@@ -1,12 +1,53 @@
-import { Image } from 'expo-image';
 import * as SplashScreen from 'expo-splash-screen';
-import { useState } from 'react';
-import { Dimensions, StyleSheet, View } from 'react-native';
-import Animated, { Easing, Keyframe } from 'react-native-reanimated';
+import { useEffect, useState } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+import Animated, {
+  Easing,
+  Keyframe,
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withRepeat,
+  withTiming,
+} from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 
-const INITIAL_SCALE_FACTOR = Dimensions.get('screen').height / 90;
+import { KettleMark } from '@/components/kettle-mark';
+import { Fonts } from '@/constants/theme';
+
 const DURATION = 600;
+
+function Dot({ delay }: { delay: number }) {
+  const pulse = useSharedValue(1);
+
+  useEffect(() => {
+    pulse.value = withDelay(
+      delay,
+      withRepeat(withTiming(0.25, { duration: 600, easing: Easing.inOut(Easing.ease) }), -1, true),
+    );
+  }, [delay, pulse]);
+
+  const style = useAnimatedStyle(() => ({ opacity: pulse.value }));
+
+  return <Animated.View style={[styles.dot, style]} />;
+}
+
+function SplashContent() {
+  return (
+    <View style={styles.content}>
+      <KettleMark size={140} color="#f3efe4" steamColor="#cf6a37" />
+      <View style={styles.textBlock}>
+        <Text style={styles.wordmark}>Kettle</Text>
+        <Text style={styles.subtitle}>local-first workout tracker</Text>
+      </View>
+      <View style={styles.dotsRow}>
+        <Dot delay={0} />
+        <Dot delay={200} />
+        <Dot delay={400} />
+      </View>
+    </View>
+  );
+}
 
 export function AnimatedSplashOverlay() {
   const [animate, setAnimate] = useState(false);
@@ -33,8 +74,6 @@ export function AnimatedSplashOverlay() {
     },
   });
 
-  const image = <Image style={styles.image} source={require('@/assets/images/expo-logo.png')} />;
-
   return animate ? (
     <Animated.View
       entering={splashKeyframe.duration(DURATION).withCallback((finished) => {
@@ -44,7 +83,7 @@ export function AnimatedSplashOverlay() {
         }
       })}
       style={styles.splashOverlay}>
-      {image}
+      <SplashContent />
     </Animated.View>
   ) : (
     <View
@@ -54,95 +93,48 @@ export function AnimatedSplashOverlay() {
         });
       }}
       style={styles.splashOverlay}>
-      {image}
-    </View>
-  );
-}
-
-const keyframe = new Keyframe({
-  0: {
-    transform: [{ scale: INITIAL_SCALE_FACTOR }],
-  },
-  100: {
-    transform: [{ scale: 1 }],
-    easing: Easing.elastic(0.7),
-  },
-});
-
-const logoKeyframe = new Keyframe({
-  0: {
-    transform: [{ scale: 1.3 }],
-    opacity: 0,
-  },
-  40: {
-    transform: [{ scale: 1.3 }],
-    opacity: 0,
-    easing: Easing.elastic(0.7),
-  },
-  100: {
-    opacity: 1,
-    transform: [{ scale: 1 }],
-    easing: Easing.elastic(0.7),
-  },
-});
-
-const glowKeyframe = new Keyframe({
-  0: {
-    transform: [{ rotateZ: '0deg' }],
-  },
-  100: {
-    transform: [{ rotateZ: '7200deg' }],
-  },
-});
-
-export function AnimatedIcon() {
-  return (
-    <View style={styles.iconContainer}>
-      <Animated.View entering={glowKeyframe.duration(60 * 1000 * 4)} style={styles.glow}>
-        <Image style={styles.glow} source={require('@/assets/images/logo-glow.png')} />
-      </Animated.View>
-
-      <Animated.View entering={keyframe.duration(DURATION)} style={styles.background} />
-      <Animated.View style={styles.imageContainer} entering={logoKeyframe.duration(DURATION)}>
-        <Image style={styles.image} source={require('@/assets/images/expo-logo.png')} />
-      </Animated.View>
+      <SplashContent />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  imageContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  glow: {
-    width: 201,
-    height: 201,
-    position: 'absolute',
-  },
-  iconContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: 128,
-    height: 128,
-    zIndex: 100,
-  },
-  image: {
-    width: 76,
-    height: 71,
-  },
-  background: {
-    borderRadius: 40,
-    experimental_backgroundImage: `linear-gradient(180deg, #3C9FFE, #0274DF)`,
-    width: 128,
-    height: 128,
-    position: 'absolute',
-  },
   splashOverlay: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: '#208AEF',
+    backgroundColor: '#17140d',
+    experimental_backgroundImage: 'radial-gradient(120% 80% at 50% 34%, #221c12 0%, #17140d 62%)',
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 1000,
+  },
+  content: {
+    alignItems: 'center',
+    gap: 30,
+  },
+  textBlock: {
+    alignItems: 'center',
+  },
+  wordmark: {
+    fontFamily: Fonts.displayBold,
+    fontSize: 38,
+    letterSpacing: -0.8,
+    color: '#f3efe4',
+  },
+  subtitle: {
+    fontFamily: Fonts.body,
+    fontSize: 13.5,
+    color: '#9a9384',
+    marginTop: 6,
+    letterSpacing: 0.2,
+  },
+  dotsRow: {
+    flexDirection: 'row',
+    gap: 7,
+  },
+  dot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: '#cf6a37',
   },
 });

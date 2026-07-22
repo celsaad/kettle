@@ -1,55 +1,67 @@
 /**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
+ * Kettle's brand palette: one warm token set, remapped for light/dark (the app shell follows the
+ * OS color scheme, with a manual override). `RunnerColors` is separate and fixed — the live
+ * session runner is always dark regardless of the shell's scheme, per the design.
  */
 
 import '@/global.css';
 
-import { Platform } from 'react-native';
-
 export const Colors = {
   light: {
-    text: '#000000',
-    background: '#ffffff',
-    backgroundElement: '#F0F0F3',
-    backgroundSelected: '#E0E1E6',
-    textSecondary: '#60646C',
+    text: '#26221c',
+    textSecondary: '#777166',
+    background: '#f7f4ef',
+    backgroundElement: '#ffffff',
+    backgroundSelected: '#efe9df',
+    border: 'rgba(30,25,15,0.10)',
+    accent: '#cf6a37',
+    accentText: '#a1502a',
+    accentSoft: 'rgba(207,106,55,0.12)',
+    accentCalm: '#3f82c0',
+    accentCalmText: '#2f6493',
+    accentCalmSoft: 'rgba(63,130,192,0.14)',
+    /** Text/icon color to place on top of an accent-colored surface (buttons, active pills). */
+    onAccent: '#ffffff',
   },
   dark: {
-    text: '#ffffff',
-    background: '#000000',
-    backgroundElement: '#212225',
-    backgroundSelected: '#2E3135',
-    textSecondary: '#B0B4BA',
+    text: '#f0ece2',
+    textSecondary: '#948d80',
+    background: '#1a1712',
+    backgroundElement: '#241f17',
+    backgroundSelected: 'rgba(240,236,226,0.08)',
+    border: 'rgba(240,236,226,0.10)',
+    accent: '#e07d47',
+    accentText: '#e8a172',
+    accentSoft: 'rgba(224,125,71,0.16)',
+    accentCalm: '#3f82c0',
+    accentCalmText: '#7fb0dd',
+    accentCalmSoft: 'rgba(63,130,192,0.2)',
+    onAccent: '#1a1712',
   },
 } as const;
 
 export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
 
-export const Fonts = Platform.select({
-  ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
-    sans: 'system-ui',
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
-    serif: 'ui-serif',
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
-    rounded: 'ui-rounded',
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
-    mono: 'ui-monospace',
-  },
-  default: {
-    sans: 'normal',
-    serif: 'serif',
-    rounded: 'normal',
-    mono: 'monospace',
-  },
-  web: {
-    sans: 'var(--font-display)',
-    serif: 'var(--font-serif)',
-    rounded: 'var(--font-rounded)',
-    mono: 'var(--font-mono)',
-  },
-});
+export const RunnerColors = {
+  text: '#f3efe4',
+  textSecondary: '#9a9384',
+  background: '#17140d',
+  backgroundElement: '#221d12',
+  border: 'rgba(243,239,228,0.12)',
+  accent: '#cf6a37',
+  accentSoft: 'rgba(207,106,55,0.16)',
+  accentCalm: '#3f82c0',
+  accentCalmSoft: 'rgba(63,130,192,0.16)',
+} as const;
+
+export const Fonts = {
+  display: 'SpaceGrotesk_600SemiBold',
+  displayMedium: 'SpaceGrotesk_500Medium',
+  displayBold: 'SpaceGrotesk_700Bold',
+  body: 'HankenGrotesk_400Regular',
+  bodyMedium: 'HankenGrotesk_500Medium',
+  bodySemiBold: 'HankenGrotesk_600SemiBold',
+} as const;
 
 export const Spacing = {
   half: 2,
@@ -61,5 +73,4 @@ export const Spacing = {
   six: 64,
 } as const;
 
-export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
-export const MaxContentWidth = 800;
+export const MaxContentWidth = 480;

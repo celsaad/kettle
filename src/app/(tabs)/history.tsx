@@ -5,12 +5,18 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
-import { historySessions, historyStats } from '@/constants/mock-data';
 import { useTheme } from '@/hooks/use-theme';
+import { useLibraryStore } from '@/state/library-store';
+import { useSessionHistoryStore } from '@/state/session-history-store';
+import { historySessionsView, historyStats as historyStatsFor } from '@/state/selectors';
 
 export default function HistoryScreen() {
   const theme = useTheme();
-  const [expandedId, setExpandedId] = useState<string | null>(historySessions[0]?.id ?? null);
+  const library = useLibraryStore((state) => state.library);
+  const sessions = useSessionHistoryStore((state) => state.sessions);
+  const historySessions = library ? historySessionsView(sessions, library) : [];
+  const historyStats = historyStatsFor(sessions);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['top', 'left', 'right']}>

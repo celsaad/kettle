@@ -5,9 +5,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
-import { nextWorkout, recentSessions } from '@/constants/mock-data';
 import { useAppTheme } from '@/hooks/theme-context';
 import { useTheme } from '@/hooks/use-theme';
+import { useLibraryStore } from '@/state/library-store';
+import { useSessionHistoryStore } from '@/state/session-history-store';
+import { blockChips, recentSessionsView, workoutSummary } from '@/state/selectors';
 
 const today = new Date();
 const dateLabel = today.toLocaleDateString('en-US', {
@@ -19,6 +21,15 @@ const dateLabel = today.toLocaleDateString('en-US', {
 export default function TodayScreen() {
   const theme = useTheme();
   const { scheme, toggle } = useAppTheme();
+  const library = useLibraryStore((state) => state.library);
+  const sessions = useSessionHistoryStore((state) => state.sessions);
+
+  const workout = library?.workouts[0];
+  const chips = workout && library ? blockChips(workout, library) : [];
+  const summary = workout && library ? workoutSummary(workout, library) : '';
+  const recentSessions = library ? recentSessionsView(sessions, library) : [];
+
+  if (!workout) return null;
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['top', 'left', 'right']}>
@@ -50,10 +61,10 @@ export default function TodayScreen() {
             NEXT UP
           </ThemedText>
           <ThemedText type="subtitle" style={styles.workoutName}>
-            {nextWorkout.workout.name}
+            {workout.name}
           </ThemedText>
           <View style={styles.chipRow}>
-            {nextWorkout.blockChips.map((chip, index) => (
+            {chips.map((chip, index) => (
               <View
                 key={`${chip}-${index}`}
                 style={[
@@ -69,7 +80,7 @@ export default function TodayScreen() {
             ))}
           </View>
           <ThemedText themeColor="textSecondary" style={styles.summaryLine}>
-            {nextWorkout.summary}
+            {summary}
           </ThemedText>
           <Pressable
             onPress={() => router.push('/session')}

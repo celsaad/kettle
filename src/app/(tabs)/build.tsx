@@ -4,13 +4,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ExerciseBadge, exerciseSummary } from '@/components/exercise-badge';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing, MaxContentWidth } from '@/constants/theme';
-import { findExercise, workouts } from '@/constants/mock-data';
 import { useTheme } from '@/hooks/use-theme';
-
-const workout = workouts[0];
+import { findExerciseInLibrary, useLibraryStore } from '@/state/library-store';
 
 export default function BuildScreen() {
   const theme = useTheme();
+  const library = useLibraryStore((state) => state.library);
+  const workout = library?.workouts[0];
+
+  if (!workout || !library) return null;
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['top', 'left', 'right']}>
@@ -32,7 +34,8 @@ export default function BuildScreen() {
 
         <View style={styles.list}>
           {workout.blocks.map((block, index) => {
-            const exercise = findExercise(block.exerciseId);
+            const exercise = findExerciseInLibrary(library, block.exerciseId);
+            if (!exercise) return null;
             const isRest = exercise.type === 'rest';
             const overrideSec = block.configOverride?.durationSec;
             const summary =

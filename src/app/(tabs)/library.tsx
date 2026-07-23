@@ -7,9 +7,10 @@ import { ExerciseBadge, exerciseSummary } from '@/components/exercise-badge';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
-import { ExerciseType, exercises } from '@/constants/mock-data';
+import { ExerciseType } from '@/domain/types';
 import { useAppTheme } from '@/hooks/theme-context';
 import { useTheme } from '@/hooks/use-theme';
+import { useLibraryStore } from '@/state/library-store';
 
 const FILTERS: { label: string; type: ExerciseType | 'all' }[] = [
   { label: 'All', type: 'all' },
@@ -23,6 +24,7 @@ export default function LibraryScreen() {
   const { scheme } = useAppTheme();
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<ExerciseType | 'all'>('all');
+  const exercises = useLibraryStore((state) => state.library?.exercises.filter((exercise) => exercise.type !== 'rest') ?? []);
 
   const filtered = useMemo(() => {
     return exercises.filter((exercise) => {
@@ -30,7 +32,7 @@ export default function LibraryScreen() {
       const matchesQuery = exercise.name.toLowerCase().includes(query.trim().toLowerCase());
       return matchesFilter && matchesQuery;
     });
-  }, [filter, query]);
+  }, [exercises, filter, query]);
 
   const fabColor = scheme === 'dark' ? theme.accent : theme.text;
 

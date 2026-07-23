@@ -11,9 +11,12 @@ import {
 import { DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
+import { useEffect } from 'react';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { ThemeOverrideProvider, useAppTheme } from '@/hooks/theme-context';
+import { useLibraryStore } from '@/state/library-store';
+import { useSessionHistoryStore } from '@/state/session-history-store';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -54,7 +57,20 @@ export default function RootLayout() {
     HankenGrotesk_600SemiBold,
   });
 
-  if (!fontsLoaded) return null;
+  const libraryStatus = useLibraryStore((state) => state.status);
+  const hydrateLibrary = useLibraryStore((state) => state.hydrate);
+  const sessionHistoryStatus = useSessionHistoryStore((state) => state.status);
+  const hydrateSessionHistory = useSessionHistoryStore((state) => state.hydrate);
+
+  useEffect(() => {
+    hydrateLibrary();
+    hydrateSessionHistory();
+  }, [hydrateLibrary, hydrateSessionHistory]);
+
+  const dataReady = libraryStatus === 'ready' || libraryStatus === 'error';
+  const historyReady = sessionHistoryStatus === 'ready' || sessionHistoryStatus === 'error';
+
+  if (!fontsLoaded || !dataReady || !historyReady) return null;
 
   return (
     <ThemeOverrideProvider>

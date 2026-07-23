@@ -1,17 +1,18 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { findExercise, Workout } from '@/constants/mock-data';
+import type { Exercise, Workout } from '@/domain/types';
 
 export type RunnerStep =
   | { kind: 'hold'; blockIndex: number; exerciseName: string; holdTargetSec: number; setIndex: number; setTotal: number }
   | { kind: 'reps'; blockIndex: number; exerciseName: string; targetReps: number; setIndex: number; setTotal: number }
   | { kind: 'rest'; blockIndex: number; seconds: number };
 
-function buildSteps(workout: Workout): RunnerStep[] {
+function buildSteps(workout: Workout, exercises: Exercise[]): RunnerStep[] {
   const steps: RunnerStep[] = [];
 
   workout.blocks.forEach((block, blockIndex) => {
-    const exercise = findExercise(block.exerciseId);
+    const exercise = exercises.find((candidate) => candidate.id === block.exerciseId);
+    if (!exercise) return;
 
     if (exercise.type === 'timed_hold') {
       for (let i = 0; i < exercise.config.sets; i++) {
@@ -62,8 +63,8 @@ function previewFor(step: RunnerStep | undefined): RestPreview {
   return null;
 }
 
-export function useSessionRunner(workout: Workout, onComplete: () => void) {
-  const steps = useMemo(() => buildSteps(workout), [workout]);
+export function useSessionRunner(workout: Workout, exercises: Exercise[], onComplete: () => void) {
+  const steps = useMemo(() => buildSteps(workout, exercises), [workout, exercises]);
   const [stepIndex, setStepIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const [holdElapsedSec, setHoldElapsedSec] = useState(0);

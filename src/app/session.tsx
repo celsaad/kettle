@@ -9,17 +9,17 @@ import { SessionReps } from '@/components/session-reps';
 import { SessionRest } from '@/components/session-rest';
 import { ThemedText } from '@/components/themed-text';
 import { RunnerColors, MaxContentWidth, Spacing } from '@/constants/theme';
-import { workouts } from '@/constants/mock-data';
 import { useSessionRunner } from '@/hooks/use-session-runner';
-
-const workout = workouts[0];
+import { useLibraryStore } from '@/state/library-store';
 
 export default function SessionScreen() {
   const onComplete = useCallback(() => router.back(), []);
-  const runner = useSessionRunner(workout, onComplete);
+  const library = useLibraryStore((state) => state.library);
+  const workout = library?.workouts[0];
+  const runner = useSessionRunner(workout ?? { id: '', name: '', blocks: [] }, library?.exercises ?? [], onComplete);
   const { step } = runner;
 
-  if (!step) return null;
+  if (!workout || !step) return null;
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'bottom', 'left', 'right']}>

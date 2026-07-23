@@ -2,7 +2,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { useTheme } from '@/hooks/use-theme';
-import { Exercise, ExerciseType } from '@/constants/mock-data';
+import { Exercise, ExerciseType } from '@/domain/types';
 
 export function ExerciseBadge({ type, overrideLabel }: { type: ExerciseType; overrideLabel?: string }) {
   const theme = useTheme();
@@ -38,12 +38,14 @@ export function exerciseSummary(exercise: Exercise): string {
     }
     case 'timed_hold':
       return `${exercise.config.sets} × ${exercise.config.holdSec}s · ${exercise.config.restSec}s rest`;
+    case 'emom':
+      return `${exercise.config.intervalSec}s interval · ${exercise.config.totalMinutes} min`;
+    case 'amrap':
+      return `${exercise.config.timeCapSec}s cap`;
     case 'cardio':
-      return `${exercise.config.distanceMeters} m`;
+      return exercise.config.distanceMeters ? `${exercise.config.distanceMeters} m` : `${exercise.config.durationSec ?? 0}s`;
     case 'rest':
       return `${exercise.config.durationSec} seconds`;
-    default:
-      return '';
   }
 }
 

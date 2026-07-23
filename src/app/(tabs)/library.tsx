@@ -25,7 +25,8 @@ export default function LibraryScreen() {
   const { scheme } = useAppTheme();
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<ExerciseType | 'all'>('all');
-  const exercises = useLibraryStore((state) => state.library?.exercises.filter((exercise) => exercise.type !== 'rest') ?? []);
+  const library = useLibraryStore((state) => state.library);
+  const exercises = useMemo(() => library?.exercises.filter((exercise) => exercise.type !== 'rest') ?? [], [library]);
 
   const filtered = useMemo(() => {
     return exercises.filter((exercise) => {

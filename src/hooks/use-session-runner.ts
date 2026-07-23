@@ -1,9 +1,9 @@
 import * as Haptics from 'expo-haptics';
-import * as Notifications from 'expo-notifications';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 
 import type { Exercise, RepsSetLog, Session, SessionEntry, TimedHoldSetLog, Workout } from '@/domain/types';
+import { cancelNotification, requestNotificationPermissions, scheduleRestCompleteNotification } from '@/hooks/safe-notifications';
 import { useSessionHistoryStore } from '@/state/session-history-store';
 
 export type RunnerStep =
@@ -93,15 +93,6 @@ function previewFor(step: RunnerStep | undefined): RestPreview {
   return null;
 }
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowBanner: false,
-    shouldShowList: false,
-    shouldPlaySound: false,
-    shouldSetBadge: false,
-  }),
-});
-
 export function useSessionRunner(workout: Workout, exercises: Exercise[], onComplete: () => void) {
   const steps = useMemo(() => buildSteps(workout, exercises), [workout, exercises]);
   const [stepIndex, setStepIndex] = useState(0);
@@ -138,7 +129,7 @@ export function useSessionRunner(workout: Workout, exercises: Exercise[], onComp
   }, []);
 
   useEffect(() => {
-    Notifications.requestPermissionsAsync();
+    requestNotificationPermissions();
   }, []);
 
   useEffect(() => {
@@ -254,17 +245,15 @@ export function useSessionRunner(workout: Workout, exercises: Exercise[], onComp
     let notificationId: string | null = null;
 
     const remaining = Math.max(1, restTargetSecRef.current - computeElapsedSec());
-    Notifications.scheduleNotificationAsync({
-      content: { title: 'Rest complete', body: `${workout.name} · back to work` },
-      trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: remaining, repeats: false },
-    }).then((id) => {
-      if (cancelled) Notifications.cancelScheduledNotificationAsync(id);
+    scheduleRestCompleteNotification('Rest complete', `${workout.name} · back to work`, remaining).then((id) => {
+      if (!id) return;
+      if (cancelled) cancelNotification(id);
       else notificationId = id;
     });
 
     return () => {
       cancelled = true;
-      if (notificationId) Notifications.cancelScheduledNotificationAsync(notificationId);
+      if (notificationId) cancelNotification(notificationId);
     };
   }, [step, paused, computeElapsedSec, workout.name]);
 

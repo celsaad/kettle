@@ -1,4 +1,5 @@
 import { router } from 'expo-router';
+import { useKeepAwake } from 'expo-keep-awake';
 import { useCallback } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -13,6 +14,7 @@ import { useSessionRunner } from '@/hooks/use-session-runner';
 import { useLibraryStore } from '@/state/library-store';
 
 export default function SessionScreen() {
+  useKeepAwake();
   const onComplete = useCallback(() => router.back(), []);
   const library = useLibraryStore((state) => state.library);
   const workout = library?.workouts[0];
@@ -39,7 +41,7 @@ export default function SessionScreen() {
             targetSec={step.holdTargetSec}
             elapsedSec={runner.holdElapsedSec}
             paused={runner.paused}
-            onTogglePause={() => runner.setPaused((paused) => !paused)}
+            onTogglePause={runner.setPaused}
             onPrev={runner.goPrev}
             onDone={runner.doneSet}
           />
@@ -63,7 +65,7 @@ export default function SessionScreen() {
         {step.kind === 'rest' && (
           <SessionRest
             secondsRemaining={runner.restRemainingSec}
-            totalSeconds={step.seconds}
+            totalSeconds={runner.restTargetSec}
             next={runner.nextPreview}
             onAddSeconds={runner.addRestSeconds}
             onSkip={runner.skipRest}

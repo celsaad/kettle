@@ -1,21 +1,87 @@
+import { File } from 'expo-file-system';
 import { router } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
+import type { MergeSummary } from '@/domain/merge';
+import { mergeLibraries } from '@/domain/merge';
+import type { Library } from '@/domain/types';
+import { parseLibraryYaml } from '@/domain/yaml-mapping';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useLibraryStore } from '@/state/library-store';
 
-const changedItems = [
-  { name: 'Front Lever', kind: 'new' as const, detail: 'new' },
-  { name: 'Muscle-up', kind: 'new' as const, detail: 'new' },
-  { name: 'Pull-ups', kind: 'updated' as const, detail: '4×8 → 4×10' },
-  { name: 'L-Sit Hold', kind: 'updated' as const, detail: '20s → 25s' },
-];
+type PickedFile = { name: string; sizeLabel: string };
+type ReadyMerge = { picked: PickedFile; library: Library; summary: MergeSummary };
 
 export default function ImportScreen() {
   const theme = useTheme();
+  const currentLibrary = useLibraryStore((state) => state.library);
+  const replaceLibrary = useLibraryStore((state) => state.replaceLibrary);
+
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [ready, setReady] = useState<ReadyMerge | null>(null);
+
   const close = () => router.back();
+
+  const pickFile = async () => {
+    setError(null);
+    setReady(null);
+    setBusy(true);
+    try {
+      const result = await File.pickFileAsync();
+      if (result.canceled) return;
+
+      const file = result.result;
+      const text = await file.text();
+      const parsed = parseLibraryYaml(text);
+      if (!parsed.ok) {
+        setError(parsed.error);
+        return;
+      }
+      if (!currentLibrary) {
+        setError('Library is not loaded yet.');
+        return;
+      }
+      const merge = mergeLibraries(currentLibrary, parsed.data);
+      if (!merge.ok) {
+        setError(merge.error);
+        return;
+      }
+
+      const sizeBytes = file.size;
+      const sizeLabel = sizeBytes < 1024 ? `${sizeBytes} B` : `${(sizeBytes / 1024).toFixed(1)} KB`;
+      setReady({ picked: { name: file.name, sizeLabel }, library: merge.library, summary: merge.summary });
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const confirmMerge = async () => {
+    if (!ready) return;
+    setBusy(true);
+    try {
+      await replaceLibrary(ready.library);
+      close();
+    } catch (err) {
+      setError((err as Error).message);
+      setBusy(false);
+    }
+  };
+
+  const changedItems = ready
+    ? [
+        ...ready.summary.newExercises.map((id) => ({ id, kind: 'new' as const, detail: 'new exercise' })),
+        ...ready.summary.updatedExercises.map((id) => ({ id, kind: 'updated' as const, detail: 'updated exercise' })),
+        ...ready.summary.newWorkouts.map((id) => ({ id, kind: 'new' as const, detail: 'new workout' })),
+        ...ready.summary.updatedWorkouts.map((id) => ({ id, kind: 'updated' as const, detail: 'updated workout' })),
+      ]
+    : [];
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['bottom', 'left', 'right']}>
@@ -23,67 +89,100 @@ export default function ImportScreen() {
         <View style={[styles.grabber, { backgroundColor: theme.border }]} />
         <ThemedText type="subtitle">Import library</ThemedText>
 
-        <View style={[styles.fileRow, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
-          <View style={[styles.fileIcon, { borderColor: theme.textSecondary }]} />
-          <View style={styles.fileText}>
-            <ThemedText type="heading" style={styles.fileName}>
-              exercises.yaml
-            </ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">
-              4.2 KB · picked from Files
-            </ThemedText>
-          </View>
-        </View>
-
-        <View style={styles.countsRow}>
-          <View style={[styles.countCard, { backgroundColor: theme.accentSoft }]}>
-            <ThemedText type="subtitle" themeColor="accentText">
-              3
-            </ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">
-              new
-            </ThemedText>
-          </View>
-          <View style={[styles.countCard, { backgroundColor: theme.accentCalmSoft }]}>
-            <ThemedText type="subtitle" themeColor="accentCalmText">
-              2
-            </ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">
-              updated
-            </ThemedText>
-          </View>
-          <View
-            style={[
-              styles.countCard,
-              { backgroundColor: theme.backgroundElement, borderWidth: 1, borderColor: theme.border },
-            ]}>
-            <ThemedText type="subtitle">1</ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">
-              workout
-            </ThemedText>
-          </View>
-        </View>
-
-        <View style={styles.changedList}>
-          {changedItems.map((item) => (
-            <View key={item.name} style={styles.changedRow}>
-              <ThemedText
-                style={[styles.changedGlyph, { color: item.kind === 'new' ? theme.accentText : theme.accentCalmText }]}>
-                {item.kind === 'new' ? '+' : '↻'}
-              </ThemedText>
-              <ThemedText type="smallMedium" style={styles.changedName}>
-                {item.name}
-              </ThemedText>
+        {!ready && (
+          <Pressable
+            onPress={pickFile}
+            disabled={busy}
+            style={[styles.fileRow, styles.pickRow, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
+            <View style={[styles.fileIcon, { borderColor: theme.textSecondary }]} />
+            <View style={styles.fileText}>
+              <ThemedText type="heading">Choose exercises.yaml</ThemedText>
               <ThemedText type="small" themeColor="textSecondary">
-                {item.detail}
+                Pick a file to merge into your library
               </ThemedText>
             </View>
-          ))}
-        </View>
+            {busy && <ActivityIndicator color={theme.accentText} />}
+          </Pressable>
+        )}
 
-        <ThemedText type="small" themeColor="textSecondary" style={styles.note}>
-          Updated items replace local tweaks. Sessions are never touched.
-        </ThemedText>
+        {ready && (
+          <View style={[styles.fileRow, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
+            <View style={[styles.fileIcon, { borderColor: theme.textSecondary }]} />
+            <View style={styles.fileText}>
+              <ThemedText type="heading" style={styles.fileName}>
+                {ready.picked.name}
+              </ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">
+                {ready.picked.sizeLabel} · picked from Files
+              </ThemedText>
+            </View>
+          </View>
+        )}
+
+        {error && (
+          <ThemedText type="small" style={[styles.error, { color: theme.accentText }]}>
+            {error}
+          </ThemedText>
+        )}
+
+        {ready && (
+          <>
+            <View style={styles.countsRow}>
+              <View style={[styles.countCard, { backgroundColor: theme.accentSoft }]}>
+                <ThemedText type="subtitle" themeColor="accentText">
+                  {ready.summary.newExercises.length + ready.summary.newWorkouts.length}
+                </ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">
+                  new
+                </ThemedText>
+              </View>
+              <View style={[styles.countCard, { backgroundColor: theme.accentCalmSoft }]}>
+                <ThemedText type="subtitle" themeColor="accentCalmText">
+                  {ready.summary.updatedExercises.length + ready.summary.updatedWorkouts.length}
+                </ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">
+                  updated
+                </ThemedText>
+              </View>
+              <View
+                style={[
+                  styles.countCard,
+                  { backgroundColor: theme.backgroundElement, borderWidth: 1, borderColor: theme.border },
+                ]}>
+                <ThemedText type="subtitle">{ready.summary.newWorkouts.length + ready.summary.updatedWorkouts.length}</ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">
+                  workout{ready.summary.newWorkouts.length + ready.summary.updatedWorkouts.length === 1 ? '' : 's'}
+                </ThemedText>
+              </View>
+            </View>
+
+            <View style={styles.changedList}>
+              {changedItems.map((item) => (
+                <View key={`${item.detail}-${item.id}`} style={styles.changedRow}>
+                  <ThemedText
+                    style={[styles.changedGlyph, { color: item.kind === 'new' ? theme.accentText : theme.accentCalmText }]}>
+                    {item.kind === 'new' ? '+' : '↻'}
+                  </ThemedText>
+                  <ThemedText type="smallMedium" style={styles.changedName}>
+                    {item.id}
+                  </ThemedText>
+                  <ThemedText type="small" themeColor="textSecondary">
+                    {item.detail}
+                  </ThemedText>
+                </View>
+              ))}
+              {changedItems.length === 0 && (
+                <ThemedText type="small" themeColor="textSecondary">
+                  No changes — the imported file matches your current library.
+                </ThemedText>
+              )}
+            </View>
+
+            <ThemedText type="small" themeColor="textSecondary" style={styles.note}>
+              Updated items replace local tweaks. Sessions are never touched.
+            </ThemedText>
+          </>
+        )}
 
         <View style={styles.buttonRow}>
           <Pressable onPress={close} style={[styles.cancelButton, { borderColor: theme.border }]}>
@@ -91,7 +190,10 @@ export default function ImportScreen() {
               Cancel
             </ThemedText>
           </Pressable>
-          <Pressable onPress={close} style={[styles.mergeButton, { backgroundColor: theme.accent }]}>
+          <Pressable
+            onPress={confirmMerge}
+            disabled={!ready || busy}
+            style={[styles.mergeButton, { backgroundColor: theme.accent, opacity: !ready || busy ? 0.5 : 1 }]}>
             <ThemedText type="heading" style={{ color: theme.onAccent }}>
               Merge & import
             </ThemedText>
@@ -130,6 +232,9 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     padding: Spacing.two + 4,
   },
+  pickRow: {
+    borderStyle: 'dashed',
+  },
   fileIcon: {
     width: 26,
     height: 32,
@@ -141,6 +246,9 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   fileName: {},
+  error: {
+    marginTop: Spacing.two,
+  },
   countsRow: {
     flexDirection: 'row',
     gap: Spacing.two,

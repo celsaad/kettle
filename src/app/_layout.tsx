@@ -42,6 +42,7 @@ function Navigation() {
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="session" options={{ presentation: 'modal', headerShown: false }} />
         <Stack.Screen name="import" options={{ presentation: 'modal', headerShown: false }} />
+        <Stack.Screen name="exercise-editor" options={{ presentation: 'modal', headerShown: false }} />
       </Stack>
     </ThemeProvider>
   );

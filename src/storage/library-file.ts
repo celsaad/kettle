@@ -1,12 +1,18 @@
 import { parseLibraryYaml, serializeLibraryYaml } from '@/domain/yaml-mapping';
 import type { Library } from '@/domain/types';
-import { ensureStorageReady, storagePaths } from '@/storage/paths';
+import { ensureStorageReady, isFileStorageSupported, storagePaths } from '@/storage/paths';
 import { seedLibrary } from '@/storage/seed-library';
 
 export type LoadLibraryResult = { ok: true; library: Library } | { ok: false; error: string };
 
-/** Reads exercises.yaml, seeding it from defaults on first launch. Never throws. */
+/**
+ * Reads exercises.yaml, seeding it from defaults on first launch. Never throws.
+ * On web (unsupported by expo-file-system) this degrades to an in-memory seed library so the UI
+ * stays browsable — nothing persists there, matching the pre-refactor mock-data web experience.
+ */
 export async function loadLibrary(): Promise<LoadLibraryResult> {
+  if (!isFileStorageSupported) return { ok: true, library: seedLibrary };
+
   ensureStorageReady();
 
   if (!storagePaths.libraryFile.exists) {
@@ -21,6 +27,8 @@ export async function loadLibrary(): Promise<LoadLibraryResult> {
 }
 
 export async function saveLibrary(library: Library): Promise<void> {
+  if (!isFileStorageSupported) return;
+
   ensureStorageReady();
   const text = serializeLibraryYaml(library);
   if (!storagePaths.libraryFile.exists) {

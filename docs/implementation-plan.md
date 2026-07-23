@@ -4,6 +4,7 @@ Plan for building out the four workstreams the README lists as *not yet implemen
 `exercises.yaml` and `sessions/`, library import/merge, export, and the wall-clock-drift-hardened
 timer engine (keep-awake, background notifications) — plus wiring the library/build CRUD screens.
 
+**Status: all workstreams (A–F) are implemented.** `npm run typecheck` and `npm run lint` are clean.
 See [`exercise-tracker-product-plan.md`](exercise-tracker-product-plan.md) for the product model this
 plan implements.
 
@@ -12,127 +13,149 @@ plan implements.
 - **Scope:** everything in the README — persistence, timer engine, import/merge, export, and
   library/build CRUD.
 - **Config key style:** hand-editable YAML stays **snake_case** (`work_sec`, `hold_sec`) per the
-  product plan; in-code domain objects stay **camelCase** (`workSec`, `holdSec`) as they already are
-  in `src/constants/mock-data.ts`. A mapping layer bridges the two at the file boundary.
-
-## Where things stand now
-
-**Workstreams A + B + C are done.** The app runs on real files, not mock data:
-
-- `src/domain/types.ts`, `schema.ts`, `yaml-mapping.ts` — canonical camelCase domain types, zod
-  schemas for the snake_case YAML shape, and the bidirectional mapping between them.
-- `src/storage/paths.ts`, `library-file.ts`, `session-files.ts`, `seed-library.ts` — file I/O on
-  `expo-file-system`'s SDK-57 `File`/`Directory` class API (confirmed from the installed package's
-  `.d.ts`s — see "Resolved" below). `exercises.yaml` is seeded from the former mock content on first
-  launch; sessions are one file per id under `sessions/`, never a full-history rewrite.
-- `src/state/library-store.ts`, `session-history-store.ts` — zustand stores exposing `status` /
-  `error` / `hydrate()`, hydrated in parallel with font loading in `src/app/_layout.tsx`; the app
-  blocks on both before rendering. `src/state/selectors.ts` derives all the display aggregates
-  (`blockChips`, `workoutSummary`, `recentSessionsView`, `historyStats`, `historySessionsView`) that
-  used to be hardcoded in mock data.
-- Every screen (`(tabs)/index.tsx`, `library.tsx`, `build.tsx`, `history.tsx`, `session.tsx`) and
-  `use-session-runner.ts` now reads from the stores instead of `@/constants/mock-data`, which has
-  been deleted. `npm run typecheck` and `npm run lint` are clean.
-
-**Scope note:** the library/session stores are currently **read + hydrate only** — no `saveExercise`/
-`saveWorkout`/write-session-entry mutators were added, since nothing calls them yet (Workstreams D, E,
-F below are what will need them). Building them now would have been unexercised, unverified code.
-`src/storage/session-files.ts` does already expose `createSession` / `appendSessionEntry` /
-`finalizeSession` as it's cheap, mechanical, and directly informed by the documented session file
-format — Workstream E wires these into the runner and the session-history store next.
-
-**Not yet done:** import/merge (D), export (D), the wall-clock-hardened timer + incremental flush
-wired into the runner (E), and library/build CRUD (F). See below — unchanged from the original plan.
+  product plan; in-code domain objects stay **camelCase** (`workSec`, `holdSec`). A mapping layer
+  (`src/domain/yaml-mapping.ts`) bridges the two at the file boundary.
 
 ---
 
 ## 0. Dependencies & config
 
-**Installed:** `js-yaml`, `zod`, `zustand`, `expo-file-system`, `expo-keep-awake`, `expo-haptics` (via
-`npx expo install`, so versions are SDK-57-pinned). js-yaml v5 and zod v4 ship their own types, no
-`@types/*` needed.
+**Installed** (all via `npx expo install`, so versions are SDK-57-pinned): `js-yaml`, `zod`,
+`zustand`, `expo-file-system`, `expo-keep-awake`, `expo-haptics`, `expo-notifications`,
+`expo-sharing`. No `expo-document-picker` — the new `expo-file-system` API exposes
+`File.pickFileAsync()` directly, so a separate picker dependency wasn't needed.
 
-**Still to add when D/E land:** `expo-document-picker` or `File.pickFileAsync` (the new
-`expo-file-system` API exposes file picking directly — evaluate whether a separate
-`expo-document-picker` dependency is even needed before adding it), `expo-sharing`,
-`expo-notifications`, `expo-audio`.
-
-- `expo-notifications` needs a `plugins` entry in `app.json` + iOS permission strings when E lands.
+- `expo-notifications` and `expo-sharing` are registered in `app.json` `plugins` (the latter was
+  auto-added by `expo install`).
 - ✅ **API-version risk resolved:** SDK 57's `expo-file-system` is the class-based `File` / `Directory`
   / `Paths` API (confirmed from `node_modules/expo-file-system/build/*.d.ts`), not the legacy
   `readAsStringAsync`/`documentDirectory` functions. Key shapes used in `src/storage/`:
   `Paths.document`, `new Directory(...)` / `new File(...)`, sync `.exists`, sync `.create(options)`,
   async `.text()`, sync `.write(content)`, sync `.list()` (filter results with `instanceof File`).
+- ✅ **expo-notifications API confirmed** from `node_modules/expo-notifications/build/*.d.ts`:
+  `scheduleNotificationAsync({ content, trigger: { type: SchedulableTriggerInputTypes.TIME_INTERVAL,
+  seconds, repeats } })`, `cancelScheduledNotificationAsync(id)`, `setNotificationHandler(...)`,
+  `requestPermissionsAsync()`.
+- ⚠️ **Web is not a persistence target.** `expo-file-system` has no web implementation. The storage
+  layer detects this (`isFileStorageSupported` in `paths.ts`) and degrades gracefully: on web,
+  `loadLibrary()` returns the seed library in-memory (no persistence, matching the old mock-data web
+  experience) and `listSessions()`/all writes are no-ops instead of throwing. This was a real bug
+  caught mid-implementation — `src/storage/paths.ts` originally constructed `Directory`/`File`
+  instances at module-import time, which crashed `expo export --platform web` (and would have crashed
+  the web runtime too); fixed by making path resolution lazy.
 
 ## A. Domain model + schemas (`src/domain/`) — ✅ done
 
-Implemented as planned, with one scope call: the exercise config schema covers all 7 product-plan
-types (`hiit`/`emom`/`amrap`/`reps`/`timed_hold`/`cardio`/`rest`) since library/import validation
-needs to recognize hand-authored files using any of them — but `amrap`'s config is just `time_cap_sec`
-(the plan's "movements" sub-field is undefined in the spec and unused anywhere, so it wasn't modeled).
-`SessionEntry`, by contrast, only covers `timed_hold` / `reps` / `rest` — the only shapes the current
-runner can produce; extending it to log `hiit`/`emom`/`amrap`/`cardio` sessions is future work tied to
-extending the runner (roadmap phases 3–4).
+`types.ts` (canonical camelCase domain types), `schema.ts` (zod, snake_case YAML shape), and
+`yaml-mapping.ts` (bidirectional mapping + parse/serialize). One scope call: the exercise config
+schema covers all 7 product-plan types (`hiit`/`emom`/`amrap`/`reps`/`timed_hold`/`cardio`/`rest`)
+since library/import validation needs to recognize hand-authored files using any of them — but
+`amrap`'s config is just `time_cap_sec` (the plan's "movements" sub-field is undefined in the spec
+and unused anywhere, so it wasn't modeled). `SessionEntry`, by contrast, only covers `timed_hold` /
+`reps` / `rest` — the only shapes the runner can produce; extending it to log `hiit`/`emom`/`amrap`/
+`cardio` sessions is future work tied to extending the runner to those types (roadmap phases 3–4).
 
 ## B. Storage layer (`src/storage/`) — ✅ done
 
-Implemented as planned. `paths.ts` resolves `<documentDir>/exercise-tracker/{exercises.yaml,sessions/}`
-and ensures the directory exists; `library-file.ts` has `loadLibrary()`/`saveLibrary()`;
-`session-files.ts` has `listSessions()`/`createSession()`/`appendSessionEntry()`/`finalizeSession()`.
-No `.version` marker file was added yet — the `version: 1` field lives inside each YAML file already,
-and a separate directory-level marker has no consumer until an actual migration exists.
+`paths.ts` resolves `<documentDir>/exercise-tracker/{exercises.yaml,sessions/}` lazily (see the web
+note above) and ensures the directory exists; `library-file.ts` has `loadLibrary()`/`saveLibrary()`;
+`session-files.ts` has `listSessions()`/`createSession()`/`appendSessionEntry()`/`finalizeSession()`,
+all now wired into the live session runner (Workstream E) for incremental flush. `export.ts` wraps
+`expo-sharing` for both the whole library and a single session file. No `.version` marker file was
+added — the `version: 1` field lives inside each YAML file already, and a separate directory-level
+marker has no consumer until an actual migration exists.
 
 ## C. Zustand store + hydration (`src/state/`) — ✅ done
 
-Implemented as planned, minus the write-mutators noted above (deferred to D/E/F). Cutover is complete:
-every screen reads from `useLibraryStore`/`useSessionHistoryStore` + `src/state/selectors.ts`, and
-`mock-data.ts` is deleted.
+`library-store.ts` and `session-history-store.ts`, hydrated in parallel with font loading in
+`src/app/_layout.tsx`; the app blocks on both before rendering. `selectors.ts` derives all the display
+aggregates (`blockChips`, `workoutSummary`, `recentSessionsView`, `historyStats`,
+`historySessionsView`) that used to be hardcoded in mock data. Both stores now carry write mutators
+(`replaceLibrary`, `saveExercise`, `saveWorkout` on the library store; `startSession`, `logEntry`,
+`completeSession` on the session-history store) — these were deliberately left out of the initial
+foundation pass until D/E/F actually called them, to avoid landing unexercised code; all are now used.
+Every screen and `use-session-runner.ts` reads from the stores instead of `@/constants/mock-data`,
+which is deleted.
 
-## D. Import/merge + export — not started
+## D. Import/merge + export — ✅ done
 
-- `src/domain/merge.ts` — merge-by-`id` (exercises + workouts), then **validate the merged whole**:
-  no duplicate ids, every block references an existing exercise, every exercise has valid type+config
-  (§6). Return a summary (`new` / `updated` / `workouts affected`) + the merged library.
-- Wire `src/app/import.tsx`: replace the hardcoded `changedItems`/counts with `expo-document-picker`
-  → parse → `merge()` → show the real pre-merge summary → confirm → `saveLibrary()` + rehydrate.
-- Export: `expo-sharing` to share `exercises.yaml` or a single session file. Add entry points
-  (library "Export" action; a session share button in history).
+- `src/domain/merge.ts` — merge-by-`id` for exercises and workouts (§6). No-duplicate-ids is
+  guaranteed by construction (both sides merge through the same `Map`); the one thing actively
+  validated is that every workout block still references an exercise that exists post-merge (the
+  "known type + required config" requirement is already enforced upstream by zod at parse time).
+  Returns a `MergeSummary` (new/updated exercise and workout ids).
+- `src/app/import.tsx` — rewritten: `File.pickFileAsync()` → read → `parseLibraryYaml()` →
+  `mergeLibraries()` against the current library → real pre-merge summary (counts + a changed-items
+  list) → confirm → `replaceLibrary()` (persists + updates the store) → close. Errors from a bad pick,
+  malformed YAML, or a merge that references an unknown exercise are shown inline, not swallowed.
+- `src/storage/export.ts` wraps `expo-sharing`. Entry points: an "Export" action next to "Import" in
+  the library header (whole `exercises.yaml`), and an "Export" action inside each expanded history
+  card (that one session's file).
 
-## E. Timer engine hardening (core value, §7.1) — not started
+## E. Timer engine hardening (core value, §7.1) — ✅ done
 
-Rewrite the timing in `src/hooks/use-session-runner.ts`:
+`src/hooks/use-session-runner.ts` was rewritten around wall-clock timestamps instead of accumulated
+`setInterval` ticks:
 
-- Track each phase by **`startedAt` timestamp**; compute elapsed/remaining from `Date.now()` deltas.
-  `setInterval` only drives re-render, never the source of truth.
-- On `AppState` background→foreground, recompute from timestamps.
-- `expo-keep-awake` active during a session.
-- On entering a timed phase, schedule an `expo-notifications` local notification at the phase-end
-  wall-clock time as a backgrounded fallback; cancel on early advance/skip.
-- `expo-haptics` + `expo-audio` cues on every phase transition.
-- **Incremental flush:** create the session file on start (`started_at`); `writeSessionEntry()` on
-  each set logged / round completed; `finalizeSession()` (write `ended_at`) on completion (§7.2).
+- Each phase is anchored by `phaseStartedAtRef` (a `Date.now()` timestamp) plus `pausedAtRef` /
+  `pausedMsRef` to account for pause time; elapsed/remaining is always `computeElapsedSec()` — a
+  timestamp diff, never a counter. `setInterval` only triggers a recompute-and-render, it is not the
+  source of truth.
+- An `AppState` listener recomputes on background→foreground and catches up a rest phase that fully
+  elapsed while backgrounded (auto-advances immediately rather than staying stuck).
+- `useKeepAwake()` (from `expo-keep-awake`) is active for the lifetime of the session screen.
+- Entering a rest phase schedules an `expo-notifications` local notification at the phase-end
+  wall-clock time as a background fallback; it's cancelled and rescheduled on pause/resume/step
+  change so it never fires stale or doubles up.
+- `expo-haptics` fires on every `advance()` (set done, rest skipped, phase transition).
+- **Incremental flush:** a session file is created via `startSession()` as soon as the runner mounts;
+  each completed set is appended to a per-block pending-sets buffer and flushed as a `SessionEntry`
+  the moment its block finishes (boundary = the next step belongs to a different block, or there is no
+  next step); standalone Rest blocks flush their own entry immediately. `completeSession()` writes
+  `ended_at` when the last step advances past the end. A mid-workout crash loses at most the
+  in-progress set, per §7.2.
+- Known limitation: `goPrev()` doesn't un-flush an already-logged set. Revisiting a previous step to
+  correct a mistake is a real product question or an already flagged limitation, left out of this pass.
 
-## F. Library/Build CRUD — not started
+## F. Library/Build CRUD — ✅ done
 
-The Library FAB (+), Build "Add block" / "Save" / edit affordances currently do nothing. Wire them to
-store mutations that persist to `exercises.yaml` (MVP §10 items 1–2). This needs `saveExercise`/
-`saveWorkout` mutators added to `useLibraryStore`, which were intentionally left out of Workstream C.
-This is the largest *new-UI* piece.
+- `src/app/exercise-editor.tsx` (new modal route): add or edit a single exercise — name, a type
+  selector (all 7 types), and a config form driven by a declarative per-type field table. New
+  exercises get a slugified id from the name; editing keeps the existing id and locks the type
+  (changing type on an existing exercise would orphan its old config shape). Saves via
+  `useLibraryStore().saveExercise()`.
+- `src/app/(tabs)/library.tsx` — the FAB opens the editor in add mode; tapping a card opens it in edit
+  mode for that exercise.
+- `src/app/(tabs)/build.tsx` — rewritten around a local `draft: Workout` buffer compared by reference
+  to the store's workout to derive a `dirty` flag (cheap and correct: `saveWorkout` writes back the
+  exact same object reference, so `dirty` clears itself post-save with no extra reset code needed).
+  Supports: rename (pencil → inline `TextInput`), remove a block (✕ per row), add a block (a picker
+  panel listing every library exercise, including Rest), Cancel (revert to the stored workout), Save
+  (`useLibraryStore().saveWorkout()`). **Not implemented:** drag-to-reorder blocks — the existing drag
+  handle (⣿) is currently decorative; real reordering needs a drag gesture library and was judged too
+  large an addition for this pass.
 
 ---
 
-## Suggested sequencing
+## What's genuinely left (not part of this implementation pass)
 
-1. ~~**A + B + C** — domain, storage, store cutover.~~ **Done.** App runs on real files (seeded from
-   the former mock content), every screen fed by store selectors, launch gated on hydration.
-2. **E** — timer hardening + incremental session persistence. Highest product value; next up.
-3. **D** — import/merge + export.
-4. **F** — library/build CRUD UI.
+- **Drag-to-reorder** blocks in Build (noted above).
+- **`goPrev` doesn't un-flush** logged sets in the session runner (noted above).
+- **`hiit`/`emom`/`amrap`/`cardio` aren't runnable** in the session screen — `useSessionRunner`'s
+  `buildSteps()` only turns `timed_hold`/`reps`/`rest` blocks into steps (this predates this
+  implementation pass; extending it is roadmap phase 4, and would also need the corresponding
+  `SessionEntry` log shapes added to the domain model, deliberately left out per Workstream A above).
+- **No exercise/workout delete** — only add/edit. Delete wasn't present in the original mock UI either
+  and wasn't asked for.
+- **Web has no persistence** (by necessity — `expo-file-system` doesn't support it); it now degrades
+  to an ephemeral in-memory seed library instead of crashing, which is a reasonable dev/preview
+  experience but not real usage.
 
-## Open questions from the product plan to settle during build
+## Open questions from the product plan, still open
 
 - Timed-hold display direction: count down from target, or count up with target as a marker (§12.2).
-- Rep-block rest behavior: auto-timer that's skippable (recommended, §12.3).
-- Merge conflict transparency: diff view vs. simple updated count (§12.5).
+  Current UI counts up (unchanged from the pre-existing mock UI).
+- Merge conflict transparency: diff view vs. simple updated count (§12.5). Currently a simple
+  new/updated count + changed-id list, no field-level diff.
 - Keep the `blocks` model shaped to allow nested groups later (supersets/circuits) without a rewrite
-  (§12.4).
+  (§12.4) — unaffected by this pass; `WorkoutBlock` is still flat.

@@ -11,6 +11,7 @@ import { ExerciseType } from '@/domain/types';
 import { useAppTheme } from '@/hooks/theme-context';
 import { useTheme } from '@/hooks/use-theme';
 import { useLibraryStore } from '@/state/library-store';
+import { exportLibrary } from '@/storage/export';
 
 const FILTERS: { label: string; type: ExerciseType | 'all' }[] = [
   { label: 'All', type: 'all' },
@@ -41,11 +42,18 @@ export default function LibraryScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
           <ThemedText type="subtitle">Library</ThemedText>
-          <Pressable onPress={() => router.push('/import')} hitSlop={8}>
-            <ThemedText type="smallMedium" themeColor="accentText">
-              Import
-            </ThemedText>
-          </Pressable>
+          <View style={styles.headerActions}>
+            <Pressable onPress={() => exportLibrary().catch(() => {})} hitSlop={8}>
+              <ThemedText type="smallMedium" themeColor="textSecondary">
+                Export
+              </ThemedText>
+            </Pressable>
+            <Pressable onPress={() => router.push('/import')} hitSlop={8}>
+              <ThemedText type="smallMedium" themeColor="accentText">
+                Import
+              </ThemedText>
+            </Pressable>
+          </View>
         </View>
         <ThemedText themeColor="textSecondary" style={styles.countLabel}>
           {filtered.length} exercises
@@ -85,20 +93,24 @@ export default function LibraryScreen() {
 
         <View style={styles.list}>
           {filtered.map((exercise) => (
-            <ThemedView key={exercise.id} type="backgroundElement" style={[styles.card, { borderColor: theme.border }]}>
-              <View style={styles.cardText}>
-                <ThemedText type="heading">{exercise.name}</ThemedText>
-                <ThemedText type="small" themeColor="textSecondary">
-                  {exerciseSummary(exercise)}
-                </ThemedText>
-              </View>
-              <ExerciseBadge type={exercise.type} />
-            </ThemedView>
+            <Pressable key={exercise.id} onPress={() => router.push({ pathname: '/exercise-editor', params: { id: exercise.id } })}>
+              <ThemedView type="backgroundElement" style={[styles.card, { borderColor: theme.border }]}>
+                <View style={styles.cardText}>
+                  <ThemedText type="heading">{exercise.name}</ThemedText>
+                  <ThemedText type="small" themeColor="textSecondary">
+                    {exerciseSummary(exercise)}
+                  </ThemedText>
+                </View>
+                <ExerciseBadge type={exercise.type} />
+              </ThemedView>
+            </Pressable>
           ))}
         </View>
       </ScrollView>
 
-      <Pressable style={({ pressed }) => [styles.fab, { backgroundColor: fabColor }, pressed && styles.pressed]}>
+      <Pressable
+        onPress={() => router.push('/exercise-editor')}
+        style={({ pressed }) => [styles.fab, { backgroundColor: fabColor }, pressed && styles.pressed]}>
         <ThemedText type="title" style={[styles.fabPlus, { color: theme.onAccent }]}>
           +
         </ThemedText>
@@ -123,6 +135,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'baseline',
+  },
+  headerActions: {
+    flexDirection: 'row',
+    gap: Spacing.two + 2,
   },
   countLabel: {
     marginTop: 2,

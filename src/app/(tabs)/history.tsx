@@ -9,6 +9,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { useLibraryStore } from '@/state/library-store';
 import { useSessionHistoryStore } from '@/state/session-history-store';
 import { historySessionsView, historyStats as historyStatsFor } from '@/state/selectors';
+import { exportSession } from '@/storage/export';
 
 export default function HistoryScreen() {
   const theme = useTheme();
@@ -71,7 +72,7 @@ export default function HistoryScreen() {
                   <ThemedText themeColor="textSecondary">{expanded ? '⌄' : '›'}</ThemedText>
                 </Pressable>
 
-                {expanded && session.entries.length > 0 && (
+                {expanded && (
                   <View style={[styles.expandedContent, { borderTopColor: theme.border }]}>
                     {session.entries.map((entry) => (
                       <View key={entry.exerciseName} style={styles.entryRow}>
@@ -81,9 +82,16 @@ export default function HistoryScreen() {
                         <ThemedText type="smallMedium">{entry.summary}</ThemedText>
                       </View>
                     ))}
-                    <ThemedText type="small" themeColor="textSecondary">
-                      self-describing · stays valid if the definition later changes
-                    </ThemedText>
+                    <View style={styles.expandedFooter}>
+                      <ThemedText type="small" themeColor="textSecondary" style={styles.expandedNote}>
+                        self-describing · stays valid if the definition later changes
+                      </ThemedText>
+                      <Pressable onPress={() => exportSession(session.id).catch(() => {})} hitSlop={8}>
+                        <ThemedText type="small" themeColor="accentText">
+                          Export
+                        </ThemedText>
+                      </Pressable>
+                    </View>
                   </View>
                 )}
               </ThemedView>
@@ -158,5 +166,15 @@ const styles = StyleSheet.create({
   },
   entryLabel: {
     width: 60,
+  },
+  expandedFooter: {
+    marginTop: Spacing.one,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: Spacing.two,
+  },
+  expandedNote: {
+    flex: 1,
   },
 });

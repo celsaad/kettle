@@ -11,11 +11,21 @@ product plan (data model, file formats, roadmap).
 
 The UI is implemented against the current design (`Kettle Screens.dc.html`): a 4-tab shell (Today,
 Library, Build, History), a live session runner with working hold/reps/rest timers, and an
-import/merge sheet — all running on mock data, with light/dark mode following the system theme.
+import/merge sheet, with light/dark mode following the system theme.
 
-Not yet implemented: reading/writing `exercises.yaml` and `sessions/`, library import/merge,
-export, and the wall-clock-drift-hardened timer engine (keep-awake, background notifications).
-These are separate, larger workstreams described in the product plan.
+The app is backed by real local storage, not mock data. `exercises.yaml` and `sessions/*.yaml` are
+read/written via `expo-file-system` (validated with zod on every load), library import merges by id
+with a real pre-merge summary, both the library and individual sessions can be exported/shared, and
+the session timer is wall-clock-based (survives backgrounding, uses keep-awake, haptics, and a local
+notification fallback) with incremental per-set flush to disk. Library exercises and workout blocks
+are editable in-app (add/edit exercise, add/remove/rename workout blocks) and persist back to
+`exercises.yaml`.
+
+See [`docs/implementation-plan.md`](docs/implementation-plan.md) for what shipped, the scope calls
+made along the way, and what's genuinely still open (drag-to-reorder blocks, running `hiit`/`emom`/
+`amrap`/`cardio` sessions, and exercise/workout delete are not implemented). Note also: web
+(`npx expo start --web`) has no persistence — `expo-file-system` doesn't support it, so the web build
+degrades to an ephemeral in-memory library rather than crashing.
 
 ## Get started
 
@@ -39,10 +49,13 @@ screens live under `src/app`.
 
 ```
 src/
-  app/                  routes (Expo Router): (tabs)/ for the tab screens, session.tsx and
-                         import.tsx as modal routes
+  app/                  routes (Expo Router): (tabs)/ for the tab screens, session.tsx,
+                         import.tsx, and exercise-editor.tsx as modal routes
   components/           shared UI (themed primitives, session runner sub-views, kettle mark)
-  constants/            theme tokens, mock data
+  constants/            theme tokens
+  domain/               types, zod schemas, YAML<->domain mapping, library merge logic
+  storage/              file I/O (expo-file-system): library, sessions, export
+  state/                zustand stores (library, session history) + derived-display selectors
   hooks/                theme context, session runner state machine
 ```
 

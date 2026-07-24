@@ -1,16 +1,23 @@
 /**
  * expo-notifications throws on native-module init in Expo Go on SDK 53+ (Android push support was
- * removed there; see https://docs.expo.dev/develop/development-builds/introduction/). A static
- * `import` of the module fails at module-evaluation time and crashes the whole screen, so it's
- * loaded lazily via `require` inside a try/catch instead — this is a best-effort background
- * fallback (§7.1), never something the session runner depends on to function.
+ * removed there; see https://docs.expo.dev/develop/development-builds/introduction/). Requiring the
+ * module there doesn't just throw — it logs its own console.error first, which LogBox turns into a
+ * full redbox. So Expo Go is detected up front via expo-constants and the require is skipped
+ * entirely; this is a best-effort background fallback (§7.1), never something the session runner
+ * depends on to function.
  */
+import Constants, { ExecutionEnvironment } from 'expo-constants';
+
 type NotificationsModule = typeof import('expo-notifications');
 
 let cached: NotificationsModule | null | undefined;
 
 function getNotifications(): NotificationsModule | null {
   if (cached !== undefined) return cached;
+  if (Constants.executionEnvironment === ExecutionEnvironment.StoreClient) {
+    cached = null;
+    return cached;
+  }
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const notifications = require('expo-notifications') as NotificationsModule;

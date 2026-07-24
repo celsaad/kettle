@@ -81,8 +81,8 @@ export default function ProgramDetailScreen() {
 
                     {overrideText.length > 0 && (
                       <View style={styles.overrides}>
-                        {overrideText.map((line) => (
-                          <ThemedText key={line} type="small" themeColor="textSecondary">
+                        {overrideText.map((line, index) => (
+                          <ThemedText key={index} type="small" themeColor="textSecondary">
                             {line}
                           </ThemedText>
                         ))}

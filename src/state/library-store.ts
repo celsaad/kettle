@@ -14,6 +14,8 @@ type LibraryStoreState = {
   saveExercise: (exercise: Exercise) => Promise<void>;
   /** Adds or updates (by id) a single workout and persists the library. */
   saveWorkout: (workout: Workout) => Promise<void>;
+  /** Removes a workout by id and persists the library. */
+  deleteWorkout: (id: string) => Promise<void>;
   /** Adds or updates (by id) a single program and persists the library. */
   saveProgram: (program: Program) => Promise<void>;
 };
@@ -51,6 +53,13 @@ export const useLibraryStore = create<LibraryStoreState>((set, get) => ({
       ? current.workouts.map((candidate) => (candidate.id === workout.id ? workout : candidate))
       : [...current.workouts, workout];
     const next = { ...current, workouts };
+    await saveLibrary(next);
+    set({ library: next });
+  },
+  deleteWorkout: async (id) => {
+    const current = get().library;
+    if (!current) return;
+    const next = { ...current, workouts: current.workouts.filter((workout) => workout.id !== id) };
     await saveLibrary(next);
     set({ library: next });
   },

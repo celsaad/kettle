@@ -165,29 +165,43 @@ which is deleted.
 
 ## What's genuinely left (current, updated past workstreams A–F)
 
-- **Per-week program overrides have no in-app editing UI.** ✅ Drag-to-reorder blocks and exercise
-  delete now exist too (`deleteExercise` in the library store, wired to a "Delete exercise" button in
+- ✅ **Full program CRUD, including override editing.** Drag-to-reorder blocks and exercise delete
+  exist too (`deleteExercise` in the library store, wired to a "Delete exercise" button in
   `exercise-editor.tsx` with the same confirm-dialog/in-use-guard pattern as workout delete — blocked
   if a workout block or circuit member still references it) — library CRUD (exercises + workouts) is
-  now complete. ✅ **Program CRUD shipped too**: `src/app/program-editor.tsx` (new modal route) does
-  name / add-remove-week / per-week week-number-stepper+day+workout-picker+notes / delete-program, via
-  the already-existing `saveProgram` plus a new `deleteProgram` (mirrors `deleteWorkout`/
-  `deleteExercise`'s shape exactly; no in-use guard needed since nothing in the domain model references
-  a program by id — a past session's `program` field is already denormalized, same as everything else
-  in `sessions/`). Reachable from a FAB on `programs.tsx` (create) and a pencil icon on
-  `program-detail.tsx` (edit). **Deliberately out of scope for this pass**: creating/editing a week's
-  `overrides` (the per-exercise/per-circuit config patches) — an edited program's existing overrides
-  are preserved and shown read-only (reusing `program-detail.tsx`'s `overrideLines`, now exported), but
-  adding a new one still requires hand-editing `exercises.yaml` and re-importing. This was a deliberate
-  scope cut (see the plan this was built from): override editing needs its own per-exercise-type
-  config sub-form and a raw-config diffing step, which is a genuinely separate, self-contained piece of
-  work that doesn't require restructuring anything else to add later. `program-guide.tsx` (the in-app
-  YAML guide, added just before this) still covers writing overrides by hand in the meantime.
-  One thing this pass deliberately did *not* do: reuse `ReorderableList` for the weeks list, even
-  though it was built with reuse in mind — a program week's display order is driven entirely by its
-  `week` number field (everything that reads it, `program-detail.tsx` and
-  `src/domain/program.ts`'s `findProgramWeek`/`programWeekNumbers`, sorts/looks up by that number, not
-  array position), so dragging rows around wouldn't actually change anything.
+  complete. `src/app/program-editor.tsx` does name / add-remove-week / per-week week-number-stepper+
+  day+workout-picker+notes / delete-program, via the already-existing `saveProgram` plus a new
+  `deleteProgram` (mirrors `deleteWorkout`/`deleteExercise`'s shape exactly; no in-use guard needed
+  since nothing in the domain model references a program by id — a past session's `program` field is
+  already denormalized, same as everything else in `sessions/`). Reachable from a FAB on
+  `programs.tsx` (create) and a pencil icon on `program-detail.tsx` (edit). One thing this pass
+  deliberately did *not* do: reuse `ReorderableList` for the weeks list, even though it was built with
+  reuse in mind — a program week's display order is driven entirely by its `week` number field
+  (everything that reads it, `program-detail.tsx` and `src/domain/program.ts`'s
+  `findProgramWeek`/`programWeekNumbers`, sorts/looks up by that number, not array position), so
+  dragging rows around wouldn't actually change anything.
+
+  **Override editing** (initially deferred as a fast-follow, now shipped): a week's `overrides` — the
+  per-exercise/per-circuit config patches — are editable via a new `src/components/
+  program-override-editor.tsx`, embedded per-week in `program-editor.tsx`. The genuinely hard part was
+  the snake_case/camelCase mismatch: `ProgramOverride.config` is a partial *raw* (snake_case) patch
+  (per `applyExerciseOverride`/`applyBlockOverride`), but every in-app config form works in camelCase
+  domain values. Solved with two new exported inverses in `yaml-mapping.ts`,
+  `diffExerciseOverride`/`diffBlockOverride`, which round-trip a base and an edited value through the
+  same private `exerciseToRaw`/`workoutBlockToRaw` used internally by `applyExerciseOverride` and
+  return only the raw keys that actually changed — so the override editor can just reuse
+  `exercise-editor.tsx`'s existing `CONFIG_FIELDS`/`configToStrings`/`buildExercise` (now exported) as
+  an ordinary camelCase form and never has to know about snake_case itself. Editing an *existing*
+  override pre-fills the form from the base value with that override already applied (via
+  `applyExerciseOverride`/`applyBlockOverride`, so it shows what's actually in effect, not the
+  unmodified base), rather than resetting to defaults. The "add override" target picker is scoped to
+  what the week's selected workout actually contains: exercises referenced by its blocks/circuit
+  members, and circuit blocks that have their own `id` set (an id-less circuit can't be a block-override
+  target, matching the documented rule in `program-guide.tsx`). Deliberately unhandled: an override
+  isn't re-validated or cleared if the week's workout is later changed to something that no longer
+  contains its target — matches the existing looseness elsewhere (`merge.ts` doesn't validate override
+  targets either); a stale/unresolvable override still renders (read-only, no edit tap) with its
+  remove control intact.
 - **No per-exercise progression view.** History (`historyStats`) is aggregate totals (session count,
   hours, sets, minutes) only — no last-time weight/reps/holds or volume trend per exercise.
 - **No charts.**

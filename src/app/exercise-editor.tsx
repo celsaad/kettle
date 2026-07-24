@@ -9,7 +9,7 @@ import type { Exercise, ExerciseType } from '@/domain/types';
 import { useTheme } from '@/hooks/use-theme';
 import { useLibraryStore } from '@/state/library-store';
 
-type FieldDef = { key: string; label: string; unit?: string; optional?: boolean };
+export type FieldDef = { key: string; label: string; unit?: string; optional?: boolean };
 
 const TYPE_OPTIONS: { type: ExerciseType; label: string }[] = [
   { type: 'reps', label: 'Reps' },
@@ -21,7 +21,7 @@ const TYPE_OPTIONS: { type: ExerciseType; label: string }[] = [
   { type: 'rest', label: 'Rest' },
 ];
 
-const CONFIG_FIELDS: Record<ExerciseType, FieldDef[]> = {
+export const CONFIG_FIELDS: Record<ExerciseType, FieldDef[]> = {
   hiit: [
     { key: 'workSec', label: 'Work', unit: 'sec' },
     { key: 'restSec', label: 'Rest', unit: 'sec' },
@@ -61,7 +61,7 @@ function slugify(name: string): string {
     .replace(/(^-+|-+$)/g, '');
 }
 
-function configToStrings(exercise: Exercise): Record<string, string> {
+export function configToStrings(exercise: Exercise): Record<string, string> {
   const values: Record<string, string> = {};
   for (const [key, value] of Object.entries(exercise.config)) {
     if (value !== undefined) values[key] = String(value);
@@ -69,7 +69,7 @@ function configToStrings(exercise: Exercise): Record<string, string> {
   return values;
 }
 
-function buildExercise(
+export function buildExercise(
   id: string,
   name: string,
   type: ExerciseType,

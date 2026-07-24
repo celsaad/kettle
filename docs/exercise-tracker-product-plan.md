@@ -278,7 +278,7 @@ Get the **live session engine** right — it's the differentiator.
 | **2** | Live session engine for one timed type (HIIT) end-to-end; nail timer reliability + incremental flush | ✅ done (shipped as part of the full interval runner below) |
 | **3** | Extend runner to `reps` and `timed_hold`; support mixed reps+timed workouts (calisthenics case) | ✅ done |
 | **4** | Add `emom` / `amrap`; session history + basic progression (last-time weights/holds, volume per session) | ⚠️ partial — `emom`/`amrap`/`cardio` are runnable and session history exists, but there's no per-exercise progression view (history is aggregate totals only: session count, hours, sets, minutes) |
-| **5** | Polish: import/export UX, cloud sync guidance, programs/plans, charts | ⚠️ partial — programs shipped (see §10) with full in-app CRUD (create/edit/delete a program and its weeks), only per-week overrides are still YAML-only; import/export UX and cloud sync guidance and charts are not done |
+| **5** | Polish: import/export UX, cloud sync guidance, programs/plans, charts | ⚠️ partial — programs shipped (see §10) with full in-app CRUD, including per-week override editing; import/export UX and cloud sync guidance and charts are not done |
 
 See §13 for the concrete, current gap list.
 
@@ -298,7 +298,6 @@ See §13 for the concrete, current gap list.
 
 What's genuinely missing today, checked directly against the code:
 
-- **Per-week program overrides are YAML-only.** `src/app/program-editor.tsx` has full in-app program CRUD (name, add/remove weeks, week number/day/workout/notes, delete) via `saveProgram`/`deleteProgram`, reachable from a FAB on the Programs tab and a pencil icon on `program-detail.tsx`. What it doesn't do yet: create or edit a week's `overrides` (the exercise/circuit config patches) — an edited program's existing overrides are preserved untouched (shown read-only), but adding new ones still requires hand-editing `exercises.yaml`. The in-app guide (`src/app/program-guide.tsx`) still covers the full YAML shape, including overrides.
 - **No per-exercise progression.** History shows aggregate totals (session count, hours, sets, minutes) but not last-time weight/reps/holds per exercise or volume trends.
 - **No charts.**
 - **No in-app cloud-sync guidance.** Sync (iCloud/Dropbox/git) is left entirely to the user, with no in-app pointers.

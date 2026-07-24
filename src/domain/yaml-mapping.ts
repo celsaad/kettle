@@ -322,6 +322,45 @@ export function applyBlockOverride(block: WorkoutBlock, config: Record<string, n
   return workoutBlockToDomain(merged);
 }
 
+/**
+ * The inverse of applyExerciseOverride: given an exercise's base (library) definition and an edited
+ * version of it (same id/type, different config values), returns just the raw/snake_case config keys
+ * that actually changed — suitable to store as a ProgramOverride's `config`. Round-trips both through
+ * exerciseToRaw so the returned keys line up with what applyExerciseOverride (and hand-written YAML)
+ * expect.
+ */
+export function diffExerciseOverride(base: Exercise, edited: Exercise): Record<string, number | string> {
+  const baseConfig = exerciseToRaw(base).config as Record<string, number | string | undefined>;
+  const editedConfig = exerciseToRaw(edited).config as Record<string, number | string | undefined>;
+  const diff: Record<string, number | string> = {};
+  for (const key of Object.keys(editedConfig)) {
+    const value = editedConfig[key];
+    if (value !== undefined && value !== baseConfig[key]) diff[key] = value;
+  }
+  return diff;
+}
+
+/**
+ * The inverse of applyBlockOverride: given a circuit block's base params and an edited version, returns
+ * just the raw/snake_case keys that changed. No-ops (returns {}) for a non-circuit block, same guard as
+ * applyBlockOverride.
+ */
+export function diffBlockOverride(base: WorkoutBlock, edited: WorkoutBlock): Record<string, number | string> {
+  if (base.kind !== 'circuit' || edited.kind !== 'circuit') return {};
+  const baseRaw = workoutBlockToRaw(base);
+  const editedRaw = workoutBlockToRaw(edited);
+  if (baseRaw.type !== 'circuit' || editedRaw.type !== 'circuit') return {};
+  const diff: Record<string, number | string> = {};
+  if (editedRaw.rounds !== baseRaw.rounds) diff.rounds = editedRaw.rounds;
+  if (editedRaw.rest_between_exercises_sec !== undefined && editedRaw.rest_between_exercises_sec !== baseRaw.rest_between_exercises_sec) {
+    diff.rest_between_exercises_sec = editedRaw.rest_between_exercises_sec;
+  }
+  if (editedRaw.rest_between_rounds_sec !== undefined && editedRaw.rest_between_rounds_sec !== baseRaw.rest_between_rounds_sec) {
+    diff.rest_between_rounds_sec = editedRaw.rest_between_rounds_sec;
+  }
+  return diff;
+}
+
 // --- Sessions ---
 
 function sessionEntryToDomain(raw: RawSessionEntry): SessionEntry {

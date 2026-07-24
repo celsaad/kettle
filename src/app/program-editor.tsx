@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { overrideLines } from '@/app/program-detail';
+import { ProgramOverrideEditor } from '@/components/program-override-editor';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
@@ -140,7 +140,6 @@ export default function ProgramEditorScreen() {
         <View style={styles.list}>
           {draft.weeks.map((week, index) => {
             const workout = library.workouts.find((candidate) => candidate.id === week.workoutId);
-            const existingOverrideLines = (week.overrides ?? []).flatMap((override) => overrideLines(override, library, workout));
 
             return (
               <View key={index} style={[styles.weekCard, { borderColor: theme.border, backgroundColor: theme.backgroundElement }]}>
@@ -216,18 +215,15 @@ export default function ProgramEditorScreen() {
                   style={[styles.smallInput, { borderColor: theme.border, backgroundColor: theme.background, color: theme.text }]}
                 />
 
-                {existingOverrideLines.length > 0 && (
-                  <View style={styles.overrides}>
-                    <ThemedText type="small" themeColor="textSecondary" style={styles.weekFieldLabel}>
-                      Overrides (not editable here yet)
-                    </ThemedText>
-                    {existingOverrideLines.map((line, lineIndex) => (
-                      <ThemedText key={lineIndex} type="small" themeColor="textSecondary">
-                        {line}
-                      </ThemedText>
-                    ))}
-                  </View>
-                )}
+                <ThemedText type="small" themeColor="textSecondary" style={styles.weekFieldLabel}>
+                  Overrides · optional
+                </ThemedText>
+                <ProgramOverrideEditor
+                  library={library}
+                  workout={workout}
+                  overrides={week.overrides ?? []}
+                  onChange={(overrides) => updateWeek(index, { overrides: overrides.length ? overrides : undefined })}
+                />
               </View>
             );
           })}

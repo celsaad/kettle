@@ -26,17 +26,18 @@ still referenced by a workout); workouts have full CRUD including delete (with a
 deleting one still referenced by a program), support circuits/supersets (round-robin blocks with
 configurable rest), and blocks can be reordered by press-and-hold drag. Multi-week programs (periodized
 wrappers around workouts, with per-week overrides and multi-session-per-week support) drive the Today
-tab's "next up" card and now have full in-app CRUD too (create/edit/delete a program, add/remove weeks,
-set each week's number/day/workout/notes) — a FAB on the Programs tab, a pencil icon on the program
-detail screen. The one thing still YAML-only is a week's *overrides* (the per-exercise/per-circuit
-config patches): the editor shows a program's existing overrides read-only but can't create new ones
-yet, so that still means hand-editing `exercises.yaml` and importing. The Programs tab explains how,
-in-app (a "?" button and empty-state guidance opening a guide screen, not a link to a doc — this repo
-is private, so a real user can't read `docs/authoring-exercises-yaml.md` anyway).
+tab's "next up" card and now have full in-app CRUD too, including per-week overrides: create/edit/
+delete a program, add/remove weeks, set each week's number/day/workout/notes, and add/edit/remove a
+week's per-exercise or per-circuit config overrides — a FAB on the Programs tab, a pencil icon on the
+program detail screen. Programs are no longer YAML-only for anything; hand-editing `exercises.yaml`
+is now a power-user option rather than a requirement. The Programs tab still explains the format
+in-app for anyone who wants it (a "?" button and empty-state guidance opening a guide screen, not a
+link to a doc — this repo is private, so a real user can't read `docs/authoring-exercises-yaml.md`
+anyway).
 
 See [`docs/implementation-plan.md`](docs/implementation-plan.md) for what shipped, the scope calls
-made along the way, and what's genuinely still open: override editing, per-exercise progression stats,
-and charts are not implemented.
+made along the way, and what's genuinely still open: per-exercise progression stats and charts are
+not implemented.
 Note also: web (`npx expo start --web`) has no persistence — `expo-file-system` doesn't support it,
 so the web build degrades to an ephemeral in-memory library rather than crashing.
 

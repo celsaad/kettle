@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-import type { Exercise, Library, Workout } from '@/domain/types';
+import type { Exercise, Library, Program, Workout } from '@/domain/types';
 import { loadLibrary, saveLibrary } from '@/storage/library-file';
 
 type LibraryStoreState = {
@@ -14,6 +14,8 @@ type LibraryStoreState = {
   saveExercise: (exercise: Exercise) => Promise<void>;
   /** Adds or updates (by id) a single workout and persists the library. */
   saveWorkout: (workout: Workout) => Promise<void>;
+  /** Adds or updates (by id) a single program and persists the library. */
+  saveProgram: (program: Program) => Promise<void>;
 };
 
 export const useLibraryStore = create<LibraryStoreState>((set, get) => ({
@@ -49,6 +51,17 @@ export const useLibraryStore = create<LibraryStoreState>((set, get) => ({
       ? current.workouts.map((candidate) => (candidate.id === workout.id ? workout : candidate))
       : [...current.workouts, workout];
     const next = { ...current, workouts };
+    await saveLibrary(next);
+    set({ library: next });
+  },
+  saveProgram: async (program) => {
+    const current = get().library;
+    if (!current) return;
+    const exists = current.programs.some((candidate) => candidate.id === program.id);
+    const programs = exists
+      ? current.programs.map((candidate) => (candidate.id === program.id ? program : candidate))
+      : [...current.programs, program];
+    const next = { ...current, programs };
     await saveLibrary(next);
     set({ library: next });
   },

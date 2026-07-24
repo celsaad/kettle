@@ -4,15 +4,31 @@ import type { z } from 'zod';
 import {
   rawExerciseSchema,
   rawLibrarySchema,
+  rawProgramSchema,
   rawSessionEntrySchema,
   rawSessionSchema,
+  rawWorkoutBlockSchema,
   rawWorkoutSchema,
 } from '@/domain/schema';
-import type { Exercise, Library, Session, SessionEntry, Workout, WorkoutBlock } from '@/domain/types';
+import type {
+  CircuitMember,
+  Exercise,
+  Library,
+  Program,
+  ProgramOverride,
+  ProgramWeek,
+  Session,
+  SessionEntry,
+  Workout,
+  WorkoutBlock,
+} from '@/domain/types';
 
 type RawExercise = z.infer<typeof rawExerciseSchema>;
 type RawWorkout = z.infer<typeof rawWorkoutSchema>;
-type RawWorkoutBlock = RawWorkout['blocks'][number];
+type RawWorkoutBlock = z.infer<typeof rawWorkoutBlockSchema>;
+type RawCircuitBlock = Extract<RawWorkoutBlock, { type: 'circuit' }>;
+type RawCircuitMember = RawCircuitBlock['exercises'][number];
+type RawProgram = z.infer<typeof rawProgramSchema>;
 type RawLibrary = z.infer<typeof rawLibrarySchema>;
 type RawSessionEntry = z.infer<typeof rawSessionEntrySchema>;
 type RawSession = z.infer<typeof rawSessionSchema>;
@@ -23,7 +39,7 @@ function formatZodError(error: z.ZodError): string {
   return error.issues.map((issue) => `${issue.path.join('.') || '(root)'}: ${issue.message}`).join('; ');
 }
 
-// --- Exercise / Workout / Library ---
+// --- Exercise / Workout / Program / Library ---
 
 function exerciseToDomain(raw: RawExercise): Exercise {
   switch (raw.type) {
@@ -33,6 +49,7 @@ function exerciseToDomain(raw: RawExercise): Exercise {
         name: raw.name,
         type: 'hiit',
         config: { workSec: raw.config.work_sec, restSec: raw.config.rest_sec, rounds: raw.config.rounds },
+        notes: raw.notes,
       };
     case 'emom':
       return {
@@ -44,9 +61,10 @@ function exerciseToDomain(raw: RawExercise): Exercise {
           totalMinutes: raw.config.total_minutes,
           targetReps: raw.config.target_reps,
         },
+        notes: raw.notes,
       };
     case 'amrap':
-      return { id: raw.id, name: raw.name, type: 'amrap', config: { timeCapSec: raw.config.time_cap_sec } };
+      return { id: raw.id, name: raw.name, type: 'amrap', config: { timeCapSec: raw.config.time_cap_sec }, notes: raw.notes };
     case 'reps':
       return {
         id: raw.id,
@@ -54,17 +72,25 @@ function exerciseToDomain(raw: RawExercise): Exercise {
         type: 'reps',
         config: {
           sets: raw.config.sets,
-          targetReps: raw.config.target_reps,
+          targetRepsMin: raw.config.target_reps_min,
+          targetRepsMax: raw.config.target_reps_max,
           targetWeightKg: raw.config.target_weight,
           restSec: raw.config.rest_sec,
         },
+        notes: raw.notes,
       };
     case 'timed_hold':
       return {
         id: raw.id,
         name: raw.name,
         type: 'timed_hold',
-        config: { sets: raw.config.sets, holdSec: raw.config.hold_sec, restSec: raw.config.rest_sec },
+        config: {
+          sets: raw.config.sets,
+          holdSecMin: raw.config.hold_sec_min,
+          holdSecMax: raw.config.hold_sec_max,
+          restSec: raw.config.rest_sec,
+        },
+        notes: raw.notes,
       };
     case 'cardio':
       return {
@@ -72,9 +98,10 @@ function exerciseToDomain(raw: RawExercise): Exercise {
         name: raw.name,
         type: 'cardio',
         config: { durationSec: raw.config.duration_sec, distanceMeters: raw.config.distance_meters },
+        notes: raw.notes,
       };
     case 'rest':
-      return { id: raw.id, name: raw.name, type: 'rest', config: { durationSec: raw.config.duration_sec } };
+      return { id: raw.id, name: raw.name, type: 'rest', config: { durationSec: raw.config.duration_sec }, notes: raw.notes };
   }
 }
 
@@ -86,6 +113,7 @@ function exerciseToRaw(exercise: Exercise): RawExercise {
         name: exercise.name,
         type: 'hiit',
         config: { work_sec: exercise.config.workSec, rest_sec: exercise.config.restSec, rounds: exercise.config.rounds },
+        notes: exercise.notes,
       };
     case 'emom':
       return {
@@ -97,9 +125,10 @@ function exerciseToRaw(exercise: Exercise): RawExercise {
           total_minutes: exercise.config.totalMinutes,
           target_reps: exercise.config.targetReps,
         },
+        notes: exercise.notes,
       };
     case 'amrap':
-      return { id: exercise.id, name: exercise.name, type: 'amrap', config: { time_cap_sec: exercise.config.timeCapSec } };
+      return { id: exercise.id, name: exercise.name, type: 'amrap', config: { time_cap_sec: exercise.config.timeCapSec }, notes: exercise.notes };
     case 'reps':
       return {
         id: exercise.id,
@@ -107,17 +136,25 @@ function exerciseToRaw(exercise: Exercise): RawExercise {
         type: 'reps',
         config: {
           sets: exercise.config.sets,
-          target_reps: exercise.config.targetReps,
+          target_reps_min: exercise.config.targetRepsMin,
+          target_reps_max: exercise.config.targetRepsMax,
           target_weight: exercise.config.targetWeightKg,
           rest_sec: exercise.config.restSec,
         },
+        notes: exercise.notes,
       };
     case 'timed_hold':
       return {
         id: exercise.id,
         name: exercise.name,
         type: 'timed_hold',
-        config: { sets: exercise.config.sets, hold_sec: exercise.config.holdSec, rest_sec: exercise.config.restSec },
+        config: {
+          sets: exercise.config.sets,
+          hold_sec_min: exercise.config.holdSecMin,
+          hold_sec_max: exercise.config.holdSecMax,
+          rest_sec: exercise.config.restSec,
+        },
+        notes: exercise.notes,
       };
     case 'cardio':
       return {
@@ -125,21 +162,55 @@ function exerciseToRaw(exercise: Exercise): RawExercise {
         name: exercise.name,
         type: 'cardio',
         config: { duration_sec: exercise.config.durationSec, distance_meters: exercise.config.distanceMeters },
+        notes: exercise.notes,
       };
     case 'rest':
-      return { id: exercise.id, name: exercise.name, type: 'rest', config: { duration_sec: exercise.config.durationSec } };
+      return { id: exercise.id, name: exercise.name, type: 'rest', config: { duration_sec: exercise.config.durationSec }, notes: exercise.notes };
   }
 }
 
-function workoutBlockToDomain(raw: RawWorkoutBlock): WorkoutBlock {
+function circuitMemberToDomain(raw: RawCircuitMember): CircuitMember {
+  return { exerciseId: raw.exercise, configOverride: raw.config ? { durationSec: raw.config.duration_sec } : undefined };
+}
+
+function circuitMemberToRaw(member: CircuitMember): { exercise: string; config?: { duration_sec?: number } } {
   return {
+    exercise: member.exerciseId,
+    config: member.configOverride ? { duration_sec: member.configOverride.durationSec } : undefined,
+  };
+}
+
+function workoutBlockToDomain(raw: RawWorkoutBlock): WorkoutBlock {
+  if (raw.type === 'circuit') {
+    return {
+      kind: 'circuit',
+      id: raw.id,
+      rounds: raw.rounds,
+      restBetweenExercisesSec: raw.rest_between_exercises_sec,
+      restBetweenRoundsSec: raw.rest_between_rounds_sec,
+      members: raw.exercises.map(circuitMemberToDomain),
+    };
+  }
+  return {
+    kind: 'exercise',
     exerciseId: raw.exercise,
     configOverride: raw.config ? { durationSec: raw.config.duration_sec } : undefined,
   };
 }
 
 function workoutBlockToRaw(block: WorkoutBlock): RawWorkoutBlock {
+  if (block.kind === 'circuit') {
+    return {
+      type: 'circuit',
+      id: block.id,
+      rounds: block.rounds,
+      rest_between_exercises_sec: block.restBetweenExercisesSec,
+      rest_between_rounds_sec: block.restBetweenRoundsSec,
+      exercises: block.members.map(circuitMemberToRaw),
+    };
+  }
   return {
+    type: 'exercise',
     exercise: block.exerciseId,
     config: block.configOverride ? { duration_sec: block.configOverride.durationSec } : undefined,
   };
@@ -153,12 +224,60 @@ function workoutToRaw(workout: Workout): RawWorkout {
   return { id: workout.id, name: workout.name, blocks: workout.blocks.map(workoutBlockToRaw) };
 }
 
+type RawProgramOverride = NonNullable<RawProgram['weeks'][number]['overrides']>[number];
+
+function programOverrideToDomain(raw: RawProgramOverride): ProgramOverride {
+  if (raw.block) return { kind: 'block', blockId: raw.block, config: raw.config };
+  return { kind: 'exercise', exerciseId: raw.exercise as string, config: raw.config };
+}
+
+function programOverrideToRaw(override: ProgramOverride): RawProgramOverride {
+  if (override.kind === 'block') return { block: override.blockId, config: override.config };
+  return { exercise: override.exerciseId, config: override.config };
+}
+
+function programWeekToDomain(raw: RawProgram['weeks'][number]): ProgramWeek {
+  return {
+    week: raw.week,
+    workoutId: raw.workout,
+    notes: raw.notes,
+    overrides: raw.overrides?.map(programOverrideToDomain),
+  };
+}
+
+function programWeekToRaw(week: ProgramWeek): RawProgram['weeks'][number] {
+  return {
+    week: week.week,
+    workout: week.workoutId,
+    notes: week.notes,
+    overrides: week.overrides?.map(programOverrideToRaw),
+  };
+}
+
+function programToDomain(raw: RawProgram): Program {
+  return { id: raw.id, name: raw.name, weeks: raw.weeks.map(programWeekToDomain) };
+}
+
+function programToRaw(program: Program): RawProgram {
+  return { id: program.id, name: program.name, weeks: program.weeks.map(programWeekToRaw) };
+}
+
 function libraryToDomain(raw: RawLibrary): Library {
-  return { version: raw.version, exercises: raw.exercises.map(exerciseToDomain), workouts: raw.workouts.map(workoutToDomain) };
+  return {
+    version: raw.version,
+    exercises: raw.exercises.map(exerciseToDomain),
+    workouts: raw.workouts.map(workoutToDomain),
+    programs: raw.programs.map(programToDomain),
+  };
 }
 
 function libraryToRaw(library: Library): RawLibrary {
-  return { version: library.version, exercises: library.exercises.map(exerciseToRaw), workouts: library.workouts.map(workoutToRaw) };
+  return {
+    version: library.version,
+    exercises: library.exercises.map(exerciseToRaw),
+    workouts: library.workouts.map(workoutToRaw),
+    programs: library.programs.map(programToRaw),
+  };
 }
 
 export function parseLibraryYaml(text: string): ParseResult<Library> {
@@ -177,42 +296,84 @@ export function serializeLibraryYaml(library: Library): string {
   return dump(libraryToRaw(library), { noRefs: true, sortKeys: false });
 }
 
+/**
+ * Applies a program week's per-exercise config override (authored with the same snake_case config
+ * keys as the base exercise) on top of the exercise's base library definition, producing the
+ * effective exercise for that week. Round-trips through the raw shape so the override keys line up
+ * with what's hand-written in the yaml.
+ */
+export function applyExerciseOverride(exercise: Exercise, config: Record<string, number | string>): Exercise {
+  const raw = exerciseToRaw(exercise);
+  const mergedConfig = { ...raw.config, ...config } as typeof raw.config;
+  return exerciseToDomain({ ...raw, config: mergedConfig } as RawExercise);
+}
+
+/**
+ * Applies a program week's block-targeted override (e.g. a deload week's `rounds: 2`) on top of a
+ * circuit block's own params. No-ops for a plain `exercise` block — those are addressed via
+ * applyExerciseOverride instead, since their only "config" is the underlying exercise's.
+ */
+export function applyBlockOverride(block: WorkoutBlock, config: Record<string, number | string>): WorkoutBlock {
+  if (block.kind !== 'circuit') return block;
+  const raw = workoutBlockToRaw(block);
+  const merged = { ...raw, ...config } as typeof raw;
+  return workoutBlockToDomain(merged);
+}
+
 // --- Sessions ---
 
 function sessionEntryToDomain(raw: RawSessionEntry): SessionEntry {
-  if (raw.type === 'timed_hold') {
-    return {
-      exercise: raw.exercise,
-      type: 'timed_hold',
-      sets: raw.sets.map((set) => ({ holdSec: set.hold_sec, restTakenSec: set.rest_taken_sec })),
-    };
+  switch (raw.type) {
+    case 'timed_hold':
+      return {
+        exercise: raw.exercise,
+        type: 'timed_hold',
+        sets: raw.sets.map((set) => ({ holdSec: set.hold_sec, restTakenSec: set.rest_taken_sec })),
+      };
+    case 'reps':
+      return {
+        exercise: raw.exercise,
+        type: 'reps',
+        sets: raw.sets.map((set) => ({ reps: set.reps, weightKg: set.weight, rpe: set.rpe, restTakenSec: set.rest_taken_sec })),
+      };
+    case 'rest':
+      return { exercise: raw.exercise, type: 'rest', restTakenSec: raw.rest_taken_sec };
+    case 'hiit':
+      return { exercise: raw.exercise, type: 'hiit', roundsCompleted: raw.rounds_completed };
+    case 'emom':
+      return { exercise: raw.exercise, type: 'emom', minutes: raw.minutes.map((minute) => ({ reps: minute.reps })) };
+    case 'amrap':
+      return { exercise: raw.exercise, type: 'amrap', roundsCompleted: raw.rounds_completed, extraReps: raw.extra_reps };
+    case 'cardio':
+      return { exercise: raw.exercise, type: 'cardio', durationSec: raw.duration_sec, distanceMeters: raw.distance_meters };
   }
-  if (raw.type === 'reps') {
-    return {
-      exercise: raw.exercise,
-      type: 'reps',
-      sets: raw.sets.map((set) => ({ reps: set.reps, weightKg: set.weight, rpe: set.rpe, restTakenSec: set.rest_taken_sec })),
-    };
-  }
-  return { exercise: raw.exercise, type: 'rest', restTakenSec: raw.rest_taken_sec };
 }
 
 function sessionEntryToRaw(entry: SessionEntry): RawSessionEntry {
-  if (entry.type === 'timed_hold') {
-    return {
-      exercise: entry.exercise,
-      type: 'timed_hold',
-      sets: entry.sets.map((set) => ({ hold_sec: set.holdSec, rest_taken_sec: set.restTakenSec })),
-    };
+  switch (entry.type) {
+    case 'timed_hold':
+      return {
+        exercise: entry.exercise,
+        type: 'timed_hold',
+        sets: entry.sets.map((set) => ({ hold_sec: set.holdSec, rest_taken_sec: set.restTakenSec })),
+      };
+    case 'reps':
+      return {
+        exercise: entry.exercise,
+        type: 'reps',
+        sets: entry.sets.map((set) => ({ reps: set.reps, weight: set.weightKg, rpe: set.rpe, rest_taken_sec: set.restTakenSec })),
+      };
+    case 'rest':
+      return { exercise: entry.exercise, type: 'rest', rest_taken_sec: entry.restTakenSec };
+    case 'hiit':
+      return { exercise: entry.exercise, type: 'hiit', rounds_completed: entry.roundsCompleted };
+    case 'emom':
+      return { exercise: entry.exercise, type: 'emom', minutes: entry.minutes.map((minute) => ({ reps: minute.reps })) };
+    case 'amrap':
+      return { exercise: entry.exercise, type: 'amrap', rounds_completed: entry.roundsCompleted, extra_reps: entry.extraReps };
+    case 'cardio':
+      return { exercise: entry.exercise, type: 'cardio', duration_sec: entry.durationSec, distance_meters: entry.distanceMeters };
   }
-  if (entry.type === 'reps') {
-    return {
-      exercise: entry.exercise,
-      type: 'reps',
-      sets: entry.sets.map((set) => ({ reps: set.reps, weight: set.weightKg, rpe: set.rpe, rest_taken_sec: set.restTakenSec })),
-    };
-  }
-  return { exercise: entry.exercise, type: 'rest', rest_taken_sec: entry.restTakenSec };
 }
 
 function sessionToDomain(raw: RawSession): Session {

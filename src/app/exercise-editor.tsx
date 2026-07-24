@@ -35,13 +35,15 @@ const CONFIG_FIELDS: Record<ExerciseType, FieldDef[]> = {
   amrap: [{ key: 'timeCapSec', label: 'Time cap', unit: 'sec' }],
   reps: [
     { key: 'sets', label: 'Sets' },
-    { key: 'targetReps', label: 'Target reps' },
+    { key: 'targetRepsMin', label: 'Target reps' },
+    { key: 'targetRepsMax', label: 'Target reps (max)', optional: true },
     { key: 'targetWeightKg', label: 'Weight', unit: 'kg', optional: true },
     { key: 'restSec', label: 'Rest', unit: 'sec' },
   ],
   timed_hold: [
     { key: 'sets', label: 'Sets' },
-    { key: 'holdSec', label: 'Hold', unit: 'sec' },
+    { key: 'holdSecMin', label: 'Hold', unit: 'sec' },
+    { key: 'holdSecMax', label: 'Hold (max)', unit: 'sec', optional: true },
     { key: 'restSec', label: 'Rest', unit: 'sec' },
   ],
   cardio: [
@@ -67,22 +69,36 @@ function configToStrings(exercise: Exercise): Record<string, string> {
   return values;
 }
 
-function buildExercise(id: string, name: string, type: ExerciseType, values: Record<string, string>): Exercise {
+function buildExercise(
+  id: string,
+  name: string,
+  type: ExerciseType,
+  values: Record<string, string>,
+  notes: string,
+): Exercise {
   const num = (key: string) => Number(values[key] ?? 0) || 0;
   const optionalNum = (key: string) => (values[key]?.trim() ? Number(values[key]) : undefined);
+  const trimmedNotes = notes.trim() || undefined;
 
   switch (type) {
     case 'hiit':
-      return { id, name, type, config: { workSec: num('workSec'), restSec: num('restSec'), rounds: num('rounds') } };
+      return {
+        id,
+        name,
+        type,
+        config: { workSec: num('workSec'), restSec: num('restSec'), rounds: num('rounds') },
+        notes: trimmedNotes,
+      };
     case 'emom':
       return {
         id,
         name,
         type,
         config: { intervalSec: num('intervalSec'), totalMinutes: num('totalMinutes'), targetReps: optionalNum('targetReps') },
+        notes: trimmedNotes,
       };
     case 'amrap':
-      return { id, name, type, config: { timeCapSec: num('timeCapSec') } };
+      return { id, name, type, config: { timeCapSec: num('timeCapSec') }, notes: trimmedNotes };
     case 'reps':
       return {
         id,
@@ -90,17 +106,31 @@ function buildExercise(id: string, name: string, type: ExerciseType, values: Rec
         type,
         config: {
           sets: num('sets'),
-          targetReps: num('targetReps'),
+          targetRepsMin: num('targetRepsMin'),
+          targetRepsMax: optionalNum('targetRepsMax'),
           targetWeightKg: optionalNum('targetWeightKg'),
           restSec: num('restSec'),
         },
+        notes: trimmedNotes,
       };
     case 'timed_hold':
-      return { id, name, type, config: { sets: num('sets'), holdSec: num('holdSec'), restSec: num('restSec') } };
+      return {
+        id,
+        name,
+        type,
+        config: { sets: num('sets'), holdSecMin: num('holdSecMin'), holdSecMax: optionalNum('holdSecMax'), restSec: num('restSec') },
+        notes: trimmedNotes,
+      };
     case 'cardio':
-      return { id, name, type, config: { durationSec: optionalNum('durationSec'), distanceMeters: optionalNum('distanceMeters') } };
+      return {
+        id,
+        name,
+        type,
+        config: { durationSec: optionalNum('durationSec'), distanceMeters: optionalNum('distanceMeters') },
+        notes: trimmedNotes,
+      };
     case 'rest':
-      return { id, name, type, config: { durationSec: num('durationSec') } };
+      return { id, name, type, config: { durationSec: num('durationSec') }, notes: trimmedNotes };
   }
 }
 
@@ -115,6 +145,7 @@ export default function ExerciseEditorScreen() {
   const [name, setName] = useState(editing?.name ?? '');
   const [type, setType] = useState<ExerciseType>(editing?.type ?? 'reps');
   const [values, setValues] = useState<Record<string, string>>(editing ? configToStrings(editing) : {});
+  const [notes, setNotes] = useState(editing?.notes ?? '');
   const [error, setError] = useState<string | null>(null);
 
   const close = () => router.back();
@@ -131,7 +162,7 @@ export default function ExerciseEditorScreen() {
       setError('Could not derive an id from that name.');
       return;
     }
-    const exercise = buildExercise(exerciseId, name.trim(), type, values);
+    const exercise = buildExercise(exerciseId, name.trim(), type, values, notes);
     await saveExercise(exercise);
     close();
   };
@@ -197,6 +228,18 @@ export default function ExerciseEditorScreen() {
             </View>
           ))}
         </View>
+
+        <ThemedText type="small" themeColor="textSecondary" style={styles.label}>
+          Notes · optional
+        </ThemedText>
+        <TextInput
+          value={notes}
+          onChangeText={setNotes}
+          placeholder="Coaching cue…"
+          placeholderTextColor={theme.textSecondary}
+          multiline
+          style={[styles.input, styles.notesInput, { borderColor: theme.border, backgroundColor: theme.backgroundElement, color: theme.text }]}
+        />
 
         {error && (
           <ThemedText type="small" style={[styles.error, { color: theme.accentText }]}>
@@ -268,6 +311,11 @@ const styles = StyleSheet.create({
     marginTop: Spacing.two,
   },
   configField: {},
+  notesInput: {
+    height: 90,
+    paddingTop: Spacing.one + 4,
+    textAlignVertical: 'top',
+  },
   error: {
     marginTop: Spacing.two,
   },

@@ -35,7 +35,7 @@ export default function HistoryScreen() {
             </ThemedText>
           </ThemedView>
           <ThemedView type="backgroundElement" style={[styles.statCard, { borderColor: theme.border }]}>
-            <ThemedText type="heading">{historyStats.hours}h</ThemedText>
+            <ThemedText type="heading">{historyStats.hours}h {historyStats.minutes}m</ThemedText>
             <ThemedText type="small" themeColor="textSecondary">
               time
             </ThemedText>
@@ -74,8 +74,8 @@ export default function HistoryScreen() {
 
                 {expanded && (
                   <View style={[styles.expandedContent, { borderTopColor: theme.border }]}>
-                    {session.entries.map((entry) => (
-                      <View key={entry.exerciseName} style={styles.entryRow}>
+                    {session.entries.map((entry, index) => (
+                      <View key={`${entry.exerciseName}-${index}`} style={styles.entryRow}>
                         <ThemedText type="small" themeColor="textSecondary" style={styles.entryLabel}>
                           {entry.exerciseName}
                         </ThemedText>
@@ -86,7 +86,7 @@ export default function HistoryScreen() {
                       <ThemedText type="small" themeColor="textSecondary" style={styles.expandedNote}>
                         self-describing · stays valid if the definition later changes
                       </ThemedText>
-                      <Pressable onPress={() => exportSession(session.id).catch(() => {})} hitSlop={8}>
+                      <Pressable onPress={() => exportSession(session.id).catch(() => { })} hitSlop={8}>
                         <ThemedText type="small" themeColor="accentText">
                           Export
                         </ThemedText>
@@ -163,9 +163,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.two,
+    justifyContent: 'space-between'
   },
   entryLabel: {
-    width: 60,
+    // width: 60,
   },
   expandedFooter: {
     marginTop: Spacing.one,

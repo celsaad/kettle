@@ -26,6 +26,11 @@ export default function TabLayout() {
         <NativeTabs.Trigger.Label>History</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf={{ default: 'clock', selected: 'clock.fill' }} md="history" />
       </NativeTabs.Trigger>
+
+      <NativeTabs.Trigger name="programs">
+        <NativeTabs.Trigger.Label>Programs</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf={{ default: 'calendar', selected: 'calendar' }} md="calendar_month" />
+      </NativeTabs.Trigger>
     </NativeTabs>
   );
 }

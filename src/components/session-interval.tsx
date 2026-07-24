@@ -3,32 +3,97 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 
 import { ThemedText } from '@/components/themed-text';
+import type { IntervalVariant } from '@/hooks/use-session-runner';
 import { RunnerColors, Spacing } from '@/constants/theme';
+
+function formatClock(totalSeconds: number): string {
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+}
+
+const VARIANT_LABEL: Record<IntervalVariant, string> = {
+  hiit: 'HIIT',
+  emom: 'EMOM',
+  amrap: 'AMRAP',
+  cardio: 'CARDIO',
+};
+
+type StepperProps = {
+  label: string;
+  value: number;
+  onChange: (value: number) => void;
+};
+
+function Stepper({ label, value, onChange }: StepperProps) {
+  return (
+    <View style={styles.stepperBlock}>
+      <ThemedText type="code" style={styles.stepperLabel}>
+        {label}
+      </ThemedText>
+      <View style={styles.stepperRow}>
+        <Pressable onPress={() => onChange(Math.max(0, value - 1))} style={styles.stepperButton}>
+          <ThemedText type="title" style={styles.stepperGlyph}>
+            −
+          </ThemedText>
+        </Pressable>
+        <ThemedText type="heading" style={styles.stepperValue}>
+          {value}
+        </ThemedText>
+        <Pressable onPress={() => onChange(value + 1)} style={[styles.stepperButton, styles.stepperButtonAccent]}>
+          <ThemedText type="title" style={[styles.stepperGlyph, styles.stepperGlyphAccent]}>
+            +
+          </ThemedText>
+        </Pressable>
+      </View>
+    </View>
+  );
+}
 
 type Props = {
   exerciseName: string;
+  variant: IntervalVariant;
   setIndex: number;
   setTotal: number;
   targetSec: number;
-  targetMaxSec?: number;
+  countUp: boolean;
   elapsedSec: number;
-  paused: boolean;
+  remainingSec: number;
+  targetReps?: number;
+  cardioDistanceMeters?: number;
   notes?: string;
+  paused: boolean;
   onTogglePause: () => void;
+  reps: number;
+  onChangeReps: (reps: number) => void;
+  roundsCompleted: number;
+  onChangeRoundsCompleted: (rounds: number) => void;
+  extraReps: number;
+  onChangeExtraReps: (reps: number) => void;
   onPrev: () => void;
   onDone: () => void;
 };
 
-export function SessionHold({
+export function SessionInterval({
   exerciseName,
+  variant,
   setIndex,
   setTotal,
   targetSec,
-  targetMaxSec,
+  countUp,
   elapsedSec,
-  paused,
+  remainingSec,
+  targetReps,
+  cardioDistanceMeters,
   notes,
+  paused,
   onTogglePause,
+  reps,
+  onChangeReps,
+  roundsCompleted,
+  onChangeRoundsCompleted,
+  extraReps,
+  onChangeExtraReps,
   onPrev,
   onDone,
 }: Props) {
@@ -39,7 +104,16 @@ export function SessionHold({
   }, [pulse]);
 
   const pulseStyle = useAnimatedStyle(() => ({ opacity: pulse.value }));
-  const fillPct = Math.min(100, (elapsedSec / targetSec) * 100);
+
+  const setLabel =
+    variant === 'hiit' ? `Round ${setIndex} of ${setTotal}` : variant === 'emom' ? `Minute ${setIndex} of ${setTotal}` : null;
+
+  const captionParts: string[] = [];
+  if (variant === 'emom' && targetReps) captionParts.push(`target ${targetReps} reps`);
+  if (variant === 'cardio' && cardioDistanceMeters) captionParts.push(`target ${cardioDistanceMeters}m`);
+  captionParts.push(countUp ? 'counting up' : `of ${formatClock(targetSec)} total`);
+
+  const fillPct = countUp || targetSec <= 0 ? 0 : Math.min(100, ((targetSec - remainingSec) / targetSec) * 100);
 
   return (
     <View style={styles.container}>
@@ -47,15 +121,17 @@ export function SessionHold({
         <View style={styles.livePill}>
           <Animated.View style={[styles.liveDot, pulseStyle]} />
           <ThemedText type="code" style={styles.liveLabel}>
-            HOLD
+            {VARIANT_LABEL[variant]}
           </ThemedText>
         </View>
         <ThemedText type="subtitle" style={styles.exerciseName}>
           {exerciseName}
         </ThemedText>
-        <ThemedText type="small" style={styles.setLabel}>
-          Set {setIndex} of {setTotal}
-        </ThemedText>
+        {setLabel && (
+          <ThemedText type="small" style={styles.setLabel}>
+            {setLabel}
+          </ThemedText>
+        )}
         {notes && (
           <ThemedText type="small" style={styles.notes}>
             {notes}
@@ -64,21 +140,26 @@ export function SessionHold({
       </View>
 
       <View style={styles.middle}>
-        <View style={styles.numeralRow}>
-          <ThemedText type="numeral" style={styles.numeral}>
-            {elapsedSec}
-          </ThemedText>
-          <ThemedText type="numeral" style={styles.numeralUnit}>
-            s
-          </ThemedText>
-        </View>
-        <View style={styles.progressTrack}>
-          <View style={[styles.progressFill, { width: `${fillPct}%` }]} />
-          <View style={styles.progressMarker} />
-        </View>
-        <ThemedText type="small" style={styles.captionLabel}>
-          target {targetMaxSec ? `${targetSec}–${targetMaxSec}` : targetSec}s · counting up
+        <ThemedText type="numeral" style={styles.numeral}>
+          {countUp ? formatClock(elapsedSec) : formatClock(remainingSec)}
         </ThemedText>
+        {!countUp && (
+          <View style={styles.progressTrack}>
+            <View style={[styles.progressFill, { width: `${fillPct}%` }]} />
+          </View>
+        )}
+        <ThemedText type="small" style={styles.captionLabel}>
+          {captionParts.join(' · ')}
+        </ThemedText>
+
+        {variant === 'emom' && <Stepper label="REPS THIS MINUTE" value={reps} onChange={onChangeReps} />}
+
+        {variant === 'amrap' && (
+          <View style={styles.amrapRow}>
+            <Stepper label="ROUNDS" value={roundsCompleted} onChange={onChangeRoundsCompleted} />
+            <Stepper label="+REPS" value={extraReps} onChange={onChangeExtraReps} />
+          </View>
+        )}
       </View>
 
       <View style={styles.controlsRow}>
@@ -96,7 +177,7 @@ export function SessionHold({
       </View>
       <Pressable onPress={onDone}>
         <ThemedText type="heading" style={styles.doneLabel}>
-          Done set ↑
+          {countUp ? 'Done ↑' : 'Skip →'}
         </ThemedText>
       </Pressable>
     </View>
@@ -150,18 +231,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: Spacing.two,
   },
-  numeralRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-  },
   numeral: {
-    fontSize: 96,
-    lineHeight: 96,
+    fontSize: 88,
+    lineHeight: 88,
     color: RunnerColors.text,
-  },
-  numeralUnit: {
-    fontSize: 38,
-    color: RunnerColors.textSecondary,
   },
   progressTrack: {
     width: 220,
@@ -177,17 +250,52 @@ const styles = StyleSheet.create({
     backgroundColor: RunnerColors.accent,
     borderRadius: 3,
   },
-  progressMarker: {
-    position: 'absolute',
-    left: '100%',
-    top: -5,
-    width: 2,
-    height: 16,
-    marginLeft: -1,
-    backgroundColor: RunnerColors.textSecondary,
-  },
   captionLabel: {
     color: RunnerColors.textSecondary,
+  },
+  stepperBlock: {
+    marginTop: Spacing.three,
+    alignItems: 'center',
+    gap: Spacing.one,
+  },
+  stepperRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.three - 2,
+  },
+  stepperButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 1.5,
+    borderColor: RunnerColors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stepperButtonAccent: {
+    backgroundColor: RunnerColors.accentSoft,
+    borderColor: 'rgba(207,106,55,0.4)',
+  },
+  stepperGlyph: {
+    fontSize: 22,
+    color: RunnerColors.textSecondary,
+  },
+  stepperGlyphAccent: {
+    color: RunnerColors.accent,
+  },
+  stepperValue: {
+    minWidth: 36,
+    textAlign: 'center',
+    color: RunnerColors.text,
+  },
+  stepperLabel: {
+    color: RunnerColors.textSecondary,
+    letterSpacing: 1.2,
+  },
+  amrapRow: {
+    flexDirection: 'row',
+    gap: Spacing.four,
   },
   controlsRow: {
     flexDirection: 'row',

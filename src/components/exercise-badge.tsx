@@ -2,7 +2,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { useTheme } from '@/hooks/use-theme';
-import { Exercise, ExerciseType } from '@/domain/types';
+import { Exercise, ExerciseType, WorkoutBlock } from '@/domain/types';
 
 export function ExerciseBadge({ type, overrideLabel }: { type: ExerciseType; overrideLabel?: string }) {
   const theme = useTheme();
@@ -28,16 +28,34 @@ export function ExerciseBadge({ type, overrideLabel }: { type: ExerciseType; ove
   );
 }
 
+export function CircuitBadge() {
+  const theme = useTheme();
+  return (
+    <View style={[styles.badge, { backgroundColor: theme.backgroundSelected }]}>
+      <ThemedText type="code" style={{ color: theme.textSecondary }}>
+        CIRCUIT
+      </ThemedText>
+    </View>
+  );
+}
+
+function rangeLabel(min: number, max: number | undefined): string {
+  return max ? `${min}–${max}` : `${min}`;
+}
+
 export function exerciseSummary(exercise: Exercise): string {
   switch (exercise.type) {
     case 'hiit':
       return `${exercise.config.workSec}s work · ${exercise.config.restSec}s rest · ×${exercise.config.rounds}`;
     case 'reps': {
       const weight = exercise.config.targetWeightKg ? ` · ${exercise.config.targetWeightKg} kg` : '';
-      return `${exercise.config.sets} × ${exercise.config.targetReps}${weight} · ${exercise.config.restSec}s rest`;
+      const reps = rangeLabel(exercise.config.targetRepsMin, exercise.config.targetRepsMax);
+      return `${exercise.config.sets} × ${reps}${weight} · ${exercise.config.restSec}s rest`;
     }
-    case 'timed_hold':
-      return `${exercise.config.sets} × ${exercise.config.holdSec}s · ${exercise.config.restSec}s rest`;
+    case 'timed_hold': {
+      const hold = rangeLabel(exercise.config.holdSecMin, exercise.config.holdSecMax);
+      return `${exercise.config.sets} × ${hold}s · ${exercise.config.restSec}s rest`;
+    }
     case 'emom':
       return `${exercise.config.intervalSec}s interval · ${exercise.config.totalMinutes} min`;
     case 'amrap':
@@ -47,6 +65,12 @@ export function exerciseSummary(exercise: Exercise): string {
     case 'rest':
       return `${exercise.config.durationSec} seconds`;
   }
+}
+
+export function circuitSummary(block: Extract<WorkoutBlock, { kind: 'circuit' }>): string {
+  const betweenExercises = block.restBetweenExercisesSec ?? 0;
+  const betweenRounds = block.restBetweenRoundsSec ?? 0;
+  return `${block.rounds} rounds · ${betweenExercises}s / ${betweenRounds}s rest`;
 }
 
 const styles = StyleSheet.create({

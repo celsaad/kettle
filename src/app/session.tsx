@@ -1,15 +1,17 @@
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useKeepAwake } from 'expo-keep-awake';
-import { useCallback } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { useCallback, useMemo } from 'react';
+import { Alert, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { SessionHold } from '@/components/session-hold';
+import { SessionInterval } from '@/components/session-interval';
 import { SessionProgressDots } from '@/components/session-progress-dots';
 import { SessionReps } from '@/components/session-reps';
 import { SessionRest } from '@/components/session-rest';
 import { ThemedText } from '@/components/themed-text';
 import { RunnerColors, MaxContentWidth, Spacing } from '@/constants/theme';
+import { resolveWorkoutForWeek } from '@/domain/program';
 import { useSessionRunner } from '@/hooks/use-session-runner';
 import { useLibraryStore } from '@/state/library-store';
 
@@ -17,9 +19,34 @@ export default function SessionScreen() {
   useKeepAwake();
   const onComplete = useCallback(() => router.back(), []);
   const library = useLibraryStore((state) => state.library);
-  const workout = library?.workouts[0];
-  const runner = useSessionRunner(workout ?? { id: '', name: '', blocks: [] }, library?.exercises ?? [], onComplete);
+  const { workoutId, programId, week } = useLocalSearchParams<{ workoutId?: string; programId?: string; week?: string }>();
+
+  const resolved = useMemo(() => {
+    if (!library) return null;
+    if (workoutId) {
+      const found = library.workouts.find((candidate) => candidate.id === workoutId);
+      return found ? { workout: found, exercises: library.exercises } : null;
+    }
+    if (programId && week) {
+      const program = library.programs.find((candidate) => candidate.id === programId);
+      const weekNumber = Number(week);
+      if (!program || Number.isNaN(weekNumber)) return null;
+      return resolveWorkoutForWeek(program, weekNumber, library);
+    }
+    return { workout: library.workouts[0], exercises: library.exercises };
+  }, [library, workoutId, programId, week]);
+
+  const workout = resolved?.workout;
+  const exercises = resolved?.exercises ?? [];
+  const runner = useSessionRunner(workout ?? { id: '', name: '', blocks: [] }, exercises, onComplete);
   const { step } = runner;
+
+  const confirmFinish = useCallback(() => {
+    Alert.alert('Finish session?', 'Your progress, including the current set, will be saved.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Finish', style: 'destructive', onPress: runner.finishSession },
+    ]);
+  }, [runner.finishSession]);
 
   if (!workout || !step) return null;
 
@@ -30,7 +57,14 @@ export default function SessionScreen() {
           <ThemedText type="small" style={styles.workoutName}>
             {runner.workoutName}
           </ThemedText>
-          <SessionProgressDots total={runner.blockTotal} activeIndex={runner.blockIndex} />
+          <View style={styles.headerRight}>
+            <SessionProgressDots total={runner.blockTotal} activeIndex={runner.blockIndex} />
+            <Pressable onPress={confirmFinish} hitSlop={8}>
+              <ThemedText type="code" style={styles.finishLabel}>
+                Finish
+              </ThemedText>
+            </Pressable>
+          </View>
         </View>
 
         {step.kind === 'hold' && (
@@ -39,8 +73,10 @@ export default function SessionScreen() {
             setIndex={step.setIndex}
             setTotal={step.setTotal}
             targetSec={step.holdTargetSec}
+            targetMaxSec={step.holdTargetMaxSec}
             elapsedSec={runner.holdElapsedSec}
             paused={runner.paused}
+            notes={step.notes}
             onTogglePause={runner.setPaused}
             onPrev={runner.goPrev}
             onDone={runner.doneSet}
@@ -53,12 +89,40 @@ export default function SessionScreen() {
             setIndex={step.setIndex}
             setTotal={step.setTotal}
             targetReps={step.targetReps}
+            targetRepsMax={step.targetRepsMax}
             reps={runner.reps}
             onChangeReps={runner.setReps}
             rpe={runner.rpe}
             onChangeRpe={runner.setRpe}
+            notes={step.notes}
             onPrev={runner.goPrev}
             onLogSet={runner.logSet}
+          />
+        )}
+
+        {step.kind === 'interval' && (
+          <SessionInterval
+            exerciseName={step.exerciseName}
+            variant={step.variant}
+            setIndex={step.setIndex}
+            setTotal={step.setTotal}
+            targetSec={step.targetSec}
+            countUp={step.countUp}
+            elapsedSec={runner.holdElapsedSec}
+            remainingSec={runner.restRemainingSec}
+            targetReps={step.targetReps}
+            cardioDistanceMeters={step.cardioDistanceMeters}
+            notes={step.notes}
+            paused={runner.paused}
+            onTogglePause={runner.setPaused}
+            reps={runner.reps}
+            onChangeReps={runner.setReps}
+            roundsCompleted={runner.roundsCompleted}
+            onChangeRoundsCompleted={runner.setRoundsCompleted}
+            extraReps={runner.extraReps}
+            onChangeExtraReps={runner.setExtraReps}
+            onPrev={runner.goPrev}
+            onDone={runner.logInterval}
           />
         )}
 
@@ -98,5 +162,14 @@ const styles = StyleSheet.create({
   },
   workoutName: {
     color: RunnerColors.textSecondary,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
+  },
+  finishLabel: {
+    color: RunnerColors.textSecondary,
+    letterSpacing: 1,
   },
 });

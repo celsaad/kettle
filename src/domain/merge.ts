@@ -27,28 +27,48 @@ export type MergeSummary = {
   updatedExercises: string[];
   newWorkouts: string[];
   updatedWorkouts: string[];
+  newPrograms: string[];
+  updatedPrograms: string[];
 };
 
 export type MergeResult = { ok: true; library: Library; summary: MergeSummary } | { ok: false; error: string };
 
+function blockExerciseIds(block: Library['workouts'][number]['blocks'][number]): string[] {
+  return block.kind === 'circuit' ? block.members.map((member) => member.exerciseId) : [block.exerciseId];
+}
+
 export function mergeLibraries(existing: Library, incoming: Library): MergeResult {
   const exerciseMerge = mergeById(existing.exercises, incoming.exercises);
   const workoutMerge = mergeById(existing.workouts, incoming.workouts);
+  const programMerge = mergeById(existing.programs, incoming.programs);
 
   const library: Library = {
     version: existing.version,
     exercises: exerciseMerge.merged,
     workouts: workoutMerge.merged,
+    programs: programMerge.merged,
   };
 
-  // Validate the merged whole (§6): every workout block must reference an exercise that exists
+  // Validate the merged whole (§6): every workout block (and circuit member) must reference an
+  // exercise that exists post-merge, and every program week must reference a workout that exists
   // post-merge. (No-duplicate-ids and known-type/required-config are already guaranteed: the
   // former by construction above, the latter by zod validation at parse time before merge runs.)
   const exerciseIds = new Set(library.exercises.map((exercise) => exercise.id));
   for (const workout of library.workouts) {
     for (const block of workout.blocks) {
-      if (!exerciseIds.has(block.exerciseId)) {
-        return { ok: false, error: `Workout "${workout.id}" references unknown exercise "${block.exerciseId}"` };
+      for (const exerciseId of blockExerciseIds(block)) {
+        if (!exerciseIds.has(exerciseId)) {
+          return { ok: false, error: `Workout "${workout.id}" references unknown exercise "${exerciseId}"` };
+        }
+      }
+    }
+  }
+
+  const workoutIds = new Set(library.workouts.map((workout) => workout.id));
+  for (const program of library.programs) {
+    for (const week of program.weeks) {
+      if (!workoutIds.has(week.workoutId)) {
+        return { ok: false, error: `Program "${program.id}" week ${week.week} references unknown workout "${week.workoutId}"` };
       }
     }
   }
@@ -61,6 +81,8 @@ export function mergeLibraries(existing: Library, incoming: Library): MergeResul
       updatedExercises: exerciseMerge.updated,
       newWorkouts: workoutMerge.added,
       updatedWorkouts: workoutMerge.updated,
+      newPrograms: programMerge.added,
+      updatedPrograms: programMerge.updated,
     },
   };
 }

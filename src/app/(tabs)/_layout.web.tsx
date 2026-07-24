@@ -10,6 +10,7 @@ const TABS = [
   { name: 'library', href: '/library' as const, label: 'Library' },
   { name: 'build', href: '/build' as const, label: 'Build' },
   { name: 'history', href: '/history' as const, label: 'History' },
+  { name: 'programs', href: '/programs' as const, label: 'Programs' },
 ];
 
 export default function TabLayout() {

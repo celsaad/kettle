@@ -10,10 +10,12 @@ type Props = {
   setIndex: number;
   setTotal: number;
   targetReps: number;
+  targetRepsMax?: number;
   reps: number;
   onChangeReps: (reps: number) => void;
   rpe: number;
   onChangeRpe: (rpe: number) => void;
+  notes?: string;
   onPrev: () => void;
   onLogSet: () => void;
 };
@@ -23,10 +25,12 @@ export function SessionReps({
   setIndex,
   setTotal,
   targetReps,
+  targetRepsMax,
   reps,
   onChangeReps,
   rpe,
   onChangeRpe,
+  notes,
   onPrev,
   onLogSet,
 }: Props) {
@@ -42,8 +46,13 @@ export function SessionReps({
           {exerciseName}
         </ThemedText>
         <ThemedText type="small" style={styles.setLabel}>
-          Set {setIndex} of {setTotal} · target {targetReps}
+          Set {setIndex} of {setTotal} · target {targetRepsMax ? `${targetReps}–${targetRepsMax}` : targetReps}
         </ThemedText>
+        {notes && (
+          <ThemedText type="small" style={styles.notes}>
+            {notes}
+          </ThemedText>
+        )}
       </View>
 
       <View style={styles.middle}>
@@ -144,6 +153,11 @@ const styles = StyleSheet.create({
   setLabel: {
     marginTop: 4,
     color: RunnerColors.textSecondary,
+  },
+  notes: {
+    marginTop: 4,
+    color: RunnerColors.textSecondary,
+    fontStyle: 'italic',
   },
   middle: {
     flex: 1,

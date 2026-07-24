@@ -22,7 +22,14 @@ export async function loadLibrary(): Promise<LoadLibraryResult> {
 
   const text = await storagePaths.libraryFile.text();
   const result = parseLibraryYaml(text);
-  if (!result.ok) return { ok: false, error: result.error };
+  if (!result.ok) {
+    // The persisted file predates a breaking schema change (or is otherwise corrupt) — this is the
+    // app's own auto-loaded storage, not a user-picked import, so self-heal by reseeding rather than
+    // leaving the app stuck on a blank screen. Hand-edited imports still get a hard error (see import.tsx).
+    console.warn(`exercises.yaml failed to parse, reseeding: ${result.error}`);
+    await saveLibrary(seedLibrary);
+    return { ok: true, library: seedLibrary };
+  }
   return { ok: true, library: result.data };
 }
 

@@ -262,22 +262,63 @@ function buildSteps(workout: Workout, exercises: Exercise[]): RunnerStep[] {
 
 type LastCommitBuffer = 'sets' | 'hiit' | 'emom';
 
+// Forces a compile error at every call site below if RunnerStep/IntervalVariant grows a case that
+// isn't handled — a new exercise type silently falling through to "no undo support" is a data-loss
+// bug, not just a missing feature, so this is enforced rather than left to a comment.
+function assertNever(value: never): never {
+  throw new Error(`Unhandled RunnerStep/variant case: ${JSON.stringify(value)}`);
+}
+
 /**
  * Which pending buffer (if any) a step's `commitCurrentStep` call touches. Used by `goPrev()` to
  * undo precisely one level: the most recent `advance()`, no further.
  */
 function bufferForStep(step: RunnerStep): LastCommitBuffer | null {
-  if (step.kind === 'hold' || step.kind === 'reps') return 'sets';
-  if (step.kind === 'interval' && step.variant === 'hiit') return 'hiit';
-  if (step.kind === 'interval' && step.variant === 'emom') return 'emom';
-  return null;
+  switch (step.kind) {
+    case 'hold':
+    case 'reps':
+      return 'sets';
+    case 'interval':
+      switch (step.variant) {
+        case 'hiit':
+          return 'hiit';
+        case 'emom':
+          return 'emom';
+        case 'amrap':
+        case 'cardio':
+          return null;
+        default:
+          return assertNever(step.variant);
+      }
+    case 'rest':
+      return null;
+    default:
+      return assertNever(step);
+  }
 }
 
 /** True for step kinds whose commit calls `logEntry` directly rather than going through a pending buffer + flush. */
 function isDirectLogStep(step: RunnerStep): boolean {
-  if (step.kind === 'interval') return step.variant === 'amrap' || step.variant === 'cardio';
-  if (step.kind === 'rest') return step.standalone;
-  return false;
+  switch (step.kind) {
+    case 'hold':
+    case 'reps':
+      return false;
+    case 'interval':
+      switch (step.variant) {
+        case 'amrap':
+        case 'cardio':
+          return true;
+        case 'hiit':
+        case 'emom':
+          return false;
+        default:
+          return assertNever(step.variant);
+      }
+    case 'rest':
+      return step.standalone;
+    default:
+      return assertNever(step);
+  }
 }
 
 /**
@@ -605,24 +646,34 @@ export function useSessionRunner(
       const commit = lastCommitRef.current;
       if (commit && commit.resultingIndex === index && sessionRef.current) {
         if (commit.kind === 'pending') {
-          if (commit.buffer === 'sets') {
-            const sets = pendingSetsRef.current[commit.memberKey];
-            if (sets && sets.length > 0) {
-              sets.pop();
-              if (sets.length === 0) delete pendingSetsRef.current[commit.memberKey];
+          const buffer = commit.buffer;
+          switch (buffer) {
+            case 'sets': {
+              const sets = pendingSetsRef.current[commit.memberKey];
+              if (sets && sets.length > 0) {
+                sets.pop();
+                if (sets.length === 0) delete pendingSetsRef.current[commit.memberKey];
+              }
+              break;
             }
-          } else if (commit.buffer === 'hiit') {
-            const count = pendingHiitRoundsRef.current[commit.memberKey];
-            if (count !== undefined) {
-              if (count > 1) pendingHiitRoundsRef.current[commit.memberKey] = count - 1;
-              else delete pendingHiitRoundsRef.current[commit.memberKey];
+            case 'hiit': {
+              const count = pendingHiitRoundsRef.current[commit.memberKey];
+              if (count !== undefined) {
+                if (count > 1) pendingHiitRoundsRef.current[commit.memberKey] = count - 1;
+                else delete pendingHiitRoundsRef.current[commit.memberKey];
+              }
+              break;
             }
-          } else if (commit.buffer === 'emom') {
-            const minutes = pendingEmomMinutesRef.current[commit.memberKey];
-            if (minutes && minutes.length > 0) {
-              minutes.pop();
-              if (minutes.length === 0) delete pendingEmomMinutesRef.current[commit.memberKey];
+            case 'emom': {
+              const minutes = pendingEmomMinutesRef.current[commit.memberKey];
+              if (minutes && minutes.length > 0) {
+                minutes.pop();
+                if (minutes.length === 0) delete pendingEmomMinutesRef.current[commit.memberKey];
+              }
+              break;
             }
+            default:
+              assertNever(buffer);
           }
         } else {
           const entries = sessionRef.current.entries;
@@ -631,13 +682,29 @@ export function useSessionRunner(
             sessionRef.current = removeLastEntry(sessionRef.current);
             // A multi-set hold/reps member (or a multi-round hiit/multi-minute emom flush) only had
             // its *last* contribution added by this commit — restore the rest back into the pending
-            // buffer rather than discarding the whole flushed entry.
-            if (commit.buffer === 'sets' && (lastEntry.type === 'timed_hold' || lastEntry.type === 'reps') && lastEntry.sets.length > 1) {
-              pendingSetsRef.current[commit.memberKey] = lastEntry.sets.slice(0, -1);
-            } else if (commit.buffer === 'hiit' && lastEntry.type === 'hiit' && lastEntry.roundsCompleted > 1) {
-              pendingHiitRoundsRef.current[commit.memberKey] = lastEntry.roundsCompleted - 1;
-            } else if (commit.buffer === 'emom' && lastEntry.type === 'emom' && lastEntry.minutes.length > 1) {
-              pendingEmomMinutesRef.current[commit.memberKey] = lastEntry.minutes.slice(0, -1);
+            // buffer rather than discarding the whole flushed entry. `buffer` is null for direct-log
+            // entries (amrap/cardio/standalone rest), which are single-shot and have nothing to restore.
+            const buffer = commit.buffer;
+            switch (buffer) {
+              case 'sets':
+                if ((lastEntry.type === 'timed_hold' || lastEntry.type === 'reps') && lastEntry.sets.length > 1) {
+                  pendingSetsRef.current[commit.memberKey] = lastEntry.sets.slice(0, -1);
+                }
+                break;
+              case 'hiit':
+                if (lastEntry.type === 'hiit' && lastEntry.roundsCompleted > 1) {
+                  pendingHiitRoundsRef.current[commit.memberKey] = lastEntry.roundsCompleted - 1;
+                }
+                break;
+              case 'emom':
+                if (lastEntry.type === 'emom' && lastEntry.minutes.length > 1) {
+                  pendingEmomMinutesRef.current[commit.memberKey] = lastEntry.minutes.slice(0, -1);
+                }
+                break;
+              case null:
+                break;
+              default:
+                assertNever(buffer);
             }
           }
         }

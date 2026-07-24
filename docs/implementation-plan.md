@@ -230,10 +230,18 @@ which is deleted.
   set — that's a separate, larger feature (touches the timer-critical `use-session-runner.ts`), flagged
   as a follow-up rather than folded in here; and no chart interactivity beyond the direct labels (see
   above), since a tap tooltip would just repeat what the list below already shows.
-- **Planned, not started: quick-add a new exercise from the workout builder's "+ Add block" picker.**
-  See `docs/exercise-tracker-product-plan.md` §13 for the shape (inline mini-form reusing
-  `exercise-editor.tsx`'s exported `CONFIG_FIELDS`/`configToStrings`/`buildExercise`, not a
-  navigate-away-and-back flow, since `workout-editor.tsx`'s draft is unpersisted local state).
+- ✅ **Quick-add a new exercise from the workout builder.** New `src/components/new-exercise-form.tsx`
+  — a mini version of `exercise-editor.tsx`'s own form (name, type pills, per-type `CONFIG_FIELDS`
+  grid, notes), reusing its now-exported `buildExercise`/`CONFIG_FIELDS`/`TYPE_OPTIONS` — embedded
+  inline in both of `workout-editor.tsx`'s pickers behind a "+ New exercise" row, rather than a
+  navigate-to-`exercise-editor`-and-back flow (the workout draft being edited is unpersisted local
+  state; navigating away would need real plumbing to avoid losing it). On create, the new exercise is
+  persisted via the existing `saveExercise` and then dropped into whichever picker triggered it: the
+  plain block picker calls `addBlock` (closes the picker, same as picking an existing exercise); the
+  circuit picker calls `toggleCircuitMember` and **stays open**, since building a circuit means
+  picking several exercises, not just the one just created. Has its own local `slugify` copy — the
+  4th one in the codebase now (`exercise-editor.tsx`, `workout-editor.tsx`, `program-editor.tsx`, this
+  one), consistent with the existing precedent of small per-screen copies rather than a shared util.
 - **Considered and rejected: consolidating `sessions/` into monthly files to reduce IO.** Would cut
   against the explicit "never rewrite all of history on save" rule (product plan §5.2) — the
   mid-workout incremental flush (`writeSession()` full-overwrites its file on every completed set)

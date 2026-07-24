@@ -14,7 +14,7 @@ import { useSessionHistoryStore } from '@/state/session-history-store';
 
 export type FieldDef = { key: string; label: string; unit?: string; optional?: boolean };
 
-const TYPE_OPTIONS: { type: ExerciseType; label: string }[] = [
+export const TYPE_OPTIONS: { type: ExerciseType; label: string }[] = [
   { type: 'reps', label: 'Reps' },
   { type: 'timed_hold', label: 'Hold' },
   { type: 'hiit', label: 'HIIT' },

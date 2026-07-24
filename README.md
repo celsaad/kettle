@@ -24,7 +24,9 @@ un-flush so stepping back to redo a set/round retracts what was just written ins
 data behind. Library exercises are editable in-app (add/edit/delete, with a guard against deleting one
 still referenced by a workout); workouts have full CRUD including delete (with a guard against
 deleting one still referenced by a program), support circuits/supersets (round-robin blocks with
-configurable rest), and blocks can be reordered by press-and-hold drag. Multi-week programs (periodized
+configurable rest), blocks can be reordered by press-and-hold drag, and a workout's exercise/circuit
+pickers can create a brand-new exercise inline (no detour to Library) via a "+ New exercise" option in
+the picker itself. Multi-week programs (periodized
 wrappers around workouts, with per-week overrides and multi-session-per-week support) drive the Today
 tab's "next up" card and now have full in-app CRUD too, including per-week overrides: create/edit/
 delete a program, add/remove weeks, set each week's number/day/workout/notes, and add/edit/remove a

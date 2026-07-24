@@ -5,11 +5,12 @@ import { GestureDetector } from 'react-native-gesture-handler';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { circuitSummary, ExerciseBadge, exerciseSummary } from '@/components/exercise-badge';
+import { NewExerciseForm } from '@/components/new-exercise-form';
 import { ReorderableList } from '@/components/reorderable-list';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing, MaxContentWidth } from '@/constants/theme';
-import type { Workout, WorkoutBlock } from '@/domain/types';
+import type { Exercise, Workout, WorkoutBlock } from '@/domain/types';
 import { useTheme } from '@/hooks/use-theme';
 import { findExerciseInLibrary, useLibraryStore } from '@/state/library-store';
 
@@ -29,6 +30,7 @@ export default function WorkoutEditorScreen() {
   const library = useLibraryStore((state) => state.library);
   const saveWorkout = useLibraryStore((state) => state.saveWorkout);
   const deleteWorkout = useLibraryStore((state) => state.deleteWorkout);
+  const saveExercise = useLibraryStore((state) => state.saveExercise);
 
   const editing = useMemo(() => library?.workouts.find((candidate) => candidate.id === id), [library, id]);
 
@@ -37,6 +39,7 @@ export default function WorkoutEditorScreen() {
   const [circuitPickerOpen, setCircuitPickerOpen] = useState(false);
   const [circuitSelection, setCircuitSelection] = useState<string[]>([]);
   const [openIdFields, setOpenIdFields] = useState<Set<number>>(new Set());
+  const [newExerciseOpen, setNewExerciseOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   if (!library) return null;
@@ -58,6 +61,16 @@ export default function WorkoutEditorScreen() {
     setCircuitSelection((current) =>
       current.includes(exerciseId) ? current.filter((existingId) => existingId !== exerciseId) : [...current, exerciseId],
     );
+  };
+
+  // Persists a quick-added exercise to the library, then drops it into whichever picker triggered the
+  // form: a plain block (addBlock also closes that picker) or a circuit-in-progress member selection
+  // (kept open — building a circuit means picking several exercises, not just one).
+  const handleCreateExercise = async (exercise: Exercise) => {
+    await saveExercise(exercise);
+    if (circuitPickerOpen) toggleCircuitMember(exercise.id);
+    else addBlock(exercise.id);
+    setNewExerciseOpen(false);
   };
 
   const addCircuit = () => {
@@ -336,6 +349,7 @@ export default function WorkoutEditorScreen() {
             onPress={() => {
               setPickerOpen((current) => !current);
               setCircuitPickerOpen(false);
+              setNewExerciseOpen(false);
             }}
             style={({ pressed }) => [styles.addBlock, styles.addBlockHalf, { borderColor: theme.border }, pressed && styles.pressed]}>
             <ThemedText type="heading" themeColor="textSecondary">
@@ -347,6 +361,7 @@ export default function WorkoutEditorScreen() {
               setCircuitPickerOpen((current) => !current);
               setPickerOpen(false);
               setCircuitSelection([]);
+              setNewExerciseOpen(false);
             }}
             style={({ pressed }) => [styles.addBlock, styles.addBlockHalf, { borderColor: theme.border }, pressed && styles.pressed]}>
             <ThemedText type="heading" themeColor="textSecondary">
@@ -357,59 +372,81 @@ export default function WorkoutEditorScreen() {
 
         {pickerOpen && (
           <View style={styles.picker}>
-            {library.exercises.map((exercise) => (
-              <Pressable key={exercise.id} onPress={() => addBlock(exercise.id)}>
-                <ThemedView type="backgroundElement" style={[styles.pickerRow, { borderColor: theme.border }]}>
-                  <ThemedText type="smallMedium" style={styles.pickerRowText}>
-                    {exercise.name}
+            {newExerciseOpen ? (
+              <NewExerciseForm onCreate={handleCreateExercise} onCancel={() => setNewExerciseOpen(false)} />
+            ) : (
+              <>
+                <Pressable onPress={() => setNewExerciseOpen(true)} style={[styles.newExerciseButton, { borderColor: theme.border }]}>
+                  <ThemedText type="smallMedium" themeColor="textSecondary">
+                    + New exercise
                   </ThemedText>
-                  <ExerciseBadge type={exercise.type} />
-                </ThemedView>
-              </Pressable>
-            ))}
+                </Pressable>
+                {library.exercises.map((exercise) => (
+                  <Pressable key={exercise.id} onPress={() => addBlock(exercise.id)}>
+                    <ThemedView type="backgroundElement" style={[styles.pickerRow, { borderColor: theme.border }]}>
+                      <ThemedText type="smallMedium" style={styles.pickerRowText}>
+                        {exercise.name}
+                      </ThemedText>
+                      <ExerciseBadge type={exercise.type} />
+                    </ThemedView>
+                  </Pressable>
+                ))}
+              </>
+            )}
           </View>
         )}
 
         {circuitPickerOpen && (
           <View style={styles.picker}>
-            <ThemedText type="small" themeColor="textSecondary">
-              Select at least 2 exercises
-            </ThemedText>
-            {library.exercises.map((exercise) => {
-              const selected = circuitSelection.includes(exercise.id);
-              return (
-                <Pressable key={exercise.id} onPress={() => toggleCircuitMember(exercise.id)}>
-                  <ThemedView
-                    type="backgroundElement"
-                    style={[styles.pickerRow, { borderColor: selected ? theme.accent : theme.border }]}>
-                    <View
-                      style={[
-                        styles.checkbox,
-                        { borderColor: theme.border },
-                        selected && { backgroundColor: theme.accent, borderColor: theme.accent },
-                      ]}>
-                      {selected && (
-                        <ThemedText type="small" style={{ color: theme.onAccent }}>
-                          ✓
-                        </ThemedText>
-                      )}
-                    </View>
-                    <ThemedText type="smallMedium" style={styles.pickerRowText}>
-                      {exercise.name}
-                    </ThemedText>
-                    <ExerciseBadge type={exercise.type} />
-                  </ThemedView>
+            {newExerciseOpen ? (
+              <NewExerciseForm onCreate={handleCreateExercise} onCancel={() => setNewExerciseOpen(false)} />
+            ) : (
+              <>
+                <ThemedText type="small" themeColor="textSecondary">
+                  Select at least 2 exercises
+                </ThemedText>
+                <Pressable onPress={() => setNewExerciseOpen(true)} style={[styles.newExerciseButton, { borderColor: theme.border }]}>
+                  <ThemedText type="smallMedium" themeColor="textSecondary">
+                    + New exercise
+                  </ThemedText>
                 </Pressable>
-              );
-            })}
-            <Pressable
-              onPress={addCircuit}
-              disabled={circuitSelection.length < 2}
-              style={[styles.confirmCircuit, { backgroundColor: theme.accent }, circuitSelection.length < 2 && styles.disabled]}>
-              <ThemedText type="heading" style={{ color: theme.onAccent }}>
-                Add circuit ({circuitSelection.length})
-              </ThemedText>
-            </Pressable>
+                {library.exercises.map((exercise) => {
+                  const selected = circuitSelection.includes(exercise.id);
+                  return (
+                    <Pressable key={exercise.id} onPress={() => toggleCircuitMember(exercise.id)}>
+                      <ThemedView
+                        type="backgroundElement"
+                        style={[styles.pickerRow, { borderColor: selected ? theme.accent : theme.border }]}>
+                        <View
+                          style={[
+                            styles.checkbox,
+                            { borderColor: theme.border },
+                            selected && { backgroundColor: theme.accent, borderColor: theme.accent },
+                          ]}>
+                          {selected && (
+                            <ThemedText type="small" style={{ color: theme.onAccent }}>
+                              ✓
+                            </ThemedText>
+                          )}
+                        </View>
+                        <ThemedText type="smallMedium" style={styles.pickerRowText}>
+                          {exercise.name}
+                        </ThemedText>
+                        <ExerciseBadge type={exercise.type} />
+                      </ThemedView>
+                    </Pressable>
+                  );
+                })}
+                <Pressable
+                  onPress={addCircuit}
+                  disabled={circuitSelection.length < 2}
+                  style={[styles.confirmCircuit, { backgroundColor: theme.accent }, circuitSelection.length < 2 && styles.disabled]}>
+                  <ThemedText type="heading" style={{ color: theme.onAccent }}>
+                    Add circuit ({circuitSelection.length})
+                  </ThemedText>
+                </Pressable>
+              </>
+            )}
           </View>
         )}
 
@@ -601,6 +638,14 @@ const styles = StyleSheet.create({
   picker: {
     marginTop: Spacing.two,
     gap: Spacing.one + 2,
+  },
+  newExerciseButton: {
+    height: 40,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   pickerRow: {
     flexDirection: 'row',

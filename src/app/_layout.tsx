@@ -12,6 +12,8 @@ import { DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
 import { useEffect } from 'react';
+import { StyleSheet } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { ThemeOverrideProvider, useAppTheme } from '@/hooks/theme-context';
@@ -76,8 +78,16 @@ export default function RootLayout() {
   if (!fontsLoaded || !dataReady || !historyReady) return null;
 
   return (
-    <ThemeOverrideProvider>
-      <Navigation />
-    </ThemeOverrideProvider>
+    <GestureHandlerRootView style={styles.root}>
+      <ThemeOverrideProvider>
+        <Navigation />
+      </ThemeOverrideProvider>
+    </GestureHandlerRootView>
   );
 }
+
+const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+  },
+});

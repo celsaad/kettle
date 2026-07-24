@@ -302,7 +302,6 @@ What's genuinely missing today, checked directly against the code:
 - **No per-exercise progression.** History shows aggregate totals (session count, hours, sets, minutes) but not last-time weight/reps/holds per exercise or volume trends.
 - **No charts.**
 - **No in-app cloud-sync guidance.** Sync (iCloud/Dropbox/git) is left entirely to the user, with no in-app pointers.
-- **No drag-to-reorder** for workout blocks — only add-at-end and remove.
 - **Merge conflict view has no field-level diff** (see open question 5 above).
 - **Timed-hold display direction was never revisited** (see open question 2 above).
 - **Web has no persistence** — `expo-file-system` doesn't support web, so the web build runs on an ephemeral in-memory seed library. This is a platform constraint, not a product gap.

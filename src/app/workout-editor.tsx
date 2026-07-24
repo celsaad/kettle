@@ -1,9 +1,11 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { GestureDetector } from 'react-native-gesture-handler';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { circuitSummary, ExerciseBadge, exerciseSummary } from '@/components/exercise-badge';
+import { ReorderableList } from '@/components/reorderable-list';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing, MaxContentWidth } from '@/constants/theme';
@@ -42,6 +44,10 @@ export default function WorkoutEditorScreen() {
   const removeBlock = (index: number) => {
     setDraft((current) => ({ ...current, blocks: current.blocks.filter((_, i) => i !== index) }));
   };
+
+  const handleReorder = useCallback((blocks: WorkoutBlock[]) => {
+    setDraft((current) => ({ ...current, blocks }));
+  }, []);
 
   const addBlock = (exerciseId: string) => {
     setDraft((current) => ({ ...current, blocks: [...current.blocks, { kind: 'exercise', exerciseId }] }));
@@ -160,8 +166,12 @@ export default function WorkoutEditorScreen() {
           {draft.blocks.length} blocks
         </ThemedText>
 
-        <View style={styles.list}>
-          {draft.blocks.map((block, index) => {
+        <ReorderableList
+          data={draft.blocks}
+          keyExtractor={(block, index) => (block.kind === 'exercise' ? `exercise-${index}` : `circuit-${index}`)}
+          onReorder={handleReorder}
+          style={styles.list}
+          renderItem={(block, index, dragHandle) => {
             if (block.kind === 'exercise') {
               const exercise = findExerciseInLibrary(library, block.exerciseId);
               if (!exercise) return null;
@@ -171,16 +181,19 @@ export default function WorkoutEditorScreen() {
 
               return (
                 <View
-                  key={`exercise-${index}`}
                   style={[
                     styles.row,
                     isRest
                       ? { borderWidth: 1, borderStyle: 'dashed', borderColor: theme.border }
                       : { backgroundColor: theme.backgroundElement, borderWidth: 1, borderColor: theme.border },
                   ]}>
-                  <ThemedText themeColor="textSecondary" style={styles.dragHandle}>
-                    ⣿
-                  </ThemedText>
+                  <GestureDetector gesture={dragHandle}>
+                    <View style={styles.dragHandleTouchArea}>
+                      <ThemedText themeColor="textSecondary" style={styles.dragHandle}>
+                        ⣿
+                      </ThemedText>
+                    </View>
+                  </GestureDetector>
                   <View style={styles.rowText}>
                     <ThemedText type={isRest ? 'default' : 'heading'}>{exercise.name}</ThemedText>
                     <ThemedText type="small" themeColor="textSecondary">
@@ -196,11 +209,15 @@ export default function WorkoutEditorScreen() {
             }
 
             return (
-              <View key={`circuit-${index}`} style={[styles.circuitBlock, { borderColor: theme.border, backgroundColor: theme.backgroundElement }]}>
+              <View style={[styles.circuitBlock, { borderColor: theme.border, backgroundColor: theme.backgroundElement }]}>
                 <View style={styles.circuitHeader}>
-                  <ThemedText themeColor="textSecondary" style={styles.dragHandle}>
-                    ⣿
-                  </ThemedText>
+                  <GestureDetector gesture={dragHandle}>
+                    <View style={styles.dragHandleTouchArea}>
+                      <ThemedText themeColor="textSecondary" style={styles.dragHandle}>
+                        ⣿
+                      </ThemedText>
+                    </View>
+                  </GestureDetector>
                   <ThemedText type="heading" style={styles.circuitTitle}>
                     Circuit
                   </ThemedText>
@@ -311,8 +328,8 @@ export default function WorkoutEditorScreen() {
                 </ThemedText>
               </View>
             );
-          })}
-        </View>
+          }}
+        />
 
         <View style={styles.addButtonsRow}>
           <Pressable
@@ -479,6 +496,10 @@ const styles = StyleSheet.create({
   },
   dragHandle: {
     letterSpacing: -2,
+  },
+  dragHandleTouchArea: {
+    paddingVertical: 4,
+    paddingHorizontal: 2,
   },
   rowText: {
     flex: 1,

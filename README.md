@@ -23,14 +23,15 @@ disk, a finish-session-early option that keeps whatever was already logged, and 
 un-flush so stepping back to redo a set/round retracts what was just written instead of leaving stale
 data behind. Library exercises are editable in-app (add/edit/delete, with a guard against deleting one
 still referenced by a workout); workouts have full CRUD including delete (with a guard against
-deleting one still referenced by a program) and support circuits/supersets (round-robin blocks with
-configurable rest). Multi-week programs (periodized wrappers around workouts, with per-week overrides
-and multi-session-per-week support) are supported and drive the Today tab's "next up" card, though
-they can only be authored by hand-editing `exercises.yaml` — there's no in-app program editor yet.
+deleting one still referenced by a program), support circuits/supersets (round-robin blocks with
+configurable rest), and blocks can be reordered by press-and-hold drag. Multi-week programs (periodized
+wrappers around workouts, with per-week overrides and multi-session-per-week support) are supported and
+drive the Today tab's "next up" card, though they can only be authored by hand-editing `exercises.yaml`
+— there's no in-app program editor yet.
 
 See [`docs/implementation-plan.md`](docs/implementation-plan.md) for what shipped, the scope calls
-made along the way, and what's genuinely still open: drag-to-reorder for workout blocks, an in-app
-program editor, per-exercise progression stats, and charts are not implemented.
+made along the way, and what's genuinely still open: an in-app program editor, per-exercise
+progression stats, and charts are not implemented.
 Note also: web (`npx expo start --web`) has no persistence — `expo-file-system` doesn't support it,
 so the web build degrades to an ephemeral in-memory library rather than crashing.
 

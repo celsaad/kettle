@@ -146,17 +146,26 @@ which is deleted.
   exact same object reference, so `dirty` clears itself post-save with no extra reset code needed).
   Supports: rename (pencil → inline `TextInput`), remove a block (✕ per row), add a block (a picker
   panel listing every library exercise, including Rest), Cancel (revert to the stored workout), Save
-  (`useLibraryStore().saveWorkout()`). **Not implemented:** drag-to-reorder blocks — the existing drag
-  handle (⣿) is currently decorative; real reordering needs a drag gesture library and was judged too
-  large an addition for this pass.
+  (`useLibraryStore().saveWorkout()`).
+- ✅ **Drag-to-reorder blocks** (was previously "not implemented" — the ⣿ handle used to be decorative
+  only). `src/components/reorderable-list.tsx` is a new generic `ReorderableList<T>` component (no
+  workout-specific concepts, so it's reusable for a future program-week list): press-and-hold the
+  handle (`Gesture.Pan().activateAfterLongPress(150)`, so ordinary `ScrollView` scrolling still works
+  untouched) to pick an item up, live reflow of siblings computed from measured per-item heights
+  (`onLayout` into a shared array — needed because exercise rows and circuit blocks are very different
+  heights), release to drop. Items never leave their original React children order/keys during the
+  drag — only a `translateY` transform moves them — so an open `TextInput` inside a circuit block
+  (rounds/rest/block-id fields) doesn't lose focus or remount while another item is dragged; `data`
+  changes exactly once, on drop. Required adding `GestureHandlerRootView` to `src/app/_layout.tsx`,
+  which hadn't existed yet anywhere in the app. Auto-scrolling the `ScrollView` when a drag reaches the
+  viewport edge is explicitly out of scope (blocks lists are short enough in practice; a contained
+  follow-up if that's ever wrong).
 
 ---
 
 ## What's genuinely left (current, updated past workstreams A–F)
 
-- **Drag-to-reorder** blocks in Build — still not implemented; `workout-editor.tsx` only supports
-  add-at-end and remove, no reorder mechanism at all (not even up/down buttons).
-- **Programs have no in-app authoring UI.** ✅ Exercise delete now exists too (`deleteExercise` in the
+- **Programs have no in-app authoring UI.** ✅ Drag-to-reorder blocks and exercise delete now exist too (`deleteExercise` in the
   library store, wired to a "Delete exercise" button in `exercise-editor.tsx` with the same
   confirm-dialog/in-use-guard pattern as workout delete — blocked if a workout block or circuit member
   still references it) — library CRUD (exercises + workouts) is now complete. `saveProgram` exists in

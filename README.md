@@ -10,22 +10,29 @@ product plan (data model, file formats, roadmap).
 ## Status
 
 The UI is implemented against the current design (`Kettle Screens.dc.html`): a 4-tab shell (Today,
-Library, Build, History), a live session runner with working hold/reps/rest timers, and an
-import/merge sheet, with light/dark mode following the system theme.
+Library, Build, History, plus a Programs tab), a live session runner with working
+hold/reps/rest/hiit/emom/amrap/cardio timers, and an import/merge sheet, with light/dark mode
+following the system theme.
 
 The app is backed by real local storage, not mock data. `exercises.yaml` and `sessions/*.yaml` are
 read/written via `expo-file-system` (validated with zod on every load), library import merges by id
 with a real pre-merge summary, both the library and individual sessions can be exported/shared, and
-the session timer is wall-clock-based (survives backgrounding, uses keep-awake, haptics, and a local
-notification fallback) with incremental per-set flush to disk. Library exercises and workout blocks
-are editable in-app (add/edit exercise, add/remove/rename workout blocks) and persist back to
-`exercises.yaml`.
+the session timer is wall-clock-based (survives backgrounding, uses keep-awake, haptics, audio cues,
+a pre-session 3-2-1 countdown, and a local notification fallback) with incremental per-set flush to
+disk, a finish-session-early option that keeps whatever was already logged, and a one-level `goPrev()`
+un-flush so stepping back to redo a set/round retracts what was just written instead of leaving stale
+data behind. Library exercises are editable in-app (add/edit/delete, with a guard against deleting one
+still referenced by a workout); workouts have full CRUD including delete (with a guard against
+deleting one still referenced by a program) and support circuits/supersets (round-robin blocks with
+configurable rest). Multi-week programs (periodized wrappers around workouts, with per-week overrides
+and multi-session-per-week support) are supported and drive the Today tab's "next up" card, though
+they can only be authored by hand-editing `exercises.yaml` — there's no in-app program editor yet.
 
 See [`docs/implementation-plan.md`](docs/implementation-plan.md) for what shipped, the scope calls
-made along the way, and what's genuinely still open (drag-to-reorder blocks, running `hiit`/`emom`/
-`amrap`/`cardio` sessions, and exercise/workout delete are not implemented). Note also: web
-(`npx expo start --web`) has no persistence — `expo-file-system` doesn't support it, so the web build
-degrades to an ephemeral in-memory library rather than crashing.
+made along the way, and what's genuinely still open: drag-to-reorder for workout blocks, an in-app
+program editor, per-exercise progression stats, and charts are not implemented.
+Note also: web (`npx expo start --web`) has no persistence — `expo-file-system` doesn't support it,
+so the web build degrades to an ephemeral in-memory library rather than crashing.
 
 ## Get started
 

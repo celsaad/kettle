@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 
 import type { Session, SessionEntry } from '@/domain/types';
-import { appendSessionEntry, createSession, finalizeSession, listSessions } from '@/storage/session-files';
+import { appendSessionEntry, createSession, finalizeSession, listSessions, removeLastSessionEntry } from '@/storage/session-files';
 
 type SessionHistoryState = {
   status: 'idle' | 'loading' | 'ready' | 'error';
@@ -12,6 +12,8 @@ type SessionHistoryState = {
   startSession: (workoutId: string | null, programId: string | null) => Session;
   /** Appends one logged entry, flushes to disk, and updates history state. Returns the updated session. */
   logEntry: (session: Session, entry: SessionEntry) => Session;
+  /** Removes the most recently appended entry, flushes to disk, and updates history state. Used to un-flush a logged entry when the user steps back. Returns the updated session. */
+  removeLastEntry: (session: Session) => Session;
   /** Writes `ended_at` and updates history state. Returns the updated session. */
   completeSession: (session: Session) => Session;
 };
@@ -33,6 +35,11 @@ export const useSessionHistoryStore = create<SessionHistoryState>((set, get) => 
   },
   logEntry: (session, entry) => {
     const updated = appendSessionEntry(session, entry);
+    set({ sessions: get().sessions.map((existing) => (existing.id === updated.id ? updated : existing)) });
+    return updated;
+  },
+  removeLastEntry: (session) => {
+    const updated = removeLastSessionEntry(session);
     set({ sessions: get().sessions.map((existing) => (existing.id === updated.id ? updated : existing)) });
     return updated;
   },

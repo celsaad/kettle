@@ -55,6 +55,18 @@ export function appendSessionEntry(session: Session, entry: SessionEntry): Sessi
   return updated;
 }
 
+/**
+ * Removes the most recently appended entry and flushes to disk. Mirrors `appendSessionEntry` but in
+ * reverse — used by `goPrev()` to un-flush a set/round/entry that was just committed, when the user
+ * steps back to redo it. A full rewrite here is exactly as cheap as the append it undoes (§5.2 note 3
+ * is about not rewriting *other* sessions' files, not this session's own).
+ */
+export function removeLastSessionEntry(session: Session): Session {
+  const updated: Session = { ...session, entries: session.entries.slice(0, -1) };
+  writeSession(updated);
+  return updated;
+}
+
 export function finalizeSession(session: Session, endedAt: string): Session {
   const updated: Session = { ...session, endedAt };
   writeSession(updated);

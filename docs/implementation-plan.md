@@ -1,12 +1,21 @@
 # Kettle — Implementation Plan
 
-Plan for building out the four workstreams the README lists as *not yet implemented*: reading/writing
-`exercises.yaml` and `sessions/`, library import/merge, export, and the wall-clock-drift-hardened
-timer engine (keep-awake, background notifications) — plus wiring the library/build CRUD screens.
+Plan for building out the four workstreams the README originally listed as *not yet implemented*:
+reading/writing `exercises.yaml` and `sessions/`, library import/merge, export, and the
+wall-clock-drift-hardened timer engine (keep-awake, background notifications) — plus wiring the
+library/build CRUD screens.
 
 **Status: all workstreams (A–F) are implemented.** `npm run typecheck` and `npm run lint` are clean.
 See [`exercise-tracker-product-plan.md`](exercise-tracker-product-plan.md) for the product model this
 plan implements.
+
+**Since this plan was written, later work (not tracked as workstreams here) shipped:** the interval
+session runner for `hiit`/`emom`/`amrap`/`cardio`, multi-week programs with per-week overrides and
+multi-session-per-week support, circuits/supersets, a workouts list with create/edit/**delete**
+(replacing the single hardcoded workout), a pre-session 3-2-1 countdown with audio cues,
+finish-session-early, exercise delete (mirroring the workout-delete confirm/in-use-guard pattern), and
+a one-level `goPrev()` un-flush fix in the session runner. See `git log` for the individual commits.
+§"What's genuinely left" below is kept current against all of that, not just workstreams A–F.
 
 ## Decisions (settled)
 
@@ -114,8 +123,14 @@ which is deleted.
   next step); standalone Rest blocks flush their own entry immediately. `completeSession()` writes
   `ended_at` when the last step advances past the end. A mid-workout crash loses at most the
   in-progress set, per §7.2.
-- Known limitation: `goPrev()` doesn't un-flush an already-logged set. Revisiting a previous step to
-  correct a mistake is a real product question or an already flagged limitation, left out of this pass.
+- ✅ `goPrev()` un-flushes the most recent `advance()`, one level deep: a `lastCommitRef` records
+  what the last `commitCurrentStep`/`flushMember` call did (pushed to a pending buffer, or
+  flushed/direct-logged a `SessionEntry`), and `goPrev()` reverses exactly that — popping the pending
+  set/round/minute, or removing the just-written entry via a new `removeLastSessionEntry` (mirrors
+  `appendSessionEntry`: a full rewrite of this session's own file, same cost as the append it undoes)
+  and restoring all-but-its-last set back into the pending buffer for a multi-set member. A second
+  `goPrev()` without an intervening `advance()` just moves the step index, as before — full
+  multi-step undo was judged out of scope for this pass.
 
 ## F. Library/Build CRUD — ✅ done
 
@@ -137,16 +152,19 @@ which is deleted.
 
 ---
 
-## What's genuinely left (not part of this implementation pass)
+## What's genuinely left (current, updated past workstreams A–F)
 
-- **Drag-to-reorder** blocks in Build (noted above).
-- **`goPrev` doesn't un-flush** logged sets in the session runner (noted above).
-- **`hiit`/`emom`/`amrap`/`cardio` aren't runnable** in the session screen — `useSessionRunner`'s
-  `buildSteps()` only turns `timed_hold`/`reps`/`rest` blocks into steps (this predates this
-  implementation pass; extending it is roadmap phase 4, and would also need the corresponding
-  `SessionEntry` log shapes added to the domain model, deliberately left out per Workstream A above).
-- **No exercise/workout delete** — only add/edit. Delete wasn't present in the original mock UI either
-  and wasn't asked for.
+- **Drag-to-reorder** blocks in Build — still not implemented; `workout-editor.tsx` only supports
+  add-at-end and remove, no reorder mechanism at all (not even up/down buttons).
+- **Programs have no in-app authoring UI.** ✅ Exercise delete now exists too (`deleteExercise` in the
+  library store, wired to a "Delete exercise" button in `exercise-editor.tsx` with the same
+  confirm-dialog/in-use-guard pattern as workout delete — blocked if a workout block or circuit member
+  still references it) — library CRUD (exercises + workouts) is now complete. `saveProgram` exists in
+  the library store but nothing in the UI calls it; programs must be hand-authored in
+  `exercises.yaml`. The programs tab/detail screen are browse + start-session only.
+- **No per-exercise progression view.** History (`historyStats`) is aggregate totals (session count,
+  hours, sets, minutes) only — no last-time weight/reps/holds or volume trend per exercise.
+- **No charts.**
 - **Web has no persistence** (by necessity — `expo-file-system` doesn't support it); it now degrades
   to an ephemeral in-memory seed library instead of crashing, which is a reasonable dev/preview
   experience but not real usage.
@@ -157,5 +175,7 @@ which is deleted.
   Current UI counts up (unchanged from the pre-existing mock UI).
 - Merge conflict transparency: diff view vs. simple updated count (§12.5). Currently a simple
   new/updated count + changed-id list, no field-level diff.
-- Keep the `blocks` model shaped to allow nested groups later (supersets/circuits) without a rewrite
-  (§12.4) — unaffected by this pass; `WorkoutBlock` is still flat.
+
+Settled since this was written: `hiit`/`emom`/`amrap`/`cardio` are all runnable in the session
+screen now (a unified interval runner, with matching `SessionEntry` log shapes added to the domain
+model), and the `blocks` model grew a `circuit` kind for supersets/circuits (§12.4) without a rewrite.

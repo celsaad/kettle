@@ -260,6 +260,41 @@ function buildSteps(workout: Workout, exercises: Exercise[]): RunnerStep[] {
   return steps;
 }
 
+type LastCommitBuffer = 'sets' | 'hiit' | 'emom';
+
+/**
+ * Which pending buffer (if any) a step's `commitCurrentStep` call touches. Used by `goPrev()` to
+ * undo precisely one level: the most recent `advance()`, no further.
+ */
+function bufferForStep(step: RunnerStep): LastCommitBuffer | null {
+  if (step.kind === 'hold' || step.kind === 'reps') return 'sets';
+  if (step.kind === 'interval' && step.variant === 'hiit') return 'hiit';
+  if (step.kind === 'interval' && step.variant === 'emom') return 'emom';
+  return null;
+}
+
+/** True for step kinds whose commit calls `logEntry` directly rather than going through a pending buffer + flush. */
+function isDirectLogStep(step: RunnerStep): boolean {
+  if (step.kind === 'interval') return step.variant === 'amrap' || step.variant === 'cardio';
+  if (step.kind === 'rest') return step.standalone;
+  return false;
+}
+
+/**
+ * A record of what the most recent `advance()` committed, precise enough for `goPrev()` to reverse
+ * it exactly one level deep (a second `goPrev()` without an intervening `advance()` reverses nothing
+ * further — see `goPrev` below).
+ *
+ * - `pending`: the commit only pushed/incremented a not-yet-flushed buffer entry for `memberKey`
+ *   (member didn't change, so no flush ran) — undo pops/decrements it back off.
+ * - `entry`: the commit produced a `SessionEntry` that's already been written to the session file,
+ *   either via `flushMember` (buffer is the buffer it was built from) or a direct one-shot `logEntry`
+ *   call (amrap/cardio/standalone rest — buffer is `null`, nothing to restore into a buffer).
+ */
+type LastCommit =
+  | { kind: 'pending'; resultingIndex: number; memberKey: string; buffer: LastCommitBuffer }
+  | { kind: 'entry'; resultingIndex: number; memberKey: string; buffer: LastCommitBuffer | null };
+
 export type RestPreview = { label: string; detail: string } | null;
 
 function formatHoldTarget(step: Extract<RunnerStep, { kind: 'hold' }>): string {
@@ -309,12 +344,15 @@ export function useSessionRunner(
 
   const startSession = useSessionHistoryStore((state) => state.startSession);
   const logEntry = useSessionHistoryStore((state) => state.logEntry);
+  const removeLastEntry = useSessionHistoryStore((state) => state.removeLastEntry);
   const completeSession = useSessionHistoryStore((state) => state.completeSession);
 
   const sessionRef = useRef<Session | null>(null);
   const pendingSetsRef = useRef<Record<string, (TimedHoldSetLog | RepsSetLog)[]>>({});
   const pendingHiitRoundsRef = useRef<Record<string, number>>({});
   const pendingEmomMinutesRef = useRef<Record<string, EmomMinuteLog[]>>({});
+  // What the last advance() committed — consumed and cleared by goPrev() to undo exactly one level.
+  const lastCommitRef = useRef<LastCommit | null>(null);
   const repsRef = useRef(reps);
   const rpeRef = useRef(rpe);
   const roundsCompletedRef = useRef(roundsCompleted);
@@ -456,17 +494,36 @@ export function useSessionRunner(
     setStepIndex((index) => {
       const current = steps[index];
       const next = steps[index + 1];
+      const nextIndex = index + 1;
 
       if (current && sessionRef.current) {
+        const buffer = bufferForStep(current);
+        const directLog = isDirectLogStep(current);
         commitCurrentStep(current);
         const leavingMember = !next || next.memberKey !== current.memberKey;
         if (leavingMember) flushMember(current.memberKey, current.exerciseId);
         // A distinct cue from the plain countdown tick, so a change of exercise is audible even
         // without looking at the screen — but not for every set/round within the same exercise.
         if (leavingMember && next) playExerciseChange();
+
+        // Track exactly what this advance() committed so goPrev() can undo it precisely (one level
+        // only — see the LastCommit type doc).
+        if (directLog) {
+          lastCommitRef.current = { kind: 'entry', resultingIndex: nextIndex, memberKey: current.memberKey, buffer: null };
+        } else if (buffer) {
+          lastCommitRef.current = leavingMember
+            ? { kind: 'entry', resultingIndex: nextIndex, memberKey: current.memberKey, buffer }
+            : { kind: 'pending', resultingIndex: nextIndex, memberKey: current.memberKey, buffer };
+        } else {
+          // Non-standalone rest: mutates the already-pending last set's restTakenSec in place rather
+          // than pushing/appending anything new, so redoing it later just overwrites that field again
+          // — nothing to track or undo.
+          lastCommitRef.current = null;
+        }
+      } else {
+        lastCommitRef.current = null;
       }
 
-      const nextIndex = index + 1;
       if (nextIndex >= steps.length) {
         if (sessionRef.current) sessionRef.current = completeSession(sessionRef.current);
         onComplete();
@@ -539,9 +596,56 @@ export function useSessionRunner(
     });
   }, []);
 
+  // Undoes exactly what the most recent advance() committed, if goPrev() is called immediately after
+  // it (i.e. we're stepping back onto the step that commit belongs to) — one level deep only. A
+  // second goPrev() in a row (no intervening advance()) finds lastCommitRef already cleared and just
+  // moves the index, same as today.
   const goPrev = useCallback(() => {
-    setStepIndex((index) => Math.max(0, index - 1));
-  }, []);
+    setStepIndex((index) => {
+      const commit = lastCommitRef.current;
+      if (commit && commit.resultingIndex === index && sessionRef.current) {
+        if (commit.kind === 'pending') {
+          if (commit.buffer === 'sets') {
+            const sets = pendingSetsRef.current[commit.memberKey];
+            if (sets && sets.length > 0) {
+              sets.pop();
+              if (sets.length === 0) delete pendingSetsRef.current[commit.memberKey];
+            }
+          } else if (commit.buffer === 'hiit') {
+            const count = pendingHiitRoundsRef.current[commit.memberKey];
+            if (count !== undefined) {
+              if (count > 1) pendingHiitRoundsRef.current[commit.memberKey] = count - 1;
+              else delete pendingHiitRoundsRef.current[commit.memberKey];
+            }
+          } else if (commit.buffer === 'emom') {
+            const minutes = pendingEmomMinutesRef.current[commit.memberKey];
+            if (minutes && minutes.length > 0) {
+              minutes.pop();
+              if (minutes.length === 0) delete pendingEmomMinutesRef.current[commit.memberKey];
+            }
+          }
+        } else {
+          const entries = sessionRef.current.entries;
+          const lastEntry = entries[entries.length - 1];
+          if (lastEntry) {
+            sessionRef.current = removeLastEntry(sessionRef.current);
+            // A multi-set hold/reps member (or a multi-round hiit/multi-minute emom flush) only had
+            // its *last* contribution added by this commit — restore the rest back into the pending
+            // buffer rather than discarding the whole flushed entry.
+            if (commit.buffer === 'sets' && (lastEntry.type === 'timed_hold' || lastEntry.type === 'reps') && lastEntry.sets.length > 1) {
+              pendingSetsRef.current[commit.memberKey] = lastEntry.sets.slice(0, -1);
+            } else if (commit.buffer === 'hiit' && lastEntry.type === 'hiit' && lastEntry.roundsCompleted > 1) {
+              pendingHiitRoundsRef.current[commit.memberKey] = lastEntry.roundsCompleted - 1;
+            } else if (commit.buffer === 'emom' && lastEntry.type === 'emom' && lastEntry.minutes.length > 1) {
+              pendingEmomMinutesRef.current[commit.memberKey] = lastEntry.minutes.slice(0, -1);
+            }
+          }
+        }
+        lastCommitRef.current = null;
+      }
+      return Math.max(0, index - 1);
+    });
+  }, [removeLastEntry]);
 
   // Ends the session on demand: the in-progress step is committed and its member flushed first,
   // so the current set/round (and anything already logged) is saved rather than discarded.

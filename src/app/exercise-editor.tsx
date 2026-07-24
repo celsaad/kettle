@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
@@ -139,6 +139,7 @@ export default function ExerciseEditorScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const library = useLibraryStore((state) => state.library);
   const saveExercise = useLibraryStore((state) => state.saveExercise);
+  const deleteExercise = useLibraryStore((state) => state.deleteExercise);
 
   const editing = useMemo(() => library?.exercises.find((exercise) => exercise.id === id), [library, id]);
 
@@ -165,6 +166,35 @@ export default function ExerciseEditorScreen() {
     const exercise = buildExercise(exerciseId, name.trim(), type, values, notes);
     await saveExercise(exercise);
     close();
+  };
+
+  const confirmDelete = () => {
+    if (!editing || !library) return;
+    const usedBy = library.workouts.filter((workout) =>
+      workout.blocks.some((block) =>
+        block.kind === 'exercise'
+          ? block.exerciseId === editing.id
+          : block.members.some((member) => member.exerciseId === editing.id),
+      ),
+    );
+    if (usedBy.length > 0) {
+      Alert.alert(
+        'Exercise in use',
+        `"${editing.name}" is used by ${usedBy.map((workout) => workout.name).join(', ')}. Remove it from those workouts first.`,
+      );
+      return;
+    }
+    Alert.alert('Delete exercise?', `"${editing.name}" will be permanently removed.`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          await deleteExercise(editing.id);
+          close();
+        },
+      },
+    ]);
   };
 
   return (
@@ -259,6 +289,14 @@ export default function ExerciseEditorScreen() {
             </ThemedText>
           </Pressable>
         </View>
+
+        {editing && (
+          <Pressable onPress={confirmDelete} style={styles.deleteButton} hitSlop={8}>
+            <ThemedText type="smallMedium" themeColor="textSecondary">
+              Delete exercise
+            </ThemedText>
+          </Pressable>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -338,5 +376,9 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  deleteButton: {
+    alignItems: 'center',
+    marginTop: Spacing.three - 2,
   },
 });

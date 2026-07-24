@@ -16,6 +16,8 @@ type LibraryStoreState = {
   saveWorkout: (workout: Workout) => Promise<void>;
   /** Removes a workout by id and persists the library. */
   deleteWorkout: (id: string) => Promise<void>;
+  /** Removes an exercise by id and persists the library. */
+  deleteExercise: (id: string) => Promise<void>;
   /** Adds or updates (by id) a single program and persists the library. */
   saveProgram: (program: Program) => Promise<void>;
 };
@@ -60,6 +62,13 @@ export const useLibraryStore = create<LibraryStoreState>((set, get) => ({
     const current = get().library;
     if (!current) return;
     const next = { ...current, workouts: current.workouts.filter((workout) => workout.id !== id) };
+    await saveLibrary(next);
+    set({ library: next });
+  },
+  deleteExercise: async (id) => {
+    const current = get().library;
+    if (!current) return;
+    const next = { ...current, exercises: current.exercises.filter((exercise) => exercise.id !== id) };
     await saveLibrary(next);
     set({ library: next });
   },

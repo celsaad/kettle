@@ -254,36 +254,55 @@ Export  → serialize library or a session → expo-sharing → user saves/syncs
 
 ---
 
-## 10. MVP Scope (v1)
+## 10. MVP Scope (v1) — ✅ shipped, and then some
 
 Get the **live session engine** right — it's the differentiator.
 
-1. **Exercise library** — load, view, and CRUD exercises with a type + default config; persist to `exercises.yaml`.
-2. **Workout builder** — order exercises + insert rest blocks; save as a template in `exercises.yaml`.
-3. **Live session runner** — timed types (hiit / emom / amrap / timed_hold) with audio + haptic cues and auto-advance; rep types with reps/weight input and rest timers; **mixed reps + timed within one workout**; pause/skip/previous.
-4. **Session history** — list past sessions from `sessions/` with basic stats.
-5. **Import (merge) / export** — merge an imported library by `id`; export library or a single session.
+1. **Exercise library** — load, view, and CRUD exercises with a type + default config; persist to `exercises.yaml`. ✅ full CRUD, including delete with an in-use-by-workout guard (mirrors the workout-delete pattern).
+2. **Workout builder** — order exercises + insert rest blocks; save as a template in `exercises.yaml`. ✅, plus a full workouts list (create/edit/**delete**, with an in-use-by-program guard) rather than a single hardcoded workout.
+3. **Live session runner** — timed types (hiit / emom / amrap / timed_hold) with audio + haptic cues and auto-advance; rep types with reps/weight input and rest timers; **mixed reps + timed within one workout**; pause/skip/previous. ✅ all types are runnable, plus a pre-session 3-2-1 countdown, tick/exercise-change audio cues, and finish-session-early (commits the in-progress set/round instead of discarding it). `goPrev()` un-flushes the most recent `advance()` (pops the still-pending set/round/minute, or removes the already-flushed/logged session entry and restores all-but-its-last set into the pending buffer) — scoped to one level deep: a second `goPrev()` in a row without an intervening `advance()` just moves the step index, same as before.
+4. **Session history** — list past sessions from `sessions/` with basic stats. ✅ (aggregate totals only — no per-exercise progression yet, see §13).
+5. **Import (merge) / export** — merge an imported library by `id`; export library or a single session. ✅
 
-**Deferred:** social, programs/plans, charts, wearable sync, cloud backup, supersets/circuits-as-groups.
+**Beyond the original MVP scope**, already built: **multi-week programs** (periodized wrappers around workouts, with per-week per-exercise/per-circuit overrides and multi-session-per-week support via a `day` field) and **circuits/supersets** (round-robin block grouping with configurable rest between exercises and between rounds) — both were explicitly deferred below and shipped anyway. The home screen now derives "next up" from active program progress instead of a fixed pick.
+
+**Still deferred:** social, wearable sync, cloud backup, charts.
 
 ---
 
 ## 11. Roadmap
 
-| Phase | Focus |
-|---|---|
-| **1** | Domain model + YAML load/validate/merge + exercise library + workout builder (no timers yet) |
-| **2** | Live session engine for one timed type (HIIT) end-to-end; nail timer reliability + incremental flush |
-| **3** | Extend runner to `reps` and `timed_hold`; support mixed reps+timed workouts (calisthenics case) |
-| **4** | Add `emom` / `amrap`; session history + basic progression (last-time weights/holds, volume per session) |
-| **5** | Polish: import/export UX, cloud sync guidance, programs/plans, charts |
+| Phase | Focus | Status |
+|---|---|---|
+| **1** | Domain model + YAML load/validate/merge + exercise library + workout builder (no timers yet) | ✅ done |
+| **2** | Live session engine for one timed type (HIIT) end-to-end; nail timer reliability + incremental flush | ✅ done (shipped as part of the full interval runner below) |
+| **3** | Extend runner to `reps` and `timed_hold`; support mixed reps+timed workouts (calisthenics case) | ✅ done |
+| **4** | Add `emom` / `amrap`; session history + basic progression (last-time weights/holds, volume per session) | ⚠️ partial — `emom`/`amrap`/`cardio` are runnable and session history exists, but there's no per-exercise progression view (history is aggregate totals only: session count, hours, sets, minutes) |
+| **5** | Polish: import/export UX, cloud sync guidance, programs/plans, charts | ⚠️ partial — programs shipped (see §10) but are YAML-only, no in-app program editor; import/export UX and cloud sync guidance and charts are not done |
+
+See §13 for the concrete, current gap list.
 
 ---
 
 ## 12. Open Questions to Settle Before Building
 
-1. **Rest as a first-class type vs. an attribute.** Recommended: keep `rest` first-class — it composes better with "breaks and all" and shows up in history.
-2. **Timed-hold display direction.** Count *down* from target hold, or count *up* to see how long the user actually held (useful when they exceed or fall short of the target)? Consider count-up with the target shown as a marker.
-3. **Rep-block rest behavior.** Fixed auto-timer vs. tap-to-end. Recommended: support both (auto-timer that's skippable).
-4. **Supersets / circuits (repeat a group N times).** Complicates the runner significantly — recommend deferring, but design the workout `blocks` model to allow nesting later so it's not a rewrite.
-5. **Merge conflict transparency.** How much detail to show when an imported `id` overwrites a locally-tweaked definition (diff view vs. simple "updated" count)?
+1. **Rest as a first-class type vs. an attribute.** ✅ Settled: kept `rest` first-class.
+2. **Timed-hold display direction.** Still open. Currently counts *up* only (unchanged since the original mock UI) — no countdown option, no target marker.
+3. **Rep-block rest behavior.** ✅ Settled: auto-timer that's skippable.
+4. **Supersets / circuits (repeat a group N times).** ✅ Settled and shipped — `WorkoutBlock` has a `circuit` kind (round-robin members, configurable rest between exercises and between rounds), no rewrite needed.
+5. **Merge conflict transparency.** Still open. Currently a simple new/updated count + changed-id list; no field-level diff.
+
+---
+
+## 13. Known Gaps (current)
+
+What's genuinely missing today, checked directly against the code:
+
+- **Programs are YAML-only.** `saveProgram` exists in the library store but no screen calls it — there's no in-app program creation/editing; programs must be hand-authored in `exercises.yaml` (see `docs/authoring-exercises-yaml.md`).
+- **No per-exercise progression.** History shows aggregate totals (session count, hours, sets, minutes) but not last-time weight/reps/holds per exercise or volume trends.
+- **No charts.**
+- **No in-app cloud-sync guidance.** Sync (iCloud/Dropbox/git) is left entirely to the user, with no in-app pointers.
+- **No drag-to-reorder** for workout blocks — only add-at-end and remove.
+- **Merge conflict view has no field-level diff** (see open question 5 above).
+- **Timed-hold display direction was never revisited** (see open question 2 above).
+- **Web has no persistence** — `expo-file-system` doesn't support web, so the web build runs on an ephemeral in-memory seed library. This is a platform constraint, not a product gap.

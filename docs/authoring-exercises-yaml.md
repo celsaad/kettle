@@ -175,6 +175,30 @@ programs:
   override does **not** carry forward into later weeks on its own, so if you want week 3's change to
   persist through week 5 and beyond, repeat the override in each of those later weeks too.
 - `notes` on a week is optional, same freeform-string idea as an exercise's `notes`.
+- A week entry can optionally carry a `day` (a freeform label like `Monday` or `Push` — not a
+  strict weekday enum) for programs that run more than one session per week. Add `day` when two or
+  more entries need to share the same `week` number; each `(week, day)` pair must be unique within
+  a program. Programs with one session per week (the common case) can omit `day` entirely, and
+  behave exactly as before. For example, a 2-day/week split:
+
+  ```yaml
+  programs:
+    - id: push-pull-split
+      name: 6-Week Push/Pull Split
+      weeks:
+        - week: 1
+          day: Monday
+          workout: push-day
+        - week: 1
+          day: Thursday
+          workout: pull-day
+        - week: 2
+          day: Monday
+          workout: push-day
+        - week: 2
+          day: Thursday
+          workout: pull-day
+  ```
 
 ## A full, runnable example
 

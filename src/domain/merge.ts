@@ -68,7 +68,8 @@ export function mergeLibraries(existing: Library, incoming: Library): MergeResul
   for (const program of library.programs) {
     for (const week of program.weeks) {
       if (!workoutIds.has(week.workoutId)) {
-        return { ok: false, error: `Program "${program.id}" week ${week.week} references unknown workout "${week.workoutId}"` };
+        const weekLabel = `${week.week}${week.day ? ` (${week.day})` : ''}`;
+        return { ok: false, error: `Program "${program.id}" week ${weekLabel} references unknown workout "${week.workoutId}"` };
       }
     }
   }

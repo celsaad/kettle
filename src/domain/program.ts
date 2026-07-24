@@ -1,12 +1,19 @@
 import { applyBlockOverride, applyExerciseOverride } from '@/domain/yaml-mapping';
 import type { Exercise, Library, Program, ProgramWeek, Workout } from '@/domain/types';
 
-export function findProgramWeek(program: Program, weekNumber: number): ProgramWeek | undefined {
+/**
+ * Looks up a program week by week number, disambiguating by `day` when given (multi-session-per-week
+ * programs can have several entries sharing a week number). Falls back to a week-only match when
+ * `day` is omitted, so single-session-per-week programs (no `day` anywhere) resolve exactly as before.
+ */
+export function findProgramWeek(program: Program, weekNumber: number, day?: string): ProgramWeek | undefined {
+  if (day !== undefined) return program.weeks.find((week) => week.week === weekNumber && week.day === day);
   return program.weeks.find((week) => week.week === weekNumber);
 }
 
+/** Distinct week numbers present in the program, ascending — a program's weeks can repeat a number across days. */
 export function programWeekNumbers(program: Program): number[] {
-  return program.weeks.map((week) => week.week).sort((a, b) => a - b);
+  return [...new Set(program.weeks.map((week) => week.week))].sort((a, b) => a - b);
 }
 
 export type ResolvedWeek = { workout: Workout; exercises: Exercise[] };
@@ -17,8 +24,8 @@ export type ResolvedWeek = { workout: Workout; exercises: Exercise[] };
  * (with any per-exercise overrides for this week applied). Anything without an override for this
  * week is returned unchanged.
  */
-export function resolveWorkoutForWeek(program: Program, weekNumber: number, library: Library): ResolvedWeek | null {
-  const week = findProgramWeek(program, weekNumber);
+export function resolveWorkoutForWeek(program: Program, weekNumber: number, library: Library, day?: string): ResolvedWeek | null {
+  const week = findProgramWeek(program, weekNumber, day);
   if (!week) return null;
   const baseWorkout = library.workouts.find((candidate) => candidate.id === week.workoutId);
   if (!baseWorkout) return null;

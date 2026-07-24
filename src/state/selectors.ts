@@ -119,7 +119,7 @@ export type NextUpView = {
   exercises: Exercise[];
   weekLabel: string | null;
   weekNotes: string | null;
-  sessionParams: { workoutId: string } | { programId: string; week: string };
+  sessionParams: { workoutId: string } | { programId: string; week: string; day?: string };
 };
 
 /**
@@ -173,15 +173,15 @@ export function nextUpView(library: Library, sessions: Session[]): NextUpView | 
   ).length;
   const targetWeek = orderedWeeks[completed % orderedWeeks.length];
 
-  const resolved = resolveWorkoutForWeek(program, targetWeek.week, library);
+  const resolved = resolveWorkoutForWeek(program, targetWeek.week, library, targetWeek.day);
   if (!resolved) return flatFallback(library);
 
   return {
     workout: resolved.workout,
     exercises: resolved.exercises,
-    weekLabel: `Week ${targetWeek.week}`,
+    weekLabel: `Week ${targetWeek.week}${targetWeek.day ? ` · ${targetWeek.day}` : ''}`,
     weekNotes: targetWeek.notes ?? null,
-    sessionParams: { programId: program.id, week: String(targetWeek.week) },
+    sessionParams: { programId: program.id, week: String(targetWeek.week), day: targetWeek.day },
   };
 }
 

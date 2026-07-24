@@ -239,6 +239,7 @@ function programOverrideToRaw(override: ProgramOverride): RawProgramOverride {
 function programWeekToDomain(raw: RawProgram['weeks'][number]): ProgramWeek {
   return {
     week: raw.week,
+    day: raw.day,
     workoutId: raw.workout,
     notes: raw.notes,
     overrides: raw.overrides?.map(programOverrideToDomain),
@@ -248,6 +249,7 @@ function programWeekToDomain(raw: RawProgram['weeks'][number]): ProgramWeek {
 function programWeekToRaw(week: ProgramWeek): RawProgram['weeks'][number] {
   return {
     week: week.week,
+    day: week.day,
     workout: week.workoutId,
     notes: week.notes,
     overrides: week.overrides?.map(programOverrideToRaw),

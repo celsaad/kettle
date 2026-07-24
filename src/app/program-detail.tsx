@@ -6,7 +6,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
-import { programWeekNumbers } from '@/domain/program';
 import type { Library, ProgramOverride, ProgramWeek, Workout } from '@/domain/types';
 import { useTheme } from '@/hooks/use-theme';
 import { useLibraryStore } from '@/state/library-store';
@@ -31,15 +30,14 @@ export default function ProgramDetailScreen() {
 
   const weeks: ProgramWeek[] = useMemo(() => {
     if (!program) return [];
-    const order = programWeekNumbers(program);
-    return order.map((weekNumber) => program.weeks.find((week) => week.week === weekNumber)!);
+    return [...program.weeks].sort((a, b) => a.week - b.week);
   }, [program]);
 
   const close = () => router.back();
 
-  const startWeek = (weekNumber: number) => {
+  const startWeek = (week: ProgramWeek) => {
     if (!program) return;
-    router.push({ pathname: '/session', params: { programId: program.id, week: String(weekNumber) } });
+    router.push({ pathname: '/session', params: { programId: program.id, week: String(week.week), day: week.day } });
   };
 
   return (
@@ -63,10 +61,16 @@ export default function ProgramDetailScreen() {
                 const overrideText = (week.overrides ?? []).flatMap((override) => overrideLines(override, library!, workout));
 
                 return (
-                  <ThemedView key={week.week} type="backgroundElement" style={[styles.card, { borderColor: theme.border }]}>
+                  <ThemedView
+                    key={`${week.week}-${week.day ?? ''}`}
+                    type="backgroundElement"
+                    style={[styles.card, { borderColor: theme.border }]}>
                     <View style={styles.cardHeader}>
                       <View style={styles.cardHeaderText}>
-                        <ThemedText type="heading">Week {week.week}</ThemedText>
+                        <ThemedText type="heading">
+                          Week {week.week}
+                          {week.day ? ` · ${week.day}` : ''}
+                        </ThemedText>
                         <ThemedText type="small" themeColor="textSecondary">
                           {workout?.name ?? week.workoutId}
                         </ThemedText>
@@ -90,10 +94,10 @@ export default function ProgramDetailScreen() {
                     )}
 
                     <Pressable
-                      onPress={() => startWeek(week.week)}
+                      onPress={() => startWeek(week)}
                       style={[styles.startButton, { backgroundColor: theme.accent }]}>
                       <ThemedText type="smallMedium" style={{ color: theme.onAccent }}>
-                        Start this week
+                        Start this {week.day ? 'day' : 'week'}
                       </ThemedText>
                     </Pressable>
                   </ThemedView>

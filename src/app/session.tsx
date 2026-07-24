@@ -21,7 +21,12 @@ export default function SessionScreen() {
   useKeepAwake();
   const onComplete = useCallback(() => router.back(), []);
   const library = useLibraryStore((state) => state.library);
-  const { workoutId, programId, week } = useLocalSearchParams<{ workoutId?: string; programId?: string; week?: string }>();
+  const { workoutId, programId, week, day } = useLocalSearchParams<{
+    workoutId?: string;
+    programId?: string;
+    week?: string;
+    day?: string;
+  }>();
   const [started, setStarted] = useState(false);
 
   const resolved = useMemo(() => {
@@ -34,11 +39,11 @@ export default function SessionScreen() {
       const program = library.programs.find((candidate) => candidate.id === programId);
       const weekNumber = Number(week);
       if (!program || Number.isNaN(weekNumber)) return null;
-      const resolvedWeek = resolveWorkoutForWeek(program, weekNumber, library);
+      const resolvedWeek = resolveWorkoutForWeek(program, weekNumber, library, day);
       return resolvedWeek ? { ...resolvedWeek, programId } : null;
     }
     return { workout: library.workouts[0], exercises: library.exercises, programId: null };
-  }, [library, workoutId, programId, week]);
+  }, [library, workoutId, programId, week, day]);
 
   const workout = resolved?.workout;
   const exercises = resolved?.exercises ?? [];

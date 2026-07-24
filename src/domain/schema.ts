@@ -127,16 +127,33 @@ const programOverrideSchema = z
 
 export const rawProgramWeekSchema = z.object({
   week: z.number().int().positive(),
+  // Freeform label ("Monday", "Tue", ...) rather than a strict weekday enum, since not every
+  // multi-session-per-week program maps onto a literal calendar week. Omit for the common case of
+  // one session per week number.
+  day: z.string().optional(),
   workout: idSchema,
   notes: z.string().optional(),
   overrides: z.array(programOverrideSchema).optional(),
 });
 
-export const rawProgramSchema = z.object({
-  id: idSchema,
-  name: z.string().min(1),
-  weeks: z.array(rawProgramWeekSchema).min(1),
-});
+export const rawProgramSchema = z
+  .object({
+    id: idSchema,
+    name: z.string().min(1),
+    weeks: z.array(rawProgramWeekSchema).min(1),
+  })
+  .refine(
+    (program) => {
+      const seen = new Set<string>();
+      for (const week of program.weeks) {
+        const key = `${week.week}::${week.day ?? ''}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+      }
+      return true;
+    },
+    { message: 'weeks must not repeat the same (week, day) pair', path: ['weeks'] },
+  );
 
 export const rawLibrarySchema = z.object({
   version: z.number().int().positive(),

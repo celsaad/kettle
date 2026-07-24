@@ -65,7 +65,7 @@ export type Workout = {
 export type ProgramOverride =
   | { kind: 'exercise'; exerciseId: string; config: Record<string, number | string> }
   | { kind: 'block'; blockId: string; config: Record<string, number | string> };
-export type ProgramWeek = { week: number; workoutId: string; notes?: string; overrides?: ProgramOverride[] };
+export type ProgramWeek = { week: number; day?: string; workoutId: string; notes?: string; overrides?: ProgramOverride[] };
 export type Program = { id: string; name: string; weeks: ProgramWeek[] };
 
 export type Library = {

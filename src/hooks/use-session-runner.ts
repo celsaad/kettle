@@ -429,7 +429,12 @@ export function useSessionRunner(
 
   // Reset per-step transient state whenever the active step changes (adjusting state during
   // render on a key change, rather than in an effect — see https://react.dev/learn/you-might-not-need-an-effect).
-  const [resetForStepIndex, setResetForStepIndex] = useState(stepIndex);
+  // Seeded to -1 (never a real stepIndex) rather than stepIndex itself, so this also fires on the very
+  // first render: seeding it with stepIndex made the first step's target look identical to "no change",
+  // so restTargetSecRef stayed at its useRef(0) default for a countdown-type first step (hiit/emom/amrap,
+  // or a leading standalone rest block) — the ticking effect then saw remaining <= 0 almost immediately
+  // and auto-advanced before the timer ever really ran.
+  const [resetForStepIndex, setResetForStepIndex] = useState(-1);
   if (resetForStepIndex !== stepIndex) {
     setResetForStepIndex(stepIndex);
     const now = Date.now();

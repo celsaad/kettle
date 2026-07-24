@@ -18,9 +18,10 @@ type Props = {
   next: RestPreview;
   onAddSeconds: (amount: number) => void;
   onSkip: () => void;
+  onPrev: () => void;
 };
 
-export function SessionRest({ secondsRemaining, totalSeconds, next, onAddSeconds, onSkip }: Props) {
+export function SessionRest({ secondsRemaining, totalSeconds, next, onAddSeconds, onSkip, onPrev }: Props) {
   const pulse = useSharedValue(1);
 
   useEffect(() => {
@@ -67,6 +68,11 @@ export function SessionRest({ secondsRemaining, totalSeconds, next, onAddSeconds
       )}
 
       <View style={styles.controlsRow}>
+        <Pressable onPress={onPrev} style={styles.prevButton}>
+          <ThemedText type="code" style={styles.prevLabel}>
+            Prev
+          </ThemedText>
+        </Pressable>
         <Pressable onPress={() => onAddSeconds(30)} style={styles.addButton}>
           <ThemedText type="heading" style={styles.addButtonLabel}>
             +30s
@@ -154,8 +160,21 @@ const styles = StyleSheet.create({
   },
   controlsRow: {
     flexDirection: 'row',
+    alignItems: 'center',
     gap: Spacing.three - 2,
     marginTop: Spacing.three - 2,
+  },
+  prevButton: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    borderWidth: 1.5,
+    borderColor: RunnerColors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  prevLabel: {
+    color: RunnerColors.textSecondary,
   },
   addButton: {
     flex: 1,

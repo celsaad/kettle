@@ -202,6 +202,7 @@ function ActiveSession({
             next={runner.nextPreview}
             onAddSeconds={runner.addRestSeconds}
             onSkip={runner.skipRest}
+            onPrev={runner.goPrev}
           />
         )}
       </View>

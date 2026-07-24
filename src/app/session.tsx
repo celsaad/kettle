@@ -1,9 +1,10 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useKeepAwake } from 'expo-keep-awake';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { SessionCountdown } from '@/components/session-countdown';
 import { SessionHold } from '@/components/session-hold';
 import { SessionInterval } from '@/components/session-interval';
 import { SessionProgressDots } from '@/components/session-progress-dots';
@@ -12,6 +13,7 @@ import { SessionRest } from '@/components/session-rest';
 import { ThemedText } from '@/components/themed-text';
 import { RunnerColors, MaxContentWidth, Spacing } from '@/constants/theme';
 import { resolveWorkoutForWeek } from '@/domain/program';
+import type { Exercise, Workout } from '@/domain/types';
 import { useSessionRunner } from '@/hooks/use-session-runner';
 import { useLibraryStore } from '@/state/library-store';
 
@@ -20,6 +22,7 @@ export default function SessionScreen() {
   const onComplete = useCallback(() => router.back(), []);
   const library = useLibraryStore((state) => state.library);
   const { workoutId, programId, week } = useLocalSearchParams<{ workoutId?: string; programId?: string; week?: string }>();
+  const [started, setStarted] = useState(false);
 
   const resolved = useMemo(() => {
     if (!library) return null;
@@ -39,7 +42,36 @@ export default function SessionScreen() {
 
   const workout = resolved?.workout;
   const exercises = resolved?.exercises ?? [];
-  const runner = useSessionRunner(workout ?? { id: '', name: '', blocks: [] }, exercises, resolved?.programId ?? null, onComplete);
+
+  if (!workout) return null;
+
+  if (!started) {
+    return (
+      <SafeAreaView style={styles.safeArea} edges={['top', 'bottom', 'left', 'right']}>
+        <View style={styles.content}>
+          <SessionCountdown workoutName={workout.name} onDone={() => setStarted(true)} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <ActiveSession workout={workout} exercises={exercises} programId={resolved?.programId ?? null} onComplete={onComplete} />
+  );
+}
+
+function ActiveSession({
+  workout,
+  exercises,
+  programId,
+  onComplete,
+}: {
+  workout: Workout;
+  exercises: Exercise[];
+  programId: string | null;
+  onComplete: () => void;
+}) {
+  const runner = useSessionRunner(workout, exercises, programId, onComplete);
   const { step } = runner;
 
   const confirmFinish = useCallback(() => {
@@ -49,7 +81,7 @@ export default function SessionScreen() {
     ]);
   }, [runner.finishSession]);
 
-  if (!workout || !step) return null;
+  if (!step) return null;
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'bottom', 'left', 'right']}>

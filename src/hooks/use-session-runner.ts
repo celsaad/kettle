@@ -13,6 +13,7 @@ import type {
   Workout,
 } from '@/domain/types';
 import { cancelNotification, requestNotificationPermissions, scheduleRestCompleteNotification } from '@/hooks/safe-notifications';
+import { useSessionSounds } from '@/hooks/use-session-sounds';
 import { useSessionHistoryStore } from '@/state/session-history-store';
 
 export type IntervalVariant = 'hiit' | 'emom' | 'amrap' | 'cardio';
@@ -304,6 +305,8 @@ export function useSessionRunner(
   const step = steps[stepIndex];
   const isCountdownStep = step?.kind === 'rest' || (step?.kind === 'interval' && !step.countUp);
 
+  const { playTick, playExerciseChange } = useSessionSounds();
+
   const startSession = useSessionHistoryStore((state) => state.startSession);
   const logEntry = useSessionHistoryStore((state) => state.logEntry);
   const completeSession = useSessionHistoryStore((state) => state.completeSession);
@@ -458,6 +461,9 @@ export function useSessionRunner(
         commitCurrentStep(current);
         const leavingMember = !next || next.memberKey !== current.memberKey;
         if (leavingMember) flushMember(current.memberKey, current.exerciseId);
+        // A distinct cue from the plain countdown tick, so a change of exercise is audible even
+        // without looking at the screen — but not for every set/round within the same exercise.
+        if (leavingMember && next) playExerciseChange();
       }
 
       const nextIndex = index + 1;
@@ -468,7 +474,7 @@ export function useSessionRunner(
       }
       return nextIndex;
     });
-  }, [steps, onComplete, commitCurrentStep, flushMember, completeSession]);
+  }, [steps, onComplete, commitCurrentStep, flushMember, completeSession, playExerciseChange]);
 
   useEffect(() => {
     if (!step || paused) return;
@@ -479,10 +485,11 @@ export function useSessionRunner(
         const remaining = Math.max(0, restTargetSecRef.current - computeElapsedSec());
         setRestRemainingSec(remaining);
         if (remaining <= 0) advance();
+        else if (remaining <= 3) playTick();
       }
     }, 1000);
     return () => clearInterval(id);
-  }, [step, paused, isCountdownStep, advance, computeElapsedSec]);
+  }, [step, paused, isCountdownStep, advance, computeElapsedSec, playTick]);
 
   // Recompute from wall-clock timestamps on foreground return, and catch up an auto-advancing
   // countdown that fully elapsed while backgrounded — JS timers are throttled/suspended in the background.

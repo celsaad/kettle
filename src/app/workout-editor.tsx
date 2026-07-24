@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Alert, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { GestureDetector } from 'react-native-gesture-handler';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -159,7 +159,7 @@ export default function WorkoutEditorScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['bottom', 'left', 'right']}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['top', 'bottom', 'left', 'right']}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={[styles.grabber, { backgroundColor: theme.border }]} />
         <ThemedText type="subtitle">{editing ? 'Edit workout' : 'New workout'}</ThemedText>
@@ -490,7 +490,7 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: MaxContentWidth,
     paddingHorizontal: Spacing.three,
-    paddingTop: Spacing.two,
+    paddingTop: Platform.select({ web: Spacing.six, default: Spacing.three }),
     paddingBottom: Spacing.four,
   },
   grabber: {

@@ -3,7 +3,8 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 
 import { ThemedText } from '@/components/themed-text';
-import type { IntervalVariant } from '@/hooks/use-session-runner';
+import { SessionNextCard } from '@/components/session-next-card';
+import type { IntervalVariant, RestPreview } from '@/hooks/use-session-runner';
 import { RunnerColors, Spacing } from '@/constants/theme';
 
 function formatClock(totalSeconds: number): string {
@@ -70,6 +71,7 @@ type Props = {
   onChangeRoundsCompleted: (rounds: number) => void;
   extraReps: number;
   onChangeExtraReps: (reps: number) => void;
+  next: RestPreview;
   onPrev: () => void;
   onDone: () => void;
 };
@@ -94,6 +96,7 @@ export function SessionInterval({
   onChangeRoundsCompleted,
   extraReps,
   onChangeExtraReps,
+  next,
   onPrev,
   onDone,
 }: Props) {
@@ -161,6 +164,8 @@ export function SessionInterval({
           </View>
         )}
       </View>
+
+      <SessionNextCard next={next} />
 
       <View style={styles.controlsRow}>
         <Pressable onPress={onPrev} style={styles.circleButton}>
@@ -301,6 +306,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.three - 2,
+    marginTop: Spacing.three - 2,
   },
   circleButton: {
     width: 56,

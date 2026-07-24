@@ -3,7 +3,9 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 
 import { ThemedText } from '@/components/themed-text';
+import { SessionNextCard } from '@/components/session-next-card';
 import { RunnerColors, Spacing } from '@/constants/theme';
+import type { RestPreview } from '@/hooks/use-session-runner';
 
 type Props = {
   exerciseName: string;
@@ -14,6 +16,7 @@ type Props = {
   elapsedSec: number;
   paused: boolean;
   notes?: string;
+  next: RestPreview;
   onTogglePause: () => void;
   onPrev: () => void;
   onDone: () => void;
@@ -28,6 +31,7 @@ export function SessionHold({
   elapsedSec,
   paused,
   notes,
+  next,
   onTogglePause,
   onPrev,
   onDone,
@@ -80,6 +84,8 @@ export function SessionHold({
           target {targetMaxSec ? `${targetSec}–${targetMaxSec}` : targetSec}s · counting up
         </ThemedText>
       </View>
+
+      <SessionNextCard next={next} />
 
       <View style={styles.controlsRow}>
         <Pressable onPress={onPrev} style={styles.circleButton}>

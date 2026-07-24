@@ -1,7 +1,9 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
+import { SessionNextCard } from '@/components/session-next-card';
 import { RunnerColors, Spacing } from '@/constants/theme';
+import type { RestPreview } from '@/hooks/use-session-runner';
 
 const RPE_OPTIONS = [7, 8, 9];
 
@@ -16,6 +18,7 @@ type Props = {
   rpe: number;
   onChangeRpe: (rpe: number) => void;
   notes?: string;
+  next: RestPreview;
   onPrev: () => void;
   onLogSet: () => void;
 };
@@ -31,6 +34,7 @@ export function SessionReps({
   rpe,
   onChangeRpe,
   notes,
+  next,
   onPrev,
   onLogSet,
 }: Props) {
@@ -110,6 +114,8 @@ export function SessionReps({
           </View>
         </View>
       </View>
+
+      <SessionNextCard next={next} />
 
       <View style={styles.controlsRow}>
         <Pressable onPress={onPrev} style={styles.prevButton}>
@@ -252,6 +258,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.three - 2,
+    marginTop: Spacing.three - 2,
   },
   prevButton: {
     width: 56,

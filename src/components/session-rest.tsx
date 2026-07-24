@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 
 import { ThemedText } from '@/components/themed-text';
+import { SessionNextCard } from '@/components/session-next-card';
 import { RestPreview } from '@/hooks/use-session-runner';
 import { RunnerColors, Spacing } from '@/constants/theme';
 
@@ -50,22 +51,7 @@ export function SessionRest({ secondsRemaining, totalSeconds, next, onAddSeconds
         </ThemedText>
       </View>
 
-      {next && (
-        <View style={styles.nextCard}>
-          <ThemedText type="code" style={styles.nextLabel}>
-            NEXT
-          </ThemedText>
-          <View style={styles.nextText}>
-            <ThemedText type="heading" style={styles.nextName}>
-              {next.label}
-            </ThemedText>
-            <ThemedText type="small" style={styles.nextDetail}>
-              {next.detail}
-            </ThemedText>
-          </View>
-          <ThemedText style={styles.nextArrow}>→</ThemedText>
-        </View>
-      )}
+      <SessionNextCard next={next} />
 
       <View style={styles.controlsRow}>
         <Pressable onPress={onPrev} style={styles.prevButton}>
@@ -128,34 +114,6 @@ const styles = StyleSheet.create({
     color: RunnerColors.accentCalm,
   },
   caption: {
-    color: RunnerColors.textSecondary,
-  },
-  nextCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.three - 2,
-    backgroundColor: RunnerColors.backgroundElement,
-    borderWidth: 1,
-    borderColor: RunnerColors.border,
-    borderRadius: 18,
-    padding: Spacing.three - 2,
-  },
-  nextLabel: {
-    color: RunnerColors.textSecondary,
-    letterSpacing: 1.4,
-  },
-  nextText: {
-    flex: 1,
-    gap: 2,
-  },
-  nextName: {
-    color: RunnerColors.text,
-  },
-  nextDetail: {
-    color: RunnerColors.textSecondary,
-  },
-  nextArrow: {
-    fontSize: 22,
     color: RunnerColors.textSecondary,
   },
   controlsRow: {

@@ -4,6 +4,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { SessionComplete } from '@/components/session-complete';
 import { SessionCountdown } from '@/components/session-countdown';
 import { SessionHold } from '@/components/session-hold';
 import { SessionInterval } from '@/components/session-interval';
@@ -19,7 +20,12 @@ import { useLibraryStore } from '@/state/library-store';
 
 export default function SessionScreen() {
   useKeepAwake();
-  const onComplete = useCallback(() => router.back(), []);
+  const [completed, setCompleted] = useState(false);
+  // Doesn't navigate back directly — advance()/finishSession() in use-session-runner.ts already call
+  // this the moment the workout is done (naturally or via "Finish"), and by then the session has
+  // already saved. Showing a completion screen first (rather than snapping straight back to wherever
+  // the session was started from) gives that moment somewhere to land instead of just vanishing.
+  const onComplete = useCallback(() => setCompleted(true), []);
   const library = useLibraryStore((state) => state.library);
   const { workoutId, programId, week, day } = useLocalSearchParams<{
     workoutId?: string;
@@ -91,6 +97,16 @@ export default function SessionScreen() {
     );
   }
 
+  if (completed) {
+    return (
+      <SafeAreaView style={styles.safeArea} edges={['top', 'bottom', 'left', 'right']}>
+        <View style={styles.content}>
+          <SessionComplete workoutName={workout.name} onDone={() => router.back()} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <ActiveSession workout={workout} exercises={exercises} programId={resolved?.programId ?? null} onComplete={onComplete} />
   );
@@ -146,6 +162,7 @@ function ActiveSession({
             elapsedSec={runner.holdElapsedSec}
             paused={runner.paused}
             notes={step.notes}
+            next={runner.nextPreview}
             onTogglePause={runner.setPaused}
             onPrev={runner.goPrev}
             onDone={runner.doneSet}
@@ -164,6 +181,7 @@ function ActiveSession({
             rpe={runner.rpe}
             onChangeRpe={runner.setRpe}
             notes={step.notes}
+            next={runner.nextPreview}
             onPrev={runner.goPrev}
             onLogSet={runner.logSet}
           />
@@ -190,6 +208,7 @@ function ActiveSession({
             onChangeRoundsCompleted={runner.setRoundsCompleted}
             extraReps={runner.extraReps}
             onChangeExtraReps={runner.setExtraReps}
+            next={runner.nextPreview}
             onPrev={runner.goPrev}
             onDone={runner.logInterval}
           />

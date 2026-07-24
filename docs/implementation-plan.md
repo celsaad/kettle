@@ -254,16 +254,41 @@ which is deleted.
 - **Web has no persistence** (by necessity — `expo-file-system` doesn't support it); it now degrades
   to an ephemeral in-memory seed library instead of crashing, which is a reasonable dev/preview
   experience but not real usage.
-- **Known bug (web only): completing a session crashes with a redbox.** `useKeepAwake()` in
-  `session.tsx` throws `"The wake lock with tag _r_0_ has not activated yet"` on unmount — `onComplete`
-  calls `router.back()` immediately when the last step finishes, racing the async browser Wake Lock API
-  before its activation promise settles. Found while testing the progression feature above (Playwright
-  drove a full 16-step session to completion — the first time in this project's history that's
-  happened under automation, which is exactly the kind of fast, back-to-back interaction that hits the
-  race reliably). Not caused by this pass — nothing here touches `use-session-runner.ts` or `session.tsx`
-  — and not data-destructive (the session had already saved and `router.back()` had already fired
-  before the error surfaces; dismissing the redbox reveals the app underneath working normally), but
-  it's a jarring crash on every web session completion and deserves a real fix, not a footnote.
+- ✅ **Fixed: starting a workout with zero runnable steps trapped the user on a blank screen.** Found
+  by deliberately reasoning through edge cases, then confirmed in the running app: a workout with no
+  blocks (fully allowed by `workout-editor.tsx` — only `name` is validated on save) resolved to
+  `buildSteps() === []`, and `session.tsx`'s `ActiveSession` did `if (!step) return null` *above* its
+  header/Finish-button markup — so after the pre-session 3-2-1 countdown played, the user landed on a
+  fully blank black screen with nothing tappable, only escapable via the OS back gesture. The real
+  condition is broader than "zero blocks," too: any workout where every block's exercise has
+  sets/rounds/minutes at 0 hits the identical empty-`steps` case — and that's reachable through normal
+  use, since `exercise-editor.tsx`'s `Sets` field (and its equivalents) is a plain numeric `TextInput`
+  with no minimum, unlike the circuit `Rounds` stepper which clamps to ≥1 — a blank/zero value there
+  silently produces a runnable-looking exercise that isn't. Fixed at the source: `buildSteps` is now
+  exported from `use-session-runner.ts`, and `session.tsx` calls it once up front to check
+  `steps.length === 0` *before* ever showing the countdown, short-circuiting to a "Nothing to run"
+  screen (workout name, explanation, a `Close` button) instead of mounting the runner at all. Verified
+  live: created a zero-block workout, started it through a real program week (not a raw URL — web has
+  no persistence, so a full page navigation would've reset the in-memory library), confirmed the
+  empty-state screen renders and `Close` navigates back cleanly. Deliberately not addressed in this
+  same pass: adding a minimum-value guard to the in-app config forms (`exercise-editor.tsx`,
+  `new-exercise-form.tsx`) so a 0-sets exercise can't be *created* in the first place — imported YAML
+  already can't produce this (the zod schema requires `sets > 0`), but the in-app save path bypasses
+  schema validation entirely, so it's the only way in today. Worth doing, but a separate, smaller
+  follow-up rather than bundled into this fix.
+- **Known bug (web only): leaving the session screen crashes with a redbox.** `useKeepAwake()` is
+  called unconditionally at the top of `session.tsx`'s `SessionScreen`, so it throws `"The wake lock
+  with tag _r_N_ has not activated yet"` on *any* unmount of that screen — `router.back()` (whether
+  from a normal completion, `finishSession`, or the empty-workout "Close" button below) fires
+  immediately, racing the async browser Wake Lock API before its activation promise settles. First
+  found while testing the progression feature (a full 16-step session driven to completion via
+  Playwright — the first time in this project's history that happened under automation); confirmed
+  again while testing the empty-workout fix below, where it fires on `Close` too, so it's broader than
+  "completing a session" — anything that unmounts `SessionScreen` hits it. Not caused by either pass —
+  nothing here touches `useKeepAwake` itself — and not data-destructive (whatever navigation triggered
+  it had already fired before the error surfaces; dismissing the redbox reveals the app underneath
+  working normally), but it's a jarring crash on every web session-screen exit and deserves a real fix,
+  not a footnote.
 
 ## Open questions from the product plan, still open
 

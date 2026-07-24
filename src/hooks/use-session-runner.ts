@@ -209,7 +209,8 @@ function expandExercise(
   }
 }
 
-function buildSteps(workout: Workout, exercises: Exercise[]): RunnerStep[] {
+/** Exported so callers (session.tsx) can check for a zero-step workout before ever starting a session. */
+export function buildSteps(workout: Workout, exercises: Exercise[]): RunnerStep[] {
   const steps: RunnerStep[] = [];
 
   workout.blocks.forEach((block, blockIndex) => {

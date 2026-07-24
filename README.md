@@ -21,7 +21,8 @@ the session timer is wall-clock-based (survives backgrounding, uses keep-awake, 
 a pre-session 3-2-1 countdown, and a local notification fallback) with incremental per-set flush to
 disk, a finish-session-early option that keeps whatever was already logged, and a one-level `goPrev()`
 un-flush so stepping back to redo a set/round retracts what was just written instead of leaving stale
-data behind. Library exercises are editable in-app (add/edit/delete, with a guard against deleting one
+data behind. Starting a workout that has nothing runnable (no blocks, or every exercise's sets/rounds/
+minutes at 0) shows a "Nothing to run" screen instead of a blank, stuck one. Library exercises are editable in-app (add/edit/delete, with a guard against deleting one
 still referenced by a workout); workouts have full CRUD including delete (with a guard against
 deleting one still referenced by a program), support circuits/supersets (round-robin blocks with
 configurable rest), blocks can be reordered by press-and-hold drag, and a workout's exercise/circuit
@@ -41,9 +42,10 @@ whichever fits the exercise's type) across the last few sessions, oldest to newe
 history as an exact-values list underneath, newest first.
 
 See [`docs/implementation-plan.md`](docs/implementation-plan.md) for what shipped, the scope calls
-made along the way, and what's genuinely still open — there's a known web-only bug where completing a
-session shows a crash redbox (from `useKeepAwake`'s cleanup racing the browser Wake Lock API) —
-dismissible, not data-destructive, but unfixed.
+made along the way, and what's genuinely still open — there's a known web-only bug where leaving the
+session screen (completing a session, finishing early, or closing the "Nothing to run" state) shows a
+crash redbox (from `useKeepAwake`'s cleanup racing the browser Wake Lock API) — dismissible, not
+data-destructive, but unfixed.
 Note also: web (`npx expo start --web`) has no persistence — `expo-file-system` doesn't support it,
 so the web build degrades to an ephemeral in-memory library rather than crashing.
 

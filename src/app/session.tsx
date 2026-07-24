@@ -14,7 +14,7 @@ import { ThemedText } from '@/components/themed-text';
 import { RunnerColors, MaxContentWidth, Spacing } from '@/constants/theme';
 import { resolveWorkoutForWeek } from '@/domain/program';
 import type { Exercise, Workout } from '@/domain/types';
-import { useSessionRunner } from '@/hooks/use-session-runner';
+import { buildSteps, useSessionRunner } from '@/hooks/use-session-runner';
 import { useLibraryStore } from '@/state/library-store';
 
 export default function SessionScreen() {
@@ -46,9 +46,40 @@ export default function SessionScreen() {
   }, [library, workoutId, programId, week, day]);
 
   const workout = resolved?.workout;
-  const exercises = resolved?.exercises ?? [];
+  // resolved is already memoized (stable reference unless its own deps change), so memoizing off it
+  // rather than `resolved?.exercises ?? []` directly keeps `exercises` from getting a fresh array
+  // identity every render while resolved is null (before library loads).
+  const exercises = useMemo(() => resolved?.exercises ?? [], [resolved]);
+  // Computed unconditionally (hooks can't follow the early returns below) so a workout that resolves
+  // to zero runnable steps — no blocks, or every block's exercise has sets/rounds/minutes at 0 — can be
+  // caught before ever showing the pre-session countdown, instead of leaving the user on a blank screen
+  // with nothing to tap once the countdown finishes.
+  const steps = useMemo(() => (workout ? buildSteps(workout, exercises) : []), [workout, exercises]);
 
   if (!workout) return null;
+
+  if (steps.length === 0) {
+    return (
+      <SafeAreaView style={styles.safeArea} edges={['top', 'bottom', 'left', 'right']}>
+        <View style={styles.content}>
+          <View style={styles.emptyState}>
+            <ThemedText type="subtitle" style={styles.emptyStateTitle}>
+              Nothing to run
+            </ThemedText>
+            <ThemedText type="small" style={styles.emptyStateBody}>
+              "{workout.name}" has no blocks, or none of its exercises have any sets/rounds/minutes
+              configured. Add a block in Build, or check each exercise's config, then try again.
+            </ThemedText>
+            <Pressable onPress={() => router.back()} style={styles.emptyStateButton}>
+              <ThemedText type="heading" style={styles.emptyStateButtonLabel}>
+                Close
+              </ThemedText>
+            </Pressable>
+          </View>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   if (!started) {
     return (
@@ -197,6 +228,31 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: Spacing.four,
+  },
+  emptyState: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.two,
+  },
+  emptyStateTitle: {
+    color: RunnerColors.text,
+  },
+  emptyStateBody: {
+    color: RunnerColors.textSecondary,
+    textAlign: 'center',
+  },
+  emptyStateButton: {
+    marginTop: Spacing.two,
+    height: 52,
+    minWidth: 160,
+    borderRadius: 15,
+    backgroundColor: RunnerColors.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyStateButtonLabel: {
+    color: RunnerColors.background,
   },
   workoutName: {
     color: RunnerColors.textSecondary,

@@ -1,15 +1,19 @@
-import type { Exercise, Library, Session, SessionEntry, Workout, WorkoutBlock } from '@/domain/types';
-import { findExerciseInLibrary } from '@/state/library-store';
+import { resolveWorkoutForWeek } from '@/domain/program';
+import type { Exercise, Library, Program, Session, SessionEntry, Workout, WorkoutBlock } from '@/domain/types';
 
-function exerciseName(library: Library, id: string): string {
-  return findExerciseInLibrary(library, id)?.name ?? id;
+function findExercise(exercises: Exercise[], id: string): Exercise | undefined {
+  return exercises.find((exercise) => exercise.id === id);
 }
 
-export function blockChips(workout: Workout, library: Library): string[] {
+function exerciseName(exercises: Exercise[], id: string): string {
+  return findExercise(exercises, id)?.name ?? id;
+}
+
+export function blockChips(workout: Workout, exercises: Exercise[]): string[] {
   return workout.blocks.flatMap((block) =>
     block.kind === 'circuit'
-      ? block.members.map((member) => exerciseName(library, member.exerciseId))
-      : [exerciseName(library, block.exerciseId)],
+      ? block.members.map((member) => exerciseName(exercises, member.exerciseId))
+      : [exerciseName(exercises, block.exerciseId)],
   );
 }
 
@@ -62,15 +66,15 @@ function memberVisitSeconds(exercise: Exercise): number {
   }
 }
 
-function estimateBlockSeconds(block: WorkoutBlock, library: Library): number {
+function estimateBlockSeconds(block: WorkoutBlock, exercises: Exercise[]): number {
   if (block.kind === 'exercise') {
-    const exercise = findExerciseInLibrary(library, block.exerciseId);
+    const exercise = findExercise(exercises, block.exerciseId);
     if (!exercise) return 0;
     return estimateExerciseSeconds(exercise, block.configOverride?.durationSec);
   }
 
   const members = block.members
-    .map((member) => findExerciseInLibrary(library, member.exerciseId))
+    .map((member) => findExercise(exercises, member.exerciseId))
     .filter((exercise): exercise is Exercise => !!exercise);
   const restBetweenExercises = block.restBetweenExercisesSec ?? 0;
   const restBetweenRounds = block.restBetweenRoundsSec ?? 0;
@@ -82,25 +86,25 @@ function estimateBlockSeconds(block: WorkoutBlock, library: Library): number {
   return block.rounds * roundSeconds + Math.max(0, block.rounds - 1) * restBetweenRounds;
 }
 
-function blockTypes(block: WorkoutBlock, library: Library): Exercise['type'][] {
+function blockTypes(block: WorkoutBlock, exercises: Exercise[]): Exercise['type'][] {
   if (block.kind === 'exercise') {
-    const exercise = findExerciseInLibrary(library, block.exerciseId);
+    const exercise = findExercise(exercises, block.exerciseId);
     return exercise ? [exercise.type] : [];
   }
   return block.members
-    .map((member) => findExerciseInLibrary(library, member.exerciseId)?.type)
+    .map((member) => findExercise(exercises, member.exerciseId)?.type)
     .filter((type): type is Exercise['type'] => !!type);
 }
 
-export function workoutSummary(workout: Workout, library: Library): string {
+export function workoutSummary(workout: Workout, exercises: Exercise[]): string {
   const types = new Set<string>();
   let totalSec = 0;
 
   for (const block of workout.blocks) {
-    for (const type of blockTypes(block, library)) {
+    for (const type of blockTypes(block, exercises)) {
       if (type !== 'rest') types.add(TYPE_LABEL[type]);
     }
-    totalSec += estimateBlockSeconds(block, library);
+    totalSec += estimateBlockSeconds(block, exercises);
   }
 
   const typeList = [...types];
@@ -108,6 +112,77 @@ export function workoutSummary(workout: Workout, library: Library): string {
   const minutes = Math.max(1, Math.round(totalSec / 60));
 
   return `${workout.blocks.length} blocks · ${typeLabel} · ~${minutes} min`;
+}
+
+export type NextUpView = {
+  workout: Workout;
+  exercises: Exercise[];
+  weekLabel: string | null;
+  weekNotes: string | null;
+  sessionParams: { workoutId: string } | { programId: string; week: string };
+};
+
+/**
+ * Seeded by the day (not Math.random) so the pick is stable across re-renders within the same
+ * day instead of flickering on every unrelated state change. This is the seam for a future
+ * recency-aware heuristic (e.g. suggest a full-body workout after a long layoff) — for now it
+ * just avoids always landing on the same workout.
+ */
+function workoutOfTheDay(workouts: Workout[]): Workout {
+  const dayIndex = Math.floor(Date.now() / 86_400_000);
+  return workouts[dayIndex % workouts.length];
+}
+
+function flatFallback(library: Library): NextUpView | null {
+  if (library.workouts.length === 0) return null;
+  const workout = workoutOfTheDay(library.workouts);
+  return {
+    workout,
+    exercises: library.exercises,
+    weekLabel: null,
+    weekNotes: null,
+    sessionParams: { workoutId: workout.id },
+  };
+}
+
+/**
+ * The program the user is currently following: whichever program the most recently *started*
+ * session was run under (sessions are already sorted newest-first). Falls back to the first
+ * library program when no session has ever been tied to one (e.g. a fresh install).
+ */
+function activeProgram(library: Library, sessions: Session[]): Program | undefined {
+  const lastProgramSession = sessions.find((session) => session.program);
+  const lastProgram = lastProgramSession && library.programs.find((candidate) => candidate.id === lastProgramSession.program);
+  return lastProgram ?? library.programs[0];
+}
+
+/**
+ * Picks the workout for the home screen's "Next up" card: the next week of the active program,
+ * advanced by counting completed sessions logged against that program's workouts (weeks are
+ * matched by array position since week numbers can be sparse, e.g. 1/3/6). Falls back to the
+ * first library workout when there's no program to follow.
+ */
+export function nextUpView(library: Library, sessions: Session[]): NextUpView | null {
+  const program = activeProgram(library, sessions);
+  if (!program || program.weeks.length === 0) return flatFallback(library);
+
+  const orderedWeeks = [...program.weeks].sort((a, b) => a.week - b.week);
+  const programWorkoutIds = new Set(orderedWeeks.map((week) => week.workoutId));
+  const completed = sessions.filter(
+    (session) => session.endedAt && session.program === program.id && session.workout && programWorkoutIds.has(session.workout),
+  ).length;
+  const targetWeek = orderedWeeks[completed % orderedWeeks.length];
+
+  const resolved = resolveWorkoutForWeek(program, targetWeek.week, library);
+  if (!resolved) return flatFallback(library);
+
+  return {
+    workout: resolved.workout,
+    exercises: resolved.exercises,
+    weekLabel: `Week ${targetWeek.week}`,
+    weekNotes: targetWeek.notes ?? null,
+    sessionParams: { programId: program.id, week: String(targetWeek.week) },
+  };
 }
 
 function sessionSetCount(session: Session): number {
@@ -203,7 +278,7 @@ export function historySessionsView(sessions: Session[], library: Library): Hist
     const loggedTypes = new Set(session.entries.filter((entry) => entry.type !== 'rest').map((entry) => entry.type));
     const entries: HistorySessionEntryView[] = session.entries
       .filter((entry) => entry.type !== 'rest')
-      .map((entry) => ({ exerciseName: exerciseName(library, entry.exercise), summary: sessionEntrySummary(entry) }));
+      .map((entry) => ({ exerciseName: exerciseName(library.exercises, entry.exercise), summary: sessionEntrySummary(entry) }));
 
     const startedAt = new Date(session.startedAt);
     return {

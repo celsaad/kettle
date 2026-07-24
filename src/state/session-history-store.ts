@@ -9,7 +9,7 @@ type SessionHistoryState = {
   errors: string[];
   hydrate: () => Promise<void>;
   /** Creates and flushes a new session file immediately (§7.2: never hold a live session only in memory). */
-  startSession: (workoutId: string | null) => Session;
+  startSession: (workoutId: string | null, programId: string | null) => Session;
   /** Appends one logged entry, flushes to disk, and updates history state. Returns the updated session. */
   logEntry: (session: Session, entry: SessionEntry) => Session;
   /** Writes `ended_at` and updates history state. Returns the updated session. */
@@ -25,9 +25,9 @@ export const useSessionHistoryStore = create<SessionHistoryState>((set, get) => 
     const { sessions, errors } = await listSessions();
     set({ status: 'ready', sessions, errors });
   },
-  startSession: (workoutId) => {
+  startSession: (workoutId, programId) => {
     const id = new Date().toISOString().replace(/[:.]/g, '-');
-    const session = createSession(id, workoutId, new Date().toISOString());
+    const session = createSession(id, workoutId, programId, new Date().toISOString());
     set({ sessions: [session, ...get().sessions] });
     return session;
   },

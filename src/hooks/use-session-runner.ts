@@ -284,7 +284,12 @@ function previewFor(step: RunnerStep | undefined): RestPreview {
   return null;
 }
 
-export function useSessionRunner(workout: Workout, exercises: Exercise[], onComplete: () => void) {
+export function useSessionRunner(
+  workout: Workout,
+  exercises: Exercise[],
+  programId: string | null,
+  onComplete: () => void,
+) {
   const steps = useMemo(() => buildSteps(workout, exercises), [workout, exercises]);
   const [stepIndex, setStepIndex] = useState(0);
   const [paused, setPaused] = useState(false);
@@ -334,7 +339,7 @@ export function useSessionRunner(workout: Workout, exercises: Exercise[], onComp
 
   useEffect(() => {
     if (workout.blocks.length === 0) return;
-    sessionRef.current = startSession(workout.id);
+    sessionRef.current = startSession(workout.id, programId);
     // Runs once per mounted workout: session should exist before any set can be logged.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

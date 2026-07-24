@@ -25,20 +25,21 @@ export default function SessionScreen() {
     if (!library) return null;
     if (workoutId) {
       const found = library.workouts.find((candidate) => candidate.id === workoutId);
-      return found ? { workout: found, exercises: library.exercises } : null;
+      return found ? { workout: found, exercises: library.exercises, programId: null } : null;
     }
     if (programId && week) {
       const program = library.programs.find((candidate) => candidate.id === programId);
       const weekNumber = Number(week);
       if (!program || Number.isNaN(weekNumber)) return null;
-      return resolveWorkoutForWeek(program, weekNumber, library);
+      const resolvedWeek = resolveWorkoutForWeek(program, weekNumber, library);
+      return resolvedWeek ? { ...resolvedWeek, programId } : null;
     }
-    return { workout: library.workouts[0], exercises: library.exercises };
+    return { workout: library.workouts[0], exercises: library.exercises, programId: null };
   }, [library, workoutId, programId, week]);
 
   const workout = resolved?.workout;
   const exercises = resolved?.exercises ?? [];
-  const runner = useSessionRunner(workout ?? { id: '', name: '', blocks: [] }, exercises, onComplete);
+  const runner = useSessionRunner(workout ?? { id: '', name: '', blocks: [] }, exercises, resolved?.programId ?? null, onComplete);
   const { step } = runner;
 
   const confirmFinish = useCallback(() => {

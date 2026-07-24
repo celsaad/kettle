@@ -185,6 +185,8 @@ export const rawSessionSchema = z.object({
   version: z.number().int().positive(),
   id: idSchema,
   workout: idSchema.nullable(),
+  // Optional/defaulted so session files written before program tracking existed still parse.
+  program: idSchema.nullable().default(null),
   started_at: z.string(),
   ended_at: z.string().nullable(),
   entries: z.array(rawSessionEntrySchema),

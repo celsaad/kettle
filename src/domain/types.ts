@@ -95,6 +95,8 @@ export type Session = {
   version: number;
   id: string;
   workout: string | null;
+  /** The program this session was started under (via a program week), if any. */
+  program: string | null;
   startedAt: string;
   endedAt: string | null;
   entries: SessionEntry[];

@@ -9,7 +9,7 @@ import { useAppTheme } from '@/hooks/theme-context';
 import { useTheme } from '@/hooks/use-theme';
 import { useLibraryStore } from '@/state/library-store';
 import { useSessionHistoryStore } from '@/state/session-history-store';
-import { blockChips, recentSessionsView, workoutSummary } from '@/state/selectors';
+import { blockChips, nextUpView, recentSessionsView, workoutSummary } from '@/state/selectors';
 
 const today = new Date();
 const dateLabel = today.toLocaleDateString('en-US', {
@@ -24,12 +24,12 @@ export default function TodayScreen() {
   const library = useLibraryStore((state) => state.library);
   const sessions = useSessionHistoryStore((state) => state.sessions);
 
-  const workout = library?.workouts[0];
-  const chips = workout && library ? blockChips(workout, library) : [];
-  const summary = workout && library ? workoutSummary(workout, library) : '';
+  const nextUp = library ? nextUpView(library, sessions) : null;
+  const chips = nextUp ? blockChips(nextUp.workout, nextUp.exercises) : [];
+  const summary = nextUp ? workoutSummary(nextUp.workout, nextUp.exercises) : '';
   const recentSessions = library ? recentSessionsView(sessions, library) : [];
 
-  if (!workout) return null;
+  if (!nextUp) return null;
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['top', 'left', 'right']}>
@@ -58,10 +58,10 @@ export default function TodayScreen() {
 
         <ThemedView type="backgroundElement" style={[styles.nextUpCard, { borderColor: theme.border }]}>
           <ThemedText type="label" themeColor="accentText">
-            NEXT UP
+            {nextUp.weekLabel ? `NEXT UP · ${nextUp.weekLabel}` : 'NEXT UP'}
           </ThemedText>
           <ThemedText type="subtitle" style={styles.workoutName}>
-            {workout.name}
+            {nextUp.workout.name}
           </ThemedText>
           <View style={styles.chipRow}>
             {chips.map((chip, index) => (
@@ -82,8 +82,13 @@ export default function TodayScreen() {
           <ThemedText themeColor="textSecondary" style={styles.summaryLine}>
             {summary}
           </ThemedText>
+          {nextUp.weekNotes && (
+            <ThemedText type="small" themeColor="textSecondary" style={styles.summaryLine}>
+              {nextUp.weekNotes}
+            </ThemedText>
+          )}
           <Pressable
-            onPress={() => router.push('/session')}
+            onPress={() => router.push({ pathname: '/session', params: nextUp.sessionParams })}
             style={({ pressed }) => [styles.startButton, { backgroundColor: theme.accent }, pressed && styles.pressed]}>
             <View style={[styles.playTriangle, { borderLeftColor: theme.onAccent }]} />
             <ThemedText type="heading" style={{ color: theme.onAccent }}>

@@ -7,3 +7,22 @@
   --font-rounded: 'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif;
   --font-serif: Georgia, 'Times New Roman', serif;
 }
+
+/*
+ * Without this, the browser's default white body shows through as a flash during any route
+ * transition (e.g. closing a modal) where React hasn't fully painted over it yet — most visible in
+ * dark mode. Values mirror Colors.light.background/Colors.dark.background in constants/theme.ts;
+ * keep in sync if those change. Web only (native has no body element) — the matching native-side fix
+ * is the Stack's contentStyle in app/_layout.tsx.
+ */
+html,
+body {
+  background-color: #f7f4ef;
+}
+
+@media (prefers-color-scheme: dark) {
+  html,
+  body {
+    background-color: #1a1712;
+  }
+}

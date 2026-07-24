@@ -16,6 +16,7 @@ import { StyleSheet } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
+import { RunnerColors } from '@/constants/theme';
 import { ThemeOverrideProvider, useAppTheme } from '@/hooks/theme-context';
 import { useLibraryStore } from '@/state/library-store';
 import { useSessionHistoryStore } from '@/state/session-history-store';
@@ -40,9 +41,20 @@ function Navigation() {
   return (
     <ThemeProvider value={navigationTheme}>
       <AnimatedSplashOverlay />
-      <Stack>
+      {/*
+        Native-stack defaults each screen's own contentStyle background to white regardless of theme —
+        a separate issue from (but same symptom as) the web body-background flash fixed in
+        theme-context.tsx/global.css: without this, closing a modal briefly flashes white through the
+        transition before the destination screen's own background paints over it. session overrides to
+        RunnerColors.background since the live session runner is always dark regardless of the shell's
+        scheme, per the design (constants/theme.ts) — every other screen uses the current theme.
+      */}
+      <Stack screenOptions={{ contentStyle: { backgroundColor: colors.background } }}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="session" options={{ presentation: 'modal', headerShown: false }} />
+        <Stack.Screen
+          name="session"
+          options={{ presentation: 'modal', headerShown: false, contentStyle: { backgroundColor: RunnerColors.background } }}
+        />
         <Stack.Screen name="import" options={{ presentation: 'modal', headerShown: false }} />
         <Stack.Screen name="exercise-editor" options={{ presentation: 'modal', headerShown: false }} />
         <Stack.Screen name="workout-editor" options={{ presentation: 'modal', headerShown: false }} />

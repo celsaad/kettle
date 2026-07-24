@@ -202,12 +202,30 @@ which is deleted.
   contains its target — matches the existing looseness elsewhere (`merge.ts` doesn't validate override
   targets either); a stale/unresolvable override still renders (read-only, no edit tap) with its
   remove control intact.
-- **No per-exercise progression view.** History (`historyStats`) is aggregate totals (session count,
-  hours, sets, minutes) only — no last-time weight/reps/holds or volume trend per exercise.
-- **No charts.**
+- ✅ **Per-exercise progression** — `src/app/exercise-editor.tsx` now shows a "Recent" section (only
+  when editing an existing exercise, and only if it's actually been logged) listing the last few times
+  it was done, newest first, via a new `exerciseHistory(sessions, exerciseId, limit)` selector in
+  `src/state/selectors.ts` (also exports the existing `sessionEntrySummary`, previously private, as the
+  per-type formatter — "8 · 7 · 5 reps", "20s · 18s · 15s", etc.). Deliberately scoped to a static list,
+  not a trend/volume computation or a chart — see "No charts" below. Also deliberately *not* done: no
+  "last time" hint live inside the session runner while performing a set — that's a separate, larger
+  feature (touches the timer-critical `use-session-runner.ts`), flagged as a natural follow-up rather
+  than folded in here.
+- **No charts, and no computed "volume" metric** (sets × reps × weight, or a trend direction) — the
+  Recent section above is a raw list of past values, not a derived stat.
 - **Web has no persistence** (by necessity — `expo-file-system` doesn't support it); it now degrades
   to an ephemeral in-memory seed library instead of crashing, which is a reasonable dev/preview
   experience but not real usage.
+- **Known bug (web only): completing a session crashes with a redbox.** `useKeepAwake()` in
+  `session.tsx` throws `"The wake lock with tag _r_0_ has not activated yet"` on unmount — `onComplete`
+  calls `router.back()` immediately when the last step finishes, racing the async browser Wake Lock API
+  before its activation promise settles. Found while testing the progression feature above (Playwright
+  drove a full 16-step session to completion — the first time in this project's history that's
+  happened under automation, which is exactly the kind of fast, back-to-back interaction that hits the
+  race reliably). Not caused by this pass — nothing here touches `use-session-runner.ts` or `session.tsx`
+  — and not data-destructive (the session had already saved and `router.back()` had already fired
+  before the error surfaces; dismissing the redbox reveals the app underneath working normally), but
+  it's a jarring crash on every web session completion and deserves a real fix, not a footnote.
 
 ## Open questions from the product plan, still open
 

@@ -277,7 +277,7 @@ Get the **live session engine** right — it's the differentiator.
 | **1** | Domain model + YAML load/validate/merge + exercise library + workout builder (no timers yet) | ✅ done |
 | **2** | Live session engine for one timed type (HIIT) end-to-end; nail timer reliability + incremental flush | ✅ done (shipped as part of the full interval runner below) |
 | **3** | Extend runner to `reps` and `timed_hold`; support mixed reps+timed workouts (calisthenics case) | ✅ done |
-| **4** | Add `emom` / `amrap`; session history + basic progression (last-time weights/holds, volume per session) | ⚠️ partial — `emom`/`amrap`/`cardio` are runnable and session history exists, but there's no per-exercise progression view (history is aggregate totals only: session count, hours, sets, minutes) |
+| **4** | Add `emom` / `amrap`; session history + basic progression (last-time weights/holds, volume per session) | ✅ done — `emom`/`amrap`/`cardio` are runnable, session history exists, and an exercise's edit screen shows its recent history (last-time weight/reps/holds, newest first) |
 | **5** | Polish: import/export UX, cloud sync guidance, programs/plans, charts | ⚠️ partial — programs shipped (see §10) with full in-app CRUD, including per-week override editing; import/export UX and cloud sync guidance and charts are not done |
 
 See §13 for the concrete, current gap list.
@@ -298,9 +298,18 @@ See §13 for the concrete, current gap list.
 
 What's genuinely missing today, checked directly against the code:
 
-- **No per-exercise progression.** History shows aggregate totals (session count, hours, sets, minutes) but not last-time weight/reps/holds per exercise or volume trends.
-- **No charts.**
+- **No charts, and no computed "volume" metric.** An exercise's recent history (see §11 phase 4) is a
+  raw list of past sessions' logged values — there's no derived stat like total volume (sets × reps ×
+  weight) or a trend direction, just what you did each time, newest first.
 - **No in-app cloud-sync guidance.** Sync (iCloud/Dropbox/git) is left entirely to the user, with no in-app pointers.
 - **Merge conflict view has no field-level diff** (see open question 5 above).
 - **Timed-hold display direction was never revisited** (see open question 2 above).
 - **Web has no persistence** — `expo-file-system` doesn't support web, so the web build runs on an ephemeral in-memory seed library. This is a platform constraint, not a product gap.
+- **Known bug (web only): completing a session crashes with a redbox.** `useKeepAwake()` in
+  `src/app/session.tsx` throws `"The wake lock with tag _r_0_ has not activated yet"` when the session
+  screen unmounts right at completion (`onComplete` calls `router.back()` immediately, racing the
+  async browser Wake Lock API before it finishes activating). Discovered while testing the progression
+  feature below — the first time in this project a session was driven to completion by automation.
+  Not a regression from this pass (nothing here touches the session runner); dismissible and
+  non-fatal to data (the session already saved and `router.back()` had already fired before the error
+  surfaces), but it's a jarring crash screen on every web session completion and is worth a real fix.

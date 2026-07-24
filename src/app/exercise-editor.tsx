@@ -8,6 +8,8 @@ import { MaxContentWidth, Spacing } from '@/constants/theme';
 import type { Exercise, ExerciseType } from '@/domain/types';
 import { useTheme } from '@/hooks/use-theme';
 import { useLibraryStore } from '@/state/library-store';
+import { exerciseHistory } from '@/state/selectors';
+import { useSessionHistoryStore } from '@/state/session-history-store';
 
 export type FieldDef = { key: string; label: string; unit?: string; optional?: boolean };
 
@@ -141,7 +143,10 @@ export default function ExerciseEditorScreen() {
   const saveExercise = useLibraryStore((state) => state.saveExercise);
   const deleteExercise = useLibraryStore((state) => state.deleteExercise);
 
+  const sessions = useSessionHistoryStore((state) => state.sessions);
+
   const editing = useMemo(() => library?.exercises.find((exercise) => exercise.id === id), [library, id]);
+  const recentHistory = useMemo(() => (editing ? exerciseHistory(sessions, editing.id) : []), [sessions, editing]);
 
   const [name, setName] = useState(editing?.name ?? '');
   const [type, setType] = useState<ExerciseType>(editing?.type ?? 'reps');
@@ -271,6 +276,24 @@ export default function ExerciseEditorScreen() {
           style={[styles.input, styles.notesInput, { borderColor: theme.border, backgroundColor: theme.backgroundElement, color: theme.text }]}
         />
 
+        {recentHistory.length > 0 && (
+          <View style={styles.historySection}>
+            <ThemedText type="small" themeColor="textSecondary" style={styles.label}>
+              Recent
+            </ThemedText>
+            <View style={styles.historyList}>
+              {recentHistory.map((entry) => (
+                <View key={entry.sessionId} style={styles.historyRow}>
+                  <ThemedText type="small" themeColor="textSecondary">
+                    {entry.dateLabel}
+                  </ThemedText>
+                  <ThemedText type="smallMedium">{entry.summary}</ThemedText>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+
         {error && (
           <ThemedText type="small" style={[styles.error, { color: theme.accentText }]}>
             {error}
@@ -349,6 +372,19 @@ const styles = StyleSheet.create({
     marginTop: Spacing.two,
   },
   configField: {},
+  historySection: {
+    marginTop: Spacing.three - 2,
+  },
+  historyList: {
+    marginTop: Spacing.one,
+    gap: Spacing.one + 2,
+  },
+  historyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: Spacing.two,
+  },
   notesInput: {
     height: 90,
     paddingTop: Spacing.one + 4,

@@ -202,17 +202,34 @@ which is deleted.
   contains its target — matches the existing looseness elsewhere (`merge.ts` doesn't validate override
   targets either); a stale/unresolvable override still renders (read-only, no edit tap) with its
   remove control intact.
-- ✅ **Per-exercise progression** — `src/app/exercise-editor.tsx` now shows a "Recent" section (only
-  when editing an existing exercise, and only if it's actually been logged) listing the last few times
-  it was done, newest first, via a new `exerciseHistory(sessions, exerciseId, limit)` selector in
-  `src/state/selectors.ts` (also exports the existing `sessionEntrySummary`, previously private, as the
-  per-type formatter — "8 · 7 · 5 reps", "20s · 18s · 15s", etc.). Deliberately scoped to a static list,
-  not a trend/volume computation or a chart — see "No charts" below. Also deliberately *not* done: no
-  "last time" hint live inside the session runner while performing a set — that's a separate, larger
-  feature (touches the timer-critical `use-session-runner.ts`), flagged as a natural follow-up rather
-  than folded in here.
-- **No charts, and no computed "volume" metric** (sets × reps × weight, or a trend direction) — the
-  Recent section above is a raw list of past values, not a derived stat.
+- ✅ **Per-exercise progression, including a volume chart.** `src/app/exercise-editor.tsx` shows a
+  "Recent" section (only when editing an existing exercise, and only if it's actually been logged)
+  listing the last few times it was done, newest first, via `exerciseHistory(sessions, exerciseId,
+  limit)` in `src/state/selectors.ts` (also exports the existing `sessionEntrySummary`, previously
+  private, as the per-type formatter — "8 · 7 · 5 reps", "20s · 18s · 15s", etc.). Above that list sits
+  a new `src/components/volume-chart.tsx` — a small `react-native-svg`-based bar chart (that dependency
+  was already installed, unused until now) built by following the `dataviz` skill's procedure: one
+  consistent numeric "volume" per exercise type (`entryVolume` in `selectors.ts`, next to
+  `sessionEntrySummary` — Σreps×weight for `reps` (or Σreps if bodyweight), Σhold-seconds for
+  `timed_hold`, `roundsCompleted` for `hiit`/`amrap`, Σreps for `emom`, distance-or-duration for
+  `cardio`), one flat accent-colored bar per session (single series, no legend needed), rounded-top/
+  flat-baseline bars via a custom `Path` (`Rect`'s `rx` rounds all four corners, which isn't what a
+  bar-anchored-to-a-baseline should look like), and — a deliberate, explicitly-reasoned deviation from
+  the skill's "always ship a hover/tap tooltip" default — direct value labels on each bar instead of
+  interactive tooltips, since touch has no hover, the chart is a small embedded sparkline (axes
+  intentionally omitted, per Tufte's original definition) sitting directly above a list that already
+  spells out every exact value as text, and the skill itself names direct labels as the sanctioned
+  alternative for exactly this case. The chart reads oldest→newest left-to-right (natural
+  progress-over-time reading order) while the list below it stays newest-first — a deliberate, called-
+  out inversion between the two, not an inconsistency. Verified by actually driving two real sessions
+  to completion (6 reps/set, then 9 reps/set) and looking at the rendered output, per the skill's
+  final "render it and look at it" step, not just trusting the code: two bars, correctly ordered,
+  correct heights (24 vs 36), correct labels.
+
+  Also deliberately *not* done: no "last time" hint live inside the session runner while performing a
+  set — that's a separate, larger feature (touches the timer-critical `use-session-runner.ts`), flagged
+  as a follow-up rather than folded in here; and no chart interactivity beyond the direct labels (see
+  above), since a tap tooltip would just repeat what the list below already shows.
 - **Web has no persistence** (by necessity — `expo-file-system` doesn't support it); it now degrades
   to an ephemeral in-memory seed library instead of crashing, which is a reasonable dev/preview
   experience but not real usage.

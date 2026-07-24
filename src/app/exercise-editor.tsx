@@ -4,6 +4,7 @@ import { Alert, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
+import { VolumeChart } from '@/components/volume-chart';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import type { Exercise, ExerciseType } from '@/domain/types';
 import { useTheme } from '@/hooks/use-theme';
@@ -281,6 +282,9 @@ export default function ExerciseEditorScreen() {
             <ThemedText type="small" themeColor="textSecondary" style={styles.label}>
               Recent
             </ThemedText>
+            <VolumeChart
+              data={[...recentHistory].reverse().map((entry) => ({ label: entry.dateLabel, value: entry.volume }))}
+            />
             <View style={styles.historyList}>
               {recentHistory.map((entry) => (
                 <View key={entry.sessionId} style={styles.historyRow}>

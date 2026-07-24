@@ -273,7 +273,33 @@ export function sessionEntrySummary(entry: SessionEntry): string {
   }
 }
 
-export type ExerciseHistoryEntry = { sessionId: string; dateLabel: string; summary: string };
+/**
+ * A single comparable number per logged entry, for the volume chart — same discriminated switch shape
+ * as sessionEntrySummary, just numeric instead of a display string. `rest` is unreachable here since
+ * exerciseHistory already filters those out before this is called.
+ */
+function entryVolume(entry: SessionEntry): number {
+  switch (entry.type) {
+    case 'timed_hold':
+      return entry.sets.reduce((sum, set) => sum + set.holdSec, 0);
+    case 'reps': {
+      const hasWeight = entry.sets.some((set) => set.weightKg !== undefined);
+      return entry.sets.reduce((sum, set) => sum + (hasWeight ? set.reps * (set.weightKg ?? 0) : set.reps), 0);
+    }
+    case 'hiit':
+      return entry.roundsCompleted;
+    case 'emom':
+      return entry.minutes.reduce((sum, minute) => sum + (minute.reps ?? 0), 0);
+    case 'amrap':
+      return entry.roundsCompleted;
+    case 'cardio':
+      return entry.distanceMeters ?? entry.durationSec ?? 0;
+    case 'rest':
+      return 0;
+  }
+}
+
+export type ExerciseHistoryEntry = { sessionId: string; dateLabel: string; summary: string; volume: number };
 
 /**
  * The last (up to `limit`) times a given exercise was logged, newest first — `sessions` is already
@@ -291,6 +317,7 @@ export function exerciseHistory(sessions: Session[], exerciseId: string, limit =
         sessionId: session.id,
         dateLabel: new Date(session.startedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
         summary: sessionEntrySummary(entry),
+        volume: entryVolume(entry),
       });
       if (results.length >= limit) return results;
     }

@@ -33,14 +33,15 @@ program detail screen. Programs are no longer YAML-only for anything; hand-editi
 is now a power-user option rather than a requirement. The Programs tab still explains the format
 in-app for anyone who wants it (a "?" button and empty-state guidance opening a guide screen, not a
 link to a doc — this repo is private, so a real user can't read `docs/authoring-exercises-yaml.md`
-anyway). Editing an exercise also shows a "Recent" section with the last few times you logged it
-(newest first), when it's actually been logged.
+anyway). Editing an exercise also shows a "Recent" section, when it's actually been logged: a small
+bar chart of a per-type "volume" metric (total weight moved, time under tension, rounds, distance —
+whichever fits the exercise's type) across the last few sessions, oldest to newest, plus the same
+history as an exact-values list underneath, newest first.
 
 See [`docs/implementation-plan.md`](docs/implementation-plan.md) for what shipped, the scope calls
-made along the way, and what's genuinely still open: charts and a computed volume/trend metric aren't
-implemented, and there's a known web-only bug where completing a session shows a crash redbox (from
-`useKeepAwake`'s cleanup racing the browser Wake Lock API) — dismissible, not data-destructive, but
-unfixed.
+made along the way, and what's genuinely still open — there's a known web-only bug where completing a
+session shows a crash redbox (from `useKeepAwake`'s cleanup racing the browser Wake Lock API) —
+dismissible, not data-destructive, but unfixed.
 Note also: web (`npx expo start --web`) has no persistence — `expo-file-system` doesn't support it,
 so the web build degrades to an ephemeral in-memory library rather than crashing.
 

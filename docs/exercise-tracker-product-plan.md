@@ -278,7 +278,7 @@ Get the **live session engine** right — it's the differentiator.
 | **2** | Live session engine for one timed type (HIIT) end-to-end; nail timer reliability + incremental flush | ✅ done (shipped as part of the full interval runner below) |
 | **3** | Extend runner to `reps` and `timed_hold`; support mixed reps+timed workouts (calisthenics case) | ✅ done |
 | **4** | Add `emom` / `amrap`; session history + basic progression (last-time weights/holds, volume per session) | ✅ done — `emom`/`amrap`/`cardio` are runnable, session history exists, and an exercise's edit screen shows its recent history (last-time weight/reps/holds, newest first) |
-| **5** | Polish: import/export UX, cloud sync guidance, programs/plans, charts | ⚠️ partial — programs shipped (see §10) with full in-app CRUD, including per-week override editing; import/export UX and cloud sync guidance and charts are not done |
+| **5** | Polish: import/export UX, cloud sync guidance, programs/plans, charts | ⚠️ partial — programs shipped (see §10) with full in-app CRUD, including per-week override editing; a per-exercise volume chart shipped too (see §13); import/export UX and cloud sync guidance are not done |
 
 See §13 for the concrete, current gap list.
 
@@ -298,9 +298,6 @@ See §13 for the concrete, current gap list.
 
 What's genuinely missing today, checked directly against the code:
 
-- **No charts, and no computed "volume" metric.** An exercise's recent history (see §11 phase 4) is a
-  raw list of past sessions' logged values — there's no derived stat like total volume (sets × reps ×
-  weight) or a trend direction, just what you did each time, newest first.
 - **No in-app cloud-sync guidance.** Sync (iCloud/Dropbox/git) is left entirely to the user, with no in-app pointers.
 - **Merge conflict view has no field-level diff** (see open question 5 above).
 - **Timed-hold display direction was never revisited** (see open question 2 above).

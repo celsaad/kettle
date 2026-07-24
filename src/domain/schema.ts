@@ -204,6 +204,10 @@ export const rawSessionSchema = z.object({
   workout: idSchema.nullable(),
   // Optional/defaulted so session files written before program tracking existed still parse.
   program: idSchema.nullable().default(null),
+  // Same reasoning: added after program tracking itself, so older session files (including ones
+  // written between program tracking and this field existing) still parse, just with no tracked week.
+  program_week: z.number().int().positive().nullable().default(null),
+  program_day: z.string().nullable().default(null),
   started_at: z.string(),
   ended_at: z.string().nullable(),
   entries: z.array(rawSessionEntrySchema),

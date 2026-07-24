@@ -276,6 +276,29 @@ which is deleted.
   already can't produce this (the zod schema requires `sets > 0`), but the in-app save path bypasses
   schema validation entirely, so it's the only way in today. Worth doing, but a separate, smaller
   follow-up rather than bundled into this fix.
+- ✅ **Fixed: "next up" tracked a completed-session count instead of actual program progress; added Today-screen metrics.** `nextUpView`'s old logic (`src/state/selectors.ts`) picked
+  `weeks[completedSessionCount % weeks.length]` — correct only if you always progressed through a
+  program's weeks in strict lockstep, but `program-detail.tsx` lets you tap "Start this week" on *any*
+  week card, so redoing a week or jumping ahead silently desynced the count from reality, which looked
+  "random." Real fix: `Session` (`src/domain/types.ts`, `src/domain/schema.ts` as `program_week`/
+  `program_day`, backward-compatible via `.nullable().default(null)` so pre-existing session files keep
+  parsing) now records which week/day it was actually started under, threaded from `session.tsx`'s
+  already-resolved `week`/`day` params through `use-session-runner.ts` → `session-history-store.ts` →
+  `session-files.ts` at session creation. `nextWeekAfter` in `selectors.ts` replaces the counting
+  heuristic with a direct lookup: find the most recent session tied to the active program that has a
+  tracked week (`sessions` is newest-first, so `.find` gets it directly), locate that week in the
+  program's sorted week list, and return the one after it — wrapping to the first week past the end (so
+  finishing a program restarts it) and falling back to the first week when there's no tracked session
+  yet (brand new program, or every existing session predates this change). Verified live: jumped
+  straight to a program's last week (skipping the earlier ones — the case that broke the old count
+  logic), completed it, confirmed Today's "next up" correctly showed the *first* week (wrap-around), not
+  a count-derived guess.
+
+  Also added a small stats row to the Today screen, reusing the existing `historyStats()` aggregator
+  rather than a parallel stats shape: **current streak** (`currentStreak` — consecutive calendar days
+  with ≥1 session, walking back from today; today not having one yet doesn't break it, only a full-day
+  gap does) and **this week's activity** (`thisWeekStats` — `historyStats` pre-filtered to sessions
+  since the current Monday, local time).
 - **Known bug (web only): leaving the session screen crashes with a redbox.** `useKeepAwake()` is
   called unconditionally at the top of `session.tsx`'s `SessionScreen`, so it throws `"The wake lock
   with tag _r_N_ has not activated yet"` on *any* unmount of that screen — `router.back()` (whether

@@ -9,7 +9,7 @@ import { useAppTheme } from '@/hooks/theme-context';
 import { useTheme } from '@/hooks/use-theme';
 import { useLibraryStore } from '@/state/library-store';
 import { useSessionHistoryStore } from '@/state/session-history-store';
-import { blockChips, nextUpView, recentSessionsView, workoutSummary } from '@/state/selectors';
+import { blockChips, currentStreak, nextUpView, recentSessionsView, thisWeekStats, workoutSummary } from '@/state/selectors';
 
 const today = new Date();
 const dateLabel = today.toLocaleDateString('en-US', {
@@ -28,6 +28,8 @@ export default function TodayScreen() {
   const chips = nextUp ? blockChips(nextUp.workout, nextUp.exercises) : [];
   const summary = nextUp ? workoutSummary(nextUp.workout, nextUp.exercises) : '';
   const recentSessions = library ? recentSessionsView(sessions, library) : [];
+  const streak = currentStreak(sessions);
+  const weekStats = thisWeekStats(sessions);
 
   if (!nextUp) return null;
 
@@ -54,6 +56,29 @@ export default function TodayScreen() {
           <ThemedText themeColor="textSecondary" style={styles.dateLabel}>
             {dateLabel}
           </ThemedText>
+        </View>
+
+        <View style={styles.statsRow}>
+          <ThemedView type="backgroundElement" style={[styles.statCard, { borderColor: theme.border }]}>
+            <ThemedText type="heading">{streak}</ThemedText>
+            <ThemedText type="small" themeColor="textSecondary">
+              day streak
+            </ThemedText>
+          </ThemedView>
+          <ThemedView type="backgroundElement" style={[styles.statCard, { borderColor: theme.border }]}>
+            <ThemedText type="heading">{weekStats.sessions}</ThemedText>
+            <ThemedText type="small" themeColor="textSecondary">
+              this week
+            </ThemedText>
+          </ThemedView>
+          <ThemedView type="backgroundElement" style={[styles.statCard, { borderColor: theme.border }]}>
+            <ThemedText type="heading">
+              {weekStats.hours}h {weekStats.minutes}m
+            </ThemedText>
+            <ThemedText type="small" themeColor="textSecondary">
+              this week
+            </ThemedText>
+          </ThemedView>
         </View>
 
         <ThemedView type="backgroundElement" style={[styles.nextUpCard, { borderColor: theme.border }]}>
@@ -154,6 +179,17 @@ const styles = StyleSheet.create({
   },
   todayHeading: {
     marginTop: Spacing.four,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    gap: Spacing.two,
+    marginTop: Spacing.three,
+  },
+  statCard: {
+    flex: 1,
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: Spacing.two + 4,
   },
   dateLabel: {
     marginTop: 2,

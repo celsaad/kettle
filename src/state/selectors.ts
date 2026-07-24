@@ -1,5 +1,5 @@
 import { resolveWorkoutForWeek } from '@/domain/program';
-import type { Exercise, Library, Program, Session, SessionEntry, Workout, WorkoutBlock } from '@/domain/types';
+import type { Exercise, Library, Program, ProgramWeek, Session, SessionEntry, Workout, WorkoutBlock } from '@/domain/types';
 
 function findExercise(exercises: Exercise[], id: string): Exercise | undefined {
   return exercises.find((exercise) => exercise.id === id);
@@ -157,21 +157,31 @@ function activeProgram(library: Library, sessions: Session[]): Program | undefin
 }
 
 /**
- * Picks the workout for the home screen's "Next up" card: the next week of the active program,
- * advanced by counting completed sessions logged against that program's workouts (weeks are
- * matched by array position since week numbers can be sparse, e.g. 1/3/6). Falls back to the
- * first library workout when there's no program to follow.
+ * The week right after whichever one the most recent tracked-progress session was actually for
+ * (`sessions` is newest-first, so `.find` naturally gets it) — not a count of completed sessions,
+ * which drifts from reality the moment a week is redone or a different week is started directly
+ * (program-detail.tsx's per-week "Start this week" lets you start any week, not just the suggested
+ * one). No matching session (brand new program, or every session predates week-tracking) starts from
+ * the beginning; reaching the end wraps back to the start, so finishing a program restarts it.
+ */
+function nextWeekAfter(program: Program, sessions: Session[]): ProgramWeek {
+  const sortedWeeks = [...program.weeks].sort((a, b) => a.week - b.week || (a.day ?? '').localeCompare(b.day ?? ''));
+  const lastSession = sessions.find((session) => session.program === program.id && session.programWeek != null);
+  const lastIndex = lastSession
+    ? sortedWeeks.findIndex((week) => week.week === lastSession.programWeek && (week.day ?? null) === lastSession.programDay)
+    : -1;
+  return sortedWeeks[lastIndex === -1 ? 0 : (lastIndex + 1) % sortedWeeks.length];
+}
+
+/**
+ * Picks the workout for the home screen's "Next up" card: the next week of the active program (see
+ * nextWeekAfter). Falls back to the first library workout when there's no program to follow.
  */
 export function nextUpView(library: Library, sessions: Session[]): NextUpView | null {
   const program = activeProgram(library, sessions);
   if (!program || program.weeks.length === 0) return flatFallback(library);
 
-  const orderedWeeks = [...program.weeks].sort((a, b) => a.week - b.week);
-  const programWorkoutIds = new Set(orderedWeeks.map((week) => week.workoutId));
-  const completed = sessions.filter(
-    (session) => session.endedAt && session.program === program.id && session.workout && programWorkoutIds.has(session.workout),
-  ).length;
-  const targetWeek = orderedWeeks[completed % orderedWeeks.length];
+  const targetWeek = nextWeekAfter(program, sessions);
 
   const resolved = resolveWorkoutForWeek(program, targetWeek.week, library, targetWeek.day);
   if (!resolved) return flatFallback(library);
@@ -232,6 +242,45 @@ export function historyStats(sessions: Session[]): HistoryStats {
     hours: Math.round((totalMinutes / 60) * 10) / 10, 
     minutes: totalMinutes % 60, 
     sets: totalSets };
+}
+
+function startOfWeek(date: Date): Date {
+  const start = new Date(date);
+  const day = start.getDay(); // 0 = Sunday .. 6 = Saturday
+  const diffToMonday = day === 0 ? -6 : 1 - day;
+  start.setDate(start.getDate() + diffToMonday);
+  start.setHours(0, 0, 0, 0);
+  return start;
+}
+
+/** historyStats scoped to the current calendar week (Monday start, local time) — same aggregation, just a pre-filtered input. */
+export function thisWeekStats(sessions: Session[]): HistoryStats {
+  const weekStart = startOfWeek(new Date());
+  return historyStats(sessions.filter((session) => new Date(session.startedAt) >= weekStart));
+}
+
+/**
+ * Consecutive calendar days with at least one session, walking back from today. Today not having a
+ * session yet doesn't break the streak (the day isn't over) — only a gap of a full day or more does.
+ */
+export function currentStreak(sessions: Session[]): number {
+  const activeDays = new Set(sessions.map((session) => new Date(session.startedAt).toDateString()));
+  if (activeDays.size === 0) return 0;
+
+  const oneDayMs = 86_400_000;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const yesterday = new Date(today.getTime() - oneDayMs);
+
+  if (!activeDays.has(today.toDateString()) && !activeDays.has(yesterday.toDateString())) return 0;
+
+  let streak = 0;
+  let cursor = activeDays.has(today.toDateString()) ? today : yesterday;
+  while (activeDays.has(cursor.toDateString())) {
+    streak += 1;
+    cursor = new Date(cursor.getTime() - oneDayMs);
+  }
+  return streak;
 }
 
 export type HistorySessionEntryView = { exerciseName: string; summary: string };

@@ -378,6 +378,8 @@ export function useSessionRunner(
   workout: Workout,
   exercises: Exercise[],
   programId: string | null,
+  programWeek: number | null,
+  programDay: string | null,
   onComplete: () => void,
 ) {
   const steps = useMemo(() => buildSteps(workout, exercises), [workout, exercises]);
@@ -434,7 +436,7 @@ export function useSessionRunner(
 
   useEffect(() => {
     if (workout.blocks.length === 0) return;
-    sessionRef.current = startSession(workout.id, programId);
+    sessionRef.current = startSession(workout.id, programId, programWeek, programDay);
     // Runs once per mounted workout: session should exist before any set can be logged.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

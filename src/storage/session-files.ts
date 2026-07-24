@@ -42,8 +42,15 @@ function writeSession(session: Session): void {
 }
 
 /** Creates and immediately flushes a new session file. Call at session start (§7.2: never hold a live session only in memory). */
-export function createSession(id: string, workout: string | null, program: string | null, startedAt: string): Session {
-  const session: Session = { version: 1, id, workout, program, startedAt, endedAt: null, entries: [] };
+export function createSession(
+  id: string,
+  workout: string | null,
+  program: string | null,
+  programWeek: number | null,
+  programDay: string | null,
+  startedAt: string,
+): Session {
+  const session: Session = { version: 1, id, workout, program, programWeek, programDay, startedAt, endedAt: null, entries: [] };
   writeSession(session);
   return session;
 }

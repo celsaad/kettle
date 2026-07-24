@@ -39,16 +39,16 @@ export default function SessionScreen() {
     if (!library) return null;
     if (workoutId) {
       const found = library.workouts.find((candidate) => candidate.id === workoutId);
-      return found ? { workout: found, exercises: library.exercises, programId: null } : null;
+      return found ? { workout: found, exercises: library.exercises, programId: null, week: null, day: null } : null;
     }
     if (programId && week) {
       const program = library.programs.find((candidate) => candidate.id === programId);
       const weekNumber = Number(week);
       if (!program || Number.isNaN(weekNumber)) return null;
       const resolvedWeek = resolveWorkoutForWeek(program, weekNumber, library, day);
-      return resolvedWeek ? { ...resolvedWeek, programId } : null;
+      return resolvedWeek ? { ...resolvedWeek, programId, week: weekNumber, day: day ?? null } : null;
     }
-    return { workout: library.workouts[0], exercises: library.exercises, programId: null };
+    return { workout: library.workouts[0], exercises: library.exercises, programId: null, week: null, day: null };
   }, [library, workoutId, programId, week, day]);
 
   const workout = resolved?.workout;
@@ -108,7 +108,14 @@ export default function SessionScreen() {
   }
 
   return (
-    <ActiveSession workout={workout} exercises={exercises} programId={resolved?.programId ?? null} onComplete={onComplete} />
+    <ActiveSession
+      workout={workout}
+      exercises={exercises}
+      programId={resolved?.programId ?? null}
+      programWeek={resolved?.week ?? null}
+      programDay={resolved?.day ?? null}
+      onComplete={onComplete}
+    />
   );
 }
 
@@ -116,14 +123,18 @@ function ActiveSession({
   workout,
   exercises,
   programId,
+  programWeek,
+  programDay,
   onComplete,
 }: {
   workout: Workout;
   exercises: Exercise[];
   programId: string | null;
+  programWeek: number | null;
+  programDay: string | null;
   onComplete: () => void;
 }) {
-  const runner = useSessionRunner(workout, exercises, programId, onComplete);
+  const runner = useSessionRunner(workout, exercises, programId, programWeek, programDay, onComplete);
   const { step } = runner;
 
   const confirmFinish = useCallback(() => {

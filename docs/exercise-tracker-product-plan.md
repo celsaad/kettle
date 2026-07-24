@@ -264,7 +264,7 @@ Get the **live session engine** right — it's the differentiator.
 4. **Session history** — list past sessions from `sessions/` with basic stats. ✅ (aggregate totals only — no per-exercise progression yet, see §13).
 5. **Import (merge) / export** — merge an imported library by `id`; export library or a single session. ✅
 
-**Beyond the original MVP scope**, already built: **multi-week programs** (periodized wrappers around workouts, with per-week per-exercise/per-circuit overrides and multi-session-per-week support via a `day` field) and **circuits/supersets** (round-robin block grouping with configurable rest between exercises and between rounds) — both were explicitly deferred below and shipped anyway. The home screen now derives "next up" from active program progress instead of a fixed pick.
+**Beyond the original MVP scope**, already built: **multi-week programs** (periodized wrappers around workouts, with per-week per-exercise/per-circuit overrides and multi-session-per-week support via a `day` field) and **circuits/supersets** (round-robin block grouping with configurable rest between exercises and between rounds) — both were explicitly deferred below and shipped anyway. The home screen derives "next up" from the actual week/day a session was started under (stored on the session itself), not a completed-session count — the count-based version looked "random" once you jumped to a non-sequential week or redid one, since `program-detail.tsx` lets you start any week, not just the suggested one. The home screen also shows a small stats row: current daily streak and this week's session count/time.
 
 **Still deferred:** social, wearable sync, cloud backup, charts.
 

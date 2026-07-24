@@ -39,7 +39,12 @@ link to a doc — this repo is private, so a real user can't read `docs/authorin
 anyway). Editing an exercise also shows a "Recent" section, when it's actually been logged: a small
 bar chart of a per-type "volume" metric (total weight moved, time under tension, rounds, distance —
 whichever fits the exercise's type) across the last few sessions, oldest to newest, plus the same
-history as an exact-values list underneath, newest first.
+history as an exact-values list underneath, newest first. The Today tab's "next up" card tracks
+which week/day of the active program a session was actually for (persisted on the session itself),
+so it correctly suggests the week *after* whichever one you last did — including jumping ahead or
+redoing a week out of order — rather than guessing from a completed-session count that drifted from
+reality the moment you didn't progress in strict lockstep; it also shows a stat row (current daily
+streak, this week's session count, this week's time) above the card.
 
 See [`docs/implementation-plan.md`](docs/implementation-plan.md) for what shipped, the scope calls
 made along the way, and what's genuinely still open — there's a known web-only bug where leaving the

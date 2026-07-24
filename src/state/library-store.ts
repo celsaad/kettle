@@ -20,6 +20,8 @@ type LibraryStoreState = {
   deleteExercise: (id: string) => Promise<void>;
   /** Adds or updates (by id) a single program and persists the library. */
   saveProgram: (program: Program) => Promise<void>;
+  /** Removes a program by id and persists the library. */
+  deleteProgram: (id: string) => Promise<void>;
 };
 
 export const useLibraryStore = create<LibraryStoreState>((set, get) => ({
@@ -80,6 +82,13 @@ export const useLibraryStore = create<LibraryStoreState>((set, get) => ({
       ? current.programs.map((candidate) => (candidate.id === program.id ? program : candidate))
       : [...current.programs, program];
     const next = { ...current, programs };
+    await saveLibrary(next);
+    set({ library: next });
+  },
+  deleteProgram: async (id) => {
+    const current = get().library;
+    if (!current) return;
+    const next = { ...current, programs: current.programs.filter((program) => program.id !== id) };
     await saveLibrary(next);
     set({ library: next });
   },

@@ -25,15 +25,18 @@ data behind. Library exercises are editable in-app (add/edit/delete, with a guar
 still referenced by a workout); workouts have full CRUD including delete (with a guard against
 deleting one still referenced by a program), support circuits/supersets (round-robin blocks with
 configurable rest), and blocks can be reordered by press-and-hold drag. Multi-week programs (periodized
-wrappers around workouts, with per-week overrides and multi-session-per-week support) are supported and
-drive the Today tab's "next up" card, though they can only be authored by hand-editing `exercises.yaml`
-— there's no in-app program editor yet. The Programs tab does explain how, in-app (a "?" button and
-empty-state guidance opening a new in-app guide screen, not a link to a doc — this repo is private, so
-a real user can't read `docs/authoring-exercises-yaml.md` anyway).
+wrappers around workouts, with per-week overrides and multi-session-per-week support) drive the Today
+tab's "next up" card and now have full in-app CRUD too (create/edit/delete a program, add/remove weeks,
+set each week's number/day/workout/notes) — a FAB on the Programs tab, a pencil icon on the program
+detail screen. The one thing still YAML-only is a week's *overrides* (the per-exercise/per-circuit
+config patches): the editor shows a program's existing overrides read-only but can't create new ones
+yet, so that still means hand-editing `exercises.yaml` and importing. The Programs tab explains how,
+in-app (a "?" button and empty-state guidance opening a guide screen, not a link to a doc — this repo
+is private, so a real user can't read `docs/authoring-exercises-yaml.md` anyway).
 
 See [`docs/implementation-plan.md`](docs/implementation-plan.md) for what shipped, the scope calls
-made along the way, and what's genuinely still open: an in-app program editor, per-exercise
-progression stats, and charts are not implemented.
+made along the way, and what's genuinely still open: override editing, per-exercise progression stats,
+and charts are not implemented.
 Note also: web (`npx expo start --web`) has no persistence — `expo-file-system` doesn't support it,
 so the web build degrades to an ephemeral in-memory library rather than crashing.
 

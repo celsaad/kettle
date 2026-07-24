@@ -8,6 +8,7 @@ import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { programWeekNumbers } from '@/domain/program';
 import type { Program } from '@/domain/types';
+import { useAppTheme } from '@/hooks/theme-context';
 import { useTheme } from '@/hooks/use-theme';
 import { useLibraryStore } from '@/state/library-store';
 
@@ -27,8 +28,10 @@ function detailLabel(program: Program): string | null {
 
 export default function ProgramsScreen() {
   const theme = useTheme();
+  const { scheme } = useAppTheme();
   const library = useLibraryStore((state) => state.library);
   const programs = useMemo(() => library?.programs ?? [], [library]);
+  const fabColor = scheme === 'dark' ? theme.accent : theme.text;
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['top', 'left', 'right']}>
@@ -73,18 +76,27 @@ export default function ProgramsScreen() {
             <ThemedView type="backgroundElement" style={[styles.emptyState, { borderColor: theme.border }]}>
               <ThemedText type="heading">No programs yet</ThemedText>
               <ThemedText type="small" themeColor="textSecondary" style={styles.emptyStateBody}>
-                Programs — multi-week plans that step through your workouts — aren't editable in the
-                app yet. Write one as YAML and import it from the Library tab.
+                Programs are multi-week plans that step through your workouts. Create one with the +
+                button, or write one as YAML for finer control (per-week overrides aren't editable
+                in-app yet).
               </ThemedText>
               <Pressable
                 onPress={() => router.push('/program-guide')}
                 style={[styles.emptyStateButton, { borderColor: theme.border }]}>
-                <ThemedText type="smallMedium">How to write one →</ThemedText>
+                <ThemedText type="smallMedium">Writing one as YAML →</ThemedText>
               </Pressable>
             </ThemedView>
           )}
         </View>
       </ScrollView>
+
+      <Pressable
+        onPress={() => router.push('/program-editor')}
+        style={({ pressed }) => [styles.fab, { backgroundColor: fabColor }, pressed && styles.pressed]}>
+        <ThemedText type="title" style={[styles.fabPlus, { color: theme.onAccent }]}>
+          +
+        </ThemedText>
+      </Pressable>
     </SafeAreaView>
   );
 }
@@ -148,5 +160,22 @@ const styles = StyleSheet.create({
   cardText: {
     flex: 1,
     gap: 2,
+  },
+  fab: {
+    position: 'absolute',
+    right: Spacing.three,
+    bottom: Spacing.four,
+    width: 52,
+    height: 52,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  fabPlus: {
+    fontSize: 26,
+    lineHeight: 28,
+  },
+  pressed: {
+    opacity: 0.7,
   },
 });

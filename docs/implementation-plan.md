@@ -165,19 +165,29 @@ which is deleted.
 
 ## What's genuinely left (current, updated past workstreams A–F)
 
-- **Programs have no in-app authoring UI.** ✅ Drag-to-reorder blocks and exercise delete now exist too (`deleteExercise` in the
-  library store, wired to a "Delete exercise" button in `exercise-editor.tsx` with the same
-  confirm-dialog/in-use-guard pattern as workout delete — blocked if a workout block or circuit member
-  still references it) — library CRUD (exercises + workouts) is now complete. `saveProgram` exists in
-  the library store but nothing in the UI calls it; programs must still be hand-authored in
-  `exercises.yaml`, and the programs tab/detail screen are still browse + start-session only. What did
-  ship: a programs-only YAML authoring guide *inside the app* (`src/app/program-guide.tsx`, a new
-  modal route reachable from a "?" button on the Programs tab header and from the empty state) — since
-  the existing `docs/authoring-exercises-yaml.md` reference lives in this private repo, a real end user
-  installing the app has no way to read it. The in-app guide is deliberately scoped to programs only
-  (workout id slugging, week/workout/day/notes/overrides fields, the multi-session-per-week `day`
-  field, and the merge-by-id-replaces-the-whole-program import caveat) since exercises and workouts
-  already have their own in-app forms and don't need YAML explained at all.
+- **Per-week program overrides have no in-app editing UI.** ✅ Drag-to-reorder blocks and exercise
+  delete now exist too (`deleteExercise` in the library store, wired to a "Delete exercise" button in
+  `exercise-editor.tsx` with the same confirm-dialog/in-use-guard pattern as workout delete — blocked
+  if a workout block or circuit member still references it) — library CRUD (exercises + workouts) is
+  now complete. ✅ **Program CRUD shipped too**: `src/app/program-editor.tsx` (new modal route) does
+  name / add-remove-week / per-week week-number-stepper+day+workout-picker+notes / delete-program, via
+  the already-existing `saveProgram` plus a new `deleteProgram` (mirrors `deleteWorkout`/
+  `deleteExercise`'s shape exactly; no in-use guard needed since nothing in the domain model references
+  a program by id — a past session's `program` field is already denormalized, same as everything else
+  in `sessions/`). Reachable from a FAB on `programs.tsx` (create) and a pencil icon on
+  `program-detail.tsx` (edit). **Deliberately out of scope for this pass**: creating/editing a week's
+  `overrides` (the per-exercise/per-circuit config patches) — an edited program's existing overrides
+  are preserved and shown read-only (reusing `program-detail.tsx`'s `overrideLines`, now exported), but
+  adding a new one still requires hand-editing `exercises.yaml` and re-importing. This was a deliberate
+  scope cut (see the plan this was built from): override editing needs its own per-exercise-type
+  config sub-form and a raw-config diffing step, which is a genuinely separate, self-contained piece of
+  work that doesn't require restructuring anything else to add later. `program-guide.tsx` (the in-app
+  YAML guide, added just before this) still covers writing overrides by hand in the meantime.
+  One thing this pass deliberately did *not* do: reuse `ReorderableList` for the weeks list, even
+  though it was built with reuse in mind — a program week's display order is driven entirely by its
+  `week` number field (everything that reads it, `program-detail.tsx` and
+  `src/domain/program.ts`'s `findProgramWeek`/`programWeekNumbers`, sorts/looks up by that number, not
+  array position), so dragging rows around wouldn't actually change anything.
 - **No per-exercise progression view.** History (`historyStats`) is aggregate totals (session count,
   hours, sets, minutes) only — no last-time weight/reps/holds or volume trend per exercise.
 - **No charts.**

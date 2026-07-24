@@ -10,7 +10,7 @@ import type { Library, ProgramOverride, ProgramWeek, Workout } from '@/domain/ty
 import { useTheme } from '@/hooks/use-theme';
 import { useLibraryStore } from '@/state/library-store';
 
-function overrideLines(override: ProgramOverride, library: Library, workout: Workout | undefined): string[] {
+export function overrideLines(override: ProgramOverride, library: Library, workout: Workout | undefined): string[] {
   if (override.kind === 'exercise') {
     const exercise = library.exercises.find((candidate) => candidate.id === override.exerciseId);
     const name = exercise?.name ?? override.exerciseId;
@@ -53,7 +53,19 @@ export default function ProgramDetailScreen() {
 
         {program && (
           <>
-            <ThemedText type="subtitle">{program.name}</ThemedText>
+            <View style={styles.titleRow}>
+              <ThemedText type="subtitle" style={styles.titleText}>
+                {program.name}
+              </ThemedText>
+              <Pressable
+                onPress={() => router.push({ pathname: '/program-editor', params: { id: program.id } })}
+                hitSlop={8}
+                style={styles.editButton}>
+                <ThemedText type="heading" themeColor="textSecondary">
+                  ✎
+                </ThemedText>
+              </Pressable>
+            </View>
 
             <View style={styles.list}>
               {weeks.map((week) => {
@@ -135,6 +147,19 @@ const styles = StyleSheet.create({
     height: 5,
     borderRadius: 3,
     marginBottom: Spacing.three - 2,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  titleText: {
+    flex: 1,
+  },
+  editButton: {
+    width: 28,
+    height: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   list: {
     marginTop: Spacing.three,

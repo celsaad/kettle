@@ -298,7 +298,7 @@ See §13 for the concrete, current gap list.
 
 What's genuinely missing today, checked directly against the code:
 
-- **Programs are YAML-only.** `saveProgram` exists in the library store but no screen calls it — there's no in-app program creation/editing; programs must be hand-authored in `exercises.yaml` (see `docs/authoring-exercises-yaml.md`).
+- **Programs are YAML-only.** `saveProgram` exists in the library store but no screen calls it — there's no in-app program creation/editing; programs must be hand-authored in `exercises.yaml`. The app itself now explains how (Programs tab → "?", and inline guidance on the empty state, `src/app/program-guide.tsx`) since the standalone `docs/authoring-exercises-yaml.md` reference lives in this private repo and real users can't see it — but writing the YAML by hand is still the only way in, no in-app editor.
 - **No per-exercise progression.** History shows aggregate totals (session count, hours, sets, minutes) but not last-time weight/reps/holds per exercise or volume trends.
 - **No charts.**
 - **No in-app cloud-sync guidance.** Sync (iCloud/Dropbox/git) is left entirely to the user, with no in-app pointers.

@@ -27,7 +27,9 @@ deleting one still referenced by a program), support circuits/supersets (round-r
 configurable rest), and blocks can be reordered by press-and-hold drag. Multi-week programs (periodized
 wrappers around workouts, with per-week overrides and multi-session-per-week support) are supported and
 drive the Today tab's "next up" card, though they can only be authored by hand-editing `exercises.yaml`
-— there's no in-app program editor yet.
+— there's no in-app program editor yet. The Programs tab does explain how, in-app (a "?" button and
+empty-state guidance opening a new in-app guide screen, not a link to a doc — this repo is private, so
+a real user can't read `docs/authoring-exercises-yaml.md` anyway).
 
 See [`docs/implementation-plan.md`](docs/implementation-plan.md) for what shipped, the scope calls
 made along the way, and what's genuinely still open: an in-app program editor, per-exercise

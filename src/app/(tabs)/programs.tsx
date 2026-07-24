@@ -35,6 +35,11 @@ export default function ProgramsScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
           <ThemedText type="subtitle">Programs</ThemedText>
+          <Pressable onPress={() => router.push('/program-guide')} hitSlop={8} style={styles.helpButton}>
+            <ThemedText type="heading" themeColor="textSecondary">
+              ?
+            </ThemedText>
+          </Pressable>
         </View>
         <ThemedText themeColor="textSecondary" style={styles.countLabel}>
           {programs.length} program{programs.length === 1 ? '' : 's'}
@@ -65,9 +70,18 @@ export default function ProgramsScreen() {
             );
           })}
           {programs.length === 0 && (
-            <ThemedText type="small" themeColor="textSecondary">
-              No programs yet.
-            </ThemedText>
+            <ThemedView type="backgroundElement" style={[styles.emptyState, { borderColor: theme.border }]}>
+              <ThemedText type="heading">No programs yet</ThemedText>
+              <ThemedText type="small" themeColor="textSecondary" style={styles.emptyStateBody}>
+                Programs — multi-week plans that step through your workouts — aren't editable in the
+                app yet. Write one as YAML and import it from the Library tab.
+              </ThemedText>
+              <Pressable
+                onPress={() => router.push('/program-guide')}
+                style={[styles.emptyStateButton, { borderColor: theme.border }]}>
+                <ThemedText type="smallMedium">How to write one →</ThemedText>
+              </Pressable>
+            </ThemedView>
           )}
         </View>
       </ScrollView>
@@ -90,7 +104,14 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'baseline',
+    alignItems: 'center',
+  },
+  helpButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   countLabel: {
     marginTop: 2,
@@ -98,6 +119,23 @@ const styles = StyleSheet.create({
   list: {
     marginTop: Spacing.three,
     gap: Spacing.two - 3,
+  },
+  emptyState: {
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: Spacing.three,
+    gap: Spacing.one + 2,
+  },
+  emptyStateBody: {
+    lineHeight: 18,
+  },
+  emptyStateButton: {
+    alignSelf: 'flex-start',
+    borderRadius: 10,
+    borderWidth: 1,
+    paddingVertical: Spacing.one + 2,
+    paddingHorizontal: Spacing.two + 2,
+    marginTop: 2,
   },
   card: {
     flexDirection: 'row',

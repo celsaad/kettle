@@ -169,8 +169,15 @@ which is deleted.
   library store, wired to a "Delete exercise" button in `exercise-editor.tsx` with the same
   confirm-dialog/in-use-guard pattern as workout delete — blocked if a workout block or circuit member
   still references it) — library CRUD (exercises + workouts) is now complete. `saveProgram` exists in
-  the library store but nothing in the UI calls it; programs must be hand-authored in
-  `exercises.yaml`. The programs tab/detail screen are browse + start-session only.
+  the library store but nothing in the UI calls it; programs must still be hand-authored in
+  `exercises.yaml`, and the programs tab/detail screen are still browse + start-session only. What did
+  ship: a programs-only YAML authoring guide *inside the app* (`src/app/program-guide.tsx`, a new
+  modal route reachable from a "?" button on the Programs tab header and from the empty state) — since
+  the existing `docs/authoring-exercises-yaml.md` reference lives in this private repo, a real end user
+  installing the app has no way to read it. The in-app guide is deliberately scoped to programs only
+  (workout id slugging, week/workout/day/notes/overrides fields, the multi-session-per-week `day`
+  field, and the merge-by-id-replaces-the-whole-program import caveat) since exercises and workouts
+  already have their own in-app forms and don't need YAML explained at all.
 - **No per-exercise progression view.** History (`historyStats`) is aggregate totals (session count,
   hours, sets, minutes) only — no last-time weight/reps/holds or volume trend per exercise.
 - **No charts.**

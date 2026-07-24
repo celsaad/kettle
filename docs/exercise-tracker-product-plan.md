@@ -298,6 +298,15 @@ See §13 for the concrete, current gap list.
 
 What's genuinely missing today, checked directly against the code:
 
+- **No quick-add for a new exercise from the workout builder.** `workout-editor.tsx`'s "+ Add block"
+  picker only lists exercises that already exist in the library — building a workout that needs an
+  exercise you haven't created yet means cancelling out to Library, creating it there, then coming
+  back and re-entering Build. Planned fix: an inline "+ New exercise" option in that same picker that
+  expands a mini version of the exercise form right there, reusing `exercise-editor.tsx`'s already-
+  exported `CONFIG_FIELDS`/`configToStrings`/`buildExercise` (the same reuse pattern
+  `program-override-editor.tsx` already uses) — not a navigation to a separate screen and back, since
+  `workout-editor.tsx`'s in-progress draft (name, blocks already added) lives only in local component
+  state with nothing persisted, and navigating away would need real plumbing to avoid losing it.
 - **No in-app cloud-sync guidance.** Sync (iCloud/Dropbox/git) is left entirely to the user, with no in-app pointers.
 - **Merge conflict view has no field-level diff** (see open question 5 above).
 - **Timed-hold display direction was never revisited** (see open question 2 above).

@@ -230,6 +230,19 @@ which is deleted.
   set — that's a separate, larger feature (touches the timer-critical `use-session-runner.ts`), flagged
   as a follow-up rather than folded in here; and no chart interactivity beyond the direct labels (see
   above), since a tap tooltip would just repeat what the list below already shows.
+- **Planned, not started: quick-add a new exercise from the workout builder's "+ Add block" picker.**
+  See `docs/exercise-tracker-product-plan.md` §13 for the shape (inline mini-form reusing
+  `exercise-editor.tsx`'s exported `CONFIG_FIELDS`/`configToStrings`/`buildExercise`, not a
+  navigate-away-and-back flow, since `workout-editor.tsx`'s draft is unpersisted local state).
+- **Considered and rejected: consolidating `sessions/` into monthly files to reduce IO.** Would cut
+  against the explicit "never rewrite all of history on save" rule (product plan §5.2) — the
+  mid-workout incremental flush (`writeSession()` full-overwrites its file on every completed set)
+  would have to rewrite an entire month's accumulated sessions instead of just the current one, a cost
+  that grows through the month, regressing the thing the product plan calls "the make-or-break issue."
+  It also weakens crash isolation between sessions. The actual unbounded-growth risk is
+  `listSessions()` reading every session file at app launch (O(total sessions ever logged)) — if that
+  ever becomes a real problem, the fix is lazy/paginated loading or a small separate index file, not
+  changing the live-workout write path.
 - **Web has no persistence** (by necessity — `expo-file-system` doesn't support it); it now degrades
   to an ephemeral in-memory seed library instead of crashing, which is a reasonable dev/preview
   experience but not real usage.

@@ -199,6 +199,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.three - 2,
+    marginTop: Spacing.three - 2,
   },
   circleButton: {
     width: 56,

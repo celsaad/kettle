@@ -24,7 +24,6 @@ export function SessionNextCard({ next }: { next: RestPreview }) {
           {next.detail}
         </ThemedText>
       </View>
-      <ThemedText style={styles.nextArrow}>→</ThemedText>
     </View>
   );
 }
@@ -52,10 +51,6 @@ const styles = StyleSheet.create({
     color: RunnerColors.text,
   },
   nextDetail: {
-    color: RunnerColors.textSecondary,
-  },
-  nextArrow: {
-    fontSize: 22,
     color: RunnerColors.textSecondary,
   },
 });

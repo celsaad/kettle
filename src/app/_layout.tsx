@@ -8,7 +8,7 @@ import {
   SpaceGrotesk_600SemiBold,
   SpaceGrotesk_700Bold,
 } from '@expo-google-fonts/space-grotesk';
-import { DefaultTheme, Stack, ThemeProvider } from 'expo-router';
+import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
 import { useEffect } from 'react';
@@ -24,12 +24,16 @@ import { useSessionHistoryStore } from '@/state/session-history-store';
 SplashScreen.preventAutoHideAsync();
 
 function Navigation() {
-  const { colors } = useAppTheme();
+  const { colors, scheme } = useAppTheme();
 
+  // Base off the matching React Navigation theme rather than always DefaultTheme (its light one), so
+  // the handful of colors not overridden below — and anything keying off the `dark` flag — don't pull
+  // light-mode surfaces into a dark shell.
+  const base = scheme === 'dark' ? DarkTheme : DefaultTheme;
   const navigationTheme = {
-    ...DefaultTheme,
+    ...base,
     colors: {
-      ...DefaultTheme.colors,
+      ...base.colors,
       background: colors.background,
       card: colors.backgroundElement,
       text: colors.text,
@@ -39,30 +43,37 @@ function Navigation() {
   };
 
   return (
-    <ThemeProvider value={navigationTheme}>
-      <AnimatedSplashOverlay />
-      {/*
-        Native-stack defaults each screen's own contentStyle background to white regardless of theme —
-        a separate issue from (but same symptom as) the web body-background flash fixed in
-        theme-context.tsx/global.css: without this, closing a modal briefly flashes white through the
-        transition before the destination screen's own background paints over it. session overrides to
-        RunnerColors.background since the live session runner is always dark regardless of the shell's
-        scheme, per the design (constants/theme.ts) — every other screen uses the current theme.
-      */}
-      <Stack screenOptions={{ contentStyle: { backgroundColor: colors.background } }}>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen
-          name="session"
-          options={{ presentation: 'modal', headerShown: false, contentStyle: { backgroundColor: RunnerColors.background } }}
-        />
-        <Stack.Screen name="import" options={{ presentation: 'modal', headerShown: false }} />
-        <Stack.Screen name="exercise-editor" options={{ presentation: 'modal', headerShown: false }} />
-        <Stack.Screen name="workout-editor" options={{ presentation: 'modal', headerShown: false }} />
-        <Stack.Screen name="program-detail" options={{ presentation: 'modal', headerShown: false }} />
-        <Stack.Screen name="program-editor" options={{ presentation: 'modal', headerShown: false }} />
-        <Stack.Screen name="program-guide" options={{ presentation: 'modal', headerShown: false }} />
-      </Stack>
-    </ThemeProvider>
+    // The root view has to carry a real background: every container React renders into is transparent
+    // by default (verified in the browser — #root and each wrapper below it compute to rgba(0,0,0,0)).
+    // On web the <body> color set in global.css/theme-context.tsx shows through, which is why the
+    // earlier flash fix worked there; on native there's no body, so a modal sliding away exposed the
+    // native window background — white — for the length of the transition.
+    <GestureHandlerRootView style={[styles.root, { backgroundColor: colors.background }]}>
+      <ThemeProvider value={navigationTheme}>
+        <AnimatedSplashOverlay />
+        {/*
+          Native-stack defaults each screen's own contentStyle background to white regardless of theme —
+          a separate issue from (but same symptom as) the web body-background flash fixed in
+          theme-context.tsx/global.css: without this, closing a modal briefly flashes white through the
+          transition before the destination screen's own background paints over it. session overrides to
+          RunnerColors.background since the live session runner is always dark regardless of the shell's
+          scheme, per the design (constants/theme.ts) — every other screen uses the current theme.
+        */}
+        <Stack screenOptions={{ contentStyle: { backgroundColor: colors.background } }}>
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen
+            name="session"
+            options={{ presentation: 'modal', headerShown: false, contentStyle: { backgroundColor: RunnerColors.background } }}
+          />
+          <Stack.Screen name="import" options={{ presentation: 'modal', headerShown: false }} />
+          <Stack.Screen name="exercise-editor" options={{ presentation: 'modal', headerShown: false }} />
+          <Stack.Screen name="workout-editor" options={{ presentation: 'modal', headerShown: false }} />
+          <Stack.Screen name="program-detail" options={{ presentation: 'modal', headerShown: false }} />
+          <Stack.Screen name="program-editor" options={{ presentation: 'modal', headerShown: false }} />
+          <Stack.Screen name="program-guide" options={{ presentation: 'modal', headerShown: false }} />
+        </Stack>
+      </ThemeProvider>
+    </GestureHandlerRootView>
   );
 }
 
@@ -91,12 +102,12 @@ export default function RootLayout() {
 
   if (!fontsLoaded || !dataReady || !historyReady) return null;
 
+  // GestureHandlerRootView now lives inside Navigation, since it needs the active theme to paint its
+  // background and that's only readable below ThemeOverrideProvider.
   return (
-    <GestureHandlerRootView style={styles.root}>
-      <ThemeOverrideProvider>
-        <Navigation />
-      </ThemeOverrideProvider>
-    </GestureHandlerRootView>
+    <ThemeOverrideProvider>
+      <Navigation />
+    </ThemeOverrideProvider>
   );
 }
 

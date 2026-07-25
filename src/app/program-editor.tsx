@@ -1,8 +1,9 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Alert, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ModalHeader } from '@/components/modal-header';
 import { ProgramOverrideEditor } from '@/components/program-override-editor';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -112,8 +113,8 @@ export default function ProgramEditorScreen() {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['top', 'bottom', 'left', 'right']}>
+      <ModalHeader onClose={close} />
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={[styles.grabber, { backgroundColor: theme.border }]} />
         <ThemedText type="subtitle">{editing ? 'Edit program' : 'New program'}</ThemedText>
 
         <ThemedText type="small" themeColor="textSecondary" style={styles.label}>
@@ -278,15 +279,7 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: MaxContentWidth,
     paddingHorizontal: Spacing.three,
-    paddingTop: Platform.select({ web: Spacing.six, default: Spacing.three }),
     paddingBottom: Spacing.four,
-  },
-  grabber: {
-    alignSelf: 'center',
-    width: 40,
-    height: 5,
-    borderRadius: 3,
-    marginBottom: Spacing.three - 2,
   },
   disabled: {
     opacity: 0.4,

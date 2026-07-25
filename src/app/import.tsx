@@ -1,9 +1,10 @@
 import { File } from 'expo-file-system';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ModalHeader } from '@/components/modal-header';
 import { ThemedText } from '@/components/themed-text';
 import type { MergeSummary } from '@/domain/merge';
 import { mergeLibraries } from '@/domain/merge';
@@ -85,8 +86,8 @@ export default function ImportScreen() {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['top', 'bottom', 'left', 'right']}>
+      <ModalHeader onClose={close} />
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={[styles.grabber, { backgroundColor: theme.border }]} />
         <ThemedText type="subtitle">Import library</ThemedText>
 
         {!ready && (
@@ -213,15 +214,7 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: MaxContentWidth,
     paddingHorizontal: Spacing.three,
-    paddingTop: Platform.select({ web: Spacing.six, default: Spacing.three }),
     paddingBottom: Spacing.four,
-  },
-  grabber: {
-    alignSelf: 'center',
-    width: 40,
-    height: 5,
-    borderRadius: 3,
-    marginBottom: Spacing.three - 2,
   },
   fileRow: {
     marginTop: Spacing.three - 2,

@@ -46,7 +46,8 @@ redoing a week out of order — rather than guessing from a completed-session co
 reality the moment you didn't progress in strict lockstep; it also shows a stat row (current daily
 streak, this week's session count, this week's time) above the card. Any workout can also be started
 directly from the Build tab — each workout card has a small play button that runs it as a one-off,
-with no program involved.
+with no program involved. Every modal screen (editors, program detail, the guide, import) opens with
+a pinned close button, so dismissing one doesn't mean scrolling to the bottom to find Cancel.
 
 See [`docs/implementation-plan.md`](docs/implementation-plan.md) for what shipped, the scope calls
 made along the way, and what's genuinely still open — there's a known web-only bug where leaving the

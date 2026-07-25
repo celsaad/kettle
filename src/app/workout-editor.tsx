@@ -1,10 +1,11 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { Alert, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { GestureDetector } from 'react-native-gesture-handler';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { circuitSummary, ExerciseBadge, exerciseSummary } from '@/components/exercise-badge';
+import { ModalHeader } from '@/components/modal-header';
 import { NewExerciseForm } from '@/components/new-exercise-form';
 import { ReorderableList } from '@/components/reorderable-list';
 import { ThemedText } from '@/components/themed-text';
@@ -160,8 +161,8 @@ export default function WorkoutEditorScreen() {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['top', 'bottom', 'left', 'right']}>
+      <ModalHeader onClose={close} />
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={[styles.grabber, { backgroundColor: theme.border }]} />
         <ThemedText type="subtitle">{editing ? 'Edit workout' : 'New workout'}</ThemedText>
 
         <ThemedText type="small" themeColor="textSecondary" style={styles.label}>
@@ -490,15 +491,7 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: MaxContentWidth,
     paddingHorizontal: Spacing.three,
-    paddingTop: Platform.select({ web: Spacing.six, default: Spacing.three }),
     paddingBottom: Spacing.four,
-  },
-  grabber: {
-    alignSelf: 'center',
-    width: 40,
-    height: 5,
-    borderRadius: 3,
-    marginBottom: Spacing.three - 2,
   },
   disabled: {
     opacity: 0.4,

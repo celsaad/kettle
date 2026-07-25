@@ -1,8 +1,9 @@
 import { router } from 'expo-router';
 import type { ReactNode } from 'react';
-import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ModalHeader } from '@/components/modal-header';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
@@ -34,14 +35,14 @@ export default function ProgramGuideScreen() {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['top', 'bottom', 'left', 'right']}>
+      <ModalHeader onClose={close} />
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={[styles.grabber, { backgroundColor: theme.border }]} />
         <ThemedText type="subtitle">Writing a program by hand</ThemedText>
         <ThemedText themeColor="textSecondary" style={styles.intro}>
           Programs — multi-week plans that step through your workouts, optionally tweaking sets/reps/
-          rounds as weeks go by — aren't editable in the app yet. You write them as YAML and import
-          the file. Exercises and workouts don't need any of this; those already have their own
-          add/edit screens.
+          rounds as weeks go by — can be built right in the app, from the + button on the Programs
+          tab. This page is for the other way: writing one as YAML and importing the file, which is
+          handy for drafting a long block on a real keyboard or sharing it with someone else.
         </ThemedText>
 
         <Section title="1. Find your workout IDs">
@@ -152,15 +153,7 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: MaxContentWidth,
     paddingHorizontal: Spacing.three,
-    paddingTop: Platform.select({ web: Spacing.six, default: Spacing.three }),
     paddingBottom: Spacing.four,
-  },
-  grabber: {
-    alignSelf: 'center',
-    width: 40,
-    height: 5,
-    borderRadius: 3,
-    marginBottom: Spacing.three - 2,
   },
   intro: {
     marginTop: Spacing.one + 2,

@@ -6,7 +6,16 @@ export default function TabLayout() {
   const theme = useTheme();
 
   return (
-    <NativeTabs backgroundColor={theme.backgroundElement} indicatorColor={theme.backgroundSelected}>
+    // Label and icon colors have to be set explicitly: without them the native tab bar falls back to
+    // platform defaults, which are picked for a system-colored bar, not this app's `backgroundElement`
+    // — against the near-white light-mode bar that left labels invisible and icons washed out. Same
+    // focused/unfocused pairing the web tab bar uses (`_layout.web.tsx`): accentText / textSecondary.
+    <NativeTabs
+      backgroundColor={theme.backgroundElement}
+      indicatorColor={theme.backgroundSelected}
+      labelStyle={{ default: { color: theme.textSecondary }, selected: { color: theme.accentText } }}
+      iconColor={{ default: theme.textSecondary, selected: theme.accentText }}
+      tintColor={theme.accentText}>
       <NativeTabs.Trigger name="index">
         <NativeTabs.Trigger.Label>Today</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf={{ default: 'house', selected: 'house.fill' }} md="home" />

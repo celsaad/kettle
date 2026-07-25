@@ -44,7 +44,9 @@ which week/day of the active program a session was actually for (persisted on th
 so it correctly suggests the week *after* whichever one you last did — including jumping ahead or
 redoing a week out of order — rather than guessing from a completed-session count that drifted from
 reality the moment you didn't progress in strict lockstep; it also shows a stat row (current daily
-streak, this week's session count, this week's time) above the card.
+streak, this week's session count, this week's time) above the card. Any workout can also be started
+directly from the Build tab — each workout card has a small play button that runs it as a one-off,
+with no program involved.
 
 See [`docs/implementation-plan.md`](docs/implementation-plan.md) for what shipped, the scope calls
 made along the way, and what's genuinely still open — there's a known web-only bug where leaving the

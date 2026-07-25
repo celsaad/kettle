@@ -299,6 +299,20 @@ which is deleted.
   with ≥1 session, walking back from today; today not having one yet doesn't break it, only a full-day
   gap does) and **this week's activity** (`thisWeekStats` — `historyStats` pre-filtered to sessions
   since the current Monday, local time).
+- ✅ **Start any workout ad-hoc, without a program.** `session.tsx` has always accepted a bare
+  `workoutId` param (the non-program branch of its `resolved` memo), but nothing in the UI ever
+  pushed it — the only two entry points were the Today tab's "next up" card and `program-detail.tsx`'s
+  per-week "Start this week", both program-driven. So a plain "I just want to do this workout today"
+  had no path at all. Fixed purely in the UI: each workout card on the Build tab now has a small
+  circular play button that pushes `/session` with `{ workoutId }`; tapping the card text still opens
+  the editor as before. No domain, storage, or runner changes — the resulting session simply has
+  `program`/`programWeek`/`programDay` all null, which the "next up" logic already treats correctly as
+  "not program progress" (`nextWeekAfter` filters on `session.program === program.id`, so an ad-hoc
+  session can't shift a program's suggested week). Deliberately kept visually quiet after a first pass
+  shipped a full-width solid-accent "Start" bar: that read as the card's primary action and made a list
+  of workouts into a wall of orange, so it became a 36px accent-soft circle with just a play glyph, and
+  the card's old `›` chevron was dropped since two right-pointing affordances side by side were
+  confusing.
 - **Known bug (web only): leaving the session screen crashes with a redbox.** `useKeepAwake()` is
   called unconditionally at the top of `session.tsx`'s `SessionScreen`, so it throws `"The wake lock
   with tag _r_N_ has not activated yet"` on *any* unmount of that screen — `router.back()` (whether

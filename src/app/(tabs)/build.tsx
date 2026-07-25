@@ -37,17 +37,25 @@ export default function BuildScreen() {
         ) : (
           <View style={styles.list}>
             {library.workouts.map((workout) => (
-              <Pressable key={workout.id} onPress={() => router.push({ pathname: '/workout-editor', params: { id: workout.id } })}>
-                <ThemedView type="backgroundElement" style={[styles.card, { borderColor: theme.border }]}>
+              <ThemedView key={workout.id} type="backgroundElement" style={[styles.card, { borderColor: theme.border }]}>
+                <Pressable
+                  onPress={() => router.push({ pathname: '/workout-editor', params: { id: workout.id } })}
+                  style={styles.cardTextArea}>
                   <View style={styles.cardText}>
                     <ThemedText type="heading">{workout.name}</ThemedText>
                     <ThemedText type="small" themeColor="textSecondary">
                       {workoutSummary(workout, library.exercises)}
                     </ThemedText>
                   </View>
-                  <ThemedText themeColor="textSecondary">›</ThemedText>
-                </ThemedView>
-              </Pressable>
+                </Pressable>
+
+                <Pressable
+                  onPress={() => router.push({ pathname: '/session', params: { workoutId: workout.id } })}
+                  hitSlop={8}
+                  style={({ pressed }) => [styles.startButton, { backgroundColor: theme.accentSoft }, pressed && styles.pressed]}>
+                  <View style={[styles.playTriangle, { borderLeftColor: theme.accent }]} />
+                </Pressable>
+              </ThemedView>
             ))}
           </View>
         )}
@@ -102,9 +110,32 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     padding: Spacing.two + 6,
   },
+  cardTextArea: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+  },
   cardText: {
     flex: 1,
     gap: 2,
+  },
+  startButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  playTriangle: {
+    width: 0,
+    height: 0,
+    marginLeft: 2,
+    borderTopWidth: 6,
+    borderBottomWidth: 6,
+    borderLeftWidth: 9,
+    borderTopColor: 'transparent',
+    borderBottomColor: 'transparent',
   },
   fab: {
     position: 'absolute',

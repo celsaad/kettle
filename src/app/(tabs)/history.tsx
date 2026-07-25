@@ -76,10 +76,16 @@ export default function HistoryScreen() {
                   <View style={[styles.expandedContent, { borderTopColor: theme.border }]}>
                     {session.entries.map((entry, index) => (
                       <View key={`${entry.exerciseName}-${index}`} style={styles.entryRow}>
-                        <ThemedText type="small" themeColor="textSecondary" style={styles.entryLabel}>
+                        <ThemedText
+                          type="small"
+                          themeColor="textSecondary"
+                          numberOfLines={1}
+                          style={styles.entryLabel}>
                           {entry.exerciseName}
                         </ThemedText>
-                        <ThemedText type="smallMedium">{entry.summary}</ThemedText>
+                        <ThemedText type="smallMedium" style={styles.entrySummary}>
+                          {entry.summary}
+                        </ThemedText>
                       </View>
                     ))}
                     <View style={styles.expandedFooter}>
@@ -161,12 +167,21 @@ const styles = StyleSheet.create({
   },
   entryRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    // Both sides are 13px/18px text, so their first lines align exactly even when the summary wraps.
+    alignItems: 'flex-start',
     gap: Spacing.two,
-    justifyContent: 'space-between'
+    justifyContent: 'space-between',
   },
+  // The name is an identifier, so it takes whatever width is left over and ellipsizes rather than
+  // wrapping — but it can't squeeze the summary out, since that's the actual logged data.
   entryLabel: {
-    // width: 60,
+    flex: 1,
+  },
+  // A long summary (an emom's "20 min · 240 reps", or a hold with many sets) wraps onto a second line
+  // instead of running off the card. flexShrink lets it give ground before it has to wrap.
+  entrySummary: {
+    flexShrink: 1,
+    textAlign: 'right',
   },
   expandedFooter: {
     marginTop: Spacing.one,

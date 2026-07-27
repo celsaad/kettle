@@ -37,6 +37,7 @@
     "zustand": "^5.0.14"
   },
   "devDependencies": {
+    "@testing-library/react-native": "^14.0.1",
     "@types/jest": "29.5.14",
     "@types/react": "~19.2.2",
     "jest": "~29.7.0",
@@ -59,6 +60,11 @@
     "setupFiles": [
       "<rootDir>/jest.setup.js"
     ],
+    "setupFilesAfterEnv": [
+      "<rootDir>/jest.setup-after-env.js"
+    ],
+    "clearMocks": true,
+    "restoreMocks": true,
     "transformIgnorePatterns": [
       "node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|react-native-svg)"
     ]

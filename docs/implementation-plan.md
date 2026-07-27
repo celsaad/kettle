@@ -459,6 +459,31 @@ Refactors this forced, both behaviour-preserving: `buildSteps` and the step mode
 `session-steps.ts` (importing the runner pulled in `expo-audio` and died on native-module init), and
 `nextWeekAfter` is now exported so it can be tested without constructing a whole `Library`.
 
+## ✅ Tests: phase 2 (the session runner) landed
+
+**115 tests across 9 suites.** The runner is exercised through the real hook with `renderHook` and
+Jest's modern fake timers, mocking haptics/sounds/notifications and the history store — the store at
+*our* boundary, not `expo-file-system`, so assertions are about what got logged rather than about file
+writes. Covers: the `-1` sentinel regression asserted on first render, countdown timing, pause
+excluding paused time, foreground catch-up after backgrounding, per-type flushing, the `goPrev` undo
+matrix (pending-pop, entry-removal with multi-set restore, one-level-only, floor at zero),
+`finishSession` committing the in-progress set, and `addRestSeconds` rescheduling its notification.
+
+**The plan's call not to inject a clock held up.** Fake timers mock `Date.now()` and `setInterval` from
+one virtual clock, so the wall-clock design tests as-is; nothing in `use-session-runner.ts` changed to
+accommodate the tests.
+
+Three things worth knowing for the next person writing tests here:
+
+- **RNTL 14's `renderHook` returns a Promise** (React 19 made rendering async-aware) and `act` must be
+  awaited. Sync `act` around `advanceTimersByTime` nests scopes and React reports overlapping act calls.
+- **`result` is not an own-enumerable property** of the renderHook result — `{ ...rendered }` silently
+  drops it and every assertion then fails on `result.current`.
+- **Cleanup is global now** (`clearMocks`/`restoreMocks` in the jest config, plus `useRealTimers` in
+  `jest.setup-after-env.js`). A spy installed and restored inside one test previously left later tests
+  failing with opaque `AggregateError`s while passing in isolation — the failure surfaced nowhere near
+  its cause, which is exactly why this belongs in config rather than per-file.
+
 ## Open bugs
 
 Found while planning the tests/a11y/i18n work (see `testing-a11y-i18n-plan.md`), each verified against
@@ -466,7 +491,17 @@ the code. Listed worst first.
 
 **Fixed since:** `historyStats`'s "1.5h 30m"; the EMOM interval count; weight never being captured;
 side effects inside `setState` updaters; `addRestSeconds` not rescheduling its notification;
-`currentStreak`'s DST stepping; and the display-name chip comparison. Notes on the two structural ones:
+`currentStreak`'s DST stepping; the display-name chip comparison; and circuit members writing one
+entry per round (below). Notes on the structural ones:
+
+- **Circuit members wrote one entry per round** instead of accumulating. Found by the phase-2 tests,
+  not by the architecture pass. `advance()` flushed whenever the *next* step belonged to a different
+  member — which in a round-robin circuit is every hand-off — so a 3-round, 3-member circuit produced
+  9 single-set entries where `session-steps.ts`'s own expansion comment says it should produce 3
+  entries of 3 sets. The fix separates two questions that were conflated: "are we changing exercise
+  right now?" (the audio cue, still true on every hand-off) from "is this member finished for the
+  whole workout?" (the flush, now checking whether any later step shares the member). Verified in the
+  app: History shows three rows reading `12 · 12 · 12 reps` rather than nine rows of one value.
 
 - The **`setState` updater** fix reads the step index from a ref instead of the updater's argument, so
   every commit/flush/`logEntry` now runs once in the event handler. The ref is advanced eagerly so two

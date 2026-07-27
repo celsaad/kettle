@@ -358,18 +358,26 @@ export function useSessionRunner(
         const buffer = bufferForStep(current);
         const directLog = isDirectLogStep(current);
         commitCurrentStep(current);
-        const leavingMember = !next || next.memberKey !== current.memberKey;
-        if (leavingMember) flushMember(current.memberKey, current.exerciseId);
+
+        // Two different questions, and conflating them was a bug. Flushing asks "is this member
+        // finished for the whole workout?" — in a circuit the member comes back next round, and
+        // flushing on the immediate hand-off wrote one entry *per round* instead of accumulating its
+        // sets into one, contradicting the intent stated in session-steps.ts's expansion. The audio
+        // cue asks the narrower "are we moving to a different exercise right now?", which is still
+        // true on every circuit hand-off.
+        const changingExercise = !next || next.memberKey !== current.memberKey;
+        const memberDone = !steps.slice(nextIndex).some((step) => step.memberKey === current.memberKey);
+        if (memberDone) flushMember(current.memberKey, current.exerciseId);
         // A distinct cue from the plain countdown tick, so a change of exercise is audible even
         // without looking at the screen — but not for every set/round within the same exercise.
-        if (leavingMember && next) playExerciseChange();
+        if (changingExercise && next) playExerciseChange();
 
         // Track exactly what this advance() committed so goPrev() can undo it precisely (one level
         // only — see the LastCommit type doc).
         if (directLog) {
           lastCommitRef.current = { kind: 'entry', resultingIndex: nextIndex, memberKey: current.memberKey, buffer: null };
         } else if (buffer) {
-          lastCommitRef.current = leavingMember
+          lastCommitRef.current = memberDone
             ? { kind: 'entry', resultingIndex: nextIndex, memberKey: current.memberKey, buffer }
             : { kind: 'pending', resultingIndex: nextIndex, memberKey: current.memberKey, buffer };
         } else {

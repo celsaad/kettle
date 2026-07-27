@@ -366,7 +366,7 @@ export function useSessionRunner(
         // cue asks the narrower "are we moving to a different exercise right now?", which is still
         // true on every circuit hand-off.
         const changingExercise = !next || next.memberKey !== current.memberKey;
-        const memberDone = !steps.slice(nextIndex).some((step) => step.memberKey === current.memberKey);
+        const memberDone = !steps.slice(nextIndex).some((later) => later.memberKey === current.memberKey);
         if (memberDone) flushMember(current.memberKey, current.exerciseId);
         // A distinct cue from the plain countdown tick, so a change of exercise is audible even
         // without looking at the screen — but not for every set/round within the same exercise.

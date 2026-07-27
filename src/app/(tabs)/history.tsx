@@ -24,7 +24,13 @@ export default function HistoryScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
           <ThemedText type="subtitle">History</ThemedText>
-          <ThemedText themeColor="textSecondary">July 2026</ThemedText>
+          {/*
+            Says "All time" rather than a month: the list below is every session ever, and the three
+            tiles are historyStats(sessions) over that same unfiltered set. This used to be a
+            hardcoded "July 2026", which was wrong twice over — frozen to one month, and labelling
+            all-time numbers as if they were that month's.
+          */}
+          <ThemedText themeColor="textSecondary">All time</ThemedText>
         </View>
 
         <View style={styles.statsRow}>
@@ -89,9 +95,6 @@ export default function HistoryScreen() {
                       </View>
                     ))}
                     <View style={styles.expandedFooter}>
-                      <ThemedText type="small" themeColor="textSecondary" style={styles.expandedNote}>
-                        self-describing · stays valid if the definition later changes
-                      </ThemedText>
                       <Pressable onPress={() => exportSession(session.id).catch(() => { })} hitSlop={8}>
                         <ThemedText type="small" themeColor="accentText">
                           Export
@@ -186,11 +189,10 @@ const styles = StyleSheet.create({
   expandedFooter: {
     marginTop: Spacing.one,
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    // Export is the only thing left here now that the data-model note is gone, so it anchors right
+    // rather than sitting alone on the left.
+    justifyContent: 'flex-end',
     alignItems: 'center',
     gap: Spacing.two,
-  },
-  expandedNote: {
-    flex: 1,
   },
 });

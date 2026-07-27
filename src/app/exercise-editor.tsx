@@ -13,7 +13,8 @@ import { useLibraryStore } from '@/state/library-store';
 import { exerciseHistory } from '@/state/selectors';
 import { useSessionHistoryStore } from '@/state/session-history-store';
 
-export type FieldDef = { key: string; label: string; unit?: string; optional?: boolean };
+/** `min` is the smallest accepted value, defaulting to 1 — see validateConfig. */
+export type FieldDef = { key: string; label: string; unit?: string; optional?: boolean; min?: number };
 
 export const TYPE_OPTIONS: { type: ExerciseType; label: string }[] = [
   { type: 'reps', label: 'Reps' },
@@ -28,7 +29,7 @@ export const TYPE_OPTIONS: { type: ExerciseType; label: string }[] = [
 export const CONFIG_FIELDS: Record<ExerciseType, FieldDef[]> = {
   hiit: [
     { key: 'workSec', label: 'Work', unit: 'sec' },
-    { key: 'restSec', label: 'Rest', unit: 'sec' },
+    { key: 'restSec', label: 'Rest', unit: 'sec', min: 0 },
     { key: 'rounds', label: 'Rounds' },
   ],
   emom: [
@@ -42,20 +43,45 @@ export const CONFIG_FIELDS: Record<ExerciseType, FieldDef[]> = {
     { key: 'targetRepsMin', label: 'Target reps' },
     { key: 'targetRepsMax', label: 'Target reps (max)', optional: true },
     { key: 'targetWeightKg', label: 'Weight', unit: 'kg', optional: true },
-    { key: 'restSec', label: 'Rest', unit: 'sec' },
+    { key: 'restSec', label: 'Rest', unit: 'sec', min: 0 },
   ],
   timed_hold: [
     { key: 'sets', label: 'Sets' },
     { key: 'holdSecMin', label: 'Hold', unit: 'sec' },
     { key: 'holdSecMax', label: 'Hold (max)', unit: 'sec', optional: true },
-    { key: 'restSec', label: 'Rest', unit: 'sec' },
+    { key: 'restSec', label: 'Rest', unit: 'sec', min: 0 },
   ],
   cardio: [
     { key: 'durationSec', label: 'Duration', unit: 'sec', optional: true },
     { key: 'distanceMeters', label: 'Distance', unit: 'm', optional: true },
   ],
-  rest: [{ key: 'durationSec', label: 'Duration', unit: 'sec' }],
+  rest: [{ key: 'durationSec', label: 'Duration', unit: 'sec', min: 0 }],
 };
+
+/**
+ * Mirrors the zod config constraints in `domain/schema.ts` for the in-app forms, which write straight
+ * to the library store and so never pass through the schema — imported YAML can't produce a 0-set
+ * exercise, but before this the editor happily could, and a workout made of those resolved to zero
+ * runnable steps (the "Nothing to run" case in session.tsx).
+ *
+ * Required fields default to a minimum of 1, matching the schema's `positive()`. The rest-length
+ * fields carry an explicit `min: 0` because the schema allows a zero-length rest and rejecting that
+ * would be stricter than the format itself. Returns the first problem found, or null if it's valid.
+ */
+export function validateConfig(type: ExerciseType, values: Record<string, string>): string | null {
+  for (const field of CONFIG_FIELDS[type]) {
+    const raw = values[field.key]?.trim() ?? '';
+    if (!raw) {
+      if (field.optional) continue;
+      return `${field.label} is required.`;
+    }
+    const parsed = Number(raw);
+    if (!Number.isFinite(parsed)) return `${field.label} must be a number.`;
+    const min = field.min ?? 1;
+    if (parsed < min) return `${field.label} must be at least ${min}.`;
+  }
+  return null;
+}
 
 function slugify(name: string): string {
   return name
@@ -168,6 +194,11 @@ export default function ExerciseEditorScreen() {
     const exerciseId = editing?.id ?? slugify(name);
     if (!exerciseId) {
       setError('Could not derive an id from that name.');
+      return;
+    }
+    const configError = validateConfig(type, values);
+    if (configError) {
+      setError(configError);
       return;
     }
     const exercise = buildExercise(exerciseId, name.trim(), type, values, notes);

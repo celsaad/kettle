@@ -19,7 +19,15 @@ import { buildSteps, useSessionRunner } from '@/hooks/use-session-runner';
 import { useLibraryStore } from '@/state/library-store';
 
 export default function SessionScreen() {
-  useKeepAwake();
+  // suppressDeactivateWarnings is the library's own escape hatch for this exact race, and without it
+  // leaving this screen always threw. useKeepAwake's cleanup calls deactivateKeepAwake() with no
+  // .catch() unless the flag is set; on web, activate() only records the tag *after* awaiting
+  // navigator.wakeLock.request(), so any unmount that beats that promise — which is every unmount
+  // here, since finishing/closing navigates immediately — leaves deactivate with no tag to release
+  // and it throws ERR_KEEP_AWAKE_TAG_INVALID ("The wake lock with tag _r_N_ has not activated yet")
+  // as an unhandled rejection. The flag makes that path .catch(() => {}) instead. Nothing is leaked:
+  // the browser releases a screen wake lock on its own when the page/tab goes away.
+  useKeepAwake(undefined, { suppressDeactivateWarnings: true });
   const [completed, setCompleted] = useState(false);
   // Doesn't navigate back directly — advance()/finishSession() in use-session-runner.ts already call
   // this the moment the workout is done (naturally or via "Finish"), and by then the session has

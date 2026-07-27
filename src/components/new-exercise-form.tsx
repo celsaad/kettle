@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
-import { buildExercise, CONFIG_FIELDS, TYPE_OPTIONS } from '@/app/exercise-editor';
+import { buildExercise, CONFIG_FIELDS, TYPE_OPTIONS, validateConfig } from '@/app/exercise-editor';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import type { Exercise, ExerciseType } from '@/domain/types';
@@ -44,6 +44,13 @@ export function NewExerciseForm({ onCreate, onCancel }: Props) {
     const id = slugify(name);
     if (!id) {
       setError('Could not derive an id from that name.');
+      return;
+    }
+    // Same check the full editor runs — this form writes to the store just as directly, so skipping
+    // it here would leave the 0-sets hole open through the quick-add path.
+    const configError = validateConfig(type, values);
+    if (configError) {
+      setError(configError);
       return;
     }
     onCreate(buildExercise(id, name.trim(), type, values, notes));

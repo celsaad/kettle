@@ -302,11 +302,13 @@ What's genuinely missing today, checked directly against the code:
 - **Merge conflict view has no field-level diff** (see open question 5 above).
 - **Timed-hold display direction was never revisited** (see open question 2 above).
 - **Web has no persistence** — `expo-file-system` doesn't support web, so the web build runs on an ephemeral in-memory seed library. This is a platform constraint, not a product gap.
-- **Known bug (web only): completing a session crashes with a redbox.** `useKeepAwake()` in
-  `src/app/session.tsx` throws `"The wake lock with tag _r_0_ has not activated yet"` when the session
-  screen unmounts right at completion (`onComplete` calls `router.back()` immediately, racing the
-  async browser Wake Lock API before it finishes activating). Discovered while testing the progression
-  feature below — the first time in this project a session was driven to completion by automation.
-  Not a regression from this pass (nothing here touches the session runner); dismissible and
-  non-fatal to data (the session already saved and `router.back()` had already fired before the error
-  surfaces), but it's a jarring crash screen on every web session completion and is worth a real fix.
+- ~~**Known bug (web only): leaving the session screen crashes with a redbox.**~~ ✅ Fixed — see the
+  implementation plan's entry for the details. `useKeepAwake` now passes
+  `suppressDeactivateWarnings`, the library's own flag for exactly this race.
+- **No automated tests at all** — no runner, no test files, no `test` script. Every regression so far
+  has been caught by hand or by driving the running app with Playwright. The wall-clock session runner
+  (§7.1, "the make-or-break issue"), the zod schemas, `merge.ts`, and the selectors all have zero
+  coverage. This is the largest structural gap in the project.
+- **A logged session can't be deleted or corrected.** `session-files.ts` has
+  create/append/remove-last-entry/finalize, but no delete — a mis-started or junk session is permanent.
+- **No history search or filtering**, and no settings screen (the light/dark toggle lives on Today).

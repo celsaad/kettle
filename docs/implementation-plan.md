@@ -313,19 +313,40 @@ which is deleted.
   of workouts into a wall of orange, so it became a 36px accent-soft circle with just a play glyph, and
   the card's old `›` chevron was dropped since two right-pointing affordances side by side were
   confusing.
-- **Known bug (web only): leaving the session screen crashes with a redbox.** `useKeepAwake()` is
-  called unconditionally at the top of `session.tsx`'s `SessionScreen`, so it throws `"The wake lock
-  with tag _r_N_ has not activated yet"` on *any* unmount of that screen — `router.back()` (whether
-  from a normal completion, `finishSession`, or the empty-workout "Close" button below) fires
-  immediately, racing the async browser Wake Lock API before its activation promise settles. First
-  found while testing the progression feature (a full 16-step session driven to completion via
-  Playwright — the first time in this project's history that happened under automation); confirmed
-  again while testing the empty-workout fix below, where it fires on `Close` too, so it's broader than
-  "completing a session" — anything that unmounts `SessionScreen` hits it. Not caused by either pass —
-  nothing here touches `useKeepAwake` itself — and not data-destructive (whatever navigation triggered
-  it had already fired before the error surfaces; dismissing the redbox reveals the app underneath
-  working normally), but it's a jarring crash on every web session-screen exit and deserves a real fix,
-  not a footnote.
+- ✅ **Fixed: leaving the session screen crashed with a redbox (web).** Read the library source rather
+  than working around it, and the fix turned out to be a flag it already ships:
+  `useKeepAwake(undefined, { suppressDeactivateWarnings: true })`. The mechanism, from
+  `expo-keep-awake/src`: `useKeepAwake`'s cleanup calls `deactivateKeepAwake(tag)` with **no `.catch()`
+  at all** unless that flag is set (`index.ts`), and the web `activate(tag)` only records the tag in
+  its map *after* awaiting `navigator.wakeLock.request('screen')` (`ExpoKeepAwake.web.ts`). Any unmount
+  that beats that promise leaves `deactivate` with no tag to release, so it throws
+  `ERR_KEEP_AWAKE_TAG_INVALID` as an unhandled rejection. Every exit from this screen beat it, since
+  finishing/closing navigates immediately — which is why it fired on completion, on `finishSession`,
+  and on the empty-workout `Close` alike. Nothing leaks by suppressing it: the browser drops a screen
+  wake lock on its own when the page goes away. Verified by driving a full session to completion and
+  out: previously every such run logged the `pageerror`; the run after the fix logged no console
+  errors of any kind.
+- ✅ **Fixed: a batch of UI-truthfulness bugs found by auditing the screens against the code.**
+  (1) `history.tsx` had **`"July 2026"` hardcoded** — frozen to one month, and sitting on top of stat
+  tiles that are `historyStats(sessions)` over *all* sessions; now reads "All time", matching both the
+  tiles and the unfiltered list below. (2) Today's "Recent" rows rendered a trailing `→` but were a
+  plain `ThemedView` with no `Pressable` — the same broken-button look already removed from
+  `SessionNextCard` in b547bdd; the arrow is gone (they stay non-interactive, since there's no
+  per-session detail screen to open). (3) The expanded history card showed *"self-describing · stays
+  valid if the definition later changes"*, a note about the data model that had no business in the UI;
+  removed, leaving Export anchored right.
+- ✅ **Fixed: no minimum-value validation on exercise config forms.** Flagged as a follow-up when the
+  "Nothing to run" screen shipped and left open until now — it was the only reachable way to create a
+  workout with zero runnable steps, since the in-app forms write straight to the library store and
+  never pass through the zod schema (imported YAML can't do this; `sets` is `positive()` there). New
+  exported `validateConfig(type, values)` in `exercise-editor.tsx` mirrors those schema constraints:
+  required fields need ≥ 1, and `FieldDef` gained an optional `min` so the rest-length fields can carry
+  `min: 0` — the schema has those as `nonnegative()`, and rejecting a zero-length rest would be
+  stricter than the format itself. Wired into both creation paths (the full editor and
+  `new-exercise-form.tsx`'s quick-add), since validating only one would leave the hole open through the
+  other. Cardio deliberately keeps both fields optional: an unconfigured cardio exercise is a valid
+  count-up stopwatch in the runner, not a broken step. Verified live: 0 sets is refused with "Sets must
+  be at least 1", while a 0-second rest still saves.
 
 ## Open questions from the product plan, still open
 

@@ -131,13 +131,17 @@ export default function TodayScreen() {
               key={session.id}
               type="backgroundElement"
               style={[styles.recentRow, { borderColor: theme.border }]}>
+              {/*
+                No trailing arrow: these rows aren't interactive (there's no per-session detail
+                screen to open), and an arrow on a non-tappable row just reads as a broken button —
+                same reason it came off SessionNextCard.
+              */}
               <View style={styles.recentRowText}>
                 <ThemedText type="heading">{session.workoutName}</ThemedText>
                 <ThemedText type="small" themeColor="textSecondary">
                   {session.dateLabel} · {session.durationLabel} · {session.setsLabel}
                 </ThemedText>
               </View>
-              <ThemedText themeColor="textSecondary">→</ThemedText>
             </ThemedView>
           ))}
         </View>

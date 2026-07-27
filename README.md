@@ -50,10 +50,8 @@ with no program involved. Every modal screen (editors, program detail, the guide
 a pinned close button, so dismissing one doesn't mean scrolling to the bottom to find Cancel.
 
 See [`docs/implementation-plan.md`](docs/implementation-plan.md) for what shipped, the scope calls
-made along the way, and what's genuinely still open — there's a known web-only bug where leaving the
-session screen (completing a session, finishing early, or closing the "Nothing to run" state) shows a
-crash redbox (from `useKeepAwake`'s cleanup racing the browser Wake Lock API) — dismissible, not
-data-destructive, but unfixed.
+made along the way, and what's genuinely still open — the largest gap being that there are no
+automated tests yet.
 Note also: web (`npx expo start --web`) has no persistence — `expo-file-system` doesn't support it,
 so the web build degrades to an ephemeral in-memory library rather than crashing.
 

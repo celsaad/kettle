@@ -11,6 +11,7 @@
       "icon": "./assets/expo.icon"
     },
     "android": {
+      "package": "com.casco.kettle",
       "adaptiveIcon": {
         "backgroundColor": "#c05c2b",
         "foregroundImage": "./assets/images/android-icon-foreground.png",

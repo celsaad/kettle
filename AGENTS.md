@@ -12,8 +12,20 @@ plus an append-only local session log. No server, no account.
 
 - `npm run typecheck` — `tsc --noEmit`
 - `npm run lint` — oxlint. **Four pre-existing `unicorn/no-array-sort` / `no-array-reverse` warnings
-  are accepted**; leave them alone and don't add new warning categories.
-- No test runner exists yet — no test script, no test files. This is the project's largest gap.
+  are accepted**; leave them alone and don't add new warning categories. Anything at `error` level is
+  new and yours.
+- `npm test` — jest via `jest-expo`. Pure logic only so far (`src/domain`, `src/state`, and the step
+  builder); no UI tests yet. Runs in a few seconds, so run it.
+
+## Delegating
+
+Mechanical, well-specified work — adding tests to an existing suite, repetitive renames, boilerplate —
+should go to a cheaper subagent rather than being done inline. Point it at an existing suite to imitate
+and give it the exact list of cases; that's most of the quality.
+
+**Verify what comes back rather than trusting the report.** A subagent has reported pre-existing lint
+damage that its own edits caused. Re-run `npm test`, `npm run typecheck` and `npm run lint` yourself
+after any delegated change, and skim the diff.
 
 ## Where things live
 

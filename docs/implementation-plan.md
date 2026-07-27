@@ -374,6 +374,66 @@ which is deleted.
   dev/preview target. It does mean a browser check of any confirm flow proves nothing unless the script
   patches it, which is how the new delete was actually verified end to end.
 
+## Planned: direct numeric entry for reps and load in the runner
+
+**The problem, found in real use:** the reps control is a −/+ stepper, so logging a high-rep set costs
+one tap per rep. A 30-rep set of air squats is 30 taps, mid-workout, out of breath. The new load
+stepper has the same shape and the same ceiling — someone working at 100 kg is 50 taps from the
+default. Steppers are right for the common small adjustment and wrong for large absolute values, and
+the runner has both.
+
+Partly mitigated already: reps now start at the set's configured target rather than 0, so hitting your
+target is zero taps and the stepper only pays for the *difference*. That's the common case, and it's
+why this is a usability issue rather than an urgent one. It doesn't help the first time an exercise is
+logged at a value far from its target, or a load entered from scratch.
+
+**Proposed solution — direct entry as a supplemental method, not a replacement.** Keep the steppers
+exactly as they are (they're the right tool one-handed and mid-set, and they don't require dismissing a
+keyboard); make the number itself tappable to type an exact value.
+
+- Tapping the big numeral opens a small numeric entry — either an inline `TextInput` swapped in place
+  with `keyboardType="numeric"` and `selectTextOnFocus`, or a compact modal keypad. The inline swap is
+  less code and no new navigation; a keypad is better one-handed and avoids the OS keyboard covering
+  the screen, which matters because the runner's layout is already tight (see the dynamic-type note in
+  `testing-a11y-i18n-plan.md`). Lean keypad for the runner specifically.
+- Commit on blur/confirm, clamp to sane bounds, and ignore non-numeric input rather than erroring.
+- Applies to reps, load, and AMRAP rounds/extra-reps, which share the stepper pattern.
+- Accessibility angle: this also gives screen-reader and motor-impaired users a way to set a value
+  without N discrete activations, so fold it in with the A11y-1 phase rather than treating it as
+  unrelated polish.
+
+Deliberately not proposed: press-and-hold to auto-repeat. It fixes the tap count but not the
+imprecision, it's fiddly to get right on touch, and it's undiscoverable.
+
+## ✅ Tests: phase 1 (pure logic) landed
+
+`jest-expo` + `npm test`. **93 tests across 7 suites, ~4s.** No UI tests yet — that's phase 3, and the
+plan deliberately sequences it after i18n so assertions don't get written against English copy.
+
+Covered: `buildSteps` (rest interleaving, circuit round-robin, `memberKey` stability across rounds,
+degenerate zero-step cases), `yaml-mapping` (round-trip across all 7 exercise and 7 entry types,
+plus a key-contract test and an idempotency test — see below), `merge` (add / replace-by-id /
+referential integrity), `program` (week resolution, override application, non-targeted exercises left
+reference-identical), `selectors` (`historyStats`, `currentStreak`, `thisWeekStats`, `nextWeekAfter`,
+`sessionEntrySummary`), `exercise-form` (the `min: 0` rest-field asymmetry), and `slug`.
+
+Three things worth recording:
+
+- **Two suites were verified against the bugs they pin**, by restoring the old logic and confirming
+  they fail. The EMOM tests fail with `Expected: 600, Received: 300`; the `historyStats` tests fail on
+  the fractional-hour form. A regression test that doesn't fail on the bug is worthless, so this check
+  is worth repeating whenever one is written.
+- **Round-trip tests alone are insufficient for the YAML mapping**, and the suite says so: a symmetric
+  typo (both directions using the same wrong key) round-trips perfectly. The key-contract test asserting
+  literal snake_case names is what actually pins the on-disk format.
+- **Parsing materialises omitted optional keys as `undefined`** rather than leaving them absent. Not a
+  defect — the serializer drops them and `serialize → parse → serialize` is byte-identical, which the
+  idempotency test now pins. That's the property that matters for a file users hand-edit and re-save.
+
+Refactors this forced, both behaviour-preserving: `buildSteps` and the step model moved to
+`session-steps.ts` (importing the runner pulled in `expo-audio` and died on native-module init), and
+`nextWeekAfter` is now exported so it can be tested without constructing a whole `Library`.
+
 ## Bugs found by an architecture pass, not yet fixed
 
 Found while planning the tests/a11y/i18n work (see `testing-a11y-i18n-plan.md`), each verified against

@@ -164,7 +164,7 @@ function activeProgram(library: Library, sessions: Session[]): Program | undefin
  * one). No matching session (brand new program, or every session predates week-tracking) starts from
  * the beginning; reaching the end wraps back to the start, so finishing a program restarts it.
  */
-function nextWeekAfter(program: Program, sessions: Session[]): ProgramWeek {
+export function nextWeekAfter(program: Program, sessions: Session[]): ProgramWeek {
   const sortedWeeks = [...program.weeks].sort((a, b) => a.week - b.week || (a.day ?? '').localeCompare(b.day ?? ''));
   const lastSession = sessions.find((session) => session.program === program.id && session.programWeek != null);
   const lastIndex = lastSession

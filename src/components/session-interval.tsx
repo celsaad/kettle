@@ -1,9 +1,10 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 
 import { ThemedText } from '@/components/themed-text';
 import { SessionNextCard } from '@/components/session-next-card';
+import { SessionNumberPad } from '@/components/session-number-pad';
 import type { IntervalVariant, RestPreview } from '@/hooks/use-session-runner';
 import { RunnerColors, Spacing } from '@/constants/theme';
 
@@ -24,9 +25,15 @@ type StepperProps = {
   label: string;
   value: number;
   onChange: (value: number) => void;
+  onRequestEdit: () => void;
 };
 
-function Stepper({ label, value, onChange }: StepperProps) {
+/**
+ * The keypad is *not* rendered here. Its overlay fills its parent, and in React Native that's the
+ * nearest view rather than the screen — inside a stepper block it would be clipped to a small strip.
+ * The parent owns which field is being edited and renders one pad at the screen root.
+ */
+function Stepper({ label, value, onChange, onRequestEdit }: StepperProps) {
   return (
     <View style={styles.stepperBlock}>
       <ThemedText type="code" style={styles.stepperLabel}>
@@ -38,9 +45,16 @@ function Stepper({ label, value, onChange }: StepperProps) {
             −
           </ThemedText>
         </Pressable>
-        <ThemedText type="heading" style={styles.stepperValue}>
-          {value}
-        </ThemedText>
+        {/* Same escape hatch as the reps screen: an AMRAP round count in the twenties is a lot of
+            taps, and these steppers sit in the same tight runner layout. */}
+        <Pressable
+          onPress={onRequestEdit}
+          accessibilityRole="button"
+          accessibilityLabel={`${label}: ${value}. Tap to enter an exact value.`}>
+          <ThemedText type="heading" style={styles.stepperValue}>
+            {value}
+          </ThemedText>
+        </Pressable>
         <Pressable onPress={() => onChange(value + 1)} style={[styles.stepperButton, styles.stepperButtonAccent]}>
           <ThemedText type="title" style={[styles.stepperGlyph, styles.stepperGlyphAccent]}>
             +
@@ -100,6 +114,7 @@ export function SessionInterval({
   onPrev,
   onDone,
 }: Props) {
+  const [editing, setEditing] = useState<'reps' | 'rounds' | 'extra' | null>(null);
   const pulse = useSharedValue(1);
 
   useEffect(() => {
@@ -158,12 +173,19 @@ export function SessionInterval({
           {captionParts.join(' · ')}
         </ThemedText>
 
-        {variant === 'emom' && <Stepper label="REPS THIS MINUTE" value={reps} onChange={onChangeReps} />}
+        {variant === 'emom' && (
+          <Stepper label="REPS THIS MINUTE" value={reps} onChange={onChangeReps} onRequestEdit={() => setEditing('reps')} />
+        )}
 
         {variant === 'amrap' && (
           <View style={styles.amrapRow}>
-            <Stepper label="ROUNDS" value={roundsCompleted} onChange={onChangeRoundsCompleted} />
-            <Stepper label="+REPS" value={extraReps} onChange={onChangeExtraReps} />
+            <Stepper
+              label="ROUNDS"
+              value={roundsCompleted}
+              onChange={onChangeRoundsCompleted}
+              onRequestEdit={() => setEditing('rounds')}
+            />
+            <Stepper label="+REPS" value={extraReps} onChange={onChangeExtraReps} onRequestEdit={() => setEditing('extra')} />
           </View>
         )}
       </View>
@@ -188,6 +210,21 @@ export function SessionInterval({
           {countUp ? 'Done ↑' : 'Skip →'}
         </ThemedText>
       </Pressable>
+
+      {editing && (
+        <SessionNumberPad
+          label={editing === 'reps' ? 'Reps this minute' : editing === 'rounds' ? 'Rounds' : 'Extra reps'}
+          initialValue={editing === 'reps' ? reps : editing === 'rounds' ? roundsCompleted : extraReps}
+          onCancel={() => setEditing(null)}
+          onConfirm={(value) => {
+            const whole = Math.round(value);
+            if (editing === 'reps') onChangeReps(whole);
+            else if (editing === 'rounds') onChangeRoundsCompleted(whole);
+            else onChangeExtraReps(whole);
+            setEditing(null);
+          }}
+        />
+      )}
     </View>
   );
 }

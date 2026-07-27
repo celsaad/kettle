@@ -405,36 +405,34 @@ Verified in the app by patching HTMLMediaElement.play: silent at 14s, exactly on
 The asset is generated rather than sourced — two sine notes (A5 then E6) with attack and exponential
 decay envelopes, since a raw sine starting or stopping at non-zero amplitude clicks audibly.
 
-## Planned: direct numeric entry for reps and load in the runner
+## ✅ Direct numeric entry for reps and load
 
-**The problem, found in real use:** the reps control is a −/+ stepper, so logging a high-rep set costs
-one tap per rep. A 30-rep set of air squats is 30 taps, mid-workout, out of breath. The new load
-stepper has the same shape and the same ceiling — someone working at 100 kg is 50 taps from the
-default. Steppers are right for the common small adjustment and wrong for large absolute values, and
-the runner has both.
+The reported problem: the reps control was a −/+ stepper, so a 30-rep set cost 30 taps mid-workout,
+out of breath. The new load stepper had the same ceiling.
 
-Partly mitigated already: reps now start at the set's configured target rather than 0, so hitting your
-target is zero taps and the stepper only pays for the *difference*. That's the common case, and it's
-why this is a usability issue rather than an urgent one. It doesn't help the first time an exercise is
-logged at a value far from its target, or a load entered from scratch.
+Steppers stay — they are right for the small adjustment and for one-handed use. The value itself is now
+tappable and opens `session-number-pad.tsx`, a keypad sheet. Wired to reps and load on the reps screen,
+and to EMOM reps and AMRAP rounds/extra-reps on the interval screen.
 
-**Proposed solution — direct entry as a supplemental method, not a replacement.** Keep the steppers
-exactly as they are (they're the right tool one-handed and mid-set, and they don't require dismissing a
-keyboard); make the number itself tappable to type an exact value.
+Decisions worth keeping:
 
-- Tapping the big numeral opens a small numeric entry — either an inline `TextInput` swapped in place
-  with `keyboardType="numeric"` and `selectTextOnFocus`, or a compact modal keypad. The inline swap is
-  less code and no new navigation; a keypad is better one-handed and avoids the OS keyboard covering
-  the screen, which matters because the runner's layout is already tight (see the dynamic-type note in
-  `testing-a11y-i18n-plan.md`). Lean keypad for the runner specifically.
-- Commit on blur/confirm, clamp to sane bounds, and ignore non-numeric input rather than erroring.
-- Applies to reps, load, and AMRAP rounds/extra-reps, which share the stepper pattern.
-- Accessibility angle: this also gives screen-reader and motor-impaired users a way to set a value
-  without N discrete activations, so fold it in with the A11y-1 phase rather than treating it as
-  unrelated polish.
+- **A custom keypad, not a `TextInput` with `keyboardType="numeric"`.** The runner screens are `flex: 1`
+  with no ScrollView and already tight; the OS keyboard would cover the very controls being edited. A
+  custom pad also keeps the digits large enough to hit while out of breath.
+- **Typing starts a fresh value** rather than appending to the current one — the reason to open the pad
+  at all is that the current value is far from what you want. Confirming without typing keeps the
+  original.
+- **The parent owns which field is being edited**, and renders one pad at the screen root. An overlay
+  fills its parent view, not the screen, so a pad rendered inside a stepper block was clipped to a
+  strip. That bug was caught before shipping but is the obvious thing to get wrong here.
+- Decimal key only where it means something (load); everything else rounds to a whole number on
+  confirm. A lone or trailing "." parses to NaN, so Set is disabled rather than writing garbage.
 
-Deliberately not proposed: press-and-hold to auto-repeat. It fixes the tap count but not the
-imprecision, it's fiddly to get right on touch, and it's undiscoverable.
+Also an accessibility win, and why it belongs with A11y-1 rather than as separate polish: it gives
+screen-reader and motor-impaired users a way to set a value without N discrete activations.
+
+Verified in the app: typing 27 into the reps pad (3 taps, versus 21 on the stepper) sets 27; Cancel
+leaves the value untouched; the load pad accepts 42.5.
 
 ## ✅ Tests: phase 1 (pure logic) landed
 

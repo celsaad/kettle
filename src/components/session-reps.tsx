@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { SessionNextCard } from '@/components/session-next-card';
+import { SessionNumberPad } from '@/components/session-number-pad';
 import { RunnerColors, Spacing } from '@/constants/theme';
 import type { RestPreview } from '@/hooks/use-session-runner';
 
@@ -51,6 +53,8 @@ export function SessionReps({
   onPrev,
   onLogSet,
 }: Props) {
+  const [editing, setEditing] = useState<'reps' | 'load' | null>(null);
+
   return (
     <View style={styles.container}>
       <View style={styles.top}>
@@ -81,14 +85,20 @@ export function SessionReps({
               −
             </ThemedText>
           </Pressable>
-          <View style={styles.repsDisplay}>
+          {/* The numeral doubles as the way in to exact entry — a 30-rep set is 30 taps on the
+              stepper otherwise, mid-workout. The steppers stay for small adjustments. */}
+          <Pressable
+            onPress={() => setEditing('reps')}
+            accessibilityRole="button"
+            accessibilityLabel={`Reps done: ${reps}. Tap to enter an exact value.`}
+            style={styles.repsDisplay}>
             <ThemedText type="numeral" style={styles.numeral}>
               {reps}
             </ThemedText>
             <ThemedText type="code" style={styles.repsLabel}>
               REPS DONE
             </ThemedText>
-          </View>
+          </Pressable>
           <Pressable onPress={() => onChangeReps(reps + 1)} style={[styles.stepperButton, styles.stepperButtonAccent]}>
             <ThemedText type="title" style={[styles.stepperGlyph, styles.stepperGlyphAccent]}>
               +
@@ -117,16 +127,21 @@ export function SessionReps({
                   −
                 </ThemedText>
               </Pressable>
-              <ThemedText type="heading" style={styles.loadValue}>
-                {weightKg > 0 ? (
-                  <>
-                    {weightKg}
-                    <ThemedText style={styles.loadUnit}> kg</ThemedText>
-                  </>
-                ) : (
-                  'BW'
-                )}
-              </ThemedText>
+              <Pressable
+                onPress={() => setEditing('load')}
+                accessibilityRole="button"
+                accessibilityLabel={`Load: ${weightKg > 0 ? `${weightKg} kilograms` : 'bodyweight'}. Tap to enter an exact value.`}>
+                <ThemedText type="heading" style={styles.loadValue}>
+                  {weightKg > 0 ? (
+                    <>
+                      {weightKg}
+                      <ThemedText style={styles.loadUnit}> kg</ThemedText>
+                    </>
+                  ) : (
+                    'BW'
+                  )}
+                </ThemedText>
+              </Pressable>
               <Pressable
                 onPress={() => onChangeWeightKg(weightKg + WEIGHT_STEP_KG)}
                 hitSlop={8}
@@ -176,6 +191,34 @@ export function SessionReps({
           </ThemedText>
         </Pressable>
       </View>
+
+      {editing === 'reps' && (
+        <SessionNumberPad
+          label="Reps done"
+          initialValue={reps}
+          onCancel={() => setEditing(null)}
+          onConfirm={(value) => {
+            // Reps are whole; the pad has no decimal key here, but a pasted or malformed value
+            // shouldn't reach the session log as a fraction.
+            onChangeReps(Math.round(value));
+            setEditing(null);
+          }}
+        />
+      )}
+
+      {editing === 'load' && (
+        <SessionNumberPad
+          label="Load"
+          initialValue={weightKg}
+          unit="kg"
+          allowDecimal
+          onCancel={() => setEditing(null)}
+          onConfirm={(value) => {
+            onChangeWeightKg(value);
+            setEditing(null);
+          }}
+        />
+      )}
     </View>
   );
 }

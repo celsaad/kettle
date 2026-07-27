@@ -88,7 +88,11 @@ export function SessionHold({
       <SessionNextCard next={next} />
 
       <View style={styles.controlsRow}>
-        <Pressable onPress={onPrev} style={styles.circleButton}>
+        <Pressable
+          onPress={onPrev}
+          accessibilityRole="button"
+          accessibilityLabel="Previous step"
+          style={styles.circleButton}>
           <View style={styles.iconPrev} />
         </Pressable>
         <Pressable onPress={onTogglePause} style={styles.pauseButton}>
@@ -96,7 +100,11 @@ export function SessionHold({
             {paused ? 'Resume' : 'Pause'}
           </ThemedText>
         </Pressable>
-        <Pressable onPress={onDone} style={styles.circleButton}>
+        <Pressable
+          onPress={onDone}
+          accessibilityRole="button"
+          accessibilityLabel="Done, next step"
+          style={styles.circleButton}>
           <View style={styles.iconNext} />
         </Pressable>
       </View>
@@ -134,7 +142,7 @@ const styles = StyleSheet.create({
     backgroundColor: RunnerColors.accent,
   },
   liveLabel: {
-    color: RunnerColors.accent,
+    color: RunnerColors.accentOnSoft,
     letterSpacing: 1.4,
   },
   exerciseName: {

@@ -99,7 +99,7 @@ const styles = StyleSheet.create({
     backgroundColor: RunnerColors.accentCalm,
   },
   restLabel: {
-    color: RunnerColors.accentCalm,
+    color: RunnerColors.accentCalmOnSoft,
     letterSpacing: 1.4,
   },
   middle: {

@@ -157,7 +157,11 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
                     </ThemedText>
                   ))}
                 </Pressable>
-                <Pressable onPress={() => removeOverride(index)} hitSlop={8}>
+                <Pressable
+                  onPress={() => removeOverride(index)}
+                  hitSlop={8}
+                  accessibilityRole="button"
+                  accessibilityLabel="Remove override">
                   <ThemedText themeColor="textSecondary">✕</ThemedText>
                 </Pressable>
               </View>

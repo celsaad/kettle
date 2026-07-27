@@ -156,7 +156,12 @@ export default function ProgramEditorScreen() {
                       <ThemedText themeColor="textSecondary">+</ThemedText>
                     </Pressable>
                   </View>
-                  <Pressable onPress={() => removeWeek(index)} hitSlop={8} style={styles.removeButton}>
+                  <Pressable
+                    onPress={() => removeWeek(index)}
+                    hitSlop={8}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Remove week ${week.week}`}
+                    style={styles.removeButton}>
                     <ThemedText themeColor="textSecondary">✕</ThemedText>
                   </Pressable>
                 </View>

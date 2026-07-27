@@ -41,6 +41,7 @@ export default function TodayScreen() {
           </ThemedText>
           <Pressable
             onPress={() => router.push('/settings')}
+            hitSlop={8}
             accessibilityRole="button"
             accessibilityLabel="Settings"
             style={({ pressed }) => [

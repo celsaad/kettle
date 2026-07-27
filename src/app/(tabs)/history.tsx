@@ -99,6 +99,7 @@ export default function HistoryScreen() {
             value={query}
             onChangeText={setQuery}
             placeholder="Search workouts"
+            accessibilityLabel="Search workouts"
             placeholderTextColor={theme.textSecondary}
             style={[styles.searchInput, { color: theme.text }]}
           />
@@ -111,6 +112,10 @@ export default function HistoryScreen() {
               <ThemedView key={session.id} type="backgroundElement" style={[styles.card, { borderColor: theme.border }]}>
                 <Pressable
                   onPress={() => setExpandedId(expanded ? null : session.id)}
+                  accessibilityRole="button"
+                  // The row's own text supplies the name; `expanded` is the part a screen reader
+                  // can't infer from the chevron glyph.
+                  accessibilityState={{ expanded }}
                   style={styles.cardHeader}>
                   <View style={styles.dateBadge}>
                     <ThemedText type="heading">{session.day}</ThemedText>

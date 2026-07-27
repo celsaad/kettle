@@ -209,7 +209,12 @@ export default function WorkoutEditorScreen() {
                     </ThemedText>
                   </View>
                   <ExerciseBadge type={exercise.type} overrideLabel={overrideSec ? 'OVERRIDE' : undefined} />
-                  <Pressable onPress={() => removeBlock(index)} hitSlop={8} style={styles.removeButton}>
+                  <Pressable
+                    onPress={() => removeBlock(index)}
+                    hitSlop={8}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Remove ${exercise.name}`}
+                    style={styles.removeButton}>
                     <ThemedText themeColor="textSecondary">✕</ThemedText>
                   </Pressable>
                 </View>
@@ -229,7 +234,12 @@ export default function WorkoutEditorScreen() {
                   <ThemedText type="heading" style={styles.circuitTitle}>
                     Circuit
                   </ThemedText>
-                  <Pressable onPress={() => removeBlock(index)} hitSlop={8} style={styles.removeButton}>
+                  <Pressable
+                    onPress={() => removeBlock(index)}
+                    hitSlop={8}
+                    accessibilityRole="button"
+                    accessibilityLabel="Remove circuit"
+                    style={styles.removeButton}>
                     <ThemedText themeColor="textSecondary">✕</ThemedText>
                   </Pressable>
                 </View>
@@ -250,7 +260,12 @@ export default function WorkoutEditorScreen() {
                           </ThemedText>
                         </View>
                         <ExerciseBadge type={exercise.type} />
-                        <Pressable onPress={() => removeCircuitMember(index, memberIndex)} hitSlop={8} style={styles.removeButton}>
+                        <Pressable
+                          onPress={() => removeCircuitMember(index, memberIndex)}
+                          hitSlop={8}
+                          accessibilityRole="button"
+                          accessibilityLabel={`Remove ${exercise.name} from circuit`}
+                          style={styles.removeButton}>
                           <ThemedText themeColor="textSecondary">✕</ThemedText>
                         </Pressable>
                       </View>

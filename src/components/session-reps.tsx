@@ -165,6 +165,9 @@ export function SessionReps({
                   <Pressable
                     key={option}
                     onPress={() => onChangeRpe(option)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`RPE ${option}`}
+                    accessibilityState={{ selected: active }}
                     style={[styles.rpePill, active && styles.rpePillActive]}>
                     <ThemedText type="smallMedium" style={active ? styles.rpeTextActive : styles.rpeText}>
                       {option}
@@ -239,7 +242,7 @@ const styles = StyleSheet.create({
     borderRadius: 999,
   },
   repsPillLabel: {
-    color: RunnerColors.accent,
+    color: RunnerColors.accentOnSoft,
     letterSpacing: 1.4,
   },
   exerciseName: {
@@ -347,9 +350,13 @@ const styles = StyleSheet.create({
     gap: 6,
     marginTop: 6,
   },
+  // Was ~26px tall on 13px text — the smallest touch target in the app, and in the live runner where
+  // you're least precise. minHeight rather than height so it still grows with accessibility text sizes.
   rpePill: {
     flex: 1,
     alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 44,
     paddingVertical: 4,
     borderRadius: 8,
     backgroundColor: 'rgba(243,239,228,0.08)',

@@ -53,6 +53,8 @@ export default function BuildScreen() {
                 <Pressable
                   onPress={() => router.push({ pathname: '/session', params: { workoutId: workout.id } })}
                   hitSlop={8}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Start ${workout.name}`}
                   style={({ pressed }) => [styles.startButton, { backgroundColor: theme.accentSoft }, pressed && styles.pressed]}>
                   <View style={[styles.playTriangle, { borderLeftColor: theme.accent }]} />
                 </Pressable>
@@ -64,6 +66,8 @@ export default function BuildScreen() {
 
       <Pressable
         onPress={() => router.push('/workout-editor')}
+        accessibilityRole="button"
+        accessibilityLabel="New workout"
         style={({ pressed }) => [styles.fab, { backgroundColor: fabColor }, pressed && styles.pressed]}>
         <ThemedText type="title" style={[styles.fabPlus, { color: theme.onAccent }]}>
           +

@@ -67,6 +67,7 @@ export default function LibraryScreen() {
             value={query}
             onChangeText={setQuery}
             placeholder="Search exercises"
+            accessibilityLabel="Search exercises"
             placeholderTextColor={theme.textSecondary}
             style={[styles.searchInput, { color: theme.text }]}
           />
@@ -112,6 +113,8 @@ export default function LibraryScreen() {
 
       <Pressable
         onPress={() => router.push('/exercise-editor')}
+        accessibilityRole="button"
+        accessibilityLabel="New exercise"
         style={({ pressed }) => [styles.fab, { backgroundColor: fabColor }, pressed && styles.pressed]}>
         <ThemedText type="title" style={[styles.fabPlus, { color: theme.onAccent }]}>
           +

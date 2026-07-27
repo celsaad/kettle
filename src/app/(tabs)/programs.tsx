@@ -39,7 +39,12 @@ export default function ProgramsScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
           <ThemedText type="subtitle">Programs</ThemedText>
-          <Pressable onPress={() => router.push('/program-guide')} hitSlop={8} style={styles.helpButton}>
+          <Pressable
+            onPress={() => router.push('/program-guide')}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="How to write a program"
+            style={styles.helpButton}>
             <ThemedText type="heading" themeColor="textSecondary">
               ?
             </ThemedText>
@@ -93,6 +98,8 @@ export default function ProgramsScreen() {
 
       <Pressable
         onPress={() => router.push('/program-editor')}
+        accessibilityRole="button"
+        accessibilityLabel="New program"
         style={({ pressed }) => [styles.fab, { backgroundColor: fabColor }, pressed && styles.pressed]}>
         <ThemedText type="title" style={[styles.fabPlus, { color: theme.onAccent }]}>
           +

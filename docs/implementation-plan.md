@@ -517,6 +517,61 @@ demonstration of the rework this ordering avoids at scale.
 labels in `recentSessionsView`/`historySessionsView`/`exerciseHistory` — the date ones need the locale
 work from I18n-3 to be worth touching, since they'd otherwise just move the hardcoded locale.
 
+## ✅ A11y-1 and A11y-2: labels, touch targets, contrast
+
+**Contrast (A11y-2).** Re-measured independently rather than taking the audit's word for it; the
+numbers matched. `light.textSecondary` was `#777166` — 4.41 on `background` and 4.01 on
+`backgroundSelected`, failing AA on two of three surfaces, and it's the app's most-used color (every
+caption, count and summary line). Now `#6b6558`: 5.28 / 5.79 / 4.79. The runner's soft pill labels
+failed too (`accent` 4.17, `accentCalm` 3.79 composited over their translucent backgrounds, at 12px),
+so they get dedicated `accentOnSoft` / `accentCalmOnSoft` tokens measuring 5.68 and 5.75 — separate
+tokens rather than lightening the fills, so the pill shapes keep their intended weight. White-on-accent
+measures 3.64 and is left as-is: it's only used for the 20px semibold "Start session" label, which
+clears AA-large, and that constraint is now written into `constants/theme.ts` so it isn't reused for
+body text by accident.
+
+**Labels and targets (A11y-1).** The worst cases were the runner's prev/next buttons — CSS-triangle
+`View`s with no text child at all, so a screen reader announced "button" with no name, on the primary
+in-workout controls. Also labelled: the Build play buttons, all three FABs, the Programs help button,
+both search inputs, the RPE pills (with `accessibilityState.selected`), and every `✕` remove control in
+the editors, which were previously N indistinguishable "✕" buttons in a list. History's session card
+gained `accessibilityState.expanded`, which the chevron glyph alone can't convey. The RPE pills were
+~26px tall — the smallest target in the app, in the live runner where you're least precise — and are
+now `minHeight: 44`, using minHeight rather than height so they still grow at large text sizes.
+
+Verified in the browser: the caption color computes to `rgb(107, 101, 88)`, the runner pill to
+`rgb(221, 138, 92)`, the RPE pill measures 44px, and every named control is reachable via its
+accessible name. That last point had a side benefit — the verification script could stop guessing pixel
+coordinates and click `getByLabel('Start Calisthenics A')` instead.
+
+**Still open from the a11y audit:** A11y-3 (dynamic type — the runner screens are `flex: 1` with no
+ScrollView, so at iOS AX5 the primary action can go off-screen, which is the one genuinely blocking
+failure), A11y-4 (runner announcements and reduce-motion), and screen-reader reordering for
+`ReorderableList`, which is gesture-only and so currently impossible without sight.
+
+## Planned: fold a11y and i18n into AGENTS.md, once both are done
+
+**Do this after the a11y and i18n workstreams land, not before.** Once every control has a label and
+every string goes through the translation layer, those stop being projects and become house rules —
+and a rule that isn't written where the next session reads it will quietly decay, exactly as the
+implementation plan's own "what's genuinely left" heading did.
+
+What to add to `AGENTS.md` at that point:
+
+- **Every interactive element needs `accessibilityRole` and a label**, and icon-only controls need the
+  label most, since they have no text to fall back on. Selected/expanded controls need
+  `accessibilityState`. Touch targets are 44px minimum, via `minHeight` (not `height`, which breaks at
+  large accessibility text sizes) or `hitSlop`.
+- **New colors must be contrast-checked** against the surfaces they sit on, alpha-composited where the
+  background is translucent. The palette's existing notes in `constants/theme.ts` record the measured
+  ratios and the one pairing that only clears AA-large.
+- **No user-facing string goes in the logic layer** — producers return descriptors, the format/i18n
+  layer renders them. No `count === 1` ternaries at call sites; no `toLocaleDateString('en-US', …)`.
+- **User data is never translated**: exercise, workout and program names come from the user's own YAML.
+
+Keep it to a few lines. The point is a checklist a future session actually reads, not a summary of the
+workstreams — those live in this file.
+
 ## Open bugs
 
 Found while planning the tests/a11y/i18n work (see `testing-a11y-i18n-plan.md`), each verified against

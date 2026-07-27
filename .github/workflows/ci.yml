@@ -22,3 +22,20 @@ jobs:
 
       - name: Lint
         run: npm run lint
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # --ci fails rather than writes on a missing snapshot; the worker cap keeps jest from
+      # over-subscribing the 2-core runner, where spawning more workers is slower, not faster.
+      - name: Test
+        run: npm test -- --ci --maxWorkers=2

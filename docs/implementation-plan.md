@@ -378,26 +378,32 @@ decision assembled across several commits. Open work belongs in the sections at 
   caller's `.catch()` missed it, surfacing as an unhandled error. Both are now `async`, which turns it
   into a rejection those existing handlers catch. Fixes the crash on Library's export and the same
   latent hole in History's.
-## Planned: two more audio cues in the runner
+## ✅ Two more audio cues in the runner
 
-Requested from real use. `use-session-sounds.ts` already provides `playTick` (last 3 seconds of a
-countdown) and `playExerciseChange` (moving to a new exercise); both of these are new cue *moments*
-rather than new mechanics, so the work is picking the trigger points, not building audio.
+Both requested from real use, and both now sound a new rising two-note `milestone.wav` — deliberately
+rising where the countdown tick is flat, because the two mean opposite things: a tick says "about to
+end", a milestone says "keep going, you are partway".
 
-- **A chime at the halfway point of a HIIT work interval.** Mid-interval is the moment you'd otherwise
-  have to look at the screen to pace yourself. Fires once per work interval, at `workSec / 2` elapsed —
-  not during the rest interval, which already has the 3-2-1 ticks.
-- **A chime when a hold reaches its target.** Holds count *up* with the target as a marker
-  (`session-hold.tsx`), so nothing currently marks the moment you've actually hit it — the one piece of
-  information that matters while your eyes are shut and your abs are shaking. Fires at `holdSecMin`;
-  for a range target, that's the bottom of the range, since that's the point the set counts.
+- **Halfway through a HIIT work interval**, the point you would otherwise have to look up to pace
+  yourself. Work intervals only: their rest already gets the 3-2-1 ticks. Not wired to emom or amrap —
+  emom intervals are usually too short for a midpoint to mean much, though an amrap time cap is a
+  reasonable future extension.
+- **When a hold reaches its target.** Holds count *up* with the target as a marker, so nothing
+  previously marked the moment you actually hit it — the one piece of information that matters with
+  your eyes shut. Fires at the bottom of a range target, since that is where the set counts.
 
-Both need a distinct sound from `playTick`, or they'll be misread as "time nearly up". Implementation
-note: fire from a ref-guarded check in the ticking effect so a cue can't repeat if the effect re-runs
-within the same second, and respect the same fired-once-per-step discipline `playExerciseChange` uses.
-This also pairs with the accessibility work — these cues are exactly what makes the runner usable
-without looking, so they belong with A11y-4's announcement design rather than being bolted on
-separately.
+One sound serves both: which one you are hearing is never ambiguous, since you are either mid-interval
+or mid-hold, and a third distinct tone would be more to learn for no added information.
+
+**The once-per-step guard is the whole feature.** Both triggers are thresholds that stay true for the
+rest of the step, so a 1Hz tick would re-chime every second — worst on a hold, which does not
+auto-advance and can run well past target. A ref keyed on the step index (not reset on change, so it
+survives the ticking effect being rebuilt by pause/resume) fixes that, and removing it fails two tests.
+Verified in the app by patching HTMLMediaElement.play: silent at 14s, exactly one milestone.wav at the
+15s target, still exactly one at 26s.
+
+The asset is generated rather than sourced — two sine notes (A5 then E6) with attack and exponential
+decay envelopes, since a raw sine starting or stopping at non-zero amplitude clicks audibly.
 
 ## Planned: direct numeric entry for reps and load in the runner
 

@@ -23,8 +23,13 @@ jest.mock('expo-haptics', () => ({
 // those factories are hoisted above these declarations.
 const mockPlayTick = jest.fn();
 const mockPlayExerciseChange = jest.fn();
+const mockPlayMilestone = jest.fn();
 jest.mock('@/hooks/use-session-sounds', () => ({
-  useSessionSounds: () => ({ playTick: mockPlayTick, playExerciseChange: mockPlayExerciseChange }),
+  useSessionSounds: () => ({
+    playTick: mockPlayTick,
+    playExerciseChange: mockPlayExerciseChange,
+    playMilestone: mockPlayMilestone,
+  }),
 }));
 
 // Typed parameters, not inferred from a zero-arg factory — the assertion below reads the third
@@ -354,6 +359,58 @@ describe('finishSession', () => {
     expect(reps?.type === 'reps' && reps.sets[0].reps).toBe(4);
     expect(mockCompleted).toBe(true);
     expect(onComplete).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('milestone chime', () => {
+  // Both triggers are thresholds that stay true for the rest of the step, so the once-per-step guard
+  // is the whole feature — without it the 1Hz tick would chime every second to the end of the interval.
+  it('sounds once at the halfway point of a hiit work interval', async () => {
+    const { result } = await mount(workoutOf(single('burpees'))); // 40s work
+    await tick(19);
+    expect(mockPlayMilestone).not.toHaveBeenCalled();
+
+    await tick(1); // 20s elapsed = halfway
+    expect(mockPlayMilestone).toHaveBeenCalledTimes(1);
+
+    await tick(10); // still past halfway, must not repeat
+    expect(mockPlayMilestone).toHaveBeenCalledTimes(1);
+    expect(result.current.stepIndex).toBe(0);
+  });
+
+  it('sounds again on the next interval, having reset per step', async () => {
+    const { result } = await mount(workoutOf(single('burpees')));
+    await tick(40); // finish work interval 1 -> rest
+    await press(() => result.current.skipRest());
+    mockPlayMilestone.mockClear();
+
+    await tick(20); // halfway through work interval 2
+    expect(mockPlayMilestone).toHaveBeenCalledTimes(1);
+  });
+
+  it('sounds once when a hold reaches its target', async () => {
+    const { result } = await mount(workoutOf(single('lsit'))); // holdSecMin 15, counts up
+    await tick(14);
+    expect(mockPlayMilestone).not.toHaveBeenCalled();
+
+    await tick(1);
+    expect(mockPlayMilestone).toHaveBeenCalledTimes(1);
+
+    // A hold doesn't auto-advance, so it keeps ticking past the target — exactly where a repeat
+    // would be most annoying.
+    await tick(15);
+    expect(mockPlayMilestone).toHaveBeenCalledTimes(1);
+    expect(result.current.holdElapsedSec).toBe(30);
+  });
+
+  it('stays silent through a rest countdown', async () => {
+    const { result } = await mount(workoutOf(single('burpees')));
+    await tick(40);
+    expect(result.current.step?.kind).toBe('rest');
+    mockPlayMilestone.mockClear();
+
+    await tick(19); // the 20s rest, all the way out
+    expect(mockPlayMilestone).not.toHaveBeenCalled();
   });
 });
 

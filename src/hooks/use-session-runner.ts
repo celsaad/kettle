@@ -160,7 +160,20 @@ export function useSessionRunner(
   const step = steps[stepIndex];
   const isCountdownStep = step?.kind === 'rest' || (step?.kind === 'interval' && !step.countUp);
 
-  const { playTick, playExerciseChange } = useSessionSounds();
+  const { playTick, playExerciseChange, playMilestone } = useSessionSounds();
+
+  /**
+   * Which step index the milestone chime has already sounded for. Both triggers are threshold
+   * conditions ("elapsed past the target", "past halfway") that stay true for the rest of the step, so
+   * the 1Hz tick would otherwise re-fire them every second. Keyed on the step index rather than reset
+   * on change, so it's correct even if the ticking effect re-runs mid-step (pause/resume rebuilds it).
+   */
+  const milestoneFiredForStepRef = useRef(-1);
+  const fireMilestone = useCallback(() => {
+    if (milestoneFiredForStepRef.current === stepIndexRef.current) return;
+    milestoneFiredForStepRef.current = stepIndexRef.current;
+    playMilestone();
+  }, [playMilestone]);
 
   const startSession = useSessionHistoryStore((state) => state.startSession);
   const logEntry = useSessionHistoryStore((state) => state.logEntry);
@@ -405,16 +418,29 @@ export function useSessionRunner(
     if (!step || paused) return;
     const id = setInterval(() => {
       if (step.kind === 'hold' || (step.kind === 'interval' && step.countUp)) {
-        setHoldElapsedSec(computeElapsedSec());
+        const elapsed = computeElapsedSec();
+        setHoldElapsedSec(elapsed);
+        // Holds count *up* with the target as a marker, so without this nothing marks the moment you
+        // actually reach it — the one thing worth knowing with your eyes shut. Fires at the bottom of
+        // a range target, since that's the point the set counts.
+        if (step.kind === 'hold' && elapsed >= step.holdTargetSec) fireMilestone();
       } else if (isCountdownStep) {
         const remaining = Math.max(0, restTargetSecRef.current - computeElapsedSec());
         setRestRemainingSec(remaining);
         if (remaining <= 0) advance();
-        else if (remaining <= 3) playTick();
+        else {
+          // Halfway through a HIIT work interval — the point you'd otherwise have to look up to pace
+          // yourself. Only hiit: its rest intervals already get the 3-2-1 ticks, and emom/amrap are
+          // either too short for a midpoint to mean anything or better served by their own cues.
+          if (step.kind === 'interval' && step.variant === 'hiit' && remaining <= step.targetSec / 2) {
+            fireMilestone();
+          }
+          if (remaining <= 3) playTick();
+        }
       }
     }, 1000);
     return () => clearInterval(id);
-  }, [step, paused, isCountdownStep, advance, computeElapsedSec, playTick]);
+  }, [step, paused, isCountdownStep, advance, computeElapsedSec, playTick, fireMilestone]);
 
   // Recompute from wall-clock timestamps on foreground return, and catch up an auto-advancing
   // countdown that fully elapsed while backgrounded — JS timers are throttled/suspended in the background.

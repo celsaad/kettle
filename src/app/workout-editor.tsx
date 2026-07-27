@@ -11,19 +11,12 @@ import { ReorderableList } from '@/components/reorderable-list';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing, MaxContentWidth } from '@/constants/theme';
+import { slugify } from '@/domain/slug';
 import type { Exercise, Workout, WorkoutBlock } from '@/domain/types';
 import { useTheme } from '@/hooks/use-theme';
 import { findExerciseInLibrary, useLibraryStore } from '@/state/library-store';
 
 const EMPTY_WORKOUT: Workout = { id: '', name: '', blocks: [] };
-
-function slugify(name: string): string {
-  return name
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-+|-+$)/g, '');
-}
 
 export default function WorkoutEditorScreen() {
   const theme = useTheme();

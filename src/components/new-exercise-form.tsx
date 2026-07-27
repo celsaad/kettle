@@ -1,19 +1,12 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
-import { buildExercise, CONFIG_FIELDS, TYPE_OPTIONS, validateConfig } from '@/app/exercise-editor';
+import { buildExercise, CONFIG_FIELDS, TYPE_OPTIONS, validateConfig } from '@/domain/exercise-form';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
+import { slugify } from '@/domain/slug';
 import type { Exercise, ExerciseType } from '@/domain/types';
 import { useTheme } from '@/hooks/use-theme';
-
-function slugify(name: string): string {
-  return name
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-+|-+$)/g, '');
-}
 
 type Props = {
   onCreate: (exercise: Exercise) => void;

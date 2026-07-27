@@ -8,19 +8,12 @@ import { ProgramOverrideEditor } from '@/components/program-override-editor';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { slugify } from '@/domain/slug';
 import type { Program, ProgramWeek } from '@/domain/types';
 import { useTheme } from '@/hooks/use-theme';
 import { useLibraryStore } from '@/state/library-store';
 
 const EMPTY_PROGRAM: Program = { id: '', name: '', weeks: [] };
-
-function slugify(name: string): string {
-  return name
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-+|-+$)/g, '');
-}
 
 function weekKey(week: ProgramWeek): string {
   return `${week.week}::${week.day ?? ''}`;

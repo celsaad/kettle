@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
-import { buildExercise, CONFIG_FIELDS, configToStrings, type FieldDef } from '@/app/exercise-editor';
+import { buildExercise, CONFIG_FIELDS, configToStrings, type FieldDef } from '@/domain/exercise-form';
 import { overrideLines } from '@/app/program-detail';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';

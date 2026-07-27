@@ -234,14 +234,22 @@ export function recentSessionsView(sessions: Session[], library: Library, limit 
 
 export type HistoryStats = { sessions: number; hours: number; sets: number; minutes: number };
 
+/**
+ * `hours`/`minutes` are the two halves of one "1h 30m" reading, so both must be whole. `hours` used to
+ * be `round(totalMinutes / 60 * 10) / 10` — a fractional *total* — while `minutes` was already a
+ * remainder, and both renderers print them side by side: 90 minutes came out as "1.5h 30m", double-
+ * counting the half hour. Only ever showed up above the hour mark, which is why short test sessions
+ * ("0h 0m") never caught it.
+ */
 export function historyStats(sessions: Session[]): HistoryStats {
   const totalMinutes = sessions.reduce((sum, session) => sum + sessionDurationMinutes(session), 0);
   const totalSets = sessions.reduce((sum, session) => sum + sessionSetCount(session), 0);
-  return { 
-    sessions: sessions.length, 
-    hours: Math.round((totalMinutes / 60) * 10) / 10, 
-    minutes: totalMinutes % 60, 
-    sets: totalSets };
+  return {
+    sessions: sessions.length,
+    hours: Math.floor(totalMinutes / 60),
+    minutes: totalMinutes % 60,
+    sets: totalSets,
+  };
 }
 
 function startOfWeek(date: Date): Date {

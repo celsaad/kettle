@@ -309,6 +309,18 @@ What's genuinely missing today, checked directly against the code:
   has been caught by hand or by driving the running app with Playwright. The wall-clock session runner
   (§7.1, "the make-or-break issue"), the zod schemas, `merge.ts`, and the selectors all have zero
   coverage. This is the largest structural gap in the project.
-- **A logged session can't be deleted or corrected.** `session-files.ts` has
-  create/append/remove-last-entry/finalize, but no delete — a mis-started or junk session is permanent.
-- **No history search or filtering**, and no settings screen (the light/dark toggle lives on Today).
+- ~~**A logged session can't be deleted.**~~ ✅ Shipped — delete from the expanded card in History,
+  behind the usual destructive confirm. Editing a past session's *entries* is still not possible; only
+  whole-session delete.
+- ~~**No history search, no settings screen.**~~ ✅ Both shipped — History has name search (which also
+  narrows the stat tiles), and there's a Settings modal with three-way appearance (light/dark/system),
+  export/import, and library counts.
+- **The appearance preference doesn't persist across relaunches.** It's in-memory, so it resets to
+  "system" on restart. There's no key-value store in the app and this value has no place in the YAML
+  library the user exports, so it needs a deliberate decision about where app preferences live.
+- **`Alert.alert` is a no-op on web** — react-native-web ships an empty implementation, so every
+  confirm dialog (all the deletes, finish-session) silently does nothing in the browser. Native is
+  unaffected, and web is a dev/preview target, so this is logged rather than fixed.
+- **No accessibility or i18n work has been done.** Almost nothing sets accessibility props, several
+  controls are under the 44px touch target, and every string is hardcoded English with `en-US` date
+  formatting and kg/metre units. Both are planned as their own workstreams.

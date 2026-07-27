@@ -47,7 +47,10 @@ reality the moment you didn't progress in strict lockstep; it also shows a stat 
 streak, this week's session count, this week's time) above the card. Any workout can also be started
 directly from the Build tab — each workout card has a small play button that runs it as a one-off,
 with no program involved. Every modal screen (editors, program detail, the guide, import) opens with
-a pinned close button, so dismissing one doesn't mean scrolling to the bottom to find Cancel.
+a pinned close button, so dismissing one doesn't mean scrolling to the bottom to find Cancel. History
+can be searched by workout name (the stat tiles and header narrow to match), and a logged session can
+be deleted from its expanded card. A Settings screen covers appearance (light/dark/system), library
+export/import, and library counts.
 
 See [`docs/implementation-plan.md`](docs/implementation-plan.md) for what shipped, the scope calls
 made along the way, and what's genuinely still open — the largest gap being that there are no

@@ -347,6 +347,74 @@ which is deleted.
   other. Cardio deliberately keeps both fields optional: an unconfigured cardio exercise is a valid
   count-up stopwatch in the runner, not a broken step. Verified live: 0 sets is refused with "Sets must
   be at least 1", while a 0-second rest still saves.
+- ✅ **Session delete, history search, and a Settings screen** (built by parallel agents; the
+  integration and the two fixes below are the parent's).
+  **Delete**: `deleteSession(id)` in `session-files.ts` (idempotent — `File.delete()` throws on a
+  missing path, so the `exists` check is load-bearing) → a store action → a destructive-confirm control
+  in History's expanded card, mirroring the exercise/workout delete pattern. Whole sessions only;
+  editing a past session's individual entries is still not possible.
+  **Search**: name search over the history list, reusing Library's search-bar styling. The stat tiles
+  now aggregate the *visible* subset and the header switches from "All time" to "N of M", because three
+  all-time numbers sitting above a filtered list would describe sessions that aren't on screen.
+  Deliberately no filter pills: a session has no single type to pill on, being whatever mix got logged.
+  **Settings**: a modal with three-way appearance, export/import, and library counts.
+  `theme-context.tsx`'s `Scheme | null` override plus `toggle()` became a `ThemePreference`
+  (`light | dark | system`) — the old toggle could never get back to following the OS, because "follow"
+  and "currently light" were indistinguishable to it. Storing intent rather than outcome is what makes
+  the third option expressible. The preference is still in-memory and resets on relaunch.
+- ✅ **Fixed: `exportLibrary`/`exportSession` threw past their own `.catch()`.** Resolving `.uri`
+  constructs an `expo-file-system` `File`, which has no web implementation and throws *synchronously* —
+  before `share()`'s async body is entered — so the throw escaped the returned promise and every
+  caller's `.catch()` missed it, surfacing as an unhandled error. Both are now `async`, which turns it
+  into a rejection those existing handlers catch. Fixes the crash on Library's export and the same
+  latent hole in History's.
+- **Not fixed, logged: `Alert.alert` is a no-op on web.** react-native-web ships
+  `class Alert { static alert() {} }`, so every confirm dialog silently does nothing in the browser —
+  all the deletes and finish-session, not just the new one. Native is unaffected and web is a
+  dev/preview target. It does mean a browser check of any confirm flow proves nothing unless the script
+  patches it, which is how the new delete was actually verified end to end.
+
+## Bugs found by an architecture pass, not yet fixed
+
+Found while planning the tests/a11y/i18n work (see `testing-a11y-i18n-plan.md`), each verified against
+the code. Listed worst first. `historyStats` returning "1.5h 30m" was in this list and is now fixed.
+
+- **EMOM builds the wrong number of intervals.** `use-session-runner.ts`'s expansion loops
+  `totalMinutes` times with `targetSec: intervalSec`, so `interval_sec: 30, total_minutes: 10` runs ten
+  30-second intervals — five minutes of work labelled "Minute 1 of 10". Should be
+  `totalMinutes * 60 / intervalSec` intervals. `estimateExerciseSeconds` computes `totalMinutes * 60`,
+  so the estimate and the runner already disagree. Invisible only when `interval_sec` is exactly 60,
+  which is why it survived.
+- **Weight is never captured or logged.** The LOAD card in `session-reps.tsx` is a hardcoded `BW +0 kg`
+  literal with no input, and `commitCurrentStep` never writes `weightKg`. So `targetWeightKg` never
+  reaches a session, `entryVolume`'s `hasWeight` branch is dead code, and the volume chart silently
+  plots rep-count for every weighted lift.
+- **Side effects run inside `setState` updaters.** `advance()` calls `commitCurrentStep`/`logEntry`/
+  `completeSession`/`onComplete` from inside `setStepIndex(index => …)`, and `goPrev()` calls
+  `removeLastEntry` the same way. React may re-invoke an updater, which would duplicate entries and
+  file writes. Latent today because nothing wraps the app in StrictMode — which also means the runner
+  tests must not use StrictMode.
+- **`addRestSeconds` doesn't reschedule the background notification.** It mutates `restTargetSecRef`
+  directly, and none of the notification effect's dependencies change, so after "+30s" the rest-complete
+  notification still fires at the original time.
+- **`currentStreak` breaks across DST.** It walks back with `getTime() - 86_400_000`; across a DST
+  boundary that lands on the wrong calendar day, truncating or double-counting a streak. Should step
+  with `setDate(getDate() - 1)`.
+- **Chip styling compares against a display name.** `index.tsx` keys rest-chip styling off
+  `chip === 'Rest'` — the user's exercise *name*. Rename that exercise, or author one in another
+  language, and the styling silently stops applying. Must key off `exercise.type === 'rest'`; today
+  `blockChips` throws the type away. This becomes a hard failure once i18n lands.
+- **`today`/`dateLabel` are computed at module scope** in `index.tsx`, so they freeze at first import —
+  leave the app open past midnight and Today shows yesterday.
+- **`sessionSetCount` under-reports interval work**, counting an EMOM entry as one "set" regardless of
+  `minutes.length` and a HIIT entry as one regardless of `roundsCompleted`.
+- **`slugify` yields an empty id for non-Latin names**, so the app can't name exercises in most
+  scripts. It surfaces as the "Could not derive an id" error rather than corruption, but it makes the
+  app unusable in those languages. Four duplicate copies of the function.
+- **`session-hold.tsx` can compute `width: "NaN%"`** when `targetSec` is 0. `validateConfig` guards the
+  in-app path, but imported YAML and `applyExerciseOverride` can still reach it.
+- **Stale copy in `programs.tsx`** still says per-week overrides aren't editable in-app; override
+  editing shipped in `09d2606`.
 
 ## Open questions from the product plan, still open
 

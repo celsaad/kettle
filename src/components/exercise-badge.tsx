@@ -2,6 +2,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { useTheme } from '@/hooks/use-theme';
+import type { CircuitShape } from '@/domain/format';
 import { Exercise, ExerciseType, WorkoutBlock } from '@/domain/types';
 
 export function ExerciseBadge({ type, overrideLabel }: { type: ExerciseType; overrideLabel?: string }) {
@@ -67,10 +68,13 @@ export function exerciseSummary(exercise: Exercise): string {
   }
 }
 
-export function circuitSummary(block: Extract<WorkoutBlock, { kind: 'circuit' }>): string {
-  const betweenExercises = block.restBetweenExercisesSec ?? 0;
-  const betweenRounds = block.restBetweenRoundsSec ?? 0;
-  return `${block.rounds} rounds · ${betweenExercises}s / ${betweenRounds}s rest`;
+/** Structured, not a sentence — `formatCircuitShape` in domain/format.ts renders it. */
+export function circuitShape(block: Extract<WorkoutBlock, { kind: 'circuit' }>): CircuitShape {
+  return {
+    rounds: block.rounds,
+    restBetweenExercisesSec: block.restBetweenExercisesSec ?? 0,
+    restBetweenRoundsSec: block.restBetweenRoundsSec ?? 0,
+  };
 }
 
 const styles = StyleSheet.create({

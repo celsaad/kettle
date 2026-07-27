@@ -5,10 +5,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { formatWorkoutShape } from '@/domain/format';
 import { useTheme } from '@/hooks/use-theme';
 import { useLibraryStore } from '@/state/library-store';
 import { useSessionHistoryStore } from '@/state/session-history-store';
-import { blockChips, currentStreak, nextUpView, recentSessionsView, thisWeekStats, workoutSummary } from '@/state/selectors';
+import { blockChips, currentStreak, nextUpView, recentSessionsView, thisWeekStats, workoutShape } from '@/state/selectors';
 
 const today = new Date();
 const dateLabel = today.toLocaleDateString('en-US', {
@@ -24,7 +25,7 @@ export default function TodayScreen() {
 
   const nextUp = library ? nextUpView(library, sessions) : null;
   const chips = nextUp ? blockChips(nextUp.workout, nextUp.exercises) : [];
-  const summary = nextUp ? workoutSummary(nextUp.workout, nextUp.exercises) : '';
+  const summary = nextUp ? formatWorkoutShape(workoutShape(nextUp.workout, nextUp.exercises)) : '';
   const recentSessions = library ? recentSessionsView(sessions, library) : [];
   const streak = currentStreak(sessions);
   const weekStats = thisWeekStats(sessions);

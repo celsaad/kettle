@@ -4,13 +4,14 @@ import { Alert, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react
 import { GestureDetector } from 'react-native-gesture-handler';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { circuitSummary, ExerciseBadge, exerciseSummary } from '@/components/exercise-badge';
+import { circuitShape, ExerciseBadge, exerciseSummary } from '@/components/exercise-badge';
 import { ModalHeader } from '@/components/modal-header';
 import { NewExerciseForm } from '@/components/new-exercise-form';
 import { ReorderableList } from '@/components/reorderable-list';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing, MaxContentWidth } from '@/constants/theme';
+import { formatCircuitShape, plural } from '@/domain/format';
 import { slugify } from '@/domain/slug';
 import type { Exercise, Workout, WorkoutBlock } from '@/domain/types';
 import { useTheme } from '@/hooks/use-theme';
@@ -170,7 +171,7 @@ export default function WorkoutEditorScreen() {
         />
 
         <ThemedText themeColor="textSecondary" style={styles.blockCount}>
-          {draft.blocks.length} blocks
+          {plural(draft.blocks.length, 'block')}
         </ThemedText>
 
         <ReorderableList
@@ -331,7 +332,7 @@ export default function WorkoutEditorScreen() {
                 </View>
 
                 <ThemedText type="small" themeColor="textSecondary" style={styles.circuitSummaryText}>
-                  {circuitSummary(block)}
+                  {formatCircuitShape(circuitShape(block))}
                 </ThemedText>
               </View>
             );

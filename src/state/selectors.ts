@@ -1,4 +1,6 @@
 import { resolveWorkoutForWeek } from '@/domain/program';
+import type { EntryResult, WorkoutShape } from '@/domain/format';
+import { formatEntryResult } from '@/domain/format';
 import type { Exercise, Library, Program, ProgramWeek, Session, SessionEntry, Workout, WorkoutBlock } from '@/domain/types';
 
 function findExercise(exercises: Exercise[], id: string): Exercise | undefined {
@@ -25,16 +27,6 @@ export function blockChips(workout: Workout, exercises: Exercise[]): BlockChip[]
     block.kind === 'circuit' ? block.members.map((member) => chipFor(member.exerciseId)) : [chipFor(block.exerciseId)],
   );
 }
-
-const TYPE_LABEL: Record<Exercise['type'], string> = {
-  hiit: 'hiit',
-  emom: 'emom',
-  amrap: 'amrap',
-  reps: 'reps',
-  timed_hold: 'hold',
-  cardio: 'cardio',
-  rest: 'rest',
-};
 
 function estimateExerciseSeconds(exercise: Exercise, overrideDurationSec?: number): number {
   switch (exercise.type) {
@@ -105,22 +97,23 @@ function blockTypes(block: WorkoutBlock, exercises: Exercise[]): Exercise['type'
     .filter((type): type is Exercise['type'] => !!type);
 }
 
-export function workoutSummary(workout: Workout, exercises: Exercise[]): string {
-  const types = new Set<string>();
+/** Structured, not a sentence — `formatWorkoutShape` in domain/format.ts renders it. */
+export function workoutShape(workout: Workout, exercises: Exercise[]): WorkoutShape {
+  const types = new Set<Exercise['type']>();
   let totalSec = 0;
 
   for (const block of workout.blocks) {
     for (const type of blockTypes(block, exercises)) {
-      if (type !== 'rest') types.add(TYPE_LABEL[type]);
+      if (type !== 'rest') types.add(type);
     }
     totalSec += estimateBlockSeconds(block, exercises);
   }
 
-  const typeList = [...types];
-  const typeLabel = typeList.length === 0 ? 'rest only' : typeList.length === 1 ? typeList[0] : `mixed ${typeList.join(' + ')}`;
-  const minutes = Math.max(1, Math.round(totalSec / 60));
-
-  return `${workout.blocks.length} blocks · ${typeLabel} · ~${minutes} min`;
+  return {
+    blockCount: workout.blocks.length,
+    types: [...types],
+    estimatedMinutes: Math.max(1, Math.round(totalSec / 60)),
+  };
 }
 
 export type NextUpView = {
@@ -322,29 +315,29 @@ export type HistorySessionView = {
   entries: HistorySessionEntryView[];
 };
 
-export function sessionEntrySummary(entry: SessionEntry): string {
+/**
+ * Structured, not a sentence — `formatEntryResult` in domain/format.ts renders it. Collapses seven
+ * entry types onto six shapes: hiit and amrap both reduce to rounds, so nothing downstream has to
+ * know which produced them.
+ */
+export function sessionEntryResult(entry: SessionEntry): EntryResult {
   switch (entry.type) {
     case 'timed_hold':
-      return entry.sets.map((set) => `${set.holdSec}s`).join(' · ');
+      return { kind: 'holds', holdSecs: entry.sets.map((set) => set.holdSec) };
     case 'reps':
-      return `${entry.sets.map((set) => set.reps).join(' · ')} reps`;
+      return { kind: 'reps', reps: entry.sets.map((set) => set.reps) };
     case 'hiit':
-      return `${entry.roundsCompleted} rounds`;
+      return { kind: 'rounds', rounds: entry.roundsCompleted };
     case 'emom': {
       const totalReps = entry.minutes.reduce((sum, minute) => sum + (minute.reps ?? 0), 0);
-      const repsNote = totalReps > 0 ? ` · ${totalReps} reps` : '';
-      return `${entry.minutes.length} min${repsNote}`;
+      return { kind: 'intervals', intervals: entry.minutes.length, totalReps: totalReps || undefined };
     }
     case 'amrap':
-      return entry.extraReps ? `${entry.roundsCompleted} rounds + ${entry.extraReps} reps` : `${entry.roundsCompleted} rounds`;
-    case 'cardio': {
-      const parts: string[] = [];
-      if (entry.durationSec !== undefined) parts.push(`${entry.durationSec}s`);
-      if (entry.distanceMeters !== undefined) parts.push(`${entry.distanceMeters} m`);
-      return parts.join(' · ');
-    }
+      return { kind: 'rounds', rounds: entry.roundsCompleted, extraReps: entry.extraReps };
+    case 'cardio':
+      return { kind: 'cardio', durationSec: entry.durationSec, distanceMeters: entry.distanceMeters };
     case 'rest':
-      return `${entry.restTakenSec}s`;
+      return { kind: 'rest', restTakenSec: entry.restTakenSec };
   }
 }
 
@@ -391,7 +384,7 @@ export function exerciseHistory(sessions: Session[], exerciseId: string, limit =
       results.push({
         sessionId: session.id,
         dateLabel: new Date(session.startedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        summary: sessionEntrySummary(entry),
+        summary: formatEntryResult(sessionEntryResult(entry)),
         volume: entryVolume(entry),
       });
       if (results.length >= limit) return results;
@@ -405,7 +398,7 @@ export function historySessionsView(sessions: Session[], library: Library): Hist
     const loggedTypes = new Set(session.entries.filter((entry) => entry.type !== 'rest').map((entry) => entry.type));
     const entries: HistorySessionEntryView[] = session.entries
       .filter((entry) => entry.type !== 'rest')
-      .map((entry) => ({ exerciseName: exerciseName(library.exercises, entry.exercise), summary: sessionEntrySummary(entry) }));
+      .map((entry) => ({ exerciseName: exerciseName(library.exercises, entry.exercise), summary: formatEntryResult(sessionEntryResult(entry)) }));
 
     const startedAt = new Date(session.startedAt);
     return {

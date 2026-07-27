@@ -5,9 +5,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { formatWorkoutShape, plural } from '@/domain/format';
 import { useAppTheme } from '@/hooks/theme-context';
 import { useTheme } from '@/hooks/use-theme';
-import { workoutSummary } from '@/state/selectors';
+import { workoutShape } from '@/state/selectors';
 import { useLibraryStore } from '@/state/library-store';
 
 export default function BuildScreen() {
@@ -24,7 +25,7 @@ export default function BuildScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <ThemedText type="subtitle">Workouts</ThemedText>
         <ThemedText themeColor="textSecondary" style={styles.countLabel}>
-          {library.workouts.length} workouts
+          {plural(library.workouts.length, 'workout')}
         </ThemedText>
 
         {library.workouts.length === 0 ? (
@@ -44,7 +45,7 @@ export default function BuildScreen() {
                   <View style={styles.cardText}>
                     <ThemedText type="heading">{workout.name}</ThemedText>
                     <ThemedText type="small" themeColor="textSecondary">
-                      {workoutSummary(workout, library.exercises)}
+                      {formatWorkoutShape(workoutShape(workout, library.exercises))}
                     </ThemedText>
                   </View>
                 </Pressable>

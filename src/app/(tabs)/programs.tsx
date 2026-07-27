@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { plural } from '@/domain/format';
 import { programWeekNumbers } from '@/domain/program';
 import type { Program } from '@/domain/types';
 import { useAppTheme } from '@/hooks/theme-context';
@@ -23,7 +24,7 @@ function weekRangeLabel(program: Program): string {
 function detailLabel(program: Program): string | null {
   const count = program.weeks.filter((week) => week.notes || (week.overrides && week.overrides.length > 0)).length;
   if (count === 0) return null;
-  return `${count} week${count === 1 ? '' : 's'} with notes or overrides`;
+  return `${plural(count, 'week')} with notes or overrides`;
 }
 
 export default function ProgramsScreen() {

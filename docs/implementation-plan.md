@@ -488,6 +488,35 @@ Three things worth knowing for the next person writing tests here:
   failing with opaque `AggregateError`s while passing in isolation — the failure surfaced nowhere near
   its cause, which is exactly why this belongs in config rather than per-file.
 
+## ✅ I18n-0: structured descriptors in the logic layer
+
+The first step of the i18n plan, done ahead of the library so later work isn't rewriting assertions.
+The logic layer returned finished English sentences, which made two things hard: tests had to assert on
+prose i18n was about to rewrite, and pluralisation was scattered across a dozen template literals.
+
+`src/domain/format.ts` is now the only place English is assembled. The producers return data:
+`workoutSummary` → `workoutShape` (`{ blockCount, types, estimatedMinutes }`), `sessionEntrySummary` →
+`sessionEntryResult` (a six-variant descriptor), `circuitSummary` → `circuitShape`. Views call
+`formatWorkoutShape` / `formatEntryResult` / `formatCircuitShape`.
+
+**This fixed live bugs rather than just moving code.** "1 blocks" was on the Today card and every Build
+row; "1 exercises", "1 workouts", "1 rounds" and "1 reps" were reachable too. They're gone by
+construction now — a single `plural()` helper — and `formatEntryResult` also drops the "N min" wording
+for EMOM, which was wrong for any interval that isn't 60 seconds.
+
+**`plural` is deliberately English-only.** The obvious implementation is `Intl.PluralRules`, but Hermes
+doesn't ship it, so that would pass in tests and on web and crash on device. It's one function, and the
+single seam to swap for CLDR categories when i18next and the `intl-pluralrules` polyfill land — which
+matters because Polish and Arabic have three to six forms, not two.
+
+The selectors test now asserts descriptors instead of sentences; converting it was a small live
+demonstration of the rework this ordering avoids at scale.
+
+**Still assembling English in the logic layer, deferred to the i18n pass proper:** `exerciseSummary`
+(`exercise-badge.tsx`), `previewFor` (`session-steps.ts`), and the `toLocaleDateString('en-US', …)`
+labels in `recentSessionsView`/`historySessionsView`/`exerciseHistory` — the date ones need the locale
+work from I18n-3 to be worth touching, since they'd otherwise just move the hardcoded locale.
+
 ## Open bugs
 
 Found while planning the tests/a11y/i18n work (see `testing-a11y-i18n-plan.md`), each verified against

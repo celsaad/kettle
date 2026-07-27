@@ -7,6 +7,7 @@ import { ExerciseBadge, exerciseSummary } from '@/components/exercise-badge';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { plural } from '@/domain/format';
 import { ExerciseType } from '@/domain/types';
 import { useAppTheme } from '@/hooks/theme-context';
 import { useTheme } from '@/hooks/use-theme';
@@ -57,7 +58,7 @@ export default function LibraryScreen() {
           </View>
         </View>
         <ThemedText themeColor="textSecondary" style={styles.countLabel}>
-          {filtered.length} exercises
+          {plural(filtered.length, 'exercise')}
         </ThemedText>
 
         <View style={[styles.searchBar, { borderColor: theme.border, backgroundColor: theme.backgroundElement }]}>

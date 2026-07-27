@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import { Alert, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
@@ -8,16 +8,52 @@ import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useLibraryStore } from '@/state/library-store';
 import { useSessionHistoryStore } from '@/state/session-history-store';
-import { historySessionsView, historyStats as historyStatsFor } from '@/state/selectors';
+import { historySessionsView, historyStats as historyStatsFor, type HistorySessionView } from '@/state/selectors';
 import { exportSession } from '@/storage/export';
 
 export default function HistoryScreen() {
   const theme = useTheme();
   const library = useLibraryStore((state) => state.library);
   const sessions = useSessionHistoryStore((state) => state.sessions);
-  const historySessions = library ? historySessionsView(sessions, library) : [];
-  const historyStats = historyStatsFor(sessions);
+  const deleteSession = useSessionHistoryStore((state) => state.deleteSession);
+  const [query, setQuery] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  const historySessions = useMemo(() => (library ? historySessionsView(sessions, library) : []), [sessions, library]);
+
+  const searching = query.trim().length > 0;
+
+  // Matching happens on the view rather than on the raw sessions because the workout *name* the user
+  // types is only resolved from the library by historySessionsView; a Session only carries the id.
+  // No filter pills alongside the search box (unlike Library): a session has no single type to pill on
+  // — it's whatever mix of exercises got logged — and a date-range pill would fight the stat tiles,
+  // which already declare their own scope in the header. Name search is the one axis where the user
+  // knows in advance what they're looking for.
+  const visibleSessions = useMemo(() => {
+    if (!searching) return historySessions;
+    const needle = query.trim().toLowerCase();
+    return historySessions.filter((session) => session.workoutName.toLowerCase().includes(needle));
+  }, [historySessions, query, searching]);
+
+  // The tiles aggregate what's actually listed below them, not the whole archive — three all-time
+  // numbers sitting on top of a filtered list would be describing sessions that aren't on screen. The
+  // header label switches from "All time" to a match count so the narrowed scope is stated, not implied.
+  const historyStats = useMemo(() => {
+    if (!searching) return historyStatsFor(sessions);
+    const visibleIds = new Set(visibleSessions.map((session) => session.id));
+    return historyStatsFor(sessions.filter((session) => visibleIds.has(session.id)));
+  }, [sessions, visibleSessions, searching]);
+
+  const confirmDelete = (session: HistorySessionView) => {
+    Alert.alert('Delete session?', `"${session.workoutName}" on ${session.day} ${session.month} will be permanently removed.`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: () => deleteSession(session.id),
+      },
+    ]);
+  };
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['top', 'left', 'right']}>
@@ -28,9 +64,12 @@ export default function HistoryScreen() {
             Says "All time" rather than a month: the list below is every session ever, and the three
             tiles are historyStats(sessions) over that same unfiltered set. This used to be a
             hardcoded "July 2026", which was wrong twice over — frozen to one month, and labelling
-            all-time numbers as if they were that month's.
+            all-time numbers as if they were that month's. Searching narrows both the list and the
+            tiles, so the label has to stop claiming "all time" and say what the subset is instead.
           */}
-          <ThemedText themeColor="textSecondary">All time</ThemedText>
+          <ThemedText themeColor="textSecondary">
+            {searching ? `${visibleSessions.length} of ${sessions.length}` : 'All time'}
+          </ThemedText>
         </View>
 
         <View style={styles.statsRow}>
@@ -54,8 +93,19 @@ export default function HistoryScreen() {
           </ThemedView>
         </View>
 
+        <View style={[styles.searchBar, { borderColor: theme.border, backgroundColor: theme.backgroundElement }]}>
+          <ThemedText themeColor="textSecondary">⌕</ThemedText>
+          <TextInput
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Search workouts"
+            placeholderTextColor={theme.textSecondary}
+            style={[styles.searchInput, { color: theme.text }]}
+          />
+        </View>
+
         <View style={styles.list}>
-          {historySessions.map((session) => {
+          {visibleSessions.map((session) => {
             const expanded = expandedId === session.id;
             return (
               <ThemedView key={session.id} type="backgroundElement" style={[styles.card, { borderColor: theme.border }]}>
@@ -95,6 +145,11 @@ export default function HistoryScreen() {
                       </View>
                     ))}
                     <View style={styles.expandedFooter}>
+                      <Pressable onPress={() => confirmDelete(session)} hitSlop={8}>
+                        <ThemedText type="small" themeColor="textSecondary">
+                          Delete
+                        </ThemedText>
+                      </Pressable>
                       <Pressable onPress={() => exportSession(session.id).catch(() => { })} hitSlop={8}>
                         <ThemedText type="small" themeColor="accentText">
                           Export
@@ -139,6 +194,22 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1,
     padding: Spacing.two + 4,
+  },
+  // Copied value-for-value from Library's search bar, deliberately: the two list screens should read
+  // as one pattern, not two takes on it.
+  searchBar: {
+    marginTop: Spacing.three,
+    height: 44,
+    borderRadius: 14,
+    borderWidth: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    paddingHorizontal: Spacing.two + 6,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
   },
   list: {
     marginTop: Spacing.three,
@@ -189,10 +260,10 @@ const styles = StyleSheet.create({
   expandedFooter: {
     marginTop: Spacing.one,
     flexDirection: 'row',
-    // Export is the only thing left here now that the data-model note is gone, so it anchors right
-    // rather than sitting alone on the left.
+    // Both actions anchor right, destructive one first: Export keeps the outermost, easiest-to-hit
+    // spot, and Delete stays muted rather than accented so it never reads as the intended action.
     justifyContent: 'flex-end',
     alignItems: 'center',
-    gap: Spacing.two,
+    gap: Spacing.two + 4,
   },
 });

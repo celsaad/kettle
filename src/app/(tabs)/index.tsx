@@ -5,7 +5,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
-import { useAppTheme } from '@/hooks/theme-context';
 import { useTheme } from '@/hooks/use-theme';
 import { useLibraryStore } from '@/state/library-store';
 import { useSessionHistoryStore } from '@/state/session-history-store';
@@ -20,7 +19,6 @@ const dateLabel = today.toLocaleDateString('en-US', {
 
 export default function TodayScreen() {
   const theme = useTheme();
-  const { scheme, toggle } = useAppTheme();
   const library = useLibraryStore((state) => state.library);
   const sessions = useSessionHistoryStore((state) => state.sessions);
 
@@ -41,13 +39,15 @@ export default function TodayScreen() {
             Kettle
           </ThemedText>
           <Pressable
-            onPress={toggle}
+            onPress={() => router.push('/settings')}
+            accessibilityRole="button"
+            accessibilityLabel="Settings"
             style={({ pressed }) => [
-              styles.syncButton,
+              styles.settingsButton,
               { borderColor: theme.border, backgroundColor: theme.backgroundElement },
               pressed && styles.pressed,
             ]}>
-            <ThemedText themeColor="textSecondary">{scheme === 'dark' ? '☀' : '☾'}</ThemedText>
+            <ThemedText themeColor="textSecondary">⚙</ThemedText>
           </Pressable>
         </View>
 
@@ -170,7 +170,7 @@ const styles = StyleSheet.create({
   wordmark: {
     fontSize: 22,
   },
-  syncButton: {
+  settingsButton: {
     width: 36,
     height: 36,
     borderRadius: 10,

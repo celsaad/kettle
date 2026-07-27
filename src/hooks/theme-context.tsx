@@ -6,19 +6,33 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 
 type Scheme = 'light' | 'dark';
 
+/** What Settings → Appearance offers: pin a scheme, or defer to the OS. */
+export type ThemePreference = Scheme | 'system';
+
 type ThemeContextValue = {
   scheme: Scheme;
   colors: (typeof Colors)[Scheme];
-  toggle: () => void;
+  preference: ThemePreference;
+  setPreference: (preference: ThemePreference) => void;
 };
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
-/** Follows the OS color scheme by default; `toggle` (the moon/sun control on Today) overrides it. */
+/**
+ * Follows the OS color scheme until Settings → Appearance pins one.
+ *
+ * `preference` replaced a `Scheme | null` override plus a `toggle()` that flipped light↔dark: once
+ * flipped, nothing could put it back to following the OS, because "follow" and "currently light"
+ * were the same state as far as the toggle could tell. Storing the intent instead of the outcome is
+ * what makes the third option expressible.
+ *
+ * Still in-memory only, as the override was — it resets to `system` on relaunch. Persisting it would
+ * mean a storage mechanism for one value that has no place in the YAML library the user exports.
+ */
 export function ThemeOverrideProvider({ children }: { children: ReactNode }) {
   const systemScheme = useColorScheme();
-  const [override, setOverride] = useState<Scheme | null>(null);
-  const scheme: Scheme = override ?? (systemScheme === 'dark' ? 'dark' : 'light');
+  const [preference, setPreference] = useState<ThemePreference>('system');
+  const scheme: Scheme = preference === 'system' ? (systemScheme === 'dark' ? 'dark' : 'light') : preference;
 
   // Keeps the web page's own background in sync with the active scheme — including a manual
   // override, which global.css's prefers-color-scheme media query can't see (it only tracks system
@@ -34,9 +48,10 @@ export function ThemeOverrideProvider({ children }: { children: ReactNode }) {
     () => ({
       scheme,
       colors: Colors[scheme],
-      toggle: () => setOverride(scheme === 'dark' ? 'light' : 'dark'),
+      preference,
+      setPreference,
     }),
-    [scheme],
+    [preference, scheme],
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;

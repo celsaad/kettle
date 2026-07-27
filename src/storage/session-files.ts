@@ -74,6 +74,18 @@ export function removeLastSessionEntry(session: Session): Session {
   return updated;
 }
 
+/**
+ * Deletes a session's file. Idempotent: a missing file already satisfies the caller's intent, and
+ * `File.delete()` throws on a nonexistent path, so the `exists` check is load-bearing rather than
+ * defensive.
+ */
+export function deleteSession(id: string): void {
+  if (!isFileStorageSupported) return;
+  ensureStorageReady();
+  const file = sessionFile(id);
+  if (file.exists) file.delete();
+}
+
 export function finalizeSession(session: Session, endedAt: string): Session {
   const updated: Session = { ...session, endedAt };
   writeSession(updated);

@@ -1,7 +1,14 @@
 import { create } from 'zustand';
 
 import type { Session, SessionEntry } from '@/domain/types';
-import { appendSessionEntry, createSession, finalizeSession, listSessions, removeLastSessionEntry } from '@/storage/session-files';
+import {
+  appendSessionEntry,
+  createSession,
+  deleteSession as deleteSessionFile,
+  finalizeSession,
+  listSessions,
+  removeLastSessionEntry,
+} from '@/storage/session-files';
 
 type SessionHistoryState = {
   status: 'idle' | 'loading' | 'ready' | 'error';
@@ -16,6 +23,8 @@ type SessionHistoryState = {
   removeLastEntry: (session: Session) => Session;
   /** Writes `ended_at` and updates history state. Returns the updated session. */
   completeSession: (session: Session) => Session;
+  /** Deletes a session's file and drops it from history state. Takes an id rather than a Session since, unlike the other actions, there is no updated session to return. */
+  deleteSession: (id: string) => void;
 };
 
 export const useSessionHistoryStore = create<SessionHistoryState>((set, get) => ({
@@ -47,5 +56,9 @@ export const useSessionHistoryStore = create<SessionHistoryState>((set, get) => 
     const updated = finalizeSession(session, new Date().toISOString());
     set({ sessions: get().sessions.map((existing) => (existing.id === updated.id ? updated : existing)) });
     return updated;
+  },
+  deleteSession: (id) => {
+    deleteSessionFile(id);
+    set({ sessions: get().sessions.filter((session) => session.id !== id) });
   },
 }));

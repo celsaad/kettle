@@ -91,15 +91,13 @@ export default function TodayScreen() {
           <View style={styles.chipRow}>
             {chips.map((chip, index) => (
               <View
-                key={`${chip}-${index}`}
+                key={`${chip.name}-${index}`}
                 style={[
                   styles.chip,
-                  { backgroundColor: chip === 'Rest' ? theme.backgroundSelected : theme.accentSoft },
+                  { backgroundColor: chip.isRest ? theme.backgroundSelected : theme.accentSoft },
                 ]}>
-                <ThemedText
-                  type="small"
-                  themeColor={chip === 'Rest' ? 'textSecondary' : 'accentText'}>
-                  {chip}
+                <ThemedText type="small" themeColor={chip.isRest ? 'textSecondary' : 'accentText'}>
+                  {chip.name}
                 </ThemedText>
               </View>
             ))}

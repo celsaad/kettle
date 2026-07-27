@@ -374,6 +374,27 @@ which is deleted.
   dev/preview target. It does mean a browser check of any confirm flow proves nothing unless the script
   patches it, which is how the new delete was actually verified end to end.
 
+## Planned: two more audio cues in the runner
+
+Requested from real use. `use-session-sounds.ts` already provides `playTick` (last 3 seconds of a
+countdown) and `playExerciseChange` (moving to a new exercise); both of these are new cue *moments*
+rather than new mechanics, so the work is picking the trigger points, not building audio.
+
+- **A chime at the halfway point of a HIIT work interval.** Mid-interval is the moment you'd otherwise
+  have to look at the screen to pace yourself. Fires once per work interval, at `workSec / 2` elapsed —
+  not during the rest interval, which already has the 3-2-1 ticks.
+- **A chime when a hold reaches its target.** Holds count *up* with the target as a marker
+  (`session-hold.tsx`), so nothing currently marks the moment you've actually hit it — the one piece of
+  information that matters while your eyes are shut and your abs are shaking. Fires at `holdSecMin`;
+  for a range target, that's the bottom of the range, since that's the point the set counts.
+
+Both need a distinct sound from `playTick`, or they'll be misread as "time nearly up". Implementation
+note: fire from a ref-guarded check in the ticking effect so a cue can't repeat if the effect re-runs
+within the same second, and respect the same fired-once-per-step discipline `playExerciseChange` uses.
+This also pairs with the accessibility work — these cues are exactly what makes the runner usable
+without looking, so they belong with A11y-4's announcement design rather than being bolted on
+separately.
+
 ## Planned: direct numeric entry for reps and load in the runner
 
 **The problem, found in real use:** the reps control is a −/+ stepper, so logging a high-rep set costs
@@ -437,33 +458,21 @@ Refactors this forced, both behaviour-preserving: `buildSteps` and the step mode
 ## Bugs found by an architecture pass, not yet fixed
 
 Found while planning the tests/a11y/i18n work (see `testing-a11y-i18n-plan.md`), each verified against
-the code. Listed worst first. `historyStats` returning "1.5h 30m" was in this list and is now fixed.
+the code. Listed worst first.
 
-- **EMOM builds the wrong number of intervals.** `use-session-runner.ts`'s expansion loops
-  `totalMinutes` times with `targetSec: intervalSec`, so `interval_sec: 30, total_minutes: 10` runs ten
-  30-second intervals — five minutes of work labelled "Minute 1 of 10". Should be
-  `totalMinutes * 60 / intervalSec` intervals. `estimateExerciseSeconds` computes `totalMinutes * 60`,
-  so the estimate and the runner already disagree. Invisible only when `interval_sec` is exactly 60,
-  which is why it survived.
-- **Weight is never captured or logged.** The LOAD card in `session-reps.tsx` is a hardcoded `BW +0 kg`
-  literal with no input, and `commitCurrentStep` never writes `weightKg`. So `targetWeightKg` never
-  reaches a session, `entryVolume`'s `hasWeight` branch is dead code, and the volume chart silently
-  plots rep-count for every weighted lift.
-- **Side effects run inside `setState` updaters.** `advance()` calls `commitCurrentStep`/`logEntry`/
-  `completeSession`/`onComplete` from inside `setStepIndex(index => …)`, and `goPrev()` calls
-  `removeLastEntry` the same way. React may re-invoke an updater, which would duplicate entries and
-  file writes. Latent today because nothing wraps the app in StrictMode — which also means the runner
-  tests must not use StrictMode.
-- **`addRestSeconds` doesn't reschedule the background notification.** It mutates `restTargetSecRef`
-  directly, and none of the notification effect's dependencies change, so after "+30s" the rest-complete
-  notification still fires at the original time.
-- **`currentStreak` breaks across DST.** It walks back with `getTime() - 86_400_000`; across a DST
-  boundary that lands on the wrong calendar day, truncating or double-counting a streak. Should step
-  with `setDate(getDate() - 1)`.
-- **Chip styling compares against a display name.** `index.tsx` keys rest-chip styling off
-  `chip === 'Rest'` — the user's exercise *name*. Rename that exercise, or author one in another
-  language, and the styling silently stops applying. Must key off `exercise.type === 'rest'`; today
-  `blockChips` throws the type away. This becomes a hard failure once i18n lands.
+**Fixed since:** `historyStats`'s "1.5h 30m"; the EMOM interval count; weight never being captured;
+side effects inside `setState` updaters; `addRestSeconds` not rescheduling its notification;
+`currentStreak`'s DST stepping; and the display-name chip comparison. Notes on the two structural ones:
+
+- The **`setState` updater** fix reads the step index from a ref instead of the updater's argument, so
+  every commit/flush/`logEntry` now runs once in the event handler. The ref is advanced eagerly so two
+  `advance()` calls in one tick (the ticking interval and the foreground catch-up can both fire) don't
+  repeat a step. Verified by driving a full session with a `goPrev` and redo mid-way: one entry per
+  exercise and exactly 8 sets, where a duplicated commit would inflate both.
+- The **`currentStreak`** fix steps with `setDate()`. Its regression tests are honest about their
+  limits: Node ignores `TZ` on Windows, so on a DST-free machine they pass whether or not the bug is
+  present. CI sets `TZ` explicitly, which is where they actually bite.
+
 - **`today`/`dateLabel` are computed at module scope** in `index.tsx`, so they freeze at first import —
   leave the app open past midnight and Today shows yesterday.
 - **`sessionSetCount` under-reports interval work**, counting an EMOM entry as one "set" regardless of

@@ -9,11 +9,20 @@ function exerciseName(exercises: Exercise[], id: string): string {
   return findExercise(exercises, id)?.name ?? id;
 }
 
-export function blockChips(workout: Workout, exercises: Exercise[]): string[] {
+export type BlockChip = { name: string; isRest: boolean };
+
+/**
+ * Carries each chip's `isRest` alongside its name. Callers used to style rest chips by comparing the
+ * rendered name to the literal `'Rest'` — the user's own exercise name, so renaming that exercise (or
+ * authoring one in any other language) silently dropped the styling.
+ */
+export function blockChips(workout: Workout, exercises: Exercise[]): BlockChip[] {
+  const chipFor = (exerciseId: string): BlockChip => ({
+    name: exerciseName(exercises, exerciseId),
+    isRest: findExercise(exercises, exerciseId)?.type === 'rest',
+  });
   return workout.blocks.flatMap((block) =>
-    block.kind === 'circuit'
-      ? block.members.map((member) => exerciseName(exercises, member.exerciseId))
-      : [exerciseName(exercises, block.exerciseId)],
+    block.kind === 'circuit' ? block.members.map((member) => chipFor(member.exerciseId)) : [chipFor(block.exerciseId)],
   );
 }
 
@@ -275,10 +284,19 @@ export function currentStreak(sessions: Session[]): number {
   const activeDays = new Set(sessions.map((session) => new Date(session.startedAt).toDateString()));
   if (activeDays.size === 0) return 0;
 
-  const oneDayMs = 86_400_000;
+  // Steps by calendar day rather than by 86_400_000ms. Subtracting a fixed 24 hours lands on the wrong
+  // day across a DST boundary — on a 23-hour day it skips back two days, silently truncating a real
+  // streak, and on a 25-hour day it stays on the same one. setDate() moves a whole day whatever that
+  // day's length is.
+  const previousDay = (date: Date): Date => {
+    const previous = new Date(date);
+    previous.setDate(previous.getDate() - 1);
+    return previous;
+  };
+
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const yesterday = new Date(today.getTime() - oneDayMs);
+  const yesterday = previousDay(today);
 
   if (!activeDays.has(today.toDateString()) && !activeDays.has(yesterday.toDateString())) return 0;
 
@@ -286,7 +304,7 @@ export function currentStreak(sessions: Session[]): number {
   let cursor = activeDays.has(today.toDateString()) ? today : yesterday;
   while (activeDays.has(cursor.toDateString())) {
     streak += 1;
-    cursor = new Date(cursor.getTime() - oneDayMs);
+    cursor = previousDay(cursor);
   }
   return streak;
 }

@@ -37,5 +37,10 @@ jobs:
 
       # --ci fails rather than writes on a missing snapshot; the worker cap keeps jest from
       # over-subscribing the 2-core runner, where spawning more workers is slower, not faster.
+      # TZ is set here as well as in jest.setup.js because that file's process.env assignment is a
+      # no-op on Windows; on this Linux runner the env var is what actually makes the DST-crossing
+      # streak tests exercise a real transition rather than passing vacuously.
       - name: Test
+        env:
+          TZ: America/New_York
         run: npm test -- --ci --maxWorkers=2

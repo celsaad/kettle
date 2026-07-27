@@ -173,6 +173,20 @@ export function useSessionRunner(
   const pendingEmomMinutesRef = useRef<Record<string, EmomMinuteLog[]>>({});
   // What the last advance() committed — consumed and cleared by goPrev() to undo exactly one level.
   const lastCommitRef = useRef<LastCommit | null>(null);
+  /**
+   * The authoritative "where are we now" for advance()/goPrev().
+   *
+   * Those used to read the index from inside a setStepIndex updater, which meant every commit,
+   * flush, logEntry and completeSession call ran *inside* that updater. React is free to re-invoke an
+   * updater (StrictMode's dev double-invoke, or a concurrent render being replayed), and here that
+   * would duplicate session entries and file writes — a data bug, not just wasted work. Reading the
+   * index from a ref lets the side effects run once, in the event handler, with the updater gone.
+   *
+   * Advanced eagerly by both functions so two calls landing in the same tick (the ticking interval and
+   * the foreground catch-up can both fire advance()) see the updated position rather than repeating one.
+   */
+  const stepIndexRef = useRef(stepIndex);
+  stepIndexRef.current = stepIndex;
   const repsRef = useRef(reps);
   const rpeRef = useRef(rpe);
   const weightKgRef = useRef(weightKg);
@@ -334,7 +348,8 @@ export function useSessionRunner(
   const advance = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
 
-    setStepIndex((index) => {
+    {
+      const index = stepIndexRef.current;
       const current = steps[index];
       const next = steps[index + 1];
       const nextIndex = index + 1;
@@ -370,10 +385,12 @@ export function useSessionRunner(
       if (nextIndex >= steps.length) {
         if (sessionRef.current) sessionRef.current = completeSession(sessionRef.current);
         onComplete();
-        return index;
+        return;
       }
-      return nextIndex;
-    });
+
+      stepIndexRef.current = nextIndex;
+      setStepIndex(nextIndex);
+    }
   }, [steps, onComplete, commitCurrentStep, flushMember, completeSession, playExerciseChange]);
 
   useEffect(() => {
@@ -424,7 +441,11 @@ export function useSessionRunner(
       cancelled = true;
       if (notificationId) cancelNotification(notificationId);
     };
-  }, [step, isCountdownStep, paused, computeElapsedSec, workout.name]);
+    // restTargetSec is in the deps as a *change signal*, not because the body reads it: the remaining
+    // time comes from restTargetSecRef, which no dependency tracks. Without it, "+30s" mutated the ref
+    // while every dep stayed equal, so the effect never re-ran and the notification still fired at the
+    // original end time. Both places that move the ref also set this state, so it's a faithful signal.
+  }, [step, isCountdownStep, paused, restTargetSec, computeElapsedSec, workout.name]);
 
   const togglePause = useCallback(() => {
     setPaused((wasPaused) => {
@@ -444,7 +465,8 @@ export function useSessionRunner(
   // second goPrev() in a row (no intervening advance()) finds lastCommitRef already cleared and just
   // moves the index, same as today.
   const goPrev = useCallback(() => {
-    setStepIndex((index) => {
+    {
+      const index = stepIndexRef.current;
       const commit = lastCommitRef.current;
       if (commit && commit.resultingIndex === index && sessionRef.current) {
         if (commit.kind === 'pending') {
@@ -512,8 +534,11 @@ export function useSessionRunner(
         }
         lastCommitRef.current = null;
       }
-      return Math.max(0, index - 1);
-    });
+
+      const prevIndex = Math.max(0, index - 1);
+      stepIndexRef.current = prevIndex;
+      setStepIndex(prevIndex);
+    }
   }, [removeLastEntry]);
 
   // Ends the session on demand: the in-progress step is committed and its member flushed first,

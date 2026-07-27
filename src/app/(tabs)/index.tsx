@@ -6,20 +6,17 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { formatWorkoutShape } from '@/domain/format';
+import { formatFullDate } from '@/i18n/format';
 import { useTheme } from '@/hooks/use-theme';
 import { useLibraryStore } from '@/state/library-store';
 import { useSessionHistoryStore } from '@/state/session-history-store';
 import { blockChips, currentStreak, nextUpView, recentSessionsView, thisWeekStats, workoutShape } from '@/state/selectors';
 
-const today = new Date();
-const dateLabel = today.toLocaleDateString('en-US', {
-  weekday: 'long',
-  month: 'short',
-  day: 'numeric',
-});
-
 export default function TodayScreen() {
   const theme = useTheme();
+  // Computed per render, not at module scope. It used to be a module-level const, which froze it at
+  // first import — leave the app open past midnight and "Today" showed yesterday's date.
+  const dateLabel = formatFullDate(new Date());
   const library = useLibraryStore((state) => state.library);
   const sessions = useSessionHistoryStore((state) => state.sessions);
 

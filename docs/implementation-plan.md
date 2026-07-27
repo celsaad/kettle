@@ -549,6 +549,42 @@ ScrollView, so at iOS AX5 the primary action can go off-screen, which is the one
 failure), A11y-4 (runner announcements and reduce-motion), and screen-reader reordering for
 `ReorderableList`, which is gesture-only and so currently impossible without sight.
 
+## ✅ I18n-1 and I18n-3: infrastructure and locale-aware formatting
+
+`expo-localization` + `i18next` + `react-i18next` + `intl-pluralrules`. `src/i18n/index.ts` initialises
+i18next from the device's preferred language, narrowed to a shipped one; `src/i18n/format.ts` holds the
+Intl wrappers. **Second locale is `pt`** (Brazilian Portuguese), scaffolded and registered — keyed by
+language rather than region, since `pt` covers pt-BR and pt-PT while *formatting* still follows the
+device's full locale.
+
+**The Hermes trap is handled and is the thing to remember here.** i18next v24+ routes pluralisation
+through `Intl.PluralRules`, and Hermes doesn't implement it — it has Collator, DateTimeFormat and
+NumberFormat, and not this. Without the polyfill imported *first*, the app works in tests and on web
+(both V8) and throws on device: the worst failure shape there is. `DateTimeFormat`/`NumberFormat` need
+no polyfill, which is why only pluralisation is special-cased.
+
+**Formatting bugs fixed, which affect users today rather than hypothetically:**
+
+- Four hardcoded `toLocaleDateString('en-US', …)` call sites now use the device locale. Verified:
+  en-US renders "Monday, Jul 27", pt-BR renders "segunda-feira, 27 de jul." — day before month, as
+  Brazil writes it.
+- **`startOfWeek` assumed Monday.** Brazil, the US, Canada and Japan start on Sunday, so "this week"
+  silently measured a different seven days than the calendar the user reads — invisible until the
+  boundary day. Now driven by `getCalendars()[0].firstWeekday`.
+- The month badge uppercases with `toLocaleUpperCase(locale)` rather than `toUpperCase()`, which is
+  wrong for Turkish (i → İ) and meaningless for scripts without case.
+- Today's date label was computed at **module scope**, freezing at first import — leave the app open
+  past midnight and it showed yesterday. Now per render. (This was on the open-bugs list.)
+
+The `thisWeekStats` tests now mock `firstWeekdayIndex` and cover **both** conventions, rather than
+depending on whatever locale the test machine reports. They failed when the fix landed, which is
+exactly right: they had encoded the hardcoded Monday as if it were a requirement.
+
+**Still to do — I18n-2, the string migration (~250–300 keys).** The infrastructure and the descriptor
+layer are in place, so this is now mechanical: replace literals with `t()` calls and fill `en.json` and
+`pt.json`. Nothing is translated yet; the locale files are empty scaffolds. Also still assembling
+English in the logic layer: `exerciseSummary` and `previewFor`.
+
 ## Planned: fold a11y and i18n into AGENTS.md, once both are done
 
 **Do this after the a11y and i18n workstreams land, not before.** Once every control has a label and

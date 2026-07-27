@@ -1,4 +1,6 @@
 import { resolveWorkoutForWeek } from '@/domain/program';
+import { firstWeekdayIndex } from '@/i18n';
+import { formatMonthBadge, formatMonthDay, formatWeekday } from '@/i18n/format';
 import type { EntryResult, WorkoutShape } from '@/domain/format';
 import { formatEntryResult } from '@/domain/format';
 import type { Exercise, Library, Program, ProgramWeek, Session, SessionEntry, Workout, WorkoutBlock } from '@/domain/types';
@@ -228,7 +230,7 @@ export function recentSessionsView(sessions: Session[], library: Library, limit 
   return sessions.slice(0, limit).map((session) => ({
     id: session.id,
     workoutName: workoutNameFor(session, library),
-    dateLabel: new Date(session.startedAt).toLocaleDateString('en-US', { weekday: 'short' }),
+    dateLabel: formatWeekday(new Date(session.startedAt)),
     durationLabel: `${sessionDurationMinutes(session)} min`,
     setsLabel: `${sessionSetCount(session)} sets`,
   }));
@@ -254,11 +256,17 @@ export function historyStats(sessions: Session[]): HistoryStats {
   };
 }
 
+/**
+ * Start of the user's current week, honouring their calendar's first weekday rather than assuming
+ * Monday. The Monday assumption is right for most of Europe and wrong for the US, Canada, Japan and
+ * much of Latin America — "this week" silently measured a different window than the calendar the user
+ * reads, and the discrepancy is invisible until the boundary day.
+ */
 function startOfWeek(date: Date): Date {
   const start = new Date(date);
-  const day = start.getDay(); // 0 = Sunday .. 6 = Saturday
-  const diffToMonday = day === 0 ? -6 : 1 - day;
-  start.setDate(start.getDate() + diffToMonday);
+  const firstDay = firstWeekdayIndex(); // 0 = Sunday .. 6 = Saturday
+  const diff = (start.getDay() - firstDay + 7) % 7;
+  start.setDate(start.getDate() - diff);
   start.setHours(0, 0, 0, 0);
   return start;
 }
@@ -383,7 +391,7 @@ export function exerciseHistory(sessions: Session[], exerciseId: string, limit =
       if (entry.exercise !== exerciseId || entry.type === 'rest') continue;
       results.push({
         sessionId: session.id,
-        dateLabel: new Date(session.startedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        dateLabel: formatMonthDay(new Date(session.startedAt)),
         summary: formatEntryResult(sessionEntryResult(entry)),
         volume: entryVolume(entry),
       });
@@ -404,7 +412,7 @@ export function historySessionsView(sessions: Session[], library: Library): Hist
     return {
       id: session.id,
       day: startedAt.getDate(),
-      month: startedAt.toLocaleDateString('en-US', { month: 'short' }).toUpperCase(),
+      month: formatMonthBadge(startedAt),
       workoutName: workoutNameFor(session, library),
       durationLabel: `${sessionDurationMinutes(session)} min`,
       setsLabel: `${sessionSetCount(session)} sets`,

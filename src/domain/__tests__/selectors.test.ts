@@ -1,3 +1,11 @@
+// Mocked so the week boundary is driven by the test rather than the machine's locale; the real one
+// reads the device calendar via expo-localization.
+const mockFirstWeekdayIndex = jest.fn(() => 1);
+jest.mock('@/i18n', () => ({
+  firstWeekdayIndex: () => mockFirstWeekdayIndex(),
+  currentLocale: () => 'en',
+}));
+
 import {
   currentStreak,
   exerciseHistory,
@@ -90,21 +98,40 @@ describe('currentStreak', () => {
   });
 });
 
+// The week's first day comes from the device calendar rather than a hardcoded Monday, so these drive
+// it explicitly instead of depending on whatever locale the test machine reports. Both conventions are
+// covered because the whole point of the change is that either can be correct: Brazil and the US start
+// on Sunday, most of Europe on Monday, and the old hardcoding silently measured a different seven days
+// than the calendar the user reads.
 describe('thisWeekStats', () => {
-  // startOfWeek treats Monday as the first day of the week, so the boundary sits between Sunday night
-  // and Monday morning rather than the Date.getDay() default of Sunday.
-  it('includes sessions from Monday through today when today is a Sunday', () => {
+  const setFirstWeekday = (day: number) => mockFirstWeekdayIndex.mockReturnValue(day);
+
+  it('starts the week on Monday when the calendar says so', () => {
+    setFirstWeekday(1);
     jest.useFakeTimers();
-    jest.setSystemTime(new Date(2026, 6, 26, 15, 0, 0)); // Sunday 2026-07-26, week started Mon 2026-07-20
+    jest.setSystemTime(new Date(2026, 6, 26, 15, 0, 0)); // Sunday 2026-07-26; week began Mon 2026-07-20
     const sessions = [
-      makeSession({ startedAt: new Date(2026, 6, 20, 8, 0, 0).toISOString() }), // this week's Monday
-      makeSession({ startedAt: new Date(2026, 6, 26, 10, 0, 0).toISOString() }), // this week's Sunday
-      makeSession({ startedAt: new Date(2026, 6, 19, 20, 0, 0).toISOString() }), // previous week's Sunday
+      makeSession({ startedAt: new Date(2026, 6, 20, 8, 0, 0).toISOString() }), // Mon, in
+      makeSession({ startedAt: new Date(2026, 6, 26, 10, 0, 0).toISOString() }), // Sun, in
+      makeSession({ startedAt: new Date(2026, 6, 19, 20, 0, 0).toISOString() }), // previous Sun, out
     ];
     expect(thisWeekStats(sessions).sessions).toBe(2);
   });
 
-  it('excludes last week entirely once the week has rolled over to Monday', () => {
+  it('starts the week on Sunday when the calendar says so', () => {
+    setFirstWeekday(0);
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date(2026, 6, 26, 15, 0, 0)); // Sunday 2026-07-26 is now the week's *first* day
+    const sessions = [
+      makeSession({ startedAt: new Date(2026, 6, 26, 10, 0, 0).toISOString() }), // today, in
+      makeSession({ startedAt: new Date(2026, 6, 20, 8, 0, 0).toISOString() }), // last Mon, now out
+      makeSession({ startedAt: new Date(2026, 6, 19, 20, 0, 0).toISOString() }), // previous Sun, out
+    ];
+    expect(thisWeekStats(sessions).sessions).toBe(1);
+  });
+
+  it('excludes the prior week once the boundary day arrives', () => {
+    setFirstWeekday(1);
     jest.useFakeTimers();
     jest.setSystemTime(new Date(2026, 6, 27, 9, 0, 0)); // Monday 2026-07-27, a new week
     const sessions = [

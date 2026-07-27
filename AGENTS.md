@@ -89,6 +89,16 @@ lot of time, so:
 
 ## Docs
 
-`docs/implementation-plan.md` is the living record of what shipped, the scope calls made, and what's
-genuinely still open. `docs/exercise-tracker-product-plan.md` holds the data model and roadmap. Check
+`docs/implementation-plan.md` holds settled decisions and the open-work lists.
+
+**Don't append a shipped feature to it just because it shipped.** The commit message is the record —
+write the root cause, the alternatives, and the deliberate scope cuts there, where `git log -S` can
+find them. Add to the decision log only when the reasoning isn't discoverable from a single commit: a
+constraint that shapes future work, something rejected so it isn't re-proposed, or a decision
+assembled across several commits. This file grew to ~210 lines of completed work under a heading that
+said "what's genuinely left"; that's the failure mode to avoid.
+
+Open bugs and planned work live in the sections at the bottom of that file. Keep those entries short —
+if the list starts wanting states and assignees, that's the signal to move it to GitHub issues
+(`origin` and `gh` are both available); until then the file is deliberately enough. `docs/exercise-tracker-product-plan.md` holds the data model and roadmap. Check
 them before assuming something is missing — but verify against the code, since they have drifted before.

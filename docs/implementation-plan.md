@@ -163,7 +163,17 @@ which is deleted.
 
 ---
 
-## What's genuinely left (current, updated past workstreams A–F)
+## Decision log
+
+Why things ended up the way they did, for decisions that span more than one commit. Named "What's
+genuinely left" until it had grown to ~210 lines of *completed* work under a backlog heading — the
+label had stopped being true, which is how it grew without anyone noticing.
+
+**Adding to this file:** don't log a shipped feature here just because it shipped. The commit message
+is the record — it has the root cause, the alternatives, and correct attribution, and `git log -S` can
+find it. Add an entry only when the reasoning **isn't discoverable from a single commit**: a
+constraint that shapes future work, something deliberately rejected (so it isn't re-proposed), or a
+decision assembled across several commits. Open work belongs in the sections at the bottom, not here.
 
 - ✅ **Full program CRUD, including override editing.** Drag-to-reorder blocks and exercise delete
   exist too (`deleteExercise` in the library store, wired to a "Delete exercise" button in
@@ -368,12 +378,6 @@ which is deleted.
   caller's `.catch()` missed it, surfacing as an unhandled error. Both are now `async`, which turns it
   into a rejection those existing handlers catch. Fixes the crash on Library's export and the same
   latent hole in History's.
-- **Not fixed, logged: `Alert.alert` is a no-op on web.** react-native-web ships
-  `class Alert { static alert() {} }`, so every confirm dialog silently does nothing in the browser —
-  all the deletes and finish-session, not just the new one. Native is unaffected and web is a
-  dev/preview target. It does mean a browser check of any confirm flow proves nothing unless the script
-  patches it, which is how the new delete was actually verified end to end.
-
 ## Planned: two more audio cues in the runner
 
 Requested from real use. `use-session-sounds.ts` already provides `playTick` (last 3 seconds of a
@@ -455,7 +459,7 @@ Refactors this forced, both behaviour-preserving: `buildSteps` and the step mode
 `session-steps.ts` (importing the runner pulled in `expo-audio` and died on native-module init), and
 `nextWeekAfter` is now exported so it can be tested without constructing a whole `Library`.
 
-## Bugs found by an architecture pass, not yet fixed
+## Open bugs
 
 Found while planning the tests/a11y/i18n work (see `testing-a11y-i18n-plan.md`), each verified against
 the code. Listed worst first.
@@ -473,6 +477,11 @@ side effects inside `setState` updaters; `addRestSeconds` not rescheduling its n
   limits: Node ignores `TZ` on Windows, so on a DST-free machine they pass whether or not the bug is
   present. CI sets `TZ` explicitly, which is where they actually bite.
 
+- **`Alert.alert` is a no-op on web.** react-native-web ships `class Alert { static alert() {} }`, so
+  every confirm dialog silently does nothing in the browser — all the deletes and finish-session.
+  Native is unaffected and web is a dev/preview target, so this is logged rather than fixed. It does
+  mean a browser check of any confirm flow proves nothing unless the script patches it, which is how
+  session delete was actually verified end to end.
 - **`today`/`dateLabel` are computed at module scope** in `index.tsx`, so they freeze at first import —
   leave the app open past midnight and Today shows yesterday.
 - **`sessionSetCount` under-reports interval work**, counting an EMOM entry as one "set" regardless of

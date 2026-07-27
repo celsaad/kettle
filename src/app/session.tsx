@@ -199,6 +199,8 @@ function ActiveSession({
             onChangeReps={runner.setReps}
             rpe={runner.rpe}
             onChangeRpe={runner.setRpe}
+            weightKg={runner.weightKg}
+            onChangeWeightKg={runner.setWeightKg}
             notes={step.notes}
             next={runner.nextPreview}
             onPrev={runner.goPrev}

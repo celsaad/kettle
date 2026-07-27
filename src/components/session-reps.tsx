@@ -6,6 +6,15 @@ import { RunnerColors, Spacing } from '@/constants/theme';
 import type { RestPreview } from '@/hooks/use-session-runner';
 
 const RPE_OPTIONS = [7, 8, 9];
+/**
+ * 2.5kg because it's the one increment that serves both ends of a generalist app: it's the smallest
+ * real jump on a bar or belt (a pair of 1.25kg plates), and metric dumbbell racks are commonly spaced
+ * the same way (2.5, 5, 7.5, 10…). 1kg suits neither — you can't load it on a bar without uncommon
+ * 0.5kg plates, and racks rarely step that finely. Going finer would also make the stepper's tap count
+ * worse, which is the wrong direction: precision is meant to come from direct entry (see the
+ * implementation plan), leaving this control for coarse adjustment.
+ */
+const WEIGHT_STEP_KG = 2.5;
 
 type Props = {
   exerciseName: string;
@@ -17,6 +26,8 @@ type Props = {
   onChangeReps: (reps: number) => void;
   rpe: number;
   onChangeRpe: (rpe: number) => void;
+  weightKg: number;
+  onChangeWeightKg: (weightKg: number) => void;
   notes?: string;
   next: RestPreview;
   onPrev: () => void;
@@ -33,6 +44,8 @@ export function SessionReps({
   onChangeReps,
   rpe,
   onChangeRpe,
+  weightKg,
+  onChangeWeightKg,
   notes,
   next,
   onPrev,
@@ -88,9 +101,43 @@ export function SessionReps({
             <ThemedText type="code" style={styles.statCardLabel}>
               LOAD
             </ThemedText>
-            <ThemedText type="heading" style={styles.loadValue}>
-              BW <ThemedText style={styles.loadUnit}>+0 kg</ThemedText>
-            </ThemedText>
+            {/*
+              This was a hardcoded "BW +0 kg" literal with no input, so no weight was ever captured and
+              every logged set looked like bodyweight. Bottoms out at 0, which reads and logs as
+              bodyweight rather than a 0 kg load.
+            */}
+            <View style={styles.loadRow}>
+              <Pressable
+                onPress={() => onChangeWeightKg(Math.max(0, weightKg - WEIGHT_STEP_KG))}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel="Decrease load"
+                style={styles.loadButton}>
+                <ThemedText type="heading" style={styles.loadButtonGlyph}>
+                  −
+                </ThemedText>
+              </Pressable>
+              <ThemedText type="heading" style={styles.loadValue}>
+                {weightKg > 0 ? (
+                  <>
+                    {weightKg}
+                    <ThemedText style={styles.loadUnit}> kg</ThemedText>
+                  </>
+                ) : (
+                  'BW'
+                )}
+              </ThemedText>
+              <Pressable
+                onPress={() => onChangeWeightKg(weightKg + WEIGHT_STEP_KG)}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel="Increase load"
+                style={styles.loadButton}>
+                <ThemedText type="heading" style={styles.loadButtonGlyph}>
+                  +
+                </ThemedText>
+              </Pressable>
+            </View>
           </View>
           <View style={styles.statCard}>
             <ThemedText type="code" style={styles.statCardLabel}>
@@ -225,13 +272,32 @@ const styles = StyleSheet.create({
     color: RunnerColors.textSecondary,
     letterSpacing: 1,
   },
-  loadValue: {
+  loadRow: {
     marginTop: 2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: Spacing.one,
+  },
+  loadValue: {
     color: RunnerColors.text,
   },
   loadUnit: {
     fontSize: 15,
     color: RunnerColors.textSecondary,
+  },
+  loadButton: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    borderWidth: 1,
+    borderColor: RunnerColors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadButtonGlyph: {
+    color: RunnerColors.textSecondary,
+    lineHeight: 24,
   },
   rpeRow: {
     flexDirection: 'row',

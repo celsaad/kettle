@@ -3,7 +3,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 
 import type {
-  BlockConfigOverride,
   EmomMinuteLog,
   Exercise,
   RepsSetLog,
@@ -16,250 +15,13 @@ import { cancelNotification, requestNotificationPermissions, scheduleRestComplet
 import { useSessionSounds } from '@/hooks/use-session-sounds';
 import { useSessionHistoryStore } from '@/state/session-history-store';
 
-export type IntervalVariant = 'hiit' | 'emom' | 'amrap' | 'cardio';
+// The step model and workout→steps expansion live in session-steps.ts so they can be tested without
+// this file's native imports. Re-exported here because they're part of the runner's public surface.
+export type { IntervalVariant, RunnerStep } from '@/hooks/session-steps';
+export { buildSteps } from '@/hooks/session-steps';
 
-export type RunnerStep =
-  | {
-      kind: 'hold';
-      blockIndex: number;
-      memberKey: string;
-      exerciseId: string;
-      exerciseName: string;
-      holdTargetSec: number;
-      holdTargetMaxSec?: number;
-      setIndex: number;
-      setTotal: number;
-      notes?: string;
-    }
-  | {
-      kind: 'reps';
-      blockIndex: number;
-      memberKey: string;
-      exerciseId: string;
-      exerciseName: string;
-      targetReps: number;
-      targetRepsMax?: number;
-      setIndex: number;
-      setTotal: number;
-      notes?: string;
-    }
-  | {
-      kind: 'interval';
-      blockIndex: number;
-      memberKey: string;
-      exerciseId: string;
-      exerciseName: string;
-      variant: IntervalVariant;
-      targetSec: number;
-      /** true = count up with no auto-advance (cardio with no configured duration); false = countdown, auto-advances. */
-      countUp: boolean;
-      setIndex: number;
-      setTotal: number;
-      targetReps?: number;
-      cardioDistanceMeters?: number;
-      notes?: string;
-    }
-  // `standalone` distinguishes a dedicated Rest workout-block (its own logged session entry) from
-  // inter-set/inter-round/inter-exercise rest folded into (or discarded after) the surrounding work.
-  | { kind: 'rest'; blockIndex: number; memberKey: string; exerciseId: string; standalone: boolean; seconds: number };
-
-function expandExercise(
-  exercise: Exercise,
-  blockIndex: number,
-  memberKey: string,
-  configOverride?: BlockConfigOverride,
-  // Set when expanding a circuit member: the circuit's own `rounds` is what repeats the member, not
-  // the member's own `sets` — so each visit is exactly one set, and no inter-set rest is inserted
-  // (rest between visits is the circuit's own rest_between_exercises_sec/rest_between_rounds_sec).
-  setsOverride?: number,
-): RunnerStep[] {
-  switch (exercise.type) {
-    case 'timed_hold': {
-      const sets = setsOverride ?? exercise.config.sets;
-      const steps: RunnerStep[] = [];
-      for (let i = 0; i < sets; i++) {
-        steps.push({
-          kind: 'hold',
-          blockIndex,
-          memberKey,
-          exerciseId: exercise.id,
-          exerciseName: exercise.name,
-          holdTargetSec: exercise.config.holdSecMin,
-          holdTargetMaxSec: exercise.config.holdSecMax,
-          setIndex: i + 1,
-          setTotal: sets,
-          notes: exercise.notes,
-        });
-        if (setsOverride === undefined && i < sets - 1) {
-          steps.push({ kind: 'rest', blockIndex, memberKey, exerciseId: exercise.id, standalone: false, seconds: exercise.config.restSec });
-        }
-      }
-      return steps;
-    }
-    case 'reps': {
-      const sets = setsOverride ?? exercise.config.sets;
-      const steps: RunnerStep[] = [];
-      for (let i = 0; i < sets; i++) {
-        steps.push({
-          kind: 'reps',
-          blockIndex,
-          memberKey,
-          exerciseId: exercise.id,
-          exerciseName: exercise.name,
-          targetReps: exercise.config.targetRepsMin,
-          targetRepsMax: exercise.config.targetRepsMax,
-          setIndex: i + 1,
-          setTotal: sets,
-          notes: exercise.notes,
-        });
-        if (setsOverride === undefined && i < sets - 1) {
-          steps.push({ kind: 'rest', blockIndex, memberKey, exerciseId: exercise.id, standalone: false, seconds: exercise.config.restSec });
-        }
-      }
-      return steps;
-    }
-    case 'hiit': {
-      const steps: RunnerStep[] = [];
-      for (let i = 0; i < exercise.config.rounds; i++) {
-        steps.push({
-          kind: 'interval',
-          blockIndex,
-          memberKey,
-          exerciseId: exercise.id,
-          exerciseName: exercise.name,
-          variant: 'hiit',
-          targetSec: exercise.config.workSec,
-          countUp: false,
-          setIndex: i + 1,
-          setTotal: exercise.config.rounds,
-          notes: exercise.notes,
-        });
-        if (i < exercise.config.rounds - 1) {
-          steps.push({ kind: 'rest', blockIndex, memberKey, exerciseId: exercise.id, standalone: false, seconds: exercise.config.restSec });
-        }
-      }
-      return steps;
-    }
-    case 'emom': {
-      const steps: RunnerStep[] = [];
-      for (let i = 0; i < exercise.config.totalMinutes; i++) {
-        steps.push({
-          kind: 'interval',
-          blockIndex,
-          memberKey,
-          exerciseId: exercise.id,
-          exerciseName: exercise.name,
-          variant: 'emom',
-          targetSec: exercise.config.intervalSec,
-          countUp: false,
-          setIndex: i + 1,
-          setTotal: exercise.config.totalMinutes,
-          targetReps: exercise.config.targetReps,
-          notes: exercise.notes,
-        });
-      }
-      return steps;
-    }
-    case 'amrap':
-      return [
-        {
-          kind: 'interval',
-          blockIndex,
-          memberKey,
-          exerciseId: exercise.id,
-          exerciseName: exercise.name,
-          variant: 'amrap',
-          targetSec: exercise.config.timeCapSec,
-          countUp: false,
-          setIndex: 1,
-          setTotal: 1,
-          notes: exercise.notes,
-        },
-      ];
-    case 'cardio': {
-      const hasDuration = exercise.config.durationSec !== undefined;
-      return [
-        {
-          kind: 'interval',
-          blockIndex,
-          memberKey,
-          exerciseId: exercise.id,
-          exerciseName: exercise.name,
-          variant: 'cardio',
-          targetSec: exercise.config.durationSec ?? 0,
-          countUp: !hasDuration,
-          setIndex: 1,
-          setTotal: 1,
-          cardioDistanceMeters: exercise.config.distanceMeters,
-          notes: exercise.notes,
-        },
-      ];
-    }
-    case 'rest':
-      return [
-        {
-          kind: 'rest',
-          blockIndex,
-          memberKey,
-          exerciseId: exercise.id,
-          standalone: true,
-          seconds: configOverride?.durationSec ?? exercise.config.durationSec,
-        },
-      ];
-  }
-}
-
-/** Exported so callers (session.tsx) can check for a zero-step workout before ever starting a session. */
-export function buildSteps(workout: Workout, exercises: Exercise[]): RunnerStep[] {
-  const steps: RunnerStep[] = [];
-
-  workout.blocks.forEach((block, blockIndex) => {
-    if (block.kind === 'exercise') {
-      const exercise = exercises.find((candidate) => candidate.id === block.exerciseId);
-      if (!exercise) return;
-      steps.push(...expandExercise(exercise, blockIndex, `${blockIndex}`, block.configOverride));
-      return;
-    }
-
-    // Circuit: true round-robin (A,B,C,A,B,C,...) — each member's memberKey stays stable across
-    // rounds so its sets accumulate into one session entry per exercise, not one per round.
-    const members = block.members
-      .map((member, memberIndex) => ({ member, memberIndex, exercise: exercises.find((candidate) => candidate.id === member.exerciseId) }))
-      .filter((entry): entry is typeof entry & { exercise: Exercise } => !!entry.exercise);
-    if (members.length === 0) return;
-
-    for (let round = 0; round < block.rounds; round++) {
-      members.forEach(({ member, memberIndex, exercise }, i) => {
-        const memberKey = `${blockIndex}:${memberIndex}`;
-        steps.push(...expandExercise(exercise, blockIndex, memberKey, member.configOverride, 1));
-        const isLastMember = i === members.length - 1;
-        if (!isLastMember && block.restBetweenExercisesSec) {
-          steps.push({
-            kind: 'rest',
-            blockIndex,
-            memberKey: `${blockIndex}:circuit-rest`,
-            exerciseId: exercise.id,
-            standalone: false,
-            seconds: block.restBetweenExercisesSec,
-          });
-        }
-      });
-      const isLastRound = round === block.rounds - 1;
-      if (!isLastRound && block.restBetweenRoundsSec) {
-        steps.push({
-          kind: 'rest',
-          blockIndex,
-          memberKey: `${blockIndex}:circuit-rest`,
-          exerciseId: members[0].exercise.id,
-          standalone: false,
-          seconds: block.restBetweenRoundsSec,
-        });
-      }
-    }
-  });
-
-  return steps;
-}
+import type { RunnerStep } from '@/hooks/session-steps';
+import { buildSteps } from '@/hooks/session-steps';
 
 type LastCommitBuffer = 'sets' | 'hiit' | 'emom';
 
@@ -390,6 +152,8 @@ export function useSessionRunner(
   const [restTargetSec, setRestTargetSec] = useState(0);
   const [reps, setReps] = useState(0);
   const [rpe, setRpe] = useState(8);
+  /** 0 means bodyweight — `weightKg` is optional on RepsSetLog, and 0 is logged as absent, not as a load of zero. */
+  const [weightKg, setWeightKg] = useState(0);
   const [roundsCompleted, setRoundsCompleted] = useState(0);
   const [extraReps, setExtraReps] = useState(0);
 
@@ -411,10 +175,12 @@ export function useSessionRunner(
   const lastCommitRef = useRef<LastCommit | null>(null);
   const repsRef = useRef(reps);
   const rpeRef = useRef(rpe);
+  const weightKgRef = useRef(weightKg);
   const roundsCompletedRef = useRef(roundsCompleted);
   const extraRepsRef = useRef(extraReps);
   repsRef.current = reps;
   rpeRef.current = rpe;
+  weightKgRef.current = weightKg;
   roundsCompletedRef.current = roundsCompleted;
   extraRepsRef.current = extraReps;
 
@@ -458,7 +224,21 @@ export function useSessionRunner(
     const countdownTarget = step?.kind === 'rest' ? step.seconds : step?.kind === 'interval' && !step.countUp ? step.targetSec : 0;
     restTargetSecRef.current = countdownTarget;
     setHoldElapsedSec(0);
-    setReps(0);
+    // Reps start at the set's target, not 0: hitting the target is the common case, so counting up
+    // from zero one tap at a time made the expected outcome the most expensive one to record. Reps
+    // re-seed from the target every set rather than carrying the last set's value, because varying
+    // reps between sets is the normal thing being logged — unlike load, below.
+    setReps(step?.kind === 'reps' ? step.targetReps : 0);
+    // Load carries across sets of the same exercise: whatever was actually lifted on the previous set
+    // is the best default for the next one, and snapping back to the configured target every set would
+    // make any mid-workout adjustment need re-entering. Falls back to the target on the first set of
+    // an exercise, since there's nothing logged yet to carry.
+    if (step?.kind === 'reps') {
+      const priorSets = pendingSetsRef.current[step.memberKey];
+      const lastLogged = priorSets?.at(-1);
+      const carried = lastLogged && 'reps' in lastLogged ? lastLogged.weightKg : undefined;
+      setWeightKg(carried ?? step.targetWeightKg ?? 0);
+    }
     setRoundsCompleted(0);
     setExtraReps(0);
     setRestRemainingSec(countdownTarget);
@@ -476,7 +256,9 @@ export function useSessionRunner(
         pendingSetsRef.current[current.memberKey] = sets;
       } else if (current.kind === 'reps') {
         const sets = pendingSetsRef.current[current.memberKey] ?? [];
-        sets.push({ reps: repsRef.current, rpe: rpeRef.current, restTakenSec: 0 });
+        // `|| undefined` so bodyweight (0) stays absent from the log rather than recording a 0 kg load —
+        // entryVolume distinguishes the two, summing reps×weight only when a weight is actually present.
+        sets.push({ reps: repsRef.current, weightKg: weightKgRef.current || undefined, rpe: rpeRef.current, restTakenSec: 0 });
         pendingSetsRef.current[current.memberKey] = sets;
       } else if (current.kind === 'interval') {
         if (current.variant === 'hiit') {
@@ -770,6 +552,8 @@ export function useSessionRunner(
     setReps,
     rpe,
     setRpe,
+    weightKg,
+    setWeightKg,
     roundsCompleted,
     setRoundsCompleted,
     extraReps,

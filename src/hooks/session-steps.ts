@@ -1,0 +1,262 @@
+/**
+ * The pure half of the session runner: the step model and the workout → step-list expansion.
+ *
+ * Split out of use-session-runner.ts so it can be imported without dragging in that hook's native
+ * dependencies (expo-audio, expo-haptics, notifications) — those made these otherwise-pure functions
+ * untestable, since merely importing them initialised native modules. No behaviour changed in the move.
+ */
+import type { BlockConfigOverride, Exercise, Workout } from '@/domain/types';
+
+export type IntervalVariant = 'hiit' | 'emom' | 'amrap' | 'cardio';
+
+export type RunnerStep =
+  | {
+      kind: 'hold';
+      blockIndex: number;
+      memberKey: string;
+      exerciseId: string;
+      exerciseName: string;
+      holdTargetSec: number;
+      holdTargetMaxSec?: number;
+      setIndex: number;
+      setTotal: number;
+      notes?: string;
+    }
+  | {
+      kind: 'reps';
+      blockIndex: number;
+      memberKey: string;
+      exerciseId: string;
+      exerciseName: string;
+      targetReps: number;
+      targetRepsMax?: number;
+      targetWeightKg?: number;
+      setIndex: number;
+      setTotal: number;
+      notes?: string;
+    }
+  | {
+      kind: 'interval';
+      blockIndex: number;
+      memberKey: string;
+      exerciseId: string;
+      exerciseName: string;
+      variant: IntervalVariant;
+      targetSec: number;
+      /** true = count up with no auto-advance (cardio with no configured duration); false = countdown, auto-advances. */
+      countUp: boolean;
+      setIndex: number;
+      setTotal: number;
+      targetReps?: number;
+      cardioDistanceMeters?: number;
+      notes?: string;
+    }
+  // `standalone` distinguishes a dedicated Rest workout-block (its own logged session entry) from
+  // inter-set/inter-round/inter-exercise rest folded into (or discarded after) the surrounding work.
+  | { kind: 'rest'; blockIndex: number; memberKey: string; exerciseId: string; standalone: boolean; seconds: number };
+
+function expandExercise(
+  exercise: Exercise,
+  blockIndex: number,
+  memberKey: string,
+  configOverride?: BlockConfigOverride,
+  // Set when expanding a circuit member: the circuit's own `rounds` is what repeats the member, not
+  // the member's own `sets` — so each visit is exactly one set, and no inter-set rest is inserted
+  // (rest between visits is the circuit's own rest_between_exercises_sec/rest_between_rounds_sec).
+  setsOverride?: number,
+): RunnerStep[] {
+  switch (exercise.type) {
+    case 'timed_hold': {
+      const sets = setsOverride ?? exercise.config.sets;
+      const steps: RunnerStep[] = [];
+      for (let i = 0; i < sets; i++) {
+        steps.push({
+          kind: 'hold',
+          blockIndex,
+          memberKey,
+          exerciseId: exercise.id,
+          exerciseName: exercise.name,
+          holdTargetSec: exercise.config.holdSecMin,
+          holdTargetMaxSec: exercise.config.holdSecMax,
+          setIndex: i + 1,
+          setTotal: sets,
+          notes: exercise.notes,
+        });
+        if (setsOverride === undefined && i < sets - 1) {
+          steps.push({ kind: 'rest', blockIndex, memberKey, exerciseId: exercise.id, standalone: false, seconds: exercise.config.restSec });
+        }
+      }
+      return steps;
+    }
+    case 'reps': {
+      const sets = setsOverride ?? exercise.config.sets;
+      const steps: RunnerStep[] = [];
+      for (let i = 0; i < sets; i++) {
+        steps.push({
+          kind: 'reps',
+          blockIndex,
+          memberKey,
+          exerciseId: exercise.id,
+          exerciseName: exercise.name,
+          targetReps: exercise.config.targetRepsMin,
+          targetRepsMax: exercise.config.targetRepsMax,
+          targetWeightKg: exercise.config.targetWeightKg,
+          setIndex: i + 1,
+          setTotal: sets,
+          notes: exercise.notes,
+        });
+        if (setsOverride === undefined && i < sets - 1) {
+          steps.push({ kind: 'rest', blockIndex, memberKey, exerciseId: exercise.id, standalone: false, seconds: exercise.config.restSec });
+        }
+      }
+      return steps;
+    }
+    case 'hiit': {
+      const steps: RunnerStep[] = [];
+      for (let i = 0; i < exercise.config.rounds; i++) {
+        steps.push({
+          kind: 'interval',
+          blockIndex,
+          memberKey,
+          exerciseId: exercise.id,
+          exerciseName: exercise.name,
+          variant: 'hiit',
+          targetSec: exercise.config.workSec,
+          countUp: false,
+          setIndex: i + 1,
+          setTotal: exercise.config.rounds,
+          notes: exercise.notes,
+        });
+        if (i < exercise.config.rounds - 1) {
+          steps.push({ kind: 'rest', blockIndex, memberKey, exerciseId: exercise.id, standalone: false, seconds: exercise.config.restSec });
+        }
+      }
+      return steps;
+    }
+    case 'emom': {
+      const steps: RunnerStep[] = [];
+      // `totalMinutes` is the block's total *duration*, not its interval count — those only coincide
+      // for a literal every-minute EMOM. Looping `totalMinutes` times at `intervalSec` each meant a
+      // 30-second interval over 10 minutes ran for 5, while estimateExerciseSeconds (selectors.ts)
+      // reported the honest `totalMinutes * 60`; the two silently disagreed for any interval but 60s.
+      // Clamped to at least one so an interval longer than the whole block still runs once rather
+      // than making the exercise vanish into the "nothing to run" path.
+      const intervalCount = Math.max(1, Math.floor((exercise.config.totalMinutes * 60) / exercise.config.intervalSec));
+      for (let i = 0; i < intervalCount; i++) {
+        steps.push({
+          kind: 'interval',
+          blockIndex,
+          memberKey,
+          exerciseId: exercise.id,
+          exerciseName: exercise.name,
+          variant: 'emom',
+          targetSec: exercise.config.intervalSec,
+          countUp: false,
+          setIndex: i + 1,
+          setTotal: intervalCount,
+          targetReps: exercise.config.targetReps,
+          notes: exercise.notes,
+        });
+      }
+      return steps;
+    }
+    case 'amrap':
+      return [
+        {
+          kind: 'interval',
+          blockIndex,
+          memberKey,
+          exerciseId: exercise.id,
+          exerciseName: exercise.name,
+          variant: 'amrap',
+          targetSec: exercise.config.timeCapSec,
+          countUp: false,
+          setIndex: 1,
+          setTotal: 1,
+          notes: exercise.notes,
+        },
+      ];
+    case 'cardio': {
+      const hasDuration = exercise.config.durationSec !== undefined;
+      return [
+        {
+          kind: 'interval',
+          blockIndex,
+          memberKey,
+          exerciseId: exercise.id,
+          exerciseName: exercise.name,
+          variant: 'cardio',
+          targetSec: exercise.config.durationSec ?? 0,
+          countUp: !hasDuration,
+          setIndex: 1,
+          setTotal: 1,
+          cardioDistanceMeters: exercise.config.distanceMeters,
+          notes: exercise.notes,
+        },
+      ];
+    }
+    case 'rest':
+      return [
+        {
+          kind: 'rest',
+          blockIndex,
+          memberKey,
+          exerciseId: exercise.id,
+          standalone: true,
+          seconds: configOverride?.durationSec ?? exercise.config.durationSec,
+        },
+      ];
+  }
+}
+
+/** Exported so callers (session.tsx) can check for a zero-step workout before ever starting a session. */
+export function buildSteps(workout: Workout, exercises: Exercise[]): RunnerStep[] {
+  const steps: RunnerStep[] = [];
+
+  workout.blocks.forEach((block, blockIndex) => {
+    if (block.kind === 'exercise') {
+      const exercise = exercises.find((candidate) => candidate.id === block.exerciseId);
+      if (!exercise) return;
+      steps.push(...expandExercise(exercise, blockIndex, `${blockIndex}`, block.configOverride));
+      return;
+    }
+
+    // Circuit: true round-robin (A,B,C,A,B,C,...) — each member's memberKey stays stable across
+    // rounds so its sets accumulate into one session entry per exercise, not one per round.
+    const members = block.members
+      .map((member, memberIndex) => ({ member, memberIndex, exercise: exercises.find((candidate) => candidate.id === member.exerciseId) }))
+      .filter((entry): entry is typeof entry & { exercise: Exercise } => !!entry.exercise);
+    if (members.length === 0) return;
+
+    for (let round = 0; round < block.rounds; round++) {
+      members.forEach(({ member, memberIndex, exercise }, i) => {
+        const memberKey = `${blockIndex}:${memberIndex}`;
+        steps.push(...expandExercise(exercise, blockIndex, memberKey, member.configOverride, 1));
+        const isLastMember = i === members.length - 1;
+        if (!isLastMember && block.restBetweenExercisesSec) {
+          steps.push({
+            kind: 'rest',
+            blockIndex,
+            memberKey: `${blockIndex}:circuit-rest`,
+            exerciseId: exercise.id,
+            standalone: false,
+            seconds: block.restBetweenExercisesSec,
+          });
+        }
+      });
+      const isLastRound = round === block.rounds - 1;
+      if (!isLastRound && block.restBetweenRoundsSec) {
+        steps.push({
+          kind: 'rest',
+          blockIndex,
+          memberKey: `${blockIndex}:circuit-rest`,
+          exerciseId: members[0].exercise.id,
+          standalone: false,
+          seconds: block.restBetweenRoundsSec,
+        });
+      }
+    }
+  });
+
+  return steps;
+}

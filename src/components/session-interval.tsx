@@ -108,8 +108,11 @@ export function SessionInterval({
 
   const pulseStyle = useAnimatedStyle(() => ({ opacity: pulse.value }));
 
+  // "Minute" only when the interval actually is one — an EMOM here is any fixed-interval block, so a
+  // 30-second interval counting "Minute 3 of 20" would be plainly wrong.
+  const emomUnit = targetSec === 60 ? 'Minute' : 'Interval';
   const setLabel =
-    variant === 'hiit' ? `Round ${setIndex} of ${setTotal}` : variant === 'emom' ? `Minute ${setIndex} of ${setTotal}` : null;
+    variant === 'hiit' ? `Round ${setIndex} of ${setTotal}` : variant === 'emom' ? `${emomUnit} ${setIndex} of ${setTotal}` : null;
 
   const captionParts: string[] = [];
   if (variant === 'emom' && targetReps) captionParts.push(`target ${targetReps} reps`);

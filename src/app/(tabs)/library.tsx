@@ -12,6 +12,7 @@ import { ExerciseType } from '@/domain/types';
 import { useAppTheme } from '@/hooks/theme-context';
 import { useTheme } from '@/hooks/use-theme';
 import { useLibraryStore } from '@/state/library-store';
+import { useUnitSystem } from '@/state/preferences-store';
 import { exportLibrary } from '@/storage/export';
 
 const FILTERS: { labelKey: string; type: ExerciseType | 'all' }[] = [
@@ -25,6 +26,7 @@ export default function LibraryScreen() {
   const theme = useTheme();
   const { scheme } = useAppTheme();
   const { t } = useTranslation();
+  const unitSystem = useUnitSystem();
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<ExerciseType | 'all'>('all');
   const library = useLibraryStore((state) => state.library);
@@ -104,7 +106,7 @@ export default function LibraryScreen() {
                 <View style={styles.cardText}>
                   <ThemedText type="heading">{exercise.name}</ThemedText>
                   <ThemedText type="small" themeColor="textSecondary">
-                    {exerciseSummary(exercise)}
+                    {exerciseSummary(exercise, unitSystem)}
                   </ThemedText>
                 </View>
                 <ExerciseBadge type={exercise.type} />

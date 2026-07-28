@@ -18,6 +18,7 @@ import '@/i18n';
 import { RunnerColors } from '@/constants/theme';
 import { ThemeOverrideProvider, useAppTheme } from '@/hooks/theme-context';
 import { useLibraryStore } from '@/state/library-store';
+import { usePreferencesStore } from '@/state/preferences-store';
 import { useSessionHistoryStore } from '@/state/session-history-store';
 
 SplashScreen.preventAutoHideAsync();
@@ -96,16 +97,21 @@ export default function RootLayout() {
   const hydrateLibrary = useLibraryStore((state) => state.hydrate);
   const sessionHistoryStatus = useSessionHistoryStore((state) => state.status);
   const hydrateSessionHistory = useSessionHistoryStore((state) => state.hydrate);
+  // Gated alongside the data stores rather than hydrated on mount like the tip store: this one picks
+  // the unit every weight renders in, so arriving late would swap the numbers under the user.
+  const preferencesStatus = usePreferencesStore((state) => state.status);
+  const hydratePreferences = usePreferencesStore((state) => state.hydrate);
 
   useEffect(() => {
     hydrateLibrary();
     hydrateSessionHistory();
-  }, [hydrateLibrary, hydrateSessionHistory]);
+    hydratePreferences();
+  }, [hydrateLibrary, hydrateSessionHistory, hydratePreferences]);
 
   const dataReady = libraryStatus === 'ready' || libraryStatus === 'error';
   const historyReady = sessionHistoryStatus === 'ready' || sessionHistoryStatus === 'error';
 
-  if (!fontsLoaded || !dataReady || !historyReady) return null;
+  if (!fontsLoaded || !dataReady || !historyReady || preferencesStatus !== 'ready') return null;
 
   // GestureHandlerRootView now lives inside Navigation, since it needs the active theme to paint its
   // background and that's only readable below ThemeOverrideProvider.

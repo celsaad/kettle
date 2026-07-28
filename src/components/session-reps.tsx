@@ -6,18 +6,11 @@ import { ThemedText } from '@/components/themed-text';
 import { SessionNextCard } from '@/components/session-next-card';
 import { SessionNumberPad } from '@/components/session-number-pad';
 import { RunnerColors, Spacing } from '@/constants/theme';
+import { fromDisplayWeight, toDisplayWeight, weightStep } from '@/domain/units';
 import type { RestPreview } from '@/hooks/use-session-runner';
+import { useUnitSystem } from '@/state/preferences-store';
 
 const RPE_OPTIONS = [7, 8, 9];
-/**
- * 2.5kg because it's the one increment that serves both ends of a generalist app: it's the smallest
- * real jump on a bar or belt (a pair of 1.25kg plates), and metric dumbbell racks are commonly spaced
- * the same way (2.5, 5, 7.5, 10…). 1kg suits neither — you can't load it on a bar without uncommon
- * 0.5kg plates, and racks rarely step that finely. Going finer would also make the stepper's tap count
- * worse, which is the wrong direction: precision is meant to come from direct entry (see the
- * implementation plan), leaving this control for coarse adjustment.
- */
-const WEIGHT_STEP_KG = 2.5;
 
 type Props = {
   exerciseName: string;
@@ -56,6 +49,16 @@ export function SessionReps({
 }: Props) {
   const [editing, setEditing] = useState<'reps' | 'load' | null>(null);
   const { t } = useTranslation();
+  const unitSystem = useUnitSystem();
+
+  // The runner works in kilograms end to end — that's what gets logged — so the conversion lives here,
+  // at the one place a load is shown or typed. Stepping in *display* units is the point: +5 lb has to
+  // land on 5 lb, not on the 5.51 lb that converting a 2.5 kg step would produce.
+  const displayWeight = toDisplayWeight(weightKg, unitSystem);
+  const step = weightStep(unitSystem);
+  const setDisplayWeight = (value: number) => onChangeWeightKg(fromDisplayWeight(Math.max(0, value), unitSystem));
+  const unitLabel = t(unitSystem === 'imperial' ? 'units.lb' : 'units.kg');
+  const spokenUnit = t(unitSystem === 'imperial' ? 'units.lbSpoken' : 'units.kgSpoken');
 
   return (
     <View style={styles.container}>
@@ -122,7 +125,7 @@ export function SessionReps({
             */}
             <View style={styles.loadRow}>
               <Pressable
-                onPress={() => onChangeWeightKg(Math.max(0, weightKg - WEIGHT_STEP_KG))}
+                onPress={() => setDisplayWeight(displayWeight - step)}
                 hitSlop={8}
                 accessibilityRole="button"
                 accessibilityLabel={t('session.reps.decreaseLoad')}
@@ -136,14 +139,14 @@ export function SessionReps({
                 accessibilityRole="button"
                 accessibilityLabel={
                   weightKg > 0
-                    ? t('session.reps.loadAccessibilityWeighted', { weight: weightKg })
+                    ? t('session.reps.loadAccessibilityWeighted', { weight: displayWeight, unit: spokenUnit })
                     : t('session.reps.loadAccessibilityBodyweight')
                 }>
                 <ThemedText type="heading" style={styles.loadValue}>
                   {weightKg > 0 ? (
                     <>
-                      {weightKg}
-                      <ThemedText style={styles.loadUnit}> kg</ThemedText>
+                      {displayWeight}
+                      <ThemedText style={styles.loadUnit}> {unitLabel}</ThemedText>
                     </>
                   ) : (
                     t('session.reps.bodyweightAbbr')
@@ -151,7 +154,7 @@ export function SessionReps({
                 </ThemedText>
               </Pressable>
               <Pressable
-                onPress={() => onChangeWeightKg(weightKg + WEIGHT_STEP_KG)}
+                onPress={() => setDisplayWeight(displayWeight + step)}
                 hitSlop={8}
                 accessibilityRole="button"
                 accessibilityLabel={t('session.reps.increaseLoad')}
@@ -220,12 +223,12 @@ export function SessionReps({
       {editing === 'load' && (
         <SessionNumberPad
           label={t('session.reps.loadLabel')}
-          initialValue={weightKg}
-          unit="kg"
+          initialValue={displayWeight}
+          unit={unitLabel}
           allowDecimal
           onCancel={() => setEditing(null)}
           onConfirm={(value) => {
-            onChangeWeightKg(value);
+            setDisplayWeight(value);
             setEditing(null);
           }}
         />

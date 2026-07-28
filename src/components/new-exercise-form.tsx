@@ -2,12 +2,13 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
-import { buildExercise, CONFIG_FIELDS, TYPE_OPTIONS, validateConfig } from '@/domain/exercise-form';
+import { buildExercise, CONFIG_FIELDS, fieldUnitLabel, TYPE_OPTIONS, validateConfig } from '@/domain/exercise-form';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { slugify } from '@/domain/slug';
 import type { Exercise, ExerciseType } from '@/domain/types';
 import { useTheme } from '@/hooks/use-theme';
+import { useUnitSystem } from '@/state/preferences-store';
 
 type Props = {
   onCreate: (exercise: Exercise) => void;
@@ -23,6 +24,7 @@ type Props = {
 export function NewExerciseForm({ onCreate, onCancel }: Props) {
   const theme = useTheme();
   const { t } = useTranslation();
+  const unitSystem = useUnitSystem();
   const [name, setName] = useState('');
   const [type, setType] = useState<ExerciseType>('reps');
   const [values, setValues] = useState<Record<string, string>>({});
@@ -48,7 +50,8 @@ export function NewExerciseForm({ onCreate, onCancel }: Props) {
       setError(configError);
       return;
     }
-    onCreate(buildExercise(id, name.trim(), type, values, notes));
+    // No previousWeightKg: this form only ever creates, so every value in it was typed just now.
+    onCreate(buildExercise(id, name.trim(), type, values, notes, { unitSystem }));
   };
 
   return (
@@ -90,24 +93,28 @@ export function NewExerciseForm({ onCreate, onCancel }: Props) {
       </View>
 
       <View style={styles.configGrid}>
-        {CONFIG_FIELDS[type].map((field) => (
-          <View key={field.key} style={styles.configField}>
-            <ThemedText type="small" themeColor="textSecondary" style={styles.label}>
-              {/* Both of these are i18next keys, not display text — rendering them raw put
-                  "exerciseForm.type.reps" and "exerciseForm.field.sets" on screen. */}
-              {t(field.label)} {field.unit ? `(${field.unit})` : ''}
-              {field.optional ? ` · ${t('exerciseEditor.optional')}` : ''}
-            </ThemedText>
-            <TextInput
-              value={values[field.key] ?? ''}
-              onChangeText={(text) => setField(field.key, text)}
-              keyboardType="numeric"
-              placeholder="0"
-              placeholderTextColor={theme.textSecondary}
-              style={[styles.input, { borderColor: theme.border, backgroundColor: theme.background, color: theme.text }]}
-            />
-          </View>
-        ))}
+        {CONFIG_FIELDS[type].map((field) => {
+          const unit = fieldUnitLabel(field, unitSystem);
+          return (
+            <View key={field.key} style={styles.configField}>
+              <ThemedText type="small" themeColor="textSecondary" style={styles.label}>
+                {/* `field.label` is an i18next key, not display text — rendering it raw put
+                  "exerciseForm.type.reps" and "exerciseForm.field.sets" on screen. The unit comes
+                  back already resolved, since the weight one depends on the user's preference. */}
+                {t(field.label)} {unit ? `(${unit})` : ''}
+                {field.optional ? ` · ${t('exerciseEditor.optional')}` : ''}
+              </ThemedText>
+              <TextInput
+                value={values[field.key] ?? ''}
+                onChangeText={(text) => setField(field.key, text)}
+                keyboardType="numeric"
+                placeholder="0"
+                placeholderTextColor={theme.textSecondary}
+                style={[styles.input, { borderColor: theme.border, backgroundColor: theme.background, color: theme.text }]}
+              />
+            </View>
+          );
+        })}
       </View>
 
       <ThemedText type="small" themeColor="textSecondary" style={styles.label}>

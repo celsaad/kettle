@@ -8,11 +8,19 @@ import { ModalHeader } from '@/components/modal-header';
 import { ThemedText } from '@/components/themed-text';
 import { VolumeChart } from '@/components/volume-chart';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
-import { buildExercise, CONFIG_FIELDS, configToStrings, TYPE_OPTIONS, validateConfig } from '@/domain/exercise-form';
+import {
+  buildExercise,
+  CONFIG_FIELDS,
+  configToStrings,
+  fieldUnitLabel,
+  TYPE_OPTIONS,
+  validateConfig,
+} from '@/domain/exercise-form';
 import { slugify } from '@/domain/slug';
 import type { ExerciseType } from '@/domain/types';
 import { useTheme } from '@/hooks/use-theme';
 import { useLibraryStore } from '@/state/library-store';
+import { useUnitSystem } from '@/state/preferences-store';
 import { exerciseHistory } from '@/state/selectors';
 import { useSessionHistoryStore } from '@/state/session-history-store';
 
@@ -26,12 +34,14 @@ export default function ExerciseEditorScreen() {
 
   const sessions = useSessionHistoryStore((state) => state.sessions);
 
+  const unitSystem = useUnitSystem();
+
   const editing = useMemo(() => library?.exercises.find((exercise) => exercise.id === id), [library, id]);
   const recentHistory = useMemo(() => (editing ? exerciseHistory(sessions, editing.id) : []), [sessions, editing]);
 
   const [name, setName] = useState(editing?.name ?? '');
   const [type, setType] = useState<ExerciseType>(editing?.type ?? 'reps');
-  const [values, setValues] = useState<Record<string, string>>(editing ? configToStrings(editing) : {});
+  const [values, setValues] = useState<Record<string, string>>(editing ? configToStrings(editing, unitSystem) : {});
   const [notes, setNotes] = useState(editing?.notes ?? '');
   const [error, setError] = useState<string | null>(null);
 
@@ -54,7 +64,10 @@ export default function ExerciseEditorScreen() {
       setError(configError);
       return;
     }
-    const exercise = buildExercise(exerciseId, name.trim(), type, values, notes);
+    const exercise = buildExercise(exerciseId, name.trim(), type, values, notes, {
+      unitSystem,
+      previousWeightKg: editing?.type === 'reps' ? editing.config.targetWeightKg : undefined,
+    });
     await saveExercise(exercise);
     close();
   };
@@ -134,25 +147,28 @@ export default function ExerciseEditorScreen() {
         </View>
 
         <View style={styles.configGrid}>
-          {CONFIG_FIELDS[type].map((field) => (
-            <View key={field.key} style={styles.configField}>
-              <ThemedText type="small" themeColor="textSecondary" style={styles.label}>
-                {t(field.label)} {field.unit ? `(${field.unit})` : ''}
-                {field.optional ? ` · ${t('exerciseEditor.optional')}` : ''}
-              </ThemedText>
-              <TextInput
-                value={values[field.key] ?? ''}
-                onChangeText={(text) => setField(field.key, text)}
-                keyboardType="numeric"
-                placeholder="0"
-                placeholderTextColor={theme.textSecondary}
-                style={[
-                  styles.input,
-                  { borderColor: theme.border, backgroundColor: theme.backgroundElement, color: theme.text },
-                ]}
-              />
-            </View>
-          ))}
+          {CONFIG_FIELDS[type].map((field) => {
+            const unit = fieldUnitLabel(field, unitSystem);
+            return (
+              <View key={field.key} style={styles.configField}>
+                <ThemedText type="small" themeColor="textSecondary" style={styles.label}>
+                  {t(field.label)} {unit ? `(${unit})` : ''}
+                  {field.optional ? ` · ${t('exerciseEditor.optional')}` : ''}
+                </ThemedText>
+                <TextInput
+                  value={values[field.key] ?? ''}
+                  onChangeText={(text) => setField(field.key, text)}
+                  keyboardType="numeric"
+                  placeholder="0"
+                  placeholderTextColor={theme.textSecondary}
+                  style={[
+                    styles.input,
+                    { borderColor: theme.border, backgroundColor: theme.backgroundElement, color: theme.text },
+                  ]}
+                />
+              </View>
+            );
+          })}
         </View>
 
         <ThemedText type="small" themeColor="textSecondary" style={styles.label}>

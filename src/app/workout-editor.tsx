@@ -17,12 +17,14 @@ import { slugify } from '@/domain/slug';
 import type { Exercise, Workout, WorkoutBlock } from '@/domain/types';
 import { useTheme } from '@/hooks/use-theme';
 import { findExerciseInLibrary, useLibraryStore } from '@/state/library-store';
+import { useUnitSystem } from '@/state/preferences-store';
 
 const EMPTY_WORKOUT: Workout = { id: '', name: '', blocks: [] };
 
 export default function WorkoutEditorScreen() {
   const theme = useTheme();
   const { t } = useTranslation();
+  const unitSystem = useUnitSystem();
   const { id } = useLocalSearchParams<{ id?: string }>();
   const library = useLibraryStore((state) => state.library);
   const saveWorkout = useLibraryStore((state) => state.saveWorkout);
@@ -192,7 +194,7 @@ export default function WorkoutEditorScreen() {
               const summary =
                 isRest && overrideSec
                   ? t('workoutEditor.overrideSeconds', { count: overrideSec })
-                  : exerciseSummary(exercise);
+                  : exerciseSummary(exercise, unitSystem);
 
               return (
                 <View
@@ -266,7 +268,7 @@ export default function WorkoutEditorScreen() {
                         <View style={styles.rowText}>
                           <ThemedText type="smallMedium">{exercise.name}</ThemedText>
                           <ThemedText type="small" themeColor="textSecondary">
-                            {exerciseSummary(exercise)}
+                            {exerciseSummary(exercise, unitSystem)}
                           </ThemedText>
                         </View>
                         <ExerciseBadge type={exercise.type} />

@@ -11,6 +11,7 @@ import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { TIP_SKU_LIST, tierForSku, toTipTierOffers, type TipTier } from '@/domain/tip';
 import { useTheme } from '@/hooks/use-theme';
+import { isIapAvailable } from '@/hooks/safe-iap';
 import { useTipStore } from '@/state/tip-store';
 
 const TIER_LABEL_KEYS: Record<TipTier, string> = {
@@ -22,21 +23,17 @@ const TIER_LABEL_KEYS: Record<TipTier, string> = {
 /** Transient outcome of the last purchase attempt. Cancellation returns to `null`, not an error. */
 type Outcome = { kind: 'pending' } | { kind: 'failed' } | { kind: 'notSaved' } | null;
 
-export default function SupportScreen() {
+/**
+ * Everything that touches Play Billing, split out so `useIAP` is only ever mounted where the native
+ * module exists — hooks can't be called conditionally, so the check has to be a component boundary
+ * rather than an `if` inside one. See `safe-iap.ts` for why the module can be missing.
+ */
+function TipTiers({ onRecorded }: { onRecorded: (tier: TipTier) => Promise<boolean> }) {
   const theme = useTheme();
   const { t } = useTranslation();
-  const supporter = useTipStore((state) => state.supporter);
-  const hydrate = useTipStore((state) => state.hydrate);
-  const recordTip = useTipStore((state) => state.recordTip);
   const [purchasingSku, setPurchasingSku] = useState<string | null>(null);
   const [outcome, setOutcome] = useState<Outcome>(null);
   const [storeFailed, setStoreFailed] = useState(false);
-
-  // Hydrated here rather than in _layout.tsx — see the note on useTipStore for why cold start
-  // deliberately doesn't wait on this file.
-  useEffect(() => {
-    hydrate();
-  }, [hydrate]);
 
   // Uses the module-level `finishTransaction` rather than the one `useIAP` returns, so this handler
   // doesn't have to close over a binding the hook below hasn't produced yet. Both do the same work.
@@ -54,7 +51,7 @@ export default function SupportScreen() {
     const tier = tierForSku(purchase.productId);
     if (!tier) return;
 
-    const saved = await recordTip(tier);
+    const saved = await onRecorded(tier);
     setOutcome(saved ? null : { kind: 'notSaved' });
 
     // `isConsumable` is what makes a tip repeatable: without it Play treats the SKU as owned and
@@ -98,27 +95,7 @@ export default function SupportScreen() {
       : { pending: t('support.pending'), failed: t('support.failed'), notSaved: t('support.notSaved') }[outcome.kind];
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['top', 'bottom', 'left', 'right']}>
-      <ModalHeader onClose={() => router.back()} />
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <ThemedText type="subtitle">{t('support.title')}</ThemedText>
-
-        <ThemedText themeColor="textSecondary" style={styles.paragraph}>
-          {t('support.pitch')}
-        </ThemedText>
-        <ThemedText themeColor="textSecondary" style={styles.paragraph}>
-          {t('support.why')}
-        </ThemedText>
-
-        {supporter.tipCount > 0 && (
-          <ThemedView type="backgroundElement" style={[styles.thankYou, { borderColor: theme.border }]}>
-            <ThemedText type="heading">{t('support.thankYouTitle')}</ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">
-              {t('support.thankYouBody', { count: supporter.tipCount })}
-            </ThemedText>
-          </ThemedView>
-        )}
-
+    <>
         {storeFailed ? (
           <View style={styles.stateBlock}>
             <ThemedText type="small" style={{ color: theme.accentText }}>
@@ -176,6 +153,55 @@ export default function SupportScreen() {
           <ThemedText type="small" style={[styles.paragraph, { color: theme.accentText }]}>
             {outcomeMessage}
           </ThemedText>
+        )}
+    </>
+  );
+}
+
+export default function SupportScreen() {
+  const theme = useTheme();
+  const { t } = useTranslation();
+  const supporter = useTipStore((state) => state.supporter);
+  const hydrate = useTipStore((state) => state.hydrate);
+  const recordTip = useTipStore((state) => state.recordTip);
+
+  // Hydrated here rather than in _layout.tsx — see the note on useTipStore for why cold start
+  // deliberately doesn't wait on this file.
+  useEffect(() => {
+    hydrate();
+  }, [hydrate]);
+
+  return (
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['top', 'bottom', 'left', 'right']}>
+      <ModalHeader onClose={() => router.back()} />
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <ThemedText type="subtitle">{t('support.title')}</ThemedText>
+
+        <ThemedText themeColor="textSecondary" style={styles.paragraph}>
+          {t('support.pitch')}
+        </ThemedText>
+        <ThemedText themeColor="textSecondary" style={styles.paragraph}>
+          {t('support.why')}
+        </ThemedText>
+
+        {/* A past tip is still worth acknowledging even when the store can't be reached now. */}
+        {supporter.tipCount > 0 && (
+          <ThemedView type="backgroundElement" style={[styles.thankYou, { borderColor: theme.border }]}>
+            <ThemedText type="heading">{t('support.thankYouTitle')}</ThemedText>
+            <ThemedText type="small" themeColor="textSecondary">
+              {t('support.thankYouBody', { count: supporter.tipCount })}
+            </ThemedText>
+          </ThemedView>
+        )}
+
+        {isIapAvailable ? (
+          <TipTiers onRecorded={recordTip} />
+        ) : (
+          <View style={styles.stateBlock}>
+            <ThemedText type="small" style={{ color: theme.accentText }}>
+              {t('support.storeUnavailable')}
+            </ThemedText>
+          </View>
         )}
       </ScrollView>
     </SafeAreaView>

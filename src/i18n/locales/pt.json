@@ -286,5 +286,51 @@
     "build": "Montar",
     "history": "Histórico",
     "programs": "Programas"
+  },
+  "format": {
+    "type": {
+      "hiit": "hiit",
+      "emom": "emom",
+      "amrap": "amrap",
+      "reps": "repetições",
+      "timed_hold": "isometria",
+      "cardio": "cardio",
+      "rest": "descanso"
+    },
+    "restOnly": "só descanso",
+    "mixed": "misto: {{types}}",
+    "workoutShape": "{{blocks}} · {{types}} · ~{{minutes}} min",
+    "block_one": "{{count}} bloco",
+    "block_other": "{{count}} blocos",
+    "round_one": "{{count}} rodada",
+    "round_other": "{{count}} rodadas",
+    "rep_one": "{{count}} repetição",
+    "rep_other": "{{count}} repetições",
+    "interval_one": "{{count}} intervalo",
+    "interval_other": "{{count}} intervalos",
+    "seconds": "{{n}}s",
+    "metres": "{{n}} m",
+    "repsList": "{{list}} repetições",
+    "roundsPlusReps": "{{rounds}} + {{reps}}",
+    "intervalsWithReps": "{{intervals}} · {{reps}}",
+    "circuitShape": "{{rounds}} · {{between}}s / {{rounds_rest}}s de descanso"
+  },
+  "summary": {
+    "hiit": "{{work}}s de trabalho · {{rest}}s de descanso · ×{{rounds}}",
+    "reps": "{{sets}} × {{reps}}{{weight}} · {{rest}}s de descanso",
+    "repsWeight": " · {{kg}} kg",
+    "hold": "{{sets}} × {{hold}}s · {{rest}}s de descanso",
+    "emom": "intervalo de {{interval}}s · {{minutes}} min",
+    "amrap": "limite de {{cap}}s",
+    "cardioDistance": "{{n}} m",
+    "cardioDuration": "{{n}}s",
+    "restSeconds": "{{n}} segundos"
+  },
+  "preview": {
+    "hold": "isometria · série {{index}} de {{total}} · alvo {{target}}",
+    "reps": "repetições · série {{index}} de {{total}} · alvo {{target}}",
+    "interval": "{{variant}} · {{progress}}",
+    "round": "rodada {{index}} de {{total}}",
+    "seconds": "{{n}}s"
   }
 }

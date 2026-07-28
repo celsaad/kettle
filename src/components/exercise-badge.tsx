@@ -1,3 +1,4 @@
+import i18next from 'i18next';
 import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
@@ -47,26 +48,37 @@ function rangeLabel(min: number, max: number | undefined): string {
 export function exerciseSummary(exercise: Exercise): string {
   switch (exercise.type) {
     case 'hiit':
-      return `${exercise.config.workSec}s work · ${exercise.config.restSec}s rest · ×${exercise.config.rounds}`;
-    case 'reps': {
-      const weight = exercise.config.targetWeightKg ? ` · ${exercise.config.targetWeightKg} kg` : '';
-      const reps = rangeLabel(exercise.config.targetRepsMin, exercise.config.targetRepsMax);
-      return `${exercise.config.sets} × ${reps}${weight} · ${exercise.config.restSec}s rest`;
-    }
-    case 'timed_hold': {
-      const hold = rangeLabel(exercise.config.holdSecMin, exercise.config.holdSecMax);
-      return `${exercise.config.sets} × ${hold}s · ${exercise.config.restSec}s rest`;
-    }
+      return i18next.t('summary.hiit', {
+        work: exercise.config.workSec,
+        rest: exercise.config.restSec,
+        rounds: exercise.config.rounds,
+      });
+    case 'reps':
+      return i18next.t('summary.reps', {
+        sets: exercise.config.sets,
+        reps: rangeLabel(exercise.config.targetRepsMin, exercise.config.targetRepsMax),
+        weight: exercise.config.targetWeightKg ? i18next.t('summary.repsWeight', { kg: exercise.config.targetWeightKg }) : '',
+        rest: exercise.config.restSec,
+      });
+    case 'timed_hold':
+      return i18next.t('summary.hold', {
+        sets: exercise.config.sets,
+        hold: rangeLabel(exercise.config.holdSecMin, exercise.config.holdSecMax),
+        rest: exercise.config.restSec,
+      });
     case 'emom':
-      return `${exercise.config.intervalSec}s interval · ${exercise.config.totalMinutes} min`;
+      return i18next.t('summary.emom', { interval: exercise.config.intervalSec, minutes: exercise.config.totalMinutes });
     case 'amrap':
-      return `${exercise.config.timeCapSec}s cap`;
+      return i18next.t('summary.amrap', { cap: exercise.config.timeCapSec });
     case 'cardio':
-      return exercise.config.distanceMeters ? `${exercise.config.distanceMeters} m` : `${exercise.config.durationSec ?? 0}s`;
+      return exercise.config.distanceMeters
+        ? i18next.t('summary.cardioDistance', { n: exercise.config.distanceMeters })
+        : i18next.t('summary.cardioDuration', { n: exercise.config.durationSec ?? 0 });
     case 'rest':
-      return `${exercise.config.durationSec} seconds`;
+      return i18next.t('summary.restSeconds', { n: exercise.config.durationSec });
   }
 }
+
 
 /** Structured, not a sentence — `formatCircuitShape` in domain/format.ts renders it. */
 export function circuitShape(block: Extract<WorkoutBlock, { kind: 'circuit' }>): CircuitShape {

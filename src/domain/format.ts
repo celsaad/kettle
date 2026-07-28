@@ -1,35 +1,25 @@
+// Imported from `i18next` directly, not from `@/i18n`. It's the same singleton — `@/i18n` configures
+// this instance — but going via that module would pull `expo-localization` into the domain layer, and
+// into every test that touches formatting. The jest setup initialises the same singleton with the
+// English resources, so these render identically under test.
+import i18next from 'i18next';
+
 import type { Exercise } from '@/domain/types';
 
 /**
- * The one place English display strings are assembled.
+ * The one place display strings are assembled.
  *
  * The logic layer (`selectors.ts`, `exercise-badge.tsx`) used to return finished sentences, which made
  * two things hard: tests had to assert on prose that i18n was about to rewrite, and pluralisation was
  * scattered across a dozen template literals — several of which were simply wrong ("1 blocks",
  * "1 rounds", "1 reps"). Those functions now return structured descriptors and this module renders
- * them, so when i18n lands only this file and the views change.
+ * them, so a new locale changes only translation files.
  *
- * **`plural` is English-only on purpose.** The obvious implementation is `Intl.PluralRules`, but
- * Hermes doesn't ship it (it has Collator/DateTimeFormat/NumberFormat and not much else), so calling
- * it would work in tests and on web and crash on device. When i18next + the `intl-pluralrules`
- * polyfill land, this function is the single seam to replace with CLDR categories — which matters
- * because languages like Polish and Arabic have three to six forms, not two.
+ * Pluralisation goes through i18next's `count`, which resolves CLDR categories — so a locale with
+ * three or six plural forms is a matter of adding `_few`/`_many` keys, not of changing code here.
  */
-export function plural(count: number, singular: string, pluralForm = `${singular}s`): string {
-  return `${count} ${count === 1 ? singular : pluralForm}`;
-}
 
-const TYPE_LABEL: Record<Exercise['type'], string> = {
-  hiit: 'hiit',
-  emom: 'emom',
-  amrap: 'amrap',
-  reps: 'reps',
-  timed_hold: 'hold',
-  cardio: 'cardio',
-  rest: 'rest',
-};
-
-/** What a workout is made of, as data — see `workoutSummary`. */
+/** What a workout is made of, as data — see `workoutShape`. */
 export type WorkoutShape = {
   blockCount: number;
   /** Distinct non-rest exercise types, in first-seen order. */
@@ -38,9 +28,18 @@ export type WorkoutShape = {
 };
 
 export function formatWorkoutShape(shape: WorkoutShape): string {
-  const labels = shape.types.map((type) => TYPE_LABEL[type]);
-  const typeLabel = labels.length === 0 ? 'rest only' : labels.length === 1 ? labels[0] : `mixed ${labels.join(' + ')}`;
-  return `${plural(shape.blockCount, 'block')} · ${typeLabel} · ~${shape.estimatedMinutes} min`;
+  const labels = shape.types.map((type) => i18next.t(`format.type.${type}`));
+  const typeLabel =
+    labels.length === 0
+      ? i18next.t('format.restOnly')
+      : labels.length === 1
+        ? labels[0]
+        : i18next.t('format.mixed', { types: labels.join(' + ') });
+  return i18next.t('format.workoutShape', {
+    blocks: i18next.t('format.block', { count: shape.blockCount }),
+    types: typeLabel,
+    minutes: shape.estimatedMinutes,
+  });
 }
 
 /**
@@ -59,25 +58,32 @@ export type EntryResult =
 export function formatEntryResult(result: EntryResult): string {
   switch (result.kind) {
     case 'holds':
-      return result.holdSecs.map((sec) => `${sec}s`).join(' · ');
+      return result.holdSecs.map((sec) => i18next.t('format.seconds', { n: sec })).join(' · ');
     case 'reps':
-      return `${result.reps.join(' · ')} reps`;
+      return i18next.t('format.repsList', { list: result.reps.join(' · ') });
     case 'rounds': {
-      const rounds = plural(result.rounds, 'round');
-      return result.extraReps ? `${rounds} + ${plural(result.extraReps, 'rep')}` : rounds;
+      const rounds = i18next.t('format.round', { count: result.rounds });
+      return result.extraReps
+        ? i18next.t('format.roundsPlusReps', { rounds, reps: i18next.t('format.rep', { count: result.extraReps }) })
+        : rounds;
     }
     case 'intervals': {
-      const intervals = plural(result.intervals, 'interval');
-      return result.totalReps ? `${intervals} · ${plural(result.totalReps, 'rep')}` : intervals;
+      const intervals = i18next.t('format.interval', { count: result.intervals });
+      return result.totalReps
+        ? i18next.t('format.intervalsWithReps', {
+            intervals,
+            reps: i18next.t('format.rep', { count: result.totalReps }),
+          })
+        : intervals;
     }
     case 'cardio': {
       const parts: string[] = [];
-      if (result.durationSec !== undefined) parts.push(`${result.durationSec}s`);
-      if (result.distanceMeters !== undefined) parts.push(`${result.distanceMeters} m`);
+      if (result.durationSec !== undefined) parts.push(i18next.t('format.seconds', { n: result.durationSec }));
+      if (result.distanceMeters !== undefined) parts.push(i18next.t('format.metres', { n: result.distanceMeters }));
       return parts.join(' · ');
     }
     case 'rest':
-      return `${result.restTakenSec}s`;
+      return i18next.t('format.seconds', { n: result.restTakenSec });
   }
 }
 
@@ -85,5 +91,9 @@ export function formatEntryResult(result: EntryResult): string {
 export type CircuitShape = { rounds: number; restBetweenExercisesSec: number; restBetweenRoundsSec: number };
 
 export function formatCircuitShape(shape: CircuitShape): string {
-  return `${plural(shape.rounds, 'round')} · ${shape.restBetweenExercisesSec}s / ${shape.restBetweenRoundsSec}s rest`;
+  return i18next.t('format.circuitShape', {
+    rounds: i18next.t('format.round', { count: shape.rounds }),
+    between: shape.restBetweenExercisesSec,
+    rounds_rest: shape.restBetweenRoundsSec,
+  });
 }

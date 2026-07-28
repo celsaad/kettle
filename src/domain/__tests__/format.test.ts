@@ -1,18 +1,20 @@
-import { formatCircuitShape, formatEntryResult, formatWorkoutShape, plural } from '@/domain/format';
+import i18next from 'i18next';
 
-describe('plural', () => {
-  it('uses the singular for exactly one', () => {
-    expect(plural(1, 'block')).toBe('1 block');
-    expect(plural(1, 'workout')).toBe('1 workout');
+import { formatCircuitShape, formatEntryResult, formatWorkoutShape } from '@/domain/format';
+
+// The hand-rolled `plural(count, singular)` helper is gone; i18next resolves CLDR categories from
+// `count` instead. These assert the resolution itself, since it's what every count-bearing string in
+// the app now depends on — and it's the piece that has to keep working when a locale with more than
+// two plural forms is added.
+describe('pluralisation', () => {
+  it('picks the singular form for exactly one', () => {
+    expect(i18next.t('format.block', { count: 1 })).toBe('1 block');
+    expect(i18next.t('format.round', { count: 1 })).toBe('1 round');
   });
 
-  it('uses the plural for zero and for many', () => {
-    expect(plural(0, 'block')).toBe('0 blocks');
-    expect(plural(4, 'block')).toBe('4 blocks');
-  });
-
-  it('accepts an irregular plural', () => {
-    expect(plural(2, 'entry', 'entries')).toBe('2 entries');
+  it('picks the plural form for zero and for many', () => {
+    expect(i18next.t('format.block', { count: 0 })).toBe('0 blocks');
+    expect(i18next.t('format.block', { count: 4 })).toBe('4 blocks');
   });
 });
 

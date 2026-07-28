@@ -585,6 +585,35 @@ layer are in place, so this is now mechanical: replace literals with `t()` calls
 `pt.json`. Nothing is translated yet; the locale files are empty scaffolds. Also still assembling
 English in the logic layer: `exerciseSummary` and `previewFor`.
 
+## ✅ I18n-2: the string migration
+
+**276 keys, `en` and `pt` at parity, no missing keys either way.** Brazilian Portuguese is a real
+translation, not placeholders. Covers the tab bar, all five tab screens, the runner, settings, import,
+every editor, and the display-string layer (`domain/format.ts`, `exerciseSummary`, `previewFor`).
+
+The `plural()` helper is gone — i18next resolves CLDR categories from `count`, so a locale with three
+or six plural forms is a matter of adding `_few`/`_many` keys rather than changing code.
+
+**Verified in both locales end to end**, which is what caught the three gaps a file-by-file pass
+missed:
+
+- The **tab bar** was never migrated, in either the native or web layout — a pt-BR user would have
+  navigated an entirely English tab bar. Easy to miss because the labels live in config arrays.
+- **"NEXT UP · WEEK 1"** stayed English because `nextUpView` assembled `` `Week ${n}` `` in the logic
+  layer. `NextUpView` now returns `weekNumber`/`weekDay` and the view composes it.
+- The **workout summary** (`"4 blocks · mixed hold + reps"`) needed `domain/format.ts` itself
+  migrated, which was blocked on i18next being available under jest.
+
+That last one is worth recording. `format.ts` imports `i18next` **directly**, not via `@/i18n` — same
+singleton, but going through that module would pull `expo-localization` into the domain layer and into
+every test that touches formatting. `jest.setup-after-env.js` initialises the same singleton with the
+English resources, so `format.test.ts` keeps asserting plain English and never needed editing to
+accommodate the change.
+
+**Not translated, by design:** exercise, workout and program names, notes, and `ProgramWeek.day` — all
+user data from their own YAML, rendered verbatim. `program-guide.tsx`'s ~194 lines of prose are still
+English and want their own namespace.
+
 ## Planned: fold a11y and i18n into AGENTS.md, once both are done
 
 **Do this after the a11y and i18n workstreams land, not before.** Once every control has a label and

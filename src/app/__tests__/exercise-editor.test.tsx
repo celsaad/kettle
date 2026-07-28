@@ -7,7 +7,7 @@ import { useLibraryStore } from '@/state/library-store';
 import { saveLibrary } from '@/storage/library-file';
 import { setSearchParams } from '@/test-support/expo-router';
 import { aLibrary, anExercise, aWorkout } from '@/test-support/library';
-import { renderScreen } from '@/test-support/render';
+import { pressAlertButton, renderScreen } from '@/test-support/render';
 
 /**
  * The editor's wiring, not its validation — `validateConfig` has its own unit tests in
@@ -150,8 +150,7 @@ describe('deleting', () => {
     await renderScreen(<ExerciseEditorScreen />);
 
     await fireEvent.press(screen.getByText('Delete exercise'));
-    const buttons = alert.mock.calls[0][2]!;
-    await buttons.find((button) => button.style === 'destructive')!.onPress!();
+    await pressAlertButton(alert, 'destructive');
 
     expect(persisted().exercises).toHaveLength(0);
   });

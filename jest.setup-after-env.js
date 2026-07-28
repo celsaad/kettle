@@ -6,9 +6,19 @@
 // runner tests hit exactly that, as opaque AggregateErrors in tests that passed in isolation.
 afterEach(() => {
   jest.useRealTimers();
-  // Same reasoning for the locale: a suite that switches to pt and doesn't switch back would leave
-  // every later suite asserting English against Portuguese output.
-  if (i18next.isInitialized && i18next.language !== 'en') i18next.changeLanguage('en');
+});
+
+// The locale needs the same isolation — a suite that switches to pt and doesn't switch back would
+// leave every later suite asserting English against Portuguese output — but it has to be reset
+// *before* each test rather than after.
+//
+// Resetting in afterEach ran while the test's tree was still mounted (RNTL's own cleanup afterEach
+// had not run yet), and `changeLanguage` re-renders every mounted `useTranslation()` component. That
+// re-render happens outside `act`, which React reports as an unwrapped update — a wall of warnings
+// pointing at this file rather than at any test. In beforeEach nothing is mounted yet, so the same
+// guarantee costs nothing.
+beforeEach(async () => {
+  if (i18next.isInitialized && i18next.language !== 'en') await i18next.changeLanguage('en');
 });
 
 // `domain/format.ts` renders through i18next, so it needs an initialised instance to return anything

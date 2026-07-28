@@ -81,7 +81,14 @@ after any delegated change, and skim the diff.
   both bundles and resets the locale after every test). An English-locale assertion *cannot* catch a
   hardcoded English string — `t('x.y')` and the literal it returns render identically. It only catches
   a rendered key path. Three screens have shipped with hardcoded strings for exactly this reason.
+- **Alert-driven confirm flows go through `pressAlertButton`**, which reaches into the spied
+  `Alert.alert` call and runs the handler in its own `act` scope. `Alert` renders nothing, so its
+  buttons aren't in the tree; and the handler writes to the store, so without `act` React reports an
+  unwrapped update from inside the *store*, naming a file nowhere near the test that caused it.
 - Finish with `npm run format`; don't hand-align a new test file against the rest.
+- `testTimeout` is 30s, not jest's 5s default. Screen tests pay a one-off lazy-init cost on the first
+  render in a file (~0.5s locally, far more on CI's contended 2-core runner, where the default failed).
+  It only costs time when something genuinely hangs.
 
 ## Verifying in the browser
 

@@ -8,7 +8,7 @@ import { useLibraryStore } from '@/state/library-store';
 import { saveLibrary } from '@/storage/library-file';
 import { router, setSearchParams } from '@/test-support/expo-router';
 import { aLibrary, anExercise, aProgram, aWorkout } from '@/test-support/library';
-import { renderScreen } from '@/test-support/render';
+import { pressAlertButton, renderScreen } from '@/test-support/render';
 
 /**
  * The five validation gates in `save()`, and the week list's local state.
@@ -220,8 +220,7 @@ it('deletes a program once confirmed', async () => {
   // No in-use guard here, unlike workouts and exercises: nothing in the library references a program,
   // so deleting one can't orphan anything. Past sessions keep their `programId` as a plain string.
   expect(savedLibrary).not.toHaveBeenCalled();
-  const buttons = alert.mock.calls[0][2]!;
-  await buttons.find((button) => button.style === 'destructive')!.onPress!();
+  await pressAlertButton(alert, 'destructive');
 
   expect(persisted().programs).toHaveLength(0);
   expect(router.back).toHaveBeenCalled();

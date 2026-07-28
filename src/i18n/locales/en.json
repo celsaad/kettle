@@ -280,7 +280,8 @@
     "deleteWorkout": "Delete workout",
     "inUseTitle": "Workout in use",
     "inUseBody": "\"{{name}}\" is used by {{programs}}. Remove it from those programs first.",
-    "deleteConfirmTitle": "Delete workout?"
+    "deleteConfirmTitle": "Delete workout?",
+    "createAndAdd": "Create & add"
   },
   "programEditor": {
     "editTitle": "Edit program",
@@ -303,6 +304,18 @@
     "addWeek": "+ Add week",
     "deleteProgram": "Delete program",
     "removeWeek": "Remove week {{n}}"
+  },
+  "overrideEditor": {
+    "addOverride": "+ Add override",
+    "nothingToOverride": "This workout has nothing to override yet.",
+    "exercise": "Exercise",
+    "circuit": "Circuit",
+    "circuitTitle": "Circuit ({{id}})",
+    "restPerExercise": "Rest/exercise (sec)",
+    "restPerRound": "Rest/round (sec)",
+    "saveOverride": "Save override",
+    "confirmAdd": "Add override",
+    "removeAccessibility": "Remove override"
   },
   "programDetail": {
     "notFound": "Program not found.",

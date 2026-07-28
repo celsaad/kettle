@@ -73,7 +73,10 @@ after any delegated change, and skim the diff.
   not close over one; `jest.mock('expo-router', () => require('@/test-support/expo-router'))` works.
 - **Prove a regression test fails against the bug it pins**, by reintroducing that bug. A test that
   passes either way is worthless, and this has caught more than one.
-- Don't run `npx prettier` — there's no config, so it reformats the whole file to double quotes.
+- **Don't reach for a formatter ad hoc.** The repo has none configured (oxlint lints but doesn't
+  format), so `npx prettier --write` reformats the file to *Prettier's* defaults — double quotes
+  throughout, rewrapped at 80 columns — against the whole codebase's style. Match the surrounding
+  file by hand. Adopting one properly is in the planned-work list.
 
 ## Verifying in the browser
 

@@ -280,7 +280,8 @@
     "deleteWorkout": "Excluir treino",
     "inUseTitle": "Treino em uso",
     "inUseBody": "\"{{name}}\" é usado em {{programs}}. Remova-o desses programas primeiro.",
-    "deleteConfirmTitle": "Excluir treino?"
+    "deleteConfirmTitle": "Excluir treino?",
+    "createAndAdd": "Criar e adicionar"
   },
   "programEditor": {
     "editTitle": "Editar programa",
@@ -303,6 +304,18 @@
     "addWeek": "+ Adicionar semana",
     "deleteProgram": "Excluir programa",
     "removeWeek": "Remover semana {{n}}"
+  },
+  "overrideEditor": {
+    "addOverride": "+ Adicionar ajuste",
+    "nothingToOverride": "Este treino ainda não tem nada para ajustar.",
+    "exercise": "Exercício",
+    "circuit": "Circuito",
+    "circuitTitle": "Circuito ({{id}})",
+    "restPerExercise": "Descanso/exercício (seg)",
+    "restPerRound": "Descanso/rodada (seg)",
+    "saveOverride": "Salvar ajuste",
+    "confirmAdd": "Adicionar ajuste",
+    "removeAccessibility": "Remover ajuste"
   },
   "programDetail": {
     "notFound": "Programa não encontrado.",

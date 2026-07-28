@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { buildExercise, CONFIG_FIELDS, configToStrings, type FieldDef } from '@/domain/exercise-form';
 import { overrideLines } from '@/app/program-detail';
@@ -45,6 +46,7 @@ function workoutIdTaggedCircuits(workout: Workout): CircuitBlock[] {
  */
 export function ProgramOverrideEditor({ library, workout, overrides, onChange }: Props) {
   const theme = useTheme();
+  const { t } = useTranslation();
   const [step, setStep] = useState<Step>('closed');
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [target, setTarget] = useState<Target | null>(null);
@@ -161,7 +163,7 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
                   onPress={() => removeOverride(index)}
                   hitSlop={8}
                   accessibilityRole="button"
-                  accessibilityLabel="Remove override">
+                  accessibilityLabel={t('overrideEditor.removeAccessibility')}>
                   <ThemedText themeColor="textSecondary">✕</ThemedText>
                 </Pressable>
               </View>
@@ -177,12 +179,12 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
             disabled={!workout || noEligibleTargets}
             style={[styles.addButton, { borderColor: theme.border }, (!workout || noEligibleTargets) && styles.disabled]}>
             <ThemedText type="small" themeColor="textSecondary">
-              + Add override
+              {t('overrideEditor.addOverride')}
             </ThemedText>
           </Pressable>
           {workout && noEligibleTargets && (
             <ThemedText type="small" themeColor="textSecondary" style={styles.hint}>
-              This workout has nothing to override yet.
+              {t('overrideEditor.nothingToOverride')}
             </ThemedText>
           )}
         </>
@@ -197,7 +199,7 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
                   {exercise.name}
                 </ThemedText>
                 <ThemedText type="small" themeColor="textSecondary">
-                  Exercise
+                  {t('overrideEditor.exercise')}
                 </ThemedText>
               </ThemedView>
             </Pressable>
@@ -209,14 +211,14 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
                   {block.id}
                 </ThemedText>
                 <ThemedText type="small" themeColor="textSecondary">
-                  Circuit
+                  {t('overrideEditor.circuit')}
                 </ThemedText>
               </ThemedView>
             </Pressable>
           ))}
           <Pressable onPress={close} style={styles.cancelPickerButton}>
             <ThemedText type="small" themeColor="textSecondary">
-              Cancel
+              {t('common.cancel')}
             </ThemedText>
           </Pressable>
         </View>
@@ -225,14 +227,14 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
       {step === 'edit-fields' && target && (
         <View style={[styles.fieldsPanel, { borderColor: theme.border }]}>
           <ThemedText type="smallMedium">
-            {target.kind === 'exercise' ? target.exercise.name : `Circuit (${target.block.id})`}
+            {target.kind === 'exercise' ? target.exercise.name : t('overrideEditor.circuitTitle', { id: target.block.id })}
           </ThemedText>
 
           {target.kind === 'block' ? (
             <>
               <View style={styles.fieldRow}>
                 <ThemedText type="small" themeColor="textSecondary" style={styles.fieldLabel}>
-                  Rounds
+                  {t('exerciseForm.field.rounds')}
                 </ThemedText>
                 <View style={styles.stepperRow}>
                   <Pressable
@@ -252,7 +254,7 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
               </View>
               <View style={styles.fieldRow}>
                 <ThemedText type="small" themeColor="textSecondary" style={styles.fieldLabel}>
-                  Rest/exercise (sec)
+                  {t('overrideEditor.restPerExercise')}
                 </ThemedText>
                 <TextInput
                   value={fieldValues.restBetweenExercisesSec ?? ''}
@@ -263,7 +265,7 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
               </View>
               <View style={styles.fieldRow}>
                 <ThemedText type="small" themeColor="textSecondary" style={styles.fieldLabel}>
-                  Rest/round (sec)
+                  {t('overrideEditor.restPerRound')}
                 </ThemedText>
                 <TextInput
                   value={fieldValues.restBetweenRoundsSec ?? ''}
@@ -277,8 +279,10 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
             exerciseFields.map((field) => (
               <View key={field.key} style={styles.fieldRow}>
                 <ThemedText type="small" themeColor="textSecondary" style={styles.fieldLabel}>
-                  {field.label} {field.unit ? `(${field.unit})` : ''}
-                  {field.optional ? ' · optional' : ''}
+                  {/* `FieldDef.label` is an i18next key, not display text — rendering it raw put
+                      "exerciseForm.field.sets" on screen. Matches exercise-editor.tsx's own row. */}
+                  {t(field.label)} {field.unit ? `(${field.unit})` : ''}
+                  {field.optional ? ` · ${t('exerciseEditor.optional')}` : ''}
                 </ThemedText>
                 <TextInput
                   value={fieldValues[field.key] ?? ''}
@@ -293,12 +297,12 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
           <View style={styles.fieldsButtonRow}>
             <Pressable onPress={close} style={[styles.smallCancelButton, { borderColor: theme.border }]}>
               <ThemedText type="small" themeColor="textSecondary">
-                Cancel
+                {t('common.cancel')}
               </ThemedText>
             </Pressable>
             <Pressable onPress={confirm} style={[styles.smallConfirmButton, { backgroundColor: theme.accent }]}>
               <ThemedText type="small" style={{ color: theme.onAccent }}>
-                {editingIndex !== null ? 'Save override' : 'Add override'}
+                {editingIndex !== null ? t('overrideEditor.saveOverride') : t('overrideEditor.confirmAdd')}
               </ThemedText>
             </Pressable>
           </View>

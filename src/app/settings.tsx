@@ -51,9 +51,7 @@ function ActionRow({
 
   return (
     <Pressable onPress={onPress} disabled={disabled} style={({ pressed }) => pressed && styles.pressed}>
-      <ThemedView
-        type="backgroundElement"
-        style={[styles.row, { borderColor: theme.border }, disabled && styles.disabled]}>
+      <ThemedView type="backgroundElement" style={[styles.row, { borderColor: theme.border }, disabled && styles.disabled]}>
         <View style={styles.rowText}>
           <ThemedText type="heading">{title}</ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
@@ -83,7 +81,8 @@ export default function SettingsScreen() {
   }, [hydrateTips]);
   // Reuses the segmented control's own labels, lowercased, so the sentence below always names the
   // same word the user just saw — no separate translation to keep in sync with the button text.
-  const schemeWord = (value: ThemePreference) => t(APPEARANCE.find((option) => option.value === value)!.labelKey).toLowerCase();
+  const schemeWord = (value: ThemePreference) =>
+    t(APPEARANCE.find((option) => option.value === value)!.labelKey).toLowerCase();
 
   const close = () => router.back();
 
@@ -113,7 +112,9 @@ export default function SettingsScreen() {
   const version = Constants.expoConfig?.version;
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['top', 'bottom', 'left', 'right']}>
+    <SafeAreaView
+      style={[styles.safeArea, { backgroundColor: theme.background }]}
+      edges={['top', 'bottom', 'left', 'right']}>
       <ModalHeader onClose={close} />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <ThemedText type="subtitle">{t('settings.title')}</ThemedText>

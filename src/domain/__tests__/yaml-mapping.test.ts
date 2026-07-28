@@ -93,11 +93,21 @@ const session: Session = {
   startedAt: '2026-07-27T09:00:00.000Z',
   endedAt: '2026-07-27T09:45:00.000Z',
   entries: [
-    { exercise: 'hold-full', type: 'timed_hold', sets: [{ holdSec: 20, restTakenSec: 60 }, { holdSec: 18, restTakenSec: 0 }] },
+    {
+      exercise: 'hold-full',
+      type: 'timed_hold',
+      sets: [
+        { holdSec: 20, restTakenSec: 60 },
+        { holdSec: 18, restTakenSec: 0 },
+      ],
+    },
     {
       exercise: 'reps-full',
       type: 'reps',
-      sets: [{ reps: 5, weightKg: 80, rpe: 8, restTakenSec: 180 }, { reps: 4, restTakenSec: 0 }],
+      sets: [
+        { reps: 5, weightKg: 80, rpe: 8, restTakenSec: 180 },
+        { reps: 4, restTakenSec: 0 },
+      ],
     },
     { exercise: 'hiit-full', type: 'hiit', roundsCompleted: 4 },
     { exercise: 'emom-full', type: 'emom', minutes: [{ reps: 3 }, { reps: 2 }, {}] },

@@ -35,7 +35,9 @@ it('replaces a matching id wholesale rather than deep-merging its config', () =>
   const incoming: Library = {
     version: 1,
     // Same id, fewer optional fields than a deep merge would preserve.
-    exercises: [{ id: 'pullups', name: 'Weighted Pull-ups', type: 'reps', config: { sets: 5, targetRepsMin: 3, restSec: 180 } }],
+    exercises: [
+      { id: 'pullups', name: 'Weighted Pull-ups', type: 'reps', config: { sets: 5, targetRepsMin: 3, restSec: 180 } },
+    ],
     workouts: [],
     programs: [],
   };

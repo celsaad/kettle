@@ -26,7 +26,7 @@ describe('toTipTierOffers', () => {
     expect(offers.map((offer) => offer.tier)).toEqual(['small', 'medium', 'large']);
   });
 
-  it('carries the store\'s own localized price string through untouched', () => {
+  it("carries the store's own localized price string through untouched", () => {
     const offers = toTipTierOffers([product(TIP_SKUS.small, 'R$ 4,90')]);
 
     expect(offers).toEqual([{ tier: 'small', sku: TIP_SKUS.small, displayPrice: 'R$ 4,90' }]);

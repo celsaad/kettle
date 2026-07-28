@@ -84,9 +84,7 @@ export function SessionReps({
 
       <View style={styles.middle}>
         <View style={styles.stepperRow}>
-          <Pressable
-            onPress={() => onChangeReps(Math.max(0, reps - 1))}
-            style={styles.stepperButton}>
+          <Pressable onPress={() => onChangeReps(Math.max(0, reps - 1))} style={styles.stepperButton}>
             <ThemedText type="title" style={styles.stepperGlyph}>
               −
             </ThemedText>

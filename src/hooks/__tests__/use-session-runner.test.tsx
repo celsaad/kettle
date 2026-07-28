@@ -34,9 +34,7 @@ jest.mock('@/hooks/use-session-sounds', () => ({
 
 // Typed parameters, not inferred from a zero-arg factory — the assertion below reads the third
 // argument (the delay in seconds), which an inferred `[]` tuple makes inaccessible.
-const mockScheduleNotification = jest.fn((_title: string, _body: string, _seconds: number) =>
-  Promise.resolve('notif-id'),
-);
+const mockScheduleNotification = jest.fn((_title: string, _body: string, _seconds: number) => Promise.resolve('notif-id'));
 const mockCancelNotification = jest.fn();
 jest.mock('@/hooks/safe-notifications', () => ({
   requestNotificationPermissions: jest.fn(() => Promise.resolve()),

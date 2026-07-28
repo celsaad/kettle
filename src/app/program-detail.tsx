@@ -44,7 +44,9 @@ export default function ProgramDetailScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['top', 'bottom', 'left', 'right']}>
+    <SafeAreaView
+      style={[styles.safeArea, { backgroundColor: theme.background }]}
+      edges={['top', 'bottom', 'left', 'right']}>
       <ModalHeader onClose={close} />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {!program && (
@@ -72,7 +74,9 @@ export default function ProgramDetailScreen() {
             <View style={styles.list}>
               {weeks.map((week) => {
                 const workout = library?.workouts.find((candidate) => candidate.id === week.workoutId);
-                const overrideText = (week.overrides ?? []).flatMap((override) => overrideLines(override, library!, workout));
+                const overrideText = (week.overrides ?? []).flatMap((override) =>
+                  overrideLines(override, library!, workout),
+                );
 
                 return (
                   <ThemedView

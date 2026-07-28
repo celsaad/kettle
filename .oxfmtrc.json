@@ -1,0 +1,8 @@
+{
+  "singleQuote": true,
+  "printWidth": 125,
+  "trailingComma": "all",
+  "bracketSameLine": true,
+  "arrowParens": "always",
+  "ignorePatterns": ["**/*.md", "package.json", ".expo/**", "expo-env.d.ts", "assets/**"]
+}

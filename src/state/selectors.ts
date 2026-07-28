@@ -159,7 +159,8 @@ function flatFallback(library: Library): NextUpView | null {
  */
 function activeProgram(library: Library, sessions: Session[]): Program | undefined {
   const lastProgramSession = sessions.find((session) => session.program);
-  const lastProgram = lastProgramSession && library.programs.find((candidate) => candidate.id === lastProgramSession.program);
+  const lastProgram =
+    lastProgramSession && library.programs.find((candidate) => candidate.id === lastProgramSession.program);
   return lastProgram ?? library.programs[0];
 }
 
@@ -410,7 +411,10 @@ export function historySessionsView(sessions: Session[], library: Library): Hist
     const loggedTypes = new Set(session.entries.filter((entry) => entry.type !== 'rest').map((entry) => entry.type));
     const entries: HistorySessionEntryView[] = session.entries
       .filter((entry) => entry.type !== 'rest')
-      .map((entry) => ({ exerciseName: exerciseName(library.exercises, entry.exercise), summary: formatEntryResult(sessionEntryResult(entry)) }));
+      .map((entry) => ({
+        exerciseName: exerciseName(library.exercises, entry.exercise),
+        summary: formatEntryResult(sessionEntryResult(entry)),
+      }));
 
     const startedAt = new Date(session.startedAt);
     return {

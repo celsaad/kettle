@@ -61,7 +61,13 @@ const restConfigSchema = z.object({
 export const rawExerciseSchema = z.discriminatedUnion('type', [
   z.object({ id: idSchema, name: z.string().min(1), type: z.literal('hiit'), config: hiitConfigSchema, notes: notesSchema }),
   z.object({ id: idSchema, name: z.string().min(1), type: z.literal('emom'), config: emomConfigSchema, notes: notesSchema }),
-  z.object({ id: idSchema, name: z.string().min(1), type: z.literal('amrap'), config: amrapConfigSchema, notes: notesSchema }),
+  z.object({
+    id: idSchema,
+    name: z.string().min(1),
+    type: z.literal('amrap'),
+    config: amrapConfigSchema,
+    notes: notesSchema,
+  }),
   z.object({ id: idSchema, name: z.string().min(1), type: z.literal('reps'), config: repsConfigSchema, notes: notesSchema }),
   z.object({
     id: idSchema,
@@ -70,7 +76,13 @@ export const rawExerciseSchema = z.discriminatedUnion('type', [
     config: timedHoldConfigSchema,
     notes: notesSchema,
   }),
-  z.object({ id: idSchema, name: z.string().min(1), type: z.literal('cardio'), config: cardioConfigSchema, notes: notesSchema }),
+  z.object({
+    id: idSchema,
+    name: z.string().min(1),
+    type: z.literal('cardio'),
+    config: cardioConfigSchema,
+    notes: notesSchema,
+  }),
   z.object({ id: idSchema, name: z.string().min(1), type: z.literal('rest'), config: restConfigSchema, notes: notesSchema }),
 ]);
 

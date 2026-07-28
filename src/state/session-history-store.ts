@@ -16,7 +16,12 @@ type SessionHistoryState = {
   errors: string[];
   hydrate: () => Promise<void>;
   /** Creates and flushes a new session file immediately (§7.2: never hold a live session only in memory). */
-  startSession: (workoutId: string | null, programId: string | null, programWeek: number | null, programDay: string | null) => Session;
+  startSession: (
+    workoutId: string | null,
+    programId: string | null,
+    programWeek: number | null,
+    programDay: string | null,
+  ) => Session;
   /** Appends one logged entry, flushes to disk, and updates history state. Returns the updated session. */
   logEntry: (session: Session, entry: SessionEntry) => Session;
   /** Removes the most recently appended entry, flushes to disk, and updates history state. Used to un-flush a logged entry when the user steps back. Returns the updated session. */

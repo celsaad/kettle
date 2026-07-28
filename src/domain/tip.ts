@@ -28,9 +28,7 @@ export const TIP_SKUS: Record<TipTier, string> = {
 
 export const TIP_SKU_LIST: string[] = TIP_TIERS.map((tier) => TIP_SKUS[tier]);
 
-const TIER_BY_SKU: Record<string, TipTier> = Object.fromEntries(
-  TIP_TIERS.map((tier) => [TIP_SKUS[tier], tier]),
-);
+const TIER_BY_SKU: Record<string, TipTier> = Object.fromEntries(TIP_TIERS.map((tier) => [TIP_SKUS[tier], tier]));
 
 export function tierForSku(sku: string): TipTier | undefined {
   return TIER_BY_SKU[sku];

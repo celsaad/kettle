@@ -83,8 +83,8 @@ export default function SessionScreen() {
               Nothing to run
             </ThemedText>
             <ThemedText type="small" style={styles.emptyStateBody}>
-              "{workout.name}" has no blocks, or none of its exercises have any sets/rounds/minutes
-              configured. Add a block in Build, or check each exercise's config, then try again.
+              "{workout.name}" has no blocks, or none of its exercises have any sets/rounds/minutes configured. Add a block
+              in Build, or check each exercise's config, then try again.
             </ThemedText>
             <Pressable onPress={() => router.back()} style={styles.emptyStateButton}>
               <ThemedText type="heading" style={styles.emptyStateButtonLabel}>

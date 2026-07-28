@@ -29,13 +29,21 @@ describe('validateConfig', () => {
   });
 
   it('returns null for a fully valid config', () => {
-    expect(validateConfig('reps', { sets: '3', targetRepsMin: '10', targetRepsMax: '12', targetWeightKg: '60', restSec: '90' })).toBeNull();
+    expect(
+      validateConfig('reps', { sets: '3', targetRepsMin: '10', targetRepsMax: '12', targetWeightKg: '60', restSec: '90' }),
+    ).toBeNull();
   });
 });
 
 describe('buildExercise', () => {
   it('builds a hiit exercise and trims notes', () => {
-    const exercise = buildExercise('burpees', 'Burpees', 'hiit', { workSec: '40', restSec: '20', rounds: '4' }, '  go hard  ');
+    const exercise = buildExercise(
+      'burpees',
+      'Burpees',
+      'hiit',
+      { workSec: '40', restSec: '20', rounds: '4' },
+      '  go hard  ',
+    );
     expect(exercise).toEqual({
       id: 'burpees',
       name: 'Burpees',
@@ -80,7 +88,11 @@ describe('configToStrings round-trips with buildExercise', () => {
     { type: 'emom', values: { intervalSec: '60', totalMinutes: '10', targetReps: '3' }, notes: '' },
     { type: 'emom', values: { intervalSec: '90', totalMinutes: '9' }, notes: '' },
     { type: 'amrap', values: { timeCapSec: '600' }, notes: '' },
-    { type: 'reps', values: { sets: '5', targetRepsMin: '3', targetRepsMax: '5', targetWeightKg: '80', restSec: '180' }, notes: 'Brace' },
+    {
+      type: 'reps',
+      values: { sets: '5', targetRepsMin: '3', targetRepsMax: '5', targetWeightKg: '80', restSec: '180' },
+      notes: 'Brace',
+    },
     { type: 'reps', values: { sets: '3', targetRepsMin: '12', restSec: '45' }, notes: '' },
     { type: 'timed_hold', values: { sets: '4', holdSecMin: '15', holdSecMax: '25', restSec: '60' }, notes: '' },
     { type: 'cardio', values: { durationSec: '480', distanceMeters: '2000' }, notes: '' },

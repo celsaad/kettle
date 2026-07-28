@@ -57,7 +57,9 @@ export function exerciseSummary(exercise: Exercise): string {
       return i18next.t('summary.reps', {
         sets: exercise.config.sets,
         reps: rangeLabel(exercise.config.targetRepsMin, exercise.config.targetRepsMax),
-        weight: exercise.config.targetWeightKg ? i18next.t('summary.repsWeight', { kg: exercise.config.targetWeightKg }) : '',
+        weight: exercise.config.targetWeightKg
+          ? i18next.t('summary.repsWeight', { kg: exercise.config.targetWeightKg })
+          : '',
         rest: exercise.config.restSec,
       });
     case 'timed_hold':
@@ -78,7 +80,6 @@ export function exerciseSummary(exercise: Exercise): string {
       return i18next.t('summary.restSeconds', { n: exercise.config.durationSec });
   }
 }
-
 
 /** Structured, not a sentence — `formatCircuitShape` in domain/format.ts renders it. */
 export function circuitShape(block: Extract<WorkoutBlock, { kind: 'circuit' }>): CircuitShape {

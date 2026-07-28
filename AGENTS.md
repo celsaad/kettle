@@ -14,8 +14,12 @@ plus an append-only local session log. No server, no account.
 - `npm run lint` — oxlint. **Four pre-existing `unicorn/no-array-sort` / `no-array-reverse` warnings
   are accepted**; leave them alone and don't add new warning categories. Anything at `error` level is
   new and yours.
-- `npm test` — jest via `jest-expo`. Pure logic only so far (`src/domain`, `src/state`, and the step
-  builder); no UI tests yet. Runs in a few seconds, so run it.
+- `npm test` — jest via `jest-expo`. Covers the logic layer, the session runner, and four screens
+  (`workout-editor`, `exercise-editor`, `session`, `import`). Under a minute, so run it.
+- `npm run format` — oxfmt (same Oxc toolchain as oxlint, so they agree). Run it instead of matching
+  the style by hand, and never reach for `npx prettier`, which has no config here and would reformat
+  the file to its own defaults. **Markdown and `package.json` are excluded on purpose** — see the
+  decision log before adding them.
 
 ## Delegating
 
@@ -59,10 +63,37 @@ after any delegated change, and skim the diff.
   without raising it first. `expo-notifications` is fine as used (local notifications only);
   `getExpoPushTokenAsync` would not be.
 
+## Writing tests
+
+- **Every RNTL 14 entry point returns a Promise** — `render`, `renderHook` *and* `fireEvent`. A
+  missing `await` doesn't fail loudly: the assertion reads the pre-interaction tree, and the only hint
+  is an "overlapping act() calls" warning from some later test. Around fake timers, `act` must be
+  `async` too, or React reports nested scopes.
+- **Mock at our own boundary** (`@/storage/*`, `@/state/session-history-store`), not at
+  `expo-file-system` — assertions then read as "what got persisted" rather than "what got written".
+  Screens read the library from the real zustand store, so setup is `useLibraryStore.setState(...)`.
+- `src/test-support/` holds the shared fixtures and the `expo-router` stand-in. That one is a module
+  rather than an inline factory because `jest.mock`'s factory is hoisted above every `const` and may
+  not close over one; `jest.mock('expo-router', () => require('@/test-support/expo-router'))` works.
+- **Prove a regression test fails against the bug it pins**, by reintroducing that bug. A test that
+  passes either way is worthless, and this has caught more than one.
+- **To test that a screen is translated, drive it in `pt`** (`changeLanguage('pt')`; the harness loads
+  both bundles and resets the locale after every test). An English-locale assertion *cannot* catch a
+  hardcoded English string — `t('x.y')` and the literal it returns render identically. It only catches
+  a rendered key path. Three screens have shipped with hardcoded strings for exactly this reason.
+- **Alert-driven confirm flows go through `pressAlertButton`**, which reaches into the spied
+  `Alert.alert` call and runs the handler in its own `act` scope. `Alert` renders nothing, so its
+  buttons aren't in the tree; and the handler writes to the store, so without `act` React reports an
+  unwrapped update from inside the *store*, naming a file nowhere near the test that caused it.
+- Finish with `npm run format`; don't hand-align a new test file against the rest.
+- `testTimeout` is 30s, not jest's 5s default. Screen tests pay a one-off lazy-init cost on the first
+  render in a file (~0.5s locally, far more on CI's contended 2-core runner, where the default failed).
+  It only costs time when something genuinely hangs.
+
 ## Verifying in the browser
 
-Unit tests cover the logic layer, but nothing covers rendering yet, so UI changes are verified by
-driving the running app. Doing this wrong wastes a lot of time, so:
+Tests cover the logic layer and four screens, but layout, animation, real audio and file writes are
+still only verified by driving the running app. Doing this wrong wastes a lot of time, so:
 
 - `npx expo start --web --port <port>`; poll with curl, it can take 60–90s. Use a distinct port if
   anything else might be running.

@@ -26,7 +26,9 @@ export default function SupportScreen() {
   const { t } = useTranslation();
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['top', 'bottom', 'left', 'right']}>
+    <SafeAreaView
+      style={[styles.safeArea, { backgroundColor: theme.background }]}
+      edges={['top', 'bottom', 'left', 'right']}>
       <ModalHeader onClose={() => router.back()} />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <ThemedText type="subtitle">{t('support.title')}</ThemedText>

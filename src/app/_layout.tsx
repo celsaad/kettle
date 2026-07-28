@@ -3,11 +3,7 @@ import {
   HankenGrotesk_500Medium,
   HankenGrotesk_600SemiBold,
 } from '@expo-google-fonts/hanken-grotesk';
-import {
-  SpaceGrotesk_500Medium,
-  SpaceGrotesk_600SemiBold,
-  SpaceGrotesk_700Bold,
-} from '@expo-google-fonts/space-grotesk';
+import { SpaceGrotesk_500Medium, SpaceGrotesk_600SemiBold, SpaceGrotesk_700Bold } from '@expo-google-fonts/space-grotesk';
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
@@ -66,7 +62,11 @@ function Navigation() {
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen
             name="session"
-            options={{ presentation: 'modal', headerShown: false, contentStyle: { backgroundColor: RunnerColors.background } }}
+            options={{
+              presentation: 'modal',
+              headerShown: false,
+              contentStyle: { backgroundColor: RunnerColors.background },
+            }}
           />
           <Stack.Screen name="import" options={{ presentation: 'modal', headerShown: false }} />
           <Stack.Screen name="exercise-editor" options={{ presentation: 'modal', headerShown: false }} />

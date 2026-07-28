@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { buildExercise, CONFIG_FIELDS, TYPE_OPTIONS, validateConfig } from '@/domain/exercise-form';
 import { ThemedText } from '@/components/themed-text';
@@ -21,6 +22,7 @@ type Props = {
  */
 export function NewExerciseForm({ onCreate, onCancel }: Props) {
   const theme = useTheme();
+  const { t } = useTranslation();
   const [name, setName] = useState('');
   const [type, setType] = useState<ExerciseType>('reps');
   const [values, setValues] = useState<Record<string, string>>({});
@@ -52,19 +54,19 @@ export function NewExerciseForm({ onCreate, onCancel }: Props) {
   return (
     <View style={[styles.container, { borderColor: theme.border }]}>
       <ThemedText type="small" themeColor="textSecondary" style={styles.label}>
-        Name
+        {t('common.name')}
       </ThemedText>
       <TextInput
         value={name}
         onChangeText={setName}
-        placeholder="e.g. Front Lever"
+        placeholder={t('exerciseEditor.namePlaceholder')}
         placeholderTextColor={theme.textSecondary}
         autoFocus
         style={[styles.input, { borderColor: theme.border, backgroundColor: theme.background, color: theme.text }]}
       />
 
       <ThemedText type="small" themeColor="textSecondary" style={styles.label}>
-        Type
+        {t('exerciseEditor.type')}
       </ThemedText>
       <View style={styles.typeRow}>
         {TYPE_OPTIONS.map((option) => {
@@ -80,7 +82,7 @@ export function NewExerciseForm({ onCreate, onCancel }: Props) {
                   : { backgroundColor: theme.background, borderWidth: 1, borderColor: theme.border },
               ]}>
               <ThemedText type="small" style={{ color: active ? theme.onAccent : theme.textSecondary }}>
-                {option.label}
+                {t(option.label)}
               </ThemedText>
             </Pressable>
           );
@@ -91,8 +93,10 @@ export function NewExerciseForm({ onCreate, onCancel }: Props) {
         {CONFIG_FIELDS[type].map((field) => (
           <View key={field.key} style={styles.configField}>
             <ThemedText type="small" themeColor="textSecondary" style={styles.label}>
-              {field.label} {field.unit ? `(${field.unit})` : ''}
-              {field.optional ? ' · optional' : ''}
+              {/* Both of these are i18next keys, not display text — rendering them raw put
+                  "exerciseForm.type.reps" and "exerciseForm.field.sets" on screen. */}
+              {t(field.label)} {field.unit ? `(${field.unit})` : ''}
+              {field.optional ? ` · ${t('exerciseEditor.optional')}` : ''}
             </ThemedText>
             <TextInput
               value={values[field.key] ?? ''}
@@ -107,12 +111,12 @@ export function NewExerciseForm({ onCreate, onCancel }: Props) {
       </View>
 
       <ThemedText type="small" themeColor="textSecondary" style={styles.label}>
-        Notes · optional
+        {t('exerciseEditor.notesOptional')}
       </ThemedText>
       <TextInput
         value={notes}
         onChangeText={setNotes}
-        placeholder="Coaching cue…"
+        placeholder={t('exerciseEditor.notesPlaceholder')}
         placeholderTextColor={theme.textSecondary}
         style={[styles.input, { borderColor: theme.border, backgroundColor: theme.background, color: theme.text }]}
       />
@@ -126,12 +130,12 @@ export function NewExerciseForm({ onCreate, onCancel }: Props) {
       <View style={styles.buttonRow}>
         <Pressable onPress={onCancel} style={[styles.cancelButton, { borderColor: theme.border }]}>
           <ThemedText type="small" themeColor="textSecondary">
-            Cancel
+            {t('common.cancel')}
           </ThemedText>
         </Pressable>
         <Pressable onPress={create} style={[styles.createButton, { backgroundColor: theme.accent }]}>
           <ThemedText type="small" style={{ color: theme.onAccent }}>
-            Create & add
+            {t('workoutEditor.createAndAdd')}
           </ThemedText>
         </Pressable>
       </View>

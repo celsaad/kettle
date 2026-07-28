@@ -120,7 +120,11 @@ export function buildExercise(
         id,
         name,
         type,
-        config: { intervalSec: num('intervalSec'), totalMinutes: num('totalMinutes'), targetReps: optionalNum('targetReps') },
+        config: {
+          intervalSec: num('intervalSec'),
+          totalMinutes: num('totalMinutes'),
+          targetReps: optionalNum('targetReps'),
+        },
         notes: trimmedNotes,
       };
     case 'amrap':
@@ -144,7 +148,12 @@ export function buildExercise(
         id,
         name,
         type,
-        config: { sets: num('sets'), holdSecMin: num('holdSecMin'), holdSecMax: optionalNum('holdSecMax'), restSec: num('restSec') },
+        config: {
+          sets: num('sets'),
+          holdSecMin: num('holdSecMin'),
+          holdSecMax: optionalNum('holdSecMax'),
+          restSec: num('restSec'),
+        },
         notes: trimmedNotes,
       };
     case 'cardio':

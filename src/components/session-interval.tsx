@@ -2,7 +2,14 @@ import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
-import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+} from 'react-native-reanimated';
 
 import { ThemedText } from '@/components/themed-text';
 import { SessionNextCard } from '@/components/session-next-card';
@@ -148,7 +155,8 @@ export function SessionInterval({
 
   const captionParts: string[] = [];
   if (variant === 'emom' && targetReps) captionParts.push(t('session.interval.targetReps', { reps: targetReps }));
-  if (variant === 'cardio' && cardioDistanceMeters) captionParts.push(t('session.interval.targetDistance', { meters: cardioDistanceMeters }));
+  if (variant === 'cardio' && cardioDistanceMeters)
+    captionParts.push(t('session.interval.targetDistance', { meters: cardioDistanceMeters }));
   captionParts.push(countUp ? t('session.countingUp') : t('session.interval.ofTotal', { clock: formatClock(targetSec) }));
 
   const fillPct = countUp || targetSec <= 0 ? 0 : Math.min(100, ((targetSec - remainingSec) / targetSec) * 100);

@@ -88,7 +88,9 @@ export default function HistoryScreen() {
             </ThemedText>
           </ThemedView>
           <ThemedView type="backgroundElement" style={[styles.statCard, { borderColor: theme.border }]}>
-            <ThemedText type="heading">{historyStats.hours}h {historyStats.minutes}m</ThemedText>
+            <ThemedText type="heading">
+              {historyStats.hours}h {historyStats.minutes}m
+            </ThemedText>
             <ThemedText type="small" themeColor="textSecondary">
               {t('history.time')}
             </ThemedText>
@@ -145,11 +147,7 @@ export default function HistoryScreen() {
                   <View style={[styles.expandedContent, { borderTopColor: theme.border }]}>
                     {session.entries.map((entry, index) => (
                       <View key={`${entry.exerciseName}-${index}`} style={styles.entryRow}>
-                        <ThemedText
-                          type="small"
-                          themeColor="textSecondary"
-                          numberOfLines={1}
-                          style={styles.entryLabel}>
+                        <ThemedText type="small" themeColor="textSecondary" numberOfLines={1} style={styles.entryLabel}>
                           {entry.exerciseName}
                         </ThemedText>
                         <ThemedText type="smallMedium" style={styles.entrySummary}>
@@ -163,7 +161,7 @@ export default function HistoryScreen() {
                           {t('common.delete')}
                         </ThemedText>
                       </Pressable>
-                      <Pressable onPress={() => exportSession(session.id).catch(() => { })} hitSlop={8}>
+                      <Pressable onPress={() => exportSession(session.id).catch(() => {})} hitSlop={8}>
                         <ThemedText type="small" themeColor="accentText">
                           {t('common.export')}
                         </ThemedText>

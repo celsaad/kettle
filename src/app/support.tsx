@@ -96,64 +96,60 @@ function TipTiers({ onRecorded }: { onRecorded: (tier: TipTier) => Promise<boole
 
   return (
     <>
-        {storeFailed ? (
-          <View style={styles.stateBlock}>
-            <ThemedText type="small" style={{ color: theme.accentText }}>
-              {t('support.storeUnavailable')}
-            </ThemedText>
-          </View>
-        ) : offers.length === 0 ? (
-          <View style={styles.stateBlock}>
-            <ActivityIndicator color={theme.textSecondary} />
-            <ThemedText type="small" themeColor="textSecondary">
-              {t('support.loading')}
-            </ThemedText>
-          </View>
-        ) : (
-          <View style={styles.tierList}>
-            {offers.map((offer) => {
-              const label = t(TIER_LABEL_KEYS[offer.tier]);
-              const busy = purchasingSku === offer.sku;
-              return (
-                <Pressable
-                  key={offer.sku}
-                  onPress={() => tip(offer.sku)}
-                  disabled={purchasingSku !== null}
-                  accessibilityRole="button"
-                  accessibilityLabel={t('support.tipA11y', { tier: label, price: offer.displayPrice })}
-                  accessibilityState={{ disabled: purchasingSku !== null, busy }}
-                  style={({ pressed }) => pressed && styles.pressed}>
-                  <ThemedView
-                    type="backgroundElement"
-                    style={[
-                      styles.tierRow,
-                      { borderColor: theme.border },
-                      purchasingSku !== null && !busy && styles.dimmed,
-                    ]}>
-                    <ThemedText type="heading" style={styles.tierLabel}>
-                      {label}
-                    </ThemedText>
-                    {busy ? (
-                      <ActivityIndicator color={theme.textSecondary} />
-                    ) : (
-                      // `accentText`, not `accent`: the theme notes record white-on-accent at 3.64,
-                      // which clears AA-large only, and this sits at body size on a plain surface.
-                      <ThemedText type="heading" style={{ color: theme.accentText }}>
-                        {offer.displayPrice}
-                      </ThemedText>
-                    )}
-                  </ThemedView>
-                </Pressable>
-              );
-            })}
-          </View>
-        )}
-
-        {outcomeMessage && (
-          <ThemedText type="small" style={[styles.paragraph, { color: theme.accentText }]}>
-            {outcomeMessage}
+      {storeFailed ? (
+        <View style={styles.stateBlock}>
+          <ThemedText type="small" style={{ color: theme.accentText }}>
+            {t('support.storeUnavailable')}
           </ThemedText>
-        )}
+        </View>
+      ) : offers.length === 0 ? (
+        <View style={styles.stateBlock}>
+          <ActivityIndicator color={theme.textSecondary} />
+          <ThemedText type="small" themeColor="textSecondary">
+            {t('support.loading')}
+          </ThemedText>
+        </View>
+      ) : (
+        <View style={styles.tierList}>
+          {offers.map((offer) => {
+            const label = t(TIER_LABEL_KEYS[offer.tier]);
+            const busy = purchasingSku === offer.sku;
+            return (
+              <Pressable
+                key={offer.sku}
+                onPress={() => tip(offer.sku)}
+                disabled={purchasingSku !== null}
+                accessibilityRole="button"
+                accessibilityLabel={t('support.tipA11y', { tier: label, price: offer.displayPrice })}
+                accessibilityState={{ disabled: purchasingSku !== null, busy }}
+                style={({ pressed }) => pressed && styles.pressed}>
+                <ThemedView
+                  type="backgroundElement"
+                  style={[styles.tierRow, { borderColor: theme.border }, purchasingSku !== null && !busy && styles.dimmed]}>
+                  <ThemedText type="heading" style={styles.tierLabel}>
+                    {label}
+                  </ThemedText>
+                  {busy ? (
+                    <ActivityIndicator color={theme.textSecondary} />
+                  ) : (
+                    // `accentText`, not `accent`: the theme notes record white-on-accent at 3.64,
+                    // which clears AA-large only, and this sits at body size on a plain surface.
+                    <ThemedText type="heading" style={{ color: theme.accentText }}>
+                      {offer.displayPrice}
+                    </ThemedText>
+                  )}
+                </ThemedView>
+              </Pressable>
+            );
+          })}
+        </View>
+      )}
+
+      {outcomeMessage && (
+        <ThemedText type="small" style={[styles.paragraph, { color: theme.accentText }]}>
+          {outcomeMessage}
+        </ThemedText>
+      )}
     </>
   );
 }
@@ -172,7 +168,9 @@ export default function SupportScreen() {
   }, [hydrate]);
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['top', 'bottom', 'left', 'right']}>
+    <SafeAreaView
+      style={[styles.safeArea, { backgroundColor: theme.background }]}
+      edges={['top', 'bottom', 'left', 'right']}>
       <ModalHeader onClose={() => router.back()} />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <ThemedText type="subtitle">{t('support.title')}</ThemedText>

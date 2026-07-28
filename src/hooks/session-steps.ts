@@ -83,7 +83,14 @@ function expandExercise(
           notes: exercise.notes,
         });
         if (setsOverride === undefined && i < sets - 1) {
-          steps.push({ kind: 'rest', blockIndex, memberKey, exerciseId: exercise.id, standalone: false, seconds: exercise.config.restSec });
+          steps.push({
+            kind: 'rest',
+            blockIndex,
+            memberKey,
+            exerciseId: exercise.id,
+            standalone: false,
+            seconds: exercise.config.restSec,
+          });
         }
       }
       return steps;
@@ -106,7 +113,14 @@ function expandExercise(
           notes: exercise.notes,
         });
         if (setsOverride === undefined && i < sets - 1) {
-          steps.push({ kind: 'rest', blockIndex, memberKey, exerciseId: exercise.id, standalone: false, seconds: exercise.config.restSec });
+          steps.push({
+            kind: 'rest',
+            blockIndex,
+            memberKey,
+            exerciseId: exercise.id,
+            standalone: false,
+            seconds: exercise.config.restSec,
+          });
         }
       }
       return steps;
@@ -128,7 +142,14 @@ function expandExercise(
           notes: exercise.notes,
         });
         if (i < exercise.config.rounds - 1) {
-          steps.push({ kind: 'rest', blockIndex, memberKey, exerciseId: exercise.id, standalone: false, seconds: exercise.config.restSec });
+          steps.push({
+            kind: 'rest',
+            blockIndex,
+            memberKey,
+            exerciseId: exercise.id,
+            standalone: false,
+            seconds: exercise.config.restSec,
+          });
         }
       }
       return steps;
@@ -224,7 +245,11 @@ export function buildSteps(workout: Workout, exercises: Exercise[]): RunnerStep[
     // Circuit: true round-robin (A,B,C,A,B,C,...) — each member's memberKey stays stable across
     // rounds so its sets accumulate into one session entry per exercise, not one per round.
     const members = block.members
-      .map((member, memberIndex) => ({ member, memberIndex, exercise: exercises.find((candidate) => candidate.id === member.exerciseId) }))
+      .map((member, memberIndex) => ({
+        member,
+        memberIndex,
+        exercise: exercises.find((candidate) => candidate.id === member.exerciseId),
+      }))
       .filter((entry): entry is typeof entry & { exercise: Exercise } => !!entry.exercise);
     if (members.length === 0) return;
 

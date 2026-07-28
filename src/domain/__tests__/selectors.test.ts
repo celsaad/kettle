@@ -54,6 +54,73 @@ describe('historyStats', () => {
   });
 });
 
+/**
+ * `sets` is the same private count behind History's and Today's tiles and both "N sets" labels, so
+ * it's asserted through `historyStats` rather than exported for the test.
+ *
+ * Regression: interval entries have no `sets` array and used to count as a flat 1 apiece, which made
+ * a 16-round HIIT worth the same as one hold. Every tile reading this under-reported for anyone
+ * training mostly in intervals.
+ */
+describe('historyStats sets', () => {
+  const setsIn = (entries: SessionEntry[]) =>
+    historyStats([makeSession({ startedAt: '2026-07-24T09:00:00.000Z', entries })]).sets;
+
+  it('counts one set per logged set for reps and holds', () => {
+    expect(
+      setsIn([
+        {
+          exercise: 'pullups',
+          type: 'reps',
+          sets: [
+            { reps: 8, restTakenSec: 90 },
+            { reps: 6, restTakenSec: 0 },
+          ],
+        },
+        { exercise: 'lsit', type: 'timed_hold', sets: [{ holdSec: 20, restTakenSec: 0 }] },
+      ]),
+    ).toBe(3);
+  });
+
+  it('counts each completed round of a HIIT or AMRAP entry', () => {
+    expect(setsIn([{ exercise: 'burpees', type: 'hiit', roundsCompleted: 8 }])).toBe(8);
+    expect(setsIn([{ exercise: 'chipper', type: 'amrap', roundsCompleted: 5, extraReps: 3 }])).toBe(5);
+  });
+
+  it('counts each interval of an EMOM entry', () => {
+    expect(setsIn([{ exercise: 'swings', type: 'emom', minutes: [{ reps: 10 }, { reps: 10 }, {}] }])).toBe(3);
+  });
+
+  it('counts cardio as one effort and rest as none', () => {
+    expect(setsIn([{ exercise: 'row', type: 'cardio', durationSec: 600, distanceMeters: 2000 }])).toBe(1);
+    expect(setsIn([{ exercise: 'rest', type: 'rest', restTakenSec: 90 }])).toBe(0);
+  });
+
+  it('sums a mixed session across all of them', () => {
+    expect(
+      setsIn([
+        {
+          exercise: 'pullups',
+          type: 'reps',
+          sets: [
+            { reps: 8, restTakenSec: 90 },
+            { reps: 6, restTakenSec: 0 },
+          ],
+        },
+        { exercise: 'rest', type: 'rest', restTakenSec: 60 },
+        { exercise: 'burpees', type: 'hiit', roundsCompleted: 8 },
+        { exercise: 'swings', type: 'emom', minutes: [{ reps: 10 }, { reps: 10 }] },
+      ]),
+    ).toBe(12);
+  });
+
+  // Nothing performed is nothing counted — an abandoned interval block shouldn't inflate the tile
+  // the way a flat 1 per entry did.
+  it('counts a round-less interval entry as no sets', () => {
+    expect(setsIn([{ exercise: 'burpees', type: 'hiit', roundsCompleted: 0 }])).toBe(0);
+  });
+});
+
 describe('currentStreak', () => {
   it('counts a session logged today only', () => {
     jest.useFakeTimers();

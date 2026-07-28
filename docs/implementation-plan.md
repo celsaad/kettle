@@ -507,8 +507,9 @@ the code. Listed worst first.
 side effects inside `setState` updaters; `addRestSeconds` not rescheduling its notification;
 `currentStreak`'s DST stepping; the display-name chip comparison; circuit members writing one entry
 per round (below); `today`/`dateLabel` freezing at module scope (fixed with the I18n-3 locale work —
-it's per-render now); `programs.tsx`'s stale "overrides aren't editable in-app" copy; and the four
-duplicate `slugify` copies, now one `domain/slug.ts` that all four call sites import. Notes on the
+it's per-render now); `programs.tsx`'s stale "overrides aren't editable in-app" copy; the four
+duplicate `slugify` copies, now one `domain/slug.ts` that all four call sites import; and
+`sessionSetCount`, `slugify`'s ASCII-only ids and `session-hold.tsx`'s `NaN%` (below). Notes on the
 structural ones:
 
 - **Circuit members wrote one entry per round** instead of accumulating. Found by the phase-2 tests,
@@ -528,20 +529,26 @@ structural ones:
 - The **`currentStreak`** fix steps with `setDate()`. Its regression tests are honest about their
   limits: Node ignores `TZ` on Windows, so on a DST-free machine they pass whether or not the bug is
   present. CI sets `TZ` explicitly, which is where they actually bite.
+- **`sessionSetCount`** now counts one set per interval actually performed — a HIIT/AMRAP round, an
+  EMOM minute — instead of one per entry, which had made a 20-minute EMOM worth the same as a single
+  hold in every History and Today tile. `cardio` stays 1, `rest` 0.
+- **`slugify` keeps the user's own script** rather than transliterating: diacritics are stripped
+  (`Flexão` → `flexao`, previously the mangled `flex-o`) and any other letter or digit is kept, so
+  `Приседания` and `腕立て伏せ` get real ids. Two things worth not rediscovering — the ids run through
+  `NFD`-strip-`NFC` so a composed and a decomposed `ã` can't become two ids for one name, and the
+  match is by token (`[\p{L}\p{N}][\p{L}\p{N}\p{M}]*`) rather than by replacing a negated class,
+  because Indic/Thai vowel signs are combining marks that must stay attached to their consonant
+  while an emoji's U+FE0F is also a mark and must not become an id of its own.
+- **`session-hold.tsx`'s `NaN%`** is guarded the way `session-interval.tsx` already was. Worth noting
+  for the next 0-config bug: nothing validates a program week's override config — the schema types it
+  as a free record of numbers and the in-app override editor doesn't call `validateConfig` — so the
+  runner screens can't assume the constraints `validateConfig`/`schema.ts` enforce elsewhere.
 
 - **`Alert.alert` is a no-op on web.** react-native-web ships `class Alert { static alert() {} }`, so
   every confirm dialog silently does nothing in the browser — all the deletes and finish-session.
   Native is unaffected and web is a dev/preview target, so this is logged rather than fixed. It does
   mean a browser check of any confirm flow proves nothing unless the script patches it, which is how
   session delete was actually verified end to end.
-- **`sessionSetCount` under-reports interval work**, counting an EMOM entry as one "set" regardless of
-  `minutes.length` and a HIIT entry as one regardless of `roundsCompleted`.
-- **`slugify` yields an empty id for non-Latin names**, so the app can't name exercises in most
-  scripts. It surfaces as the "Could not derive an id" error rather than corruption, but it makes the
-  app unusable in those languages. The four copies are now one (`domain/slug.ts`), which documents the
-  limitation; the fix itself — transliteration, or falling back to a generated id — is still open.
-- **`session-hold.tsx` can compute `width: "NaN%"`** when `targetSec` is 0. `validateConfig` guards the
-  in-app path, but imported YAML and `applyExerciseOverride` can still reach it.
 
 ## Open questions from the product plan, still open
 

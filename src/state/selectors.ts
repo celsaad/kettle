@@ -204,12 +204,35 @@ export function nextUpView(library: Library, sessions: Session[]): NextUpView | 
   };
 }
 
+/**
+ * How many sets one logged entry is worth. Interval work has no `sets` array, and counting each such
+ * entry as a flat 1 — which is what this did — made a 20-minute EMOM and a single 30-second hold the
+ * same one "set". Every stat tile in History and Today reads this, so the whole volume story
+ * under-reported for anyone whose training is mostly intervals.
+ *
+ * The comparable unit is one interval actually performed: a HIIT or AMRAP round, an EMOM minute —
+ * the same numbers `sessionEntryResult` already reports per entry. `cardio` stays at 1 (one
+ * continuous effort, not a set count) and `rest` at 0.
+ */
+function entrySetCount(entry: SessionEntry): number {
+  switch (entry.type) {
+    case 'timed_hold':
+    case 'reps':
+      return entry.sets.length;
+    case 'hiit':
+    case 'amrap':
+      return entry.roundsCompleted;
+    case 'emom':
+      return entry.minutes.length;
+    case 'cardio':
+      return 1;
+    case 'rest':
+      return 0;
+  }
+}
+
 function sessionSetCount(session: Session): number {
-  return session.entries.reduce((count, entry) => {
-    if (entry.type === 'reps' || entry.type === 'timed_hold') return count + entry.sets.length;
-    if (entry.type === 'rest') return count;
-    return count + 1;
-  }, 0);
+  return session.entries.reduce((count, entry) => count + entrySetCount(entry), 0);
 }
 
 function sessionDurationMinutes(session: Session): number {

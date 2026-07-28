@@ -15,6 +15,11 @@ A backend-free React Native app for planning and tracking workouts. Exercises an
 - **Sessions are self-describing.** A completed session renders correctly forever, even if the underlying exercise definition is later changed or deleted.
 - **Type determines behavior.** An exercise's type drives which timers run and what data is captured — it's not just a label.
 
+**Positioning under consideration:** the hand-editable library is also what makes the app a good target
+for AI-generated workouts — an assistant emits YAML well, and import already validates it and merges by
+`id` non-destructively. The enabling work, and the constraint that the app must never call a model
+itself, are in the implementation plan's planned-work list rather than restated here.
+
 ---
 
 ## 2. Core Concepts

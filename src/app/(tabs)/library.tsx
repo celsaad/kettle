@@ -1,29 +1,30 @@
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ExerciseBadge, exerciseSummary } from '@/components/exercise-badge';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
-import { plural } from '@/domain/format';
 import { ExerciseType } from '@/domain/types';
 import { useAppTheme } from '@/hooks/theme-context';
 import { useTheme } from '@/hooks/use-theme';
 import { useLibraryStore } from '@/state/library-store';
 import { exportLibrary } from '@/storage/export';
 
-const FILTERS: { label: string; type: ExerciseType | 'all' }[] = [
-  { label: 'All', type: 'all' },
-  { label: 'HIIT', type: 'hiit' },
-  { label: 'Reps', type: 'reps' },
-  { label: 'Hold', type: 'timed_hold' },
+const FILTERS: { labelKey: string; type: ExerciseType | 'all' }[] = [
+  { labelKey: 'library.filterAll', type: 'all' },
+  { labelKey: 'library.filterHiit', type: 'hiit' },
+  { labelKey: 'library.filterReps', type: 'reps' },
+  { labelKey: 'library.filterHold', type: 'timed_hold' },
 ];
 
 export default function LibraryScreen() {
   const theme = useTheme();
   const { scheme } = useAppTheme();
+  const { t } = useTranslation();
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<ExerciseType | 'all'>('all');
   const library = useLibraryStore((state) => state.library);
@@ -43,22 +44,22 @@ export default function LibraryScreen() {
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['top', 'left', 'right']}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
-          <ThemedText type="subtitle">Library</ThemedText>
+          <ThemedText type="subtitle">{t('library.title')}</ThemedText>
           <View style={styles.headerActions}>
             <Pressable onPress={() => exportLibrary().catch(() => {})} hitSlop={8}>
               <ThemedText type="smallMedium" themeColor="textSecondary">
-                Export
+                {t('common.export')}
               </ThemedText>
             </Pressable>
             <Pressable onPress={() => router.push('/import')} hitSlop={8}>
               <ThemedText type="smallMedium" themeColor="accentText">
-                Import
+                {t('common.import')}
               </ThemedText>
             </Pressable>
           </View>
         </View>
         <ThemedText themeColor="textSecondary" style={styles.countLabel}>
-          {plural(filtered.length, 'exercise')}
+          {t('library.exerciseCount', { count: filtered.length })}
         </ThemedText>
 
         <View style={[styles.searchBar, { borderColor: theme.border, backgroundColor: theme.backgroundElement }]}>
@@ -66,8 +67,8 @@ export default function LibraryScreen() {
           <TextInput
             value={query}
             onChangeText={setQuery}
-            placeholder="Search exercises"
-            accessibilityLabel="Search exercises"
+            placeholder={t('library.searchPlaceholder')}
+            accessibilityLabel={t('library.searchPlaceholder')}
             placeholderTextColor={theme.textSecondary}
             style={[styles.searchInput, { color: theme.text }]}
           />
@@ -78,7 +79,7 @@ export default function LibraryScreen() {
             const active = item.type === filter;
             return (
               <Pressable
-                key={item.label}
+                key={item.labelKey}
                 onPress={() => setFilter(item.type)}
                 style={[
                   styles.filterPill,
@@ -87,7 +88,7 @@ export default function LibraryScreen() {
                     : { backgroundColor: theme.backgroundElement, borderWidth: 1, borderColor: theme.border },
                 ]}>
                 <ThemedText type="small" style={{ color: active ? theme.onAccent : theme.textSecondary }}>
-                  {item.label}
+                  {t(item.labelKey)}
                 </ThemedText>
               </Pressable>
             );
@@ -114,7 +115,7 @@ export default function LibraryScreen() {
       <Pressable
         onPress={() => router.push('/exercise-editor')}
         accessibilityRole="button"
-        accessibilityLabel="New exercise"
+        accessibilityLabel={t('library.newExercise')}
         style={({ pressed }) => [styles.fab, { backgroundColor: fabColor }, pressed && styles.pressed]}>
         <ThemedText type="title" style={[styles.fabPlus, { color: theme.onAccent }]}>
           +

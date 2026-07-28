@@ -121,7 +121,9 @@ export function workoutShape(workout: Workout, exercises: Exercise[]): WorkoutSh
 export type NextUpView = {
   workout: Workout;
   exercises: Exercise[];
-  weekLabel: string | null;
+  /** Structured, not a sentence: the view composes the label so it can be translated. */
+  weekNumber: number | null;
+  weekDay: string | null;
   weekNotes: string | null;
   sessionParams: { workoutId: string } | { programId: string; week: string; day?: string };
 };
@@ -143,7 +145,8 @@ function flatFallback(library: Library): NextUpView | null {
   return {
     workout,
     exercises: library.exercises,
-    weekLabel: null,
+    weekNumber: null,
+    weekDay: null,
     weekNotes: null,
     sessionParams: { workoutId: workout.id },
   };
@@ -193,7 +196,8 @@ export function nextUpView(library: Library, sessions: Session[]): NextUpView | 
   return {
     workout: resolved.workout,
     exercises: resolved.exercises,
-    weekLabel: `Week ${targetWeek.week}${targetWeek.day ? ` · ${targetWeek.day}` : ''}`,
+    weekNumber: targetWeek.week,
+    weekDay: targetWeek.day ?? null,
     weekNotes: targetWeek.notes ?? null,
     sessionParams: { programId: program.id, week: String(targetWeek.week), day: targetWeek.day },
   };

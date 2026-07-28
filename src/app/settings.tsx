@@ -3,6 +3,7 @@ import { router } from 'expo-router';
 import type { ReactNode } from 'react';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ModalHeader } from '@/components/modal-header';
@@ -17,10 +18,10 @@ import { useSessionHistoryStore } from '@/state/session-history-store';
 import { exportLibrary } from '@/storage/export';
 import { isFileStorageSupported } from '@/storage/paths';
 
-const APPEARANCE: { label: string; value: ThemePreference }[] = [
-  { label: 'Light', value: 'light' },
-  { label: 'Dark', value: 'dark' },
-  { label: 'System', value: 'system' },
+const APPEARANCE: { labelKey: string; value: ThemePreference }[] = [
+  { labelKey: 'settings.light', value: 'light' },
+  { labelKey: 'settings.dark', value: 'dark' },
+  { labelKey: 'settings.system', value: 'system' },
 ];
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
@@ -66,10 +67,14 @@ function ActionRow({
 
 export default function SettingsScreen() {
   const theme = useTheme();
+  const { t } = useTranslation();
   const { preference, setPreference, scheme } = useAppTheme();
   const library = useLibraryStore((state) => state.library);
   const sessions = useSessionHistoryStore((state) => state.sessions);
   const [exportError, setExportError] = useState<string | null>(null);
+  // Reuses the segmented control's own labels, lowercased, so the sentence below always names the
+  // same word the user just saw — no separate translation to keep in sync with the button text.
+  const schemeWord = (value: ThemePreference) => t(APPEARANCE.find((option) => option.value === value)!.labelKey).toLowerCase();
 
   const close = () => router.back();
 
@@ -90,10 +95,10 @@ export default function SettingsScreen() {
   const counts = [
     // Matches the Library tab's count: `rest` is a built-in pseudo-exercise, not something the user
     // wrote, so counting it would make the two screens disagree.
-    { label: 'Exercises', value: library?.exercises.filter((exercise) => exercise.type !== 'rest').length ?? 0 },
-    { label: 'Workouts', value: library?.workouts.length ?? 0 },
-    { label: 'Programs', value: library?.programs.length ?? 0 },
-    { label: 'Sessions', value: sessions.length },
+    { label: t('settings.exercises'), value: library?.exercises.filter((exercise) => exercise.type !== 'rest').length ?? 0 },
+    { label: t('build.title'), value: library?.workouts.length ?? 0 },
+    { label: t('programs.title'), value: library?.programs.length ?? 0 },
+    { label: t('settings.sessions'), value: sessions.length },
   ];
 
   const version = Constants.expoConfig?.version;
@@ -102,9 +107,9 @@ export default function SettingsScreen() {
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['top', 'bottom', 'left', 'right']}>
       <ModalHeader onClose={close} />
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <ThemedText type="subtitle">Settings</ThemedText>
+        <ThemedText type="subtitle">{t('settings.title')}</ThemedText>
 
-        <Section title="Appearance">
+        <Section title={t('settings.appearance')}>
           <View style={[styles.segmented, { borderColor: theme.border, backgroundColor: theme.backgroundElement }]}>
             {APPEARANCE.map((option) => {
               const active = option.value === preference;
@@ -116,7 +121,7 @@ export default function SettingsScreen() {
                   accessibilityState={{ selected: active }}
                   style={[styles.segment, active && { backgroundColor: theme.text }]}>
                   <ThemedText type="smallMedium" style={{ color: active ? theme.onAccent : theme.textSecondary }}>
-                    {option.label}
+                    {t(option.labelKey)}
                   </ThemedText>
                 </Pressable>
               );
@@ -124,26 +129,22 @@ export default function SettingsScreen() {
           </View>
           <ThemedText type="small" themeColor="textSecondary" style={styles.caption}>
             {preference === 'system'
-              ? `Following your device, which is set to ${scheme}.`
-              : `Pinned to ${preference}, ignoring your device.`}
+              ? t('settings.followingDevice', { scheme: schemeWord(scheme) })
+              : t('settings.pinnedTo', { preference: schemeWord(preference) })}
           </ThemedText>
         </Section>
 
-        <Section title="Data">
+        <Section title={t('settings.data')}>
           <View style={styles.rowList}>
             <ActionRow
-              title="Export library"
-              detail={
-                isFileStorageSupported
-                  ? 'Share exercises.yaml — every exercise, workout and program.'
-                  : 'Not available in the browser build.'
-              }
+              title={t('settings.exportLibrary')}
+              detail={isFileStorageSupported ? t('settings.exportLibraryDetail') : t('settings.exportUnavailable')}
               onPress={runExport}
               disabled={!isFileStorageSupported}
             />
             <ActionRow
-              title="Import library"
-              detail="Merge a .yaml file into what you already have."
+              title={t('settings.importLibrary')}
+              detail={t('settings.importLibraryDetail')}
               onPress={() => router.push('/import')}
             />
           </View>
@@ -153,11 +154,11 @@ export default function SettingsScreen() {
             </ThemedText>
           )}
           <ThemedText type="small" themeColor="textSecondary" style={styles.caption}>
-            Sessions stay on this device — export covers the library only.
+            {t('settings.sessionsStayNote')}
           </ThemedText>
         </Section>
 
-        <Section title="In your library">
+        <Section title={t('settings.inYourLibrary')}>
           <ThemedView type="backgroundElement" style={[styles.countsCard, { borderColor: theme.border }]}>
             {counts.map((count) => (
               <View key={count.label} style={styles.countRow}>
@@ -170,7 +171,7 @@ export default function SettingsScreen() {
 
         {version && (
           <ThemedText type="small" themeColor="textSecondary" style={styles.version}>
-            Kettle {version}
+            {t('settings.version', { version })}
           </ThemedText>
         )}
       </ScrollView>

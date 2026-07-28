@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { ThemedText } from '@/components/themed-text';
 import { RunnerColors, Spacing } from '@/constants/theme';
@@ -14,6 +15,7 @@ type Props = {
  * then a distinct "exercise change" ding as the first exercise begins. */
 export function SessionCountdown({ workoutName, onDone }: Props) {
   const [count, setCount] = useState(3);
+  const { t } = useTranslation();
   const { playTick, playExerciseChange } = useSessionSounds();
 
   useEffect(() => {
@@ -39,7 +41,7 @@ export function SessionCountdown({ workoutName, onDone }: Props) {
   return (
     <View style={styles.container}>
       <ThemedText type="code" style={styles.label}>
-        GET READY
+        {t('session.countdown.getReady')}
       </ThemedText>
       <ThemedText type="numeral" style={styles.numeral}>
         {count}

@@ -1,11 +1,12 @@
 import { router } from 'expo-router';
 import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
-import { formatWorkoutShape, plural } from '@/domain/format';
+import { formatWorkoutShape } from '@/domain/format';
 import { useAppTheme } from '@/hooks/theme-context';
 import { useTheme } from '@/hooks/use-theme';
 import { workoutShape } from '@/state/selectors';
@@ -14,6 +15,7 @@ import { useLibraryStore } from '@/state/library-store';
 export default function BuildScreen() {
   const theme = useTheme();
   const { scheme } = useAppTheme();
+  const { t } = useTranslation();
   const library = useLibraryStore((state) => state.library);
 
   if (!library) return null;
@@ -23,16 +25,16 @@ export default function BuildScreen() {
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['top', 'left', 'right']}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <ThemedText type="subtitle">Workouts</ThemedText>
+        <ThemedText type="subtitle">{t('build.title')}</ThemedText>
         <ThemedText themeColor="textSecondary" style={styles.countLabel}>
-          {plural(library.workouts.length, 'workout')}
+          {t('build.workoutCount', { count: library.workouts.length })}
         </ThemedText>
 
         {library.workouts.length === 0 ? (
           <ThemedView type="backgroundElement" style={[styles.empty, { borderColor: theme.border }]}>
-            <ThemedText type="heading">No workouts yet</ThemedText>
+            <ThemedText type="heading">{t('build.emptyTitle')}</ThemedText>
             <ThemedText themeColor="textSecondary" style={styles.emptyBody}>
-              Build one from exercises in your library.
+              {t('build.emptyBody')}
             </ThemedText>
           </ThemedView>
         ) : (
@@ -54,7 +56,7 @@ export default function BuildScreen() {
                   onPress={() => router.push({ pathname: '/session', params: { workoutId: workout.id } })}
                   hitSlop={8}
                   accessibilityRole="button"
-                  accessibilityLabel={`Start ${workout.name}`}
+                  accessibilityLabel={t('build.startAccessibility', { name: workout.name })}
                   style={({ pressed }) => [styles.startButton, { backgroundColor: theme.accentSoft }, pressed && styles.pressed]}>
                   <View style={[styles.playTriangle, { borderLeftColor: theme.accent }]} />
                 </Pressable>
@@ -67,7 +69,7 @@ export default function BuildScreen() {
       <Pressable
         onPress={() => router.push('/workout-editor')}
         accessibilityRole="button"
-        accessibilityLabel="New workout"
+        accessibilityLabel={t('build.newWorkout')}
         style={({ pressed }) => [styles.fab, { backgroundColor: fabColor }, pressed && styles.pressed]}>
         <ThemedText type="title" style={[styles.fabPlus, { color: theme.onAccent }]}>
           +

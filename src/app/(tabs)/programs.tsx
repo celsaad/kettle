@@ -1,35 +1,37 @@
 import { router } from 'expo-router';
 import { useMemo } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import type { TFunction } from 'i18next';
+import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
-import { plural } from '@/domain/format';
 import { programWeekNumbers } from '@/domain/program';
 import type { Program } from '@/domain/types';
 import { useAppTheme } from '@/hooks/theme-context';
 import { useTheme } from '@/hooks/use-theme';
 import { useLibraryStore } from '@/state/library-store';
 
-function weekRangeLabel(program: Program): string {
+function weekRangeLabel(program: Program, t: TFunction): string {
   const weeks = programWeekNumbers(program);
-  if (weeks.length === 0) return 'No weeks';
+  if (weeks.length === 0) return t('programs.noWeeks');
   const first = weeks[0];
   const last = weeks[weeks.length - 1];
-  return first === last ? `Week ${first}` : `Weeks ${first}–${last}`;
+  return first === last ? t('programs.week', { n: first }) : t('programs.weeksRange', { first, last });
 }
 
-function detailLabel(program: Program): string | null {
+function detailLabel(program: Program, t: TFunction): string | null {
   const count = program.weeks.filter((week) => week.notes || (week.overrides && week.overrides.length > 0)).length;
   if (count === 0) return null;
-  return `${plural(count, 'week')} with notes or overrides`;
+  return t('programs.weeksWithNotes', { count });
 }
 
 export default function ProgramsScreen() {
   const theme = useTheme();
   const { scheme } = useAppTheme();
+  const { t } = useTranslation();
   const library = useLibraryStore((state) => state.library);
   const programs = useMemo(() => library?.programs ?? [], [library]);
   const fabColor = scheme === 'dark' ? theme.accent : theme.text;
@@ -38,12 +40,12 @@ export default function ProgramsScreen() {
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['top', 'left', 'right']}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
-          <ThemedText type="subtitle">Programs</ThemedText>
+          <ThemedText type="subtitle">{t('programs.title')}</ThemedText>
           <Pressable
             onPress={() => router.push('/program-guide')}
             hitSlop={8}
             accessibilityRole="button"
-            accessibilityLabel="How to write a program"
+            accessibilityLabel={t('programs.helpLabel')}
             style={styles.helpButton}>
             <ThemedText type="heading" themeColor="textSecondary">
               ?
@@ -51,12 +53,12 @@ export default function ProgramsScreen() {
           </Pressable>
         </View>
         <ThemedText themeColor="textSecondary" style={styles.countLabel}>
-          {programs.length} program{programs.length === 1 ? '' : 's'}
+          {t('programs.count', { count: programs.length })}
         </ThemedText>
 
         <View style={styles.list}>
           {programs.map((program) => {
-            const detail = detailLabel(program);
+            const detail = detailLabel(program, t);
             return (
               <Pressable
                 key={program.id}
@@ -65,7 +67,7 @@ export default function ProgramsScreen() {
                   <View style={styles.cardText}>
                     <ThemedText type="heading">{program.name}</ThemedText>
                     <ThemedText type="small" themeColor="textSecondary">
-                      {weekRangeLabel(program)}
+                      {weekRangeLabel(program, t)}
                     </ThemedText>
                     {detail && (
                       <ThemedText type="small" themeColor="textSecondary">
@@ -80,16 +82,14 @@ export default function ProgramsScreen() {
           })}
           {programs.length === 0 && (
             <ThemedView type="backgroundElement" style={[styles.emptyState, { borderColor: theme.border }]}>
-              <ThemedText type="heading">No programs yet</ThemedText>
+              <ThemedText type="heading">{t('programs.emptyTitle')}</ThemedText>
               <ThemedText type="small" themeColor="textSecondary" style={styles.emptyStateBody}>
-                Programs are multi-week plans that step through your workouts. Create one with the +
-                button, or write one as YAML for finer control (per-week overrides aren't editable
-                in-app yet).
+                {t('programs.emptyBody')}
               </ThemedText>
               <Pressable
                 onPress={() => router.push('/program-guide')}
                 style={[styles.emptyStateButton, { borderColor: theme.border }]}>
-                <ThemedText type="smallMedium">Writing one as YAML →</ThemedText>
+                <ThemedText type="smallMedium">{t('programs.emptyYamlLink')}</ThemedText>
               </Pressable>
             </ThemedView>
           )}
@@ -99,7 +99,7 @@ export default function ProgramsScreen() {
       <Pressable
         onPress={() => router.push('/program-editor')}
         accessibilityRole="button"
-        accessibilityLabel="New program"
+        accessibilityLabel={t('programs.newProgram')}
         style={({ pressed }) => [styles.fab, { backgroundColor: fabColor }, pressed && styles.pressed]}>
         <ThemedText type="title" style={[styles.fabPlus, { color: theme.onAccent }]}>
           +

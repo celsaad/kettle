@@ -1,5 +1,6 @@
 import { router } from 'expo-router';
 import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
@@ -14,6 +15,7 @@ import { blockChips, currentStreak, nextUpView, recentSessionsView, thisWeekStat
 
 export default function TodayScreen() {
   const theme = useTheme();
+  const { t } = useTranslation();
   // Computed per render, not at module scope. It used to be a module-level const, which froze it at
   // first import — leave the app open past midnight and "Today" showed yesterday's date.
   const dateLabel = formatFullDate(new Date());
@@ -40,7 +42,7 @@ export default function TodayScreen() {
             onPress={() => router.push('/settings')}
             hitSlop={8}
             accessibilityRole="button"
-            accessibilityLabel="Settings"
+            accessibilityLabel={t('common.settings')}
             style={({ pressed }) => [
               styles.settingsButton,
               { borderColor: theme.border, backgroundColor: theme.backgroundElement },
@@ -51,7 +53,7 @@ export default function TodayScreen() {
         </View>
 
         <View style={styles.todayHeading}>
-          <ThemedText type="subtitle">Today</ThemedText>
+          <ThemedText type="subtitle">{t('today.heading')}</ThemedText>
           <ThemedText themeColor="textSecondary" style={styles.dateLabel}>
             {dateLabel}
           </ThemedText>
@@ -61,13 +63,13 @@ export default function TodayScreen() {
           <ThemedView type="backgroundElement" style={[styles.statCard, { borderColor: theme.border }]}>
             <ThemedText type="heading">{streak}</ThemedText>
             <ThemedText type="small" themeColor="textSecondary">
-              day streak
+              {t('today.dayStreak')}
             </ThemedText>
           </ThemedView>
           <ThemedView type="backgroundElement" style={[styles.statCard, { borderColor: theme.border }]}>
             <ThemedText type="heading">{weekStats.sessions}</ThemedText>
             <ThemedText type="small" themeColor="textSecondary">
-              this week
+              {t('today.thisWeek')}
             </ThemedText>
           </ThemedView>
           <ThemedView type="backgroundElement" style={[styles.statCard, { borderColor: theme.border }]}>
@@ -75,14 +77,18 @@ export default function TodayScreen() {
               {weekStats.hours}h {weekStats.minutes}m
             </ThemedText>
             <ThemedText type="small" themeColor="textSecondary">
-              this week
+              {t('today.thisWeek')}
             </ThemedText>
           </ThemedView>
         </View>
 
         <ThemedView type="backgroundElement" style={[styles.nextUpCard, { borderColor: theme.border }]}>
           <ThemedText type="label" themeColor="accentText">
-            {nextUp.weekLabel ? `NEXT UP · ${nextUp.weekLabel}` : 'NEXT UP'}
+            {nextUp.weekNumber !== null
+              ? t('today.nextUpWeek', {
+                  week: `${t('programs.week', { n: nextUp.weekNumber })}${nextUp.weekDay ? ` · ${nextUp.weekDay}` : ''}`,
+                })
+              : t('today.nextUp')}
           </ThemedText>
           <ThemedText type="subtitle" style={styles.workoutName}>
             {nextUp.workout.name}
@@ -114,13 +120,13 @@ export default function TodayScreen() {
             style={({ pressed }) => [styles.startButton, { backgroundColor: theme.accent }, pressed && styles.pressed]}>
             <View style={[styles.playTriangle, { borderLeftColor: theme.onAccent }]} />
             <ThemedText type="heading" style={{ color: theme.onAccent }}>
-              Start session
+              {t('today.startSession')}
             </ThemedText>
           </Pressable>
         </ThemedView>
 
         <ThemedText type="label" themeColor="textSecondary" style={styles.sectionLabel}>
-          RECENT
+          {t('today.recent')}
         </ThemedText>
         <View style={styles.recentList}>
           {recentSessions.map((session) => (

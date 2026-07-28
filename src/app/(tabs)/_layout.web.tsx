@@ -1,19 +1,21 @@
 import { Tabs, TabList, TabTrigger, TabSlot, TabTriggerSlotProps, TabListProps } from 'expo-router/ui';
 import { Pressable, View, StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 
 const TABS = [
-  { name: 'index', href: '/' as const, label: 'Today' },
-  { name: 'library', href: '/library' as const, label: 'Library' },
-  { name: 'build', href: '/build' as const, label: 'Build' },
-  { name: 'history', href: '/history' as const, label: 'History' },
-  { name: 'programs', href: '/programs' as const, label: 'Programs' },
+  { name: 'index', href: '/' as const, labelKey: 'tabs.today' },
+  { name: 'library', href: '/library' as const, labelKey: 'tabs.library' },
+  { name: 'build', href: '/build' as const, labelKey: 'tabs.build' },
+  { name: 'history', href: '/history' as const, labelKey: 'tabs.history' },
+  { name: 'programs', href: '/programs' as const, labelKey: 'tabs.programs' },
 ];
 
 export default function TabLayout() {
+  const { t } = useTranslation();
   return (
     <Tabs>
       <TabSlot style={{ height: '100%' }} />
@@ -21,7 +23,7 @@ export default function TabLayout() {
         <CustomTabList>
           {TABS.map((tab) => (
             <TabTrigger key={tab.name} name={tab.name} href={tab.href} asChild>
-              <TabButton>{tab.label}</TabButton>
+              <TabButton>{t(tab.labelKey)}</TabButton>
             </TabTrigger>
           ))}
         </CustomTabList>

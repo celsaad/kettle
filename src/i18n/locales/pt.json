@@ -123,7 +123,7 @@
       "repsDoneCaps": "REPS FEITAS",
       "loadCaps": "CARGA",
       "decreaseLoad": "Diminuir carga",
-      "loadAccessibilityWeighted": "Carga: {{weight}} quilos. Toque para inserir um valor exato.",
+      "loadAccessibilityWeighted": "Carga: {{weight}} {{unit}}. Toque para inserir um valor exato.",
       "loadAccessibilityBodyweight": "Carga: peso corporal. Toque para inserir um valor exato.",
       "bodyweightAbbr": "PC",
       "increaseLoad": "Aumentar carga",
@@ -152,6 +152,11 @@
     "followingDevice": "Seguindo o dispositivo, que está definido como {{scheme}}.",
     "pinnedTo": "Fixado em {{preference}}, ignorando o dispositivo.",
     "appearance": "Aparência",
+    "units": "Unidades",
+    "metric": "Métrico",
+    "imperial": "Imperial",
+    "unitsMetricNote": "Os pesos aparecem em quilogramas.",
+    "unitsImperialNote": "Os pesos aparecem em libras. Eles continuam salvos em quilogramas, então sua biblioteca exportada é lida igual em qualquer lugar.",
     "data": "Dados",
     "exportLibrary": "Exportar biblioteca",
     "exportLibraryDetail": "Compartilhe exercises.yaml — todos os exercícios, treinos e programas.",
@@ -362,13 +367,19 @@
   "summary": {
     "hiit": "{{work}}s de trabalho · {{rest}}s de descanso · ×{{rounds}}",
     "reps": "{{sets}} × {{reps}}{{weight}} · {{rest}}s de descanso",
-    "repsWeight": " · {{kg}} kg",
+    "repsWeight": " · {{weight}} {{unit}}",
     "hold": "{{sets}} × {{hold}}s · {{rest}}s de descanso",
     "emom": "intervalo de {{interval}}s · {{minutes}} min",
     "amrap": "limite de {{cap}}s",
     "cardioDistance": "{{n}} m",
     "cardioDuration": "{{n}}s",
     "restSeconds": "{{n}} segundos"
+  },
+  "units": {
+    "kg": "kg",
+    "lb": "lb",
+    "kgSpoken": "quilogramas",
+    "lbSpoken": "libras"
   },
   "preview": {
     "hold": "isometria · série {{index}} de {{total}} · alvo {{target}}",

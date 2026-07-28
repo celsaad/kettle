@@ -4,7 +4,13 @@ import { Platform } from 'react-native';
 /** expo-file-system has no web implementation; storage degrades to no-op/unsupported there. */
 export const isFileStorageSupported = Platform.OS !== 'web';
 
-type ResolvedPaths = { root: Directory; sessionsDir: Directory; libraryFile: File; supporterFile: File };
+type ResolvedPaths = {
+  root: Directory;
+  sessionsDir: Directory;
+  libraryFile: File;
+  supporterFile: File;
+  preferencesFile: File;
+};
 
 let resolved: ResolvedPaths | null = null;
 
@@ -17,7 +23,9 @@ function resolvePaths(): ResolvedPaths {
     const libraryFile = new File(root, 'exercises.yaml');
     // JSON, not YAML: app-owned purchase state, deliberately outside the library the user hand-edits.
     const supporterFile = new File(root, 'supporter.json');
-    resolved = { root, sessionsDir, libraryFile, supporterFile };
+    // Same reasoning: app settings aren't part of the library the user exports and shares.
+    const preferencesFile = new File(root, 'preferences.json');
+    resolved = { root, sessionsDir, libraryFile, supporterFile, preferencesFile };
   }
   return resolved;
 }
@@ -34,6 +42,9 @@ export const storagePaths = {
   },
   get supporterFile() {
     return resolvePaths().supporterFile;
+  },
+  get preferencesFile() {
+    return resolvePaths().preferencesFile;
   },
 };
 

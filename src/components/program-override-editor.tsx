@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
-import { buildExercise, CONFIG_FIELDS, configToStrings, type FieldDef } from '@/domain/exercise-form';
+import { buildExercise, CONFIG_FIELDS, configToStrings, fieldUnitLabel, type FieldDef } from '@/domain/exercise-form';
 import { overrideLines } from '@/app/program-detail';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -10,6 +10,7 @@ import { Spacing } from '@/constants/theme';
 import { applyBlockOverride, applyExerciseOverride, diffBlockOverride, diffExerciseOverride } from '@/domain/yaml-mapping';
 import type { Exercise, Library, ProgramOverride, Workout, WorkoutBlock } from '@/domain/types';
 import { useTheme } from '@/hooks/use-theme';
+import { useUnitSystem } from '@/state/preferences-store';
 
 type CircuitBlock = Extract<WorkoutBlock, { kind: 'circuit' }>;
 type Target = { kind: 'exercise'; exercise: Exercise } | { kind: 'block'; block: CircuitBlock };
@@ -51,32 +52,44 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [target, setTarget] = useState<Target | null>(null);
   const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
+  const unitSystem = useUnitSystem();
+  /**
+   * The kilograms the weight field was seeded with — the *effective* value when editing an existing
+   * override, not the base. Kept so an untouched pound display doesn't convert back into a slightly
+   * different number and invent an override nobody asked for (see UnitContext in exercise-form.ts).
+   */
+  const [seedWeightKg, setSeedWeightKg] = useState<number | undefined>(undefined);
+
+  const seedFields = (exercise: Exercise) => {
+    setFieldValues(configToStrings(exercise, unitSystem));
+    setSeedWeightKg(exercise.type === 'reps' ? exercise.config.targetWeightKg : undefined);
+  };
 
   const close = () => {
     setStep('closed');
     setEditingIndex(null);
     setTarget(null);
     setFieldValues({});
+    setSeedWeightKg(undefined);
   };
 
   const startAdd = () => {
     setEditingIndex(null);
     setTarget(null);
     setFieldValues({});
+    setSeedWeightKg(undefined);
     setStep('choose-target');
   };
 
   const chooseTarget = (next: Target) => {
     setTarget(next);
-    setFieldValues(
-      next.kind === 'exercise'
-        ? configToStrings(next.exercise)
-        : {
-            rounds: String(next.block.rounds),
-            restBetweenExercisesSec: String(next.block.restBetweenExercisesSec ?? 0),
-            restBetweenRoundsSec: String(next.block.restBetweenRoundsSec ?? 0),
-          },
-    );
+    if (next.kind === 'exercise') seedFields(next.exercise);
+    else
+      setFieldValues({
+        rounds: String(next.block.rounds),
+        restBetweenExercisesSec: String(next.block.restBetweenExercisesSec ?? 0),
+        restBetweenRoundsSec: String(next.block.restBetweenRoundsSec ?? 0),
+      });
     setStep('edit-fields');
   };
 
@@ -87,7 +100,7 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
       if (!base) return;
       const effective = applyExerciseOverride(base, override.config);
       setTarget({ kind: 'exercise', exercise: base });
-      setFieldValues(configToStrings(effective));
+      seedFields(effective);
     } else {
       const block = workout?.blocks.find(
         (candidate): candidate is CircuitBlock => candidate.kind === 'circuit' && candidate.id === override.blockId,
@@ -121,6 +134,7 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
         target.exercise.type,
         fieldValues,
         target.exercise.notes ?? '',
+        { unitSystem, previousWeightKg: seedWeightKg },
       );
       nextOverride = {
         kind: 'exercise',
@@ -304,7 +318,7 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
                 <ThemedText type="small" themeColor="textSecondary" style={styles.fieldLabel}>
                   {/* `FieldDef.label` is an i18next key, not display text — rendering it raw put
                       "exerciseForm.field.sets" on screen. Matches exercise-editor.tsx's own row. */}
-                  {t(field.label)} {field.unit ? `(${field.unit})` : ''}
+                  {t(field.label)} {fieldUnitLabel(field, unitSystem) ? `(${fieldUnitLabel(field, unitSystem)})` : ''}
                   {field.optional ? ` · ${t('exerciseEditor.optional')}` : ''}
                 </ThemedText>
                 <TextInput

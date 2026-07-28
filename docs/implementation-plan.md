@@ -316,6 +316,37 @@ decision assembled across several commits. Open work belongs in the sections at 
   picking several exercises, not just the one just created. It originally carried its own local
   `slugify` copy — the 4th, following the then-precedent of small per-screen copies — which is what
   finally made the duplication worth removing: all four now import `domain/slug.ts`.
+- ✅ **kg/lb is a display preference, and there is now a preferences store to hold it.** Two things
+  here shape future work and neither is visible from the commit that added the toggle.
+
+  **Storage stays metric, unconditionally.** `exercises.yaml` is a file users hand-edit, export and
+  share, so `target_weight: 60` has to mean the same thing wherever it's opened — a library whose
+  numbers changed meaning with the reader's settings would be unshareable, which is most of the
+  product's pitch. `domain/units.ts` is the only converter; `useUnitSystem()` the only reader of the
+  preference. A pound value must never reach disk.
+
+  **The lossy direction is solved by not converting, not by rounding.** Pounds display at 0.1 and
+  kilograms store at 0.01, which is what makes a *pound-authored* value survive the trip (135 → 61.23
+  kg → 135.0); showing pounds at two decimals instead would put the quantisation on screen as 134.99,
+  in front of the person who just typed 135. The reverse trip can't be fixed the same way, because
+  0.1 lb is coarser than 0.01 kg: 100 kg shows as 220.5 lb and converts back to 100.02. So
+  `buildExercise` takes `previousWeightKg` and keeps the stored value when the field wasn't edited.
+  Without it, opening an exercise in pounds and saving an unrelated change quietly moves its weight —
+  a little further on each save — and in the override editor invents an override nobody asked for.
+  Any future editor of a stored weight has to pass it too.
+
+  Two smaller calls: the −/+ step is 5 lb rather than a converted 2.5 kg, because 5.51 lb matches no
+  plate or rack anyone owns and the stepper exists to move in increments the equipment has; and
+  `measurementSystem: 'uk'` maps to **metric**, since British gyms load kilo plates however the UK
+  weighs people.
+
+  **`preferences.json` now exists**, app-owned JSON next to `supporter.json` and deliberately outside
+  the library — so the appearance preference resetting on every relaunch (§"Open bugs") is no longer
+  blocked on missing infrastructure, just unmigrated. Unlike `useTipStore` it *is* in `_layout.tsx`'s
+  startup gate: it decides how every weight renders, so arriving after first paint would swap the
+  numbers under the user. `loadPreferences` returns `null` rather than a default, so "never chosen"
+  reaches the store, which is the only layer that can answer it with the device's own measurement
+  system.
 - **Considered and rejected: consolidating `sessions/` into monthly files to reduce IO.** Would cut
   against the explicit "never rewrite all of history on save" rule (product plan §5.2) — the
   mid-workout incremental flush (`writeSession()` full-overwrites its file on every completed set)

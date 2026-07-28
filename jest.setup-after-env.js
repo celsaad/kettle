@@ -21,6 +21,25 @@ beforeEach(async () => {
   if (i18next.isInitialized && i18next.language !== 'en') await i18next.changeLanguage('en');
 });
 
+// Display units get the same treatment, and for the same reason: zustand stores are module singletons
+// that outlive a test, so one suite switching to imperial would leave every later suite reading "220.5
+// lb" where it asserted "100". Metric is the store's own pre-hydration value, so this resets to the
+// state a suite that never touches units would have had anyway.
+//
+// Reset to `idle` too, not just to metric — `hydrate()` returns early when it finds itself mid-load,
+// so a suite that left the status behind could make the next one's hydrate silently do nothing.
+//
+// **`require` inside the hook, deliberately.** Requiring the store at this file's top level loads it
+// before the test file is evaluated, so it binds the *real* `@/storage/preferences-file` and every
+// suite's `jest.mock` of that module silently misses — which is exactly how the first version of this
+// broke three suites. By the time a hook runs, the test file's hoisted mocks are registered, so this
+// resolves to the same instance the test itself holds.
+beforeEach(() => {
+  const store = require('./src/state/preferences-store').usePreferencesStore;
+  // A suite that mocks the store module outright has no setState, and nothing to reset either.
+  store?.setState?.({ status: 'idle', preferences: { unitSystem: 'metric' } });
+});
+
 // `domain/format.ts` renders through i18next, so it needs an initialised instance to return anything
 // but raw key paths. Initialised here rather than by importing `@/i18n`, which would pull
 // `expo-localization` into every test that touches formatting; this configures the same singleton

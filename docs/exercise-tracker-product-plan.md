@@ -325,8 +325,9 @@ What's genuinely missing today, checked directly against the code:
   narrows the stat tiles), and there's a Settings modal with three-way appearance (light/dark/system),
   export/import, and library counts.
 - **The appearance preference doesn't persist across relaunches.** It's in-memory, so it resets to
-  "system" on restart. There's no key-value store in the app and this value has no place in the YAML
-  library the user exports, so it needs a deliberate decision about where app preferences live.
+  "system" on restart. No longer blocked: `preferences.json` and its store now exist (added for the
+  units preference), so this is a migration of `theme-context.tsx` onto them rather than a decision
+  about where app settings live.
 - **`Alert.alert` is a no-op on web** — react-native-web ships an empty implementation, so every
   confirm dialog (all the deletes, finish-session) silently does nothing in the browser. Native is
   unaffected, and web is a dev/preview target, so this is logged rather than fixed.
@@ -337,6 +338,6 @@ What's genuinely missing today, checked directly against the code:
   dates, numbers and first-day-of-week. **Still open within them:** screen-reader reordering for
   `ReorderableList`, which is gesture-only and so impossible without sight; the `height`-based search
   bars and stat cards outside the runner, which degrade at large text sizes rather than block;
-  `program-guide.tsx`'s prose, still English-only; and unit conversion — storage stays metric, but
-  there is no display-side kg/lb preference yet, which is blocked on the same missing preferences
-  store as the appearance setting below.
+  `program-guide.tsx`'s prose, still English-only. ~~Unit conversion~~ ✅ shipped — Settings → Units
+  switches every weight between kg and lb, seeded from the device's measurement system; storage stays
+  metric, so an exported library reads the same for everyone.

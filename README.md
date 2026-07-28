@@ -44,11 +44,13 @@ can also be started ad-hoc from the Build tab's play button, with no program inv
 workstreams. Every interactive control carries a role and label, touch targets are 44px minimum,
 colors are contrast-checked against each surface they sit on, the runner stays usable at large
 accessibility text sizes, and it announces step transitions to screen readers while respecting
-reduce-motion. The UI ships in English and Brazilian Portuguese (314 keys at parity), with dates,
-numbers and first-day-of-week following the device locale. User data — exercise, workout and program
-names, and notes — is never translated.
+reduce-motion. The UI ships in English and Brazilian Portuguese (323 keys at parity), with dates,
+numbers, first-day-of-week and kg/lb all following the device locale by default. User data —
+exercise, workout and program names, and notes — is never translated.
 
-**Settings** covers appearance (light/dark/system), library export/import, and library counts, and
+**Settings** covers appearance (light/dark/system), display units (kg/lb, seeded from the device's
+measurement system — storage stays metric, so an exported library reads the same everywhere), library
+export/import, and library counts, and
 reaches an optional tip jar (three one-off amounts via Google Play Billing, Android only). It gates
 nothing, every feature is free, and it exists only to offset the Play developer fee. No ads, no
 account, no subscription, and no third-party purchase or analytics SDK, so the Play Data Safety
@@ -87,9 +89,11 @@ src/
                          workout / program editors and program detail as modal routes
   components/           shared UI (themed primitives, session runner sub-views, kettle mark)
   constants/            theme tokens, with the measured contrast ratios recorded alongside them
-  domain/               types, zod schemas, YAML<->domain mapping, library merge, display formatting
-  storage/              file I/O (expo-file-system): library, sessions, export, tip state
-  state/                zustand stores (library, session history, tip) + derived-display selectors
+  domain/               types, zod schemas, YAML<->domain mapping, library merge, display formatting,
+                         kg/lb conversion
+  storage/              file I/O (expo-file-system): library, sessions, export, tip and app preferences
+  state/                zustand stores (library, session history, tip, preferences) + derived-display
+                         selectors
   hooks/                theme context, session runner and its pure step model, announcements
   i18n/                 i18next setup and the en / pt locale bundles
   test-support/         shared fixtures and the expo-router stand-in used by the test suite
@@ -105,6 +109,6 @@ npm run format        # oxfmt (markdown and package.json are excluded on purpose
 ```
 
 Typecheck, lint and the test suite all run in CI (`.github/workflows/ci.yml`) on every push and pull
-request. The suite is 230 tests across 22 files covering the domain layer, the session runner, and
+request. The suite is 287 tests across 25 files covering the domain layer, the session runner, and
 the highest-branch screens; layout, animation, real audio and file writes are verified by driving the
 running app instead.

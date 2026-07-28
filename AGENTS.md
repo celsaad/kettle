@@ -11,14 +11,14 @@ plus an append-only local session log. No server, no account.
 ## Commands
 
 - `npm run typecheck` — `tsc --noEmit`
-- `npm run lint` — oxlint. **41 pre-existing warnings are accepted**, in exactly two categories:
-  4 `unicorn/no-array-sort` / `no-array-reverse`, and 37 `import/no-named-as-default-member` from
+- `npm run lint` — oxlint. **42 pre-existing warnings are accepted**, in exactly two categories:
+  4 `unicorn/no-array-sort` / `no-array-reverse`, and 38 `import/no-named-as-default-member` from
   `i18next.t(...)` call sites (the i18n migration added those; whether to switch to a named `t`
   import is an open call, not an oversight). Leave both alone, don't add a third category, and check
   the count rather than assuming a clean run. Anything at `error` level is new and yours.
-- `npm test` — jest via `jest-expo`. 230 tests across 22 files: the domain layer, the session runner,
+- `npm test` — jest via `jest-expo`. 287 tests across 25 files: the domain layer, the session runner,
   five screens (`workout-editor`, `exercise-editor`, `program-editor`, `session`, `import`), three
-  components, and the tip storage/store. Under a minute, so run it.
+  components, and the tip and preferences storage/stores. Under a minute, so run it.
 - `npm run format` — oxfmt (same Oxc toolchain as oxlint, so they agree). Run it instead of matching
   the style by hand, and never reach for `npx prettier`, which has no config here and would reformat
   the file to its own defaults. **Markdown and `package.json` are excluded on purpose** — see the
@@ -41,8 +41,8 @@ after any delegated change, and skim the diff.
   (week resolution + override application).
 - `src/storage/` — all file I/O, via `expo-file-system`'s **class-based `File`/`Directory` API**.
   One file per session (`session-files.ts`), so a mid-workout flush never rewrites history.
-- `src/state/` — zustand stores (`library-store`, `session-history-store`) and `selectors.ts`, which
-  holds most derived/display logic.
+- `src/state/` — zustand stores (`library-store`, `session-history-store`, `preferences-store`) and
+  `selectors.ts`, which holds most derived/display logic.
 - `src/hooks/use-session-runner.ts` — the wall-clock session engine. The product plan calls timer
   reliability "the make-or-break issue"; treat this file as high-risk and verify changes by running a
   real session, not by reasoning alone. Its pure parts live next door in `session-steps.ts`
@@ -125,6 +125,11 @@ still only verified by driving the running app. Doing this wrong wastes a lot of
   session runner is always dark (`RunnerColors`) regardless of scheme.
 - In-app forms write straight to the store and never pass through the zod schema, so they need their
   own validation (see `validateConfig` in `domain/exercise-form.ts`).
+- **Weights are stored in kilograms, always.** The library is a file users export and share, so it
+  can't change meaning with the reader's settings. `domain/units.ts` is the only converter and
+  `useUnitSystem()` the only reader of the preference — never store a pound value, and never format a
+  weight without going through `toDisplayWeight`. Anything editing a *stored* weight must also pass
+  `previousWeightKg`, or an untouched field silently drifts on save (see the decision log).
 - **Comments explain why, not what** — trade-offs, root causes, and deliberate scope cuts. Match the
   surrounding density; don't annotate self-evident lines.
 

@@ -123,7 +123,7 @@
       "repsDoneCaps": "REPS DONE",
       "loadCaps": "LOAD",
       "decreaseLoad": "Decrease load",
-      "loadAccessibilityWeighted": "Load: {{weight}} kilograms. Tap to enter an exact value.",
+      "loadAccessibilityWeighted": "Load: {{weight}} {{unit}}. Tap to enter an exact value.",
       "loadAccessibilityBodyweight": "Load: bodyweight. Tap to enter an exact value.",
       "bodyweightAbbr": "BW",
       "increaseLoad": "Increase load",
@@ -152,6 +152,11 @@
     "followingDevice": "Following your device, which is set to {{scheme}}.",
     "pinnedTo": "Pinned to {{preference}}, ignoring your device.",
     "appearance": "Appearance",
+    "units": "Units",
+    "metric": "Metric",
+    "imperial": "Imperial",
+    "unitsMetricNote": "Weights show in kilograms.",
+    "unitsImperialNote": "Weights show in pounds. They are still stored in kilograms, so your exported library reads the same everywhere.",
     "data": "Data",
     "exportLibrary": "Export library",
     "exportLibraryDetail": "Share exercises.yaml — every exercise, workout and program.",
@@ -362,13 +367,19 @@
   "summary": {
     "hiit": "{{work}}s work · {{rest}}s rest · ×{{rounds}}",
     "reps": "{{sets}} × {{reps}}{{weight}} · {{rest}}s rest",
-    "repsWeight": " · {{kg}} kg",
+    "repsWeight": " · {{weight}} {{unit}}",
     "hold": "{{sets}} × {{hold}}s · {{rest}}s rest",
     "emom": "{{interval}}s interval · {{minutes}} min",
     "amrap": "{{cap}}s cap",
     "cardioDistance": "{{n}} m",
     "cardioDuration": "{{n}}s",
     "restSeconds": "{{n}} seconds"
+  },
+  "units": {
+    "kg": "kg",
+    "lb": "lb",
+    "kgSpoken": "kilograms",
+    "lbSpoken": "pounds"
   },
   "preview": {
     "hold": "hold · set {{index}} of {{total}} · target {{target}}",

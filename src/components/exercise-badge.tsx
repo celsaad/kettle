@@ -5,6 +5,7 @@ import { ThemedText } from '@/components/themed-text';
 import { useTheme } from '@/hooks/use-theme';
 import type { CircuitShape } from '@/domain/format';
 import { Exercise, ExerciseType, WorkoutBlock } from '@/domain/types';
+import { toDisplayWeight, type UnitSystem } from '@/domain/units';
 
 export function ExerciseBadge({ type, overrideLabel }: { type: ExerciseType; overrideLabel?: string }) {
   const theme = useTheme();
@@ -45,7 +46,11 @@ function rangeLabel(min: number, max: number | undefined): string {
   return max ? `${min}–${max}` : `${min}`;
 }
 
-export function exerciseSummary(exercise: Exercise): string {
+/**
+ * `unitSystem` is passed in rather than read from the store because this is a plain function, not a
+ * component — its two call sites are screens that already hold `useUnitSystem()`.
+ */
+export function exerciseSummary(exercise: Exercise, unitSystem: UnitSystem): string {
   switch (exercise.type) {
     case 'hiit':
       return i18next.t('summary.hiit', {
@@ -58,7 +63,10 @@ export function exerciseSummary(exercise: Exercise): string {
         sets: exercise.config.sets,
         reps: rangeLabel(exercise.config.targetRepsMin, exercise.config.targetRepsMax),
         weight: exercise.config.targetWeightKg
-          ? i18next.t('summary.repsWeight', { kg: exercise.config.targetWeightKg })
+          ? i18next.t('summary.repsWeight', {
+              weight: toDisplayWeight(exercise.config.targetWeightKg, unitSystem),
+              unit: i18next.t(unitSystem === 'imperial' ? 'units.lb' : 'units.kg'),
+            })
           : '',
         rest: exercise.config.restSec,
       });

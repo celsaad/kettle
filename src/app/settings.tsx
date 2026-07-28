@@ -10,10 +10,12 @@ import { ModalHeader } from '@/components/modal-header';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
+import type { UnitSystem } from '@/domain/units';
 import type { ThemePreference } from '@/hooks/theme-context';
 import { useAppTheme } from '@/hooks/theme-context';
 import { useTheme } from '@/hooks/use-theme';
 import { useLibraryStore } from '@/state/library-store';
+import { usePreferencesStore, useUnitSystem } from '@/state/preferences-store';
 import { useSessionHistoryStore } from '@/state/session-history-store';
 import { isTipJarSupported, useTipStore } from '@/state/tip-store';
 import { exportLibrary } from '@/storage/export';
@@ -25,6 +27,14 @@ const APPEARANCE: { labelKey: string; value: ThemePreference }[] = [
   { labelKey: 'settings.system', value: 'system' },
 ];
 
+// No "system" option to match Appearance's: the device measurement system only seeds the initial
+// value (see deviceUnitSystem), and a running "follow the device" mode would have nothing to follow —
+// unlike the color scheme, the OS has no unit setting that changes while the app is open.
+const UNITS: { labelKey: string; value: UnitSystem }[] = [
+  { labelKey: 'settings.metric', value: 'metric' },
+  { labelKey: 'settings.imperial', value: 'imperial' },
+];
+
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <View style={styles.section}>
@@ -32,6 +42,40 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
         {title}
       </ThemedText>
       {children}
+    </View>
+  );
+}
+
+/** Extracted when Units needed the same control as Appearance — two copies of this markup would have drifted. */
+function Segmented<T extends string>({
+  options,
+  selected,
+  onSelect,
+}: {
+  options: { labelKey: string; value: T }[];
+  selected: T;
+  onSelect: (value: T) => void;
+}) {
+  const theme = useTheme();
+  const { t } = useTranslation();
+
+  return (
+    <View style={[styles.segmented, { borderColor: theme.border, backgroundColor: theme.backgroundElement }]}>
+      {options.map((option) => {
+        const active = option.value === selected;
+        return (
+          <Pressable
+            key={option.value}
+            onPress={() => onSelect(option.value)}
+            accessibilityRole="button"
+            accessibilityState={{ selected: active }}
+            style={[styles.segment, active && { backgroundColor: theme.text }]}>
+            <ThemedText type="smallMedium" style={{ color: active ? theme.onAccent : theme.textSecondary }}>
+              {t(option.labelKey)}
+            </ThemedText>
+          </Pressable>
+        );
+      })}
     </View>
   );
 }
@@ -68,6 +112,8 @@ export default function SettingsScreen() {
   const theme = useTheme();
   const { t } = useTranslation();
   const { preference, setPreference, scheme } = useAppTheme();
+  const unitSystem = useUnitSystem();
+  const setUnitSystem = usePreferencesStore((state) => state.setUnitSystem);
   const library = useLibraryStore((state) => state.library);
   const sessions = useSessionHistoryStore((state) => state.sessions);
   const supporter = useTipStore((state) => state.supporter);
@@ -120,27 +166,20 @@ export default function SettingsScreen() {
         <ThemedText type="subtitle">{t('settings.title')}</ThemedText>
 
         <Section title={t('settings.appearance')}>
-          <View style={[styles.segmented, { borderColor: theme.border, backgroundColor: theme.backgroundElement }]}>
-            {APPEARANCE.map((option) => {
-              const active = option.value === preference;
-              return (
-                <Pressable
-                  key={option.value}
-                  onPress={() => setPreference(option.value)}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: active }}
-                  style={[styles.segment, active && { backgroundColor: theme.text }]}>
-                  <ThemedText type="smallMedium" style={{ color: active ? theme.onAccent : theme.textSecondary }}>
-                    {t(option.labelKey)}
-                  </ThemedText>
-                </Pressable>
-              );
-            })}
-          </View>
+          <Segmented options={APPEARANCE} selected={preference} onSelect={setPreference} />
           <ThemedText type="small" themeColor="textSecondary" style={styles.caption}>
             {preference === 'system'
               ? t('settings.followingDevice', { scheme: schemeWord(scheme) })
               : t('settings.pinnedTo', { preference: schemeWord(preference) })}
+          </ThemedText>
+        </Section>
+
+        <Section title={t('settings.units')}>
+          <Segmented options={UNITS} selected={unitSystem} onSelect={setUnitSystem} />
+          <ThemedText type="small" themeColor="textSecondary" style={styles.caption}>
+            {/* The imperial copy spells out that storage doesn't change, because that's the surprising
+                half: switching units here does not rewrite a single number in exercises.yaml. */}
+            {unitSystem === 'imperial' ? t('settings.unitsImperialNote') : t('settings.unitsMetricNote')}
           </ThemedText>
         </Section>
 

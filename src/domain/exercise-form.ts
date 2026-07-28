@@ -10,14 +10,40 @@
  */
 import i18next from '@/i18n';
 import type { Exercise, ExerciseType } from '@/domain/types';
+import { fromDisplayWeight, toDisplayWeight, type UnitSystem } from '@/domain/units';
 
 /**
  * `label` is an i18next key rather than display text, resolved with `i18next.t()` at the point of use
  * — this module has no React tree to hook `useTranslation()` into, and there's no in-app language
  * switch (the device locale is read once at startup, see `i18n/index.ts`), so resolving eagerly here
  * is safe. `min` is the smallest accepted value, defaulting to 1 — see validateConfig.
+ *
+ * `unit` is the suffix shown next to the label. `'weight'` is the one entry that isn't literal: it
+ * renders as kg or lb per the user's preference, and its value is converted on the way in and out.
  */
 export type FieldDef = { key: string; label: string; unit?: string; optional?: boolean; min?: number };
+
+/** The form's only unit-converted field, named once so the three places that special-case it agree. */
+const WEIGHT_FIELD = 'targetWeightKg';
+
+export type UnitContext = {
+  unitSystem: UnitSystem;
+  /**
+   * The kilograms the weight field was initialised from, when editing something that already exists.
+   *
+   * Lets an *untouched* field keep its stored value exactly rather than being rewritten by a lossy
+   * display round-trip: 100 kg shows as 220.5 lb, and converting that back lands on 100.02. Without
+   * this, opening an exercise in pounds and saving an unrelated change would quietly edit its weight —
+   * and, in the override editor, invent an override that the user never asked for.
+   */
+  previousWeightKg?: number;
+};
+
+/** The unit suffix to render beside a field's label, translated where it's a real unit of measure. */
+export function fieldUnitLabel(field: FieldDef, unitSystem: UnitSystem): string | undefined {
+  if (field.unit !== 'weight') return field.unit;
+  return i18next.t(unitSystem === 'imperial' ? 'units.lb' : 'units.kg');
+}
 
 export const TYPE_OPTIONS: { type: ExerciseType; label: string }[] = [
   { type: 'reps', label: 'exerciseForm.type.reps' },
@@ -45,7 +71,7 @@ export const CONFIG_FIELDS: Record<ExerciseType, FieldDef[]> = {
     { key: 'sets', label: 'exerciseForm.field.sets' },
     { key: 'targetRepsMin', label: 'exerciseForm.field.targetReps' },
     { key: 'targetRepsMax', label: 'exerciseForm.field.targetRepsMax', optional: true },
-    { key: 'targetWeightKg', label: 'exerciseForm.field.weight', unit: 'kg', optional: true },
+    { key: WEIGHT_FIELD, label: 'exerciseForm.field.weight', unit: 'weight', optional: true },
     { key: 'restSec', label: 'exerciseForm.field.rest', unit: 'sec', min: 0 },
   ],
   timed_hold: [
@@ -87,10 +113,12 @@ export function validateConfig(type: ExerciseType, values: Record<string, string
   return null;
 }
 
-export function configToStrings(exercise: Exercise): Record<string, string> {
+/** Config → the string map a form holds. Weight is converted to the user's unit; nothing else is. */
+export function configToStrings(exercise: Exercise, unitSystem: UnitSystem): Record<string, string> {
   const values: Record<string, string> = {};
   for (const [key, value] of Object.entries(exercise.config)) {
-    if (value !== undefined) values[key] = String(value);
+    if (value === undefined) continue;
+    values[key] = key === WEIGHT_FIELD ? String(toDisplayWeight(value as number, unitSystem)) : String(value);
   }
   return values;
 }
@@ -101,10 +129,24 @@ export function buildExercise(
   type: ExerciseType,
   values: Record<string, string>,
   notes: string,
+  units: UnitContext,
 ): Exercise {
   const num = (key: string) => Number(values[key] ?? 0) || 0;
   const optionalNum = (key: string) => (values[key]?.trim() ? Number(values[key]) : undefined);
   const trimmedNotes = notes.trim() || undefined;
+
+  /** The weight field, back in kilograms — the unit everything downstream of this form stores. */
+  const weightKg = () => {
+    const entered = optionalNum(WEIGHT_FIELD);
+    if (entered === undefined || !Number.isFinite(entered)) return undefined;
+    // Unchanged from what was shown? Keep the stored value rather than the conversion of the rounded
+    // display of it. See UnitContext.previousWeightKg.
+    const { unitSystem, previousWeightKg } = units;
+    if (previousWeightKg !== undefined && entered === toDisplayWeight(previousWeightKg, unitSystem)) {
+      return previousWeightKg;
+    }
+    return fromDisplayWeight(entered, unitSystem);
+  };
 
   switch (type) {
     case 'hiit':
@@ -138,7 +180,7 @@ export function buildExercise(
           sets: num('sets'),
           targetRepsMin: num('targetRepsMin'),
           targetRepsMax: optionalNum('targetRepsMax'),
-          targetWeightKg: optionalNum('targetWeightKg'),
+          targetWeightKg: weightKg(),
           restSec: num('restSec'),
         },
         notes: trimmedNotes,

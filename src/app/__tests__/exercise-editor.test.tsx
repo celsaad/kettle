@@ -1,9 +1,14 @@
 import { fireEvent, screen } from '@testing-library/react-native';
+// Named import rather than the default: `i18next.changeLanguage(...)` trips
+// `import/no-named-as-default-member`, and that accepted-warning pile is meant to stop growing.
+import { changeLanguage } from 'i18next';
 import { Alert } from 'react-native';
 
 import ExerciseEditorScreen from '@/app/exercise-editor';
 import type { Library } from '@/domain/types';
+import type { UnitSystem } from '@/domain/units';
 import { useLibraryStore } from '@/state/library-store';
+import { usePreferencesStore } from '@/state/preferences-store';
 import { saveLibrary } from '@/storage/library-file';
 import { setSearchParams } from '@/test-support/expo-router';
 import { aLibrary, anExercise, aWorkout } from '@/test-support/library';
@@ -38,9 +43,15 @@ function configField(index: number) {
   return screen.getAllByPlaceholderText('0')[index];
 }
 
+function setUnitSystem(unitSystem: UnitSystem) {
+  usePreferencesStore.setState({ preferences: { unitSystem }, status: 'ready' });
+}
+
 beforeEach(() => {
   setSearchParams({});
   useLibraryStore.setState({ library: aLibrary(), status: 'ready' });
+  // No metric reset here: jest.setup-after-env.js does it globally, so the imperial cases below can't
+  // leak into anything that runs after them.
 });
 
 it('refuses a blank name', async () => {
@@ -98,6 +109,67 @@ it('locks the type of an exercise that already exists', async () => {
   await fireEvent.press(screen.getByText('Save'));
 
   expect(persisted().exercises[0].type).toBe('reps');
+});
+
+/**
+ * The screen half of the unit work — `domain/units.ts` and `exercise-form.ts` have their own tests, so
+ * what's pinned here is the wiring those can't reach: that the editor reads the preference at all, and
+ * that it hands `buildExercise` the *stored* kilograms so an untouched field survives a save.
+ */
+describe('weight units', () => {
+  const benchPress = anExercise({
+    id: 'bench-press',
+    name: 'Bench Press',
+    config: { sets: 5, targetRepsMin: 5, targetWeightKg: 100, restSec: 120 },
+  });
+
+  beforeEach(() => {
+    setSearchParams({ id: 'bench-press' });
+    useLibraryStore.setState({ library: aLibrary({ exercises: [benchPress] }) });
+  });
+
+  it('labels the weight field and fills it in the chosen unit', async () => {
+    setUnitSystem('imperial');
+    await renderScreen(<ExerciseEditorScreen />);
+
+    expect(screen.getByText(/Weight \(lb\)/)).toBeTruthy();
+    expect(configField(3).props.value).toBe('220.5');
+  });
+
+  // Driven in pt because an English-locale assertion can't tell `t('exerciseForm.field.weight')` apart
+  // from a hardcoded "Weight" — they render identically.
+  it('translates the label around the unit', async () => {
+    setUnitSystem('imperial');
+    await changeLanguage('pt');
+    await renderScreen(<ExerciseEditorScreen />);
+
+    expect(screen.getByText(/Peso \(lb\)/)).toBeTruthy();
+  });
+
+  it('stores a weight typed in pounds as kilograms', async () => {
+    setUnitSystem('imperial');
+    await renderScreen(<ExerciseEditorScreen />);
+
+    await fireEvent.changeText(configField(3), '225');
+    await fireEvent.press(screen.getByText('Save'));
+
+    expect(persisted().exercises[0]).toMatchObject({ config: { targetWeightKg: 102.06 } });
+  });
+
+  /**
+   * The bug this guards: 100 kg displays as 220.5 lb, and converting 220.5 lb back lands on 100.02.
+   * Editing an unrelated field in pounds would then quietly rewrite the weight — and keep doing it,
+   * a little further each time, on every subsequent save.
+   */
+  it('leaves an untouched weight exactly as stored when saving an unrelated change', async () => {
+    setUnitSystem('imperial');
+    await renderScreen(<ExerciseEditorScreen />);
+
+    await fireEvent.changeText(configField(0), '6');
+    await fireEvent.press(screen.getByText('Save'));
+
+    expect(persisted().exercises[0]).toMatchObject({ config: { sets: 6, targetWeightKg: 100 } });
+  });
 });
 
 describe('deleting', () => {

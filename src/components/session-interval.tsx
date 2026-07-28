@@ -173,7 +173,7 @@ export function SessionInterval({
       </View>
 
       <View style={styles.middle}>
-        <ThemedText type="numeral" style={styles.numeral}>
+        <ThemedText type="numeral" maxFontSizeMultiplier={1.3} style={styles.numeral}>
           {countUp ? formatClock(elapsedSec) : formatClock(remainingSec)}
         </ThemedText>
         {!countUp && (
@@ -418,7 +418,8 @@ const styles = StyleSheet.create({
   },
   pauseButton: {
     flex: 1,
-    height: 64,
+    minHeight: 64,
+    paddingVertical: Spacing.one,
     borderRadius: 20,
     backgroundColor: RunnerColors.text,
     alignItems: 'center',

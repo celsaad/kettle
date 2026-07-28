@@ -586,10 +586,9 @@ Verified in the browser: the caption color computes to `rgb(107, 101, 88)`, the 
 accessible name. That last point had a side benefit — the verification script could stop guessing pixel
 coordinates and click `getByLabel('Start Calisthenics A')` instead.
 
-**Still open from the a11y audit:** A11y-3 (dynamic type — the runner screens are `flex: 1` with no
-ScrollView, so at iOS AX5 the primary action can go off-screen, which is the one genuinely blocking
-failure), A11y-4 (runner announcements and reduce-motion), and screen-reader reordering for
-`ReorderableList`, which is gesture-only and so currently impossible without sight.
+**Still open from the a11y audit:** A11y-4 (runner announcements and reduce-motion), and
+screen-reader reordering for `ReorderableList`, which is gesture-only and so currently impossible
+without sight. A11y-3 (dynamic type) is done — see below.
 
 ## ✅ I18n-1 and I18n-3: infrastructure and locale-aware formatting
 
@@ -655,6 +654,40 @@ accommodate the change.
 **Not translated, by design:** exercise, workout and program names, notes, and `ProgramWeek.day` — all
 user data from their own YAML, rendered verbatim. `program-guide.tsx`'s ~194 lines of prose are still
 English and want their own namespace.
+
+## ✅ A11y-3: dynamic type
+
+The one genuinely *blocking* accessibility failure rather than a degradation: the runner screens are
+`flex: 1` with `space-between` and **no ScrollView**, so at large accessibility text sizes content
+clips instead of scrolling — and what clips is the bottom, where the primary action lives. A user at
+iOS AX5 could be left unable to log a set.
+
+Three changes, cheapest first:
+
+- **Capped the giant numerals** at `maxFontSizeMultiplier={1.3}`. They're already 88–100px and are the
+  single biggest driver of overflow; they're also the one element already legible at arm's length, so
+  capping costs nothing and buys the most room. The hold screen's `s` unit is capped to match —
+  letting it scale while the number doesn't would break their alignment rather than help.
+- **`height` → `minHeight` on the primary action buttons** (log set, skip rest, add time, done), so a
+  wrapped label grows the button instead of being clipped by it. The circular prev/next buttons keep a
+  fixed height deliberately: a fixed width bounds them anyway, and stretching a circle vertically
+  distorts it without making the glyph more legible.
+- **`SessionNextCard` removes itself above `fontScale > 1.5`.** It's the only genuinely supplementary
+  element on those screens, and it previews a step the user is about to reach regardless.
+
+**Pinned by test, because the browser can't reach it:** react-native-web always reports
+`fontScale: 1`, so the large-text branch is unreachable there. `session-next-card.test.tsx` mocks
+`useWindowDimensions` and covers both sides of the threshold.
+
+That test also unblocked component testing generally, by fixing two things that would have stopped any
+of it: `constants/theme.ts` imports `global.css`, which jest can't parse — it surfaces as a bare
+`Unexpected token ':'` pointing at `:root`, nowhere near the test that triggered it, now mapped to a
+stub — and anything rendering `ThemedText` needs `ThemeOverrideProvider`. Note also that RNTL 14's
+`render` returns a Promise and must be awaited, the same trap as `renderHook`.
+
+**Still open:** the `height`-based search bars, stat cards and modal header row outside the runner,
+which degrade rather than block; and verifying by hand at iOS AX5 / Android 200%, which nothing
+automated here substitutes for.
 
 ## Open bugs
 

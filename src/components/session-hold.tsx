@@ -71,10 +71,12 @@ export function SessionHold({
 
       <View style={styles.middle}>
         <View style={styles.numeralRow}>
-          <ThemedText type="numeral" style={styles.numeral}>
+          <ThemedText type="numeral" maxFontSizeMultiplier={1.3} style={styles.numeral}>
             {elapsedSec}
           </ThemedText>
-          <ThemedText type="numeral" style={styles.numeralUnit}>
+          {/* Capped to match the numeral it sits beside — letting the unit scale while the number
+              doesn't would break their alignment rather than help anyone read it. */}
+          <ThemedText type="numeral" maxFontSizeMultiplier={1.3} style={styles.numeralUnit}>
             s
           </ThemedText>
         </View>
@@ -242,7 +244,8 @@ const styles = StyleSheet.create({
   },
   pauseButton: {
     flex: 1,
-    height: 64,
+    minHeight: 64,
+    paddingVertical: Spacing.one,
     borderRadius: 20,
     backgroundColor: RunnerColors.text,
     alignItems: 'center',

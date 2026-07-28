@@ -45,7 +45,7 @@ export function SessionRest({ secondsRemaining, totalSeconds, next, onAddSeconds
       </View>
 
       <View style={styles.middle}>
-        <ThemedText type="numeral" style={styles.numeral}>
+        <ThemedText type="numeral" maxFontSizeMultiplier={1.3} style={styles.numeral}>
           {formatClock(secondsRemaining)}
         </ThemedText>
         <ThemedText type="small" style={styles.caption}>
@@ -138,7 +138,8 @@ const styles = StyleSheet.create({
   },
   addButton: {
     flex: 1,
-    height: 60,
+    minHeight: 60,
+    paddingVertical: Spacing.one,
     borderRadius: 18,
     borderWidth: 1.5,
     borderColor: RunnerColors.border,
@@ -150,7 +151,8 @@ const styles = StyleSheet.create({
   },
   skipButton: {
     flex: 1,
-    height: 60,
+    minHeight: 60,
+    paddingVertical: Spacing.one,
     borderRadius: 18,
     backgroundColor: RunnerColors.text,
     alignItems: 'center',

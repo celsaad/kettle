@@ -11,11 +11,14 @@ plus an append-only local session log. No server, no account.
 ## Commands
 
 - `npm run typecheck` — `tsc --noEmit`
-- `npm run lint` — oxlint. **Four pre-existing `unicorn/no-array-sort` / `no-array-reverse` warnings
-  are accepted**; leave them alone and don't add new warning categories. Anything at `error` level is
-  new and yours.
-- `npm test` — jest via `jest-expo`. Covers the logic layer, the session runner, and four screens
-  (`workout-editor`, `exercise-editor`, `session`, `import`). Under a minute, so run it.
+- `npm run lint` — oxlint. **41 pre-existing warnings are accepted**, in exactly two categories:
+  4 `unicorn/no-array-sort` / `no-array-reverse`, and 37 `import/no-named-as-default-member` from
+  `i18next.t(...)` call sites (the i18n migration added those; whether to switch to a named `t`
+  import is an open call, not an oversight). Leave both alone, don't add a third category, and check
+  the count rather than assuming a clean run. Anything at `error` level is new and yours.
+- `npm test` — jest via `jest-expo`. 230 tests across 22 files: the domain layer, the session runner,
+  five screens (`workout-editor`, `exercise-editor`, `program-editor`, `session`, `import`), three
+  components, and the tip storage/store. Under a minute, so run it.
 - `npm run format` — oxfmt (same Oxc toolchain as oxlint, so they agree). Run it instead of matching
   the style by hand, and never reach for `npx prettier`, which has no config here and would reformat
   the file to its own defaults. **Markdown and `package.json` are excluded on purpose** — see the
@@ -42,7 +45,9 @@ after any delegated change, and skim the diff.
   holds most derived/display logic.
 - `src/hooks/use-session-runner.ts` — the wall-clock session engine. The product plan calls timer
   reliability "the make-or-break issue"; treat this file as high-risk and verify changes by running a
-  real session, not by reasoning alone. `buildSteps` is exported and pure.
+  real session, not by reasoning alone. Its pure parts live next door in `session-steps.ts`
+  (`buildSteps`, `previewFor`, the step model) — importing the runner itself pulls in `expo-audio`
+  and dies on native-module init, which is why that split exists.
 - `src/app/` — expo-router routes. `src/components/` — shared UI.
 
 **YAML is snake_case, domain code is camelCase**, bridged only in `yaml-mapping.ts`. Program
@@ -144,16 +149,24 @@ done as you go and tedious to retrofit, which is why they're here rather than on
 
 ## Docs
 
-`docs/implementation-plan.md` holds settled decisions and the open-work lists.
+- `docs/implementation-plan.md` — settled decisions, the decision log, and the open-work lists.
+- `docs/history.md` — write-ups of shipped work, split out of the plan so it stays a plan.
+- `docs/exercise-tracker-product-plan.md` — the data model, file formats and roadmap.
+- `docs/authoring-exercises-yaml.md` — the YAML reference, kept exact against `schema.ts`.
+- `docs/testing-a11y-i18n-plan.md` — executed; kept for its rationale, not as a backlog.
 
-**Don't append a shipped feature to it just because it shipped.** The commit message is the record —
-write the root cause, the alternatives, and the deliberate scope cuts there, where `git log -S` can
-find them. Add to the decision log only when the reasoning isn't discoverable from a single commit: a
-constraint that shapes future work, something rejected so it isn't re-proposed, or a decision
-assembled across several commits. This file grew to ~210 lines of completed work under a heading that
-said "what's genuinely left"; that's the failure mode to avoid.
+**Don't append a shipped feature to any of them just because it shipped.** The commit message is the
+record — write the root cause, the alternatives, and the deliberate scope cuts there, where
+`git log -S` can find them. Add to the decision log only when the reasoning isn't discoverable from a
+single commit: a constraint that shapes future work, something rejected so it isn't re-proposed, or a
+decision assembled across several commits. This has already failed twice — the plan grew to ~210
+lines of completed work under a heading reading "what's genuinely left", and then regrew ~330 more as
+top-level `## ✅` sections after that heading was fixed. Both are now in `history.md`.
 
-Open bugs and planned work live in the sections at the bottom of that file. Keep those entries short —
-if the list starts wanting states and assignees, that's the signal to move it to GitHub issues
-(`origin` and `gh` are both available); until then the file is deliberately enough. `docs/exercise-tracker-product-plan.md` holds the data model and roadmap. Check
-them before assuming something is missing — but verify against the code, since they have drifted before.
+Open bugs and planned work live in the sections at the bottom of the implementation plan. Keep those
+entries short — if the list starts wanting states and assignees, that's the signal to move it to
+GitHub issues (`origin` and `gh` are both available); until then the file is deliberately enough.
+
+Check these before assuming something is missing — but **verify against the code**, since they have
+drifted before. A docs audit on 2026-07-28 found the README claiming the project had no tests when it
+had 230, and three "open bugs" that were already fixed.

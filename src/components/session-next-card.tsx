@@ -1,9 +1,18 @@
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { ThemedText } from '@/components/themed-text';
 import { RunnerColors, Spacing } from '@/constants/theme';
 import type { RestPreview } from '@/hooks/use-session-runner';
+
+/**
+ * Above this text scale the runner screens stop fitting. They're `flex: 1` with `space-between` and
+ * no ScrollView, so overflow *clips* rather than scrolls — and what gets clipped is the bottom, which
+ * is where the primary action lives. Dropping this card is the cheapest way to buy that room back:
+ * it's the only genuinely supplementary element on those screens, and the information is a preview of
+ * a step the user is about to reach anyway.
+ */
+const MAX_FONT_SCALE_FOR_PREVIEW = 1.5;
 
 /**
  * The "what's coming up next" card — originally only shown on the rest screen, now shared across
@@ -12,7 +21,8 @@ import type { RestPreview } from '@/hooks/use-session-runner';
  */
 export function SessionNextCard({ next }: { next: RestPreview }) {
   const { t } = useTranslation();
-  if (!next) return null;
+  const { fontScale } = useWindowDimensions();
+  if (!next || fontScale > MAX_FONT_SCALE_FOR_PREVIEW) return null;
   return (
     <View style={styles.nextCard}>
       <ThemedText type="code" style={styles.nextLabel}>

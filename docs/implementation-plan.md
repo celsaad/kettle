@@ -586,10 +586,9 @@ Verified in the browser: the caption color computes to `rgb(107, 101, 88)`, the 
 accessible name. That last point had a side benefit — the verification script could stop guessing pixel
 coordinates and click `getByLabel('Start Calisthenics A')` instead.
 
-**Still open from the a11y audit:** A11y-3 (dynamic type — the runner screens are `flex: 1` with no
-ScrollView, so at iOS AX5 the primary action can go off-screen, which is the one genuinely blocking
-failure), A11y-4 (runner announcements and reduce-motion), and screen-reader reordering for
-`ReorderableList`, which is gesture-only and so currently impossible without sight.
+**Still open from the a11y audit:** screen-reader reordering for `ReorderableList`, which is
+gesture-only and so currently impossible without sight. A11y-3 (dynamic type) and A11y-4
+(announcements, reduce-motion) are done — see below.
 
 ## ✅ I18n-1 and I18n-3: infrastructure and locale-aware formatting
 
@@ -655,6 +654,70 @@ accommodate the change.
 **Not translated, by design:** exercise, workout and program names, notes, and `ProgramWeek.day` — all
 user data from their own YAML, rendered verbatim. `program-guide.tsx`'s ~194 lines of prose are still
 English and want their own namespace.
+
+## ✅ A11y-3: dynamic type
+
+The one genuinely *blocking* accessibility failure rather than a degradation: the runner screens are
+`flex: 1` with `space-between` and **no ScrollView**, so at large accessibility text sizes content
+clips instead of scrolling — and what clips is the bottom, where the primary action lives. A user at
+iOS AX5 could be left unable to log a set.
+
+Three changes, cheapest first:
+
+- **Capped the giant numerals** at `maxFontSizeMultiplier={1.3}`. They're already 88–100px and are the
+  single biggest driver of overflow; they're also the one element already legible at arm's length, so
+  capping costs nothing and buys the most room. The hold screen's `s` unit is capped to match —
+  letting it scale while the number doesn't would break their alignment rather than help.
+- **`height` → `minHeight` on the primary action buttons** (log set, skip rest, add time, done), so a
+  wrapped label grows the button instead of being clipped by it. The circular prev/next buttons keep a
+  fixed height deliberately: a fixed width bounds them anyway, and stretching a circle vertically
+  distorts it without making the glyph more legible.
+- **`SessionNextCard` removes itself above `fontScale > 1.5`.** It's the only genuinely supplementary
+  element on those screens, and it previews a step the user is about to reach regardless.
+
+**Pinned by test, because the browser can't reach it:** react-native-web always reports
+`fontScale: 1`, so the large-text branch is unreachable there. `session-next-card.test.tsx` mocks
+`useWindowDimensions` and covers both sides of the threshold.
+
+That test also unblocked component testing generally, by fixing two things that would have stopped any
+of it: `constants/theme.ts` imports `global.css`, which jest can't parse — it surfaces as a bare
+`Unexpected token ':'` pointing at `:root`, nowhere near the test that triggered it, now mapped to a
+stub — and anything rendering `ThemedText` needs `ThemeOverrideProvider`. Note also that RNTL 14's
+`render` returns a Promise and must be awaited, the same trap as `renderHook`.
+
+**Still open:** the `height`-based search bars, stat cards and modal header row outside the runner,
+which degrade rather than block; and verifying by hand at iOS AX5 / Android 200%, which nothing
+automated here substitutes for.
+
+## ✅ A11y-4: runner announcements and reduce-motion
+
+**Announcements needed design, not just an API call.** The obvious implementation —
+`accessibilityLiveRegion` on the timer numeral — would announce once per second, roughly sixty
+interruptions a minute, talking over the user mid-set. It would also be reading out the one thing they
+don't need: the *timing* is already carried eyes-free by the audio cues.
+
+What's missing without sight is **identity** — which exercise, which set, how many left. So
+`use-session-announcements.ts` announces transitions only: one sentence per step, nothing in between.
+Roughly five utterances per exercise instead of ninety. Deduped, because the derived string is rebuilt
+as the runner re-renders; gated on a screen reader actually running, so the runner does no per-step
+work in the ~99% of sessions where nobody is listening.
+
+**A test caught a real bug here, not a test artifact.** `isScreenReaderEnabled()` resolves
+asynchronously, and the first step's announcement arrives before it does. Held in a ref, that first
+announcement was silently dropped — at exactly the moment identity matters most, the start of a
+session. Holding it as state means resolving the check re-runs the effect and the pending announcement
+still gets spoken.
+
+**Reduce-motion:** the three infinite `withRepeat` pulses (hold, interval, rest) now hold at full
+opacity when `useReducedMotion()` is set. The pulse is decoration — its only job, signalling "this is
+live", is already carried by the numeral counting.
+
+Exercise names are interpolated into the announcement rather than translated, per the user-data rule.
+
+**Still open from the a11y audit:** screen-reader reordering for `ReorderableList`. It's
+`Gesture.Pan().activateAfterLongPress`-only, so reordering workout blocks is currently impossible
+without sight — a feature gap rather than a labelling one, and worth sizing on its own rather than
+letting it hide inside "a11y polish".
 
 ## Open bugs
 

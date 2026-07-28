@@ -43,7 +43,7 @@ export function SessionCountdown({ workoutName, onDone }: Props) {
       <ThemedText type="code" style={styles.label}>
         {t('session.countdown.getReady')}
       </ThemedText>
-      <ThemedText type="numeral" style={styles.numeral}>
+      <ThemedText type="numeral" maxFontSizeMultiplier={1.3} style={styles.numeral}>
         {count}
       </ThemedText>
       <ThemedText type="small" style={styles.workoutName}>

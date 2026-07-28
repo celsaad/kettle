@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
-import Animated, { Easing, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
+import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 
 import { ThemedText } from '@/components/themed-text';
 import { SessionNextCard } from '@/components/session-next-card';
@@ -123,10 +123,15 @@ export function SessionInterval({
   const [editing, setEditing] = useState<'reps' | 'rounds' | 'extra' | null>(null);
   const { t } = useTranslation();
   const pulse = useSharedValue(1);
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
+    if (reduceMotion) {
+      pulse.value = 1;
+      return;
+    }
     pulse.value = withRepeat(withTiming(0.35, { duration: 650, easing: Easing.inOut(Easing.ease) }), -1, true);
-  }, [pulse]);
+  }, [pulse, reduceMotion]);
 
   const pulseStyle = useAnimatedStyle(() => ({ opacity: pulse.value }));
 
@@ -173,7 +178,7 @@ export function SessionInterval({
       </View>
 
       <View style={styles.middle}>
-        <ThemedText type="numeral" style={styles.numeral}>
+        <ThemedText type="numeral" maxFontSizeMultiplier={1.3} style={styles.numeral}>
           {countUp ? formatClock(elapsedSec) : formatClock(remainingSec)}
         </ThemedText>
         {!countUp && (
@@ -418,7 +423,8 @@ const styles = StyleSheet.create({
   },
   pauseButton: {
     flex: 1,
-    height: 64,
+    minHeight: 64,
+    paddingVertical: Spacing.one,
     borderRadius: 20,
     backgroundColor: RunnerColors.text,
     alignItems: 'center',

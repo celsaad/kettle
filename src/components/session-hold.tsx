@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import Animated, { Easing, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
+import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 
 import { ThemedText } from '@/components/themed-text';
 import { SessionNextCard } from '@/components/session-next-card';
@@ -39,10 +39,15 @@ export function SessionHold({
 }: Props) {
   const { t } = useTranslation();
   const pulse = useSharedValue(1);
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
+    if (reduceMotion) {
+      pulse.value = 1;
+      return;
+    }
     pulse.value = withRepeat(withTiming(0.35, { duration: 650, easing: Easing.inOut(Easing.ease) }), -1, true);
-  }, [pulse]);
+  }, [pulse, reduceMotion]);
 
   const pulseStyle = useAnimatedStyle(() => ({ opacity: pulse.value }));
   const fillPct = Math.min(100, (elapsedSec / targetSec) * 100);
@@ -71,10 +76,12 @@ export function SessionHold({
 
       <View style={styles.middle}>
         <View style={styles.numeralRow}>
-          <ThemedText type="numeral" style={styles.numeral}>
+          <ThemedText type="numeral" maxFontSizeMultiplier={1.3} style={styles.numeral}>
             {elapsedSec}
           </ThemedText>
-          <ThemedText type="numeral" style={styles.numeralUnit}>
+          {/* Capped to match the numeral it sits beside — letting the unit scale while the number
+              doesn't would break their alignment rather than help anyone read it. */}
+          <ThemedText type="numeral" maxFontSizeMultiplier={1.3} style={styles.numeralUnit}>
             s
           </ThemedText>
         </View>
@@ -242,7 +249,8 @@ const styles = StyleSheet.create({
   },
   pauseButton: {
     flex: 1,
-    height: 64,
+    minHeight: 64,
+    paddingVertical: Spacing.one,
     borderRadius: 20,
     backgroundColor: RunnerColors.text,
     alignItems: 'center',

@@ -68,7 +68,8 @@ const styles = StyleSheet.create({
   },
   doneButton: {
     marginTop: Spacing.four,
-    height: 52,
+    minHeight: 52,
+    paddingVertical: Spacing.one,
     minWidth: 160,
     borderRadius: 15,
     backgroundColor: RunnerColors.accent,

@@ -2,6 +2,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useKeepAwake } from 'expo-keep-awake';
 import { useCallback, useMemo, useState } from 'react';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { SessionComplete } from '@/components/session-complete';
@@ -15,6 +16,7 @@ import { ThemedText } from '@/components/themed-text';
 import { RunnerColors, MaxContentWidth, Spacing } from '@/constants/theme';
 import { resolveWorkoutForWeek } from '@/domain/program';
 import type { Exercise, Workout } from '@/domain/types';
+import { useSessionAnnouncements } from '@/hooks/use-session-announcements';
 import { buildSteps, useSessionRunner } from '@/hooks/use-session-runner';
 import { useLibraryStore } from '@/state/library-store';
 
@@ -143,6 +145,44 @@ function ActiveSession({
   onComplete: () => void;
 }) {
   const runner = useSessionRunner(workout, exercises, programId, programWeek, programDay, onComplete);
+  const { t } = useTranslation();
+
+  /**
+   * One sentence per step, rebuilt only when the step itself changes — the hook dedupes, but keeping
+   * this out of the tick path means the string isn't reassembled sixty times a minute either.
+   * Names come from the user's library, so they're interpolated rather than translated.
+   */
+  const announcement = useMemo(() => {
+    const current = runner.step;
+    if (!current) return null;
+    switch (current.kind) {
+      case 'hold':
+        return t('session.announce.hold', {
+          name: current.exerciseName,
+          index: current.setIndex,
+          total: current.setTotal,
+          target: current.holdTargetSec,
+        });
+      case 'reps':
+        return t('session.announce.reps', {
+          name: current.exerciseName,
+          index: current.setIndex,
+          total: current.setTotal,
+          target: current.targetReps,
+        });
+      case 'interval':
+        return t('session.announce.interval', {
+          name: current.exerciseName,
+          index: current.setIndex,
+          total: current.setTotal,
+          seconds: current.targetSec,
+        });
+      case 'rest':
+        return t('session.announce.rest', { seconds: current.seconds });
+    }
+  }, [runner.step, t]);
+
+  useSessionAnnouncements(announcement);
   const { step } = runner;
 
   const confirmFinish = useCallback(() => {

@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import Animated, { Easing, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
+import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 
 import { ThemedText } from '@/components/themed-text';
 import { SessionNextCard } from '@/components/session-next-card';
@@ -26,10 +26,15 @@ type Props = {
 export function SessionRest({ secondsRemaining, totalSeconds, next, onAddSeconds, onSkip, onPrev }: Props) {
   const { t } = useTranslation();
   const pulse = useSharedValue(1);
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
+    if (reduceMotion) {
+      pulse.value = 1;
+      return;
+    }
     pulse.value = withRepeat(withTiming(0.35, { duration: 800, easing: Easing.inOut(Easing.ease) }), -1, true);
-  }, [pulse]);
+  }, [pulse, reduceMotion]);
 
   const pulseStyle = useAnimatedStyle(() => ({ opacity: pulse.value }));
 
@@ -45,7 +50,7 @@ export function SessionRest({ secondsRemaining, totalSeconds, next, onAddSeconds
       </View>
 
       <View style={styles.middle}>
-        <ThemedText type="numeral" style={styles.numeral}>
+        <ThemedText type="numeral" maxFontSizeMultiplier={1.3} style={styles.numeral}>
           {formatClock(secondsRemaining)}
         </ThemedText>
         <ThemedText type="small" style={styles.caption}>
@@ -138,7 +143,8 @@ const styles = StyleSheet.create({
   },
   addButton: {
     flex: 1,
-    height: 60,
+    minHeight: 60,
+    paddingVertical: Spacing.one,
     borderRadius: 18,
     borderWidth: 1.5,
     borderColor: RunnerColors.border,
@@ -150,7 +156,8 @@ const styles = StyleSheet.create({
   },
   skipButton: {
     flex: 1,
-    height: 60,
+    minHeight: 60,
+    paddingVertical: Spacing.one,
     borderRadius: 18,
     backgroundColor: RunnerColors.text,
     alignItems: 'center',

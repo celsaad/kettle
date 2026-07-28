@@ -98,7 +98,7 @@ export function SessionReps({
             accessibilityRole="button"
             accessibilityLabel={t('session.reps.repsDoneAccessibility', { count: reps })}
             style={styles.repsDisplay}>
-            <ThemedText type="numeral" style={styles.numeral}>
+            <ThemedText type="numeral" maxFontSizeMultiplier={1.3} style={styles.numeral}>
               {reps}
             </ThemedText>
             <ThemedText type="code" style={styles.repsLabel}>
@@ -400,7 +400,8 @@ const styles = StyleSheet.create({
   },
   logButton: {
     flex: 1,
-    height: 64,
+    minHeight: 64,
+    paddingVertical: Spacing.one,
     borderRadius: 20,
     backgroundColor: RunnerColors.accent,
     alignItems: 'center',

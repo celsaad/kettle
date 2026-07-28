@@ -14,8 +14,8 @@ plus an append-only local session log. No server, no account.
 - `npm run lint` — oxlint. **Four pre-existing `unicorn/no-array-sort` / `no-array-reverse` warnings
   are accepted**; leave them alone and don't add new warning categories. Anything at `error` level is
   new and yours.
-- `npm test` — jest via `jest-expo`. Pure logic only so far (`src/domain`, `src/state`, and the step
-  builder); no UI tests yet. Runs in a few seconds, so run it.
+- `npm test` — jest via `jest-expo`. Covers the logic layer, the session runner, and four screens
+  (`workout-editor`, `exercise-editor`, `session`, `import`). Under a minute, so run it.
 
 ## Delegating
 
@@ -59,10 +59,26 @@ after any delegated change, and skim the diff.
   without raising it first. `expo-notifications` is fine as used (local notifications only);
   `getExpoPushTokenAsync` would not be.
 
+## Writing tests
+
+- **Every RNTL 14 entry point returns a Promise** — `render`, `renderHook` *and* `fireEvent`. A
+  missing `await` doesn't fail loudly: the assertion reads the pre-interaction tree, and the only hint
+  is an "overlapping act() calls" warning from some later test. Around fake timers, `act` must be
+  `async` too, or React reports nested scopes.
+- **Mock at our own boundary** (`@/storage/*`, `@/state/session-history-store`), not at
+  `expo-file-system` — assertions then read as "what got persisted" rather than "what got written".
+  Screens read the library from the real zustand store, so setup is `useLibraryStore.setState(...)`.
+- `src/test-support/` holds the shared fixtures and the `expo-router` stand-in. That one is a module
+  rather than an inline factory because `jest.mock`'s factory is hoisted above every `const` and may
+  not close over one; `jest.mock('expo-router', () => require('@/test-support/expo-router'))` works.
+- **Prove a regression test fails against the bug it pins**, by reintroducing that bug. A test that
+  passes either way is worthless, and this has caught more than one.
+- Don't run `npx prettier` — there's no config, so it reformats the whole file to double quotes.
+
 ## Verifying in the browser
 
-Unit tests cover the logic layer, but nothing covers rendering yet, so UI changes are verified by
-driving the running app. Doing this wrong wastes a lot of time, so:
+Tests cover the logic layer and four screens, but layout, animation, real audio and file writes are
+still only verified by driving the running app. Doing this wrong wastes a lot of time, so:
 
 - `npx expo start --web --port <port>`; poll with curl, it can take 60–90s. Use a distinct port if
   anything else might be running.

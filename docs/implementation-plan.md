@@ -478,8 +478,8 @@ leaves the value untouched; the load pad accepts 42.5.
 
 ## ✅ Tests: phase 1 (pure logic) landed
 
-`jest-expo` + `npm test`. **93 tests across 7 suites, ~4s.** No UI tests yet — that's phase 3, and the
-plan deliberately sequences it after i18n so assertions don't get written against English copy.
+`jest-expo` + `npm test`. **93 tests across 7 suites, ~4s.** No UI tests at this point — those are
+phase 3 below, deliberately sequenced after i18n so assertions don't get written against English copy.
 
 Covered: `buildSteps` (rest interleaving, circuit round-robin, `memberKey` stability across rounds,
 degenerate zero-step cases), `yaml-mapping` (round-trip across all 7 exercise and 7 entry types,
@@ -529,6 +529,43 @@ Three things worth knowing for the next person writing tests here:
   `jest.setup-after-env.js`). A spy installed and restored inside one test previously left later tests
   failing with opaque `AggregateError`s while passing in isolation — the failure surfaced nowhere near
   its cause, which is exactly why this belongs in config rather than per-file.
+
+## ✅ Tests: phase 3 (screens) landed
+
+**200 tests across 19 suites.** Four screens: `workout-editor`, `exercise-editor`, `session`,
+`import`. Per the plan, these assert what the browser check reaches worst — validation wiring, delete
+guards, error branches, step-kind dispatch — and leave layout, animation, real audio and file writes
+to the browser. Every one was verified against the bug it pins by reintroducing that bug and
+confirming the test fails; all seven were caught.
+
+Two harness problems had to be solved first, and both are worth knowing about because neither
+announces itself:
+
+- **`jest.resolver.js` composes two resolvers rather than choosing one.** `react-native-worklets`
+  resolves to `.native.ts` entry points that reach for a JSI binding at *import* time, so any screen
+  containing a `ReorderableList` — which is the two biggest editors — died with
+  `Cannot read properties of undefined (reading 'loadUnpackers')`, naming nothing relevant. Worklets
+  ships a resolver that strips `.native` from the extension list, but jest allows only one `resolver`
+  and jest-expo already installs React Native's. Setting either would silently discard the other.
+- **`react-i18next` was never registered in the test harness.** `jest.setup-after-env.js` initialised
+  the i18next singleton but not the React plugin, so `useTranslation()` found no bound instance and
+  rendered key paths — `session.countdown.getReady` instead of `GET READY`. Screen tests appeared to
+  work anyway wherever something in the import graph happened to reach `@/i18n`, which registers the
+  plugin as a side effect of loading. So a screen's assertions passed or failed based on an unrelated
+  module's imports. Now registered in the setup file.
+
+**RNTL 14's `fireEvent` also returns a Promise**, completing the set with `render` and `renderHook`.
+Missing the `await` fails silently — the assertion just reads the pre-press tree, and the only hint is
+an "overlapping act() calls" warning from some later test.
+
+Shared fixtures live in `src/test-support/` (outside `__tests__`, which jest would otherwise treat as
+test files). The `expo-router` stand-in is a module rather than an inline factory because
+`jest.mock`'s factory is hoisted above every `const` and may not close over one.
+
+One test documents behaviour rather than asserting a wish, and says so: re-importing an identical file
+reports every item as "updated", because `mergeById` classifies by id and not by value. Harmless — the
+merge is a whole-object replace — but it means the "no changes" line is reachable only by an empty
+file, which is worth knowing before someone loosens that test to "fix" it.
 
 ## ✅ I18n-0: structured descriptors in the logic layer
 
@@ -718,6 +755,20 @@ Exercise names are interpolated into the announcement rather than translated, pe
 `Gesture.Pan().activateAfterLongPress`-only, so reordering workout blocks is currently impossible
 without sight — a feature gap rather than a labelling one, and worth sizing on its own rather than
 letting it hide inside "a11y polish".
+
+## Planned work
+
+- **A starter library worth landing on.** `storage/seed-library.ts` already writes 7 exercises, 2
+  workouts and one 6-week program on first launch, so the app never opens empty — but its own comment
+  says it "mirrors what was previously hardcoded mock data". It was built to *demonstrate the format*
+  (ranges, notes, a circuit, a periodized program), not to be a first workout someone would actually
+  do. What's wanted instead is curated starter content: a few complete, sensible programs and the
+  exercises they need, so a new user can press start on day one rather than build a library before
+  the app does anything. Two things to decide when picking it up — whether the seed grows into
+  several selectable starter programs or stays one, and whether exercise `notes` carry enough
+  coaching to be useful without becoming a fitness-advice surface the app then owns. Note the seed is
+  also the web build's entire library and the self-heal target for a corrupt `exercises.yaml`, so it
+  has to stay small enough to be a reasonable thing to reset to.
 
 ## Open bugs
 

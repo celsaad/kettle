@@ -75,7 +75,8 @@
     ],
     "moduleNameMapper": {
       ".css$": "<rootDir>/jest.style-mock.js"
-    }
+    },
+    "resolver": "<rootDir>/jest.resolver.js"
   },
   "private": true
 }

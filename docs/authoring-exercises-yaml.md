@@ -47,7 +47,9 @@ programs:
 
 - `id` is a hand-typed slug (lowercase, hyphenated is conventional) — not a UUID. It's what
   `blocks[].exercise`, circuit members, and program references point at, and what re-importing the
-  same file will match on to update.
+  same file will match on to update. Any non-empty string is valid, in any script: the ids the app
+  derives from a name keep whatever script that name was written in (`Приседания` → `приседания`),
+  flattening Latin accents only (`Flexão` → `flexao`).
 - `exercises`, `workouts`, and `programs` are flat lists in the same file.
 - `version: 1` is required at the top level.
 - `notes` is optional on every exercise — a freeform string for a coaching cue ("stop 2 reps shy of

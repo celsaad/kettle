@@ -15,6 +15,11 @@ A backend-free React Native app for planning and tracking workouts. Exercises an
 - **Sessions are self-describing.** A completed session renders correctly forever, even if the underlying exercise definition is later changed or deleted.
 - **Type determines behavior.** An exercise's type drives which timers run and what data is captured — it's not just a label.
 
+**Positioning under consideration:** the hand-editable library is also what makes the app a good target
+for AI-generated workouts — an assistant emits YAML well, and import already validates it and merges by
+`id` non-destructively. The enabling work, and the constraint that the app must never call a model
+itself, are in the implementation plan's planned-work list rather than restated here.
+
 ---
 
 ## 2. Core Concepts
@@ -270,7 +275,7 @@ Get the **live session engine** right — it's the differentiator.
 1. **Exercise library** — load, view, and CRUD exercises with a type + default config; persist to `exercises.yaml`. ✅ full CRUD, including delete with an in-use-by-workout guard (mirrors the workout-delete pattern).
 2. **Workout builder** — order exercises + insert rest blocks; save as a template in `exercises.yaml`. ✅, plus a full workouts list (create/edit/**delete**, with an in-use-by-program guard) rather than a single hardcoded workout.
 3. **Live session runner** — timed types (hiit / emom / amrap / timed_hold) with audio + haptic cues and auto-advance; rep types with reps/weight input and rest timers; **mixed reps + timed within one workout**; pause/skip/previous. ✅ all types are runnable, plus a pre-session 3-2-1 countdown, tick/exercise-change audio cues, and finish-session-early (commits the in-progress set/round instead of discarding it). `goPrev()` un-flushes the most recent `advance()` (pops the still-pending set/round/minute, or removes the already-flushed/logged session entry and restores all-but-its-last set into the pending buffer) — scoped to one level deep: a second `goPrev()` in a row without an intervening `advance()` just moves the step index, same as before.
-4. **Session history** — list past sessions from `sessions/` with basic stats. ✅ (aggregate totals only — no per-exercise progression yet, see §13).
+4. **Session history** — list past sessions from `sessions/` with basic stats. ✅, and per-exercise progression shipped after this was written: an exercise's edit screen has a "Recent" section listing the last few times it was logged, newest first (`exerciseHistory` in `selectors.ts`), above a per-exercise volume chart (`components/volume-chart.tsx`). See §11 phase 4 and the implementation plan's decision-log entry.
 5. **Import (merge) / export** — merge an imported library by `id`; export library or a single session. ✅
 
 **Beyond the original MVP scope**, already built: **multi-week programs** (periodized wrappers around workouts, with per-week per-exercise/per-circuit overrides and multi-session-per-week support via a `day` field) and **circuits/supersets** (round-robin block grouping with configurable rest between exercises and between rounds) — both were explicitly deferred below and shipped anyway. The home screen derives "next up" from the actual week/day a session was started under (stored on the session itself), not a completed-session count — the count-based version looked "random" once you jumped to a non-sequential week or redid one, since `program-detail.tsx` lets you start any week, not just the suggested one. The home screen also shows a small stats row: current daily streak and this week's session count/time.
@@ -314,8 +319,10 @@ What's genuinely missing today, checked directly against the code:
 - ~~**Known bug (web only): leaving the session screen crashes with a redbox.**~~ ✅ Fixed — see the
   implementation plan's entry for the details. `useKeepAwake` now passes
   `suppressDeactivateWarnings`, the library's own flag for exactly this race.
-- ~~**No automated tests at all.**~~ ✅ Closed — jest via `jest-expo`, 230 tests across 22 files,
-  running in CI alongside typecheck and lint. Covers the domain layer, the wall-clock session runner
+- ~~**No automated tests at all.**~~ ✅ Closed — jest via `jest-expo`, running in CI alongside
+  typecheck and lint. (AGENTS.md carries the current suite size; a second copy of the count here only
+  ever went stale — it read "230 tests across 22 files" long after that stopped being true.) Covers
+  the domain layer, the wall-clock session runner
   (§7.1, "the make-or-break issue"), and the highest-branch screens. Layout, animation, real audio and
   file writes are still verified by driving the running app rather than by test.
 - ~~**A logged session can't be deleted.**~~ ✅ Shipped — delete from the expanded card in History,

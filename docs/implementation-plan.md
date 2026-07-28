@@ -498,6 +498,56 @@ failure mode the decision-log note above warns about, regrown one heading level 
   also the web build's entire library and the self-heal target for a corrupt `exercises.yaml`, so it
   has to stay small enough to be a reasonable thing to reset to.
 
+- **Lean into AI-generated workouts — the format is already the feature.** A hand-editable YAML
+  library that merges by `id` is exactly what an assistant is good at emitting, and the pipeline it
+  would land in already exists and is already safe: zod validates on import, `mergeLibraries` replaces
+  whole objects by id rather than patching, and the summary names what changed before anything is
+  written. Nothing in the data model needs to change for this, which is the whole argument for
+  positioning the app this way (store listing and README, not a new SKU — see the tip-jar entry on why
+  there's no paid tier to attach it to). What's missing is the plumbing around it:
+
+  - **A paste path into import.** The one real friction. `import.tsx` takes input only via
+    `File.pickFileAsync()`, and an assistant's output is text in a chat window — saving that as a
+    `.yaml` on a phone is several awkward steps. A paste box reuses the existing parse → merge →
+    summary pipeline unchanged; only the input source differs.
+  - **A machine-readable schema to hand the model.** `authoring-exercises-yaml.md` is written for
+    humans and is a hand-maintained second copy of `schema.ts` (it has drifted before). zod v4 is
+    already a dependency and `z.toJSONSchema()` exists, so a JSON Schema is a *generated* artifact —
+    no third copy to keep in sync.
+  - **The user's existing ids, alongside it.** Merge-by-id means a generated program referencing
+    `pullups` only works if that id exists, so whatever gets copied out has to include the library's
+    current ids/names/types, not just the format.
+  - **A repair loop from the errors we now return.** `ParseError` is already a discriminated union
+    carrying the offending ids (`unknownExercise`, `unknownWorkout`, `schemaMismatch` + detail). Made
+    copyable, a rejected file becomes something the user pastes straight back to the assistant. Note
+    this overlaps in-flight work on the import screen's error wording — coordinate rather than collide.
+
+  **Hard constraint, decided in advance:** the app must never call a model itself. The Play listing
+  declares zero data collected/shared (see the tip-jar entry), and an API key field or an in-app
+  "generate" button breaks that claim and needs a Data Safety declaration. This is bring-your-own
+  assistant: generated anywhere, imported here. **Still to decide:** whether shipping a prompt
+  template makes the app the owner of the training advice it produces — the same line the starter
+  library entry above is trying not to cross.
+
+- **Audit for error boundaries and graceful degradation.** There is currently no React error boundary
+  anywhere in the app (no `ErrorBoundary` export, no `componentDidCatch`), so any render throw takes
+  the whole tree down — worst mid-session, where a crash costs the workout in progress and the app is
+  by design the only copy of it. Degrading well is already a house pattern in places (`safe-iap.ts`,
+  `safe-notifications.ts`, the eight `isFileStorageSupported` guards, `library-file.ts` reseeding a
+  corrupt `exercises.yaml`), so the audit is about where else it's warranted rather than inventing an
+  approach. Expo Router supports a per-route `ErrorBoundary` export, which is the obvious seam; the
+  question to answer per screen is what a useful fallback even *is* — the runner probably wants to
+  save what it has and exit to History, not offer a "try again" that re-throws.
+
+- **Audit for refactoring opportunities.** No single known offender, so this is a survey, not a fix
+  with a known shape. Starting points: the five files over 450 lines (`workout-editor.tsx` at 745,
+  `use-session-runner.ts` at 642, `yaml-mapping.ts` at 520, `selectors.ts` at 459,
+  `program-override-editor.tsx` at 451); the four parallel `switch (entry.type)` blocks over
+  `SessionEntry` in `selectors.ts`, which grow together every time an entry type is added; and
+  `new-exercise-form.tsx`, a deliberate mini-copy of `exercise-editor.tsx`'s form whose duplication
+  was accepted at the time and is worth re-checking. Worth doing with the same bar the `slugify`
+  dedup was held to: only where the copies have actually drifted or would.
+
 ## Open bugs
 
 Found while planning the tests/a11y/i18n work (see `testing-a11y-i18n-plan.md`), each verified against
@@ -507,8 +557,9 @@ the code. Listed worst first.
 side effects inside `setState` updaters; `addRestSeconds` not rescheduling its notification;
 `currentStreak`'s DST stepping; the display-name chip comparison; circuit members writing one entry
 per round (below); `today`/`dateLabel` freezing at module scope (fixed with the I18n-3 locale work —
-it's per-render now); `programs.tsx`'s stale "overrides aren't editable in-app" copy; and the four
-duplicate `slugify` copies, now one `domain/slug.ts` that all four call sites import. Notes on the
+it's per-render now); `programs.tsx`'s stale "overrides aren't editable in-app" copy; the four
+duplicate `slugify` copies, now one `domain/slug.ts` that all four call sites import; and
+`sessionSetCount`, `slugify`'s ASCII-only ids and `session-hold.tsx`'s `NaN%` (below). Notes on the
 structural ones:
 
 - **Circuit members wrote one entry per round** instead of accumulating. Found by the phase-2 tests,
@@ -528,20 +579,26 @@ structural ones:
 - The **`currentStreak`** fix steps with `setDate()`. Its regression tests are honest about their
   limits: Node ignores `TZ` on Windows, so on a DST-free machine they pass whether or not the bug is
   present. CI sets `TZ` explicitly, which is where they actually bite.
+- **`sessionSetCount`** now counts one set per interval actually performed — a HIIT/AMRAP round, an
+  EMOM minute — instead of one per entry, which had made a 20-minute EMOM worth the same as a single
+  hold in every History and Today tile. `cardio` stays 1, `rest` 0.
+- **`slugify` keeps the user's own script** rather than transliterating: diacritics are stripped
+  (`Flexão` → `flexao`, previously the mangled `flex-o`) and any other letter or digit is kept, so
+  `Приседания` and `腕立て伏せ` get real ids. Two things worth not rediscovering — the ids run through
+  `NFD`-strip-`NFC` so a composed and a decomposed `ã` can't become two ids for one name, and the
+  match is by token (`[\p{L}\p{N}][\p{L}\p{N}\p{M}]*`) rather than by replacing a negated class,
+  because Indic/Thai vowel signs are combining marks that must stay attached to their consonant
+  while an emoji's U+FE0F is also a mark and must not become an id of its own.
+- **`session-hold.tsx`'s `NaN%`** is guarded the way `session-interval.tsx` already was. Worth noting
+  for the next 0-config bug: nothing validates a program week's override config — the schema types it
+  as a free record of numbers and the in-app override editor doesn't call `validateConfig` — so the
+  runner screens can't assume the constraints `validateConfig`/`schema.ts` enforce elsewhere.
 
 - **`Alert.alert` is a no-op on web.** react-native-web ships `class Alert { static alert() {} }`, so
   every confirm dialog silently does nothing in the browser — all the deletes and finish-session.
   Native is unaffected and web is a dev/preview target, so this is logged rather than fixed. It does
   mean a browser check of any confirm flow proves nothing unless the script patches it, which is how
   session delete was actually verified end to end.
-- **`sessionSetCount` under-reports interval work**, counting an EMOM entry as one "set" regardless of
-  `minutes.length` and a HIIT entry as one regardless of `roundsCompleted`.
-- **`slugify` yields an empty id for non-Latin names**, so the app can't name exercises in most
-  scripts. It surfaces as the "Could not derive an id" error rather than corruption, but it makes the
-  app unusable in those languages. The four copies are now one (`domain/slug.ts`), which documents the
-  limitation; the fix itself — transliteration, or falling back to a generated id — is still open.
-- **`session-hold.tsx` can compute `width: "NaN%"`** when `targetSec` is 0. `validateConfig` guards the
-  in-app path, but imported YAML and `applyExerciseOverride` can still reach it.
 
 ## Open questions from the product plan, still open
 

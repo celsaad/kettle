@@ -57,7 +57,13 @@ export function SessionHold({
   }, [pulse, reduceMotion]);
 
   const pulseStyle = useAnimatedStyle(() => ({ opacity: pulse.value }));
-  const fillPct = Math.min(100, (elapsedSec / targetSec) * 100);
+  // Guarded the same way session-interval.tsx's bar is: a 0 target makes this NaN before the clock
+  // starts (0/0) and Infinity after it, and `width: "NaN%"` is an invalid style rather than a
+  // no-op. validateConfig keeps the in-app editor from writing a 0-second hold, but a program
+  // week's `hold_sec_min: 0` override reaches here unchecked from either direction — the override
+  // schema types `config` as a free record of numbers, and the in-app override editor doesn't run
+  // validateConfig either.
+  const fillPct = targetSec > 0 ? Math.min(100, (elapsedSec / targetSec) * 100) : 0;
 
   return (
     <View style={styles.container}>

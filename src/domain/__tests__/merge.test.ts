@@ -14,8 +14,13 @@ const base = (): Library => ({
 });
 
 function expectOk(result: ReturnType<typeof mergeLibraries>) {
-  if (!result.ok) throw new Error(`expected merge to succeed, got: ${result.error}`);
+  if (!result.ok) throw new Error(`expected merge to succeed, got: ${JSON.stringify(result.error)}`);
   return result;
+}
+
+function expectError(result: ReturnType<typeof mergeLibraries>) {
+  if (result.ok) throw new Error('expected merge to be refused');
+  return result.error;
 }
 
 it('adds ids that did not exist', () => {
@@ -86,6 +91,8 @@ it('reports new and updated ids across all three collections', () => {
   });
 });
 
+// The refusal reasons are descriptors, not sentences — the import screen words them, in whichever
+// locale is running. These pin the fields it interpolates; the prose itself is asserted there.
 describe('referential integrity', () => {
   it('rejects a workout block pointing at an unknown exercise', () => {
     const incoming: Library = {
@@ -94,7 +101,11 @@ describe('referential integrity', () => {
       workouts: [{ id: 'bad', name: 'Bad', blocks: [{ kind: 'exercise', exerciseId: 'ghost' }] }],
       programs: [],
     };
-    expect(mergeLibraries(base(), incoming).ok).toBe(false);
+    expect(expectError(mergeLibraries(base(), incoming))).toEqual({
+      kind: 'unknownExercise',
+      workoutId: 'bad',
+      exerciseId: 'ghost',
+    });
   });
 
   it('rejects a circuit member pointing at an unknown exercise', () => {
@@ -120,7 +131,31 @@ describe('referential integrity', () => {
       workouts: [],
       programs: [{ id: 'bad', name: 'Bad', weeks: [{ week: 1, workoutId: 'ghost' }] }],
     };
-    expect(mergeLibraries(base(), incoming).ok).toBe(false);
+    expect(expectError(mergeLibraries(base(), incoming))).toEqual({
+      kind: 'unknownWorkout',
+      programId: 'bad',
+      week: 1,
+      day: undefined,
+      workoutId: 'ghost',
+    });
+  });
+
+  // The day is what distinguishes two weeks with the same number, so it has to reach the message —
+  // it used to be baked into the string here, which is why it's carried as its own field now.
+  it("carries a week's day through to the refusal, when it has one", () => {
+    const incoming: Library = {
+      version: 1,
+      exercises: [],
+      workouts: [],
+      programs: [{ id: 'bad', name: 'Bad', weeks: [{ week: 2, day: 'Monday', workoutId: 'ghost' }] }],
+    };
+    expect(expectError(mergeLibraries(base(), incoming))).toEqual({
+      kind: 'unknownWorkout',
+      programId: 'bad',
+      week: 2,
+      day: 'Monday',
+      workoutId: 'ghost',
+    });
   });
 
   it('accepts a reference satisfied by the existing library rather than the incoming one', () => {

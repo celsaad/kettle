@@ -2,7 +2,7 @@ import { resolveWorkoutForWeek } from '@/domain/program';
 import { firstWeekdayIndex } from '@/i18n';
 import { formatMonthBadge, formatMonthDay, formatWeekday } from '@/i18n/format';
 import type { EntryResult, WorkoutShape } from '@/domain/format';
-import { formatEntryResult } from '@/domain/format';
+import { formatEntryResult, formatSessionDuration, formatSessionName, formatSetCount } from '@/domain/format';
 import type { Exercise, Library, Program, ProgramWeek, Session, SessionEntry, Workout, WorkoutBlock } from '@/domain/types';
 
 function findExercise(exercises: Exercise[], id: string): Exercise | undefined {
@@ -204,12 +204,35 @@ export function nextUpView(library: Library, sessions: Session[]): NextUpView | 
   };
 }
 
+/**
+ * How many sets one logged entry is worth. Interval work has no `sets` array, and counting each such
+ * entry as a flat 1 — which is what this did — made a 20-minute EMOM and a single 30-second hold the
+ * same one "set". Every stat tile in History and Today reads this, so the whole volume story
+ * under-reported for anyone whose training is mostly intervals.
+ *
+ * The comparable unit is one interval actually performed: a HIIT or AMRAP round, an EMOM minute —
+ * the same numbers `sessionEntryResult` already reports per entry. `cardio` stays at 1 (one
+ * continuous effort, not a set count) and `rest` at 0.
+ */
+function entrySetCount(entry: SessionEntry): number {
+  switch (entry.type) {
+    case 'timed_hold':
+    case 'reps':
+      return entry.sets.length;
+    case 'hiit':
+    case 'amrap':
+      return entry.roundsCompleted;
+    case 'emom':
+      return entry.minutes.length;
+    case 'cardio':
+      return 1;
+    case 'rest':
+      return 0;
+  }
+}
+
 function sessionSetCount(session: Session): number {
-  return session.entries.reduce((count, entry) => {
-    if (entry.type === 'reps' || entry.type === 'timed_hold') return count + entry.sets.length;
-    if (entry.type === 'rest') return count;
-    return count + 1;
-  }, 0);
+  return session.entries.reduce((count, entry) => count + entrySetCount(entry), 0);
 }
 
 function sessionDurationMinutes(session: Session): number {
@@ -218,8 +241,13 @@ function sessionDurationMinutes(session: Session): number {
   return Math.max(0, Math.round(ms / 60000));
 }
 
-function workoutNameFor(session: Session, library: Library): string {
-  if (!session.workout) return 'Ad-hoc session';
+/**
+ * The workout behind a session, or `null` when it was started ad-hoc — the stand-in label for that
+ * case is `formatSessionName`'s to translate, not this layer's to assemble. Falls back to the raw id
+ * for a workout that has since been deleted from the library, which is user data either way.
+ */
+function workoutNameFor(session: Session, library: Library): string | null {
+  if (!session.workout) return null;
   return library.workouts.find((workout) => workout.id === session.workout)?.name ?? session.workout;
 }
 
@@ -234,10 +262,10 @@ export type RecentSessionView = {
 export function recentSessionsView(sessions: Session[], library: Library, limit = 5): RecentSessionView[] {
   return sessions.slice(0, limit).map((session) => ({
     id: session.id,
-    workoutName: workoutNameFor(session, library),
+    workoutName: formatSessionName(workoutNameFor(session, library)),
     dateLabel: formatWeekday(new Date(session.startedAt)),
-    durationLabel: `${sessionDurationMinutes(session)} min`,
-    setsLabel: `${sessionSetCount(session)} sets`,
+    durationLabel: formatSessionDuration(sessionDurationMinutes(session)),
+    setsLabel: formatSetCount(sessionSetCount(session)),
   }));
 }
 
@@ -421,9 +449,9 @@ export function historySessionsView(sessions: Session[], library: Library): Hist
       id: session.id,
       day: startedAt.getDate(),
       month: formatMonthBadge(startedAt),
-      workoutName: workoutNameFor(session, library),
-      durationLabel: `${sessionDurationMinutes(session)} min`,
-      setsLabel: `${sessionSetCount(session)} sets`,
+      workoutName: formatSessionName(workoutNameFor(session, library)),
+      durationLabel: formatSessionDuration(sessionDurationMinutes(session)),
+      setsLabel: formatSetCount(sessionSetCount(session)),
       mixed: loggedTypes.size > 1,
       entries,
     };

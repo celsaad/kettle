@@ -87,6 +87,25 @@ export function formatEntryResult(result: EntryResult): string {
   }
 }
 
+/**
+ * A logged session's display name: the workout's own name, which is user data and renders verbatim,
+ * or a translated stand-in when the session was started ad-hoc and has no workout behind it. The
+ * selector returns `null` for that case rather than the English label it used to assemble itself.
+ */
+export function formatSessionName(workoutName: string | null): string {
+  return workoutName ?? i18next.t('format.adHocSession');
+}
+
+/** A logged session's duration. Abbreviated, so it doesn't pluralise in either locale. */
+export function formatSessionDuration(minutes: number): string {
+  return i18next.t('format.minutes', { n: minutes });
+}
+
+/** Through `count`, not a template literal: History and Today both rendered "1 sets" before this. */
+export function formatSetCount(sets: number): string {
+  return i18next.t('format.set', { count: sets });
+}
+
 /** A circuit block's configuration, as data — see `circuitShape`. */
 export type CircuitShape = { rounds: number; restBetweenExercisesSec: number; restBetweenRoundsSec: number };
 

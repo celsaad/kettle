@@ -6,16 +6,20 @@ jest.mock('@/i18n', () => ({
   currentLocale: () => 'en',
 }));
 
+import i18next from 'i18next';
+
 import {
   currentStreak,
   exerciseHistory,
+  historySessionsView,
   historyStats,
   nextWeekAfter,
+  recentSessionsView,
   sessionEntryResult,
   thisWeekStats,
 } from '@/state/selectors';
 import type { EntryResult } from '@/domain/format';
-import type { Program, Session, SessionEntry } from '@/domain/types';
+import type { Library, Program, Session, SessionEntry } from '@/domain/types';
 
 function makeSession(overrides: Partial<Session> & { startedAt: string }): Session {
   return {
@@ -51,6 +55,137 @@ describe('historyStats', () => {
   it('reports 0 hours for a sub-hour total', () => {
     const session = makeSession({ startedAt: '2026-07-24T09:00:00.000Z', endedAt: '2026-07-24T09:25:00.000Z' });
     expect(historyStats([session])).toEqual({ sessions: 1, hours: 0, minutes: 25, sets: 0 });
+  });
+});
+
+/**
+ * `sets` is the same private count behind History's and Today's tiles and both "N sets" labels, so
+ * it's asserted through `historyStats` rather than exported for the test.
+ *
+ * Regression: interval entries have no `sets` array and used to count as a flat 1 apiece, which made
+ * a 16-round HIIT worth the same as one hold. Every tile reading this under-reported for anyone
+ * training mostly in intervals.
+ */
+describe('historyStats sets', () => {
+  const setsIn = (entries: SessionEntry[]) =>
+    historyStats([makeSession({ startedAt: '2026-07-24T09:00:00.000Z', entries })]).sets;
+
+  it('counts one set per logged set for reps and holds', () => {
+    expect(
+      setsIn([
+        {
+          exercise: 'pullups',
+          type: 'reps',
+          sets: [
+            { reps: 8, restTakenSec: 90 },
+            { reps: 6, restTakenSec: 0 },
+          ],
+        },
+        { exercise: 'lsit', type: 'timed_hold', sets: [{ holdSec: 20, restTakenSec: 0 }] },
+      ]),
+    ).toBe(3);
+  });
+
+  it('counts each completed round of a HIIT or AMRAP entry', () => {
+    expect(setsIn([{ exercise: 'burpees', type: 'hiit', roundsCompleted: 8 }])).toBe(8);
+    expect(setsIn([{ exercise: 'chipper', type: 'amrap', roundsCompleted: 5, extraReps: 3 }])).toBe(5);
+  });
+
+  it('counts each interval of an EMOM entry', () => {
+    expect(setsIn([{ exercise: 'swings', type: 'emom', minutes: [{ reps: 10 }, { reps: 10 }, {}] }])).toBe(3);
+  });
+
+  it('counts cardio as one effort and rest as none', () => {
+    expect(setsIn([{ exercise: 'row', type: 'cardio', durationSec: 600, distanceMeters: 2000 }])).toBe(1);
+    expect(setsIn([{ exercise: 'rest', type: 'rest', restTakenSec: 90 }])).toBe(0);
+  });
+
+  it('sums a mixed session across all of them', () => {
+    expect(
+      setsIn([
+        {
+          exercise: 'pullups',
+          type: 'reps',
+          sets: [
+            { reps: 8, restTakenSec: 90 },
+            { reps: 6, restTakenSec: 0 },
+          ],
+        },
+        { exercise: 'rest', type: 'rest', restTakenSec: 60 },
+        { exercise: 'burpees', type: 'hiit', roundsCompleted: 8 },
+        { exercise: 'swings', type: 'emom', minutes: [{ reps: 10 }, { reps: 10 }] },
+      ]),
+    ).toBe(12);
+  });
+
+  // Nothing performed is nothing counted — an abandoned interval block shouldn't inflate the tile
+  // the way a flat 1 per entry did.
+  it('counts a round-less interval entry as no sets', () => {
+    expect(setsIn([{ exercise: 'burpees', type: 'hiit', roundsCompleted: 0 }])).toBe(0);
+  });
+});
+
+/**
+ * The two session-list views feed History and Today, and both used to assemble their labels here as
+ * English template literals — untranslated on both screens, and pluralised by concatenation, so a
+ * one-set session read "1 sets". They now go through `domain/format.ts`, which is what makes the `pt`
+ * case below possible at all: against `en` a hardcoded literal and a `t()` call render identically.
+ */
+describe('session list labels', () => {
+  const library: Library = {
+    version: 1,
+    exercises: [{ id: 'lsit', name: 'L-Sit', type: 'timed_hold', config: { sets: 3, holdSecMin: 15, restSec: 60 } }],
+    workouts: [{ id: 'push-day', name: 'Push day', blocks: [] }],
+    programs: [],
+  };
+
+  const oneSet = makeSession({
+    startedAt: '2026-07-24T09:00:00.000Z',
+    endedAt: '2026-07-24T09:12:00.000Z',
+    workout: 'push-day',
+    entries: [{ exercise: 'lsit', type: 'timed_hold', sets: [{ holdSec: 20, restTakenSec: 0 }] }],
+  });
+
+  it('pluralises the set count instead of concatenating it', () => {
+    const [single] = historySessionsView([oneSet], library);
+    expect(single.setsLabel).toBe('1 set');
+    expect(single.durationLabel).toBe('12 min');
+
+    const twoSets = makeSession({
+      startedAt: '2026-07-24T09:00:00.000Z',
+      endedAt: '2026-07-24T09:12:00.000Z',
+      entries: [
+        {
+          exercise: 'lsit',
+          type: 'timed_hold',
+          sets: [
+            { holdSec: 20, restTakenSec: 0 },
+            { holdSec: 18, restTakenSec: 0 },
+          ],
+        },
+      ],
+    });
+    expect(historySessionsView([twoSets], library)[0].setsLabel).toBe('2 sets');
+    expect(recentSessionsView([oneSet], library)[0].setsLabel).toBe('1 set');
+  });
+
+  it('names a session after its workout, falling back to a label when it was started ad-hoc', () => {
+    expect(historySessionsView([oneSet], library)[0].workoutName).toBe('Push day');
+    const adHoc = makeSession({ startedAt: '2026-07-24T09:00:00.000Z', workout: null });
+    expect(historySessionsView([adHoc], library)[0].workoutName).toBe('Ad-hoc session');
+    expect(recentSessionsView([adHoc], library)[0].workoutName).toBe('Ad-hoc session');
+  });
+
+  // The workout is user data from their own YAML, so it stays as written whatever the locale is.
+  it('translates every label it owns, and none of the user data', async () => {
+    await i18next.changeLanguage('pt');
+    const [session] = historySessionsView([oneSet], library);
+    expect(session.setsLabel).toBe('1 série');
+    expect(session.durationLabel).toBe('12 min');
+    expect(session.workoutName).toBe('Push day');
+
+    const adHoc = makeSession({ startedAt: '2026-07-24T09:00:00.000Z', workout: null });
+    expect(recentSessionsView([adHoc], library)[0].workoutName).toBe('Sessão avulsa');
   });
 });
 

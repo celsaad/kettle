@@ -34,23 +34,24 @@ export default function ProgramGuideScreen() {
   const close = () => router.back();
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['top', 'bottom', 'left', 'right']}>
+    <SafeAreaView
+      style={[styles.safeArea, { backgroundColor: theme.background }]}
+      edges={['top', 'bottom', 'left', 'right']}>
       <ModalHeader onClose={close} />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <ThemedText type="subtitle">Writing a program by hand</ThemedText>
         <ThemedText themeColor="textSecondary" style={styles.intro}>
-          Programs — multi-week plans that step through your workouts, optionally tweaking sets/reps/
-          rounds as weeks go by — can be built right in the app, from the + button on the Programs
-          tab. This page is for the other way: writing one as YAML and importing the file, which is
-          handy for drafting a long block on a real keyboard or sharing it with someone else.
+          Programs — multi-week plans that step through your workouts, optionally tweaking sets/reps/ rounds as weeks go by —
+          can be built right in the app, from the + button on the Programs tab. This page is for the other way: writing one
+          as YAML and importing the file, which is handy for drafting a long block on a real keyboard or sharing it with
+          someone else.
         </ThemedText>
 
         <Section title="1. Find your workout IDs">
           <ThemedText themeColor="textSecondary" style={styles.body}>
-            A program points at workouts by their id, not their display name. A workout's id is set
-            automatically from its name when you create it in Build: lowercased, with anything that
-            isn't a letter or number turned into a single hyphen. So a workout named{' '}
-            <ThemedText style={styles.inline}>"Calisthenics A"</ThemedText> has the id{' '}
+            A program points at workouts by their id, not their display name. A workout's id is set automatically from its
+            name when you create it in Build: lowercased, with anything that isn't a letter or number turned into a single
+            hyphen. So a workout named <ThemedText style={styles.inline}>"Calisthenics A"</ThemedText> has the id{' '}
             <ThemedText style={styles.inline}>calisthenics-a</ThemedText>.
           </ThemedText>
         </Section>
@@ -80,20 +81,20 @@ programs:
 
         <Section title="3. Fields">
           <ThemedText themeColor="textSecondary" style={styles.body}>
-            • <ThemedText style={styles.inline}>id</ThemedText> — the program's own slug, hand-typed
-            (lowercase-with-hyphens is conventional). {'\n'}• <ThemedText style={styles.inline}>name</ThemedText> —
-            what shows in the Programs list. {'\n'}• <ThemedText style={styles.inline}>weeks</ThemedText> — a
-            list; each entry needs a <ThemedText style={styles.inline}>week</ThemedText> number and a{' '}
+            • <ThemedText style={styles.inline}>id</ThemedText> — the program's own slug, hand-typed (lowercase-with-hyphens
+            is conventional). {'\n'}• <ThemedText style={styles.inline}>name</ThemedText> — what shows in the Programs list.{' '}
+            {'\n'}• <ThemedText style={styles.inline}>weeks</ThemedText> — a list; each entry needs a{' '}
+            <ThemedText style={styles.inline}>week</ThemedText> number and a{' '}
             <ThemedText style={styles.inline}>workout</ThemedText> id. {'\n'}•{' '}
-            <ThemedText style={styles.inline}>notes</ThemedText> — optional freeform text shown on that
-            week. {'\n'}• <ThemedText style={styles.inline}>overrides</ThemedText> — optional, see below.
+            <ThemedText style={styles.inline}>notes</ThemedText> — optional freeform text shown on that week. {'\n'}•{' '}
+            <ThemedText style={styles.inline}>overrides</ThemedText> — optional, see below.
           </ThemedText>
         </Section>
 
         <Section title="4. Overrides (optional)">
           <ThemedText themeColor="textSecondary" style={styles.body}>
-            Each entry targets exactly one exercise or one circuit block, by id, with a partial config
-            patch using that exercise's/circuit's own field names:
+            Each entry targets exactly one exercise or one circuit block, by id, with a partial config patch using that
+            exercise's/circuit's own field names:
           </ThemedText>
           <CodeBlock>{`overrides:
   - exercise: pullups
@@ -101,19 +102,17 @@ programs:
   - block: finisher-rounds
     config: { rounds: 2 }`}</CodeBlock>
           <ThemedText themeColor="textSecondary" style={styles.body}>
-            An exercise override only makes sense for a single exercise block. A block override only
-            works on a circuit that was given its own id in Build (the optional "Block ID" field when
-            editing a circuit) — it patches the circuit's own{' '}
-            <ThemedText style={styles.inline}>rounds</ThemedText>/rest fields, not one member's config.
-            Overrides don't carry forward — repeat one in every later week you want it to keep applying
-            to.
+            An exercise override only makes sense for a single exercise block. A block override only works on a circuit that
+            was given its own id in Build (the optional "Block ID" field when editing a circuit) — it patches the circuit's
+            own <ThemedText style={styles.inline}>rounds</ThemedText>/rest fields, not one member's config. Overrides don't
+            carry forward — repeat one in every later week you want it to keep applying to.
           </ThemedText>
         </Section>
 
         <Section title="5. More than one session a week (optional)">
           <ThemedText themeColor="textSecondary" style={styles.body}>
-            Add a freeform <ThemedText style={styles.inline}>day</ThemedText> label when two weeks share
-            the same week number — e.g. a push/pull split:
+            Add a freeform <ThemedText style={styles.inline}>day</ThemedText> label when two weeks share the same week number
+            — e.g. a push/pull split:
           </ThemedText>
           <CodeBlock>{`weeks:
   - week: 1
@@ -126,11 +125,10 @@ programs:
 
         <Section title="6. Import it">
           <ThemedText themeColor="textSecondary" style={styles.body}>
-            Library tab → Import → pick your file → review the summary → Merge & import. Programs
-            merge by id: a new id gets added, but re-importing an id that already exists replaces that
-            whole program — all its weeks — with what's in the file, it doesn't merge week-by-week. So
-            to add or change one week, include the program's complete, up-to-date week list in the file
-            you import, not just the changed week.
+            Library tab → Import → pick your file → review the summary → Merge & import. Programs merge by id: a new id gets
+            added, but re-importing an id that already exists replaces that whole program — all its weeks — with what's in
+            the file, it doesn't merge week-by-week. So to add or change one week, include the program's complete, up-to-date
+            week list in the file you import, not just the changed week.
           </ThemedText>
         </Section>
 

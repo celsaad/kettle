@@ -64,7 +64,13 @@ function exerciseToDomain(raw: RawExercise): Exercise {
         notes: raw.notes,
       };
     case 'amrap':
-      return { id: raw.id, name: raw.name, type: 'amrap', config: { timeCapSec: raw.config.time_cap_sec }, notes: raw.notes };
+      return {
+        id: raw.id,
+        name: raw.name,
+        type: 'amrap',
+        config: { timeCapSec: raw.config.time_cap_sec },
+        notes: raw.notes,
+      };
     case 'reps':
       return {
         id: raw.id,
@@ -101,7 +107,13 @@ function exerciseToDomain(raw: RawExercise): Exercise {
         notes: raw.notes,
       };
     case 'rest':
-      return { id: raw.id, name: raw.name, type: 'rest', config: { durationSec: raw.config.duration_sec }, notes: raw.notes };
+      return {
+        id: raw.id,
+        name: raw.name,
+        type: 'rest',
+        config: { durationSec: raw.config.duration_sec },
+        notes: raw.notes,
+      };
   }
 }
 
@@ -128,7 +140,13 @@ function exerciseToRaw(exercise: Exercise): RawExercise {
         notes: exercise.notes,
       };
     case 'amrap':
-      return { id: exercise.id, name: exercise.name, type: 'amrap', config: { time_cap_sec: exercise.config.timeCapSec }, notes: exercise.notes };
+      return {
+        id: exercise.id,
+        name: exercise.name,
+        type: 'amrap',
+        config: { time_cap_sec: exercise.config.timeCapSec },
+        notes: exercise.notes,
+      };
     case 'reps':
       return {
         id: exercise.id,
@@ -165,7 +183,13 @@ function exerciseToRaw(exercise: Exercise): RawExercise {
         notes: exercise.notes,
       };
     case 'rest':
-      return { id: exercise.id, name: exercise.name, type: 'rest', config: { duration_sec: exercise.config.durationSec }, notes: exercise.notes };
+      return {
+        id: exercise.id,
+        name: exercise.name,
+        type: 'rest',
+        config: { duration_sec: exercise.config.durationSec },
+        notes: exercise.notes,
+      };
   }
 }
 
@@ -352,10 +376,16 @@ export function diffBlockOverride(base: WorkoutBlock, edited: WorkoutBlock): Rec
   if (baseRaw.type !== 'circuit' || editedRaw.type !== 'circuit') return {};
   const diff: Record<string, number | string> = {};
   if (editedRaw.rounds !== baseRaw.rounds) diff.rounds = editedRaw.rounds;
-  if (editedRaw.rest_between_exercises_sec !== undefined && editedRaw.rest_between_exercises_sec !== baseRaw.rest_between_exercises_sec) {
+  if (
+    editedRaw.rest_between_exercises_sec !== undefined &&
+    editedRaw.rest_between_exercises_sec !== baseRaw.rest_between_exercises_sec
+  ) {
     diff.rest_between_exercises_sec = editedRaw.rest_between_exercises_sec;
   }
-  if (editedRaw.rest_between_rounds_sec !== undefined && editedRaw.rest_between_rounds_sec !== baseRaw.rest_between_rounds_sec) {
+  if (
+    editedRaw.rest_between_rounds_sec !== undefined &&
+    editedRaw.rest_between_rounds_sec !== baseRaw.rest_between_rounds_sec
+  ) {
     diff.rest_between_rounds_sec = editedRaw.rest_between_rounds_sec;
   }
   return diff;
@@ -375,7 +405,12 @@ function sessionEntryToDomain(raw: RawSessionEntry): SessionEntry {
       return {
         exercise: raw.exercise,
         type: 'reps',
-        sets: raw.sets.map((set) => ({ reps: set.reps, weightKg: set.weight, rpe: set.rpe, restTakenSec: set.rest_taken_sec })),
+        sets: raw.sets.map((set) => ({
+          reps: set.reps,
+          weightKg: set.weight,
+          rpe: set.rpe,
+          restTakenSec: set.rest_taken_sec,
+        })),
       };
     case 'rest':
       return { exercise: raw.exercise, type: 'rest', restTakenSec: raw.rest_taken_sec };
@@ -402,7 +437,12 @@ function sessionEntryToRaw(entry: SessionEntry): RawSessionEntry {
       return {
         exercise: entry.exercise,
         type: 'reps',
-        sets: entry.sets.map((set) => ({ reps: set.reps, weight: set.weightKg, rpe: set.rpe, rest_taken_sec: set.restTakenSec })),
+        sets: entry.sets.map((set) => ({
+          reps: set.reps,
+          weight: set.weightKg,
+          rpe: set.rpe,
+          rest_taken_sec: set.restTakenSec,
+        })),
       };
     case 'rest':
       return { exercise: entry.exercise, type: 'rest', rest_taken_sec: entry.restTakenSec };
@@ -411,9 +451,19 @@ function sessionEntryToRaw(entry: SessionEntry): RawSessionEntry {
     case 'emom':
       return { exercise: entry.exercise, type: 'emom', minutes: entry.minutes.map((minute) => ({ reps: minute.reps })) };
     case 'amrap':
-      return { exercise: entry.exercise, type: 'amrap', rounds_completed: entry.roundsCompleted, extra_reps: entry.extraReps };
+      return {
+        exercise: entry.exercise,
+        type: 'amrap',
+        rounds_completed: entry.roundsCompleted,
+        extra_reps: entry.extraReps,
+      };
     case 'cardio':
-      return { exercise: entry.exercise, type: 'cardio', duration_sec: entry.durationSec, distance_meters: entry.distanceMeters };
+      return {
+        exercise: entry.exercise,
+        type: 'cardio',
+        duration_sec: entry.durationSec,
+        distance_meters: entry.distanceMeters,
+      };
   }
 }
 

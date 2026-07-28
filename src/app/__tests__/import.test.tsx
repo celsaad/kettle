@@ -91,7 +91,11 @@ it('refuses a file whose workout points at an exercise nobody has', async () => 
   // The merge-level check, which the schema can't make: each file is internally valid, and only the
   // *combination* is broken. Importing it would leave "Push day" resolving a block to nothing, which
   // surfaces much later as a workout that silently runs one exercise short.
-  picks(aLibrary({ workouts: [aWorkout({ id: 'leg-day', name: 'Leg day', blocks: [{ kind: 'exercise', exerciseId: 'squats' }] })] }));
+  picks(
+    aLibrary({
+      workouts: [aWorkout({ id: 'leg-day', name: 'Leg day', blocks: [{ kind: 'exercise', exerciseId: 'squats' }] })],
+    }),
+  );
   await chooseFile();
 
   expect(screen.getByText('Workout "leg-day" references unknown exercise "squats"')).toBeTruthy();

@@ -4,16 +4,7 @@ import { Fonts, ThemeColor } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 export type ThemedTextProps = TextProps & {
-  type?:
-    | 'default'
-    | 'label'
-    | 'title'
-    | 'subtitle'
-    | 'heading'
-    | 'small'
-    | 'smallMedium'
-    | 'numeral'
-    | 'code';
+  type?: 'default' | 'label' | 'title' | 'subtitle' | 'heading' | 'small' | 'smallMedium' | 'numeral' | 'code';
   themeColor?: ThemeColor;
 };
 

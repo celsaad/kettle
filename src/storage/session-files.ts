@@ -50,7 +50,17 @@ export function createSession(
   programDay: string | null,
   startedAt: string,
 ): Session {
-  const session: Session = { version: 1, id, workout, program, programWeek, programDay, startedAt, endedAt: null, entries: [] };
+  const session: Session = {
+    version: 1,
+    id,
+    workout,
+    program,
+    programWeek,
+    programDay,
+    startedAt,
+    endedAt: null,
+    entries: [],
+  };
   writeSession(session);
   return session;
 }

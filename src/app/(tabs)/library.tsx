@@ -97,7 +97,9 @@ export default function LibraryScreen() {
 
         <View style={styles.list}>
           {filtered.map((exercise) => (
-            <Pressable key={exercise.id} onPress={() => router.push({ pathname: '/exercise-editor', params: { id: exercise.id } })}>
+            <Pressable
+              key={exercise.id}
+              onPress={() => router.push({ pathname: '/exercise-editor', params: { id: exercise.id } })}>
               <ThemedView type="backgroundElement" style={[styles.card, { borderColor: theme.border }]}>
                 <View style={styles.cardText}>
                   <ThemedText type="heading">{exercise.name}</ThemedText>

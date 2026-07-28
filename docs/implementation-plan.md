@@ -186,6 +186,27 @@ find it. Add an entry only when the reasoning **isn't discoverable from a single
 constraint that shapes future work, something deliberately rejected (so it isn't re-proposed), or a
 decision assembled across several commits. Open work belongs in the sections at the bottom, not here.
 
+- ✅ **Formatting is oxfmt's, and it deliberately does not own the docs.** The repo went a long time
+  with no formatter, which cost real time: reaching for `npx prettier` ad hoc reformats a file to
+  Prettier's defaults and fights the whole codebase's style, and a subagent has no way to infer an
+  unwritten convention. oxfmt was chosen over Prettier because the repo already lints with **oxlint,
+  which is the same Oxc toolchain** — so the two agree instead of needing a compatibility shim. Vite+
+  was considered first and rejected: it is commercial, and this app is free with a tip jar that only
+  covers the Play developer fee, so a per-seat tool can't be justified here. It also couldn't have
+  replaced Metro, which bundles the app, and must never be allowed to drag the test runner with it —
+  `jest-expo` is what makes the RN preset, the transform ignore list and the native-module mocks work.
+
+  Two exclusions in `.oxfmtrc.json` that are decisions, not oversights, and shouldn't be "fixed":
+
+  - **Markdown.** oxfmt rewrites prose emphasis (`*raw*` → `_raw_`) and dropped the indent on a
+    wrapped list continuation in AGENTS.md, which changes how it renders. The docs are hand-wrapped;
+    that's a regression, not a normalization.
+  - **`package.json`.** npm rewrites its key order on install, so two tools owning it means a dirty
+    tree after every install.
+
+  `printWidth` is 125 because that's where the code already sat — 92 lines exceeded it against 145 at
+  120, so it rewraps what is genuinely long rather than relitigating lines that were fine.
+
 - ✅ **The tip jar is the whole monetization story, and nothing is gated behind it.** Kettle ships to
   Google Play only for now ($25 one-time); the App Store's $99/yr is deferred until the app shows
   traction, so the bar to clear is deliberately low. The app is backend-free, so marginal cost per
@@ -757,32 +778,6 @@ without sight — a feature gap rather than a labelling one, and worth sizing on
 letting it hide inside "a11y polish".
 
 ## Planned work
-
-- **Evaluate Vite+ (`vite+`) for the toolchain, primarily to get a formatter.** There is no formatter
-  in the repo — oxlint lints but doesn't format — so the house style (single quotes, trailing commas,
-  ~120 columns) is maintained entirely by hand. It has held up, but nothing enforces it, and the gap
-  has a concrete cost: a subagent has no way to infer an unwritten style, and running a formatter with
-  no config present reformats to *its* defaults instead (which is why AGENTS.md says not to reach for
-  one ad hoc).
-
-  Vite+ is the natural candidate rather than a generic one because the repo already lints with
-  **oxlint, which is Oxc** — the same toolchain Vite+ is built on, so its formatter should agree with
-  the linter already in place instead of fighting it. Two constraints to establish *before* adopting
-  anything, since both could kill it:
-
-  - **It cannot replace Metro.** Expo SDK 57 bundles with Metro, and Vite+ is not a React Native
-    bundler. The realistic scope here is formatting and task running, not the build.
-  - **It must not pull the test runner with it.** `jest-expo` is what makes the RN preset, the
-    transform ignore list and the native-module mocks work; the phase-1 plan already weighed Vitest
-    and rejected it for exactly that reason. Swapping runners would cost more than the formatting is
-    worth.
-
-  Also check the licensing before committing: Vite+ is a commercial product, and this app is free with
-  a tip jar that only covers the Play developer fee — a per-seat tool has to be judged against that,
-  not against a company budget. If it doesn't fit, the fallback is standalone `oxfmt` (same Oxc
-  family, same agreement with oxlint) rather than dropping the goal. Either way the adoption commit
-  should be one mechanical reformat kept separate from anything behavioural, so it doesn't poison
-  `git blame`.
 
 - **A starter library worth landing on.** `storage/seed-library.ts` already writes 7 exercises, 2
   workouts and one 6-week program on first launch, so the app never opens empty — but its own comment

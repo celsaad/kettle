@@ -3,16 +3,12 @@ import i18next from 'i18next';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 
-import type {
-  EmomMinuteLog,
-  Exercise,
-  RepsSetLog,
-  Session,
-  SessionEntry,
-  TimedHoldSetLog,
-  Workout,
-} from '@/domain/types';
-import { cancelNotification, requestNotificationPermissions, scheduleRestCompleteNotification } from '@/hooks/safe-notifications';
+import type { EmomMinuteLog, Exercise, RepsSetLog, Session, SessionEntry, TimedHoldSetLog, Workout } from '@/domain/types';
+import {
+  cancelNotification,
+  requestNotificationPermissions,
+  scheduleRestCompleteNotification,
+} from '@/hooks/safe-notifications';
 import { useSessionSounds } from '@/hooks/use-session-sounds';
 import { useSessionHistoryStore } from '@/state/session-history-store';
 
@@ -255,7 +251,8 @@ export function useSessionRunner(
     phaseStartedAtRef.current = now;
     pausedAtRef.current = paused ? now : null;
     pausedMsRef.current = 0;
-    const countdownTarget = step?.kind === 'rest' ? step.seconds : step?.kind === 'interval' && !step.countUp ? step.targetSec : 0;
+    const countdownTarget =
+      step?.kind === 'rest' ? step.seconds : step?.kind === 'interval' && !step.countUp ? step.targetSec : 0;
     restTargetSecRef.current = countdownTarget;
     setHoldElapsedSec(0);
     // Reps start at the set's target, not 0: hitting the target is the common case, so counting up
@@ -292,7 +289,12 @@ export function useSessionRunner(
         const sets = pendingSetsRef.current[current.memberKey] ?? [];
         // `|| undefined` so bodyweight (0) stays absent from the log rather than recording a 0 kg load —
         // entryVolume distinguishes the two, summing reps×weight only when a weight is actually present.
-        sets.push({ reps: repsRef.current, weightKg: weightKgRef.current || undefined, rpe: rpeRef.current, restTakenSec: 0 });
+        sets.push({
+          reps: repsRef.current,
+          weightKg: weightKgRef.current || undefined,
+          rpe: rpeRef.current,
+          restTakenSec: 0,
+        });
         pendingSetsRef.current[current.memberKey] = sets;
       } else if (current.kind === 'interval') {
         if (current.variant === 'hiit') {
@@ -352,7 +354,11 @@ export function useSessionRunner(
 
       const roundsDone = pendingHiitRoundsRef.current[memberKey];
       if (roundsDone !== undefined) {
-        sessionRef.current = logEntry(sessionRef.current, { exercise: exerciseId, type: 'hiit', roundsCompleted: roundsDone });
+        sessionRef.current = logEntry(sessionRef.current, {
+          exercise: exerciseId,
+          type: 'hiit',
+          roundsCompleted: roundsDone,
+        });
         delete pendingHiitRoundsRef.current[memberKey];
       }
 

@@ -28,7 +28,11 @@ const circuit = {
   members: [{ exerciseId: 'pull-ups' }, { exerciseId: 'dips' }],
 };
 
-const workout = aWorkout({ id: 'push-day', name: 'Push day', blocks: [{ kind: 'exercise', exerciseId: 'pull-ups' }, circuit] });
+const workout = aWorkout({
+  id: 'push-day',
+  name: 'Push day',
+  blocks: [{ kind: 'exercise', exerciseId: 'pull-ups' }, circuit],
+});
 const library = aLibrary({ exercises: [pullUps, dips], workouts: [workout] });
 
 /**
@@ -50,9 +54,7 @@ function mount(overrides: ProgramOverride[] = []) {
 
 it('says there is nothing to override when the week has no workout selected', async () => {
   const onChange = jest.fn();
-  await renderScreen(
-    <ProgramOverrideEditor library={library} workout={undefined} overrides={[]} onChange={onChange} />,
-  );
+  await renderScreen(<ProgramOverrideEditor library={library} workout={undefined} overrides={[]} onChange={onChange} />);
 
   // No workout means no eligible targets, and the button is disabled rather than opening an empty
   // picker. The hint is deliberately absent here — with no workout chosen yet there is nothing to

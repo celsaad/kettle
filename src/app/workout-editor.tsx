@@ -156,7 +156,9 @@ export default function WorkoutEditorScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['top', 'bottom', 'left', 'right']}>
+    <SafeAreaView
+      style={[styles.safeArea, { backgroundColor: theme.background }]}
+      edges={['top', 'bottom', 'left', 'right']}>
       <ModalHeader onClose={close} />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <ThemedText type="subtitle">{editing ? t('workoutEditor.editTitle') : t('workoutEditor.newTitle')}</ThemedText>
@@ -187,7 +189,10 @@ export default function WorkoutEditorScreen() {
               if (!exercise) return null;
               const isRest = exercise.type === 'rest';
               const overrideSec = block.configOverride?.durationSec;
-              const summary = isRest && overrideSec ? t('workoutEditor.overrideSeconds', { count: overrideSec }) : exerciseSummary(exercise);
+              const summary =
+                isRest && overrideSec
+                  ? t('workoutEditor.overrideSeconds', { count: overrideSec })
+                  : exerciseSummary(exercise);
 
               return (
                 <View
@@ -210,7 +215,10 @@ export default function WorkoutEditorScreen() {
                       {summary}
                     </ThemedText>
                   </View>
-                  <ExerciseBadge type={exercise.type} overrideLabel={overrideSec ? t('workoutEditor.overrideBadge') : undefined} />
+                  <ExerciseBadge
+                    type={exercise.type}
+                    overrideLabel={overrideSec ? t('workoutEditor.overrideBadge') : undefined}
+                  />
                   <Pressable
                     onPress={() => removeBlock(index)}
                     hitSlop={8}
@@ -277,7 +285,9 @@ export default function WorkoutEditorScreen() {
 
                 <Pressable onPress={() => toggleIdField(index)} style={styles.circuitIdToggle} hitSlop={4}>
                   <ThemedText type="small" themeColor="textSecondary" style={styles.circuitFieldLabel}>
-                    {block.id ? t('workoutEditor.blockIdWithValue', { id: block.id }) : t('workoutEditor.blockIdPlaceholder')}
+                    {block.id
+                      ? t('workoutEditor.blockIdWithValue', { id: block.id })
+                      : t('workoutEditor.blockIdPlaceholder')}
                   </ThemedText>
                   <ThemedText type="small" themeColor="textSecondary">
                     {openIdFields.has(index) ? '⌄' : '›'}
@@ -296,7 +306,10 @@ export default function WorkoutEditorScreen() {
                       autoCapitalize="none"
                       autoCorrect={false}
                       autoFocus
-                      style={[styles.smallInput, { borderColor: theme.border, backgroundColor: theme.background, color: theme.text }]}
+                      style={[
+                        styles.smallInput,
+                        { borderColor: theme.border, backgroundColor: theme.background, color: theme.text },
+                      ]}
                     />
                   </View>
                 )}
@@ -331,7 +344,10 @@ export default function WorkoutEditorScreen() {
                       value={String(block.restBetweenExercisesSec ?? 0)}
                       onChangeText={(text) => updateCircuit(index, { restBetweenExercisesSec: Number(text) || 0 })}
                       keyboardType="numeric"
-                      style={[styles.smallInput, { borderColor: theme.border, backgroundColor: theme.background, color: theme.text }]}
+                      style={[
+                        styles.smallInput,
+                        { borderColor: theme.border, backgroundColor: theme.background, color: theme.text },
+                      ]}
                     />
                   </View>
 
@@ -343,7 +359,10 @@ export default function WorkoutEditorScreen() {
                       value={String(block.restBetweenRoundsSec ?? 0)}
                       onChangeText={(text) => updateCircuit(index, { restBetweenRoundsSec: Number(text) || 0 })}
                       keyboardType="numeric"
-                      style={[styles.smallInput, { borderColor: theme.border, backgroundColor: theme.background, color: theme.text }]}
+                      style={[
+                        styles.smallInput,
+                        { borderColor: theme.border, backgroundColor: theme.background, color: theme.text },
+                      ]}
                     />
                   </View>
                 </View>
@@ -363,7 +382,12 @@ export default function WorkoutEditorScreen() {
               setCircuitPickerOpen(false);
               setNewExerciseOpen(false);
             }}
-            style={({ pressed }) => [styles.addBlock, styles.addBlockHalf, { borderColor: theme.border }, pressed && styles.pressed]}>
+            style={({ pressed }) => [
+              styles.addBlock,
+              styles.addBlockHalf,
+              { borderColor: theme.border },
+              pressed && styles.pressed,
+            ]}>
             <ThemedText type="heading" themeColor="textSecondary">
               {pickerOpen ? t('common.close') : t('workoutEditor.addBlock')}
             </ThemedText>
@@ -375,7 +399,12 @@ export default function WorkoutEditorScreen() {
               setCircuitSelection([]);
               setNewExerciseOpen(false);
             }}
-            style={({ pressed }) => [styles.addBlock, styles.addBlockHalf, { borderColor: theme.border }, pressed && styles.pressed]}>
+            style={({ pressed }) => [
+              styles.addBlock,
+              styles.addBlockHalf,
+              { borderColor: theme.border },
+              pressed && styles.pressed,
+            ]}>
             <ThemedText type="heading" themeColor="textSecondary">
               {circuitPickerOpen ? t('common.close') : t('workoutEditor.newCircuit')}
             </ThemedText>
@@ -388,7 +417,9 @@ export default function WorkoutEditorScreen() {
               <NewExerciseForm onCreate={handleCreateExercise} onCancel={() => setNewExerciseOpen(false)} />
             ) : (
               <>
-                <Pressable onPress={() => setNewExerciseOpen(true)} style={[styles.newExerciseButton, { borderColor: theme.border }]}>
+                <Pressable
+                  onPress={() => setNewExerciseOpen(true)}
+                  style={[styles.newExerciseButton, { borderColor: theme.border }]}>
                   <ThemedText type="smallMedium" themeColor="textSecondary">
                     {t('workoutEditor.newExercise')}
                   </ThemedText>
@@ -417,7 +448,9 @@ export default function WorkoutEditorScreen() {
                 <ThemedText type="small" themeColor="textSecondary">
                   {t('workoutEditor.selectAtLeast2')}
                 </ThemedText>
-                <Pressable onPress={() => setNewExerciseOpen(true)} style={[styles.newExerciseButton, { borderColor: theme.border }]}>
+                <Pressable
+                  onPress={() => setNewExerciseOpen(true)}
+                  style={[styles.newExerciseButton, { borderColor: theme.border }]}>
                   <ThemedText type="smallMedium" themeColor="textSecondary">
                     {t('workoutEditor.newExercise')}
                   </ThemedText>
@@ -452,7 +485,11 @@ export default function WorkoutEditorScreen() {
                 <Pressable
                   onPress={addCircuit}
                   disabled={circuitSelection.length < 2}
-                  style={[styles.confirmCircuit, { backgroundColor: theme.accent }, circuitSelection.length < 2 && styles.disabled]}>
+                  style={[
+                    styles.confirmCircuit,
+                    { backgroundColor: theme.accent },
+                    circuitSelection.length < 2 && styles.disabled,
+                  ]}>
                   <ThemedText type="heading" style={{ color: theme.onAccent }}>
                     {t('workoutEditor.addCircuitCount', { count: circuitSelection.length })}
                   </ThemedText>

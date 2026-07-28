@@ -62,9 +62,7 @@ describe('timed_hold blocks', () => {
 describe('hiit blocks', () => {
   it('emits one interval per round with rest between, not after', () => {
     const steps = buildSteps(workoutOf(single('burpees')), exercises);
-    expect(steps.map((step) => step.kind)).toEqual([
-      'interval', 'rest', 'interval', 'rest', 'interval', 'rest', 'interval',
-    ]);
+    expect(steps.map((step) => step.kind)).toEqual(['interval', 'rest', 'interval', 'rest', 'interval', 'rest', 'interval']);
     const work = steps.filter((step) => step.kind === 'interval');
     expect(work.every((step) => step.kind === 'interval' && step.targetSec === 40)).toBe(true);
   });
@@ -123,9 +121,7 @@ describe('circuits', () => {
   it('visits members round-robin, once per round, ignoring their own set counts', () => {
     const steps = buildSteps(workoutOf(circuit()), exercises);
     const work = steps.filter((step) => step.kind !== 'rest');
-    expect(work.map((step) => step.exerciseId)).toEqual([
-      'pushups', 'lsit', 'pushups', 'lsit', 'pushups', 'lsit',
-    ]);
+    expect(work.map((step) => step.exerciseId)).toEqual(['pushups', 'lsit', 'pushups', 'lsit', 'pushups', 'lsit']);
   });
 
   it('gives each member a memberKey stable across rounds, so sets accumulate into one entry', () => {

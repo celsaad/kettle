@@ -24,7 +24,12 @@ export type ResolvedWeek = { workout: Workout; exercises: Exercise[] };
  * (with any per-exercise overrides for this week applied). Anything without an override for this
  * week is returned unchanged.
  */
-export function resolveWorkoutForWeek(program: Program, weekNumber: number, library: Library, day?: string): ResolvedWeek | null {
+export function resolveWorkoutForWeek(
+  program: Program,
+  weekNumber: number,
+  library: Library,
+  day?: string,
+): ResolvedWeek | null {
   const week = findProgramWeek(program, weekNumber, day);
   if (!week) return null;
   const baseWorkout = library.workouts.find((candidate) => candidate.id === week.workoutId);

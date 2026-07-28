@@ -46,7 +46,11 @@ export async function requestNotificationPermissions(): Promise<void> {
   }
 }
 
-export async function scheduleRestCompleteNotification(title: string, body: string, seconds: number): Promise<string | null> {
+export async function scheduleRestCompleteNotification(
+  title: string,
+  body: string,
+  seconds: number,
+): Promise<string | null> {
   const notifications = getNotifications();
   if (!notifications) return null;
   try {

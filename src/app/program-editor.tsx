@@ -37,7 +37,10 @@ export default function ProgramEditorScreen() {
   if (!library) return null;
 
   const updateWeek = (index: number, patch: Partial<ProgramWeek>) => {
-    setDraft((current) => ({ ...current, weeks: current.weeks.map((week, i) => (i === index ? { ...week, ...patch } : week)) }));
+    setDraft((current) => ({
+      ...current,
+      weeks: current.weeks.map((week, i) => (i === index ? { ...week, ...patch } : week)),
+    }));
   };
 
   const removeWeek = (index: number) => {
@@ -107,7 +110,9 @@ export default function ProgramEditorScreen() {
   const noWorkouts = library.workouts.length === 0;
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['top', 'bottom', 'left', 'right']}>
+    <SafeAreaView
+      style={[styles.safeArea, { backgroundColor: theme.background }]}
+      edges={['top', 'bottom', 'left', 'right']}>
       <ModalHeader onClose={close} />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <ThemedText type="subtitle">{editing ? t('programEditor.editTitle') : t('programEditor.newTitle')}</ThemedText>
@@ -138,7 +143,9 @@ export default function ProgramEditorScreen() {
             const workout = library.workouts.find((candidate) => candidate.id === week.workoutId);
 
             return (
-              <View key={index} style={[styles.weekCard, { borderColor: theme.border, backgroundColor: theme.backgroundElement }]}>
+              <View
+                key={index}
+                style={[styles.weekCard, { borderColor: theme.border, backgroundColor: theme.backgroundElement }]}>
                 <View style={styles.weekHeader}>
                   <ThemedText type="small" themeColor="textSecondary" style={styles.weekFieldLabel}>
                     {t('programEditor.week')}
@@ -176,7 +183,10 @@ export default function ProgramEditorScreen() {
                   onChangeText={(text) => updateWeek(index, { day: text.trim() || undefined })}
                   placeholder={t('programEditor.dayPlaceholder')}
                   placeholderTextColor={theme.textSecondary}
-                  style={[styles.smallInput, { borderColor: theme.border, backgroundColor: theme.background, color: theme.text }]}
+                  style={[
+                    styles.smallInput,
+                    { borderColor: theme.border, backgroundColor: theme.background, color: theme.text },
+                  ]}
                 />
 
                 <ThemedText type="small" themeColor="textSecondary" style={styles.weekFieldLabel}>
@@ -213,7 +223,10 @@ export default function ProgramEditorScreen() {
                   onChangeText={(text) => updateWeek(index, { notes: text.trim() || undefined })}
                   placeholder={t('programEditor.notesPlaceholder')}
                   placeholderTextColor={theme.textSecondary}
-                  style={[styles.smallInput, { borderColor: theme.border, backgroundColor: theme.background, color: theme.text }]}
+                  style={[
+                    styles.smallInput,
+                    { borderColor: theme.border, backgroundColor: theme.background, color: theme.text },
+                  ]}
                 />
 
                 <ThemedText type="small" themeColor="textSecondary" style={styles.weekFieldLabel}>

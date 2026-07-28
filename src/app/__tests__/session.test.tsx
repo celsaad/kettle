@@ -59,8 +59,7 @@ function setLibrary(workout: Workout) {
   useLibraryStore.setState({ library: aLibrary({ exercises, workouts: [workout] }), status: 'ready' });
 }
 
-const workoutOf = (exerciseId: string) =>
-  aWorkout({ id: 'w', name: 'Session', blocks: [{ kind: 'exercise', exerciseId }] });
+const workoutOf = (exerciseId: string) => aWorkout({ id: 'w', name: 'Session', blocks: [{ kind: 'exercise', exerciseId }] });
 
 /** Renders, then runs the 3-2-1 count-in out so the runner's first step is on screen. */
 async function start(workout: Workout) {

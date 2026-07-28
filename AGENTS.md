@@ -16,6 +16,10 @@ plus an append-only local session log. No server, no account.
   new and yours.
 - `npm test` — jest via `jest-expo`. Covers the logic layer, the session runner, and four screens
   (`workout-editor`, `exercise-editor`, `session`, `import`). Under a minute, so run it.
+- `npm run format` — oxfmt (same Oxc toolchain as oxlint, so they agree). Run it instead of matching
+  the style by hand, and never reach for `npx prettier`, which has no config here and would reformat
+  the file to its own defaults. **Markdown and `package.json` are excluded on purpose** — see the
+  decision log before adding them.
 
 ## Delegating
 
@@ -73,10 +77,7 @@ after any delegated change, and skim the diff.
   not close over one; `jest.mock('expo-router', () => require('@/test-support/expo-router'))` works.
 - **Prove a regression test fails against the bug it pins**, by reintroducing that bug. A test that
   passes either way is worthless, and this has caught more than one.
-- **Don't reach for a formatter ad hoc.** The repo has none configured (oxlint lints but doesn't
-  format), so `npx prettier --write` reformats the file to *Prettier's* defaults — double quotes
-  throughout, rewrapped at 80 columns — against the whole codebase's style. Match the surrounding
-  file by hand. Adopting one properly is in the planned-work list.
+- Finish with `npm run format`; don't hand-align a new test file against the rest.
 
 ## Verifying in the browser
 

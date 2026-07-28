@@ -80,14 +80,20 @@ export default function ImportScreen() {
   const changedItems = ready
     ? [
         ...ready.summary.newExercises.map((id) => ({ id, kind: 'new' as const, detail: t('import.newExercise') })),
-        ...ready.summary.updatedExercises.map((id) => ({ id, kind: 'updated' as const, detail: t('import.updatedExercise') })),
+        ...ready.summary.updatedExercises.map((id) => ({
+          id,
+          kind: 'updated' as const,
+          detail: t('import.updatedExercise'),
+        })),
         ...ready.summary.newWorkouts.map((id) => ({ id, kind: 'new' as const, detail: t('import.newWorkout') })),
         ...ready.summary.updatedWorkouts.map((id) => ({ id, kind: 'updated' as const, detail: t('import.updatedWorkout') })),
       ]
     : [];
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['top', 'bottom', 'left', 'right']}>
+    <SafeAreaView
+      style={[styles.safeArea, { backgroundColor: theme.background }]}
+      edges={['top', 'bottom', 'left', 'right']}>
       <ModalHeader onClose={close} />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <ThemedText type="subtitle">{t('import.title')}</ThemedText>
@@ -96,7 +102,11 @@ export default function ImportScreen() {
           <Pressable
             onPress={pickFile}
             disabled={busy}
-            style={[styles.fileRow, styles.pickRow, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
+            style={[
+              styles.fileRow,
+              styles.pickRow,
+              { backgroundColor: theme.backgroundElement, borderColor: theme.border },
+            ]}>
             <View style={[styles.fileIcon, { borderColor: theme.textSecondary }]} />
             <View style={styles.fileText}>
               <ThemedText type="heading">{t('import.chooseFile')}</ThemedText>
@@ -152,9 +162,13 @@ export default function ImportScreen() {
                   styles.countCard,
                   { backgroundColor: theme.backgroundElement, borderWidth: 1, borderColor: theme.border },
                 ]}>
-                <ThemedText type="subtitle">{ready.summary.newWorkouts.length + ready.summary.updatedWorkouts.length}</ThemedText>
+                <ThemedText type="subtitle">
+                  {ready.summary.newWorkouts.length + ready.summary.updatedWorkouts.length}
+                </ThemedText>
                 <ThemedText type="small" themeColor="textSecondary">
-                  {t('import.workoutNoun', { count: ready.summary.newWorkouts.length + ready.summary.updatedWorkouts.length })}
+                  {t('import.workoutNoun', {
+                    count: ready.summary.newWorkouts.length + ready.summary.updatedWorkouts.length,
+                  })}
                 </ThemedText>
               </View>
             </View>

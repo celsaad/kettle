@@ -57,7 +57,11 @@ export default function BuildScreen() {
                   hitSlop={8}
                   accessibilityRole="button"
                   accessibilityLabel={t('build.startAccessibility', { name: workout.name })}
-                  style={({ pressed }) => [styles.startButton, { backgroundColor: theme.accentSoft }, pressed && styles.pressed]}>
+                  style={({ pressed }) => [
+                    styles.startButton,
+                    { backgroundColor: theme.accentSoft },
+                    pressed && styles.pressed,
+                  ]}>
                   <View style={[styles.playTriangle, { borderLeftColor: theme.accent }]} />
                 </Pressable>
               </ThemedView>

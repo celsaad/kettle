@@ -115,8 +115,18 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
     if (!target) return;
     let nextOverride: ProgramOverride;
     if (target.kind === 'exercise') {
-      const edited = buildExercise(target.exercise.id, target.exercise.name, target.exercise.type, fieldValues, target.exercise.notes ?? '');
-      nextOverride = { kind: 'exercise', exerciseId: target.exercise.id, config: diffExerciseOverride(target.exercise, edited) };
+      const edited = buildExercise(
+        target.exercise.id,
+        target.exercise.name,
+        target.exercise.type,
+        fieldValues,
+        target.exercise.notes ?? '',
+      );
+      nextOverride = {
+        kind: 'exercise',
+        exerciseId: target.exercise.id,
+        config: diffExerciseOverride(target.exercise, edited),
+      };
     } else {
       const blockId = target.block.id;
       if (!blockId) return;
@@ -128,7 +138,11 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
       };
       nextOverride = { kind: 'block', blockId, config: diffBlockOverride(target.block, edited) };
     }
-    onChange(editingIndex !== null ? overrides.map((existing, i) => (i === editingIndex ? nextOverride : existing)) : [...overrides, nextOverride]);
+    onChange(
+      editingIndex !== null
+        ? overrides.map((existing, i) => (i === editingIndex ? nextOverride : existing))
+        : [...overrides, nextOverride],
+    );
     close();
   };
 
@@ -152,7 +166,10 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
                 : !!workout?.blocks.some((block) => block.kind === 'circuit' && block.id === override.blockId);
             return (
               <View key={index} style={[styles.overrideRow, { borderColor: theme.border }]}>
-                <Pressable onPress={() => resolvable && startEdit(index)} disabled={!resolvable} style={styles.overrideRowText}>
+                <Pressable
+                  onPress={() => resolvable && startEdit(index)}
+                  disabled={!resolvable}
+                  style={styles.overrideRowText}>
                   {lines.map((line, lineIndex) => (
                     <ThemedText key={lineIndex} type="small" themeColor="textSecondary">
                       {line}
@@ -260,7 +277,10 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
                   value={fieldValues.restBetweenExercisesSec ?? ''}
                   onChangeText={(text) => setField('restBetweenExercisesSec', text)}
                   keyboardType="numeric"
-                  style={[styles.fieldInput, { borderColor: theme.border, backgroundColor: theme.background, color: theme.text }]}
+                  style={[
+                    styles.fieldInput,
+                    { borderColor: theme.border, backgroundColor: theme.background, color: theme.text },
+                  ]}
                 />
               </View>
               <View style={styles.fieldRow}>
@@ -271,7 +291,10 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
                   value={fieldValues.restBetweenRoundsSec ?? ''}
                   onChangeText={(text) => setField('restBetweenRoundsSec', text)}
                   keyboardType="numeric"
-                  style={[styles.fieldInput, { borderColor: theme.border, backgroundColor: theme.background, color: theme.text }]}
+                  style={[
+                    styles.fieldInput,
+                    { borderColor: theme.border, backgroundColor: theme.background, color: theme.text },
+                  ]}
                 />
               </View>
             </>
@@ -288,7 +311,10 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
                   value={fieldValues[field.key] ?? ''}
                   onChangeText={(text) => setField(field.key, text)}
                   keyboardType="numeric"
-                  style={[styles.fieldInput, { borderColor: theme.border, backgroundColor: theme.background, color: theme.text }]}
+                  style={[
+                    styles.fieldInput,
+                    { borderColor: theme.border, backgroundColor: theme.background, color: theme.text },
+                  ]}
                 />
               </View>
             ))

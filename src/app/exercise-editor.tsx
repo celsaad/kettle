@@ -16,7 +16,6 @@ import { useLibraryStore } from '@/state/library-store';
 import { exerciseHistory } from '@/state/selectors';
 import { useSessionHistoryStore } from '@/state/session-history-store';
 
-
 export default function ExerciseEditorScreen() {
   const theme = useTheme();
   const { t } = useTranslation();
@@ -90,7 +89,9 @@ export default function ExerciseEditorScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['top', 'bottom', 'left', 'right']}>
+    <SafeAreaView
+      style={[styles.safeArea, { backgroundColor: theme.background }]}
+      edges={['top', 'bottom', 'left', 'right']}>
       <ModalHeader onClose={close} />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <ThemedText type="subtitle">{editing ? t('exerciseEditor.editTitle') : t('exerciseEditor.newTitle')}</ThemedText>
@@ -145,7 +146,10 @@ export default function ExerciseEditorScreen() {
                 keyboardType="numeric"
                 placeholder="0"
                 placeholderTextColor={theme.textSecondary}
-                style={[styles.input, { borderColor: theme.border, backgroundColor: theme.backgroundElement, color: theme.text }]}
+                style={[
+                  styles.input,
+                  { borderColor: theme.border, backgroundColor: theme.backgroundElement, color: theme.text },
+                ]}
               />
             </View>
           ))}
@@ -160,7 +164,11 @@ export default function ExerciseEditorScreen() {
           placeholder={t('exerciseEditor.notesPlaceholder')}
           placeholderTextColor={theme.textSecondary}
           multiline
-          style={[styles.input, styles.notesInput, { borderColor: theme.border, backgroundColor: theme.backgroundElement, color: theme.text }]}
+          style={[
+            styles.input,
+            styles.notesInput,
+            { borderColor: theme.border, backgroundColor: theme.backgroundElement, color: theme.text },
+          ]}
         />
 
         {recentHistory.length > 0 && (

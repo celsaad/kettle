@@ -97,10 +97,7 @@ export default function TodayScreen() {
             {chips.map((chip, index) => (
               <View
                 key={`${chip.name}-${index}`}
-                style={[
-                  styles.chip,
-                  { backgroundColor: chip.isRest ? theme.backgroundSelected : theme.accentSoft },
-                ]}>
+                style={[styles.chip, { backgroundColor: chip.isRest ? theme.backgroundSelected : theme.accentSoft }]}>
                 <ThemedText type="small" themeColor={chip.isRest ? 'textSecondary' : 'accentText'}>
                   {chip.name}
                 </ThemedText>
@@ -130,10 +127,7 @@ export default function TodayScreen() {
         </ThemedText>
         <View style={styles.recentList}>
           {recentSessions.map((session) => (
-            <ThemedView
-              key={session.id}
-              type="backgroundElement"
-              style={[styles.recentRow, { borderColor: theme.border }]}>
+            <ThemedView key={session.id} type="backgroundElement" style={[styles.recentRow, { borderColor: theme.border }]}>
               {/*
                 No trailing arrow: these rows aren't interactive (there's no per-session detail
                 screen to open), and an arrow on a non-tappable row just reads as a broken button —

@@ -31,7 +31,15 @@ export type MergeSummary = {
   updatedPrograms: string[];
 };
 
-export type MergeResult = { ok: true; library: Library; summary: MergeSummary } | { ok: false; error: string };
+/**
+ * Why a merge was refused, as data rather than a sentence — the import screen renders it. Every field
+ * is a user-authored id or day label, so they interpolate into the translated frame verbatim.
+ */
+export type MergeError =
+  | { kind: 'unknownExercise'; workoutId: string; exerciseId: string }
+  | { kind: 'unknownWorkout'; programId: string; week: number; day?: string; workoutId: string };
+
+export type MergeResult = { ok: true; library: Library; summary: MergeSummary } | { ok: false; error: MergeError };
 
 function blockExerciseIds(block: Library['workouts'][number]['blocks'][number]): string[] {
   return block.kind === 'circuit' ? block.members.map((member) => member.exerciseId) : [block.exerciseId];
@@ -58,7 +66,7 @@ export function mergeLibraries(existing: Library, incoming: Library): MergeResul
     for (const block of workout.blocks) {
       for (const exerciseId of blockExerciseIds(block)) {
         if (!exerciseIds.has(exerciseId)) {
-          return { ok: false, error: `Workout "${workout.id}" references unknown exercise "${exerciseId}"` };
+          return { ok: false, error: { kind: 'unknownExercise', workoutId: workout.id, exerciseId } };
         }
       }
     }
@@ -68,10 +76,15 @@ export function mergeLibraries(existing: Library, incoming: Library): MergeResul
   for (const program of library.programs) {
     for (const week of program.weeks) {
       if (!workoutIds.has(week.workoutId)) {
-        const weekLabel = `${week.week}${week.day ? ` (${week.day})` : ''}`;
         return {
           ok: false,
-          error: `Program "${program.id}" week ${weekLabel} references unknown workout "${week.workoutId}"`,
+          error: {
+            kind: 'unknownWorkout',
+            programId: program.id,
+            week: week.week,
+            day: week.day,
+            workoutId: week.workoutId,
+          },
         };
       }
     }

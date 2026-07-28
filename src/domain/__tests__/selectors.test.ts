@@ -6,16 +6,20 @@ jest.mock('@/i18n', () => ({
   currentLocale: () => 'en',
 }));
 
+import i18next from 'i18next';
+
 import {
   currentStreak,
   exerciseHistory,
+  historySessionsView,
   historyStats,
   nextWeekAfter,
+  recentSessionsView,
   sessionEntryResult,
   thisWeekStats,
 } from '@/state/selectors';
 import type { EntryResult } from '@/domain/format';
-import type { Program, Session, SessionEntry } from '@/domain/types';
+import type { Library, Program, Session, SessionEntry } from '@/domain/types';
 
 function makeSession(overrides: Partial<Session> & { startedAt: string }): Session {
   return {
@@ -118,6 +122,70 @@ describe('historyStats sets', () => {
   // the way a flat 1 per entry did.
   it('counts a round-less interval entry as no sets', () => {
     expect(setsIn([{ exercise: 'burpees', type: 'hiit', roundsCompleted: 0 }])).toBe(0);
+  });
+});
+
+/**
+ * The two session-list views feed History and Today, and both used to assemble their labels here as
+ * English template literals — untranslated on both screens, and pluralised by concatenation, so a
+ * one-set session read "1 sets". They now go through `domain/format.ts`, which is what makes the `pt`
+ * case below possible at all: against `en` a hardcoded literal and a `t()` call render identically.
+ */
+describe('session list labels', () => {
+  const library: Library = {
+    version: 1,
+    exercises: [{ id: 'lsit', name: 'L-Sit', type: 'timed_hold', config: { sets: 3, holdSecMin: 15, restSec: 60 } }],
+    workouts: [{ id: 'push-day', name: 'Push day', blocks: [] }],
+    programs: [],
+  };
+
+  const oneSet = makeSession({
+    startedAt: '2026-07-24T09:00:00.000Z',
+    endedAt: '2026-07-24T09:12:00.000Z',
+    workout: 'push-day',
+    entries: [{ exercise: 'lsit', type: 'timed_hold', sets: [{ holdSec: 20, restTakenSec: 0 }] }],
+  });
+
+  it('pluralises the set count instead of concatenating it', () => {
+    const [single] = historySessionsView([oneSet], library);
+    expect(single.setsLabel).toBe('1 set');
+    expect(single.durationLabel).toBe('12 min');
+
+    const twoSets = makeSession({
+      startedAt: '2026-07-24T09:00:00.000Z',
+      endedAt: '2026-07-24T09:12:00.000Z',
+      entries: [
+        {
+          exercise: 'lsit',
+          type: 'timed_hold',
+          sets: [
+            { holdSec: 20, restTakenSec: 0 },
+            { holdSec: 18, restTakenSec: 0 },
+          ],
+        },
+      ],
+    });
+    expect(historySessionsView([twoSets], library)[0].setsLabel).toBe('2 sets');
+    expect(recentSessionsView([oneSet], library)[0].setsLabel).toBe('1 set');
+  });
+
+  it('names a session after its workout, falling back to a label when it was started ad-hoc', () => {
+    expect(historySessionsView([oneSet], library)[0].workoutName).toBe('Push day');
+    const adHoc = makeSession({ startedAt: '2026-07-24T09:00:00.000Z', workout: null });
+    expect(historySessionsView([adHoc], library)[0].workoutName).toBe('Ad-hoc session');
+    expect(recentSessionsView([adHoc], library)[0].workoutName).toBe('Ad-hoc session');
+  });
+
+  // The workout is user data from their own YAML, so it stays as written whatever the locale is.
+  it('translates every label it owns, and none of the user data', async () => {
+    await i18next.changeLanguage('pt');
+    const [session] = historySessionsView([oneSet], library);
+    expect(session.setsLabel).toBe('1 série');
+    expect(session.durationLabel).toBe('12 min');
+    expect(session.workoutName).toBe('Push day');
+
+    const adHoc = makeSession({ startedAt: '2026-07-24T09:00:00.000Z', workout: null });
+    expect(recentSessionsView([adHoc], library)[0].workoutName).toBe('Sessão avulsa');
   });
 });
 

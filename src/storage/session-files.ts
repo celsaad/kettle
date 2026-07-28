@@ -26,7 +26,7 @@ export async function listSessions(): Promise<ListSessionsResult> {
     const text = await file.text();
     const result = parseSessionYaml(text);
     if (result.ok) sessions.push(result.data);
-    else errors.push(`${file.name}: ${result.error}`);
+    else errors.push(`${file.name} (${result.error.kind}): ${result.error.detail}`);
   }
 
   sessions.sort((a, b) => b.startedAt.localeCompare(a.startedAt));

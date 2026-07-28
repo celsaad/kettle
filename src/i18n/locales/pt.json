@@ -207,9 +207,20 @@
     "updatedExercise": "exercício atualizado",
     "newWorkout": "novo treino",
     "updatedWorkout": "treino atualizado",
+    "newProgram": "novo programa",
+    "updatedProgram": "programa atualizado",
     "noChanges": "Nenhuma alteração — o arquivo importado é igual à sua biblioteca atual.",
     "updateNote": "Itens atualizados substituem ajustes locais. As sessões nunca são alteradas.",
-    "mergeButton": "Mesclar e importar"
+    "mergeButton": "Mesclar e importar",
+    "error": {
+      "invalidYaml": "YAML inválido: {{detail}}",
+      "schemaMismatch": "Não corresponde ao formato do exercises.yaml — {{detail}}",
+      "unknownExercise": "O treino \"{{workout}}\" referencia o exercício desconhecido \"{{exercise}}\"",
+      "unknownWorkout": "O programa \"{{program}}\" na semana {{week}} referencia o treino desconhecido \"{{workout}}\"",
+      "weekWithDay": "{{week}} ({{day}})",
+      "readFailed": "Não foi possível ler esse arquivo: {{detail}}",
+      "saveFailed": "Não foi possível salvar sua biblioteca: {{detail}}"
+    }
   },
   "exerciseForm": {
     "type": {
@@ -357,12 +368,16 @@
     "rep_other": "{{count}} repetições",
     "interval_one": "{{count}} intervalo",
     "interval_other": "{{count}} intervalos",
+    "set_one": "{{count}} série",
+    "set_other": "{{count}} séries",
     "seconds": "{{n}}s",
+    "minutes": "{{n}} min",
     "metres": "{{n}} m",
     "repsList": "{{list}} repetições",
     "roundsPlusReps": "{{rounds}} + {{reps}}",
     "intervalsWithReps": "{{intervals}} · {{reps}}",
-    "circuitShape": "{{rounds}} · {{between}}s / {{rounds_rest}}s de descanso"
+    "circuitShape": "{{rounds}} · {{between}}s / {{rounds_rest}}s de descanso",
+    "adHocSession": "Sessão avulsa"
   },
   "summary": {
     "hiit": "{{work}}s de trabalho · {{rest}}s de descanso · ×{{rounds}}",

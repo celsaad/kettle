@@ -33,9 +33,17 @@ type RawLibrary = z.infer<typeof rawLibrarySchema>;
 type RawSessionEntry = z.infer<typeof rawSessionEntrySchema>;
 type RawSession = z.infer<typeof rawSessionSchema>;
 
-export type ParseResult<T> = { ok: true; data: T } | { ok: false; error: string };
+/**
+ * Why a parse failed, as data rather than a sentence — the import screen renders it, and the two
+ * storage callers only log it. `detail` is the one part that stays English in every locale: it's
+ * js-yaml's syntax message or zod's issue list, library output rather than prose of ours, so the
+ * translated frame goes around it instead of replacing it.
+ */
+export type ParseError = { kind: 'invalidYaml'; detail: string } | { kind: 'schemaMismatch'; detail: string };
 
-function formatZodError(error: z.ZodError): string {
+export type ParseResult<T> = { ok: true; data: T } | { ok: false; error: ParseError };
+
+function zodIssueDetail(error: z.ZodError): string {
   return error.issues.map((issue) => `${issue.path.join('.') || '(root)'}: ${issue.message}`).join('; ');
 }
 
@@ -311,10 +319,10 @@ export function parseLibraryYaml(text: string): ParseResult<Library> {
   try {
     parsed = load(text);
   } catch (error) {
-    return { ok: false, error: `Invalid YAML: ${(error as Error).message}` };
+    return { ok: false, error: { kind: 'invalidYaml', detail: (error as Error).message } };
   }
   const result = rawLibrarySchema.safeParse(parsed);
-  if (!result.success) return { ok: false, error: formatZodError(result.error) };
+  if (!result.success) return { ok: false, error: { kind: 'schemaMismatch', detail: zodIssueDetail(result.error) } };
   return { ok: true, data: libraryToDomain(result.data) };
 }
 
@@ -500,10 +508,10 @@ export function parseSessionYaml(text: string): ParseResult<Session> {
   try {
     parsed = load(text);
   } catch (error) {
-    return { ok: false, error: `Invalid YAML: ${(error as Error).message}` };
+    return { ok: false, error: { kind: 'invalidYaml', detail: (error as Error).message } };
   }
   const result = rawSessionSchema.safeParse(parsed);
-  if (!result.success) return { ok: false, error: formatZodError(result.error) };
+  if (!result.success) return { ok: false, error: { kind: 'schemaMismatch', detail: zodIssueDetail(result.error) } };
   return { ok: true, data: sessionToDomain(result.data) };
 }
 

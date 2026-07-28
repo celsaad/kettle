@@ -159,8 +159,11 @@ Each entry **embeds its `type`** (and optionally a snapshot of the config used) 
     2026-07-20T09-15-00.yaml
     2026-07-22T18-30-00.yaml
   supporter.json            # tip-jar state (app-owned, never hand-edited)
-  .version                  # schema version marker
 ```
+
+A directory-level `.version` marker was planned here and deliberately **not** built: every YAML file
+already carries its own `version: 1` field, so a separate marker has no consumer until a real
+migration exists.
 
 `supporter.json` is JSON rather than YAML on purpose: YAML is the format the user is invited to edit,
 and purchase state isn't theirs to edit. It is also the only place tip history can live — Play
@@ -239,11 +242,11 @@ Wire a **flush-to-disk** into each meaningful state transition (set logged, roun
 | Framework | Expo (managed) — fast iteration, clean access to haptics/audio/notifications/keep-awake |
 | YAML | `js-yaml` (parse/serialize) |
 | Files | `expo-file-system` (read/write app document storage) |
-| Import/export | `expo-document-picker` (pick YAML to import) + `expo-sharing` (export library or session) |
+| Import/export | `expo-sharing` (export library or session) + `File.pickFileAsync()` — no `expo-document-picker`, since SDK 57's `expo-file-system` exposes the picker directly |
 | Validation | `zod` (validate YAML→JSON on every load and import) |
 | State | Zustand — hydrate store from YAML on launch; store is runtime source of truth; persist changes back to disk |
-| Timers/cues | `expo-av`/`expo-audio` (audio), `expo-haptics` (vibration), `expo-notifications` (background fallback), `expo-keep-awake` |
-| Session runner | Explicit state machine (XState or a hand-rolled reducer) |
+| Timers/cues | `expo-audio` (audio; `expo-av` is superseded), `expo-haptics` (vibration), `expo-notifications` (background fallback), `expo-keep-awake` |
+| Session runner | Hand-rolled, in `use-session-runner.ts` — wall-clock timestamps rather than a formal state machine; XState was not needed |
 
 ---
 
@@ -252,7 +255,7 @@ Wire a **flush-to-disk** into each meaningful state transition (set logged, roun
 ```
 Launch  → read exercises.yaml + sessions/ → validate (zod) → hydrate Zustand store
 Author  → edit in-app → serialize → write exercises.yaml
-Import  → document-picker → parse → validate → MERGE by id → validate merged → write exercises.yaml
+Import  → pickFileAsync → parse → validate → MERGE by id → validate merged → write exercises.yaml
 Run     → session state machine → flush each entry → sessions/<id>.yaml
 Finish  → write ended_at → finalize session file
 Export  → serialize library or a session → expo-sharing → user saves/syncs the file
@@ -311,10 +314,10 @@ What's genuinely missing today, checked directly against the code:
 - ~~**Known bug (web only): leaving the session screen crashes with a redbox.**~~ ✅ Fixed — see the
   implementation plan's entry for the details. `useKeepAwake` now passes
   `suppressDeactivateWarnings`, the library's own flag for exactly this race.
-- **No automated tests at all** — no runner, no test files, no `test` script. Every regression so far
-  has been caught by hand or by driving the running app with Playwright. The wall-clock session runner
-  (§7.1, "the make-or-break issue"), the zod schemas, `merge.ts`, and the selectors all have zero
-  coverage. This is the largest structural gap in the project.
+- ~~**No automated tests at all.**~~ ✅ Closed — jest via `jest-expo`, 230 tests across 22 files,
+  running in CI alongside typecheck and lint. Covers the domain layer, the wall-clock session runner
+  (§7.1, "the make-or-break issue"), and the highest-branch screens. Layout, animation, real audio and
+  file writes are still verified by driving the running app rather than by test.
 - ~~**A logged session can't be deleted.**~~ ✅ Shipped — delete from the expanded card in History,
   behind the usual destructive confirm. Editing a past session's *entries* is still not possible; only
   whole-session delete.
@@ -327,6 +330,13 @@ What's genuinely missing today, checked directly against the code:
 - **`Alert.alert` is a no-op on web** — react-native-web ships an empty implementation, so every
   confirm dialog (all the deletes, finish-session) silently does nothing in the browser. Native is
   unaffected, and web is a dev/preview target, so this is logged rather than fixed.
-- **No accessibility or i18n work has been done.** Almost nothing sets accessibility props, several
-  controls are under the 44px touch target, and every string is hardcoded English with `en-US` date
-  formatting and kg/metre units. Both are planned as their own workstreams.
+- ~~**No accessibility or i18n work has been done.**~~ ✅ Closed — both shipped and are now house
+  rules for new work rather than workstreams (see AGENTS.md). Every control carries a role and label,
+  touch targets are 44px minimum, colors are contrast-measured, the runner survives large text sizes
+  and announces transitions, and the UI ships in English and Brazilian Portuguese with locale-aware
+  dates, numbers and first-day-of-week. **Still open within them:** screen-reader reordering for
+  `ReorderableList`, which is gesture-only and so impossible without sight; the `height`-based search
+  bars and stat cards outside the runner, which degrade at large text sizes rather than block;
+  `program-guide.tsx`'s prose, still English-only; and unit conversion — storage stays metric, but
+  there is no display-side kg/lb preference yet, which is blocked on the same missing preferences
+  store as the appearance setting below.

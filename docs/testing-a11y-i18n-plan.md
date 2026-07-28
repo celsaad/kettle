@@ -1,5 +1,17 @@
 # Tests, Accessibility, i18n — plan
 
+> **This plan has been executed.** All three workstreams landed in the order below; see
+> [`history.md`](history.md) for what each one actually shipped and
+> [`implementation-plan.md`](implementation-plan.md) for what remains open. It is kept because the
+> *reasoning* — why the ordering is what it is, why Jest over Vitest, why announcements need design
+> rather than a `liveRegion`, what is deliberately out of scope — still governs new work, and none of
+> it is recoverable from the commits that carried it out. Read it as rationale, not as a backlog.
+>
+> Two calls in here were **not** followed, deliberately: the pseudo-locale (`en-XA`) was skipped in
+> favour of going straight to real pt-BR translations, and the units preference (with its preferences
+> store) was deferred rather than built — storage stays metric and there is still no display-side
+> kg/lb conversion.
+
 Produced by an architect pass over the tree at commit `b4e8c07` plus the session-delete/search and
 settings work. Estimates are the planner's; treat them as relative sizing, not commitments.
 

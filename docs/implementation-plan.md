@@ -586,9 +586,9 @@ Verified in the browser: the caption color computes to `rgb(107, 101, 88)`, the 
 accessible name. That last point had a side benefit — the verification script could stop guessing pixel
 coordinates and click `getByLabel('Start Calisthenics A')` instead.
 
-**Still open from the a11y audit:** A11y-4 (runner announcements and reduce-motion), and
-screen-reader reordering for `ReorderableList`, which is gesture-only and so currently impossible
-without sight. A11y-3 (dynamic type) is done — see below.
+**Still open from the a11y audit:** screen-reader reordering for `ReorderableList`, which is
+gesture-only and so currently impossible without sight. A11y-3 (dynamic type) and A11y-4
+(announcements, reduce-motion) are done — see below.
 
 ## ✅ I18n-1 and I18n-3: infrastructure and locale-aware formatting
 
@@ -688,6 +688,36 @@ stub — and anything rendering `ThemedText` needs `ThemeOverrideProvider`. Note
 **Still open:** the `height`-based search bars, stat cards and modal header row outside the runner,
 which degrade rather than block; and verifying by hand at iOS AX5 / Android 200%, which nothing
 automated here substitutes for.
+
+## ✅ A11y-4: runner announcements and reduce-motion
+
+**Announcements needed design, not just an API call.** The obvious implementation —
+`accessibilityLiveRegion` on the timer numeral — would announce once per second, roughly sixty
+interruptions a minute, talking over the user mid-set. It would also be reading out the one thing they
+don't need: the *timing* is already carried eyes-free by the audio cues.
+
+What's missing without sight is **identity** — which exercise, which set, how many left. So
+`use-session-announcements.ts` announces transitions only: one sentence per step, nothing in between.
+Roughly five utterances per exercise instead of ninety. Deduped, because the derived string is rebuilt
+as the runner re-renders; gated on a screen reader actually running, so the runner does no per-step
+work in the ~99% of sessions where nobody is listening.
+
+**A test caught a real bug here, not a test artifact.** `isScreenReaderEnabled()` resolves
+asynchronously, and the first step's announcement arrives before it does. Held in a ref, that first
+announcement was silently dropped — at exactly the moment identity matters most, the start of a
+session. Holding it as state means resolving the check re-runs the effect and the pending announcement
+still gets spoken.
+
+**Reduce-motion:** the three infinite `withRepeat` pulses (hold, interval, rest) now hold at full
+opacity when `useReducedMotion()` is set. The pulse is decoration — its only job, signalling "this is
+live", is already carried by the numeral counting.
+
+Exercise names are interpolated into the announcement rather than translated, per the user-data rule.
+
+**Still open from the a11y audit:** screen-reader reordering for `ReorderableList`. It's
+`Gesture.Pan().activateAfterLongPress`-only, so reordering workout blocks is currently impossible
+without sight — a feature gap rather than a labelling one, and worth sizing on its own rather than
+letting it hide inside "a11y polish".
 
 ## Open bugs
 

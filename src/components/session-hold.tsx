@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import Animated, { Easing, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
+import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 
 import { ThemedText } from '@/components/themed-text';
 import { SessionNextCard } from '@/components/session-next-card';
@@ -39,10 +39,15 @@ export function SessionHold({
 }: Props) {
   const { t } = useTranslation();
   const pulse = useSharedValue(1);
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
+    if (reduceMotion) {
+      pulse.value = 1;
+      return;
+    }
     pulse.value = withRepeat(withTiming(0.35, { duration: 650, easing: Easing.inOut(Easing.ease) }), -1, true);
-  }, [pulse]);
+  }, [pulse, reduceMotion]);
 
   const pulseStyle = useAnimatedStyle(() => ({ opacity: pulse.value }));
   const fillPct = Math.min(100, (elapsedSec / targetSec) * 100);

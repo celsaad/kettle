@@ -136,6 +136,12 @@
     "numberPad": {
       "dismiss": "Fechar teclado",
       "set": "Definir"
+    },
+    "announce": {
+      "hold": "{{name}}, série {{index}} de {{total}}, segure {{target}} segundos",
+      "reps": "{{name}}, série {{index}} de {{total}}, alvo {{target}} repetições",
+      "interval": "{{name}}, {{index}} de {{total}}, {{seconds}} segundos",
+      "rest": "Descanso, {{seconds}} segundos"
     }
   },
   "settings": {

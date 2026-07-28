@@ -136,6 +136,12 @@
     "numberPad": {
       "dismiss": "Dismiss keypad",
       "set": "Set"
+    },
+    "announce": {
+      "hold": "{{name}}, set {{index}} of {{total}}, hold {{target}} seconds",
+      "reps": "{{name}}, set {{index}} of {{total}}, target {{target}} reps",
+      "interval": "{{name}}, {{index}} of {{total}}, {{seconds}} seconds",
+      "rest": "Rest, {{seconds}} seconds"
     }
   },
   "settings": {

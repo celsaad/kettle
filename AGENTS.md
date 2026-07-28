@@ -56,8 +56,8 @@ after any delegated change, and skim the diff.
 
 ## Verifying in the browser
 
-There's no test suite, so changes are verified by driving the running app. Doing this wrong wastes a
-lot of time, so:
+Unit tests cover the logic layer, but nothing covers rendering yet, so UI changes are verified by
+driving the running app. Doing this wrong wastes a lot of time, so:
 
 - `npx expo start --web --port <port>`; poll with curl, it can take 60–90s. Use a distinct port if
   anything else might be running.
@@ -83,9 +83,28 @@ lot of time, so:
 - Theming is strict: `useTheme`, `ThemedText`, `ThemedView`, `Spacing.*`, `MaxContentWidth`. The
   session runner is always dark (`RunnerColors`) regardless of scheme.
 - In-app forms write straight to the store and never pass through the zod schema, so they need their
-  own validation (see `validateConfig` in `exercise-editor.tsx`).
+  own validation (see `validateConfig` in `domain/exercise-form.ts`).
 - **Comments explain why, not what** — trade-offs, root causes, and deliberate scope cuts. Match the
   surrounding density; don't annotate self-evident lines.
+
+## Accessibility and i18n are house rules, not projects
+
+Both workstreams have landed. New work is expected to arrive already conforming — these are cheap when
+done as you go and tedious to retrofit, which is why they're here rather than on a backlog.
+
+- **Every interactive element needs `accessibilityRole` and a label.** Icon-only controls need it most,
+  having no text to fall back on — the runner's prev/next were CSS triangles announcing as an unnamed
+  "button". Selected/expanded controls need `accessibilityState`. Touch targets are 44px minimum, via
+  `minHeight` (never `height`, which breaks at large accessibility text sizes) or `hitSlop`.
+- **Contrast-check new colors** against every surface they sit on, alpha-compositing where the
+  background is translucent. `constants/theme.ts` records the measured ratios and the one pairing that
+  clears AA-large only.
+- **No user-facing string in the logic layer.** Producers return descriptors; `domain/format.ts` and
+  the views render them. Counts go through i18next's `count` (never a `=== 1` ternary), and dates
+  through `i18n/format.ts` (never `toLocaleDateString('en-US', …)`).
+- **Never translate user data** — exercise, workout and program names, notes, and `ProgramWeek.day`
+  come from the user's YAML and render verbatim. Key the English around them and interpolate the name.
+- Adding a key means adding it to **both** `en.json` and `pt.json`; they are kept at exact parity.
 
 ## Docs
 

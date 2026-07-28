@@ -614,29 +614,6 @@ accommodate the change.
 user data from their own YAML, rendered verbatim. `program-guide.tsx`'s ~194 lines of prose are still
 English and want their own namespace.
 
-## Planned: fold a11y and i18n into AGENTS.md, once both are done
-
-**Do this after the a11y and i18n workstreams land, not before.** Once every control has a label and
-every string goes through the translation layer, those stop being projects and become house rules —
-and a rule that isn't written where the next session reads it will quietly decay, exactly as the
-implementation plan's own "what's genuinely left" heading did.
-
-What to add to `AGENTS.md` at that point:
-
-- **Every interactive element needs `accessibilityRole` and a label**, and icon-only controls need the
-  label most, since they have no text to fall back on. Selected/expanded controls need
-  `accessibilityState`. Touch targets are 44px minimum, via `minHeight` (not `height`, which breaks at
-  large accessibility text sizes) or `hitSlop`.
-- **New colors must be contrast-checked** against the surfaces they sit on, alpha-composited where the
-  background is translucent. The palette's existing notes in `constants/theme.ts` record the measured
-  ratios and the one pairing that only clears AA-large.
-- **No user-facing string goes in the logic layer** — producers return descriptors, the format/i18n
-  layer renders them. No `count === 1` ternaries at call sites; no `toLocaleDateString('en-US', …)`.
-- **User data is never translated**: exercise, workout and program names come from the user's own YAML.
-
-Keep it to a few lines. The point is a checklist a future session actually reads, not a summary of the
-workstreams — those live in this file.
-
 ## Open bugs
 
 Found while planning the tests/a11y/i18n work (see `testing-a11y-i18n-plan.md`), each verified against

@@ -1,0 +1,11 @@
+# oxfmt writes LF and has no "preserve existing endings" mode (its `endOfLine` takes lf/crlf/cr —
+# Prettier's `"auto"` has no equivalent), so on a CRLF checkout every `npm run format` rewrote all
+# 118 files. Nothing wrong reached a commit — the endings normalise on the way in — but the mtime
+# churn showed up as phantom `git status` entries and woke every file watcher, and it would have
+# become real diffs for anyone with `core.autocrlf=false`. Checking out LF everywhere makes the
+# working tree match what the formatter writes, on every platform. Prettier's own docs prescribe
+# this same line.
+#
+# `text=auto` leaves git's binary detection in place, so the PNGs and fonts under assets/ are not
+# touched by the eol rule.
+* text=auto eol=lf

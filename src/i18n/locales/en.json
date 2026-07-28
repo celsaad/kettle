@@ -303,7 +303,8 @@
     "notesPlaceholder": "Baseline — see where you land.",
     "addWeek": "+ Add week",
     "deleteProgram": "Delete program",
-    "removeWeek": "Remove week {{n}}"
+    "removeWeek": "Remove week {{n}}",
+    "overridesOptional": "Overrides · optional"
   },
   "overrideEditor": {
     "addOverride": "+ Add override",

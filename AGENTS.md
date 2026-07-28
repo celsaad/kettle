@@ -77,6 +77,10 @@ after any delegated change, and skim the diff.
   not close over one; `jest.mock('expo-router', () => require('@/test-support/expo-router'))` works.
 - **Prove a regression test fails against the bug it pins**, by reintroducing that bug. A test that
   passes either way is worthless, and this has caught more than one.
+- **To test that a screen is translated, drive it in `pt`** (`changeLanguage('pt')`; the harness loads
+  both bundles and resets the locale after every test). An English-locale assertion *cannot* catch a
+  hardcoded English string — `t('x.y')` and the literal it returns render identically. It only catches
+  a rendered key path. Three screens have shipped with hardcoded strings for exactly this reason.
 - Finish with `npm run format`; don't hand-align a new test file against the rest.
 
 ## Verifying in the browser

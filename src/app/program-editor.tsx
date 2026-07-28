@@ -230,7 +230,7 @@ export default function ProgramEditorScreen() {
                 />
 
                 <ThemedText type="small" themeColor="textSecondary" style={styles.weekFieldLabel}>
-                  Overrides · optional
+                  {t('programEditor.overridesOptional')}
                 </ThemedText>
                 <ProgramOverrideEditor
                   library={library}

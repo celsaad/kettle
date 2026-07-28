@@ -303,7 +303,8 @@
     "notesPlaceholder": "Base — veja onde você chega.",
     "addWeek": "+ Adicionar semana",
     "deleteProgram": "Excluir programa",
-    "removeWeek": "Remover semana {{n}}"
+    "removeWeek": "Remover semana {{n}}",
+    "overridesOptional": "Ajustes · opcional"
   },
   "overrideEditor": {
     "addOverride": "+ Adicionar ajuste",

@@ -156,7 +156,31 @@
     "inYourLibrary": "In your library",
     "exercises": "Exercises",
     "sessions": "Sessions",
-    "version": "Kettle {{version}}"
+    "version": "Kettle {{version}}",
+    "support": "Support"
+  },
+  "support": {
+    "title": "Support Kettle",
+    "row": "Support Kettle",
+    "rowDetail": "Free, no ads, no account, no subscription.",
+    "rowDetailTipped": "Thank you for supporting Kettle.",
+    "pitch": "Kettle is free and always will be. No ads, no account, no subscription — and nothing you log ever leaves your device.",
+    "why": "A tip helps cover the Google Play developer fee. It unlocks nothing: every feature is already yours.",
+    "loading": "Loading…",
+    "unavailable": "Not available in the browser build.",
+    "storeUnavailable": "Couldn't reach the Play Store. Check your connection and try again.",
+    "retry": "Try again",
+    "tierSmall": "Small tip",
+    "tierMedium": "Medium tip",
+    "tierLarge": "Large tip",
+    "tipA11y": "{{tier}}, {{price}}",
+    "processing": "Processing…",
+    "pending": "Your payment is still being processed. Thank you!",
+    "failed": "The purchase didn't go through. Nothing was charged.",
+    "thankYouTitle": "Thank you!",
+    "thankYouBody_one": "You've tipped once. It genuinely helps.",
+    "thankYouBody_other": "You've tipped {{count}} times. It genuinely helps.",
+    "notSaved": "Your tip went through, but it couldn't be saved on this device."
   },
   "import": {
     "title": "Import library",

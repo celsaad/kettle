@@ -156,7 +156,31 @@
     "inYourLibrary": "Na sua biblioteca",
     "exercises": "Exercícios",
     "sessions": "Sessões",
-    "version": "Kettle {{version}}"
+    "version": "Kettle {{version}}",
+    "support": "Apoio"
+  },
+  "support": {
+    "title": "Apoie o Kettle",
+    "row": "Apoie o Kettle",
+    "rowDetail": "Grátis, sem anúncios, sem conta e sem assinatura.",
+    "rowDetailTipped": "Obrigado por apoiar o Kettle.",
+    "pitch": "O Kettle é grátis e sempre será. Sem anúncios, sem conta, sem assinatura — e nada do que você registra sai do seu aparelho.",
+    "why": "Uma gorjeta ajuda a cobrir a taxa de desenvolvedor do Google Play. Ela não desbloqueia nada: todos os recursos já são seus.",
+    "loading": "Carregando…",
+    "unavailable": "Não disponível na versão para navegador.",
+    "storeUnavailable": "Não foi possível conectar à Play Store. Verifique sua conexão e tente de novo.",
+    "retry": "Tentar de novo",
+    "tierSmall": "Gorjeta pequena",
+    "tierMedium": "Gorjeta média",
+    "tierLarge": "Gorjeta grande",
+    "tipA11y": "{{tier}}, {{price}}",
+    "processing": "Processando…",
+    "pending": "Seu pagamento ainda está sendo processado. Obrigado!",
+    "failed": "A compra não foi concluída. Nada foi cobrado.",
+    "thankYouTitle": "Obrigado!",
+    "thankYouBody_one": "Você deixou uma gorjeta. Isso ajuda de verdade.",
+    "thankYouBody_other": "Você deixou {{count}} gorjetas. Isso ajuda de verdade.",
+    "notSaved": "Sua gorjeta foi concluída, mas não foi possível salvá-la neste aparelho."
   },
   "import": {
     "title": "Importar biblioteca",

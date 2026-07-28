@@ -53,6 +53,11 @@ after any delegated change, and skim the diff.
   browser check of a confirm flow verifies nothing unless you patch it at runtime in the test script.
 - Adding a route file requires regenerating `.expo/types/router.d.ts` (briefly run the dev server) or
   `router.push('/new-route')` fails typecheck.
+- **Nothing may phone home.** The Play listing declares zero data collected/shared, which is a product
+  claim, not an accident (see the tip-jar entry in the decision log). Any SDK that transmits — Sentry,
+  EAS Update, analytics, RevenueCat — breaks it and needs a Data Safety declaration. Don't add one
+  without raising it first. `expo-notifications` is fine as used (local notifications only);
+  `getExpoPushTokenAsync` would not be.
 
 ## Verifying in the browser
 

@@ -4,7 +4,7 @@ import { Platform } from 'react-native';
 /** expo-file-system has no web implementation; storage degrades to no-op/unsupported there. */
 export const isFileStorageSupported = Platform.OS !== 'web';
 
-type ResolvedPaths = { root: Directory; sessionsDir: Directory; libraryFile: File };
+type ResolvedPaths = { root: Directory; sessionsDir: Directory; libraryFile: File; supporterFile: File };
 
 let resolved: ResolvedPaths | null = null;
 
@@ -15,7 +15,9 @@ function resolvePaths(): ResolvedPaths {
     const root = new Directory(Paths.document, 'exercise-tracker');
     const sessionsDir = new Directory(root, 'sessions');
     const libraryFile = new File(root, 'exercises.yaml');
-    resolved = { root, sessionsDir, libraryFile };
+    // JSON, not YAML: app-owned purchase state, deliberately outside the library the user hand-edits.
+    const supporterFile = new File(root, 'supporter.json');
+    resolved = { root, sessionsDir, libraryFile, supporterFile };
   }
   return resolved;
 }
@@ -29,6 +31,9 @@ export const storagePaths = {
   },
   get libraryFile() {
     return resolvePaths().libraryFile;
+  },
+  get supporterFile() {
+    return resolvePaths().supporterFile;
   },
 };
 

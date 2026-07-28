@@ -1,7 +1,7 @@
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import type { ReactNode } from 'react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -15,6 +15,7 @@ import { useAppTheme } from '@/hooks/theme-context';
 import { useTheme } from '@/hooks/use-theme';
 import { useLibraryStore } from '@/state/library-store';
 import { useSessionHistoryStore } from '@/state/session-history-store';
+import { isTipJarSupported, useTipStore } from '@/state/tip-store';
 import { exportLibrary } from '@/storage/export';
 import { isFileStorageSupported } from '@/storage/paths';
 
@@ -71,7 +72,15 @@ export default function SettingsScreen() {
   const { preference, setPreference, scheme } = useAppTheme();
   const library = useLibraryStore((state) => state.library);
   const sessions = useSessionHistoryStore((state) => state.sessions);
+  const supporter = useTipStore((state) => state.supporter);
+  const hydrateTips = useTipStore((state) => state.hydrate);
   const [exportError, setExportError] = useState<string | null>(null);
+
+  // Cheap enough to do on open, and it's what lets the Support row acknowledge a past tip. The store
+  // is deliberately absent from the root layout's startup gate — see the note in tip-store.ts.
+  useEffect(() => {
+    if (isTipJarSupported) hydrateTips();
+  }, [hydrateTips]);
   // Reuses the segmented control's own labels, lowercased, so the sentence below always names the
   // same word the user just saw — no separate translation to keep in sync with the button text.
   const schemeWord = (value: ThemePreference) => t(APPEARANCE.find((option) => option.value === value)!.labelKey).toLowerCase();
@@ -157,6 +166,18 @@ export default function SettingsScreen() {
             {t('settings.sessionsStayNote')}
           </ThemedText>
         </Section>
+
+        {/* Hidden rather than disabled on web: there's no Play Billing in a browser, so a greyed row
+            would advertise something that can never work there. */}
+        {isTipJarSupported && (
+          <Section title={t('settings.support')}>
+            <ActionRow
+              title={t('support.row')}
+              detail={supporter.tipCount > 0 ? t('support.rowDetailTipped') : t('support.rowDetail')}
+              onPress={() => router.push('/support')}
+            />
+          </Section>
+        )}
 
         <Section title={t('settings.inYourLibrary')}>
           <ThemedView type="backgroundElement" style={[styles.countsCard, { borderColor: theme.border }]}>

@@ -75,6 +75,7 @@ function Navigation() {
           <Stack.Screen name="program-editor" options={{ presentation: 'modal', headerShown: false }} />
           <Stack.Screen name="program-guide" options={{ presentation: 'modal', headerShown: false }} />
           <Stack.Screen name="settings" options={{ presentation: 'modal', headerShown: false }} />
+          <Stack.Screen name="support" options={{ presentation: 'modal', headerShown: false }} />
         </Stack>
       </ThemeProvider>
     </GestureHandlerRootView>

@@ -45,6 +45,17 @@ a one-level `goPrev()` un-flush fix in the session runner. See `git log` for the
   `scheduleNotificationAsync({ content, trigger: { type: SchedulableTriggerInputTypes.TIME_INTERVAL,
   seconds, repeats } })`, `cancelScheduledNotificationAsync(id)`, `setNotificationHandler(...)`,
   `requestPermissionsAsync()`.
+- ✅ **expo-iap API confirmed** from `node_modules/expo-iap/build/*.d.ts` (installed at 4.7.2 — the
+  published docs site still shows 3.4 examples, and the `hyochan/expo-iap` repo is archived in favour
+  of the OpenIAP monorepo, so the types are the only trustworthy source). Shapes used in
+  `src/app/support.tsx`: `useIAP({ onPurchaseSuccess, onPurchaseError, onError })` returning
+  `{ connected, products, fetchProducts, requestPurchase }`; `fetchProducts({ skus, type: 'in-app' })`;
+  `requestPurchase({ request: { google: { skus } }, type: 'in-app' })` (`android` is deprecated in
+  favour of `google`); the **module-level** `finishTransaction({ purchase, isConsumable })`, used
+  instead of the hook's so the success handler doesn't close over a binding the hook hasn't produced
+  yet; `ErrorCode.UserCancelled` (kebab-case values — the `E_`-prefixed codes are long gone);
+  `Product.displayPrice` (the store's localized string; `price` is `number | null` on Android, hence
+  never used for ordering) and `Purchase.purchaseState: 'pending' | 'purchased' | 'unknown'`.
 - ⚠️ **Web is not a persistence target.** `expo-file-system` has no web implementation. The storage
   layer detects this (`isFileStorageSupported` in `paths.ts`) and degrades gracefully: on web,
   `loadLibrary()` returns the seed library in-memory (no persistence, matching the old mock-data web
@@ -174,6 +185,37 @@ is the record — it has the root cause, the alternatives, and correct attributi
 find it. Add an entry only when the reasoning **isn't discoverable from a single commit**: a
 constraint that shapes future work, something deliberately rejected (so it isn't re-proposed), or a
 decision assembled across several commits. Open work belongs in the sections at the bottom, not here.
+
+- ✅ **The tip jar is the whole monetization story, and nothing is gated behind it.** Kettle ships to
+  Google Play only for now ($25 one-time); the App Store's $99/yr is deferred until the app shows
+  traction, so the bar to clear is deliberately low. The app is backend-free, so marginal cost per
+  user is zero — which is why there is no subscription (nothing recurring is delivered) and no ads.
+
+  Two constraints this places on future work, neither discoverable from the commit that added the
+  screen:
+
+  - **No third-party purchase or analytics SDK.** RevenueCat was the obvious choice and was rejected:
+    it transmits app user IDs, device identifiers and purchase events to its own servers, which would
+    force a Play **Data Safety** declaration. "No data collected / no data shared" is currently true,
+    it is printed on the store listing, and it is the thing that distinguishes Kettle from Hevy,
+    Strong and Fitbod. Play Billing keeps the transaction inside Google Play, where payment data never
+    reaches app code. RevenueCat's real advantage is cross-platform entitlements, which is exactly
+    what's deferred with iOS. **Adding EAS Update, Sentry, or any analytics would break the same
+    claim** — treat zero declarations as a product constraint, not an accident.
+  - **Tips must stay in-app.** Linking out to Ko-fi/PayPal violates the Play Payments policy for
+    non-nonprofit developers. This is the policy risk, not the Data Safety form.
+
+  Shape: three **consumable** tiers (`tip_small`/`tip_medium`/`tip_large`), so a repeat tip is
+  possible — `finishTransaction({ isConsumable: true })` is load-bearing, since without it Play treats
+  the SKU as owned and refuses every later purchase of that tier. Consumables aren't restorable from
+  Play, so "has tipped" can only live locally: `supporter.json`, app-owned JSON deliberately outside
+  the hand-editable YAML library. There is no receipt verification because there is no backend to
+  verify against; the downside is a contrived free tip, which costs nothing that was ever owed.
+  `useTipStore` is **not** in `_layout.tsx`'s startup gate — the root layout renders `null` until every
+  store it awaits is ready, and cold start shouldn't wait on a file almost nobody has.
+
+  The paywall line, if a Pro tier is ever revisited: **export stays free** regardless. Gating it would
+  contradict the data-ownership pitch that the whole product rests on.
 
 - ✅ **Full program CRUD, including override editing.** Drag-to-reorder blocks and exercise delete
   exist too (`deleteExercise` in the library store, wired to a "Delete exercise" button in

@@ -498,6 +498,37 @@ failure mode the decision-log note above warns about, regrown one heading level 
   also the web build's entire library and the self-heal target for a corrupt `exercises.yaml`, so it
   has to stay small enough to be a reasonable thing to reset to.
 
+- **Lean into AI-generated workouts — the format is already the feature.** A hand-editable YAML
+  library that merges by `id` is exactly what an assistant is good at emitting, and the pipeline it
+  would land in already exists and is already safe: zod validates on import, `mergeLibraries` replaces
+  whole objects by id rather than patching, and the summary names what changed before anything is
+  written. Nothing in the data model needs to change for this, which is the whole argument for
+  positioning the app this way (store listing and README, not a new SKU — see the tip-jar entry on why
+  there's no paid tier to attach it to). What's missing is the plumbing around it:
+
+  - **A paste path into import.** The one real friction. `import.tsx` takes input only via
+    `File.pickFileAsync()`, and an assistant's output is text in a chat window — saving that as a
+    `.yaml` on a phone is several awkward steps. A paste box reuses the existing parse → merge →
+    summary pipeline unchanged; only the input source differs.
+  - **A machine-readable schema to hand the model.** `authoring-exercises-yaml.md` is written for
+    humans and is a hand-maintained second copy of `schema.ts` (it has drifted before). zod v4 is
+    already a dependency and `z.toJSONSchema()` exists, so a JSON Schema is a *generated* artifact —
+    no third copy to keep in sync.
+  - **The user's existing ids, alongside it.** Merge-by-id means a generated program referencing
+    `pullups` only works if that id exists, so whatever gets copied out has to include the library's
+    current ids/names/types, not just the format.
+  - **A repair loop from the errors we now return.** `ParseError` is already a discriminated union
+    carrying the offending ids (`unknownExercise`, `unknownWorkout`, `schemaMismatch` + detail). Made
+    copyable, a rejected file becomes something the user pastes straight back to the assistant. Note
+    this overlaps in-flight work on the import screen's error wording — coordinate rather than collide.
+
+  **Hard constraint, decided in advance:** the app must never call a model itself. The Play listing
+  declares zero data collected/shared (see the tip-jar entry), and an API key field or an in-app
+  "generate" button breaks that claim and needs a Data Safety declaration. This is bring-your-own
+  assistant: generated anywhere, imported here. **Still to decide:** whether shipping a prompt
+  template makes the app the owner of the training advice it produces — the same line the starter
+  library entry above is trying not to cross.
+
 - **Audit for error boundaries and graceful degradation.** There is currently no React error boundary
   anywhere in the app (no `ErrorBoundary` export, no `componentDidCatch`), so any render throw takes
   the whole tree down — worst mid-session, where a crash costs the workout in progress and the app is

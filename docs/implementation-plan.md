@@ -498,6 +498,25 @@ failure mode the decision-log note above warns about, regrown one heading level 
   also the web build's entire library and the self-heal target for a corrupt `exercises.yaml`, so it
   has to stay small enough to be a reasonable thing to reset to.
 
+- **Audit for error boundaries and graceful degradation.** There is currently no React error boundary
+  anywhere in the app (no `ErrorBoundary` export, no `componentDidCatch`), so any render throw takes
+  the whole tree down — worst mid-session, where a crash costs the workout in progress and the app is
+  by design the only copy of it. Degrading well is already a house pattern in places (`safe-iap.ts`,
+  `safe-notifications.ts`, the eight `isFileStorageSupported` guards, `library-file.ts` reseeding a
+  corrupt `exercises.yaml`), so the audit is about where else it's warranted rather than inventing an
+  approach. Expo Router supports a per-route `ErrorBoundary` export, which is the obvious seam; the
+  question to answer per screen is what a useful fallback even *is* — the runner probably wants to
+  save what it has and exit to History, not offer a "try again" that re-throws.
+
+- **Audit for refactoring opportunities.** No single known offender, so this is a survey, not a fix
+  with a known shape. Starting points: the five files over 450 lines (`workout-editor.tsx` at 745,
+  `use-session-runner.ts` at 642, `yaml-mapping.ts` at 520, `selectors.ts` at 459,
+  `program-override-editor.tsx` at 451); the four parallel `switch (entry.type)` blocks over
+  `SessionEntry` in `selectors.ts`, which grow together every time an entry type is added; and
+  `new-exercise-form.tsx`, a deliberate mini-copy of `exercise-editor.tsx`'s form whose duplication
+  was accepted at the time and is worth re-checking. Worth doing with the same bar the `slugify`
+  dedup was held to: only where the copies have actually drifted or would.
+
 ## Open bugs
 
 Found while planning the tests/a11y/i18n work (see `testing-a11y-i18n-plan.md`), each verified against

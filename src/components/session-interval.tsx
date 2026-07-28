@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import type { TFunction } from 'i18next';
+import { useTranslation } from 'react-i18next';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 
 import { ThemedText } from '@/components/themed-text';
@@ -14,11 +16,14 @@ function formatClock(totalSeconds: number): string {
   return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }
 
-const VARIANT_LABEL: Record<IntervalVariant, string> = {
-  hiit: 'HIIT',
-  emom: 'EMOM',
-  amrap: 'AMRAP',
-  cardio: 'CARDIO',
+// These acronyms (HIIT/EMOM/AMRAP) and "CARDIO" don't change between en and pt — Brazilian fitness
+// usage keeps the English training-style names — but they're still routed through t() so the seam
+// exists if that ever stops being true for a future locale.
+const VARIANT_LABEL_KEY: Record<IntervalVariant, string> = {
+  hiit: 'session.interval.variantHiit',
+  emom: 'session.interval.variantEmom',
+  amrap: 'session.interval.variantAmrap',
+  cardio: 'session.interval.variantCardio',
 };
 
 type StepperProps = {
@@ -26,6 +31,7 @@ type StepperProps = {
   value: number;
   onChange: (value: number) => void;
   onRequestEdit: () => void;
+  t: TFunction;
 };
 
 /**
@@ -33,7 +39,7 @@ type StepperProps = {
  * nearest view rather than the screen — inside a stepper block it would be clipped to a small strip.
  * The parent owns which field is being edited and renders one pad at the screen root.
  */
-function Stepper({ label, value, onChange, onRequestEdit }: StepperProps) {
+function Stepper({ label, value, onChange, onRequestEdit, t }: StepperProps) {
   return (
     <View style={styles.stepperBlock}>
       <ThemedText type="code" style={styles.stepperLabel}>
@@ -50,7 +56,7 @@ function Stepper({ label, value, onChange, onRequestEdit }: StepperProps) {
         <Pressable
           onPress={onRequestEdit}
           accessibilityRole="button"
-          accessibilityLabel={`${label}: ${value}. Tap to enter an exact value.`}>
+          accessibilityLabel={t('session.stepperAccessibility', { label, value })}>
           <ThemedText type="heading" style={styles.stepperValue}>
             {value}
           </ThemedText>
@@ -115,6 +121,7 @@ export function SessionInterval({
   onDone,
 }: Props) {
   const [editing, setEditing] = useState<'reps' | 'rounds' | 'extra' | null>(null);
+  const { t } = useTranslation();
   const pulse = useSharedValue(1);
 
   useEffect(() => {
@@ -125,14 +132,19 @@ export function SessionInterval({
 
   // "Minute" only when the interval actually is one — an EMOM here is any fixed-interval block, so a
   // 30-second interval counting "Minute 3 of 20" would be plainly wrong.
-  const emomUnit = targetSec === 60 ? 'Minute' : 'Interval';
   const setLabel =
-    variant === 'hiit' ? `Round ${setIndex} of ${setTotal}` : variant === 'emom' ? `${emomUnit} ${setIndex} of ${setTotal}` : null;
+    variant === 'hiit'
+      ? t('session.interval.roundLabel', { index: setIndex, total: setTotal })
+      : variant === 'emom'
+        ? targetSec === 60
+          ? t('session.interval.minuteLabel', { index: setIndex, total: setTotal })
+          : t('session.interval.intervalLabel', { index: setIndex, total: setTotal })
+        : null;
 
   const captionParts: string[] = [];
-  if (variant === 'emom' && targetReps) captionParts.push(`target ${targetReps} reps`);
-  if (variant === 'cardio' && cardioDistanceMeters) captionParts.push(`target ${cardioDistanceMeters}m`);
-  captionParts.push(countUp ? 'counting up' : `of ${formatClock(targetSec)} total`);
+  if (variant === 'emom' && targetReps) captionParts.push(t('session.interval.targetReps', { reps: targetReps }));
+  if (variant === 'cardio' && cardioDistanceMeters) captionParts.push(t('session.interval.targetDistance', { meters: cardioDistanceMeters }));
+  captionParts.push(countUp ? t('session.countingUp') : t('session.interval.ofTotal', { clock: formatClock(targetSec) }));
 
   const fillPct = countUp || targetSec <= 0 ? 0 : Math.min(100, ((targetSec - remainingSec) / targetSec) * 100);
 
@@ -142,7 +154,7 @@ export function SessionInterval({
         <View style={styles.livePill}>
           <Animated.View style={[styles.liveDot, pulseStyle]} />
           <ThemedText type="code" style={styles.liveLabel}>
-            {VARIANT_LABEL[variant]}
+            {t(VARIANT_LABEL_KEY[variant])}
           </ThemedText>
         </View>
         <ThemedText type="subtitle" style={styles.exerciseName}>
@@ -174,18 +186,31 @@ export function SessionInterval({
         </ThemedText>
 
         {variant === 'emom' && (
-          <Stepper label="REPS THIS MINUTE" value={reps} onChange={onChangeReps} onRequestEdit={() => setEditing('reps')} />
+          <Stepper
+            label={t('session.interval.repsThisMinuteCaps')}
+            value={reps}
+            onChange={onChangeReps}
+            onRequestEdit={() => setEditing('reps')}
+            t={t}
+          />
         )}
 
         {variant === 'amrap' && (
           <View style={styles.amrapRow}>
             <Stepper
-              label="ROUNDS"
+              label={t('session.interval.roundsCaps')}
               value={roundsCompleted}
               onChange={onChangeRoundsCompleted}
               onRequestEdit={() => setEditing('rounds')}
+              t={t}
             />
-            <Stepper label="+REPS" value={extraReps} onChange={onChangeExtraReps} onRequestEdit={() => setEditing('extra')} />
+            <Stepper
+              label={t('session.interval.extraRepsCaps')}
+              value={extraReps}
+              onChange={onChangeExtraReps}
+              onRequestEdit={() => setEditing('extra')}
+              t={t}
+            />
           </View>
         )}
       </View>
@@ -193,27 +218,41 @@ export function SessionInterval({
       <SessionNextCard next={next} />
 
       <View style={styles.controlsRow}>
-        <Pressable onPress={onPrev} style={styles.circleButton}>
+        <Pressable
+          onPress={onPrev}
+          accessibilityRole="button"
+          accessibilityLabel={t('session.previousStep')}
+          style={styles.circleButton}>
           <View style={styles.iconPrev} />
         </Pressable>
         <Pressable onPress={onTogglePause} style={styles.pauseButton}>
           <ThemedText type="heading" style={styles.pauseButtonLabel}>
-            {paused ? 'Resume' : 'Pause'}
+            {paused ? t('session.resume') : t('session.pause')}
           </ThemedText>
         </Pressable>
-        <Pressable onPress={onDone} style={styles.circleButton}>
+        <Pressable
+          onPress={onDone}
+          accessibilityRole="button"
+          accessibilityLabel={t('session.doneNextStep')}
+          style={styles.circleButton}>
           <View style={styles.iconNext} />
         </Pressable>
       </View>
       <Pressable onPress={onDone}>
         <ThemedText type="heading" style={styles.doneLabel}>
-          {countUp ? 'Done ↑' : 'Skip →'}
+          {countUp ? t('session.interval.doneUp') : t('session.interval.skipArrow')}
         </ThemedText>
       </Pressable>
 
       {editing && (
         <SessionNumberPad
-          label={editing === 'reps' ? 'Reps this minute' : editing === 'rounds' ? 'Rounds' : 'Extra reps'}
+          label={
+            editing === 'reps'
+              ? t('session.interval.repsThisMinute')
+              : editing === 'rounds'
+                ? t('session.interval.roundsLabel')
+                : t('session.interval.extraRepsLabel')
+          }
           initialValue={editing === 'reps' ? reps : editing === 'rounds' ? roundsCompleted : extraReps}
           onCancel={() => setEditing(null)}
           onConfirm={(value) => {
@@ -254,7 +293,7 @@ const styles = StyleSheet.create({
     backgroundColor: RunnerColors.accent,
   },
   liveLabel: {
-    color: RunnerColors.accent,
+    color: RunnerColors.accentOnSoft,
     letterSpacing: 1.4,
   },
   exerciseName: {

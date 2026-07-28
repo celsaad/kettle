@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 
 import { ThemedText } from '@/components/themed-text';
@@ -36,6 +37,7 @@ export function SessionHold({
   onPrev,
   onDone,
 }: Props) {
+  const { t } = useTranslation();
   const pulse = useSharedValue(1);
 
   useEffect(() => {
@@ -51,14 +53,14 @@ export function SessionHold({
         <View style={styles.livePill}>
           <Animated.View style={[styles.liveDot, pulseStyle]} />
           <ThemedText type="code" style={styles.liveLabel}>
-            HOLD
+            {t('session.hold.label')}
           </ThemedText>
         </View>
         <ThemedText type="subtitle" style={styles.exerciseName}>
           {exerciseName}
         </ThemedText>
         <ThemedText type="small" style={styles.setLabel}>
-          Set {setIndex} of {setTotal}
+          {t('session.setOf', { index: setIndex, total: setTotal })}
         </ThemedText>
         {notes && (
           <ThemedText type="small" style={styles.notes}>
@@ -81,28 +83,36 @@ export function SessionHold({
           <View style={styles.progressMarker} />
         </View>
         <ThemedText type="small" style={styles.captionLabel}>
-          target {targetMaxSec ? `${targetSec}–${targetMaxSec}` : targetSec}s · counting up
+          {t('session.hold.caption', { target: targetMaxSec ? `${targetSec}–${targetMaxSec}` : targetSec })}
         </ThemedText>
       </View>
 
       <SessionNextCard next={next} />
 
       <View style={styles.controlsRow}>
-        <Pressable onPress={onPrev} style={styles.circleButton}>
+        <Pressable
+          onPress={onPrev}
+          accessibilityRole="button"
+          accessibilityLabel={t('session.previousStep')}
+          style={styles.circleButton}>
           <View style={styles.iconPrev} />
         </Pressable>
         <Pressable onPress={onTogglePause} style={styles.pauseButton}>
           <ThemedText type="heading" style={styles.pauseButtonLabel}>
-            {paused ? 'Resume' : 'Pause'}
+            {paused ? t('session.resume') : t('session.pause')}
           </ThemedText>
         </Pressable>
-        <Pressable onPress={onDone} style={styles.circleButton}>
+        <Pressable
+          onPress={onDone}
+          accessibilityRole="button"
+          accessibilityLabel={t('session.doneNextStep')}
+          style={styles.circleButton}>
           <View style={styles.iconNext} />
         </Pressable>
       </View>
       <Pressable onPress={onDone}>
         <ThemedText type="heading" style={styles.doneLabel}>
-          Done set ↑
+          {t('session.hold.doneSet')}
         </ThemedText>
       </Pressable>
     </View>
@@ -134,7 +144,7 @@ const styles = StyleSheet.create({
     backgroundColor: RunnerColors.accent,
   },
   liveLabel: {
-    color: RunnerColors.accent,
+    color: RunnerColors.accentOnSoft,
     letterSpacing: 1.4,
   },
   exerciseName: {

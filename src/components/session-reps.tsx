@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { ThemedText } from '@/components/themed-text';
 import { SessionNextCard } from '@/components/session-next-card';
@@ -54,20 +55,25 @@ export function SessionReps({
   onLogSet,
 }: Props) {
   const [editing, setEditing] = useState<'reps' | 'load' | null>(null);
+  const { t } = useTranslation();
 
   return (
     <View style={styles.container}>
       <View style={styles.top}>
         <View style={styles.repsPill}>
           <ThemedText type="code" style={styles.repsPillLabel}>
-            REPS
+            {t('session.reps.pillLabel')}
           </ThemedText>
         </View>
         <ThemedText type="subtitle" style={styles.exerciseName}>
           {exerciseName}
         </ThemedText>
         <ThemedText type="small" style={styles.setLabel}>
-          Set {setIndex} of {setTotal} · target {targetRepsMax ? `${targetReps}–${targetRepsMax}` : targetReps}
+          {t('session.reps.setLabel', {
+            index: setIndex,
+            total: setTotal,
+            target: targetRepsMax ? `${targetReps}–${targetRepsMax}` : targetReps,
+          })}
         </ThemedText>
         {notes && (
           <ThemedText type="small" style={styles.notes}>
@@ -90,13 +96,13 @@ export function SessionReps({
           <Pressable
             onPress={() => setEditing('reps')}
             accessibilityRole="button"
-            accessibilityLabel={`Reps done: ${reps}. Tap to enter an exact value.`}
+            accessibilityLabel={t('session.reps.repsDoneAccessibility', { count: reps })}
             style={styles.repsDisplay}>
             <ThemedText type="numeral" style={styles.numeral}>
               {reps}
             </ThemedText>
             <ThemedText type="code" style={styles.repsLabel}>
-              REPS DONE
+              {t('session.reps.repsDoneCaps')}
             </ThemedText>
           </Pressable>
           <Pressable onPress={() => onChangeReps(reps + 1)} style={[styles.stepperButton, styles.stepperButtonAccent]}>
@@ -109,7 +115,7 @@ export function SessionReps({
         <View style={styles.statsRow}>
           <View style={styles.statCard}>
             <ThemedText type="code" style={styles.statCardLabel}>
-              LOAD
+              {t('session.reps.loadCaps')}
             </ThemedText>
             {/*
               This was a hardcoded "BW +0 kg" literal with no input, so no weight was ever captured and
@@ -121,7 +127,7 @@ export function SessionReps({
                 onPress={() => onChangeWeightKg(Math.max(0, weightKg - WEIGHT_STEP_KG))}
                 hitSlop={8}
                 accessibilityRole="button"
-                accessibilityLabel="Decrease load"
+                accessibilityLabel={t('session.reps.decreaseLoad')}
                 style={styles.loadButton}>
                 <ThemedText type="heading" style={styles.loadButtonGlyph}>
                   −
@@ -130,7 +136,11 @@ export function SessionReps({
               <Pressable
                 onPress={() => setEditing('load')}
                 accessibilityRole="button"
-                accessibilityLabel={`Load: ${weightKg > 0 ? `${weightKg} kilograms` : 'bodyweight'}. Tap to enter an exact value.`}>
+                accessibilityLabel={
+                  weightKg > 0
+                    ? t('session.reps.loadAccessibilityWeighted', { weight: weightKg })
+                    : t('session.reps.loadAccessibilityBodyweight')
+                }>
                 <ThemedText type="heading" style={styles.loadValue}>
                   {weightKg > 0 ? (
                     <>
@@ -138,7 +148,7 @@ export function SessionReps({
                       <ThemedText style={styles.loadUnit}> kg</ThemedText>
                     </>
                   ) : (
-                    'BW'
+                    t('session.reps.bodyweightAbbr')
                   )}
                 </ThemedText>
               </Pressable>
@@ -146,7 +156,7 @@ export function SessionReps({
                 onPress={() => onChangeWeightKg(weightKg + WEIGHT_STEP_KG)}
                 hitSlop={8}
                 accessibilityRole="button"
-                accessibilityLabel="Increase load"
+                accessibilityLabel={t('session.reps.increaseLoad')}
                 style={styles.loadButton}>
                 <ThemedText type="heading" style={styles.loadButtonGlyph}>
                   +
@@ -156,7 +166,7 @@ export function SessionReps({
           </View>
           <View style={styles.statCard}>
             <ThemedText type="code" style={styles.statCardLabel}>
-              RPE
+              {t('session.reps.rpe')}
             </ThemedText>
             <View style={styles.rpeRow}>
               {RPE_OPTIONS.map((option) => {
@@ -165,6 +175,9 @@ export function SessionReps({
                   <Pressable
                     key={option}
                     onPress={() => onChangeRpe(option)}
+                    accessibilityRole="button"
+                    accessibilityLabel={t('session.reps.rpeOption', { value: option })}
+                    accessibilityState={{ selected: active }}
                     style={[styles.rpePill, active && styles.rpePillActive]}>
                     <ThemedText type="smallMedium" style={active ? styles.rpeTextActive : styles.rpeText}>
                       {option}
@@ -182,19 +195,19 @@ export function SessionReps({
       <View style={styles.controlsRow}>
         <Pressable onPress={onPrev} style={styles.prevButton}>
           <ThemedText type="code" style={styles.prevLabel}>
-            Prev
+            {t('session.prev')}
           </ThemedText>
         </Pressable>
         <Pressable onPress={onLogSet} style={styles.logButton}>
           <ThemedText type="heading" style={styles.logButtonLabel}>
-            Log set → Rest
+            {t('session.reps.logSet')}
           </ThemedText>
         </Pressable>
       </View>
 
       {editing === 'reps' && (
         <SessionNumberPad
-          label="Reps done"
+          label={t('session.reps.repsDone')}
           initialValue={reps}
           onCancel={() => setEditing(null)}
           onConfirm={(value) => {
@@ -208,7 +221,7 @@ export function SessionReps({
 
       {editing === 'load' && (
         <SessionNumberPad
-          label="Load"
+          label={t('session.reps.loadLabel')}
           initialValue={weightKg}
           unit="kg"
           allowDecimal
@@ -239,7 +252,7 @@ const styles = StyleSheet.create({
     borderRadius: 999,
   },
   repsPillLabel: {
-    color: RunnerColors.accent,
+    color: RunnerColors.accentOnSoft,
     letterSpacing: 1.4,
   },
   exerciseName: {
@@ -347,9 +360,13 @@ const styles = StyleSheet.create({
     gap: 6,
     marginTop: 6,
   },
+  // Was ~26px tall on 13px text — the smallest touch target in the app, and in the live runner where
+  // you're least precise. minHeight rather than height so it still grows with accessibility text sizes.
   rpePill: {
     flex: 1,
     alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 44,
     paddingVertical: 4,
     borderRadius: 8,
     backgroundColor: 'rgba(243,239,228,0.08)',

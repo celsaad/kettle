@@ -45,6 +45,17 @@ a one-level `goPrev()` un-flush fix in the session runner. See `git log` for the
   `scheduleNotificationAsync({ content, trigger: { type: SchedulableTriggerInputTypes.TIME_INTERVAL,
   seconds, repeats } })`, `cancelScheduledNotificationAsync(id)`, `setNotificationHandler(...)`,
   `requestPermissionsAsync()`.
+- ✅ **expo-iap API confirmed** from `node_modules/expo-iap/build/*.d.ts` (installed at 4.7.2 — the
+  published docs site still shows 3.4 examples, and the `hyochan/expo-iap` repo is archived in favour
+  of the OpenIAP monorepo, so the types are the only trustworthy source). Shapes used in
+  `src/app/support.tsx`: `useIAP({ onPurchaseSuccess, onPurchaseError, onError })` returning
+  `{ connected, products, fetchProducts, requestPurchase }`; `fetchProducts({ skus, type: 'in-app' })`;
+  `requestPurchase({ request: { google: { skus } }, type: 'in-app' })` (`android` is deprecated in
+  favour of `google`); the **module-level** `finishTransaction({ purchase, isConsumable })`, used
+  instead of the hook's so the success handler doesn't close over a binding the hook hasn't produced
+  yet; `ErrorCode.UserCancelled` (kebab-case values — the `E_`-prefixed codes are long gone);
+  `Product.displayPrice` (the store's localized string; `price` is `number | null` on Android, hence
+  never used for ordering) and `Purchase.purchaseState: 'pending' | 'purchased' | 'unknown'`.
 - ⚠️ **Web is not a persistence target.** `expo-file-system` has no web implementation. The storage
   layer detects this (`isFileStorageSupported` in `paths.ts`) and degrades gracefully: on web,
   `loadLibrary()` returns the seed library in-memory (no persistence, matching the old mock-data web
@@ -174,6 +185,37 @@ is the record — it has the root cause, the alternatives, and correct attributi
 find it. Add an entry only when the reasoning **isn't discoverable from a single commit**: a
 constraint that shapes future work, something deliberately rejected (so it isn't re-proposed), or a
 decision assembled across several commits. Open work belongs in the sections at the bottom, not here.
+
+- ✅ **The tip jar is the whole monetization story, and nothing is gated behind it.** Kettle ships to
+  Google Play only for now ($25 one-time); the App Store's $99/yr is deferred until the app shows
+  traction, so the bar to clear is deliberately low. The app is backend-free, so marginal cost per
+  user is zero — which is why there is no subscription (nothing recurring is delivered) and no ads.
+
+  Two constraints this places on future work, neither discoverable from the commit that added the
+  screen:
+
+  - **No third-party purchase or analytics SDK.** RevenueCat was the obvious choice and was rejected:
+    it transmits app user IDs, device identifiers and purchase events to its own servers, which would
+    force a Play **Data Safety** declaration. "No data collected / no data shared" is currently true,
+    it is printed on the store listing, and it is the thing that distinguishes Kettle from Hevy,
+    Strong and Fitbod. Play Billing keeps the transaction inside Google Play, where payment data never
+    reaches app code. RevenueCat's real advantage is cross-platform entitlements, which is exactly
+    what's deferred with iOS. **Adding EAS Update, Sentry, or any analytics would break the same
+    claim** — treat zero declarations as a product constraint, not an accident.
+  - **Tips must stay in-app.** Linking out to Ko-fi/PayPal violates the Play Payments policy for
+    non-nonprofit developers. This is the policy risk, not the Data Safety form.
+
+  Shape: three **consumable** tiers (`tip_small`/`tip_medium`/`tip_large`), so a repeat tip is
+  possible — `finishTransaction({ isConsumable: true })` is load-bearing, since without it Play treats
+  the SKU as owned and refuses every later purchase of that tier. Consumables aren't restorable from
+  Play, so "has tipped" can only live locally: `supporter.json`, app-owned JSON deliberately outside
+  the hand-editable YAML library. There is no receipt verification because there is no backend to
+  verify against; the downside is a contrived free tip, which costs nothing that was ever owed.
+  `useTipStore` is **not** in `_layout.tsx`'s startup gate — the root layout renders `null` until every
+  store it awaits is ready, and cold start shouldn't wait on a file almost nobody has.
+
+  The paywall line, if a Pro tier is ever revisited: **export stays free** regardless. Gating it would
+  contradict the data-ownership pitch that the whole product rests on.
 
 - ✅ **Full program CRUD, including override editing.** Drag-to-reorder blocks and exercise delete
   exist too (`deleteExercise` in the library store, wired to a "Delete exercise" button in
@@ -487,6 +529,132 @@ Three things worth knowing for the next person writing tests here:
   `jest.setup-after-env.js`). A spy installed and restored inside one test previously left later tests
   failing with opaque `AggregateError`s while passing in isolation — the failure surfaced nowhere near
   its cause, which is exactly why this belongs in config rather than per-file.
+
+## ✅ I18n-0: structured descriptors in the logic layer
+
+The first step of the i18n plan, done ahead of the library so later work isn't rewriting assertions.
+The logic layer returned finished English sentences, which made two things hard: tests had to assert on
+prose i18n was about to rewrite, and pluralisation was scattered across a dozen template literals.
+
+`src/domain/format.ts` is now the only place English is assembled. The producers return data:
+`workoutSummary` → `workoutShape` (`{ blockCount, types, estimatedMinutes }`), `sessionEntrySummary` →
+`sessionEntryResult` (a six-variant descriptor), `circuitSummary` → `circuitShape`. Views call
+`formatWorkoutShape` / `formatEntryResult` / `formatCircuitShape`.
+
+**This fixed live bugs rather than just moving code.** "1 blocks" was on the Today card and every Build
+row; "1 exercises", "1 workouts", "1 rounds" and "1 reps" were reachable too. They're gone by
+construction now — a single `plural()` helper — and `formatEntryResult` also drops the "N min" wording
+for EMOM, which was wrong for any interval that isn't 60 seconds.
+
+**`plural` is deliberately English-only.** The obvious implementation is `Intl.PluralRules`, but Hermes
+doesn't ship it, so that would pass in tests and on web and crash on device. It's one function, and the
+single seam to swap for CLDR categories when i18next and the `intl-pluralrules` polyfill land — which
+matters because Polish and Arabic have three to six forms, not two.
+
+The selectors test now asserts descriptors instead of sentences; converting it was a small live
+demonstration of the rework this ordering avoids at scale.
+
+**Still assembling English in the logic layer, deferred to the i18n pass proper:** `exerciseSummary`
+(`exercise-badge.tsx`), `previewFor` (`session-steps.ts`), and the `toLocaleDateString('en-US', …)`
+labels in `recentSessionsView`/`historySessionsView`/`exerciseHistory` — the date ones need the locale
+work from I18n-3 to be worth touching, since they'd otherwise just move the hardcoded locale.
+
+## ✅ A11y-1 and A11y-2: labels, touch targets, contrast
+
+**Contrast (A11y-2).** Re-measured independently rather than taking the audit's word for it; the
+numbers matched. `light.textSecondary` was `#777166` — 4.41 on `background` and 4.01 on
+`backgroundSelected`, failing AA on two of three surfaces, and it's the app's most-used color (every
+caption, count and summary line). Now `#6b6558`: 5.28 / 5.79 / 4.79. The runner's soft pill labels
+failed too (`accent` 4.17, `accentCalm` 3.79 composited over their translucent backgrounds, at 12px),
+so they get dedicated `accentOnSoft` / `accentCalmOnSoft` tokens measuring 5.68 and 5.75 — separate
+tokens rather than lightening the fills, so the pill shapes keep their intended weight. White-on-accent
+measures 3.64 and is left as-is: it's only used for the 20px semibold "Start session" label, which
+clears AA-large, and that constraint is now written into `constants/theme.ts` so it isn't reused for
+body text by accident.
+
+**Labels and targets (A11y-1).** The worst cases were the runner's prev/next buttons — CSS-triangle
+`View`s with no text child at all, so a screen reader announced "button" with no name, on the primary
+in-workout controls. Also labelled: the Build play buttons, all three FABs, the Programs help button,
+both search inputs, the RPE pills (with `accessibilityState.selected`), and every `✕` remove control in
+the editors, which were previously N indistinguishable "✕" buttons in a list. History's session card
+gained `accessibilityState.expanded`, which the chevron glyph alone can't convey. The RPE pills were
+~26px tall — the smallest target in the app, in the live runner where you're least precise — and are
+now `minHeight: 44`, using minHeight rather than height so they still grow at large text sizes.
+
+Verified in the browser: the caption color computes to `rgb(107, 101, 88)`, the runner pill to
+`rgb(221, 138, 92)`, the RPE pill measures 44px, and every named control is reachable via its
+accessible name. That last point had a side benefit — the verification script could stop guessing pixel
+coordinates and click `getByLabel('Start Calisthenics A')` instead.
+
+**Still open from the a11y audit:** A11y-3 (dynamic type — the runner screens are `flex: 1` with no
+ScrollView, so at iOS AX5 the primary action can go off-screen, which is the one genuinely blocking
+failure), A11y-4 (runner announcements and reduce-motion), and screen-reader reordering for
+`ReorderableList`, which is gesture-only and so currently impossible without sight.
+
+## ✅ I18n-1 and I18n-3: infrastructure and locale-aware formatting
+
+`expo-localization` + `i18next` + `react-i18next` + `intl-pluralrules`. `src/i18n/index.ts` initialises
+i18next from the device's preferred language, narrowed to a shipped one; `src/i18n/format.ts` holds the
+Intl wrappers. **Second locale is `pt`** (Brazilian Portuguese), scaffolded and registered — keyed by
+language rather than region, since `pt` covers pt-BR and pt-PT while *formatting* still follows the
+device's full locale.
+
+**The Hermes trap is handled and is the thing to remember here.** i18next v24+ routes pluralisation
+through `Intl.PluralRules`, and Hermes doesn't implement it — it has Collator, DateTimeFormat and
+NumberFormat, and not this. Without the polyfill imported *first*, the app works in tests and on web
+(both V8) and throws on device: the worst failure shape there is. `DateTimeFormat`/`NumberFormat` need
+no polyfill, which is why only pluralisation is special-cased.
+
+**Formatting bugs fixed, which affect users today rather than hypothetically:**
+
+- Four hardcoded `toLocaleDateString('en-US', …)` call sites now use the device locale. Verified:
+  en-US renders "Monday, Jul 27", pt-BR renders "segunda-feira, 27 de jul." — day before month, as
+  Brazil writes it.
+- **`startOfWeek` assumed Monday.** Brazil, the US, Canada and Japan start on Sunday, so "this week"
+  silently measured a different seven days than the calendar the user reads — invisible until the
+  boundary day. Now driven by `getCalendars()[0].firstWeekday`.
+- The month badge uppercases with `toLocaleUpperCase(locale)` rather than `toUpperCase()`, which is
+  wrong for Turkish (i → İ) and meaningless for scripts without case.
+- Today's date label was computed at **module scope**, freezing at first import — leave the app open
+  past midnight and it showed yesterday. Now per render. (This was on the open-bugs list.)
+
+The `thisWeekStats` tests now mock `firstWeekdayIndex` and cover **both** conventions, rather than
+depending on whatever locale the test machine reports. They failed when the fix landed, which is
+exactly right: they had encoded the hardcoded Monday as if it were a requirement.
+
+**Still to do — I18n-2, the string migration (~250–300 keys).** The infrastructure and the descriptor
+layer are in place, so this is now mechanical: replace literals with `t()` calls and fill `en.json` and
+`pt.json`. Nothing is translated yet; the locale files are empty scaffolds. Also still assembling
+English in the logic layer: `exerciseSummary` and `previewFor`.
+
+## ✅ I18n-2: the string migration
+
+**276 keys, `en` and `pt` at parity, no missing keys either way.** Brazilian Portuguese is a real
+translation, not placeholders. Covers the tab bar, all five tab screens, the runner, settings, import,
+every editor, and the display-string layer (`domain/format.ts`, `exerciseSummary`, `previewFor`).
+
+The `plural()` helper is gone — i18next resolves CLDR categories from `count`, so a locale with three
+or six plural forms is a matter of adding `_few`/`_many` keys rather than changing code.
+
+**Verified in both locales end to end**, which is what caught the three gaps a file-by-file pass
+missed:
+
+- The **tab bar** was never migrated, in either the native or web layout — a pt-BR user would have
+  navigated an entirely English tab bar. Easy to miss because the labels live in config arrays.
+- **"NEXT UP · WEEK 1"** stayed English because `nextUpView` assembled `` `Week ${n}` `` in the logic
+  layer. `NextUpView` now returns `weekNumber`/`weekDay` and the view composes it.
+- The **workout summary** (`"4 blocks · mixed hold + reps"`) needed `domain/format.ts` itself
+  migrated, which was blocked on i18next being available under jest.
+
+That last one is worth recording. `format.ts` imports `i18next` **directly**, not via `@/i18n` — same
+singleton, but going through that module would pull `expo-localization` into the domain layer and into
+every test that touches formatting. `jest.setup-after-env.js` initialises the same singleton with the
+English resources, so `format.test.ts` keeps asserting plain English and never needed editing to
+accommodate the change.
+
+**Not translated, by design:** exercise, workout and program names, notes, and `ProgramWeek.day` — all
+user data from their own YAML, rendered verbatim. `program-guide.tsx`'s ~194 lines of prose are still
+English and want their own namespace.
 
 ## Open bugs
 

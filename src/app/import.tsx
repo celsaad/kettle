@@ -2,6 +2,7 @@ import { File } from 'expo-file-system';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ModalHeader } from '@/components/modal-header';
@@ -19,6 +20,7 @@ type ReadyMerge = { picked: PickedFile; library: Library; summary: MergeSummary 
 
 export default function ImportScreen() {
   const theme = useTheme();
+  const { t } = useTranslation();
   const currentLibrary = useLibraryStore((state) => state.library);
   const replaceLibrary = useLibraryStore((state) => state.replaceLibrary);
 
@@ -44,7 +46,7 @@ export default function ImportScreen() {
         return;
       }
       if (!currentLibrary) {
-        setError('Library is not loaded yet.');
+        setError(t('import.libraryNotLoaded'));
         return;
       }
       const merge = mergeLibraries(currentLibrary, parsed.data);
@@ -77,10 +79,10 @@ export default function ImportScreen() {
 
   const changedItems = ready
     ? [
-        ...ready.summary.newExercises.map((id) => ({ id, kind: 'new' as const, detail: 'new exercise' })),
-        ...ready.summary.updatedExercises.map((id) => ({ id, kind: 'updated' as const, detail: 'updated exercise' })),
-        ...ready.summary.newWorkouts.map((id) => ({ id, kind: 'new' as const, detail: 'new workout' })),
-        ...ready.summary.updatedWorkouts.map((id) => ({ id, kind: 'updated' as const, detail: 'updated workout' })),
+        ...ready.summary.newExercises.map((id) => ({ id, kind: 'new' as const, detail: t('import.newExercise') })),
+        ...ready.summary.updatedExercises.map((id) => ({ id, kind: 'updated' as const, detail: t('import.updatedExercise') })),
+        ...ready.summary.newWorkouts.map((id) => ({ id, kind: 'new' as const, detail: t('import.newWorkout') })),
+        ...ready.summary.updatedWorkouts.map((id) => ({ id, kind: 'updated' as const, detail: t('import.updatedWorkout') })),
       ]
     : [];
 
@@ -88,7 +90,7 @@ export default function ImportScreen() {
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['top', 'bottom', 'left', 'right']}>
       <ModalHeader onClose={close} />
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <ThemedText type="subtitle">Import library</ThemedText>
+        <ThemedText type="subtitle">{t('import.title')}</ThemedText>
 
         {!ready && (
           <Pressable
@@ -97,9 +99,9 @@ export default function ImportScreen() {
             style={[styles.fileRow, styles.pickRow, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
             <View style={[styles.fileIcon, { borderColor: theme.textSecondary }]} />
             <View style={styles.fileText}>
-              <ThemedText type="heading">Choose exercises.yaml</ThemedText>
+              <ThemedText type="heading">{t('import.chooseFile')}</ThemedText>
               <ThemedText type="small" themeColor="textSecondary">
-                Pick a file to merge into your library
+                {t('import.chooseFileDetail')}
               </ThemedText>
             </View>
             {busy && <ActivityIndicator color={theme.accentText} />}
@@ -114,7 +116,7 @@ export default function ImportScreen() {
                 {ready.picked.name}
               </ThemedText>
               <ThemedText type="small" themeColor="textSecondary">
-                {ready.picked.sizeLabel} · picked from Files
+                {t('import.pickedFrom', { size: ready.picked.sizeLabel })}
               </ThemedText>
             </View>
           </View>
@@ -134,7 +136,7 @@ export default function ImportScreen() {
                   {ready.summary.newExercises.length + ready.summary.newWorkouts.length}
                 </ThemedText>
                 <ThemedText type="small" themeColor="textSecondary">
-                  new
+                  {t('import.new')}
                 </ThemedText>
               </View>
               <View style={[styles.countCard, { backgroundColor: theme.accentCalmSoft }]}>
@@ -142,7 +144,7 @@ export default function ImportScreen() {
                   {ready.summary.updatedExercises.length + ready.summary.updatedWorkouts.length}
                 </ThemedText>
                 <ThemedText type="small" themeColor="textSecondary">
-                  updated
+                  {t('import.updated')}
                 </ThemedText>
               </View>
               <View
@@ -152,7 +154,7 @@ export default function ImportScreen() {
                 ]}>
                 <ThemedText type="subtitle">{ready.summary.newWorkouts.length + ready.summary.updatedWorkouts.length}</ThemedText>
                 <ThemedText type="small" themeColor="textSecondary">
-                  workout{ready.summary.newWorkouts.length + ready.summary.updatedWorkouts.length === 1 ? '' : 's'}
+                  {t('import.workoutNoun', { count: ready.summary.newWorkouts.length + ready.summary.updatedWorkouts.length })}
                 </ThemedText>
               </View>
             </View>
@@ -174,13 +176,13 @@ export default function ImportScreen() {
               ))}
               {changedItems.length === 0 && (
                 <ThemedText type="small" themeColor="textSecondary">
-                  No changes — the imported file matches your current library.
+                  {t('import.noChanges')}
                 </ThemedText>
               )}
             </View>
 
             <ThemedText type="small" themeColor="textSecondary" style={styles.note}>
-              Updated items replace local tweaks. Sessions are never touched.
+              {t('import.updateNote')}
             </ThemedText>
           </>
         )}
@@ -188,7 +190,7 @@ export default function ImportScreen() {
         <View style={styles.buttonRow}>
           <Pressable onPress={close} style={[styles.cancelButton, { borderColor: theme.border }]}>
             <ThemedText type="heading" themeColor="textSecondary">
-              Cancel
+              {t('common.cancel')}
             </ThemedText>
           </Pressable>
           <Pressable
@@ -196,7 +198,7 @@ export default function ImportScreen() {
             disabled={!ready || busy}
             style={[styles.mergeButton, { backgroundColor: theme.accent, opacity: !ready || busy ? 0.5 : 1 }]}>
             <ThemedText type="heading" style={{ color: theme.onAccent }}>
-              Merge & import
+              {t('import.mergeButton')}
             </ThemedText>
           </Pressable>
         </View>

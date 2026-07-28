@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Alert, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
@@ -13,6 +14,7 @@ import { exportSession } from '@/storage/export';
 
 export default function HistoryScreen() {
   const theme = useTheme();
+  const { t } = useTranslation();
   const library = useLibraryStore((state) => state.library);
   const sessions = useSessionHistoryStore((state) => state.sessions);
   const deleteSession = useSessionHistoryStore((state) => state.deleteSession);
@@ -45,21 +47,25 @@ export default function HistoryScreen() {
   }, [sessions, visibleSessions, searching]);
 
   const confirmDelete = (session: HistorySessionView) => {
-    Alert.alert('Delete session?', `"${session.workoutName}" on ${session.day} ${session.month} will be permanently removed.`, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: () => deleteSession(session.id),
-      },
-    ]);
+    Alert.alert(
+      t('history.deleteConfirmTitle'),
+      t('history.deleteConfirmBody', { name: session.workoutName, day: session.day, month: session.month }),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('common.delete'),
+          style: 'destructive',
+          onPress: () => deleteSession(session.id),
+        },
+      ],
+    );
   };
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['top', 'left', 'right']}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
-          <ThemedText type="subtitle">History</ThemedText>
+          <ThemedText type="subtitle">{t('history.title')}</ThemedText>
           {/*
             Says "All time" rather than a month: the list below is every session ever, and the three
             tiles are historyStats(sessions) over that same unfiltered set. This used to be a
@@ -68,7 +74,9 @@ export default function HistoryScreen() {
             tiles, so the label has to stop claiming "all time" and say what the subset is instead.
           */}
           <ThemedText themeColor="textSecondary">
-            {searching ? `${visibleSessions.length} of ${sessions.length}` : 'All time'}
+            {searching
+              ? t('history.matchCount', { shown: visibleSessions.length, total: sessions.length })
+              : t('history.allTime')}
           </ThemedText>
         </View>
 
@@ -76,19 +84,19 @@ export default function HistoryScreen() {
           <ThemedView type="backgroundElement" style={[styles.statCard, { borderColor: theme.border }]}>
             <ThemedText type="heading">{historyStats.sessions}</ThemedText>
             <ThemedText type="small" themeColor="textSecondary">
-              sessions
+              {t('history.sessions')}
             </ThemedText>
           </ThemedView>
           <ThemedView type="backgroundElement" style={[styles.statCard, { borderColor: theme.border }]}>
             <ThemedText type="heading">{historyStats.hours}h {historyStats.minutes}m</ThemedText>
             <ThemedText type="small" themeColor="textSecondary">
-              time
+              {t('history.time')}
             </ThemedText>
           </ThemedView>
           <ThemedView type="backgroundElement" style={[styles.statCard, { borderColor: theme.border }]}>
             <ThemedText type="heading">{historyStats.sets}</ThemedText>
             <ThemedText type="small" themeColor="textSecondary">
-              sets
+              {t('history.sets')}
             </ThemedText>
           </ThemedView>
         </View>
@@ -98,7 +106,8 @@ export default function HistoryScreen() {
           <TextInput
             value={query}
             onChangeText={setQuery}
-            placeholder="Search workouts"
+            placeholder={t('history.searchPlaceholder')}
+            accessibilityLabel={t('history.searchPlaceholder')}
             placeholderTextColor={theme.textSecondary}
             style={[styles.searchInput, { color: theme.text }]}
           />
@@ -111,6 +120,10 @@ export default function HistoryScreen() {
               <ThemedView key={session.id} type="backgroundElement" style={[styles.card, { borderColor: theme.border }]}>
                 <Pressable
                   onPress={() => setExpandedId(expanded ? null : session.id)}
+                  accessibilityRole="button"
+                  // The row's own text supplies the name; `expanded` is the part a screen reader
+                  // can't infer from the chevron glyph.
+                  accessibilityState={{ expanded }}
                   style={styles.cardHeader}>
                   <View style={styles.dateBadge}>
                     <ThemedText type="heading">{session.day}</ThemedText>
@@ -122,7 +135,7 @@ export default function HistoryScreen() {
                     <ThemedText type="heading">{session.workoutName}</ThemedText>
                     <ThemedText type="small" themeColor="textSecondary">
                       {session.durationLabel} · {session.setsLabel}
-                      {session.mixed ? ' · mixed' : ''}
+                      {session.mixed ? ` · ${t('history.mixed')}` : ''}
                     </ThemedText>
                   </View>
                   <ThemedText themeColor="textSecondary">{expanded ? '⌄' : '›'}</ThemedText>
@@ -147,12 +160,12 @@ export default function HistoryScreen() {
                     <View style={styles.expandedFooter}>
                       <Pressable onPress={() => confirmDelete(session)} hitSlop={8}>
                         <ThemedText type="small" themeColor="textSecondary">
-                          Delete
+                          {t('common.delete')}
                         </ThemedText>
                       </Pressable>
                       <Pressable onPress={() => exportSession(session.id).catch(() => { })} hitSlop={8}>
                         <ThemedText type="small" themeColor="accentText">
-                          Export
+                          {t('common.export')}
                         </ThemedText>
                       </Pressable>
                     </View>

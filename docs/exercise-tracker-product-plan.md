@@ -158,8 +158,14 @@ Each entry **embeds its `type`** (and optionally a snapshot of the config used) 
   sessions/
     2026-07-20T09-15-00.yaml
     2026-07-22T18-30-00.yaml
+  supporter.json            # tip-jar state (app-owned, never hand-edited)
   .version                  # schema version marker
 ```
+
+`supporter.json` is JSON rather than YAML on purpose: YAML is the format the user is invited to edit,
+and purchase state isn't theirs to edit. It is also the only place tip history can live — Play
+consumables aren't restorable — so it self-heals to an empty state on a bad read rather than
+reporting an error nobody can act on.
 
 **One file per session** = the directory is the database. This gives append-only-log benefits (crash safety, easy sync, no full-file rewrites, no partial-write corruption of history) while keeping the hand-editable library as a single tidy file.
 

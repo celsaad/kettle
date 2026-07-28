@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { ThemedText } from '@/components/themed-text';
 import { RunnerColors, Spacing } from '@/constants/theme';
@@ -33,6 +34,7 @@ const DIGITS = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
  */
 export function SessionNumberPad({ label, initialValue, unit, allowDecimal, onCancel, onConfirm }: Props) {
   const [buffer, setBuffer] = useState('');
+  const { t } = useTranslation();
 
   const display = buffer === '' ? String(initialValue) : buffer;
   const parsed = buffer === '' ? initialValue : Number(buffer);
@@ -54,7 +56,7 @@ export function SessionNumberPad({ label, initialValue, unit, allowDecimal, onCa
 
   return (
     <View style={styles.overlay}>
-      <Pressable style={styles.backdrop} onPress={onCancel} accessibilityLabel="Dismiss keypad" />
+      <Pressable style={styles.backdrop} onPress={onCancel} accessibilityLabel={t('session.numberPad.dismiss')} />
 
       <View style={styles.sheet}>
         <ThemedText type="code" style={styles.label}>
@@ -74,7 +76,7 @@ export function SessionNumberPad({ label, initialValue, unit, allowDecimal, onCa
                 key={key}
                 onPress={() => (key === '⌫' ? backspace() : append(key))}
                 accessibilityRole="button"
-                accessibilityLabel={key === '⌫' ? 'Delete' : key}
+                accessibilityLabel={key === '⌫' ? t('common.delete') : key}
                 style={({ pressed }) => [styles.key, pressed && styles.keyPressed]}>
                 <ThemedText type="heading" style={styles.keyLabel}>
                   {key}
@@ -87,7 +89,7 @@ export function SessionNumberPad({ label, initialValue, unit, allowDecimal, onCa
         <View style={styles.actions}>
           <Pressable onPress={onCancel} accessibilityRole="button" style={styles.cancelButton}>
             <ThemedText type="code" style={styles.cancelLabel}>
-              Cancel
+              {t('common.cancel')}
             </ThemedText>
           </Pressable>
           <Pressable
@@ -96,7 +98,7 @@ export function SessionNumberPad({ label, initialValue, unit, allowDecimal, onCa
             accessibilityRole="button"
             style={[styles.setButton, !canConfirm && styles.setButtonDisabled]}>
             <ThemedText type="heading" style={styles.setLabel}>
-              Set
+              {t('session.numberPad.set')}
             </ThemedText>
           </Pressable>
         </View>

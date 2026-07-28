@@ -1,6 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ModalHeader } from '@/components/modal-header';
@@ -18,6 +19,7 @@ import { useSessionHistoryStore } from '@/state/session-history-store';
 
 export default function ExerciseEditorScreen() {
   const theme = useTheme();
+  const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id?: string }>();
   const library = useLibraryStore((state) => state.library);
   const saveExercise = useLibraryStore((state) => state.saveExercise);
@@ -40,12 +42,12 @@ export default function ExerciseEditorScreen() {
 
   const save = async () => {
     if (!name.trim()) {
-      setError('Name is required.');
+      setError(t('common.nameRequired'));
       return;
     }
     const exerciseId = editing?.id ?? slugify(name);
     if (!exerciseId) {
-      setError('Could not derive an id from that name.');
+      setError(t('common.couldNotDeriveId'));
       return;
     }
     const configError = validateConfig(type, values);
@@ -69,15 +71,15 @@ export default function ExerciseEditorScreen() {
     );
     if (usedBy.length > 0) {
       Alert.alert(
-        'Exercise in use',
-        `"${editing.name}" is used by ${usedBy.map((workout) => workout.name).join(', ')}. Remove it from those workouts first.`,
+        t('exerciseEditor.inUseTitle'),
+        t('exerciseEditor.inUseBody', { name: editing.name, workouts: usedBy.map((workout) => workout.name).join(', ') }),
       );
       return;
     }
-    Alert.alert('Delete exercise?', `"${editing.name}" will be permanently removed.`, [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('exerciseEditor.deleteConfirmTitle'), t('common.deleteConfirmBody', { name: editing.name }), [
+      { text: t('common.cancel'), style: 'cancel' },
       {
-        text: 'Delete',
+        text: t('common.delete'),
         style: 'destructive',
         onPress: async () => {
           await deleteExercise(editing.id);
@@ -91,21 +93,21 @@ export default function ExerciseEditorScreen() {
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['top', 'bottom', 'left', 'right']}>
       <ModalHeader onClose={close} />
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <ThemedText type="subtitle">{editing ? 'Edit exercise' : 'New exercise'}</ThemedText>
+        <ThemedText type="subtitle">{editing ? t('exerciseEditor.editTitle') : t('exerciseEditor.newTitle')}</ThemedText>
 
         <ThemedText type="small" themeColor="textSecondary" style={styles.label}>
-          Name
+          {t('common.name')}
         </ThemedText>
         <TextInput
           value={name}
           onChangeText={setName}
-          placeholder="e.g. Front Lever"
+          placeholder={t('exerciseEditor.namePlaceholder')}
           placeholderTextColor={theme.textSecondary}
           style={[styles.input, { borderColor: theme.border, backgroundColor: theme.backgroundElement, color: theme.text }]}
         />
 
         <ThemedText type="small" themeColor="textSecondary" style={styles.label}>
-          Type
+          {t('exerciseEditor.type')}
         </ThemedText>
         <View style={styles.typeRow}>
           {TYPE_OPTIONS.map((option) => {
@@ -123,7 +125,7 @@ export default function ExerciseEditorScreen() {
                   !!editing && styles.pillDisabled,
                 ]}>
                 <ThemedText type="small" style={{ color: active ? theme.onAccent : theme.textSecondary }}>
-                  {option.label}
+                  {t(option.label)}
                 </ThemedText>
               </Pressable>
             );
@@ -134,8 +136,8 @@ export default function ExerciseEditorScreen() {
           {CONFIG_FIELDS[type].map((field) => (
             <View key={field.key} style={styles.configField}>
               <ThemedText type="small" themeColor="textSecondary" style={styles.label}>
-                {field.label} {field.unit ? `(${field.unit})` : ''}
-                {field.optional ? ' · optional' : ''}
+                {t(field.label)} {field.unit ? `(${field.unit})` : ''}
+                {field.optional ? ` · ${t('exerciseEditor.optional')}` : ''}
               </ThemedText>
               <TextInput
                 value={values[field.key] ?? ''}
@@ -150,12 +152,12 @@ export default function ExerciseEditorScreen() {
         </View>
 
         <ThemedText type="small" themeColor="textSecondary" style={styles.label}>
-          Notes · optional
+          {t('exerciseEditor.notesOptional')}
         </ThemedText>
         <TextInput
           value={notes}
           onChangeText={setNotes}
-          placeholder="Coaching cue…"
+          placeholder={t('exerciseEditor.notesPlaceholder')}
           placeholderTextColor={theme.textSecondary}
           multiline
           style={[styles.input, styles.notesInput, { borderColor: theme.border, backgroundColor: theme.backgroundElement, color: theme.text }]}
@@ -164,7 +166,7 @@ export default function ExerciseEditorScreen() {
         {recentHistory.length > 0 && (
           <View style={styles.historySection}>
             <ThemedText type="small" themeColor="textSecondary" style={styles.label}>
-              Recent
+              {t('exerciseEditor.recent')}
             </ThemedText>
             <VolumeChart
               data={[...recentHistory].reverse().map((entry) => ({ label: entry.dateLabel, value: entry.volume }))}
@@ -191,12 +193,12 @@ export default function ExerciseEditorScreen() {
         <View style={styles.buttonRow}>
           <Pressable onPress={close} style={[styles.cancelButton, { borderColor: theme.border }]}>
             <ThemedText type="heading" themeColor="textSecondary">
-              Cancel
+              {t('common.cancel')}
             </ThemedText>
           </Pressable>
           <Pressable onPress={save} style={[styles.saveButton, { backgroundColor: theme.accent }]}>
             <ThemedText type="heading" style={{ color: theme.onAccent }}>
-              Save
+              {t('common.save')}
             </ThemedText>
           </Pressable>
         </View>
@@ -204,7 +206,7 @@ export default function ExerciseEditorScreen() {
         {editing && (
           <Pressable onPress={confirmDelete} style={styles.deleteButton} hitSlop={8}>
             <ThemedText type="smallMedium" themeColor="textSecondary">
-              Delete exercise
+              {t('exerciseEditor.deleteExercise')}
             </ThemedText>
           </Pressable>
         )}

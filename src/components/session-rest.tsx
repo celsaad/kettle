@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 
 import { ThemedText } from '@/components/themed-text';
@@ -23,6 +24,7 @@ type Props = {
 };
 
 export function SessionRest({ secondsRemaining, totalSeconds, next, onAddSeconds, onSkip, onPrev }: Props) {
+  const { t } = useTranslation();
   const pulse = useSharedValue(1);
 
   useEffect(() => {
@@ -37,7 +39,7 @@ export function SessionRest({ secondsRemaining, totalSeconds, next, onAddSeconds
         <View style={styles.restPill}>
           <Animated.View style={[styles.restDot, pulseStyle]} />
           <ThemedText type="code" style={styles.restLabel}>
-            REST
+            {t('session.rest.label')}
           </ThemedText>
         </View>
       </View>
@@ -47,7 +49,7 @@ export function SessionRest({ secondsRemaining, totalSeconds, next, onAddSeconds
           {formatClock(secondsRemaining)}
         </ThemedText>
         <ThemedText type="small" style={styles.caption}>
-          of {formatClock(totalSeconds)} remaining
+          {t('session.rest.remaining', { total: formatClock(totalSeconds) })}
         </ThemedText>
       </View>
 
@@ -56,17 +58,17 @@ export function SessionRest({ secondsRemaining, totalSeconds, next, onAddSeconds
       <View style={styles.controlsRow}>
         <Pressable onPress={onPrev} style={styles.prevButton}>
           <ThemedText type="code" style={styles.prevLabel}>
-            Prev
+            {t('session.prev')}
           </ThemedText>
         </Pressable>
         <Pressable onPress={() => onAddSeconds(30)} style={styles.addButton}>
           <ThemedText type="heading" style={styles.addButtonLabel}>
-            +30s
+            {t('session.rest.add30')}
           </ThemedText>
         </Pressable>
         <Pressable onPress={onSkip} style={styles.skipButton}>
           <ThemedText type="heading" style={styles.skipButtonLabel}>
-            Skip rest →
+            {t('session.rest.skip')}
           </ThemedText>
         </Pressable>
       </View>
@@ -99,7 +101,7 @@ const styles = StyleSheet.create({
     backgroundColor: RunnerColors.accentCalm,
   },
   restLabel: {
-    color: RunnerColors.accentCalm,
+    color: RunnerColors.accentCalmOnSoft,
     letterSpacing: 1.4,
   },
   middle: {

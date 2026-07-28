@@ -1,11 +1,20 @@
+// Mocked so the week boundary is driven by the test rather than the machine's locale; the real one
+// reads the device calendar via expo-localization.
+const mockFirstWeekdayIndex = jest.fn(() => 1);
+jest.mock('@/i18n', () => ({
+  firstWeekdayIndex: () => mockFirstWeekdayIndex(),
+  currentLocale: () => 'en',
+}));
+
 import {
   currentStreak,
   exerciseHistory,
   historyStats,
   nextWeekAfter,
-  sessionEntrySummary,
+  sessionEntryResult,
   thisWeekStats,
 } from '@/state/selectors';
+import type { EntryResult } from '@/domain/format';
 import type { Program, Session, SessionEntry } from '@/domain/types';
 
 function makeSession(overrides: Partial<Session> & { startedAt: string }): Session {
@@ -89,21 +98,40 @@ describe('currentStreak', () => {
   });
 });
 
+// The week's first day comes from the device calendar rather than a hardcoded Monday, so these drive
+// it explicitly instead of depending on whatever locale the test machine reports. Both conventions are
+// covered because the whole point of the change is that either can be correct: Brazil and the US start
+// on Sunday, most of Europe on Monday, and the old hardcoding silently measured a different seven days
+// than the calendar the user reads.
 describe('thisWeekStats', () => {
-  // startOfWeek treats Monday as the first day of the week, so the boundary sits between Sunday night
-  // and Monday morning rather than the Date.getDay() default of Sunday.
-  it('includes sessions from Monday through today when today is a Sunday', () => {
+  const setFirstWeekday = (day: number) => mockFirstWeekdayIndex.mockReturnValue(day);
+
+  it('starts the week on Monday when the calendar says so', () => {
+    setFirstWeekday(1);
     jest.useFakeTimers();
-    jest.setSystemTime(new Date(2026, 6, 26, 15, 0, 0)); // Sunday 2026-07-26, week started Mon 2026-07-20
+    jest.setSystemTime(new Date(2026, 6, 26, 15, 0, 0)); // Sunday 2026-07-26; week began Mon 2026-07-20
     const sessions = [
-      makeSession({ startedAt: new Date(2026, 6, 20, 8, 0, 0).toISOString() }), // this week's Monday
-      makeSession({ startedAt: new Date(2026, 6, 26, 10, 0, 0).toISOString() }), // this week's Sunday
-      makeSession({ startedAt: new Date(2026, 6, 19, 20, 0, 0).toISOString() }), // previous week's Sunday
+      makeSession({ startedAt: new Date(2026, 6, 20, 8, 0, 0).toISOString() }), // Mon, in
+      makeSession({ startedAt: new Date(2026, 6, 26, 10, 0, 0).toISOString() }), // Sun, in
+      makeSession({ startedAt: new Date(2026, 6, 19, 20, 0, 0).toISOString() }), // previous Sun, out
     ];
     expect(thisWeekStats(sessions).sessions).toBe(2);
   });
 
-  it('excludes last week entirely once the week has rolled over to Monday', () => {
+  it('starts the week on Sunday when the calendar says so', () => {
+    setFirstWeekday(0);
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date(2026, 6, 26, 15, 0, 0)); // Sunday 2026-07-26 is now the week's *first* day
+    const sessions = [
+      makeSession({ startedAt: new Date(2026, 6, 26, 10, 0, 0).toISOString() }), // today, in
+      makeSession({ startedAt: new Date(2026, 6, 20, 8, 0, 0).toISOString() }), // last Mon, now out
+      makeSession({ startedAt: new Date(2026, 6, 19, 20, 0, 0).toISOString() }), // previous Sun, out
+    ];
+    expect(thisWeekStats(sessions).sessions).toBe(1);
+  });
+
+  it('excludes the prior week once the boundary day arrives', () => {
+    setFirstWeekday(1);
     jest.useFakeTimers();
     jest.setSystemTime(new Date(2026, 6, 27, 9, 0, 0)); // Monday 2026-07-27, a new week
     const sessions = [
@@ -150,20 +178,39 @@ describe('nextWeekAfter', () => {
   });
 });
 
-describe('sessionEntrySummary', () => {
-  it('summarizes every entry type', () => {
-    const cases: [SessionEntry, string][] = [
-      [{ exercise: 'e', type: 'timed_hold', sets: [{ holdSec: 20, restTakenSec: 60 }, { holdSec: 15, restTakenSec: 0 }] }, '20s · 15s'],
-      [{ exercise: 'e', type: 'reps', sets: [{ reps: 10, restTakenSec: 60 }, { reps: 8, restTakenSec: 0 }] }, '10 · 8 reps'],
-      [{ exercise: 'e', type: 'hiit', roundsCompleted: 4 }, '4 rounds'],
-      [{ exercise: 'e', type: 'emom', minutes: [{ reps: 3 }, { reps: 2 }] }, '2 min · 5 reps'],
-      [{ exercise: 'e', type: 'emom', minutes: [{}, {}] }, '2 min'],
-      [{ exercise: 'e', type: 'amrap', roundsCompleted: 7, extraReps: 4 }, '7 rounds + 4 reps'],
-      [{ exercise: 'e', type: 'amrap', roundsCompleted: 7 }, '7 rounds'],
-      [{ exercise: 'e', type: 'cardio', durationSec: 480, distanceMeters: 2000 }, '480s · 2000 m'],
-      [{ exercise: 'e', type: 'rest', restTakenSec: 90 }, '90s'],
+// Asserts the descriptor, not the sentence: rendering is format.test.ts's job, and assertions on
+// prose are exactly what i18n would invalidate. hiit and amrap both collapse onto `rounds` — the
+// renderer never needs to know which produced it.
+describe('sessionEntryResult', () => {
+  it('describes every entry type structurally', () => {
+    const cases: [SessionEntry, EntryResult][] = [
+      [
+        { exercise: 'e', type: 'timed_hold', sets: [{ holdSec: 20, restTakenSec: 60 }, { holdSec: 15, restTakenSec: 0 }] },
+        { kind: 'holds', holdSecs: [20, 15] },
+      ],
+      [
+        { exercise: 'e', type: 'reps', sets: [{ reps: 10, restTakenSec: 60 }, { reps: 8, restTakenSec: 0 }] },
+        { kind: 'reps', reps: [10, 8] },
+      ],
+      [{ exercise: 'e', type: 'hiit', roundsCompleted: 4 }, { kind: 'rounds', rounds: 4 }],
+      [
+        { exercise: 'e', type: 'emom', minutes: [{ reps: 3 }, { reps: 2 }] },
+        { kind: 'intervals', intervals: 2, totalReps: 5 },
+      ],
+      // No reps logged at all reports none, rather than a misleading zero.
+      [{ exercise: 'e', type: 'emom', minutes: [{}, {}] }, { kind: 'intervals', intervals: 2, totalReps: undefined }],
+      [
+        { exercise: 'e', type: 'amrap', roundsCompleted: 7, extraReps: 4 },
+        { kind: 'rounds', rounds: 7, extraReps: 4 },
+      ],
+      [{ exercise: 'e', type: 'amrap', roundsCompleted: 7 }, { kind: 'rounds', rounds: 7, extraReps: undefined }],
+      [
+        { exercise: 'e', type: 'cardio', durationSec: 480, distanceMeters: 2000 },
+        { kind: 'cardio', durationSec: 480, distanceMeters: 2000 },
+      ],
+      [{ exercise: 'e', type: 'rest', restTakenSec: 90 }, { kind: 'rest', restTakenSec: 90 }],
     ];
-    for (const [entry, expected] of cases) expect(sessionEntrySummary(entry)).toBe(expected);
+    for (const [entry, expected] of cases) expect(sessionEntryResult(entry)).toEqual(expected);
   });
 });
 

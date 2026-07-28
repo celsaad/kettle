@@ -50,7 +50,10 @@ with no program involved. Every modal screen (editors, program detail, the guide
 a pinned close button, so dismissing one doesn't mean scrolling to the bottom to find Cancel. History
 can be searched by workout name (the stat tiles and header narrow to match), and a logged session can
 be deleted from its expanded card. A Settings screen covers appearance (light/dark/system), library
-export/import, and library counts.
+export/import, and library counts. Settings also reaches an optional tip jar (three one-off amounts
+via Google Play Billing, Android only) — it gates nothing, every feature is free, and it exists only
+to offset the Play developer fee. No ads, no account, no subscription, and no third-party purchase or
+analytics SDK, so the Play Data Safety declaration stays at zero data collected.
 
 See [`docs/implementation-plan.md`](docs/implementation-plan.md) for what shipped, the scope calls
 made along the way, and what's genuinely still open — the largest gap being that there are no

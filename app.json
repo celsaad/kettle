@@ -42,7 +42,9 @@
           "color": "#c05c2b"
         }
       ],
-      "expo-audio"
+      "expo-audio",
+      "expo-localization",
+      "expo-iap"
     ],
     "experiments": {
       "typedRoutes": true,

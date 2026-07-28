@@ -16,6 +16,9 @@ import { StyleSheet } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
+// Imported for its side effect: initialises i18next (and the Intl.PluralRules polyfill Hermes lacks)
+// before any screen renders a translated string.
+import '@/i18n';
 import { RunnerColors } from '@/constants/theme';
 import { ThemeOverrideProvider, useAppTheme } from '@/hooks/theme-context';
 import { useLibraryStore } from '@/state/library-store';
@@ -72,6 +75,7 @@ function Navigation() {
           <Stack.Screen name="program-editor" options={{ presentation: 'modal', headerShown: false }} />
           <Stack.Screen name="program-guide" options={{ presentation: 'modal', headerShown: false }} />
           <Stack.Screen name="settings" options={{ presentation: 'modal', headerShown: false }} />
+          <Stack.Screen name="support" options={{ presentation: 'modal', headerShown: false }} />
         </Stack>
       </ThemeProvider>
     </GestureHandlerRootView>

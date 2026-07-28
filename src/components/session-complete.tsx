@@ -1,4 +1,5 @@
 import { Pressable, StyleSheet, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { ThemedText } from '@/components/themed-text';
 import { RunnerColors, Spacing } from '@/constants/theme';
@@ -14,20 +15,21 @@ type Props = {
  * since this is a different kind of moment, not another countdown.
  */
 export function SessionComplete({ workoutName, onDone }: Props) {
+  const { t } = useTranslation();
   return (
     <View style={styles.container}>
       <View style={styles.badge}>
         <ThemedText style={styles.checkmark}>✓</ThemedText>
       </View>
       <ThemedText type="title" style={styles.title}>
-        Workout complete
+        {t('session.complete.title')}
       </ThemedText>
       <ThemedText type="small" style={styles.workoutName}>
         {workoutName}
       </ThemedText>
       <Pressable onPress={onDone} style={styles.doneButton}>
         <ThemedText type="heading" style={styles.doneButtonLabel}>
-          Done
+          {t('session.complete.done')}
         </ThemedText>
       </Pressable>
     </View>

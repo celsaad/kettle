@@ -8,51 +8,57 @@
  * touches React, so it belongs with the domain — and being importable without pulling in a screen is
  * what makes it testable.
  */
+import i18next from '@/i18n';
 import type { Exercise, ExerciseType } from '@/domain/types';
 
-/** `min` is the smallest accepted value, defaulting to 1 — see validateConfig. */
+/**
+ * `label` is an i18next key rather than display text, resolved with `i18next.t()` at the point of use
+ * — this module has no React tree to hook `useTranslation()` into, and there's no in-app language
+ * switch (the device locale is read once at startup, see `i18n/index.ts`), so resolving eagerly here
+ * is safe. `min` is the smallest accepted value, defaulting to 1 — see validateConfig.
+ */
 export type FieldDef = { key: string; label: string; unit?: string; optional?: boolean; min?: number };
 
 export const TYPE_OPTIONS: { type: ExerciseType; label: string }[] = [
-  { type: 'reps', label: 'Reps' },
-  { type: 'timed_hold', label: 'Hold' },
-  { type: 'hiit', label: 'HIIT' },
-  { type: 'emom', label: 'EMOM' },
-  { type: 'amrap', label: 'AMRAP' },
-  { type: 'cardio', label: 'Cardio' },
-  { type: 'rest', label: 'Rest' },
+  { type: 'reps', label: 'exerciseForm.type.reps' },
+  { type: 'timed_hold', label: 'exerciseForm.type.hold' },
+  { type: 'hiit', label: 'exerciseForm.type.hiit' },
+  { type: 'emom', label: 'exerciseForm.type.emom' },
+  { type: 'amrap', label: 'exerciseForm.type.amrap' },
+  { type: 'cardio', label: 'exerciseForm.type.cardio' },
+  { type: 'rest', label: 'exerciseForm.type.rest' },
 ];
 
 export const CONFIG_FIELDS: Record<ExerciseType, FieldDef[]> = {
   hiit: [
-    { key: 'workSec', label: 'Work', unit: 'sec' },
-    { key: 'restSec', label: 'Rest', unit: 'sec', min: 0 },
-    { key: 'rounds', label: 'Rounds' },
+    { key: 'workSec', label: 'exerciseForm.field.work', unit: 'sec' },
+    { key: 'restSec', label: 'exerciseForm.field.rest', unit: 'sec', min: 0 },
+    { key: 'rounds', label: 'exerciseForm.field.rounds' },
   ],
   emom: [
-    { key: 'intervalSec', label: 'Interval', unit: 'sec' },
-    { key: 'totalMinutes', label: 'Total', unit: 'min' },
-    { key: 'targetReps', label: 'Target reps', optional: true },
+    { key: 'intervalSec', label: 'exerciseForm.field.interval', unit: 'sec' },
+    { key: 'totalMinutes', label: 'exerciseForm.field.total', unit: 'min' },
+    { key: 'targetReps', label: 'exerciseForm.field.targetReps', optional: true },
   ],
-  amrap: [{ key: 'timeCapSec', label: 'Time cap', unit: 'sec' }],
+  amrap: [{ key: 'timeCapSec', label: 'exerciseForm.field.timeCap', unit: 'sec' }],
   reps: [
-    { key: 'sets', label: 'Sets' },
-    { key: 'targetRepsMin', label: 'Target reps' },
-    { key: 'targetRepsMax', label: 'Target reps (max)', optional: true },
-    { key: 'targetWeightKg', label: 'Weight', unit: 'kg', optional: true },
-    { key: 'restSec', label: 'Rest', unit: 'sec', min: 0 },
+    { key: 'sets', label: 'exerciseForm.field.sets' },
+    { key: 'targetRepsMin', label: 'exerciseForm.field.targetReps' },
+    { key: 'targetRepsMax', label: 'exerciseForm.field.targetRepsMax', optional: true },
+    { key: 'targetWeightKg', label: 'exerciseForm.field.weight', unit: 'kg', optional: true },
+    { key: 'restSec', label: 'exerciseForm.field.rest', unit: 'sec', min: 0 },
   ],
   timed_hold: [
-    { key: 'sets', label: 'Sets' },
-    { key: 'holdSecMin', label: 'Hold', unit: 'sec' },
-    { key: 'holdSecMax', label: 'Hold (max)', unit: 'sec', optional: true },
-    { key: 'restSec', label: 'Rest', unit: 'sec', min: 0 },
+    { key: 'sets', label: 'exerciseForm.field.sets' },
+    { key: 'holdSecMin', label: 'exerciseForm.field.hold', unit: 'sec' },
+    { key: 'holdSecMax', label: 'exerciseForm.field.holdMax', unit: 'sec', optional: true },
+    { key: 'restSec', label: 'exerciseForm.field.rest', unit: 'sec', min: 0 },
   ],
   cardio: [
-    { key: 'durationSec', label: 'Duration', unit: 'sec', optional: true },
-    { key: 'distanceMeters', label: 'Distance', unit: 'm', optional: true },
+    { key: 'durationSec', label: 'exerciseForm.field.duration', unit: 'sec', optional: true },
+    { key: 'distanceMeters', label: 'exerciseForm.field.distance', unit: 'm', optional: true },
   ],
-  rest: [{ key: 'durationSec', label: 'Duration', unit: 'sec', min: 0 }],
+  rest: [{ key: 'durationSec', label: 'exerciseForm.field.duration', unit: 'sec', min: 0 }],
 };
 
 /**
@@ -68,14 +74,15 @@ export const CONFIG_FIELDS: Record<ExerciseType, FieldDef[]> = {
 export function validateConfig(type: ExerciseType, values: Record<string, string>): string | null {
   for (const field of CONFIG_FIELDS[type]) {
     const raw = values[field.key]?.trim() ?? '';
+    const label = i18next.t(field.label);
     if (!raw) {
       if (field.optional) continue;
-      return `${field.label} is required.`;
+      return i18next.t('exerciseForm.error.required', { label });
     }
     const parsed = Number(raw);
-    if (!Number.isFinite(parsed)) return `${field.label} must be a number.`;
+    if (!Number.isFinite(parsed)) return i18next.t('exerciseForm.error.mustBeNumber', { label });
     const min = field.min ?? 1;
-    if (parsed < min) return `${field.label} must be at least ${min}.`;
+    if (parsed < min) return i18next.t('exerciseForm.error.mustBeAtLeast', { label, min });
   }
   return null;
 }

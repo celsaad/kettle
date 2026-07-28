@@ -1,4 +1,5 @@
 import { StyleSheet, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { ThemedText } from '@/components/themed-text';
 import { RunnerColors, Spacing } from '@/constants/theme';
@@ -10,11 +11,12 @@ import type { RestPreview } from '@/hooks/use-session-runner';
  * rest. Renders nothing when there's nothing upcoming (end of workout).
  */
 export function SessionNextCard({ next }: { next: RestPreview }) {
+  const { t } = useTranslation();
   if (!next) return null;
   return (
     <View style={styles.nextCard}>
       <ThemedText type="code" style={styles.nextLabel}>
-        NEXT
+        {t('session.next')}
       </ThemedText>
       <View style={styles.nextText}>
         <ThemedText type="heading" style={styles.nextName}>

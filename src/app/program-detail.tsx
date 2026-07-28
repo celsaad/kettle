@@ -1,6 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ModalHeader } from '@/components/modal-header';
@@ -24,6 +25,7 @@ export function overrideLines(override: ProgramOverride, library: Library, worko
 
 export default function ProgramDetailScreen() {
   const theme = useTheme();
+  const { t } = useTranslation();
   const { programId } = useLocalSearchParams<{ programId?: string }>();
   const library = useLibraryStore((state) => state.library);
 
@@ -47,7 +49,7 @@ export default function ProgramDetailScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {!program && (
           <ThemedText type="small" themeColor="textSecondary">
-            Program not found.
+            {t('programDetail.notFound')}
           </ThemedText>
         )}
 
@@ -80,7 +82,7 @@ export default function ProgramDetailScreen() {
                     <View style={styles.cardHeader}>
                       <View style={styles.cardHeaderText}>
                         <ThemedText type="heading">
-                          Week {week.week}
+                          {t('programs.week', { n: week.week })}
                           {week.day ? ` · ${week.day}` : ''}
                         </ThemedText>
                         <ThemedText type="small" themeColor="textSecondary">
@@ -109,7 +111,7 @@ export default function ProgramDetailScreen() {
                       onPress={() => startWeek(week)}
                       style={[styles.startButton, { backgroundColor: theme.accent }]}>
                       <ThemedText type="smallMedium" style={{ color: theme.onAccent }}>
-                        Start this {week.day ? 'day' : 'week'}
+                        {week.day ? t('programDetail.startThisDay') : t('programDetail.startThisWeek')}
                       </ThemedText>
                     </Pressable>
                   </ThemedView>
@@ -119,7 +121,7 @@ export default function ProgramDetailScreen() {
 
             <Pressable onPress={close} style={[styles.closeButton, { borderColor: theme.border }]}>
               <ThemedText type="heading" themeColor="textSecondary">
-                Close
+                {t('common.close')}
               </ThemedText>
             </Pressable>
           </>

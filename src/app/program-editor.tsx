@@ -1,6 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ModalHeader } from '@/components/modal-header';
@@ -21,6 +22,7 @@ function weekKey(week: ProgramWeek): string {
 
 export default function ProgramEditorScreen() {
   const theme = useTheme();
+  const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id?: string }>();
   const library = useLibraryStore((state) => state.library);
   const saveProgram = useLibraryStore((state) => state.saveProgram);
@@ -58,29 +60,29 @@ export default function ProgramEditorScreen() {
 
   const save = async () => {
     if (!draft.name.trim()) {
-      setError('Name is required.');
+      setError(t('common.nameRequired'));
       return;
     }
     if (draft.weeks.length === 0) {
-      setError('Add at least one week.');
+      setError(t('programEditor.addAtLeastOneWeek'));
       return;
     }
     if (draft.weeks.some((week) => !week.workoutId)) {
-      setError('Every week needs a workout.');
+      setError(t('programEditor.everyWeekNeedsWorkout'));
       return;
     }
     const seen = new Set<string>();
     for (const week of draft.weeks) {
       const key = weekKey(week);
       if (seen.has(key)) {
-        setError(`Week ${week.week}${week.day ? ` (${week.day})` : ''} is used twice — give one a different day, or remove the duplicate.`);
+        setError(t('programEditor.duplicateWeek', { label: `${week.week}${week.day ? ` (${week.day})` : ''}` }));
         return;
       }
       seen.add(key);
     }
     const programId = editing?.id || slugify(draft.name);
     if (!programId) {
-      setError('Could not derive an id from that name.');
+      setError(t('common.couldNotDeriveId'));
       return;
     }
     await saveProgram({ ...draft, id: programId, name: draft.name.trim() });
@@ -89,10 +91,10 @@ export default function ProgramEditorScreen() {
 
   const confirmDelete = () => {
     if (!editing) return;
-    Alert.alert('Delete program?', `"${editing.name}" will be permanently removed.`, [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('programEditor.deleteConfirmTitle'), t('common.deleteConfirmBody', { name: editing.name }), [
+      { text: t('common.cancel'), style: 'cancel' },
       {
-        text: 'Delete',
+        text: t('common.delete'),
         style: 'destructive',
         onPress: async () => {
           await deleteProgram(editing.id);
@@ -108,26 +110,26 @@ export default function ProgramEditorScreen() {
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['top', 'bottom', 'left', 'right']}>
       <ModalHeader onClose={close} />
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <ThemedText type="subtitle">{editing ? 'Edit program' : 'New program'}</ThemedText>
+        <ThemedText type="subtitle">{editing ? t('programEditor.editTitle') : t('programEditor.newTitle')}</ThemedText>
 
         <ThemedText type="small" themeColor="textSecondary" style={styles.label}>
-          Name
+          {t('common.name')}
         </ThemedText>
         <TextInput
           value={draft.name}
           onChangeText={(name) => setDraft((current) => ({ ...current, name }))}
-          placeholder="e.g. 6-Week Pull Progression"
+          placeholder={t('programEditor.namePlaceholder')}
           placeholderTextColor={theme.textSecondary}
           style={[styles.input, { borderColor: theme.border, backgroundColor: theme.backgroundElement, color: theme.text }]}
         />
 
         <ThemedText themeColor="textSecondary" style={styles.weekCount}>
-          {draft.weeks.length} week{draft.weeks.length === 1 ? '' : 's'}
+          {t('programEditor.weekCount', { count: draft.weeks.length })}
         </ThemedText>
 
         {noWorkouts && (
           <ThemedText type="small" themeColor="textSecondary" style={styles.noWorkoutsHint}>
-            No workouts yet — create one in Build first, then come back to add weeks here.
+            {t('programEditor.noWorkoutsHint')}
           </ThemedText>
         )}
 
@@ -139,7 +141,7 @@ export default function ProgramEditorScreen() {
               <View key={index} style={[styles.weekCard, { borderColor: theme.border, backgroundColor: theme.backgroundElement }]}>
                 <View style={styles.weekHeader}>
                   <ThemedText type="small" themeColor="textSecondary" style={styles.weekFieldLabel}>
-                    Week
+                    {t('programEditor.week')}
                   </ThemedText>
                   <View style={styles.stepperRow}>
                     <Pressable
@@ -156,29 +158,34 @@ export default function ProgramEditorScreen() {
                       <ThemedText themeColor="textSecondary">+</ThemedText>
                     </Pressable>
                   </View>
-                  <Pressable onPress={() => removeWeek(index)} hitSlop={8} style={styles.removeButton}>
+                  <Pressable
+                    onPress={() => removeWeek(index)}
+                    hitSlop={8}
+                    accessibilityRole="button"
+                    accessibilityLabel={t('programEditor.removeWeek', { n: week.week })}
+                    style={styles.removeButton}>
                     <ThemedText themeColor="textSecondary">✕</ThemedText>
                   </Pressable>
                 </View>
 
                 <ThemedText type="small" themeColor="textSecondary" style={styles.weekFieldLabel}>
-                  Day · optional
+                  {t('programEditor.dayOptional')}
                 </ThemedText>
                 <TextInput
                   value={week.day ?? ''}
                   onChangeText={(text) => updateWeek(index, { day: text.trim() || undefined })}
-                  placeholder="e.g. Monday — only needed for 2+ sessions in one week"
+                  placeholder={t('programEditor.dayPlaceholder')}
                   placeholderTextColor={theme.textSecondary}
                   style={[styles.smallInput, { borderColor: theme.border, backgroundColor: theme.background, color: theme.text }]}
                 />
 
                 <ThemedText type="small" themeColor="textSecondary" style={styles.weekFieldLabel}>
-                  Workout
+                  {t('programEditor.workout')}
                 </ThemedText>
                 <Pressable
                   onPress={() => setOpenWorkoutPicker((current) => (current === index ? null : index))}
                   style={[styles.workoutPickerButton, { borderColor: theme.border }]}>
-                  <ThemedText type="smallMedium">{workout?.name ?? 'Select a workout'}</ThemedText>
+                  <ThemedText type="smallMedium">{workout?.name ?? t('programEditor.selectWorkout')}</ThemedText>
                   <ThemedText themeColor="textSecondary">{openWorkoutPicker === index ? '⌄' : '›'}</ThemedText>
                 </Pressable>
                 {openWorkoutPicker === index && (
@@ -199,12 +206,12 @@ export default function ProgramEditorScreen() {
                 )}
 
                 <ThemedText type="small" themeColor="textSecondary" style={styles.weekFieldLabel}>
-                  Notes · optional
+                  {t('programEditor.notesOptional')}
                 </ThemedText>
                 <TextInput
                   value={week.notes ?? ''}
                   onChangeText={(text) => updateWeek(index, { notes: text.trim() || undefined })}
-                  placeholder="Baseline — see where you land."
+                  placeholder={t('programEditor.notesPlaceholder')}
                   placeholderTextColor={theme.textSecondary}
                   style={[styles.smallInput, { borderColor: theme.border, backgroundColor: theme.background, color: theme.text }]}
                 />
@@ -228,7 +235,7 @@ export default function ProgramEditorScreen() {
           disabled={noWorkouts}
           style={[styles.addWeek, { borderColor: theme.border }, noWorkouts && styles.disabled]}>
           <ThemedText type="heading" themeColor="textSecondary">
-            + Add week
+            {t('programEditor.addWeek')}
           </ThemedText>
         </Pressable>
 
@@ -241,12 +248,12 @@ export default function ProgramEditorScreen() {
         <View style={styles.buttonRow}>
           <Pressable onPress={close} style={[styles.cancelButton, { borderColor: theme.border }]}>
             <ThemedText type="heading" themeColor="textSecondary">
-              Cancel
+              {t('common.cancel')}
             </ThemedText>
           </Pressable>
           <Pressable onPress={save} style={[styles.saveButton, { backgroundColor: theme.accent }]}>
             <ThemedText type="heading" style={{ color: theme.onAccent }}>
-              Save
+              {t('common.save')}
             </ThemedText>
           </Pressable>
         </View>
@@ -254,7 +261,7 @@ export default function ProgramEditorScreen() {
         {editing && (
           <Pressable onPress={confirmDelete} style={styles.deleteButton} hitSlop={8}>
             <ThemedText type="smallMedium" themeColor="textSecondary">
-              Delete program
+              {t('programEditor.deleteProgram')}
             </ThemedText>
           </Pressable>
         )}

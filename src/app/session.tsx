@@ -26,16 +26,15 @@ import { useSessionHistoryStore } from '@/state/session-history-store';
 /**
  * The one screen where a render throw costs data, so its boundary does more than apologise.
  *
- * Entries reach the session file as each exercise finishes (§7.2), so completed exercises survive a
- * throw — but the runner writes `ended_at` only when the whole workout does, and a session without it
- * counts as zero minutes in every stat tile and is skipped outright by `exerciseHistory`. Those
- * entries would sit on disk and appear nowhere in the app. React has already unmounted the runner and
- * the ref holding that `Session` by the time this renders, which is why the id is tracked in the store
- * rather than passed down here.
+ * Every logged set reaches the session file as it happens (§7.2), so all of them survive a throw — but
+ * the runner writes `ended_at` only when the whole workout does, and a session without it counts as
+ * zero minutes in every stat tile and is skipped outright by `exerciseHistory`. Those entries would sit
+ * on disk and appear nowhere in the app. React has already unmounted the runner and the ref holding
+ * that `Session` by the time this renders, which is why the id is tracked in the store rather than
+ * passed down here.
  *
- * What this *can't* salvage, and the copy is careful not to claim: sets of the exercise in progress
- * live in `pendingSetsRef` until that exercise ends, and they unmount with the hook. Making them
- * survive means changing when the runner writes, not anything here.
+ * What this *can't* salvage, and the copy is careful not to claim: the set being performed right now,
+ * which has no logged value until the user advances off it.
  *
  * Deliberately no retry, unlike the shared boundaries: re-rendering this route restarts it from the
  * countdown, and mounting the runner again calls `startSession` — a second session file for one
@@ -70,6 +69,7 @@ export default function SessionScreen() {
   // as an unhandled rejection. The flag makes that path .catch(() => {}) instead. Nothing is leaked:
   // the browser releases a screen wake lock on its own when the page/tab goes away.
   useKeepAwake(undefined, { suppressDeactivateWarnings: true });
+  const { t } = useTranslation();
   const [completed, setCompleted] = useState(false);
   // Doesn't navigate back directly — advance()/finishSession() in use-session-runner.ts already call
   // this the moment the workout is done (naturally or via "Finish"), and by then the session has
@@ -120,15 +120,18 @@ export default function SessionScreen() {
         <View style={styles.content}>
           <View style={styles.emptyState}>
             <ThemedText type="subtitle" style={styles.emptyStateTitle}>
-              Nothing to run
+              {t('session.nothingToRun.title')}
             </ThemedText>
             <ThemedText type="small" style={styles.emptyStateBody}>
-              "{workout.name}" has no blocks, or none of its exercises have any sets/rounds/minutes configured. Add a block
-              in Build, or check each exercise's config, then try again.
+              {t('session.nothingToRun.body', { name: workout.name })}
             </ThemedText>
-            <Pressable onPress={() => router.back()} style={styles.emptyStateButton}>
+            <Pressable
+              onPress={() => router.back()}
+              style={styles.emptyStateButton}
+              accessibilityRole="button"
+              accessibilityLabel={t('common.close')}>
               <ThemedText type="heading" style={styles.emptyStateButtonLabel}>
-                Close
+                {t('common.close')}
               </ThemedText>
             </Pressable>
           </View>
@@ -226,11 +229,11 @@ function ActiveSession({
   const { step } = runner;
 
   const confirmFinish = useCallback(() => {
-    Alert.alert('Finish session?', 'Your progress, including the current set, will be saved.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Finish', style: 'destructive', onPress: runner.finishSession },
+    Alert.alert(t('session.finish.confirmTitle'), t('session.finish.confirmBody'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('session.finish.confirmAction'), style: 'destructive', onPress: runner.finishSession },
     ]);
-  }, [runner.finishSession]);
+  }, [runner.finishSession, t]);
 
   if (!step) return null;
 
@@ -243,9 +246,13 @@ function ActiveSession({
           </ThemedText>
           <View style={styles.headerRight}>
             <SessionProgressDots total={runner.blockTotal} activeIndex={runner.blockIndex} />
-            <Pressable onPress={confirmFinish} hitSlop={8}>
+            <Pressable
+              onPress={confirmFinish}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel={t('session.finish.confirmTitle')}>
               <ThemedText type="code" style={styles.finishLabel}>
-                Finish
+                {t('session.finish.label')}
               </ThemedText>
             </Pressable>
           </View>

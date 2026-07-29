@@ -7,15 +7,20 @@ jest.mock('@/storage/session-files', () => ({
   finalizeSession: (...args: unknown[]) => mockFinalizeSession(...args),
   listSessions: jest.fn(),
   removeLastSessionEntry: (session: unknown) => session,
+  replaceSessionEntry: (session: Session, index: number, entry: SessionEntry) => ({
+    ...session,
+    entries: session.entries.map((existing, position) => (position === index ? entry : existing)),
+  }),
 }));
 
-import type { Session } from '@/domain/types';
+import type { Session, SessionEntry } from '@/domain/types';
 import { useSessionHistoryStore } from '@/state/session-history-store';
 
 /**
- * `activeSessionId` and `abandonActiveSession` only, since they exist for one caller: `session.tsx`'s
- * error boundary, which runs after React has thrown away the runner and the `Session` ref it held.
- * The rest of the store is exercised through the runner's own suite.
+ * `activeSessionId`/`abandonActiveSession` (which exist for one caller: `session.tsx`'s error
+ * boundary, running after React has thrown away the runner and the `Session` ref it held) and
+ * `replaceEntry`'s effect on history state, which the runner's suite can't see because it mocks this
+ * store out. The rest is exercised through that suite.
  */
 function aSession(overrides: Partial<Session> = {}): Session {
   return {
@@ -51,6 +56,30 @@ describe('activeSessionId', () => {
     useSessionHistoryStore.getState().completeSession(session);
 
     expect(useSessionHistoryStore.getState().activeSessionId).toBeNull();
+  });
+});
+
+describe('replaceEntry', () => {
+  // The runner rewrites an exercise's entry on every set, so history has to show the grown version
+  // rather than the one-set entry it first appended — a live History tab is reading this array.
+  it('swaps the entry in history state, leaving its neighbours alone', () => {
+    const first: SessionEntry = { exercise: 'pullups', type: 'reps', sets: [{ reps: 6, restTakenSec: 0 }] };
+    const other: SessionEntry = { exercise: 'lsit', type: 'timed_hold', sets: [{ holdSec: 20, restTakenSec: 0 }] };
+    const session = aSession({ entries: [first, other] });
+    useSessionHistoryStore.setState({ sessions: [session] });
+
+    const grown: SessionEntry = {
+      exercise: 'pullups',
+      type: 'reps',
+      sets: [
+        { reps: 6, restTakenSec: 45 },
+        { reps: 5, restTakenSec: 0 },
+      ],
+    };
+    const updated = useSessionHistoryStore.getState().replaceEntry(session, 0, grown);
+
+    expect(updated.entries).toEqual([grown, other]);
+    expect(useSessionHistoryStore.getState().sessions[0].entries).toEqual([grown, other]);
   });
 });
 

@@ -15,7 +15,7 @@ plus an append-only local session log. No server, no account.
   the i18next call sites moved to `import { t } from 'i18next'` and the five copy-then-sort sites got
   a disable comment each (decision log: why not `toSorted`). Keep it at zero — a warning you can't
   fix wants a one-line disable naming the reason, not a new accepted baseline.
-- `npm test` — jest via `jest-expo`. 346 tests across 31 files: the domain layer, the session runner,
+- `npm test` — jest via `jest-expo`. 354 tests across 31 files: the domain layer, the session runner,
   five screens (`workout-editor`, `exercise-editor`, `program-editor`, `session`, `import`), six
   components, the theme context, the seed library, and the tip, preferences and session-history
   storage/stores. Under a minute, so run it.

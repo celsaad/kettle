@@ -240,6 +240,8 @@ React Native timers drift and get throttled when the app backgrounds — fatal f
 
 Wire a **flush-to-disk** into each meaningful state transition (set logged, round completed). Write to the session's working file as you go; finalize (`ended_at`) on completion. A mid-workout crash then loses at most the current in-progress set.
 
+Implemented as a write-through: an exercise's entry is appended when its first set lands and rewritten in place as each later set is added, so "as you go" means per set rather than per exercise. It first shipped flushing only when an exercise *finished*, which read as satisfying this section and didn't — a crash three sets into a four-set exercise wrote none of them.
+
 ---
 
 ## 8. Recommended Stack

@@ -130,17 +130,16 @@ which is deleted.
   change so it never fires stale or doubles up.
 - `expo-haptics` fires on every `advance()` (set done, rest skipped, phase transition).
 - **Incremental flush:** a session file is created via `startSession()` as soon as the runner mounts;
-  each completed set is appended to a per-block pending-sets buffer and flushed as a `SessionEntry`
-  the moment its block finishes (boundary = the next step belongs to a different block, or there is no
-  next step); standalone Rest blocks flush their own entry immediately. `completeSession()` writes
-  `ended_at` when the last step advances past the end. A mid-workout crash loses at most the
-  in-progress set, per §7.2.
-- ✅ `goPrev()` un-flushes the most recent `advance()`, one level deep: a `lastCommitRef` records
-  what the last `commitCurrentStep`/`flushMember` call did (pushed to a pending buffer, or
-  flushed/direct-logged a `SessionEntry`), and `goPrev()` reverses exactly that — popping the pending
-  set/round/minute, or removing the just-written entry via a new `removeLastSessionEntry` (mirrors
-  `appendSessionEntry`: a full rewrite of this session's own file, same cost as the append it undoes)
-  and restoring all-but-its-last set back into the pending buffer for a multi-set member. A second
+  every completed set writes through to it immediately — the exercise's `SessionEntry` is appended on
+  its first set and rewritten in place on each one after (`persistMember`), so a crash loses at most
+  the set in progress, per §7.2. This is the second design: the first buffered an exercise's sets in
+  memory and flushed them only when it *finished*, which lost a whole exercise rather than a set.
+  `completeSession()` writes `ended_at` when the last step advances past the end.
+- ✅ `goPrev()` un-flushes the most recent `advance()`, one level deep: a `lastCommitRef` records what
+  the last `commitCurrentStep` call did, and `goPrev()` reverses exactly that — dropping the
+  set/round/minute from the exercise's log and rewriting its entry, or removing the entry outright
+  (via `removeLastSessionEntry`, a full rewrite of this session's own file, same cost as the write it
+  undoes) when that set was the only thing in it. A second
   `goPrev()` without an intervening `advance()` just moves the step index, as before — full
   multi-step undo was judged out of scope for this pass.
 
@@ -551,8 +550,8 @@ failure mode the decision-log note above warns about, regrown one heading level 
   declares zero data collected/shared (see the tip-jar entry), and an API key field or an in-app
   "generate" button breaks that claim and needs a Data Safety declaration. This is bring-your-own
   assistant: generated anywhere, imported here. **Still to decide:** whether shipping a prompt
-  template makes the app the owner of the training advice it produces — the same line the starter
-  library entry above is trying not to cross.
+  template makes the app the owner of the training advice it produces — the same line the seed
+  library's notes rule (decision log) is drawn to stay behind.
 
 - **Audit for graceful degradation.** Error boundaries themselves are done — every route exports one
   (`components/error-fallback.tsx`, with `session.tsx` and the root layout carrying their own), so a
@@ -564,8 +563,8 @@ failure mode the decision-log note above warns about, regrown one heading level 
 
 - **Audit for refactoring opportunities.** No single known offender, so this is a survey, not a fix
   with a known shape. Starting points: the five files over 450 lines (`workout-editor.tsx` at 749,
-  `use-session-runner.ts` at 646, `yaml-mapping.ts` at 520, `program-override-editor.tsx` at 465,
-  `selectors.ts` at 459); the four parallel `switch (entry.type)` blocks over
+  `use-session-runner.ts` at 649, `yaml-mapping.ts` at 520, `program-override-editor.tsx` at 465,
+  `selectors.ts` at 461); the four parallel `switch (entry.type)` blocks over
   `SessionEntry` in `selectors.ts`, which grow together every time an entry type is added; and
   `new-exercise-form.tsx`, a deliberate mini-copy of `exercise-editor.tsx`'s form whose duplication
   was accepted at the time and is worth re-checking. Worth doing with the same bar the `slugify`
@@ -585,14 +584,20 @@ duplicate `slugify` copies, now one `domain/slug.ts` that all four call sites im
 `sessionSetCount`, `slugify`'s ASCII-only ids and `session-hold.tsx`'s `NaN%` (below). Notes on the
 structural ones:
 
+- **A crash mid-exercise lost that exercise's sets, not just the set in progress** — §7.2's "loses at
+  most the in-progress set" was a claim the code didn't honour, since sets accumulated in memory until
+  the *exercise* finished. Now a write-through: the exercise's entry is appended on its first set and
+  rewritten on each one after. Both flush-shaped bugs on this list came from the same place — a
+  buffer whose flush boundary had to be inferred from the step list — and the write-through removes
+  the question rather than answering it again.
+
 - **Circuit members wrote one entry per round** instead of accumulating. Found by the phase-2 tests,
   not by the architecture pass. `advance()` flushed whenever the *next* step belonged to a different
   member — which in a round-robin circuit is every hand-off — so a 3-round, 3-member circuit produced
   9 single-set entries where `session-steps.ts`'s own expansion comment says it should produce 3
-  entries of 3 sets. The fix separates two questions that were conflated: "are we changing exercise
-  right now?" (the audio cue, still true on every hand-off) from "is this member finished for the
-  whole workout?" (the flush, now checking whether any later step shares the member). Verified in the
-  app: History shows three rows reading `12 · 12 · 12 reps` rather than nine rows of one value.
+  entries of 3 sets. Fixed at the time by separating two questions that had been conflated ("are we
+  changing exercise right now?" for the audio cue, "is this member finished?" for the flush); the
+  second question no longer exists, since each set now writes itself into its member's own entry.
 
 - The **`setState` updater** fix reads the step index from a ref instead of the updater's argument, so
   every commit/flush/`logEntry` now runs once in the event handler. The ref is advanced eagerly so two
@@ -616,15 +621,6 @@ structural ones:
   for the next 0-config bug: nothing validates a program week's override config — the schema types it
   as a free record of numbers and the in-app override editor doesn't call `validateConfig` — so the
   runner screens can't assume the constraints `validateConfig`/`schema.ts` enforce elsewhere.
-
-- **A crash mid-exercise loses that exercise's sets, not just the set in progress** — so §7.2's "loses
-  at most the in-progress set" (repeated in Workstream E above) overstates what the code does. Sets go
-  into `pendingSetsRef` and only become a `SessionEntry` when the *member* finishes, so a 4-set hold
-  crashed on set 3 writes nothing for it. Found by crashing the runner on purpose while verifying the
-  error boundaries, which is why the boundary's own copy promises only the finished exercises. The fix
-  is a write-through flush per set (upserting the member's entry rather than appending), which touches
-  the timer-critical file and wants its own pass — `session.tsx`'s boundary can't help, since the
-  buffer unmounts with the hook.
 
 - **`Alert.alert` is a no-op on web.** react-native-web ships `class Alert { static alert() {} }`, so
   every confirm dialog silently does nothing in the browser — all the deletes and finish-session.

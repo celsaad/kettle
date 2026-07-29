@@ -86,15 +86,15 @@ function isDirectLogStep(step: RunnerStep): boolean {
  * it exactly one level deep (a second `goPrev()` without an intervening `advance()` reverses nothing
  * further — see `goPrev` below).
  *
- * - `pending`: the commit only pushed/incremented a not-yet-flushed buffer entry for `memberKey`
- *   (member didn't change, so no flush ran) — undo pops/decrements it back off.
- * - `entry`: the commit produced a `SessionEntry` that's already been written to the session file,
- *   either via `flushMember` (buffer is the buffer it was built from) or a direct one-shot `logEntry`
- *   call (amrap/cardio/standalone rest — buffer is `null`, nothing to restore into a buffer).
+ * Every commit reaches the session file (see `persistMember`), so what varies is *how* to take it
+ * back, not whether anything was written:
+ *
+ * - `buffer` set: the commit grew that member's accumulating log, so undo shrinks it back by one and
+ *   rewrites the member's entry — or retracts the entry entirely if that was its first contribution.
+ * - `buffer: null`: a one-shot `logEntry` (amrap/cardio/standalone rest), which has no accumulating
+ *   buffer behind it — undo just removes the entry it appended.
  */
-type LastCommit =
-  | { kind: 'pending'; resultingIndex: number; memberKey: string; buffer: LastCommitBuffer }
-  | { kind: 'entry'; resultingIndex: number; memberKey: string; buffer: LastCommitBuffer | null };
+type LastCommit = { resultingIndex: number; memberKey: string; exerciseId: string; buffer: LastCommitBuffer | null };
 
 export type RestPreview = { label: string; detail: string } | null;
 
@@ -180,13 +180,30 @@ export function useSessionRunner(
 
   const startSession = useSessionHistoryStore((state) => state.startSession);
   const logEntry = useSessionHistoryStore((state) => state.logEntry);
+  const replaceEntry = useSessionHistoryStore((state) => state.replaceEntry);
   const removeLastEntry = useSessionHistoryStore((state) => state.removeLastEntry);
   const completeSession = useSessionHistoryStore((state) => state.completeSession);
 
   const sessionRef = useRef<Session | null>(null);
-  const pendingSetsRef = useRef<Record<string, (TimedHoldSetLog | RepsSetLog)[]>>({});
-  const pendingHiitRoundsRef = useRef<Record<string, number>>({});
-  const pendingEmomMinutesRef = useRef<Record<string, EmomMinuteLog[]>>({});
+  /**
+   * Each member's accumulating log — the sets/rounds/minutes done so far, keyed by `memberKey` so a
+   * circuit member's visits across rounds gather into one entry rather than one per round.
+   *
+   * These are a working copy, not a buffer of unwritten work: every mutation is followed by a
+   * `persistMember` call that rewrites the member's session entry, so nothing lives only here between
+   * sets. They're kept for the whole session rather than cleared when a member finishes — the entry
+   * they'd be rebuilt from is on disk anyway, and holding them means an undo doesn't have to
+   * reconstruct a member's earlier sets from what it just retracted.
+   */
+  const memberSetsRef = useRef<Record<string, (TimedHoldSetLog | RepsSetLog)[]>>({});
+  const memberHiitRoundsRef = useRef<Record<string, number>>({});
+  const memberEmomMinutesRef = useRef<Record<string, EmomMinuteLog[]>>({});
+  /**
+   * Where each member's entry sits in `session.entries`, so a later set rewrites that entry instead of
+   * appending another. Entries are only ever appended at the end or removed from the end (see
+   * `goPrev`), so a recorded index stays valid for the life of the session.
+   */
+  const entryIndexRef = useRef<Record<string, number>>({});
   // What the last advance() committed — consumed and cleared by goPrev() to undo exactly one level.
   const lastCommitRef = useRef<LastCommit | null>(null);
   /**
@@ -265,7 +282,7 @@ export function useSessionRunner(
     // make any mid-workout adjustment need re-entering. Falls back to the target on the first set of
     // an exercise, since there's nothing logged yet to carry.
     if (step?.kind === 'reps') {
-      const priorSets = pendingSetsRef.current[step.memberKey];
+      const priorSets = memberSetsRef.current[step.memberKey];
       const lastLogged = priorSets?.at(-1);
       const carried = lastLogged && 'reps' in lastLogged ? lastLogged.weightKg : undefined;
       setWeightKg(carried ?? step.targetWeightKg ?? 0);
@@ -276,17 +293,65 @@ export function useSessionRunner(
     setRestTargetSec(countdownTarget);
   }
 
+  /** The entry a member's accumulated log currently amounts to, or null if it has logged nothing yet. */
+  const entryForMember = useCallback((memberKey: string, exerciseId: string): SessionEntry | null => {
+    const sets = memberSetsRef.current[memberKey];
+    if (sets && sets.length > 0) {
+      return 'holdSec' in sets[0]
+        ? { exercise: exerciseId, type: 'timed_hold', sets: sets as TimedHoldSetLog[] }
+        : { exercise: exerciseId, type: 'reps', sets: sets as RepsSetLog[] };
+    }
+
+    const roundsDone = memberHiitRoundsRef.current[memberKey];
+    if (roundsDone !== undefined) return { exercise: exerciseId, type: 'hiit', roundsCompleted: roundsDone };
+
+    const minutes = memberEmomMinutesRef.current[memberKey];
+    if (minutes && minutes.length > 0) return { exercise: exerciseId, type: 'emom', minutes };
+
+    return null;
+  }, []);
+
+  /**
+   * Write-through: puts the member's log on disk as it stands, appending its entry the first time and
+   * rewriting that same entry every time after.
+   *
+   * This is what §7.2 asks for and what the old flush-when-the-member-finishes design didn't deliver:
+   * sets sat in memory until the whole exercise was done, so a crash three sets into a four-set hold
+   * wrote nothing for it. The cost is one file write per set instead of one per exercise, on a file
+   * that was already rewritten whole on every append — and it's this session's own file, never the
+   * rest of history (§5.2 note 3).
+   */
+  const persistMember = useCallback(
+    (memberKey: string, exerciseId: string) => {
+      const session = sessionRef.current;
+      if (!session) return;
+      const entry = entryForMember(memberKey, exerciseId);
+      if (!entry) return;
+
+      const index = entryIndexRef.current[memberKey];
+      if (index === undefined) {
+        entryIndexRef.current[memberKey] = session.entries.length;
+        sessionRef.current = logEntry(session, entry);
+      } else {
+        sessionRef.current = replaceEntry(session, index, entry);
+      }
+    },
+    [entryForMember, logEntry, replaceEntry],
+  );
+
   // Records `current`'s own contribution (the set/round/minute just finished, or the rest just
-  // taken) into the pending-by-member buffers, or directly into the session for one-shot entries.
+  // taken) into its member's log and straight through to the session file, or logs a one-shot entry
+  // for the step kinds that have no accumulating log behind them.
   const commitCurrentStep = useCallback(
     (current: RunnerStep) => {
       if (!sessionRef.current) return;
       if (current.kind === 'hold') {
-        const sets = pendingSetsRef.current[current.memberKey] ?? [];
+        const sets = memberSetsRef.current[current.memberKey] ?? [];
         sets.push({ holdSec: computeElapsedSec(), restTakenSec: 0 });
-        pendingSetsRef.current[current.memberKey] = sets;
+        memberSetsRef.current[current.memberKey] = sets;
+        persistMember(current.memberKey, current.exerciseId);
       } else if (current.kind === 'reps') {
-        const sets = pendingSetsRef.current[current.memberKey] ?? [];
+        const sets = memberSetsRef.current[current.memberKey] ?? [];
         // `|| undefined` so bodyweight (0) stays absent from the log rather than recording a 0 kg load —
         // entryVolume distinguishes the two, summing reps×weight only when a weight is actually present.
         sets.push({
@@ -295,14 +360,17 @@ export function useSessionRunner(
           rpe: rpeRef.current,
           restTakenSec: 0,
         });
-        pendingSetsRef.current[current.memberKey] = sets;
+        memberSetsRef.current[current.memberKey] = sets;
+        persistMember(current.memberKey, current.exerciseId);
       } else if (current.kind === 'interval') {
         if (current.variant === 'hiit') {
-          pendingHiitRoundsRef.current[current.memberKey] = (pendingHiitRoundsRef.current[current.memberKey] ?? 0) + 1;
+          memberHiitRoundsRef.current[current.memberKey] = (memberHiitRoundsRef.current[current.memberKey] ?? 0) + 1;
+          persistMember(current.memberKey, current.exerciseId);
         } else if (current.variant === 'emom') {
-          const minutes = pendingEmomMinutesRef.current[current.memberKey] ?? [];
+          const minutes = memberEmomMinutesRef.current[current.memberKey] ?? [];
           minutes.push({ reps: repsRef.current || undefined });
-          pendingEmomMinutesRef.current[current.memberKey] = minutes;
+          memberEmomMinutesRef.current[current.memberKey] = minutes;
+          persistMember(current.memberKey, current.exerciseId);
         } else if (current.variant === 'amrap') {
           sessionRef.current = logEntry(sessionRef.current, {
             exercise: current.exerciseId,
@@ -327,48 +395,18 @@ export function useSessionRunner(
             restTakenSec: takenSec,
           });
         } else {
-          const sets = pendingSetsRef.current[current.memberKey];
-          if (sets && sets.length > 0) sets[sets.length - 1].restTakenSec = takenSec;
+          // Attributes the rest to the set it followed. The set is already on disk without it, so the
+          // entry has to be rewritten — otherwise `rest_taken_sec` would be the one field that only
+          // survived if the exercise ran to completion.
+          const sets = memberSetsRef.current[current.memberKey];
+          if (sets && sets.length > 0) {
+            sets[sets.length - 1].restTakenSec = takenSec;
+            persistMember(current.memberKey, current.exerciseId);
+          }
         }
       }
     },
-    [computeElapsedSec, logEntry],
-  );
-
-  // Flushes whatever's pending for a member into the session. Looks at the buffers directly
-  // (rather than the current step's kind) so it also works when the active step is the member's
-  // interleaved rest — at most one member has unflushed data at a time, so this is unambiguous.
-  const flushMember = useCallback(
-    (memberKey: string, exerciseId: string) => {
-      if (!sessionRef.current) return;
-
-      const sets = pendingSetsRef.current[memberKey];
-      if (sets && sets.length > 0) {
-        const entry: SessionEntry =
-          'holdSec' in sets[0]
-            ? { exercise: exerciseId, type: 'timed_hold', sets: sets as TimedHoldSetLog[] }
-            : { exercise: exerciseId, type: 'reps', sets: sets as RepsSetLog[] };
-        sessionRef.current = logEntry(sessionRef.current, entry);
-      }
-      delete pendingSetsRef.current[memberKey];
-
-      const roundsDone = pendingHiitRoundsRef.current[memberKey];
-      if (roundsDone !== undefined) {
-        sessionRef.current = logEntry(sessionRef.current, {
-          exercise: exerciseId,
-          type: 'hiit',
-          roundsCompleted: roundsDone,
-        });
-        delete pendingHiitRoundsRef.current[memberKey];
-      }
-
-      const minutes = pendingEmomMinutesRef.current[memberKey];
-      if (minutes !== undefined) {
-        sessionRef.current = logEntry(sessionRef.current, { exercise: exerciseId, type: 'emom', minutes });
-        delete pendingEmomMinutesRef.current[memberKey];
-      }
-    },
-    [logEntry],
+    [computeElapsedSec, logEntry, persistMember],
   );
 
   const advance = useCallback(() => {
@@ -385,31 +423,23 @@ export function useSessionRunner(
         const directLog = isDirectLogStep(current);
         commitCurrentStep(current);
 
-        // Two different questions, and conflating them was a bug. Flushing asks "is this member
-        // finished for the whole workout?" — in a circuit the member comes back next round, and
-        // flushing on the immediate hand-off wrote one entry *per round* instead of accumulating its
-        // sets into one, contradicting the intent stated in session-steps.ts's expansion. The audio
-        // cue asks the narrower "are we moving to a different exercise right now?", which is still
-        // true on every circuit hand-off.
-        const changingExercise = !next || next.memberKey !== current.memberKey;
-        const memberDone = !steps.slice(nextIndex).some((later) => later.memberKey === current.memberKey);
-        if (memberDone) flushMember(current.memberKey, current.exerciseId);
         // A distinct cue from the plain countdown tick, so a change of exercise is audible even
-        // without looking at the screen — but not for every set/round within the same exercise.
+        // without looking at the screen — but not for every set/round within the same exercise. In a
+        // circuit this is true on every hand-off, since the member comes back next round; nothing
+        // about *writing* hangs off it any more, now that each set writes itself.
+        const changingExercise = !next || next.memberKey !== current.memberKey;
         if (changingExercise && next) playExerciseChange();
 
         // Track exactly what this advance() committed so goPrev() can undo it precisely (one level
         // only — see the LastCommit type doc).
+        const commitContext = { resultingIndex: nextIndex, memberKey: current.memberKey, exerciseId: current.exerciseId };
         if (directLog) {
-          lastCommitRef.current = { kind: 'entry', resultingIndex: nextIndex, memberKey: current.memberKey, buffer: null };
+          lastCommitRef.current = { ...commitContext, buffer: null };
         } else if (buffer) {
-          lastCommitRef.current = memberDone
-            ? { kind: 'entry', resultingIndex: nextIndex, memberKey: current.memberKey, buffer }
-            : { kind: 'pending', resultingIndex: nextIndex, memberKey: current.memberKey, buffer };
+          lastCommitRef.current = { ...commitContext, buffer };
         } else {
-          // Non-standalone rest: mutates the already-pending last set's restTakenSec in place rather
-          // than pushing/appending anything new, so redoing it later just overwrites that field again
-          // — nothing to track or undo.
+          // Non-standalone rest: overwrites the previous set's restTakenSec rather than adding
+          // anything, so redoing it later just overwrites that field again — nothing to undo.
           lastCommitRef.current = null;
         }
       } else {
@@ -425,7 +455,7 @@ export function useSessionRunner(
       stepIndexRef.current = nextIndex;
       setStepIndex(nextIndex);
     }
-  }, [steps, onComplete, commitCurrentStep, flushMember, completeSession, playExerciseChange]);
+  }, [steps, onComplete, commitCurrentStep, completeSession, playExerciseChange]);
 
   useEffect(() => {
     if (!step || paused) return;
@@ -516,67 +546,47 @@ export function useSessionRunner(
       const index = stepIndexRef.current;
       const commit = lastCommitRef.current;
       if (commit && commit.resultingIndex === index && sessionRef.current) {
-        if (commit.kind === 'pending') {
-          const buffer = commit.buffer;
-          switch (buffer) {
-            case 'sets': {
-              const sets = pendingSetsRef.current[commit.memberKey];
-              if (sets && sets.length > 0) {
-                sets.pop();
-                if (sets.length === 0) delete pendingSetsRef.current[commit.memberKey];
-              }
-              break;
-            }
-            case 'hiit': {
-              const count = pendingHiitRoundsRef.current[commit.memberKey];
-              if (count !== undefined) {
-                if (count > 1) pendingHiitRoundsRef.current[commit.memberKey] = count - 1;
-                else delete pendingHiitRoundsRef.current[commit.memberKey];
-              }
-              break;
-            }
-            case 'emom': {
-              const minutes = pendingEmomMinutesRef.current[commit.memberKey];
-              if (minutes && minutes.length > 0) {
-                minutes.pop();
-                if (minutes.length === 0) delete pendingEmomMinutesRef.current[commit.memberKey];
-              }
-              break;
-            }
-            default:
-              assertNever(buffer);
+        const buffer = commit.buffer;
+        switch (buffer) {
+          case 'sets': {
+            const sets = memberSetsRef.current[commit.memberKey];
+            if (sets && sets.length > 0) sets.pop();
+            break;
           }
-        } else {
-          const entries = sessionRef.current.entries;
-          const lastEntry = entries[entries.length - 1];
-          if (lastEntry) {
-            sessionRef.current = removeLastEntry(sessionRef.current);
-            // A multi-set hold/reps member (or a multi-round hiit/multi-minute emom flush) only had
-            // its *last* contribution added by this commit — restore the rest back into the pending
-            // buffer rather than discarding the whole flushed entry. `buffer` is null for direct-log
-            // entries (amrap/cardio/standalone rest), which are single-shot and have nothing to restore.
-            const buffer = commit.buffer;
-            switch (buffer) {
-              case 'sets':
-                if ((lastEntry.type === 'timed_hold' || lastEntry.type === 'reps') && lastEntry.sets.length > 1) {
-                  pendingSetsRef.current[commit.memberKey] = lastEntry.sets.slice(0, -1);
-                }
-                break;
-              case 'hiit':
-                if (lastEntry.type === 'hiit' && lastEntry.roundsCompleted > 1) {
-                  pendingHiitRoundsRef.current[commit.memberKey] = lastEntry.roundsCompleted - 1;
-                }
-                break;
-              case 'emom':
-                if (lastEntry.type === 'emom' && lastEntry.minutes.length > 1) {
-                  pendingEmomMinutesRef.current[commit.memberKey] = lastEntry.minutes.slice(0, -1);
-                }
-                break;
-              case null:
-                break;
-              default:
-                assertNever(buffer);
+          case 'hiit': {
+            const count = memberHiitRoundsRef.current[commit.memberKey];
+            if (count !== undefined) {
+              if (count > 1) memberHiitRoundsRef.current[commit.memberKey] = count - 1;
+              else delete memberHiitRoundsRef.current[commit.memberKey];
             }
+            break;
+          }
+          case 'emom': {
+            const minutes = memberEmomMinutesRef.current[commit.memberKey];
+            if (minutes && minutes.length > 0) minutes.pop();
+            break;
+          }
+          // A one-shot entry (amrap/cardio/standalone rest) with no accumulating log behind it: the
+          // commit appended it and nothing has been appended since, so removing the last entry
+          // removes exactly that one.
+          case null:
+            sessionRef.current = removeLastEntry(sessionRef.current);
+            break;
+          default:
+            assertNever(buffer);
+        }
+
+        if (buffer !== null) {
+          // Rewrite what the member has left, or retract its entry if that set was all it had. The
+          // retraction can only ever hit the *last* entry: this undoes the most recent commit, so
+          // whatever it appended is still the newest thing in the session.
+          if (entryForMember(commit.memberKey, commit.exerciseId)) {
+            persistMember(commit.memberKey, commit.exerciseId);
+          } else {
+            sessionRef.current = removeLastEntry(sessionRef.current);
+            // Forget where its entry was, so redoing the set appends a fresh one instead of trying to
+            // rewrite an index that no longer holds it.
+            delete entryIndexRef.current[commit.memberKey];
           }
         }
         lastCommitRef.current = null;
@@ -586,18 +596,15 @@ export function useSessionRunner(
       stepIndexRef.current = prevIndex;
       setStepIndex(prevIndex);
     }
-  }, [removeLastEntry]);
+  }, [removeLastEntry, entryForMember, persistMember]);
 
-  // Ends the session on demand: the in-progress step is committed and its member flushed first,
-  // so the current set/round (and anything already logged) is saved rather than discarded.
+  // Ends the session on demand: the in-progress step is committed first, so the current set/round
+  // (and everything already logged) is saved rather than discarded.
   const finishSession = useCallback(() => {
-    if (step && sessionRef.current) {
-      commitCurrentStep(step);
-      flushMember(step.memberKey, step.exerciseId);
-    }
+    if (step && sessionRef.current) commitCurrentStep(step);
     if (sessionRef.current) sessionRef.current = completeSession(sessionRef.current);
     onComplete();
-  }, [step, commitCurrentStep, flushMember, completeSession, onComplete]);
+  }, [step, commitCurrentStep, completeSession, onComplete]);
 
   const addRestSeconds = useCallback(
     (amount: number) => {

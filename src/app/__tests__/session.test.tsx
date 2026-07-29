@@ -1,4 +1,5 @@
 import { act, fireEvent, screen } from '@testing-library/react-native';
+import { changeLanguage } from 'i18next';
 
 import SessionScreen, { ErrorBoundary } from '@/app/session';
 import type { Exercise, Session, SessionEntry, Workout } from '@/domain/types';
@@ -45,6 +46,10 @@ jest.mock('@/state/session-history-store', () => ({
     selector({
       startSession: () => mockSession,
       logEntry: (current: Session, entry: SessionEntry) => ({ ...current, entries: [...current.entries, entry] }),
+      replaceEntry: (current: Session, index: number, entry: SessionEntry) => ({
+        ...current,
+        entries: current.entries.map((existing, position) => (position === index ? entry : existing)),
+      }),
       removeLastEntry: (current: Session) => current,
       completeSession: (current: Session) => current,
       abandonActiveSession: mockAbandonActiveSession,
@@ -117,6 +122,17 @@ describe('before the first step', () => {
     expect(screen.queryByText('GET READY')).toBeNull();
   });
 
+  // Driven in pt because an English assertion can't tell `t('session.nothingToRun.title')` from the
+  // literal it replaced — which is how this screen (and its "Finish" control, below) shipped with
+  // hardcoded English in an otherwise translated app.
+  it('renders the empty state in the active locale', async () => {
+    await changeLanguage('pt');
+    setLibrary(aWorkout({ id: 'w', name: 'Session', blocks: [{ kind: 'exercise', exerciseId: 'nothing' }] }));
+    await renderScreen(<SessionScreen />);
+
+    expect(screen.getByText('Nada para executar')).toBeTruthy();
+  });
+
   it('counts in before starting the timers', async () => {
     setLibrary(workoutOf('pullups'));
     await renderScreen(<SessionScreen />);
@@ -159,6 +175,13 @@ describe('step-kind dispatch', () => {
 
     expect(screen.getByText('REST')).toBeTruthy();
     expect(screen.queryByText('REPS')).toBeNull();
+  });
+
+  it('labels the finish control in the active locale', async () => {
+    await changeLanguage('pt');
+    await start(workoutOf('pullups'));
+
+    expect(screen.getByText('Encerrar')).toBeTruthy();
   });
 });
 

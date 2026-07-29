@@ -44,9 +44,9 @@ Type is the heart of the model. Each type carries its own **config** (the plan) 
 |---|---|---|
 | `hiit` | work sec, rest sec, rounds | per-round elapsed, completed? |
 | `emom` | interval sec, total minutes, target reps/interval | reps done per interval, missed intervals |
-| `amrap` | time cap, movements | rounds + reps completed |
-| `reps` | sets, target reps, target weight, rest sec | per-set: actual reps, weight, RPE, rest taken |
-| `timed_hold` | sets, hold sec, rest sec | per-set: actual hold duration, rest taken |
+| `amrap` | time cap | rounds + reps completed |
+| `reps` | sets, target rep range (min, optional max), target weight, rest sec | per-set: actual reps, weight, RPE, rest taken |
+| `timed_hold` | sets, target hold range (min, optional max), rest sec | per-set: actual hold duration, rest taken |
 | `cardio` | duration or distance | time, distance, pace |
 | `rest` | duration sec | actual rest taken |
 
@@ -82,8 +82,8 @@ exercises:
     type: reps
     config:
       sets: 5
-      target_reps: 5
-      target_weight: 60         # kg; unit is a global app setting
+      target_reps_min: 5        # add target_reps_max for a range ("5 to 8")
+      target_weight: 60         # always kg on disk; the kg/lb setting is display-only
       rest_sec: 120
 
   - id: l-sit
@@ -91,7 +91,7 @@ exercises:
     type: timed_hold
     config:
       sets: 4
-      hold_sec: 20
+      hold_sec_min: 20          # hold_sec_max optional, same range shape as reps
       rest_sec: 60
 
   - id: pullups
@@ -99,7 +99,7 @@ exercises:
     type: reps
     config:
       sets: 4
-      target_reps: 8
+      target_reps_min: 8
       rest_sec: 90
 
   - id: rest
@@ -112,12 +112,22 @@ workouts:
   - id: calisthenics-a
     name: Calisthenics A
     blocks:
-      - exercise: l-sit         # timed hold
-      - exercise: rest
-      - exercise: pullups       # reps
-      - exercise: rest
+      - type: exercise          # or `circuit` — blocks are a discriminated union
+        exercise: l-sit         # timed hold
+      - type: exercise
+        exercise: rest
+      - type: exercise
+        exercise: pullups       # reps
+      - type: exercise
+        exercise: rest
         config: { duration_sec: 120 }   # per-block override
+
+programs: []                    # required key, even when empty
 ```
+
+This sample is illustrative; [`authoring-exercises-yaml.md`](authoring-exercises-yaml.md) is the exact
+reference, kept against `schema.ts`. It postdates this section, which is why circuits, programs and
+the rep/hold *range* fields appear there and only in passing here.
 
 **Design notes:**
 
@@ -131,22 +141,22 @@ workouts:
 version: 1
 id: 2026-07-22T18-30-00
 workout: calisthenics-a       # nullable — supports ad-hoc sessions
-started_at: 2026-07-22T18:30:00Z
-ended_at:   2026-07-22T19:05:12Z
+started_at: '2026-07-22T18:30:00Z'   # quoted, or js-yaml resolves it to a Date and the schema rejects it
+ended_at: '2026-07-22T19:05:12Z'
 entries:
   - exercise: l-sit
     type: timed_hold          # embedded — session is self-describing
     sets:
-      - hold_sec: 20, rest_taken_sec: 58
-      - hold_sec: 18, rest_taken_sec: 61
-      - hold_sec: 15, rest_taken_sec: 60
+      - { hold_sec: 20, rest_taken_sec: 58 }
+      - { hold_sec: 18, rest_taken_sec: 61 }
+      - { hold_sec: 15, rest_taken_sec: 60 }
 
   - exercise: pullups
     type: reps
     sets:
-      - reps: 8, rest_taken_sec: 90, rpe: 7
-      - reps: 7, rest_taken_sec: 95, rpe: 8
-      - reps: 5, rest_taken_sec: 92, rpe: 9
+      - { reps: 8, rest_taken_sec: 90, rpe: 7 }
+      - { reps: 7, rest_taken_sec: 95, rpe: 8 }
+      - { reps: 5, rest_taken_sec: 92, rpe: 9 }
 ```
 
 Each entry **embeds its `type`** (and optionally a snapshot of the config used) so a session can be read and rendered without cross-referencing the library. Old sessions stay valid even if the exercise definition is later edited or deleted.

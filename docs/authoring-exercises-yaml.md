@@ -51,6 +51,9 @@ programs:
   derives from a name keep whatever script that name was written in (`Приседания` → `приседания`),
   flattening Latin accents only (`Flexão` → `flexao`).
 - `exercises`, `workouts`, and `programs` are flat lists in the same file.
+- **All three lists are required keys, even when empty.** A file that adds two exercises and nothing
+  else still needs `workouts: []` and `programs: []`, or it's refused with a schema error naming the
+  missing one. (Their *contents* are what's optional — see merge-by-id at the bottom.)
 - `version: 1` is required at the top level.
 - `notes` is optional on every exercise — a freeform string for a coaching cue ("stop 2 reps shy of
   failure") or a video link.
@@ -67,7 +70,7 @@ marked *optional* is required.
 | `amrap` | `time_cap_sec` (>0) | as-many-rounds-as-possible within the cap |
 | `reps` | `sets` (int >0), `target_reps_min` (int >0), `target_reps_max` (int >0, *optional*, ≥ `target_reps_min`), `target_weight` (≥0, *optional*, kg), `rest_sec` (≥0) | e.g. bench press; give only `target_reps_min` for a fixed target, or add `target_reps_max` for a range like "5 to 10 reps" |
 | `timed_hold` | `sets` (int >0), `hold_sec_min` (>0), `hold_sec_max` (>0, *optional*, ≥ `hold_sec_min`), `rest_sec` (≥0) | e.g. L-sit, plank; same fixed-vs-range shape as `reps` |
-| `cardio` | `duration_sec` (>0, *optional*), `distance_meters` (>0, *optional*) | give either or both |
+| `cardio` | `duration_sec` (>0, *optional*), `distance_meters` (>0, *optional*) | give either, both, or neither — an empty `config: {}` is valid and runs as a plain count-up stopwatch |
 | `rest` | `duration_sec` (≥0) | a standalone rest block between exercises — see below |
 
 All 7 types run step-by-step in the session screen — there's no longer any limitation on which
@@ -317,10 +320,19 @@ gets replaced by the imported definition; new `id`s get added; everything else i
 There's no need to include your whole existing library in a file you're importing — just the
 exercises/workouts/programs you want to add or change.
 
-1. Save your YAML as a file (any name — `exercises.yaml`, `my-workout.yaml`, whatever).
-2. In the app: **Library → Import**, pick the file.
-3. Review the new/updated summary, then **Merge & import**.
+There are two ways in, both reaching the same validation and the same preview:
+
+1. **A file.** Save your YAML anywhere (any name — `exercises.yaml`, `my-workout.yaml`, whatever),
+   then **Library → Import → Choose exercises.yaml** and pick it.
+2. **Pasted text.** **Library → Import → Paste YAML instead**, paste the whole thing, then **Review
+   paste**. Nothing is saved to a file first, which is the shorter path when the YAML came out of a
+   chat window rather than an editor.
+
+Either way, review the new/updated summary and confirm with **Merge & import**.
 
 If something's malformed, the import screen shows the validation error inline (from
 `parseLibraryYaml`) rather than silently failing — e.g. a missing required field, an unknown
-`exercise` reference in a block, or a `type` that isn't one of the seven above.
+`exercise` reference in a block, or a `type` that isn't one of the seven above. The error names the
+offending ids, and a **Copy error** button beside it puts the whole refusal on the clipboard — so if
+an assistant wrote the YAML, the fix is to paste that refusal back to it rather than to hunt through
+the file by hand.

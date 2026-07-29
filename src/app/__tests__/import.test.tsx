@@ -1,5 +1,6 @@
 import { fireEvent, screen } from '@testing-library/react-native';
 import { changeLanguage, t } from 'i18next';
+import { AccessibilityInfo } from 'react-native';
 
 import ImportScreen from '@/app/import';
 import type { Library } from '@/domain/types';
@@ -28,7 +29,14 @@ jest.mock('@/storage/library-file', () => ({
 
 jest.mock('expo-router', () => require('@/test-support/expo-router'));
 
+const mockSetString = jest.fn<Promise<boolean>, [string]>();
+jest.mock('expo-clipboard', () => ({ setStringAsync: (...args: [string]) => mockSetString(...args) }));
+
 const savedLibrary = saveLibrary as jest.MockedFunction<typeof saveLibrary>;
+
+beforeEach(() => {
+  mockSetString.mockResolvedValue(true);
+});
 
 /** Stands in for the picked file. Serialising a real Library keeps the fixture and the schema in step. */
 function picks(library: Library, name = 'exercises.yaml') {
@@ -277,6 +285,93 @@ describe('pasting', () => {
 
     expect(screen.getByText('YAML colado')).toBeTruthy();
     expect(screen.getByText('novo exercício')).toBeTruthy();
+  });
+});
+
+/**
+ * The other half of the paste path. An assistant emits the YAML, the importer refuses it, and the
+ * refusal already names the offending ids — so the loop closes only if that sentence can get back to
+ * whoever wrote it without being retyped from a screenshot.
+ */
+describe('the repair loop', () => {
+  /** The merge-level refusal, which is the one worth handing back: it names both ends of the break. */
+  async function refusedForUnknownExercise() {
+    picks(
+      aLibrary({
+        workouts: [aWorkout({ id: 'leg-day', name: 'Leg day', blocks: [{ kind: 'exercise', exerciseId: 'squats' }] })],
+      }),
+    );
+    await chooseFile();
+  }
+
+  it('copies the refusal, framed as something to act on', async () => {
+    await refusedForUnknownExercise();
+    await fireEvent.press(screen.getByText('Copy error'));
+
+    // The ids survive verbatim — they're what the fix is addressed to.
+    expect(mockSetString).toHaveBeenCalledWith(
+      'Kettle refused this exercises.yaml on import. Please fix the YAML and send back the corrected file.\n\n' +
+        'Workout "leg-day" references unknown exercise "squats"',
+    );
+  });
+
+  it('confirms the copy on the button and to a screen reader', async () => {
+    const announce = jest.spyOn(AccessibilityInfo, 'announceForAccessibility');
+    await refusedForUnknownExercise();
+    await fireEvent.press(screen.getByText('Copy error'));
+
+    // The button's own text is the confirmation, so it carries no accessibilityLabel to drift from
+    // it — which is exactly why the announcement has to be explicit: focus doesn't move, so nothing
+    // would be re-read.
+    expect(screen.getByText('Copied')).toBeTruthy();
+    expect(announce).toHaveBeenCalledWith('Error copied to the clipboard');
+  });
+
+  it('offers nothing to copy when the failure was not about the content', async () => {
+    mockPickFile.mockResolvedValue({
+      canceled: false,
+      result: { name: 'exercises.yaml', size: 512, text: () => Promise.reject(new Error('Permission denied')) },
+    });
+    await chooseFile();
+
+    // A read failure is the platform's, not the YAML's. Offering to send it to an assistant would
+    // imply the assistant could do something about a denied file handle.
+    expect(screen.getByText("Couldn't read that file: Permission denied")).toBeTruthy();
+    expect(screen.queryByText('Copy error')).toBeNull();
+  });
+
+  it('says so when the clipboard refuses, without losing the error', async () => {
+    // Reachable on web, where the clipboard is permission-gated. The refusal is still the thing worth
+    // reading, so a failed copy must not overwrite it.
+    mockSetString.mockRejectedValue(new Error('NotAllowedError'));
+    await refusedForUnknownExercise();
+    await fireEvent.press(screen.getByText('Copy error'));
+
+    expect(screen.getByText("Couldn't reach the clipboard.")).toBeTruthy();
+    expect(screen.getByText('Workout "leg-day" references unknown exercise "squats"')).toBeTruthy();
+    expect(screen.queryByText('Copied')).toBeNull();
+  });
+
+  it('does not claim a copy the clipboard reported it did not make', async () => {
+    // The other failure shape: `setStringAsync` resolves false rather than throwing. Claiming
+    // "Copied" over that would send the user back to a chat window to paste nothing.
+    mockSetString.mockResolvedValue(false);
+    await refusedForUnknownExercise();
+    await fireEvent.press(screen.getByText('Copy error'));
+
+    expect(screen.getByText("Couldn't reach the clipboard.")).toBeTruthy();
+    expect(screen.queryByText('Copied')).toBeNull();
+  });
+
+  it('is translated, prompt included', async () => {
+    await changeLanguage('pt');
+    await refusedForUnknownExercise();
+    await fireEvent.press(screen.getByText('Copiar erro'));
+
+    expect(mockSetString.mock.calls.at(-1)![0]).toBe(
+      'O Kettle recusou este exercises.yaml na importação. Corrija o YAML e devolva o arquivo corrigido.\n\n' +
+        'O treino "leg-day" referencia o exercício desconhecido "squats"',
+    );
   });
 });
 

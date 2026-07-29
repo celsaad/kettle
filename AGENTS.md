@@ -218,7 +218,9 @@ Three rules, in the order they get broken:
 - **Verify against the code before believing any of them.** They have drifted before, in both
   directions: an audit found the README claiming no tests when there were 230, three "open bugs"
   already fixed, and this file asserting an a11y pass was complete when seven files had no a11y props
-  at all.
+  at all. The YAML samples no longer rely on this: `docs-samples.test.ts` runs every complete library
+  sample in `authoring-exercises-yaml.md` and the product plan through the real `parseLibraryYaml`, so
+  a doc that teaches a shape the schema refuses fails the suite. Prose is still on you.
 
 Keep open-work entries short. If the list starts wanting states and assignees, move it to GitHub
 issues (`origin` and `gh` are both available); until then the file is deliberately enough.

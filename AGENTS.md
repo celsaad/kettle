@@ -69,7 +69,8 @@ after any delegated change, and skim the diff.
   (week resolution + override application).
 - `src/storage/` — all file I/O, via `expo-file-system`'s **class-based `File`/`Directory` API**.
   One file per session (`session-files.ts`), so a mid-workout flush never rewrites history.
-- `src/state/` — zustand stores (`library-store`, `session-history-store`, `preferences-store`) and
+- `src/state/` — zustand stores (`library-store`, `session-history-store`, `preferences-store`,
+  `tip-store`) and
   `selectors.ts`, which holds most derived/display logic.
 - `src/hooks/use-session-runner.ts` — the wall-clock session engine. The product plan calls timer
   reliability "the make-or-break issue"; treat this file as high-risk and verify changes by running a

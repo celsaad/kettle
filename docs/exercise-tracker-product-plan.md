@@ -164,16 +164,18 @@ Each entry **embeds its `type`** (and optionally a snapshot of the config used) 
     2026-07-20T09-15-00.yaml
     2026-07-22T18-30-00.yaml
   supporter.json            # tip-jar state (app-owned, never hand-edited)
+  preferences.json          # appearance + kg/lb (app-owned, never hand-edited)
 ```
 
 A directory-level `.version` marker was planned here and deliberately **not** built: every YAML file
 already carries its own `version: 1` field, so a separate marker has no consumer until a real
 migration exists.
 
-`supporter.json` is JSON rather than YAML on purpose: YAML is the format the user is invited to edit,
-and purchase state isn't theirs to edit. It is also the only place tip history can live — Play
-consumables aren't restorable — so it self-heals to an empty state on a bad read rather than
-reporting an error nobody can act on.
+`supporter.json` and `preferences.json` are JSON rather than YAML on purpose: YAML is the format the
+user is invited to edit and export, and neither purchase state nor app settings belong in a library
+that gets shared. `supporter.json` is also the only place tip history can live — Play consumables
+aren't restorable — so it self-heals to an empty state on a bad read rather than reporting an error
+nobody can act on.
 
 **One file per session** = the directory is the database. This gives append-only-log benefits (crash safety, easy sync, no full-file rewrites, no partial-write corruption of history) while keeping the hand-editable library as a single tidy file.
 
@@ -194,7 +196,7 @@ Importing an `exercises.yaml` **merges** into the existing library rather than r
 **Merge algorithm (keyed by `id`):**
 
 - For each incoming **exercise**: if the `id` exists, the imported definition **replaces** the existing one; if not, it's **added**.
-- Same rule for **workouts**, keyed by workout `id`.
+- Same rule for **workouts** and **programs**, each keyed by its own `id`. (Programs postdate this section; they merge on identical terms — whole-object replace, never a field-level patch.)
 - Existing items whose `id` is **not** present in the import are **kept untouched**.
 
 **Before applying, validate the merged result as a whole:**

@@ -172,6 +172,9 @@ programs:
   (`rounds`, `rest_between_exercises_sec`, `rest_between_rounds_sec`) — only the keys you're changing.
 - A block override only makes sense against a `type: circuit` block that has an `id`; it has nothing
   to patch on a `type: exercise` block (use an exercise override for that instead).
+- **Week numbers are taken literally, not as a schedule to fill in.** The example above jumps 1 → 3 →
+  6 to keep it short; a program authored that way genuinely has three weeks, and the home screen's
+  "next up" walks 1 → 3 → 6, never offering 2, 4 or 5. Enumerate every week you intend to train.
 - Only include an `overrides` list for a week when that week changes something. Weeks are resolved
   independently against each exercise's/block's base definition in `exercises:`/`workouts:` — an
   override does **not** carry forward into later weeks on its own, so if you want week 3's change to

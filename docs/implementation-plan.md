@@ -472,6 +472,28 @@ decision assembled across several commits. Open work belongs in the sections at 
   (`light | dark | system`) — the old toggle could never get back to following the OS, because "follow"
   and "currently light" were indistinguishable to it. Storing intent rather than outcome is what makes
   the third option expressible. (It was in-memory at the time; it now persists via `preferences.json`.)
+- ✅ **The seed library is curated starter content, and three domain rules constrain what it may
+  contain.** It ships two programs and four workouts a new user can press start on, rather than the
+  format demo it used to be. The content itself is in `storage/seed-library.ts` and readable there;
+  what isn't visible from that file is the rules any *edit* to it has to respect, all three of which
+  the old seed broke:
+
+  - **`programs[0]` is the default.** `activeProgram` (`selectors.ts`) falls back to the first library
+    program when no session has been run yet, and there is no starter-program picker — so the
+    no-equipment program stays first, and the dumbbell one is browse-only until explicitly started.
+  - **Multi-day weeks sort by `day.localeCompare`** (`nextWeekAfter`), so `Monday`/`Wednesday`/
+    `Friday` would walk a week as *Friday → Monday → Wednesday*. Day labels have to sort in training
+    order, hence `Day 1`/`Day 2`/`Day 3`.
+  - **Weeks resolve sparsely and overrides don't carry forward.** Weeks 1/3/6 make "next up" skip 2, 4
+    and 5 entirely, so a seeded program enumerates every week and repeats an override in each later
+    week it should still apply to.
+
+  Two content rules, deliberate rather than incidental: seed content is **English-only** (a
+  locale-picked seed would double every future content edit, and this is the one place a name the user
+  dislikes is trivially renameable), and exercise `notes` describe **the app's own progression model
+  only** — never form cues, injury or diet, so the app keeps describing its data model rather than
+  prescribing training. The seed is also the web build's entire library and the reseed target for a
+  corrupt `exercises.yaml`, so it has to stay small enough to be a reasonable thing to reset to.
 - ✅ **Fixed: `exportLibrary`/`exportSession` threw past their own `.catch()`.** Resolving `.uri`
   constructs an `expo-file-system` `File`, which has no web implementation and throws *synchronously* —
   before `share()`'s async body is entered — so the throw escaped the returned promise and every
@@ -489,40 +511,6 @@ keep it a plan: the same ~330 lines of completed work under a forward-looking he
 failure mode the decision-log note above warns about, regrown one heading level up.
 
 ## Planned work
-
-- **A starter library worth landing on.** `storage/seed-library.ts` already writes 7 exercises, 2
-  workouts and one 6-week program on first launch, so the app never opens empty — but its own comment
-  says it "mirrors what was previously hardcoded mock data". It was built to *demonstrate the format*
-  (ranges, notes, a circuit, a periodized program), not to be a first workout someone would actually
-  do. What's wanted instead is curated starter content, so a new user can press start on day one
-  rather than build a library before the app does anything. Note the seed is also the web build's
-  entire library and the self-heal target for a corrupt `exercises.yaml`, so it has to stay small
-  enough to be a reasonable thing to reset to.
-
-  **Settled:** two programs — a no-equipment one **first**, a dumbbell one second — plus two
-  standalone workouts, startable ad-hoc from the Build tab, that exist so all seven exercise types
-  have a live example: one mixed conditioning session (`hiit` → `amrap` → a short `cardio` cooldown)
-  and one `emom`. An earlier draft gave each type its own single-block workout; folding them cut four
-  near-empty workouts to two without losing the coverage, which is the point of them.
-  Seed content stays **English-only**; a locale-picked seed is a
-  follow-up, not part of this (it would double every future content edit, and the seed is the one
-  place a name the user dislikes is trivially renameable). Exercise `notes` describe **the app's own
-  progression model only** — "stop 2 reps shy of failure", "hit the top of the range twice before
-  adding a set" — never form cues, pain/injury, or diet, so the app keeps describing its data model
-  rather than prescribing training. No loads are seeded: `target_weight` is left unset so the user
-  fills in their own.
-
-  Three constraints the content has to be authored around, none obvious from the seed file:
-
-  - **`programs[0]` is the default.** `activeProgram` (`selectors.ts`) falls back to the first library
-    program when no session has been run yet, and there is no starter-program picker — so the
-    no-equipment program must be first, and the second is browse-only until explicitly started.
-  - **Multi-day weeks sort by `day.localeCompare`** (`nextWeekAfter`), so `Monday`/`Wednesday`/
-    `Friday` walks a week as *Friday → Monday → Wednesday*. Day labels have to sort in training
-    order: `Day 1`/`Day 2`/`Day 3`.
-  - **Weeks resolve sparsely and overrides don't carry forward.** The current seed's weeks 1/3/6 make
-    "next up" skip 2, 4 and 5 entirely; a curated program must enumerate every week, and repeat an
-    override in each later week it should still apply to.
 
 - **Lean into AI-generated workouts — the format is already the feature.** A hand-editable YAML
   library that merges by `id` is exactly what an assistant is good at emitting, and the pipeline it
@@ -564,9 +552,9 @@ failure mode the decision-log note above warns about, regrown one heading level 
   catches, is the obvious gap to start from.
 
 - **Audit for refactoring opportunities.** No single known offender, so this is a survey, not a fix
-  with a known shape. Starting points: the five files over 450 lines (`workout-editor.tsx` at 745,
-  `use-session-runner.ts` at 642, `yaml-mapping.ts` at 520, `selectors.ts` at 459,
-  `program-override-editor.tsx` at 451); the four parallel `switch (entry.type)` blocks over
+  with a known shape. Starting points: the five files over 450 lines (`workout-editor.tsx` at 749,
+  `use-session-runner.ts` at 646, `yaml-mapping.ts` at 520, `program-override-editor.tsx` at 465,
+  `selectors.ts` at 459); the four parallel `switch (entry.type)` blocks over
   `SessionEntry` in `selectors.ts`, which grow together every time an entry type is added; and
   `new-exercise-form.tsx`, a deliberate mini-copy of `exercise-editor.tsx`'s form whose duplication
   was accepted at the time and is worth re-checking. Worth doing with the same bar the `slugify`

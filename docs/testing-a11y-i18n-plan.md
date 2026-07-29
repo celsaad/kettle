@@ -7,10 +7,10 @@
 > rather than a `liveRegion`, what is deliberately out of scope — still governs new work, and none of
 > it is recoverable from the commits that carried it out. Read it as rationale, not as a backlog.
 >
-> Two calls in here were **not** followed, deliberately: the pseudo-locale (`en-XA`) was skipped in
-> favour of going straight to real pt-BR translations, and the units preference (with its preferences
-> store) was deferred rather than built — storage stays metric and there is still no display-side
-> kg/lb conversion.
+> One call in here was **not** followed, deliberately: the pseudo-locale (`en-XA`) was skipped in
+> favour of going straight to real pt-BR translations. The units preference was deferred past the i18n
+> pass rather than built with it, but has since shipped — Settings switches every weight between kg and
+> lb, on the preferences store this plan called for, and storage stays metric as described below.
 
 Produced by an architect pass over the tree at commit `b4e8c07` plus the session-delete/search and
 settings work. Estimates are the planner's; treat them as relative sizing, not commitments.

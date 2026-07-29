@@ -16,6 +16,13 @@ const milestoneSource = require('../../assets/sounds/milestone.wav');
  * says "about to end", a milestone says "keep going, you're partway". One sound serves both milestone
  * cases — which of the two you're hearing is never ambiguous, since you're either mid-interval or
  * mid-hold, and a third distinct sound would be more to learn for no added information.
+ *
+ * **The three files are level-matched on purpose** (~0.30 RMS, 0.5 peak). The milestone shipped as a
+ * decaying bell at 0.09 RMS — a real ~11dB below the other two — and got reported as "doesn't fire",
+ * because mid-HIIT or mid-hold you are breathing hard with the phone on the floor. It fires; it was
+ * inaudible. A cue you are meant to hear without looking has to hold its level, so these are
+ * flat-topped tones with a short release, not chimes that ring out. Measure a replacement against
+ * tick.wav before assuming it is loud enough.
  */
 export function useSessionSounds() {
   const tickPlayer = useAudioPlayer(tickSource);

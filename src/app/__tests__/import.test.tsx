@@ -198,6 +198,88 @@ it('counts a re-imported identical file as updates, not as no changes', async ()
   expect(screen.getByText('updated exercise')).toBeTruthy();
 });
 
+/**
+ * The paste box exists because an assistant's YAML is text in a chat window, and the picker can only
+ * take a file. It shares every rejection with the picker by construction — both call the same
+ * `review` — so what's worth pinning here is that it reaches that shared path at all, and that it
+ * can't reach the merge on an empty box.
+ */
+describe('pasting', () => {
+  async function paste(text: string) {
+    await renderScreen(<ImportScreen />);
+    await fireEvent.press(screen.getByText(t('import.pasteToggle')));
+    await fireEvent.changeText(screen.getByPlaceholderText(t('import.pastePlaceholder')), text);
+    await fireEvent.press(screen.getByText(t('import.reviewPaste')));
+  }
+
+  it('previews a pasted library and merges it on confirm', async () => {
+    await paste(serializeLibraryYaml(aLibrary({ exercises: [dips] })));
+
+    expect(screen.getByText('Pasted YAML')).toBeTruthy();
+    expect(screen.getByText('dips')).toBeTruthy();
+    expect(screen.getByText('new exercise')).toBeTruthy();
+    expect(savedLibrary).not.toHaveBeenCalled();
+    // The picker was never touched, which is the point — this path has no file and no I/O at all.
+    expect(mockPickFile).not.toHaveBeenCalled();
+
+    await fireEvent.press(screen.getByText('Merge & import'));
+
+    expect(savedLibrary.mock.calls.at(-1)![0].exercises.map((exercise) => exercise.id)).toEqual(['pull-ups', 'dips']);
+  });
+
+  it('counts the lines it is about to merge', async () => {
+    // Trailing whitespace is trimmed before counting, so the label describes the YAML rather than
+    // however many blank lines a chat window happened to append.
+    await paste(`${serializeLibraryYaml(aLibrary({ exercises: [dips] }))}\n\n`);
+
+    const lines = serializeLibraryYaml(aLibrary({ exercises: [dips] }))
+      .trim()
+      .split('\n').length;
+    expect(screen.getByText(`${lines} lines pasted`)).toBeTruthy();
+  });
+
+  it('refuses malformed YAML the same way the picker does, keeping the text to fix', async () => {
+    await paste('exercises: [\n  - id: broken');
+
+    expect(screen.getByText(/^Invalid YAML:/)).toBeTruthy();
+    expect(savedLibrary).not.toHaveBeenCalled();
+    // Still on the paste box with the text in it — a refusal the user can act on, not a reset.
+    expect(screen.getByPlaceholderText(t('import.pastePlaceholder')).props.value).toBe('exercises: [\n  - id: broken');
+  });
+
+  it('refuses a merge-level break, which the schema alone would let through', async () => {
+    await paste(
+      serializeLibraryYaml(
+        aLibrary({
+          workouts: [aWorkout({ id: 'leg-day', name: 'Leg day', blocks: [{ kind: 'exercise', exerciseId: 'squats' }] })],
+        }),
+      ),
+    );
+
+    expect(screen.getByText('Workout "leg-day" references unknown exercise "squats"')).toBeTruthy();
+    expect(savedLibrary).not.toHaveBeenCalled();
+  });
+
+  it('does nothing on an empty box', async () => {
+    await paste('   \n  ');
+
+    // No preview *and no error*. Unguarded, whitespace reaches js-yaml and comes back "expected a
+    // document, but the input is empty" — an accusatory red line on the way to typing, before the
+    // user has done anything wrong. Asserting only the absence of a preview passes either way, so
+    // the rejection is what this pins.
+    expect(screen.queryByText(/^Invalid YAML:/)).toBeNull();
+    expect(screen.queryByText('Pasted YAML')).toBeNull();
+  });
+
+  it('is translated', async () => {
+    await changeLanguage('pt');
+    await paste(serializeLibraryYaml(aLibrary({ exercises: [dips] })));
+
+    expect(screen.getByText('YAML colado')).toBeTruthy();
+    expect(screen.getByText('novo exercício')).toBeTruthy();
+  });
+});
+
 it('surfaces a read failure instead of failing silently', async () => {
   mockPickFile.mockResolvedValue({
     canceled: false,

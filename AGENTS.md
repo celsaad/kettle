@@ -176,10 +176,6 @@ still only verified by driving the running app. Doing this wrong wastes a lot of
 Both workstreams have had their pass, so new work is expected to arrive already conforming — cheap as
 you go, tedious to retrofit, which is why they're here rather than on a backlog.
 
-Both are at parity as of 2026-07-29 — but that's a fact about the code on that date, and this section
-is the rule, not the report. **Verify before believing it**: this file claimed a completed a11y pass
-once while seven files had no a11y props at all.
-
 - **Every interactive element needs `accessibilityRole`; it needs an explicit `accessibilityLabel`
   only when its own children don't name it.** A `Pressable` wrapping a `Text` already takes its name
   from that text, and adding a label that duplicates it will drift from what's on screen and break

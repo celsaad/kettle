@@ -567,11 +567,14 @@ failure mode the decision-log note above warns about, regrown one heading level 
   - **The user's existing ids, alongside it.** Merge-by-id means a generated program referencing
     `pullups` only works if that id exists, so whatever gets copied out has to include the library's
     current ids/names/types, not just the format.
-  - **A repair loop from the errors we now return.** `ParseError` is already a discriminated union
-    carrying the offending ids (`unknownExercise`, `unknownWorkout`, `schemaMismatch` + detail). Made
-    copyable, a rejected file becomes something the user pastes straight back to the assistant — now
-    the obvious next one, since paste closed the other half of that loop. It needs a clipboard
-    dependency (`expo-clipboard`), which is the only reason it wasn't folded into the paste commit.
+  - ~~**A repair loop from the errors we now return.**~~ ✅ Shipped. A refusal now carries a "Copy
+    error" button that puts one framing line plus the refusal itself on the clipboard, so a rejected
+    file goes straight back to the assistant that wrote it. Two calls worth not re-litigating: the
+    button appears only for refusals about the *content* (`ParseError`/`MergeError`) and never for a
+    failed read, a failed write or an unhydrated library — handing "no space left on device" to a
+    model asks it to fix something it can't reach — and the rejected YAML is deliberately **not**
+    attached, since an assistant that just emitted it still has it and a hand-edited file is on the
+    user's own disk.
 
   **Hard constraint, decided in advance:** the app must never call a model itself. The Play listing
   declares zero data collected/shared (see the tip-jar entry), and an API key field or an in-app
@@ -589,8 +592,8 @@ failure mode the decision-log note above warns about, regrown one heading level 
   catches, is the obvious gap to start from.
 
 - **Audit for refactoring opportunities.** No single known offender, so this is a survey, not a fix
-  with a known shape. Starting points: the five files over 450 lines (`workout-editor.tsx` at 749,
-  `use-session-runner.ts` at 649, `yaml-mapping.ts` at 520, `program-override-editor.tsx` at 465,
+  with a known shape. Starting points: the five files over 450 lines (`workout-editor.tsx` at 785,
+  `use-session-runner.ts` at 649, `yaml-mapping.ts` at 520, `program-override-editor.tsx` at 482,
   `selectors.ts` at 461); the four parallel `switch (entry.type)` blocks over
   `SessionEntry` in `selectors.ts`, which grow together every time an entry type is added; and
   `new-exercise-form.tsx`, a deliberate mini-copy of `exercise-editor.tsx`'s form whose duplication

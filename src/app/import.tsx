@@ -1,8 +1,9 @@
+import * as Clipboard from 'expo-clipboard';
 import { File } from 'expo-file-system';
 import { router } from 'expo-router';
 import type { TFunction } from 'i18next';
-import { useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { AccessibilityInfo, ActivityIndicator, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -22,6 +23,16 @@ export { ModalErrorBoundary as ErrorBoundary } from '@/components/error-fallback
 /** What the preview says it's about to merge. A filename for a pick, "Pasted YAML" for a paste. */
 type Source = { title: string; detail: string };
 type ReadyMerge = { picked: Source; library: Library; summary: MergeSummary };
+
+/**
+ * A refusal on screen, plus — when there is one — the same refusal worded for whoever wrote the YAML.
+ *
+ * `report` is deliberately null for the failures that aren't about the *content*: a picker that
+ * couldn't read the file, a disk that wouldn't take the write, a library that hasn't hydrated. Handing
+ * "Couldn't save your library: no space left on device" to an assistant asks it to fix something it
+ * has no access to, and offering the button at all would suggest it could.
+ */
+type ImportError = { message: string; report: string | null };
 
 /**
  * Where an import failure becomes a sentence. The parser and the merge return descriptors — they're
@@ -53,12 +64,64 @@ export default function ImportScreen() {
   const replaceLibrary = useLibraryStore((state) => state.replaceLibrary);
 
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<ImportError | null>(null);
   const [ready, setReady] = useState<ReadyMerge | null>(null);
   const [pasting, setPasting] = useState(false);
   const [pasted, setPasted] = useState('');
+  const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>('idle');
+  const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(
+    () => () => {
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+    },
+    [],
+  );
 
   const close = () => router.back();
+
+  /** Every refusal goes through here, so none can leave a stale "Copied" over a different error. */
+  const refuse = (message: string, report: string | null = null) => {
+    setError({ message, report });
+    setCopyState('idle');
+  };
+
+  /** A refusal the YAML's author can act on — the only kind that gets a report to hand back. */
+  const refuseContent = (reason: ParseError | MergeError) => {
+    const message = errorMessage(t, reason);
+    refuse(message, `${t('import.repairPrompt')}\n\n${message}`);
+  };
+
+  /**
+   * The other half of the paste path: an assistant emitted the YAML, so the fastest fix is to hand the
+   * refusal back to it verbatim. The message is already a full sentence naming the offending ids —
+   * that's the whole reason `ParseError` carries them rather than being pre-rendered prose — so the
+   * report is that sentence plus one line of framing, and nothing else.
+   *
+   * Deliberately not included: the rejected YAML itself. An assistant that just wrote it still has it,
+   * and a hand-edited file is on disk where the user can point at it — so appending it would mostly
+   * mean putting a whole library on the clipboard to say something both ends already know.
+   */
+  const copyReport = async (report: string) => {
+    try {
+      // The boolean is the API's own way of saying it didn't take, distinct from throwing — so a
+      // "Copied" claimed over a false here would be the one thing this button must never do.
+      if (!(await Clipboard.setStringAsync(report))) {
+        setCopyState('failed');
+        return;
+      }
+      setCopyState('copied');
+      // Announced rather than left to the label change: the button's own text switches to "Copied",
+      // which a screen reader doesn't re-read while focus stays put.
+      AccessibilityInfo.announceForAccessibility(t('import.copiedAnnouncement'));
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+      copyTimerRef.current = setTimeout(() => setCopyState('idle'), 2000);
+    } catch {
+      // Reachable on web, where the clipboard is permission-gated and throws when denied. The error
+      // it would replace is the one still worth reading, so this degrades to a note beside the button.
+      setCopyState('failed');
+    }
+  };
 
   /**
    * The only path from raw YAML to a confirmed preview. Both input sources land here, so a paste is
@@ -68,16 +131,16 @@ export default function ImportScreen() {
   const review = (text: string, source: Source) => {
     const parsed = parseLibraryYaml(text);
     if (!parsed.ok) {
-      setError(errorMessage(t, parsed.error));
+      refuseContent(parsed.error);
       return;
     }
     if (!currentLibrary) {
-      setError(t('import.libraryNotLoaded'));
+      refuse(t('import.libraryNotLoaded'));
       return;
     }
     const merge = mergeLibraries(currentLibrary, parsed.data);
     if (!merge.ok) {
-      setError(errorMessage(t, merge.error));
+      refuseContent(merge.error);
       return;
     }
     setReady({ picked: source, library: merge.library, summary: merge.summary });
@@ -99,7 +162,7 @@ export default function ImportScreen() {
     } catch (err) {
       // The picker's and the filesystem's own message, which is the platform's and stays untranslated
       // — but the sentence around it says which step failed, and that part is ours.
-      setError(t('import.error.readFailed', { detail: (err as Error).message }));
+      refuse(t('import.error.readFailed', { detail: (err as Error).message }));
     } finally {
       setBusy(false);
     }
@@ -129,7 +192,7 @@ export default function ImportScreen() {
       await replaceLibrary(ready.library);
       close();
     } catch (err) {
-      setError(t('import.error.saveFailed', { detail: (err as Error).message }));
+      refuse(t('import.error.saveFailed', { detail: (err as Error).message }));
       setBusy(false);
     }
   };
@@ -155,6 +218,9 @@ export default function ImportScreen() {
 
   const newCount = changedItems.filter((item) => item.kind === 'new').length;
   const updatedCount = changedItems.length - newCount;
+  // Hoisted out of the JSX: narrowing `error.report` inside the press handler's closure doesn't hold,
+  // since TypeScript has to assume a property can change between render and tap.
+  const errorReport = error?.report ?? null;
 
   return (
     <SafeAreaView
@@ -253,9 +319,28 @@ export default function ImportScreen() {
         )}
 
         {error && (
-          <ThemedText type="small" style={[styles.error, { color: theme.accentText }]}>
-            {error}
-          </ThemedText>
+          <View style={styles.error}>
+            <ThemedText type="small" style={{ color: theme.accentText }}>
+              {error.message}
+            </ThemedText>
+            {errorReport && (
+              <View style={styles.copyRow}>
+                <Pressable
+                  onPress={() => copyReport(errorReport)}
+                  accessibilityRole="button"
+                  style={[styles.copyButton, { borderColor: theme.border }]}>
+                  <ThemedText type="smallMedium" themeColor="textSecondary">
+                    {copyState === 'copied' ? t('import.copied') : t('import.copyError')}
+                  </ThemedText>
+                </Pressable>
+                {copyState === 'failed' && (
+                  <ThemedText type="small" themeColor="textSecondary" style={styles.copyFailed}>
+                    {t('import.copyFailed')}
+                  </ThemedText>
+                )}
+              </View>
+            )}
+          </View>
         )}
 
         {ready && (
@@ -406,6 +491,24 @@ const styles = StyleSheet.create({
   fileName: {},
   error: {
     marginTop: Spacing.two,
+    gap: Spacing.two - 2,
+    alignItems: 'flex-start',
+  },
+  copyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    flexWrap: 'wrap',
+  },
+  copyButton: {
+    minHeight: 44,
+    justifyContent: 'center',
+    paddingHorizontal: Spacing.two + 2,
+    borderWidth: 1,
+    borderRadius: 12,
+  },
+  copyFailed: {
+    flexShrink: 1,
   },
   countsRow: {
     flexDirection: 'row',

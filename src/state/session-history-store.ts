@@ -8,6 +8,7 @@ import {
   finalizeSession,
   listSessions,
   removeLastSessionEntry,
+  replaceSessionEntry,
 } from '@/storage/session-files';
 
 type SessionHistoryState = {
@@ -34,6 +35,12 @@ type SessionHistoryState = {
   ) => Session;
   /** Appends one logged entry, flushes to disk, and updates history state. Returns the updated session. */
   logEntry: (session: Session, entry: SessionEntry) => Session;
+  /**
+   * Rewrites an already-logged entry in place, flushes to disk, and updates history state. The runner
+   * uses this to grow an exercise's entry set by set without appending a second one. Returns the
+   * updated session.
+   */
+  replaceEntry: (session: Session, index: number, entry: SessionEntry) => Session;
   /** Removes the most recently appended entry, flushes to disk, and updates history state. Used to un-flush a logged entry when the user steps back. Returns the updated session. */
   removeLastEntry: (session: Session) => Session;
   /** Writes `ended_at` and updates history state. Returns the updated session. */
@@ -66,6 +73,11 @@ export const useSessionHistoryStore = create<SessionHistoryState>((set, get) => 
   },
   logEntry: (session, entry) => {
     const updated = appendSessionEntry(session, entry);
+    set({ sessions: get().sessions.map((existing) => (existing.id === updated.id ? updated : existing)) });
+    return updated;
+  },
+  replaceEntry: (session, index, entry) => {
+    const updated = replaceSessionEntry(session, index, entry);
     set({ sessions: get().sessions.map((existing) => (existing.id === updated.id ? updated : existing)) });
     return updated;
   },

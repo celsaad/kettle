@@ -173,6 +173,8 @@ function activeProgram(library: Library, sessions: Session[]): Program | undefin
  * the beginning; reaching the end wraps back to the start, so finishing a program restarts it.
  */
 export function nextWeekAfter(program: Program, sessions: Session[]): ProgramWeek {
+  // Sorts a copy — the spread is the copy oxlint can't see through (decision log: no `toSorted`).
+  // oxlint-disable-next-line unicorn/no-array-sort
   const sortedWeeks = [...program.weeks].sort((a, b) => a.week - b.week || (a.day ?? '').localeCompare(b.day ?? ''));
   const lastSession = sessions.find((session) => session.program === program.id && session.programWeek != null);
   const lastIndex = lastSession

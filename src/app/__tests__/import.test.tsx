@@ -1,5 +1,5 @@
 import { fireEvent, screen } from '@testing-library/react-native';
-import i18next from 'i18next';
+import { changeLanguage, t } from 'i18next';
 
 import ImportScreen from '@/app/import';
 import type { Library } from '@/domain/types';
@@ -59,7 +59,7 @@ beforeEach(() => {
 // pt cases below reuse it rather than hardcoding the Portuguese label of a button they don't test.
 async function chooseFile() {
   await renderScreen(<ImportScreen />);
-  await fireEvent.press(screen.getByText(i18next.t('import.chooseFile')));
+  await fireEvent.press(screen.getByText(t('import.chooseFile')));
 }
 
 it('does nothing when the picker is dismissed', async () => {
@@ -155,7 +155,7 @@ it('counts an existing program as an update', async () => {
 // so the summary and the refusal reasons are only genuinely proven translated from here.
 describe('in Portuguese', () => {
   beforeEach(async () => {
-    await i18next.changeLanguage('pt');
+    await changeLanguage('pt');
   });
 
   it('translates the change summary', async () => {

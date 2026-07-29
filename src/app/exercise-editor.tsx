@@ -195,6 +195,8 @@ export default function ExerciseEditorScreen() {
               {t('exerciseEditor.recent')}
             </ThemedText>
             <VolumeChart
+              // Reverses a copy — the spread is the copy oxlint can't see through (decision log: no `toReversed`).
+              // oxlint-disable-next-line unicorn/no-array-reverse
               data={[...recentHistory].reverse().map((entry) => ({ label: entry.dateLabel, value: entry.volume }))}
             />
             <View style={styles.historyList}>

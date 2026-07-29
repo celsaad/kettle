@@ -20,7 +20,7 @@
     "retry": "Try again",
     "session": {
       "title": "Session interrupted",
-      "body": "The workout screen hit an unexpected error. The exercises you'd finished were saved and the session has been closed out, so it counts in your history — though sets from the exercise you were on may not have made it.",
+      "body": "The workout screen hit an unexpected error. Every set you'd logged was saved and the session has been closed out, so it counts in your history — only the set you were in the middle of is lost.",
       "toHistory": "Go to History"
     }
   },
@@ -87,6 +87,16 @@
     "pause": "Pause",
     "resume": "Resume",
     "prev": "Prev",
+    "finish": {
+      "label": "Finish",
+      "confirmTitle": "Finish session?",
+      "confirmBody": "Everything you've logged, including the set you're on, will be saved.",
+      "confirmAction": "Finish"
+    },
+    "nothingToRun": {
+      "title": "Nothing to run",
+      "body": "\"{{name}}\" has no blocks, or none of its exercises have any sets/rounds/minutes configured. Add a block in Build, or check each exercise's config, then try again."
+    },
     "setOf": "Set {{index}} of {{total}}",
     "countingUp": "counting up",
     "stepperAccessibility": "{{label}}: {{value}}. Tap to enter an exact value.",

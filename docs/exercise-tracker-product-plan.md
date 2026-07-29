@@ -164,16 +164,18 @@ Each entry **embeds its `type`** (and optionally a snapshot of the config used) 
     2026-07-20T09-15-00.yaml
     2026-07-22T18-30-00.yaml
   supporter.json            # tip-jar state (app-owned, never hand-edited)
+  preferences.json          # appearance + kg/lb (app-owned, never hand-edited)
 ```
 
 A directory-level `.version` marker was planned here and deliberately **not** built: every YAML file
 already carries its own `version: 1` field, so a separate marker has no consumer until a real
 migration exists.
 
-`supporter.json` is JSON rather than YAML on purpose: YAML is the format the user is invited to edit,
-and purchase state isn't theirs to edit. It is also the only place tip history can live — Play
-consumables aren't restorable — so it self-heals to an empty state on a bad read rather than
-reporting an error nobody can act on.
+`supporter.json` and `preferences.json` are JSON rather than YAML on purpose: YAML is the format the
+user is invited to edit and export, and neither purchase state nor app settings belong in a library
+that gets shared. `supporter.json` is also the only place tip history can live — Play consumables
+aren't restorable — so it self-heals to an empty state on a bad read rather than reporting an error
+nobody can act on.
 
 **One file per session** = the directory is the database. This gives append-only-log benefits (crash safety, easy sync, no full-file rewrites, no partial-write corruption of history) while keeping the hand-editable library as a single tidy file.
 
@@ -194,7 +196,7 @@ Importing an `exercises.yaml` **merges** into the existing library rather than r
 **Merge algorithm (keyed by `id`):**
 
 - For each incoming **exercise**: if the `id` exists, the imported definition **replaces** the existing one; if not, it's **added**.
-- Same rule for **workouts**, keyed by workout `id`.
+- Same rule for **workouts** and **programs**, each keyed by its own `id`. (Programs postdate this section; they merge on identical terms — whole-object replace, never a field-level patch.)
 - Existing items whose `id` is **not** present in the import are **kept untouched**.
 
 **Before applying, validate the merged result as a whole:**
@@ -238,6 +240,8 @@ React Native timers drift and get throttled when the app backgrounds — fatal f
 
 Wire a **flush-to-disk** into each meaningful state transition (set logged, round completed). Write to the session's working file as you go; finalize (`ended_at`) on completion. A mid-workout crash then loses at most the current in-progress set.
 
+Implemented as a write-through: an exercise's entry is appended when its first set lands and rewritten in place as each later set is added, so "as you go" means per set rather than per exercise. It first shipped flushing only when an exercise *finished*, which read as satisfying this section and didn't — a crash three sets into a four-set exercise wrote none of them.
+
 ---
 
 ## 8. Recommended Stack
@@ -274,7 +278,7 @@ Get the **live session engine** right — it's the differentiator.
 
 1. **Exercise library** — load, view, and CRUD exercises with a type + default config; persist to `exercises.yaml`. ✅ full CRUD, including delete with an in-use-by-workout guard (mirrors the workout-delete pattern).
 2. **Workout builder** — order exercises + insert rest blocks; save as a template in `exercises.yaml`. ✅, plus a full workouts list (create/edit/**delete**, with an in-use-by-program guard) rather than a single hardcoded workout.
-3. **Live session runner** — timed types (hiit / emom / amrap / timed_hold) with audio + haptic cues and auto-advance; rep types with reps/weight input and rest timers; **mixed reps + timed within one workout**; pause/skip/previous. ✅ all types are runnable, plus a pre-session 3-2-1 countdown, tick/exercise-change audio cues, and finish-session-early (commits the in-progress set/round instead of discarding it). `goPrev()` un-flushes the most recent `advance()` (pops the still-pending set/round/minute, or removes the already-flushed/logged session entry and restores all-but-its-last set into the pending buffer) — scoped to one level deep: a second `goPrev()` in a row without an intervening `advance()` just moves the step index, same as before.
+3. **Live session runner** — timed types (hiit / emom / amrap / timed_hold) with audio + haptic cues and auto-advance; rep types with reps/weight input and rest timers; **mixed reps + timed within one workout**; pause/skip/previous. ✅ all types are runnable, plus a pre-session 3-2-1 countdown, tick/exercise-change audio cues, and finish-session-early (commits the in-progress set/round instead of discarding it). `goPrev()` un-flushes the most recent `advance()` (drops that set/round/minute and rewrites the exercise's entry, or retracts the entry outright when that was the only thing in it) — scoped to one level deep: a second `goPrev()` in a row without an intervening `advance()` just moves the step index, same as before.
 4. **Session history** — list past sessions from `sessions/` with basic stats. ✅, and per-exercise progression shipped after this was written: an exercise's edit screen has a "Recent" section listing the last few times it was logged, newest first (`exerciseHistory` in `selectors.ts`), above a per-exercise volume chart (`components/volume-chart.tsx`). See §11 phase 4 and the implementation plan's decision-log entry.
 5. **Import (merge) / export** — merge an imported library by `id`; export library or a single session. ✅
 

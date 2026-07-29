@@ -11,12 +11,11 @@ plus an append-only local session log. No server, no account.
 ## Commands
 
 - `npm run typecheck` — `tsc --noEmit`
-- `npm run lint` — oxlint. **49 pre-existing warnings are accepted**, in exactly two categories:
-  5 `unicorn/no-array-sort` / `no-array-reverse`, and 44 `import/no-named-as-default-member` from
-  `i18next.t(...)` call sites (the i18n migration added those; whether to switch to a named `t`
-  import is an open call, not an oversight). Leave both alone, don't add a third category, and check
-  the count rather than assuming a clean run. Anything at `error` level is new and yours.
-- `npm test` — jest via `jest-expo`. 346 tests across 31 files: the domain layer, the session runner,
+- `npm run lint` — oxlint. **Clean: zero warnings, zero errors.** It was 49 accepted warnings until
+  the i18next call sites moved to `import { t } from 'i18next'` and the five copy-then-sort sites got
+  a disable comment each (decision log: why not `toSorted`). Keep it at zero — a warning you can't
+  fix wants a one-line disable naming the reason, not a new accepted baseline.
+- `npm test` — jest via `jest-expo`. 354 tests across 31 files: the domain layer, the session runner,
   five screens (`workout-editor`, `exercise-editor`, `program-editor`, `session`, `import`), six
   components, the theme context, the seed library, and the tip, preferences and session-history
   storage/stores. Under a minute, so run it.
@@ -69,7 +68,8 @@ after any delegated change, and skim the diff.
   (week resolution + override application).
 - `src/storage/` — all file I/O, via `expo-file-system`'s **class-based `File`/`Directory` API**.
   One file per session (`session-files.ts`), so a mid-workout flush never rewrites history.
-- `src/state/` — zustand stores (`library-store`, `session-history-store`, `preferences-store`) and
+- `src/state/` — zustand stores (`library-store`, `session-history-store`, `preferences-store`,
+  `tip-store`) and
   `selectors.ts`, which holds most derived/display logic.
 - `src/hooks/use-session-runner.ts` — the wall-clock session engine. The product plan calls timer
   reliability "the make-or-break issue"; treat this file as high-risk and verify changes by running a

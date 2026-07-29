@@ -73,6 +73,24 @@ export function appendSessionEntry(session: Session, entry: SessionEntry): Sessi
 }
 
 /**
+ * Rewrites one already-appended entry in place and flushes to disk.
+ *
+ * The runner appends an exercise's entry when its first set lands and then replaces that same entry
+ * as each later set is added, which is what keeps the on-disk session at most one in-progress set
+ * behind (§7.2). Out-of-range indices are left alone rather than appended: the caller tracks the index
+ * it was given at append time, so an index that no longer exists means the caller's bookkeeping is
+ * wrong, and inventing a duplicate entry would hide that instead of showing it.
+ */
+export function replaceSessionEntry(session: Session, index: number, entry: SessionEntry): Session {
+  const updated: Session = {
+    ...session,
+    entries: session.entries.map((existing, position) => (position === index ? entry : existing)),
+  };
+  writeSession(updated);
+  return updated;
+}
+
+/**
  * Removes the most recently appended entry and flushes to disk. Mirrors `appendSessionEntry` but in
  * reverse — used by `goPrev()` to un-flush a set/round/entry that was just committed, when the user
  * steps back to redo it. A full rewrite here is exactly as cheap as the append it undoes (§5.2 note 3

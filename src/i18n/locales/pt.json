@@ -20,7 +20,7 @@
     "retry": "Tentar de novo",
     "session": {
       "title": "Treino interrompido",
-      "body": "A tela de treino encontrou um erro inesperado. Os exercícios que você já havia concluído foram salvos e a sessão foi encerrada, então ela conta no seu histórico — mas as séries do exercício em andamento podem não ter sido gravadas.",
+      "body": "A tela de treino encontrou um erro inesperado. Todas as séries que você registrou foram salvas e a sessão foi encerrada, então ela conta no seu histórico — só a série em andamento foi perdida.",
       "toHistory": "Ir para o Histórico"
     }
   },
@@ -87,6 +87,16 @@
     "pause": "Pausar",
     "resume": "Continuar",
     "prev": "Voltar",
+    "finish": {
+      "label": "Encerrar",
+      "confirmTitle": "Encerrar o treino?",
+      "confirmBody": "Tudo que você registrou, inclusive a série em andamento, será salvo.",
+      "confirmAction": "Encerrar"
+    },
+    "nothingToRun": {
+      "title": "Nada para executar",
+      "body": "\"{{name}}\" não tem blocos, ou nenhum dos seus exercícios tem séries/rodadas/minutos configurados. Adicione um bloco em Montar, ou confira a configuração de cada exercício, e tente de novo."
+    },
     "setOf": "Série {{index}} de {{total}}",
     "countingUp": "contando para cima",
     "stepperAccessibility": "{{label}}: {{value}}. Toque para inserir um valor exato.",

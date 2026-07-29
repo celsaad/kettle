@@ -13,6 +13,8 @@ export function findProgramWeek(program: Program, weekNumber: number, day?: stri
 
 /** Distinct week numbers present in the program, ascending — a program's weeks can repeat a number across days. */
 export function programWeekNumbers(program: Program): number[] {
+  // Sorts a copy — the spread is the copy oxlint can't see through (decision log: no `toSorted`).
+  // oxlint-disable-next-line unicorn/no-array-sort
   return [...new Set(program.weeks.map((week) => week.week))].sort((a, b) => a - b);
 }
 

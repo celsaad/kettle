@@ -74,6 +74,13 @@ jest.mock('@/state/session-history-store', () => ({
         mockSession = { ...current, entries: [...current.entries, entry] };
         return mockSession;
       },
+      replaceEntry: (current: Session, index: number, entry: SessionEntry) => {
+        mockSession = {
+          ...current,
+          entries: current.entries.map((existing, position) => (position === index ? entry : existing)),
+        };
+        return mockSession;
+      },
       removeLastEntry: (current: Session) => {
         mockSession = { ...current, entries: current.entries.slice(0, -1) };
         return mockSession;
@@ -201,6 +208,83 @@ describe('foreground catch-up', () => {
   });
 });
 
+/**
+ * §7.2's promise — "a mid-workout crash loses at most the in-progress set" — is only true if each set
+ * reaches the session as it happens. It didn't: sets accumulated in memory until the whole exercise
+ * finished, so a crash three sets into a four-set exercise wrote none of them. These assert on the
+ * session *between* sets, which is the only place the difference shows.
+ */
+describe('write-through persistence', () => {
+  it('writes the first set before the exercise is anywhere near finished', async () => {
+    const { result } = await mount(workoutOf(single('pullups'))); // 3 sets
+    await press(() => result.current.setReps(7));
+    await press(() => result.current.logSet());
+
+    const reps = mockSession.entries.find((entry) => entry.type === 'reps');
+    expect(reps?.type === 'reps' && reps.sets).toHaveLength(1);
+    expect(reps?.type === 'reps' && reps.sets[0].reps).toBe(7);
+  });
+
+  it('grows that same entry set by set instead of appending one per set', async () => {
+    const { result } = await mount(workoutOf(single('pullups')));
+    await press(() => result.current.logSet());
+    await press(() => result.current.skipRest());
+    await press(() => result.current.logSet());
+
+    const reps = mockSession.entries.filter((entry) => entry.type === 'reps');
+    expect(reps).toHaveLength(1);
+    expect(reps[0].type === 'reps' && reps[0].sets).toHaveLength(2);
+  });
+
+  it('records the rest taken after a set that is already on disk', async () => {
+    const { result } = await mount(workoutOf(single('pullups')));
+    await press(() => result.current.logSet());
+    await tick(45); // the rest between sets 1 and 2
+    await press(() => result.current.skipRest());
+
+    const reps = mockSession.entries.find((entry) => entry.type === 'reps');
+    expect(reps?.type === 'reps' && reps.sets[0].restTakenSec).toBe(45);
+  });
+
+  it('writes a hiit round as it completes, and counts up in place', async () => {
+    const { result } = await mount(workoutOf(single('burpees'))); // 3 rounds
+    await press(() => result.current.logInterval());
+    expect(mockSession.entries.filter((entry) => entry.type === 'hiit')).toMatchObject([{ roundsCompleted: 1 }]);
+
+    await press(() => result.current.skipRest());
+    await press(() => result.current.logInterval());
+    expect(mockSession.entries.filter((entry) => entry.type === 'hiit')).toMatchObject([{ roundsCompleted: 2 }]);
+  });
+
+  it('keeps each circuit member in its own entry while both are still going', async () => {
+    const circuit = workoutOf({
+      kind: 'circuit',
+      rounds: 2,
+      restBetweenExercisesSec: 15,
+      restBetweenRoundsSec: 60,
+      members: [{ exerciseId: 'pullups' }, { exerciseId: 'lsit' }],
+    });
+    const { result } = await mount(circuit);
+
+    // Round 1 of 2: pull-ups, circuit rest, L-sit. Both members are mid-workout, and interleaved —
+    // which is what makes "rewrite the member's entry" need to find the right one rather than the last.
+    await press(() => result.current.doneSet());
+    await press(() => result.current.skipRest());
+    await press(() => result.current.doneSet());
+
+    expect(mockSession.entries).toHaveLength(2);
+    expect(mockSession.entries[0]).toMatchObject({ exercise: 'pullups', type: 'reps' });
+    expect(mockSession.entries[1]).toMatchObject({ exercise: 'lsit', type: 'timed_hold' });
+
+    // Round 2's pull-up set has to land back in entry 0, not in the L-sit entry or a third one.
+    await press(() => result.current.skipRest());
+    await press(() => result.current.doneSet());
+    expect(mockSession.entries).toHaveLength(2);
+    expect(mockSession.entries[0].type === 'reps' && mockSession.entries[0].sets).toHaveLength(2);
+    expect(mockSession.entries[1].type === 'timed_hold' && mockSession.entries[1].sets).toHaveLength(1);
+  });
+});
+
 describe('logging', () => {
   it('flushes one hiit entry with the rounds actually completed', async () => {
     const { result } = await mount(workoutOf(single('burpees')));
@@ -293,12 +377,14 @@ describe('circuits', () => {
 });
 
 describe('goPrev undo', () => {
-  it('pops a pending set that had not been flushed yet', async () => {
+  it('retracts the entry a first set had just created', async () => {
     const { result } = await mount(workoutOf(single('pullups')));
-    await press(() => result.current.logSet()); // set 1 buffered, member unchanged -> nothing written
-    expect(mockSession.entries).toHaveLength(0);
+    await press(() => result.current.logSet()); // set 1 is on disk immediately, in its own entry
+    expect(mockSession.entries).toHaveLength(1);
 
     await press(() => result.current.goPrev());
+    // Nothing of that set is left behind: its entry was the whole of what it wrote.
+    expect(mockSession.entries).toHaveLength(0);
     expect(result.current.stepIndex).toBe(0);
 
     // Redo, then finish the exercise: the popped set must not resurface as a duplicate.
@@ -311,29 +397,34 @@ describe('goPrev undo', () => {
     expect(reps?.type === 'reps' && reps.sets).toHaveLength(3);
   });
 
-  it('removes an already-flushed entry and restores its earlier sets to the buffer', async () => {
+  it('shrinks a written entry back by one set rather than retracting the whole thing', async () => {
     const { result } = await mount(workoutOf(single('pullups'), single('grinder')));
     await press(() => result.current.logSet());
     await press(() => result.current.skipRest());
     await press(() => result.current.logSet());
     await press(() => result.current.skipRest());
-    await press(() => result.current.logSet()); // last set: leaves the member, flushes all 3
-    expect(mockSession.entries.filter((entry) => entry.type === 'reps')).toHaveLength(1);
+    await press(() => result.current.logSet()); // last set of the exercise
+    const written = mockSession.entries.filter((entry) => entry.type === 'reps');
+    expect(written).toHaveLength(1);
+    expect(written[0].type === 'reps' && written[0].sets).toHaveLength(3);
 
     await press(() => result.current.goPrev());
-    // The flushed entry is retracted, not left behind as stale data.
-    expect(mockSession.entries.filter((entry) => entry.type === 'reps')).toHaveLength(0);
+    // Only the undone set goes: the two before it were never at risk, having been written as they happened.
+    const afterUndo = mockSession.entries.filter((entry) => entry.type === 'reps');
+    expect(afterUndo).toHaveLength(1);
+    expect(afterUndo[0].type === 'reps' && afterUndo[0].sets).toHaveLength(2);
 
     await press(() => result.current.logSet()); // redo the final set
-    const reps = mockSession.entries.find((entry) => entry.type === 'reps');
-    expect(reps?.type === 'reps' && reps.sets).toHaveLength(3);
+    const reps = mockSession.entries.filter((entry) => entry.type === 'reps');
+    expect(reps).toHaveLength(1);
+    expect(reps[0].type === 'reps' && reps[0].sets).toHaveLength(3);
   });
 
   it('undoes only one level: a second goPrev just moves the index', async () => {
     const { result } = await mount(workoutOf(single('pullups')));
     await press(() => result.current.logSet());
     await press(() => result.current.skipRest());
-    await press(() => result.current.goPrev()); // undoes the rest step (nothing buffered)
+    await press(() => result.current.goPrev()); // undoes the rest step (which only overwrote a field)
     await press(() => result.current.goPrev()); // no further commit to reverse
     await press(() => result.current.goPrev());
     expect(result.current.stepIndex).toBe(0);

@@ -35,6 +35,8 @@ export default function ProgramDetailScreen() {
 
   const weeks: ProgramWeek[] = useMemo(() => {
     if (!program) return [];
+    // Sorts a copy — the spread is the copy oxlint can't see through (decision log: no `toSorted`).
+    // oxlint-disable-next-line unicorn/no-array-sort
     return [...program.weeks].sort((a, b) => a.week - b.week);
   }, [program]);
 

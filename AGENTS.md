@@ -16,9 +16,9 @@ plus an append-only local session log. No server, no account.
   `i18next.t(...)` call sites (the i18n migration added those; whether to switch to a named `t`
   import is an open call, not an oversight). Leave both alone, don't add a third category, and check
   the count rather than assuming a clean run. Anything at `error` level is new and yours.
-- `npm test` — jest via `jest-expo`. 310 tests across 26 files: the domain layer, the session runner,
+- `npm test` — jest via `jest-expo`. 321 tests across 27 files: the domain layer, the session runner,
   five screens (`workout-editor`, `exercise-editor`, `program-editor`, `session`, `import`), four
-  components, and the tip and preferences storage/stores. Under a minute, so run it.
+  components, the theme context, and the tip and preferences storage/stores. Under a minute, so run it.
 - `npm run format` — oxfmt (same Oxc toolchain as oxlint, so they agree). Run it instead of matching
   the style by hand, and never reach for `npx prettier`, which has no config here and would reformat
   the file to its own defaults. **Markdown and `package.json` are excluded on purpose** — see the

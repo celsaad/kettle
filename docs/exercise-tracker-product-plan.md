@@ -331,10 +331,9 @@ What's genuinely missing today, checked directly against the code:
 - ~~**No history search, no settings screen.**~~ ✅ Both shipped — History has name search (which also
   narrows the stat tiles), and there's a Settings modal with three-way appearance (light/dark/system),
   export/import, and library counts.
-- **The appearance preference doesn't persist across relaunches.** It's in-memory, so it resets to
-  "system" on restart. No longer blocked: `preferences.json` and its store now exist (added for the
-  units preference), so this is a migration of `theme-context.tsx` onto them rather than a decision
-  about where app settings live.
+- ~~**The appearance preference doesn't persist across relaunches.**~~ ✅ Fixed — `themePreference`
+  joined `unitSystem` in `preferences.json`, and `theme-context.tsx` reads it from the preferences
+  store instead of holding its own `useState`.
 - **`Alert.alert` is a no-op on web** — react-native-web ships an empty implementation, so every
   confirm dialog (all the deletes, finish-session) silently does nothing in the browser. Native is
   unaffected, and web is a dev/preview target, so this is logged rather than fixed.

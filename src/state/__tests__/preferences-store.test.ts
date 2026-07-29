@@ -14,20 +14,45 @@ jest.mock('@/i18n', () => ({
 import { usePreferencesStore } from '@/state/preferences-store';
 
 beforeEach(() => {
-  usePreferencesStore.setState({ status: 'idle', preferences: { unitSystem: 'metric' } });
+  usePreferencesStore.setState({
+    status: 'idle',
+    preferences: { unitSystem: 'metric', themePreference: 'system' },
+  });
   mockLoad.mockReset().mockResolvedValue(null);
   mockSave.mockReset().mockResolvedValue(true);
   mockDeviceUnitSystem.mockReset().mockReturnValue('metric');
 });
 
 describe('hydrate', () => {
-  it('loads the persisted preference and marks itself ready', async () => {
-    mockLoad.mockResolvedValue({ unitSystem: 'imperial' });
+  // Both fields together, since `loadPreferences` never returns a partial one — the schema defaults
+  // any key the stored file predates.
+  it('loads the persisted preferences and marks itself ready', async () => {
+    mockLoad.mockResolvedValue({ unitSystem: 'imperial', themePreference: 'dark' });
 
     await usePreferencesStore.getState().hydrate();
 
-    expect(usePreferencesStore.getState().preferences.unitSystem).toBe('imperial');
+    expect(usePreferencesStore.getState().preferences).toEqual({ unitSystem: 'imperial', themePreference: 'dark' });
     expect(usePreferencesStore.getState().status).toBe('ready');
+  });
+
+  /**
+   * The bug this closes: the appearance choice used to be `useState` in `theme-context.tsx`, so it
+   * reset to `system` on every relaunch. Hydration is the whole fix — the provider reads it from here.
+   */
+  it('restores a pinned scheme rather than falling back to system', async () => {
+    mockLoad.mockResolvedValue({ unitSystem: 'metric', themePreference: 'light' });
+
+    await usePreferencesStore.getState().hydrate();
+
+    expect(usePreferencesStore.getState().preferences.themePreference).toBe('light');
+  });
+
+  // Unlike units, there is no device-derived seed to fall back to: `system` already *is* "follow the
+  // device", so nothing has to be resolved from the locale here.
+  it('defaults the theme to system when nothing is stored', async () => {
+    await usePreferencesStore.getState().hydrate();
+
+    expect(usePreferencesStore.getState().preferences.themePreference).toBe('system');
   });
 
   /**
@@ -46,7 +71,7 @@ describe('hydrate', () => {
   // A stored choice has to beat the device, or switching to metric on a US phone would undo itself
   // at every launch.
   it('prefers a stored choice over the device default', async () => {
-    mockLoad.mockResolvedValue({ unitSystem: 'metric' });
+    mockLoad.mockResolvedValue({ unitSystem: 'metric', themePreference: 'system' });
     mockDeviceUnitSystem.mockReturnValue('imperial');
 
     await usePreferencesStore.getState().hydrate();
@@ -70,7 +95,7 @@ describe('hydrate', () => {
 describe('setUnitSystem', () => {
   it('persists the choice', async () => {
     expect(await usePreferencesStore.getState().setUnitSystem('imperial')).toBe(true);
-    expect(mockSave).toHaveBeenCalledWith({ unitSystem: 'imperial' });
+    expect(mockSave).toHaveBeenCalledWith({ unitSystem: 'imperial', themePreference: 'system' });
   });
 
   /**
@@ -83,5 +108,30 @@ describe('setUnitSystem', () => {
 
     expect(await usePreferencesStore.getState().setUnitSystem('imperial')).toBe(false);
     expect(usePreferencesStore.getState().preferences.unitSystem).toBe('imperial');
+  });
+});
+
+describe('setThemePreference', () => {
+  it('persists the choice', async () => {
+    expect(await usePreferencesStore.getState().setThemePreference('dark')).toBe(true);
+    expect(mockSave).toHaveBeenCalledWith({ unitSystem: 'metric', themePreference: 'dark' });
+  });
+
+  // Both preferences share one file, so each setter writes the *merged* object. Writing only its own
+  // field would drop the other one on every change.
+  it('keeps the other preference when writing', async () => {
+    await usePreferencesStore.getState().setUnitSystem('imperial');
+    await usePreferencesStore.getState().setThemePreference('light');
+
+    expect(mockSave).toHaveBeenLastCalledWith({ unitSystem: 'imperial', themePreference: 'light' });
+  });
+
+  // Same reasoning as units: the whole app has already repainted in the new scheme, and snapping it
+  // back would look broken when all that's lost is the choice surviving a relaunch.
+  it('still applies the change when persistence fails, and says so', async () => {
+    mockSave.mockResolvedValue(false);
+
+    expect(await usePreferencesStore.getState().setThemePreference('dark')).toBe(false);
+    expect(usePreferencesStore.getState().preferences.themePreference).toBe('dark');
   });
 });

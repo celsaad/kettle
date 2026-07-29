@@ -44,7 +44,7 @@ can also be started ad-hoc from the Build tab's play button, with no program inv
 workstreams. Every interactive control carries a role and label, touch targets are 44px minimum,
 colors are contrast-checked against each surface they sit on, the runner stays usable at large
 accessibility text sizes, and it announces step transitions to screen readers while respecting
-reduce-motion. The UI ships in English and Brazilian Portuguese (323 keys at parity), with dates,
+reduce-motion. The UI ships in English and Brazilian Portuguese (336 keys at parity), with dates,
 numbers, first-day-of-week and kg/lb all following the device locale by default. User data —
 exercise, workout and program names, and notes — is never translated.
 
@@ -109,6 +109,6 @@ npm run format        # oxfmt (markdown and package.json are excluded on purpose
 ```
 
 Typecheck, lint and the test suite all run in CI (`.github/workflows/ci.yml`) on every push and pull
-request. The suite is 287 tests across 25 files covering the domain layer, the session runner, and
+request. The suite is 321 tests across 27 files covering the domain layer, the session runner, and
 the highest-branch screens; layout, animation, real audio and file writes are verified by driving the
 running app instead.

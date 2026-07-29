@@ -37,7 +37,7 @@ beforeEach(async () => {
 beforeEach(() => {
   const store = require('./src/state/preferences-store').usePreferencesStore;
   // A suite that mocks the store module outright has no setState, and nothing to reset either.
-  store?.setState?.({ status: 'idle', preferences: { unitSystem: 'metric' } });
+  store?.setState?.({ status: 'idle', preferences: { unitSystem: 'metric', themePreference: 'system' } });
 });
 
 // `domain/format.ts` renders through i18next, so it needs an initialised instance to return anything

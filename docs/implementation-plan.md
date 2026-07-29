@@ -341,12 +341,16 @@ decision assembled across several commits. Open work belongs in the sections at 
   weighs people.
 
   **`preferences.json` now exists**, app-owned JSON next to `supporter.json` and deliberately outside
-  the library — so the appearance preference resetting on every relaunch (§"Open bugs") is no longer
-  blocked on missing infrastructure, just unmigrated. Unlike `useTipStore` it *is* in `_layout.tsx`'s
-  startup gate: it decides how every weight renders, so arriving after first paint would swap the
-  numbers under the user. `loadPreferences` returns `null` rather than a default, so "never chosen"
-  reaches the store, which is the only layer that can answer it with the device's own measurement
-  system.
+  the library — and the appearance preference has since migrated onto it, closing the reset-on-relaunch
+  bug. Unlike `useTipStore` it *is* in `_layout.tsx`'s startup gate: it decides how every weight
+  renders and what color the app is, so arriving after first paint would swap both under the user.
+  `loadPreferences` returns `null` rather than a default, so "never chosen" reaches the store, which is
+  the only layer that can answer it with the device's own measurement system.
+
+  **Every field added here after the first release must be `.default()`ed, not required.** A missing
+  key fails `safeParse`, and `loadPreferences` answers a failed parse with `null` — so a required new
+  field would silently reset every *other* preference in the file for existing users. `themePreference`
+  is the worked example.
 - **Considered and rejected: consolidating `sessions/` into monthly files to reduce IO.** Would cut
   against the explicit "never rewrite all of history on save" rule (product plan §5.2) — the
   mid-workout incremental flush (`writeSession()` full-overwrites its file on every completed set)
@@ -467,7 +471,7 @@ decision assembled across several commits. Open work belongs in the sections at 
   `theme-context.tsx`'s `Scheme | null` override plus `toggle()` became a `ThemePreference`
   (`light | dark | system`) — the old toggle could never get back to following the OS, because "follow"
   and "currently light" were indistinguishable to it. Storing intent rather than outcome is what makes
-  the third option expressible. The preference is still in-memory and resets on relaunch.
+  the third option expressible. (It was in-memory at the time; it now persists via `preferences.json`.)
 - ✅ **Fixed: `exportLibrary`/`exportSession` threw past their own `.catch()`.** Resolving `.uri`
   constructs an `expo-file-system` `File`, which has no web implementation and throws *synchronously* —
   before `share()`'s async body is entered — so the throw escaped the returned promise and every

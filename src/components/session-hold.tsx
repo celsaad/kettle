@@ -117,7 +117,7 @@ export function SessionHold({
           style={styles.circleButton}>
           <View style={styles.iconPrev} />
         </Pressable>
-        <Pressable onPress={onTogglePause} style={styles.pauseButton}>
+        <Pressable onPress={onTogglePause} accessibilityRole="button" style={styles.pauseButton}>
           <ThemedText type="heading" style={styles.pauseButtonLabel}>
             {paused ? t('session.resume') : t('session.pause')}
           </ThemedText>
@@ -130,7 +130,7 @@ export function SessionHold({
           <View style={styles.iconNext} />
         </Pressable>
       </View>
-      <Pressable onPress={onDone}>
+      <Pressable onPress={onDone} accessibilityRole="button">
         <ThemedText type="heading" style={styles.doneLabel}>
           {t('session.hold.doneSet')}
         </ThemedText>

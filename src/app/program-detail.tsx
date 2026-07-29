@@ -68,6 +68,8 @@ export default function ProgramDetailScreen() {
               <Pressable
                 onPress={() => router.push({ pathname: '/program-editor', params: { id: program.id } })}
                 hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel={t('programDetail.edit')}
                 style={styles.editButton}>
                 <ThemedText type="heading" themeColor="textSecondary">
                   ✎
@@ -117,6 +119,7 @@ export default function ProgramDetailScreen() {
 
                     <Pressable
                       onPress={() => startWeek(week)}
+                      accessibilityRole="button"
                       style={[styles.startButton, { backgroundColor: theme.accent }]}>
                       <ThemedText type="smallMedium" style={{ color: theme.onAccent }}>
                         {week.day ? t('programDetail.startThisDay') : t('programDetail.startThisWeek')}
@@ -127,7 +130,10 @@ export default function ProgramDetailScreen() {
               })}
             </View>
 
-            <Pressable onPress={close} style={[styles.closeButton, { borderColor: theme.border }]}>
+            <Pressable
+              onPress={close}
+              accessibilityRole="button"
+              style={[styles.closeButton, { borderColor: theme.border }]}>
               <ThemedText type="heading" themeColor="textSecondary">
                 {t('common.close')}
               </ThemedText>

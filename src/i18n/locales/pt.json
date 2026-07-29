@@ -4,13 +4,16 @@
     "cancel": "Cancelar",
     "delete": "Excluir",
     "save": "Salvar",
+    "done": "Concluir",
     "export": "Exportar",
     "import": "Importar",
     "close": "Fechar",
     "name": "Nome",
     "nameRequired": "O nome é obrigatório.",
     "couldNotDeriveId": "Não foi possível gerar um id a partir desse nome.",
-    "deleteConfirmBody": "\"{{name}}\" será removido permanentemente."
+    "deleteConfirmBody": "\"{{name}}\" será removido permanentemente.",
+    "decrease": "Diminuir {{label}}",
+    "increase": "Aumentar {{label}}"
   },
   "errorBoundary": {
     "title": "Algo deu errado",
@@ -153,7 +156,8 @@
       "rpeOption": "RPE {{value}}",
       "logSet": "Registrar série → Descanso",
       "repsDone": "Reps feitas",
-      "loadLabel": "Carga"
+      "loadLabel": "Carga",
+      "repsLabel": "Repetições"
     },
     "numberPad": {
       "dismiss": "Fechar teclado",
@@ -326,7 +330,11 @@
     "inUseTitle": "Treino em uso",
     "inUseBody": "\"{{name}}\" é usado em {{programs}}. Remova-o desses programas primeiro.",
     "deleteConfirmTitle": "Excluir treino?",
-    "createAndAdd": "Criar e adicionar"
+    "createAndAdd": "Criar e adicionar",
+    "reorderAccessibility": "Reordenar {{name}}",
+    "positionOf": "Posição {{index}} de {{total}}",
+    "moveUp": "Mover para cima",
+    "moveDown": "Mover para baixo"
   },
   "programEditor": {
     "editTitle": "Editar programa",

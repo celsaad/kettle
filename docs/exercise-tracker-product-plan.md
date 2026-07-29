@@ -345,9 +345,13 @@ What's genuinely missing today, checked directly against the code:
   rules for new work rather than workstreams (see AGENTS.md). Every control carries a role and label,
   touch targets are 44px minimum, colors are contrast-measured, the runner survives large text sizes
   and announces transitions, and the UI ships in English and Brazilian Portuguese with locale-aware
-  dates, numbers and first-day-of-week. **Still open within them:** screen-reader reordering for
-  `ReorderableList`, which is gesture-only and so impossible without sight; the `height`-based search
-  bars and stat cards outside the runner, which degrade at large text sizes rather than block;
-  `program-guide.tsx`'s prose, still English-only. ~~Unit conversion~~ ✅ shipped — Settings → Units
+  dates, numbers and first-day-of-week. ~~Still open within them: screen-reader reordering, the
+  `height`-based search bars, `program-guide.tsx`'s prose.~~ ✅ Closed 2026-07-29 — the reorder handle
+  now carries `adjustable` + move-up/move-down actions (see the implementation plan's decision log for
+  why they sit on the handle rather than the row, and why a browser can't see them), and the search
+  bars are `minHeight`. Two corrections to what this list used to say: the **stat cards were never
+  `height`-based** — they size by padding, so there was nothing to fix — and `program-guide.tsx`'s
+  prose staying English is a **decision**, not an omission (the testing plan's out-of-scope list); its
+  one button is translated. ~~Unit conversion~~ ✅ shipped — Settings → Units
   switches every weight between kg and lb, seeded from the device's measurement system; storage stays
   metric, so an exported library reads the same for everyone.

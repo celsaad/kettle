@@ -350,6 +350,25 @@ decision assembled across several commits. Open work belongs in the sections at 
   key fails `safeParse`, and `loadPreferences` answers a failed parse with `null` — so a required new
   field would silently reset every *other* preference in the file for existing users. `themePreference`
   is the worked example.
+- ✅ **A11y is complete, and two constraints from finishing it shape anything that touches it next.**
+  The pass now covers every interactive control; what isn't visible from the commits is why two
+  things are shaped the way they are.
+
+  **The reorder handle carries the screen-reader path, not the row.** `ReorderableList` was
+  gesture-only, and a drag has no non-visual equivalent, so the handle also takes
+  `accessibilityRole="adjustable"` plus `increment`/`decrement` actions. The obvious alternative —
+  putting the actions on the row wrapper — is wrong and shouldn't be re-proposed: making the wrapper
+  `accessible` collapses the row into one element and *hides* the remove button and the circuit's
+  text fields inside it, trading a reorder path for several controls. The labels are a required prop
+  (`labelsFor`) rather than defaulted, because the component has no locale bundle of its own and an
+  English default would be a hardcoded string no `pt` test could catch.
+
+  **`react-native-web` drops `accessibilityActions` and `accessibilityValue` entirely** — it maps
+  role and label only, so in a browser the handle is a named `role="slider"` with no actions and no
+  position. Verified by reading the rendered attributes, not assumed. So the non-gesture reorder is
+  **native-only, and a browser check cannot see it**; the jest tests cover the wiring, and TalkBack on
+  a device is the only thing that can confirm the rest. Don't "fix" the missing web actions.
+
 - **Considered and rejected: consolidating `sessions/` into monthly files to reduce IO.** Would cut
   against the explicit "never rewrite all of history on save" rule (product plan §5.2) — the
   mid-workout incremental flush (`writeSession()` full-overwrites its file on every completed set)
@@ -560,18 +579,6 @@ failure mode the decision-log note above warns about, regrown one heading level 
   assistant: generated anywhere, imported here. **Still to decide:** whether shipping a prompt
   template makes the app the owner of the training advice it produces — the same line the seed
   library's notes rule (decision log) is drawn to stay behind.
-
-- **Finish the a11y pass on text-labelled controls.** Found by auditing the screens against the code
-  on 2026-07-29, after both the README and AGENTS.md claimed "every interactive control carries a role
-  and label" — which is not true and was stopping anyone from checking. The pass prioritised icon-only
-  controls, correctly, since those announce as an unnamed "button"; text-labelled `Pressable`s largely
-  never got their `accessibilityRole`, so they announce their text but not what they are. Seven files
-  carry no a11y props at all: `exercise-editor`, `program-detail`, `program-guide`,
-  `new-exercise-form`, `session-rest`, `session-complete`, and the two tab layouts. `session-rest` is
-  the one to do first — prev / +30s / skip are primary in-workout controls. `import.tsx` was the
-  eighth and is done, fixed in passing while the paste path was being built. Cheap per file; the
-  reason it's a backlog entry rather than a checklist item is that it's ~15 files of nothing but this.
-  The `height`-instead-of-`minHeight` sizing (`library.tsx`, `history.tsx`) is the same shape of job.
 
 - **Audit for graceful degradation.** Error boundaries themselves are done — every route exports one
   (`components/error-fallback.tsx`, with `session.tsx` and the root layout carrying their own), so a

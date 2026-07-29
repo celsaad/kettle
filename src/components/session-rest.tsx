@@ -68,17 +68,22 @@ export function SessionRest({ secondsRemaining, totalSeconds, next, onAddSeconds
       <SessionNextCard next={next} />
 
       <View style={styles.controlsRow}>
-        <Pressable onPress={onPrev} style={styles.prevButton}>
+        {/*
+         * Role only, no `accessibilityLabel`: each of these has a Text child, and RN derives the
+         * accessible name from it. An explicit label would duplicate the visible text and then drift
+         * from it — and worse, break Voice Control, which matches on what's on screen.
+         */}
+        <Pressable onPress={onPrev} accessibilityRole="button" style={styles.prevButton}>
           <ThemedText type="code" style={styles.prevLabel}>
             {t('session.prev')}
           </ThemedText>
         </Pressable>
-        <Pressable onPress={() => onAddSeconds(30)} style={styles.addButton}>
+        <Pressable onPress={() => onAddSeconds(30)} accessibilityRole="button" style={styles.addButton}>
           <ThemedText type="heading" style={styles.addButtonLabel}>
             {t('session.rest.add30')}
           </ThemedText>
         </Pressable>
-        <Pressable onPress={onSkip} style={styles.skipButton}>
+        <Pressable onPress={onSkip} accessibilityRole="button" style={styles.skipButton}>
           <ThemedText type="heading" style={styles.skipButtonLabel}>
             {t('session.rest.skip')}
           </ThemedText>

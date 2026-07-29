@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import type { ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ModalHeader } from '@/components/modal-header';
@@ -33,6 +34,7 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 
 export default function ProgramGuideScreen() {
   const theme = useTheme();
+  const { t } = useTranslation();
   const close = () => router.back();
 
   return (
@@ -134,9 +136,13 @@ programs:
           </ThemedText>
         </Section>
 
-        <Pressable onPress={close} style={[styles.doneButton, { backgroundColor: theme.accent }]}>
+        {/*
+         * The guide's prose is deliberately English-only (see the testing plan's out-of-scope list),
+         * but its one control is not prose and has no reason to be.
+         */}
+        <Pressable onPress={close} accessibilityRole="button" style={[styles.doneButton, { backgroundColor: theme.accent }]}>
           <ThemedText type="heading" style={{ color: theme.onAccent }}>
-            Done
+            {t('common.done')}
           </ThemedText>
         </Pressable>
       </ScrollView>

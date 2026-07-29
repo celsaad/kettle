@@ -158,12 +158,15 @@ export default function HistoryScreen() {
                       </View>
                     ))}
                     <View style={styles.expandedFooter}>
-                      <Pressable onPress={() => confirmDelete(session)} hitSlop={8}>
+                      <Pressable onPress={() => confirmDelete(session)} accessibilityRole="button" hitSlop={8}>
                         <ThemedText type="small" themeColor="textSecondary">
                           {t('common.delete')}
                         </ThemedText>
                       </Pressable>
-                      <Pressable onPress={() => exportSession(session.id).catch(() => {})} hitSlop={8}>
+                      <Pressable
+                        onPress={() => exportSession(session.id).catch(() => {})}
+                        accessibilityRole="button"
+                        hitSlop={8}>
                         <ThemedText type="small" themeColor="accentText">
                           {t('common.export')}
                         </ThemedText>
@@ -212,7 +215,7 @@ const styles = StyleSheet.create({
   // as one pattern, not two takes on it.
   searchBar: {
     marginTop: Spacing.three,
-    height: 44,
+    minHeight: 44,
     borderRadius: 14,
     borderWidth: 1,
     flexDirection: 'row',

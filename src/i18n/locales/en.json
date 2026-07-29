@@ -4,13 +4,16 @@
     "cancel": "Cancel",
     "delete": "Delete",
     "save": "Save",
+    "done": "Done",
     "export": "Export",
     "import": "Import",
     "close": "Close",
     "name": "Name",
     "nameRequired": "Name is required.",
     "couldNotDeriveId": "Could not derive an id from that name.",
-    "deleteConfirmBody": "\"{{name}}\" will be permanently removed."
+    "deleteConfirmBody": "\"{{name}}\" will be permanently removed.",
+    "decrease": "Decrease {{label}}",
+    "increase": "Increase {{label}}"
   },
   "errorBoundary": {
     "title": "Something went wrong",
@@ -153,7 +156,8 @@
       "rpeOption": "RPE {{value}}",
       "logSet": "Log set → Rest",
       "repsDone": "Reps done",
-      "loadLabel": "Load"
+      "loadLabel": "Load",
+      "repsLabel": "Reps"
     },
     "numberPad": {
       "dismiss": "Dismiss keypad",
@@ -326,7 +330,11 @@
     "inUseTitle": "Workout in use",
     "inUseBody": "\"{{name}}\" is used by {{programs}}. Remove it from those programs first.",
     "deleteConfirmTitle": "Delete workout?",
-    "createAndAdd": "Create & add"
+    "createAndAdd": "Create & add",
+    "reorderAccessibility": "Reorder {{name}}",
+    "positionOf": "Position {{index}} of {{total}}",
+    "moveUp": "Move up",
+    "moveDown": "Move down"
   },
   "programEditor": {
     "editTitle": "Edit program",

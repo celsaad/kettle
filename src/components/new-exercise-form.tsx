@@ -78,6 +78,8 @@ export function NewExerciseForm({ onCreate, onCancel }: Props) {
             <Pressable
               key={option.type}
               onPress={() => setType(option.type)}
+              accessibilityRole="button"
+              accessibilityState={{ selected: active }}
               style={[
                 styles.typePill,
                 active
@@ -135,12 +137,18 @@ export function NewExerciseForm({ onCreate, onCancel }: Props) {
       )}
 
       <View style={styles.buttonRow}>
-        <Pressable onPress={onCancel} style={[styles.cancelButton, { borderColor: theme.border }]}>
+        <Pressable
+          onPress={onCancel}
+          accessibilityRole="button"
+          style={[styles.cancelButton, { borderColor: theme.border }]}>
           <ThemedText type="small" themeColor="textSecondary">
             {t('common.cancel')}
           </ThemedText>
         </Pressable>
-        <Pressable onPress={create} style={[styles.createButton, { backgroundColor: theme.accent }]}>
+        <Pressable
+          onPress={create}
+          accessibilityRole="button"
+          style={[styles.createButton, { backgroundColor: theme.accent }]}>
           <ThemedText type="small" style={{ color: theme.onAccent }}>
             {t('workoutEditor.createAndAdd')}
           </ThemedText>

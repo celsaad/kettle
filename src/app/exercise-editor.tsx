@@ -117,6 +117,7 @@ export default function ExerciseEditorScreen() {
         <TextInput
           value={name}
           onChangeText={setName}
+          accessibilityLabel={t('common.name')}
           placeholder={t('exerciseEditor.namePlaceholder')}
           placeholderTextColor={theme.textSecondary}
           style={[styles.input, { borderColor: theme.border, backgroundColor: theme.backgroundElement, color: theme.text }]}
@@ -133,6 +134,10 @@ export default function ExerciseEditorScreen() {
                 key={option.type}
                 onPress={() => setType(option.type)}
                 disabled={!!editing}
+                accessibilityRole="button"
+                // `disabled` is in the state too: editing locks the type, and a control that looks
+                // dimmed but announces as tappable is worse than one that just doesn't respond.
+                accessibilityState={{ selected: active, disabled: !!editing }}
                 style={[
                   styles.typePill,
                   active
@@ -160,6 +165,9 @@ export default function ExerciseEditorScreen() {
                 <TextInput
                   value={values[field.key] ?? ''}
                   onChangeText={(text) => setField(field.key, text)}
+                  // The visible <ThemedText> above is not programmatically tied to the input in RN, so
+                  // without this a screen reader reads the value with no idea which field it is.
+                  accessibilityLabel={unit ? `${t(field.label)} (${unit})` : t(field.label)}
                   keyboardType="numeric"
                   placeholder="0"
                   placeholderTextColor={theme.textSecondary}
@@ -179,6 +187,7 @@ export default function ExerciseEditorScreen() {
         <TextInput
           value={notes}
           onChangeText={setNotes}
+          accessibilityLabel={t('exerciseEditor.notesOptional')}
           placeholder={t('exerciseEditor.notesPlaceholder')}
           placeholderTextColor={theme.textSecondary}
           multiline
@@ -219,12 +228,15 @@ export default function ExerciseEditorScreen() {
         )}
 
         <View style={styles.buttonRow}>
-          <Pressable onPress={close} style={[styles.cancelButton, { borderColor: theme.border }]}>
+          <Pressable onPress={close} accessibilityRole="button" style={[styles.cancelButton, { borderColor: theme.border }]}>
             <ThemedText type="heading" themeColor="textSecondary">
               {t('common.cancel')}
             </ThemedText>
           </Pressable>
-          <Pressable onPress={save} style={[styles.saveButton, { backgroundColor: theme.accent }]}>
+          <Pressable
+            onPress={save}
+            accessibilityRole="button"
+            style={[styles.saveButton, { backgroundColor: theme.accent }]}>
             <ThemedText type="heading" style={{ color: theme.onAccent }}>
               {t('common.save')}
             </ThemedText>
@@ -232,7 +244,7 @@ export default function ExerciseEditorScreen() {
         </View>
 
         {editing && (
-          <Pressable onPress={confirmDelete} style={styles.deleteButton} hitSlop={8}>
+          <Pressable onPress={confirmDelete} accessibilityRole="button" style={styles.deleteButton} hitSlop={8}>
             <ThemedText type="smallMedium" themeColor="textSecondary">
               {t('exerciseEditor.deleteExercise')}
             </ThemedText>

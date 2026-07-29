@@ -64,7 +64,8 @@ export default function ProgramsScreen() {
             return (
               <Pressable
                 key={program.id}
-                onPress={() => router.push({ pathname: '/program-detail', params: { programId: program.id } })}>
+                onPress={() => router.push({ pathname: '/program-detail', params: { programId: program.id } })}
+                accessibilityRole="button">
                 <ThemedView type="backgroundElement" style={[styles.card, { borderColor: theme.border }]}>
                   <View style={styles.cardText}>
                     <ThemedText type="heading">{program.name}</ThemedText>
@@ -90,6 +91,7 @@ export default function ProgramsScreen() {
               </ThemedText>
               <Pressable
                 onPress={() => router.push('/program-guide')}
+                accessibilityRole="button"
                 style={[styles.emptyStateButton, { borderColor: theme.border }]}>
                 <ThemedText type="smallMedium">{t('programs.emptyYamlLink')}</ThemedText>
               </Pressable>

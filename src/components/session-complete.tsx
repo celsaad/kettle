@@ -27,7 +27,7 @@ export function SessionComplete({ workoutName, onDone }: Props) {
       <ThemedText type="small" style={styles.workoutName}>
         {workoutName}
       </ThemedText>
-      <Pressable onPress={onDone} style={styles.doneButton}>
+      <Pressable onPress={onDone} accessibilityRole="button" style={styles.doneButton}>
         <ThemedText type="heading" style={styles.doneButtonLabel}>
           {t('session.complete.done')}
         </ThemedText>

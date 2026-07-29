@@ -30,6 +30,11 @@ Run this in order. The two middle questions are the ones that get skipped and ar
 retrofit, so answer them out loud even when the answer is no.
 
 - [ ] **Branch first** — `git checkout -b <name>`. Nothing lands straight on the default branch.
+- [ ] **Plan it first if it's big.** The tell is whether you can name the files you'll touch without
+      opening them; if you can't, or it crosses layers, changes a file format, or won't land in one
+      sitting, write the approach down and agree it before any code. Say what you're *not* doing — a
+      scope cut named up front is a decision, and the same cut discovered halfway is a rewrite. Small
+      contained changes skip this.
 - [ ] **Implement the feature.**
 - [ ] **Does it need a11y and i18n?** For anything with UI, assume yes: `accessibilityRole` + a label on
       every interactive element, `accessibilityState` where it's selected/expanded, 44px targets via
@@ -46,8 +51,8 @@ retrofit, so answer them out loud even when the answer is no.
 - [ ] `npm test`
 - [ ] `npm run typecheck`
 - [ ] `npm run format`
-- [ ] `npm run lint` — compare the warning count to the accepted baseline above rather than assuming a
-      clean run; anything at `error` level is yours.
+- [ ] `npm run lint` — it comes back completely silent, so anything it prints is yours. A warning you
+      genuinely can't fix wants a one-line disable naming the reason, not a new accepted baseline.
 - [ ] **Push the branch and open a PR** (`gh pr create`). The commit message is the durable record —
       root cause, alternatives, deliberate scope cuts go there, not into the docs (see "Docs").
 
@@ -125,7 +130,7 @@ after any delegated change, and skim the diff.
 
 ## Verifying in the browser
 
-Tests cover the logic layer and four screens, but layout, animation, real audio and file writes are
+Tests cover the logic layer and five screens, but layout, animation, real audio and file writes are
 still only verified by driving the running app. Doing this wrong wastes a lot of time, so:
 
 - `npx expo start --web --port <port>`; poll with curl, it can take 60–90s. Use a distinct port if

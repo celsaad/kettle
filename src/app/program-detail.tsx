@@ -12,6 +12,8 @@ import type { Library, ProgramOverride, ProgramWeek, Workout } from '@/domain/ty
 import { useTheme } from '@/hooks/use-theme';
 import { useLibraryStore } from '@/state/library-store';
 
+export { ModalErrorBoundary as ErrorBoundary } from '@/components/error-fallback';
+
 export function overrideLines(override: ProgramOverride, library: Library, workout: Workout | undefined): string[] {
   if (override.kind === 'exercise') {
     const exercise = library.exercises.find((candidate) => candidate.id === override.exerciseId);

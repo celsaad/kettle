@@ -9,6 +9,8 @@ import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
+export { ModalErrorBoundary as ErrorBoundary } from '@/components/error-fallback';
+
 function CodeBlock({ children }: { children: string }) {
   const theme = useTheme();
   return (

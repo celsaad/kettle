@@ -1,9 +1,9 @@
 import { act, fireEvent, screen } from '@testing-library/react-native';
 
-import SessionScreen from '@/app/session';
+import SessionScreen, { ErrorBoundary } from '@/app/session';
 import type { Exercise, Session, SessionEntry, Workout } from '@/domain/types';
 import { useLibraryStore } from '@/state/library-store';
-import { setSearchParams } from '@/test-support/expo-router';
+import { router, setSearchParams } from '@/test-support/expo-router';
 import { aLibrary, aWorkout } from '@/test-support/library';
 import { renderScreen } from '@/test-support/render';
 
@@ -36,8 +36,10 @@ jest.mock('@/hooks/safe-notifications', () => ({
 }));
 
 // The session store is stubbed rather than mocked at expo-file-system, so a rendered session logs
-// into memory instead of writing files. Nothing here asserts on what was logged.
+// into memory instead of writing files. Nothing here asserts on what was logged, apart from the
+// boundary's abandon call — `session-history-store.test.ts` owns what that actually writes.
 let mockSession: Session;
+const mockAbandonActiveSession = jest.fn();
 jest.mock('@/state/session-history-store', () => ({
   useSessionHistoryStore: (selector: (state: unknown) => unknown) =>
     selector({
@@ -45,6 +47,7 @@ jest.mock('@/state/session-history-store', () => ({
       logEntry: (current: Session, entry: SessionEntry) => ({ ...current, entries: [...current.entries, entry] }),
       removeLastEntry: (current: Session) => current,
       completeSession: (current: Session) => current,
+      abandonActiveSession: mockAbandonActiveSession,
     }),
 }));
 
@@ -156,5 +159,40 @@ describe('step-kind dispatch', () => {
 
     expect(screen.getByText('REST')).toBeTruthy();
     expect(screen.queryByText('REPS')).toBeNull();
+  });
+});
+
+/**
+ * The route's own boundary, rendered the way expo-router's `<Try>` hands it over. This is the one
+ * screen where a render throw costs data, so it does more than apologise — everything below is about
+ * not stranding the sets that were already flushed to the session file.
+ */
+describe('ErrorBoundary', () => {
+  it('closes out the session the runner was writing to', async () => {
+    await renderScreen(<ErrorBoundary error={new Error('boom')} retry={jest.fn(() => Promise.resolve())} />);
+
+    expect(mockAbandonActiveSession).toHaveBeenCalledTimes(1);
+    expect(screen.getByText('Session interrupted')).toBeTruthy();
+  });
+
+  // dismissTo, not back: the runner is a modal, so leaving it *and* landing on a tab is one call.
+  it('sends the user to the history tab, where the salvaged session is', async () => {
+    await renderScreen(<ErrorBoundary error={new Error('boom')} retry={jest.fn(() => Promise.resolve())} />);
+
+    await fireEvent.press(screen.getByLabelText('Go to History'));
+
+    expect(router.dismissTo).toHaveBeenCalledWith('/history');
+  });
+
+  /**
+   * Deliberately no retry, unlike the shared boundaries. Re-rendering this route restarts it from the
+   * count-in, and mounting the runner again calls `startSession` — a second session file for one
+   * workout, with the first one's sets stranded in it.
+   */
+  it('offers no retry', async () => {
+    const retry = jest.fn(() => Promise.resolve());
+    await renderScreen(<ErrorBoundary error={new Error('boom')} retry={retry} />);
+
+    expect(screen.queryByLabelText('Try again')).toBeNull();
   });
 });

@@ -12,6 +12,18 @@
     "couldNotDeriveId": "Não foi possível gerar um id a partir desse nome.",
     "deleteConfirmBody": "\"{{name}}\" será removido permanentemente."
   },
+  "errorBoundary": {
+    "title": "Algo deu errado",
+    "body": "Esta tela encontrou um erro inesperado. Sua biblioteca e seu histórico são arquivos no dispositivo, então nada do que você já salvou foi afetado.",
+    "rootBody": "O Kettle encontrou um erro inesperado e não conseguiu terminar de carregar. Sua biblioteca e seu histórico são arquivos no dispositivo, então nada do que você já salvou foi afetado.",
+    "detail": "Detalhes do erro",
+    "retry": "Tentar de novo",
+    "session": {
+      "title": "Treino interrompido",
+      "body": "A tela de treino encontrou um erro inesperado. Os exercícios que você já havia concluído foram salvos e a sessão foi encerrada, então ela conta no seu histórico — mas as séries do exercício em andamento podem não ter sido gravadas.",
+      "toHistory": "Ir para o Histórico"
+    }
+  },
   "today": {
     "heading": "Hoje",
     "dayStreak": "dias seguidos",

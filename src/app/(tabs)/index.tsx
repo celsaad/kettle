@@ -13,6 +13,8 @@ import { useLibraryStore } from '@/state/library-store';
 import { useSessionHistoryStore } from '@/state/session-history-store';
 import { blockChips, currentStreak, nextUpView, recentSessionsView, thisWeekStats, workoutShape } from '@/state/selectors';
 
+export { RouteErrorBoundary as ErrorBoundary } from '@/components/error-fallback';
+
 export default function TodayScreen() {
   const theme = useTheme();
   const { t } = useTranslation();

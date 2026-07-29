@@ -24,6 +24,8 @@ import { useUnitSystem } from '@/state/preferences-store';
 import { exerciseHistory } from '@/state/selectors';
 import { useSessionHistoryStore } from '@/state/session-history-store';
 
+export { ModalErrorBoundary as ErrorBoundary } from '@/components/error-fallback';
+
 export default function ExerciseEditorScreen() {
   const theme = useTheme();
   const { t } = useTranslation();

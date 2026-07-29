@@ -555,15 +555,13 @@ failure mode the decision-log note above warns about, regrown one heading level 
   template makes the app the owner of the training advice it produces — the same line the starter
   library entry above is trying not to cross.
 
-- **Audit for error boundaries and graceful degradation.** There is currently no React error boundary
-  anywhere in the app (no `ErrorBoundary` export, no `componentDidCatch`), so any render throw takes
-  the whole tree down — worst mid-session, where a crash costs the workout in progress and the app is
-  by design the only copy of it. Degrading well is already a house pattern in places (`safe-iap.ts`,
-  `safe-notifications.ts`, the eight `isFileStorageSupported` guards, `library-file.ts` reseeding a
-  corrupt `exercises.yaml`), so the audit is about where else it's warranted rather than inventing an
-  approach. Expo Router supports a per-route `ErrorBoundary` export, which is the obvious seam; the
-  question to answer per screen is what a useful fallback even *is* — the runner probably wants to
-  save what it has and exit to History, not offer a "try again" that re-throws.
+- **Audit for graceful degradation.** Error boundaries themselves are done — every route exports one
+  (`components/error-fallback.tsx`, with `session.tsx` and the root layout carrying their own), so a
+  render throw now costs one screen instead of the app. What's still a survey is the rest of the
+  degrade surface: the house pattern exists in places (`safe-iap.ts`, `safe-notifications.ts`, the
+  `isFileStorageSupported` guards, `library-file.ts` reseeding a corrupt `exercises.yaml`), and the
+  question is where else it's warranted — a throw inside an `onPress` or a promise, which no boundary
+  catches, is the obvious gap to start from.
 
 - **Audit for refactoring opportunities.** No single known offender, so this is a survey, not a fix
   with a known shape. Starting points: the five files over 450 lines (`workout-editor.tsx` at 745,
@@ -619,6 +617,15 @@ structural ones:
   for the next 0-config bug: nothing validates a program week's override config — the schema types it
   as a free record of numbers and the in-app override editor doesn't call `validateConfig` — so the
   runner screens can't assume the constraints `validateConfig`/`schema.ts` enforce elsewhere.
+
+- **A crash mid-exercise loses that exercise's sets, not just the set in progress** — so §7.2's "loses
+  at most the in-progress set" (repeated in Workstream E above) overstates what the code does. Sets go
+  into `pendingSetsRef` and only become a `SessionEntry` when the *member* finishes, so a 4-set hold
+  crashed on set 3 writes nothing for it. Found by crashing the runner on purpose while verifying the
+  error boundaries, which is why the boundary's own copy promises only the finished exercises. The fix
+  is a write-through flush per set (upserting the member's entry rather than appending), which touches
+  the timer-critical file and wants its own pass — `session.tsx`'s boundary can't help, since the
+  buffer unmounts with the hook.
 
 - **`Alert.alert` is a no-op on web.** react-native-web ships `class Alert { static alert() {} }`, so
   every confirm dialog silently does nothing in the browser — all the deletes and finish-session.

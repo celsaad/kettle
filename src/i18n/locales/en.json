@@ -12,6 +12,18 @@
     "couldNotDeriveId": "Could not derive an id from that name.",
     "deleteConfirmBody": "\"{{name}}\" will be permanently removed."
   },
+  "errorBoundary": {
+    "title": "Something went wrong",
+    "body": "This screen hit an unexpected error. Your library and history are files on disk, so nothing you had saved was affected.",
+    "rootBody": "Kettle hit an unexpected error and couldn't finish loading. Your library and history are files on disk, so nothing you had saved was affected.",
+    "detail": "Error details",
+    "retry": "Try again",
+    "session": {
+      "title": "Session interrupted",
+      "body": "The workout screen hit an unexpected error. The exercises you'd finished were saved and the session has been closed out, so it counts in your history — though sets from the exercise you were on may not have made it.",
+      "toHistory": "Go to History"
+    }
+  },
   "today": {
     "heading": "Today",
     "dayStreak": "day streak",

@@ -14,6 +14,8 @@ import type { Program, ProgramWeek } from '@/domain/types';
 import { useTheme } from '@/hooks/use-theme';
 import { useLibraryStore } from '@/state/library-store';
 
+export { ModalErrorBoundary as ErrorBoundary } from '@/components/error-fallback';
+
 const EMPTY_PROGRAM: Program = { id: '', name: '', weeks: [] };
 
 function weekKey(week: ProgramWeek): string {

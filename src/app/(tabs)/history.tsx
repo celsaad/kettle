@@ -12,6 +12,8 @@ import { useSessionHistoryStore } from '@/state/session-history-store';
 import { historySessionsView, historyStats as historyStatsFor, type HistorySessionView } from '@/state/selectors';
 import { exportSession } from '@/storage/export';
 
+export { RouteErrorBoundary as ErrorBoundary } from '@/components/error-fallback';
+
 export default function HistoryScreen() {
   const theme = useTheme();
   const { t } = useTranslation();

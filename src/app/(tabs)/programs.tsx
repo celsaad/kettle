@@ -14,6 +14,8 @@ import { useAppTheme } from '@/hooks/theme-context';
 import { useTheme } from '@/hooks/use-theme';
 import { useLibraryStore } from '@/state/library-store';
 
+export { RouteErrorBoundary as ErrorBoundary } from '@/components/error-fallback';
+
 function weekRangeLabel(program: Program, t: TFunction): string {
   const weeks = programWeekNumbers(program);
   if (weeks.length === 0) return t('programs.noWeeks');

@@ -8,6 +8,8 @@ import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
+export { ModalErrorBoundary as ErrorBoundary } from '@/components/error-fallback';
+
 /**
  * Web has no Play Billing, so this variant renders the pitch without ever calling `useIAP` — matching
  * the platform split already used by `_layout.web.tsx` and `animated-icon.web.tsx`.

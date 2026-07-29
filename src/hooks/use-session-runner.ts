@@ -30,8 +30,8 @@ function assertNever(value: never): never {
 }
 
 /**
- * Which pending buffer (if any) a step's `commitCurrentStep` call touches. Used by `goPrev()` to
- * undo precisely one level: the most recent `advance()`, no further.
+ * Which of the member's accumulating logs (if any) a step's `commitCurrentStep` call grows. Used by
+ * `goPrev()` to undo precisely one level: the most recent `advance()`, no further.
  */
 function bufferForStep(step: RunnerStep): LastCommitBuffer | null {
   switch (step.kind) {
@@ -57,7 +57,7 @@ function bufferForStep(step: RunnerStep): LastCommitBuffer | null {
   }
 }
 
-/** True for step kinds whose commit calls `logEntry` directly rather than going through a pending buffer + flush. */
+/** True for step kinds whose commit logs a one-shot entry rather than growing a member's accumulating log. */
 function isDirectLogStep(step: RunnerStep): boolean {
   switch (step.kind) {
     case 'hold':

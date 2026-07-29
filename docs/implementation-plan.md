@@ -523,6 +523,22 @@ decision assembled across several commits. Open work belongs in the sections at 
   only** — never form cues, injury or diet, so the app keeps describing its data model rather than
   prescribing training. The seed is also the web build's entire library and the reseed target for a
   corrupt `exercises.yaml`, so it has to stay small enough to be a reasonable thing to reset to.
+- ✅ **The app authors format, never training intent — it owns nothing the user could call theirs.**
+  Settled while scoping the AI-authoring work, where the open question was whether shipping a prompt
+  template would make Kettle the owner of the advice that template produces. It doesn't, provided the
+  template carries **format only**: the schema, the user's own ids/names/types, and the importer's own
+  error text. What it must never carry is intent — goals, set/rep prescriptions, progression schemes,
+  exercise selection, or anything about the user's body. Ask of any string the app emits toward an
+  assistant: if the generated program turns out badly, does this sentence make that Kettle's fault?
+
+  This is the same line the seed library's `notes` rule is drawn to stay behind, and it doesn't
+  disturb it: seeded content is editable starter data under that rule, not advice the app stands
+  behind. The worked example already in the tree is import's repair prompt — "fix the YAML and send
+  back the corrected file", not a word about training. The reason it's a constraint rather than a
+  preference is that data ownership is the entire pitch: an app with no backend and no account has
+  nothing to stand behind a training claim with, and the moment it ships one, the contents of the
+  user's library stop being solely theirs.
+
 - ✅ **Fixed: `exportLibrary`/`exportSession` threw past their own `.catch()`.** Resolving `.uri`
   constructs an `expo-file-system` `File`, which has no web implementation and throws *synchronously* —
   before `share()`'s async body is entered — so the throw escaped the returned promise and every
@@ -547,7 +563,10 @@ failure mode the decision-log note above warns about, regrown one heading level 
   whole objects by id rather than patching, and the summary names what changed before anything is
   written. Nothing in the data model needs to change for this, which is the whole argument for
   positioning the app this way (store listing and README, not a new SKU — see the tip-jar entry on why
-  there's no paid tier to attach it to). What's missing is the plumbing around it:
+  there's no paid tier to attach it to). **The plumbing is now complete** — all four pieces below
+  shipped, and the loop runs end to end: copy the format out, paste the YAML back, copy the refusal
+  out if it's wrong. What's left is the positioning itself, which is store-listing and README copy
+  rather than code:
 
   - ~~**A paste path into import.**~~ ✅ Shipped. Both input sources funnel through one
     `review(text, source)`, so a paste is refused for the same reasons and in the same words as a
@@ -560,13 +579,18 @@ failure mode the decision-log note above warns about, regrown one heading level 
     `Object.prototype`, and a name carrying `<script>` renders as inert text. The one real residual
     is that js-yaml applies no alias-expansion limit, so a crafted anchor bomb can hang the app —
     reachable through the picker long before paste existed, and a DoS on the user's own device.
-  - **A machine-readable schema to hand the model.** `authoring-exercises-yaml.md` is written for
-    humans and is a hand-maintained second copy of `schema.ts` (it has drifted before). zod v4 is
-    already a dependency and `z.toJSONSchema()` exists, so a JSON Schema is a *generated* artifact —
-    no third copy to keep in sync.
-  - **The user's existing ids, alongside it.** Merge-by-id means a generated program referencing
-    `pullups` only works if that id exists, so whatever gets copied out has to include the library's
-    current ids/names/types, not just the format.
+  - ~~**A machine-readable schema to hand the model.**~~ ~~**The user's existing ids, alongside
+    it.**~~ ✅ Both shipped, as one payload: `domain/assistant-brief.ts` builds a "Copy the format for
+    an assistant" brief of `z.toJSONSchema(rawLibrarySchema)` plus every id/name/type currently in the
+    library, and the import screen copies it. Generated rather than written out, so it can't drift
+    from what the importer accepts — which was the whole argument, given
+    `authoring-exercises-yaml.md` had already drifted. Two things worth knowing before extending it:
+    `toJSONSchema` **silently drops zod's cross-field refinements** (`target_reps_max >=
+    target_reps_min`, an override targeting exactly one of `exercise`/`block`, unique `(week, day)`),
+    so the brief tells the model the importer checks more than the schema shows and leaves the rest to
+    the repair loop rather than restating those rules and becoming the third copy; and the brief is
+    scoped to the *format* side of the ownership line (decision log), which is what a test in
+    `assistant-brief.test.ts` pins rather than a comment.
   - ~~**A repair loop from the errors we now return.**~~ ✅ Shipped. A refusal now carries a "Copy
     error" button that puts one framing line plus the refusal itself on the clipboard, so a rejected
     file goes straight back to the assistant that wrote it. Two calls worth not re-litigating: the
@@ -579,9 +603,9 @@ failure mode the decision-log note above warns about, regrown one heading level 
   **Hard constraint, decided in advance:** the app must never call a model itself. The Play listing
   declares zero data collected/shared (see the tip-jar entry), and an API key field or an in-app
   "generate" button breaks that claim and needs a Data Safety declaration. This is bring-your-own
-  assistant: generated anywhere, imported here. **Still to decide:** whether shipping a prompt
-  template makes the app the owner of the training advice it produces — the same line the seed
-  library's notes rule (decision log) is drawn to stay behind.
+  assistant: generated anywhere, imported here. **Settled:** a prompt template may ship, because it
+  will carry format and nothing else — see the ownership entry in the decision log for where that line
+  falls.
 
 - **Audit for graceful degradation.** Error boundaries themselves are done — every route exports one
   (`components/error-fallback.tsx`, with `session.tsx` and the root layout carrying their own), so a

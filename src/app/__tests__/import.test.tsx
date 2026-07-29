@@ -375,6 +375,40 @@ describe('the repair loop', () => {
   });
 });
 
+/** The outbound half: what gets sent to an assistant before any YAML exists to import. */
+describe('the assistant brief', () => {
+  it('copies the schema and the library’s own ids', async () => {
+    await renderScreen(<ImportScreen />);
+    await fireEvent.press(screen.getByText('Copy the format for an assistant'));
+
+    const copied = mockSetString.mock.calls.at(-1)![0];
+    expect(copied).toContain('pull-ups (reps)');
+    expect(copied).toContain('push-day — Push day');
+    expect(copied).toContain('"$schema"');
+    expect(screen.getByText('Copied')).toBeTruthy();
+  });
+
+  it('confirms only the button that was pressed', async () => {
+    picksText('exercises: [\n  - id: broken');
+    await chooseFile();
+    await fireEvent.press(screen.getByText('Copy error'));
+
+    // Both copy buttons are on screen at once here. A shared "copied" flag would light up the wrong
+    // one — the brief's label must still read as un-copied.
+    expect(screen.getByText('Copied')).toBeTruthy();
+    expect(screen.getByText('Copy the format for an assistant')).toBeTruthy();
+  });
+
+  it('is not offered before the library has loaded', async () => {
+    // Its entire value is the ids in it; offered against no library it would hand an assistant a
+    // confident list of nothing to reference.
+    useLibraryStore.setState({ library: null, status: 'loading' });
+    await renderScreen(<ImportScreen />);
+
+    expect(screen.queryByText('Copy the format for an assistant')).toBeNull();
+  });
+});
+
 it('surfaces a read failure instead of failing silently', async () => {
   mockPickFile.mockResolvedValue({
     canceled: false,

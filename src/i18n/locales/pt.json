@@ -233,6 +233,17 @@
     "pastedLines_other": "{{count}} linhas coladas",
     "libraryNotLoaded": "A biblioteca ainda não foi carregada.",
     "repairPrompt": "O Kettle recusou este exercises.yaml na importação. Corrija o YAML e devolva o arquivo corrigido.",
+    "copyBrief": "Copiar o formato para um assistente",
+    "copyBriefDetail": "O schema e os ids que já estão na sua biblioteca",
+    "brief": {
+      "prompt": "Este é o formato de arquivo que o app de treinos Kettle importa e os ids que já estão na minha biblioteca. Responda com YAML que siga o schema abaixo. Reutilize um id existente para substituir aquele item; use um id novo para adicionar um. O app valida algumas regras entre campos que o schema não consegue expressar — se ele recusar o arquivo, ele diz o motivo, e eu colo isso de volta para você.",
+      "inventoryHeading": "## Ids que já estão na minha biblioteca",
+      "exercisesLabel": "exercises:",
+      "workoutsLabel": "workouts:",
+      "programsLabel": "programs:",
+      "none": "(nenhum ainda)",
+      "schemaHeading": "## JSON Schema do exercises.yaml"
+    },
     "copyError": "Copiar erro",
     "copied": "Copiado",
     "copiedAnnouncement": "Erro copiado para a área de transferência",

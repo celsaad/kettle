@@ -9,6 +9,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ModalHeader } from '@/components/modal-header';
 import { ThemedText } from '@/components/themed-text';
+import { buildAssistantBrief } from '@/domain/assistant-brief';
 import type { MergeError, MergeSummary } from '@/domain/merge';
 import { mergeLibraries } from '@/domain/merge';
 import type { Library } from '@/domain/types';
@@ -33,6 +34,13 @@ type ReadyMerge = { picked: Source; library: Library; summary: MergeSummary };
  * has no access to, and offering the button at all would suggest it could.
  */
 type ImportError = { message: string; report: string | null };
+
+/**
+ * The two things worth putting on the clipboard, and the two directions of the same loop: `brief` goes
+ * out to an assistant before anything is written, `report` goes back to it after the importer refuses
+ * what came of that.
+ */
+type CopyTarget = 'brief' | 'report';
 
 /**
  * Where an import failure becomes a sentence. The parser and the merge return descriptors — they're
@@ -68,7 +76,9 @@ export default function ImportScreen() {
   const [ready, setReady] = useState<ReadyMerge | null>(null);
   const [pasting, setPasting] = useState(false);
   const [pasted, setPasted] = useState('');
-  const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>('idle');
+  // Keyed by which button copied, since there are two of them: a "Copied" that isn't tied to a target
+  // would confirm the wrong one the moment the screen has both on it.
+  const [copied, setCopied] = useState<{ target: CopyTarget; status: 'copied' | 'failed' } | null>(null);
   const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(
@@ -83,7 +93,7 @@ export default function ImportScreen() {
   /** Every refusal goes through here, so none can leave a stale "Copied" over a different error. */
   const refuse = (message: string, report: string | null = null) => {
     setError({ message, report });
-    setCopyState('idle');
+    setCopied(null);
   };
 
   /** A refusal the YAML's author can act on — the only kind that gets a report to hand back. */
@@ -93,33 +103,32 @@ export default function ImportScreen() {
   };
 
   /**
-   * The other half of the paste path: an assistant emitted the YAML, so the fastest fix is to hand the
-   * refusal back to it verbatim. The message is already a full sentence naming the offending ids —
-   * that's the whole reason `ParseError` carries them rather than being pre-rendered prose — so the
-   * report is that sentence plus one line of framing, and nothing else.
+   * The one path to the clipboard, shared by both directions of the loop.
    *
-   * Deliberately not included: the rejected YAML itself. An assistant that just wrote it still has it,
-   * and a hand-edited file is on disk where the user can point at it — so appending it would mostly
-   * mean putting a whole library on the clipboard to say something both ends already know.
+   * The `report` it carries is the refusal plus a line of framing, and deliberately *not* the rejected
+   * YAML: an assistant that just wrote it still has it, and a hand-edited file is on disk where the
+   * user can point at it, so appending it would mostly mean putting a whole library on the clipboard
+   * to say something both ends already know. The `brief` is built in `domain/assistant-brief.ts`.
    */
-  const copyReport = async (report: string) => {
+  const copy = async (target: CopyTarget, text: string) => {
     try {
       // The boolean is the API's own way of saying it didn't take, distinct from throwing — so a
-      // "Copied" claimed over a false here would be the one thing this button must never do.
-      if (!(await Clipboard.setStringAsync(report))) {
-        setCopyState('failed');
+      // "Copied" claimed over a false here would be the one thing these buttons must never do.
+      if (!(await Clipboard.setStringAsync(text))) {
+        setCopied({ target, status: 'failed' });
         return;
       }
-      setCopyState('copied');
+      setCopied({ target, status: 'copied' });
       // Announced rather than left to the label change: the button's own text switches to "Copied",
       // which a screen reader doesn't re-read while focus stays put.
       AccessibilityInfo.announceForAccessibility(t('import.copiedAnnouncement'));
       if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
-      copyTimerRef.current = setTimeout(() => setCopyState('idle'), 2000);
+      copyTimerRef.current = setTimeout(() => setCopied(null), 2000);
     } catch {
-      // Reachable on web, where the clipboard is permission-gated and throws when denied. The error
-      // it would replace is the one still worth reading, so this degrades to a note beside the button.
-      setCopyState('failed');
+      // Reachable on web, where the clipboard is permission-gated and throws when denied. For the
+      // report that means the error it would replace is the one still worth reading, so both degrade
+      // to a note beside the button rather than taking the screen over.
+      setCopied({ target, status: 'failed' });
     }
   };
 
@@ -221,6 +230,9 @@ export default function ImportScreen() {
   // Hoisted out of the JSX: narrowing `error.report` inside the press handler's closure doesn't hold,
   // since TypeScript has to assume a property can change between render and tap.
   const errorReport = error?.report ?? null;
+  const copyLabel = (target: CopyTarget, idle: string) =>
+    copied?.target === target && copied.status === 'copied' ? t('import.copied') : idle;
+  const copyFailed = (target: CopyTarget) => copied?.target === target && copied.status === 'failed';
 
   return (
     <SafeAreaView
@@ -301,6 +313,28 @@ export default function ImportScreen() {
                 </Pressable>
               </>
             )}
+
+            {/*
+              Sits under both input sources rather than beside them, because it isn't one: it's what
+              you send *before* there's any YAML to bring in. Only rendered with a library loaded —
+              the brief's whole point is the ids in it, and offering it empty would hand an assistant
+              a confident list of nothing.
+            */}
+            {currentLibrary && (
+              <View style={styles.briefRow}>
+                <Pressable
+                  onPress={() => copy('brief', buildAssistantBrief(currentLibrary))}
+                  accessibilityRole="button"
+                  style={[styles.copyButton, { borderColor: theme.border }]}>
+                  <ThemedText type="smallMedium" themeColor="textSecondary">
+                    {copyLabel('brief', t('import.copyBrief'))}
+                  </ThemedText>
+                </Pressable>
+                <ThemedText type="small" themeColor="textSecondary">
+                  {copyFailed('brief') ? t('import.copyFailed') : t('import.copyBriefDetail')}
+                </ThemedText>
+              </View>
+            )}
           </>
         )}
 
@@ -326,14 +360,14 @@ export default function ImportScreen() {
             {errorReport && (
               <View style={styles.copyRow}>
                 <Pressable
-                  onPress={() => copyReport(errorReport)}
+                  onPress={() => copy('report', errorReport)}
                   accessibilityRole="button"
                   style={[styles.copyButton, { borderColor: theme.border }]}>
                   <ThemedText type="smallMedium" themeColor="textSecondary">
-                    {copyState === 'copied' ? t('import.copied') : t('import.copyError')}
+                    {copyLabel('report', t('import.copyError'))}
                   </ThemedText>
                 </Pressable>
-                {copyState === 'failed' && (
+                {copyFailed('report') && (
                   <ThemedText type="small" themeColor="textSecondary" style={styles.copyFailed}>
                     {t('import.copyFailed')}
                   </ThemedText>
@@ -499,6 +533,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.two,
     flexWrap: 'wrap',
+  },
+  briefRow: {
+    marginTop: Spacing.three - 2,
+    gap: Spacing.one + 2,
+    alignItems: 'flex-start',
   },
   copyButton: {
     minHeight: 44,

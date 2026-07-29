@@ -11,14 +11,10 @@ plus an append-only local session log. No server, no account.
 ## Commands
 
 - `npm run typecheck` — `tsc --noEmit`
-- `npm run lint` — oxlint. **Clean: zero warnings, zero errors.** It was 49 accepted warnings until
-  the i18next call sites moved to `import { t } from 'i18next'` and the five copy-then-sort sites got
-  a disable comment each (decision log: why not `toSorted`). Keep it at zero — a warning you can't
-  fix wants a one-line disable naming the reason, not a new accepted baseline.
-- `npm test` — jest via `jest-expo`. 354 tests across 31 files: the domain layer, the session runner,
-  five screens (`workout-editor`, `exercise-editor`, `program-editor`, `session`, `import`), six
-  components, the theme context, the seed library, and the tip, preferences and session-history
-  storage/stores. Under a minute, so run it.
+- `npm run lint` — oxlint. **Keep it at zero warnings and zero errors.** A warning you genuinely
+  can't fix wants a one-line disable naming the reason, not a new accepted baseline.
+- `npm test` — jest via `jest-expo`. Covers the domain layer, the session runner, the highest-branch
+  screens and the stores. Under a minute, so run it. A single file is `npx jest <path>`.
 - `npm run format` — oxfmt (same Oxc toolchain as oxlint, so they agree). Run it instead of matching
   the style by hand, and never reach for `npx prettier`, which has no config here and would reformat
   the file to its own defaults. **Markdown and `package.json` are excluded on purpose** — see the
@@ -29,7 +25,8 @@ plus an append-only local session log. No server, no account.
 Run this in order. The two middle questions are the ones that get skipped and are the most expensive to
 retrofit, so answer them out loud even when the answer is no.
 
-- [ ] **Branch first** — `git checkout -b <name>`. Nothing lands straight on the default branch.
+- [ ] **Branch first** — `git checkout -b <name>`. Nothing lands straight on `master` (the default
+      branch is `master`, not `main`).
 - [ ] **Plan it first if it's big.** The tell is whether you can name the files you'll touch without
       opening them; if you can't, or it crosses layers, changes a file format, or won't land in one
       sitting, write the approach down and agree it before any code. Say what you're *not* doing — a
@@ -51,8 +48,7 @@ retrofit, so answer them out loud even when the answer is no.
 - [ ] `npm test`
 - [ ] `npm run typecheck`
 - [ ] `npm run format`
-- [ ] `npm run lint` — it comes back completely silent, so anything it prints is yours. A warning you
-      genuinely can't fix wants a one-line disable naming the reason, not a new accepted baseline.
+- [ ] `npm run lint` — it comes back completely silent, so anything it prints is yours.
 - [ ] **Push the branch and open a PR** (`gh pr create`). The commit message is the durable record —
       root cause, alternatives, deliberate scope cuts go there, not into the docs (see "Docs").
 
@@ -173,15 +169,14 @@ still only verified by driving the running app. Doing this wrong wastes a lot of
 
 ## Accessibility and i18n are house rules, not projects
 
-Both workstreams have landed. New work is expected to arrive already conforming — these are cheap when
-done as you go and tedious to retrofit, which is why they're here rather than on a backlog.
+Both workstreams have had their pass, so new work is expected to arrive already conforming — cheap as
+you go, tedious to retrofit, which is why they're here rather than on a backlog.
 
-**This is the rule for what you touch, not a description of what's already there.** i18n is at
-parity; a11y is not — the pass prioritised icon-only controls and left text-labelled ones without an
-explicit role. Which files, and what's worth doing first, is in the implementation plan's planned
-work; don't keep a second copy of that list here, where it would go stale. The wording this replaced
-("every interactive control carries a role and label") read as a description and stopped people from
-checking.
+**Read this as the rule for what you touch, not a description of what's there.** i18n is at parity;
+a11y isn't — the pass prioritised icon-only controls and left text-labelled ones without an explicit
+role. Which files, and what to do first, is in the implementation plan's planned work; no second copy
+here, where it would go stale. The wording this replaced ("every interactive control carries a role
+and label") read as a description and stopped people from checking.
 
 - **Every interactive element needs `accessibilityRole` and a label.** Icon-only controls need it most,
   having no text to fall back on — the runner's prev/next were CSS triangles announcing as an unnamed
@@ -205,24 +200,22 @@ checking.
 - `docs/authoring-exercises-yaml.md` — the YAML reference, kept exact against `schema.ts`.
 - `docs/testing-a11y-i18n-plan.md` — executed; kept for its rationale, not as a backlog.
 
-**Don't append a shipped feature to any of them just because it shipped.** The commit message is the
-record — write the root cause, the alternatives, and the deliberate scope cuts there, where
-`git log -S` can find them. Add to the decision log only when the reasoning isn't discoverable from a
-single commit: a constraint that shapes future work, something rejected so it isn't re-proposed, or a
-decision assembled across several commits. This has already failed twice — the plan grew to ~210
-lines of completed work under a heading reading "what's genuinely left", and then regrew ~330 more as
-top-level `## ✅` sections after that heading was fixed. Both are now in `history.md`.
+Three rules, in the order they get broken:
 
-Open bugs and planned work live in the sections at the bottom of the implementation plan. Keep those
-entries short — if the list starts wanting states and assignees, that's the signal to move it to
-GitHub issues (`origin` and `gh` are both available); until then the file is deliberately enough.
+- **Don't append a shipped feature just because it shipped.** The commit is the record — root cause,
+  alternatives and scope cuts go there, where `git log -S` finds them. Add to the decision log only
+  when the reasoning isn't discoverable from a single commit: a constraint that shapes future work,
+  something rejected so it isn't re-proposed, or a decision assembled across several commits. This
+  has already failed twice, both times growing hundreds of lines of completed work under a
+  forward-looking heading; the reason the rule is this strict is that it doesn't hold on its own.
+- **But do prune the open-work lists when you ship.** The rule above is about not *adding* and says
+  nothing about subtracting, which reads as "touch no docs at all" — and leaves a shipped item in
+  "planned work" claiming to be open. Shipped part of a multi-part entry? Leave the rest, say which
+  part went. Deleting a finished bullet needs no write-up.
+- **Verify against the code before believing any of them.** They have drifted before, in both
+  directions: an audit found the README claiming no tests when there were 230, three "open bugs"
+  already fixed, and this file asserting an a11y pass was complete when seven files had no a11y props
+  at all.
 
-**Pruning those two lists is the one doc edit shipping does oblige.** The rule above is about not
-*adding*; it says nothing about subtracting, and read alone it argues for touching no docs at all —
-which leaves a shipped item sitting in "planned work" claiming to be open. So: close what you shipped,
-and if you shipped part of a multi-part entry, leave the rest and say which part went. Deleting a
-finished bullet needs no write-up; the commit is still the record.
-
-Check these before assuming something is missing — but **verify against the code**, since they have
-drifted before. A docs audit on 2026-07-28 found the README claiming the project had no tests when it
-had 230, and three "open bugs" that were already fixed.
+Keep open-work entries short. If the list starts wanting states and assignees, move it to GitHub
+issues (`origin` and `gh` are both available); until then the file is deliberately enough.

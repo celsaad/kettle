@@ -530,10 +530,17 @@ failure mode the decision-log note above warns about, regrown one heading level 
   positioning the app this way (store listing and README, not a new SKU — see the tip-jar entry on why
   there's no paid tier to attach it to). What's missing is the plumbing around it:
 
-  - **A paste path into import.** The one real friction. `import.tsx` takes input only via
-    `File.pickFileAsync()`, and an assistant's output is text in a chat window — saving that as a
-    `.yaml` on a phone is several awkward steps. A paste box reuses the existing parse → merge →
-    summary pipeline unchanged; only the input source differs.
+  - ~~**A paste path into import.**~~ ✅ Shipped. Both input sources funnel through one
+    `review(text, source)`, so a paste is refused for the same reasons and in the same words as a
+    file, and the parse → merge → summary pipeline is untouched. Two things the commit can't tell
+    you: whitespace-only input is guarded **twice** (disabled button *and* an early return) because
+    unguarded it reaches js-yaml and comes back "expected a document, but the input is empty" — an
+    accusation aimed at someone who hasn't typed yet; and the hostile-YAML question was settled
+    empirically rather than assumed, so it doesn't need re-litigating each time this area grows:
+    js-yaml 5's default schema rejects `!!js/function` outright, a `__proto__` key never reaches
+    `Object.prototype`, and a name carrying `<script>` renders as inert text. The one real residual
+    is that js-yaml applies no alias-expansion limit, so a crafted anchor bomb can hang the app —
+    reachable through the picker long before paste existed, and a DoS on the user's own device.
   - **A machine-readable schema to hand the model.** `authoring-exercises-yaml.md` is written for
     humans and is a hand-maintained second copy of `schema.ts` (it has drifted before). zod v4 is
     already a dependency and `z.toJSONSchema()` exists, so a JSON Schema is a *generated* artifact —
@@ -543,8 +550,9 @@ failure mode the decision-log note above warns about, regrown one heading level 
     current ids/names/types, not just the format.
   - **A repair loop from the errors we now return.** `ParseError` is already a discriminated union
     carrying the offending ids (`unknownExercise`, `unknownWorkout`, `schemaMismatch` + detail). Made
-    copyable, a rejected file becomes something the user pastes straight back to the assistant. Note
-    this overlaps in-flight work on the import screen's error wording — coordinate rather than collide.
+    copyable, a rejected file becomes something the user pastes straight back to the assistant — now
+    the obvious next one, since paste closed the other half of that loop. It needs a clipboard
+    dependency (`expo-clipboard`), which is the only reason it wasn't folded into the paste commit.
 
   **Hard constraint, decided in advance:** the app must never call a model itself. The Play listing
   declares zero data collected/shared (see the tip-jar entry), and an API key field or an in-app
@@ -552,6 +560,18 @@ failure mode the decision-log note above warns about, regrown one heading level 
   assistant: generated anywhere, imported here. **Still to decide:** whether shipping a prompt
   template makes the app the owner of the training advice it produces — the same line the seed
   library's notes rule (decision log) is drawn to stay behind.
+
+- **Finish the a11y pass on text-labelled controls.** Found by auditing the screens against the code
+  on 2026-07-29, after both the README and AGENTS.md claimed "every interactive control carries a role
+  and label" — which is not true and was stopping anyone from checking. The pass prioritised icon-only
+  controls, correctly, since those announce as an unnamed "button"; text-labelled `Pressable`s largely
+  never got their `accessibilityRole`, so they announce their text but not what they are. Seven files
+  carry no a11y props at all: `exercise-editor`, `program-detail`, `program-guide`,
+  `new-exercise-form`, `session-rest`, `session-complete`, and the two tab layouts. `session-rest` is
+  the one to do first — prev / +30s / skip are primary in-workout controls. `import.tsx` was the
+  eighth and is done, fixed in passing while the paste path was being built. Cheap per file; the
+  reason it's a backlog entry rather than a checklist item is that it's ~15 files of nothing but this.
+  The `height`-instead-of-`minHeight` sizing (`library.tsx`, `history.tsx`) is the same shape of job.
 
 - **Audit for graceful degradation.** Error boundaries themselves are done — every route exports one
   (`components/error-fallback.tsx`, with `session.tsx` and the root layout carrying their own), so a

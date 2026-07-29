@@ -1,89 +1,395 @@
 import type { Library } from '@/domain/types';
 
 /**
- * Written to exercises.yaml the first time the app launches and no library file exists yet, so
- * the app never opens empty. Mirrors what was previously hardcoded mock data, and demonstrates
- * ranges, notes, a circuit block, and a periodized program.
+ * Written to exercises.yaml the first time the app launches and no library file exists yet, so the
+ * app never opens empty — and it is also the web build's entire library and what a corrupt
+ * exercises.yaml is reset to, which is why it stays deliberately small.
+ *
+ * This is curated starter content, not a format demo: two four-week programs a new user can press
+ * start on without building anything first, plus two standalone workouts so all seven exercise
+ * types have a live example. Three authoring constraints it has to respect, none of them local to
+ * this file:
+ *
+ * - `foundations` must stay **first**: `activeProgram` (state/selectors.ts) falls back to
+ *   `programs[0]` until a session has been run, and there is no starter-program picker — so the
+ *   no-equipment program is what a fresh install lands on, and the dumbbell one is browse-only
+ *   until it's explicitly started.
+ * - Day labels are `Day 1`/`Day 2`/`Day 3` because `nextWeekAfter` orders a multi-day week by
+ *   `day.localeCompare` — `Monday`/`Wednesday`/`Friday` would walk the week Friday-first.
+ * - Every week is enumerated and each override is repeated in every later week it still applies to:
+ *   weeks resolve sparsely (a gap is skipped, not filled), and overrides don't carry forward.
+ *
+ * `notes` describe the progression model and nothing else — no form cues, no injury or diet
+ * advice — so the app keeps explaining its own data rather than prescribing training. No
+ * `targetWeightKg` is seeded: loads are the user's to set.
  */
 export const seedLibrary: Library = {
   version: 1,
   exercises: [
-    { id: 'burpees', name: 'Burpees', type: 'hiit', config: { workSec: 40, restSec: 20, rounds: 4 } },
-    {
-      id: 'bench-press',
-      name: 'Bench Press',
-      type: 'reps',
-      config: { sets: 5, targetRepsMin: 5, targetWeightKg: 60, restSec: 120 },
-    },
-    {
-      id: 'l-sit',
-      name: 'L-Sit Hold',
-      type: 'timed_hold',
-      config: { sets: 4, holdSecMin: 15, holdSecMax: 25, restSec: 60 },
-      notes: 'Escalate toward 25s before adding load.',
-    },
-    {
-      id: 'pullups',
-      name: 'Pull-ups',
-      type: 'reps',
-      config: { sets: 4, targetRepsMin: 6, targetRepsMax: 10, restSec: 90 },
-      notes: 'Beat last session within the range before adding a set.',
-    },
+    { id: 'rest', name: 'Rest', type: 'rest', config: { durationSec: 90 } },
+
+    // Foundations — nothing here needs equipment.
     {
       id: 'pushups',
       name: 'Push-ups',
       type: 'reps',
-      config: { sets: 3, targetRepsMin: 12, targetRepsMax: 20, restSec: 45 },
-      notes: 'Stop 2 reps shy of failure.',
+      config: { sets: 3, targetRepsMin: 8, targetRepsMax: 15, restSec: 60 },
+      notes: 'Stop 2 reps shy of failure. Hit 15 on every set twice before moving to a harder variation.',
     },
-    { id: 'row-erg', name: 'Row Erg', type: 'cardio', config: { distanceMeters: 2000 } },
-    { id: 'rest', name: 'Rest', type: 'rest', config: { durationSec: 90 } },
+    {
+      id: 'bodyweight-squats',
+      name: 'Bodyweight Squats',
+      type: 'reps',
+      config: { sets: 3, targetRepsMin: 12, targetRepsMax: 20, restSec: 60 },
+    },
+    {
+      id: 'inverted-rows',
+      name: 'Inverted Rows',
+      type: 'reps',
+      config: { sets: 3, targetRepsMin: 6, targetRepsMax: 12, restSec: 75 },
+      notes: 'Under a table or a low bar. Walk your feet further out to make it harder once you own the top of the range.',
+    },
+    {
+      id: 'split-squats',
+      name: 'Split Squats',
+      type: 'reps',
+      config: { sets: 3, targetRepsMin: 8, targetRepsMax: 12, restSec: 60 },
+      notes: 'Reps are per leg — log the weaker side, so the number you beat next time is the honest one.',
+    },
+    {
+      id: 'glute-bridge',
+      name: 'Glute Bridge',
+      type: 'reps',
+      config: { sets: 3, targetRepsMin: 12, targetRepsMax: 20, restSec: 45 },
+    },
+    {
+      id: 'plank',
+      name: 'Plank',
+      type: 'timed_hold',
+      config: { sets: 3, holdSecMin: 20, holdSecMax: 45, restSec: 45 },
+      notes: 'Raise the whole range by 5s once you hit 45s on every set.',
+    },
+    { id: 'mountain-climbers', name: 'Mountain Climbers', type: 'hiit', config: { workSec: 30, restSec: 30, rounds: 4 } },
+
+    // Dumbbell Strength — one adjustable pair covers all of it.
+    {
+      id: 'db-goblet-squat',
+      name: 'Dumbbell Goblet Squat',
+      type: 'reps',
+      config: { sets: 3, targetRepsMin: 8, targetRepsMax: 12, restSec: 90 },
+      notes:
+        'No weight is seeded — set yours on the first session, then add the smallest jump you own once you hit 12 on every set.',
+    },
+    {
+      id: 'db-floor-press',
+      name: 'Dumbbell Floor Press',
+      type: 'reps',
+      config: { sets: 3, targetRepsMin: 8, targetRepsMax: 12, restSec: 90 },
+      notes: 'Pressed off the floor, so it needs no bench. Add weight once you hit 12 on every set.',
+    },
+    {
+      id: 'db-row',
+      name: 'Dumbbell Row',
+      type: 'reps',
+      config: { sets: 3, targetRepsMin: 8, targetRepsMax: 12, restSec: 90 },
+      notes: 'Reps are per side.',
+    },
+    {
+      id: 'db-romanian-deadlift',
+      name: 'Dumbbell Romanian Deadlift',
+      type: 'reps',
+      config: { sets: 3, targetRepsMin: 8, targetRepsMax: 12, restSec: 90 },
+    },
+    {
+      id: 'db-overhead-press',
+      name: 'Dumbbell Overhead Press',
+      type: 'reps',
+      config: { sets: 3, targetRepsMin: 6, targetRepsMax: 10, restSec: 90 },
+    },
+    {
+      id: 'farmers-carry',
+      name: "Farmer's Carry",
+      type: 'timed_hold',
+      config: { sets: 3, holdSecMin: 30, holdSecMax: 45, restSec: 60 },
+      notes: 'Add time before adding weight.',
+    },
+
+    // Standalone conditioning — the types the two programs don't otherwise cover.
+    { id: 'burpees', name: 'Burpees', type: 'hiit', config: { workSec: 40, restSec: 20, rounds: 4 } },
+    {
+      id: 'emom-pushups',
+      name: 'EMOM Push-ups',
+      type: 'emom',
+      config: { intervalSec: 60, totalMinutes: 10, targetReps: 8 },
+      notes:
+        'Every minute on the minute: 8 push-ups, then rest whatever is left of the minute. Cut the target once you stop finishing inside it.',
+    },
+    {
+      id: 'amrap-12-bodyweight',
+      name: 'AMRAP 12',
+      type: 'amrap',
+      config: { timeCapSec: 720 },
+      notes:
+        'One round is 10 push-ups, 15 bodyweight squats, 10 inverted rows. The app times the cap and counts rounds — the movements live here in the notes, since an AMRAP has no movement list of its own.',
+    },
+    {
+      id: 'easy-cardio',
+      name: 'Easy Cardio Cooldown',
+      type: 'cardio',
+      config: { durationSec: 600 },
+      notes: 'Run, bike, row, walk — whatever you have. Add a distance to the config if you want that tracked too.',
+    },
   ],
   workouts: [
     {
-      id: 'calisthenics-a',
-      name: 'Calisthenics A',
+      id: 'foundations-push',
+      name: 'Foundations · Push',
       blocks: [
-        { kind: 'exercise', exerciseId: 'l-sit' },
+        { kind: 'exercise', exerciseId: 'pushups' },
         { kind: 'exercise', exerciseId: 'rest' },
-        { kind: 'exercise', exerciseId: 'pullups' },
-        { kind: 'exercise', exerciseId: 'rest', configOverride: { durationSec: 120 } },
+        { kind: 'exercise', exerciseId: 'plank' },
+        { kind: 'exercise', exerciseId: 'rest', configOverride: { durationSec: 60 } },
+        { kind: 'exercise', exerciseId: 'mountain-climbers' },
       ],
     },
     {
-      id: 'finisher-circuit',
-      name: 'Finisher Circuit',
+      id: 'foundations-legs',
+      name: 'Foundations · Legs',
       blocks: [
+        { kind: 'exercise', exerciseId: 'bodyweight-squats' },
+        { kind: 'exercise', exerciseId: 'rest' },
+        { kind: 'exercise', exerciseId: 'split-squats' },
+        { kind: 'exercise', exerciseId: 'rest' },
+        { kind: 'exercise', exerciseId: 'glute-bridge' },
+      ],
+    },
+    {
+      id: 'foundations-pull',
+      name: 'Foundations · Pull',
+      blocks: [
+        { kind: 'exercise', exerciseId: 'inverted-rows' },
+        { kind: 'exercise', exerciseId: 'rest', configOverride: { durationSec: 120 } },
         {
           kind: 'circuit',
-          id: 'finisher-rounds',
+          id: 'foundations-finisher',
           rounds: 3,
           restBetweenExercisesSec: 15,
           restBetweenRoundsSec: 60,
-          // Each member here contributes one visit per round (not its own `sets`) — the circuit's
-          // `rounds` is what repeats pushups/l-sit/pullups, not their individual set counts.
-          members: [{ exerciseId: 'pushups' }, { exerciseId: 'l-sit' }, { exerciseId: 'pullups' }],
+          // Members are reps/timed_hold on purpose: a circuit repeats a member once per round and
+          // ignores its own `sets`, but a hiit/emom/amrap member would run its whole internal
+          // timing on every visit — four 30/30 rounds of mountain climbers, three times over.
+          members: [{ exerciseId: 'pushups' }, { exerciseId: 'bodyweight-squats' }, { exerciseId: 'plank' }],
         },
       ],
+    },
+    {
+      id: 'db-full-body-a',
+      name: 'Dumbbell Full Body A',
+      blocks: [
+        { kind: 'exercise', exerciseId: 'db-goblet-squat' },
+        { kind: 'exercise', exerciseId: 'rest' },
+        { kind: 'exercise', exerciseId: 'db-floor-press' },
+        { kind: 'exercise', exerciseId: 'rest' },
+        { kind: 'exercise', exerciseId: 'db-row' },
+      ],
+    },
+    {
+      id: 'db-full-body-b',
+      name: 'Dumbbell Full Body B',
+      blocks: [
+        { kind: 'exercise', exerciseId: 'db-romanian-deadlift' },
+        { kind: 'exercise', exerciseId: 'rest' },
+        { kind: 'exercise', exerciseId: 'db-overhead-press' },
+        { kind: 'exercise', exerciseId: 'rest' },
+        { kind: 'exercise', exerciseId: 'farmers-carry' },
+      ],
+    },
+    {
+      id: 'mixed-conditioning',
+      name: 'Mixed Conditioning',
+      blocks: [
+        { kind: 'exercise', exerciseId: 'burpees' },
+        { kind: 'exercise', exerciseId: 'rest' },
+        { kind: 'exercise', exerciseId: 'amrap-12-bodyweight' },
+        { kind: 'exercise', exerciseId: 'rest', configOverride: { durationSec: 120 } },
+        { kind: 'exercise', exerciseId: 'easy-cardio' },
+      ],
+    },
+    {
+      id: 'emom-10',
+      name: 'EMOM 10',
+      blocks: [{ kind: 'exercise', exerciseId: 'emom-pushups' }],
     },
   ],
   programs: [
     {
-      id: 'pull-progression',
-      name: '6-Week Pull Progression',
+      id: 'foundations',
+      name: 'Foundations · 4 Weeks · No Equipment',
       weeks: [
-        { week: 1, workoutId: 'calisthenics-a', notes: 'Baseline — log where you land in each range.' },
+        {
+          week: 1,
+          day: 'Day 1',
+          workoutId: 'foundations-push',
+          notes: 'Baseline week. Log where you actually land in each range — don’t chase the top of it yet.',
+        },
+        { week: 1, day: 'Day 2', workoutId: 'foundations-legs' },
+        { week: 1, day: 'Day 3', workoutId: 'foundations-pull' },
+
+        {
+          week: 2,
+          day: 'Day 1',
+          workoutId: 'foundations-push',
+          notes: 'Same three sessions. Aim for one more rep than you logged in week 1, on every set.',
+        },
+        { week: 2, day: 'Day 2', workoutId: 'foundations-legs' },
+        { week: 2, day: 'Day 3', workoutId: 'foundations-pull' },
+
         {
           week: 3,
-          workoutId: 'calisthenics-a',
-          notes: 'Add a 5th set once 2 clean sessions hit the top of the range.',
-          overrides: [{ kind: 'exercise', exerciseId: 'pullups', config: { sets: 5 } }],
+          day: 'Day 1',
+          workoutId: 'foundations-push',
+          notes: 'A fourth set everywhere. Keep the reps where they were rather than pushing both at once.',
+          overrides: [
+            { kind: 'exercise', exerciseId: 'pushups', config: { sets: 4 } },
+            { kind: 'exercise', exerciseId: 'plank', config: { sets: 4 } },
+          ],
         },
         {
-          week: 6,
-          workoutId: 'finisher-circuit',
-          notes: 'Deload — cut the finisher circuit down to 2 rounds.',
-          overrides: [{ kind: 'block', blockId: 'finisher-rounds', config: { rounds: 2 } }],
+          week: 3,
+          day: 'Day 2',
+          workoutId: 'foundations-legs',
+          overrides: [
+            { kind: 'exercise', exerciseId: 'bodyweight-squats', config: { sets: 4 } },
+            { kind: 'exercise', exerciseId: 'split-squats', config: { sets: 4 } },
+          ],
+        },
+        {
+          week: 3,
+          day: 'Day 3',
+          workoutId: 'foundations-pull',
+          overrides: [{ kind: 'exercise', exerciseId: 'inverted-rows', config: { sets: 4 } }],
+        },
+
+        // Week 4 repeats week 3's overrides verbatim: an override applies to its own week only.
+        {
+          week: 4,
+          day: 'Day 1',
+          workoutId: 'foundations-push',
+          notes: 'Heaviest week of the block. Now push the reps toward the top of each range.',
+          overrides: [
+            { kind: 'exercise', exerciseId: 'pushups', config: { sets: 4 } },
+            { kind: 'exercise', exerciseId: 'plank', config: { sets: 4 } },
+          ],
+        },
+        {
+          week: 4,
+          day: 'Day 2',
+          workoutId: 'foundations-legs',
+          overrides: [
+            { kind: 'exercise', exerciseId: 'bodyweight-squats', config: { sets: 4 } },
+            { kind: 'exercise', exerciseId: 'split-squats', config: { sets: 4 } },
+          ],
+        },
+        {
+          week: 4,
+          day: 'Day 3',
+          workoutId: 'foundations-pull',
+          notes:
+            'Last session of the block, and a fourth finisher round. Completing it loops back to week 1 — run it again with the top of each range as your new floor.',
+          overrides: [
+            { kind: 'exercise', exerciseId: 'inverted-rows', config: { sets: 4 } },
+            { kind: 'block', blockId: 'foundations-finisher', config: { rounds: 4 } },
+          ],
+        },
+      ],
+    },
+    {
+      id: 'dumbbell-strength',
+      name: 'Dumbbell Strength · 4 Weeks',
+      weeks: [
+        // Three sessions a week alternating two full-body workouts, so each lands twice a fortnight.
+        {
+          week: 1,
+          day: 'Day 1',
+          workoutId: 'db-full-body-a',
+          notes: 'Baseline week. Pick weights you could stop 2 reps shy of failure with, and write them into each exercise.',
+        },
+        { week: 1, day: 'Day 2', workoutId: 'db-full-body-b' },
+        { week: 1, day: 'Day 3', workoutId: 'db-full-body-a' },
+
+        {
+          week: 2,
+          day: 'Day 1',
+          workoutId: 'db-full-body-b',
+          notes: 'The A/B order flips this week. Add the smallest jump you own to anything you hit the top of the range on.',
+        },
+        { week: 2, day: 'Day 2', workoutId: 'db-full-body-a' },
+        { week: 2, day: 'Day 3', workoutId: 'db-full-body-b' },
+
+        {
+          week: 3,
+          day: 'Day 1',
+          workoutId: 'db-full-body-a',
+          notes: 'A fourth set everywhere. Hold the weights where they are this week.',
+          overrides: [
+            { kind: 'exercise', exerciseId: 'db-goblet-squat', config: { sets: 4 } },
+            { kind: 'exercise', exerciseId: 'db-floor-press', config: { sets: 4 } },
+            { kind: 'exercise', exerciseId: 'db-row', config: { sets: 4 } },
+          ],
+        },
+        {
+          week: 3,
+          day: 'Day 2',
+          workoutId: 'db-full-body-b',
+          overrides: [
+            { kind: 'exercise', exerciseId: 'db-romanian-deadlift', config: { sets: 4 } },
+            { kind: 'exercise', exerciseId: 'db-overhead-press', config: { sets: 4 } },
+            { kind: 'exercise', exerciseId: 'farmers-carry', config: { sets: 4 } },
+          ],
+        },
+        {
+          week: 3,
+          day: 'Day 3',
+          workoutId: 'db-full-body-a',
+          overrides: [
+            { kind: 'exercise', exerciseId: 'db-goblet-squat', config: { sets: 4 } },
+            { kind: 'exercise', exerciseId: 'db-floor-press', config: { sets: 4 } },
+            { kind: 'exercise', exerciseId: 'db-row', config: { sets: 4 } },
+          ],
+        },
+
+        {
+          week: 4,
+          day: 'Day 1',
+          workoutId: 'db-full-body-b',
+          notes: 'Heaviest week of the block: four sets, and add weight wherever week 3 felt easy.',
+          overrides: [
+            { kind: 'exercise', exerciseId: 'db-romanian-deadlift', config: { sets: 4 } },
+            { kind: 'exercise', exerciseId: 'db-overhead-press', config: { sets: 4 } },
+            { kind: 'exercise', exerciseId: 'farmers-carry', config: { sets: 4 } },
+          ],
+        },
+        {
+          week: 4,
+          day: 'Day 2',
+          workoutId: 'db-full-body-a',
+          overrides: [
+            { kind: 'exercise', exerciseId: 'db-goblet-squat', config: { sets: 4 } },
+            { kind: 'exercise', exerciseId: 'db-floor-press', config: { sets: 4 } },
+            { kind: 'exercise', exerciseId: 'db-row', config: { sets: 4 } },
+          ],
+        },
+        {
+          week: 4,
+          day: 'Day 3',
+          workoutId: 'db-full-body-b',
+          notes:
+            'Last session of the block. Completing it loops back to week 1 — run it again from the weights you finished on.',
+          overrides: [
+            { kind: 'exercise', exerciseId: 'db-romanian-deadlift', config: { sets: 4 } },
+            { kind: 'exercise', exerciseId: 'db-overhead-press', config: { sets: 4 } },
+            { kind: 'exercise', exerciseId: 'farmers-carry', config: { sets: 4 } },
+          ],
         },
       ],
     },

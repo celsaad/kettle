@@ -494,13 +494,35 @@ failure mode the decision-log note above warns about, regrown one heading level 
   workouts and one 6-week program on first launch, so the app never opens empty — but its own comment
   says it "mirrors what was previously hardcoded mock data". It was built to *demonstrate the format*
   (ranges, notes, a circuit, a periodized program), not to be a first workout someone would actually
-  do. What's wanted instead is curated starter content: a few complete, sensible programs and the
-  exercises they need, so a new user can press start on day one rather than build a library before
-  the app does anything. Two things to decide when picking it up — whether the seed grows into
-  several selectable starter programs or stays one, and whether exercise `notes` carry enough
-  coaching to be useful without becoming a fitness-advice surface the app then owns. Note the seed is
-  also the web build's entire library and the self-heal target for a corrupt `exercises.yaml`, so it
-  has to stay small enough to be a reasonable thing to reset to.
+  do. What's wanted instead is curated starter content, so a new user can press start on day one
+  rather than build a library before the app does anything. Note the seed is also the web build's
+  entire library and the self-heal target for a corrupt `exercises.yaml`, so it has to stay small
+  enough to be a reasonable thing to reset to.
+
+  **Settled:** two programs — a no-equipment one **first**, a dumbbell one second — plus two
+  standalone workouts, startable ad-hoc from the Build tab, that exist so all seven exercise types
+  have a live example: one mixed conditioning session (`hiit` → `amrap` → a short `cardio` cooldown)
+  and one `emom`. An earlier draft gave each type its own single-block workout; folding them cut four
+  near-empty workouts to two without losing the coverage, which is the point of them.
+  Seed content stays **English-only**; a locale-picked seed is a
+  follow-up, not part of this (it would double every future content edit, and the seed is the one
+  place a name the user dislikes is trivially renameable). Exercise `notes` describe **the app's own
+  progression model only** — "stop 2 reps shy of failure", "hit the top of the range twice before
+  adding a set" — never form cues, pain/injury, or diet, so the app keeps describing its data model
+  rather than prescribing training. No loads are seeded: `target_weight` is left unset so the user
+  fills in their own.
+
+  Three constraints the content has to be authored around, none obvious from the seed file:
+
+  - **`programs[0]` is the default.** `activeProgram` (`selectors.ts`) falls back to the first library
+    program when no session has been run yet, and there is no starter-program picker — so the
+    no-equipment program must be first, and the second is browse-only until explicitly started.
+  - **Multi-day weeks sort by `day.localeCompare`** (`nextWeekAfter`), so `Monday`/`Wednesday`/
+    `Friday` walks a week as *Friday → Monday → Wednesday*. Day labels have to sort in training
+    order: `Day 1`/`Day 2`/`Day 3`.
+  - **Weeks resolve sparsely and overrides don't carry forward.** The current seed's weeks 1/3/6 make
+    "next up" skip 2, 4 and 5 entirely; a curated program must enumerate every week, and repeat an
+    override in each later week it should still apply to.
 
 - **Lean into AI-generated workouts — the format is already the feature.** A hand-editable YAML
   library that merges by `id` is exactly what an assistant is good at emitting, and the pipeline it

@@ -24,6 +24,33 @@ plus an append-only local session log. No server, no account.
   the file to its own defaults. **Markdown and `package.json` are excluded on purpose** — see the
   decision log before adding them.
 
+## Working on a feature
+
+Run this in order. The two middle questions are the ones that get skipped and are the most expensive to
+retrofit, so answer them out loud even when the answer is no.
+
+- [ ] **Branch first** — `git checkout -b <name>`. Nothing lands straight on the default branch.
+- [ ] **Implement the feature.**
+- [ ] **Does it need a11y and i18n?** For anything with UI, assume yes: `accessibilityRole` + a label on
+      every interactive element, `accessibilityState` where it's selected/expanded, 44px targets via
+      `minHeight`, new colors contrast-checked, and no user-facing string outside the locale bundles —
+      keys go into **both** `en.json` and `pt.json`. User data is never translated. See the house-rules
+      section below; these are cheap now and tedious later, which is why they're a checklist item.
+- [ ] **Does it need error checks, an error boundary, or a graceful degrade?** Ask per layer: does a
+      storage call need an `isFileStorageSupported` guard; does an in-app form need `validateConfig`-style
+      validation (the zod schema does *not* run on that path); can a render throw here cost a workout in
+      progress? Degrading beats crashing — `safe-iap.ts`, `safe-notifications.ts` and `library-file.ts`'s
+      reseed of a corrupt library are the patterns to copy.
+- [ ] **Add tests if it makes sense.** Pure logic, error and empty branches, validation wiring: yes.
+      Layout, animation, real audio and file writes: drive the running app instead. See "Writing tests".
+- [ ] `npm test`
+- [ ] `npm run typecheck`
+- [ ] `npm run format`
+- [ ] `npm run lint` — compare the warning count to the accepted baseline above rather than assuming a
+      clean run; anything at `error` level is yours.
+- [ ] **Push the branch and open a PR** (`gh pr create`). The commit message is the durable record —
+      root cause, alternatives, deliberate scope cuts go there, not into the docs (see "Docs").
+
 ## Delegating
 
 Mechanical, well-specified work — adding tests to an existing suite, repetitive renames, boilerplate —

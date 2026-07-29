@@ -14,11 +14,26 @@ import { z } from 'zod';
 
 import { UNIT_SYSTEMS, type UnitSystem } from '@/domain/units';
 
+/**
+ * What Settings → Appearance offers: pin a scheme, or defer to the OS.
+ *
+ * `system` is the intent "follow the device", not an outcome — which is the whole reason this is a
+ * three-value preference rather than the `Scheme | null` override it replaced. See `theme-context.tsx`.
+ */
+export const THEME_PREFERENCES = ['light', 'dark', 'system'] as const;
+export type ThemePreference = (typeof THEME_PREFERENCES)[number];
+
 export type Preferences = {
   /** Display only — stored weights are always kilograms, see `domain/units.ts`. */
   unitSystem: UnitSystem;
+  themePreference: ThemePreference;
 };
 
 export const preferencesSchema = z.object({
   unitSystem: z.enum(UNIT_SYSTEMS),
+  // Defaulted, not required, because this field arrived after `preferences.json` was already being
+  // written in the field. A required key would fail `safeParse` on every file that predates it, and
+  // `loadPreferences` answers a failed parse with `null` — so an unrelated missing key would silently
+  // reset the user's *unit* choice too. Any preference added later needs the same treatment.
+  themePreference: z.enum(THEME_PREFERENCES).default('system'),
 });

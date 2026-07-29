@@ -1,4 +1,5 @@
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
@@ -17,6 +18,7 @@ import { useTheme } from '@/hooks/use-theme';
  */
 export function ModalHeader({ onClose }: { onClose: () => void }) {
   const theme = useTheme();
+  const { t } = useTranslation();
 
   return (
     <View style={styles.container}>
@@ -26,7 +28,7 @@ export function ModalHeader({ onClose }: { onClose: () => void }) {
           onPress={onClose}
           hitSlop={10}
           accessibilityRole="button"
-          accessibilityLabel="Close"
+          accessibilityLabel={t('common.close')}
           style={({ pressed }) => [
             styles.closeButton,
             { borderColor: theme.border, backgroundColor: theme.backgroundElement },

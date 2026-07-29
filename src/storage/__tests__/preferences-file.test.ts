@@ -29,7 +29,7 @@ jest.mock('@/storage/paths', () => ({
 
 import { loadPreferences, savePreferences } from '@/storage/preferences-file';
 
-const stored = { unitSystem: 'imperial' as const };
+const stored = { unitSystem: 'imperial' as const, themePreference: 'dark' as const };
 
 beforeEach(() => {
   mockStorageSupported = true;
@@ -43,6 +43,17 @@ describe('loadPreferences', () => {
   it('reads back preferences the app previously wrote', async () => {
     mockFile.text.mockResolvedValue(JSON.stringify(stored));
     expect(await loadPreferences()).toEqual(stored);
+  });
+
+  /**
+   * The regression this pins: `themePreference` was added to a file already being written in the
+   * field. Had it gone in as a required key, every pre-existing `preferences.json` would have failed
+   * the schema, and a failed parse answers `null` — so shipping the appearance setting would have
+   * quietly reset each existing user's *unit* choice back to their device default.
+   */
+  it('reads a file written before themePreference existed, keeping its unit choice', async () => {
+    mockFile.text.mockResolvedValue(JSON.stringify({ unitSystem: 'imperial' }));
+    expect(await loadPreferences()).toEqual({ unitSystem: 'imperial', themePreference: 'system' });
   });
 
   it('returns null when nothing has been chosen yet', async () => {
@@ -60,6 +71,13 @@ describe('loadPreferences', () => {
   // carry into the UI as a valid setting.
   it('returns null on JSON that parses but fails the schema', async () => {
     mockFile.text.mockResolvedValue(JSON.stringify({ unitSystem: 'stone' }));
+    expect(await loadPreferences()).toBeNull();
+  });
+
+  // Same reasoning one field over: a *present* but unknown value is a downgrade or a hand-edit, not a
+  // missing key, so it gets the file's usual all-or-nothing answer rather than the default above.
+  it('returns null on a theme preference this build does not know', async () => {
+    mockFile.text.mockResolvedValue(JSON.stringify({ unitSystem: 'metric', themePreference: 'sepia' }));
     expect(await loadPreferences()).toBeNull();
   });
 

@@ -44,7 +44,9 @@ function configField(index: number) {
 }
 
 function setUnitSystem(unitSystem: UnitSystem) {
-  usePreferencesStore.setState({ preferences: { unitSystem }, status: 'ready' });
+  // Merged rather than replaced: `preferences` now also carries the appearance choice, and dropping
+  // it here would leave the theme provider without one.
+  usePreferencesStore.setState((state) => ({ preferences: { ...state.preferences, unitSystem }, status: 'ready' }));
 }
 
 beforeEach(() => {

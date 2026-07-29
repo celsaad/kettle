@@ -186,6 +186,18 @@ export default function WorkoutEditorScreen() {
           data={draft.blocks}
           keyExtractor={(block, index) => (block.kind === 'exercise' ? `exercise-${index}` : `circuit-${index}`)}
           onReorder={handleReorder}
+          labelsFor={(block, index, total) => {
+            const name =
+              block.kind === 'exercise'
+                ? (findExerciseInLibrary(library, block.exerciseId)?.name ?? block.exerciseId)
+                : t('workoutEditor.circuit');
+            return {
+              handle: t('workoutEditor.reorderAccessibility', { name }),
+              position: t('workoutEditor.positionOf', { index: index + 1, total }),
+              moveUp: t('workoutEditor.moveUp'),
+              moveDown: t('workoutEditor.moveDown'),
+            };
+          }}
           style={styles.list}
           renderItem={(block, index, dragHandle) => {
             if (block.kind === 'exercise') {
@@ -206,8 +218,8 @@ export default function WorkoutEditorScreen() {
                       ? { borderWidth: 1, borderStyle: 'dashed', borderColor: theme.border }
                       : { backgroundColor: theme.backgroundElement, borderWidth: 1, borderColor: theme.border },
                   ]}>
-                  <GestureDetector gesture={dragHandle}>
-                    <View style={styles.dragHandleTouchArea}>
+                  <GestureDetector gesture={dragHandle.gesture}>
+                    <View {...dragHandle.a11yProps} style={styles.dragHandleTouchArea}>
                       <ThemedText themeColor="textSecondary" style={styles.dragHandle}>
                         ⣿
                       </ThemedText>
@@ -238,8 +250,8 @@ export default function WorkoutEditorScreen() {
             return (
               <View style={[styles.circuitBlock, { borderColor: theme.border, backgroundColor: theme.backgroundElement }]}>
                 <View style={styles.circuitHeader}>
-                  <GestureDetector gesture={dragHandle}>
-                    <View style={styles.dragHandleTouchArea}>
+                  <GestureDetector gesture={dragHandle.gesture}>
+                    <View {...dragHandle.a11yProps} style={styles.dragHandleTouchArea}>
                       <ThemedText themeColor="textSecondary" style={styles.dragHandle}>
                         ⣿
                       </ThemedText>
@@ -287,7 +299,12 @@ export default function WorkoutEditorScreen() {
                   })}
                 </View>
 
-                <Pressable onPress={() => toggleIdField(index)} style={styles.circuitIdToggle} hitSlop={4}>
+                <Pressable
+                  onPress={() => toggleIdField(index)}
+                  accessibilityRole="button"
+                  accessibilityState={{ expanded: openIdFields.has(index) }}
+                  style={styles.circuitIdToggle}
+                  hitSlop={4}>
                   <ThemedText type="small" themeColor="textSecondary" style={styles.circuitFieldLabel}>
                     {block.id
                       ? t('workoutEditor.blockIdWithValue', { id: block.id })
@@ -326,6 +343,8 @@ export default function WorkoutEditorScreen() {
                     <View style={styles.stepperRow}>
                       <Pressable
                         onPress={() => updateCircuit(index, { rounds: Math.max(1, block.rounds - 1) })}
+                        accessibilityRole="button"
+                        accessibilityLabel={t('common.decrease', { label: t('workoutEditor.rounds') })}
                         style={[styles.stepperButton, { borderColor: theme.border }]}>
                         <ThemedText themeColor="textSecondary">−</ThemedText>
                       </Pressable>
@@ -334,6 +353,8 @@ export default function WorkoutEditorScreen() {
                       </ThemedText>
                       <Pressable
                         onPress={() => updateCircuit(index, { rounds: block.rounds + 1 })}
+                        accessibilityRole="button"
+                        accessibilityLabel={t('common.increase', { label: t('workoutEditor.rounds') })}
                         style={[styles.stepperButton, { borderColor: theme.border }]}>
                         <ThemedText themeColor="textSecondary">+</ThemedText>
                       </Pressable>
@@ -386,6 +407,8 @@ export default function WorkoutEditorScreen() {
               setCircuitPickerOpen(false);
               setNewExerciseOpen(false);
             }}
+            accessibilityRole="button"
+            accessibilityState={{ expanded: pickerOpen }}
             style={({ pressed }) => [
               styles.addBlock,
               styles.addBlockHalf,
@@ -403,6 +426,8 @@ export default function WorkoutEditorScreen() {
               setCircuitSelection([]);
               setNewExerciseOpen(false);
             }}
+            accessibilityRole="button"
+            accessibilityState={{ expanded: circuitPickerOpen }}
             style={({ pressed }) => [
               styles.addBlock,
               styles.addBlockHalf,
@@ -423,13 +448,14 @@ export default function WorkoutEditorScreen() {
               <>
                 <Pressable
                   onPress={() => setNewExerciseOpen(true)}
+                  accessibilityRole="button"
                   style={[styles.newExerciseButton, { borderColor: theme.border }]}>
                   <ThemedText type="smallMedium" themeColor="textSecondary">
                     {t('workoutEditor.newExercise')}
                   </ThemedText>
                 </Pressable>
                 {library.exercises.map((exercise) => (
-                  <Pressable key={exercise.id} onPress={() => addBlock(exercise.id)}>
+                  <Pressable key={exercise.id} onPress={() => addBlock(exercise.id)} accessibilityRole="button">
                     <ThemedView type="backgroundElement" style={[styles.pickerRow, { borderColor: theme.border }]}>
                       <ThemedText type="smallMedium" style={styles.pickerRowText}>
                         {exercise.name}
@@ -454,6 +480,7 @@ export default function WorkoutEditorScreen() {
                 </ThemedText>
                 <Pressable
                   onPress={() => setNewExerciseOpen(true)}
+                  accessibilityRole="button"
                   style={[styles.newExerciseButton, { borderColor: theme.border }]}>
                   <ThemedText type="smallMedium" themeColor="textSecondary">
                     {t('workoutEditor.newExercise')}
@@ -462,7 +489,11 @@ export default function WorkoutEditorScreen() {
                 {library.exercises.map((exercise) => {
                   const selected = circuitSelection.includes(exercise.id);
                   return (
-                    <Pressable key={exercise.id} onPress={() => toggleCircuitMember(exercise.id)}>
+                    <Pressable
+                      key={exercise.id}
+                      onPress={() => toggleCircuitMember(exercise.id)}
+                      accessibilityRole="checkbox"
+                      accessibilityState={{ checked: selected }}>
                       <ThemedView
                         type="backgroundElement"
                         style={[styles.pickerRow, { borderColor: selected ? theme.accent : theme.border }]}>
@@ -489,6 +520,8 @@ export default function WorkoutEditorScreen() {
                 <Pressable
                   onPress={addCircuit}
                   disabled={circuitSelection.length < 2}
+                  accessibilityRole="button"
+                  accessibilityState={{ disabled: circuitSelection.length < 2 }}
                   style={[
                     styles.confirmCircuit,
                     { backgroundColor: theme.accent },
@@ -510,12 +543,15 @@ export default function WorkoutEditorScreen() {
         )}
 
         <View style={styles.buttonRow}>
-          <Pressable onPress={close} style={[styles.cancelButton, { borderColor: theme.border }]}>
+          <Pressable onPress={close} accessibilityRole="button" style={[styles.cancelButton, { borderColor: theme.border }]}>
             <ThemedText type="heading" themeColor="textSecondary">
               {t('common.cancel')}
             </ThemedText>
           </Pressable>
-          <Pressable onPress={save} style={[styles.saveButton, { backgroundColor: theme.accent }]}>
+          <Pressable
+            onPress={save}
+            accessibilityRole="button"
+            style={[styles.saveButton, { backgroundColor: theme.accent }]}>
             <ThemedText type="heading" style={{ color: theme.onAccent }}>
               {t('common.save')}
             </ThemedText>
@@ -523,7 +559,7 @@ export default function WorkoutEditorScreen() {
         </View>
 
         {editing && (
-          <Pressable onPress={confirmDelete} style={styles.deleteButton} hitSlop={8}>
+          <Pressable onPress={confirmDelete} accessibilityRole="button" style={styles.deleteButton} hitSlop={8}>
             <ThemedText type="smallMedium" themeColor="textSecondary">
               {t('workoutEditor.deleteWorkout')}
             </ThemedText>

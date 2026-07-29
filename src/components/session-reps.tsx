@@ -87,7 +87,11 @@ export function SessionReps({
 
       <View style={styles.middle}>
         <View style={styles.stepperRow}>
-          <Pressable onPress={() => onChangeReps(Math.max(0, reps - 1))} style={styles.stepperButton}>
+          <Pressable
+            onPress={() => onChangeReps(Math.max(0, reps - 1))}
+            accessibilityRole="button"
+            accessibilityLabel={t('common.decrease', { label: t('session.reps.repsLabel') })}
+            style={styles.stepperButton}>
             <ThemedText type="title" style={styles.stepperGlyph}>
               −
             </ThemedText>
@@ -106,7 +110,11 @@ export function SessionReps({
               {t('session.reps.repsDoneCaps')}
             </ThemedText>
           </Pressable>
-          <Pressable onPress={() => onChangeReps(reps + 1)} style={[styles.stepperButton, styles.stepperButtonAccent]}>
+          <Pressable
+            onPress={() => onChangeReps(reps + 1)}
+            accessibilityRole="button"
+            accessibilityLabel={t('common.increase', { label: t('session.reps.repsLabel') })}
+            style={[styles.stepperButton, styles.stepperButtonAccent]}>
             <ThemedText type="title" style={[styles.stepperGlyph, styles.stepperGlyphAccent]}>
               +
             </ThemedText>
@@ -194,12 +202,12 @@ export function SessionReps({
       <SessionNextCard next={next} />
 
       <View style={styles.controlsRow}>
-        <Pressable onPress={onPrev} style={styles.prevButton}>
+        <Pressable onPress={onPrev} accessibilityRole="button" style={styles.prevButton}>
           <ThemedText type="code" style={styles.prevLabel}>
             {t('session.prev')}
           </ThemedText>
         </Pressable>
-        <Pressable onPress={onLogSet} style={styles.logButton}>
+        <Pressable onPress={onLogSet} accessibilityRole="button" style={styles.logButton}>
           <ThemedText type="heading" style={styles.logButtonLabel}>
             {t('session.reps.logSet')}
           </ThemedText>

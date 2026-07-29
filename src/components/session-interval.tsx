@@ -53,7 +53,11 @@ function Stepper({ label, value, onChange, onRequestEdit, t }: StepperProps) {
         {label}
       </ThemedText>
       <View style={styles.stepperRow}>
-        <Pressable onPress={() => onChange(Math.max(0, value - 1))} style={styles.stepperButton}>
+        <Pressable
+          onPress={() => onChange(Math.max(0, value - 1))}
+          accessibilityRole="button"
+          accessibilityLabel={t('common.decrease', { label })}
+          style={styles.stepperButton}>
           <ThemedText type="title" style={styles.stepperGlyph}>
             −
           </ThemedText>
@@ -68,7 +72,11 @@ function Stepper({ label, value, onChange, onRequestEdit, t }: StepperProps) {
             {value}
           </ThemedText>
         </Pressable>
-        <Pressable onPress={() => onChange(value + 1)} style={[styles.stepperButton, styles.stepperButtonAccent]}>
+        <Pressable
+          onPress={() => onChange(value + 1)}
+          accessibilityRole="button"
+          accessibilityLabel={t('common.increase', { label })}
+          style={[styles.stepperButton, styles.stepperButtonAccent]}>
           <ThemedText type="title" style={[styles.stepperGlyph, styles.stepperGlyphAccent]}>
             +
           </ThemedText>
@@ -238,7 +246,7 @@ export function SessionInterval({
           style={styles.circleButton}>
           <View style={styles.iconPrev} />
         </Pressable>
-        <Pressable onPress={onTogglePause} style={styles.pauseButton}>
+        <Pressable onPress={onTogglePause} accessibilityRole="button" style={styles.pauseButton}>
           <ThemedText type="heading" style={styles.pauseButtonLabel}>
             {paused ? t('session.resume') : t('session.pause')}
           </ThemedText>
@@ -251,7 +259,7 @@ export function SessionInterval({
           <View style={styles.iconNext} />
         </Pressable>
       </View>
-      <Pressable onPress={onDone}>
+      <Pressable onPress={onDone} accessibilityRole="button">
         <ThemedText type="heading" style={styles.doneLabel}>
           {countUp ? t('session.interval.doneUp') : t('session.interval.skipArrow')}
         </ThemedText>

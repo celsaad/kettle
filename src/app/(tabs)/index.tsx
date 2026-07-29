@@ -116,6 +116,7 @@ export default function TodayScreen() {
           )}
           <Pressable
             onPress={() => router.push({ pathname: '/session', params: nextUp.sessionParams })}
+            accessibilityRole="button"
             style={({ pressed }) => [styles.startButton, { backgroundColor: theme.accent }, pressed && styles.pressed]}>
             <View style={[styles.playTriangle, { borderLeftColor: theme.onAccent }]} />
             <ThemedText type="heading" style={{ color: theme.onAccent }}>

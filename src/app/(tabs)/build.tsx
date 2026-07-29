@@ -45,6 +45,7 @@ export default function BuildScreen() {
               <ThemedView key={workout.id} type="backgroundElement" style={[styles.card, { borderColor: theme.border }]}>
                 <Pressable
                   onPress={() => router.push({ pathname: '/workout-editor', params: { id: workout.id } })}
+                  accessibilityRole="button"
                   style={styles.cardTextArea}>
                   <View style={styles.cardText}>
                     <ThemedText type="heading">{workout.name}</ThemedText>

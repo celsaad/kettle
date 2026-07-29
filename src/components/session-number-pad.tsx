@@ -56,7 +56,12 @@ export function SessionNumberPad({ label, initialValue, unit, allowDecimal, onCa
 
   return (
     <View style={styles.overlay}>
-      <Pressable style={styles.backdrop} onPress={onCancel} accessibilityLabel={t('session.numberPad.dismiss')} />
+      <Pressable
+        style={styles.backdrop}
+        onPress={onCancel}
+        accessibilityRole="button"
+        accessibilityLabel={t('session.numberPad.dismiss')}
+      />
 
       <View style={styles.sheet}>
         <ThemedText type="code" style={styles.label}>

@@ -183,6 +183,8 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
                 <Pressable
                   onPress={() => resolvable && startEdit(index)}
                   disabled={!resolvable}
+                  accessibilityRole="button"
+                  accessibilityState={{ disabled: !resolvable }}
                   style={styles.overrideRowText}>
                   {lines.map((line, lineIndex) => (
                     <ThemedText key={lineIndex} type="small" themeColor="textSecondary">
@@ -208,6 +210,8 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
           <Pressable
             onPress={startAdd}
             disabled={!workout || noEligibleTargets}
+            accessibilityRole="button"
+            accessibilityState={{ disabled: !workout || noEligibleTargets }}
             style={[styles.addButton, { borderColor: theme.border }, (!workout || noEligibleTargets) && styles.disabled]}>
             <ThemedText type="small" themeColor="textSecondary">
               {t('overrideEditor.addOverride')}
@@ -224,7 +228,10 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
       {step === 'choose-target' && (
         <View style={styles.picker}>
           {eligibleExercises.map((exercise) => (
-            <Pressable key={exercise.id} onPress={() => chooseTarget({ kind: 'exercise', exercise })}>
+            <Pressable
+              key={exercise.id}
+              onPress={() => chooseTarget({ kind: 'exercise', exercise })}
+              accessibilityRole="button">
               <ThemedView type="backgroundElement" style={[styles.pickerRow, { borderColor: theme.border }]}>
                 <ThemedText type="smallMedium" style={styles.pickerRowText}>
                   {exercise.name}
@@ -236,7 +243,7 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
             </Pressable>
           ))}
           {eligibleCircuits.map((block) => (
-            <Pressable key={block.id} onPress={() => chooseTarget({ kind: 'block', block })}>
+            <Pressable key={block.id} onPress={() => chooseTarget({ kind: 'block', block })} accessibilityRole="button">
               <ThemedView type="backgroundElement" style={[styles.pickerRow, { borderColor: theme.border }]}>
                 <ThemedText type="smallMedium" style={styles.pickerRowText}>
                   {block.id}
@@ -247,7 +254,7 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
               </ThemedView>
             </Pressable>
           ))}
-          <Pressable onPress={close} style={styles.cancelPickerButton}>
+          <Pressable onPress={close} accessibilityRole="button" style={styles.cancelPickerButton}>
             <ThemedText type="small" themeColor="textSecondary">
               {t('common.cancel')}
             </ThemedText>
@@ -270,6 +277,8 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
                 <View style={styles.stepperRow}>
                   <Pressable
                     onPress={() => setField('rounds', String(Math.max(1, (Number(fieldValues.rounds) || 1) - 1)))}
+                    accessibilityRole="button"
+                    accessibilityLabel={t('common.decrease', { label: t('workoutEditor.rounds') })}
                     style={[styles.stepperButton, { borderColor: theme.border }]}>
                     <ThemedText themeColor="textSecondary">−</ThemedText>
                   </Pressable>
@@ -278,6 +287,8 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
                   </ThemedText>
                   <Pressable
                     onPress={() => setField('rounds', String((Number(fieldValues.rounds) || 1) + 1))}
+                    accessibilityRole="button"
+                    accessibilityLabel={t('common.increase', { label: t('workoutEditor.rounds') })}
                     style={[styles.stepperButton, { borderColor: theme.border }]}>
                     <ThemedText themeColor="textSecondary">+</ThemedText>
                   </Pressable>
@@ -335,12 +346,18 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
           )}
 
           <View style={styles.fieldsButtonRow}>
-            <Pressable onPress={close} style={[styles.smallCancelButton, { borderColor: theme.border }]}>
+            <Pressable
+              onPress={close}
+              accessibilityRole="button"
+              style={[styles.smallCancelButton, { borderColor: theme.border }]}>
               <ThemedText type="small" themeColor="textSecondary">
                 {t('common.cancel')}
               </ThemedText>
             </Pressable>
-            <Pressable onPress={confirm} style={[styles.smallConfirmButton, { backgroundColor: theme.accent }]}>
+            <Pressable
+              onPress={confirm}
+              accessibilityRole="button"
+              style={[styles.smallConfirmButton, { backgroundColor: theme.accent }]}>
               <ThemedText type="small" style={{ color: theme.onAccent }}>
                 {editingIndex !== null ? t('overrideEditor.saveOverride') : t('overrideEditor.confirmAdd')}
               </ThemedText>

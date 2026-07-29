@@ -50,12 +50,12 @@ export default function LibraryScreen() {
         <View style={styles.header}>
           <ThemedText type="subtitle">{t('library.title')}</ThemedText>
           <View style={styles.headerActions}>
-            <Pressable onPress={() => exportLibrary().catch(() => {})} hitSlop={8}>
+            <Pressable onPress={() => exportLibrary().catch(() => {})} accessibilityRole="button" hitSlop={8}>
               <ThemedText type="smallMedium" themeColor="textSecondary">
                 {t('common.export')}
               </ThemedText>
             </Pressable>
-            <Pressable onPress={() => router.push('/import')} hitSlop={8}>
+            <Pressable onPress={() => router.push('/import')} accessibilityRole="button" hitSlop={8}>
               <ThemedText type="smallMedium" themeColor="accentText">
                 {t('common.import')}
               </ThemedText>
@@ -85,6 +85,8 @@ export default function LibraryScreen() {
               <Pressable
                 key={item.labelKey}
                 onPress={() => setFilter(item.type)}
+                accessibilityRole="button"
+                accessibilityState={{ selected: active }}
                 style={[
                   styles.filterPill,
                   active
@@ -103,7 +105,8 @@ export default function LibraryScreen() {
           {filtered.map((exercise) => (
             <Pressable
               key={exercise.id}
-              onPress={() => router.push({ pathname: '/exercise-editor', params: { id: exercise.id } })}>
+              onPress={() => router.push({ pathname: '/exercise-editor', params: { id: exercise.id } })}
+              accessibilityRole="button">
               <ThemedView type="backgroundElement" style={[styles.card, { borderColor: theme.border }]}>
                 <View style={styles.cardText}>
                   <ThemedText type="heading">{exercise.name}</ThemedText>
@@ -160,7 +163,7 @@ const styles = StyleSheet.create({
   },
   searchBar: {
     marginTop: Spacing.three,
-    height: 44,
+    minHeight: 44,
     borderRadius: 14,
     borderWidth: 1,
     flexDirection: 'row',

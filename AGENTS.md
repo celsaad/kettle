@@ -146,6 +146,10 @@ still only verified by driving the running app. Doing this wrong wastes a lot of
 - To get a session into history: Build tab → the small round play button on a workout card (starts it
   ad-hoc) → repeatedly click whichever is visible of `Done set ↑`, `Log set → Rest`, `Skip rest →`,
   then `Done`.
+- **`react-native-web` implements only part of the a11y API**, so a browser check under-reports it:
+  `accessibilityRole`/`accessibilityLabel` map to `role`/`aria-label`, but `accessibilityActions`,
+  `onAccessibilityAction` and `accessibilityValue` are dropped with no warning. The block-reorder
+  handle looks actionless in the DOM and works fine under TalkBack. Assert those in jest, not here.
 - Always capture `page.on('console')` and `page.on('pageerror')`. The app is currently clean apart
   from one expo-notifications web warning, so any error means investigate.
 - Actually read your screenshots. Don't claim something renders correctly without having looked.
@@ -172,16 +176,15 @@ still only verified by driving the running app. Doing this wrong wastes a lot of
 Both workstreams have had their pass, so new work is expected to arrive already conforming — cheap as
 you go, tedious to retrofit, which is why they're here rather than on a backlog.
 
-**Read this as the rule for what you touch, not a description of what's there.** i18n is at parity;
-a11y isn't — the pass prioritised icon-only controls and left text-labelled ones without an explicit
-role. Which files, and what to do first, is in the implementation plan's planned work; no second copy
-here, where it would go stale. The wording this replaced ("every interactive control carries a role
-and label") read as a description and stopped people from checking.
-
-- **Every interactive element needs `accessibilityRole` and a label.** Icon-only controls need it most,
-  having no text to fall back on — the runner's prev/next were CSS triangles announcing as an unnamed
-  "button". Selected/expanded controls need `accessibilityState`. Touch targets are 44px minimum, via
-  `minHeight` (never `height`, which breaks at large accessibility text sizes) or `hitSlop`.
+- **Every interactive element needs `accessibilityRole`; it needs an explicit `accessibilityLabel`
+  only when its own children don't name it.** A `Pressable` wrapping a `Text` already takes its name
+  from that text, and adding a label that duplicates it will drift from what's on screen and break
+  Voice Control, which matches the visible words. Icon-only controls are the ones that genuinely need
+  a label, having nothing to fall back on — the runner's prev/next were CSS triangles announcing as an
+  unnamed "button". Selected/expanded/disabled controls need `accessibilityState`. Touch targets are
+  44px minimum, via `minHeight` (never `height`, which breaks at large accessibility text sizes) or
+  `hitSlop`. Decorative geometry — progress bars, CSS triangles, the grabber — keeps a fixed `height`;
+  the rule is about controls, not every box.
 - **Contrast-check new colors** against every surface they sit on, alpha-compositing where the
   background is translucent. `constants/theme.ts` records the measured ratios and the one pairing that
   clears AA-large only.

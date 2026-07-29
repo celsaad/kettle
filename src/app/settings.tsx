@@ -96,7 +96,12 @@ function ActionRow({
   const theme = useTheme();
 
   return (
-    <Pressable onPress={onPress} disabled={disabled} style={({ pressed }) => pressed && styles.pressed}>
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      accessibilityRole="button"
+      accessibilityState={{ disabled }}
+      style={({ pressed }) => pressed && styles.pressed}>
       <ThemedView type="backgroundElement" style={[styles.row, { borderColor: theme.border }, disabled && styles.disabled]}>
         <View style={styles.rowText}>
           <ThemedText type="heading">{title}</ThemedText>

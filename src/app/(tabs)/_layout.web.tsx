@@ -34,7 +34,13 @@ export default function TabLayout() {
 
 function TabButton({ children, isFocused, ...props }: TabTriggerSlotProps) {
   return (
-    <Pressable {...props} style={({ pressed }) => pressed && styles.pressed}>
+    // Role and state after the spread, deliberately: `isFocused` is destructured out for styling, so
+    // without this the selected tab looks selected but never announces as one.
+    <Pressable
+      {...props}
+      accessibilityRole="tab"
+      accessibilityState={{ selected: isFocused }}
+      style={({ pressed }) => pressed && styles.pressed}>
       <ThemedView type={isFocused ? 'backgroundSelected' : 'backgroundElement'} style={styles.tabButtonView}>
         <ThemedText type="smallMedium" themeColor={isFocused ? 'accentText' : 'textSecondary'}>
           {children}

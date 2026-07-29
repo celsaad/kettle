@@ -31,16 +31,55 @@ function triggerPickupHaptic() {
   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
 }
 
+/**
+ * What the consumer spreads onto whatever it uses as the drag handle. The gesture alone left this
+ * list impossible to reorder without sight — a drag has no non-visual equivalent — so the handle also
+ * carries an `adjustable` role, which both VoiceOver and TalkBack expose as swipe-up/swipe-down.
+ * It lives here rather than on the row wrapper deliberately: making the wrapper `accessible` would
+ * collapse the row into a single element and hide the remove button and text fields inside it.
+ */
+export type DragHandle = {
+  gesture: PanGesture;
+  a11yProps: {
+    accessible: true;
+    accessibilityRole: 'adjustable';
+    accessibilityLabel: string;
+    accessibilityValue: { text: string };
+    accessibilityActions: { name: 'increment' | 'decrement'; label: string }[];
+    onAccessibilityAction: (event: { nativeEvent: { actionName: string } }) => void;
+  };
+};
+
+export type ReorderLabels = {
+  /** Names the handle, e.g. "Reorder Push-ups". */
+  handle: string;
+  /** States where the item currently sits, e.g. "Position 2 of 5". */
+  position: string;
+  moveUp: string;
+  moveDown: string;
+};
+
 type ReorderableItemProps = {
   index: number;
+  total: number;
+  labels: ReorderLabels;
   heights: SharedValue<number[]>;
   activeIndex: SharedValue<number>;
   dragTranslateY: SharedValue<number>;
   onCommit: (from: number, to: number) => void;
-  children: (dragHandle: PanGesture) => ReactNode;
+  children: (dragHandle: DragHandle) => ReactNode;
 };
 
-function ReorderableItem({ index, heights, activeIndex, dragTranslateY, onCommit, children }: ReorderableItemProps) {
+function ReorderableItem({
+  index,
+  total,
+  labels,
+  heights,
+  activeIndex,
+  dragTranslateY,
+  onCommit,
+  children,
+}: ReorderableItemProps) {
   // Long-press-then-drag (not an immediate pan) so ordinary vertical scrolling of the surrounding
   // ScrollView keeps working untouched, and gives a clear "picked up" moment to pair with a haptic.
   const dragHandle = Gesture.Pan()
@@ -96,9 +135,37 @@ function ReorderableItem({ index, heights, activeIndex, dragTranslateY, onCommit
     [heights, index],
   );
 
+  // Clamped rather than wrapped: "move up" on the first row should do nothing, not teleport it to the
+  // bottom, which is disorienting when you can't see the list.
+  const move = useCallback(
+    (delta: number) => {
+      const target = index + delta;
+      if (target < 0 || target >= total) return;
+      onCommit(index, target);
+    },
+    [index, total, onCommit],
+  );
+
+  const handle: DragHandle = {
+    gesture: dragHandle,
+    a11yProps: {
+      accessible: true,
+      accessibilityRole: 'adjustable',
+      accessibilityLabel: labels.handle,
+      accessibilityValue: { text: labels.position },
+      accessibilityActions: [
+        { name: 'increment', label: labels.moveUp },
+        { name: 'decrement', label: labels.moveDown },
+      ],
+      // `increment` is up because the actions also back the adjustable role's swipe gestures, where
+      // swipe-up is increment — so the gesture and the named action can't disagree.
+      onAccessibilityAction: (event) => move(event.nativeEvent.actionName === 'increment' ? -1 : 1),
+    },
+  };
+
   return (
     <Animated.View style={animatedStyle} onLayout={onLayout}>
-      {children(dragHandle)}
+      {children(handle)}
     </Animated.View>
   );
 }
@@ -106,9 +173,19 @@ function ReorderableItem({ index, heights, activeIndex, dragTranslateY, onCommit
 export type ReorderableListProps<T> = {
   data: T[];
   keyExtractor: (item: T, index: number) => string;
-  /** `dragHandle` is a Gesture to attach to whatever should pick the row up, via `<GestureDetector gesture={dragHandle}>`. */
-  renderItem: (item: T, index: number, dragHandle: PanGesture) => ReactNode;
+  /**
+   * `dragHandle.gesture` goes on a `<GestureDetector>`; `dragHandle.a11yProps` spreads onto the View
+   * inside it. Both belong on the same element — that's what makes the drag and the screen-reader
+   * path the same control rather than two competing ones.
+   */
+  renderItem: (item: T, index: number, dragHandle: DragHandle) => ReactNode;
   onReorder: (data: T[]) => void;
+  /**
+   * Labels for the non-visual reorder path. Required rather than defaulted: this component is in a
+   * fully localized app and has no locale bundle of its own, so an English fallback here would be a
+   * hardcoded string that no pt test could catch.
+   */
+  labelsFor: (item: T, index: number, total: number) => ReorderLabels;
   style?: StyleProp<ViewStyle>;
 };
 
@@ -121,7 +198,14 @@ export type ReorderableListProps<T> = {
  * Deliberately generic (no workout/exercise concepts) so it can be reused for other reorderable
  * lists later (e.g. a future program-week editor).
  */
-export function ReorderableList<T>({ data, keyExtractor, renderItem, onReorder, style }: ReorderableListProps<T>) {
+export function ReorderableList<T>({
+  data,
+  keyExtractor,
+  renderItem,
+  onReorder,
+  labelsFor,
+  style,
+}: ReorderableListProps<T>) {
   const heights = useSharedValue<number[]>(data.map(() => 0));
   const activeIndex = useSharedValue(-1);
   const dragTranslateY = useSharedValue(0);
@@ -152,6 +236,8 @@ export function ReorderableList<T>({ data, keyExtractor, renderItem, onReorder, 
         <ReorderableItem
           key={keyExtractor(item, index)}
           index={index}
+          total={data.length}
+          labels={labelsFor(item, index, data.length)}
           heights={heights}
           activeIndex={activeIndex}
           dragTranslateY={dragTranslateY}

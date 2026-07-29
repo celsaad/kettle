@@ -155,6 +155,8 @@ export default function ProgramEditorScreen() {
                   <View style={styles.stepperRow}>
                     <Pressable
                       onPress={() => updateWeek(index, { week: Math.max(1, week.week - 1) })}
+                      accessibilityRole="button"
+                      accessibilityLabel={t('common.decrease', { label: t('programEditor.week') })}
                       style={[styles.stepperButton, { borderColor: theme.border }]}>
                       <ThemedText themeColor="textSecondary">−</ThemedText>
                     </Pressable>
@@ -163,6 +165,8 @@ export default function ProgramEditorScreen() {
                     </ThemedText>
                     <Pressable
                       onPress={() => updateWeek(index, { week: week.week + 1 })}
+                      accessibilityRole="button"
+                      accessibilityLabel={t('common.increase', { label: t('programEditor.week') })}
                       style={[styles.stepperButton, { borderColor: theme.border }]}>
                       <ThemedText themeColor="textSecondary">+</ThemedText>
                     </Pressable>
@@ -196,6 +200,8 @@ export default function ProgramEditorScreen() {
                 </ThemedText>
                 <Pressable
                   onPress={() => setOpenWorkoutPicker((current) => (current === index ? null : index))}
+                  accessibilityRole="button"
+                  accessibilityState={{ expanded: openWorkoutPicker === index }}
                   style={[styles.workoutPickerButton, { borderColor: theme.border }]}>
                   <ThemedText type="smallMedium">{workout?.name ?? t('programEditor.selectWorkout')}</ThemedText>
                   <ThemedText themeColor="textSecondary">{openWorkoutPicker === index ? '⌄' : '›'}</ThemedText>
@@ -203,7 +209,11 @@ export default function ProgramEditorScreen() {
                 {openWorkoutPicker === index && (
                   <View style={styles.picker}>
                     {library.workouts.map((candidate) => (
-                      <Pressable key={candidate.id} onPress={() => selectWorkout(index, candidate.id)}>
+                      <Pressable
+                        key={candidate.id}
+                        onPress={() => selectWorkout(index, candidate.id)}
+                        accessibilityRole="button"
+                        accessibilityState={{ selected: candidate.id === week.workoutId }}>
                         <ThemedView
                           type="backgroundElement"
                           style={[
@@ -248,6 +258,8 @@ export default function ProgramEditorScreen() {
         <Pressable
           onPress={addWeek}
           disabled={noWorkouts}
+          accessibilityRole="button"
+          accessibilityState={{ disabled: noWorkouts }}
           style={[styles.addWeek, { borderColor: theme.border }, noWorkouts && styles.disabled]}>
           <ThemedText type="heading" themeColor="textSecondary">
             {t('programEditor.addWeek')}
@@ -261,12 +273,15 @@ export default function ProgramEditorScreen() {
         )}
 
         <View style={styles.buttonRow}>
-          <Pressable onPress={close} style={[styles.cancelButton, { borderColor: theme.border }]}>
+          <Pressable onPress={close} accessibilityRole="button" style={[styles.cancelButton, { borderColor: theme.border }]}>
             <ThemedText type="heading" themeColor="textSecondary">
               {t('common.cancel')}
             </ThemedText>
           </Pressable>
-          <Pressable onPress={save} style={[styles.saveButton, { backgroundColor: theme.accent }]}>
+          <Pressable
+            onPress={save}
+            accessibilityRole="button"
+            style={[styles.saveButton, { backgroundColor: theme.accent }]}>
             <ThemedText type="heading" style={{ color: theme.onAccent }}>
               {t('common.save')}
             </ThemedText>
@@ -274,7 +289,7 @@ export default function ProgramEditorScreen() {
         </View>
 
         {editing && (
-          <Pressable onPress={confirmDelete} style={styles.deleteButton} hitSlop={8}>
+          <Pressable onPress={confirmDelete} accessibilityRole="button" style={styles.deleteButton} hitSlop={8}>
             <ThemedText type="smallMedium" themeColor="textSecondary">
               {t('programEditor.deleteProgram')}
             </ThemedText>

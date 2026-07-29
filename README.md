@@ -41,11 +41,12 @@ it sits a stat row: current daily streak, this week's session count, this week's
 can also be started ad-hoc from the Build tab's play button, with no program involved.
 
 **Accessibility and i18n.** Both have landed and are house rules for new work rather than open
-workstreams. Icon-only controls carry a role and label, touch targets are 44px minimum, colors are
-contrast-checked against each surface they sit on, the runner stays usable at large accessibility
-text sizes, and it announces step transitions to screen readers while respecting reduce-motion. The
-pass is not complete: text-labelled controls on several screens still lack an explicit role, and
-reordering workout blocks is gesture-only — see the implementation plan for the current list. The UI ships in English and Brazilian Portuguese (350 keys at parity), with dates,
+workstreams. Every interactive control carries a role, and a label wherever its own text doesn't
+supply one; touch targets are 44px minimum; colors are contrast-checked against each surface they sit
+on; the runner stays usable at large accessibility text sizes and announces step transitions to
+screen readers while respecting reduce-motion. Reordering workout blocks works by press-and-hold drag
+or, without sight, through the handle's move-up/move-down screen-reader actions. The program-format
+guide's prose is English-only by decision, not omission. The UI ships in English and Brazilian Portuguese (350 keys at parity), with dates,
 numbers, first-day-of-week and kg/lb all following the device locale by default. User data —
 exercise, workout and program names, and notes — is never translated.
 

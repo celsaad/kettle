@@ -2,7 +2,11 @@
 // this instance — but going via that module would pull `expo-localization` into the domain layer, and
 // into every test that touches formatting. The jest setup initialises the same singleton with the
 // English resources, so these render identically under test.
-import i18next from 'i18next';
+//
+// The named `t` is that instance's own method, bound to it at module load (i18next binds its
+// prototype members in the constructor), so it reads the *current* language on every call — switching
+// locale at runtime is picked up here, exactly as `i18next.t(…)` was.
+import { t } from 'i18next';
 
 import type { Exercise } from '@/domain/types';
 
@@ -28,15 +32,15 @@ export type WorkoutShape = {
 };
 
 export function formatWorkoutShape(shape: WorkoutShape): string {
-  const labels = shape.types.map((type) => i18next.t(`format.type.${type}`));
+  const labels = shape.types.map((type) => t(`format.type.${type}`));
   const typeLabel =
     labels.length === 0
-      ? i18next.t('format.restOnly')
+      ? t('format.restOnly')
       : labels.length === 1
         ? labels[0]
-        : i18next.t('format.mixed', { types: labels.join(' + ') });
-  return i18next.t('format.workoutShape', {
-    blocks: i18next.t('format.block', { count: shape.blockCount }),
+        : t('format.mixed', { types: labels.join(' + ') });
+  return t('format.workoutShape', {
+    blocks: t('format.block', { count: shape.blockCount }),
     types: typeLabel,
     minutes: shape.estimatedMinutes,
   });
@@ -58,32 +62,32 @@ export type EntryResult =
 export function formatEntryResult(result: EntryResult): string {
   switch (result.kind) {
     case 'holds':
-      return result.holdSecs.map((sec) => i18next.t('format.seconds', { n: sec })).join(' · ');
+      return result.holdSecs.map((sec) => t('format.seconds', { n: sec })).join(' · ');
     case 'reps':
-      return i18next.t('format.repsList', { list: result.reps.join(' · ') });
+      return t('format.repsList', { list: result.reps.join(' · ') });
     case 'rounds': {
-      const rounds = i18next.t('format.round', { count: result.rounds });
+      const rounds = t('format.round', { count: result.rounds });
       return result.extraReps
-        ? i18next.t('format.roundsPlusReps', { rounds, reps: i18next.t('format.rep', { count: result.extraReps }) })
+        ? t('format.roundsPlusReps', { rounds, reps: t('format.rep', { count: result.extraReps }) })
         : rounds;
     }
     case 'intervals': {
-      const intervals = i18next.t('format.interval', { count: result.intervals });
+      const intervals = t('format.interval', { count: result.intervals });
       return result.totalReps
-        ? i18next.t('format.intervalsWithReps', {
+        ? t('format.intervalsWithReps', {
             intervals,
-            reps: i18next.t('format.rep', { count: result.totalReps }),
+            reps: t('format.rep', { count: result.totalReps }),
           })
         : intervals;
     }
     case 'cardio': {
       const parts: string[] = [];
-      if (result.durationSec !== undefined) parts.push(i18next.t('format.seconds', { n: result.durationSec }));
-      if (result.distanceMeters !== undefined) parts.push(i18next.t('format.metres', { n: result.distanceMeters }));
+      if (result.durationSec !== undefined) parts.push(t('format.seconds', { n: result.durationSec }));
+      if (result.distanceMeters !== undefined) parts.push(t('format.metres', { n: result.distanceMeters }));
       return parts.join(' · ');
     }
     case 'rest':
-      return i18next.t('format.seconds', { n: result.restTakenSec });
+      return t('format.seconds', { n: result.restTakenSec });
   }
 }
 
@@ -93,25 +97,25 @@ export function formatEntryResult(result: EntryResult): string {
  * selector returns `null` for that case rather than the English label it used to assemble itself.
  */
 export function formatSessionName(workoutName: string | null): string {
-  return workoutName ?? i18next.t('format.adHocSession');
+  return workoutName ?? t('format.adHocSession');
 }
 
 /** A logged session's duration. Abbreviated, so it doesn't pluralise in either locale. */
 export function formatSessionDuration(minutes: number): string {
-  return i18next.t('format.minutes', { n: minutes });
+  return t('format.minutes', { n: minutes });
 }
 
 /** Through `count`, not a template literal: History and Today both rendered "1 sets" before this. */
 export function formatSetCount(sets: number): string {
-  return i18next.t('format.set', { count: sets });
+  return t('format.set', { count: sets });
 }
 
 /** A circuit block's configuration, as data — see `circuitShape`. */
 export type CircuitShape = { rounds: number; restBetweenExercisesSec: number; restBetweenRoundsSec: number };
 
 export function formatCircuitShape(shape: CircuitShape): string {
-  return i18next.t('format.circuitShape', {
-    rounds: i18next.t('format.round', { count: shape.rounds }),
+  return t('format.circuitShape', {
+    rounds: t('format.round', { count: shape.rounds }),
     between: shape.restBetweenExercisesSec,
     rounds_rest: shape.restBetweenRoundsSec,
   });

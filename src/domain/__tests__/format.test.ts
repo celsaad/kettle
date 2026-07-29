@@ -1,4 +1,4 @@
-import i18next from 'i18next';
+import { t } from 'i18next';
 
 import { formatCircuitShape, formatEntryResult, formatWorkoutShape } from '@/domain/format';
 
@@ -8,13 +8,13 @@ import { formatCircuitShape, formatEntryResult, formatWorkoutShape } from '@/dom
 // two plural forms is added.
 describe('pluralisation', () => {
   it('picks the singular form for exactly one', () => {
-    expect(i18next.t('format.block', { count: 1 })).toBe('1 block');
-    expect(i18next.t('format.round', { count: 1 })).toBe('1 round');
+    expect(t('format.block', { count: 1 })).toBe('1 block');
+    expect(t('format.round', { count: 1 })).toBe('1 round');
   });
 
   it('picks the plural form for zero and for many', () => {
-    expect(i18next.t('format.block', { count: 0 })).toBe('0 blocks');
-    expect(i18next.t('format.block', { count: 4 })).toBe('4 blocks');
+    expect(t('format.block', { count: 0 })).toBe('0 blocks');
+    expect(t('format.block', { count: 4 })).toBe('4 blocks');
   });
 });
 

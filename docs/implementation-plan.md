@@ -5,8 +5,8 @@ reading/writing `exercises.yaml` and `sessions/`, library import/merge, export, 
 wall-clock-drift-hardened timer engine (keep-awake, background notifications) — plus wiring the
 library/build CRUD screens.
 
-**Status: all workstreams (A–F) are implemented.** `npm run typecheck` passes and `npm run lint` sits
-at its accepted warning baseline (see AGENTS.md for the count and the two categories).
+**Status: all workstreams (A–F) are implemented.** `npm run typecheck` and `npm run lint` both pass
+clean.
 See [`exercise-tracker-product-plan.md`](exercise-tracker-product-plan.md) for the product model this
 plan implements.
 
@@ -472,6 +472,17 @@ decision assembled across several commits. Open work belongs in the sections at 
   (`light | dark | system`) — the old toggle could never get back to following the OS, because "follow"
   and "currently light" were indistinguishable to it. Storing intent rather than outcome is what makes
   the third option expressible. (It was in-memory at the time; it now persists via `preferences.json`.)
+- ✅ **No ES2023 change-array-by-copy methods (`toSorted`, `toReversed`, `toSpliced`, `with`) until
+  Hermes support is verified on a device.** This is the one thing standing between the five
+  `unicorn/no-array-sort` / `no-array-reverse` warnings and a clean lint run, so it will come up again.
+  All five sites already sort or reverse a **copy** (`[...weeks].sort(…)`); oxlint only recognises that
+  for an array declared in the same scope, so it flags correct code. `toSorted` would satisfy it — but
+  it's a runtime builtin, this app runs on Hermes 0.17 (RN 0.86), and nothing checked into the repo
+  says whether that build ships it: `hermesc` compiles rather than runs, no RN or Expo package calls
+  these methods, and the web build proves nothing because it's V8. Swapping a proven idiom for one
+  whose failure mode is *device-only* isn't worth silencing a linter, so each site carries an
+  `oxlint-disable-next-line` naming the reason instead. Revisit by running one on a device or an
+  emulator, not by recalling a Hermes changelog.
 - ✅ **The seed library is curated starter content, and three domain rules constrain what it may
   contain.** It ships two programs and four workouts a new user can press start on, rather than the
   format demo it used to be. The content itself is in `storage/seed-library.ts` and readable there;

@@ -1,5 +1,5 @@
 import * as Haptics from 'expo-haptics';
-import i18next from 'i18next';
+import { t } from 'i18next';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 
@@ -110,19 +110,19 @@ function previewFor(step: RunnerStep | undefined): RestPreview {
   if (!step) return null;
   // `label` stays the user's own exercise name — never translated.
   if (step.kind === 'hold') {
-    const detail = i18next.t('preview.hold', { index: step.setIndex, total: step.setTotal, target: formatHoldTarget(step) });
+    const detail = t('preview.hold', { index: step.setIndex, total: step.setTotal, target: formatHoldTarget(step) });
     return { label: step.exerciseName, detail };
   }
   if (step.kind === 'reps') {
-    const detail = i18next.t('preview.reps', { index: step.setIndex, total: step.setTotal, target: formatRepsTarget(step) });
+    const detail = t('preview.reps', { index: step.setIndex, total: step.setTotal, target: formatRepsTarget(step) });
     return { label: step.exerciseName, detail };
   }
   if (step.kind === 'interval') {
     const progress =
       step.setTotal > 1
-        ? i18next.t('preview.round', { index: step.setIndex, total: step.setTotal })
-        : i18next.t('preview.seconds', { n: step.targetSec });
-    return { label: step.exerciseName, detail: i18next.t('preview.interval', { variant: step.variant, progress }) };
+        ? t('preview.round', { index: step.setIndex, total: step.setTotal })
+        : t('preview.seconds', { n: step.targetSec });
+    return { label: step.exerciseName, detail: t('preview.interval', { variant: step.variant, progress }) };
   }
   return null;
 }

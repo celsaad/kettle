@@ -43,6 +43,8 @@ it('leaves nothing in the library unreachable from a workout', () => {
 });
 
 it('demonstrates all seven exercise types', () => {
+  // Sorts a copy — the spread is the copy oxlint can't see through (decision log: no `toSorted`).
+  // oxlint-disable-next-line unicorn/no-array-sort
   expect([...new Set(seedLibrary.exercises.map((exercise) => exercise.type))].sort()).toEqual([
     'amrap',
     'cardio',

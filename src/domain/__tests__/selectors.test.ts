@@ -6,7 +6,7 @@ jest.mock('@/i18n', () => ({
   currentLocale: () => 'en',
 }));
 
-import i18next from 'i18next';
+import { changeLanguage } from 'i18next';
 
 import {
   currentStreak,
@@ -178,7 +178,7 @@ describe('session list labels', () => {
 
   // The workout is user data from their own YAML, so it stays as written whatever the locale is.
   it('translates every label it owns, and none of the user data', async () => {
-    await i18next.changeLanguage('pt');
+    await changeLanguage('pt');
     const [session] = historySessionsView([oneSet], library);
     expect(session.setsLabel).toBe('1 série');
     expect(session.durationLabel).toBe('12 min');

@@ -7,7 +7,7 @@
 import 'intl-pluralrules';
 
 import { getCalendars, getLocales } from 'expo-localization';
-import i18next from 'i18next';
+import i18next, { use } from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
 import type { UnitSystem } from '@/domain/units';
@@ -34,7 +34,11 @@ function deviceLanguage(): string {
   return 'en';
 }
 
-i18next.use(initReactI18next).init({
+// i18next's named exports (`use`, `t`, `changeLanguage`, …) are this same default instance's own
+// methods, bound to it at module load — so calling `use(…)` here configures exactly the singleton the
+// default import below reads, and the domain layer's `import { t } from 'i18next'` calls the instance
+// this line initialises. Only `language` has no named counterpart, hence the default import.
+use(initReactI18next).init({
   resources,
   lng: deviceLanguage(),
   fallbackLng: 'en',
@@ -42,8 +46,6 @@ i18next.use(initReactI18next).init({
   interpolation: { escapeValue: false },
   returnNull: false,
 });
-
-export default i18next;
 
 /**
  * Which weekday the user's calendar starts on, 1 = Sunday through 7 = Saturday per `expo-localization`.

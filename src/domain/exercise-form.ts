@@ -8,12 +8,12 @@
  * touches React, so it belongs with the domain — and being importable without pulling in a screen is
  * what makes it testable.
  */
-import i18next from '@/i18n';
+import { t } from 'i18next';
 import type { Exercise, ExerciseType } from '@/domain/types';
 import { fromDisplayWeight, toDisplayWeight, type UnitSystem } from '@/domain/units';
 
 /**
- * `label` is an i18next key rather than display text, resolved with `i18next.t()` at the point of use
+ * `label` is an i18next key rather than display text, resolved with `t()` at the point of use
  * — this module has no React tree to hook `useTranslation()` into, and there's no in-app language
  * switch (the device locale is read once at startup, see `i18n/index.ts`), so resolving eagerly here
  * is safe. `min` is the smallest accepted value, defaulting to 1 — see validateConfig.
@@ -42,7 +42,7 @@ export type UnitContext = {
 /** The unit suffix to render beside a field's label, translated where it's a real unit of measure. */
 export function fieldUnitLabel(field: FieldDef, unitSystem: UnitSystem): string | undefined {
   if (field.unit !== 'weight') return field.unit;
-  return i18next.t(unitSystem === 'imperial' ? 'units.lb' : 'units.kg');
+  return t(unitSystem === 'imperial' ? 'units.lb' : 'units.kg');
 }
 
 export const TYPE_OPTIONS: { type: ExerciseType; label: string }[] = [
@@ -100,15 +100,15 @@ export const CONFIG_FIELDS: Record<ExerciseType, FieldDef[]> = {
 export function validateConfig(type: ExerciseType, values: Record<string, string>): string | null {
   for (const field of CONFIG_FIELDS[type]) {
     const raw = values[field.key]?.trim() ?? '';
-    const label = i18next.t(field.label);
+    const label = t(field.label);
     if (!raw) {
       if (field.optional) continue;
-      return i18next.t('exerciseForm.error.required', { label });
+      return t('exerciseForm.error.required', { label });
     }
     const parsed = Number(raw);
-    if (!Number.isFinite(parsed)) return i18next.t('exerciseForm.error.mustBeNumber', { label });
+    if (!Number.isFinite(parsed)) return t('exerciseForm.error.mustBeNumber', { label });
     const min = field.min ?? 1;
-    if (parsed < min) return i18next.t('exerciseForm.error.mustBeAtLeast', { label, min });
+    if (parsed < min) return t('exerciseForm.error.mustBeAtLeast', { label, min });
   }
   return null;
 }

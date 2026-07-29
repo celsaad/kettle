@@ -1,4 +1,4 @@
-import i18next from 'i18next';
+import { t } from 'i18next';
 import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
@@ -53,39 +53,39 @@ function rangeLabel(min: number, max: number | undefined): string {
 export function exerciseSummary(exercise: Exercise, unitSystem: UnitSystem): string {
   switch (exercise.type) {
     case 'hiit':
-      return i18next.t('summary.hiit', {
+      return t('summary.hiit', {
         work: exercise.config.workSec,
         rest: exercise.config.restSec,
         rounds: exercise.config.rounds,
       });
     case 'reps':
-      return i18next.t('summary.reps', {
+      return t('summary.reps', {
         sets: exercise.config.sets,
         reps: rangeLabel(exercise.config.targetRepsMin, exercise.config.targetRepsMax),
         weight: exercise.config.targetWeightKg
-          ? i18next.t('summary.repsWeight', {
+          ? t('summary.repsWeight', {
               weight: toDisplayWeight(exercise.config.targetWeightKg, unitSystem),
-              unit: i18next.t(unitSystem === 'imperial' ? 'units.lb' : 'units.kg'),
+              unit: t(unitSystem === 'imperial' ? 'units.lb' : 'units.kg'),
             })
           : '',
         rest: exercise.config.restSec,
       });
     case 'timed_hold':
-      return i18next.t('summary.hold', {
+      return t('summary.hold', {
         sets: exercise.config.sets,
         hold: rangeLabel(exercise.config.holdSecMin, exercise.config.holdSecMax),
         rest: exercise.config.restSec,
       });
     case 'emom':
-      return i18next.t('summary.emom', { interval: exercise.config.intervalSec, minutes: exercise.config.totalMinutes });
+      return t('summary.emom', { interval: exercise.config.intervalSec, minutes: exercise.config.totalMinutes });
     case 'amrap':
-      return i18next.t('summary.amrap', { cap: exercise.config.timeCapSec });
+      return t('summary.amrap', { cap: exercise.config.timeCapSec });
     case 'cardio':
       return exercise.config.distanceMeters
-        ? i18next.t('summary.cardioDistance', { n: exercise.config.distanceMeters })
-        : i18next.t('summary.cardioDuration', { n: exercise.config.durationSec ?? 0 });
+        ? t('summary.cardioDistance', { n: exercise.config.distanceMeters })
+        : t('summary.cardioDuration', { n: exercise.config.durationSec ?? 0 });
     case 'rest':
-      return i18next.t('summary.restSeconds', { n: exercise.config.durationSec });
+      return t('summary.restSeconds', { n: exercise.config.durationSec });
   }
 }
 

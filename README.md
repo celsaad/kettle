@@ -109,6 +109,6 @@ npm run format        # oxfmt (markdown and package.json are excluded on purpose
 ```
 
 Typecheck, lint and the test suite all run in CI (`.github/workflows/ci.yml`) on every push and pull
-request. The suite is 321 tests across 27 files covering the domain layer, the session runner, and
+request. The suite is 323 tests across 28 files covering the domain layer, the session runner, and
 the highest-branch screens; layout, animation, real audio and file writes are verified by driving the
 running app instead.

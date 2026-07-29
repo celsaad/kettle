@@ -142,6 +142,11 @@ still only verified by driving the running app. Doing this wrong wastes a lot of
 - **React Navigation keeps previous screens mounted but hidden**, so the same text matches several
   times. Use `.filter({ visible: true }).last()`, not bare `.last()`. A bare `input` index will hit
   the Library screen's hidden search box — scope numeric fields with `input[inputmode="numeric"]`.
+- **The app boots in the browser's locale, so your selectors are probably Portuguese.** `text=Library`
+  times out at 30s against a pt-BR machine and reads as a broken app rather than a wrong selector.
+  Either dump `body.innerText` first and write selectors against what's actually there, or launch the
+  context with `locale: 'en-US'` — but the pt run is the more valuable one, since an English pass
+  can't catch a hardcoded English string (same reason the screen tests drive `pt`).
 - To get a session into history: Build tab → the small round play button on a workout card (starts it
   ad-hoc) → repeatedly click whichever is visible of `Done set ↑`, `Log set → Rest`, `Skip rest →`,
   then `Done`.
@@ -170,6 +175,13 @@ still only verified by driving the running app. Doing this wrong wastes a lot of
 
 Both workstreams have landed. New work is expected to arrive already conforming — these are cheap when
 done as you go and tedious to retrofit, which is why they're here rather than on a backlog.
+
+**This is the rule for what you touch, not a description of what's already there.** i18n is at
+parity; a11y is not — the pass prioritised icon-only controls and left text-labelled ones without an
+explicit role. Which files, and what's worth doing first, is in the implementation plan's planned
+work; don't keep a second copy of that list here, where it would go stale. The wording this replaced
+("every interactive control carries a role and label") read as a description and stopped people from
+checking.
 
 - **Every interactive element needs `accessibilityRole` and a label.** Icon-only controls need it most,
   having no text to fall back on — the runner's prev/next were CSS triangles announcing as an unnamed
@@ -204,6 +216,12 @@ top-level `## ✅` sections after that heading was fixed. Both are now in `histo
 Open bugs and planned work live in the sections at the bottom of the implementation plan. Keep those
 entries short — if the list starts wanting states and assignees, that's the signal to move it to
 GitHub issues (`origin` and `gh` are both available); until then the file is deliberately enough.
+
+**Pruning those two lists is the one doc edit shipping does oblige.** The rule above is about not
+*adding*; it says nothing about subtracting, and read alone it argues for touching no docs at all —
+which leaves a shipped item sitting in "planned work" claiming to be open. So: close what you shipped,
+and if you shipped part of a multi-part entry, leave the rest and say which part went. Deleting a
+finished bullet needs no write-up; the commit is still the record.
 
 Check these before assuming something is missing — but **verify against the code**, since they have
 drifted before. A docs audit on 2026-07-28 found the README claiming the project had no tests when it

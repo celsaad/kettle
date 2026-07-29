@@ -21,6 +21,8 @@ import { isTipJarSupported, useTipStore } from '@/state/tip-store';
 import { exportLibrary } from '@/storage/export';
 import { isFileStorageSupported } from '@/storage/paths';
 
+export { ModalErrorBoundary as ErrorBoundary } from '@/components/error-fallback';
+
 const APPEARANCE: { labelKey: string; value: ThemePreference }[] = [
   { labelKey: 'settings.light', value: 'light' },
   { labelKey: 'settings.dark', value: 'dark' },

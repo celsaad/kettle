@@ -15,6 +15,8 @@ import { useLibraryStore } from '@/state/library-store';
 import { useUnitSystem } from '@/state/preferences-store';
 import { exportLibrary } from '@/storage/export';
 
+export { RouteErrorBoundary as ErrorBoundary } from '@/components/error-fallback';
+
 const FILTERS: { labelKey: string; type: ExerciseType | 'all' }[] = [
   { labelKey: 'library.filterAll', type: 'all' },
   { labelKey: 'library.filterHiit', type: 'hiit' },

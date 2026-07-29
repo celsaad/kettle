@@ -12,6 +12,8 @@ import { useTheme } from '@/hooks/use-theme';
 import { workoutShape } from '@/state/selectors';
 import { useLibraryStore } from '@/state/library-store';
 
+export { RouteErrorBoundary as ErrorBoundary } from '@/components/error-fallback';
+
 export default function BuildScreen() {
   const theme = useTheme();
   const { scheme } = useAppTheme();

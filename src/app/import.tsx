@@ -17,6 +17,8 @@ import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useLibraryStore } from '@/state/library-store';
 
+export { ModalErrorBoundary as ErrorBoundary } from '@/components/error-fallback';
+
 type PickedFile = { name: string; sizeLabel: string };
 type ReadyMerge = { picked: PickedFile; library: Library; summary: MergeSummary };
 

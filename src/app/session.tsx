@@ -1,10 +1,12 @@
 import { router, useLocalSearchParams } from 'expo-router';
+import type { ErrorBoundaryProps } from 'expo-router';
 import { useKeepAwake } from 'expo-keep-awake';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ErrorFallback } from '@/components/error-fallback';
 import { SessionComplete } from '@/components/session-complete';
 import { SessionCountdown } from '@/components/session-countdown';
 import { SessionHold } from '@/components/session-hold';
@@ -19,6 +21,44 @@ import type { Exercise, Workout } from '@/domain/types';
 import { useSessionAnnouncements } from '@/hooks/use-session-announcements';
 import { buildSteps, useSessionRunner } from '@/hooks/use-session-runner';
 import { useLibraryStore } from '@/state/library-store';
+import { useSessionHistoryStore } from '@/state/session-history-store';
+
+/**
+ * The one screen where a render throw costs data, so its boundary does more than apologise.
+ *
+ * Entries reach the session file as each exercise finishes (§7.2), so completed exercises survive a
+ * throw — but the runner writes `ended_at` only when the whole workout does, and a session without it
+ * counts as zero minutes in every stat tile and is skipped outright by `exerciseHistory`. Those
+ * entries would sit on disk and appear nowhere in the app. React has already unmounted the runner and
+ * the ref holding that `Session` by the time this renders, which is why the id is tracked in the store
+ * rather than passed down here.
+ *
+ * What this *can't* salvage, and the copy is careful not to claim: sets of the exercise in progress
+ * live in `pendingSetsRef` until that exercise ends, and they unmount with the hook. Making them
+ * survive means changing when the runner writes, not anything here.
+ *
+ * Deliberately no retry, unlike the shared boundaries: re-rendering this route restarts it from the
+ * countdown, and mounting the runner again calls `startSession` — a second session file for one
+ * workout, with the first one's sets stranded in it. "Go to History" instead, where the salvaged
+ * session is the top row.
+ */
+export function ErrorBoundary({ error }: ErrorBoundaryProps) {
+  const { t } = useTranslation();
+  const abandonActiveSession = useSessionHistoryStore((state) => state.abandonActiveSession);
+
+  useEffect(() => {
+    abandonActiveSession();
+  }, [abandonActiveSession]);
+
+  return (
+    <ErrorFallback
+      title={t('errorBoundary.session.title')}
+      body={t('errorBoundary.session.body')}
+      error={error}
+      primary={{ label: t('errorBoundary.session.toHistory'), onPress: () => router.dismissTo('/history') }}
+    />
+  );
+}
 
 export default function SessionScreen() {
   // suppressDeactivateWarnings is the library's own escape hatch for this exact race, and without it

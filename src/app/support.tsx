@@ -14,6 +14,8 @@ import { useTheme } from '@/hooks/use-theme';
 import { isIapAvailable } from '@/hooks/safe-iap';
 import { useTipStore } from '@/state/tip-store';
 
+export { ModalErrorBoundary as ErrorBoundary } from '@/components/error-fallback';
+
 const TIER_LABEL_KEYS: Record<TipTier, string> = {
   small: 'support.tierSmall',
   medium: 'support.tierMedium',

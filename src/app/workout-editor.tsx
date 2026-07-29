@@ -19,6 +19,8 @@ import { useTheme } from '@/hooks/use-theme';
 import { findExerciseInLibrary, useLibraryStore } from '@/state/library-store';
 import { useUnitSystem } from '@/state/preferences-store';
 
+export { ModalErrorBoundary as ErrorBoundary } from '@/components/error-fallback';
+
 const EMPTY_WORKOUT: Workout = { id: '', name: '', blocks: [] };
 
 export default function WorkoutEditorScreen() {

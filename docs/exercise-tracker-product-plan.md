@@ -42,13 +42,22 @@ Type is the heart of the model. Each type carries its own **config** (the plan) 
 
 | Type | Config (planned) | Log (actual) |
 |---|---|---|
-| `hiit` | work sec, rest sec, rounds | per-round elapsed, completed? |
-| `emom` | interval sec, total minutes, target reps/interval | reps done per interval, missed intervals |
-| `amrap` | time cap | rounds + reps completed |
+| `hiit` | work sec, rest sec, rounds | rounds completed |
+| `emom` | interval sec, total minutes, target reps/interval | reps done per interval (a missed interval logs no reps) |
+| `amrap` | time cap | rounds + optional extra reps |
 | `reps` | sets, target rep range (min, optional max), target weight, rest sec | per-set: actual reps, weight, RPE, rest taken |
 | `timed_hold` | sets, target hold range (min, optional max), rest sec | per-set: actual hold duration, rest taken |
-| `cardio` | duration or distance | time, distance, pace |
+| `cardio` | duration or distance | duration and/or distance |
 | `rest` | duration sec | actual rest taken |
+
+The log column is `SessionEntry` in `src/domain/types.ts`, and two entries in it used to promise more
+than the runner records: `hiit` logs `roundsCompleted`, not per-round elapsed (round length is fixed by
+config, so the elapsed time was derivable and never worth storing), and `cardio` stores duration and
+distance without a **pace** — nothing computes or displays one.
+
+**Is this list final?** Open — the implementation plan's planned-work list carries the survey (which
+candidates are genuinely missing types, which are already expressible with existing config, and what
+adding one costs). Don't restate the candidates here; this table is the shipped set.
 
 ### 3.1 Mixed-mode sessions (reps + timed within one workout)
 
@@ -294,7 +303,9 @@ Get the **live session engine** right — it's the differentiator.
 
 **Beyond the original MVP scope**, already built: **multi-week programs** (periodized wrappers around workouts, with per-week per-exercise/per-circuit overrides and multi-session-per-week support via a `day` field) and **circuits/supersets** (round-robin block grouping with configurable rest between exercises and between rounds) — both were explicitly deferred below and shipped anyway. The home screen derives "next up" from the actual week/day a session was started under (stored on the session itself), not a completed-session count — the count-based version looked "random" once you jumped to a non-sequential week or redid one, since `program-detail.tsx` lets you start any week, not just the suggested one. The home screen also shows a small stats row: current daily streak and this week's session count/time.
 
-**Still deferred:** social, wearable sync, cloud backup, charts.
+**Still deferred:** social, wearable sync, cloud backup. Charts were on this list and came off it — the
+per-exercise volume chart in item 4 is the one that shipped; nothing plots across exercises or over a
+whole program.
 
 ---
 
@@ -306,7 +317,7 @@ Get the **live session engine** right — it's the differentiator.
 | **2** | Live session engine for one timed type (HIIT) end-to-end; nail timer reliability + incremental flush | ✅ done (shipped as part of the full interval runner below) |
 | **3** | Extend runner to `reps` and `timed_hold`; support mixed reps+timed workouts (calisthenics case) | ✅ done |
 | **4** | Add `emom` / `amrap`; session history + basic progression (last-time weights/holds, volume per session) | ✅ done — `emom`/`amrap`/`cardio` are runnable, session history exists, and an exercise's edit screen shows its recent history (last-time weight/reps/holds, newest first) |
-| **5** | Polish: import/export UX, cloud sync guidance, programs/plans, charts | ⚠️ partial — programs shipped (see §10) with full in-app CRUD, including per-week override editing; a per-exercise volume chart shipped too (see §13); import/export UX and cloud sync guidance are not done |
+| **5** | Polish: import/export UX, cloud sync guidance, programs/plans, charts | ✅ done — programs have full in-app CRUD including per-week override editing (§10); a per-exercise volume chart shipped (§13); cloud sync guidance is Settings → "Backups and sync" (§13); import/export UX covers a file **or** paste path, a field-level merge diff, a copy-the-format brief for an assistant, a copy-the-error repair loop, and export from Library, Settings and any History card |
 
 See §13 for the concrete, current gap list.
 
@@ -326,6 +337,13 @@ See §13 for the concrete, current gap list.
 
 What's genuinely missing today, checked directly against the code:
 
+- **No analytics screen.** Nothing aggregates progress across exercises or across a program. The app's
+  only chart is the per-exercise volume sparkline in the exercise editor (§10 item 4), and the
+  cross-cutting numbers that do exist — `historyStats`, `currentStreak`, `thisWeekStats` — are split
+  between Today's stat row and History's tiles rather than collected anywhere. It branches off **History**
+  as a modal route rather than becoming a sixth tab. Scoped in the implementation plan's planned-work
+  list, including why **"analytics" here never means a telemetry SDK**: it's charts over the user's own
+  local sessions, and the zero-data-collected claim is unaffected.
 - ~~**No in-app cloud-sync guidance.**~~ ✅ Shipped — Settings has a "Backups and sync" section: the
   files are local and unsynced by design, and export/import is the mechanism. It deliberately names no
   directory, because the app's folder isn't reachable on Android without adb and this app declares no

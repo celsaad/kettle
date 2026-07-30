@@ -684,11 +684,11 @@ structural ones:
 
 ## Open questions from the product plan, still open
 
-- Timed-hold display direction: count down from target, or count up with target as a marker (§12.2).
-  Current UI counts up (unchanged from the pre-existing mock UI).
 - Merge conflict transparency: diff view vs. simple updated count (§12.5). Currently a simple
   new/updated count + changed-id list, no field-level diff.
 
-Settled since this was written: `hiit`/`emom`/`amrap`/`cardio` are all runnable in the session
+Settled since this was written: the timed-hold direction is **count up, range as marker** (§12.2) —
+a countdown has no non-arbitrary number to count from once the target is a range, and counting up is
+what the log records; and `hiit`/`emom`/`amrap`/`cardio` are all runnable in the session
 screen now (a unified interval runner, with matching `SessionEntry` log shapes added to the domain
 model), and the `blocks` model grew a `circuit` kind for supersets/circuits (§12.4) without a rewrite.

@@ -315,7 +315,7 @@ See §13 for the concrete, current gap list.
 ## 12. Open Questions to Settle Before Building
 
 1. **Rest as a first-class type vs. an attribute.** ✅ Settled: kept `rest` first-class.
-2. **Timed-hold display direction.** Still open. Currently counts *up* only (unchanged since the original mock UI) — no countdown option, no target marker.
+2. **Timed-hold display direction.** ✅ Settled: **count up, with the target range as a marker** — no countdown option. A countdown needs one number to count from, and a hold's config is a *range* (`hold_sec_min` + optional `hold_sec_max`), so there is no non-arbitrary end to count from; counting up also matches what gets logged, which is how long the hold actually lasted. The bar is scaled to the top of the range with the minimum marked part-way along, so crossing the minimum reads as crossing a mark rather than finishing.
 3. **Rep-block rest behavior.** ✅ Settled: auto-timer that's skippable.
 4. **Supersets / circuits (repeat a group N times).** ✅ Settled and shipped — `WorkoutBlock` has a `circuit` kind (round-robin members, configurable rest between exercises and between rounds), no rewrite needed.
 5. **Merge conflict transparency.** Still open. Currently a simple new/updated count + changed-id list; no field-level diff.
@@ -326,9 +326,12 @@ See §13 for the concrete, current gap list.
 
 What's genuinely missing today, checked directly against the code:
 
-- **No in-app cloud-sync guidance.** Sync (iCloud/Dropbox/git) is left entirely to the user, with no in-app pointers.
+- ~~**No in-app cloud-sync guidance.**~~ ✅ Shipped — Settings has a "Backups and sync" section: the
+  files are local and unsynced by design, and export/import is the mechanism. It deliberately names no
+  directory, because the app's folder isn't reachable on Android without adb and this app declares no
+  iOS file sharing, so pointing a sync client at it isn't a thing anyone can do.
 - **Merge conflict view has no field-level diff** (see open question 5 above).
-- **Timed-hold display direction was never revisited** (see open question 2 above).
+- ~~**Timed-hold display direction was never revisited**~~ ✅ Settled — see open question 2 above.
 - **Web has no persistence** — `expo-file-system` doesn't support web, so the web build runs on an ephemeral in-memory seed library. This is a platform constraint, not a product gap.
 - ~~**Known bug (web only): leaving the session screen crashes with a redbox.**~~ ✅ Fixed — see the
   implementation plan's entry for the details. `useKeepAwake` now passes

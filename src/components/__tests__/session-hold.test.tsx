@@ -30,6 +30,11 @@ function fillWidth(): string | undefined {
   return JSON.stringify(screen.toJSON()).match(/"width":"([^"]*)"/)?.[1];
 }
 
+/** Same trick for the target mark, which is the only percentage `left` in the component. */
+function markerLeft(): string | undefined {
+  return JSON.stringify(screen.toJSON()).match(/"left":"([^"]*)"/)?.[1];
+}
+
 it('fills in proportion to the elapsed hold', async () => {
   await renderScreen(<SessionHold {...props} targetSec={30} elapsedSec={15} />);
 
@@ -55,4 +60,46 @@ it('renders an empty bar for a 0-second target once the clock is running', async
   await renderScreen(<SessionHold {...props} targetSec={0} elapsedSec={12} />);
 
   expect(fillWidth()).toBe('0%');
+});
+
+it('puts the target mark at the end of the bar when there is a single target', async () => {
+  await renderScreen(<SessionHold {...props} targetSec={30} elapsedSec={15} />);
+
+  expect(markerLeft()).toBe('100%');
+});
+
+/**
+ * §12.2, settled: count up, with the range as the marker. The bar is scaled to the *top* of the range
+ * — scaled to the bottom it hit 100% at 15s and sat there through 25s, going flat across exactly the
+ * seconds a range hold is about.
+ */
+describe('a hold with a target range', () => {
+  it('scales the bar to the top of the range', async () => {
+    await renderScreen(<SessionHold {...props} targetSec={15} targetMaxSec={25} elapsedSec={15} />);
+
+    expect(fillWidth()).toBe('60%');
+  });
+
+  it('marks the bottom of the range part-way along, as something to cross', async () => {
+    await renderScreen(<SessionHold {...props} targetSec={15} targetMaxSec={25} elapsedSec={20} />);
+
+    expect(markerLeft()).toBe('60%');
+    expect(fillWidth()).toBe('80%');
+  });
+
+  it('still tops out at the range maximum', async () => {
+    await renderScreen(<SessionHold {...props} targetSec={15} targetMaxSec={25} elapsedSec={40} />);
+
+    expect(fillWidth()).toBe('100%');
+  });
+
+  // A max at or below the min is a range in name only — authored by a program override, which no
+  // schema refinement guards on that path. Falling back to the min keeps the bar meaningful instead
+  // of dividing by the smaller number and reading past full immediately.
+  it('ignores a maximum that is not above the minimum', async () => {
+    await renderScreen(<SessionHold {...props} targetSec={30} targetMaxSec={20} elapsedSec={15} />);
+
+    expect(fillWidth()).toBe('50%');
+    expect(markerLeft()).toBe('100%');
+  });
 });

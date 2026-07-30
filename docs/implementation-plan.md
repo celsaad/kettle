@@ -630,14 +630,27 @@ failure mode the decision-log note above warns about, regrown one heading level 
   Left alone deliberately: `savePreferences` already returns a boolean instead of throwing, and the tip
   store already checks it.
 
-- **Audit for refactoring opportunities.** No single known offender, so this is a survey, not a fix
-  with a known shape. Starting points: the five files over 450 lines (`workout-editor.tsx` at 785,
-  `use-session-runner.ts` at 649, `yaml-mapping.ts` at 520, `program-override-editor.tsx` at 482,
-  `selectors.ts` at 461); the four parallel `switch (entry.type)` blocks over
-  `SessionEntry` in `selectors.ts`, which grow together every time an entry type is added; and
-  `new-exercise-form.tsx`, a deliberate mini-copy of `exercise-editor.tsx`'s form whose duplication
-  was accepted at the time and is worth re-checking. Worth doing with the same bar the `slugify`
-  dedup was held to: only where the copies have actually drifted or would.
+- ✅ **Audit for refactoring opportunities — surveyed, and the answer is mostly "don't".** Held to the
+  bar the `slugify` dedup set: only where the copies have actually drifted or would. Recorded because
+  each of these looks like an obvious cleanup until you check, and re-proposing them is the likelier
+  failure than leaving them:
+
+  - **The parallel `switch` blocks stay.** There are five, not four — three over `SessionEntry`
+    (`entrySetCount`, `sessionEntryResult`, `entryVolume`) and two over `Exercise`
+    (`estimateExerciseSeconds`, `memberVisitSeconds`). Every one is exhaustive over a discriminated
+    union **with no `default`**, so adding a type is already a *compile error* in each place that
+    hasn't been updated. The drift they'd be consolidated to prevent cannot happen silently, and a
+    per-type record of lambdas would trade three separately-named, separately-documented functions
+    computing three different things for one table with worse narrowing.
+  - **`new-exercise-form.tsx` is no longer a meaningful copy.** It and `exercise-editor.tsx` and
+    `program-override-editor.tsx` all import the same `buildExercise`/`CONFIG_FIELDS`/`TYPE_OPTIONS`/
+    `validateConfig`/`configToStrings`/`fieldUnitLabel` from `domain/exercise-form.ts`. What's left
+    duplicated is JSX layout for a different container with different actions, and no logic has
+    drifted — `validateConfig` is wired in both save paths.
+  - **The long files stay until something needs changing in them.** No defect tracks to any of them,
+    and the two biggest are the two riskiest to touch (`use-session-runner.ts` is the timer path). If
+    `workout-editor.tsx` (785) is opened for a real reason, the seam is its two picker panels — they're
+    self-contained, and `new-exercise-form.tsx` already embeds inside them.
 
 ## Open bugs
 

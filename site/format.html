@@ -1,0 +1,888 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>The Kettle library format — YAML reference</title>
+    <meta
+      name="description"
+      content="Public reference for the Kettle YAML library format: the file shape, the seven exercise types and their config fields, and the merge-by-id import rule. Paste it at an AI assistant to generate a valid program." />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="canonical" href="https://celsaad.github.io/kettle/format.html" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Kettle" />
+    <meta property="og:title" content="The Kettle library format" />
+    <meta
+      property="og:description"
+      content="Full YAML reference: the file shape, the seven exercise types and their config fields, circuits, programs and the merge-by-id import rule." />
+    <meta property="og:url" content="https://celsaad.github.io/kettle/format.html" />
+    <!-- og:image intentionally absent until a 1200x630 card exists; a broken preview image is worse than a text-only card. -->
+    <meta name="twitter:card" content="summary" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <div class="wrap bar">
+        <a class="brand" href="index.html" aria-label="Kettle home">
+          <span class="mark" aria-hidden="true">
+            <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" width="30" height="30">
+              <path
+                d="M13,32 C8,26 14,21 11,15"
+                stroke="currentColor"
+                stroke-width="3.2"
+                stroke-linecap="round"
+                opacity="0.7" />
+              <path
+                d="M22,30 C17,24 23,19 20,13"
+                stroke="currentColor"
+                stroke-width="3.2"
+                stroke-linecap="round"
+                opacity="0.45" />
+              <path d="M40,42 C42,23 82,23 84,42" stroke="currentColor" stroke-width="6.5" stroke-linecap="round" />
+              <ellipse cx="62" cy="43" rx="24" ry="6.5" fill="currentColor" />
+              <circle cx="62" cy="33" r="5.5" fill="currentColor" />
+              <path
+                d="M30,71 C30,53 44,45 62,45 C80,45 96,53 96,71 C96,88 80,95 62,95 C44,95 30,88 30,71 Z"
+                fill="currentColor" />
+              <path d="M33,60 L15,45 L21,39 L39,52 Z" fill="currentColor" />
+              <rect x="47" y="93" width="30" height="7" rx="3.5" fill="currentColor" />
+            </svg>
+          </span>
+          <span class="word">Kettle</span>
+        </a>
+        <nav class="site-nav" aria-label="Primary">
+          <a href="index.html#features">Features</a>
+          <a href="format.html" aria-current="page">Format</a>
+          <a href="index.html#data">Your data</a>
+          <a href="support.html">Support</a>
+          <a href="https://github.com/celsaad/kettle">GitHub</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <div class="wrap">
+        <div class="page-head">
+          <p class="eyebrow">Reference</p>
+          <h1>The library format</h1>
+          <p class="lede">
+            Kettle reads and writes one YAML file: your library. It's a plain, human-editable document with a published JSON
+            schema. This page is the full reference — read it, edit against it, or paste it at an assistant and ask for a
+            program.
+          </p>
+          <p class="meta">Format version 1 · valid files declare <code class="inl">version: 1</code></p>
+        </div>
+
+        <div class="doc-layout">
+          <nav class="doc-nav" aria-label="On this page">
+            <h5>On this page</h5>
+            <ul>
+              <li><a href="#file-shape">File shape</a></li>
+              <li><a href="#exercises">Exercises</a></li>
+              <li><a href="#types">Exercise types</a></li>
+              <li><a href="#workouts">Workouts</a></li>
+              <li><a href="#programs">Programs</a></li>
+              <li><a href="#import">Import &amp; merge</a></li>
+              <li><a href="#example">A complete example</a></li>
+              <li><a href="#assistant">Using an assistant</a></li>
+            </ul>
+          </nav>
+
+          <article class="prose">
+            <section>
+              <h2 id="file-shape">File shape</h2>
+              <p>
+                A library is a YAML mapping with four top-level keys. Every valid file declares its format
+                <code class="inl">version</code>, then lists your <code class="inl">exercises</code>, the
+                <code class="inl">workouts</code> that reference them, and any multi-week <code class="inl">programs</code>.
+              </p>
+              <p>
+                <strong>All three lists are required keys, even when empty.</strong> A file that adds two exercises and
+                nothing else still needs <code class="inl">workouts: []</code> and <code class="inl">programs: []</code>, or
+                it is refused with a schema error naming the missing one. Their contents are what's optional, not their
+                presence.
+              </p>
+              <div class="code-panel">
+                <div class="code-head"><span class="dot" aria-hidden="true"></span><span class="name">shape.yaml</span></div>
+                <pre
+                  tabindex="0"
+                  role="region"
+                  aria-label="Code sample"><code><span class="y-k">version</span><span class="y-p">:</span> <span class="y-n">1</span>
+
+<span class="y-k">exercises</span><span class="y-p">:</span> <span class="y-c"># the movements you do</span>
+  <span class="y-p">-</span> <span class="y-k">id</span><span class="y-p">:</span> <span class="y-s">back-squat</span>
+    <span class="y-k">name</span><span class="y-p">:</span> <span class="y-s">Back Squat</span>
+    <span class="y-k">type</span><span class="y-p">:</span> <span class="y-s">reps</span>
+    <span class="y-k">config</span><span class="y-p">:</span> <span class="y-p">{ ... }</span>
+
+<span class="y-k">workouts</span><span class="y-p">:</span> <span class="y-c"># ordered blocks of exercises</span>
+  <span class="y-p">-</span> <span class="y-k">id</span><span class="y-p">:</span> <span class="y-s">lower-a</span>
+    <span class="y-k">name</span><span class="y-p">:</span> <span class="y-s">Lower A</span>
+    <span class="y-k">blocks</span><span class="y-p">:</span> <span class="y-p">[ ... ]</span>
+
+<span class="y-k">programs</span><span class="y-p">:</span> <span class="y-p">[]</span> <span class="y-c"># multi-week schedules (optional)</span></code></pre>
+              </div>
+              <p>
+                Order inside a list is meaningful: workout blocks and program days run top to bottom. Everything is
+                referenced by <code class="inl">id</code>, so a workout points at an exercise's id rather than repeating its
+                definition.
+              </p>
+            </section>
+
+            <section>
+              <h2 id="exercises">Exercises</h2>
+              <p>
+                An exercise is a single movement with a <code class="inl">type</code> that determines which
+                <code class="inl">config</code> fields apply. These four keys are common to every exercise:
+              </p>
+              <div class="table-scroll" tabindex="0" role="region" aria-label="Reference table">
+                <table class="ref">
+                  <thead>
+                    <tr>
+                      <th>Field</th>
+                      <th>Type</th>
+                      <th>Required</th>
+                      <th>Meaning</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>id</code></td>
+                      <td>string</td>
+                      <td>yes</td>
+                      <td>
+                        Stable, unique key. Lowercase, hyphenated by convention. Used everywhere this exercise is referenced.
+                      </td>
+                    </tr>
+                    <tr>
+                      <td><code>name</code></td>
+                      <td>string</td>
+                      <td>yes</td>
+                      <td>Display name shown in the app.</td>
+                    </tr>
+                    <tr>
+                      <td><code>type</code></td>
+                      <td>enum</td>
+                      <td>yes</td>
+                      <td>One of the seven types below. Selects the runner and the valid <code>config</code> fields.</td>
+                    </tr>
+                    <tr>
+                      <td><code>config</code></td>
+                      <td>mapping</td>
+                      <td>yes</td>
+                      <td>Type-specific settings — see each type.</td>
+                    </tr>
+                    <tr>
+                      <td><code>notes</code></td>
+                      <td>string</td>
+                      <td>no</td>
+                      <td>Free text shown during the session. Cues, targets, reminders.</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <p>
+                All durations are seconds and end in <code class="inl">_sec</code>; weights are unit-agnostic numbers you
+                interpret consistently. A missing optional field falls back to the app's default rather than erroring.
+              </p>
+            </section>
+
+            <section>
+              <h2 id="types">Exercise types</h2>
+              <p>
+                There are seven types. Each is a shape of block with its own <code class="inl">config</code> fields. Fields
+                marked optional may be omitted.
+              </p>
+
+              <h3>reps</h3>
+              <p>Counted sets, for strength work. The runner takes a rep count, a load and an RPE per set.</p>
+              <div class="table-scroll" tabindex="0" role="region" aria-label="Reference table">
+                <table class="ref">
+                  <thead>
+                    <tr>
+                      <th>config field</th>
+                      <th>Type</th>
+                      <th>Meaning</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>sets</code></td>
+                      <td>int &gt; 0</td>
+                      <td>Number of working sets.</td>
+                    </tr>
+                    <tr>
+                      <td><code>target_reps_min</code></td>
+                      <td>int &gt; 0</td>
+                      <td>Target reps, or the bottom of the range. Required.</td>
+                    </tr>
+                    <tr>
+                      <td><code>target_reps_max</code></td>
+                      <td>int · optional</td>
+                      <td>Top of the range, ≥ <code>target_reps_min</code>. Omit for a fixed target.</td>
+                    </tr>
+                    <tr>
+                      <td><code>target_weight</code></td>
+                      <td>number ≥ 0 · optional</td>
+                      <td>Suggested load, <strong>in kilograms</strong>. Omit for bodyweight.</td>
+                    </tr>
+                    <tr>
+                      <td><code>rest_sec</code></td>
+                      <td>int ≥ 0</td>
+                      <td>Rest between sets, in seconds.</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <h3>hiit</h3>
+              <p>Alternating work and rest intervals over a number of rounds, run as a live countdown.</p>
+              <div class="table-scroll" tabindex="0" role="region" aria-label="Reference table">
+                <table class="ref">
+                  <thead>
+                    <tr>
+                      <th>config field</th>
+                      <th>Type</th>
+                      <th>Meaning</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>work_sec</code></td>
+                      <td>number &gt; 0</td>
+                      <td>Work interval length, in seconds.</td>
+                    </tr>
+                    <tr>
+                      <td><code>rest_sec</code></td>
+                      <td>number ≥ 0</td>
+                      <td>Rest interval between rounds, in seconds.</td>
+                    </tr>
+                    <tr>
+                      <td><code>rounds</code></td>
+                      <td>int &gt; 0</td>
+                      <td>Number of work/rest rounds.</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <h3>emom</h3>
+              <p>Every minute on the minute: start a fixed task at the top of each interval, rest the remainder.</p>
+              <div class="table-scroll" tabindex="0" role="region" aria-label="Reference table">
+                <table class="ref">
+                  <thead>
+                    <tr>
+                      <th>config field</th>
+                      <th>Type</th>
+                      <th>Meaning</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>interval_sec</code></td>
+                      <td>number &gt; 0</td>
+                      <td>Length of each interval. Usually 60.</td>
+                    </tr>
+                    <tr>
+                      <td><code>total_minutes</code></td>
+                      <td>number &gt; 0</td>
+                      <td>
+                        How long the whole block runs. This is the field that ends it — there is no <code>rounds</code> here.
+                      </td>
+                    </tr>
+                    <tr>
+                      <td><code>target_reps</code></td>
+                      <td>int · optional</td>
+                      <td>Reps to hit within each interval.</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <h3>amrap</h3>
+              <p>As many rounds or reps as possible inside a single time cap.</p>
+              <div class="table-scroll" tabindex="0" role="region" aria-label="Reference table">
+                <table class="ref">
+                  <thead>
+                    <tr>
+                      <th>config field</th>
+                      <th>Type</th>
+                      <th>Meaning</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>time_cap_sec</code></td>
+                      <td>number &gt; 0</td>
+                      <td>Total time cap, in seconds. The only field, and required.</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <h3>timed_hold</h3>
+              <p>Hold a position for a set duration — planks, hangs, wall sits, loaded carries.</p>
+              <div class="table-scroll" tabindex="0" role="region" aria-label="Reference table">
+                <table class="ref">
+                  <thead>
+                    <tr>
+                      <th>config field</th>
+                      <th>Type</th>
+                      <th>Meaning</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>sets</code></td>
+                      <td>int &gt; 0</td>
+                      <td>Number of holds.</td>
+                    </tr>
+                    <tr>
+                      <td><code>hold_sec_min</code></td>
+                      <td>number &gt; 0</td>
+                      <td>Hold duration, or the bottom of the range. Required.</td>
+                    </tr>
+                    <tr>
+                      <td><code>hold_sec_max</code></td>
+                      <td>number · optional</td>
+                      <td>Top of the range, ≥ <code>hold_sec_min</code>. Same fixed-vs-range shape as <code>reps</code>.</td>
+                    </tr>
+                    <tr>
+                      <td><code>rest_sec</code></td>
+                      <td>number ≥ 0</td>
+                      <td>Rest between holds, in seconds.</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <h3>cardio</h3>
+              <p>A continuous effort tracked by time or distance.</p>
+              <div class="table-scroll" tabindex="0" role="region" aria-label="Reference table">
+                <table class="ref">
+                  <thead>
+                    <tr>
+                      <th>config field</th>
+                      <th>Type</th>
+                      <th>Meaning</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>duration_sec</code></td>
+                      <td>number &gt; 0 · optional</td>
+                      <td>Target duration, in seconds.</td>
+                    </tr>
+                    <tr>
+                      <td><code>distance_meters</code></td>
+                      <td>number &gt; 0 · optional</td>
+                      <td>Target distance, in metres.</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <p>
+                Give either, both, or neither — an empty <code class="inl">config: {}</code> is valid and runs as a plain
+                count-up stopwatch.
+              </p>
+
+              <h3>rest</h3>
+              <p>A standalone rest block between efforts, timed to the second.</p>
+              <div class="table-scroll" tabindex="0" role="region" aria-label="Reference table">
+                <table class="ref">
+                  <thead>
+                    <tr>
+                      <th>config field</th>
+                      <th>Type</th>
+                      <th>Meaning</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>duration_sec</code></td>
+                      <td>number ≥ 0</td>
+                      <td>
+                        Length of the rest, in seconds. Note this is <code>duration_sec</code>, not <code>rest_sec</code>.
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <p>
+                <code class="inl">rest</code> is not special-cased — it is an ordinary exercise you define once and reference
+                from as many blocks as you like, overriding the duration per block where one rest should differ from the
+                default.
+              </p>
+            </section>
+
+            <section>
+              <h2 id="workouts">Workouts</h2>
+              <p>
+                A workout is an ordered list of <code class="inl">blocks</code>, walked top to bottom by the session runner.
+                Each block is tagged with a <code class="inl">type</code>: either a single <code class="inl">exercise</code>,
+                or a <code class="inl">circuit</code> that cycles several exercises round-robin.
+              </p>
+              <div class="code-panel">
+                <div class="code-head">
+                  <span class="dot" aria-hidden="true"></span><span class="name">workout.yaml</span>
+                </div>
+                <pre
+                  tabindex="0"
+                  role="region"
+                  aria-label="Code sample"><code><span class="y-k">workouts</span><span class="y-p">:</span>
+  <span class="y-p">-</span> <span class="y-k">id</span><span class="y-p">:</span> <span class="y-s">calisthenics-a</span>
+    <span class="y-k">name</span><span class="y-p">:</span> <span class="y-s">Calisthenics A</span>
+    <span class="y-k">blocks</span><span class="y-p">:</span>
+      <span class="y-p">-</span> <span class="y-k">type</span><span class="y-p">:</span> <span class="y-s">exercise</span>
+        <span class="y-k">exercise</span><span class="y-p">:</span> <span class="y-s">pullups</span>
+      <span class="y-p">-</span> <span class="y-k">type</span><span class="y-p">:</span> <span class="y-s">exercise</span>
+        <span class="y-k">exercise</span><span class="y-p">:</span> <span class="y-s">rest</span>
+        <span class="y-k">config</span><span class="y-p">:</span> <span class="y-p">{</span> <span class="y-k">duration_sec</span><span class="y-p">:</span> <span class="y-n">120</span> <span class="y-p">}</span>   <span class="y-c"># this rest only</span>
+      <span class="y-p">-</span> <span class="y-k">type</span><span class="y-p">:</span> <span class="y-s">circuit</span>
+        <span class="y-k">id</span><span class="y-p">:</span> <span class="y-s">finisher-rounds</span>     <span class="y-c"># only needed if a program overrides it</span>
+        <span class="y-k">rounds</span><span class="y-p">:</span> <span class="y-n">3</span>
+        <span class="y-k">rest_between_exercises_sec</span><span class="y-p">:</span> <span class="y-n">15</span>
+        <span class="y-k">rest_between_rounds_sec</span><span class="y-p">:</span> <span class="y-n">60</span>
+        <span class="y-k">exercises</span><span class="y-p">:</span>
+          <span class="y-p">-</span> <span class="y-k">exercise</span><span class="y-p">:</span> <span class="y-s">pushups</span>
+          <span class="y-p">-</span> <span class="y-k">exercise</span><span class="y-p">:</span> <span class="y-s">l-sit</span></code></pre>
+              </div>
+              <div class="table-scroll" tabindex="0" role="region" aria-label="Reference table">
+                <table class="ref">
+                  <thead>
+                    <tr>
+                      <th>Field</th>
+                      <th>Type</th>
+                      <th>Required</th>
+                      <th>Meaning</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>id</code> / <code>name</code></td>
+                      <td>string</td>
+                      <td>yes</td>
+                      <td>Unique key and display name for the workout.</td>
+                    </tr>
+                    <tr>
+                      <td><code>blocks</code></td>
+                      <td>list</td>
+                      <td>yes</td>
+                      <td>Ordered blocks, each <code>type: exercise</code> or <code>type: circuit</code>.</td>
+                    </tr>
+                    <tr>
+                      <td><code>blocks[].exercise</code></td>
+                      <td>id</td>
+                      <td>exercise blocks</td>
+                      <td>The exercise this block runs.</td>
+                    </tr>
+                    <tr>
+                      <td><code>blocks[].config</code></td>
+                      <td>mapping · optional</td>
+                      <td>—</td>
+                      <td>
+                        Only <code>duration_sec</code> is supported, and only meaningfully on a block referencing a
+                        <code>rest</code> exercise.
+                      </td>
+                    </tr>
+                    <tr>
+                      <td><code>blocks[].rounds</code></td>
+                      <td>int</td>
+                      <td>circuit blocks</td>
+                      <td>How many times the circuit cycles its members.</td>
+                    </tr>
+                    <tr>
+                      <td><code>blocks[].exercises</code></td>
+                      <td>list</td>
+                      <td>circuit blocks</td>
+                      <td>At least two members, each <code>{ exercise: &lt;id&gt; }</code>.</td>
+                    </tr>
+                    <tr>
+                      <td><code>rest_between_exercises_sec</code></td>
+                      <td>number · optional</td>
+                      <td>—</td>
+                      <td>
+                        Rest between consecutive members within a round. Omit or set <code>0</code> for back-to-back work.
+                      </td>
+                    </tr>
+                    <tr>
+                      <td><code>rest_between_rounds_sec</code></td>
+                      <td>number · optional</td>
+                      <td>—</td>
+                      <td>Rest after finishing all members, before the next round.</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="callout">
+                <p>
+                  <strong>A circuit member runs once per round, whatever its own config says.</strong> The circuit's
+                  <code class="inl">rounds</code> is the only thing that repeats a member — a
+                  <code class="inl">reps</code> member's own <code class="inl">sets</code> is ignored inside a circuit, and
+                  its <code class="inl">rest_sec</code> is not inserted between visits. So
+                  <code class="inl">pushups</code> with <code class="inl">sets: 3</code> in a 3-round circuit does 3 visits,
+                  not 9.
+                </p>
+                <p>
+                  There is no separate superset concept: a superset is a two-member circuit with no rest between exercises.
+                </p>
+              </div>
+            </section>
+
+            <section>
+              <h2 id="programs">Programs</h2>
+              <p>
+                A program is a periodized wrapper around workouts you have already defined. Each entry in
+                <code class="inl">weeks</code> carries a week number and the <code class="inl">workout</code> to run, and may
+                layer <code class="inl">overrides</code> on top of the base definitions for that week only. Overrides are how
+                a program progresses — add a set in week 3, cut the finisher in week 6 — without duplicating the workout.
+              </p>
+              <div class="code-panel">
+                <div class="code-head">
+                  <span class="dot" aria-hidden="true"></span><span class="name">program.yaml</span>
+                </div>
+                <pre
+                  tabindex="0"
+                  role="region"
+                  aria-label="Code sample"><code><span class="y-k">programs</span><span class="y-p">:</span>
+  <span class="y-p">-</span> <span class="y-k">id</span><span class="y-p">:</span> <span class="y-s">pull-progression</span>
+    <span class="y-k">name</span><span class="y-p">:</span> <span class="y-s">6-Week Pull Progression</span>
+    <span class="y-k">weeks</span><span class="y-p">:</span>
+      <span class="y-p">-</span> <span class="y-k">week</span><span class="y-p">:</span> <span class="y-n">1</span>
+        <span class="y-k">workout</span><span class="y-p">:</span> <span class="y-s">calisthenics-a</span>
+        <span class="y-k">notes</span><span class="y-p">:</span> <span class="y-s">Baseline — log where you land in each range.</span>
+      <span class="y-p">-</span> <span class="y-k">week</span><span class="y-p">:</span> <span class="y-n">2</span>
+        <span class="y-k">workout</span><span class="y-p">:</span> <span class="y-s">calisthenics-a</span>
+        <span class="y-k">overrides</span><span class="y-p">:</span>
+          <span class="y-p">-</span> <span class="y-k">exercise</span><span class="y-p">:</span> <span class="y-s">pullups</span>
+            <span class="y-k">config</span><span class="y-p">:</span> <span class="y-p">{</span> <span class="y-k">sets</span><span class="y-p">:</span> <span class="y-n">5</span> <span class="y-p">}</span>
+          <span class="y-p">-</span> <span class="y-k">block</span><span class="y-p">:</span> <span class="y-s">finisher-rounds</span>
+            <span class="y-k">config</span><span class="y-p">:</span> <span class="y-p">{</span> <span class="y-k">rounds</span><span class="y-p">:</span> <span class="y-n">2</span> <span class="y-p">}</span></code></pre>
+              </div>
+              <div class="table-scroll" tabindex="0" role="region" aria-label="Reference table">
+                <table class="ref">
+                  <thead>
+                    <tr>
+                      <th>Field</th>
+                      <th>Type</th>
+                      <th>Meaning</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>id</code> / <code>name</code></td>
+                      <td>string</td>
+                      <td>Unique key and display name.</td>
+                    </tr>
+                    <tr>
+                      <td><code>weeks</code></td>
+                      <td>list</td>
+                      <td>The weeks of the program. Kettle queues the next one up.</td>
+                    </tr>
+                    <tr>
+                      <td><code>weeks[].week</code></td>
+                      <td>int</td>
+                      <td>The week number, taken literally — see the note below.</td>
+                    </tr>
+                    <tr>
+                      <td><code>weeks[].workout</code></td>
+                      <td>id</td>
+                      <td>The workout run that week.</td>
+                    </tr>
+                    <tr>
+                      <td><code>weeks[].day</code></td>
+                      <td>string · optional</td>
+                      <td>
+                        Freeform label (<code>Monday</code>, <code>Push</code>) for programs with more than one session a
+                        week. Each <code>(week, day)</code> pair must be unique. Omit it entirely for one session per week.
+                      </td>
+                    </tr>
+                    <tr>
+                      <td><code>weeks[].notes</code></td>
+                      <td>string · optional</td>
+                      <td>Freeform note for the week.</td>
+                    </tr>
+                    <tr>
+                      <td><code>weeks[].overrides</code></td>
+                      <td>list · optional</td>
+                      <td>
+                        A <strong>list</strong>, not a mapping. Each entry targets exactly one of <code>exercise</code> or
+                        <code>block</code>, plus a partial <code>config</code>.
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="callout">
+                <p>
+                  <strong>Week numbers are literal, not a schedule to fill in.</strong> A program whose weeks jump 1 → 3 → 6
+                  genuinely has three weeks, and the home screen walks 1 → 3 → 6 without ever offering 2, 4 or 5. Enumerate
+                  every week you intend to train.
+                </p>
+                <p>
+                  <strong>Overrides don't carry forward.</strong> Each week resolves independently against the base
+                  definitions, so a change you want to persist from week 3 onward has to be repeated in every later week.
+                </p>
+                <p>
+                  An <code class="inl">exercise</code> override uses that exercise's own config keys; a
+                  <code class="inl">block</code> override targets a circuit by its <code class="inl">id</code> and uses the
+                  circuit's keys (<code class="inl">rounds</code>, <code class="inl">rest_between_exercises_sec</code>,
+                  <code class="inl">rest_between_rounds_sec</code>). Give only the keys you're changing.
+                </p>
+              </div>
+            </section>
+
+            <section>
+              <h2 id="import">Import &amp; merge</h2>
+              <p>
+                Importing a file does not replace your library — it merges into it, keyed by <code class="inl">id</code>. For
+                each exercise, workout and program in the incoming file:
+              </p>
+              <ul>
+                <li>If the <code class="inl">id</code> is <strong>new</strong>, the item is added.</li>
+                <li>
+                  If the <code class="inl">id</code> already <strong>exists</strong>, the incoming definition replaces that
+                  item's definition.
+                </li>
+                <li>Items you have that <strong>aren't in the file</strong> are left untouched.</li>
+              </ul>
+              <p>
+                Your session history is never part of the library file and is never affected by an import — it lives in the
+                separate append-only log. That's what makes it safe to accept a file from anywhere: worst case, you replace
+                some definitions you can edit back.
+              </p>
+              <div class="callout">
+                <p>
+                  <strong>Stable ids are the contract.</strong> Keep an exercise's <code class="inl">id</code> constant
+                  across edits so overrides and history keep pointing at the right movement. Change the
+                  <code class="inl">name</code> freely; change the <code class="inl">id</code> only when you mean to create a
+                  different exercise.
+                </p>
+              </div>
+            </section>
+
+            <section>
+              <h2 id="example">A complete example</h2>
+              <p>
+                Everything above, in one valid file: five exercises covering four types, a workout with a rest override and a
+                two-member circuit, and a program that progresses across three weeks. This is checked against the app's own
+                parser by the test suite, so it is known to import cleanly.
+              </p>
+              <div class="code-panel">
+                <div class="code-head">
+                  <span class="dot" aria-hidden="true"></span><span class="name">exercises.yaml</span>
+                </div>
+                <pre
+                  tabindex="0"
+                  role="region"
+                  aria-label="Code sample"
+                  data-validate="library"><code><span class="y-k">version</span><span class="y-p">:</span> <span class="y-n">1</span>
+
+<span class="y-k">exercises</span><span class="y-p">:</span>
+  <span class="y-p">-</span> <span class="y-k">id</span><span class="y-p">:</span> <span class="y-s">pullups</span>
+    <span class="y-k">name</span><span class="y-p">:</span> <span class="y-s">Pull-ups</span>
+    <span class="y-k">type</span><span class="y-p">:</span> <span class="y-s">reps</span>
+    <span class="y-k">config</span><span class="y-p">:</span>
+      <span class="y-k">sets</span><span class="y-p">:</span> <span class="y-n">4</span>
+      <span class="y-k">target_reps_min</span><span class="y-p">:</span> <span class="y-n">5</span>
+      <span class="y-k">target_reps_max</span><span class="y-p">:</span> <span class="y-n">8</span>
+      <span class="y-k">rest_sec</span><span class="y-p">:</span> <span class="y-n">120</span>
+    <span class="y-k">notes</span><span class="y-p">:</span> <span class="y-s">Stop 2 reps shy of failure.</span>
+
+  <span class="y-p">-</span> <span class="y-k">id</span><span class="y-p">:</span> <span class="y-s">pushups</span>
+    <span class="y-k">name</span><span class="y-p">:</span> <span class="y-s">Push-ups</span>
+    <span class="y-k">type</span><span class="y-p">:</span> <span class="y-s">reps</span>
+    <span class="y-k">config</span><span class="y-p">:</span>
+      <span class="y-k">sets</span><span class="y-p">:</span> <span class="y-n">3</span>
+      <span class="y-k">target_reps_min</span><span class="y-p">:</span> <span class="y-n">8</span>
+      <span class="y-k">target_reps_max</span><span class="y-p">:</span> <span class="y-n">15</span>
+      <span class="y-k">rest_sec</span><span class="y-p">:</span> <span class="y-n">60</span>
+
+  <span class="y-p">-</span> <span class="y-k">id</span><span class="y-p">:</span> <span class="y-s">l-sit</span>
+    <span class="y-k">name</span><span class="y-p">:</span> <span class="y-s">L-sit</span>
+    <span class="y-k">type</span><span class="y-p">:</span> <span class="y-s">timed_hold</span>
+    <span class="y-k">config</span><span class="y-p">:</span>
+      <span class="y-k">sets</span><span class="y-p">:</span> <span class="y-n">3</span>
+      <span class="y-k">hold_sec_min</span><span class="y-p">:</span> <span class="y-n">15</span>
+      <span class="y-k">hold_sec_max</span><span class="y-p">:</span> <span class="y-n">30</span>
+      <span class="y-k">rest_sec</span><span class="y-p">:</span> <span class="y-n">90</span>
+
+  <span class="y-p">-</span> <span class="y-k">id</span><span class="y-p">:</span> <span class="y-s">burpees</span>
+    <span class="y-k">name</span><span class="y-p">:</span> <span class="y-s">Burpees</span>
+    <span class="y-k">type</span><span class="y-p">:</span> <span class="y-s">hiit</span>
+    <span class="y-k">config</span><span class="y-p">:</span>
+      <span class="y-k">work_sec</span><span class="y-p">:</span> <span class="y-n">30</span>
+      <span class="y-k">rest_sec</span><span class="y-p">:</span> <span class="y-n">15</span>
+      <span class="y-k">rounds</span><span class="y-p">:</span> <span class="y-n">8</span>
+
+  <span class="y-p">-</span> <span class="y-k">id</span><span class="y-p">:</span> <span class="y-s">rest</span>
+    <span class="y-k">name</span><span class="y-p">:</span> <span class="y-s">Rest</span>
+    <span class="y-k">type</span><span class="y-p">:</span> <span class="y-s">rest</span>
+    <span class="y-k">config</span><span class="y-p">:</span>
+      <span class="y-k">duration_sec</span><span class="y-p">:</span> <span class="y-n">90</span>
+
+<span class="y-k">workouts</span><span class="y-p">:</span>
+  <span class="y-p">-</span> <span class="y-k">id</span><span class="y-p">:</span> <span class="y-s">calisthenics-a</span>
+    <span class="y-k">name</span><span class="y-p">:</span> <span class="y-s">Calisthenics A</span>
+    <span class="y-k">blocks</span><span class="y-p">:</span>
+      <span class="y-p">-</span> <span class="y-k">type</span><span class="y-p">:</span> <span class="y-s">exercise</span>
+        <span class="y-k">exercise</span><span class="y-p">:</span> <span class="y-s">pullups</span>
+      <span class="y-p">-</span> <span class="y-k">type</span><span class="y-p">:</span> <span class="y-s">exercise</span>
+        <span class="y-k">exercise</span><span class="y-p">:</span> <span class="y-s">rest</span>
+        <span class="y-k">config</span><span class="y-p">:</span> <span class="y-p">{</span> <span class="y-k">duration_sec</span><span class="y-p">:</span> <span class="y-n">120</span> <span class="y-p">}</span>
+      <span class="y-p">-</span> <span class="y-k">type</span><span class="y-p">:</span> <span class="y-s">circuit</span>
+        <span class="y-k">id</span><span class="y-p">:</span> <span class="y-s">finisher-rounds</span>
+        <span class="y-k">rounds</span><span class="y-p">:</span> <span class="y-n">3</span>
+        <span class="y-k">rest_between_exercises_sec</span><span class="y-p">:</span> <span class="y-n">15</span>
+        <span class="y-k">rest_between_rounds_sec</span><span class="y-p">:</span> <span class="y-n">60</span>
+        <span class="y-k">exercises</span><span class="y-p">:</span>
+          <span class="y-p">-</span> <span class="y-k">exercise</span><span class="y-p">:</span> <span class="y-s">pushups</span>
+          <span class="y-p">-</span> <span class="y-k">exercise</span><span class="y-p">:</span> <span class="y-s">l-sit</span>
+
+  <span class="y-p">-</span> <span class="y-k">id</span><span class="y-p">:</span> <span class="y-s">conditioning</span>
+    <span class="y-k">name</span><span class="y-p">:</span> <span class="y-s">Conditioning</span>
+    <span class="y-k">blocks</span><span class="y-p">:</span>
+      <span class="y-p">-</span> <span class="y-k">type</span><span class="y-p">:</span> <span class="y-s">exercise</span>
+        <span class="y-k">exercise</span><span class="y-p">:</span> <span class="y-s">burpees</span>
+
+<span class="y-k">programs</span><span class="y-p">:</span>
+  <span class="y-p">-</span> <span class="y-k">id</span><span class="y-p">:</span> <span class="y-s">pull-progression</span>
+    <span class="y-k">name</span><span class="y-p">:</span> <span class="y-s">3-Week Pull Progression</span>
+    <span class="y-k">weeks</span><span class="y-p">:</span>
+      <span class="y-p">-</span> <span class="y-k">week</span><span class="y-p">:</span> <span class="y-n">1</span>
+        <span class="y-k">workout</span><span class="y-p">:</span> <span class="y-s">calisthenics-a</span>
+        <span class="y-k">notes</span><span class="y-p">:</span> <span class="y-s">Baseline — log where you land in each range.</span>
+      <span class="y-p">-</span> <span class="y-k">week</span><span class="y-p">:</span> <span class="y-n">2</span>
+        <span class="y-k">workout</span><span class="y-p">:</span> <span class="y-s">calisthenics-a</span>
+        <span class="y-k">overrides</span><span class="y-p">:</span>
+          <span class="y-p">-</span> <span class="y-k">exercise</span><span class="y-p">:</span> <span class="y-s">pullups</span>
+            <span class="y-k">config</span><span class="y-p">:</span> <span class="y-p">{</span> <span class="y-k">sets</span><span class="y-p">:</span> <span class="y-n">5</span> <span class="y-p">}</span>
+      <span class="y-p">-</span> <span class="y-k">week</span><span class="y-p">:</span> <span class="y-n">3</span>
+        <span class="y-k">workout</span><span class="y-p">:</span> <span class="y-s">conditioning</span>
+        <span class="y-k">notes</span><span class="y-p">:</span> <span class="y-s">Deload the pulling, keep the engine.</span></code></pre>
+              </div>
+            </section>
+
+            <section>
+              <h2 id="assistant">Using an assistant</h2>
+              <p>
+                Because this format is documented and schema-checked, you can have any AI assistant generate a program and
+                paste the result straight into Kettle. A workable prompt:
+              </p>
+              <div class="callout">
+                <p>
+                  “Here is the Kettle library format: <em>[paste this page]</em>. Write a valid
+                  <code class="inl">version: 1</code> library for a 4-week push/pull/legs program, dumbbells only, sessions
+                  around 40 minutes. Use the seven exercise types where they fit. Output YAML only.”
+                </p>
+              </div>
+              <p>
+                Import the reply. Kettle validates it against the schema on your device and merges by
+                <code class="inl">id</code>; anything invalid is reported rather than silently accepted. Then edit by hand —
+                it's a file you can read.
+              </p>
+              <p>
+                <strong>To be exact:</strong> Kettle has no AI features and never calls a model. The assistant is something
+                you bring; the app only ever reads the file you paste.
+              </p>
+              <p style="margin-top: var(--s5)"><a href="index.html">← Back to the overview</a></p>
+            </section>
+          </article>
+        </div>
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap">
+        <div class="footer-grid">
+          <div>
+            <a class="brand" href="index.html" style="color: #f7f4ef">
+              <span class="mark" aria-hidden="true" style="color: var(--accent)">
+                <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" width="28" height="28">
+                  <path
+                    d="M13,32 C8,26 14,21 11,15"
+                    stroke="currentColor"
+                    stroke-width="3.2"
+                    stroke-linecap="round"
+                    opacity="0.7" />
+                  <path
+                    d="M22,30 C17,24 23,19 20,13"
+                    stroke="currentColor"
+                    stroke-width="3.2"
+                    stroke-linecap="round"
+                    opacity="0.45" />
+                  <path d="M40,42 C42,23 82,23 84,42" stroke="currentColor" stroke-width="6.5" stroke-linecap="round" />
+                  <ellipse cx="62" cy="43" rx="24" ry="6.5" fill="currentColor" />
+                  <circle cx="62" cy="33" r="5.5" fill="currentColor" />
+                  <path
+                    d="M30,71 C30,53 44,45 62,45 C80,45 96,53 96,71 C96,88 80,95 62,95 C44,95 30,88 30,71 Z"
+                    fill="currentColor" />
+                  <path d="M33,60 L15,45 L21,39 L39,52 Z" fill="currentColor" />
+                  <rect x="47" y="93" width="30" height="7" rx="3.5" fill="currentColor" />
+                </svg>
+              </span>
+              <span class="word">Kettle</span>
+            </a>
+            <p style="margin-top: var(--s3)">A backend-free workout tracker for Android. Your data stays on your device.</p>
+          </div>
+          <div class="footer-col">
+            <h5>Project</h5>
+            <ul>
+              <li><a href="https://github.com/celsaad/kettle">GitHub repository</a></li>
+              <li><a href="https://github.com/celsaad/kettle/issues">Issues &amp; support</a></li>
+              <li><a href="format.html">Format reference</a></li>
+              <li><a href="support.html">Support Kettle</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h5>Legal</h5>
+            <ul>
+              <li><a href="privacy.html">Privacy policy</a></li>
+              <li><a href="https://github.com/celsaad/kettle/blob/HEAD/LICENSE">MIT license</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer-bottom">
+          <span>© 2026 Kettle. Released under the MIT license.</span>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+      // Sticky in-page nav highlight. Passive, respects reduced-motion via CSS.
+      (function () {
+        var links = Array.prototype.slice.call(document.querySelectorAll('.doc-nav a'));
+        var map = {};
+        links.forEach(function (a) {
+          var id = a.getAttribute('href').slice(1);
+          var el = document.getElementById(id);
+          if (el) map[id] = a;
+        });
+        var ids = Object.keys(map);
+        if (!ids.length || !('IntersectionObserver' in window)) return;
+        function clear() {
+          links.forEach(function (a) {
+            a.removeAttribute('aria-current');
+          });
+        }
+        var io = new IntersectionObserver(
+          function (entries) {
+            entries.forEach(function (e) {
+              if (e.isIntersecting) {
+                clear();
+                map[e.target.id].setAttribute('aria-current', 'true');
+              }
+            });
+          },
+          { rootMargin: '-80px 0px -70% 0px', threshold: 0 },
+        );
+        ids.forEach(function (id) {
+          io.observe(document.getElementById(id));
+        });
+      })();
+    </script>
+  </body>
+</html>

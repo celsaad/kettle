@@ -78,6 +78,8 @@ after any delegated change, and skim the diff.
   (`buildSteps`, `previewFor`, the step model) — importing the runner itself pulls in `expo-audio`
   and dies on native-module init, which is why that split exists.
 - `src/app/` — expo-router routes. `src/components/` — shared UI.
+- `site/` — the public landing site (GitHub Pages), plain static HTML with no build step. Not part of
+  the app build. `site/format.html` mirrors `schema.ts` — see "Changing the YAML format" below.
 
 **YAML is snake_case, domain code is camelCase**, bridged only in `yaml-mapping.ts`. Program
 `overrides` are partial *raw* (snake_case) patches — that asymmetry is deliberate and load-bearing.
@@ -261,3 +263,28 @@ Three rules, in the order they get broken:
 
 Keep open-work entries short. If the list starts wanting states and assignees, move it to GitHub
 issues (`origin` and `gh` are both available); until then the file is deliberately enough.
+
+## Changing the YAML format
+
+**`schema.ts` has three hand-maintained mirrors, and the public one is outside `docs/`.** Any change
+to the format — a new field, a renamed key, a changed requirement, a new exercise type — has to land
+in all of them in the same PR:
+
+1. `docs/authoring-exercises-yaml.md` — the authoring reference.
+2. `docs/exercise-tracker-product-plan.md` — its file-format section.
+3. **`site/format.html`** — the published reference on the landing site, which is the copy an outside
+   author or an assistant actually reads. It is the easiest to forget precisely because it doesn't
+   look like a doc and nothing in `src/` imports it.
+
+`site-samples.test.ts` catches the part it can: every `<pre data-validate="library">` block on the
+site is run through the real `parseLibraryYaml`, so a sample teaching a shape the schema refuses
+fails the suite. **The tables and prose around those samples are not checked** — the same caveat as
+the docs rule above. The first draft of that page shipped with five of seven type tables wrong
+(`emom` taking `rounds` instead of `total_minutes`, `amrap` missing the required `time_cap_sec`,
+program weeks as `days[]` with `overrides` as a mapping), all of it plausible enough to read as
+correct and every bit of it refused on import. Diff the tables against `schema.ts` by hand; the test
+will not do it for you.
+
+If you add a complete library sample to any page, mark it `data-validate="library"` so it joins the
+checked set. Deliberate fragments — a bare `workouts:` list, a shape sketch with `{ ... }` — stay
+unmarked, since they can't parse standalone.

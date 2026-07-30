@@ -1,0 +1,578 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Kettle — a backend-free workout tracker for Android</title>
+    <meta
+      name="description"
+      content="Kettle is a workout tracker with no server, no account and no sync. Your exercises, workouts and programs live in a plain YAML file you own. Completed sessions are written to a local append-only log." />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="canonical" href="https://celsaad.github.io/kettle/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Kettle" />
+    <meta property="og:title" content="Kettle — a backend-free workout tracker" />
+    <meta
+      property="og:description"
+      content="No server, no account, no sync. Your exercises, workouts and programs live in a plain YAML file you own." />
+    <meta property="og:url" content="https://celsaad.github.io/kettle/" />
+    <!-- og:image intentionally absent until a 1200x630 card exists; a broken preview image is worse than a text-only card. -->
+    <meta name="twitter:card" content="summary" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <div class="wrap bar">
+        <a class="brand" href="index.html" aria-label="Kettle home">
+          <span class="mark" aria-hidden="true">
+            <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" width="30" height="30">
+              <path
+                d="M13,32 C8,26 14,21 11,15"
+                stroke="currentColor"
+                stroke-width="3.2"
+                stroke-linecap="round"
+                opacity="0.7" />
+              <path
+                d="M22,30 C17,24 23,19 20,13"
+                stroke="currentColor"
+                stroke-width="3.2"
+                stroke-linecap="round"
+                opacity="0.45" />
+              <path d="M40,42 C42,23 82,23 84,42" stroke="currentColor" stroke-width="6.5" stroke-linecap="round" />
+              <ellipse cx="62" cy="43" rx="24" ry="6.5" fill="currentColor" />
+              <circle cx="62" cy="33" r="5.5" fill="currentColor" />
+              <path
+                d="M30,71 C30,53 44,45 62,45 C80,45 96,53 96,71 C96,88 80,95 62,95 C44,95 30,88 30,71 Z"
+                fill="currentColor" />
+              <path d="M33,60 L15,45 L21,39 L39,52 Z" fill="currentColor" />
+              <rect x="47" y="93" width="30" height="7" rx="3.5" fill="currentColor" />
+            </svg>
+          </span>
+          <span class="word">Kettle</span>
+        </a>
+        <nav class="site-nav" aria-label="Primary">
+          <a href="#features">Features</a>
+          <a href="format.html">Format</a>
+          <a href="#data">Your data</a>
+          <a href="support.html">Support</a>
+          <a href="https://github.com/celsaad/kettle">GitHub</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <!-- HERO -->
+      <section class="hero">
+        <div class="wrap">
+          <div class="hero-grid">
+            <div class="hero-copy">
+              <p class="eyebrow">Workout tracker · Android</p>
+              <h1>Your training, in a file you own.</h1>
+              <p class="hero-lede">
+                Kettle has no server, no account and no sync. Exercises, workouts and multi-week programs live in a plain
+                YAML file you can hand-edit. Completed sessions are written to a local, append-only log. It collects nothing
+                and transmits nothing.
+              </p>
+              <div class="hero-badges">
+                <span class="chip">No account</span>
+                <span class="chip">No server</span>
+                <span class="chip plain">Local log</span>
+                <span class="chip plain">Export anytime</span>
+              </div>
+              <!--
+            STORE BADGES.
+
+            Kettle is not on either store yet, so both slots render as status text rather than a
+            badge. A badge linking nowhere is worse than no badge: it reads as broken, and Google's
+            brand guidelines don't allow the Play badge to be shown for an app that isn't listed.
+
+            To go live on Play: delete the .store-pending span below, uncomment the anchor under it,
+            and drop the official badge PNG at assets/img/google-play-badge.png. Get the badge from
+            Google's own brand assets page — don't redraw it, the guidelines are specific about
+            proportions and clear space.
+
+            iOS is deliberately deferred (the App Store's yearly fee isn't worth it until the app
+            shows traction), so the App Store slot keeps the row's shape without promising a date.
+          -->
+              <div class="store-badges">
+                <span class="store-pending">
+                  <svg viewBox="0 0 24 24" aria-hidden="true" width="18" height="18">
+                    <path
+                      d="M3.6 2.3a1 1 0 0 0-.4.8v17.8a1 1 0 0 0 .4.8l.1.1L13.5 12v-.2L3.7 2.2z"
+                      fill="currentColor"
+                      opacity="0.75" />
+                    <path
+                      d="M17 15.3 13.5 12v-.2L17 8.6l.1.1 4 2.3c1.1.7 1.1 1.7 0 2.3l-4 2.3z"
+                      fill="currentColor"
+                      opacity="0.55" />
+                    <path d="m17.1 15.4-3.6-3.4L3.6 21.9c.4.4 1 .4 1.7 0l11.8-6.5" fill="currentColor" opacity="0.4" />
+                  </svg>
+                  Coming to Google Play
+                </span>
+                <!-- <a class="store-badge" href="PLAY_STORE_URL"><img src="assets/img/google-play-badge.png" alt="Get it on Google Play" height="56"></a> -->
+
+                <span class="store-pending muted">iOS not planned yet</span>
+                <!-- <a class="store-badge" href="APP_STORE_URL"><img src="assets/img/app-store-badge.svg" alt="Download on the App Store" height="56"></a> -->
+              </div>
+            </div>
+
+            <div class="hero-media">
+              <div class="hero-media-row">
+                <div class="code-panel">
+                  <div class="code-head">
+                    <span class="dot" aria-hidden="true"></span>
+                    <span class="name">library.yaml</span>
+                  </div>
+                  <pre
+                    tabindex="0"
+                    role="region"
+                    data-validate="library"
+                    aria-label="Example Kettle library file"><code><span class="y-k">version</span><span class="y-p">:</span> <span class="y-n">1</span>
+
+<span class="y-k">exercises</span><span class="y-p">:</span>
+  <span class="y-p">-</span> <span class="y-k">id</span><span class="y-p">:</span> <span class="y-s">back-squat</span>
+    <span class="y-k">name</span><span class="y-p">:</span> <span class="y-s">Back Squat</span>
+    <span class="y-k">type</span><span class="y-p">:</span> <span class="y-s">reps</span>
+    <span class="y-k">config</span><span class="y-p">:</span>
+      <span class="y-k">sets</span><span class="y-p">:</span> <span class="y-n">5</span>
+      <span class="y-k">target_reps_min</span><span class="y-p">:</span> <span class="y-n">5</span>
+      <span class="y-k">target_weight</span><span class="y-p">:</span> <span class="y-n">100</span>
+      <span class="y-k">rest_sec</span><span class="y-p">:</span> <span class="y-n">180</span>
+    <span class="y-k">notes</span><span class="y-p">:</span> <span class="y-s">stop 2 reps shy of failure</span>
+
+  <span class="y-p">-</span> <span class="y-k">id</span><span class="y-p">:</span> <span class="y-s">burpees</span>
+    <span class="y-k">name</span><span class="y-p">:</span> <span class="y-s">Burpees</span>
+    <span class="y-k">type</span><span class="y-p">:</span> <span class="y-s">hiit</span>
+    <span class="y-k">config</span><span class="y-p">:</span>
+      <span class="y-k">work_sec</span><span class="y-p">:</span> <span class="y-n">30</span>
+      <span class="y-k">rest_sec</span><span class="y-p">:</span> <span class="y-n">15</span>
+      <span class="y-k">rounds</span><span class="y-p">:</span> <span class="y-n">8</span>
+
+<span class="y-k">workouts</span><span class="y-p">:</span>
+  <span class="y-p">-</span> <span class="y-k">id</span><span class="y-p">:</span> <span class="y-s">lower-a</span>
+    <span class="y-k">name</span><span class="y-p">:</span> <span class="y-s">Lower A</span>
+    <span class="y-k">blocks</span><span class="y-p">:</span>
+      <span class="y-p">-</span> <span class="y-k">type</span><span class="y-p">:</span> <span class="y-s">exercise</span>
+        <span class="y-k">exercise</span><span class="y-p">:</span> <span class="y-s">back-squat</span>
+      <span class="y-p">-</span> <span class="y-k">type</span><span class="y-p">:</span> <span class="y-s">exercise</span>
+        <span class="y-k">exercise</span><span class="y-p">:</span> <span class="y-s">burpees</span>
+
+<span class="y-k">programs</span><span class="y-p">:</span> <span class="y-p">[]</span></code></pre>
+                </div>
+                <div class="phone" style="max-width: 230px">
+                  <div class="screen">
+                    <img
+                      src="assets/img/today.jpg"
+                      alt="Kettle home screen showing today's workout, Foundations · Push, queued as Week 1 Day 1 with a Start session button."
+                      width="1080"
+                      height="2242"
+                      loading="lazy" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- FEATURES -->
+      <section class="section" id="features">
+        <div class="wrap">
+          <div class="reveal">
+            <p class="eyebrow">What it does</p>
+            <h2 style="font-size: clamp(28px, 4vw, 40px); max-width: 18ch">
+              A precise runner, driven by a file you can read.
+            </h2>
+          </div>
+
+          <div style="margin-top: var(--s6)">
+            <div class="feature reveal">
+              <div class="feature-copy">
+                <h3>The session runner</h3>
+                <p>
+                  Work through a workout block by block. Reps sets take a count, a load and an RPE; timed blocks — HIIT,
+                  EMOM, AMRAP, holds — run a live countdown with the next block always in view. No mid-workout typing you
+                  don't need.
+                </p>
+                <p><a href="format.html#types">See how blocks are defined →</a></p>
+              </div>
+              <div class="feature-media">
+                <div class="phone">
+                  <div class="screen">
+                    <img
+                      src="assets/img/session-hiit.jpg"
+                      alt="Session runner mid-HIIT: Burpees, round 1 of 4, a large 0:38 countdown of 0:40 total, with Pause and Skip controls."
+                      width="1080"
+                      height="2242"
+                      loading="lazy" />
+                  </div>
+                </div>
+                <div class="phone">
+                  <div class="screen">
+                    <img
+                      src="assets/img/session-reps.jpg"
+                      alt="Session runner for a reps set: Push-ups, set 1 of 3, target 8–15, a large rep counter, load and RPE inputs, and Log set."
+                      width="1080"
+                      height="2242"
+                      loading="lazy" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="feature flip reveal">
+              <div class="feature-copy">
+                <h3>The library, as YAML</h3>
+                <p>
+                  Your exercises and workouts are one editable file. Read it, diff it, keep it in a repo, edit it in any text
+                  editor. Import takes a file or pasted text and merges by <code class="inl">id</code>, so you can accept a
+                  library from anywhere without losing your own log. Export the whole thing whenever you want.
+                </p>
+                <p><a href="format.html">Read the format reference →</a></p>
+              </div>
+              <div class="feature-media">
+                <div class="phone">
+                  <div class="screen">
+                    <img
+                      src="assets/img/workouts.jpg"
+                      alt="Workouts list showing seven built workouts such as Foundations · Push and Mixed Conditioning, each with block count and estimated duration."
+                      width="1080"
+                      height="2242"
+                      loading="lazy" />
+                  </div>
+                </div>
+                <div class="phone">
+                  <div class="screen">
+                    <img
+                      src="assets/img/import.jpg"
+                      alt="Import library sheet: choose a YAML file or paste YAML instead, a button to copy the format for an assistant, and a Merge and import action."
+                      width="1080"
+                      height="2242"
+                      loading="lazy" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="feature reveal">
+              <div class="feature-copy">
+                <h3>Multi-week programs</h3>
+                <p>
+                  Group workouts into a program that runs across weeks, with per-week overrides — add a set, bump a target,
+                  swap a block — expressed as diffs against the base workout. Kettle queues the next day for you; the file
+                  stays the source of truth.
+                </p>
+                <p><a href="format.html#file-shape">How programs are structured →</a></p>
+              </div>
+              <div class="feature-media">
+                <div class="phone">
+                  <div class="screen">
+                    <img
+                      src="assets/img/programs.jpg"
+                      alt="Programs list with two multi-week programs: Foundations · 4 Weeks · No Equipment and Dumbbell Strength · 4 Weeks, each noting weeks 1–4 and per-week overrides."
+                      width="1080"
+                      height="2242"
+                      loading="lazy" />
+                  </div>
+                </div>
+                <div class="phone">
+                  <div class="screen">
+                    <img
+                      src="assets/img/today.jpg"
+                      alt="Today screen with the program's next day queued: Foundations · Push, Week 1 Day 1, block chips and an estimated 12 minutes."
+                      width="1080"
+                      height="2242"
+                      loading="lazy" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="feature flip reveal">
+              <div class="feature-copy">
+                <h3>History you keep</h3>
+                <p>
+                  Every finished set appends to a local log — date, exercise, what you actually did. Nothing is overwritten
+                  and nothing is uploaded. Streaks and weekly totals are read back from that log on the device, and you can
+                  export it as plain data any time.
+                </p>
+              </div>
+              <div class="feature-media">
+                <div class="phone">
+                  <div class="screen">
+                    <img
+                      src="assets/img/history.jpg"
+                      alt="History screen: three sessions, 8 sets logged all time, a workout search field, and dated entries for Mixed Conditioning and two Foundations sessions."
+                      width="1080"
+                      height="2242"
+                      loading="lazy" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- EXERCISE TYPES -->
+      <section class="section" style="padding-top: 0">
+        <div class="wrap reveal">
+          <p class="eyebrow">Seven exercise types</p>
+          <h2 style="font-size: clamp(26px, 3.5vw, 36px); max-width: 20ch; margin-bottom: var(--s4)">
+            Each type is a shape of block, with its own config fields.
+          </h2>
+          <div class="type-grid">
+            <div class="type">
+              <div class="name">reps</div>
+              <p class="desc">Sets of counted repetitions, with load and an optional target range.</p>
+            </div>
+            <div class="type">
+              <div class="name">hiit</div>
+              <p class="desc">Alternating work and rest intervals over a number of rounds.</p>
+            </div>
+            <div class="type">
+              <div class="name">emom</div>
+              <p class="desc">Every minute on the minute — a fixed task at the top of each minute.</p>
+            </div>
+            <div class="type">
+              <div class="name">amrap</div>
+              <p class="desc">As many rounds or reps as possible inside a time cap.</p>
+            </div>
+            <div class="type">
+              <div class="name">timed_hold</div>
+              <p class="desc">Hold a position for a set duration — planks, hangs, carries.</p>
+            </div>
+            <div class="type">
+              <div class="name">cardio</div>
+              <p class="desc">A continuous effort tracked by time or distance.</p>
+            </div>
+            <div class="type">
+              <div class="name">rest</div>
+              <p class="desc">An explicit rest block between efforts, timed to the second.</p>
+            </div>
+          </div>
+          <p style="margin-top: var(--s4)"><a href="format.html#types">Full field reference for every type →</a></p>
+        </div>
+      </section>
+
+      <!-- YOUR DATA -->
+      <section class="section data-band" id="data">
+        <div class="wrap">
+          <div class="reveal" style="max-width: 46ch">
+            <p class="eyebrow">Your data</p>
+            <h2 style="font-size: clamp(28px, 4vw, 40px); margin-bottom: var(--s4)">Nothing leaves the device.</h2>
+            <p class="lede" style="margin-bottom: var(--s5)">
+              Kettle is backend-free by design. There is no account to create and no cloud to trust, because there is no
+              cloud. The competitors sync to a server; Kettle keeps your training where you can see it.
+            </p>
+          </div>
+          <div class="data-grid reveal">
+            <div class="data-item">
+              <svg class="ico" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path
+                  d="M12 3l7 3v6c0 4.2-2.9 7.4-7 9-4.1-1.6-7-4.8-7-9V6l7-3z"
+                  stroke="currentColor"
+                  stroke-width="1.6"
+                  stroke-linejoin="round" />
+                <path
+                  d="M9 12l2 2 4-4"
+                  stroke="currentColor"
+                  stroke-width="1.6"
+                  stroke-linecap="round"
+                  stroke-linejoin="round" />
+              </svg>
+              <h4>No account</h4>
+              <p>Install and start. There is no sign-up, no email, no password to reset.</p>
+            </div>
+            <div class="data-item">
+              <svg class="ico" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <rect x="4" y="5" width="16" height="6" rx="1.4" stroke="currentColor" stroke-width="1.6" />
+                <rect x="4" y="13" width="16" height="6" rx="1.4" stroke="currentColor" stroke-width="1.6" />
+                <path d="M7.5 8h.01M7.5 16h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+              </svg>
+              <h4>No server</h4>
+              <p>The app has no backend to talk to. Your library and log live in local storage on your phone.</p>
+            </div>
+            <div class="data-item">
+              <svg class="ico" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path
+                  d="M12 16V4m0 0l-4 4m4-4l4 4"
+                  stroke="currentColor"
+                  stroke-width="1.6"
+                  stroke-linecap="round"
+                  stroke-linejoin="round" />
+                <path
+                  d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"
+                  stroke="currentColor"
+                  stroke-width="1.6"
+                  stroke-linecap="round" />
+              </svg>
+              <h4>Export anytime</h4>
+              <p>Pull your whole library or your session history out as plain files whenever you want. It's yours.</p>
+            </div>
+            <div class="data-item">
+              <svg class="ico" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path
+                  d="M12 3v18M5 8l7-5 7 5"
+                  stroke="currentColor"
+                  stroke-width="1.6"
+                  stroke-linecap="round"
+                  stroke-linejoin="round" />
+                <path
+                  d="M5 8v8l7 5 7-5V8"
+                  stroke="currentColor"
+                  stroke-width="1.6"
+                  stroke-linecap="round"
+                  stroke-linejoin="round" />
+              </svg>
+              <h4>Nothing transmitted</h4>
+              <p>Zero analytics and zero trackers. The app makes no network requests — this site doesn't either.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- BRING YOUR OWN ASSISTANT -->
+      <section class="section" id="assistant">
+        <div class="wrap">
+          <div class="assist">
+            <div class="reveal">
+              <p class="eyebrow">Bring your own assistant</p>
+              <h2 style="font-size: clamp(28px, 4vw, 40px); margin-bottom: var(--s3)">
+                Generate a program elsewhere. Paste it straight in.
+              </h2>
+              <p class="lede" style="margin-bottom: var(--s4)">
+                Because the library is a documented YAML format with a published JSON schema, any AI assistant can write a
+                valid program for you. Give it the format reference, describe your training, and paste the result into
+                Kettle.
+              </p>
+              <p style="color: var(--secondary); margin-bottom: var(--s4)">
+                Kettle itself has no AI features and never calls a model. This works because the format is open and legible —
+                not because anything phones home.
+              </p>
+              <a class="btn btn-ghost" href="format.html">Open the format reference</a>
+              <p class="disclaimer">
+                The app collects nothing and calls no external service, including no model. Whatever an assistant produces is
+                checked against the schema on import, on your device.
+              </p>
+            </div>
+            <div class="card reveal">
+              <div class="step">
+                <span class="num">1</span>
+                <p>
+                  Paste the <strong>format reference</strong> — or point the assistant at this site — so it knows the file
+                  shape and the seven types.
+                </p>
+              </div>
+              <div class="step">
+                <span class="num">2</span>
+                <p>
+                  Describe your goal in plain words:
+                  <strong>“a 4-week push/pull/legs program, dumbbells only, 40 minutes.”</strong>
+                </p>
+              </div>
+              <div class="step">
+                <span class="num">3</span>
+                <p>
+                  It returns YAML. <strong>Import it into Kettle</strong>, which validates against the schema and merges by
+                  <code class="inl">id</code>.
+                </p>
+              </div>
+              <div class="step">
+                <span class="num">4</span>
+                <p>Edit anything by hand afterwards. The file stays <strong>yours to read and change</strong>.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap">
+        <div class="footer-grid">
+          <div>
+            <a class="brand" href="index.html" style="color: #f7f4ef">
+              <span class="mark" aria-hidden="true" style="color: var(--accent)">
+                <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" width="28" height="28">
+                  <path
+                    d="M13,32 C8,26 14,21 11,15"
+                    stroke="currentColor"
+                    stroke-width="3.2"
+                    stroke-linecap="round"
+                    opacity="0.7" />
+                  <path
+                    d="M22,30 C17,24 23,19 20,13"
+                    stroke="currentColor"
+                    stroke-width="3.2"
+                    stroke-linecap="round"
+                    opacity="0.45" />
+                  <path d="M40,42 C42,23 82,23 84,42" stroke="currentColor" stroke-width="6.5" stroke-linecap="round" />
+                  <ellipse cx="62" cy="43" rx="24" ry="6.5" fill="currentColor" />
+                  <circle cx="62" cy="33" r="5.5" fill="currentColor" />
+                  <path
+                    d="M30,71 C30,53 44,45 62,45 C80,45 96,53 96,71 C96,88 80,95 62,95 C44,95 30,88 30,71 Z"
+                    fill="currentColor" />
+                  <path d="M33,60 L15,45 L21,39 L39,52 Z" fill="currentColor" />
+                  <rect x="47" y="93" width="30" height="7" rx="3.5" fill="currentColor" />
+                </svg>
+              </span>
+              <span class="word">Kettle</span>
+            </a>
+            <p style="margin-top: var(--s3)">A backend-free workout tracker for Android. Your data stays on your device.</p>
+          </div>
+          <div class="footer-col">
+            <h5>Project</h5>
+            <ul>
+              <li><a href="https://github.com/celsaad/kettle">GitHub repository</a></li>
+              <li><a href="https://github.com/celsaad/kettle/issues">Issues &amp; support</a></li>
+              <li><a href="format.html">Format reference</a></li>
+              <li><a href="support.html">Support Kettle</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h5>Legal</h5>
+            <ul>
+              <li><a href="privacy.html">Privacy policy</a></li>
+              <li><a href="https://github.com/celsaad/kettle/blob/HEAD/LICENSE">MIT license</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer-bottom">
+          <span>© 2026 Kettle. Released under the MIT license.</span>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+      // Restrained entrance fades. Skipped entirely under reduced-motion.
+      (function () {
+        var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        var els = document.querySelectorAll('.reveal');
+        if (reduce || !('IntersectionObserver' in window)) {
+          els.forEach(function (el) {
+            el.classList.add('in');
+          });
+          return;
+        }
+        var io = new IntersectionObserver(
+          function (entries) {
+            entries.forEach(function (e) {
+              if (e.isIntersecting) {
+                e.target.classList.add('in');
+                io.unobserve(e.target);
+              }
+            });
+          },
+          { rootMargin: '0px 0px -8% 0px', threshold: 0.06 },
+        );
+        els.forEach(function (el) {
+          io.observe(el);
+        });
+      })();
+    </script>
+  </body>
+</html>

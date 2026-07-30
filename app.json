@@ -2,7 +2,7 @@
   "expo": {
     "name": "kettle",
     "slug": "kettle",
-    "version": "1.0.0",
+    "version": "0.1.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "kettle",
@@ -12,6 +12,7 @@
     },
     "android": {
       "package": "com.casco.kettle",
+      "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#c05c2b",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -42,7 +43,12 @@
           "color": "#c05c2b"
         }
       ],
-      "expo-audio",
+      [
+        "expo-audio",
+        {
+          "recordAudioAndroid": false
+        }
+      ],
       "expo-localization",
       "expo-iap"
     ],

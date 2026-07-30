@@ -1,0 +1,59 @@
+name: Pages
+
+# Publishes site/ to GitHub Pages. There is no build step — the site is plain HTML, CSS and
+# self-hosted fonts — so this uploads the directory as-is.
+#
+# Deliberately scoped to site/ rather than the repo root or docs/: docs/ holds the internal
+# decision log and planning notes, which are not written for publication.
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'site/**'
+      - '.github/workflows/pages.yml'
+  # Manual runs, for republishing without a content change.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Let a running deploy finish rather than cancelling it — a half-applied Pages deploy is worse
+# than a slightly stale one.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Fails the deploy rather than shipping a page whose type silently falls back to system
+      # sans-serif. The fonts are committed, so a miss here means something dropped them.
+      - name: Check self-hosted fonts are present
+        run: |
+          missing=0
+          for f in space-grotesk-500 space-grotesk-600 space-grotesk-700 \
+                   hanken-grotesk-400 hanken-grotesk-500 hanken-grotesk-600; do
+            if [ ! -f "site/fonts/$f.woff2" ]; then
+              echo "missing: site/fonts/$f.woff2"
+              missing=1
+            fi
+          done
+          exit $missing
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,0 +1,1065 @@
+/* ============================================================
+   Kettle — shared stylesheet for index / format / privacy / support
+   Warm paper-and-terracotta. Both themes via prefers-color-scheme.
+   No external requests: fonts are self-hosted under ./fonts/.
+
+   Contrast: every pairing here is measured against WCAG AA (4.5:1 body, 3:1 large), the same bar
+   `src/constants/theme.ts` holds the app to, and the measured ratio is recorded next to any value
+   that was chosen to clear it. Two surfaces do NOT follow the color scheme — the hero band and the
+   code panels are always dark, mirroring the app's always-dark session runner — so anything inside
+   them needs the dark value written out rather than inherited from a token.
+   ============================================================ */
+
+/* ---- Self-hosted fonts ------------------------------------
+   Converted from the app's own @expo-google-fonts TTFs, so the site and the app render identical
+   type. See fonts/README.md for how to regenerate. The system stack behind them is a real fallback,
+   not a placeholder: a missing file degrades instead of breaking.
+   ---------------------------------------------------------- */
+@font-face {
+  font-family: 'Space Grotesk';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('./fonts/space-grotesk-500.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Space Grotesk';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('./fonts/space-grotesk-600.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Space Grotesk';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('./fonts/space-grotesk-700.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Hanken Grotesk';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('./fonts/hanken-grotesk-400.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Hanken Grotesk';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('./fonts/hanken-grotesk-500.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Hanken Grotesk';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('./fonts/hanken-grotesk-600.woff2') format('woff2');
+}
+
+/* ---- Tokens ------------------------------------------------ */
+:root {
+  --text: #26221c;
+  --secondary: #6b6558;
+  --bg: #f7f4ef;
+  --surface: #ffffff;
+  --selected: #efe9df;
+  --border: rgba(30, 25, 15, 0.1);
+  --accent: #cf6a37;
+  --accent-text: #a1502a; /* accent-colored TEXT on light bg (AA) */
+  --accent-soft: rgba(207, 106, 55, 0.12);
+  --calm: #3f82c0;
+  --calm-text: #2f6493; /* calm-colored TEXT on light bg (AA)  */
+  --ink: #17140d; /* app splash / session background     */
+  --on-accent: #17140d; /* near-black label on accent fills    */
+
+  /* spacing scale: 4 / 8 / 16 / 24 / 32 / 64 */
+  --s1: 4px;
+  --s2: 8px;
+  --s3: 16px;
+  --s4: 24px;
+  --s5: 32px;
+  --s6: 64px;
+
+  --radius: 14px;
+  --radius-s: 10px;
+  --radius-l: 22px;
+
+  --font-display: 'Space Grotesk', ui-sans-serif, 'Segoe UI', system-ui, sans-serif;
+  --font-body: 'Hanken Grotesk', ui-sans-serif, -apple-system, 'Segoe UI', system-ui, sans-serif;
+
+  /* Secondary text sitting ON a `--selected` fill rather than on `--bg`. In light the same value
+     works (5.79). In dark, `--selected` is a translucent white that composites to #2b2823 — lighter
+     than `--bg` — and `--secondary` drops to 4.46, just under AA. Kept as its own token so the
+     app-matching `--secondary` doesn't have to be bent to fit its least forgiving surface. */
+  --secondary-on-selected: #6b6558;
+
+  --measure: 70ch;
+  --maxw: 1120px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --text: #f0ece2;
+    --secondary: #948d80;
+    --bg: #1a1712;
+    --surface: #241f17;
+    --selected: rgba(240, 236, 226, 0.08);
+    --border: rgba(240, 236, 226, 0.1);
+    --accent: #e07d47;
+    --accent-text: #e8a172;
+    --accent-soft: rgba(224, 125, 71, 0.16);
+    --calm: #3f82c0;
+    --calm-text: #7fb0dd;
+    --ink: #17140d;
+    --on-accent: #17140d;
+    --secondary-on-selected: #a49c8d; /* 5.40 on the composited #2b2823 */
+  }
+}
+
+/* ---- Reset / base ----------------------------------------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+html {
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: 17px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+img {
+  max-width: 100%;
+  display: block;
+}
+a {
+  color: var(--accent-text);
+  text-decoration: none;
+}
+a:hover {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* A link sitting inside a paragraph must be distinguishable without relying on colour (WCAG 1.4.1).
+   Accent-on-body only measures 2.78:1 against the surrounding text in light and 1.82:1 in dark —
+   nowhere near the 3:1 that would let colour carry it alone — so body links are underlined at rest.
+   Navigation, footer columns and buttons are excluded: they sit in their own blocks, where position
+   already distinguishes them and underlining every one is just noise. */
+.prose a,
+.callout a,
+.data-item a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+}
+::selection {
+  background: var(--accent-soft);
+  color: var(--text);
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  line-height: 1.08;
+  letter-spacing: -0.015em;
+  margin: 0;
+  text-wrap: balance;
+}
+p {
+  margin: 0 0 var(--s3);
+  text-wrap: pretty;
+}
+strong {
+  font-weight: 600;
+}
+
+/* Visible, themed keyboard focus everywhere */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+a:focus-visible,
+button:focus-visible {
+  outline-offset: 3px;
+}
+
+.skip-link {
+  position: absolute;
+  left: var(--s3);
+  top: -60px;
+  background: var(--surface);
+  color: var(--text);
+  padding: var(--s2) var(--s3);
+  border-radius: var(--radius-s);
+  border: 1px solid var(--border);
+  z-index: 100;
+  transition: top 0.15s ease;
+}
+.skip-link:focus {
+  top: var(--s3);
+  text-decoration: none;
+}
+
+/* ---- Layout ----------------------------------------------- */
+.wrap {
+  max-width: var(--maxw);
+  margin-inline: auto;
+  padding-inline: var(--s4);
+}
+.narrow {
+  max-width: 760px;
+}
+.section {
+  padding-block: var(--s6);
+}
+.eyebrow {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent-text);
+  margin: 0 0 var(--s2);
+}
+.lede {
+  font-size: 20px;
+  color: var(--secondary);
+  max-width: 52ch;
+}
+
+/* ---- Site header ------------------------------------------ */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: saturate(1.4) blur(10px);
+  border-bottom: 1px solid var(--border);
+}
+.site-header .bar {
+  display: flex;
+  align-items: center;
+  gap: var(--s4);
+  padding-block: var(--s3);
+}
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  color: var(--text);
+}
+.brand:hover {
+  text-decoration: none;
+  color: var(--text);
+}
+.brand .mark {
+  width: 30px;
+  height: 30px;
+  color: var(--accent);
+}
+.brand .word {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 21px;
+  letter-spacing: -0.01em;
+}
+/* `flex-wrap` is load-bearing, not defensive: five links do not fit a 390px viewport on one line,
+   and without it the nav pushes the header 66px wider than the screen and the whole page scrolls
+   sideways. Adding a sixth link must stay this cheap. */
+.site-nav {
+  margin-left: auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s4);
+}
+/* 44px minimum touch target, the same house rule the app holds itself to. Done with `min-height`
+   rather than `height` so the target still grows when the reader enlarges text. */
+.site-nav a {
+  color: var(--secondary);
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+.site-nav a:hover,
+.site-nav a[aria-current='page'] {
+  color: var(--text);
+  text-decoration: none;
+}
+.site-nav a[aria-current='page'] {
+  color: var(--accent-text);
+}
+
+/* ---- Buttons ---------------------------------------------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 17px;
+  line-height: 1;
+  padding: 14px 22px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    transform 0.05s ease;
+}
+.btn-primary {
+  background: var(--accent);
+  color: var(--on-accent);
+} /* large bold label — AA on accent */
+.btn-primary:hover {
+  background: color-mix(in srgb, var(--accent) 88%, #000);
+  text-decoration: none;
+  color: var(--on-accent);
+}
+.btn-primary:active {
+  transform: translateY(1px);
+}
+.btn-ghost {
+  background: transparent;
+  color: var(--text);
+  border-color: var(--border);
+}
+.btn-ghost:hover {
+  background: var(--selected);
+  text-decoration: none;
+  color: var(--text);
+}
+.btn .ico {
+  width: 18px;
+  height: 18px;
+}
+
+/* ---- Chips / tags ----------------------------------------- */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 14px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+.chip.calm {
+  background: color-mix(in srgb, var(--calm) 14%, transparent);
+  color: var(--calm-text);
+}
+.chip.plain {
+  background: var(--selected);
+  color: var(--secondary);
+}
+
+/* ---- Store badges ----------------------------------------- *
+ * Two slots, holding the row's shape while the app is unlisted. `.store-pending` is the placeholder
+ * state; `.store-badge` is what the real store badge images get when they replace it. Both are sized
+ * to the same 56px badge height so swapping one for the other doesn't move the layout. */
+.store-badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s3);
+  margin-top: var(--s4);
+}
+/* Sits on the always-dark hero, so the colors are the dark-scheme ones spelled out rather than
+   inherited: #a89f8f on #17140d measures 7.02. */
+.store-pending {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 0 18px;
+  border-radius: 12px;
+  border: 1px dashed rgba(240, 236, 226, 0.18);
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 15px;
+  color: #a89f8f;
+}
+/* The second slot is a reservation, not an announcement — it recedes rather than competing. Done
+   with an explicit dimmer color rather than `opacity`, which multiplies against the background and
+   silently destroys contrast (at 0.62 it measured 1.96). #8f887a measures 5.23. */
+.store-pending.muted {
+  color: #8f887a;
+  font-weight: 400;
+}
+.store-badge {
+  display: inline-flex;
+}
+.store-badge img {
+  height: 56px;
+  width: auto;
+}
+
+/* ---- Cards ------------------------------------------------ */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--s4);
+}
+
+/* ---- Hero (near-black band) ------------------------------- */
+.hero {
+  background: var(--ink);
+  color: #f0ece2;
+  border-bottom: 1px solid rgba(240, 236, 226, 0.08);
+}
+.hero .wrap {
+  padding-block: var(--s6);
+}
+/* Copy sits above a full-width media row, so the YAML gets a readable measure. */
+.hero-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--s5);
+}
+.hero-copy {
+  max-width: 62ch;
+}
+.hero h1 {
+  font-size: clamp(40px, 6vw, 68px);
+  font-weight: 700;
+  color: #f7f4ef;
+  margin-bottom: var(--s3);
+  max-width: 20ch;
+}
+/* code panel + phone, side by side on desktop, stacked on mobile */
+.hero-media-row {
+  display: grid;
+  grid-template-columns: minmax(340px, 1fr) auto;
+  gap: var(--s4);
+  align-items: stretch;
+}
+.hero-media-row .code-panel {
+  min-width: 0;
+}
+.hero-media-row .phone {
+  align-self: center;
+}
+/* The hero band is ALWAYS dark, in both schemes — the same split the app makes with `RunnerColors`.
+   So anything inside it needs the dark-scheme token explicitly; inheriting `--accent-text` put the
+   light value (#a1502a) on #17140d and measured 3.23. #e8a172 measures 8.55. */
+.hero .eyebrow {
+  color: #e8a172;
+}
+.hero-lede {
+  font-size: clamp(18px, 2.2vw, 22px);
+  color: #cabfac;
+  max-width: 46ch;
+  margin-bottom: var(--s4);
+}
+.hero-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+  margin-top: var(--s4);
+}
+.hero-badges .chip {
+  background: rgba(224, 125, 71, 0.16);
+  color: #e8a172;
+}
+.hero-badges .chip.plain {
+  background: rgba(240, 236, 226, 0.08);
+  color: #cabfac;
+}
+
+/* code panel inside hero */
+.hero .code-panel {
+  margin-top: 0;
+}
+
+/* ---- Code blocks ------------------------------------------ */
+.code-panel {
+  background: #12100b;
+  border: 1px solid rgba(240, 236, 226, 0.12);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: 0 20px 50px -30px rgba(0, 0, 0, 0.7);
+}
+.code-head {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  padding: 10px var(--s3);
+  border-bottom: 1px solid rgba(240, 236, 226, 0.1);
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: #948d80;
+}
+.code-head .dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: rgba(240, 236, 226, 0.22);
+}
+.code-head .name {
+  margin-left: 6px;
+  font-weight: 500;
+  color: #cabfac;
+}
+pre {
+  margin: 0;
+  padding: var(--s4);
+  overflow-x: auto;
+  font-family: ui-monospace, 'SF Mono', 'Cascadia Code', 'JetBrains Mono', Menlo, Consolas, monospace;
+  font-size: 13.5px;
+  line-height: 1.7;
+  color: #e8e2d5;
+  tab-size: 2;
+}
+pre code {
+  font: inherit;
+  color: inherit;
+  white-space: pre;
+}
+/* YAML token colors (against #12100b) */
+.y-k {
+  color: #7fb0dd;
+} /* keys — calm blue */
+.y-n {
+  color: #e8a172;
+} /* numbers — accent */
+.y-p {
+  color: #948d80;
+} /* dashes / punctuation */
+.y-s {
+  color: #e8e2d5;
+} /* scalar strings */
+.y-c {
+  color: #8b8474;
+  font-style: italic;
+} /* comments */
+
+/* inline code within prose */
+code.inl {
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 0.88em;
+  background: var(--selected);
+  color: var(--accent-text);
+  padding: 1px 6px;
+  border-radius: 6px;
+}
+
+/* ---- Feature blocks --------------------------------------- */
+.feature {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s6);
+  align-items: center;
+}
+.feature + .feature {
+  margin-top: var(--s6);
+}
+.feature.flip .feature-media {
+  order: -1;
+}
+.feature h3 {
+  font-size: clamp(26px, 3vw, 34px);
+  margin-bottom: var(--s3);
+}
+.feature p {
+  color: var(--secondary);
+  max-width: 46ch;
+}
+.feature-media {
+  display: flex;
+  gap: var(--s3);
+  justify-content: center;
+}
+
+/* ---- Phone frames ----------------------------------------- */
+.phone {
+  width: 100%;
+  max-width: 260px;
+  aspect-ratio: 1080 / 2242;
+  background: var(--ink);
+  border: 1px solid var(--border);
+  border-radius: 30px;
+  padding: 8px;
+  box-shadow: 0 30px 60px -35px rgba(0, 0, 0, 0.55);
+}
+.phone .screen {
+  width: 100%;
+  height: 100%;
+  border-radius: 22px;
+  overflow: hidden;
+  background: var(--ink);
+}
+.phone .screen img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+/* labelled placeholder variant */
+.phone.placeholder .screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s2);
+  text-align: center;
+  padding: var(--s4);
+  background: repeating-linear-gradient(135deg, rgba(224, 125, 71, 0.05) 0 12px, transparent 12px 24px), var(--ink);
+  color: #948d80;
+}
+.phone.placeholder .screen .plabel {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 15px;
+  color: #cabfac;
+}
+.phone.placeholder .screen .pmeta {
+  font-size: 12px;
+  color: #7d766a;
+}
+.phone.placeholder .screen .ico {
+  width: 30px;
+  height: 30px;
+  color: var(--accent);
+  opacity: 0.85;
+}
+
+/* ---- Exercise-type grid ----------------------------------- */
+.type-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--s3);
+}
+.type {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--s3) var(--s4);
+}
+.type .name {
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 14px;
+  color: var(--accent-text);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.type .desc {
+  font-size: 14.5px;
+  color: var(--secondary);
+  margin: 6px 0 0;
+}
+
+/* ---- Data / ownership section ----------------------------- */
+.data-band {
+  background: var(--surface);
+  border-block: 1px solid var(--border);
+}
+.data-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--s4);
+}
+.data-item h4 {
+  font-family: var(--font-display);
+  font-size: 19px;
+  margin-bottom: 6px;
+}
+.data-item p {
+  color: var(--secondary);
+  font-size: 15.5px;
+  margin: 0;
+}
+.data-item .ico {
+  width: 24px;
+  height: 24px;
+  color: var(--accent);
+  margin-bottom: var(--s2);
+}
+
+/* ---- Assistant section ------------------------------------ */
+.assist {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: var(--s6);
+  align-items: center;
+}
+.assist .card {
+  background: var(--surface);
+}
+.assist .step {
+  display: flex;
+  gap: var(--s3);
+  align-items: flex-start;
+  padding-block: var(--s3);
+}
+.assist .step + .step {
+  border-top: 1px solid var(--border);
+}
+.assist .num {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 15px;
+}
+.assist .step p {
+  margin: 0;
+  font-size: 15.5px;
+  color: var(--secondary);
+}
+.assist .step strong {
+  color: var(--text);
+}
+.disclaimer {
+  font-size: 14px;
+  color: var(--secondary);
+  border-left: 2px solid var(--calm);
+  padding-left: var(--s3);
+  margin-top: var(--s4);
+}
+
+/* ---- Footer ----------------------------------------------- */
+.site-footer {
+  background: var(--ink);
+  color: #cabfac;
+  padding-block: var(--s6) var(--s5);
+}
+.footer-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr;
+  gap: var(--s5);
+}
+.site-footer .brand .word {
+  color: #f7f4ef;
+}
+.site-footer p {
+  color: #948d80;
+  font-size: 15px;
+  max-width: 34ch;
+}
+.footer-col h5 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #948d80;
+  margin: 0 0 var(--s3);
+}
+.footer-col ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 2px;
+}
+/* Same 44px rule as the primary nav; the row gap shrinks to 2px to absorb the taller targets so the
+   column doesn't grow. */
+.footer-col ul a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+.site-footer a {
+  color: #cabfac;
+}
+.site-footer a:hover {
+  color: #f7f4ef;
+}
+.footer-bottom {
+  margin-top: var(--s5);
+  padding-top: var(--s4);
+  border-top: 1px solid rgba(240, 236, 226, 0.1);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s3) var(--s4);
+  align-items: center;
+  font-size: 14px;
+  color: #948d80; /* was #7d766a, 4.08 on the ink band; this measures 5.59 */
+}
+
+/* ============================================================
+   format.html — reference layout
+   ============================================================ */
+.doc-layout {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: var(--s6);
+  align-items: start;
+}
+.doc-nav {
+  position: sticky;
+  top: 84px;
+}
+.doc-nav h5 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--secondary);
+  margin: 0 0 var(--s3);
+}
+.doc-nav ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+  border-left: 1px solid var(--border);
+}
+.doc-nav a {
+  display: block;
+  padding: 6px var(--s3);
+  margin-left: -1px;
+  color: var(--secondary);
+  font-size: 14.5px;
+  font-weight: 500;
+  border-left: 2px solid transparent;
+}
+.doc-nav a:hover {
+  color: var(--text);
+  text-decoration: none;
+}
+.doc-nav a[aria-current='true'] {
+  color: var(--accent-text);
+  border-left-color: var(--accent);
+}
+
+/* `min-width: 0` for the same reason as the grid column above — as a grid item it defaults to a
+   min-content floor, which its own code blocks would otherwise set. */
+.prose {
+  max-width: var(--measure);
+  min-width: 0;
+}
+.prose h2 {
+  font-size: 30px;
+  margin: var(--s6) 0 var(--s3);
+  scroll-margin-top: 90px;
+}
+.prose h2:first-child {
+  margin-top: 0;
+}
+.prose h3 {
+  font-size: 21px;
+  margin: var(--s5) 0 var(--s2);
+  scroll-margin-top: 90px;
+}
+.prose p,
+.prose li {
+  color: var(--text);
+}
+.prose ul {
+  padding-left: 1.3em;
+}
+.prose li {
+  margin-bottom: 8px;
+}
+.prose .code-panel {
+  margin: var(--s4) 0;
+}
+
+/* Tables */
+.table-scroll {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin: var(--s4) 0;
+}
+table.ref {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 520px;
+  font-size: 15px;
+}
+table.ref th,
+table.ref td {
+  text-align: left;
+  padding: 12px var(--s3);
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+table.ref thead th {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--secondary-on-selected);
+  background: var(--selected);
+}
+table.ref tbody tr:last-child td {
+  border-bottom: none;
+}
+table.ref td code,
+table.ref th code {
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 13px;
+  color: var(--accent-text);
+}
+table.ref td:first-child {
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.callout {
+  background: var(--accent-soft);
+  border-radius: var(--radius);
+  padding: var(--s4);
+  margin: var(--s4) 0;
+}
+.callout p:last-child {
+  margin-bottom: 0;
+}
+.callout strong {
+  color: var(--accent-text);
+}
+
+/* page intro block shared by format + privacy */
+.page-head {
+  padding-block: var(--s6) var(--s4);
+  border-bottom: 1px solid var(--border);
+}
+.page-head h1 {
+  font-size: clamp(34px, 5vw, 52px);
+  font-weight: 700;
+  margin-bottom: var(--s3);
+}
+.page-head .lede {
+  font-size: 19px;
+}
+.page-head .meta {
+  color: var(--secondary);
+  font-size: 14px;
+  margin-top: var(--s3);
+}
+
+/* ---- Responsive ------------------------------------------- */
+@media (max-width: 760px) {
+  .hero-media-row {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+  .hero-media-row .code-panel {
+    width: 100%;
+  }
+}
+@media (max-width: 900px) {
+  .feature {
+    grid-template-columns: 1fr;
+    gap: var(--s4);
+  }
+  .feature.flip .feature-media {
+    order: 0;
+  }
+  .assist {
+    grid-template-columns: 1fr;
+    gap: var(--s4);
+  }
+  .footer-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--s4);
+  }
+  /* `minmax(0, 1fr)`, never bare `1fr`. A bare `1fr` is `minmax(auto, 1fr)`, and that `auto` floor
+     is the column's min-content width — which the reference's wide YAML samples blow past, dragging
+     the grid to 612px inside a 390px viewport. The `pre` already scrolls internally; this is what
+     lets it. */
+  .doc-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--s4);
+  }
+  .doc-nav {
+    position: static;
+  }
+  .doc-nav ul {
+    display: flex;
+    flex-wrap: wrap;
+    border-left: none;
+    gap: 4px;
+  }
+  .doc-nav a {
+    border-left: none;
+    border-radius: 999px;
+    background: var(--selected);
+    color: var(--secondary-on-selected);
+  }
+  .doc-nav a[aria-current='true'] {
+    border-left: none;
+    background: var(--accent-soft);
+  }
+}
+@media (max-width: 560px) {
+  body {
+    font-size: 16px;
+  }
+  .wrap {
+    padding-inline: var(--s3);
+  }
+  .section {
+    padding-block: var(--s5);
+  }
+  .site-nav {
+    gap: var(--s3);
+  }
+  .footer-grid {
+    grid-template-columns: 1fr;
+  }
+  .feature-media {
+    flex-wrap: wrap;
+  }
+}
+
+/* ---- Motion preferences ----------------------------------- */
+.reveal {
+  opacity: 0;
+  transform: translateY(12px);
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 0.5s ease,
+    transform 0.5s ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .reveal {
+    opacity: 1;
+    transform: none;
+  }
+}
+html {
+  scroll-behavior: smooth;
+}

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <!-- The app's kettle mark, in the brand accent. Deliberately drawn in the one accent that reads
+       against both a light and a dark browser chrome, so there is no light/dark variant to keep. -->
+  <rect width="120" height="120" rx="26" fill="#17140d"/>
+  <g fill="#e07d47" stroke="#e07d47">
+    <path d="M13,32 C8,26 14,21 11,15" stroke-width="3.2" stroke-linecap="round" fill="none" opacity="0.7"/>
+    <path d="M22,30 C17,24 23,19 20,13" stroke-width="3.2" stroke-linecap="round" fill="none" opacity="0.45"/>
+    <path d="M40,42 C42,23 82,23 84,42" stroke-width="6.5" stroke-linecap="round" fill="none"/>
+    <ellipse cx="62" cy="43" rx="24" ry="6.5" stroke="none"/>
+    <circle cx="62" cy="33" r="5.5" stroke="none"/>
+    <path d="M30,71 C30,53 44,45 62,45 C80,45 96,53 96,71 C96,88 80,95 62,95 C44,95 30,88 30,71 Z" stroke="none"/>
+    <path d="M33,60 L15,45 L21,39 L39,52 Z" stroke="none"/>
+    <rect x="47" y="93" width="30" height="7" rx="3.5" stroke="none"/>
+  </g>
+</svg>

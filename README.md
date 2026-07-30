@@ -31,6 +31,17 @@ weeks, set each week's number/day/workout/notes, and edit per-exercise or per-ci
 Hand-editing `exercises.yaml` is a power-user option, not a requirement; the Programs tab explains
 the format in-app via a guide screen.
 
+**Bring your own assistant.** A hand-editable library that merges by `id` happens to be exactly what
+an LLM is good at emitting, so the import screen is built around that loop rather than merely
+tolerating it. "Copy the format for an assistant" puts a generated JSON Schema plus every id, name and
+type already in your library on the clipboard — so what comes back references your own exercises
+instead of inventing near-duplicates. Paste the reply straight in or pick a file; either path is
+validated and shown as a field-level diff of what would change before a single byte is written, and if
+it's refused, "Copy error" hands the refusal back to whatever produced it. Kettle never calls a model
+itself: no API key field, no in-app "generate" button, nothing leaving the device — which is what keeps
+the zero-data-collected claim below true. It supplies the format and validates the result; what you
+should actually be doing in a workout stays between you and whoever you asked.
+
 **History and progression.** Sessions can be searched by workout name (stat tiles and header narrow
 to match) and deleted from the expanded card. Editing an exercise shows a "Recent" section once it's
 been logged: a bar chart of a per-type volume metric (weight moved, time under tension, rounds,

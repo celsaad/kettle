@@ -565,8 +565,10 @@ failure mode the decision-log note above warns about, regrown one heading level 
   positioning the app this way (store listing and README, not a new SKU — see the tip-jar entry on why
   there's no paid tier to attach it to). **The plumbing is now complete** — all four pieces below
   shipped, and the loop runs end to end: copy the format out, paste the YAML back, copy the refusal
-  out if it's wrong. What's left is the positioning itself, which is store-listing and README copy
-  rather than code:
+  out if it's wrong. The README half of the positioning has landed too ("Bring your own assistant"),
+  written to the ownership line in the decision log: it describes the format, the validation and the
+  fact that the app never calls a model, and it closes by saying what happens *in* a workout isn't
+  Kettle's to prescribe. **What's left is the Play store listing**, which isn't in this repo:
 
   - ~~**A paste path into import.**~~ ✅ Shipped. Both input sources funnel through one
     `review(text, source)`, so a paste is refused for the same reasons and in the same words as a

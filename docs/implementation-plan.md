@@ -682,13 +682,17 @@ structural ones:
   mean a browser check of any confirm flow proves nothing unless the script patches it, which is how
   session delete was actually verified end to end.
 
-## Open questions from the product plan, still open
+## Open questions from the product plan — all five settled
 
-- Merge conflict transparency: diff view vs. simple updated count (§12.5). Currently a simple
-  new/updated count + changed-id list, no field-level diff.
+Kept as a record of where each landed, since §12 is where they're numbered.
 
-Settled since this was written: the timed-hold direction is **count up, range as marker** (§12.2) —
-a countdown has no non-arbitrary number to count from once the target is a range, and counting up is
-what the log records; and `hiit`/`emom`/`amrap`/`cardio` are all runnable in the session
-screen now (a unified interval runner, with matching `SessionEntry` log shapes added to the domain
-model), and the `blocks` model grew a `circuit` kind for supersets/circuits (§12.4) without a rewrite.
+- **Timed-hold direction** (§12.2): **count up, with the range as a marker.** A countdown has no
+  non-arbitrary number to count from once the target is a range (`hold_sec_min` + optional
+  `hold_sec_max`), and counting up is what the log records. The bar spans the top of the range with the
+  minimum marked part-way along.
+- **Merge conflict transparency** (§12.5): **a field-level diff** (`domain/library-diff.ts`), shallower
+  for workouts and programs than for exercises — see §12.5 for why that asymmetry is deliberate.
+- Earlier: `rest` stayed first-class (§12.1), rep-block rest is an auto timer that's skippable
+  (§12.3), and `blocks` grew a `circuit` kind for supersets/circuits (§12.4) without a rewrite.
+  `hiit`/`emom`/`amrap`/`cardio` are all runnable now, on a unified interval runner with matching
+  `SessionEntry` log shapes.

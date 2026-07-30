@@ -261,6 +261,16 @@
     "updatedWorkout": "updated workout",
     "newProgram": "new program",
     "updatedProgram": "updated program",
+    "diff": {
+      "type": "Type",
+      "notes": "Notes",
+      "blocks": "Blocks",
+      "exercises": "Exercises",
+      "weeks": "Weeks",
+      "weeksChanged": "Weeks edited",
+      "unset": "not set",
+      "sameValues": "no field changes — replaced with an identical definition"
+    },
     "noChanges": "No changes — the imported file matches your current library.",
     "updateNote": "Updated items replace local tweaks. Sessions are never touched.",
     "mergeButton": "Merge & import",

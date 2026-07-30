@@ -3,7 +3,7 @@ import { changeLanguage, t } from 'i18next';
 import { AccessibilityInfo } from 'react-native';
 
 import ImportScreen from '@/app/import';
-import type { Library } from '@/domain/types';
+import type { Exercise, Library } from '@/domain/types';
 import { serializeLibraryYaml } from '@/domain/yaml-mapping';
 import { useLibraryStore } from '@/state/library-store';
 import { saveLibrary } from '@/storage/library-file';
@@ -372,6 +372,40 @@ describe('the repair loop', () => {
       'O Kettle recusou este exercises.yaml na importação. Corrija o YAML e devolva o arquivo corrigido.\n\n' +
         'O treino "leg-day" referencia o exercício desconhecido "squats"',
     );
+  });
+});
+
+/**
+ * §12.5, and the reason §6 asks for updates to be surfaced clearly: an id that already exists is
+ * replaced wholesale, so the preview is the only place a local tweak can be seen before it's gone.
+ */
+describe('the update diff', () => {
+  it('names what an updated exercise is about to lose', async () => {
+    const fourSets = anExercise({ config: { sets: 4, targetRepsMin: 8, restSec: 90 } } as Partial<Exercise>);
+    const threeSets = anExercise({ config: { sets: 3, targetRepsMin: 8, restSec: 90 } } as Partial<Exercise>);
+    useLibraryStore.setState({ library: { ...current, exercises: [threeSets] }, status: 'ready' });
+    picks(aLibrary({ exercises: [fourSets] }));
+    await chooseFile();
+
+    expect(screen.getByText(/Sets: 3 → 4/)).toBeTruthy();
+  });
+
+  it('says so when an updated id is byte-identical rather than showing a blank indent', async () => {
+    // `mergeById` classifies by id, not by value, so re-importing your own export lands every item
+    // here. Without this line that's a wall of updates with no explanation attached.
+    picks(current);
+    await chooseFile();
+
+    // One per updated row — the exercise and the workout — so every row on screen accounts for itself.
+    expect(screen.getAllByText('no field changes — replaced with an identical definition')).toHaveLength(2);
+  });
+
+  it('is translated', async () => {
+    await changeLanguage('pt');
+    picks(current);
+    await chooseFile();
+
+    expect(screen.getAllByText('nenhum campo alterado — substituído por uma definição idêntica')).toHaveLength(2);
   });
 });
 

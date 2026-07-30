@@ -261,6 +261,16 @@
     "updatedWorkout": "treino atualizado",
     "newProgram": "novo programa",
     "updatedProgram": "programa atualizado",
+    "diff": {
+      "type": "Tipo",
+      "notes": "Notas",
+      "blocks": "Blocos",
+      "exercises": "Exercícios",
+      "weeks": "Semanas",
+      "weeksChanged": "Semanas editadas",
+      "unset": "não definido",
+      "sameValues": "nenhum campo alterado — substituído por uma definição idêntica"
+    },
     "noChanges": "Nenhuma alteração — o arquivo importado é igual à sua biblioteca atual.",
     "updateNote": "Itens atualizados substituem ajustes locais. As sessões nunca são alteradas.",
     "mergeButton": "Mesclar e importar",

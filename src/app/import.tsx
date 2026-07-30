@@ -10,6 +10,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ModalHeader } from '@/components/modal-header';
 import { ThemedText } from '@/components/themed-text';
 import { buildAssistantBrief } from '@/domain/assistant-brief';
+import type { FieldChange } from '@/domain/library-diff';
+import { diffExercise, diffProgram, diffWorkout } from '@/domain/library-diff';
 import type { MergeError, MergeSummary } from '@/domain/merge';
 import { mergeLibraries } from '@/domain/merge';
 import type { Library } from '@/domain/types';
@@ -18,6 +20,7 @@ import { parseLibraryYaml } from '@/domain/yaml-mapping';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useLibraryStore } from '@/state/library-store';
+import { useUnitSystem } from '@/state/preferences-store';
 
 export { ModalErrorBoundary as ErrorBoundary } from '@/components/error-fallback';
 
@@ -70,6 +73,10 @@ export default function ImportScreen() {
   const { t } = useTranslation();
   const currentLibrary = useLibraryStore((state) => state.library);
   const replaceLibrary = useLibraryStore((state) => state.replaceLibrary);
+  // The diff prints a target weight, and a weight is never formatted without going through the
+  // preference — a kilogram figure shown to somebody working in pounds describes a change they didn't
+  // make.
+  const unitSystem = useUnitSystem();
 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<ImportError | null>(null);
@@ -210,18 +217,70 @@ export default function ImportScreen() {
   // merge writes all three (§6: surface updates clearly so local tweaks aren't lost silently). They
   // were missing from both, so a program-only file previewed as "0 new, 0 updated" and then merged
   // its programs anyway — the one case where the preview contradicted what the button was about to do.
+  /**
+   * What an updated id actually loses, per §6 and open question §12.5. Computed here rather than in
+   * `merge.ts` because both sides are already on hand — the store's library and the merged result —
+   * so the merge doesn't have to carry a diff nobody but this preview wants.
+   */
+  const changesFor = (kind: 'exercise' | 'workout' | 'program', id: string): FieldChange[] => {
+    if (!ready || !currentLibrary) return [];
+    switch (kind) {
+      case 'exercise': {
+        const before = currentLibrary.exercises.find((exercise) => exercise.id === id);
+        const after = ready.library.exercises.find((exercise) => exercise.id === id);
+        return before && after ? diffExercise(before, after, unitSystem) : [];
+      }
+      case 'workout': {
+        const before = currentLibrary.workouts.find((workout) => workout.id === id);
+        const after = ready.library.workouts.find((workout) => workout.id === id);
+        return before && after ? diffWorkout(before, after) : [];
+      }
+      case 'program': {
+        const before = currentLibrary.programs.find((program) => program.id === id);
+        const after = ready.library.programs.find((program) => program.id === id);
+        return before && after ? diffProgram(before, after) : [];
+      }
+    }
+  };
+
   const changedItems = ready
     ? [
-        ...ready.summary.newExercises.map((id) => ({ id, kind: 'new' as const, detail: t('import.newExercise') })),
+        ...ready.summary.newExercises.map((id) => ({
+          id,
+          kind: 'new' as const,
+          detail: t('import.newExercise'),
+          changes: [],
+        })),
         ...ready.summary.updatedExercises.map((id) => ({
           id,
           kind: 'updated' as const,
           detail: t('import.updatedExercise'),
+          changes: changesFor('exercise', id),
         })),
-        ...ready.summary.newWorkouts.map((id) => ({ id, kind: 'new' as const, detail: t('import.newWorkout') })),
-        ...ready.summary.updatedWorkouts.map((id) => ({ id, kind: 'updated' as const, detail: t('import.updatedWorkout') })),
-        ...ready.summary.newPrograms.map((id) => ({ id, kind: 'new' as const, detail: t('import.newProgram') })),
-        ...ready.summary.updatedPrograms.map((id) => ({ id, kind: 'updated' as const, detail: t('import.updatedProgram') })),
+        ...ready.summary.newWorkouts.map((id) => ({
+          id,
+          kind: 'new' as const,
+          detail: t('import.newWorkout'),
+          changes: [],
+        })),
+        ...ready.summary.updatedWorkouts.map((id) => ({
+          id,
+          kind: 'updated' as const,
+          detail: t('import.updatedWorkout'),
+          changes: changesFor('workout', id),
+        })),
+        ...ready.summary.newPrograms.map((id) => ({
+          id,
+          kind: 'new' as const,
+          detail: t('import.newProgram'),
+          changes: [],
+        })),
+        ...ready.summary.updatedPrograms.map((id) => ({
+          id,
+          kind: 'updated' as const,
+          detail: t('import.updatedProgram'),
+          changes: changesFor('program', id),
+        })),
       ]
     : [];
 
@@ -414,17 +473,42 @@ export default function ImportScreen() {
 
             <View style={styles.changedList}>
               {changedItems.map((item) => (
-                <View key={`${item.detail}-${item.id}`} style={styles.changedRow}>
-                  <ThemedText
-                    style={[styles.changedGlyph, { color: item.kind === 'new' ? theme.accentText : theme.accentCalmText }]}>
-                    {item.kind === 'new' ? '+' : '↻'}
-                  </ThemedText>
-                  <ThemedText type="smallMedium" style={styles.changedName}>
-                    {item.id}
-                  </ThemedText>
-                  <ThemedText type="small" themeColor="textSecondary">
-                    {item.detail}
-                  </ThemedText>
+                <View key={`${item.detail}-${item.id}`}>
+                  <View style={styles.changedRow}>
+                    <ThemedText
+                      style={[
+                        styles.changedGlyph,
+                        { color: item.kind === 'new' ? theme.accentText : theme.accentCalmText },
+                      ]}>
+                      {item.kind === 'new' ? '+' : '↻'}
+                    </ThemedText>
+                    <ThemedText type="smallMedium" style={styles.changedName}>
+                      {item.id}
+                    </ThemedText>
+                    <ThemedText type="small" themeColor="textSecondary">
+                      {item.detail}
+                    </ThemedText>
+                  </View>
+                  {/*
+                    Only for updates, and only what moved. An updated id whose definition is
+                    byte-identical says so instead of showing an empty indent — `mergeById` classifies
+                    by id, not by value, so re-importing your own export lands here for every item and
+                    would otherwise look like a wall of unexplained overwrites.
+                  */}
+                  {item.kind === 'updated' && (
+                    <View style={styles.diffList}>
+                      {item.changes.map((field) => (
+                        <ThemedText key={field.label} type="small" themeColor="textSecondary">
+                          {field.label}: {field.from} → {field.to}
+                        </ThemedText>
+                      ))}
+                      {item.changes.length === 0 && (
+                        <ThemedText type="small" themeColor="textSecondary">
+                          {t('import.diff.sameValues')}
+                        </ThemedText>
+                      )}
+                    </View>
+                  )}
                 </View>
               ))}
               {changedItems.length === 0 && (
@@ -576,6 +660,12 @@ const styles = StyleSheet.create({
   },
   changedName: {
     flex: 1,
+  },
+  // Indented under the id it belongs to, past the glyph column so the two read as one entry.
+  diffList: {
+    marginTop: 2,
+    marginLeft: 18 + Spacing.two + 2,
+    gap: 1,
   },
   note: {
     marginTop: Spacing.two + 4,

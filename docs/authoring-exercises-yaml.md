@@ -208,6 +208,84 @@ programs:
           workout: pull-day
   ```
 
+## Writing in another language
+
+The format itself has no language. Keys are always English snake_case — `target_reps_min` is a key,
+not a word that ever reaches the screen — and every value you *do* see in the app (`name`, `notes`, a
+program week's `day`) is user data: it renders verbatim, in whatever language you typed it, and is
+never passed through the app's translations. The app's own chrome (tabs, buttons, the set counter,
+the rest screen) follows the device language independently, in English or Brazilian Portuguese.
+
+So there is no per-locale name field, and nothing to add for one — a library is one person's file,
+and a Portuguese library is one whose names are written in Portuguese:
+
+```yaml
+version: 1
+
+exercises:
+  - id: descanso
+    name: Descanso
+    type: rest
+    config:
+      duration_sec: 90
+
+  - id: flexoes
+    name: Flexões
+    type: reps
+    config:
+      sets: 3
+      target_reps_min: 8
+      target_reps_max: 15
+      rest_sec: 60
+    notes: Pare 2 repetições antes da falha.
+
+  - id: prancha
+    name: Prancha
+    type: timed_hold
+    config:
+      sets: 3
+      hold_sec_min: 20
+      hold_sec_max: 45
+      rest_sec: 45
+
+workouts:
+  - id: treino-a
+    name: Treino A
+    blocks:
+      - type: exercise
+        exercise: flexoes
+      - type: exercise
+        exercise: descanso
+      - type: exercise
+        exercise: prancha
+
+programs: []
+```
+
+**Translating a library you already have is a rename of `name` (and `notes`) and nothing else.** Ids
+are the wiring — blocks, circuit members and program weeks all reference exercises and workouts by
+`id`, never by name — and every other field is a number, a type, or a duration, none of which change
+meaning with the reader. Keep the ids as they are and the whole structure survives the translation
+untouched. The practical route is to export the library (**Library → export**, or **Settings →
+Export library**), edit the names in the exported file, then import it back:
+
+- **Ids stay put.** Changing an `id` to match the new name doesn't rename anything — merge-by-id
+  would *add* a second exercise under the new id and leave the old one behind, with every workout
+  still pointing at the old one. Translate the names, leave the ids alone. (New ids you're inventing
+  from scratch can be written in any script — the app flattens Latin accents when deriving one from a
+  name, `Flexão` → `flexao`, but a hand-typed `flexões` is equally valid.)
+- **Each translated item has to carry its whole definition.** Import replaces a matching `id` with
+  the imported object outright rather than patching it, so an exercise entry that's only `id` +
+  `name` doesn't keep its old config — it fails validation for the missing `type`/`config`. Editing
+  an exported file rather than writing a fresh one gets this for free.
+- **Renaming one exercise is faster in the app** — Library → the exercise → edit its name. Export and
+  re-import is for doing all of them in one pass.
+
+The starter library the app seeds itself with on first launch follows the same rule from the other
+side: it's seeded in your device's language (English or Portuguese) and then it's *yours* — switching
+the app's language later won't rename it, because by then those names are your data like any others.
+Renaming them is the same edit as renaming anything else.
+
 ## A full, runnable example
 
 ```yaml

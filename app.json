@@ -12,6 +12,7 @@
     },
     "android": {
       "package": "com.casco.kettle",
+      "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#c05c2b",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -42,7 +43,12 @@
           "color": "#c05c2b"
         }
       ],
-      "expo-audio",
+      [
+        "expo-audio",
+        {
+          "recordAudioAndroid": false
+        }
+      ],
       "expo-localization",
       "expo-iap"
     ],

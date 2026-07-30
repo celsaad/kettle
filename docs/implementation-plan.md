@@ -72,9 +72,9 @@ a one-level `goPrev()` un-flush fix in the session runner. See `git log` for the
 schema covers all 7 product-plan types (`hiit`/`emom`/`amrap`/`reps`/`timed_hold`/`cardio`/`rest`)
 since library/import validation needs to recognize hand-authored files using any of them — but
 `amrap`'s config is just `time_cap_sec` (the plan's "movements" sub-field is undefined in the spec
-and unused anywhere, so it wasn't modeled). `SessionEntry`, by contrast, only covers `timed_hold` /
-`reps` / `rest` — the only shapes the runner can produce; extending it to log `hiit`/`emom`/`amrap`/
-`cardio` sessions is future work tied to extending the runner to those types (roadmap phases 3–4).
+and unused anywhere, so it wasn't modeled). `SessionEntry` started narrower than the config schema —
+`timed_hold` / `reps` / `rest`, the only shapes the runner could produce at the time — and now covers
+all seven, added alongside the interval runner that produces them (roadmap phases 3–4, both ✅).
 
 ## B. Storage layer (`src/storage/`) — ✅ done
 
@@ -651,6 +651,94 @@ failure mode the decision-log note above warns about, regrown one heading level 
     and the two biggest are the two riskiest to touch (`use-session-runner.ts` is the timer path). If
     `workout-editor.tsx` (785) is opened for a real reason, the seam is its two picker panels — they're
     self-contained, and `new-exercise-form.tsx` already embeds inside them.
+
+- **Color-code the session progress indicator.** The dots at the top of the runner
+  (`session-progress-dots.tsx`) are one per **workout block** — `total` is `workout.blocks.length` — not
+  one per circuit, so the first thing this has to settle is what a dot is colored *by*: a block is a
+  single exercise, a circuit, or a rest, and the middle one has no single type to color with. Three
+  constraints, none visible from the component itself:
+
+  - **The runner has two hues and they already mean something.** `RunnerColors` carries `accent` (warm)
+    and `accentCalm` (blue), and the split in use is work vs rest — `session-rest.tsx` is the only
+    screen on the calm one. A per-type scheme needs a categorical palette that doesn't exist yet; build
+    it through the `dataviz` skill's categorical procedure and run its validator against the runner's
+    fixed `background: '#17140d'` rather than picking seven hues by eye.
+  - **Hue can't be the only channel.** The dots are decorative geometry today — no label, no
+    screen-reader path, and a fixed `height: 4` that the a11y house rules exempt for exactly that
+    reason. The moment a color carries meaning that exemption lapses: it needs a second channel and it
+    stops being exempt from the contrast check.
+  - **Only the active dot is distinguished at all.** `dotActive` widens to 22 and takes `accent`;
+    completed and upcoming dots are an identical 9×4 at 22% opacity. So whether the useful thing to
+    encode is *type* or *progress* is the real question — both want the same channel, and progress is
+    the one a person mid-workout is actually asking about.
+
+- **Are seven exercise types enough?** Checked against the config shapes rather than brainstormed, so
+  the survey doesn't get re-run: one candidate is genuinely a new type, and most of what sounds like one
+  is already expressible.
+
+  - **`for_time` is the real gap** — fixed work, measure the clock. It's exactly `amrap` inverted
+    (`amrap` fixes the clock at `timeCapSec` and counts rounds), and nothing today records "3 rounds,
+    how long did that take". Needs its own `SessionEntry` shape (elapsed, plus whether a cap was hit)
+    and a count-up runner screen against a round target.
+  - **Already expressible — don't add a type for these:** Tabata is `hiit` at 20/10×8; E2MOM is `emom`
+    with `intervalSec: 120`; an unconfigured `cardio` is already a count-up stopwatch (see the
+    `validateConfig` entry); and distance repeats (400m × 6) are a one-member circuit with `rounds` and
+    rest, since `session-steps.ts` caps a circuit member at one set per round.
+  - **Config extensions, not types:** a weighted hold (`TimedHoldConfig` has no `targetWeightKg`, nor
+    `TimedHoldSetLog` a weight), tempo prescriptions, and per-set ladders/pyramids/drop sets. The last
+    is the largest by far — `RepsConfig` carries one target range for *all* sets and `buildSteps`
+    expands them uniformly, so per-set targets change the step model, not just a form.
+
+  Either way the compiler names the work: `ExerciseType` feeds the `Exercise` union, `CONFIG_FIELDS`'s
+  `Record<ExerciseType, …>`, and the two exhaustive `switch`es over `Exercise` — and a new
+  `SessionEntry` variant breaks the three over that — which is the payoff the decision log's
+  "parallel switches stay" entry was banking. `schema.ts`, `yaml-mapping.ts`, `TYPE_OPTIONS` and both
+  locale bundles are the parts it can't catch for you.
+
+- **An analytics screen — progress across the whole log, rather than one exercise at a time.**
+  *Analytics* here means **charts over the user's own local sessions**, and the word is doing dangerous
+  double duty: an analytics *SDK* is a hard no (see the tip-jar entry — zero data collected/shared is a
+  printed store claim), and nothing in this entry sends anything anywhere. Spelled out because "add
+  analytics" read out of context is precisely the change that breaks the Data Safety declaration.
+
+  **Placement is settled: it branches off History**, as a modal route pushed from that screen — not a
+  sixth tab. `(tabs)/_layout.tsx` already has five `NativeTabs.Trigger`s, which is the conventional
+  ceiling for a native tab bar, and History is where this belongs on the merits anyway: it owns the
+  session log and already carries the stat tiles and the search that narrows them. Concretely that means
+  a new `src/app/analytics.tsx` sibling registered in `_layout.tsx` with
+  `presentation: 'modal', headerShown: false` and opened with the shared `ModalHeader` — the same shape
+  as every other non-tab screen in the app, `program-detail.tsx` being the closest precedent (reached
+  from a tab, not from another modal). Two consequences: adding the route file means regenerating
+  `.expo/types/router.d.ts` by briefly running the dev server, or `router.push('/analytics')` fails
+  typecheck; and the entry point wants to be a header control on History rather than a row in the list,
+  which is already full of sessions.
+
+  Most of the math is already written and just isn't collected anywhere: `historyStats`, `thisWeekStats`
+  and `currentStreak` are on Today and History already, and `exerciseHistory` + `entryVolume` cover
+  per-exercise volume. Four things to settle before building, in rising order of cost:
+
+  - **`entryVolume` and `sessionSetCount` are module-private** in `selectors.ts` and need exporting,
+    exactly as `sessionEntrySummary` and `nextWeekAfter` did before them. The cheap part.
+  - **`VolumeChart` is the wrong component to reuse**, by its own design note: it's deliberately a
+    sparkline — no axes, direct value labels, sized to sit inline above a list that already states every
+    value. A screen-sized chart needs a scale, so it needs axes, gridlines and a tick strategy. That's a
+    new component built through the `dataviz` skill, not a wider `VolumeChart`.
+  - **Branching off History raises one question the tab version wouldn't have:** does the screen inherit
+    History's active search filter, or always aggregate all-time? History already sets a precedent in
+    the *other* direction — its stat tiles narrow to the visible subset, and the header switches from
+    "All time" to "N of M", because three all-time numbers above a filtered list would describe sessions
+    that aren't on screen. Arriving from a filtered History and showing unfiltered charts would break
+    that same expectation, so inheriting the filter is the consistent answer; it needs the same honest
+    header treatment rather than silently charting a subset.
+  - **This is the consumer that makes `listSessions()`'s O(all sessions ever logged) real.** It's in the
+    decision log as a risk with nothing exercising it; a screen whose whole job is aggregating all of
+    history is that something. The remedy named there still stands — lazy or paginated loading, or a
+    small index file — and explicitly *not* consolidating the per-session files.
+
+  One thing to decide up front rather than discover: an SVG chart has no screen-reader story, and the
+  precedent already set is that **the numbers ship as text as well** — the volume chart sits directly
+  above a list that spells out every value. A screen of charts with no textual equivalent would be the
+  first a11y regression since the house rules landed.
 
 ## Open bugs
 

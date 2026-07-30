@@ -1,9 +1,15 @@
 import type { Library } from '@/domain/types';
+import { localizeSeed } from '@/storage/seed-translations';
 
 /**
  * Written to exercises.yaml the first time the app launches and no library file exists yet, so the
  * app never opens empty — and it is also the web build's entire library and what a corrupt
  * exercises.yaml is reset to, which is why it stays deliberately small.
+ *
+ * **This is the structural definition, and it is written in English.** The names, notes and day
+ * labels a non-English user actually sees come from `seed-translations.ts`, applied over this by
+ * `seedLibraryFor` below — so an edit here (a new exercise, a changed week) is a content change every
+ * language's table then owes a string for, and `seed-library.test.ts` fails the ones that don't.
  *
  * This is curated starter content, not a format demo: two four-week programs a new user can press
  * start on without building anything first, plus two standalone workouts so all seven exercise
@@ -395,3 +401,14 @@ export const seedLibrary: Library = {
     },
   ],
 };
+
+/**
+ * The seed as the user's language will read it — the single entry point anything seeding a library
+ * should call. Falls back to the English structure above for any language with no table.
+ *
+ * The language is a parameter rather than read here so it stays testable per-language; `library-file`
+ * passes whatever i18next is currently on, which is the language the rest of the UI is rendering in.
+ */
+export function seedLibraryFor(language: string | undefined): Library {
+  return localizeSeed(seedLibrary, language);
+}

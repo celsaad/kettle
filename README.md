@@ -57,9 +57,11 @@ supply one; touch targets are 44px minimum; colors are contrast-checked against 
 on; the runner stays usable at large accessibility text sizes and announces step transitions to
 screen readers while respecting reduce-motion. Reordering workout blocks works by press-and-hold drag
 or, without sight, through the handle's move-up/move-down screen-reader actions. The program-format
-guide's prose is English-only by decision, not omission. The UI ships in English and Brazilian Portuguese (350 keys at parity), with dates,
-numbers, first-day-of-week and kg/lb all following the device locale by default. User data —
-exercise, workout and program names, and notes — is never translated.
+guide's prose is English-only by decision, not omission. The UI ships in English and Brazilian Portuguese (394 keys at parity), with dates,
+numbers, first-day-of-week and kg/lb all following the device locale by default, and the starter
+library a fresh install lands on is seeded in the same two languages. User data —
+exercise, workout and program names, and notes — is never translated: the seeded names included, once
+they're written, so changing language later never rewrites a library you've been editing.
 
 **Settings** covers appearance (light/dark/system), display units (kg/lb, seeded from the device's
 measurement system — storage stays metric, so an exported library reads the same everywhere), library

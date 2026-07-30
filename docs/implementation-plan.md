@@ -512,17 +512,35 @@ decision assembled across several commits. Open work belongs in the sections at 
     no-equipment program stays first, and the dumbbell one is browse-only until explicitly started.
   - **Multi-day weeks sort by `day.localeCompare`** (`nextWeekAfter`), so `Monday`/`Wednesday`/
     `Friday` would walk a week as *Friday → Monday → Wednesday*. Day labels have to sort in training
-    order, hence `Day 1`/`Day 2`/`Day 3`.
+    order, hence `Day 1`/`Day 2`/`Day 3` — and `Dia 1`/`Dia 2`/`Dia 3` in the translation, which is
+    pinned per-language by the test rather than left to whoever writes the next one.
   - **Weeks resolve sparsely and overrides don't carry forward.** Weeks 1/3/6 make "next up" skip 2, 4
     and 5 entirely, so a seeded program enumerates every week and repeats an override in each later
     week it should still apply to.
 
-  Two content rules, deliberate rather than incidental: seed content is **English-only** (a
-  locale-picked seed would double every future content edit, and this is the one place a name the user
-  dislikes is trivially renameable), and exercise `notes` describe **the app's own progression model
-  only** — never form cues, injury or diet, so the app keeps describing its data model rather than
-  prescribing training. The seed is also the web build's entire library and the reseed target for a
-  corrupt `exercises.yaml`, so it has to stay small enough to be a reasonable thing to reset to.
+  Two content rules, deliberate rather than incidental: exercise `notes` describe **the app's own
+  progression model only** — never form cues, injury or diet, so the app keeps describing its data
+  model rather than prescribing training — and the seed is also the web build's entire library and the
+  reseed target for a corrupt `exercises.yaml`, so it has to stay small enough to be a reasonable thing
+  to reset to.
+
+  **The seed ships per-language, as one English structure plus a string table** (`seed-translations.ts`)
+  — reversing an earlier English-only call, whose reasoning was that a locale-picked seed doubles every
+  future content edit. That cost is real and this shape is the answer to it, so the rule an edit has to
+  respect is: **structure changes once, and every language owes it a string.** `seed-library.test.ts`
+  fails the language that didn't get one, in both directions (a missing translation and a stale key
+  pointing at content that was renamed away), and runs every structural invariant above against every
+  language, because a translated seed is a real library a real first launch lands on. Two constraints
+  behind that shape, neither obvious from the files:
+
+  - **Seed strings must never live in `en.json`/`pt.json`.** The seed is written to `exercises.yaml`
+    and becomes the user's own data at that moment. Locale-bundle strings re-render on every language
+    change, which would rename exercises the user has since edited and logged against — the exact thing
+    the never-translate-user-data rule exists to prevent. Read once at seed time, then frozen.
+  - **The pick is shared with the corrupt-file reseed**, so a library corrupted after the user switched
+    device language comes back in the new one. Accepted rather than overlooked: the content is being
+    regenerated from scratch anyway, and the alternative is reseeding into a language the user is no
+    longer reading.
 - ✅ **The app authors format, never training intent — it owns nothing the user could call theirs.**
   Settled while scoping the AI-authoring work, where the open question was whether shipping a prompt
   template would make Kettle the owner of the advice that template produces. It doesn't, provided the

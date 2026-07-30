@@ -70,7 +70,15 @@ export default function ExerciseEditorScreen() {
       unitSystem,
       previousWeightKg: editing?.type === 'reps' ? editing.config.targetWeightKg : undefined,
     });
-    await saveExercise(exercise);
+    // A library write can fail for reasons the form can't prevent — a full disk, a permission the OS
+    // withdrew. Uncaught, the rejection went nowhere: `close()` never ran, so the modal just sat there
+    // looking like the button hadn't been pressed, with nothing said and nothing saved.
+    try {
+      await saveExercise(exercise);
+    } catch (err) {
+      setError(t('common.saveFailed', { detail: (err as Error).message }));
+      return;
+    }
     close();
   };
 
@@ -96,7 +104,12 @@ export default function ExerciseEditorScreen() {
         text: t('common.delete'),
         style: 'destructive',
         onPress: async () => {
-          await deleteExercise(editing.id);
+          try {
+            await deleteExercise(editing.id);
+          } catch (err) {
+            setError(t('common.deleteFailed', { detail: (err as Error).message }));
+            return;
+          }
           close();
         },
       },

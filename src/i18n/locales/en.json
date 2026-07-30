@@ -11,6 +11,8 @@
     "name": "Name",
     "nameRequired": "Name is required.",
     "couldNotDeriveId": "Could not derive an id from that name.",
+    "saveFailed": "Couldn't save that: {{detail}}",
+    "deleteFailed": "Couldn't delete that: {{detail}}",
     "deleteConfirmBody": "\"{{name}}\" will be permanently removed.",
     "decrease": "Decrease {{label}}",
     "increase": "Increase {{label}}"
@@ -55,7 +57,9 @@
     "searchPlaceholder": "Search workouts",
     "mixed": "mixed",
     "deleteConfirmTitle": "Delete session?",
-    "deleteConfirmBody": "\"{{name}}\" on {{day}} {{month}} will be permanently removed."
+    "deleteConfirmBody": "\"{{name}}\" on {{day}} {{month}} will be permanently removed.",
+    "problemsTitle_one": "{{count}} session file couldn't be read or written",
+    "problemsTitle_other": "{{count}} session files couldn't be read or written"
   },
   "library": {
     "title": "Library",

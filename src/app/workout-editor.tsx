@@ -68,7 +68,12 @@ export default function WorkoutEditorScreen() {
   // form: a plain block (addBlock also closes that picker) or a circuit-in-progress member selection
   // (kept open — building a circuit means picking several exercises, not just one).
   const handleCreateExercise = async (exercise: Exercise) => {
-    await saveExercise(exercise);
+    try {
+      await saveExercise(exercise);
+    } catch (err) {
+      setError(t('common.saveFailed', { detail: (err as Error).message }));
+      return;
+    }
     if (circuitPickerOpen) toggleCircuitMember(exercise.id);
     else addBlock(exercise.id);
     setNewExerciseOpen(false);
@@ -132,7 +137,12 @@ export default function WorkoutEditorScreen() {
       setError(t('common.couldNotDeriveId'));
       return;
     }
-    await saveWorkout({ ...draft, id: workoutId, name: draft.name.trim() });
+    try {
+      await saveWorkout({ ...draft, id: workoutId, name: draft.name.trim() });
+    } catch (err) {
+      setError(t('common.saveFailed', { detail: (err as Error).message }));
+      return;
+    }
     close();
   };
 
@@ -152,7 +162,12 @@ export default function WorkoutEditorScreen() {
         text: t('common.delete'),
         style: 'destructive',
         onPress: async () => {
-          await deleteWorkout(editing.id);
+          try {
+            await deleteWorkout(editing.id);
+          } catch (err) {
+            setError(t('common.deleteFailed', { detail: (err as Error).message }));
+            return;
+          }
           close();
         },
       },

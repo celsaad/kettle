@@ -11,6 +11,8 @@
     "name": "Nome",
     "nameRequired": "O nome é obrigatório.",
     "couldNotDeriveId": "Não foi possível gerar um id a partir desse nome.",
+    "saveFailed": "Não foi possível salvar: {{detail}}",
+    "deleteFailed": "Não foi possível excluir: {{detail}}",
     "deleteConfirmBody": "\"{{name}}\" será removido permanentemente.",
     "decrease": "Diminuir {{label}}",
     "increase": "Aumentar {{label}}"
@@ -55,7 +57,9 @@
     "searchPlaceholder": "Buscar treinos",
     "mixed": "misto",
     "deleteConfirmTitle": "Excluir sessão?",
-    "deleteConfirmBody": "\"{{name}}\" em {{day}} {{month}} será removida permanentemente."
+    "deleteConfirmBody": "\"{{name}}\" em {{day}} {{month}} será removida permanentemente.",
+    "problemsTitle_one": "{{count}} arquivo de sessão não pôde ser lido ou gravado",
+    "problemsTitle_other": "{{count}} arquivos de sessão não puderam ser lidos ou gravados"
   },
   "library": {
     "title": "Biblioteca",

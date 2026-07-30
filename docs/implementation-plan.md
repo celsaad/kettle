@@ -607,13 +607,28 @@ failure mode the decision-log note above warns about, regrown one heading level 
   will carry format and nothing else — see the ownership entry in the decision log for where that line
   falls.
 
-- **Audit for graceful degradation.** Error boundaries themselves are done — every route exports one
-  (`components/error-fallback.tsx`, with `session.tsx` and the root layout carrying their own), so a
-  render throw now costs one screen instead of the app. What's still a survey is the rest of the
-  degrade surface: the house pattern exists in places (`safe-iap.ts`, `safe-notifications.ts`, the
-  `isFileStorageSupported` guards, `library-file.ts` reseeding a corrupt `exercises.yaml`), and the
-  question is where else it's warranted — a throw inside an `onPress` or a promise, which no boundary
-  catches, is the obvious gap to start from.
+- ~~**Audit for graceful degradation.**~~ ✅ Done, and it found what it predicted it would: the gap was
+  entirely in the throws no boundary covers. Three shapes, all now closed, and the reasoning behind the
+  fixes is what's worth keeping:
+
+  - **A workout must outlive the disk that's recording it.** Session writes are synchronous and happen
+    inside the runner's `advance()` — an event handler or an interval tick, so *no* error boundary sees
+    them. A full disk ended the session between two sets. `writeSession` is now the single non-throwing
+    choke point every session write funnels through; a failure is recorded and stepped over, and
+    `takeWriteFailure()` is what keeps that from being silent. Deliberately not surfaced mid-set: the
+    person is holding a plank, and a dialog about free space is no more useful then than it is honest
+    to hide it afterwards.
+  - **The store's `errors` were collected and never rendered.** Since hydration existed: a session file
+    that wouldn't parse was known about and never mentioned. History shows them now, which is also
+    where the write failures above land.
+  - **Every library write reached the screens uncaught.** `saveExercise`/`saveWorkout`/`saveProgram`
+    and the three deletes were `await`ed and then followed by `close()`, so a failed write left the
+    modal sitting there looking like the button hadn't been pressed. All six now catch into the error
+    line each editor already had. Import was the only screen that ever did this, and it's the pattern
+    the rest copied.
+
+  Left alone deliberately: `savePreferences` already returns a boolean instead of throwing, and the tip
+  store already checks it.
 
 - **Audit for refactoring opportunities.** No single known offender, so this is a survey, not a fix
   with a known shape. Starting points: the five files over 450 lines (`workout-editor.tsx` at 785,

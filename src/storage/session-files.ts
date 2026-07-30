@@ -33,12 +33,44 @@ export async function listSessions(): Promise<ListSessionsResult> {
   return { sessions, errors };
 }
 
+/**
+ * Set by `writeSession` when a flush fails, read and cleared by `takeWriteFailure()`.
+ *
+ * Module state rather than a return value on purpose: every session write funnels through
+ * `writeSession`, and threading a success flag back out would change the signature of all five
+ * exported writers plus the store actions plus the runner's `sessionRef.current = logEntry(...)`
+ * chain — a wide change to the timer-critical path to report something none of those callers can act
+ * on mid-set anyway.
+ */
+let writeFailure: string | null = null;
+
+/** Reads and clears the last flush failure. The store calls this after each write to surface it. */
+export function takeWriteFailure(): string | null {
+  const failure = writeFailure;
+  writeFailure = null;
+  return failure;
+}
+
+/**
+ * The single choke point for every session write, and deliberately **non-throwing**.
+ *
+ * These writes are synchronous and happen inside the runner's `advance()` — an event handler or an
+ * interval tick, neither of which any error boundary covers. So a full disk mid-workout used to take
+ * the runner down between two sets: the set was done, the app was gone, and what had already been
+ * flushed was all that survived. A workout has to outlive the disk that's recording it — losing the
+ * log is bad, losing the session in progress is worse — so a failure is recorded and stepped over,
+ * and `takeWriteFailure` is what stops that from being silent.
+ */
 function writeSession(session: Session): void {
   if (!isFileStorageSupported) return;
-  ensureStorageReady();
-  const file = sessionFile(session.id);
-  if (!file.exists) file.create({ intermediates: true, overwrite: true });
-  file.write(serializeSessionYaml(session));
+  try {
+    ensureStorageReady();
+    const file = sessionFile(session.id);
+    if (!file.exists) file.create({ intermediates: true, overwrite: true });
+    file.write(serializeSessionYaml(session));
+  } catch (err) {
+    writeFailure = `${session.id}: ${(err as Error).message}`;
+  }
 }
 
 /** Creates and immediately flushes a new session file. Call at session start (§7.2: never hold a live session only in memory). */

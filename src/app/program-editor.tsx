@@ -90,7 +90,12 @@ export default function ProgramEditorScreen() {
       setError(t('common.couldNotDeriveId'));
       return;
     }
-    await saveProgram({ ...draft, id: programId, name: draft.name.trim() });
+    try {
+      await saveProgram({ ...draft, id: programId, name: draft.name.trim() });
+    } catch (err) {
+      setError(t('common.saveFailed', { detail: (err as Error).message }));
+      return;
+    }
     close();
   };
 
@@ -102,7 +107,12 @@ export default function ProgramEditorScreen() {
         text: t('common.delete'),
         style: 'destructive',
         onPress: async () => {
-          await deleteProgram(editing.id);
+          try {
+            await deleteProgram(editing.id);
+          } catch (err) {
+            setError(t('common.deleteFailed', { detail: (err as Error).message }));
+            return;
+          }
           close();
         },
       },

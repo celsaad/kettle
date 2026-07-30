@@ -523,6 +523,22 @@ decision assembled across several commits. Open work belongs in the sections at 
   only** — never form cues, injury or diet, so the app keeps describing its data model rather than
   prescribing training. The seed is also the web build's entire library and the reseed target for a
   corrupt `exercises.yaml`, so it has to stay small enough to be a reasonable thing to reset to.
+- ✅ **The app authors format, never training intent — it owns nothing the user could call theirs.**
+  Settled while scoping the AI-authoring work, where the open question was whether shipping a prompt
+  template would make Kettle the owner of the advice that template produces. It doesn't, provided the
+  template carries **format only**: the schema, the user's own ids/names/types, and the importer's own
+  error text. What it must never carry is intent — goals, set/rep prescriptions, progression schemes,
+  exercise selection, or anything about the user's body. Ask of any string the app emits toward an
+  assistant: if the generated program turns out badly, does this sentence make that Kettle's fault?
+
+  This is the same line the seed library's `notes` rule is drawn to stay behind, and it doesn't
+  disturb it: seeded content is editable starter data under that rule, not advice the app stands
+  behind. The worked example already in the tree is import's repair prompt — "fix the YAML and send
+  back the corrected file", not a word about training. The reason it's a constraint rather than a
+  preference is that data ownership is the entire pitch: an app with no backend and no account has
+  nothing to stand behind a training claim with, and the moment it ships one, the contents of the
+  user's library stop being solely theirs.
+
 - ✅ **Fixed: `exportLibrary`/`exportSession` threw past their own `.catch()`.** Resolving `.uri`
   constructs an `expo-file-system` `File`, which has no web implementation and throws *synchronously* —
   before `share()`'s async body is entered — so the throw escaped the returned promise and every
@@ -547,7 +563,10 @@ failure mode the decision-log note above warns about, regrown one heading level 
   whole objects by id rather than patching, and the summary names what changed before anything is
   written. Nothing in the data model needs to change for this, which is the whole argument for
   positioning the app this way (store listing and README, not a new SKU — see the tip-jar entry on why
-  there's no paid tier to attach it to). What's missing is the plumbing around it:
+  there's no paid tier to attach it to). **The plumbing is now complete** — all four pieces below
+  shipped, and the loop runs end to end: copy the format out, paste the YAML back, copy the refusal
+  out if it's wrong. What's left is the positioning itself, which is store-listing and README copy
+  rather than code:
 
   - ~~**A paste path into import.**~~ ✅ Shipped. Both input sources funnel through one
     `review(text, source)`, so a paste is refused for the same reasons and in the same words as a
@@ -560,13 +579,18 @@ failure mode the decision-log note above warns about, regrown one heading level 
     `Object.prototype`, and a name carrying `<script>` renders as inert text. The one real residual
     is that js-yaml applies no alias-expansion limit, so a crafted anchor bomb can hang the app —
     reachable through the picker long before paste existed, and a DoS on the user's own device.
-  - **A machine-readable schema to hand the model.** `authoring-exercises-yaml.md` is written for
-    humans and is a hand-maintained second copy of `schema.ts` (it has drifted before). zod v4 is
-    already a dependency and `z.toJSONSchema()` exists, so a JSON Schema is a *generated* artifact —
-    no third copy to keep in sync.
-  - **The user's existing ids, alongside it.** Merge-by-id means a generated program referencing
-    `pullups` only works if that id exists, so whatever gets copied out has to include the library's
-    current ids/names/types, not just the format.
+  - ~~**A machine-readable schema to hand the model.**~~ ~~**The user's existing ids, alongside
+    it.**~~ ✅ Both shipped, as one payload: `domain/assistant-brief.ts` builds a "Copy the format for
+    an assistant" brief of `z.toJSONSchema(rawLibrarySchema)` plus every id/name/type currently in the
+    library, and the import screen copies it. Generated rather than written out, so it can't drift
+    from what the importer accepts — which was the whole argument, given
+    `authoring-exercises-yaml.md` had already drifted. Two things worth knowing before extending it:
+    `toJSONSchema` **silently drops zod's cross-field refinements** (`target_reps_max >=
+    target_reps_min`, an override targeting exactly one of `exercise`/`block`, unique `(week, day)`),
+    so the brief tells the model the importer checks more than the schema shows and leaves the rest to
+    the repair loop rather than restating those rules and becoming the third copy; and the brief is
+    scoped to the *format* side of the ownership line (decision log), which is what a test in
+    `assistant-brief.test.ts` pins rather than a comment.
   - ~~**A repair loop from the errors we now return.**~~ ✅ Shipped. A refusal now carries a "Copy
     error" button that puts one framing line plus the refusal itself on the clipboard, so a rejected
     file goes straight back to the assistant that wrote it. Two calls worth not re-litigating: the
@@ -579,26 +603,54 @@ failure mode the decision-log note above warns about, regrown one heading level 
   **Hard constraint, decided in advance:** the app must never call a model itself. The Play listing
   declares zero data collected/shared (see the tip-jar entry), and an API key field or an in-app
   "generate" button breaks that claim and needs a Data Safety declaration. This is bring-your-own
-  assistant: generated anywhere, imported here. **Still to decide:** whether shipping a prompt
-  template makes the app the owner of the training advice it produces — the same line the seed
-  library's notes rule (decision log) is drawn to stay behind.
+  assistant: generated anywhere, imported here. **Settled:** a prompt template may ship, because it
+  will carry format and nothing else — see the ownership entry in the decision log for where that line
+  falls.
 
-- **Audit for graceful degradation.** Error boundaries themselves are done — every route exports one
-  (`components/error-fallback.tsx`, with `session.tsx` and the root layout carrying their own), so a
-  render throw now costs one screen instead of the app. What's still a survey is the rest of the
-  degrade surface: the house pattern exists in places (`safe-iap.ts`, `safe-notifications.ts`, the
-  `isFileStorageSupported` guards, `library-file.ts` reseeding a corrupt `exercises.yaml`), and the
-  question is where else it's warranted — a throw inside an `onPress` or a promise, which no boundary
-  catches, is the obvious gap to start from.
+- ~~**Audit for graceful degradation.**~~ ✅ Done, and it found what it predicted it would: the gap was
+  entirely in the throws no boundary covers. Three shapes, all now closed, and the reasoning behind the
+  fixes is what's worth keeping:
 
-- **Audit for refactoring opportunities.** No single known offender, so this is a survey, not a fix
-  with a known shape. Starting points: the five files over 450 lines (`workout-editor.tsx` at 785,
-  `use-session-runner.ts` at 649, `yaml-mapping.ts` at 520, `program-override-editor.tsx` at 482,
-  `selectors.ts` at 461); the four parallel `switch (entry.type)` blocks over
-  `SessionEntry` in `selectors.ts`, which grow together every time an entry type is added; and
-  `new-exercise-form.tsx`, a deliberate mini-copy of `exercise-editor.tsx`'s form whose duplication
-  was accepted at the time and is worth re-checking. Worth doing with the same bar the `slugify`
-  dedup was held to: only where the copies have actually drifted or would.
+  - **A workout must outlive the disk that's recording it.** Session writes are synchronous and happen
+    inside the runner's `advance()` — an event handler or an interval tick, so *no* error boundary sees
+    them. A full disk ended the session between two sets. `writeSession` is now the single non-throwing
+    choke point every session write funnels through; a failure is recorded and stepped over, and
+    `takeWriteFailure()` is what keeps that from being silent. Deliberately not surfaced mid-set: the
+    person is holding a plank, and a dialog about free space is no more useful then than it is honest
+    to hide it afterwards.
+  - **The store's `errors` were collected and never rendered.** Since hydration existed: a session file
+    that wouldn't parse was known about and never mentioned. History shows them now, which is also
+    where the write failures above land.
+  - **Every library write reached the screens uncaught.** `saveExercise`/`saveWorkout`/`saveProgram`
+    and the three deletes were `await`ed and then followed by `close()`, so a failed write left the
+    modal sitting there looking like the button hadn't been pressed. All six now catch into the error
+    line each editor already had. Import was the only screen that ever did this, and it's the pattern
+    the rest copied.
+
+  Left alone deliberately: `savePreferences` already returns a boolean instead of throwing, and the tip
+  store already checks it.
+
+- ✅ **Audit for refactoring opportunities — surveyed, and the answer is mostly "don't".** Held to the
+  bar the `slugify` dedup set: only where the copies have actually drifted or would. Recorded because
+  each of these looks like an obvious cleanup until you check, and re-proposing them is the likelier
+  failure than leaving them:
+
+  - **The parallel `switch` blocks stay.** There are five, not four — three over `SessionEntry`
+    (`entrySetCount`, `sessionEntryResult`, `entryVolume`) and two over `Exercise`
+    (`estimateExerciseSeconds`, `memberVisitSeconds`). Every one is exhaustive over a discriminated
+    union **with no `default`**, so adding a type is already a *compile error* in each place that
+    hasn't been updated. The drift they'd be consolidated to prevent cannot happen silently, and a
+    per-type record of lambdas would trade three separately-named, separately-documented functions
+    computing three different things for one table with worse narrowing.
+  - **`new-exercise-form.tsx` is no longer a meaningful copy.** It and `exercise-editor.tsx` and
+    `program-override-editor.tsx` all import the same `buildExercise`/`CONFIG_FIELDS`/`TYPE_OPTIONS`/
+    `validateConfig`/`configToStrings`/`fieldUnitLabel` from `domain/exercise-form.ts`. What's left
+    duplicated is JSX layout for a different container with different actions, and no logic has
+    drifted — `validateConfig` is wired in both save paths.
+  - **The long files stay until something needs changing in them.** No defect tracks to any of them,
+    and the two biggest are the two riskiest to touch (`use-session-runner.ts` is the timer path). If
+    `workout-editor.tsx` (785) is opened for a real reason, the seam is its two picker panels — they're
+    self-contained, and `new-exercise-form.tsx` already embeds inside them.
 
 ## Open bugs
 
@@ -658,13 +710,17 @@ structural ones:
   mean a browser check of any confirm flow proves nothing unless the script patches it, which is how
   session delete was actually verified end to end.
 
-## Open questions from the product plan, still open
+## Open questions from the product plan — all five settled
 
-- Timed-hold display direction: count down from target, or count up with target as a marker (§12.2).
-  Current UI counts up (unchanged from the pre-existing mock UI).
-- Merge conflict transparency: diff view vs. simple updated count (§12.5). Currently a simple
-  new/updated count + changed-id list, no field-level diff.
+Kept as a record of where each landed, since §12 is where they're numbered.
 
-Settled since this was written: `hiit`/`emom`/`amrap`/`cardio` are all runnable in the session
-screen now (a unified interval runner, with matching `SessionEntry` log shapes added to the domain
-model), and the `blocks` model grew a `circuit` kind for supersets/circuits (§12.4) without a rewrite.
+- **Timed-hold direction** (§12.2): **count up, with the range as a marker.** A countdown has no
+  non-arbitrary number to count from once the target is a range (`hold_sec_min` + optional
+  `hold_sec_max`), and counting up is what the log records. The bar spans the top of the range with the
+  minimum marked part-way along.
+- **Merge conflict transparency** (§12.5): **a field-level diff** (`domain/library-diff.ts`), shallower
+  for workouts and programs than for exercises — see §12.5 for why that asymmetry is deliberate.
+- Earlier: `rest` stayed first-class (§12.1), rep-block rest is an auto timer that's skippable
+  (§12.3), and `blocks` grew a `circuit` kind for supersets/circuits (§12.4) without a rewrite.
+  `hiit`/`emom`/`amrap`/`cardio` are all runnable now, on a unified interval runner with matching
+  `SessionEntry` log shapes.

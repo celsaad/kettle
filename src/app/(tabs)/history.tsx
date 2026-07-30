@@ -20,6 +20,10 @@ export default function HistoryScreen() {
   const library = useLibraryStore((state) => state.library);
   const sessions = useSessionHistoryStore((state) => state.sessions);
   const deleteSession = useSessionHistoryStore((state) => state.deleteSession);
+  // Collected since hydration existed and rendered nowhere: a session file that wouldn't parse, or one
+  // the disk wouldn't take mid-workout, was known about and never mentioned. History is where a
+  // session that's missing or short would be noticed, so it's where the reason belongs.
+  const sessionErrors = useSessionHistoryStore((state) => state.errors);
   const [query, setQuery] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -81,6 +85,19 @@ export default function HistoryScreen() {
               : t('history.allTime')}
           </ThemedText>
         </View>
+
+        {sessionErrors.length > 0 && (
+          <View style={[styles.problemCard, { borderColor: theme.accentText }]}>
+            <ThemedText type="smallMedium" style={{ color: theme.accentText }}>
+              {t('history.problemsTitle', { count: sessionErrors.length })}
+            </ThemedText>
+            {sessionErrors.map((problem) => (
+              <ThemedText key={problem} type="small" themeColor="textSecondary">
+                {problem}
+              </ThemedText>
+            ))}
+          </View>
+        )}
 
         <View style={styles.statsRow}>
           <ThemedView type="backgroundElement" style={[styles.statCard, { borderColor: theme.border }]}>
@@ -199,6 +216,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'baseline',
+  },
+  problemCard: {
+    marginTop: Spacing.two,
+    gap: 2,
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: Spacing.two,
   },
   statsRow: {
     flexDirection: 'row',

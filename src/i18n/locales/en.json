@@ -11,6 +11,8 @@
     "name": "Name",
     "nameRequired": "Name is required.",
     "couldNotDeriveId": "Could not derive an id from that name.",
+    "saveFailed": "Couldn't save that: {{detail}}",
+    "deleteFailed": "Couldn't delete that: {{detail}}",
     "deleteConfirmBody": "\"{{name}}\" will be permanently removed.",
     "decrease": "Decrease {{label}}",
     "increase": "Increase {{label}}"
@@ -55,7 +57,9 @@
     "searchPlaceholder": "Search workouts",
     "mixed": "mixed",
     "deleteConfirmTitle": "Delete session?",
-    "deleteConfirmBody": "\"{{name}}\" on {{day}} {{month}} will be permanently removed."
+    "deleteConfirmBody": "\"{{name}}\" on {{day}} {{month}} will be permanently removed.",
+    "problemsTitle_one": "{{count}} session file couldn't be read or written",
+    "problemsTitle_other": "{{count}} session files couldn't be read or written"
   },
   "library": {
     "title": "Library",
@@ -190,6 +194,9 @@
     "importLibrary": "Import library",
     "importLibraryDetail": "Merge a .yaml file into what you already have.",
     "sessionsStayNote": "Sessions stay on this device — export covers the library only.",
+    "files": "Backups and sync",
+    "filesLocal": "Your library and every session live in this app's own folder on this device. Nothing is uploaded and there's no account, so a backup is something you make rather than something that happens.",
+    "filesSync": "Export sends exercises.yaml wherever you keep files — a cloud drive, a git repo, a mail to yourself. A single session exports the same way from History. Import brings one back, merging by id, so a returning file updates only the items it names.",
     "inYourLibrary": "In your library",
     "exercises": "Exercises",
     "sessions": "Sessions",
@@ -233,6 +240,17 @@
     "pastedLines_other": "{{count}} lines pasted",
     "libraryNotLoaded": "Library is not loaded yet.",
     "repairPrompt": "Kettle refused this exercises.yaml on import. Please fix the YAML and send back the corrected file.",
+    "copyBrief": "Copy the format for an assistant",
+    "copyBriefDetail": "The schema plus the ids already in your library",
+    "brief": {
+      "prompt": "This is the file format the Kettle workout app imports, and the ids already in my library. Reply with YAML matching the schema below. Reuse an existing id to replace that item; use a new id to add one. The app validates a few cross-field rules the schema can't express — if it refuses the file, it says why, and I'll paste that back to you.",
+      "inventoryHeading": "## Ids already in my library",
+      "exercisesLabel": "exercises:",
+      "workoutsLabel": "workouts:",
+      "programsLabel": "programs:",
+      "none": "(none yet)",
+      "schemaHeading": "## JSON Schema for exercises.yaml"
+    },
     "copyError": "Copy error",
     "copied": "Copied",
     "copiedAnnouncement": "Error copied to the clipboard",
@@ -247,6 +265,16 @@
     "updatedWorkout": "updated workout",
     "newProgram": "new program",
     "updatedProgram": "updated program",
+    "diff": {
+      "type": "Type",
+      "notes": "Notes",
+      "blocks": "Blocks",
+      "exercises": "Exercises",
+      "weeks": "Weeks",
+      "weeksChanged": "Weeks edited",
+      "unset": "not set",
+      "sameValues": "no field changes — replaced with an identical definition"
+    },
     "noChanges": "No changes — the imported file matches your current library.",
     "updateNote": "Updated items replace local tweaks. Sessions are never touched.",
     "mergeButton": "Merge & import",

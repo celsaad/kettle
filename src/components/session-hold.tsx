@@ -63,7 +63,17 @@ export function SessionHold({
   // week's `hold_sec_min: 0` override reaches here unchecked from either direction — the override
   // schema types `config` as a free record of numbers, and the in-app override editor doesn't run
   // validateConfig either.
-  const fillPct = targetSec > 0 ? Math.min(100, (elapsedSec / targetSec) * 100) : 0;
+  //
+  // The bar spans the *top* of the range, not the bottom (§12.2, settled): a range hold scaled to its
+  // minimum pegged at 100% the moment the minimum was reached and stayed there for the whole span the
+  // range exists to describe — so on a 15–25s hold the bar was uninformative across exactly the
+  // seconds that decide the set. Scaled to the maximum, the fill keeps moving to the end, and the
+  // minimum becomes a mark to cross rather than the finish line.
+  const barSec = targetMaxSec && targetMaxSec > targetSec ? targetMaxSec : targetSec;
+  const fillPct = barSec > 0 ? Math.min(100, (elapsedSec / barSec) * 100) : 0;
+  // Where "enough" sits on that bar: the end of the track for a single target, part-way along it for a
+  // range. Guarded with the fill, since a 0 target divides here too.
+  const markerPct = barSec > 0 ? Math.min(100, (targetSec / barSec) * 100) : 100;
 
   return (
     <View style={styles.container}>
@@ -100,7 +110,7 @@ export function SessionHold({
         </View>
         <View style={styles.progressTrack}>
           <View style={[styles.progressFill, { width: `${fillPct}%` }]} />
-          <View style={styles.progressMarker} />
+          <View style={[styles.progressMarker, { left: `${markerPct}%` }]} />
         </View>
         <ThemedText type="small" style={styles.captionLabel}>
           {t('session.hold.caption', { target: targetMaxSec ? `${targetSec}–${targetMaxSec}` : targetSec })}
@@ -213,9 +223,9 @@ const styles = StyleSheet.create({
     backgroundColor: RunnerColors.accent,
     borderRadius: 3,
   },
+  // `left` is set inline: it marks the range's minimum, which is only 100% when there's no range.
   progressMarker: {
     position: 'absolute',
-    left: '100%',
     top: -5,
     width: 2,
     height: 16,

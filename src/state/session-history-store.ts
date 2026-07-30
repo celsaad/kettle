@@ -9,6 +9,7 @@ import {
   listSessions,
   removeLastSessionEntry,
   replaceSessionEntry,
+  takeWriteFailure,
 } from '@/storage/session-files';
 
 type SessionHistoryState = {
@@ -55,6 +56,17 @@ type SessionHistoryState = {
   deleteSession: (id: string) => void;
 };
 
+/**
+ * Merges any flush failure from the write that just happened into the store's own `errors`, which
+ * History renders. The writes themselves can't throw (see `writeSession`) — this is what keeps a disk
+ * that stopped accepting the session from being invisible rather than fatal.
+ */
+function withWriteFailure(errors: string[]): string[] {
+  const failure = takeWriteFailure();
+  // Deduped: a disk that's full stays full, and one line per set would bury every other error.
+  return failure && !errors.includes(failure) ? [...errors, failure] : errors;
+}
+
 export const useSessionHistoryStore = create<SessionHistoryState>((set, get) => ({
   status: 'idle',
   sessions: [],
@@ -68,28 +80,38 @@ export const useSessionHistoryStore = create<SessionHistoryState>((set, get) => 
   startSession: (workoutId, programId, programWeek, programDay) => {
     const id = new Date().toISOString().replace(/[:.]/g, '-');
     const session = createSession(id, workoutId, programId, programWeek, programDay, new Date().toISOString());
-    set({ sessions: [session, ...get().sessions], activeSessionId: id });
+    set({ sessions: [session, ...get().sessions], errors: withWriteFailure(get().errors), activeSessionId: id });
     return session;
   },
   logEntry: (session, entry) => {
     const updated = appendSessionEntry(session, entry);
-    set({ sessions: get().sessions.map((existing) => (existing.id === updated.id ? updated : existing)) });
+    set({
+      sessions: get().sessions.map((existing) => (existing.id === updated.id ? updated : existing)),
+      errors: withWriteFailure(get().errors),
+    });
     return updated;
   },
   replaceEntry: (session, index, entry) => {
     const updated = replaceSessionEntry(session, index, entry);
-    set({ sessions: get().sessions.map((existing) => (existing.id === updated.id ? updated : existing)) });
+    set({
+      sessions: get().sessions.map((existing) => (existing.id === updated.id ? updated : existing)),
+      errors: withWriteFailure(get().errors),
+    });
     return updated;
   },
   removeLastEntry: (session) => {
     const updated = removeLastSessionEntry(session);
-    set({ sessions: get().sessions.map((existing) => (existing.id === updated.id ? updated : existing)) });
+    set({
+      sessions: get().sessions.map((existing) => (existing.id === updated.id ? updated : existing)),
+      errors: withWriteFailure(get().errors),
+    });
     return updated;
   },
   completeSession: (session) => {
     const updated = finalizeSession(session, new Date().toISOString());
     set({
       sessions: get().sessions.map((existing) => (existing.id === updated.id ? updated : existing)),
+      errors: withWriteFailure(get().errors),
       activeSessionId: null,
     });
     return updated;
@@ -107,11 +129,21 @@ export const useSessionHistoryStore = create<SessionHistoryState>((set, get) => 
     const updated = finalizeSession(active, new Date().toISOString());
     set({
       sessions: sessions.map((existing) => (existing.id === updated.id ? updated : existing)),
+      errors: withWriteFailure(get().errors),
       activeSessionId: null,
     });
   },
   deleteSession: (id) => {
-    deleteSessionFile(id);
-    set({ sessions: get().sessions.filter((session) => session.id !== id) });
+    // Called straight from an Alert button, which is an event handler: a throw here is caught by no
+    // error boundary and takes the tab down. The file is what's being deleted, so a failure has to
+    // leave the session in the list — dropping it from state anyway would show it gone until the next
+    // launch brought it back.
+    try {
+      deleteSessionFile(id);
+    } catch (err) {
+      set({ errors: [...get().errors, `${id}: ${(err as Error).message}`] });
+      return;
+    }
+    set({ sessions: get().sessions.filter((session) => session.id !== id), errors: withWriteFailure(get().errors) });
   },
 }));

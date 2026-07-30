@@ -226,6 +226,22 @@ export default function SettingsScreen() {
           </Section>
         )}
 
+        {/*
+          The sync story, which the product plan leaves to the user and the app never explained. It
+          deliberately does not tell anyone to point a sync client at the app's folder: on Android
+          that path isn't reachable without adb, and this app declares no iOS file sharing either — so
+          export/import genuinely *is* the mechanism, and naming a directory would only send people
+          looking for something they can't open.
+        */}
+        <Section title={t('settings.files')}>
+          <ThemedText type="small" themeColor="textSecondary">
+            {t('settings.filesLocal')}
+          </ThemedText>
+          <ThemedText type="small" themeColor="textSecondary" style={styles.caption}>
+            {t('settings.filesSync')}
+          </ThemedText>
+        </Section>
+
         <Section title={t('settings.inYourLibrary')}>
           <ThemedView type="backgroundElement" style={[styles.countsCard, { borderColor: theme.border }]}>
             {counts.map((count) => (

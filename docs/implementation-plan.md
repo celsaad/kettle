@@ -760,6 +760,18 @@ failure mode the decision-log note above warns about, regrown one heading level 
   above a list that spells out every value. A screen of charts with no textual equivalent would be the
   first a11y regression since the house rules landed.
 
+- **Drive a running session from the wrist.** Wear OS bridges phone notifications, action buttons
+  included, so an ongoing notification carrying Done / Back / +30s is a watch remote with no watch app,
+  no second APK and no sync layer — and the runner's public API is already exactly that vocabulary
+  (`advance()` takes no arguments and reads the step's targets). Full write-up, the verified
+  expo-notifications facts it rests on and the deliberate scope cuts in
+  [`watch-remote-plan.md`](watch-remote-plan.md). Two things worth knowing before opening it: the
+  standalone Wear OS app was costed and rejected because per-device `expo-file-system` storage makes a
+  data-carrying watch a Bluetooth sync project, and `opensAppToForeground` defaults to `true`, which
+  would make every wrist tap yank the phone open. Carries a fix for a live i18n break at
+  `use-session-runner.ts:511`, where the rest notification's copy is hardcoded English outside the
+  locale bundles.
+
 ## Open bugs
 
 Found while planning the tests/a11y/i18n work (see `testing-a11y-i18n-plan.md`), each verified against

@@ -1,0 +1,332 @@
+# Kettle example library — Push / Pull / Legs, 6 weeks
+#
+# Three sessions a week for six weeks: a push day, a pull day and a leg day, with
+# volume added in weeks 3–5 and a deload in week 6. Equipment: a barbell, plates,
+# dumbbells and a bar to hang from.
+#
+# The weights below are placeholders in KILOGRAMS — Kettle always stores kg and
+# converts for display, so a file means the same thing whoever opens it. Replace
+# them with yours before the first session.
+#
+# To use it: Kettle → Library → Import → pick this file, or paste the whole text
+# into Library → Import → Paste YAML instead.
+#
+# Import merges by id, so every id below is prefixed `ppl-` and can never replace
+# something already in your library.
+#
+# Format reference: https://celsaad.github.io/kettle/format.html
+
+version: 1
+
+exercises:
+  - id: ppl-rest
+    name: Rest
+    type: rest
+    config:
+      duration_sec: 120
+
+  # --- Push ---
+  - id: ppl-bench-press
+    name: Bench Press
+    type: reps
+    config:
+      sets: 4
+      target_reps_min: 5
+      target_reps_max: 8
+      target_weight: 50
+      rest_sec: 180
+    notes: Add 2.5 kg once all sets reach 8.
+
+  - id: ppl-overhead-press
+    name: Overhead Press
+    type: reps
+    config:
+      sets: 3
+      target_reps_min: 6
+      target_reps_max: 10
+      target_weight: 30
+      rest_sec: 120
+
+  - id: ppl-dips
+    name: Dips
+    type: reps
+    config:
+      sets: 3
+      target_reps_min: 6
+      target_reps_max: 12
+      rest_sec: 90
+    notes: Bodyweight until 3 × 12, then hang weight from a belt.
+
+  - id: ppl-lateral-raise
+    name: Dumbbell Lateral Raise
+    type: reps
+    config:
+      sets: 3
+      target_reps_min: 12
+      target_reps_max: 15
+      target_weight: 8
+      rest_sec: 60
+
+  # --- Pull ---
+  - id: ppl-deadlift
+    name: Deadlift
+    type: reps
+    config:
+      sets: 3
+      target_reps_min: 5
+      target_weight: 80
+      rest_sec: 180
+    notes: A fixed target of 5 — no range, so no `target_reps_max` here.
+
+  - id: ppl-pullups
+    name: Pull-ups
+    type: reps
+    config:
+      sets: 4
+      target_reps_min: 5
+      target_reps_max: 8
+      rest_sec: 120
+    notes: Bands or a machine count. Log what you actually did.
+
+  - id: ppl-barbell-row
+    name: Barbell Row
+    type: reps
+    config:
+      sets: 4
+      target_reps_min: 6
+      target_reps_max: 10
+      target_weight: 40
+      rest_sec: 120
+
+  - id: ppl-curl
+    name: Dumbbell Curl
+    type: reps
+    config:
+      sets: 3
+      target_reps_min: 10
+      target_reps_max: 12
+      target_weight: 12
+      rest_sec: 60
+
+  # --- Legs ---
+  - id: ppl-back-squat
+    name: Back Squat
+    type: reps
+    config:
+      sets: 5
+      target_reps_min: 5
+      target_weight: 60
+      rest_sec: 180
+
+  - id: ppl-romanian-deadlift
+    name: Romanian Deadlift
+    type: reps
+    config:
+      sets: 3
+      target_reps_min: 8
+      target_reps_max: 10
+      target_weight: 50
+      rest_sec: 120
+
+  - id: ppl-walking-lunge
+    name: Walking Lunge
+    type: reps
+    config:
+      sets: 3
+      target_reps_min: 10
+      target_reps_max: 12
+      rest_sec: 60
+
+  - id: ppl-calf-raise
+    name: Standing Calf Raise
+    type: reps
+    config:
+      sets: 3
+      target_reps_min: 12
+      target_reps_max: 20
+      rest_sec: 45
+
+  - id: ppl-hollow-hold
+    name: Hollow Hold
+    type: timed_hold
+    config:
+      sets: 3
+      hold_sec_min: 20
+      hold_sec_max: 40
+      rest_sec: 45
+
+workouts:
+  - id: ppl-push
+    name: Push Day
+    blocks:
+      - type: exercise
+        exercise: ppl-bench-press
+      - type: exercise
+        exercise: ppl-rest
+      - type: exercise
+        exercise: ppl-overhead-press
+      - type: exercise
+        exercise: ppl-rest
+        config: { duration_sec: 90 }
+      - type: exercise
+        exercise: ppl-dips
+      - type: exercise
+        exercise: ppl-rest
+        config: { duration_sec: 90 }
+      - type: exercise
+        exercise: ppl-lateral-raise
+
+  - id: ppl-pull
+    name: Pull Day
+    blocks:
+      - type: exercise
+        exercise: ppl-deadlift
+      - type: exercise
+        exercise: ppl-rest
+      - type: exercise
+        exercise: ppl-pullups
+      - type: exercise
+        exercise: ppl-rest
+      - type: exercise
+        exercise: ppl-barbell-row
+      - type: exercise
+        exercise: ppl-rest
+        config: { duration_sec: 90 }
+      - type: exercise
+        exercise: ppl-curl
+
+  - id: ppl-legs
+    name: Leg Day
+    blocks:
+      - type: exercise
+        exercise: ppl-back-squat
+      - type: exercise
+        exercise: ppl-rest
+      - type: exercise
+        exercise: ppl-romanian-deadlift
+      - type: exercise
+        exercise: ppl-rest
+      # A circuit runs its members round-robin — lunge, calf raise, hold, then
+      # round two. `id` is here only so a program week can override its rounds.
+      # Members are reps and timed_hold on purpose: a member runs once per round
+      # and its own `sets` is ignored, while a hiit or amrap member would run its
+      # whole internal timing again on every visit.
+      - type: circuit
+        id: ppl-leg-finisher
+        rounds: 3
+        rest_between_exercises_sec: 20
+        rest_between_rounds_sec: 90
+        exercises:
+          - exercise: ppl-walking-lunge
+          - exercise: ppl-calf-raise
+          - exercise: ppl-hollow-hold
+
+programs:
+  # Six weeks, every one of them written out, with the day labels ordered so the
+  # week runs push → pull → legs (Kettle orders a multi-day week by its `day`
+  # label, so `Push`/`Pull`/`Legs` on their own would run legs first).
+  - id: ppl-6-weeks
+    name: Push/Pull/Legs · 6 Weeks
+    weeks:
+      - week: 1
+        day: Day 1 · Push
+        workout: ppl-push
+        notes: Baseline week. Leave the weights conservative and log the ranges.
+      - week: 1
+        day: Day 2 · Pull
+        workout: ppl-pull
+      - week: 1
+        day: Day 3 · Legs
+        workout: ppl-legs
+
+      - week: 2
+        day: Day 1 · Push
+        workout: ppl-push
+        notes: Same weights, one more rep per set where the range allows it.
+      - week: 2
+        day: Day 2 · Pull
+        workout: ppl-pull
+      - week: 2
+        day: Day 3 · Legs
+        workout: ppl-legs
+
+      # Volume goes up here and stays up: an override applies to the week it is
+      # written in and nothing else, so weeks 4 and 5 repeat it verbatim.
+      - week: 3
+        day: Day 1 · Push
+        workout: ppl-push
+        notes: Fifth set on the bench from this week on.
+        overrides:
+          - exercise: ppl-bench-press
+            config: { sets: 5 }
+      - week: 3
+        day: Day 2 · Pull
+        workout: ppl-pull
+        overrides:
+          - exercise: ppl-barbell-row
+            config: { sets: 5 }
+      - week: 3
+        day: Day 3 · Legs
+        workout: ppl-legs
+
+      - week: 4
+        day: Day 1 · Push
+        workout: ppl-push
+        overrides:
+          - exercise: ppl-bench-press
+            config: { sets: 5 }
+      - week: 4
+        day: Day 2 · Pull
+        workout: ppl-pull
+        overrides:
+          - exercise: ppl-barbell-row
+            config: { sets: 5 }
+      - week: 4
+        day: Day 3 · Legs
+        workout: ppl-legs
+
+      - week: 5
+        day: Day 1 · Push
+        workout: ppl-push
+        notes: Peak week. Everything is at its heaviest and longest.
+        overrides:
+          - exercise: ppl-bench-press
+            config: { sets: 5 }
+      - week: 5
+        day: Day 2 · Pull
+        workout: ppl-pull
+        overrides:
+          - exercise: ppl-barbell-row
+            config: { sets: 5 }
+      - week: 5
+        day: Day 3 · Legs
+        workout: ppl-legs
+        overrides:
+          # A `block` override targets the circuit by its own id and takes the
+          # circuit's keys, not an exercise's.
+          - block: ppl-leg-finisher
+            config: { rounds: 4 }
+
+      # Deload: back to the base sets by simply not overriding them, and the
+      # finisher cut to two rounds.
+      - week: 6
+        day: Day 1 · Push
+        workout: ppl-push
+        notes: Deload. Keep the bar moving fast, stop well short of failure.
+        overrides:
+          - exercise: ppl-bench-press
+            config: { sets: 3 }
+      - week: 6
+        day: Day 2 · Pull
+        workout: ppl-pull
+        overrides:
+          - exercise: ppl-barbell-row
+            config: { sets: 3 }
+      - week: 6
+        day: Day 3 · Legs
+        workout: ppl-legs
+        overrides:
+          - exercise: ppl-back-squat
+            config: { sets: 3 }
+          - block: ppl-leg-finisher
+            config: { rounds: 2 }

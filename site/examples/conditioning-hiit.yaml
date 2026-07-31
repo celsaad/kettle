@@ -1,0 +1,185 @@
+# Kettle example library — Conditioning
+#
+# Four weeks, two sessions a week, and the four timer types the other examples
+# don't use: `hiit` (work/rest intervals), `emom` (every minute on the minute),
+# `amrap` (one time cap, as many rounds as you can) and `cardio` (time and/or
+# distance). Equipment: a kettlebell or a single dumbbell, and somewhere to run,
+# row or ride.
+#
+# The timed types have no notion of sets or rounds you log per movement — the
+# round itself lives in `notes`, which Kettle shows on screen while the clock is
+# running. That's the intended way to write an AMRAP.
+#
+# To use it: Kettle → Library → Import → pick this file, or paste the whole text
+# into Library → Import → Paste YAML instead.
+#
+# Import merges by id, so every id below is prefixed `cnd-` and can never replace
+# something already in your library.
+#
+# Format reference: https://celsaad.github.io/kettle/format.html
+
+version: 1
+
+exercises:
+  - id: cnd-rest
+    name: Rest
+    type: rest
+    config:
+      duration_sec: 120
+
+  - id: cnd-burpees
+    name: Burpees
+    type: hiit
+    config:
+      work_sec: 30
+      rest_sec: 30
+      rounds: 8
+    notes: Steady pace you can hold for all 8 — the last round should look like the first.
+
+  - id: cnd-high-knees
+    name: High Knees
+    type: hiit
+    config:
+      work_sec: 20
+      rest_sec: 40
+      rounds: 10
+    notes: Flat out for the 20 seconds. The 40 is there to make that possible.
+
+  - id: cnd-swings
+    name: Kettlebell Swings
+    type: emom
+    config:
+      interval_sec: 60
+      total_minutes: 12
+      target_reps: 15
+    notes: 15 swings at the top of each minute; the rest of the minute is the rest.
+
+  - id: cnd-amrap-12
+    name: AMRAP 12
+    type: amrap
+    config:
+      time_cap_sec: 720
+    notes: One round is 10 swings, 10 push-ups, 15 air squats. Count the rounds.
+
+  - id: cnd-row-2k
+    name: Row 2k
+    type: cardio
+    config:
+      distance_meters: 2000
+    notes: A repeatable test. Same machine, same damper, log the time.
+
+  - id: cnd-easy-run
+    name: Easy Run
+    type: cardio
+    config:
+      duration_sec: 1800
+    notes: Conversational pace. Run, bike or row — whatever you have.
+
+  # An empty config is valid: a cardio exercise with neither a duration nor a
+  # distance runs as a plain count-up stopwatch.
+  - id: cnd-cooldown
+    name: Cool-down Walk
+    type: cardio
+    config: {}
+
+workouts:
+  - id: cnd-intervals
+    name: Intervals
+    blocks:
+      - type: exercise
+        exercise: cnd-burpees
+      - type: exercise
+        exercise: cnd-rest
+      - type: exercise
+        exercise: cnd-high-knees
+      - type: exercise
+        exercise: cnd-rest
+      - type: exercise
+        exercise: cnd-cooldown
+
+  - id: cnd-emom
+    name: EMOM 12
+    blocks:
+      - type: exercise
+        exercise: cnd-swings
+      - type: exercise
+        exercise: cnd-rest
+      - type: exercise
+        exercise: cnd-cooldown
+
+  - id: cnd-amrap
+    name: AMRAP 12
+    blocks:
+      - type: exercise
+        exercise: cnd-amrap-12
+      - type: exercise
+        exercise: cnd-rest
+        config: { duration_sec: 180 }
+      - type: exercise
+        exercise: cnd-cooldown
+
+  - id: cnd-steady
+    name: Steady State
+    blocks:
+      - type: exercise
+        exercise: cnd-easy-run
+
+  - id: cnd-test
+    name: 2k Test
+    blocks:
+      - type: exercise
+        exercise: cnd-row-2k
+      - type: exercise
+        exercise: cnd-rest
+        config: { duration_sec: 300 }
+      - type: exercise
+        exercise: cnd-cooldown
+
+programs:
+  # One hard session and one easy session a week, with the 2k test bookending
+  # the block: week 1 sets the number, week 4 tries to beat it.
+  - id: cnd-4-weeks
+    name: Conditioning · 4 Weeks
+    weeks:
+      - week: 1
+        day: Day 1
+        workout: cnd-test
+        notes: Set the baseline. Everything after this is measured against it.
+      - week: 1
+        day: Day 2
+        workout: cnd-steady
+
+      - week: 2
+        day: Day 1
+        workout: cnd-intervals
+      - week: 2
+        day: Day 2
+        workout: cnd-steady
+
+      # An override patches the exercise's own config keys — here the timers
+      # themselves get longer, and week 4 repeats what week 3 changed because
+      # overrides apply only to the week they're written in.
+      - week: 3
+        day: Day 1
+        workout: cnd-emom
+        notes: EMOM stretched to 15 minutes.
+        overrides:
+          - exercise: cnd-swings
+            config: { total_minutes: 15 }
+      - week: 3
+        day: Day 2
+        workout: cnd-steady
+        overrides:
+          - exercise: cnd-easy-run
+            config: { duration_sec: 2400 }
+
+      - week: 4
+        day: Day 1
+        workout: cnd-test
+        notes: Same test as week 1, rested. Compare the two entries in History.
+      - week: 4
+        day: Day 2
+        workout: cnd-amrap
+        overrides:
+          - exercise: cnd-amrap-12
+            config: { time_cap_sec: 900 }

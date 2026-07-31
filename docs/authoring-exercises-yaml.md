@@ -4,6 +4,10 @@ Reference for hand-writing exercise, workout, and program definitions, matching 
 `src/domain/schema.ts` validates and `src/domain/yaml-mapping.ts` parses. Field names below are the
 literal YAML keys (snake_case) — the app maps them to camelCase internally.
 
+For whole worked programs rather than field-by-field rules, `site/examples/*.yaml` holds four
+complete libraries (published at `celsaad.github.io/kettle/examples.html`) that between them use
+every type and structure documented here.
+
 ## File shape
 
 ```yaml

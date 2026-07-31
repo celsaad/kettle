@@ -1,0 +1,245 @@
+# Kettle example library — Bodyweight, No Equipment
+#
+# Four weeks, three sessions a week, nothing but the floor and a wall. Built out
+# of circuits: a circuit runs its members round-robin — A, B, C, A, B, C — and a
+# superset is just a two-member circuit with no rest between the members, which
+# is what `bw-core-superset` below is.
+#
+# Honest limitation: with no bar and no rings there is very little pulling here.
+# If you have a bar, a table edge or a set of rings, add rows and swap them in.
+#
+# To use it: Kettle → Library → Import → pick this file, or paste the whole text
+# into Library → Import → Paste YAML instead.
+#
+# Import merges by id, so every id below is prefixed `bw-` and can never replace
+# something already in your library.
+#
+# Format reference: https://celsaad.github.io/kettle/format.html
+
+version: 1
+
+exercises:
+  - id: bw-rest
+    name: Rest
+    type: rest
+    config:
+      duration_sec: 60
+
+  - id: bw-pushups
+    name: Push-ups
+    type: reps
+    config:
+      sets: 3
+      target_reps_min: 8
+      target_reps_max: 15
+      rest_sec: 60
+    notes: Hands raised on a step if you can't reach 8; feet raised once 15 is easy.
+
+  - id: bw-squats
+    name: Bodyweight Squat
+    type: reps
+    config:
+      sets: 3
+      target_reps_min: 15
+      target_reps_max: 25
+      rest_sec: 60
+
+  - id: bw-split-squat
+    name: Split Squat
+    type: reps
+    config:
+      sets: 3
+      target_reps_min: 8
+      target_reps_max: 12
+      rest_sec: 60
+    notes: Reps are per leg.
+
+  - id: bw-pike-pushups
+    name: Pike Push-ups
+    type: reps
+    config:
+      sets: 3
+      target_reps_min: 6
+      target_reps_max: 10
+      rest_sec: 60
+
+  - id: bw-glute-bridge
+    name: Glute Bridge
+    type: reps
+    config:
+      sets: 3
+      target_reps_min: 12
+      target_reps_max: 20
+      rest_sec: 45
+
+  - id: bw-superman
+    name: Superman
+    type: reps
+    config:
+      sets: 3
+      target_reps_min: 10
+      target_reps_max: 15
+      rest_sec: 45
+
+  - id: bw-plank
+    name: Plank
+    type: timed_hold
+    config:
+      sets: 3
+      hold_sec_min: 20
+      hold_sec_max: 45
+      rest_sec: 45
+
+  - id: bw-hollow-hold
+    name: Hollow Hold
+    type: timed_hold
+    config:
+      sets: 3
+      hold_sec_min: 15
+      hold_sec_max: 30
+      rest_sec: 45
+
+  - id: bw-wall-sit
+    name: Wall Sit
+    type: timed_hold
+    config:
+      sets: 3
+      hold_sec_min: 30
+      hold_sec_max: 60
+      rest_sec: 60
+
+  - id: bw-mountain-climbers
+    name: Mountain Climbers
+    type: hiit
+    config:
+      work_sec: 30
+      rest_sec: 30
+      rounds: 4
+
+workouts:
+  - id: bw-full-body
+    name: Bodyweight Full Body
+    blocks:
+      # Three rounds of push / squat / back, with 15s between movements. Each
+      # member runs once per round — the `sets: 3` in their own config is ignored
+      # inside a circuit, so this is 3 visits each, not 9.
+      - type: circuit
+        id: bw-main-circuit
+        rounds: 3
+        rest_between_exercises_sec: 15
+        rest_between_rounds_sec: 90
+        exercises:
+          - exercise: bw-pushups
+          - exercise: bw-squats
+          - exercise: bw-superman
+      - type: exercise
+        exercise: bw-rest
+        config: { duration_sec: 120 }
+      # A superset: two members, straight from one into the other with no rest.
+      - type: circuit
+        id: bw-core-superset
+        rounds: 3
+        rest_between_exercises_sec: 0
+        rest_between_rounds_sec: 45
+        exercises:
+          - exercise: bw-plank
+          - exercise: bw-hollow-hold
+
+  - id: bw-lower
+    name: Bodyweight Lower
+    blocks:
+      - type: exercise
+        exercise: bw-split-squat
+      - type: exercise
+        exercise: bw-rest
+        config: { duration_sec: 90 }
+      - type: exercise
+        exercise: bw-glute-bridge
+      - type: exercise
+        exercise: bw-rest
+      - type: exercise
+        exercise: bw-wall-sit
+
+  - id: bw-quick
+    name: Quick 15
+    blocks:
+      - type: circuit
+        id: bw-quick-circuit
+        rounds: 4
+        rest_between_exercises_sec: 10
+        rest_between_rounds_sec: 60
+        exercises:
+          - exercise: bw-pushups
+          - exercise: bw-squats
+          - exercise: bw-plank
+      - type: exercise
+        exercise: bw-rest
+      - type: exercise
+        exercise: bw-mountain-climbers
+
+programs:
+  - id: bw-4-weeks
+    name: Bodyweight · 4 Weeks · No Equipment
+    weeks:
+      - week: 1
+        day: Day 1
+        workout: bw-full-body
+        notes: Baseline. Stop each set two reps short and see where that lands.
+      - week: 1
+        day: Day 2
+        workout: bw-lower
+      - week: 1
+        day: Day 3
+        workout: bw-quick
+
+      - week: 2
+        day: Day 1
+        workout: bw-full-body
+        notes: Same rounds, more reps inside each range.
+      - week: 2
+        day: Day 2
+        workout: bw-lower
+      - week: 2
+        day: Day 3
+        workout: bw-quick
+
+      # Rounds go up, by overriding the circuit block rather than the exercises
+      # in it. A block override targets a circuit by its `id` and uses the
+      # circuit's own keys: rounds and the two rest fields.
+      - week: 3
+        day: Day 1
+        workout: bw-full-body
+        notes: Fourth round on the main circuit.
+        overrides:
+          - block: bw-main-circuit
+            config: { rounds: 4 }
+      - week: 3
+        day: Day 2
+        workout: bw-lower
+      - week: 3
+        day: Day 3
+        workout: bw-quick
+        overrides:
+          - block: bw-quick-circuit
+            config: { rounds: 5 }
+
+      # Week 4 repeats week 3's overrides — they don't carry forward on their
+      # own — and adds a round to the core superset.
+      - week: 4
+        day: Day 1
+        workout: bw-full-body
+        notes: Last week. Everything at its longest.
+        overrides:
+          - block: bw-main-circuit
+            config: { rounds: 4 }
+          - block: bw-core-superset
+            config: { rounds: 4 }
+      - week: 4
+        day: Day 2
+        workout: bw-lower
+      - week: 4
+        day: Day 3
+        workout: bw-quick
+        overrides:
+          - block: bw-quick-circuit
+            config: { rounds: 5 }

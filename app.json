@@ -12,7 +12,7 @@
     },
     "android": {
       "package": "com.casco.kettle",
-      "versionCode": 2,
+      "versionCode": 3,
       "adaptiveIcon": {
         "backgroundColor": "#c05c2b",
         "foregroundImage": "./assets/images/android-icon-foreground.png",

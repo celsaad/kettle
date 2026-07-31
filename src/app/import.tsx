@@ -313,7 +313,6 @@ export default function ImportScreen() {
                 styles.pickRow,
                 { backgroundColor: theme.backgroundElement, borderColor: theme.border },
               ]}>
-              <View style={[styles.fileIcon, { borderColor: theme.textSecondary }]} />
               <View style={styles.fileText}>
                 <ThemedText type="heading">{t('import.chooseFile')}</ThemedText>
                 <ThemedText type="small" themeColor="textSecondary">
@@ -333,7 +332,6 @@ export default function ImportScreen() {
                 styles.pickRow,
                 { backgroundColor: theme.backgroundElement, borderColor: theme.border },
               ]}>
-              <View style={[styles.fileIcon, styles.pasteIcon, { borderColor: theme.textSecondary }]} />
               <View style={styles.fileText}>
                 <ThemedText type="heading">{t('import.pasteToggle')}</ThemedText>
                 <ThemedText type="small" themeColor="textSecondary">
@@ -399,7 +397,6 @@ export default function ImportScreen() {
 
         {ready && (
           <View style={[styles.fileRow, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
-            <View style={[styles.fileIcon, { borderColor: theme.textSecondary }]} />
             <View style={styles.fileText}>
               <ThemedText type="heading" style={styles.fileName}>
                 {ready.picked.title}
@@ -573,17 +570,11 @@ const styles = StyleSheet.create({
   pickRow: {
     borderStyle: 'dashed',
   },
-  fileIcon: {
-    width: 26,
-    height: 32,
-    borderRadius: 5,
-    borderWidth: 1.5,
-  },
-  // Squarer than the file glyph, so the two rows read as different sources at a glance.
-  pasteIcon: {
-    height: 26,
-    borderRadius: 7,
-  },
+  // No leading glyph on these rows, deliberately. There used to be two outlined squares — a taller
+  // one for "choose a file", a square one for "paste" — sized apart so the rows would read as
+  // different sources. They didn't: the 6px difference was too small to carry meaning and just
+  // looked misaligned, and an empty outlined square beside a label reads as an unchecked checkbox,
+  // implying a selection these rows never had. The labels already draw the distinction.
   pasteInput: {
     marginTop: Spacing.two,
     minHeight: 132,

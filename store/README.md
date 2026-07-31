@@ -197,6 +197,52 @@ For an internal or closed test, the last line is better spent on direction than 
 > Please test: starting a session from Today, all seven exercise types running to completion,
 > importing a YAML library, and exporting your history. Report anything that hangs or loses data.
 
+## Tip jar products
+
+Created under **Monetize with Play › Products › In-app products** (the docs now call these "one-time
+products"; the Console still says both). Requires a payments profile first — that lives on the
+sibling **Monetisation setup** page and is the step with real lead time, since it needs bank details.
+
+| Product ID | Price (USD) | Name | Description |
+|---|---|---|---|
+| `tip_small` | $1 | Small tip | A small thank-you for Kettle. Nothing is unlocked — every feature is already free, and your data stays on your device. |
+| `tip_medium` | $3 | Medium tip | A thank-you for Kettle, and a hand with the developer account fee. Nothing is unlocked; every feature is already free. |
+| `tip_large` | $5 | Large tip | A generous thank-you for Kettle. Nothing is unlocked — the whole app is free, with no ads and no account. |
+
+Portuguese, for listings that have it:
+
+| Product ID | Name | Description |
+|---|---|---|
+| `tip_small` | Gorjeta pequena | Um obrigado pelo Kettle. Nada é desbloqueado — todos os recursos já são gratuitos e seus dados ficam no seu aparelho. |
+| `tip_medium` | Gorjeta média | Um obrigado pelo Kettle e uma ajuda com a taxa da conta de desenvolvedor. Nada é desbloqueado; tudo já é gratuito. |
+| `tip_large` | Gorjeta grande | Um obrigado generoso pelo Kettle. Nada é desbloqueado — o app inteiro é gratuito, sem anúncios e sem conta. |
+
+Why these, and what not to change casually:
+
+- **The names are the app's own tier labels**, `support.tierSmall`/`tierMedium`/`tierLarge` in the
+  locale bundles. Someone taps "Small tip" and Play's sheet has to say "Small tip"; a mismatch there
+  reads as the wrong purchase and gets cancelled. Renaming a tier in the app means renaming it here.
+- **Every description says nothing is unlocked**, which is both true and defensive: Play reviews IAP
+  descriptions for misrepresentation, and a tip that sounds like it buys something is what gets
+  flagged. It also matches `site/support.html` and the store listing.
+- **Prices must stay ascending.** `TIP_TIERS` in `domain/tip.ts` fixes the display order small →
+  medium → large and deliberately does *not* sort by price — Android reports price as optional, so
+  sorting by it would scramble the list exactly when the store returns partial data. Price medium
+  above large and the UI shows them out of order with no warning.
+- **Product IDs are permanent.** They cannot be renamed, and cannot be reused after deletion.
+  Everything else in these tables is editable in the Console at any time.
+- **There is no "consumable" setting in the Console.** Consumability is entirely app-side:
+  `finishTransaction({ purchase, isConsumable: true })` in `app/support.tsx`. Without it Play treats
+  the SKU as owned and refuses every later purchase of that tier — so "buy the same tier twice" is
+  the test that actually proves the tip jar works, not "buy one".
+- Play auto-converts to other currencies and its rounding is occasionally odd. Worth checking the
+  BRL figures by hand, Portuguese being one of the two shipped languages. The app renders
+  `displayPrice` straight from the store, so whatever Play decides is what users see.
+
+Testing needs **Licence testing** (account level — back out of the app, then `Setup › Licence
+testing`), an account opted into a test track, and the build **installed from Play**. In-app products
+do not resolve on a locally installed APK.
+
 ## Open
 
 - The lead screenshot (`today`) shows a zeroed streak and an empty Recent list. Capture it again with

@@ -246,6 +246,8 @@ Two traps before picking one:
 - `docs/exercise-tracker-product-plan.md` — the data model, file formats and roadmap.
 - `docs/authoring-exercises-yaml.md` — the YAML reference, kept exact against `schema.ts`.
 - `docs/testing-a11y-i18n-plan.md` — executed; kept for its rationale, not as a backlog.
+- `docs/watch-remote-plan.md` — **not executed.** Driving a running session from a Wear OS wrist via
+  the notification shade, with no watch app and no data on the watch.
 
 Three rules, in the order they get broken:
 

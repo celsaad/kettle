@@ -962,6 +962,80 @@ table.ref td:first-child {
   margin-top: var(--s3);
 }
 
+/* ============================================================
+   examples.html — the ready-made library cards
+   ============================================================ */
+/* `auto-fit` with a `min()` floor rather than a breakpoint: two columns while there is room for two
+   420px ones, one full-width column below that. The floor is deliberately wide enough that four
+   cards land 2×2 rather than 3+1 at desktop widths. `min(100%, …)` keeps the floor from exceeding
+   the viewport, which is what stops the previews' code blocks setting a min-content overflow. */
+.example-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
+  gap: var(--s4);
+}
+/* Column flex with the action row pushed down by `margin-top: auto`, so two cards sitting side by
+   side line their buttons up however unevenly their descriptions wrap. */
+.card.example {
+  display: flex;
+  flex-direction: column;
+}
+.card.example h2 {
+  font-size: 25px;
+  margin-bottom: var(--s2);
+}
+.card.example > p {
+  color: var(--secondary);
+}
+.card.example .chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 0;
+}
+.example-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+  margin-top: auto;
+  padding-top: var(--s4);
+}
+/* Slightly smaller than the hero's call to action — there are eight of these on the page, and they
+   are not the loudest thing on it. Still 44px tall. */
+.example-actions .btn {
+  font-size: 16px;
+  padding: 12px 20px;
+  min-height: 44px;
+}
+.example-preview {
+  margin-top: var(--s3);
+}
+.example-preview summary {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  cursor: pointer;
+  color: var(--secondary);
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 15px;
+}
+.example-preview summary:hover {
+  color: var(--text);
+}
+.example-preview .code-panel {
+  margin-top: var(--s2);
+}
+/* The files run to a couple of hundred lines; the panel scrolls rather than the page carrying all
+   four of them at full height. */
+.example-preview pre {
+  max-height: 420px;
+  overflow: auto;
+  padding: var(--s3);
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+
 /* ---- Responsive ------------------------------------------- */
 @media (max-width: 760px) {
   .hero-media-row {

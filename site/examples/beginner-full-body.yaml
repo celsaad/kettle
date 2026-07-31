@@ -1,0 +1,197 @@
+# Kettle example library — Beginner Full Body
+#
+# Four weeks, three sessions a week, two workouts alternating A/B/A then B/A/B.
+# Equipment: a pair of dumbbells and the floor. Loads are in kilograms and are
+# left off on purpose — set them the first week and edit the file after.
+#
+# To use it: Kettle → Library → Import → pick this file, or paste the whole text
+# into Library → Import → Paste YAML instead.
+#
+# Import merges by id, so every id below is prefixed `bfb-` and can never replace
+# something already in your library. Once imported it is yours: rename it, retune
+# the numbers, delete what you don't do.
+#
+# Format reference: https://celsaad.github.io/kettle/format.html
+
+version: 1
+
+exercises:
+  - id: bfb-rest
+    name: Rest
+    type: rest
+    config:
+      duration_sec: 90
+
+  - id: bfb-goblet-squat
+    name: Goblet Squat
+    type: reps
+    config:
+      sets: 3
+      target_reps_min: 8
+      target_reps_max: 12
+      rest_sec: 90
+    notes: Add weight once you hit 12 on every set, then start again at 8.
+
+  - id: bfb-floor-press
+    name: Dumbbell Floor Press
+    type: reps
+    config:
+      sets: 3
+      target_reps_min: 8
+      target_reps_max: 12
+      rest_sec: 90
+    notes: Same rule — top of the range on all sets, then add weight.
+
+  - id: bfb-row
+    name: Dumbbell Row
+    type: reps
+    config:
+      sets: 3
+      target_reps_min: 8
+      target_reps_max: 12
+      rest_sec: 90
+    notes: Reps are per side; log the harder side.
+
+  - id: bfb-romanian-deadlift
+    name: Dumbbell Romanian Deadlift
+    type: reps
+    config:
+      sets: 3
+      target_reps_min: 8
+      target_reps_max: 12
+      rest_sec: 90
+
+  - id: bfb-overhead-press
+    name: Dumbbell Overhead Press
+    type: reps
+    config:
+      sets: 3
+      target_reps_min: 6
+      target_reps_max: 10
+      rest_sec: 90
+
+  - id: bfb-glute-bridge
+    name: Glute Bridge
+    type: reps
+    config:
+      sets: 3
+      target_reps_min: 10
+      target_reps_max: 15
+      rest_sec: 60
+
+  - id: bfb-plank
+    name: Plank
+    type: timed_hold
+    config:
+      sets: 3
+      hold_sec_min: 20
+      hold_sec_max: 45
+      rest_sec: 45
+    notes: Hold to the top of the range for two sessions before extending it.
+
+workouts:
+  - id: bfb-full-body-a
+    name: Full Body A
+    blocks:
+      - type: exercise
+        exercise: bfb-goblet-squat
+      - type: exercise
+        exercise: bfb-rest
+      - type: exercise
+        exercise: bfb-floor-press
+      - type: exercise
+        exercise: bfb-rest
+      - type: exercise
+        exercise: bfb-row
+      - type: exercise
+        exercise: bfb-rest
+        config: { duration_sec: 60 }
+      - type: exercise
+        exercise: bfb-plank
+
+  - id: bfb-full-body-b
+    name: Full Body B
+    blocks:
+      - type: exercise
+        exercise: bfb-romanian-deadlift
+      - type: exercise
+        exercise: bfb-rest
+      - type: exercise
+        exercise: bfb-overhead-press
+      - type: exercise
+        exercise: bfb-rest
+      - type: exercise
+        exercise: bfb-glute-bridge
+      - type: exercise
+        exercise: bfb-rest
+        config: { duration_sec: 60 }
+      - type: exercise
+        exercise: bfb-plank
+
+programs:
+  # Every week is listed and every day is labelled: Kettle walks the weeks you
+  # write, in `day` alphabetical order, and never fills in one you left out.
+  - id: bfb-beginner-4-weeks
+    name: Beginner Full Body · 4 Weeks
+    weeks:
+      - week: 1
+        day: Day 1
+        workout: bfb-full-body-a
+        notes: Baseline. Pick a weight you could stop two reps short with.
+      - week: 1
+        day: Day 2
+        workout: bfb-full-body-b
+      - week: 1
+        day: Day 3
+        workout: bfb-full-body-a
+
+      - week: 2
+        day: Day 1
+        workout: bfb-full-body-b
+        notes: Same weights as week 1 if week 1 felt hard. Otherwise nudge them up.
+      - week: 2
+        day: Day 2
+        workout: bfb-full-body-a
+      - week: 2
+        day: Day 3
+        workout: bfb-full-body-b
+
+      # Weeks 3 and 4 add a fourth set to the two main lifts. The override has to
+      # be repeated in week 4 — a week resolves against the base definitions on
+      # its own, so nothing carries forward from the week before it.
+      - week: 3
+        day: Day 1
+        workout: bfb-full-body-a
+        notes: Fourth set on the squat and the press from here on.
+        overrides:
+          - exercise: bfb-goblet-squat
+            config: { sets: 4 }
+          - exercise: bfb-floor-press
+            config: { sets: 4 }
+      - week: 3
+        day: Day 2
+        workout: bfb-full-body-b
+      - week: 3
+        day: Day 3
+        workout: bfb-full-body-a
+        overrides:
+          - exercise: bfb-goblet-squat
+            config: { sets: 4 }
+          - exercise: bfb-floor-press
+            config: { sets: 4 }
+
+      - week: 4
+        day: Day 1
+        workout: bfb-full-body-b
+        notes: Last week. Log honestly, then rewrite the file with what you learned.
+      - week: 4
+        day: Day 2
+        workout: bfb-full-body-a
+        overrides:
+          - exercise: bfb-goblet-squat
+            config: { sets: 4 }
+          - exercise: bfb-floor-press
+            config: { sets: 4 }
+      - week: 4
+        day: Day 3
+        workout: bfb-full-body-b

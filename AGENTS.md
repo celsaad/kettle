@@ -80,6 +80,11 @@ after any delegated change, and skim the diff.
 - `src/app/` — expo-router routes. `src/components/` — shared UI.
 - `site/` — the public landing site (GitHub Pages), plain static HTML with no build step. Not part of
   the app build. `site/format.html` mirrors `schema.ts` — see "Changing the YAML format" below.
+  `site/examples/*.yaml` are complete libraries published for readers to import as they are;
+  `site-examples.test.ts` parses each one, merges it into the seed library the way the import screen
+  does (which is what catches a dangling `exercise:` reference), and holds the id-prefix promise the
+  examples page makes — every example prefixes its ids so importing one can't overwrite anything the
+  reader already has.
 
 **YAML is snake_case, domain code is camelCase**, bridged only in `yaml-mapping.ts`. Program
 `overrides` are partial *raw* (snake_case) patches — that asymmetry is deliberate and load-bearing.
@@ -288,3 +293,7 @@ will not do it for you.
 If you add a complete library sample to any page, mark it `data-validate="library"` so it joins the
 checked set. Deliberate fragments — a bare `workouts:` list, a shape sketch with `{ ... }` — stay
 unmarked, since they can't parse standalone.
+
+The four `site/examples/*.yaml` libraries are a fourth copy of the format, but the only one that is
+checked end to end rather than by eye (`site-examples.test.ts`) — a renamed key breaks them loudly.
+Their prose is on `site/examples.html`, which isn't checked, same as the tables above.

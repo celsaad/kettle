@@ -1,0 +1,394 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Example libraries — Kettle</title>
+    <meta
+      name="description"
+      content="Four ready-made Kettle libraries you can import as they are: a beginner full-body program, a six-week push/pull/legs block, a no-equipment bodyweight plan and a conditioning file covering the timed types." />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="canonical" href="https://celsaad.github.io/kettle/examples.html" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Kettle" />
+    <meta property="og:title" content="Example libraries for Kettle" />
+    <meta
+      property="og:description"
+      content="Four complete, importable YAML libraries — copy one into the app, then edit it into your own." />
+    <meta property="og:url" content="https://celsaad.github.io/kettle/examples.html" />
+    <meta name="twitter:card" content="summary" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <div class="wrap bar">
+        <a class="brand" href="index.html" aria-label="Kettle home">
+          <span class="mark" aria-hidden="true">
+            <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" width="30" height="30">
+              <path
+                d="M13,32 C8,26 14,21 11,15"
+                stroke="currentColor"
+                stroke-width="3.2"
+                stroke-linecap="round"
+                opacity="0.7" />
+              <path
+                d="M22,30 C17,24 23,19 20,13"
+                stroke="currentColor"
+                stroke-width="3.2"
+                stroke-linecap="round"
+                opacity="0.45" />
+              <path d="M40,42 C42,23 82,23 84,42" stroke="currentColor" stroke-width="6.5" stroke-linecap="round" />
+              <ellipse cx="62" cy="43" rx="24" ry="6.5" fill="currentColor" />
+              <circle cx="62" cy="33" r="5.5" fill="currentColor" />
+              <path
+                d="M30,71 C30,53 44,45 62,45 C80,45 96,53 96,71 C96,88 80,95 62,95 C44,95 30,88 30,71 Z"
+                fill="currentColor" />
+              <path d="M33,60 L15,45 L21,39 L39,52 Z" fill="currentColor" />
+              <rect x="47" y="93" width="30" height="7" rx="3.5" fill="currentColor" />
+            </svg>
+          </span>
+          <span class="word">Kettle</span>
+        </a>
+        <nav class="site-nav" aria-label="Primary">
+          <a href="index.html#features">Features</a>
+          <a href="format.html">Format</a>
+          <a href="examples.html" aria-current="page">Examples</a>
+          <a href="index.html#data">Your data</a>
+          <a href="support.html">Support</a>
+          <a href="https://github.com/celsaad/kettle">GitHub</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <div class="wrap">
+        <div class="page-head">
+          <p class="eyebrow">Examples</p>
+          <h1>Libraries you can start from</h1>
+          <p class="lede">
+            Four complete programs, each one a single valid file. Copy one into the app and press start today, or open it in
+            an editor and treat it as a worked example of the format. They're plain text either way.
+          </p>
+          <p class="meta">Format version 1 · every file here is checked against the app's own parser by its test suite</p>
+        </div>
+
+        <section class="section">
+          <div class="example-grid">
+            <article class="card example" data-file="examples/beginner-full-body.yaml">
+              <h2>Beginner Full Body</h2>
+              <p>
+                Two dumbbell workouts alternating A/B/A then B/A/B, with a fourth set added to the main lifts halfway
+                through. The smallest complete program that still shows how a progression is written.
+              </p>
+              <p class="chips">
+                <span class="chip">4 weeks</span>
+                <span class="chip calm">3 sessions a week</span>
+                <span class="chip plain">Dumbbells</span>
+                <span class="chip plain">reps · timed_hold · rest</span>
+              </p>
+              <div class="example-actions">
+                <button class="btn btn-primary js-copy" type="button">Copy YAML</button>
+                <a class="btn btn-ghost" href="examples/beginner-full-body.yaml" download>Download</a>
+              </div>
+              <details class="example-preview">
+                <summary>Preview the file</summary>
+                <div class="code-panel">
+                  <div class="code-head">
+                    <span class="dot" aria-hidden="true"></span><span class="name">beginner-full-body.yaml</span>
+                  </div>
+                  <pre tabindex="0" role="region" aria-label="File contents"><code>Loading…</code></pre>
+                </div>
+              </details>
+            </article>
+
+            <article class="card example" data-file="examples/push-pull-legs-6-weeks.yaml">
+              <h2>Push / Pull / Legs</h2>
+              <p>
+                A full barbell block: six weeks, three days each, volume added from week 3 and a deload in week 6. The one to
+                read if you want to see day labels, weekly overrides and a circuit override in the same file.
+              </p>
+              <p class="chips">
+                <span class="chip">6 weeks</span>
+                <span class="chip calm">3 sessions a week</span>
+                <span class="chip plain">Barbell &amp; dumbbells</span>
+                <span class="chip plain">reps · timed_hold · circuit</span>
+              </p>
+              <div class="example-actions">
+                <button class="btn btn-primary js-copy" type="button">Copy YAML</button>
+                <a class="btn btn-ghost" href="examples/push-pull-legs-6-weeks.yaml" download>Download</a>
+              </div>
+              <details class="example-preview">
+                <summary>Preview the file</summary>
+                <div class="code-panel">
+                  <div class="code-head">
+                    <span class="dot" aria-hidden="true"></span><span class="name">push-pull-legs-6-weeks.yaml</span>
+                  </div>
+                  <pre tabindex="0" role="region" aria-label="File contents"><code>Loading…</code></pre>
+                </div>
+              </details>
+            </article>
+
+            <article class="card example" data-file="examples/bodyweight-no-equipment.yaml">
+              <h2>Bodyweight, No Equipment</h2>
+              <p>
+                Circuits and holds, nothing but the floor and a wall. Includes a superset written the way the format expects
+                one — a two-member circuit with no rest between the members — and rounds that climb week to week.
+              </p>
+              <p class="chips">
+                <span class="chip">4 weeks</span>
+                <span class="chip calm">3 sessions a week</span>
+                <span class="chip plain">No equipment</span>
+                <span class="chip plain">circuit · timed_hold · hiit</span>
+              </p>
+              <div class="example-actions">
+                <button class="btn btn-primary js-copy" type="button">Copy YAML</button>
+                <a class="btn btn-ghost" href="examples/bodyweight-no-equipment.yaml" download>Download</a>
+              </div>
+              <details class="example-preview">
+                <summary>Preview the file</summary>
+                <div class="code-panel">
+                  <div class="code-head">
+                    <span class="dot" aria-hidden="true"></span><span class="name">bodyweight-no-equipment.yaml</span>
+                  </div>
+                  <pre tabindex="0" role="region" aria-label="File contents"><code>Loading…</code></pre>
+                </div>
+              </details>
+            </article>
+
+            <article class="card example" data-file="examples/conditioning-hiit.yaml">
+              <h2>Conditioning</h2>
+              <p>
+                The four timed types in one file: interval work, an EMOM, an AMRAP carrying its round in the notes, and
+                steady cardio — bookended by a 2k test in week 1 and week 4 so there's something to compare.
+              </p>
+              <p class="chips">
+                <span class="chip">4 weeks</span>
+                <span class="chip calm">2 sessions a week</span>
+                <span class="chip plain">Kettlebell or dumbbell</span>
+                <span class="chip plain">hiit · emom · amrap · cardio</span>
+              </p>
+              <div class="example-actions">
+                <button class="btn btn-primary js-copy" type="button">Copy YAML</button>
+                <a class="btn btn-ghost" href="examples/conditioning-hiit.yaml" download>Download</a>
+              </div>
+              <details class="example-preview">
+                <summary>Preview the file</summary>
+                <div class="code-panel">
+                  <div class="code-head">
+                    <span class="dot" aria-hidden="true"></span><span class="name">conditioning-hiit.yaml</span>
+                  </div>
+                  <pre tabindex="0" role="region" aria-label="File contents"><code>Loading…</code></pre>
+                </div>
+              </details>
+            </article>
+          </div>
+        </section>
+
+        <section class="section" style="padding-top: 0">
+          <article class="prose">
+            <h2 id="how">Getting one into the app</h2>
+            <p>
+              <strong>Copy YAML</strong> puts the whole file on your clipboard; in Kettle, open
+              <strong>Library → Import → Paste YAML instead</strong>, paste, and review. That's the short path on a phone.
+              <strong>Download</strong> saves the <code class="inl">.yaml</code> file instead, for
+              <strong>Library → Import → Choose exercises.yaml</strong>.
+            </p>
+            <p>
+              Either way you get the same preview of what's new and what's changing before anything is written, and the same
+              inline error if the file doesn't validate.
+            </p>
+            <div class="callout">
+              <p>
+                <strong>Importing adds; it doesn't replace.</strong> A library merges into yours keyed by
+                <code class="inl">id</code> — new ids are added, existing ones are overwritten, and anything you have that
+                isn't in the file is left alone. Your session history is a separate log and is never touched by an import.
+              </p>
+              <p>
+                Every id in these four files carries its own prefix (<code class="inl">bfb-</code>,
+                <code class="inl">ppl-</code>, <code class="inl">bw-</code>, <code class="inl">cnd-</code>) precisely so none
+                of them can overwrite an exercise you already have. The trade is that you may end up with a second “Push-ups”
+                sitting next to your own — delete whichever you don't want.
+              </p>
+            </div>
+            <p>
+              Nothing here is meant to be used unedited. The numbers are a starting point; the file is yours the moment it
+              lands, and the app writes your edits back to it in the same format.
+            </p>
+
+            <h2 id="write-your-own">Writing your own</h2>
+            <p>
+              The <a href="format.html">format reference</a> is the full spec — the file shape, the seven exercise types and
+              their config fields, circuits, programs and the merge rule. These four files between them use every type and
+              every structure it documents, so reading one alongside the reference is the fastest way in.
+            </p>
+            <p>
+              You can also hand the reference to an AI assistant and have it write a program to your own constraints — Kettle
+              itself has no AI features and never calls a model; see
+              <a href="format.html#assistant">using an assistant</a>.
+            </p>
+            <p style="margin-top: var(--s5)"><a href="index.html">← Back to the overview</a></p>
+          </article>
+        </section>
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap">
+        <div class="footer-grid">
+          <div>
+            <a class="brand" href="index.html" style="color: #f7f4ef">
+              <span class="mark" aria-hidden="true" style="color: var(--accent)">
+                <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" width="28" height="28">
+                  <path
+                    d="M13,32 C8,26 14,21 11,15"
+                    stroke="currentColor"
+                    stroke-width="3.2"
+                    stroke-linecap="round"
+                    opacity="0.7" />
+                  <path
+                    d="M22,30 C17,24 23,19 20,13"
+                    stroke="currentColor"
+                    stroke-width="3.2"
+                    stroke-linecap="round"
+                    opacity="0.45" />
+                  <path d="M40,42 C42,23 82,23 84,42" stroke="currentColor" stroke-width="6.5" stroke-linecap="round" />
+                  <ellipse cx="62" cy="43" rx="24" ry="6.5" fill="currentColor" />
+                  <circle cx="62" cy="33" r="5.5" fill="currentColor" />
+                  <path
+                    d="M30,71 C30,53 44,45 62,45 C80,45 96,53 96,71 C96,88 80,95 62,95 C44,95 30,88 30,71 Z"
+                    fill="currentColor" />
+                  <path d="M33,60 L15,45 L21,39 L39,52 Z" fill="currentColor" />
+                  <rect x="47" y="93" width="30" height="7" rx="3.5" fill="currentColor" />
+                </svg>
+              </span>
+              <span class="word">Kettle</span>
+            </a>
+            <p style="margin-top: var(--s3)">A backend-free workout tracker for Android. Your data stays on your device.</p>
+          </div>
+          <div class="footer-col">
+            <h5>Project</h5>
+            <ul>
+              <li><a href="https://github.com/celsaad/kettle">GitHub repository</a></li>
+              <li><a href="https://github.com/celsaad/kettle/issues">Issues &amp; support</a></li>
+              <li><a href="format.html">Format reference</a></li>
+              <li><a href="examples.html">Example libraries</a></li>
+              <li><a href="support.html">Support Kettle</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h5>Legal</h5>
+            <ul>
+              <li><a href="privacy.html">Privacy policy</a></li>
+              <li><a href="https://github.com/celsaad/kettle/blob/HEAD/LICENSE">MIT license</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer-bottom">
+          <span>© 2026 Kettle. Released under the MIT license.</span>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+      /* Copy and preview both read the .yaml files at runtime rather than duplicating them into this
+         page, so the file a reader copies is byte-for-byte the file the test suite validates. The
+         cost is that both need an http(s) origin: opened over file://, fetch is blocked, and the
+         Download link is the fallback. */
+      (function () {
+        var cache = {};
+
+        function escapeHtml(text) {
+          return text.replace(/[&<>]/g, function (character) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;' }[character];
+          });
+        }
+
+        /* Enough YAML to match the hand-written samples elsewhere on the site: comments, keys, the
+           list dash, punctuation and numbers. Values stay the default text color, which is what
+           `.y-s` is anyway. */
+        function highlight(source) {
+          return escapeHtml(source)
+            .split('\n')
+            .map(function (line) {
+              var whole = line.match(/^(\s*)(#.*)$/);
+              if (whole) return whole[1] + '<span class="y-c">' + whole[2] + '</span>';
+
+              var code = line;
+              var trailing = '';
+              var hash = line.indexOf(' #');
+              if (hash > -1) {
+                code = line.slice(0, hash);
+                trailing = ' <span class="y-c">' + line.slice(hash + 1) + '</span>';
+              }
+              return (
+                code
+                  .replace(/^(\s*)(- )/, '$1<span class="y-p">- </span>')
+                  .replace(/([A-Za-z_][\w-]*)(:)/g, '<span class="y-k">$1</span><span class="y-p">:</span>')
+                  // Only a number that ends the value — so the `1` in a day label like `Day 1 · Push`
+                  // is left as the string it is.
+                  .replace(/(:<\/span>)( -?\d+(?:\.\d+)?)(?=\s*[,}]|$)/g, '$1<span class="y-n">$2</span>')
+                  .replace(/([{}[\]])/g, '<span class="y-p">$1</span>') + trailing
+              );
+            })
+            .join('\n');
+        }
+
+        function load(file) {
+          if (!cache[file]) {
+            cache[file] = fetch(file).then(function (response) {
+              if (!response.ok) throw new Error(String(response.status));
+              return response.text();
+            });
+          }
+          return cache[file];
+        }
+
+        Array.prototype.forEach.call(document.querySelectorAll('.example[data-file]'), function (card) {
+          var file = card.getAttribute('data-file');
+          var button = card.querySelector('.js-copy');
+          var details = card.querySelector('.example-preview');
+          var code = details && details.querySelector('code');
+          var label = button.textContent;
+          var revert;
+
+          function say(message) {
+            window.clearTimeout(revert);
+            button.textContent = message;
+            revert = window.setTimeout(function () {
+              button.textContent = label;
+            }, 2500);
+          }
+
+          button.addEventListener('click', function () {
+            load(file)
+              .then(function (text) {
+                if (!navigator.clipboard) throw new Error('no clipboard');
+                return navigator.clipboard.writeText(text).then(function () {
+                  say('Copied ✓');
+                });
+              })
+              .catch(function () {
+                say('Copy failed — use Download');
+              });
+          });
+
+          if (!details || !code) return;
+          details.addEventListener('toggle', function () {
+            if (!details.open || details.dataset.loaded) return;
+            details.dataset.loaded = 'yes';
+            load(file)
+              .then(function (text) {
+                code.innerHTML = highlight(text);
+              })
+              .catch(function () {
+                code.textContent = 'Preview needs a network request. Use Download to read the file.';
+              });
+          });
+        });
+      })();
+    </script>
+  </body>
+</html>

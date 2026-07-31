@@ -21,11 +21,7 @@
       },
       "predictiveBackGestureEnabled": false,
       "permissions": ["android.permission.MODIFY_AUDIO_SETTINGS"],
-      "blockedPermissions": [
-        "android.permission.SYSTEM_ALERT_WINDOW",
-        "android.permission.READ_APP_BADGE",
-        "android.permission.DUMP"
-      ]
+      "blockedPermissions": ["android.permission.SYSTEM_ALERT_WINDOW", "android.permission.READ_APP_BADGE"]
     },
     "web": {
       "output": "static",

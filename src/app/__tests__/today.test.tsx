@@ -4,6 +4,7 @@ import { fireEvent, screen } from '@testing-library/react-native';
 import { changeLanguage } from 'i18next';
 
 import TodayScreen from '@/app/(tabs)/index';
+import type { Session } from '@/domain/types';
 import { useLibraryStore } from '@/state/library-store';
 import { useSessionHistoryStore } from '@/state/session-history-store';
 import { router } from '@/test-support/expo-router';
@@ -35,6 +36,29 @@ beforeEach(() => {
 /** An exercise but no workouts: nothing for `nextUpView` to suggest, which is the null path. */
 function setEmptyLibrary() {
   useLibraryStore.setState({ library: aLibrary({ exercises: [anExercise()] }), status: 'ready' });
+}
+
+/** The seeded shape a first run actually has: something to run, nothing logged yet. */
+function setSeededLibrary() {
+  useLibraryStore.setState({
+    library: aLibrary({ exercises: [anExercise()], workouts: [aWorkout({ name: 'Push day' })] }),
+    status: 'ready',
+  });
+}
+
+function aSession(overrides: Partial<Session> = {}): Session {
+  return {
+    version: 1,
+    id: 'session-1',
+    workout: 'push-day',
+    program: null,
+    programWeek: null,
+    programDay: null,
+    startedAt: '2026-07-29T09:00:00.000Z',
+    endedAt: '2026-07-29T09:40:00.000Z',
+    entries: [],
+    ...overrides,
+  };
 }
 
 describe('with no workouts', () => {
@@ -74,14 +98,61 @@ describe('with no workouts', () => {
 });
 
 it('still suggests a workout when the library has one', async () => {
-  useLibraryStore.setState({
-    library: aLibrary({ exercises: [anExercise()], workouts: [aWorkout({ name: 'Push day' })] }),
-    status: 'ready',
-  });
+  setSeededLibrary();
 
   await renderScreen(<TodayScreen />);
 
   expect(screen.getByText('Push day')).toBeTruthy();
   expect(screen.getByText('Start session')).toBeTruthy();
   expect(screen.queryByText('Nothing to run yet')).toBeNull();
+});
+
+/**
+ * The first-run guidance. Who sees it is derived from history rather than persisted: "has never
+ * finished a session" is what being new actually means, and it costs no storage — which is also why
+ * it behaves the same on web, where nothing can be persisted at all.
+ */
+describe('first-run guidance', () => {
+  it('is shown to someone who has never logged a session', async () => {
+    setSeededLibrary();
+
+    await renderScreen(<TodayScreen />);
+
+    expect(screen.getByText('NEW HERE?')).toBeTruthy();
+    expect(screen.getByText('Start the workout below')).toBeTruthy();
+    expect(screen.getByText('Make it yours in Build')).toBeTruthy();
+    expect(screen.getByText('Plan weeks in Programs')).toBeTruthy();
+  });
+
+  it('is gone once a session has been logged', async () => {
+    setSeededLibrary();
+    useSessionHistoryStore.setState({ sessions: [aSession()], status: 'ready' });
+
+    await renderScreen(<TodayScreen />);
+
+    expect(screen.queryByText('NEW HERE?')).toBeNull();
+    // The screen itself is still fine — this is the card going away, not the tab.
+    expect(screen.getByText('Start session')).toBeTruthy();
+  });
+
+  it('stays out of the empty state, which is its own single instruction', async () => {
+    // Both conditions hold at once for a brand-new user who clears the seeded library: no sessions
+    // and nothing to run. Step one would point at a workout that isn't there.
+    setEmptyLibrary();
+
+    await renderScreen(<TodayScreen />);
+
+    expect(screen.queryByText('NEW HERE?')).toBeNull();
+    expect(screen.getByText('Nothing to run yet')).toBeTruthy();
+  });
+
+  it('is translated', async () => {
+    await changeLanguage('pt');
+    setSeededLibrary();
+
+    await renderScreen(<TodayScreen />);
+
+    expect(screen.getByText('PRIMEIRA VEZ?')).toBeTruthy();
+    expect(screen.getByText('Planeje semanas em Programas')).toBeTruthy();
+  });
 });

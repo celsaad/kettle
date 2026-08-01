@@ -38,6 +38,15 @@
     "startSession": "Start session",
     "emptyTitle": "Nothing to run yet",
     "emptyBody": "Your library has no workouts. Build one and it will show up here.",
+    "firstRun": {
+      "title": "NEW HERE?",
+      "step1Title": "Start the workout below",
+      "step1Body": "Timers and audio cues run it, hands-free.",
+      "step2Title": "Make it yours in Build",
+      "step2Body": "Edit the starter workouts or add your own.",
+      "step3Title": "Plan weeks in Programs",
+      "step3Body": "Kettle queues up what comes next."
+    },
     "recent": "RECENT"
   },
   "build": {

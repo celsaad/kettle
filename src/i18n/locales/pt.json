@@ -38,6 +38,15 @@
     "startSession": "Iniciar treino",
     "emptyTitle": "Nada para fazer ainda",
     "emptyBody": "Sua biblioteca não tem treinos. Monte um e ele aparece aqui.",
+    "firstRun": {
+      "title": "PRIMEIRA VEZ?",
+      "step1Title": "Comece o treino abaixo",
+      "step1Body": "Cronômetros e sinais sonoros conduzem tudo.",
+      "step2Title": "Deixe do seu jeito em Montar",
+      "step2Body": "Edite os treinos iniciais ou crie os seus.",
+      "step3Title": "Planeje semanas em Programas",
+      "step3Body": "O Kettle já deixa o próximo na fila."
+    },
     "recent": "RECENTE"
   },
   "build": {

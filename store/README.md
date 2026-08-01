@@ -182,6 +182,43 @@ Recorded because the reasoning is not obvious from the answers, and each will be
 
 Per release, per language, 500 characters each. Not cumulative — the next version needs new ones.
 
+Include a `pt-BR` block only if the listing really has that language — an unsupported tag is
+rejected on upload. Both blocks below are within the limit as written (490 and 464 characters);
+re-count if you edit them.
+
+### 0.2.0 (versionCode 4)
+
+```
+<en-US>
+What's new in 0.2.0
+
+New here? Today opens with three short steps telling you where to start, and clears away once you finish your first session.
+
+Importing a library now says what it changed — how many items were added or updated, and which ones — instead of just closing.
+
+Today no longer goes blank if you delete every workout: it says so, and offers to build one.
+
+Please test starting a session, importing a library and exporting your history. Report anything that hangs or loses data.
+</en-US>
+<pt-BR>
+Novidades da 0.2.0
+
+Primeira vez? A tela Hoje abre com três passos curtos dizendo por onde começar, e some depois do seu primeiro treino.
+
+Importar uma biblioteca agora mostra o que mudou — quantos itens entraram ou foram atualizados, e quais — em vez de só fechar.
+
+A tela Hoje não fica mais em branco se você apagar todos os treinos: ela avisa e oferece criar um.
+
+Teste iniciar um treino, importar e exportar seu histórico. Relate travamentos ou perda de dados.
+</pt-BR>
+```
+
+While the app is in closed testing the last line is deliberately spent on direction rather than on
+positioning — a tester who is told what to exercise reports something, and "real feedback" is what
+the track is assessed on.
+
+### 0.1.0 (versionCode 3) — superseded, kept as the shape to copy
+
 ```
 <en-US>
 First public build of Kettle.
@@ -191,11 +228,6 @@ Plan workouts in a plain YAML file you own, then run them with live timers for a
 English and Portuguese. Please report anything that breaks.
 </en-US>
 ```
-
-For an internal or closed test, the last line is better spent on direction than on positioning:
-
-> Please test: starting a session from Today, all seven exercise types running to completion,
-> importing a YAML library, and exporting your history. Report anything that hangs or loses data.
 
 ## Tip jar products
 

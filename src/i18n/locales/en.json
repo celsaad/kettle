@@ -36,6 +36,8 @@
     "nextUp": "NEXT UP",
     "nextUpWeek": "NEXT UP · {{week}}",
     "startSession": "Start session",
+    "emptyTitle": "Nothing to run yet",
+    "emptyBody": "Your library has no workouts. Build one and it will show up here.",
     "recent": "RECENT"
   },
   "build": {

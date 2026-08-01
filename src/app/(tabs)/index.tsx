@@ -31,7 +31,12 @@ export default function TodayScreen() {
   const streak = currentStreak(sessions);
   const weekStats = thisWeekStats(sessions);
 
-  if (!nextUp) return null;
+  // Only the store still hydrating. A null `nextUp` is a different thing entirely — a library with no
+  // workouts, which is reachable by deleting the seeded ones — and gets the empty card below. This
+  // screen used to return null for that too, so clearing your library blanked the home tab: no
+  // wordmark, no settings button, no way to find out why. Build already had the empty state; Today
+  // didn't, and a blank home tab reads as a crash rather than as an empty library.
+  if (!library) return null;
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['top', 'left', 'right']}>
@@ -84,50 +89,79 @@ export default function TodayScreen() {
           </ThemedView>
         </View>
 
-        <ThemedView type="backgroundElement" style={[styles.nextUpCard, { borderColor: theme.border }]}>
-          <ThemedText type="label" themeColor="accentText">
-            {nextUp.weekNumber !== null
-              ? t('today.nextUpWeek', {
-                  week: `${t('programs.week', { n: nextUp.weekNumber })}${nextUp.weekDay ? ` · ${nextUp.weekDay}` : ''}`,
-                })
-              : t('today.nextUp')}
-          </ThemedText>
-          <ThemedText type="subtitle" style={styles.workoutName}>
-            {nextUp.workout.name}
-          </ThemedText>
-          <View style={styles.chipRow}>
-            {chips.map((chip, index) => (
-              <View
-                key={`${chip.name}-${index}`}
-                style={[styles.chip, { backgroundColor: chip.isRest ? theme.backgroundSelected : theme.accentSoft }]}>
-                <ThemedText type="small" themeColor={chip.isRest ? 'textSecondary' : 'accentText'}>
-                  {chip.name}
-                </ThemedText>
-              </View>
-            ))}
-          </View>
-          <ThemedText themeColor="textSecondary" style={styles.summaryLine}>
-            {summary}
-          </ThemedText>
-          {nextUp.weekNotes && (
-            <ThemedText type="small" themeColor="textSecondary" style={styles.summaryLine}>
-              {nextUp.weekNotes}
+        {nextUp ? (
+          <ThemedView type="backgroundElement" style={[styles.nextUpCard, { borderColor: theme.border }]}>
+            <ThemedText type="label" themeColor="accentText">
+              {nextUp.weekNumber !== null
+                ? t('today.nextUpWeek', {
+                    week: `${t('programs.week', { n: nextUp.weekNumber })}${nextUp.weekDay ? ` · ${nextUp.weekDay}` : ''}`,
+                  })
+                : t('today.nextUp')}
             </ThemedText>
-          )}
-          <Pressable
-            onPress={() => router.push({ pathname: '/session', params: nextUp.sessionParams })}
-            accessibilityRole="button"
-            style={({ pressed }) => [styles.startButton, { backgroundColor: theme.accent }, pressed && styles.pressed]}>
-            <View style={[styles.playTriangle, { borderLeftColor: theme.onAccent }]} />
-            <ThemedText type="heading" style={{ color: theme.onAccent }}>
-              {t('today.startSession')}
+            <ThemedText type="subtitle" style={styles.workoutName}>
+              {nextUp.workout.name}
             </ThemedText>
-          </Pressable>
-        </ThemedView>
+            <View style={styles.chipRow}>
+              {chips.map((chip, index) => (
+                <View
+                  key={`${chip.name}-${index}`}
+                  style={[styles.chip, { backgroundColor: chip.isRest ? theme.backgroundSelected : theme.accentSoft }]}>
+                  <ThemedText type="small" themeColor={chip.isRest ? 'textSecondary' : 'accentText'}>
+                    {chip.name}
+                  </ThemedText>
+                </View>
+              ))}
+            </View>
+            <ThemedText themeColor="textSecondary" style={styles.summaryLine}>
+              {summary}
+            </ThemedText>
+            {nextUp.weekNotes && (
+              <ThemedText type="small" themeColor="textSecondary" style={styles.summaryLine}>
+                {nextUp.weekNotes}
+              </ThemedText>
+            )}
+            <Pressable
+              onPress={() => router.push({ pathname: '/session', params: nextUp.sessionParams })}
+              accessibilityRole="button"
+              style={({ pressed }) => [styles.startButton, { backgroundColor: theme.accent }, pressed && styles.pressed]}>
+              <View style={[styles.playTriangle, { borderLeftColor: theme.onAccent }]} />
+              <ThemedText type="heading" style={{ color: theme.onAccent }}>
+                {t('today.startSession')}
+              </ThemedText>
+            </Pressable>
+          </ThemedView>
+        ) : (
+          <ThemedView type="backgroundElement" style={[styles.nextUpCard, { borderColor: theme.border }]}>
+            <ThemedText type="subtitle">{t('today.emptyTitle')}</ThemedText>
+            <ThemedText themeColor="textSecondary" style={styles.emptyBody}>
+              {t('today.emptyBody')}
+            </ThemedText>
+            {/*
+              Straight to the editor rather than to the Build tab: it's the same action Build's own
+              FAB takes, and it needs no cross-tab navigation. The editor can create exercises inline,
+              so this works even when the library was cleared out entirely.
+            */}
+            <Pressable
+              onPress={() => router.push('/workout-editor')}
+              accessibilityRole="button"
+              style={({ pressed }) => [styles.startButton, { backgroundColor: theme.accent }, pressed && styles.pressed]}>
+              <ThemedText type="heading" style={{ color: theme.onAccent }}>
+                {t('build.newWorkout')}
+              </ThemedText>
+            </Pressable>
+          </ThemedView>
+        )}
 
-        <ThemedText type="label" themeColor="textSecondary" style={styles.sectionLabel}>
-          {t('today.recent')}
-        </ThemedText>
+        {/*
+          The heading goes with its list rather than standing alone: before this it rendered
+          unconditionally, so a fresh install (and the empty library above) showed a "RECENT" label
+          with nothing under it — which reads as content that failed to load.
+        */}
+        {recentSessions.length > 0 && (
+          <ThemedText type="label" themeColor="textSecondary" style={styles.sectionLabel}>
+            {t('today.recent')}
+          </ThemedText>
+        )}
         <View style={styles.recentList}>
           {recentSessions.map((session) => (
             <ThemedView key={session.id} type="backgroundElement" style={[styles.recentRow, { borderColor: theme.border }]}>
@@ -207,6 +241,9 @@ const styles = StyleSheet.create({
   workoutName: {
     marginTop: Spacing.one,
   },
+  emptyBody: {
+    marginTop: Spacing.one,
+  },
   chipRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -223,7 +260,9 @@ const styles = StyleSheet.create({
   },
   startButton: {
     marginTop: Spacing.three,
-    height: 56,
+    // minHeight, not height: a fixed one clips the label at large accessibility text sizes, and this
+    // style now carries the empty state's button too.
+    minHeight: 56,
     borderRadius: 16,
     flexDirection: 'row',
     alignItems: 'center',

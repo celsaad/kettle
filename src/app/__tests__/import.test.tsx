@@ -126,7 +126,9 @@ it('previews what would change, and only writes once confirmed', async () => {
   await fireEvent.press(screen.getByText('Merge & import'));
 
   expect(savedLibrary.mock.calls.at(-1)![0].exercises.map((exercise) => exercise.id)).toEqual(['pull-ups', 'dips']);
-  expect(router.back).toHaveBeenCalled();
+  // Deliberately *not* closed: the write is the one step with nothing to show for it, so the screen
+  // stays to say what landed. Closing is now the Done button's job, covered below.
+  expect(router.back).not.toHaveBeenCalled();
 });
 
 /**
@@ -456,4 +458,73 @@ it('surfaces a read failure instead of failing silently', async () => {
   // And the picker is usable again — the `finally` that clears `busy` is what makes a failed import
   // retryable rather than a dead screen.
   expect(screen.getByText('Choose exercises.yaml')).toBeTruthy();
+});
+
+/**
+ * What the screen says once the write has landed.
+ *
+ * The modal used to close the instant the merge succeeded, which is the one moment in the flow with
+ * nothing to show for it: a few ids folded into a library of dozens is invisible by nature, so
+ * "it closed" was the only evidence anything had happened — indistinguishable from a button that
+ * did nothing.
+ */
+describe('after a successful merge', () => {
+  it('reports what landed instead of vanishing', async () => {
+    picks(aLibrary({ exercises: [dips], programs: [aProgram({ id: 'base-6', name: 'Base 6' })] }));
+    await chooseFile();
+    await fireEvent.press(screen.getByText('Merge & import'));
+
+    expect(screen.getByText('Imported')).toBeTruthy();
+    expect(screen.getByText('2 new items · 0 updated')).toBeTruthy();
+    // The ids that landed are still named, so the confirmation is specific rather than a bare "OK".
+    expect(screen.getByText('dips')).toBeTruthy();
+    expect(screen.getByText('base-6')).toBeTruthy();
+  });
+
+  it('announces the result, which a screen reader would otherwise miss', async () => {
+    const announce = jest.spyOn(AccessibilityInfo, 'announceForAccessibility');
+    picks(aLibrary({ exercises: [dips] }));
+    await chooseFile();
+    await fireEvent.press(screen.getByText('Merge & import'));
+
+    // Focus doesn't move and the heading swaps in below it, so nothing re-reads on its own.
+    expect(announce).toHaveBeenCalledWith('Imported. 1 new, 0 updated.');
+  });
+
+  it('closes on Done, and offers nothing that implies the import could be undone', async () => {
+    picks(aLibrary({ exercises: [dips] }));
+    await chooseFile();
+    await fireEvent.press(screen.getByText('Merge & import'));
+
+    // Cancel would be a lie at this point — the library is already on disk.
+    expect(screen.queryByText('Cancel')).toBeNull();
+    expect(screen.queryByText('Merge & import')).toBeNull();
+
+    await fireEvent.press(screen.getByText('Done'));
+
+    expect(router.back).toHaveBeenCalled();
+  });
+
+  it('counts an update separately from a new item', async () => {
+    // `pull-ups` is already in the library, so this is one of each — the case where the two plural
+    // fragments have to disagree.
+    picks(aLibrary({ exercises: [anExercise({ id: 'pull-ups', name: 'Pull-ups (renamed)' }), dips] }));
+    await chooseFile();
+    await fireEvent.press(screen.getByText('Merge & import'));
+
+    expect(screen.getByText('1 new item · 1 updated')).toBeTruthy();
+  });
+
+  it('is translated', async () => {
+    await changeLanguage('pt');
+    picks(aLibrary({ exercises: [dips] }));
+    await chooseFile();
+    await fireEvent.press(screen.getByText('Mesclar e importar'));
+
+    expect(screen.getByText('Importado')).toBeTruthy();
+    // "0 atualizado", singular: pt's CLDR rule is `i = 0,1`, so zero takes the singular form where
+    // English takes the plural. Precisely what i18next's `count` handles and a `=== 1` ternary
+    // would get wrong in one of the two shipped languages.
+    expect(screen.getByText('1 item novo · 0 atualizado')).toBeTruthy();
+  });
 });

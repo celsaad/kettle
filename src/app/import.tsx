@@ -29,6 +29,17 @@ type Source = { title: string; detail: string };
 type ReadyMerge = { picked: Source; library: Library; summary: MergeSummary };
 
 /**
+ * What actually landed, snapshotted at the moment of the write.
+ *
+ * It has to be a snapshot rather than a re-read of the preview: `changesFor` diffs the store's library
+ * against the merged one, and once the write lands those are the same object — so re-rendering the
+ * preview after applying would report every item as unchanged. This holds the ids and their kind,
+ * which stay true; the per-field diffs are deliberately dropped, being a statement about a "before"
+ * that no longer exists.
+ */
+type Applied = { newCount: number; updatedCount: number; items: { id: string; kind: 'new' | 'updated'; detail: string }[] };
+
+/**
  * A refusal on screen, plus — when there is one — the same refusal worded for whoever wrote the YAML.
  *
  * `report` is deliberately null for the failures that aren't about the *content*: a picker that
@@ -81,6 +92,7 @@ export default function ImportScreen() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<ImportError | null>(null);
   const [ready, setReady] = useState<ReadyMerge | null>(null);
+  const [applied, setApplied] = useState<Applied | null>(null);
   const [pasting, setPasting] = useState(false);
   const [pasted, setPasted] = useState('');
   // Keyed by which button copied, since there are two of them: a "Copied" that isn't tied to a target
@@ -201,12 +213,29 @@ export default function ImportScreen() {
     });
   };
 
+  /**
+   * Applies the merge and says what it did, rather than closing on the spot.
+   *
+   * The modal used to vanish the instant the write landed, which is the one moment in the flow with
+   * nothing to show for it: the change is invisible by nature — a few ids folded into a library of
+   * dozens — so "it closed" was the only evidence the import had happened at all, and it reads the
+   * same as a button that did nothing. The extra tap buys a statement of what changed.
+   */
   const confirmMerge = async () => {
     if (!ready) return;
     setBusy(true);
     try {
+      // Snapshotted before the write, while `changedItems` still describes a real before-and-after.
+      const summary = { newCount, updatedCount, items: changedItems.map(({ id, kind, detail }) => ({ id, kind, detail })) };
       await replaceLibrary(ready.library);
-      close();
+      setReady(null);
+      setApplied(summary);
+      setBusy(false);
+      // The screen changes under the user without focus moving, and the heading it swaps in isn't
+      // where a screen reader is looking — the same reason the copy buttons announce.
+      AccessibilityInfo.announceForAccessibility(
+        t('import.applied.announcement', { new: summary.newCount, updated: summary.updatedCount }),
+      );
     } catch (err) {
       refuse(t('import.error.saveFailed', { detail: (err as Error).message }));
       setBusy(false);
@@ -301,7 +330,7 @@ export default function ImportScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <ThemedText type="subtitle">{t('import.title')}</ThemedText>
 
-        {!ready && (
+        {!ready && !applied && (
           <>
             <Pressable
               onPress={pickFile}
@@ -521,27 +550,87 @@ export default function ImportScreen() {
           </>
         )}
 
-        <View style={styles.buttonRow}>
-          <Pressable
-            onPress={close}
-            accessibilityRole="button"
-            accessibilityLabel={t('common.cancel')}
-            style={[styles.cancelButton, { borderColor: theme.border }]}>
-            <ThemedText type="heading" themeColor="textSecondary">
-              {t('common.cancel')}
-            </ThemedText>
-          </Pressable>
-          <Pressable
-            onPress={confirmMerge}
-            disabled={!ready || busy}
-            accessibilityRole="button"
-            accessibilityLabel={t('import.mergeButton')}
-            style={[styles.mergeButton, { backgroundColor: theme.accent, opacity: !ready || busy ? 0.5 : 1 }]}>
-            <ThemedText type="heading" style={{ color: theme.onAccent }}>
-              {t('import.mergeButton')}
-            </ThemedText>
-          </Pressable>
-        </View>
+        {applied && (
+          <>
+            <View style={[styles.appliedCard, { backgroundColor: theme.accentSoft }]}>
+              <ThemedText type="heading" themeColor="accentText">
+                {t('import.applied.title')}
+              </ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">
+                {t('import.applied.newCount', { count: applied.newCount })} ·{' '}
+                {t('import.applied.updatedCount', { count: applied.updatedCount })}
+              </ThemedText>
+            </View>
+
+            {/*
+              The same rows as the preview, minus the per-field diffs — those describe a "before" the
+              write has already replaced, so re-showing them would be a claim this screen can no
+              longer stand behind.
+            */}
+            <View style={styles.changedList}>
+              {applied.items.map((item) => (
+                <View key={`${item.detail}-${item.id}`} style={styles.changedRow}>
+                  <ThemedText
+                    style={[styles.changedGlyph, { color: item.kind === 'new' ? theme.accentText : theme.accentCalmText }]}>
+                    {item.kind === 'new' ? '+' : '↻'}
+                  </ThemedText>
+                  <ThemedText type="smallMedium" style={styles.changedName}>
+                    {item.id}
+                  </ThemedText>
+                  <ThemedText type="small" themeColor="textSecondary">
+                    {item.detail}
+                  </ThemedText>
+                </View>
+              ))}
+              {applied.items.length === 0 && (
+                <ThemedText type="small" themeColor="textSecondary">
+                  {t('import.noChanges')}
+                </ThemedText>
+              )}
+            </View>
+          </>
+        )}
+
+        {/*
+          Once the write has landed there is nothing left to cancel and nothing left to merge, so the
+          pair collapses to one button. Leaving "Cancel" beside a completed import would suggest it
+          could still be undone, which it can't — the library is already on disk.
+        */}
+        {applied ? (
+          <View style={styles.buttonRow}>
+            <Pressable
+              onPress={close}
+              accessibilityRole="button"
+              accessibilityLabel={t('common.done')}
+              style={[styles.mergeButton, { backgroundColor: theme.accent }]}>
+              <ThemedText type="heading" style={{ color: theme.onAccent }}>
+                {t('common.done')}
+              </ThemedText>
+            </Pressable>
+          </View>
+        ) : (
+          <View style={styles.buttonRow}>
+            <Pressable
+              onPress={close}
+              accessibilityRole="button"
+              accessibilityLabel={t('common.cancel')}
+              style={[styles.cancelButton, { borderColor: theme.border }]}>
+              <ThemedText type="heading" themeColor="textSecondary">
+                {t('common.cancel')}
+              </ThemedText>
+            </Pressable>
+            <Pressable
+              onPress={confirmMerge}
+              disabled={!ready || busy}
+              accessibilityRole="button"
+              accessibilityLabel={t('import.mergeButton')}
+              style={[styles.mergeButton, { backgroundColor: theme.accent, opacity: !ready || busy ? 0.5 : 1 }]}>
+              <ThemedText type="heading" style={{ color: theme.onAccent }}>
+                {t('import.mergeButton')}
+              </ThemedText>
+            </Pressable>
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -623,6 +712,12 @@ const styles = StyleSheet.create({
   },
   copyFailed: {
     flexShrink: 1,
+  },
+  appliedCard: {
+    marginTop: Spacing.three - 2,
+    borderRadius: 14,
+    padding: Spacing.two + 4,
+    gap: 2,
   },
   countsRow: {
     flexDirection: 'row',

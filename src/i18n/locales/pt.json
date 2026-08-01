@@ -287,6 +287,14 @@
       "sameValues": "nenhum campo alterado — substituído por uma definição idêntica"
     },
     "noChanges": "Nenhuma alteração — o arquivo importado é igual à sua biblioteca atual.",
+    "applied": {
+      "title": "Importado",
+      "newCount_one": "{{count}} item novo",
+      "newCount_other": "{{count}} itens novos",
+      "updatedCount_one": "{{count}} atualizado",
+      "updatedCount_other": "{{count}} atualizados",
+      "announcement": "Importado. {{new}} novos, {{updated}} atualizados."
+    },
     "updateNote": "Itens atualizados substituem ajustes locais. As sessões nunca são alteradas.",
     "mergeButton": "Mesclar e importar",
     "error": {

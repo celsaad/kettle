@@ -287,6 +287,14 @@
       "sameValues": "no field changes — replaced with an identical definition"
     },
     "noChanges": "No changes — the imported file matches your current library.",
+    "applied": {
+      "title": "Imported",
+      "newCount_one": "{{count}} new item",
+      "newCount_other": "{{count}} new items",
+      "updatedCount_one": "{{count}} updated",
+      "updatedCount_other": "{{count}} updated",
+      "announcement": "Imported. {{new}} new, {{updated}} updated."
+    },
     "updateNote": "Updated items replace local tweaks. Sessions are never touched.",
     "mergeButton": "Merge & import",
     "error": {

@@ -57,7 +57,7 @@ supply one; touch targets are 44px minimum; colors are contrast-checked against 
 on; the runner stays usable at large accessibility text sizes and announces step transitions to
 screen readers while respecting reduce-motion. Reordering workout blocks works by press-and-hold drag
 or, without sight, through the handle's move-up/move-down screen-reader actions. The program-format
-guide's prose is English-only by decision, not omission. The UI ships in English and Brazilian Portuguese (403 keys at parity), with dates,
+guide's prose is English-only by decision, not omission. The UI ships in English and Brazilian Portuguese (409 keys at parity), with dates,
 numbers, first-day-of-week and kg/lb all following the device locale by default, and the starter
 library a fresh install lands on is seeded in the same two languages. User data —
 exercise, workout and program names, and notes — is never translated: the seeded names included, once
@@ -124,6 +124,6 @@ npm run format        # oxfmt (markdown and package.json are excluded on purpose
 ```
 
 Typecheck, lint and the test suite all run in CI (`.github/workflows/ci.yml`) on every push and pull
-request. The suite is 458 tests across 40 files covering the domain layer, the session runner, and
+request. The suite is 463 tests across 40 files covering the domain layer, the session runner, and
 the highest-branch screens; layout, animation, real audio and file writes are verified by driving the
 running app instead.

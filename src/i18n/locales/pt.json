@@ -36,6 +36,8 @@
     "nextUp": "PRÓXIMO",
     "nextUpWeek": "PRÓXIMO · {{week}}",
     "startSession": "Iniciar treino",
+    "emptyTitle": "Nada para fazer ainda",
+    "emptyBody": "Sua biblioteca não tem treinos. Monte um e ele aparece aqui.",
     "recent": "RECENTE"
   },
   "build": {

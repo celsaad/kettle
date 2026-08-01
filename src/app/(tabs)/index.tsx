@@ -3,6 +3,7 @@ import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native'
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { FirstRunCard } from '@/components/first-run-card';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
@@ -30,6 +31,15 @@ export default function TodayScreen() {
   const recentSessions = library ? recentSessionsView(sessions, library) : [];
   const streak = currentStreak(sessions);
   const weekStats = thisWeekStats(sessions);
+
+  // Never having finished a session is what "new here" actually means — it survives a reinstall's
+  // seeded library and doesn't need a flag persisted anywhere, so web (which can't persist at all)
+  // gets the same behaviour as native for free. It goes for good the moment the first session lands.
+  //
+  // Suppressed when there's nothing to run: the empty state below is itself a single clear
+  // instruction, and two competing instruction blocks is worse than either alone. Step one would be
+  // pointing at a workout that isn't there.
+  const isFirstRun = sessions.length === 0 && nextUp !== null;
 
   // Only the store still hydrating. A null `nextUp` is a different thing entirely — a library with no
   // workouts, which is reachable by deleting the seeded ones — and gets the empty card below. This
@@ -88,6 +98,8 @@ export default function TodayScreen() {
             </ThemedText>
           </ThemedView>
         </View>
+
+        {isFirstRun && <FirstRunCard />}
 
         {nextUp ? (
           <ThemedView type="backgroundElement" style={[styles.nextUpCard, { borderColor: theme.border }]}>

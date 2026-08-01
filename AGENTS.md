@@ -201,7 +201,7 @@ you go, tedious to retrofit, which is why they're here rather than on a backlog.
 - **Never translate user data** — exercise, workout and program names, notes, and `ProgramWeek.day`
   come from the user's YAML and render verbatim. Key the English around them and interpolate the name.
 - Adding a key means adding it to **both** `en.json` and `pt.json`; they are kept at exact parity
-  (396 keys each today) — by hand, since nothing tests it. A key missing from one bundle doesn't fail
+  (403 keys each today) — by hand, since nothing tests it. A key missing from one bundle doesn't fail
   anywhere; i18next's `fallbackLng` quietly renders it in English.
 
 ### Adding a language

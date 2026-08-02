@@ -259,8 +259,19 @@ export function SessionInterval({
           <View style={styles.iconNext} />
         </Pressable>
       </View>
-      <Pressable onPress={onDone} accessibilityRole="button">
-        <ThemedText type="heading" style={styles.doneLabel}>
+      {/*
+       * Promoted to a filled button only when the clock counts up. That's the AMRAP-shaped case, where
+       * nothing ends the step but this tap — the same reason the hold screen's is always primary. A
+       * countdown interval auto-advances at zero, so there this is a genuine "skip ahead" and stays a
+       * quiet link; hitSlop rather than minHeight gets it to a 44px target without giving a secondary
+       * action a button's weight.
+       */}
+      <Pressable
+        onPress={onDone}
+        accessibilityRole="button"
+        hitSlop={countUp ? undefined : { top: 12, bottom: 12, left: 24, right: 24 }}
+        style={countUp ? styles.doneButton : styles.skipLink}>
+        <ThemedText type="heading" style={countUp ? styles.doneLabel : styles.skipLabel}>
           {countUp ? t('session.interval.doneUp') : t('session.interval.skipArrow')}
         </ThemedText>
       </Pressable>
@@ -395,6 +406,7 @@ const styles = StyleSheet.create({
     color: RunnerColors.text,
   },
   stepperLabel: {
+    textAlign: 'center',
     color: RunnerColors.textSecondary,
     letterSpacing: 1.2,
   },
@@ -441,17 +453,37 @@ const styles = StyleSheet.create({
     flex: 1,
     minHeight: 64,
     paddingVertical: Spacing.one,
+    paddingHorizontal: Spacing.two + 4,
     borderRadius: 20,
-    backgroundColor: RunnerColors.text,
+    borderWidth: 1.5,
+    borderColor: RunnerColors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
   pauseButtonLabel: {
-    color: RunnerColors.background,
+    textAlign: 'center',
+    color: RunnerColors.text,
+  },
+  // accent + background is the reps screen's log-set pairing (4.9:1), so no new color decision here.
+  doneButton: {
+    marginTop: Spacing.two,
+    minHeight: 64,
+    paddingVertical: Spacing.one,
+    paddingHorizontal: Spacing.two,
+    borderRadius: 20,
+    backgroundColor: RunnerColors.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   doneLabel: {
     textAlign: 'center',
+    color: RunnerColors.background,
+  },
+  skipLink: {
     marginTop: Spacing.two,
+  },
+  skipLabel: {
+    textAlign: 'center',
     color: RunnerColors.accent,
   },
 });

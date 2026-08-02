@@ -140,7 +140,14 @@ export function SessionHold({
           <View style={styles.iconNext} />
         </Pressable>
       </View>
-      <Pressable onPress={onDone} accessibilityRole="button">
+      {/*
+       * The primary action, styled like one. A hold counts up with its target as a marker and never
+       * auto-advances (unlike rest and a countdown interval), so this is the *only* way out of the
+       * step — and it was a bare text link with no minHeight, giving it the smallest touch target on
+       * the screen where you're least able to aim. Pause, which is the interruption case, had the
+       * filled treatment instead; it's outlined now so the hierarchy matches what each one does.
+       */}
+      <Pressable onPress={onDone} accessibilityRole="button" style={styles.doneButton}>
         <ThemedText type="heading" style={styles.doneLabel}>
           {t('session.hold.doneSet')}
         </ThemedText>
@@ -274,17 +281,30 @@ const styles = StyleSheet.create({
     flex: 1,
     minHeight: 64,
     paddingVertical: Spacing.one,
+    paddingHorizontal: Spacing.two + 4,
     borderRadius: 20,
-    backgroundColor: RunnerColors.text,
+    borderWidth: 1.5,
+    borderColor: RunnerColors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
   pauseButtonLabel: {
-    color: RunnerColors.background,
+    textAlign: 'center',
+    color: RunnerColors.text,
+  },
+  // accent + background is the reps screen's log-set pairing (4.9:1), so no new color decision here.
+  doneButton: {
+    marginTop: Spacing.two,
+    minHeight: 64,
+    paddingVertical: Spacing.one,
+    paddingHorizontal: Spacing.two,
+    borderRadius: 20,
+    backgroundColor: RunnerColors.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   doneLabel: {
     textAlign: 'center',
-    marginTop: Spacing.two,
-    color: RunnerColors.accent,
+    color: RunnerColors.background,
   },
 });

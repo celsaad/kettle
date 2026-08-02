@@ -355,8 +355,8 @@ What's genuinely missing today, checked directly against the code:
   implementation plan's entry for the details. `useKeepAwake` now passes
   `suppressDeactivateWarnings`, the library's own flag for exactly this race.
 - ~~**No automated tests at all.**~~ ✅ Closed — jest via `jest-expo`, running in CI alongside
-  typecheck and lint. (AGENTS.md carries the current suite size; a second copy of the count here only
-  ever went stale — it read "230 tests across 22 files" long after that stopped being true.) Covers
+  typecheck and lint. (`npm test` is the suite size; no doc quotes it, because every copy went stale —
+  this line itself read "230 tests across 22 files" long after that stopped being true.) Covers
   the domain layer, the wall-clock session runner
   (§7.1, "the make-or-break issue"), and the highest-branch screens. Layout, animation, real audio and
   file writes are still verified by driving the running app rather than by test.

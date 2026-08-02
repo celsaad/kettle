@@ -120,7 +120,7 @@ can see.
 user-facing strings outside the locale bundles — against the house rule, and invisible to the suite
 because no test drives that path in `pt`. This plan roughly triples the notification copy surface, so
 fix it in the same PR rather than widening a known break. Budget ~10 new keys, in **both** `en.json`
-and `pt.json`, which AGENTS.md records at 409 keys and exact parity.
+and `pt.json`, which are kept at exact parity by hand.
 
 ## Phases
 

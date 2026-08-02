@@ -1,101 +1,67 @@
 # Kettle
 
-A backend-free React Native app for planning and tracking workouts. Exercises and workout
-templates live in a hand-editable YAML library; completed sessions are written by the app to a
-local, append-only store. No server, no account — fully local, portable, and power-user friendly.
+A backend-free workout tracker for Android. Exercises, workouts and multi-week programs live in a
+hand-editable YAML file you own; completed sessions are written by the app to a local, append-only
+log. No server, no account, nothing transmitted.
 
-See [`docs/exercise-tracker-product-plan.md`](docs/exercise-tracker-product-plan.md) for the full
-product plan (data model, file formats, roadmap), and
-[`docs/authoring-exercises-yaml.md`](docs/authoring-exercises-yaml.md) for the YAML reference.
+**[Landing site](https://celsaad.github.io/kettle/)** ·
+[format reference](https://celsaad.github.io/kettle/format.html) ·
+[example libraries](https://celsaad.github.io/kettle/examples.html)
 
-## Status
+<p>
+  <img src="site/assets/img/today.jpg" width="240"
+       alt="Kettle home screen showing today's workout queued as Week 1 Day 1 with a Start session button." />
+  <img src="site/assets/img/session-hiit.jpg" width="240"
+       alt="Session runner mid-HIIT: round 1 of 4, a large countdown, with Pause and Skip controls." />
+  <img src="site/assets/img/import.jpg" width="240"
+       alt="Import library sheet: choose a YAML file or paste YAML, copy the format for an assistant, merge and import." />
+</p>
 
-A five-tab shell (Today, Library, Build, History, Programs) over real local storage — there is no
-mock data left. `exercises.yaml` and `sessions/*.yaml` are read and written via `expo-file-system`,
-validated with zod on every load. Light/dark mode follows the system theme.
+## What it does
 
-**Session runner.** Live timers for all seven exercise types (hiit / emom / amrap / reps /
-timed_hold / cardio / rest). Timing is wall-clock-based, so it survives backgrounding; it uses
-keep-awake, haptics, audio cues, a pre-session 3-2-1 countdown, and a local notification as a
-background fallback. Every completed set flushes to disk incrementally, so a crash loses at most the
-set in progress. You can finish early (keeping whatever was logged) and step back one level with
-`goPrev()`, which un-flushes what it just wrote rather than leaving stale data behind. A workout with
-nothing runnable shows a "Nothing to run" screen instead of a blank, stuck one.
+- **A live session runner** for all seven exercise types (hiit / emom / amrap / reps / timed_hold /
+  cardio / rest). Timing is wall-clock-based, so it survives backgrounding, and every completed set
+  flushes to disk as it happens.
+- **Full in-app CRUD** for exercises, workouts — including circuits and supersets — and multi-week
+  programs with per-week overrides. Hand-editing the YAML is a power-user option, not a requirement.
+- **Import merges by `id`**, from a file or pasted text, shown as a field-level diff before a single
+  byte is written. A library from anywhere can be accepted without losing your own.
+- **Bring your own assistant.** Import copies a generated JSON Schema plus every id already in your
+  library, so what an LLM writes references your exercises instead of inventing near-duplicates.
+  Kettle never calls a model itself: it supplies the format and validates the result, and what you
+  should actually be doing in a workout stays between you and whoever you asked.
+- **History and progression** — per-exercise volume charts, current streak and weekly totals, all
+  read back from the local log. Export the library or the whole log as plain files any time.
+- **English and Brazilian Portuguese**, the seeded starter library included, with dates, numbers,
+  first day of week and kg/lb following the device locale. User data is never translated.
+- **Accessible by house rule** — roles and labels on every control, 44px targets, contrast-checked
+  colors, screen-reader announcements in the runner, and reduce-motion support.
+- **No ads, no account, no subscription, no analytics or third-party purchase SDK**, so the Play
+  Data Safety declaration stays at zero data collected. An optional tip jar (Google Play Billing)
+  gates nothing and exists only to offset the Play developer fee.
 
-**Authoring.** Exercises, workouts and multi-week programs all have full in-app CRUD, including
-delete behind in-use guards (an exercise still referenced by a workout, a workout still referenced by
-a program). Workouts support circuits/supersets as round-robin blocks with configurable rest, blocks
-reorder by press-and-hold drag, and the exercise/circuit pickers can create a new exercise inline via
-"+ New exercise" instead of detouring to Library. Programs cover per-week overrides — add/remove
-weeks, set each week's number/day/workout/notes, and edit per-exercise or per-circuit config patches.
-Hand-editing `exercises.yaml` is a power-user option, not a requirement; the Programs tab explains
-the format in-app via a guide screen. The exercise, workout and program lists each search by name and
-order by your own file order, A–Z, or what you trained most recently — the order is remembered per
-list, and both are view settings only: neither rewrites the library.
+## Install
 
-**Bring your own assistant.** A hand-editable library that merges by `id` happens to be exactly what
-an LLM is good at emitting, so the import screen is built around that loop rather than merely
-tolerating it. "Copy the format for an assistant" puts a generated JSON Schema plus every id, name and
-type already in your library on the clipboard — so what comes back references your own exercises
-instead of inventing near-duplicates. Paste the reply straight in or pick a file; either path is
-validated and shown as a field-level diff of what would change before a single byte is written, and if
-it's refused, "Copy error" hands the refusal back to whatever produced it. Kettle never calls a model
-itself: no API key field, no in-app "generate" button, nothing leaving the device — which is what keeps
-the zero-data-collected claim below true. It supplies the format and validates the result; what you
-should actually be doing in a workout stays between you and whoever you asked.
+Not on Google Play yet. iOS is not planned — [the site](https://celsaad.github.io/kettle/) carries
+current status.
 
-**History and progression.** Sessions can be searched by workout name (stat tiles and header narrow
-to match) and deleted from the expanded card. Editing an exercise shows a "Recent" section once it's
-been logged: a bar chart of a per-type volume metric (weight moved, time under tension, rounds,
-distance) across recent sessions oldest-to-newest, over an exact-values list newest-first. Today's
-"next up" card tracks which week/day of the active program each session was actually for, persisted
-on the session, so jumping ahead or redoing a week out of order still suggests the right week. Above
-it sits a stat row: current daily streak, this week's session count, this week's time. Any workout
-can also be started ad-hoc from the Build tab's play button, with no program involved.
-
-**Accessibility and i18n.** Both have landed and are house rules for new work rather than open
-workstreams. Every interactive control carries a role, and a label wherever its own text doesn't
-supply one; touch targets are 44px minimum; colors are contrast-checked against each surface they sit
-on; the runner stays usable at large accessibility text sizes and announces step transitions to
-screen readers while respecting reduce-motion. Reordering workout blocks works by press-and-hold drag
-or, without sight, through the handle's move-up/move-down screen-reader actions. The program-format
-guide's prose is English-only by decision, not omission. The UI ships in English and Brazilian Portuguese (423 keys at parity), with dates,
-numbers, first-day-of-week and kg/lb all following the device locale by default, and the starter
-library a fresh install lands on is seeded in the same two languages. User data —
-exercise, workout and program names, and notes — is never translated: the seeded names included, once
-they're written, so changing language later never rewrites a library you've been editing.
-
-**Settings** covers appearance (light/dark/system), display units (kg/lb, seeded from the device's
-measurement system — storage stays metric, so an exported library reads the same everywhere), library
-export/import, exporting the whole session log as one file, and library counts, and
-reaches an optional tip jar (three one-off amounts via Google Play Billing, Android only). It gates
-nothing, every feature is free, and it exists only to offset the Play developer fee. No ads, no
-account, no subscription, and no third-party purchase or analytics SDK, so the Play Data Safety
-declaration stays at zero data collected.
-
-See [`docs/implementation-plan.md`](docs/implementation-plan.md) for what shipped, the scope calls
-made along the way, and what's genuinely still open.
-
-Note that web (`npx expo start --web`) has no persistence — `expo-file-system` doesn't support it, so
-the web build degrades to an ephemeral in-memory seed library rather than crashing.
-
-## Get started
+## Development
 
 ```bash
 npm install
 npx expo start
 ```
 
-In the output, you'll find options to open the app in a
+The output offers a [development build](https://docs.expo.dev/develop/development-builds/introduction/),
+an [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/), an
+[iOS simulator](https://docs.expo.dev/workflow/ios-simulator/), [Expo Go](https://expo.dev/go), or
+the web.
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-- the web (`npx expo start --web`)
+**Web has no persistence.** `expo-file-system` doesn't support it, so `npx expo start --web` degrades
+to an ephemeral in-memory seed library rather than crashing.
 
-This project uses [Expo Router](https://docs.expo.dev/router/introduction) file-based routing;
-screens live under `src/app`.
+Routing is [Expo Router](https://docs.expo.dev/router/introduction) file-based; screens live under
+`src/app`.
 
 ## Project structure
 
@@ -114,6 +80,8 @@ src/
   hooks/                theme context, session runner and its pure step model, announcements
   i18n/                 i18next setup and the en / pt locale bundles
   test-support/         shared fixtures and the expo-router stand-in used by the test suite
+site/                   the public landing site (GitHub Pages), static HTML, no build step
+store/                  Play listing copy and generated store graphics
 ```
 
 ## Scripts
@@ -125,7 +93,24 @@ npm test              # jest, via jest-expo
 npm run format        # oxfmt (markdown and package.json are excluded on purpose)
 ```
 
-Typecheck, lint and the test suite all run in CI (`.github/workflows/ci.yml`) on every push and pull
-request. The suite is 463 tests across 40 files covering the domain layer, the session runner, and
-the highest-branch screens; layout, animation, real audio and file writes are verified by driving the
-running app instead.
+All three checks run in CI (`.github/workflows/ci.yml`) on every push and pull request. The suite
+covers the domain layer, the session runner, the stores and the highest-branch screens; layout,
+animation, real audio and file writes are verified by driving the running app instead.
+
+## Docs
+
+| Doc | What it's for |
+| --- | --- |
+| [`AGENTS.md`](AGENTS.md) | How to work in this repo — conventions, house rules, and the traps worth knowing before you start |
+| [`docs/exercise-tracker-product-plan.md`](docs/exercise-tracker-product-plan.md) | The product model: data model, file formats, roadmap |
+| [`docs/authoring-exercises-yaml.md`](docs/authoring-exercises-yaml.md) | YAML reference, kept exact against `schema.ts` |
+| [`docs/implementation-plan.md`](docs/implementation-plan.md) | Settled decisions, the decision log, and what's genuinely still open |
+| [`docs/history.md`](docs/history.md) | Write-ups of shipped work, where the reasoning outlived the commit |
+
+`AGENTS.md` lists the rest.
+
+## Privacy and license
+
+Kettle collects nothing, transmits nothing, and makes no network requests — see
+[`PRIVACY.md`](PRIVACY.md). The code is MIT licensed ([`LICENSE`](LICENSE)); your library and session
+log are yours and were never anyone else's.

@@ -9,8 +9,9 @@ rediscover. **Do not append to this file just because something shipped.** The c
 `git log -S` finds it. The bar for landing here is the same as for the decision log: reasoning that
 is not discoverable from one commit.
 
-Counts quoted below are as-of the entry that mentions them and drift as work continues — see the
-README for current numbers.
+Counts quoted below are as-of the entry that mentions them and drift as work continues. Nothing
+restates them as current: `npm test` is the test count and the locale bundles are the key count, and
+a hand-maintained copy in prose is a claim no test checks.
 
 ---
 

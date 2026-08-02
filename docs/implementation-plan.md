@@ -165,9 +165,10 @@ which is deleted.
   only). `src/components/reorderable-list.tsx` is a new generic `ReorderableList<T>` component (no
   workout-specific concepts, so it's reusable for a future program-week list): press-and-hold the
   handle (`Gesture.Pan().activateAfterLongPress(150)`, so ordinary `ScrollView` scrolling still works
-  untouched) to pick an item up, live reflow of siblings computed from measured per-item heights
-  (`onLayout` into a shared array — needed because exercise rows and circuit blocks are very different
-  heights), release to drop. Items never leave their original React children order/keys during the
+  untouched) to pick an item up, live reflow of siblings computed from each item's measured resting
+  position *and* height (`onLayout` into a shared array — needed because exercise rows and circuit
+  blocks are very different heights, and because the consumer's own `gap` between rows is invisible to
+  a heights-only model), release to drop. Items never leave their original React children order/keys during the
   drag — only a `translateY` transform moves them — so an open `TextInput` inside a circuit block
   (rounds/rest/block-id fields) doesn't lose focus or remount while another item is dragged; `data`
   changes exactly once, on drop. Required adding `GestureHandlerRootView` to `src/app/_layout.tsx`,

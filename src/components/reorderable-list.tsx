@@ -1,30 +1,68 @@
 import * as Haptics from 'expo-haptics';
-import { useCallback, useRef, type ReactNode } from 'react';
+import { useCallback, useMemo, useRef, type ReactNode } from 'react';
 import { View, type LayoutChangeEvent, type StyleProp, type ViewStyle } from 'react-native';
 import { Gesture, type PanGesture } from 'react-native-gesture-handler';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming, type SharedValue } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 
 /**
- * Which original-index "slot" the actively-dragged item's current center falls into, using each
- * item's *resting* (undisplaced) cumulative height — not the currently-animated positions of the
- * other items. Hit-testing against the static layout avoids a feedback loop between "where things
- * are drawn" and "what counts as the drop target".
+ * Each item's resting (undisplaced) position and size in the list's own coordinate space, taken
+ * straight from `onLayout`.
+ *
+ * `y` is measured rather than derived from a running sum of heights, because the *consumer* owns the
+ * spacing between rows — `workout-editor` sets `gap: 10` on the list container — and a heights-only
+ * model has no way to see it. Summing heights puts every slot boundary at a multiple of the row
+ * *height* where the row actually sits at a multiple of its *pitch*, so the drop target runs ahead of
+ * the finger by one gap per position crossed. Two or three rows down that is a whole position, which
+ * is what made dropping into a chosen middle position impossible.
  */
-function targetIndexFor(activeIndex: number, dragY: number, heights: number[]): number {
-  'worklet';
-  let restingTop = 0;
-  for (let i = 0; i < activeIndex; i++) restingTop += heights[i] ?? 0;
-  const activeHeight = heights[activeIndex] ?? 0;
-  const currentCenter = restingTop + activeHeight / 2 + dragY;
+export type Slot = { y: number; height: number };
 
-  let cumulative = 0;
-  for (let i = 0; i < heights.length; i++) {
-    const h = heights[i] ?? 0;
-    if (currentCenter < cumulative + h) return i;
-    cumulative += h;
+/**
+ * Which resting slot the actively-dragged item's current centre is nearest to. Hit-testing against
+ * the static layout — not the currently-animated positions of the other items — avoids a feedback
+ * loop between "where things are drawn" and "what counts as the drop target".
+ *
+ * Nearest-centre rather than "first slot whose band contains the centre": with real gaps a centre can
+ * land *between* two bands, and it makes the threshold symmetric — a row changes place once it has
+ * travelled past the midpoint between its own centre and its neighbour's, in either direction.
+ *
+ * Exported for tests only. The gesture that drives it cannot be simulated in RNTL, so this arithmetic
+ * has no other reachable surface; the a11y move path is covered through the handle instead.
+ */
+export function targetIndexFor(activeIndex: number, dragY: number, slots: Slot[]): number {
+  'worklet';
+  const active = slots[activeIndex];
+  // Nothing measured yet (first frame, or the array is mid-resize after an add/remove): stay put
+  // rather than treating every zero-height slot as a candidate and committing a move to index 0.
+  if (!active || active.height === 0) return activeIndex;
+
+  const currentCenter = active.y + active.height / 2 + dragY;
+  let target = activeIndex;
+  let bestDistance = Infinity;
+  for (let i = 0; i < slots.length; i++) {
+    const slot = slots[i];
+    if (!slot || slot.height === 0) continue;
+    const distance = Math.abs(currentCenter - (slot.y + slot.height / 2));
+    if (distance < bestDistance) {
+      bestDistance = distance;
+      target = i;
+    }
   }
-  return heights.length - 1;
+  return target;
+}
+
+/**
+ * How far the rows between `from` and `to` slide to open up the gap. That distance is the *pitch* the
+ * dragged row vacates — its height plus the container's spacing — which is exactly the difference
+ * between two consecutive resting tops, so it never has to be told what the spacing is.
+ */
+function displacementFor(from: number, to: number, slots: Slot[]): number {
+  'worklet';
+  // `from < to` guarantees `from + 1` exists; `from > to` guarantees `from - 1` does.
+  const [a, b] = from < to ? [slots[from], slots[from + 1]] : [slots[from - 1], slots[from]];
+  if (!a || !b) return 0;
+  return from < to ? -(b.y - a.y) : b.y - a.y;
 }
 
 function triggerPickupHaptic() {
@@ -63,7 +101,7 @@ type ReorderableItemProps = {
   index: number;
   total: number;
   labels: ReorderLabels;
-  heights: SharedValue<number[]>;
+  slots: SharedValue<Slot[]>;
   activeIndex: SharedValue<number>;
   dragTranslateY: SharedValue<number>;
   onCommit: (from: number, to: number) => void;
@@ -74,7 +112,7 @@ function ReorderableItem({
   index,
   total,
   labels,
-  heights,
+  slots,
   activeIndex,
   dragTranslateY,
   onCommit,
@@ -82,26 +120,49 @@ function ReorderableItem({
 }: ReorderableItemProps) {
   // Long-press-then-drag (not an immediate pan) so ordinary vertical scrolling of the surrounding
   // ScrollView keeps working untouched, and gives a clear "picked up" moment to pair with a haptic.
-  const dragHandle = Gesture.Pan()
-    .activateAfterLongPress(150)
-    .onStart(() => {
-      'worklet';
-      activeIndex.value = index;
-      dragTranslateY.value = 0;
-      scheduleOnRN(triggerPickupHaptic);
-    })
-    .onUpdate((event) => {
-      'worklet';
-      dragTranslateY.value = event.translationY;
-    })
-    .onEnd(() => {
-      'worklet';
-      const from = activeIndex.value;
-      const target = targetIndexFor(from, dragTranslateY.value, heights.value);
-      activeIndex.value = -1;
-      dragTranslateY.value = withTiming(0, { duration: 150 });
-      if (from !== target) scheduleOnRN(onCommit, from, target);
-    });
+  //
+  // Memoized because `GestureDetector` re-attaches on a new gesture object, and this list re-renders
+  // on every keystroke in the sibling name field — rebuilding the handler mid-drag drops the drag.
+  const dragHandle = useMemo(
+    () =>
+      Gesture.Pan()
+        .activateAfterLongPress(150)
+        .onStart(() => {
+          'worklet';
+          activeIndex.value = index;
+          dragTranslateY.value = 0;
+          scheduleOnRN(triggerPickupHaptic);
+        })
+        .onUpdate((event) => {
+          'worklet';
+          dragTranslateY.value = event.translationY;
+        })
+        .onEnd((_event, success) => {
+          'worklet';
+          const from = activeIndex.value;
+          activeIndex.value = -1;
+          const target = success && from >= 0 ? targetIndexFor(from, dragTranslateY.value, slots.value) : from;
+          if (from < 0 || target === from) {
+            dragTranslateY.value = withTiming(0, { duration: 150 });
+            return;
+          }
+          // Snap rather than ease back to zero: the row's new position comes from the `data` change a
+          // frame later, so animating the transform towards its *old* slot at the same time renders as
+          // the drop being rejected and then teleporting.
+          dragTranslateY.value = 0;
+          scheduleOnRN(onCommit, from, target);
+        })
+        .onFinalize(() => {
+          'worklet';
+          // A gesture can be cancelled without `onEnd` ever running — it only fires out of ACTIVE.
+          // Without this the list stays frozen mid-drag: every other row displaced, the handle dead,
+          // and no way back short of leaving the screen.
+          if (activeIndex.value !== index) return;
+          activeIndex.value = -1;
+          dragTranslateY.value = withTiming(0, { duration: 150 });
+        }),
+    [activeIndex, dragTranslateY, index, onCommit, slots],
+  );
 
   const animatedStyle = useAnimatedStyle(() => {
     if (activeIndex.value === index) {
@@ -119,20 +180,20 @@ function ReorderableItem({
       return { transform: [{ translateY: withTiming(0, { duration: 150 }) }], zIndex: 0, elevation: 0, shadowOpacity: 0 };
     }
     const a = activeIndex.value;
-    const target = targetIndexFor(a, dragTranslateY.value, heights.value);
-    let shift = 0;
-    if (a < target && index > a && index <= target) shift = -(heights.value[a] ?? 0);
-    else if (a > target && index >= target && index < a) shift = heights.value[a] ?? 0;
+    const target = targetIndexFor(a, dragTranslateY.value, slots.value);
+    const displaced = a < target ? index > a && index <= target : index >= target && index < a;
+    const shift = displaced ? displacementFor(a, target, slots.value) : 0;
     return { transform: [{ translateY: withTiming(shift, { duration: 150 }) }], zIndex: 0, elevation: 0, shadowOpacity: 0 };
   });
 
   const onLayout = useCallback(
     (event: LayoutChangeEvent) => {
-      const measured = event.nativeEvent.layout.height;
-      if (heights.value[index] === measured) return;
-      heights.value = heights.value.map((h, i) => (i === index ? measured : h));
+      const { y, height } = event.nativeEvent.layout;
+      const current = slots.value[index];
+      if (current && current.y === y && current.height === height) return;
+      slots.value = slots.value.map((slot, i) => (i === index ? { y, height } : slot));
     },
-    [heights, index],
+    [slots, index],
   );
 
   // Clamped rather than wrapped: "move up" on the first row should do nothing, not teleport it to the
@@ -206,14 +267,14 @@ export function ReorderableList<T>({
   labelsFor,
   style,
 }: ReorderableListProps<T>) {
-  const heights = useSharedValue<number[]>(data.map(() => 0));
+  const slots = useSharedValue<Slot[]>(data.map(() => ({ y: 0, height: 0 })));
   const activeIndex = useSharedValue(-1);
   const dragTranslateY = useSharedValue(0);
 
-  // Resize the shared heights array to match `data` across add/remove, preserving already-measured
-  // heights by index. Cheap, and only ever runs between drags (add/remove close any open picker UI).
-  if (heights.value.length !== data.length) {
-    heights.value = data.map((_, i) => heights.value[i] ?? 0);
+  // Resize the shared slot array to match `data` across add/remove, preserving already-measured slots
+  // by index. Cheap, and only ever runs between drags (add/remove close any open picker UI).
+  if (slots.value.length !== data.length) {
+    slots.value = data.map((_, i) => slots.value[i] ?? { y: 0, height: 0 });
   }
 
   // Keep `onReorder`/`data` reachable from the commit callback without changing its identity on every
@@ -238,7 +299,7 @@ export function ReorderableList<T>({
           index={index}
           total={data.length}
           labels={labelsFor(item, index, data.length)}
-          heights={heights}
+          slots={slots}
           activeIndex={activeIndex}
           dragTranslateY={dragTranslateY}
           onCommit={commitReorder}>

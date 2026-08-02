@@ -1,6 +1,6 @@
 # Kettle — shipped-work history
 
-Narrative write-ups of features that have shipped, moved out of `implementation-plan.md` so that
+Narrative write-ups of features that have shipped, moved out of `open-work.md` so that
 file stays a plan rather than a changelog. Nothing here is open work.
 
 Kept because each entry records reasoning that a single commit message does not carry — a

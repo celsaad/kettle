@@ -36,7 +36,7 @@ function librarySamples(file: string): string[] {
     .filter((yaml) => yaml.startsWith('version: 1') && yaml.includes('exercises:') && !yaml.includes('<'));
 }
 
-describe.each([['authoring-exercises-yaml.md'], ['exercise-tracker-product-plan.md']])('%s', (file) => {
+describe.each([['authoring-exercises-yaml.md'], ['product-plan.md']])('%s', (file) => {
   const samples = librarySamples(file);
 
   // A guard on the extraction itself: a doc reorganised so the regex matches nothing would otherwise
@@ -74,6 +74,6 @@ it('the product plan session sample quotes timestamps the way the app writes the
   });
   expect(written).toContain("started_at: '2026-07-22T18:30:00Z'");
 
-  const plan = readFileSync(`${docsDir}/exercise-tracker-product-plan.md`, 'utf8');
+  const plan = readFileSync(`${docsDir}/product-plan.md`, 'utf8');
   expect(plan).toContain("started_at: '2026-07-22T18:30:00Z'");
 });

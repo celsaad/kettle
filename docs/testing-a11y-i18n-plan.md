@@ -2,7 +2,7 @@
 
 > **This plan has been executed.** All three workstreams landed in the order below; see
 > [`history.md`](history.md) for what each one actually shipped and
-> [`implementation-plan.md`](implementation-plan.md) for what remains open. It is kept because the
+> [`open-work.md`](open-work.md) for what remains open. It is kept because the
 > *reasoning* — why the ordering is what it is, why Jest over Vitest, why announcements need design
 > rather than a `liveRegion`, what is deliberately out of scope — still governs new work, and none of
 > it is recoverable from the commits that carried it out. Read it as rationale, not as a backlog.

@@ -102,9 +102,10 @@ animation, real audio and file writes are verified by driving the running app in
 | Doc | What it's for |
 | --- | --- |
 | [`AGENTS.md`](AGENTS.md) | How to work in this repo — conventions, house rules, and the traps worth knowing before you start |
-| [`docs/exercise-tracker-product-plan.md`](docs/exercise-tracker-product-plan.md) | The product model: data model, file formats, roadmap |
+| [`docs/product-plan.md`](docs/product-plan.md) | The product model: data model, file formats, roadmap |
 | [`docs/authoring-exercises-yaml.md`](docs/authoring-exercises-yaml.md) | YAML reference, kept exact against `schema.ts` |
-| [`docs/implementation-plan.md`](docs/implementation-plan.md) | Settled decisions, the decision log, and what's genuinely still open |
+| [`docs/decisions.md`](docs/decisions.md) | The decision log — why things are the way they are |
+| [`docs/open-work.md`](docs/open-work.md) | What's genuinely still open |
 | [`docs/history.md`](docs/history.md) | Write-ups of shipped work, where the reasoning outlived the commit |
 
 `AGENTS.md` lists the rest.

@@ -196,19 +196,29 @@ to the format — a new field, a renamed key, a changed requirement, a new exerc
 in all of them in the same PR:
 
 1. `docs/authoring-exercises-yaml.md` — the authoring reference.
-2. `docs/exercise-tracker-product-plan.md` — its file-format section.
+2. `docs/product-plan.md` — its file-format section.
 3. **`site/format.html`** — the published reference on the landing site, which is the copy an outside
    author or an assistant actually reads. It is the easiest to forget precisely because it doesn't
    look like a doc and nothing in `src/` imports it.
 
-`site-samples.test.ts` catches the part it can: every `<pre data-validate="library">` block on the
-site is run through the real `parseLibraryYaml`, so a sample teaching a shape the schema refuses
-fails the suite. **The tables and prose around those samples are not checked** — the same caveat as
-the docs rules below. The first draft of that page shipped with five of seven type tables wrong
-(`emom` taking `rounds` instead of `total_minutes`, `amrap` missing the required `time_cap_sec`,
-program weeks as `days[]` with `overrides` as a mapping), all of it plausible enough to read as
-correct and every bit of it refused on import. Diff the tables against `schema.ts` by hand; the test
-will not do it for you.
+Three tests cover most of this, and it's worth knowing exactly where they stop:
+
+- `site-samples.test.ts` runs every `<pre data-validate="library">` block on the site through the real
+  `parseLibraryYaml`, and `docs-samples.test.ts` does the same for the complete samples in
+  `authoring-exercises-yaml.md` and `product-plan.md`. A sample teaching a shape the schema refuses
+  fails the suite.
+- `format-mirrors.test.ts` parses the **type tables** in the markdown reference and in
+  `site/format.html` and diffs the field names and optional flags against `schema.ts` itself. So a
+  renamed, invented or missing config field now fails the build in both mirrors.
+- **Ranges, units and prose are still unchecked.** `(>0)` versus `(≥0)`, "in kilograms", and every
+  sentence around the tables are on you.
+
+That split exists because the eyeball pass failed the first time it mattered: the first draft of the
+published page shipped with five of seven type tables wrong (`emom` taking `rounds` instead of
+`total_minutes`, `amrap` missing the required `time_cap_sec`, program weeks as `days[]` with
+`overrides` as a mapping), all of it plausible enough to read as correct and every bit of it refused
+on import. The first two of those are now regression-tested — reintroducing either one fails
+`format-mirrors.test.ts`, which is how it was verified.
 
 If you add a complete library sample to any page, mark it `data-validate="library"` so it joins the
 checked set. Deliberate fragments — a bare `workouts:` list, a shape sketch with `{ ... }` — stay
@@ -220,10 +230,18 @@ Their prose is on `site/examples.html`, which isn't checked, same as the tables 
 
 ## Docs
 
-- `docs/implementation-plan.md` — settled decisions, the decision log, and the open-work lists.
-- `docs/history.md` — write-ups of shipped work, split out of the plan so it stays a plan.
-- `docs/exercise-tracker-product-plan.md` — the data model, file formats and roadmap.
+Every one of these opens with a banner saying what it is and whether it's live; the one-liners here
+are the index, the banner is the contract.
+
+- `docs/decisions.md` — **the decision log.** Why things are the way they are, for reasoning that
+  doesn't fit in one commit. Cited from `AGENTS.md` and eight source files; this is the file they
+  mean.
+- `docs/open-work.md` — the backlog, and only the backlog.
+- `docs/history.md` — write-ups of shipped work, split out so the backlog stays a backlog.
+- `docs/product-plan.md` — the data model, file formats and roadmap.
 - `docs/authoring-exercises-yaml.md` — the YAML reference, kept exact against `schema.ts`.
+- `docs/sdk-57-api-notes.md` — the `expo-file-system` / `expo-notifications` / `expo-iap` shapes
+  confirmed from `node_modules`, because the published docs are wrong for two of the three.
 - `docs/adding-a-language.md` — the six-place procedure for shipping a new UI language.
 - `docs/verifying-in-the-browser.md` — driving the running app under Playwright.
 - `docs/testing-a11y-i18n-plan.md` — executed; kept for its rationale, not as a backlog.

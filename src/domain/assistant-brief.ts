@@ -9,7 +9,7 @@ import type { Library } from '@/domain/types';
 /**
  * Everything an assistant needs to emit YAML this app will accept: the format, and the ids already in
  * the user's library. Copied out of the import screen and pasted into a chat — the app never talks to
- * a model itself (see the implementation plan's hard constraint).
+ * a model itself (see the hard constraint in docs/open-work.md).
  *
  * **This carries format and never intent.** No goals, no set/rep prescriptions, no progression
  * scheme, no exercise selection, nothing about the user's body. The test for any line added here is

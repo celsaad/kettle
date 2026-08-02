@@ -1,5 +1,11 @@
 # Authoring `exercises.yaml`
 
+> **Live reference, and one of `schema.ts`'s three hand-maintained mirrors.** The other two are
+> `product-plan.md` §4 and `site/format.html`; a format change lands in all three in the same PR, per
+> `AGENTS.md` § "Changing the YAML format". The complete samples here are parsed by
+> `docs-samples.test.ts` and the field tables by `format-mirrors.test.ts` — so a field name that
+> doesn't exist fails the suite. The surrounding prose is not checked.
+
 Reference for hand-writing exercise, workout, and program definitions, matching exactly what
 `src/domain/schema.ts` validates and `src/domain/yaml-mapping.ts` parses. Field names below are the
 literal YAML keys (snake_case) — the app maps them to camelCase internally.

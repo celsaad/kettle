@@ -1,4 +1,14 @@
-# Exercise Tracker — Product Plan
+# Kettle — Product Plan
+
+> **The product model, largely built.** This is what Kettle *is* — the data model, the file formats,
+> the seven exercise types and why each behaves as it does — and it stays useful because the model
+> outlived the build. The roadmap (§11) and open questions (§12) are settled and marked; the live
+> backlog is [`open-work.md`](open-work.md), and §13 is the honest current gap list.
+>
+> **§4 is one of `schema.ts`'s three hand-maintained mirrors.** Changing the format means changing it
+> here, in `authoring-exercises-yaml.md`, and in `site/format.html`, in the same PR — see `AGENTS.md`
+> § "Changing the YAML format". The complete YAML samples on this page are parsed by
+> `docs-samples.test.ts` and the field tables by `format-mirrors.test.ts`; the prose is on you.
 
 A backend-free React Native app for planning and tracking workouts. Exercises and workout templates live in a hand-editable YAML library; completed sessions are written by the app to a local, append-only store. No server, no account — fully local, portable, and power-user friendly.
 
@@ -18,7 +28,7 @@ A backend-free React Native app for planning and tracking workouts. Exercises an
 **Positioning under consideration:** the hand-editable library is also what makes the app a good target
 for AI-generated workouts — an assistant emits YAML well, and import already validates it and merges by
 `id` non-destructively. The enabling work, and the constraint that the app must never call a model
-itself, are in the implementation plan's planned-work list rather than restated here.
+itself, are in [`open-work.md`](open-work.md) rather than restated here.
 
 ---
 
@@ -55,7 +65,7 @@ than the runner records: `hiit` logs `roundsCompleted`, not per-round elapsed (r
 config, so the elapsed time was derivable and never worth storing), and `cardio` stores duration and
 distance without a **pace** — nothing computes or displays one.
 
-**Is this list final?** Open — the implementation plan's planned-work list carries the survey (which
+**Is this list final?** Open — [`open-work.md`](open-work.md) carries the survey (which
 candidates are genuinely missing types, which are already expressible with existing config, and what
 adding one costs). Don't restate the candidates here; this table is the shipped set.
 
@@ -298,7 +308,7 @@ Get the **live session engine** right — it's the differentiator.
 1. **Exercise library** — load, view, and CRUD exercises with a type + default config; persist to `exercises.yaml`. ✅ full CRUD, including delete with an in-use-by-workout guard (mirrors the workout-delete pattern).
 2. **Workout builder** — order exercises + insert rest blocks; save as a template in `exercises.yaml`. ✅, plus a full workouts list (create/edit/**delete**, with an in-use-by-program guard) rather than a single hardcoded workout.
 3. **Live session runner** — timed types (hiit / emom / amrap / timed_hold) with audio + haptic cues and auto-advance; rep types with reps/weight input and rest timers; **mixed reps + timed within one workout**; pause/skip/previous. ✅ all types are runnable, plus a pre-session 3-2-1 countdown, tick/exercise-change audio cues, and finish-session-early (commits the in-progress set/round instead of discarding it). `goPrev()` un-flushes the most recent `advance()` (drops that set/round/minute and rewrites the exercise's entry, or retracts the entry outright when that was the only thing in it) — scoped to one level deep: a second `goPrev()` in a row without an intervening `advance()` just moves the step index, same as before.
-4. **Session history** — list past sessions from `sessions/` with basic stats. ✅, and per-exercise progression shipped after this was written: an exercise's edit screen has a "Recent" section listing the last few times it was logged, newest first (`exerciseHistory` in `selectors.ts`), above a per-exercise volume chart (`components/volume-chart.tsx`). See §11 phase 4 and the implementation plan's decision-log entry.
+4. **Session history** — list past sessions from `sessions/` with basic stats. ✅, and per-exercise progression shipped after this was written: an exercise's edit screen has a "Recent" section listing the last few times it was logged, newest first (`exerciseHistory` in `selectors.ts`), above a per-exercise volume chart (`components/volume-chart.tsx`). See §11 phase 4 and the [decision log](decisions.md).
 5. **Import (merge) / export** — merge an imported library by `id`; export library or a single session. ✅
 
 **Beyond the original MVP scope**, already built: **multi-week programs** (periodized wrappers around workouts, with per-week per-exercise/per-circuit overrides and multi-session-per-week support via a `day` field) and **circuits/supersets** (round-robin block grouping with configurable rest between exercises and between rounds) — both were explicitly deferred below and shipped anyway. The home screen derives "next up" from the actual week/day a session was started under (stored on the session itself), not a completed-session count — the count-based version looked "random" once you jumped to a non-sequential week or redid one, since `program-detail.tsx` lets you start any week, not just the suggested one. The home screen also shows a small stats row: current daily streak and this week's session count/time.
@@ -352,7 +362,7 @@ What's genuinely missing today, checked directly against the code:
 - ~~**Timed-hold display direction was never revisited**~~ ✅ Settled — see open question 2 above.
 - **Web has no persistence** — `expo-file-system` doesn't support web, so the web build runs on an ephemeral in-memory seed library. This is a platform constraint, not a product gap.
 - ~~**Known bug (web only): leaving the session screen crashes with a redbox.**~~ ✅ Fixed — see the
-  implementation plan's entry for the details. `useKeepAwake` now passes
+  [decision log](decisions.md) for the details. `useKeepAwake` now passes
   `suppressDeactivateWarnings`, the library's own flag for exactly this race.
 - ~~**No automated tests at all.**~~ ✅ Closed — jest via `jest-expo`, running in CI alongside
   typecheck and lint. (`npm test` is the suite size; no doc quotes it, because every copy went stale —
@@ -378,7 +388,7 @@ What's genuinely missing today, checked directly against the code:
   and announces transitions, and the UI ships in English and Brazilian Portuguese with locale-aware
   dates, numbers and first-day-of-week. ~~Still open within them: screen-reader reordering, the
   `height`-based search bars, `program-guide.tsx`'s prose.~~ ✅ Closed 2026-07-29 — the reorder handle
-  now carries `adjustable` + move-up/move-down actions (see the implementation plan's decision log for
+  now carries `adjustable` + move-up/move-down actions (see [`decisions.md`](decisions.md) for
   why they sit on the handle rather than the row, and why a browser can't see them), and the search
   bars are `minHeight`. Two corrections to what this list used to say: the **stat cards were never
   `height`-based** — they size by padding, so there was nothing to fix — and `program-guide.tsx`'s

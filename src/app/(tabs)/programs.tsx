@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
-import { useMemo } from 'react';
-import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { memo, useMemo } from 'react';
+import { FlatList, Platform, Pressable, StyleSheet, View, type ListRenderItemInfo } from 'react-native';
 import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -34,6 +34,43 @@ function detailLabel(program: Program, t: TFunction): string | null {
   return t('programs.weeksWithNotes', { count });
 }
 
+/** Memoised and module-level for the same reasons as Build's `WorkoutCard`; see the note there. */
+const ProgramCard = memo(function ProgramCard({ program }: { program: Program }) {
+  const theme = useTheme();
+  const { t } = useTranslation();
+  const detail = detailLabel(program, t);
+
+  return (
+    <Pressable
+      onPress={() => router.push({ pathname: '/program-detail', params: { programId: program.id } })}
+      accessibilityRole="button">
+      <ThemedView type="backgroundElement" style={[styles.card, { borderColor: theme.border }]}>
+        <View style={styles.cardText}>
+          <ThemedText type="heading">{program.name}</ThemedText>
+          <ThemedText type="small" themeColor="textSecondary">
+            {weekRangeLabel(program, t)}
+          </ThemedText>
+          {detail && (
+            <ThemedText type="small" themeColor="textSecondary">
+              {detail}
+            </ThemedText>
+          )}
+        </View>
+        <ThemedText themeColor="textSecondary">{'›'}</ThemedText>
+      </ThemedView>
+    </Pressable>
+  );
+});
+
+/** Reproduces the `gap` the old `styles.list` had, which a FlatList's cells don't inherit. */
+function Separator() {
+  return <View style={styles.separator} />;
+}
+
+const keyExtractor = (program: Program) => program.id;
+
+const renderItem = ({ item }: ListRenderItemInfo<Program>) => <ProgramCard program={item} />;
+
 export default function ProgramsScreen() {
   const theme = useTheme();
   const { scheme } = useAppTheme();
@@ -52,68 +89,51 @@ export default function ProgramsScreen() {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['top', 'left', 'right']}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.header}>
-          <ThemedText type="subtitle">{t('programs.title')}</ThemedText>
-          <Pressable
-            onPress={() => router.push('/program-guide')}
-            hitSlop={8}
-            accessibilityRole="button"
-            accessibilityLabel={t('programs.helpLabel')}
-            style={styles.helpButton}>
-            <ThemedText type="heading" themeColor="textSecondary">
-              ?
-            </ThemedText>
-          </Pressable>
-        </View>
-        <ThemedText themeColor="textSecondary" style={styles.countLabel}>
-          {t('programs.count', { count: programs.length })}
-        </ThemedText>
-
-        {/* See Build: nothing to order below two items. */}
-        {programs.length > 1 && <SortPills sort={sort} onSelect={(next) => setListSort('programs', next)} />}
-
-        <View style={styles.list}>
-          {programs.map((program) => {
-            const detail = detailLabel(program, t);
-            return (
-              <Pressable
-                key={program.id}
-                onPress={() => router.push({ pathname: '/program-detail', params: { programId: program.id } })}
-                accessibilityRole="button">
-                <ThemedView type="backgroundElement" style={[styles.card, { borderColor: theme.border }]}>
-                  <View style={styles.cardText}>
-                    <ThemedText type="heading">{program.name}</ThemedText>
-                    <ThemedText type="small" themeColor="textSecondary">
-                      {weekRangeLabel(program, t)}
-                    </ThemedText>
-                    {detail && (
-                      <ThemedText type="small" themeColor="textSecondary">
-                        {detail}
-                      </ThemedText>
-                    )}
-                  </View>
-                  <ThemedText themeColor="textSecondary">{'›'}</ThemedText>
-                </ThemedView>
-              </Pressable>
-            );
-          })}
-          {programs.length === 0 && (
-            <ThemedView type="backgroundElement" style={[styles.emptyState, { borderColor: theme.border }]}>
-              <ThemedText type="heading">{t('programs.emptyTitle')}</ThemedText>
-              <ThemedText type="small" themeColor="textSecondary" style={styles.emptyStateBody}>
-                {t('programs.emptyBody')}
-              </ThemedText>
+      {/* The header is an element, not an inline `() => <Header/>` — see the note in build.tsx. */}
+      <FlatList
+        data={programs}
+        keyExtractor={keyExtractor}
+        renderItem={renderItem}
+        ItemSeparatorComponent={Separator}
+        contentContainerStyle={styles.scrollContent}
+        ListHeaderComponent={
+          <View style={styles.listHeader}>
+            <View style={styles.header}>
+              <ThemedText type="subtitle">{t('programs.title')}</ThemedText>
               <Pressable
                 onPress={() => router.push('/program-guide')}
+                hitSlop={8}
                 accessibilityRole="button"
-                style={[styles.emptyStateButton, { borderColor: theme.border }]}>
-                <ThemedText type="smallMedium">{t('programs.emptyYamlLink')}</ThemedText>
+                accessibilityLabel={t('programs.helpLabel')}
+                style={styles.helpButton}>
+                <ThemedText type="heading" themeColor="textSecondary">
+                  ?
+                </ThemedText>
               </Pressable>
-            </ThemedView>
-          )}
-        </View>
-      </ScrollView>
+            </View>
+            <ThemedText themeColor="textSecondary" style={styles.countLabel}>
+              {t('programs.count', { count: programs.length })}
+            </ThemedText>
+
+            {/* See Build: nothing to order below two items. */}
+            {programs.length > 1 && <SortPills sort={sort} onSelect={(next) => setListSort('programs', next)} />}
+          </View>
+        }
+        ListEmptyComponent={
+          <ThemedView type="backgroundElement" style={[styles.emptyState, { borderColor: theme.border }]}>
+            <ThemedText type="heading">{t('programs.emptyTitle')}</ThemedText>
+            <ThemedText type="small" themeColor="textSecondary" style={styles.emptyStateBody}>
+              {t('programs.emptyBody')}
+            </ThemedText>
+            <Pressable
+              onPress={() => router.push('/program-guide')}
+              accessibilityRole="button"
+              style={[styles.emptyStateButton, { borderColor: theme.border }]}>
+              <ThemedText type="smallMedium">{t('programs.emptyYamlLink')}</ThemedText>
+            </Pressable>
+          </ThemedView>
+        }
+      />
 
       <Pressable
         onPress={() => router.push('/program-editor')}
@@ -155,9 +175,12 @@ const styles = StyleSheet.create({
   countLabel: {
     marginTop: 2,
   },
-  list: {
-    marginTop: Spacing.three,
-    gap: Spacing.two - 3,
+  // What `styles.list`'s `marginTop` and `gap` became once the list stopped being one `View`.
+  listHeader: {
+    marginBottom: Spacing.three,
+  },
+  separator: {
+    height: Spacing.two - 3,
   },
   emptyState: {
     borderRadius: 16,

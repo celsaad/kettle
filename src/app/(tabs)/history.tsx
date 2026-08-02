@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { Alert, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { memo, useCallback, useMemo, useState } from 'react';
+import { Alert, FlatList, Platform, Pressable, StyleSheet, TextInput, View, type ListRenderItemInfo } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -13,6 +13,91 @@ import { historySessionsView, historyStats as historyStatsFor, type HistorySessi
 import { exportSession, exportSessions } from '@/storage/export';
 
 export { RouteErrorBoundary as ErrorBoundary } from '@/components/error-fallback';
+
+/**
+ * One session card, memoised and module-level for the reasons in `build.tsx`'s note — and this is the
+ * list where it pays: History is the only one that grows every time the app is used, and every card
+ * carries an expandable body of per-exercise rows.
+ *
+ * `onToggle` and `onDelete` take the session rather than being bound per row, so the screen can hand
+ * down two `useCallback`s that never change. Only the card whose `expanded` actually flipped
+ * re-renders; the rest compare equal and bail out.
+ */
+const SessionCard = memo(function SessionCard({
+  session,
+  expanded,
+  onToggle,
+  onDelete,
+}: {
+  session: HistorySessionView;
+  expanded: boolean;
+  onToggle: (id: string) => void;
+  onDelete: (session: HistorySessionView) => void;
+}) {
+  const theme = useTheme();
+  const { t } = useTranslation();
+
+  return (
+    <ThemedView type="backgroundElement" style={[styles.card, { borderColor: theme.border }]}>
+      <Pressable
+        onPress={() => onToggle(session.id)}
+        accessibilityRole="button"
+        // The row's own text supplies the name; `expanded` is the part a screen reader
+        // can't infer from the chevron glyph.
+        accessibilityState={{ expanded }}
+        style={styles.cardHeader}>
+        <View style={styles.dateBadge}>
+          <ThemedText type="heading">{session.day}</ThemedText>
+          <ThemedText type="code" themeColor="textSecondary">
+            {session.month}
+          </ThemedText>
+        </View>
+        <View style={styles.cardHeaderText}>
+          <ThemedText type="heading">{session.workoutName}</ThemedText>
+          <ThemedText type="small" themeColor="textSecondary">
+            {session.durationLabel} · {session.setsLabel}
+            {session.mixed ? ` · ${t('history.mixed')}` : ''}
+          </ThemedText>
+        </View>
+        <ThemedText themeColor="textSecondary">{expanded ? '⌄' : '›'}</ThemedText>
+      </Pressable>
+
+      {expanded && (
+        <View style={[styles.expandedContent, { borderTopColor: theme.border }]}>
+          {session.entries.map((entry, index) => (
+            <View key={`${entry.exerciseName}-${index}`} style={styles.entryRow}>
+              <ThemedText type="small" themeColor="textSecondary" numberOfLines={1} style={styles.entryLabel}>
+                {entry.exerciseName}
+              </ThemedText>
+              <ThemedText type="smallMedium" style={styles.entrySummary}>
+                {entry.summary}
+              </ThemedText>
+            </View>
+          ))}
+          <View style={styles.expandedFooter}>
+            <Pressable onPress={() => onDelete(session)} accessibilityRole="button" hitSlop={8}>
+              <ThemedText type="small" themeColor="textSecondary">
+                {t('common.delete')}
+              </ThemedText>
+            </Pressable>
+            <Pressable onPress={() => exportSession(session.id).catch(() => {})} accessibilityRole="button" hitSlop={8}>
+              <ThemedText type="small" themeColor="accentText">
+                {t('common.export')}
+              </ThemedText>
+            </Pressable>
+          </View>
+        </View>
+      )}
+    </ThemedView>
+  );
+});
+
+/** Reproduces the `gap` the old `styles.list` had, which a FlatList's cells don't inherit. */
+function Separator() {
+  return <View style={styles.separator} />;
+}
+
+const keyExtractor = (session: HistorySessionView) => session.id;
 
 export default function HistoryScreen() {
   const theme = useTheme();
@@ -52,164 +137,130 @@ export default function HistoryScreen() {
     return historyStatsFor(sessions.filter((session) => visibleIds.has(session.id)));
   }, [sessions, visibleSessions, searching]);
 
-  const confirmDelete = (session: HistorySessionView) => {
-    Alert.alert(
-      t('history.deleteConfirmTitle'),
-      t('history.deleteConfirmBody', { name: session.workoutName, day: session.day, month: session.month }),
-      [
-        { text: t('common.cancel'), style: 'cancel' },
-        {
-          text: t('common.delete'),
-          style: 'destructive',
-          onPress: () => deleteSession(session.id),
-        },
-      ],
-    );
-  };
+  // Both wrapped so every card can hold the same two function identities and stay memo-equal; without
+  // that, one expand re-renders every card on screen.
+  const confirmDelete = useCallback(
+    (session: HistorySessionView) => {
+      Alert.alert(
+        t('history.deleteConfirmTitle'),
+        t('history.deleteConfirmBody', { name: session.workoutName, day: session.day, month: session.month }),
+        [
+          { text: t('common.cancel'), style: 'cancel' },
+          {
+            text: t('common.delete'),
+            style: 'destructive',
+            onPress: () => deleteSession(session.id),
+          },
+        ],
+      );
+    },
+    [t, deleteSession],
+  );
+
+  const toggleExpanded = useCallback((id: string) => {
+    setExpandedId((current) => (current === id ? null : id));
+  }, []);
+
+  const renderItem = useCallback(
+    ({ item }: ListRenderItemInfo<HistorySessionView>) => (
+      <SessionCard session={item} expanded={expandedId === item.id} onToggle={toggleExpanded} onDelete={confirmDelete} />
+    ),
+    [expandedId, toggleExpanded, confirmDelete],
+  );
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['top', 'left', 'right']}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.header}>
-          <ThemedText type="subtitle">{t('history.title')}</ThemedText>
-          {/*
+      {/* The header is an element, not an inline `() => <Header/>` — see the note in build.tsx. That
+          matters here and not only in principle: the search box below lives in it, and a remounted
+          header loses focus on every keystroke. */}
+      <FlatList
+        data={visibleSessions}
+        keyExtractor={keyExtractor}
+        renderItem={renderItem}
+        ItemSeparatorComponent={Separator}
+        contentContainerStyle={styles.scrollContent}
+        ListHeaderComponent={
+          <View style={styles.listHeader}>
+            <View style={styles.header}>
+              <ThemedText type="subtitle">{t('history.title')}</ThemedText>
+              {/*
             Hidden rather than disabled at zero, since the empty list below already says there's
             nothing to export. "Export all" rather than the bare "Export" the Library header uses:
             each expanded card carries its own Export for one session, and two identical labels a
             scroll apart meaning different amounts of data is the kind of thing you only find out
             about after sharing the wrong one.
           */}
-          {sessions.length > 0 && (
-            <Pressable onPress={() => exportSessions(sessions).catch(() => {})} accessibilityRole="button" hitSlop={8}>
-              <ThemedText type="smallMedium" themeColor="accentText">
-                {t('history.exportAll')}
-              </ThemedText>
-            </Pressable>
-          )}
-        </View>
-        {/*
+              {sessions.length > 0 && (
+                <Pressable onPress={() => exportSessions(sessions).catch(() => {})} accessibilityRole="button" hitSlop={8}>
+                  <ThemedText type="smallMedium" themeColor="accentText">
+                    {t('history.exportAll')}
+                  </ThemedText>
+                </Pressable>
+              )}
+            </View>
+            {/*
           Says "All time" rather than a month: the list below is every session ever, and the three
           tiles are historyStats(sessions) over that same unfiltered set. This used to be a
           hardcoded "July 2026", which was wrong twice over — frozen to one month, and labelling
           all-time numbers as if they were that month's. Searching narrows both the list and the
           tiles, so the label has to stop claiming "all time" and say what the subset is instead.
         */}
-        <ThemedText themeColor="textSecondary" style={styles.countLabel}>
-          {searching
-            ? t('history.matchCount', { shown: visibleSessions.length, total: sessions.length })
-            : t('history.allTime')}
-        </ThemedText>
-
-        {sessionErrors.length > 0 && (
-          <View style={[styles.problemCard, { borderColor: theme.accentText }]}>
-            <ThemedText type="smallMedium" style={{ color: theme.accentText }}>
-              {t('history.problemsTitle', { count: sessionErrors.length })}
+            <ThemedText themeColor="textSecondary" style={styles.countLabel}>
+              {searching
+                ? t('history.matchCount', { shown: visibleSessions.length, total: sessions.length })
+                : t('history.allTime')}
             </ThemedText>
-            {sessionErrors.map((problem) => (
-              <ThemedText key={problem} type="small" themeColor="textSecondary">
-                {problem}
-              </ThemedText>
-            ))}
-          </View>
-        )}
 
-        <View style={styles.statsRow}>
-          <ThemedView type="backgroundElement" style={[styles.statCard, { borderColor: theme.border }]}>
-            <ThemedText type="heading">{historyStats.sessions}</ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">
-              {t('history.sessions')}
-            </ThemedText>
-          </ThemedView>
-          <ThemedView type="backgroundElement" style={[styles.statCard, { borderColor: theme.border }]}>
-            <ThemedText type="heading">
-              {historyStats.hours}h {historyStats.minutes}m
-            </ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">
-              {t('history.time')}
-            </ThemedText>
-          </ThemedView>
-          <ThemedView type="backgroundElement" style={[styles.statCard, { borderColor: theme.border }]}>
-            <ThemedText type="heading">{historyStats.sets}</ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">
-              {t('history.sets')}
-            </ThemedText>
-          </ThemedView>
-        </View>
+            {sessionErrors.length > 0 && (
+              <View style={[styles.problemCard, { borderColor: theme.accentText }]}>
+                <ThemedText type="smallMedium" style={{ color: theme.accentText }}>
+                  {t('history.problemsTitle', { count: sessionErrors.length })}
+                </ThemedText>
+                {sessionErrors.map((problem) => (
+                  <ThemedText key={problem} type="small" themeColor="textSecondary">
+                    {problem}
+                  </ThemedText>
+                ))}
+              </View>
+            )}
 
-        <View style={[styles.searchBar, { borderColor: theme.border, backgroundColor: theme.backgroundElement }]}>
-          <ThemedText themeColor="textSecondary">⌕</ThemedText>
-          <TextInput
-            value={query}
-            onChangeText={setQuery}
-            placeholder={t('history.searchPlaceholder')}
-            accessibilityLabel={t('history.searchPlaceholder')}
-            placeholderTextColor={theme.textSecondary}
-            style={[styles.searchInput, { color: theme.text }]}
-          />
-        </View>
-
-        <View style={styles.list}>
-          {visibleSessions.map((session) => {
-            const expanded = expandedId === session.id;
-            return (
-              <ThemedView key={session.id} type="backgroundElement" style={[styles.card, { borderColor: theme.border }]}>
-                <Pressable
-                  onPress={() => setExpandedId(expanded ? null : session.id)}
-                  accessibilityRole="button"
-                  // The row's own text supplies the name; `expanded` is the part a screen reader
-                  // can't infer from the chevron glyph.
-                  accessibilityState={{ expanded }}
-                  style={styles.cardHeader}>
-                  <View style={styles.dateBadge}>
-                    <ThemedText type="heading">{session.day}</ThemedText>
-                    <ThemedText type="code" themeColor="textSecondary">
-                      {session.month}
-                    </ThemedText>
-                  </View>
-                  <View style={styles.cardHeaderText}>
-                    <ThemedText type="heading">{session.workoutName}</ThemedText>
-                    <ThemedText type="small" themeColor="textSecondary">
-                      {session.durationLabel} · {session.setsLabel}
-                      {session.mixed ? ` · ${t('history.mixed')}` : ''}
-                    </ThemedText>
-                  </View>
-                  <ThemedText themeColor="textSecondary">{expanded ? '⌄' : '›'}</ThemedText>
-                </Pressable>
-
-                {expanded && (
-                  <View style={[styles.expandedContent, { borderTopColor: theme.border }]}>
-                    {session.entries.map((entry, index) => (
-                      <View key={`${entry.exerciseName}-${index}`} style={styles.entryRow}>
-                        <ThemedText type="small" themeColor="textSecondary" numberOfLines={1} style={styles.entryLabel}>
-                          {entry.exerciseName}
-                        </ThemedText>
-                        <ThemedText type="smallMedium" style={styles.entrySummary}>
-                          {entry.summary}
-                        </ThemedText>
-                      </View>
-                    ))}
-                    <View style={styles.expandedFooter}>
-                      <Pressable onPress={() => confirmDelete(session)} accessibilityRole="button" hitSlop={8}>
-                        <ThemedText type="small" themeColor="textSecondary">
-                          {t('common.delete')}
-                        </ThemedText>
-                      </Pressable>
-                      <Pressable
-                        onPress={() => exportSession(session.id).catch(() => {})}
-                        accessibilityRole="button"
-                        hitSlop={8}>
-                        <ThemedText type="small" themeColor="accentText">
-                          {t('common.export')}
-                        </ThemedText>
-                      </Pressable>
-                    </View>
-                  </View>
-                )}
+            <View style={styles.statsRow}>
+              <ThemedView type="backgroundElement" style={[styles.statCard, { borderColor: theme.border }]}>
+                <ThemedText type="heading">{historyStats.sessions}</ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">
+                  {t('history.sessions')}
+                </ThemedText>
               </ThemedView>
-            );
-          })}
-        </View>
-      </ScrollView>
+              <ThemedView type="backgroundElement" style={[styles.statCard, { borderColor: theme.border }]}>
+                <ThemedText type="heading">
+                  {historyStats.hours}h {historyStats.minutes}m
+                </ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">
+                  {t('history.time')}
+                </ThemedText>
+              </ThemedView>
+              <ThemedView type="backgroundElement" style={[styles.statCard, { borderColor: theme.border }]}>
+                <ThemedText type="heading">{historyStats.sets}</ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">
+                  {t('history.sets')}
+                </ThemedText>
+              </ThemedView>
+            </View>
+
+            <View style={[styles.searchBar, { borderColor: theme.border, backgroundColor: theme.backgroundElement }]}>
+              <ThemedText themeColor="textSecondary">⌕</ThemedText>
+              <TextInput
+                value={query}
+                onChangeText={setQuery}
+                placeholder={t('history.searchPlaceholder')}
+                accessibilityLabel={t('history.searchPlaceholder')}
+                placeholderTextColor={theme.textSecondary}
+                style={[styles.searchInput, { color: theme.text }]}
+              />
+            </View>
+          </View>
+        }
+      />
     </SafeAreaView>
   );
 }
@@ -272,9 +323,12 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
   },
-  list: {
-    marginTop: Spacing.three,
-    gap: Spacing.two,
+  // What `styles.list`'s `marginTop` and `gap` became once the list stopped being one `View`.
+  listHeader: {
+    marginBottom: Spacing.three,
+  },
+  separator: {
+    height: Spacing.two,
   },
   card: {
     borderRadius: 16,

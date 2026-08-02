@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
-import { useMemo } from 'react';
-import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { memo, useCallback, useMemo } from 'react';
+import { FlatList, Platform, Pressable, StyleSheet, View, type ListRenderItemInfo } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -10,6 +10,7 @@ import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { formatWorkoutShape } from '@/domain/format';
 import { lastTrainedByWorkout, sortForList } from '@/domain/list-sort';
+import type { Exercise, Workout } from '@/domain/types';
 import { useAppTheme } from '@/hooks/theme-context';
 import { useTheme } from '@/hooks/use-theme';
 import { workoutShape } from '@/state/selectors';
@@ -18,6 +19,54 @@ import { useListSort, usePreferencesStore } from '@/state/preferences-store';
 import { useSessionHistoryStore } from '@/state/session-history-store';
 
 export { RouteErrorBoundary as ErrorBoundary } from '@/components/error-fallback';
+
+/**
+ * One card, memoised, and defined at module level so its identity is stable across renders — a
+ * component declared inside the screen is a new type every render, which remounts every row and makes
+ * the memo worse than useless.
+ *
+ * It navigates by itself rather than taking `onOpen`/`onStart` props, which is what keeps its props
+ * down to two values that don't change: a new lambda per row per render would defeat `memo` at the
+ * first prop comparison. `exercises` comes straight off the library, so its identity only changes when
+ * the library does.
+ */
+const WorkoutCard = memo(function WorkoutCard({ workout, exercises }: { workout: Workout; exercises: Exercise[] }) {
+  const theme = useTheme();
+  const { t } = useTranslation();
+  const shape = useMemo(() => formatWorkoutShape(workoutShape(workout, exercises)), [workout, exercises]);
+
+  return (
+    <ThemedView type="backgroundElement" style={[styles.card, { borderColor: theme.border }]}>
+      <Pressable
+        onPress={() => router.push({ pathname: '/workout-editor', params: { id: workout.id } })}
+        accessibilityRole="button"
+        style={styles.cardTextArea}>
+        <View style={styles.cardText}>
+          <ThemedText type="heading">{workout.name}</ThemedText>
+          <ThemedText type="small" themeColor="textSecondary">
+            {shape}
+          </ThemedText>
+        </View>
+      </Pressable>
+
+      <Pressable
+        onPress={() => router.push({ pathname: '/session', params: { workoutId: workout.id } })}
+        hitSlop={8}
+        accessibilityRole="button"
+        accessibilityLabel={t('build.startAccessibility', { name: workout.name })}
+        style={({ pressed }) => [styles.startButton, { backgroundColor: theme.accentSoft }, pressed && styles.pressed]}>
+        <View style={[styles.playTriangle, { borderLeftColor: theme.accent }]} />
+      </Pressable>
+    </ThemedView>
+  );
+});
+
+/** Reproduces the `gap` the old `styles.list` had, which a FlatList's cells don't inherit. */
+function Separator() {
+  return <View style={styles.separator} />;
+}
+
+const keyExtractor = (workout: Workout) => workout.id;
 
 export default function BuildScreen() {
   const theme = useTheme();
@@ -37,62 +86,51 @@ export default function BuildScreen() {
   );
   const workouts = useMemo(() => sortForList(library?.workouts ?? [], sort, lastTrained), [library, sort, lastTrained]);
 
+  const exercises = library?.exercises;
+  const renderItem = useCallback(
+    ({ item }: ListRenderItemInfo<Workout>) => <WorkoutCard workout={item} exercises={exercises ?? []} />,
+    [exercises],
+  );
+
   if (!library) return null;
 
   const fabColor = scheme === 'dark' ? theme.accent : theme.text;
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['top', 'left', 'right']}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <ThemedText type="subtitle">{t('build.title')}</ThemedText>
-        <ThemedText themeColor="textSecondary" style={styles.countLabel}>
-          {t('build.workoutCount', { count: workouts.length })}
-        </ThemedText>
+      {/*
+        The chrome is passed as an *element*, never as an inline `() => <Header/>`. An inline arrow is
+        a new component type on every render, so React unmounts and remounts the whole header — which
+        costs nothing visible today and will silently eat every keystroke once a text input lives up
+        there.
+      */}
+      <FlatList
+        data={workouts}
+        keyExtractor={keyExtractor}
+        renderItem={renderItem}
+        ItemSeparatorComponent={Separator}
+        contentContainerStyle={styles.scrollContent}
+        ListHeaderComponent={
+          <View style={styles.listHeader}>
+            <ThemedText type="subtitle">{t('build.title')}</ThemedText>
+            <ThemedText themeColor="textSecondary" style={styles.countLabel}>
+              {t('build.workoutCount', { count: workouts.length })}
+            </ThemedText>
 
-        {/* Hidden at one item and at none: there is nothing to order, and a control that changes
-            nothing when pressed is worse than an absent one. */}
-        {workouts.length > 1 && <SortPills sort={sort} onSelect={(next) => setListSort('workouts', next)} />}
-
-        {workouts.length === 0 ? (
+            {/* Hidden at one item and at none: there is nothing to order, and a control that changes
+                nothing when pressed is worse than an absent one. */}
+            {workouts.length > 1 && <SortPills sort={sort} onSelect={(next) => setListSort('workouts', next)} />}
+          </View>
+        }
+        ListEmptyComponent={
           <ThemedView type="backgroundElement" style={[styles.empty, { borderColor: theme.border }]}>
             <ThemedText type="heading">{t('build.emptyTitle')}</ThemedText>
             <ThemedText themeColor="textSecondary" style={styles.emptyBody}>
               {t('build.emptyBody')}
             </ThemedText>
           </ThemedView>
-        ) : (
-          <View style={styles.list}>
-            {workouts.map((workout) => (
-              <ThemedView key={workout.id} type="backgroundElement" style={[styles.card, { borderColor: theme.border }]}>
-                <Pressable
-                  onPress={() => router.push({ pathname: '/workout-editor', params: { id: workout.id } })}
-                  accessibilityRole="button"
-                  style={styles.cardTextArea}>
-                  <View style={styles.cardText}>
-                    <ThemedText type="heading">{workout.name}</ThemedText>
-                    <ThemedText type="small" themeColor="textSecondary">
-                      {formatWorkoutShape(workoutShape(workout, library.exercises))}
-                    </ThemedText>
-                  </View>
-                </Pressable>
-
-                <Pressable
-                  onPress={() => router.push({ pathname: '/session', params: { workoutId: workout.id } })}
-                  hitSlop={8}
-                  accessibilityRole="button"
-                  accessibilityLabel={t('build.startAccessibility', { name: workout.name })}
-                  style={({ pressed }) => [
-                    styles.startButton,
-                    { backgroundColor: theme.accentSoft },
-                    pressed && styles.pressed,
-                  ]}>
-                  <View style={[styles.playTriangle, { borderLeftColor: theme.accent }]} />
-                </Pressable>
-              </ThemedView>
-            ))}
-          </View>
-        )}
-      </ScrollView>
+        }
+      />
 
       <Pressable
         onPress={() => router.push('/workout-editor')}
@@ -125,17 +163,21 @@ const styles = StyleSheet.create({
   pressed: {
     opacity: 0.7,
   },
+  // No `marginTop` any more: the header below carries the gap that `styles.list` used to, and both
+  // would have stacked into double the space above the empty card.
   empty: {
-    marginTop: Spacing.three,
     borderRadius: 16,
     borderWidth: 1,
     padding: Spacing.three,
     gap: 4,
   },
   emptyBody: {},
-  list: {
-    marginTop: Spacing.three,
-    gap: Spacing.two - 3,
+  // What `styles.list`'s `marginTop` and `gap` became once the list stopped being one `View`.
+  listHeader: {
+    marginBottom: Spacing.three,
+  },
+  separator: {
+    height: Spacing.two - 3,
   },
   card: {
     flexDirection: 'row',

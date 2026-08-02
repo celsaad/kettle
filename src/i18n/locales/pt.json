@@ -23,6 +23,11 @@
     "name": "A–Z",
     "recent": "Recentes"
   },
+  "search": {
+    "noMatchTitle": "Nada encontrado",
+    "noMatchBody": "Nenhum resultado para \"{{query}}\". Confira a grafia, ou limpe a busca para ver tudo de novo.",
+    "noMatchFilterBody": "Nada aqui se encaixa nesses filtros. Escolha \"Todos\" para ver tudo de novo."
+  },
   "errorBoundary": {
     "title": "Algo deu errado",
     "body": "Esta tela encontrou um erro inesperado. Sua biblioteca e seu histórico são arquivos no dispositivo, então nada do que você já salvou foi afetado.",
@@ -61,6 +66,7 @@
     "workoutCount_other": "{{count}} treinos",
     "emptyTitle": "Nenhum treino ainda",
     "emptyBody": "Monte um treino a partir dos exercícios da sua biblioteca.",
+    "searchPlaceholder": "Buscar treinos",
     "startAccessibility": "Iniciar {{name}}",
     "newWorkout": "Novo treino"
   },
@@ -103,6 +109,7 @@
     "emptyTitle": "Nenhum programa ainda",
     "emptyBody": "Programas são planos de várias semanas que percorrem seus treinos. Crie um com o botão +, ou escreva um em YAML para mais controle (substituições por semana ainda não são editáveis no app).",
     "emptyYamlLink": "Escrever um em YAML →",
+    "searchPlaceholder": "Buscar programas",
     "newProgram": "Novo programa"
   },
   "session": {

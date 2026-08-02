@@ -125,3 +125,24 @@ it('narrows both the list and the stat tiles to what matched', async () => {
   expect(screen.getByText('Leg day')).toBeTruthy();
   expect(screen.getByText('1 of 2')).toBeTruthy();
 });
+
+// Before this, a search matching nothing left intact chrome over a blank body, which reads as a
+// broken screen rather than as an answer.
+it('says nothing matched instead of going blank', async () => {
+  await renderScreen(<HistoryScreen />);
+
+  await fireEvent.changeText(screen.getByPlaceholderText('Search workouts'), 'zzz');
+
+  expect(screen.getByText('Nothing matched')).toBeTruthy();
+  expect(screen.getByText('0 of 2')).toBeTruthy();
+});
+
+// An empty log is what a new install *is*, and the tiles above already say so — a "nothing matched"
+// card there would be answering a question nobody asked.
+it('stays quiet when there is no history at all', async () => {
+  useSessionHistoryStore.setState({ sessions: [], errors: [], status: 'ready' });
+
+  await renderScreen(<HistoryScreen />);
+
+  expect(screen.queryByText('Nothing matched')).toBeNull();
+});

@@ -127,4 +127,66 @@ it('is translated', async () => {
   expect(screen.getByText('Ordenar')).toBeTruthy();
   expect(screen.getByText('Sua ordem')).toBeTruthy();
   expect(screen.getByText('Recentes')).toBeTruthy();
+  expect(screen.getByPlaceholderText('Buscar treinos')).toBeTruthy();
+});
+
+describe('search', () => {
+  it('narrows the list to matching names', async () => {
+    await renderScreen(<BuildScreen />);
+
+    await fireEvent.changeText(screen.getByPlaceholderText('Search workouts'), 'bench');
+
+    expect(order()).toEqual(['Bench day']);
+  });
+
+  it('ignores case and matches anywhere in the name', async () => {
+    await renderScreen(<BuildScreen />);
+
+    await fireEvent.changeText(screen.getByPlaceholderText('Search workouts'), 'DAY');
+
+    expect(order()).toHaveLength(3);
+  });
+
+  /**
+   * The regression this feature creates if the two empty states aren't told apart: "No workouts yet —
+   * build one from exercises in your library" is right on a fresh install and actively wrong in front
+   * of someone with three workouts who mistyped one.
+   */
+  it('says nothing matched rather than claiming there are no workouts', async () => {
+    await renderScreen(<BuildScreen />);
+
+    await fireEvent.changeText(screen.getByPlaceholderText('Search workouts'), 'zzz');
+
+    expect(screen.getByText('Nothing matched')).toBeTruthy();
+    expect(screen.queryByText('No workouts yet')).toBeNull();
+  });
+
+  it('still tells a new library it has no workouts yet', async () => {
+    useLibraryStore.setState({ library: aLibrary({ exercises: [anExercise()], workouts: [] }), status: 'ready' });
+
+    await renderScreen(<BuildScreen />);
+
+    expect(screen.getByText('No workouts yet')).toBeTruthy();
+    expect(screen.queryByText('Nothing matched')).toBeNull();
+  });
+
+  // Nothing to search in, so the box would only be something else to tap past.
+  it('offers no search box on an empty library', async () => {
+    useLibraryStore.setState({ library: aLibrary({ exercises: [anExercise()], workouts: [] }), status: 'ready' });
+
+    await renderScreen(<BuildScreen />);
+
+    expect(screen.queryByPlaceholderText('Search workouts')).toBeNull();
+  });
+
+  // Both controls key off the whole library, not the visible subset: tied to what's on screen they'd
+  // vanish the moment a query narrowed things, moving the list under the finger that's typing.
+  it('keeps both controls on screen while a search narrows the list to one', async () => {
+    await renderScreen(<BuildScreen />);
+
+    await fireEvent.changeText(screen.getByPlaceholderText('Search workouts'), 'bench');
+
+    expect(screen.getByPlaceholderText('Search workouts')).toBeTruthy();
+    expect(screen.getByText('A–Z')).toBeTruthy();
+  });
 });

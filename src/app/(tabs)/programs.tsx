@@ -5,14 +5,18 @@ import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { SortPills } from '@/components/sort-pills';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { lastTrainedByProgram, sortForList } from '@/domain/list-sort';
 import { programWeekNumbers } from '@/domain/program';
 import type { Program } from '@/domain/types';
 import { useAppTheme } from '@/hooks/theme-context';
 import { useTheme } from '@/hooks/use-theme';
 import { useLibraryStore } from '@/state/library-store';
+import { useListSort, usePreferencesStore } from '@/state/preferences-store';
+import { useSessionHistoryStore } from '@/state/session-history-store';
 
 export { RouteErrorBoundary as ErrorBoundary } from '@/components/error-fallback';
 
@@ -35,7 +39,15 @@ export default function ProgramsScreen() {
   const { scheme } = useAppTheme();
   const { t } = useTranslation();
   const library = useLibraryStore((state) => state.library);
-  const programs = useMemo(() => library?.programs ?? [], [library]);
+  const sessions = useSessionHistoryStore((state) => state.sessions);
+  const sort = useListSort('programs');
+  const setListSort = usePreferencesStore((state) => state.setListSort);
+  // Only `recent` reads the log, and reading it means walking every session ever logged — see Build.
+  const lastTrained = useMemo(
+    () => (sort === 'recent' ? lastTrainedByProgram(sessions) : new Map<string, string>()),
+    [sessions, sort],
+  );
+  const programs = useMemo(() => sortForList(library?.programs ?? [], sort, lastTrained), [library, sort, lastTrained]);
   const fabColor = scheme === 'dark' ? theme.accent : theme.text;
 
   return (
@@ -57,6 +69,9 @@ export default function ProgramsScreen() {
         <ThemedText themeColor="textSecondary" style={styles.countLabel}>
           {t('programs.count', { count: programs.length })}
         </ThemedText>
+
+        {/* See Build: nothing to order below two items. */}
+        {programs.length > 1 && <SortPills sort={sort} onSelect={(next) => setListSort('programs', next)} />}
 
         <View style={styles.list}>
           {programs.map((program) => {

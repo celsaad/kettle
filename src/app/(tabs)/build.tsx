@@ -1,16 +1,21 @@
 import { router } from 'expo-router';
+import { useMemo } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { SortPills } from '@/components/sort-pills';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { formatWorkoutShape } from '@/domain/format';
+import { lastTrainedByWorkout, sortForList } from '@/domain/list-sort';
 import { useAppTheme } from '@/hooks/theme-context';
 import { useTheme } from '@/hooks/use-theme';
 import { workoutShape } from '@/state/selectors';
 import { useLibraryStore } from '@/state/library-store';
+import { useListSort, usePreferencesStore } from '@/state/preferences-store';
+import { useSessionHistoryStore } from '@/state/session-history-store';
 
 export { RouteErrorBoundary as ErrorBoundary } from '@/components/error-fallback';
 
@@ -19,6 +24,18 @@ export default function BuildScreen() {
   const { scheme } = useAppTheme();
   const { t } = useTranslation();
   const library = useLibraryStore((state) => state.library);
+  const sessions = useSessionHistoryStore((state) => state.sessions);
+  const sort = useListSort('workouts');
+  const setListSort = usePreferencesStore((state) => state.setListSort);
+
+  // Both memos run before the `!library` bail-out below, since hooks can't be conditional. `recent` is
+  // the only order that reads the log at all, so the map is built only when it's the one in effect —
+  // this walks every session ever logged, and Build is a screen you land on to start training.
+  const lastTrained = useMemo(
+    () => (sort === 'recent' ? lastTrainedByWorkout(sessions) : new Map<string, string>()),
+    [sessions, sort],
+  );
+  const workouts = useMemo(() => sortForList(library?.workouts ?? [], sort, lastTrained), [library, sort, lastTrained]);
 
   if (!library) return null;
 
@@ -29,10 +46,14 @@ export default function BuildScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <ThemedText type="subtitle">{t('build.title')}</ThemedText>
         <ThemedText themeColor="textSecondary" style={styles.countLabel}>
-          {t('build.workoutCount', { count: library.workouts.length })}
+          {t('build.workoutCount', { count: workouts.length })}
         </ThemedText>
 
-        {library.workouts.length === 0 ? (
+        {/* Hidden at one item and at none: there is nothing to order, and a control that changes
+            nothing when pressed is worse than an absent one. */}
+        {workouts.length > 1 && <SortPills sort={sort} onSelect={(next) => setListSort('workouts', next)} />}
+
+        {workouts.length === 0 ? (
           <ThemedView type="backgroundElement" style={[styles.empty, { borderColor: theme.border }]}>
             <ThemedText type="heading">{t('build.emptyTitle')}</ThemedText>
             <ThemedText themeColor="textSecondary" style={styles.emptyBody}>
@@ -41,7 +62,7 @@ export default function BuildScreen() {
           </ThemedView>
         ) : (
           <View style={styles.list}>
-            {library.workouts.map((workout) => (
+            {workouts.map((workout) => (
               <ThemedView key={workout.id} type="backgroundElement" style={[styles.card, { borderColor: theme.border }]}>
                 <Pressable
                   onPress={() => router.push({ pathname: '/workout-editor', params: { id: workout.id } })}

@@ -11,12 +11,13 @@ jest.mock('@/i18n', () => ({
   deviceUnitSystem: () => mockDeviceUnitSystem(),
 }));
 
+import { DEFAULT_LIST_SORTS } from '@/domain/preferences';
 import { usePreferencesStore } from '@/state/preferences-store';
 
 beforeEach(() => {
   usePreferencesStore.setState({
     status: 'idle',
-    preferences: { unitSystem: 'metric', themePreference: 'system' },
+    preferences: { unitSystem: 'metric', themePreference: 'system', listSort: DEFAULT_LIST_SORTS },
   });
   mockLoad.mockReset().mockResolvedValue(null);
   mockSave.mockReset().mockResolvedValue(true);
@@ -95,7 +96,11 @@ describe('hydrate', () => {
 describe('setUnitSystem', () => {
   it('persists the choice', async () => {
     expect(await usePreferencesStore.getState().setUnitSystem('imperial')).toBe(true);
-    expect(mockSave).toHaveBeenCalledWith({ unitSystem: 'imperial', themePreference: 'system' });
+    expect(mockSave).toHaveBeenCalledWith({
+      unitSystem: 'imperial',
+      themePreference: 'system',
+      listSort: DEFAULT_LIST_SORTS,
+    });
   });
 
   /**
@@ -114,16 +119,24 @@ describe('setUnitSystem', () => {
 describe('setThemePreference', () => {
   it('persists the choice', async () => {
     expect(await usePreferencesStore.getState().setThemePreference('dark')).toBe(true);
-    expect(mockSave).toHaveBeenCalledWith({ unitSystem: 'metric', themePreference: 'dark' });
+    expect(mockSave).toHaveBeenCalledWith({
+      unitSystem: 'metric',
+      themePreference: 'dark',
+      listSort: DEFAULT_LIST_SORTS,
+    });
   });
 
-  // Both preferences share one file, so each setter writes the *merged* object. Writing only its own
-  // field would drop the other one on every change.
-  it('keeps the other preference when writing', async () => {
+  // Every preference shares one file, so each setter writes the *merged* object. Writing only its own
+  // field would drop the others on every change.
+  it('keeps the other preferences when writing', async () => {
     await usePreferencesStore.getState().setUnitSystem('imperial');
     await usePreferencesStore.getState().setThemePreference('light');
 
-    expect(mockSave).toHaveBeenLastCalledWith({ unitSystem: 'imperial', themePreference: 'light' });
+    expect(mockSave).toHaveBeenLastCalledWith({
+      unitSystem: 'imperial',
+      themePreference: 'light',
+      listSort: DEFAULT_LIST_SORTS,
+    });
   });
 
   // Same reasoning as units: the whole app has already repainted in the new scheme, and snapping it
@@ -133,5 +146,25 @@ describe('setThemePreference', () => {
 
     expect(await usePreferencesStore.getState().setThemePreference('dark')).toBe(false);
     expect(usePreferencesStore.getState().preferences.themePreference).toBe('dark');
+  });
+});
+
+describe('setListSort', () => {
+  it('persists the choice', async () => {
+    expect(await usePreferencesStore.getState().setListSort('workouts', 'name')).toBe(true);
+    expect(usePreferencesStore.getState().preferences.listSort.workouts).toBe('name');
+  });
+
+  // The merge above goes one level deeper here: `listSort` is a map of three lists in one field, so a
+  // setter that replaced the whole object would reset the two lists the user isn't looking at.
+  it('leaves the other lists alone', async () => {
+    await usePreferencesStore.getState().setListSort('workouts', 'name');
+    await usePreferencesStore.getState().setListSort('exercises', 'recent');
+
+    expect(usePreferencesStore.getState().preferences.listSort).toEqual({
+      workouts: 'name',
+      programs: 'custom',
+      exercises: 'recent',
+    });
   });
 });

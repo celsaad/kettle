@@ -1,6 +1,12 @@
 import { create } from 'zustand';
 
-import type { Preferences, ThemePreference } from '@/domain/preferences';
+import {
+  DEFAULT_LIST_SORTS,
+  type ListKind,
+  type ListSort,
+  type Preferences,
+  type ThemePreference,
+} from '@/domain/preferences';
 import type { UnitSystem } from '@/domain/units';
 import { deviceUnitSystem } from '@/i18n';
 import { loadPreferences, savePreferences } from '@/storage/preferences-file';
@@ -14,6 +20,8 @@ type PreferencesStoreState = {
   setUnitSystem: (unitSystem: UnitSystem) => Promise<boolean>;
   /** Resolves false when the write failed; the change still applies for this run. */
   setThemePreference: (themePreference: ThemePreference) => Promise<boolean>;
+  /** Resolves false when the write failed; the change still applies for this run. */
+  setListSort: (list: ListKind, sort: ListSort) => Promise<boolean>;
 };
 
 /**
@@ -40,7 +48,7 @@ export const usePreferencesStore = create<PreferencesStoreState>((set, get) => {
 
   return {
     status: 'idle',
-    preferences: { unitSystem: 'metric', themePreference: 'system' },
+    preferences: { unitSystem: 'metric', themePreference: 'system', listSort: DEFAULT_LIST_SORTS },
     hydrate: async () => {
       if (get().status === 'loading') return;
       set({ status: 'loading' });
@@ -49,11 +57,18 @@ export const usePreferencesStore = create<PreferencesStoreState>((set, get) => {
       const stored = await loadPreferences();
       set({
         status: 'ready',
-        preferences: stored ?? { unitSystem: deviceUnitSystem(), themePreference: 'system' },
+        preferences: stored ?? {
+          unitSystem: deviceUnitSystem(),
+          themePreference: 'system',
+          listSort: DEFAULT_LIST_SORTS,
+        },
       });
     },
     setUnitSystem: (unitSystem) => applyAndPersist({ unitSystem }),
     setThemePreference: (themePreference) => applyAndPersist({ themePreference }),
+    // Patches one list's entry rather than replacing the map, so setting Build's order can't reset
+    // the two lists the user isn't looking at.
+    setListSort: (list, sort) => applyAndPersist({ listSort: { ...get().preferences.listSort, [list]: sort } }),
   };
 });
 
@@ -64,4 +79,9 @@ export const usePreferencesStore = create<PreferencesStoreState>((set, get) => {
  */
 export function useUnitSystem(): UnitSystem {
   return usePreferencesStore((state) => state.preferences.unitSystem);
+}
+
+/** One list's chosen order. Narrow selector so a change on Build doesn't re-render Programs. */
+export function useListSort(list: ListKind): ListSort {
+  return usePreferencesStore((state) => state.preferences.listSort[list]);
 }

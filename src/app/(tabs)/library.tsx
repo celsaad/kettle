@@ -5,14 +5,17 @@ import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ExerciseBadge, exerciseSummary } from '@/components/exercise-badge';
+import { SortPills } from '@/components/sort-pills';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { lastTrainedByExercise, sortForList } from '@/domain/list-sort';
 import { ExerciseType } from '@/domain/types';
 import { useAppTheme } from '@/hooks/theme-context';
 import { useTheme } from '@/hooks/use-theme';
 import { useLibraryStore } from '@/state/library-store';
-import { useUnitSystem } from '@/state/preferences-store';
+import { useListSort, usePreferencesStore, useUnitSystem } from '@/state/preferences-store';
+import { useSessionHistoryStore } from '@/state/session-history-store';
 import { exportLibrary } from '@/storage/export';
 
 export { RouteErrorBoundary as ErrorBoundary } from '@/components/error-fallback';
@@ -32,6 +35,9 @@ export default function LibraryScreen() {
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<ExerciseType | 'all'>('all');
   const library = useLibraryStore((state) => state.library);
+  const sessions = useSessionHistoryStore((state) => state.sessions);
+  const sort = useListSort('exercises');
+  const setListSort = usePreferencesStore((state) => state.setListSort);
   const exercises = useMemo(() => library?.exercises.filter((exercise) => exercise.type !== 'rest') ?? [], [library]);
 
   const filtered = useMemo(() => {
@@ -41,6 +47,15 @@ export default function LibraryScreen() {
       return matchesFilter && matchesQuery;
     });
   }, [exercises, filter, query]);
+
+  // Only `recent` reads the log, and reading it means walking every session ever logged — see Build.
+  const lastTrained = useMemo(
+    () => (sort === 'recent' ? lastTrainedByExercise(sessions) : new Map<string, string>()),
+    [sessions, sort],
+  );
+  // Sorted after filtering, not before: the two are independent, and ordering the whole library to
+  // then throw most of it away is work nobody sees.
+  const visible = useMemo(() => sortForList(filtered, sort, lastTrained), [filtered, sort, lastTrained]);
 
   const fabColor = scheme === 'dark' ? theme.accent : theme.text;
 
@@ -63,7 +78,7 @@ export default function LibraryScreen() {
           </View>
         </View>
         <ThemedText themeColor="textSecondary" style={styles.countLabel}>
-          {t('library.exerciseCount', { count: filtered.length })}
+          {t('library.exerciseCount', { count: visible.length })}
         </ThemedText>
 
         <View style={[styles.searchBar, { borderColor: theme.border, backgroundColor: theme.backgroundElement }]}>
@@ -101,8 +116,13 @@ export default function LibraryScreen() {
           })}
         </View>
 
+        {/* Keyed off the whole library rather than what's currently visible: tied to `visible` the
+            control would vanish mid-search the moment a query narrowed things to one result, moving
+            the list under the finger that's typing. */}
+        {exercises.length > 1 && <SortPills sort={sort} onSelect={(next) => setListSort('exercises', next)} />}
+
         <View style={styles.list}>
-          {filtered.map((exercise) => (
+          {visible.map((exercise) => (
             <Pressable
               key={exercise.id}
               onPress={() => router.push({ pathname: '/exercise-editor', params: { id: exercise.id } })}

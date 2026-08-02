@@ -29,7 +29,9 @@ reorder by press-and-hold drag, and the exercise/circuit pickers can create a ne
 "+ New exercise" instead of detouring to Library. Programs cover per-week overrides — add/remove
 weeks, set each week's number/day/workout/notes, and edit per-exercise or per-circuit config patches.
 Hand-editing `exercises.yaml` is a power-user option, not a requirement; the Programs tab explains
-the format in-app via a guide screen.
+the format in-app via a guide screen. The exercise, workout and program lists each order by your own
+file order, A–Z, or what you trained most recently — remembered per list, and a view setting only:
+choosing an order never rewrites the library.
 
 **Bring your own assistant.** A hand-editable library that merges by `id` happens to be exactly what
 an LLM is good at emitting, so the import screen is built around that loop rather than merely

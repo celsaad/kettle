@@ -372,7 +372,10 @@ const styles = StyleSheet.create({
   },
   emptyStateButton: {
     marginTop: Spacing.two,
-    height: 52,
+    // minHeight, not height: a fixed one clips the label at large accessibility text sizes.
+    minHeight: 52,
+    paddingVertical: Spacing.one,
+    paddingHorizontal: Spacing.three,
     minWidth: 160,
     borderRadius: 15,
     backgroundColor: RunnerColors.accent,
@@ -380,6 +383,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   emptyStateButtonLabel: {
+    textAlign: 'center',
     color: RunnerColors.background,
   },
   workoutName: {

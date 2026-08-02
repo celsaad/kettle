@@ -405,18 +405,27 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   prevLabel: {
+    textAlign: 'center',
     color: RunnerColors.textSecondary,
   },
   logButton: {
     flex: 1,
     minHeight: 64,
     paddingVertical: Spacing.one,
+    paddingHorizontal: Spacing.two,
     borderRadius: 20,
     backgroundColor: RunnerColors.accent,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  // `textAlign` matters only once the label wraps, which is exactly when it's noticed: the parent's
+  // `alignItems: 'center'` centers the *text block*, so a wrapped label centers its longest line and
+  // left-aligns every other one against it. pt's "Registrar série → Descanso" wraps on any device
+  // with a raised font scale, and it read as a misaligned button rather than a long label. Every
+  // runner button label carries this for the same reason — a translation only has to get one word
+  // longer to hit it.
   logButtonLabel: {
+    textAlign: 'center',
     color: RunnerColors.background,
   },
 });

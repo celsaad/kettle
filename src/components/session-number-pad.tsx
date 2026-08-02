@@ -185,6 +185,8 @@ const styles = StyleSheet.create({
   cancelButton: {
     flex: 1,
     minHeight: 52,
+    paddingVertical: Spacing.one,
+    paddingHorizontal: Spacing.two,
     borderRadius: 15,
     borderWidth: 1,
     borderColor: RunnerColors.border,
@@ -192,12 +194,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   cancelLabel: {
+    textAlign: 'center',
     color: RunnerColors.textSecondary,
     letterSpacing: 1,
   },
   setButton: {
     flex: 1.6,
     minHeight: 52,
+    paddingVertical: Spacing.one,
+    paddingHorizontal: Spacing.two,
     borderRadius: 15,
     backgroundColor: RunnerColors.accent,
     alignItems: 'center',
@@ -207,6 +212,7 @@ const styles = StyleSheet.create({
     opacity: 0.4,
   },
   setLabel: {
+    textAlign: 'center',
     color: RunnerColors.background,
   },
 });

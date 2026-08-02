@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
-import { useMemo, useState } from 'react';
-import { Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { memo, useCallback, useMemo, useState } from 'react';
+import { FlatList, Platform, Pressable, StyleSheet, TextInput, View, type ListRenderItemInfo } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -10,7 +10,8 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { lastTrainedByExercise, sortForList } from '@/domain/list-sort';
-import { ExerciseType } from '@/domain/types';
+import { ExerciseType, type Exercise } from '@/domain/types';
+import type { UnitSystem } from '@/domain/units';
 import { useAppTheme } from '@/hooks/theme-context';
 import { useTheme } from '@/hooks/use-theme';
 import { useLibraryStore } from '@/state/library-store';
@@ -26,6 +27,38 @@ const FILTERS: { labelKey: string; type: ExerciseType | 'all' }[] = [
   { labelKey: 'library.filterReps', type: 'reps' },
   { labelKey: 'library.filterHold', type: 'timed_hold' },
 ];
+
+/**
+ * Memoised and module-level for the same reasons as Build's `WorkoutCard`; see the note there. This is
+ * the one that matters most of the four: a library grows without bound, and it's about to gain a
+ * search box whose every keystroke re-renders this screen.
+ */
+const ExerciseCard = memo(function ExerciseCard({ exercise, unitSystem }: { exercise: Exercise; unitSystem: UnitSystem }) {
+  const theme = useTheme();
+
+  return (
+    <Pressable
+      onPress={() => router.push({ pathname: '/exercise-editor', params: { id: exercise.id } })}
+      accessibilityRole="button">
+      <ThemedView type="backgroundElement" style={[styles.card, { borderColor: theme.border }]}>
+        <View style={styles.cardText}>
+          <ThemedText type="heading">{exercise.name}</ThemedText>
+          <ThemedText type="small" themeColor="textSecondary">
+            {exerciseSummary(exercise, unitSystem)}
+          </ThemedText>
+        </View>
+        <ExerciseBadge type={exercise.type} />
+      </ThemedView>
+    </Pressable>
+  );
+});
+
+/** Reproduces the `gap` the old `styles.list` had, which a FlatList's cells don't inherit. */
+function Separator() {
+  return <View style={styles.separator} />;
+}
+
+const keyExtractor = (exercise: Exercise) => exercise.id;
 
 export default function LibraryScreen() {
   const theme = useTheme();
@@ -57,89 +90,87 @@ export default function LibraryScreen() {
   // then throw most of it away is work nobody sees.
   const visible = useMemo(() => sortForList(filtered, sort, lastTrained), [filtered, sort, lastTrained]);
 
+  const renderItem = useCallback(
+    ({ item }: ListRenderItemInfo<Exercise>) => <ExerciseCard exercise={item} unitSystem={unitSystem} />,
+    [unitSystem],
+  );
+
   const fabColor = scheme === 'dark' ? theme.accent : theme.text;
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['top', 'left', 'right']}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.header}>
-          <ThemedText type="subtitle">{t('library.title')}</ThemedText>
-          <View style={styles.headerActions}>
-            <Pressable onPress={() => exportLibrary().catch(() => {})} accessibilityRole="button" hitSlop={8}>
-              <ThemedText type="smallMedium" themeColor="textSecondary">
-                {t('common.export')}
-              </ThemedText>
-            </Pressable>
-            <Pressable onPress={() => router.push('/import')} accessibilityRole="button" hitSlop={8}>
-              <ThemedText type="smallMedium" themeColor="accentText">
-                {t('common.import')}
-              </ThemedText>
-            </Pressable>
-          </View>
-        </View>
-        <ThemedText themeColor="textSecondary" style={styles.countLabel}>
-          {t('library.exerciseCount', { count: visible.length })}
-        </ThemedText>
-
-        <View style={[styles.searchBar, { borderColor: theme.border, backgroundColor: theme.backgroundElement }]}>
-          <ThemedText themeColor="textSecondary">⌕</ThemedText>
-          <TextInput
-            value={query}
-            onChangeText={setQuery}
-            placeholder={t('library.searchPlaceholder')}
-            accessibilityLabel={t('library.searchPlaceholder')}
-            placeholderTextColor={theme.textSecondary}
-            style={[styles.searchInput, { color: theme.text }]}
-          />
-        </View>
-
-        <View style={styles.filterRow}>
-          {FILTERS.map((item) => {
-            const active = item.type === filter;
-            return (
-              <Pressable
-                key={item.labelKey}
-                onPress={() => setFilter(item.type)}
-                accessibilityRole="button"
-                accessibilityState={{ selected: active }}
-                style={[
-                  styles.filterPill,
-                  active
-                    ? { backgroundColor: theme.text }
-                    : { backgroundColor: theme.backgroundElement, borderWidth: 1, borderColor: theme.border },
-                ]}>
-                <ThemedText type="small" style={{ color: active ? theme.onAccent : theme.textSecondary }}>
-                  {t(item.labelKey)}
-                </ThemedText>
-              </Pressable>
-            );
-          })}
-        </View>
-
-        {/* Keyed off the whole library rather than what's currently visible: tied to `visible` the
-            control would vanish mid-search the moment a query narrowed things to one result, moving
-            the list under the finger that's typing. */}
-        {exercises.length > 1 && <SortPills sort={sort} onSelect={(next) => setListSort('exercises', next)} />}
-
-        <View style={styles.list}>
-          {visible.map((exercise) => (
-            <Pressable
-              key={exercise.id}
-              onPress={() => router.push({ pathname: '/exercise-editor', params: { id: exercise.id } })}
-              accessibilityRole="button">
-              <ThemedView type="backgroundElement" style={[styles.card, { borderColor: theme.border }]}>
-                <View style={styles.cardText}>
-                  <ThemedText type="heading">{exercise.name}</ThemedText>
-                  <ThemedText type="small" themeColor="textSecondary">
-                    {exerciseSummary(exercise, unitSystem)}
+      {/* The header is an element, not an inline `() => <Header/>` — see the note in build.tsx. That
+          matters here and not only in principle: the search box below lives in it, and a remounted
+          header loses focus on every keystroke. */}
+      <FlatList
+        data={visible}
+        keyExtractor={keyExtractor}
+        renderItem={renderItem}
+        ItemSeparatorComponent={Separator}
+        contentContainerStyle={styles.scrollContent}
+        ListHeaderComponent={
+          <View style={styles.listHeader}>
+            <View style={styles.header}>
+              <ThemedText type="subtitle">{t('library.title')}</ThemedText>
+              <View style={styles.headerActions}>
+                <Pressable onPress={() => exportLibrary().catch(() => {})} accessibilityRole="button" hitSlop={8}>
+                  <ThemedText type="smallMedium" themeColor="textSecondary">
+                    {t('common.export')}
                   </ThemedText>
-                </View>
-                <ExerciseBadge type={exercise.type} />
-              </ThemedView>
-            </Pressable>
-          ))}
-        </View>
-      </ScrollView>
+                </Pressable>
+                <Pressable onPress={() => router.push('/import')} accessibilityRole="button" hitSlop={8}>
+                  <ThemedText type="smallMedium" themeColor="accentText">
+                    {t('common.import')}
+                  </ThemedText>
+                </Pressable>
+              </View>
+            </View>
+            <ThemedText themeColor="textSecondary" style={styles.countLabel}>
+              {t('library.exerciseCount', { count: visible.length })}
+            </ThemedText>
+
+            <View style={[styles.searchBar, { borderColor: theme.border, backgroundColor: theme.backgroundElement }]}>
+              <ThemedText themeColor="textSecondary">⌕</ThemedText>
+              <TextInput
+                value={query}
+                onChangeText={setQuery}
+                placeholder={t('library.searchPlaceholder')}
+                accessibilityLabel={t('library.searchPlaceholder')}
+                placeholderTextColor={theme.textSecondary}
+                style={[styles.searchInput, { color: theme.text }]}
+              />
+            </View>
+
+            <View style={styles.filterRow}>
+              {FILTERS.map((item) => {
+                const active = item.type === filter;
+                return (
+                  <Pressable
+                    key={item.labelKey}
+                    onPress={() => setFilter(item.type)}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: active }}
+                    style={[
+                      styles.filterPill,
+                      active
+                        ? { backgroundColor: theme.text }
+                        : { backgroundColor: theme.backgroundElement, borderWidth: 1, borderColor: theme.border },
+                    ]}>
+                    <ThemedText type="small" style={{ color: active ? theme.onAccent : theme.textSecondary }}>
+                      {t(item.labelKey)}
+                    </ThemedText>
+                  </Pressable>
+                );
+              })}
+            </View>
+
+            {/* Keyed off the whole library rather than what's currently visible: tied to `visible` the
+                control would vanish mid-search the moment a query narrowed things to one result,
+                moving the list under the finger that's typing. */}
+            {exercises.length > 1 && <SortPills sort={sort} onSelect={(next) => setListSort('exercises', next)} />}
+          </View>
+        }
+      />
 
       <Pressable
         onPress={() => router.push('/exercise-editor')}
@@ -205,9 +236,12 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
     borderRadius: 999,
   },
-  list: {
-    marginTop: Spacing.three,
-    gap: Spacing.two - 3,
+  // What `styles.list`'s `marginTop` and `gap` became once the list stopped being one `View`.
+  listHeader: {
+    marginBottom: Spacing.three,
+  },
+  separator: {
+    height: Spacing.two - 3,
   },
   card: {
     flexDirection: 'row',

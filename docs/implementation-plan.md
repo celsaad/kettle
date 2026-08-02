@@ -189,6 +189,25 @@ find it. Add an entry only when the reasoning **isn't discoverable from a single
 constraint that shapes future work, something deliberately rejected (so it isn't re-proposed), or a
 decision assembled across several commits. Open work belongs in the sections at the bottom, not here.
 
+- ✅ **The four list screens are `FlatList`s, and their chrome is a `ListHeaderComponent` *element*.**
+  Build, Programs, Library and History all rendered every row into a plain `ScrollView` + `.map`, so
+  any state change on the screen re-rendered every card that existed — fine at seed-library size, and
+  the reason a search box was going to feel bad on a real log. Two rules come out of it, and only the
+  first is obvious from reading the code:
+
+  - **Never `ListHeaderComponent={() => <Header/>}`.** An inline arrow is a new component *type* on
+    every render, so React unmounts and remounts the whole header rather than reconciling it. Today
+    that costs nothing visible; the moment a `TextInput` lives up there it silently eats every
+    keystroke, because the remounted input has no focus. Passing an element (or a stable module-level
+    component) is what makes the search work planned below possible at all. Library and History
+    already have a search box in that header, so this is load-bearing now, not a precaution.
+  - **A row's props have to be comparable for `memo` to do anything.** Every card navigates or calls a
+    shared `useCallback` rather than taking a lambda built per row per render, which is what keeps the
+    prop set down to values that actually compare equal. History is the one where this is tested
+    directly (`history.test.tsx`): the cards take `expanded` as a prop now instead of each reading
+    `expandedId`, and a comparator that ignored it would leave the wrong card open — three of those
+    tests fail against exactly that bug.
+
 - ✅ **Formatting is oxfmt's, and it deliberately does not own the docs.** The repo went a long time
   with no formatter, which cost real time: reaching for `npx prettier` ad hoc reformats a file to
   Prettier's defaults and fights the whole codebase's style, and a subagent has no way to infer an

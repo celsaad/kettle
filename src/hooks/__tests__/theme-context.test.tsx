@@ -1,6 +1,7 @@
 import { act, renderHook } from '@testing-library/react-native';
 import type { ReactNode } from 'react';
 
+import { DEFAULT_LIST_SORTS } from '@/domain/preferences';
 import { ThemeOverrideProvider, useAppTheme } from '@/hooks/theme-context';
 import { usePreferencesStore } from '@/state/preferences-store';
 
@@ -39,7 +40,10 @@ beforeEach(() => {
  * intermediate frame in the wrong scheme to assert against.
  */
 it('has a stored scheme in effect on the first render', async () => {
-  usePreferencesStore.setState({ status: 'ready', preferences: { unitSystem: 'metric', themePreference: 'dark' } });
+  usePreferencesStore.setState({
+    status: 'ready',
+    preferences: { unitSystem: 'metric', themePreference: 'dark', listSort: DEFAULT_LIST_SORTS },
+  });
 
   const { result } = await renderHook(() => useAppTheme(), { wrapper });
 
@@ -50,7 +54,10 @@ it('has a stored scheme in effect on the first render', async () => {
 // A pinned scheme is a pin: the device disagreeing with it must not win.
 it('keeps a pinned scheme when the device is set to the other one', async () => {
   mockColorScheme.mockReturnValue('dark');
-  usePreferencesStore.setState({ status: 'ready', preferences: { unitSystem: 'metric', themePreference: 'light' } });
+  usePreferencesStore.setState({
+    status: 'ready',
+    preferences: { unitSystem: 'metric', themePreference: 'light', listSort: DEFAULT_LIST_SORTS },
+  });
 
   const { result } = await renderHook(() => useAppTheme(), { wrapper });
 

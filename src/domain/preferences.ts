@@ -23,10 +23,33 @@ import { UNIT_SYSTEMS, type UnitSystem } from '@/domain/units';
 export const THEME_PREFERENCES = ['light', 'dark', 'system'] as const;
 export type ThemePreference = (typeof THEME_PREFERENCES)[number];
 
+/**
+ * How Build, Programs and Library order what they list.
+ *
+ * `custom` is the order the items appear in `exercises.yaml` — the user's own, since they wrote the
+ * file — which is why it's the default and why it's named for whose order it is rather than for the
+ * absence of sorting. `recent` is by when each item was last trained, from the session log.
+ *
+ * A view concern only: nothing here reorders the library file. Sorting that wrote back would make
+ * looking at a list a reason to rewrite the thing the user hand-edits and shares.
+ */
+export const LIST_SORTS = ['custom', 'name', 'recent'] as const;
+export type ListSort = (typeof LIST_SORTS)[number];
+
+/** The three lists that carry the control, each remembering its own choice. */
+export const LIST_KINDS = ['workouts', 'programs', 'exercises'] as const;
+export type ListKind = (typeof LIST_KINDS)[number];
+
+export type ListSorts = Record<ListKind, ListSort>;
+
+export const DEFAULT_LIST_SORTS: ListSorts = { workouts: 'custom', programs: 'custom', exercises: 'custom' };
+
 export type Preferences = {
   /** Display only — stored weights are always kilograms, see `domain/units.ts`. */
   unitSystem: UnitSystem;
   themePreference: ThemePreference;
+  /** Per-list, not one shared setting: ordering exercises by name says nothing about programs. */
+  listSort: ListSorts;
 };
 
 export const preferencesSchema = z.object({
@@ -36,4 +59,15 @@ export const preferencesSchema = z.object({
   // `loadPreferences` answers a failed parse with `null` — so an unrelated missing key would silently
   // reset the user's *unit* choice too. Any preference added later needs the same treatment.
   themePreference: z.enum(THEME_PREFERENCES).default('system'),
+  // Same treatment as `themePreference` above, and for the same reason: this arrived after
+  // `preferences.json` was being written in the field, so it defaults per key *and* as a whole —
+  // a file predating it has no `listSort` object at all, and an inner default can't rescue a missing
+  // parent.
+  listSort: z
+    .object({
+      workouts: z.enum(LIST_SORTS).default('custom'),
+      programs: z.enum(LIST_SORTS).default('custom'),
+      exercises: z.enum(LIST_SORTS).default('custom'),
+    })
+    .default(DEFAULT_LIST_SORTS),
 });

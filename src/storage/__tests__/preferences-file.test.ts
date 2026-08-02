@@ -27,9 +27,14 @@ jest.mock('@/storage/paths', () => ({
   },
 }));
 
+import { DEFAULT_LIST_SORTS } from '@/domain/preferences';
 import { loadPreferences, savePreferences } from '@/storage/preferences-file';
 
-const stored = { unitSystem: 'imperial' as const, themePreference: 'dark' as const };
+const stored = {
+  unitSystem: 'imperial' as const,
+  themePreference: 'dark' as const,
+  listSort: { workouts: 'name' as const, programs: 'custom' as const, exercises: 'recent' as const },
+};
 
 beforeEach(() => {
   mockStorageSupported = true;
@@ -53,7 +58,37 @@ describe('loadPreferences', () => {
    */
   it('reads a file written before themePreference existed, keeping its unit choice', async () => {
     mockFile.text.mockResolvedValue(JSON.stringify({ unitSystem: 'imperial' }));
-    expect(await loadPreferences()).toEqual({ unitSystem: 'imperial', themePreference: 'system' });
+    expect(await loadPreferences()).toEqual({
+      unitSystem: 'imperial',
+      themePreference: 'system',
+      listSort: DEFAULT_LIST_SORTS,
+    });
+  });
+
+  /**
+   * The same regression one preference later, with a twist the first one didn't have: `listSort` is a
+   * nested object, so it needs a default on the *parent* as well as on each key. With only the inner
+   * defaults, a file predating it has no `listSort` at all, nothing runs them, and the parse fails
+   * into `null` — resetting the two choices this user did make.
+   */
+  it('reads a file written before listSort existed, keeping the choices it does have', async () => {
+    mockFile.text.mockResolvedValue(JSON.stringify({ unitSystem: 'imperial', themePreference: 'dark' }));
+    expect(await loadPreferences()).toEqual({
+      unitSystem: 'imperial',
+      themePreference: 'dark',
+      listSort: DEFAULT_LIST_SORTS,
+    });
+  });
+
+  it('defaults only the lists a partially-written listSort leaves out', async () => {
+    mockFile.text.mockResolvedValue(
+      JSON.stringify({ unitSystem: 'metric', themePreference: 'dark', listSort: { workouts: 'name' } }),
+    );
+    expect(await loadPreferences()).toEqual({
+      unitSystem: 'metric',
+      themePreference: 'dark',
+      listSort: { workouts: 'name', programs: 'custom', exercises: 'custom' },
+    });
   });
 
   it('returns null when nothing has been chosen yet', async () => {
@@ -78,6 +113,13 @@ describe('loadPreferences', () => {
   // missing key, so it gets the file's usual all-or-nothing answer rather than the default above.
   it('returns null on a theme preference this build does not know', async () => {
     mockFile.text.mockResolvedValue(JSON.stringify({ unitSystem: 'metric', themePreference: 'sepia' }));
+    expect(await loadPreferences()).toBeNull();
+  });
+
+  it('returns null on a list order this build does not know, for the same reason', async () => {
+    mockFile.text.mockResolvedValue(
+      JSON.stringify({ unitSystem: 'metric', themePreference: 'dark', listSort: { workouts: 'by-vibes' } }),
+    );
     expect(await loadPreferences()).toBeNull();
   });
 

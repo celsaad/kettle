@@ -17,6 +17,12 @@
     "decrease": "Diminuir {{label}}",
     "increase": "Aumentar {{label}}"
   },
+  "sort": {
+    "label": "Ordenar",
+    "custom": "Sua ordem",
+    "name": "A–Z",
+    "recent": "Recentes"
+  },
   "errorBoundary": {
     "title": "Algo deu errado",
     "body": "Esta tela encontrou um erro inesperado. Sua biblioteca e seu histórico são arquivos no dispositivo, então nada do que você já salvou foi afetado.",

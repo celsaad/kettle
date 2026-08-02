@@ -17,6 +17,12 @@
     "decrease": "Decrease {{label}}",
     "increase": "Increase {{label}}"
   },
+  "sort": {
+    "label": "Sort",
+    "custom": "Your order",
+    "name": "A–Z",
+    "recent": "Recent"
+  },
   "errorBoundary": {
     "title": "Something went wrong",
     "body": "This screen hit an unexpected error. Your library and history are files on disk, so nothing you had saved was affected.",

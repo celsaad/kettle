@@ -52,6 +52,16 @@ export function sessionFile(id: string): File {
   return new File(resolvePaths().sessionsDir, `${id}.yaml`);
 }
 
+/**
+ * A scratch file for something assembled on the fly to be handed to another app — today, the whole
+ * history as one document. Deliberately in the cache directory and outside `storagePaths`: it holds
+ * a *copy* of data that already lives under `root`, so the OS reclaiming it costs nothing, and
+ * nothing here should ever be read back as if it were the source of truth.
+ */
+export function cacheFile(name: string): File {
+  return new File(Paths.cache, name);
+}
+
 /** Ensures the app document directory layout exists. Safe to call repeatedly. */
 export function ensureStorageReady(): void {
   const { root, sessionsDir } = resolvePaths();

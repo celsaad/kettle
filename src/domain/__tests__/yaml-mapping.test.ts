@@ -1,3 +1,5 @@
+import { load } from 'js-yaml';
+
 import {
   applyBlockOverride,
   applyExerciseOverride,
@@ -6,6 +8,7 @@ import {
   parseLibraryYaml,
   parseSessionYaml,
   serializeLibraryYaml,
+  serializeSessionArchiveYaml,
   serializeSessionYaml,
 } from '@/domain/yaml-mapping';
 import type { Exercise, Library, Session, WorkoutBlock } from '@/domain/types';
@@ -168,6 +171,38 @@ describe('session round-trip', () => {
       expect(result.data.programWeek).toBeNull();
       expect(result.data.programDay).toBeNull();
     }
+  });
+});
+
+describe('session archive', () => {
+  const other: Session = { ...session, id: 'session-2', entries: [] };
+
+  // The promise the archive makes: it's a container, not a second format. If these two ever diverge,
+  // an exported log stops being the same data the app wrote per session — which is the whole reason
+  // the sessions carry their own `version` inside a document that also has one.
+  it('holds each session exactly as its own file would', () => {
+    const archive = load(serializeSessionArchiveYaml([session, other], '2026-08-02T12:00:00.000Z')) as {
+      sessions: unknown[];
+    };
+    expect(archive.sessions[0]).toEqual(load(serializeSessionYaml(session)));
+    expect(archive.sessions[1]).toEqual(load(serializeSessionYaml(other)));
+  });
+
+  it('reads back as one plain document, not a stream', () => {
+    const archive = load(serializeSessionArchiveYaml([session], '2026-08-02T12:00:00.000Z')) as {
+      version: number;
+      exported_at: string;
+      sessions: unknown[];
+    };
+    expect(archive.version).toBe(1);
+    expect(archive.exported_at).toBe('2026-08-02T12:00:00.000Z');
+    expect(archive.sessions).toHaveLength(1);
+  });
+
+  it('writes snake_case at the container level too', () => {
+    const yaml = serializeSessionArchiveYaml([session], '2026-08-02T12:00:00.000Z');
+    expect(yaml).toContain('exported_at:');
+    expect(yaml).not.toMatch(/exportedAt/);
   });
 });
 

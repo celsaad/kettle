@@ -10,7 +10,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { useLibraryStore } from '@/state/library-store';
 import { useSessionHistoryStore } from '@/state/session-history-store';
 import { historySessionsView, historyStats as historyStatsFor, type HistorySessionView } from '@/state/selectors';
-import { exportSession } from '@/storage/export';
+import { exportSession, exportSessions } from '@/storage/export';
 
 export { RouteErrorBoundary as ErrorBoundary } from '@/components/error-fallback';
 
@@ -73,18 +73,32 @@ export default function HistoryScreen() {
         <View style={styles.header}>
           <ThemedText type="subtitle">{t('history.title')}</ThemedText>
           {/*
-            Says "All time" rather than a month: the list below is every session ever, and the three
-            tiles are historyStats(sessions) over that same unfiltered set. This used to be a
-            hardcoded "July 2026", which was wrong twice over — frozen to one month, and labelling
-            all-time numbers as if they were that month's. Searching narrows both the list and the
-            tiles, so the label has to stop claiming "all time" and say what the subset is instead.
+            Hidden rather than disabled at zero, since the empty list below already says there's
+            nothing to export. "Export all" rather than the bare "Export" the Library header uses:
+            each expanded card carries its own Export for one session, and two identical labels a
+            scroll apart meaning different amounts of data is the kind of thing you only find out
+            about after sharing the wrong one.
           */}
-          <ThemedText themeColor="textSecondary">
-            {searching
-              ? t('history.matchCount', { shown: visibleSessions.length, total: sessions.length })
-              : t('history.allTime')}
-          </ThemedText>
+          {sessions.length > 0 && (
+            <Pressable onPress={() => exportSessions(sessions).catch(() => {})} accessibilityRole="button" hitSlop={8}>
+              <ThemedText type="smallMedium" themeColor="accentText">
+                {t('history.exportAll')}
+              </ThemedText>
+            </Pressable>
+          )}
         </View>
+        {/*
+          Says "All time" rather than a month: the list below is every session ever, and the three
+          tiles are historyStats(sessions) over that same unfiltered set. This used to be a
+          hardcoded "July 2026", which was wrong twice over — frozen to one month, and labelling
+          all-time numbers as if they were that month's. Searching narrows both the list and the
+          tiles, so the label has to stop claiming "all time" and say what the subset is instead.
+        */}
+        <ThemedText themeColor="textSecondary" style={styles.countLabel}>
+          {searching
+            ? t('history.matchCount', { shown: visibleSessions.length, total: sessions.length })
+            : t('history.allTime')}
+        </ThemedText>
 
         {sessionErrors.length > 0 && (
           <View style={[styles.problemCard, { borderColor: theme.accentText }]}>
@@ -216,6 +230,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'baseline',
+    // Holds its height with no action button, so the scope label below doesn't jump when the first
+    // session lands and "Export all" appears.
+    minHeight: 28,
+  },
+  // Matches Library and Build, which both carry their count on its own line under the title.
+  countLabel: {
+    marginTop: 2,
   },
   problemCard: {
     marginTop: Spacing.two,

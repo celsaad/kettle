@@ -518,3 +518,26 @@ export function parseSessionYaml(text: string): ParseResult<Session> {
 export function serializeSessionYaml(session: Session): string {
   return dump(sessionToRaw(session), { noRefs: true, sortKeys: false });
 }
+
+/**
+ * Every session in one document, for the "export history" path — `expo-sharing` hands over a single
+ * URI, so a whole log has to arrive as one file rather than as the directory it's stored in.
+ *
+ * A wrapper object with a `sessions:` list rather than a stream of `---`-separated documents: it
+ * reads back with a plain `load()`, the same as every other file this module produces, and it has
+ * somewhere to put `exported_at`. Each element is exactly what `serializeSessionYaml` would write for
+ * that session, its own `version` included — the archive's `version` is the container's, not the
+ * sessions', and they're deliberately separate numbers.
+ *
+ * `exportedAt` is a parameter rather than a `new Date()` here so this stays pure like the rest of the
+ * module; the caller owns the clock.
+ */
+export function serializeSessionArchiveYaml(sessions: Session[], exportedAt: string): string {
+  return dump(
+    { version: 1, exported_at: exportedAt, sessions: sessions.map(sessionToRaw) },
+    {
+      noRefs: true,
+      sortKeys: false,
+    },
+  );
+}

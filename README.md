@@ -65,7 +65,7 @@ they're written, so changing language later never rewrites a library you've been
 
 **Settings** covers appearance (light/dark/system), display units (kg/lb, seeded from the device's
 measurement system — storage stays metric, so an exported library reads the same everywhere), library
-export/import, and library counts, and
+export/import, exporting the whole session log as one file, and library counts, and
 reaches an optional tip jar (three one-off amounts via Google Play Billing, Android only). It gates
 nothing, every feature is free, and it exists only to offset the Play developer fee. No ads, no
 account, no subscription, and no third-party purchase or analytics SDK, so the Play Data Safety

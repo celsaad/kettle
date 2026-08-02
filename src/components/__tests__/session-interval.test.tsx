@@ -42,7 +42,7 @@ function isFilledPrimary(name: string | RegExp): boolean {
 it('gives a count-up interval a filled button, since the tap is the only way out of the step', async () => {
   await renderScreen(<SessionInterval {...props} targetSec={0} countUp />);
 
-  expect(isFilledPrimary('Done ↑')).toBe(true);
+  expect(isFilledPrimary('Done →')).toBe(true);
 });
 
 it('leaves a countdown interval a quiet link, since it advances on its own at zero', async () => {

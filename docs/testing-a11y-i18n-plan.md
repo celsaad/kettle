@@ -140,7 +140,7 @@ stage, for a couple of hours of work.
 
 **RTL:** cheaper than expected — only 26 physical-direction properties across 11 files, and RN auto-
 flips the row/gap/padding layouts. The real work is CSS-triangle glyphs (drawn, so they don't flip) and
-24 arrow characters baked into copy (`'Skip rest →'`, `'Done set ↑'`). Getting arrows out of strings is
+24 arrow characters baked into copy (`'Skip rest →'`, `'Done set →'`). Getting arrows out of strings is
 worth doing regardless. Defer the `I18nManager` plumbing until a real RTL locale exists — half-
 implemented RTL is worse than none.
 

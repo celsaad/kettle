@@ -128,7 +128,7 @@
     "hold": {
       "label": "ISOMETRIA",
       "caption": "meta de {{target}}s · contando para cima",
-      "doneSet": "Série concluída ↑"
+      "doneSet": "Série concluída →"
     },
     "rest": {
       "label": "DESCANSO",
@@ -150,7 +150,7 @@
       "repsThisMinuteCaps": "REPS NESTE MINUTO",
       "roundsCaps": "RODADAS",
       "extraRepsCaps": "+REPS",
-      "doneUp": "Concluído ↑",
+      "doneUp": "Concluído →",
       "skipArrow": "Pular →",
       "repsThisMinute": "Reps neste minuto",
       "roundsLabel": "Rodadas",

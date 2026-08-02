@@ -128,7 +128,7 @@
     "hold": {
       "label": "HOLD",
       "caption": "target {{target}}s · counting up",
-      "doneSet": "Done set ↑"
+      "doneSet": "Done set →"
     },
     "rest": {
       "label": "REST",
@@ -150,7 +150,7 @@
       "repsThisMinuteCaps": "REPS THIS MINUTE",
       "roundsCaps": "ROUNDS",
       "extraRepsCaps": "+REPS",
-      "doneUp": "Done ↑",
+      "doneUp": "Done →",
       "skipArrow": "Skip →",
       "repsThisMinute": "Reps this minute",
       "roundsLabel": "Rounds",

@@ -1,9 +1,11 @@
 import { router } from 'expo-router';
-import { memo, useCallback, useMemo } from 'react';
+import { memo, useCallback, useDeferredValue, useMemo, useState } from 'react';
 import { FlatList, Platform, Pressable, StyleSheet, View, type ListRenderItemInfo } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { NoResults } from '@/components/no-results';
+import { SearchBar } from '@/components/search-bar';
 import { SortPills } from '@/components/sort-pills';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -76,15 +78,35 @@ export default function BuildScreen() {
   const sessions = useSessionHistoryStore((state) => state.sessions);
   const sort = useListSort('workouts');
   const setListSort = usePreferencesStore((state) => state.setListSort);
+  const [query, setQuery] = useState('');
+  /*
+    The input keeps the immediate value so typing is never held back; only the filtering below runs on
+    the deferred one. A timer-based debounce was the alternative and would have added its full delay to
+    every list, including the seed library where filtering is already instant — this adds nothing until
+    the work is actually slow enough to notice, and then yields to the keystroke instead of blocking it.
+  */
+  const deferredQuery = useDeferredValue(query);
 
-  // Both memos run before the `!library` bail-out below, since hooks can't be conditional. `recent` is
-  // the only order that reads the log at all, so the map is built only when it's the one in effect —
-  // this walks every session ever logged, and Build is a screen you land on to start training.
+  // Every hook here runs before the `!library` bail-out below, since hooks can't be conditional.
+  const all = library?.workouts ?? [];
+  const matching = useMemo(() => {
+    const needle = deferredQuery.trim().toLowerCase();
+    if (!needle) return all;
+    return all.filter((workout) => workout.name.toLowerCase().includes(needle));
+    // `all` is a fresh array literal whenever the library is null, so the library itself is the honest
+    // dependency — depending on `all` would re-filter on every render of an unhydrated screen.
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
+  }, [library, deferredQuery]);
+
+  // `recent` is the only order that reads the log at all, so the map is built only when it's the one
+  // in effect — this walks every session ever logged, and Build is a screen you land on to train.
   const lastTrained = useMemo(
     () => (sort === 'recent' ? lastTrainedByWorkout(sessions) : new Map<string, string>()),
     [sessions, sort],
   );
-  const workouts = useMemo(() => sortForList(library?.workouts ?? [], sort, lastTrained), [library, sort, lastTrained]);
+  // Sorted after filtering: ordering the whole library to then throw most of it away is work nobody
+  // sees.
+  const workouts = useMemo(() => sortForList(matching, sort, lastTrained), [matching, sort, lastTrained]);
 
   const exercises = library?.exercises;
   const renderItem = useCallback(
@@ -117,18 +139,33 @@ export default function BuildScreen() {
               {t('build.workoutCount', { count: workouts.length })}
             </ThemedText>
 
+            {/* Keyed off the whole library rather than what's visible, so neither control disappears
+                mid-search and moves the list under the finger that's typing. */}
+            {all.length > 0 && (
+              <SearchBar value={query} onChangeText={setQuery} placeholder={t('build.searchPlaceholder')} />
+            )}
+
             {/* Hidden at one item and at none: there is nothing to order, and a control that changes
                 nothing when pressed is worse than an absent one. */}
-            {workouts.length > 1 && <SortPills sort={sort} onSelect={(next) => setListSort('workouts', next)} />}
+            {all.length > 1 && <SortPills sort={sort} onSelect={(next) => setListSort('workouts', next)} />}
           </View>
         }
+        /*
+          Two different empty states, and telling them apart is the point. "No workouts yet — build one
+          from exercises in your library" is the right thing to say on a fresh install and exactly the
+          wrong thing to say to someone with forty workouts who mistyped one.
+        */
         ListEmptyComponent={
-          <ThemedView type="backgroundElement" style={[styles.empty, { borderColor: theme.border }]}>
-            <ThemedText type="heading">{t('build.emptyTitle')}</ThemedText>
-            <ThemedText themeColor="textSecondary" style={styles.emptyBody}>
-              {t('build.emptyBody')}
-            </ThemedText>
-          </ThemedView>
+          all.length > 0 ? (
+            <NoResults query={deferredQuery} />
+          ) : (
+            <ThemedView type="backgroundElement" style={[styles.empty, { borderColor: theme.border }]}>
+              <ThemedText type="heading">{t('build.emptyTitle')}</ThemedText>
+              <ThemedText themeColor="textSecondary" style={styles.emptyBody}>
+                {t('build.emptyBody')}
+              </ThemedText>
+            </ThemedView>
+          )
         }
       />
 

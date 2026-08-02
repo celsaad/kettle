@@ -1,10 +1,12 @@
 import { router } from 'expo-router';
-import { memo, useCallback, useMemo, useState } from 'react';
-import { FlatList, Platform, Pressable, StyleSheet, TextInput, View, type ListRenderItemInfo } from 'react-native';
+import { memo, useCallback, useDeferredValue, useMemo, useState } from 'react';
+import { FlatList, Platform, Pressable, StyleSheet, View, type ListRenderItemInfo } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ExerciseBadge, exerciseSummary } from '@/components/exercise-badge';
+import { NoResults } from '@/components/no-results';
+import { SearchBar } from '@/components/search-bar';
 import { SortPills } from '@/components/sort-pills';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -72,14 +74,17 @@ export default function LibraryScreen() {
   const sort = useListSort('exercises');
   const setListSort = usePreferencesStore((state) => state.setListSort);
   const exercises = useMemo(() => library?.exercises.filter((exercise) => exercise.type !== 'rest') ?? [], [library]);
+  // Immediate value in the input, deferred value in the filter — see the note in build.tsx.
+  const deferredQuery = useDeferredValue(query);
 
   const filtered = useMemo(() => {
+    const needle = deferredQuery.trim().toLowerCase();
     return exercises.filter((exercise) => {
       const matchesFilter = filter === 'all' || exercise.type === filter;
-      const matchesQuery = exercise.name.toLowerCase().includes(query.trim().toLowerCase());
+      const matchesQuery = exercise.name.toLowerCase().includes(needle);
       return matchesFilter && matchesQuery;
     });
-  }, [exercises, filter, query]);
+  }, [exercises, filter, deferredQuery]);
 
   // Only `recent` reads the log, and reading it means walking every session ever logged — see Build.
   const lastTrained = useMemo(
@@ -129,17 +134,7 @@ export default function LibraryScreen() {
               {t('library.exerciseCount', { count: visible.length })}
             </ThemedText>
 
-            <View style={[styles.searchBar, { borderColor: theme.border, backgroundColor: theme.backgroundElement }]}>
-              <ThemedText themeColor="textSecondary">⌕</ThemedText>
-              <TextInput
-                value={query}
-                onChangeText={setQuery}
-                placeholder={t('library.searchPlaceholder')}
-                accessibilityLabel={t('library.searchPlaceholder')}
-                placeholderTextColor={theme.textSecondary}
-                style={[styles.searchInput, { color: theme.text }]}
-              />
-            </View>
+            <SearchBar value={query} onChangeText={setQuery} placeholder={t('library.searchPlaceholder')} />
 
             <View style={styles.filterRow}>
               {FILTERS.map((item) => {
@@ -170,6 +165,13 @@ export default function LibraryScreen() {
             {exercises.length > 1 && <SortPills sort={sort} onSelect={(next) => setListSort('exercises', next)} />}
           </View>
         }
+        /*
+          No first-run half here, unlike Build and Programs: a library with no exercises at all is only
+          reachable by deleting every seeded one, and Library has never had a card for it. This adds
+          the case that a search *creates* — a blank body under intact chrome, which reads as a broken
+          screen rather than as "nothing matched".
+        */
+        ListEmptyComponent={exercises.length > 0 ? <NoResults query={deferredQuery} /> : null}
       />
 
       <Pressable
@@ -211,20 +213,6 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.7,
-  },
-  searchBar: {
-    marginTop: Spacing.three,
-    minHeight: 44,
-    borderRadius: 14,
-    borderWidth: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.two,
-    paddingHorizontal: Spacing.two + 6,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 14,
   },
   filterRow: {
     flexDirection: 'row',

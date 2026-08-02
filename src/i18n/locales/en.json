@@ -23,6 +23,11 @@
     "name": "A–Z",
     "recent": "Recent"
   },
+  "search": {
+    "noMatchTitle": "Nothing matched",
+    "noMatchBody": "No results for \"{{query}}\". Check the spelling, or clear the search to see everything again.",
+    "noMatchFilterBody": "Nothing here fits those filters. Pick \"All\" to see everything again."
+  },
   "errorBoundary": {
     "title": "Something went wrong",
     "body": "This screen hit an unexpected error. Your library and history are files on disk, so nothing you had saved was affected.",
@@ -61,6 +66,7 @@
     "workoutCount_other": "{{count}} workouts",
     "emptyTitle": "No workouts yet",
     "emptyBody": "Build one from exercises in your library.",
+    "searchPlaceholder": "Search workouts",
     "startAccessibility": "Start {{name}}",
     "newWorkout": "New workout"
   },
@@ -103,6 +109,7 @@
     "emptyTitle": "No programs yet",
     "emptyBody": "Programs are multi-week plans that step through your workouts. Create one with the + button, or write one as YAML for finer control (per-week overrides aren't editable in-app yet).",
     "emptyYamlLink": "Writing one as YAML →",
+    "searchPlaceholder": "Search programs",
     "newProgram": "New program"
   },
   "session": {

@@ -29,9 +29,9 @@ reorder by press-and-hold drag, and the exercise/circuit pickers can create a ne
 "+ New exercise" instead of detouring to Library. Programs cover per-week overrides — add/remove
 weeks, set each week's number/day/workout/notes, and edit per-exercise or per-circuit config patches.
 Hand-editing `exercises.yaml` is a power-user option, not a requirement; the Programs tab explains
-the format in-app via a guide screen. The exercise, workout and program lists each order by your own
-file order, A–Z, or what you trained most recently — remembered per list, and a view setting only:
-choosing an order never rewrites the library.
+the format in-app via a guide screen. The exercise, workout and program lists each search by name and
+order by your own file order, A–Z, or what you trained most recently — the order is remembered per
+list, and both are view settings only: neither rewrites the library.
 
 **Bring your own assistant.** A hand-editable library that merges by `id` happens to be exactly what
 an LLM is good at emitting, so the import screen is built around that loop rather than merely
@@ -59,7 +59,7 @@ supply one; touch targets are 44px minimum; colors are contrast-checked against 
 on; the runner stays usable at large accessibility text sizes and announces step transitions to
 screen readers while respecting reduce-motion. Reordering workout blocks works by press-and-hold drag
 or, without sight, through the handle's move-up/move-down screen-reader actions. The program-format
-guide's prose is English-only by decision, not omission. The UI ships in English and Brazilian Portuguese (409 keys at parity), with dates,
+guide's prose is English-only by decision, not omission. The UI ships in English and Brazilian Portuguese (423 keys at parity), with dates,
 numbers, first-day-of-week and kg/lb all following the device locale by default, and the starter
 library a fresh install lands on is seeded in the same two languages. User data —
 exercise, workout and program names, and notes — is never translated: the seeded names included, once

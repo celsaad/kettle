@@ -1,10 +1,12 @@
 import { router } from 'expo-router';
-import { memo, useMemo } from 'react';
+import { memo, useDeferredValue, useMemo, useState } from 'react';
 import { FlatList, Platform, Pressable, StyleSheet, View, type ListRenderItemInfo } from 'react-native';
 import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { NoResults } from '@/components/no-results';
+import { SearchBar } from '@/components/search-bar';
 import { SortPills } from '@/components/sort-pills';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -79,12 +81,25 @@ export default function ProgramsScreen() {
   const sessions = useSessionHistoryStore((state) => state.sessions);
   const sort = useListSort('programs');
   const setListSort = usePreferencesStore((state) => state.setListSort);
+  const [query, setQuery] = useState('');
+  // Immediate value in the input, deferred value in the filter — see the note in build.tsx.
+  const deferredQuery = useDeferredValue(query);
+
+  const all = library?.programs ?? [];
+  const matching = useMemo(() => {
+    const needle = deferredQuery.trim().toLowerCase();
+    if (!needle) return all;
+    return all.filter((program) => program.name.toLowerCase().includes(needle));
+    // The library, not `all`, is the honest dependency — see the note in build.tsx.
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
+  }, [library, deferredQuery]);
+
   // Only `recent` reads the log, and reading it means walking every session ever logged — see Build.
   const lastTrained = useMemo(
     () => (sort === 'recent' ? lastTrainedByProgram(sessions) : new Map<string, string>()),
     [sessions, sort],
   );
-  const programs = useMemo(() => sortForList(library?.programs ?? [], sort, lastTrained), [library, sort, lastTrained]);
+  const programs = useMemo(() => sortForList(matching, sort, lastTrained), [matching, sort, lastTrained]);
   const fabColor = scheme === 'dark' ? theme.accent : theme.text;
 
   return (
@@ -115,23 +130,35 @@ export default function ProgramsScreen() {
               {t('programs.count', { count: programs.length })}
             </ThemedText>
 
+            {/* Both keyed off the whole library rather than what's visible — see Build. */}
+            {all.length > 0 && (
+              <SearchBar value={query} onChangeText={setQuery} placeholder={t('programs.searchPlaceholder')} />
+            )}
+
             {/* See Build: nothing to order below two items. */}
-            {programs.length > 1 && <SortPills sort={sort} onSelect={(next) => setListSort('programs', next)} />}
+            {all.length > 1 && <SortPills sort={sort} onSelect={(next) => setListSort('programs', next)} />}
           </View>
         }
+        /* Two different empty states, told apart — see the note in build.tsx. This one matters more if
+           anything: the first-run card invites you to go read the YAML guide, which is a strange
+           answer to a mistyped program name. */
         ListEmptyComponent={
-          <ThemedView type="backgroundElement" style={[styles.emptyState, { borderColor: theme.border }]}>
-            <ThemedText type="heading">{t('programs.emptyTitle')}</ThemedText>
-            <ThemedText type="small" themeColor="textSecondary" style={styles.emptyStateBody}>
-              {t('programs.emptyBody')}
-            </ThemedText>
-            <Pressable
-              onPress={() => router.push('/program-guide')}
-              accessibilityRole="button"
-              style={[styles.emptyStateButton, { borderColor: theme.border }]}>
-              <ThemedText type="smallMedium">{t('programs.emptyYamlLink')}</ThemedText>
-            </Pressable>
-          </ThemedView>
+          all.length > 0 ? (
+            <NoResults query={deferredQuery} />
+          ) : (
+            <ThemedView type="backgroundElement" style={[styles.emptyState, { borderColor: theme.border }]}>
+              <ThemedText type="heading">{t('programs.emptyTitle')}</ThemedText>
+              <ThemedText type="small" themeColor="textSecondary" style={styles.emptyStateBody}>
+                {t('programs.emptyBody')}
+              </ThemedText>
+              <Pressable
+                onPress={() => router.push('/program-guide')}
+                accessibilityRole="button"
+                style={[styles.emptyStateButton, { borderColor: theme.border }]}>
+                <ThemedText type="smallMedium">{t('programs.emptyYamlLink')}</ThemedText>
+              </Pressable>
+            </ThemedView>
+          )
         }
       />
 

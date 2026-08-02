@@ -1,8 +1,10 @@
-import { memo, useCallback, useMemo, useState } from 'react';
-import { Alert, FlatList, Platform, Pressable, StyleSheet, TextInput, View, type ListRenderItemInfo } from 'react-native';
+import { memo, useCallback, useDeferredValue, useMemo, useState } from 'react';
+import { Alert, FlatList, Platform, Pressable, StyleSheet, View, type ListRenderItemInfo } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { NoResults } from '@/components/no-results';
+import { SearchBar } from '@/components/search-bar';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
@@ -114,7 +116,13 @@ export default function HistoryScreen() {
 
   const historySessions = useMemo(() => (library ? historySessionsView(sessions, library) : []), [sessions, library]);
 
-  const searching = query.trim().length > 0;
+  // Immediate value in the input, deferred value in the filter — see the note in build.tsx. This is
+  // the screen it was added for: the tiles below aggregate over every entry of every matching session,
+  // so a keystroke here does real work on a long log rather than a name comparison.
+  const deferredQuery = useDeferredValue(query);
+  // Derived from the deferred value, not the typed one, so the label, the tiles and the list can never
+  // describe three different sets mid-keystroke.
+  const searching = deferredQuery.trim().length > 0;
 
   // Matching happens on the view rather than on the raw sessions because the workout *name* the user
   // types is only resolved from the library by historySessionsView; a Session only carries the id.
@@ -124,9 +132,9 @@ export default function HistoryScreen() {
   // knows in advance what they're looking for.
   const visibleSessions = useMemo(() => {
     if (!searching) return historySessions;
-    const needle = query.trim().toLowerCase();
+    const needle = deferredQuery.trim().toLowerCase();
     return historySessions.filter((session) => session.workoutName.toLowerCase().includes(needle));
-  }, [historySessions, query, searching]);
+  }, [historySessions, deferredQuery, searching]);
 
   // The tiles aggregate what's actually listed below them, not the whole archive — three all-time
   // numbers sitting on top of a filtered list would be describing sessions that aren't on screen. The
@@ -247,19 +255,12 @@ export default function HistoryScreen() {
               </ThemedView>
             </View>
 
-            <View style={[styles.searchBar, { borderColor: theme.border, backgroundColor: theme.backgroundElement }]}>
-              <ThemedText themeColor="textSecondary">⌕</ThemedText>
-              <TextInput
-                value={query}
-                onChangeText={setQuery}
-                placeholder={t('history.searchPlaceholder')}
-                accessibilityLabel={t('history.searchPlaceholder')}
-                placeholderTextColor={theme.textSecondary}
-                style={[styles.searchInput, { color: theme.text }]}
-              />
-            </View>
+            <SearchBar value={query} onChangeText={setQuery} placeholder={t('history.searchPlaceholder')} />
           </View>
         }
+        /* No first-run half, same as Library: an empty log is what a new install *is*, and the stat
+           tiles above already read 0 · 0h 0m · 0. This covers only the blank body a search creates. */
+        ListEmptyComponent={sessions.length > 0 ? <NoResults query={deferredQuery} /> : null}
       />
     </SafeAreaView>
   );
@@ -306,22 +307,6 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1,
     padding: Spacing.two + 4,
-  },
-  // Copied value-for-value from Library's search bar, deliberately: the two list screens should read
-  // as one pattern, not two takes on it.
-  searchBar: {
-    marginTop: Spacing.three,
-    minHeight: 44,
-    borderRadius: 14,
-    borderWidth: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.two,
-    paddingHorizontal: Spacing.two + 6,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 14,
   },
   // What `styles.list`'s `marginTop` and `gap` became once the list stopped being one `View`.
   listHeader: {

@@ -151,12 +151,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   prevLabel: {
+    textAlign: 'center',
     color: RunnerColors.textSecondary,
   },
+  // Sized to its own content rather than `flex: 1`. Splitting the row evenly gave "+30s" — four
+  // characters in every language — the same width as the primary action, which left pt's "Pular
+  // descanso →" wrapping with room going spare next to it.
   addButton: {
-    flex: 1,
     minHeight: 60,
     paddingVertical: Spacing.one,
+    paddingHorizontal: Spacing.two + 4,
     borderRadius: 18,
     borderWidth: 1.5,
     borderColor: RunnerColors.border,
@@ -164,18 +168,24 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   addButtonLabel: {
+    textAlign: 'center',
     color: RunnerColors.text,
   },
+  // Padding here is a guard against the label touching the edge, not a design margin — the label is
+  // centered and normally has slack. Kept narrow because pt's "Pular descanso →" clears the row by
+  // about 15px, and every point of it comes out of this.
   skipButton: {
     flex: 1,
     minHeight: 60,
     paddingVertical: Spacing.one,
+    paddingHorizontal: Spacing.two,
     borderRadius: 18,
     backgroundColor: RunnerColors.text,
     alignItems: 'center',
     justifyContent: 'center',
   },
   skipButtonLabel: {
+    textAlign: 'center',
     color: RunnerColors.background,
   },
 });

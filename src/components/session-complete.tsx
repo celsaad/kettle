@@ -70,6 +70,7 @@ const styles = StyleSheet.create({
     marginTop: Spacing.four,
     minHeight: 52,
     paddingVertical: Spacing.one,
+    paddingHorizontal: Spacing.three,
     minWidth: 160,
     borderRadius: 15,
     backgroundColor: RunnerColors.accent,
@@ -77,6 +78,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   doneButtonLabel: {
+    textAlign: 'center',
     color: RunnerColors.background,
   },
 });

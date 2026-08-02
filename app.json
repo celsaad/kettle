@@ -2,7 +2,7 @@
   "expo": {
     "name": "kettle",
     "slug": "kettle",
-    "version": "0.2.0",
+    "version": "0.2.1",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "kettle",
@@ -12,7 +12,7 @@
     },
     "android": {
       "package": "com.casco.kettle",
-      "versionCode": 4,
+      "versionCode": 5,
       "adaptiveIcon": {
         "backgroundColor": "#c05c2b",
         "foregroundImage": "./assets/images/android-icon-foreground.png",

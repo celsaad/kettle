@@ -151,7 +151,7 @@ still only verified by driving the running app. Doing this wrong wastes a lot of
   context with `locale: 'en-US'` — but the pt run is the more valuable one, since an English pass
   can't catch a hardcoded English string (same reason the screen tests drive `pt`).
 - To get a session into history: Build tab → the small round play button on a workout card (starts it
-  ad-hoc) → repeatedly click whichever is visible of `Done set ↑`, `Log set → Rest`, `Skip rest →`,
+  ad-hoc) → repeatedly click whichever is visible of `Done set →`, `Log set → Rest`, `Skip rest →`,
   then `Done`.
 - **`react-native-web` implements only part of the a11y API**, so a browser check under-reports it:
   `accessibilityRole`/`accessibilityLabel` map to `role`/`aria-label`, but `accessibilityActions`,
@@ -234,7 +234,7 @@ Two traps before picking one:
 - **An RTL language is a project, not a bundle.** The `I18nManager` plumbing was deliberately deferred
   until a real RTL locale existed (see `testing-a11y-i18n-plan.md`), and the work it defers is the
   CSS-triangle glyphs, which are drawn and don't flip, plus the arrow characters baked into copy
-  (`'Skip rest →'`, `'Done set ↑'`). Adding Arabic or Hebrew means doing that first.
+  (`'Skip rest →'`, `'Done set →'`). Adding Arabic or Hebrew means doing that first.
 - **A seed table's day labels must sort in training order.** `nextWeekAfter` walks a multi-day week by
   `day.localeCompare`, so `Dia 1`/`Dia 2`/`Dia 3` works and weekday names do not — the per-language
   seed test catches it, and this is why it runs every structural invariant against every language.

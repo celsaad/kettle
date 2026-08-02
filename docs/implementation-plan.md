@@ -110,8 +110,11 @@ which is deleted.
   list) → confirm → `replaceLibrary()` (persists + updates the store) → close. Errors from a bad pick,
   malformed YAML, or a merge that references an unknown exercise are shown inline, not swallowed.
 - `src/storage/export.ts` wraps `expo-sharing`. Entry points: an "Export" action next to "Import" in
-  the library header (whole `exercises.yaml`), and an "Export" action inside each expanded history
-  card (that one session's file).
+  the library header (whole `exercises.yaml`), an "Export" action inside each expanded history
+  card (that one session's file), and "Export all" in the History header plus an "Export history" row
+  in Settings (every session as one assembled file — `expo-sharing` takes a single URI, so a whole log
+  can't be shared as the directory it's stored in). The log is export-only: nothing imports a session
+  back, which is why the archive needs no parser and has none.
 
 ## E. Timer engine hardening (core value, §7.1) — ✅ done
 

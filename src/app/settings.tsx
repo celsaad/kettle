@@ -18,7 +18,7 @@ import { useLibraryStore } from '@/state/library-store';
 import { usePreferencesStore, useUnitSystem } from '@/state/preferences-store';
 import { useSessionHistoryStore } from '@/state/session-history-store';
 import { isTipJarSupported, useTipStore } from '@/state/tip-store';
-import { exportLibrary } from '@/storage/export';
+import { exportLibrary, exportSessions } from '@/storage/export';
 import { isFileStorageSupported } from '@/storage/paths';
 
 export { ModalErrorBoundary as ErrorBoundary } from '@/components/error-fallback';
@@ -139,15 +139,19 @@ export default function SettingsScreen() {
 
   const close = () => router.back();
 
-  // The Library tab swallows this failure, which is fine next to a one-word "Export" link; a row
+  // The Library and History tabs swallow this failure, which is fine next to a one-word link; a row
   // that spells out what it's about to do owes the user a reason when nothing happens. The `async`
-  // wrapper matters: on web `exportLibrary` throws *synchronously* (expo-file-system's File
+  // wrapper matters: on web both exporters throw *synchronously* (expo-file-system's File
   // constructor has no web implementation, and it runs before any promise exists), which a bare
   // `.catch()` would miss — that's the unhandled error the Library tab's Export hits today.
-  const runExport = async () => {
+  //
+  // Parameterised rather than one function per row: they fail the same two ways (no share sheet, no
+  // filesystem) into the same error line below, so a second copy would only be a second place to
+  // forget the try/catch.
+  const runExport = async (exporter: () => Promise<void>) => {
     setExportError(null);
     try {
-      await exportLibrary();
+      await exporter();
     } catch (error) {
       setExportError((error as Error).message);
     }
@@ -195,8 +199,24 @@ export default function SettingsScreen() {
             <ActionRow
               title={t('settings.exportLibrary')}
               detail={isFileStorageSupported ? t('settings.exportLibraryDetail') : t('settings.exportUnavailable')}
-              onPress={runExport}
+              onPress={() => runExport(exportLibrary)}
               disabled={!isFileStorageSupported}
+            />
+            {/* Disabled rather than hidden at zero sessions, unlike History's header link: this row
+                is part of a list describing what the app can do with your data, and a row that
+                appears only once you've trained wouldn't answer "is my log exportable?" for the
+                person asking before they start. */}
+            <ActionRow
+              title={t('settings.exportHistory')}
+              detail={
+                !isFileStorageSupported
+                  ? t('settings.exportUnavailable')
+                  : sessions.length === 0
+                    ? t('settings.exportHistoryEmpty')
+                    : t('settings.exportHistoryDetail', { count: sessions.length })
+              }
+              onPress={() => runExport(() => exportSessions(sessions))}
+              disabled={!isFileStorageSupported || sessions.length === 0}
             />
             <ActionRow
               title={t('settings.importLibrary')}

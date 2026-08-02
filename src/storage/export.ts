@@ -1,6 +1,11 @@
 import * as Sharing from 'expo-sharing';
 
-import { sessionFile, storagePaths } from '@/storage/paths';
+import type { Session } from '@/domain/types';
+import { serializeSessionArchiveYaml } from '@/domain/yaml-mapping';
+import { cacheFile, sessionFile, storagePaths } from '@/storage/paths';
+
+/** Where the assembled history lands before it's shared. Overwritten each time; see `cacheFile`. */
+const HISTORY_FILENAME = 'kettle-history.yaml';
 
 async function share(uri: string, dialogTitle: string): Promise<void> {
   const available = await Sharing.isAvailableAsync();
@@ -19,4 +24,23 @@ export async function exportLibrary(): Promise<void> {
 
 export async function exportSession(sessionId: string): Promise<void> {
   return share(sessionFile(sessionId).uri, `Export session ${sessionId}`);
+}
+
+/**
+ * Shares the whole log as one file. Takes the sessions rather than reading `sessionsDir` because the
+ * store already holds every one of them in memory — re-reading and re-parsing the directory here
+ * would pay `listSessions()`'s O(all sessions ever logged) cost a second time for data that is
+ * already sitting one import away, and would disagree with what History is showing if it did.
+ *
+ * Ordered oldest-first, the opposite of the store (and of History, which leads with what you just
+ * did). This is an archive being read top to bottom in some other app, so it runs forward in time.
+ */
+export async function exportSessions(sessions: Session[]): Promise<void> {
+  // Sorts a copy — the spread is the copy oxlint can't see through (decision log: no `toSorted`).
+  // oxlint-disable-next-line unicorn/no-array-sort
+  const chronological = [...sessions].sort((a, b) => a.startedAt.localeCompare(b.startedAt));
+  const file = cacheFile(HISTORY_FILENAME);
+  file.create({ intermediates: true, overwrite: true });
+  file.write(serializeSessionArchiveYaml(chronological, new Date().toISOString()));
+  return share(file.uri, 'Export history');
 }

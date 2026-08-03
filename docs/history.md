@@ -10,7 +10,7 @@ rediscover. **Do not append to this file just because something shipped.** The c
 is not discoverable from one commit.
 
 Counts quoted below are as-of the entry that mentions them and drift as work continues. Nothing
-restates them as current: `npm test` is the test count and the locale bundles are the key count, and
+restates them as current: `pnpm test` is the test count and the locale bundles are the key count, and
 a hand-maintained copy in prose is a claim no test checks.
 
 ---

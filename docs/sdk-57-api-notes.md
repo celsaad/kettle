@@ -9,7 +9,7 @@
 > Everything below was confirmed from the installed `.d.ts` files. If a version bumps, re-confirm the
 > same way rather than trusting this page.
 
-**Installed** (all via `npx expo install`, so versions are SDK-57-pinned): `js-yaml`, `zod`,
+**Installed** (all via `pnpm expo install`, so versions are SDK-57-pinned): `js-yaml`, `zod`,
 `zustand`, `expo-file-system`, `expo-keep-awake`, `expo-haptics`, `expo-notifications`,
 `expo-sharing`. No `expo-document-picker` — the new `expo-file-system` API exposes
 `File.pickFileAsync()` directly, so a separate picker dependency wasn't needed.

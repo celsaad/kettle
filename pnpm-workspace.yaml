@@ -1,0 +1,15 @@
+# pnpm-specific settings live here rather than in .npmrc: pnpm 10 began moving them out, and by 11
+# an .npmrc entry is read as an npm setting and silently ignored. A misplaced nodeLinker doesn't
+# error, it just installs the wrong layout — which is how this file came to exist.
+
+# React Native's Metro bundler and Gradle autolinking both walk node_modules expecting a flat tree.
+# pnpm's default isolated layout puts real packages under .pnpm/ and links them in, which leaves
+# transitive deps unresolvable: `expo-modules-core` is imported directly by src/hooks/safe-iap.ts
+# but is only a dependency of `expo`, so isolated mode fails typecheck on it.
+nodeLinker: hoisted
+
+# Windows caps paths at 260 chars unless LongPathsEnabled is set, and it isn't here (turning it on
+# needs admin plus a reboot). pnpm's virtual store encodes the full package name and a hash into one
+# directory name; at the default of 120 the longest @babel entries overflow and the install dies
+# with ENOENT on mkdir. 60 keeps them under the cap.
+virtualStoreDirMaxLength: 60

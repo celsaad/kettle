@@ -10,40 +10,48 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      # pnpm/action-setup has to run before setup-node: `cache: pnpm` resolves the store path by
+      # shelling out to pnpm, so with the order reversed setup-node fails outright. The version
+      # comes from the "packageManager" field in package.json, so it is pinned in one place.
+      - uses: pnpm/action-setup@v4
+
       - uses: actions/setup-node@v7
         with:
           node-version: 22
-          cache: npm
+          cache: pnpm
 
-      - run: npm ci
+      - run: pnpm install --frozen-lockfile
 
       - name: Type check
-        run: npm run typecheck
+        run: pnpm run typecheck
 
       - name: Lint
-        run: npm run lint
+        run: pnpm run lint
 
       - name: Format
-        run: npm run format:check
+        run: pnpm run format:check
 
   test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
 
+      - uses: pnpm/action-setup@v4
+
       - uses: actions/setup-node@v7
         with:
           node-version: 22
-          cache: npm
+          cache: pnpm
 
-      - run: npm ci
+      - run: pnpm install --frozen-lockfile
 
       # --ci fails rather than writes on a missing snapshot; the worker cap keeps jest from
       # over-subscribing the 2-core runner, where spawning more workers is slower, not faster.
       # TZ is set here as well as in jest.setup.js because that file's process.env assignment is a
       # no-op on Windows; on this Linux runner the env var is what actually makes the DST-crossing
       # streak tests exercise a real transition rather than passing vacuously.
+      # pnpm forwards trailing args to the script directly, so this needs no `--` separator.
       - name: Test
         env:
           TZ: America/New_York
-        run: npm test -- --ci --maxWorkers=2
+        run: pnpm test --ci --maxWorkers=2

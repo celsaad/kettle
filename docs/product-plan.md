@@ -365,7 +365,7 @@ What's genuinely missing today, checked directly against the code:
   [decision log](decisions.md) for the details. `useKeepAwake` now passes
   `suppressDeactivateWarnings`, the library's own flag for exactly this race.
 - ~~**No automated tests at all.**~~ ✅ Closed — jest via `jest-expo`, running in CI alongside
-  typecheck and lint. (`npm test` is the suite size; no doc quotes it, because every copy went stale —
+  typecheck and lint. (`pnpm test` is the suite size; no doc quotes it, because every copy went stale —
   this line itself read "230 tests across 22 files" long after that stopped being true.) Covers
   the domain layer, the wall-clock session runner
   (§7.1, "the make-or-break issue"), and the highest-branch screens. Layout, animation, real audio and

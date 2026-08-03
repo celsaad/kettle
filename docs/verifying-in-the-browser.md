@@ -3,10 +3,12 @@
 Tests cover the logic layer and five screens, but layout, animation, real audio and file writes are
 still only verified by driving the running app. Doing this wrong wastes a lot of time, so:
 
-- `npx expo start --web --port <port>`; poll with curl, it can take 60–90s. Use a distinct port if
-  anything else might be running.
+- `pnpm expo start --web --port <port>`; poll with curl, it can take 60–90s. Use a distinct port if
+  anything else might be running. Curl-ing the port only proves the dev server is listening — Metro
+  bundles on request, so fetching the `.bundle` URL out of the served HTML is what actually exercises
+  module resolution.
 - Playwright is **not** a project dependency — install it in a scratch dir outside the repo. If the
-  browser build is missing: `npx playwright install chromium-headless-shell`.
+  browser build is missing: `pnpm dlx playwright install chromium-headless-shell`.
 - **Never `page.goto` mid-flow.** A full reload resets the in-memory library, destroying anything you
   just created. Drive everything through real in-app navigation in one page instance.
 - **React Navigation keeps previous screens mounted but hidden**, so the same text matches several

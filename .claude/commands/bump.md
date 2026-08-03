@@ -1,7 +1,7 @@
 ---
 description: Bump the app version and Android versionCode, and commit the release
 argument-hint: "[patch|minor|major|<explicit version>]"
-allowed-tools: Read, Edit, Bash(git:*), Bash(npm run typecheck), Bash(npm run lint), Bash(npm test), Bash(gh pr:*)
+allowed-tools: Read, Edit, Bash(git:*), Bash(pnpm run typecheck), Bash(pnpm run lint), Bash(pnpm test), Bash(gh pr:*)
 ---
 
 Cut a release by bumping the version. The requested bump is: **$ARGUMENTS** (if that's empty, work out
@@ -47,7 +47,7 @@ Check what's in flight before deciding, and say which you're doing:
 ## Then
 
 1. Edit `app.json` — both fields.
-2. Run `npm run typecheck` and `npm run lint`. They should be untouched by a version bump; if they
+2. Run `pnpm run typecheck` and `pnpm run lint`. They should be untouched by a version bump; if they
    aren't clean, something else is wrong and the bump isn't the thing to fix it with.
 3. Commit as **`Release <version> (versionCode <n>)`**, matching every previous release. The body says
    what's in it — the user-facing changes, by PR number where there is one — and why the level was

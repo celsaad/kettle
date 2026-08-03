@@ -43,6 +43,20 @@ export type ParseError = { kind: 'invalidYaml'; detail: string } | { kind: 'sche
 
 export type ParseResult<T> = { ok: true; data: T } | { ok: false; error: ParseError };
 
+/**
+ * Load options shared by both parsers. `maxAliases` is the one that isn't a default: js-yaml ships
+ * `maxDepth: 100` and `maxTotalMergeKeys: 10000`, but leaves aliases unbounded at `-1`.
+ *
+ * An alias bomb (nine anchors each referencing the previous nine times — 437 bytes describing 387
+ * million leaves) doesn't detonate on `load`: js-yaml resolves an alias to a *shared reference*, so
+ * the result is a cheap DAG. It detonates on whatever walks that DAG without tracking identity. What
+ * saves us today is that nothing does — zod refuses an element without recursing into it, and this
+ * schema has no recursive types, so exponential fan-out is always refused at depth 1. That's a
+ * property of the current schema rather than a guarantee, and the whole point of a bomb is that it
+ * costs the author nothing to try. 1000 is far above any hand-written library and far below a bomb.
+ */
+const LOAD_OPTIONS = { maxAliases: 1000 } as const;
+
 function zodIssueDetail(error: z.ZodError): string {
   return error.issues.map((issue) => `${issue.path.join('.') || '(root)'}: ${issue.message}`).join('; ');
 }
@@ -317,7 +331,7 @@ function libraryToRaw(library: Library): RawLibrary {
 export function parseLibraryYaml(text: string): ParseResult<Library> {
   let parsed: unknown;
   try {
-    parsed = load(text);
+    parsed = load(text, LOAD_OPTIONS);
   } catch (error) {
     return { ok: false, error: { kind: 'invalidYaml', detail: (error as Error).message } };
   }
@@ -506,7 +520,9 @@ function sessionToRaw(session: Session): RawSession {
 export function parseSessionYaml(text: string): ParseResult<Session> {
   let parsed: unknown;
   try {
-    parsed = load(text);
+    // Session files are app-written and `dump`ed with `noRefs`, so they carry no aliases at all —
+    // the limit rides along so neither parser is the one somebody has to notice is missing it.
+    parsed = load(text, LOAD_OPTIONS);
   } catch (error) {
     return { ok: false, error: { kind: 'invalidYaml', detail: (error as Error).message } };
   }

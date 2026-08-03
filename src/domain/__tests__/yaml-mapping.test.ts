@@ -278,6 +278,36 @@ describe('parse failures', () => {
     const bad = serializeLibraryYaml(library).replace('sets: 5', 'sets: 0');
     expect(parseLibraryYaml(bad).ok).toBe(false);
   });
+
+  /**
+   * Pins the `maxAliases` load option, which js-yaml leaves off by default. Without it this document
+   * parses fine and is refused a step later by zod as a `schemaMismatch`, so asserting `ok === false`
+   * would pass either way — the error *kind* is the whole assertion.
+   */
+  it('refuses a document with more aliases than any hand-written library has', () => {
+    const aliases = Array(1001).fill('*a').join(',');
+    const result = parseLibraryYaml(`version: 1\na: &a 1\nexercises: [${aliases}]\nworkouts: []\nprograms: []\n`);
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error.kind).toBe('invalidYaml');
+  });
+
+  it('accepts a library that uses aliases sparingly, as a hand-written one might', () => {
+    const yaml = `version: 1
+exercises:
+  - id: a
+    name: A
+    type: rest
+    config: &standard-rest { duration_sec: 90 }
+  - id: b
+    name: B
+    type: rest
+    config: *standard-rest
+workouts: []
+programs: []
+`;
+    expect(parseLibraryYaml(yaml).ok).toBe(true);
+  });
 });
 
 /**

@@ -314,6 +314,9 @@
       "sameValues": "nenhum campo alterado — substituído por uma definição idêntica"
     },
     "noChanges": "Nenhuma alteração — o arquivo importado é igual à sua biblioteca atual.",
+    "showAll_one": "Mostrar a {{count}} alteração",
+    "showAll_other": "Mostrar todas as {{count}} alterações",
+    "showFewer": "Mostrar menos",
     "applied": {
       "title": "Importado",
       "newCount_one": "{{count}} item novo",

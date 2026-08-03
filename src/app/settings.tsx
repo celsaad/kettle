@@ -196,6 +196,15 @@ export default function SettingsScreen() {
 
         <Section title={t('settings.data')}>
           <View style={styles.rowList}>
+            {/* First of the three, above the exports: it's the only row here that *changes* anything,
+                and the one an assistant-written library arrives through. The exports below it are
+                also the only rows that can be disabled, so leading with them put a greyed-out row at
+                the top of the section on a device with no file storage and nothing logged yet. */}
+            <ActionRow
+              title={t('settings.importLibrary')}
+              detail={t('settings.importLibraryDetail')}
+              onPress={() => router.push('/import')}
+            />
             <ActionRow
               title={t('settings.exportLibrary')}
               detail={isFileStorageSupported ? t('settings.exportLibraryDetail') : t('settings.exportUnavailable')}
@@ -217,11 +226,6 @@ export default function SettingsScreen() {
               }
               onPress={() => runExport(() => exportSessions(sessions))}
               disabled={!isFileStorageSupported || sessions.length === 0}
-            />
-            <ActionRow
-              title={t('settings.importLibrary')}
-              detail={t('settings.importLibraryDetail')}
-              onPress={() => router.push('/import')}
             />
           </View>
           {exportError && (

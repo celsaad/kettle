@@ -57,6 +57,67 @@ type ImportError = { message: string; report: string | null };
 type CopyTarget = 'brief' | 'report';
 
 /**
+ * How many changed ids the preview shows before it offers the rest behind a tap.
+ *
+ * The list is one row per changed id *plus* a line per changed field, so a re-imported library of any
+ * size renders a wall — and a wall is not a review. The three count tiles directly above already
+ * answer "how much is about to change"; these rows answer "is my own stuff in here", which is a
+ * question you ask about a few ids, not forty. Eight is what fits above the fold beside the tiles on
+ * a small phone, which is the only thing the number is chosen for.
+ */
+const COLLAPSED_CHANGES = 8;
+
+/**
+ * The indented "what moved" block under an updated id.
+ *
+ * Only for updates, and only what moved. An updated id whose definition is byte-identical says so
+ * instead of showing an empty indent — `mergeById` classifies by id, not by value, so re-importing
+ * your own export lands here for every item and would otherwise look like a wall of unexplained
+ * overwrites.
+ */
+function ChangedFields({ changes }: { changes: FieldChange[] }) {
+  const { t } = useTranslation();
+
+  return (
+    <View style={styles.diffList}>
+      {changes.map((field) => (
+        <ThemedText key={field.label} type="small" themeColor="textSecondary">
+          {field.label}: {field.from} → {field.to}
+        </ThemedText>
+      ))}
+      {changes.length === 0 && (
+        <ThemedText type="small" themeColor="textSecondary">
+          {t('import.diff.sameValues')}
+        </ThemedText>
+      )}
+    </View>
+  );
+}
+
+/**
+ * The "show the rest" control, shared by the preview list and the applied one so the two can't drift
+ * into disagreeing about how a long list behaves.
+ */
+function ChangeListToggle({ total, expanded, onToggle }: { total: number; expanded: boolean; onToggle: () => void }) {
+  const theme = useTheme();
+  const { t } = useTranslation();
+
+  return (
+    <Pressable
+      onPress={onToggle}
+      accessibilityRole="button"
+      // No `accessibilityLabel`: the text below names it, and a duplicate would drift from the
+      // count it quotes. `expanded` is what tells a screen reader this reveals rather than navigates.
+      accessibilityState={{ expanded }}
+      style={[styles.showAllButton, { borderColor: theme.border }]}>
+      <ThemedText type="smallMedium" themeColor="textSecondary">
+        {expanded ? t('import.showFewer') : t('import.showAll', { count: total })}
+      </ThemedText>
+    </Pressable>
+  );
+}
+
+/**
  * Where an import failure becomes a sentence. The parser and the merge return descriptors — they're
  * logic-layer code and hold no prose — so every reason a file is refused is worded here, in both
  * locales, rather than in whichever module happened to detect it.
@@ -98,6 +159,12 @@ export default function ImportScreen() {
   // Keyed by which button copied, since there are two of them: a "Copied" that isn't tied to a target
   // would confirm the wrong one the moment the screen has both on it.
   const [copied, setCopied] = useState<{ target: CopyTarget; status: 'copied' | 'failed' } | null>(null);
+  // One flag for both lists rather than one each: they never render together, and carrying the
+  // expansion across the merge is the honest default — someone who opened the full list to find an id
+  // is the same person reading what landed. It needs no reset between files, because there is no
+  // second file: the pick and paste rows are gone once a preview exists, so the only ways out of one
+  // are Cancel and Merge.
+  const [showAllChanges, setShowAllChanges] = useState(false);
   const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(
@@ -250,6 +317,13 @@ export default function ImportScreen() {
    * What an updated id actually loses, per §6 and open question §12.5. Computed here rather than in
    * `merge.ts` because both sides are already on hand — the store's library and the merged result —
    * so the merge doesn't have to carry a diff nobody but this preview wants.
+   *
+   * **Called per rendered row, not per changed id.** It used to be folded into `changedItems` as a
+   * `changes` field, which meant a re-imported library — where every id counts as an update — diffed
+   * its entire contents on *every* render, including the renders that only toggled a button. A real
+   * library runs to a few hundred ids and the diff is the expensive half of that pass (measured), so
+   * the version that hurts is the one nobody sees. Nothing but a visible row ever reads a diff: the
+   * count tiles work off `kind`, and the applied snapshot deliberately drops the field entirely.
    */
   const changesFor = (kind: 'exercise' | 'workout' | 'program', id: string): FieldChange[] => {
     if (!ready || !currentLibrary) return [];
@@ -272,49 +346,55 @@ export default function ImportScreen() {
     }
   };
 
+  // Each row carries which library it came out of rather than its diff, so that the diff can wait
+  // until something is about to draw it. `detail` is the noun the row prints; `entity` is what
+  // `changesFor` needs and is never rendered.
   const changedItems = ready
     ? [
         ...ready.summary.newExercises.map((id) => ({
           id,
           kind: 'new' as const,
+          entity: 'exercise' as const,
           detail: t('import.newExercise'),
-          changes: [],
         })),
         ...ready.summary.updatedExercises.map((id) => ({
           id,
           kind: 'updated' as const,
+          entity: 'exercise' as const,
           detail: t('import.updatedExercise'),
-          changes: changesFor('exercise', id),
         })),
         ...ready.summary.newWorkouts.map((id) => ({
           id,
           kind: 'new' as const,
+          entity: 'workout' as const,
           detail: t('import.newWorkout'),
-          changes: [],
         })),
         ...ready.summary.updatedWorkouts.map((id) => ({
           id,
           kind: 'updated' as const,
+          entity: 'workout' as const,
           detail: t('import.updatedWorkout'),
-          changes: changesFor('workout', id),
         })),
         ...ready.summary.newPrograms.map((id) => ({
           id,
           kind: 'new' as const,
+          entity: 'program' as const,
           detail: t('import.newProgram'),
-          changes: [],
         })),
         ...ready.summary.updatedPrograms.map((id) => ({
           id,
           kind: 'updated' as const,
+          entity: 'program' as const,
           detail: t('import.updatedProgram'),
-          changes: changesFor('program', id),
         })),
       ]
     : [];
 
   const newCount = changedItems.filter((item) => item.kind === 'new').length;
   const updatedCount = changedItems.length - newCount;
+  const visibleChangedItems = showAllChanges ? changedItems : changedItems.slice(0, COLLAPSED_CHANGES);
+  const appliedItems = applied?.items ?? [];
+  const visibleAppliedItems = showAllChanges ? appliedItems : appliedItems.slice(0, COLLAPSED_CHANGES);
   // Hoisted out of the JSX: narrowing `error.report` inside the press handler's closure doesn't hold,
   // since TypeScript has to assume a property can change between render and tap.
   const errorReport = error?.report ?? null;
@@ -498,7 +578,7 @@ export default function ImportScreen() {
             </View>
 
             <View style={styles.changedList}>
-              {changedItems.map((item) => (
+              {visibleChangedItems.map((item) => (
                 <View key={`${item.detail}-${item.id}`}>
                   <View style={styles.changedRow}>
                     <ThemedText
@@ -521,26 +601,20 @@ export default function ImportScreen() {
                     by id, not by value, so re-importing your own export lands here for every item and
                     would otherwise look like a wall of unexplained overwrites.
                   */}
-                  {item.kind === 'updated' && (
-                    <View style={styles.diffList}>
-                      {item.changes.map((field) => (
-                        <ThemedText key={field.label} type="small" themeColor="textSecondary">
-                          {field.label}: {field.from} → {field.to}
-                        </ThemedText>
-                      ))}
-                      {item.changes.length === 0 && (
-                        <ThemedText type="small" themeColor="textSecondary">
-                          {t('import.diff.sameValues')}
-                        </ThemedText>
-                      )}
-                    </View>
-                  )}
+                  {item.kind === 'updated' && <ChangedFields changes={changesFor(item.entity, item.id)} />}
                 </View>
               ))}
               {changedItems.length === 0 && (
                 <ThemedText type="small" themeColor="textSecondary">
                   {t('import.noChanges')}
                 </ThemedText>
+              )}
+              {changedItems.length > COLLAPSED_CHANGES && (
+                <ChangeListToggle
+                  total={changedItems.length}
+                  expanded={showAllChanges}
+                  onToggle={() => setShowAllChanges((shown) => !shown)}
+                />
               )}
             </View>
 
@@ -568,7 +642,7 @@ export default function ImportScreen() {
               longer stand behind.
             */}
             <View style={styles.changedList}>
-              {applied.items.map((item) => (
+              {visibleAppliedItems.map((item) => (
                 <View key={`${item.detail}-${item.id}`} style={styles.changedRow}>
                   <ThemedText
                     style={[styles.changedGlyph, { color: item.kind === 'new' ? theme.accentText : theme.accentCalmText }]}>
@@ -587,51 +661,68 @@ export default function ImportScreen() {
                   {t('import.noChanges')}
                 </ThemedText>
               )}
+              {applied.items.length > COLLAPSED_CHANGES && (
+                <ChangeListToggle
+                  total={applied.items.length}
+                  expanded={showAllChanges}
+                  onToggle={() => setShowAllChanges((shown) => !shown)}
+                />
+              )}
             </View>
           </>
         )}
-
-        {/*
-          Once the write has landed there is nothing left to cancel and nothing left to merge, so the
-          pair collapses to one button. Leaving "Cancel" beside a completed import would suggest it
-          could still be undone, which it can't — the library is already on disk.
-        */}
-        {applied ? (
-          <View style={styles.buttonRow}>
-            <Pressable
-              onPress={close}
-              accessibilityRole="button"
-              accessibilityLabel={t('common.done')}
-              style={[styles.mergeButton, { backgroundColor: theme.accent }]}>
-              <ThemedText type="heading" style={{ color: theme.onAccent }}>
-                {t('common.done')}
-              </ThemedText>
-            </Pressable>
-          </View>
-        ) : (
-          <View style={styles.buttonRow}>
-            <Pressable
-              onPress={close}
-              accessibilityRole="button"
-              accessibilityLabel={t('common.cancel')}
-              style={[styles.cancelButton, { borderColor: theme.border }]}>
-              <ThemedText type="heading" themeColor="textSecondary">
-                {t('common.cancel')}
-              </ThemedText>
-            </Pressable>
-            <Pressable
-              onPress={confirmMerge}
-              disabled={!ready || busy}
-              accessibilityRole="button"
-              accessibilityLabel={t('import.mergeButton')}
-              style={[styles.mergeButton, { backgroundColor: theme.accent, opacity: !ready || busy ? 0.5 : 1 }]}>
-              <ThemedText type="heading" style={{ color: theme.onAccent }}>
-                {t('import.mergeButton')}
-              </ThemedText>
-            </Pressable>
-          </View>
-        )}
       </ScrollView>
+
+      {/*
+        Pinned below the scroll rather than being its last child, because the preview's length is a
+        property of the imported file: a re-imported library renders a row per changed id and a line
+        per changed field, which put Merge several screens down with nothing on screen saying it was
+        there. A primary action that a big enough file can hide is the same as one that isn't there.
+      */}
+      <View style={[styles.footer, { borderTopColor: theme.border }]}>
+        <View style={styles.footerInner}>
+          {/*
+            Once the write has landed there is nothing left to cancel and nothing left to merge, so the
+            pair collapses to one button. Leaving "Cancel" beside a completed import would suggest it
+            could still be undone, which it can't — the library is already on disk.
+          */}
+          {applied ? (
+            <View style={styles.buttonRow}>
+              <Pressable
+                onPress={close}
+                accessibilityRole="button"
+                accessibilityLabel={t('common.done')}
+                style={[styles.mergeButton, { backgroundColor: theme.accent }]}>
+                <ThemedText type="heading" style={{ color: theme.onAccent }}>
+                  {t('common.done')}
+                </ThemedText>
+              </Pressable>
+            </View>
+          ) : (
+            <View style={styles.buttonRow}>
+              <Pressable
+                onPress={close}
+                accessibilityRole="button"
+                accessibilityLabel={t('common.cancel')}
+                style={[styles.cancelButton, { borderColor: theme.border }]}>
+                <ThemedText type="heading" themeColor="textSecondary">
+                  {t('common.cancel')}
+                </ThemedText>
+              </Pressable>
+              <Pressable
+                onPress={confirmMerge}
+                disabled={!ready || busy}
+                accessibilityRole="button"
+                accessibilityLabel={t('import.mergeButton')}
+                style={[styles.mergeButton, { backgroundColor: theme.accent, opacity: !ready || busy ? 0.5 : 1 }]}>
+                <ThemedText type="heading" style={{ color: theme.onAccent }}>
+                  {t('import.mergeButton')}
+                </ThemedText>
+              </Pressable>
+            </View>
+          )}
+        </View>
+      </View>
     </SafeAreaView>
   );
 }
@@ -756,10 +847,30 @@ const styles = StyleSheet.create({
   note: {
     marginTop: Spacing.two + 4,
   },
+  // Full-bleed so its rule spans the screen, with the buttons themselves held to the same centred
+  // column as the scroll content — a border stopping at `MaxContentWidth` on a tablet reads as a card.
+  footer: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: Spacing.three,
+    paddingTop: Spacing.two + 2,
+    paddingBottom: Spacing.one,
+  },
+  footerInner: {
+    alignSelf: 'center',
+    width: '100%',
+    maxWidth: MaxContentWidth,
+  },
   buttonRow: {
     flexDirection: 'row',
     gap: Spacing.three - 4,
-    marginTop: Spacing.three,
+  },
+  showAllButton: {
+    marginTop: Spacing.one + 2,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderRadius: 12,
   },
   cancelButton: {
     flex: 1,

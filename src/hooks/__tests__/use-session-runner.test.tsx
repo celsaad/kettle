@@ -38,7 +38,7 @@ const mockScheduleNotification = jest.fn((_title: string, _body: string, _second
 const mockCancelNotification = jest.fn();
 jest.mock('@/hooks/safe-notifications', () => ({
   requestNotificationPermissions: jest.fn(() => Promise.resolve()),
-  scheduleRestCompleteNotification: (title: string, body: string, seconds: number) =>
+  scheduleStepCompleteNotification: (title: string, body: string, seconds: number) =>
     mockScheduleNotification(title, body, seconds),
   cancelNotification: (id: string) => mockCancelNotification(id),
 }));
@@ -97,6 +97,10 @@ const exercises: Exercise[] = [
   { id: 'burpees', name: 'Burpees', type: 'hiit', config: { workSec: 40, restSec: 20, rounds: 3 } },
   { id: 'pullups', name: 'Pull-ups', type: 'reps', config: { sets: 3, targetRepsMin: 6, targetWeightKg: 20, restSec: 90 } },
   { id: 'lsit', name: 'L-Sit', type: 'timed_hold', config: { sets: 3, holdSecMin: 15, restSec: 60 } },
+  // The three hold shapes, which end differently: `lsit` at its fixed 15s, `plank` at the top of its
+  // range, and `deadhang` not at all.
+  { id: 'plank', name: 'Plank', type: 'timed_hold', config: { sets: 2, holdSecMin: 15, holdSecMax: 25, restSec: 30 } },
+  { id: 'deadhang', name: 'Dead Hang', type: 'timed_hold', config: { sets: 2, restSec: 30 } },
   { id: 'grinder', name: 'Grinder', type: 'amrap', config: { timeCapSec: 300 } },
   // rest_sec: 0 — back-to-back sets, how half a hand-rolled superset is written.
   { id: 'dips', name: 'Dips', type: 'reps', config: { sets: 3, targetRepsMin: 8, restSec: 0 } },
@@ -207,6 +211,94 @@ describe('foreground catch-up', () => {
     });
 
     expect(result.current.stepIndex).toBe(1);
+  });
+
+  /**
+   * The same catch-up for a hold, which is where it matters most: a hold is run with the phone on the
+   * floor and the screen asleep, so ending while nothing is ticking is its *normal* case. Without it
+   * the clock resumes mid-hold and the set runs long — which is the overrun the auto-end exists to
+   * remove, reintroduced through the back door.
+   */
+  it('advances a hold whose end passed while backgrounded, logging the target rather than the overrun', async () => {
+    const { result } = await mount(workoutOf(single('plank'))); // 15–25s
+    await act(async () => {
+      jest.setSystemTime(new Date('2026-07-27T09:01:00Z')); // 60s later, well past the 25s end
+      appStateHandlers.at(-1)?.('active');
+    });
+
+    expect(result.current.stepIndex).toBe(1);
+    const hold = mockSession.entries.find((entry) => entry.type === 'timed_hold');
+    expect(hold?.type === 'timed_hold' && hold.sets[0].holdSec).toBe(25);
+  });
+
+  it('leaves a targetless hold running however long it was backgrounded', async () => {
+    const { result } = await mount(workoutOf(single('deadhang')));
+    await act(async () => {
+      jest.setSystemTime(new Date('2026-07-27T09:05:00Z'));
+      appStateHandlers.at(-1)?.('active');
+    });
+
+    expect(result.current.stepIndex).toBe(0);
+    expect(result.current.holdElapsedSec).toBe(300);
+  });
+});
+
+describe('a hold that ends itself', () => {
+  it('advances at the top of the range, not at the minimum', async () => {
+    const { result } = await mount(workoutOf(single('plank'))); // 15–25s
+    await tick(20);
+    expect(result.current.stepIndex).toBe(0);
+
+    await tick(5);
+    expect(result.current.step?.kind).toBe('rest');
+  });
+
+  it('advances at a fixed target', async () => {
+    const { result } = await mount(workoutOf(single('lsit'))); // 15s
+    await tick(14);
+    expect(result.current.stepIndex).toBe(0);
+
+    await tick(1);
+    expect(result.current.step?.kind).toBe('rest');
+  });
+
+  // The whole point of the escape hatch: omitting the target is the only way to write "hold as long
+  // as you can", and it has to survive well past any number the runner might have inferred.
+  it('never advances a hold with no target', async () => {
+    const { result } = await mount(workoutOf(single('deadhang')));
+    await tick(600);
+
+    expect(result.current.stepIndex).toBe(0);
+    expect(result.current.holdElapsedSec).toBe(600);
+  });
+
+  it('logs the same set an auto-end and a tapped Done both produce', async () => {
+    const { result } = await mount(workoutOf(single('lsit')));
+    await tick(15); // auto-ends set 1
+    await press(() => result.current.skipRest());
+    await tick(10);
+    await press(() => result.current.doneSet()); // set 2, ended early by hand
+
+    const hold = mockSession.entries.find((entry) => entry.type === 'timed_hold');
+    expect(hold?.type === 'timed_hold' && hold.sets.map((set) => set.holdSec)).toEqual([15, 10]);
+  });
+
+  // The 3-2-1 into the end, which is the part that earns its keep in a hold: it's how you know to
+  // prepare the dismount without looking up.
+  it('ticks the last three seconds before it ends', async () => {
+    await mount(workoutOf(single('plank'))); // ends at 25s
+    await tick(21);
+    expect(mockPlayTick).not.toHaveBeenCalled();
+
+    await tick(3); // 22s, 23s, 24s
+    expect(mockPlayTick).toHaveBeenCalledTimes(3);
+  });
+
+  it('does not tick through a hold with no end to count into', async () => {
+    await mount(workoutOf(single('deadhang')));
+    await tick(120);
+
+    expect(mockPlayTick).not.toHaveBeenCalled();
   });
 });
 
@@ -506,19 +598,35 @@ describe('milestone chime', () => {
     expect(mockPlayMilestone).toHaveBeenCalledTimes(1);
   });
 
-  it('sounds once when a hold reaches its target', async () => {
-    const { result } = await mount(workoutOf(single('lsit'))); // holdSecMin 15, counts up
+  it('sounds once when a range hold crosses its minimum', async () => {
+    const { result } = await mount(workoutOf(single('plank'))); // 15–25s, ends at 25
     await tick(14);
     expect(mockPlayMilestone).not.toHaveBeenCalled();
 
     await tick(1);
     expect(mockPlayMilestone).toHaveBeenCalledTimes(1);
 
-    // A hold doesn't auto-advance, so it keeps ticking past the target — exactly where a repeat
-    // would be most annoying.
-    await tick(15);
+    // Still inside the range, where a repeat would be most annoying — the once-per-step guard.
+    await tick(5);
     expect(mockPlayMilestone).toHaveBeenCalledTimes(1);
-    expect(result.current.holdElapsedSec).toBe(30);
+    expect(result.current.holdElapsedSec).toBe(20);
+  });
+
+  // The minimum is only worth marking when there's something left to run after it. On a fixed target
+  // the mark and the auto-advance land in the same second, and the chime firing into the step change
+  // is two cues in one breath rather than two pieces of information.
+  it('stays silent on a fixed-target hold, whose minimum is its end', async () => {
+    await mount(workoutOf(single('lsit'))); // holdSecMin 15, no max
+    await tick(15);
+
+    expect(mockPlayMilestone).not.toHaveBeenCalled();
+  });
+
+  it('stays silent through a hold with no target at all', async () => {
+    await mount(workoutOf(single('deadhang')));
+    await tick(120);
+
+    expect(mockPlayMilestone).not.toHaveBeenCalled();
   });
 
   it('stays silent through a rest countdown', async () => {

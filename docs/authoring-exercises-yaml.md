@@ -79,12 +79,35 @@ marked *optional* is required.
 | `emom` | `interval_sec` (>0), `total_minutes` (>0), `target_reps` (int >0, *optional*) | every-minute-on-the-minute |
 | `amrap` | `time_cap_sec` (>0) | as-many-rounds-as-possible within the cap |
 | `reps` | `sets` (int >0), `target_reps_min` (int >0), `target_reps_max` (int >0, *optional*, ≥ `target_reps_min`), `target_weight` (≥0, *optional*, kg), `rest_sec` (≥0) | e.g. bench press; give only `target_reps_min` for a fixed target, or add `target_reps_max` for a range like "5 to 10 reps" |
-| `timed_hold` | `sets` (int >0), `hold_sec_min` (>0), `hold_sec_max` (>0, *optional*, ≥ `hold_sec_min`), `rest_sec` (≥0) | e.g. L-sit, plank; same fixed-vs-range shape as `reps` |
+| `timed_hold` | `sets` (int >0), `hold_sec_min` (>0, *optional*), `hold_sec_max` (>0, *optional*, ≥ `hold_sec_min`, needs `hold_sec_min`), `rest_sec` (≥0) | e.g. L-sit, plank; same fixed-vs-range shape as `reps`, and the hold **ends itself** at the top of the range — omit both targets for a max-effort hold that counts up until you tap Done |
 | `cardio` | `duration_sec` (>0, *optional*), `distance_meters` (>0, *optional*) | give either, both, or neither — an empty `config: {}` is valid and runs as a plain count-up stopwatch |
 | `rest` | `duration_sec` (≥0) | a standalone rest block between exercises — see below |
 
 All 7 types run step-by-step in the session screen — there's no longer any limitation on which
 types are runnable end-to-end.
+
+### How a `timed_hold` ends
+
+The two target fields are both optional, and which you give decides when the set stops. The runner
+always counts **up** — the number on screen is the number written to your session log — so the
+targets set the end rather than the display.
+
+| what you write | when the set ends | on screen |
+|---|---|---|
+| `hold_sec_min: 30` | at 30s, by itself | bar fills to 30s |
+| `hold_sec_min: 15` + `hold_sec_max: 25` | at 25s, by itself | bar fills to 25s, with 15s marked part-way along and a chime as you cross it |
+| neither | never — you tap **Done set** | no bar; the clock just counts |
+
+Leaving both out is how you write "hold as long as you can": the set runs until you end it and logs
+whatever you managed, which is what makes a hold PR visible in your history. Give a target and the
+step ends on its own, with a 3-2-1 of ticks into the end so you can prepare the dismount without
+looking at the phone — the point being that in a dead hang you can't reach it anyway.
+
+`hold_sec_max` on its own is refused: a range needs both ends.
+
+> **If you already have holds in your library, they now end themselves.** `hold_sec_min` used to be
+> required, so every existing hold has a target and will stop there — a "60s minimum, hold to
+> failure" set is cut at 60. Delete `hold_sec_min` to get the old count-until-you-tap behaviour.
 
 ## Workouts
 

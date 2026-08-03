@@ -71,11 +71,15 @@ export function exerciseSummary(exercise: Exercise, unitSystem: UnitSystem): str
         rest: exercise.config.restSec,
       });
     case 'timed_hold':
-      return t('summary.hold', {
-        sets: exercise.config.sets,
-        hold: rangeLabel(exercise.config.holdSecMin, exercise.config.holdSecMax),
-        rest: exercise.config.restSec,
-      });
+      // A max-effort hold has no duration to put in the badge, and "3 × s" is what the shared string
+      // renders without one.
+      return exercise.config.holdSecMin === undefined
+        ? t('summary.holdOpen', { sets: exercise.config.sets, rest: exercise.config.restSec })
+        : t('summary.hold', {
+            sets: exercise.config.sets,
+            hold: rangeLabel(exercise.config.holdSecMin, exercise.config.holdSecMax),
+            rest: exercise.config.restSec,
+          });
     case 'emom':
       return t('summary.emom', { interval: exercise.config.intervalSec, minutes: exercise.config.totalMinutes });
     case 'amrap':

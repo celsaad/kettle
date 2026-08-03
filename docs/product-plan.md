@@ -56,7 +56,7 @@ Type is the heart of the model. Each type carries its own **config** (the plan) 
 | `emom` | interval sec, total minutes, target reps/interval | reps done per interval (a missed interval logs no reps) |
 | `amrap` | time cap | rounds + optional extra reps |
 | `reps` | sets, target rep range (min, optional max), target weight, rest sec | per-set: actual reps, weight, RPE, rest taken |
-| `timed_hold` | sets, target hold range (min, optional max), rest sec | per-set: actual hold duration, rest taken |
+| `timed_hold` | sets, target hold range (optional min, optional max), rest sec | per-set: actual hold duration, rest taken |
 | `cardio` | duration or distance | duration and/or distance |
 | `rest` | duration sec | actual rest taken |
 
@@ -74,7 +74,7 @@ adding one costs). Don't restate the candidates here; this table is the shipped 
 A single workout commonly mixes rep-counted and time-based movements — e.g. a calisthenics session with **L-sit holds** (timed) and **pull-ups** (reps). This is handled naturally by the model because **each block in a workout references an exercise that carries its own type.** The session runner switches its behavior per block:
 
 - A `reps` block → rep/weight input UI, then a rest timer.
-- A `timed_hold` block → a countdown/count-up hold timer, then a rest timer.
+- A `timed_hold` block → a count-up hold timer that ends itself at the target (or runs until you tap Done, if no target is configured), then a rest timer.
 
 No special "mixed workout" type is needed. A workout is just an ordered list of typed blocks, and the runner adapts to each block's type as it advances. This keeps calisthenics circuits (hold → pull-ups → rest → repeat) and traditional strength days on the exact same engine.
 
@@ -110,7 +110,7 @@ exercises:
     type: timed_hold
     config:
       sets: 4
-      hold_sec_min: 20          # hold_sec_max optional, same range shape as reps
+      hold_sec_min: 20          # both targets optional; omit them for a max-effort hold
       rest_sec: 60
 
   - id: pullups
@@ -250,7 +250,7 @@ idle → running → resting → paused → complete
 
 The runner advances block by block through the workout, adapting to each block's type:
 
-- **Timed types** (`hiit`, `emom`, `amrap`, `timed_hold`): auto-running countdown/interval timers, large readable display, audio + haptic cues on every transition, auto-advance to the next block.
+- **Timed types** (`hiit`, `emom`, `amrap`, `timed_hold`): auto-running countdown/interval timers, large readable display, audio + haptic cues on every transition, auto-advance to the next block. A `timed_hold` counts up rather than down and auto-advances only when it has a target — with neither target configured it runs until you end it.
 - **Rep types** (`reps`): input reps/weight per set, then a rest timer auto-starts; "Next set" advances. Rest can auto-expire **or** be skipped early with a tap.
 - **Rest blocks**: a simple countdown; skippable.
 
@@ -336,7 +336,7 @@ See §13 for the concrete, current gap list.
 ## 12. Open Questions to Settle Before Building
 
 1. **Rest as a first-class type vs. an attribute.** ✅ Settled: kept `rest` first-class.
-2. **Timed-hold display direction.** ✅ Settled: **count up, with the target range as a marker** — no countdown option. A countdown needs one number to count from, and a hold's config is a *range* (`hold_sec_min` + optional `hold_sec_max`), so there is no non-arbitrary end to count from; counting up also matches what gets logged, which is how long the hold actually lasted. The bar is scaled to the top of the range with the minimum marked part-way along, so crossing the minimum reads as crossing a mark rather than finishing.
+2. **Timed-hold display direction.** ✅ Settled: **count up, with the target range as a marker** — no countdown option. A countdown needs one number to count from, and a hold's config is a *range* (`hold_sec_min` + optional `hold_sec_max`), so there is no non-arbitrary end to count from; counting up also matches what gets logged, which is how long the hold actually lasted. The bar is scaled to the top of the range with the minimum marked part-way along, so crossing the minimum reads as crossing a mark rather than finishing. **This settled the display, not the ending** — a hold now *ends* itself at the top of its range, and `hold_sec_min` became optional so a max-effort hold can be written at all. The display is unchanged and for the same reason: the number on screen is the number logged.
 3. **Rep-block rest behavior.** ✅ Settled: auto-timer that's skippable.
 4. **Supersets / circuits (repeat a group N times).** ✅ Settled and shipped — `WorkoutBlock` has a `circuit` kind (round-robin members, configurable rest between exercises and between rounds), no rewrite needed.
 5. **Merge conflict transparency.** ✅ Settled: **a field-level diff**, not just a count. Each updated id lists what moves — `Sets: 3 → 4`, `Weight: 60 kg → 65 kg`, `Target reps (max): 8 → not set` — with weights in the reader's own units. Deliberately shallower for workouts (block count plus which exercise references appeared or vanished, circuit members included) and programs (week count plus which shared weeks were edited): a faithful per-block diff of reordered circuits is a diffing algorithm, where the question the preview has to answer is only "is this still the same thing, and does it still contain what I put in it".

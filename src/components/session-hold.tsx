@@ -19,7 +19,7 @@ type Props = {
   exerciseName: string;
   setIndex: number;
   setTotal: number;
-  targetSec: number;
+  targetSec?: number;
   targetMaxSec?: number;
   elapsedSec: number;
   paused: boolean;
@@ -57,9 +57,13 @@ export function SessionHold({
   }, [pulse, reduceMotion]);
 
   const pulseStyle = useAnimatedStyle(() => ({ opacity: pulse.value }));
-  // Guarded the same way session-interval.tsx's bar is: a 0 target makes this NaN before the clock
-  // starts (0/0) and Infinity after it, and `width: "NaN%"` is an invalid style rather than a
-  // no-op. validateConfig keeps the in-app editor from writing a 0-second hold, but a program
+  // A max-effort hold has no scale to draw against, so it gets no bar at all rather than an empty
+  // track that never fills. This is a first-class config (`hold_sec_min` omitted), not a malformed
+  // one — the guards below are the separate, still-necessary defence against a 0 target.
+  //
+  // Those are guarded the same way session-interval.tsx's bar is: a 0 target makes this NaN before
+  // the clock starts (0/0) and Infinity after it, and `width: "NaN%"` is an invalid style rather
+  // than a no-op. validateConfig keeps the in-app editor from writing a 0-second hold, but a program
   // week's `hold_sec_min: 0` override reaches here unchecked from either direction — the override
   // schema types `config` as a free record of numbers, and the in-app override editor doesn't run
   // validateConfig either.
@@ -68,12 +72,13 @@ export function SessionHold({
   // minimum pegged at 100% the moment the minimum was reached and stayed there for the whole span the
   // range exists to describe — so on a 15–25s hold the bar was uninformative across exactly the
   // seconds that decide the set. Scaled to the maximum, the fill keeps moving to the end, and the
-  // minimum becomes a mark to cross rather than the finish line.
-  const barSec = targetMaxSec && targetMaxSec > targetSec ? targetMaxSec : targetSec;
+  // minimum becomes a mark to cross rather than the finish line — and, since the hold now ends there
+  // too, a full bar and a finished set are the same event.
+  const barSec = targetSec === undefined ? 0 : targetMaxSec && targetMaxSec > targetSec ? targetMaxSec : targetSec;
   const fillPct = barSec > 0 ? Math.min(100, (elapsedSec / barSec) * 100) : 0;
-  // Where "enough" sits on that bar: the end of the track for a single target, part-way along it for a
-  // range. Guarded with the fill, since a 0 target divides here too.
-  const markerPct = barSec > 0 ? Math.min(100, (targetSec / barSec) * 100) : 100;
+  // Only drawn for a genuine range. With the hold ending at the top of the track, a fixed target puts
+  // this mark exactly where the fill finishes, where it says nothing the filled bar doesn't.
+  const markerPct = targetSec !== undefined && barSec > targetSec ? (targetSec / barSec) * 100 : null;
 
   return (
     <View style={styles.container}>
@@ -108,12 +113,21 @@ export function SessionHold({
             s
           </ThemedText>
         </View>
-        <View style={styles.progressTrack}>
-          <View style={[styles.progressFill, { width: `${fillPct}%` }]} />
-          <View style={[styles.progressMarker, { left: `${markerPct}%` }]} />
-        </View>
+        {/*
+          Keyed on the target being *configured*, not on it being usable: a malformed 0 still draws an
+          empty track, because something was configured and a bar stuck at zero says so. Only a
+          max-effort hold — no target at all — drops the bar, having no scale to draw against.
+        */}
+        {targetSec !== undefined && (
+          <View style={styles.progressTrack}>
+            <View style={[styles.progressFill, { width: `${fillPct}%` }]} />
+            {markerPct !== null && <View style={[styles.progressMarker, { left: `${markerPct}%` }]} />}
+          </View>
+        )}
         <ThemedText type="small" style={styles.captionLabel}>
-          {t('session.hold.caption', { target: targetMaxSec ? `${targetSec}–${targetMaxSec}` : targetSec })}
+          {targetSec === undefined
+            ? t('session.hold.captionOpen')
+            : t('session.hold.caption', { target: targetMaxSec ? `${targetSec}–${targetMaxSec}` : targetSec })}
         </ThemedText>
       </View>
 
@@ -141,9 +155,10 @@ export function SessionHold({
         </Pressable>
       </View>
       {/*
-       * The primary action, styled like one. A hold counts up with its target as a marker and never
-       * auto-advances (unlike rest and a countdown interval), so this is the *only* way out of the
-       * step — and it was a bare text link with no minHeight, giving it the smallest touch target on
+       * The primary action, styled like one. A targeted hold now ends itself at the top of its range,
+       * but this stays the primary control rather than a fallback: it's how you end a set you dropped
+       * out of early, and on a max-effort hold (no target configured) it remains the *only* way out of
+       * the step. It was a bare text link with no minHeight, giving it the smallest touch target on
        * the screen where you're least able to aim. Pause, which is the interruption case, had the
        * filled treatment instead; it's outlined now so the hierarchy matches what each one does.
        */}

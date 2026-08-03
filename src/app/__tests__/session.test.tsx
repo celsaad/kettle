@@ -32,7 +32,7 @@ jest.mock('@/hooks/use-session-sounds', () => ({
 
 jest.mock('@/hooks/safe-notifications', () => ({
   requestNotificationPermissions: jest.fn(() => Promise.resolve()),
-  scheduleRestCompleteNotification: jest.fn(() => Promise.resolve('notif-id')),
+  scheduleStepCompleteNotification: jest.fn(() => Promise.resolve('notif-id')),
   cancelNotification: jest.fn(),
 }));
 

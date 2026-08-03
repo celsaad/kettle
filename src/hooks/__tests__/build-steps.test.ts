@@ -12,6 +12,8 @@ const exercises: Exercise[] = [
   { id: 'pullups', name: 'Pull-ups', type: 'reps', config: { sets: 3, targetRepsMin: 6, targetRepsMax: 10, restSec: 90 } },
   { id: 'pushups', name: 'Push-ups', type: 'reps', config: { sets: 2, targetRepsMin: 12, restSec: 45 } },
   { id: 'lsit', name: 'L-Sit', type: 'timed_hold', config: { sets: 3, holdSecMin: 15, restSec: 60 } },
+  { id: 'plank', name: 'Plank', type: 'timed_hold', config: { sets: 2, holdSecMin: 15, holdSecMax: 25, restSec: 30 } },
+  { id: 'deadhang', name: 'Dead Hang', type: 'timed_hold', config: { sets: 2, restSec: 30 } },
   { id: 'burpees', name: 'Burpees', type: 'hiit', config: { workSec: 40, restSec: 20, rounds: 4 } },
   { id: 'clean', name: 'Clean', type: 'emom', config: { intervalSec: 30, totalMinutes: 10, targetReps: 3 } },
   { id: 'everyminute', name: 'Every Minute', type: 'emom', config: { intervalSec: 60, totalMinutes: 5 } },
@@ -61,6 +63,51 @@ describe('timed_hold blocks', () => {
   it('interleaves rest between holds', () => {
     const steps = buildSteps(workoutOf(single('lsit')), exercises);
     expect(steps.map((step) => step.kind)).toEqual(['hold', 'rest', 'hold', 'rest', 'hold']);
+  });
+
+  /**
+   * Where each of the three config shapes ends. The end is the *top* of the range rather than the
+   * bottom: scaled to the minimum, a range hold would stop at the first second the range describes,
+   * making the range itself unreachable.
+   */
+  describe('holdEndSec', () => {
+    const firstHold = (exerciseId: string) => {
+      const step = buildSteps(workoutOf(single(exerciseId)), exercises)[0];
+      return step.kind === 'hold' ? step : null;
+    };
+
+    it('is the maximum when the target is a range', () => {
+      expect(firstHold('plank')?.holdEndSec).toBe(25);
+      expect(firstHold('plank')?.holdTargetSec).toBe(15);
+    });
+
+    it('is the minimum when that is the only target', () => {
+      expect(firstHold('lsit')?.holdEndSec).toBe(15);
+    });
+
+    it('is absent when there is no target, which is what makes a max-effort hold possible', () => {
+      expect(firstHold('deadhang')?.holdEndSec).toBeUndefined();
+      expect(firstHold('deadhang')?.holdTargetSec).toBeUndefined();
+    });
+
+    /**
+     * A 0 end would auto-advance on the first tick and skip the hold outright. Nothing validates a
+     * program week's override config — the override schema types it as a free record of numbers and
+     * the in-app override editor doesn't call validateConfig — so this arrives from a real path, and
+     * degrading to a hold you end by hand beats one that vanishes mid-workout.
+     */
+    it('is absent for a 0 target, which an unvalidated program override can still write', () => {
+      const zeroHold: Exercise = {
+        id: 'zero',
+        name: 'Zero',
+        type: 'timed_hold',
+        config: { sets: 1, holdSecMin: 0, restSec: 30 },
+      };
+      const steps = buildSteps(workoutOf(single('zero')), [...exercises, zeroHold]);
+      expect(steps[0].kind === 'hold' && steps[0].holdEndSec).toBeUndefined();
+      // Still a runnable step, not a skipped one.
+      expect(steps[0].kind).toBe('hold');
+    });
   });
 });
 

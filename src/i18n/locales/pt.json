@@ -142,7 +142,14 @@
     "hold": {
       "label": "ISOMETRIA",
       "caption": "meta de {{target}}s · contando para cima",
+      "captionOpen": "sem meta · contando para cima",
       "doneSet": "Série concluída →"
+    },
+    "notification": {
+      "restTitle": "Descanso concluído",
+      "restBody": "{{workout}} · de volta ao treino",
+      "holdTitle": "Isometria concluída",
+      "holdBody": "{{workout}} · pode descer"
     },
     "rest": {
       "label": "DESCANSO",
@@ -195,6 +202,7 @@
     },
     "announce": {
       "hold": "{{name}}, série {{index}} de {{total}}, segure {{target}} segundos",
+      "holdOpen": "{{name}}, série {{index}} de {{total}}, segure o máximo que conseguir",
       "reps": "{{name}}, série {{index}} de {{total}}, alvo {{target}} repetições",
       "interval": "{{name}}, {{index}} de {{total}}, {{seconds}} segundos",
       "rest": "Descanso, {{seconds}} segundos"
@@ -355,7 +363,9 @@
     "error": {
       "required": "Preencha o campo {{label}}.",
       "mustBeNumber": "{{label}} precisa ser um número.",
-      "mustBeAtLeast": "{{label}} precisa ser pelo menos {{min}}."
+      "mustBeAtLeast": "{{label}} precisa ser pelo menos {{min}}.",
+      "holdMaxNeedsMin": "Uma faixa de isometria precisa de um mínimo além do máximo.",
+      "holdMaxBelowMin": "A isometria máxima não pode ser menor que a mínima."
     }
   },
   "exerciseEditor": {
@@ -492,6 +502,7 @@
     "reps": "{{sets}} × {{reps}}{{weight}} · {{rest}}s de descanso",
     "repsWeight": " · {{weight}} {{unit}}",
     "hold": "{{sets}} × {{hold}}s · {{rest}}s de descanso",
+    "holdOpen": "{{sets}} × isometria máxima · {{rest}}s de descanso",
     "emom": "intervalo de {{interval}}s · {{minutes}} min",
     "amrap": "limite de {{cap}}s",
     "cardioDistance": "{{n}} m",
@@ -506,6 +517,7 @@
   },
   "preview": {
     "hold": "isometria · série {{index}} de {{total}} · alvo {{target}}",
+    "holdOpen": "isometria · série {{index}} de {{total}} · sem alvo",
     "reps": "repetições · série {{index}} de {{total}} · alvo {{target}}",
     "interval": "{{variant}} · {{progress}}",
     "round": "rodada {{index}} de {{total}}",

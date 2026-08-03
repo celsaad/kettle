@@ -17,8 +17,14 @@ export type RepsConfig = {
   targetWeightKg?: number;
   restSec: number;
 };
-/** holdSecMax is optional: omit it for a fixed target, set it for a double-progression range. */
-export type TimedHoldConfig = { sets: number; holdSecMin: number; holdSecMax?: number; restSec: number };
+/**
+ * Both targets are optional, and the three legal shapes each mean something different: neither is a
+ * max-effort hold that counts up until you end it, `holdSecMin` alone is a fixed target, and both is
+ * a double-progression range. The hold ends itself at `holdSecMax ?? holdSecMin`, so the minimum is a
+ * mark to cross rather than the finish line. `holdSecMax` without `holdSecMin` is refused by the
+ * schema.
+ */
+export type TimedHoldConfig = { sets: number; holdSecMin?: number; holdSecMax?: number; restSec: number };
 export type CardioConfig = { durationSec?: number; distanceMeters?: number };
 export type RestConfig = { durationSec: number };
 

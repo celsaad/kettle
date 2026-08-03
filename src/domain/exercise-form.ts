@@ -76,7 +76,9 @@ export const CONFIG_FIELDS: Record<ExerciseType, FieldDef[]> = {
   ],
   timed_hold: [
     { key: 'sets', label: 'exerciseForm.field.sets' },
-    { key: 'holdSecMin', label: 'exerciseForm.field.hold', unit: 'sec' },
+    // Optional, like cardio's duration below: left blank it's a max-effort hold that counts up until
+    // you end it, which is the only way to express one.
+    { key: 'holdSecMin', label: 'exerciseForm.field.hold', unit: 'sec', optional: true },
     { key: 'holdSecMax', label: 'exerciseForm.field.holdMax', unit: 'sec', optional: true },
     { key: 'restSec', label: 'exerciseForm.field.rest', unit: 'sec', min: 0 },
   ],
@@ -96,6 +98,11 @@ export const CONFIG_FIELDS: Record<ExerciseType, FieldDef[]> = {
  * Required fields default to a minimum of 1, matching the schema's `positive()`. The rest-length
  * fields carry an explicit `min: 0` because the schema allows a zero-length rest and rejecting that
  * would be stricter than the format itself. Returns the first problem found, or null if it's valid.
+ *
+ * The per-field loop can't see the schema's *cross-field* refinements, which is how the hold range
+ * went unchecked on this path entirely: an editor could write `hold_sec_max` below `hold_sec_min`,
+ * or without one at all, and the store took both — the same file would then be refused on import.
+ * Those two rules are enforced after the loop.
  */
 export function validateConfig(type: ExerciseType, values: Record<string, string>): string | null {
   for (const field of CONFIG_FIELDS[type]) {
@@ -110,6 +117,14 @@ export function validateConfig(type: ExerciseType, values: Record<string, string
     const min = field.min ?? 1;
     if (parsed < min) return t('exerciseForm.error.mustBeAtLeast', { label, min });
   }
+
+  if (type === 'timed_hold') {
+    const holdMin = values.holdSecMin?.trim() ?? '';
+    const holdMax = values.holdSecMax?.trim() ?? '';
+    if (holdMax && !holdMin) return t('exerciseForm.error.holdMaxNeedsMin');
+    if (holdMax && holdMin && Number(holdMax) < Number(holdMin)) return t('exerciseForm.error.holdMaxBelowMin');
+  }
+
   return null;
 }
 
@@ -192,7 +207,7 @@ export function buildExercise(
         type,
         config: {
           sets: num('sets'),
-          holdSecMin: num('holdSecMin'),
+          holdSecMin: optionalNum('holdSecMin'),
           holdSecMax: optionalNum('holdSecMax'),
           restSec: num('restSec'),
         },

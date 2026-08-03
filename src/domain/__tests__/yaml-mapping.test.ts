@@ -279,3 +279,60 @@ describe('parse failures', () => {
     expect(parseLibraryYaml(bad).ok).toBe(false);
   });
 });
+
+/**
+ * `hold_sec_min` is optional so that "hold as long as you can" is expressible at all — a hold with no
+ * target counts up and only Done ends it, the same shape `cardio` has without `duration_sec`.
+ */
+describe('the three timed_hold target shapes', () => {
+  const holdYaml = (config: string) => `
+version: 1
+exercises:
+  - id: hold
+    name: Hold
+    type: timed_hold
+    config:
+      sets: 3
+${config}
+      rest_sec: 60
+workouts: []
+programs: []
+`;
+
+  const configOf = (yaml: string) => {
+    const result = parseLibraryYaml(yaml);
+    const exercise = result.ok ? result.data.exercises[0] : null;
+    return exercise?.type === 'timed_hold' ? exercise.config : null;
+  };
+
+  it('accepts no target at all', () => {
+    expect(configOf(holdYaml('      # no target'))).toEqual({ sets: 3, restSec: 60 });
+  });
+
+  it('accepts a bare minimum', () => {
+    expect(configOf(holdYaml('      hold_sec_min: 30'))?.holdSecMin).toBe(30);
+  });
+
+  it('accepts a full range', () => {
+    expect(configOf(holdYaml('      hold_sec_min: 15\n      hold_sec_max: 25'))?.holdSecMax).toBe(25);
+  });
+
+  // A range needs both ends. Allowing a bare maximum would give a fixed target two spellings, one of
+  // which reads as a range and isn't one.
+  it('rejects a maximum with no minimum', () => {
+    expect(parseLibraryYaml(holdYaml('      hold_sec_max: 25')).ok).toBe(false);
+  });
+
+  it('still rejects a maximum below the minimum', () => {
+    expect(parseLibraryYaml(holdYaml('      hold_sec_min: 30\n      hold_sec_max: 20')).ok).toBe(false);
+  });
+
+  // Round-trip: the key has to *vanish* on export, not come back as `hold_sec_min: null`, which the
+  // schema would then refuse on the next import.
+  it('omits an absent target from the exported yaml', () => {
+    const parsed = parseLibraryYaml(holdYaml('      # no target'));
+    const yaml = parsed.ok ? serializeLibraryYaml(parsed.data) : '';
+    expect(yaml).not.toContain('hold_sec_min');
+    expect(parseLibraryYaml(yaml).ok).toBe(true);
+  });
+});

@@ -142,7 +142,14 @@
     "hold": {
       "label": "HOLD",
       "caption": "target {{target}}s · counting up",
+      "captionOpen": "no target · counting up",
       "doneSet": "Done set →"
+    },
+    "notification": {
+      "restTitle": "Rest complete",
+      "restBody": "{{workout}} · back to work",
+      "holdTitle": "Hold complete",
+      "holdBody": "{{workout}} · you can come down"
     },
     "rest": {
       "label": "REST",
@@ -195,6 +202,7 @@
     },
     "announce": {
       "hold": "{{name}}, set {{index}} of {{total}}, hold {{target}} seconds",
+      "holdOpen": "{{name}}, set {{index}} of {{total}}, hold as long as you can",
       "reps": "{{name}}, set {{index}} of {{total}}, target {{target}} reps",
       "interval": "{{name}}, {{index}} of {{total}}, {{seconds}} seconds",
       "rest": "Rest, {{seconds}} seconds"
@@ -355,7 +363,9 @@
     "error": {
       "required": "{{label}} is required.",
       "mustBeNumber": "{{label}} must be a number.",
-      "mustBeAtLeast": "{{label}} must be at least {{min}}."
+      "mustBeAtLeast": "{{label}} must be at least {{min}}.",
+      "holdMaxNeedsMin": "A hold range needs a minimum as well as a maximum.",
+      "holdMaxBelowMin": "The maximum hold can't be shorter than the minimum."
     }
   },
   "exerciseEditor": {
@@ -492,6 +502,7 @@
     "reps": "{{sets}} × {{reps}}{{weight}} · {{rest}}s rest",
     "repsWeight": " · {{weight}} {{unit}}",
     "hold": "{{sets}} × {{hold}}s · {{rest}}s rest",
+    "holdOpen": "{{sets}} × max hold · {{rest}}s rest",
     "emom": "{{interval}}s interval · {{minutes}} min",
     "amrap": "{{cap}}s cap",
     "cardioDistance": "{{n}} m",
@@ -506,6 +517,7 @@
   },
   "preview": {
     "hold": "hold · set {{index}} of {{total}} · target {{target}}",
+    "holdOpen": "hold · set {{index}} of {{total}} · no target",
     "reps": "reps · set {{index}} of {{total}} · target {{target}}",
     "interval": "{{variant}} · {{progress}}",
     "round": "round {{index}} of {{total}}",

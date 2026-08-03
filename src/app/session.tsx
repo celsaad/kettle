@@ -199,13 +199,14 @@ function ActiveSession({
     const current = runner.step;
     if (!current) return null;
     switch (current.kind) {
-      case 'hold':
-        return t('session.announce.hold', {
-          name: current.exerciseName,
-          index: current.setIndex,
-          total: current.setTotal,
-          target: current.holdTargetSec,
-        });
+      case 'hold': {
+        // The end, not the minimum: it's when the set will actually stop, which is the thing you
+        // can't see coming without sight. A max-effort hold has no end to announce.
+        const spoken = { name: current.exerciseName, index: current.setIndex, total: current.setTotal };
+        return current.holdEndSec === undefined
+          ? t('session.announce.holdOpen', spoken)
+          : t('session.announce.hold', { ...spoken, target: current.holdEndSec });
+      }
       case 'reps':
         return t('session.announce.reps', {
           name: current.exerciseName,

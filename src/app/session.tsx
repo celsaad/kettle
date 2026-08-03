@@ -241,7 +241,7 @@ function ActiveSession({
     <SafeAreaView style={styles.safeArea} edges={['top', 'bottom', 'left', 'right']}>
       <View style={styles.content}>
         <View style={styles.header}>
-          <ThemedText type="small" style={styles.workoutName}>
+          <ThemedText type="small" style={styles.workoutName} numberOfLines={1}>
             {runner.workoutName}
           </ThemedText>
           <View style={styles.headerRight}>
@@ -353,8 +353,10 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    // gap, not space-between: the name now flexes into whatever is left, so there is no free space
+    // for space-between to distribute, and a long name would otherwise sit flush against the dots.
+    gap: Spacing.two,
     marginBottom: Spacing.four,
   },
   emptyState: {
@@ -388,11 +390,18 @@ const styles = StyleSheet.create({
   },
   workoutName: {
     color: RunnerColors.textSecondary,
+    // Takes the leftover width and ellipsizes inside it (with numberOfLines) instead of growing to
+    // its intrinsic width and shoving the dots and "Finish" off the right edge. minWidth: 0 is what
+    // actually lets it shrink below that intrinsic width on web, where the flex default is auto.
+    flex: 1,
+    minWidth: 0,
   },
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.three,
+    // The name is the only thing here that may lose width; "Finish" is a control and stays whole.
+    flexShrink: 0,
   },
   finishLabel: {
     color: RunnerColors.textSecondary,

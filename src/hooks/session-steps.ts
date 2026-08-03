@@ -53,21 +53,37 @@ export type RunnerStep =
     }
   // `standalone` distinguishes a dedicated Rest workout-block (its own logged session entry) from
   // inter-set/inter-round/inter-exercise rest folded into (or discarded after) the surrounding work.
+  //
+  // Non-standalone rest is only emitted when it's longer than zero. A zero-second rest step isn't
+  // free: the runner shows the rest screen, then `remaining <= 0` fires on the very next tick, so
+  // back-to-back sets got a flash of rest UI, the completion chime and a scheduled "Rest complete"
+  // notification between every one of them — the thing that made a `rest_sec: 0` superset feel
+  // broken. Standalone rest is exempt: it's a logged entry, and the schema permits `duration_sec: 0`.
   | { kind: 'rest'; blockIndex: number; memberKey: string; exerciseId: string; standalone: boolean; seconds: number };
+
+/**
+ * Where a circuit member's single visit sits in the circuit's rounds. Set only when expanding a
+ * circuit member: the circuit's own `rounds` is what repeats the member, not the member's own
+ * `sets` — so each visit is exactly one set, and no inter-set rest is inserted (rest between visits
+ * is the circuit's own rest_between_exercises_sec/rest_between_rounds_sec).
+ *
+ * It carries the round position rather than just suppressing the loop because that position is the
+ * only honest thing to put on the step: a member visited once per round across 3 rounds is doing 3
+ * sets of that exercise, and reporting the literal `1 of 1` of a single visit left the runner
+ * saying "Set 1 of 1" on every round with no sense of progress through the circuit.
+ */
+type CircuitVisit = { index: number; total: number };
 
 function expandExercise(
   exercise: Exercise,
   blockIndex: number,
   memberKey: string,
   configOverride?: BlockConfigOverride,
-  // Set when expanding a circuit member: the circuit's own `rounds` is what repeats the member, not
-  // the member's own `sets` — so each visit is exactly one set, and no inter-set rest is inserted
-  // (rest between visits is the circuit's own rest_between_exercises_sec/rest_between_rounds_sec).
-  setsOverride?: number,
+  visit?: CircuitVisit,
 ): RunnerStep[] {
   switch (exercise.type) {
     case 'timed_hold': {
-      const sets = setsOverride ?? exercise.config.sets;
+      const sets = visit ? 1 : exercise.config.sets;
       const steps: RunnerStep[] = [];
       for (let i = 0; i < sets; i++) {
         steps.push({
@@ -78,11 +94,11 @@ function expandExercise(
           exerciseName: exercise.name,
           holdTargetSec: exercise.config.holdSecMin,
           holdTargetMaxSec: exercise.config.holdSecMax,
-          setIndex: i + 1,
-          setTotal: sets,
+          setIndex: visit?.index ?? i + 1,
+          setTotal: visit?.total ?? sets,
           notes: exercise.notes,
         });
-        if (setsOverride === undefined && i < sets - 1) {
+        if (!visit && i < sets - 1 && exercise.config.restSec > 0) {
           steps.push({
             kind: 'rest',
             blockIndex,
@@ -96,7 +112,7 @@ function expandExercise(
       return steps;
     }
     case 'reps': {
-      const sets = setsOverride ?? exercise.config.sets;
+      const sets = visit ? 1 : exercise.config.sets;
       const steps: RunnerStep[] = [];
       for (let i = 0; i < sets; i++) {
         steps.push({
@@ -108,11 +124,11 @@ function expandExercise(
           targetReps: exercise.config.targetRepsMin,
           targetRepsMax: exercise.config.targetRepsMax,
           targetWeightKg: exercise.config.targetWeightKg,
-          setIndex: i + 1,
-          setTotal: sets,
+          setIndex: visit?.index ?? i + 1,
+          setTotal: visit?.total ?? sets,
           notes: exercise.notes,
         });
-        if (setsOverride === undefined && i < sets - 1) {
+        if (!visit && i < sets - 1 && exercise.config.restSec > 0) {
           steps.push({
             kind: 'rest',
             blockIndex,
@@ -141,7 +157,7 @@ function expandExercise(
           setTotal: exercise.config.rounds,
           notes: exercise.notes,
         });
-        if (i < exercise.config.rounds - 1) {
+        if (i < exercise.config.rounds - 1 && exercise.config.restSec > 0) {
           steps.push({
             kind: 'rest',
             blockIndex,
@@ -256,7 +272,12 @@ export function buildSteps(workout: Workout, exercises: Exercise[]): RunnerStep[
     for (let round = 0; round < block.rounds; round++) {
       members.forEach(({ member, memberIndex, exercise }, i) => {
         const memberKey = `${blockIndex}:${memberIndex}`;
-        steps.push(...expandExercise(exercise, blockIndex, memberKey, member.configOverride, 1));
+        steps.push(
+          ...expandExercise(exercise, blockIndex, memberKey, member.configOverride, {
+            index: round + 1,
+            total: block.rounds,
+          }),
+        );
         const isLastMember = i === members.length - 1;
         if (!isLastMember && block.restBetweenExercisesSec) {
           steps.push({

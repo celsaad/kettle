@@ -1,20 +1,31 @@
 import * as Haptics from 'expo-haptics';
 import { useCallback, useMemo, useRef, type ReactNode } from 'react';
-import { View, type LayoutChangeEvent, type StyleProp, type ViewStyle } from 'react-native';
+import { View, type StyleProp, type ViewStyle } from 'react-native';
 import { Gesture, type PanGesture } from 'react-native-gesture-handler';
-import Animated, { useAnimatedStyle, useSharedValue, withTiming, type SharedValue } from 'react-native-reanimated';
+import Animated, {
+  measure,
+  useAnimatedReaction,
+  useAnimatedRef,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+  type SharedValue,
+} from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 
 /**
- * Each item's resting (undisplaced) position and size in the list's own coordinate space, taken
- * straight from `onLayout`.
+ * Each item's resting (undisplaced) position and height on screen, read on the UI thread the moment a
+ * drag begins.
  *
- * `y` is measured rather than derived from a running sum of heights, because the *consumer* owns the
- * spacing between rows — `workout-editor` sets `gap: 10` on the list container — and a heights-only
- * model has no way to see it. Summing heights puts every slot boundary at a multiple of the row
- * *height* where the row actually sits at a multiple of its *pitch*, so the drop target runs ahead of
- * the finger by one gap per position crossed. Two or three rows down that is a whole position, which
- * is what made dropping into a chosen middle position impossible.
+ * Position is measured rather than derived from a running sum of heights, because the *consumer* owns
+ * the spacing between rows — `workout-editor` sets `gap: 10` on the list container — and a
+ * heights-only model has no way to see it. Summing heights puts every slot boundary at a multiple of
+ * the row *height* where the row actually sits at a multiple of its *pitch*, so the drop target runs
+ * ahead of the finger by one gap per position crossed.
+ *
+ * All rows are measured in the same instant and only differences between them are ever used, so the
+ * absolute frame these coordinates are in does not matter — any scroll offset is common to all of
+ * them and cancels.
  */
 export type Slot = { y: number; height: number };
 
@@ -133,6 +144,8 @@ function ReorderableItem({
   onCommit,
   children,
 }: ReorderableItemProps) {
+  const rowRef = useAnimatedRef<Animated.View>();
+
   // Long-press-then-drag (not an immediate pan) so ordinary vertical scrolling of the surrounding
   // ScrollView keeps working untouched, and gives a clear "picked up" moment to pair with a haptic.
   //
@@ -215,14 +228,30 @@ function ReorderableItem({
     return { transform: [{ translateY: withTiming(shift, { duration: 150 }) }], zIndex: 0, elevation: 0, shadowOpacity: 0 };
   });
 
-  const onLayout = useCallback(
-    (event: LayoutChangeEvent) => {
-      const { y, height } = event.nativeEvent.layout;
-      const current = slots.value[index];
-      if (current && current.y === y && current.height === height) return;
-      slots.value = slots.value.map((slot, i) => (i === index ? { y, height } : slot));
+  /**
+   * Every row measures itself the moment any drag starts.
+   *
+   * This used to accumulate `onLayout` into the shared array, and on a device that array stayed empty
+   * — the list behaved exactly as though every row were zero-sized. With no geometry the hit test has
+   * nothing to compare against, so nothing ever slid aside and every drop resolved to the row's own
+   * index: blocks could be picked up and dragged but not placed. A browser, where `onLayout` does
+   * fire, looked correct throughout, which is what kept hiding it.
+   *
+   * `measure` reads the native layout synchronously on the UI thread, so it does not depend on a
+   * layout event arriving at all. Reading it at drag start is also simply more correct than caching
+   * it: the geometry is taken as it is at the moment it gets used.
+   */
+  useAnimatedReaction(
+    () => activeIndex.value >= 0,
+    (dragging) => {
+      'worklet';
+      if (!dragging) return;
+      const measured = measure(rowRef);
+      if (measured === null) return;
+      const next = [...slots.value];
+      next[index] = { y: measured.pageY, height: measured.height };
+      slots.value = next;
     },
-    [slots, index],
   );
 
   // Clamped rather than wrapped: "move up" on the first row should do nothing, not teleport it to the
@@ -254,7 +283,10 @@ function ReorderableItem({
   };
 
   return (
-    <Animated.View style={animatedStyle} onLayout={onLayout}>
+    // `collapsable={false}` is load-bearing, not defensive: Android flattens views it thinks draw
+    // nothing, and `measure` on a flattened view returns null — which would put us straight back to
+    // having no geometry.
+    <Animated.View ref={rowRef} collapsable={false} style={animatedStyle}>
       {children(handle)}
     </Animated.View>
   );

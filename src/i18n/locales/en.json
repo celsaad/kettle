@@ -184,6 +184,7 @@
       "rpe": "RPE",
       "rpeOption": "RPE {{value}}",
       "logSet": "Log set → Rest",
+      "logSetNoRest": "Log set →",
       "repsDone": "Reps done",
       "loadLabel": "Load",
       "repsLabel": "Reps"

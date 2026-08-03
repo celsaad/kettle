@@ -98,6 +98,8 @@ const exercises: Exercise[] = [
   { id: 'pullups', name: 'Pull-ups', type: 'reps', config: { sets: 3, targetRepsMin: 6, targetWeightKg: 20, restSec: 90 } },
   { id: 'lsit', name: 'L-Sit', type: 'timed_hold', config: { sets: 3, holdSecMin: 15, restSec: 60 } },
   { id: 'grinder', name: 'Grinder', type: 'amrap', config: { timeCapSec: 300 } },
+  // rest_sec: 0 — back-to-back sets, how half a hand-rolled superset is written.
+  { id: 'dips', name: 'Dips', type: 'reps', config: { sets: 3, targetRepsMin: 8, restSec: 0 } },
 ];
 
 const workoutOf = (...blocks: Workout['blocks']): Workout => ({ id: 'w', name: 'W', blocks });
@@ -373,6 +375,33 @@ describe('circuits', () => {
     expect(holds).toHaveLength(1);
     expect(reps[0].type === 'reps' && reps[0].sets).toHaveLength(2);
     expect(holds[0].type === 'timed_hold' && holds[0].sets).toHaveLength(2);
+  });
+});
+
+describe('restFollows', () => {
+  // The reps button names what's next ("Log set → Rest"). That used to be unconditionally true,
+  // because a rest step was emitted between sets even at rest_sec: 0. Now that zero-length rest is
+  // skipped, the promise has to be checked against the actual step list or the button lies on
+  // exactly the back-to-back sets this was fixed for.
+  it('is true between sets that have real rest', async () => {
+    const { result } = await mount(workoutOf(single('pullups')));
+    expect(result.current.restFollows).toBe(true);
+  });
+
+  it('is false between back-to-back sets', async () => {
+    const { result } = await mount(workoutOf(single('dips')));
+    expect(result.current.restFollows).toBe(false);
+    await press(result.current.logSet);
+    expect(result.current.restFollows).toBe(false);
+  });
+
+  it('is false on the last step of the workout', async () => {
+    const { result } = await mount(workoutOf(single('pullups')));
+    await press(result.current.logSet); // set 1 -> rest
+    await press(result.current.skipRest); // rest -> set 2
+    await press(result.current.logSet); // set 2 -> rest
+    await press(result.current.skipRest); // rest -> set 3, the final step
+    expect(result.current.restFollows).toBe(false);
   });
 });
 

@@ -290,6 +290,7 @@ function ActiveSession({
             onChangeWeightKg={runner.setWeightKg}
             notes={step.notes}
             next={runner.nextPreview}
+            restFollows={runner.restFollows}
             onPrev={runner.goPrev}
             onLogSet={runner.logSet}
           />

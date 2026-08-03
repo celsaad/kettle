@@ -18,6 +18,11 @@ const exercises: Exercise[] = [
   { id: 'grinder', name: 'Grinder', type: 'amrap', config: { timeCapSec: 600 } },
   { id: 'row', name: 'Row', type: 'cardio', config: { distanceMeters: 2000 } },
   { id: 'rest', name: 'Rest', type: 'rest', config: { durationSec: 120 } },
+  // rest_sec: 0 — how an author writes back-to-back sets (half of a hand-rolled superset).
+  { id: 'nonstop-reps', name: 'Nonstop Reps', type: 'reps', config: { sets: 3, targetRepsMin: 8, restSec: 0 } },
+  { id: 'nonstop-hold', name: 'Nonstop Hold', type: 'timed_hold', config: { sets: 3, holdSecMin: 20, restSec: 0 } },
+  { id: 'nonstop-hiit', name: 'Nonstop HIIT', type: 'hiit', config: { workSec: 30, restSec: 0, rounds: 3 } },
+  { id: 'norest', name: 'No Rest', type: 'rest', config: { durationSec: 0 } },
 ];
 
 function workoutOf(...blocks: Workout['blocks']): Workout {
@@ -109,6 +114,42 @@ describe('single-shot blocks', () => {
   });
 });
 
+/**
+ * The regression: inter-set rest was emitted unconditionally, so `rest_sec: 0` produced a real
+ * zero-second rest step. That isn't a no-op — the runner shows the rest screen and `remaining <= 0`
+ * fires on the next tick, so back-to-back sets got a flash of rest UI, the completion chime and a
+ * scheduled "Rest complete" notification between every one of them.
+ */
+describe('zero-length rest', () => {
+  it('omits the rest step between reps sets', () => {
+    const steps = buildSteps(workoutOf(single('nonstop-reps')), exercises);
+    expect(steps.map((step) => step.kind)).toEqual(['reps', 'reps', 'reps']);
+  });
+
+  it('omits the rest step between holds', () => {
+    const steps = buildSteps(workoutOf(single('nonstop-hold')), exercises);
+    expect(steps.map((step) => step.kind)).toEqual(['hold', 'hold', 'hold']);
+  });
+
+  it('omits the rest step between hiit rounds', () => {
+    const steps = buildSteps(workoutOf(single('nonstop-hiit')), exercises);
+    expect(steps.map((step) => step.kind)).toEqual(['interval', 'interval', 'interval']);
+  });
+
+  it('still numbers the sets it does emit', () => {
+    const steps = buildSteps(workoutOf(single('nonstop-reps')), exercises);
+    expect(steps.map((step) => (step.kind === 'reps' ? step.setIndex : null))).toEqual([1, 2, 3]);
+  });
+
+  // Exempt: a standalone Rest block is its own logged session entry, and the schema permits
+  // `duration_sec: 0`. Dropping it would lose the entry, not just a pause.
+  it('keeps a standalone rest block of zero seconds', () => {
+    const steps = buildSteps(workoutOf(single('norest')), exercises);
+    expect(steps.map((step) => step.kind)).toEqual(['rest']);
+    expect(steps[0].kind === 'rest' && steps[0].standalone).toBe(true);
+  });
+});
+
 describe('circuits', () => {
   const circuit = (): Workout['blocks'][number] => ({
     kind: 'circuit',
@@ -144,6 +185,34 @@ describe('circuits', () => {
     const steps = buildSteps(workoutOf(circuit()), exercises);
     // pushups configures restSec: 45; none of the circuit rests should be that.
     expect(steps.every((step) => step.kind !== 'rest' || step.seconds !== 45)).toBe(true);
+  });
+
+  // A member is visited once per round, so its own `sets` is meaningless here — but reporting the
+  // literal 1-of-1 of that single visit left the runner saying "Set 1 of 1" on every round, with no
+  // sense of progress through the circuit. The round position is the honest number: a member visited
+  // once per round across 3 rounds is doing 3 sets of that exercise.
+  it('numbers a member visit by its round, not by the visit being a single set', () => {
+    const steps = buildSteps(workoutOf(circuit()), exercises);
+    const positions = steps.flatMap((step) =>
+      step.kind !== 'rest' && step.exerciseId === 'pushups' ? [[step.setIndex, step.setTotal]] : [],
+    );
+    expect(positions).toEqual([
+      [1, 3],
+      [2, 3],
+      [3, 3],
+    ]);
+  });
+
+  // Two rounds against lsit's own `sets: 3`, so the total can only have come from the circuit.
+  it('takes the total from the circuit rounds, not from the member own sets', () => {
+    const pair: Workout['blocks'][number] = {
+      kind: 'circuit',
+      rounds: 2,
+      members: [{ exerciseId: 'lsit' }, { exerciseId: 'pushups' }],
+    };
+    const holds = buildSteps(workoutOf(pair), exercises).filter((step) => step.kind === 'hold');
+    expect(holds.map((step) => step.setIndex)).toEqual([1, 2]);
+    expect(holds.every((step) => step.setTotal === 2)).toBe(true);
   });
 });
 

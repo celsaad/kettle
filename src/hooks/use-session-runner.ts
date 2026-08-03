@@ -638,6 +638,10 @@ export function useSessionRunner(
     extraReps,
     setExtraReps,
     nextPreview: upcomingPreview(steps, stepIndex),
+    // Whether a rest step actually follows, which the reps button names ("Log set → Rest"). It used
+    // to be safe to assume one always did; back-to-back sets (rest_sec: 0) emit no rest step at all,
+    // so the label has to ask rather than promise.
+    restFollows: steps[stepIndex + 1]?.kind === 'rest',
     doneSet: advance,
     logSet: advance,
     skipRest: advance,

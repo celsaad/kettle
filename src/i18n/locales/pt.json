@@ -184,6 +184,7 @@
       "rpe": "RPE",
       "rpeOption": "RPE {{value}}",
       "logSet": "Registrar série → Descanso",
+      "logSetNoRest": "Registrar série →",
       "repsDone": "Reps feitas",
       "loadLabel": "Carga",
       "repsLabel": "Repetições"

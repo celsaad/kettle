@@ -132,10 +132,9 @@ workouts:
 - A `circuit` block runs its `exercises` **round-robin** — A, B, C, A, B, C, ... for `rounds` rounds —
   not grouped by exercise (A, A, A, B, B, B, ...). It needs at least 2 members.
   `rest_between_exercises_sec` is the rest between consecutive members within a round (omit it, or
-  set it to `0`, for back-to-back work with no rest — that's exactly how you author what's
-  colloquially called a "superset": a 2-member circuit with no rest between exercises). There's no
-  separate superset concept. `rest_between_rounds_sec` is the rest taken after finishing all members
-  of a round, before the next round starts; both rest fields are optional.
+  set it to `0`, for back-to-back work with no rest). `rest_between_rounds_sec` is the rest taken
+  after finishing all members of a round, before the next round starts; both rest fields are
+  optional. A superset is a circuit — see "Supersets" below.
 - **A circuit member contributes exactly one visit per round, regardless of its own config.** The
   circuit's `rounds` is the only thing that repeats a member — a `reps` member's own `sets` (or a
   `timed_hold` member's own `sets`) is ignored inside a circuit, and no inter-set rest from the
@@ -148,6 +147,47 @@ workouts:
 - `id` on a circuit block is optional — set it only if you want a program week's `overrides` to be
   able to target this circuit's own `rounds`/rest fields (see Programs below). It's meaningless on a
   `type: exercise` block, which has no params of its own beyond the `duration_sec` override.
+
+### Supersets
+
+**A superset is a two-member circuit.** There is no separate superset block type, and you don't need
+one — a circuit already runs its members round-robin, which is exactly what alternating A/B is.
+"3 × 8 chin-ups supersetted with 3 × 8 dips, 90s after each pair" is:
+
+```yaml
+- type: circuit
+  rounds: 3                        # the *set* count: 3 chin-up sets and 3 dip sets
+  rest_between_exercises_sec: 0    # within the pair — straight from A into B
+  rest_between_rounds_sec: 90      # after each full A+B pair
+  exercises:
+    - exercise: chinups
+    - exercise: dips
+```
+
+That runs `chinups → dips → 90s → chinups → dips → 90s → chinups → dips`, with no trailing rest
+after the last pair. The three fields map onto how you'd say it out loud:
+
+| You'd say                     | Field                                    |
+| :---------------------------- | :--------------------------------------- |
+| "3 sets of each"              | `rounds: 3`                              |
+| "no rest between the two"     | `rest_between_exercises_sec: 0` (or omit)|
+| "90 seconds after each pair"  | `rest_between_rounds_sec: 90`            |
+
+Two consequences of the circuit rules above are worth spelling out, because they're the ones that
+bite:
+
+- **`rounds` carries the set count, not the members' own `sets`.** A circuit member is visited once
+  per round whatever its config says, so `chinups` keeps whatever `sets` and `rest_sec` make sense
+  for it *on its own*, in some other workout — those values are simply ignored here. Don't edit an
+  exercise's `rest_sec` to `0` to express a pairing; that changes the exercise everywhere it's used,
+  and the pairing still won't happen.
+- **Both members get the same number of sets.** Unequal pairs — 2 sets of A against 3 of B — can't
+  be expressed as one circuit today. Author the common rounds as a circuit and the odd sets as a
+  separate block after it.
+
+The mistake this replaces: writing the two exercises as separate `type: exercise` blocks and setting
+`rest_sec: 0` on the first one. That runs A, A, A, B, B, B — not a superset — and gives the first
+exercise no rest at all between its own sets.
 
 ## Programs
 

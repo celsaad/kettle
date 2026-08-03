@@ -327,6 +327,18 @@
 
               <h3>timed_hold</h3>
               <p>Hold a position for a set duration — planks, hangs, wall sits, loaded carries.</p>
+              <p>
+                Both targets are optional, and which you give decides when the set stops. The runner always counts
+                <em>up</em> — the number on screen is the number written to your log — so the targets set the end, not the
+                display. With <code>hold_sec_min</code> alone the hold ends there; with a range it ends at
+                <code>hold_sec_max</code>, marking the minimum part-way along the bar and chiming as you cross it. Either way
+                you get a 3-2-1 of ticks into the end, so you can prepare the dismount without looking at the phone.
+              </p>
+              <p>
+                Omit both and the hold never ends by itself — it counts until you tap <strong>Done set</strong>, which is how
+                you write “hold as long as you can” and the only way a hold PR shows up in your history.
+                <code>hold_sec_max</code> on its own is refused: a range needs both ends.
+              </p>
               <div class="table-scroll" tabindex="0" role="region" aria-label="Reference table">
                 <table class="ref">
                   <thead>
@@ -344,13 +356,16 @@
                     </tr>
                     <tr>
                       <td><code>hold_sec_min</code></td>
-                      <td>number &gt; 0</td>
-                      <td>Hold duration, or the bottom of the range. Required.</td>
+                      <td>number · optional</td>
+                      <td>Hold duration, or the bottom of the range. Omit it for a max-effort hold.</td>
                     </tr>
                     <tr>
                       <td><code>hold_sec_max</code></td>
                       <td>number · optional</td>
-                      <td>Top of the range, ≥ <code>hold_sec_min</code>. Same fixed-vs-range shape as <code>reps</code>.</td>
+                      <td>
+                        Top of the range, ≥ <code>hold_sec_min</code>, and needs it. Same fixed-vs-range shape as
+                        <code>reps</code>.
+                      </td>
                     </tr>
                     <tr>
                       <td><code>rest_sec</code></td>

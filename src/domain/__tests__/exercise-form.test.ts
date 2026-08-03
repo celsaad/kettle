@@ -36,6 +36,33 @@ describe('validateConfig', () => {
       validateConfig('reps', { sets: '3', targetRepsMin: '10', targetRepsMax: '12', targetWeightKg: '60', restSec: '90' }),
     ).toBeNull();
   });
+
+  /**
+   * The per-field loop can't express these, and until the hold target became optional neither was
+   * checked on this path at all — so the editor could write a config the importer would refuse.
+   */
+  describe('the hold range, which needs cross-field rules', () => {
+    it('accepts a hold with no target, which is how a max-effort hold is written', () => {
+      expect(validateConfig('timed_hold', { sets: '3', restSec: '60' })).toBeNull();
+    });
+
+    it('rejects a maximum with no minimum, which is a range with one end', () => {
+      expect(validateConfig('timed_hold', { sets: '3', holdSecMax: '25', restSec: '60' })).toBe(
+        'A hold range needs a minimum as well as a maximum.',
+      );
+    });
+
+    // The schema has always refused this; the form quietly took it.
+    it('rejects a maximum below the minimum', () => {
+      expect(validateConfig('timed_hold', { sets: '3', holdSecMin: '25', holdSecMax: '15', restSec: '60' })).toBe(
+        "The maximum hold can't be shorter than the minimum.",
+      );
+    });
+
+    it('accepts a maximum equal to the minimum, as the schema does', () => {
+      expect(validateConfig('timed_hold', { sets: '3', holdSecMin: '20', holdSecMax: '20', restSec: '60' })).toBeNull();
+    });
+  });
 });
 
 describe('buildExercise', () => {

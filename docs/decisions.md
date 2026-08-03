@@ -494,6 +494,27 @@ Kept as a record of where each landed, since §12 is where they're numbered.
   non-arbitrary number to count from once the target is a range (`hold_sec_min` + optional
   `hold_sec_max`), and counting up is what the log records. The bar spans the top of the range with the
   minimum marked part-way along.
+
+  **Amended when holds grew an end: the display decision above stands, and a hold now ends itself at
+  the top of its range.** The two are separable, and reading the settled entry as ruling out an
+  auto-end is the mistake this paragraph exists to prevent. What changed the balance was that the log
+  was *wrong*: in a dead hang you can't reach the phone, so the clock kept running through the
+  dismount and `holdSec` recorded several seconds that weren't the hold. Three consequences worth not
+  re-deriving:
+
+  - **The end is the maximum, not the minimum.** Ending at the minimum truncates every set to its
+    floor, so no hold could ever log more than its prescription and hold progression dies. The
+    maximum is also the number the bar was already scaled to, so a full bar and a finished set became
+    the same event rather than two.
+  - **`hold_sec_min` became optional**, which is what makes "hold as long as you can" expressible at
+    all — the shape `cardio` already had with `duration_sec`. Rejected instead: a global "auto-end
+    holds" preference, because whether a hold is prescribed or max-effort is a property of the
+    exercise and one workout can contain both; and a "keep going" button, which reintroduces the
+    reach-for-the-phone problem the auto-end removes.
+  - **The logged value is clamped to the hold's end, not the elapsed clock.** A hold that ends while
+    backgrounded is only noticed on foreground return, so the raw elapsed there is however long you
+    were away — a 25s plank logged 60s until a regression test caught it. Anything that later ends a
+    step from the catch-up path needs the same clamp.
 - **Merge conflict transparency** (§12.5): **a field-level diff** (`domain/library-diff.ts`), shallower
   for workouts and programs than for exercises — see §12.5 for why that asymmetry is deliberate.
 - Earlier: `rest` stayed first-class (§12.1), rep-block rest is an auto timer that's skippable

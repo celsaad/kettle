@@ -221,9 +221,9 @@ wanting states and assignees, it wants GitHub issues instead.
   [`watch-remote-plan.md`](watch-remote-plan.md). Two things worth knowing before opening it: the
   standalone Wear OS app was costed and rejected because per-device `expo-file-system` storage makes a
   data-carrying watch a Bluetooth sync project, and `opensAppToForeground` defaults to `true`, which
-  would make every wrist tap yank the phone open. Carries a fix for a live i18n break at
-  `use-session-runner.ts:511`, where the rest notification's copy is hardcoded English outside the
-  locale bundles.
+  would make every wrist tap yank the phone open. (The i18n break this used to carry a fix for — the
+  rest notification's hardcoded English — went with the timed-hold auto-end, which needed its own
+  notification copy and wasn't going to add a second hardcoded string beside the first.)
 
 ## Open bugs
 

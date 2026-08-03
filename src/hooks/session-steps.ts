@@ -16,8 +16,17 @@ export type RunnerStep =
       memberKey: string;
       exerciseId: string;
       exerciseName: string;
-      holdTargetSec: number;
+      /** The mark to cross, not the finish line — see `holdEndSec`. Absent on a max-effort hold. */
+      holdTargetSec?: number;
       holdTargetMaxSec?: number;
+      /**
+       * When the hold ends by itself: the top of the range (`holdSecMax ?? holdSecMin`), or undefined
+       * for a max-effort hold, which counts up until the Done button ends it.
+       *
+       * Precomputed here rather than derived in the runner for the same reason `countUp` is, a few
+       * cases down: one place decides what shape of step the config describes.
+       */
+      holdEndSec?: number;
       setIndex: number;
       setTotal: number;
       notes?: string;
@@ -84,6 +93,13 @@ function expandExercise(
   switch (exercise.type) {
     case 'timed_hold': {
       const sets = visit ? 1 : exercise.config.sets;
+      // A 0 (or negative) end would auto-advance on the very first tick, skipping the hold outright —
+      // and nothing validates a program week's override config, so `hold_sec_min: 0` reaches here from
+      // both the override schema (a free record of numbers) and the in-app override editor (no
+      // validateConfig). Degrading to a no-auto-end hold keeps the set runnable by hand, which is what
+      // it did before holds could end themselves; vanishing mid-workout would not be a degrade.
+      const configuredEnd = exercise.config.holdSecMax ?? exercise.config.holdSecMin;
+      const holdEndSec = configuredEnd !== undefined && configuredEnd > 0 ? configuredEnd : undefined;
       const steps: RunnerStep[] = [];
       for (let i = 0; i < sets; i++) {
         steps.push({
@@ -94,6 +110,7 @@ function expandExercise(
           exerciseName: exercise.name,
           holdTargetSec: exercise.config.holdSecMin,
           holdTargetMaxSec: exercise.config.holdSecMax,
+          holdEndSec,
           setIndex: visit?.index ?? i + 1,
           setTotal: visit?.total ?? sets,
           notes: exercise.notes,

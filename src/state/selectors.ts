@@ -34,8 +34,14 @@ function estimateExerciseSeconds(exercise: Exercise, overrideDurationSec?: numbe
   switch (exercise.type) {
     case 'hiit':
       return exercise.config.rounds * (exercise.config.workSec + exercise.config.restSec);
+    // Estimated from the top of the range, because that's where the hold now ends itself. A
+    // max-effort hold has no end to estimate and contributes only its rest, the same way cardio
+    // without a duration contributes 0 below.
     case 'timed_hold':
-      return exercise.config.sets * exercise.config.holdSecMin + (exercise.config.sets - 1) * exercise.config.restSec;
+      return (
+        exercise.config.sets * (exercise.config.holdSecMax ?? exercise.config.holdSecMin ?? 0) +
+        (exercise.config.sets - 1) * exercise.config.restSec
+      );
     case 'reps':
       return exercise.config.sets * exercise.config.restSec;
     case 'emom':
@@ -53,7 +59,7 @@ function estimateExerciseSeconds(exercise: Exercise, overrideDurationSec?: numbe
 function memberVisitSeconds(exercise: Exercise): number {
   switch (exercise.type) {
     case 'timed_hold':
-      return exercise.config.holdSecMin;
+      return exercise.config.holdSecMax ?? exercise.config.holdSecMin ?? 0;
     case 'reps':
       return exercise.config.restSec;
     case 'hiit':

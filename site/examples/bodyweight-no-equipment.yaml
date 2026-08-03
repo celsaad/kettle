@@ -116,6 +116,18 @@ exercises:
       rest_sec: 30
       rounds: 4
 
+  # No hold target at all, which is the max-effort shape: the timer counts up and
+  # runs until you tap Done, logging whatever you managed. Every other hold here
+  # has a range and stops itself at the top of it — this one can't, because the
+  # whole point is finding out how long you last.
+  - id: bw-plank-test
+    name: Plank Test
+    type: timed_hold
+    notes: Hold to failure. One set, once a month — this is the measurement, not the training.
+    config:
+      sets: 1
+      rest_sec: 0
+
 workouts:
   - id: bw-full-body
     name: Bodyweight Full Body
@@ -176,6 +188,14 @@ workouts:
         exercise: bw-rest
       - type: exercise
         exercise: bw-mountain-climbers
+
+  # Its own workout because it isn't training — run it on its own, rested, so the
+  # number means something month to month.
+  - id: bw-benchmark
+    name: Plank Benchmark
+    blocks:
+      - type: exercise
+        exercise: bw-plank-test
 
 programs:
   - id: bw-4-weeks

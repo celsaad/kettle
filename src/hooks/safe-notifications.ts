@@ -46,7 +46,8 @@ export async function requestNotificationPermissions(): Promise<void> {
   }
 }
 
-export async function scheduleRestCompleteNotification(
+/** Title and body are the caller's, translated: this schedules any step's completion cue, not rest's. */
+export async function scheduleStepCompleteNotification(
   title: string,
   body: string,
   seconds: number,

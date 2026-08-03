@@ -252,6 +252,8 @@ are the index, the banner is the contract.
 - `docs/testing-a11y-i18n-plan.md` — executed; kept for its rationale, not as a backlog.
 - `docs/watch-remote-plan.md` — **not executed.** Driving a running session from a Wear OS wrist via
   the notification shade, with no watch app and no data on the watch.
+- `docs/timed-hold-auto-end-plan.md` — executed; kept for its rationale, not as a backlog. Ending a
+  `timed_hold` at the top of its range, and making `hold_sec_min` optional.
 
 Three rules about keeping the plan files honest, in the order they get broken:
 

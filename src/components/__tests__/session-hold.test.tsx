@@ -62,10 +62,35 @@ it('renders an empty bar for a 0-second target once the clock is running', async
   expect(fillWidth()).toBe('0%');
 });
 
-it('puts the target mark at the end of the bar when there is a single target', async () => {
+// The mark used to sit at 100% here. Now that the hold *ends* at the top of the track, a fixed
+// target puts the mark exactly where the fill finishes, where it repeats what the full bar already
+// says — so it isn't drawn at all.
+it('draws no target mark when there is a single target', async () => {
   await renderScreen(<SessionHold {...props} targetSec={30} elapsedSec={15} />);
 
-  expect(markerLeft()).toBe('100%');
+  expect(markerLeft()).toBeUndefined();
+});
+
+/**
+ * A max-effort hold (`hold_sec_min` omitted) has no scale to draw against, so it gets no track at
+ * all rather than one that never fills. Distinct from the malformed 0 above, which still draws an
+ * empty track — something was configured there, and a bar stuck at zero says so.
+ */
+describe('a hold with no target', () => {
+  it('renders no bar at all', async () => {
+    await renderScreen(<SessionHold {...props} elapsedSec={42} />);
+
+    expect(fillWidth()).toBeUndefined();
+    expect(markerLeft()).toBeUndefined();
+  });
+
+  it('says it has no target rather than interpolating a missing one', async () => {
+    await renderScreen(<SessionHold {...props} elapsedSec={42} />);
+
+    // The bug this pins renders "target undefineds" or a bare "target s".
+    expect(screen.queryByText(/undefined/)).toBeNull();
+    expect(screen.getByText('no target · counting up')).toBeTruthy();
+  });
 });
 
 /**
@@ -100,6 +125,7 @@ describe('a hold with a target range', () => {
     await renderScreen(<SessionHold {...props} targetSec={30} targetMaxSec={20} elapsedSec={15} />);
 
     expect(fillWidth()).toBe('50%');
-    expect(markerLeft()).toBe('100%');
+    // Falling back to the min makes this a fixed target, so the mark goes the same way as one.
+    expect(markerLeft()).toBeUndefined();
   });
 });

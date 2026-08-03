@@ -37,17 +37,34 @@ const repsConfigSchema = z
     path: ['target_reps_max'],
   });
 
+/**
+ * `hold_sec_min` is optional, which is what makes a max-effort hold expressible: with no target the
+ * runner counts up and only the Done button ends the set, exactly as `cardio` behaves without
+ * `duration_sec`. With a target, the hold ends itself at the top of the range — see
+ * `docs/timed-hold-auto-end-plan.md` for why the end is the maximum rather than the minimum.
+ *
+ * A bare `hold_sec_max` is refused rather than treated as a fixed target: a range needs both ends,
+ * and allowing it would give one meaning two spellings.
+ */
 const timedHoldConfigSchema = z
   .object({
     sets: z.number().int().positive(),
-    hold_sec_min: z.number().positive(),
+    hold_sec_min: z.number().positive().optional(),
     hold_sec_max: z.number().positive().optional(),
     rest_sec: z.number().nonnegative(),
   })
-  .refine((config) => config.hold_sec_max === undefined || config.hold_sec_max >= config.hold_sec_min, {
-    message: 'hold_sec_max must be >= hold_sec_min',
+  .refine((config) => config.hold_sec_max === undefined || config.hold_sec_min !== undefined, {
+    message: 'hold_sec_max needs hold_sec_min',
     path: ['hold_sec_max'],
-  });
+  })
+  .refine(
+    (config) =>
+      config.hold_sec_max === undefined || config.hold_sec_min === undefined || config.hold_sec_max >= config.hold_sec_min,
+    {
+      message: 'hold_sec_max must be >= hold_sec_min',
+      path: ['hold_sec_max'],
+    },
+  );
 
 const cardioConfigSchema = z.object({
   duration_sec: z.number().positive().optional(),

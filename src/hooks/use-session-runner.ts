@@ -7,7 +7,7 @@ import type { EmomMinuteLog, Exercise, RepsSetLog, Session, SessionEntry, TimedH
 import {
   cancelNotification,
   requestNotificationPermissions,
-  scheduleRestCompleteNotification,
+  scheduleStepCompleteNotification,
 } from '@/hooks/safe-notifications';
 import { useSessionSounds } from '@/hooks/use-session-sounds';
 import { useSessionHistoryStore } from '@/state/session-history-store';
@@ -98,7 +98,9 @@ type LastCommit = { resultingIndex: number; memberKey: string; exerciseId: strin
 
 export type RestPreview = { label: string; detail: string } | null;
 
-function formatHoldTarget(step: Extract<RunnerStep, { kind: 'hold' }>): string {
+/** Null on a max-effort hold, which has no target to preview — the caller picks a different string. */
+function formatHoldTarget(step: Extract<RunnerStep, { kind: 'hold' }>): string | null {
+  if (step.holdTargetSec === undefined) return null;
   return step.holdTargetMaxSec ? `${step.holdTargetSec}–${step.holdTargetMaxSec}s` : `${step.holdTargetSec}s`;
 }
 
@@ -110,7 +112,11 @@ function previewFor(step: RunnerStep | undefined): RestPreview {
   if (!step) return null;
   // `label` stays the user's own exercise name — never translated.
   if (step.kind === 'hold') {
-    const detail = t('preview.hold', { index: step.setIndex, total: step.setTotal, target: formatHoldTarget(step) });
+    const target = formatHoldTarget(step);
+    const detail =
+      target === null
+        ? t('preview.holdOpen', { index: step.setIndex, total: step.setTotal })
+        : t('preview.hold', { index: step.setIndex, total: step.setTotal, target });
     return { label: step.exerciseName, detail };
   }
   if (step.kind === 'reps') {
@@ -161,7 +167,22 @@ export function useSessionRunner(
   const [extraReps, setExtraReps] = useState(0);
 
   const step = steps[stepIndex];
+  /**
+   * Drives the *countdown display* — `restRemainingSec` off `stepEndSecRef`. An auto-ending hold
+   * deliberately isn't one of these: it still counts up on screen, because the number shown is the
+   * number logged as `holdSec` (§12.2).
+   */
   const isCountdownStep = step?.kind === 'rest' || (step?.kind === 'interval' && !step.countUp);
+  /**
+   * Whether the current step ends on its own: the countdown steps above, plus a hold with a target.
+   * These are the two that need the background catch-up and the scheduled notification, because both
+   * can end while the screen is asleep. A max-effort hold and a counting-up cardio end only when the
+   * user says so.
+   *
+   * This and `isCountdownStep` were one predicate until holds grew an end. Widening that one would
+   * have put holds on the countdown *display* as well, which is the single thing they must not join.
+   */
+  const stepEndsItself = isCountdownStep || (step?.kind === 'hold' && step.holdEndSec !== undefined);
 
   const { playTick, playExerciseChange, playMilestone } = useSessionSounds();
 
@@ -236,7 +257,7 @@ export function useSessionRunner(
   const phaseStartedAtRef = useRef(Date.now());
   const pausedAtRef = useRef<number | null>(null);
   const pausedMsRef = useRef(0);
-  const restTargetSecRef = useRef(0);
+  const stepEndSecRef = useRef(0);
 
   const computeElapsedSec = useCallback(() => {
     const now = pausedAtRef.current ?? Date.now();
@@ -258,7 +279,7 @@ export function useSessionRunner(
   // render on a key change, rather than in an effect — see https://react.dev/learn/you-might-not-need-an-effect).
   // Seeded to -1 (never a real stepIndex) rather than stepIndex itself, so this also fires on the very
   // first render: seeding it with stepIndex made the first step's target look identical to "no change",
-  // so restTargetSecRef stayed at its useRef(0) default for a countdown-type first step (hiit/emom/amrap,
+  // so stepEndSecRef stayed at its useRef(0) default for a countdown-type first step (hiit/emom/amrap,
   // or a leading standalone rest block) — the ticking effect then saw remaining <= 0 almost immediately
   // and auto-advanced before the timer ever really ran.
   const [resetForStepIndex, setResetForStepIndex] = useState(-1);
@@ -268,9 +289,18 @@ export function useSessionRunner(
     phaseStartedAtRef.current = now;
     pausedAtRef.current = paused ? now : null;
     pausedMsRef.current = 0;
-    const countdownTarget =
-      step?.kind === 'rest' ? step.seconds : step?.kind === 'interval' && !step.countUp ? step.targetSec : 0;
-    restTargetSecRef.current = countdownTarget;
+    // A hold seeds this too, even though it counts *up* on screen: everything downstream that asks
+    // "when does this step end" — the background catch-up and the scheduled notification — then reads
+    // one field instead of branching on step kind again.
+    const endSec =
+      step?.kind === 'rest'
+        ? step.seconds
+        : step?.kind === 'interval' && !step.countUp
+          ? step.targetSec
+          : step?.kind === 'hold'
+            ? (step.holdEndSec ?? 0)
+            : 0;
+    stepEndSecRef.current = endSec;
     setHoldElapsedSec(0);
     // Reps start at the set's target, not 0: hitting the target is the common case, so counting up
     // from zero one tap at a time made the expected outcome the most expensive one to record. Reps
@@ -289,8 +319,11 @@ export function useSessionRunner(
     }
     setRoundsCompleted(0);
     setExtraReps(0);
-    setRestRemainingSec(countdownTarget);
-    setRestTargetSec(countdownTarget);
+    // Seeded from `endSec` for every kind, holds included, so the state stays a faithful mirror of
+    // `stepEndSecRef` at step start — which is exactly what the notification effect leans on as its
+    // change signal (see its dependency-array note). The hold screen reads neither of these.
+    setRestRemainingSec(endSec);
+    setRestTargetSec(endSec);
   }
 
   /** The entry a member's accumulated log currently amounts to, or null if it has logged nothing yet. */
@@ -347,7 +380,14 @@ export function useSessionRunner(
       if (!sessionRef.current) return;
       if (current.kind === 'hold') {
         const sets = memberSetsRef.current[current.memberKey] ?? [];
-        sets.push({ holdSec: computeElapsedSec(), restTakenSec: 0 });
+        // Clamped to the hold's own end, which is not the same as the elapsed clock. A hold that ends
+        // while the app is backgrounded is only *noticed* on foreground return, so the raw elapsed
+        // there is however long you were away — a 25s plank logged 60s in the test that found this.
+        // The same clamp covers a throttled tick arriving a second or two late in the foreground.
+        // Ending early by hand is unaffected: elapsed is below the end, and the honest number wins.
+        const elapsed = computeElapsedSec();
+        const holdSec = current.holdEndSec === undefined ? elapsed : Math.min(elapsed, current.holdEndSec);
+        sets.push({ holdSec, restTakenSec: 0 });
         memberSetsRef.current[current.memberKey] = sets;
         persistMember(current.memberKey, current.exerciseId);
       } else if (current.kind === 'reps') {
@@ -463,12 +503,27 @@ export function useSessionRunner(
       if (step.kind === 'hold' || (step.kind === 'interval' && step.countUp)) {
         const elapsed = computeElapsedSec();
         setHoldElapsedSec(elapsed);
-        // Holds count *up* with the target as a marker, so without this nothing marks the moment you
-        // actually reach it — the one thing worth knowing with your eyes shut. Fires at the bottom of
-        // a range target, since that's the point the set counts.
-        if (step.kind === 'hold' && elapsed >= step.holdTargetSec) fireMilestone();
+        if (step.kind === 'hold') {
+          const { holdTargetSec: target, holdEndSec: end } = step;
+          // Holds count *up* with the target as a marker, so without this nothing marks the moment you
+          // actually reach it — the one thing worth knowing with your eyes shut. Fires at the bottom of
+          // a range target, since that's the point the set counts.
+          //
+          // Only when the minimum is genuinely short of the end, though: on a fixed target the mark
+          // and the auto-advance land in the same second, and two cues one after the other read as a
+          // glitch rather than as two pieces of information.
+          if (target !== undefined && elapsed >= target && (end === undefined || target < end)) fireMilestone();
+          if (end !== undefined) {
+            const remaining = end - elapsed;
+            // The same 3-2-1 rest and countdown intervals get. In a hold this is the part that earns
+            // its keep: it's how you know to prepare the dismount without looking, which is the whole
+            // reason the step ends itself at all.
+            if (remaining > 0 && remaining <= 3) playTick();
+            if (remaining <= 0) advance();
+          }
+        }
       } else if (isCountdownStep) {
-        const remaining = Math.max(0, restTargetSecRef.current - computeElapsedSec());
+        const remaining = Math.max(0, stepEndSecRef.current - computeElapsedSec());
         setRestRemainingSec(remaining);
         if (remaining <= 0) advance();
         else {
@@ -485,15 +540,22 @@ export function useSessionRunner(
     return () => clearInterval(id);
   }, [step, paused, isCountdownStep, advance, computeElapsedSec, playTick, fireMilestone]);
 
-  // Recompute from wall-clock timestamps on foreground return, and catch up an auto-advancing
-  // countdown that fully elapsed while backgrounded — JS timers are throttled/suspended in the background.
+  // Recompute from wall-clock timestamps on foreground return, and catch up a step that ended while
+  // backgrounded — JS timers are throttled/suspended in the background.
+  //
+  // The hold branch does the catching up as well as the countdown one, and that is not symmetry for
+  // its own sake: a hold is run with the phone on the floor and the screen asleep, so "the step ended
+  // while we weren't ticking" is its *normal* case rather than an edge one. Without this the timer
+  // resumes mid-hold and quietly runs long, which is the exact overrun the feature exists to remove.
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (nextState) => {
       if (nextState !== 'active' || !step || paused) return;
       if (step.kind === 'hold' || (step.kind === 'interval' && step.countUp)) {
-        setHoldElapsedSec(computeElapsedSec());
+        const elapsed = computeElapsedSec();
+        if (step.kind === 'hold' && step.holdEndSec !== undefined && elapsed >= step.holdEndSec) advance();
+        else setHoldElapsedSec(elapsed);
       } else if (isCountdownStep) {
-        const remaining = Math.max(0, restTargetSecRef.current - computeElapsedSec());
+        const remaining = Math.max(0, stepEndSecRef.current - computeElapsedSec());
         if (remaining <= 0) advance();
         else setRestRemainingSec(remaining);
       }
@@ -501,14 +563,20 @@ export function useSessionRunner(
     return () => subscription.remove();
   }, [step, paused, isCountdownStep, advance, computeElapsedSec]);
 
-  // Local-notification fallback so the rest-complete cue still fires if the app is backgrounded.
+  // Local-notification fallback so a step that ends itself still cues you when the app is
+  // backgrounded — a hold as much as a rest, since both are run with the screen off.
   useEffect(() => {
-    if (!step || !isCountdownStep || paused) return;
+    if (!step || !stepEndsItself || paused) return;
     let cancelled = false;
     let notificationId: string | null = null;
 
-    const remaining = Math.max(1, restTargetSecRef.current - computeElapsedSec());
-    scheduleRestCompleteNotification('Rest complete', `${workout.name} · back to work`, remaining).then((id) => {
+    const isHold = step.kind === 'hold';
+    const remaining = Math.max(1, stepEndSecRef.current - computeElapsedSec());
+    scheduleStepCompleteNotification(
+      t(isHold ? 'session.notification.holdTitle' : 'session.notification.restTitle'),
+      t(isHold ? 'session.notification.holdBody' : 'session.notification.restBody', { workout: workout.name }),
+      remaining,
+    ).then((id) => {
       if (!id) return;
       if (cancelled) cancelNotification(id);
       else notificationId = id;
@@ -519,10 +587,11 @@ export function useSessionRunner(
       if (notificationId) cancelNotification(notificationId);
     };
     // restTargetSec is in the deps as a *change signal*, not because the body reads it: the remaining
-    // time comes from restTargetSecRef, which no dependency tracks. Without it, "+30s" mutated the ref
+    // time comes from stepEndSecRef, which no dependency tracks. Without it, "+30s" mutated the ref
     // while every dep stayed equal, so the effect never re-ran and the notification still fired at the
-    // original end time. Both places that move the ref also set this state, so it's a faithful signal.
-  }, [step, isCountdownStep, paused, restTargetSec, computeElapsedSec, workout.name]);
+    // original end time. Every place that moves the ref also sets this state — including a hold's own
+    // seeding — so it stays a faithful signal.
+  }, [step, stepEndsItself, paused, restTargetSec, computeElapsedSec, workout.name]);
 
   const togglePause = useCallback(() => {
     setPaused((wasPaused) => {
@@ -608,9 +677,9 @@ export function useSessionRunner(
 
   const addRestSeconds = useCallback(
     (amount: number) => {
-      restTargetSecRef.current = Math.max(0, restTargetSecRef.current + amount);
-      setRestTargetSec(restTargetSecRef.current);
-      setRestRemainingSec(Math.max(0, restTargetSecRef.current - computeElapsedSec()));
+      stepEndSecRef.current = Math.max(0, stepEndSecRef.current + amount);
+      setRestTargetSec(stepEndSecRef.current);
+      setRestRemainingSec(Math.max(0, stepEndSecRef.current - computeElapsedSec()));
     },
     [computeElapsedSec],
   );

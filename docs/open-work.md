@@ -49,9 +49,15 @@ wanting states and assignees, it wants GitHub issues instead.
     accusation aimed at someone who hasn't typed yet; and the hostile-YAML question was settled
     empirically rather than assumed, so it doesn't need re-litigating each time this area grows:
     js-yaml 5's default schema rejects `!!js/function` outright, a `__proto__` key never reaches
-    `Object.prototype`, and a name carrying `<script>` renders as inert text. The one real residual
-    is that js-yaml applies no alias-expansion limit, so a crafted anchor bomb can hang the app —
-    reachable through the picker long before paste existed, and a DoS on the user's own device.
+    `Object.prototype`, and a name carrying `<script>` renders as inert text. ~~The one real residual
+    is that js-yaml applies no alias-expansion limit, so a crafted anchor bomb can hang the app.~~
+    ✅ Closed, and the measurement corrected the claim in two ways worth keeping: an alias bomb never
+    detonates on `load` at all (js-yaml resolves an alias to a *shared reference*, so 437 bytes
+    describing 387M leaves parses in 3ms as a DAG — it detonates only on something that walks that DAG
+    without tracking identity), and no placement of one survives `parseLibraryYaml`, because zod
+    refuses an element without recursing into it and this schema has no recursive types. So the hang
+    was unreachable rather than merely unexploited. `maxAliases: 1000` is set anyway, since that
+    immunity is a property of the current schema rather than a guarantee about the next one.
   - ~~**A machine-readable schema to hand the model.**~~ ~~**The user's existing ids, alongside
     it.**~~ ✅ Both shipped, as one payload: `domain/assistant-brief.ts` builds a "Copy the format for
     an assistant" brief of `z.toJSONSchema(rawLibrarySchema)` plus every id/name/type currently in the

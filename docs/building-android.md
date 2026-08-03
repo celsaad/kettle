@@ -1,9 +1,10 @@
 # Building the Android release on GitHub Actions
 
 > **Live.** `.github/workflows/android.yml` builds the Play bundle on a GitHub runner instead of on
-> EAS. EAS is not used by it at all, and `eas.json` is kept only for the one-off credentials access
-> described below. The keystore setup here is a prerequisite — the workflow fails on the first run
-> without it, deliberately and early.
+> EAS, on every merge to `master` and on demand. EAS is not used by it at all, and `eas.json` is kept
+> only for the one-off credentials access described below. The keystore setup here is a prerequisite —
+> without it the workflow fails on the first run, deliberately and early, which for a merge trigger
+> means every merge until it's done.
 
 ## Why not EAS
 
@@ -56,13 +57,19 @@ Then delete `keystore.b64` and keep the `.jks` somewhere you'd still have it aft
 `*.jks` is gitignored, which stops the obvious accident and nothing else.
 
 **The repository being public doesn't expose these.** Secrets are never given to a workflow triggered
-from a fork, and this one is `workflow_dispatch` only, so the only way to run it is to already have
-write access. Don't add a `pull_request` trigger to it — that is the change that would break the
-property.
+from a fork, and this one runs only on a push to `master` or on a manual dispatch — both of which
+already require write access. Don't add a `pull_request` trigger to it: that is the single change
+that would break the property, and it wouldn't buy the cache warming it looks like it would (see
+below).
 
-## Running it
+## When it runs
 
-Actions › Android build › Run workflow, or:
+**On every merge to `master`**, skipping prose-only changes (`docs/`, `site/`, `store/`, any `.md`).
+That build is doing two jobs at once: nothing else in CI compiles a line of native code, so it's the
+only thing that catches a dependency bump breaking the Android build; and it leaves a warm ccache
+behind for the next one.
+
+**Manually**, when you want an `.apk` or a build at a bumped `versionCode`:
 
 ```sh
 gh workflow run android.yml -f variant=aab
@@ -75,34 +82,54 @@ gh run watch
   is *not* enough for in-app purchases: `expo-iap` only resolves products in a build installed from
   Play (see `store/README.md` on licence testing).
 
-The artifact is attached to the run for 14 days. Upload it to Play by hand — automating that needs a
-service account JSON, which is a fifth secret with write access to the listing, and hasn't been worth
-it for a release every few weeks.
+Both variants are the same signed release build; the merge trigger produces an `.aab`. The artifact
+is attached to the run for 14 days, named by run number rather than by version — only a release commit
+bumps `versionCode`, so a week of merge builds are all `kettle 0.3.0 (6)` and nothing inside the file
+distinguishes them.
+
+Upload to Play by hand. Automating it needs a service account JSON, which is a fifth secret with
+write access to the listing, and hasn't been worth it for a release every few weeks.
 
 **`versionCode` comes from `app.json`** via prebuild, and Play rejects a re-used one. `/bump` is what
 increments it; the workflow doesn't, and `eas.json` has `autoIncrement: false` for the same reason.
 
-## What it costs
+## What it costs, and what warming it actually means
 
 Most of the wall clock is C++. `react-native-reanimated`, `react-native-worklets` and
 `expo-modules-core` all ship sources rather than prebuilt `.so` files, so every ABI is compiled from
 scratch; React Native's own core is a prebuilt Maven artifact and isn't part of this.
 
-The Gradle cache (`gradle/actions/setup-gradle`) covers dependency downloads and, with
-`--build-cache`, the Kotlin and Java compilation. It does **not** cover the CMake output: that lands
-in `android/.cxx`, and `expo prebuild` regenerates `android/` on every run, so the NDK work is paid
-in full each time.
+Two caches, covering different things:
 
-If that becomes the problem, in rough order of payoff:
+- **Gradle** (`gradle/actions/setup-gradle`, plus `--build-cache`) — dependency and wrapper
+  downloads, and the Kotlin and Java compilation.
+- **ccache** — the C++, which is the expensive half. It has to be ccache rather than a cache of the
+  build directory: the NDK output lands in `android/.cxx`, `expo prebuild` regenerates `android/`
+  every run, and `externalNativeBuild` tasks aren't Gradle-cacheable anyway. ccache works at the
+  compiler, below all of that.
 
-1. **ccache**, keyed on the lockfile — the only thing that attacks the actual cost. It needs
-   `CMAKE_C_COMPILER_LAUNCHER` threaded through to the externalNativeBuild tasks, which is the fiddly
-   part.
-2. **A larger runner.** Paid, but linear, and the build is embarrassingly parallel across ABIs.
-3. **Cache `android/.cxx` directly**, restoring it after prebuild. Fragile — it holds absolute paths
-   and NDK version stamps, and a stale hit fails in ways that read as a compiler bug.
+**A prior build on a branch does not warm master.** Actions caches are scoped: a branch can read the
+default branch's caches, but the default branch cannot read a branch's. So a "pre-build on the PR"
+stage would populate a cache only that PR can use, and the post-merge build would still start cold.
+The only thing that warms the merge build is the *previous* merge build — which is why the trigger is
+`push: master` and not `pull_request`.
 
-None of these are done. Measure a real run before picking one.
+Two things to know about the ccache setup, both of which will eventually be the reason it stops
+working:
+
+- **The stats step is not decoration.** It prints the hit rate at the end of every run. On a warm
+  run that number should be high; if it's near zero, `CMAKE_C_COMPILER_LAUNCHER` stopped reaching the
+  CMake invocations — CMake picks it up as the default for `CMAKE_<LANG>_COMPILER_LAUNCHER`, and a
+  module that sets that variable explicitly wins over it. The fallback is injecting `cmakeArgs` in
+  the prebuild patch, which is worse and hasn't been needed.
+- **The sloppiness settings are load-bearing.** `time_macros` and the `include_file_*` pair are what
+  stop the NDK headers missing on every run, and `pch_defines` covers reanimated's generated stub
+  PCH. `base_dir` and `hash_dir=false` keep the regenerated absolute build path out of the hash.
+  Tightening any of them turns the cache silently cold rather than breaking anything.
+
+If it's still too slow after that, the remaining levers are a **larger runner** (paid, but linear,
+and the build parallelises well across ABIs) and **dropping ABIs** — `x86`/`x86_64` exist for
+emulators, and Play would serve a bundle without them to nobody real. Neither is done.
 
 ## The trap this is built around
 

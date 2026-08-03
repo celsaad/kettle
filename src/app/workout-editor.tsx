@@ -1,8 +1,11 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { Alert, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { GestureDetector } from 'react-native-gesture-handler';
+// The gesture-handler `ScrollView`, deliberately, not `react-native`'s: it is the only one RNGH can
+// make defer to the block-drag, and without that Android's scroller eats the long-press. See
+// `ScrollableRef` in `reorderable-list.tsx`.
+import { GestureDetector, ScrollView } from 'react-native-gesture-handler';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { circuitShape, ExerciseBadge, exerciseSummary } from '@/components/exercise-badge';
@@ -52,6 +55,9 @@ export default function WorkoutEditorScreen() {
   const handleReorder = useCallback((blocks: WorkoutBlock[]) => {
     setDraft((current) => ({ ...current, blocks }));
   }, []);
+
+  // Handed to `ReorderableList` so a block-drag outranks the scroll it lives inside.
+  const scrollRef = useRef(null);
 
   const addBlock = (exerciseId: string) => {
     setDraft((current) => ({ ...current, blocks: [...current.blocks, { kind: 'exercise', exerciseId }] }));
@@ -179,7 +185,7 @@ export default function WorkoutEditorScreen() {
       style={[styles.safeArea, { backgroundColor: theme.background }]}
       edges={['top', 'bottom', 'left', 'right']}>
       <ModalHeader onClose={close} />
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView ref={scrollRef} contentContainerStyle={styles.scrollContent}>
         <ThemedText type="subtitle">{editing ? t('workoutEditor.editTitle') : t('workoutEditor.newTitle')}</ThemedText>
 
         <ThemedText type="small" themeColor="textSecondary" style={styles.label}>
@@ -201,6 +207,7 @@ export default function WorkoutEditorScreen() {
           data={draft.blocks}
           keyExtractor={(block, index) => (block.kind === 'exercise' ? `exercise-${index}` : `circuit-${index}`)}
           onReorder={handleReorder}
+          scrollRef={scrollRef}
           labelsFor={(block, index, total) => {
             const name =
               block.kind === 'exercise'
@@ -630,9 +637,16 @@ const styles = StyleSheet.create({
   dragHandle: {
     letterSpacing: -2,
   },
+  // The whole target for picking a block up, so it is sized as a control rather than around the
+  // glyph: the ⣿ renders about 14×30dp, roughly 2.5mm wide on a phone against a ~9mm fingertip, and
+  // missing it looks exactly like a drag that refused to start. `minWidth`/`minHeight` rather than
+  // `hitSlop`, which RNGH cannot expand past the view's own bounds on Android.
   dragHandleTouchArea: {
-    paddingVertical: 4,
-    paddingHorizontal: 2,
+    minWidth: 44,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: -Spacing.one,
   },
   rowText: {
     flex: 1,

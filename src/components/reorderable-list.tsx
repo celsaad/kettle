@@ -97,10 +97,24 @@ export type ReorderLabels = {
   moveDown: string;
 };
 
+/**
+ * A ref to the scrollable ancestor the list sits in, so the drag can outrank it.
+ *
+ * Android's `ScrollView` claims any touch that drifts past its ~8dp slop, and it decides that before
+ * the 150ms long-press has elapsed — so a finger that isn't perfectly still scrolls the list instead
+ * of picking a block up, with no haptic and no lift to say why. RNGH can only arbitrate against a
+ * scroller it knows about, which is what `blocksExternalGesture` plus the gesture-handler `ScrollView`
+ * gives it: the scroller now waits for this pan to fail before it may claim anything. Move fast and
+ * the long-press fails immediately and scrolling still works, so this costs nothing but the case it
+ * fixes.
+ */
+export type ScrollableRef = React.RefObject<React.ComponentType | null>;
+
 type ReorderableItemProps = {
   index: number;
   total: number;
   labels: ReorderLabels;
+  scrollRef?: ScrollableRef;
   slots: SharedValue<Slot[]>;
   activeIndex: SharedValue<number>;
   dragTranslateY: SharedValue<number>;
@@ -112,6 +126,7 @@ function ReorderableItem({
   index,
   total,
   labels,
+  scrollRef,
   slots,
   activeIndex,
   dragTranslateY,
@@ -123,46 +138,46 @@ function ReorderableItem({
   //
   // Memoized because `GestureDetector` re-attaches on a new gesture object, and this list re-renders
   // on every keystroke in the sibling name field — rebuilding the handler mid-drag drops the drag.
-  const dragHandle = useMemo(
-    () =>
-      Gesture.Pan()
-        .activateAfterLongPress(150)
-        .onStart(() => {
-          'worklet';
-          activeIndex.value = index;
-          dragTranslateY.value = 0;
-          scheduleOnRN(triggerPickupHaptic);
-        })
-        .onUpdate((event) => {
-          'worklet';
-          dragTranslateY.value = event.translationY;
-        })
-        .onEnd((_event, success) => {
-          'worklet';
-          const from = activeIndex.value;
-          activeIndex.value = -1;
-          const target = success && from >= 0 ? targetIndexFor(from, dragTranslateY.value, slots.value) : from;
-          if (from < 0 || target === from) {
-            dragTranslateY.value = withTiming(0, { duration: 150 });
-            return;
-          }
-          // Snap rather than ease back to zero: the row's new position comes from the `data` change a
-          // frame later, so animating the transform towards its *old* slot at the same time renders as
-          // the drop being rejected and then teleporting.
-          dragTranslateY.value = 0;
-          scheduleOnRN(onCommit, from, target);
-        })
-        .onFinalize(() => {
-          'worklet';
-          // A gesture can be cancelled without `onEnd` ever running — it only fires out of ACTIVE.
-          // Without this the list stays frozen mid-drag: every other row displaced, the handle dead,
-          // and no way back short of leaving the screen.
-          if (activeIndex.value !== index) return;
-          activeIndex.value = -1;
+  const dragHandle = useMemo(() => {
+    const pan = Gesture.Pan();
+    if (scrollRef) pan.blocksExternalGesture(scrollRef);
+    return pan
+      .activateAfterLongPress(150)
+      .onStart(() => {
+        'worklet';
+        activeIndex.value = index;
+        dragTranslateY.value = 0;
+        scheduleOnRN(triggerPickupHaptic);
+      })
+      .onUpdate((event) => {
+        'worklet';
+        dragTranslateY.value = event.translationY;
+      })
+      .onEnd((_event, success) => {
+        'worklet';
+        const from = activeIndex.value;
+        activeIndex.value = -1;
+        const target = success && from >= 0 ? targetIndexFor(from, dragTranslateY.value, slots.value) : from;
+        if (from < 0 || target === from) {
           dragTranslateY.value = withTiming(0, { duration: 150 });
-        }),
-    [activeIndex, dragTranslateY, index, onCommit, slots],
-  );
+          return;
+        }
+        // Snap rather than ease back to zero: the row's new position comes from the `data` change a
+        // frame later, so animating the transform towards its *old* slot at the same time renders as
+        // the drop being rejected and then teleporting.
+        dragTranslateY.value = 0;
+        scheduleOnRN(onCommit, from, target);
+      })
+      .onFinalize(() => {
+        'worklet';
+        // A gesture can be cancelled without `onEnd` ever running — it only fires out of ACTIVE.
+        // Without this the list stays frozen mid-drag: every other row displaced, the handle dead,
+        // and no way back short of leaving the screen.
+        if (activeIndex.value !== index) return;
+        activeIndex.value = -1;
+        dragTranslateY.value = withTiming(0, { duration: 150 });
+      });
+  }, [activeIndex, dragTranslateY, index, onCommit, scrollRef, slots]);
 
   const animatedStyle = useAnimatedStyle(() => {
     if (activeIndex.value === index) {
@@ -247,6 +262,13 @@ export type ReorderableListProps<T> = {
    * hardcoded string that no pt test could catch.
    */
   labelsFor: (item: T, index: number, total: number) => ReorderLabels;
+  /**
+   * The scrollable ancestor, if there is one — and there should be, since a list worth reordering is
+   * usually longer than a screen. It must be the `ScrollView` from `react-native-gesture-handler`, not
+   * the one from `react-native`: RNGH can only make a scroller defer to the drag if it is a scroller
+   * RNGH knows about. See `ScrollableRef`.
+   */
+  scrollRef?: ScrollableRef;
   style?: StyleProp<ViewStyle>;
 };
 
@@ -265,6 +287,7 @@ export function ReorderableList<T>({
   renderItem,
   onReorder,
   labelsFor,
+  scrollRef,
   style,
 }: ReorderableListProps<T>) {
   const slots = useSharedValue<Slot[]>(data.map(() => ({ y: 0, height: 0 })));
@@ -299,6 +322,7 @@ export function ReorderableList<T>({
           index={index}
           total={data.length}
           labels={labelsFor(item, index, data.length)}
+          scrollRef={scrollRef}
           slots={slots}
           activeIndex={activeIndex}
           dragTranslateY={dragTranslateY}

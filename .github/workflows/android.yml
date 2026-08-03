@@ -1,0 +1,124 @@
+name: Android build
+
+# Builds the Play bundle on the runner instead of on EAS: `expo prebuild` regenerates the gitignored
+# `android/` tree, Gradle builds it, and the artifact comes back attached to the run. Nothing here
+# talks to EAS, so there is no queue to wait behind — see docs/building-android.md for the one-time
+# keystore setup and for what to do when a build gets slow.
+#
+# Manual only. A release-signed build costs ~30 minutes of runner time, and the trigger for one is a
+# release, not a push.
+
+on:
+  workflow_dispatch:
+    inputs:
+      variant:
+        description: 'aab for a Play upload, apk to sideload'
+        type: choice
+        options: [aab, apk]
+        default: aab
+
+concurrency:
+  group: android-build
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    # A cold cache spends most of its time compiling C++ (reanimated, worklets and expo-modules-core
+    # all ship sources, not prebuilt .so files). 90 minutes is a hang, not a slow build.
+    timeout-minutes: 90
+
+    steps:
+      - uses: actions/checkout@v7
+
+      # Same ordering constraint as ci.yml: `cache: pnpm` shells out to pnpm to find the store.
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+
+      # Pinned rather than left to the runner image's default, which has changed under us before and
+      # would surface as an unrelated-looking Kotlin or AGP error. Expo SDK 57 is a JDK 17 toolchain.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      # Caches ~/.gradle across runs, keyed on the wrapper and the build scripts. It covers the
+      # dependency and wrapper downloads, not the NDK output — that lives under android/, which
+      # prebuild regenerates every run.
+      - uses: gradle/actions/setup-gradle@v4
+
+      - run: pnpm install --frozen-lockfile
+
+      # --no-install because the step above already installed, and prebuild would otherwise run the
+      # package manager a second time.
+      - name: Prebuild android/
+        run: pnpm exec expo prebuild --platform android --no-install
+
+      # The keystore only exists on disk for the length of the job. It is the *upload* key, not the
+      # app signing key — Play holds that one, so a leak here is recoverable by resetting the upload
+      # key, and losing this file is not fatal either. Both are still secrets.
+      - name: Restore the upload keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::error::ANDROID_UPLOAD_KEYSTORE_BASE64 is not set. See docs/building-android.md."
+            exit 1
+          fi
+          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/upload.jks"
+
+      - name: Sign the release build with it
+        run: node .github/scripts/inject-release-signing.mjs
+
+      # An .aab has to carry every ABI, since Play splits it per device. An .apk here is for
+      # sideloading onto a real phone, so it's built arm64-only — that is three quarters less C++ to
+      # compile, and no phone shipped in the last several years wants the other three.
+      - name: Build
+        working-directory: android
+        env:
+          KETTLE_UPLOAD_KEYSTORE: ${{ runner.temp }}/upload.jks
+          KETTLE_UPLOAD_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_PASSWORD }}
+          KETTLE_UPLOAD_KEY_ALIAS: ${{ secrets.ANDROID_UPLOAD_KEY_ALIAS }}
+          KETTLE_UPLOAD_KEY_PASSWORD: ${{ secrets.ANDROID_UPLOAD_KEY_PASSWORD }}
+        # No --no-daemon: gradle/actions manages the daemon's lifecycle itself, and killing it early
+        # costs the caching it sets up. --build-cache is what makes a warm run cheaper than a cold
+        # one for the Kotlin and Java work; the CMake tasks aren't cacheable and always rebuild.
+        run: |
+          if [ "${{ inputs.variant }}" = "apk" ]; then
+            ./gradlew :app:assembleRelease --build-cache -PreactNativeArchitectures=arm64-v8a
+          else
+            ./gradlew :app:bundleRelease --build-cache
+          fi
+
+      # Deleted before the artifact upload rather than after, so a failure in between can't sweep the
+      # keystore into a partial artifact.
+      - name: Shred the keystore
+        if: always()
+        run: rm -f "$RUNNER_TEMP/upload.jks"
+
+      # The failure this catches is a build that silently fell back to the debug keystore: it produces
+      # a perfectly valid file that Play rejects on upload, half an hour later. Compare the printed
+      # SHA-256 against the upload certificate on Play Console › Setup › App integrity.
+      - name: Print the signing certificate
+        run: |
+          if [ "${{ inputs.variant }}" = "apk" ]; then
+            "$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)/apksigner" verify --print-certs \
+              android/app/build/outputs/apk/release/app-release.apk
+          else
+            keytool -printcert -jarfile android/app/build/outputs/bundle/release/app-release.aab
+          fi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kettle-${{ inputs.variant }}
+          path: |
+            android/app/build/outputs/bundle/release/*.aab
+            android/app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
+          # An upload key is not a distribution key, so these are only useful to whoever can already
+          # push to Play. Short retention keeps stale builds from being mistaken for the current one.
+          retention-days: 14

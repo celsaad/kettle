@@ -1,20 +1,31 @@
 import * as Haptics from 'expo-haptics';
 import { useCallback, useMemo, useRef, type ReactNode } from 'react';
-import { View, type LayoutChangeEvent, type StyleProp, type ViewStyle } from 'react-native';
+import { View, type StyleProp, type ViewStyle } from 'react-native';
 import { Gesture, type PanGesture } from 'react-native-gesture-handler';
-import Animated, { useAnimatedStyle, useSharedValue, withTiming, type SharedValue } from 'react-native-reanimated';
+import Animated, {
+  measure,
+  useAnimatedReaction,
+  useAnimatedRef,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+  type SharedValue,
+} from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 
 /**
- * Each item's resting (undisplaced) position and size in the list's own coordinate space, taken
- * straight from `onLayout`.
+ * Each item's resting (undisplaced) position and height on screen, read on the UI thread the moment a
+ * drag begins.
  *
- * `y` is measured rather than derived from a running sum of heights, because the *consumer* owns the
- * spacing between rows — `workout-editor` sets `gap: 10` on the list container — and a heights-only
- * model has no way to see it. Summing heights puts every slot boundary at a multiple of the row
- * *height* where the row actually sits at a multiple of its *pitch*, so the drop target runs ahead of
- * the finger by one gap per position crossed. Two or three rows down that is a whole position, which
- * is what made dropping into a chosen middle position impossible.
+ * Position is measured rather than derived from a running sum of heights, because the *consumer* owns
+ * the spacing between rows — `workout-editor` sets `gap: 10` on the list container — and a
+ * heights-only model has no way to see it. Summing heights puts every slot boundary at a multiple of
+ * the row *height* where the row actually sits at a multiple of its *pitch*, so the drop target runs
+ * ahead of the finger by one gap per position crossed.
+ *
+ * All rows are measured in the same instant and only differences between them are ever used, so the
+ * absolute frame these coordinates are in does not matter — any scroll offset is common to all of
+ * them and cancels.
  */
 export type Slot = { y: number; height: number };
 
@@ -97,10 +108,24 @@ export type ReorderLabels = {
   moveDown: string;
 };
 
+/**
+ * A ref to the scrollable ancestor the list sits in, so the drag can outrank it.
+ *
+ * Android's `ScrollView` claims any touch that drifts past its ~8dp slop, and it decides that before
+ * the 150ms long-press has elapsed — so a finger that isn't perfectly still scrolls the list instead
+ * of picking a block up, with no haptic and no lift to say why. RNGH can only arbitrate against a
+ * scroller it knows about, which is what `blocksExternalGesture` plus the gesture-handler `ScrollView`
+ * gives it: the scroller now waits for this pan to fail before it may claim anything. Move fast and
+ * the long-press fails immediately and scrolling still works, so this costs nothing but the case it
+ * fixes.
+ */
+export type ScrollableRef = React.RefObject<React.ComponentType | null>;
+
 type ReorderableItemProps = {
   index: number;
   total: number;
   labels: ReorderLabels;
+  scrollRef?: ScrollableRef;
   slots: SharedValue<Slot[]>;
   activeIndex: SharedValue<number>;
   dragTranslateY: SharedValue<number>;
@@ -112,57 +137,74 @@ function ReorderableItem({
   index,
   total,
   labels,
+  scrollRef,
   slots,
   activeIndex,
   dragTranslateY,
   onCommit,
   children,
 }: ReorderableItemProps) {
+  const rowRef = useAnimatedRef<Animated.View>();
+
   // Long-press-then-drag (not an immediate pan) so ordinary vertical scrolling of the surrounding
   // ScrollView keeps working untouched, and gives a clear "picked up" moment to pair with a haptic.
   //
   // Memoized because `GestureDetector` re-attaches on a new gesture object, and this list re-renders
   // on every keystroke in the sibling name field — rebuilding the handler mid-drag drops the drag.
-  const dragHandle = useMemo(
-    () =>
-      Gesture.Pan()
-        .activateAfterLongPress(150)
-        .onStart(() => {
-          'worklet';
-          activeIndex.value = index;
-          dragTranslateY.value = 0;
-          scheduleOnRN(triggerPickupHaptic);
-        })
-        .onUpdate((event) => {
-          'worklet';
-          dragTranslateY.value = event.translationY;
-        })
-        .onEnd((_event, success) => {
-          'worklet';
-          const from = activeIndex.value;
-          activeIndex.value = -1;
-          const target = success && from >= 0 ? targetIndexFor(from, dragTranslateY.value, slots.value) : from;
-          if (from < 0 || target === from) {
-            dragTranslateY.value = withTiming(0, { duration: 150 });
-            return;
-          }
-          // Snap rather than ease back to zero: the row's new position comes from the `data` change a
-          // frame later, so animating the transform towards its *old* slot at the same time renders as
-          // the drop being rejected and then teleporting.
-          dragTranslateY.value = 0;
-          scheduleOnRN(onCommit, from, target);
-        })
-        .onFinalize(() => {
-          'worklet';
-          // A gesture can be cancelled without `onEnd` ever running — it only fires out of ACTIVE.
-          // Without this the list stays frozen mid-drag: every other row displaced, the handle dead,
-          // and no way back short of leaving the screen.
-          if (activeIndex.value !== index) return;
-          activeIndex.value = -1;
+  const dragHandle = useMemo(() => {
+    const pan = Gesture.Pan();
+    if (scrollRef) pan.blocksExternalGesture(scrollRef);
+    return pan
+      .activateAfterLongPress(150)
+      .onStart(() => {
+        'worklet';
+        activeIndex.value = index;
+        dragTranslateY.value = 0;
+        scheduleOnRN(triggerPickupHaptic);
+      })
+      .onUpdate((event) => {
+        'worklet';
+        dragTranslateY.value = event.translationY;
+      })
+      .onEnd(() => {
+        'worklet';
+        const from = activeIndex.value;
+        activeIndex.value = -1;
+        // Deliberately *not* gated on `onEnd`'s `success` flag, which RNGH sets false for an ACTIVE →
+        // CANCELLED transition. Android routinely cancels an active pan that lives inside a scroller
+        // when the finger lifts, so gating on it meant no drop ever committed: every block sprang back
+        // to where it started. A browser reports END and looked perfectly fine, which is exactly why
+        // this needs a device.
+        //
+        // `from >= 0` is the check that actually carries the meaning — `onStart` only runs once the
+        // gesture has activated, so a press that never picked anything up cannot reach here with a
+        // real index. And a cancelled drag committing where the finger genuinely was is recoverable
+        // by dragging it back; never committing at all is not.
+        if (from < 0) {
           dragTranslateY.value = withTiming(0, { duration: 150 });
-        }),
-    [activeIndex, dragTranslateY, index, onCommit, slots],
-  );
+          return;
+        }
+        const target = targetIndexFor(from, dragTranslateY.value, slots.value);
+        if (target === from) {
+          dragTranslateY.value = withTiming(0, { duration: 150 });
+          return;
+        }
+        // Snap rather than ease back to zero: the row's new position comes from the `data` change a
+        // frame later, so animating the transform towards its *old* slot at the same time renders as
+        // the drop being rejected and then teleporting.
+        dragTranslateY.value = 0;
+        scheduleOnRN(onCommit, from, target);
+      })
+      .onFinalize(() => {
+        'worklet';
+        // A gesture can be cancelled without `onEnd` ever running — it only fires out of ACTIVE.
+        // Without this the list stays frozen mid-drag: every other row displaced, the handle dead,
+        // and no way back short of leaving the screen.
+        if (activeIndex.value !== index) return;
+        activeIndex.value = -1;
+        dragTranslateY.value = withTiming(0, { duration: 150 });
+      });
+  }, [activeIndex, dragTranslateY, index, onCommit, scrollRef, slots]);
 
   const animatedStyle = useAnimatedStyle(() => {
     if (activeIndex.value === index) {
@@ -186,14 +228,30 @@ function ReorderableItem({
     return { transform: [{ translateY: withTiming(shift, { duration: 150 }) }], zIndex: 0, elevation: 0, shadowOpacity: 0 };
   });
 
-  const onLayout = useCallback(
-    (event: LayoutChangeEvent) => {
-      const { y, height } = event.nativeEvent.layout;
-      const current = slots.value[index];
-      if (current && current.y === y && current.height === height) return;
-      slots.value = slots.value.map((slot, i) => (i === index ? { y, height } : slot));
+  /**
+   * Every row measures itself the moment any drag starts.
+   *
+   * This used to accumulate `onLayout` into the shared array, and on a device that array stayed empty
+   * — the list behaved exactly as though every row were zero-sized. With no geometry the hit test has
+   * nothing to compare against, so nothing ever slid aside and every drop resolved to the row's own
+   * index: blocks could be picked up and dragged but not placed. A browser, where `onLayout` does
+   * fire, looked correct throughout, which is what kept hiding it.
+   *
+   * `measure` reads the native layout synchronously on the UI thread, so it does not depend on a
+   * layout event arriving at all. Reading it at drag start is also simply more correct than caching
+   * it: the geometry is taken as it is at the moment it gets used.
+   */
+  useAnimatedReaction(
+    () => activeIndex.value >= 0,
+    (dragging) => {
+      'worklet';
+      if (!dragging) return;
+      const measured = measure(rowRef);
+      if (measured === null) return;
+      const next = [...slots.value];
+      next[index] = { y: measured.pageY, height: measured.height };
+      slots.value = next;
     },
-    [slots, index],
   );
 
   // Clamped rather than wrapped: "move up" on the first row should do nothing, not teleport it to the
@@ -225,7 +283,10 @@ function ReorderableItem({
   };
 
   return (
-    <Animated.View style={animatedStyle} onLayout={onLayout}>
+    // `collapsable={false}` is load-bearing, not defensive: Android flattens views it thinks draw
+    // nothing, and `measure` on a flattened view returns null — which would put us straight back to
+    // having no geometry.
+    <Animated.View ref={rowRef} collapsable={false} style={animatedStyle}>
       {children(handle)}
     </Animated.View>
   );
@@ -247,6 +308,13 @@ export type ReorderableListProps<T> = {
    * hardcoded string that no pt test could catch.
    */
   labelsFor: (item: T, index: number, total: number) => ReorderLabels;
+  /**
+   * The scrollable ancestor, if there is one — and there should be, since a list worth reordering is
+   * usually longer than a screen. It must be the `ScrollView` from `react-native-gesture-handler`, not
+   * the one from `react-native`: RNGH can only make a scroller defer to the drag if it is a scroller
+   * RNGH knows about. See `ScrollableRef`.
+   */
+  scrollRef?: ScrollableRef;
   style?: StyleProp<ViewStyle>;
 };
 
@@ -265,6 +333,7 @@ export function ReorderableList<T>({
   renderItem,
   onReorder,
   labelsFor,
+  scrollRef,
   style,
 }: ReorderableListProps<T>) {
   const slots = useSharedValue<Slot[]>(data.map(() => ({ y: 0, height: 0 })));
@@ -299,6 +368,7 @@ export function ReorderableList<T>({
           index={index}
           total={data.length}
           labels={labelsFor(item, index, data.length)}
+          scrollRef={scrollRef}
           slots={slots}
           activeIndex={activeIndex}
           dragTranslateY={dragTranslateY}

@@ -29,6 +29,13 @@ still only verified by driving the running app. Doing this wrong wastes a lot of
 - Always capture `page.on('console')` and `page.on('pageerror')`. The app is currently clean apart
   from one expo-notifications web warning, so any error means investigate.
 - Actually read your screenshots. Don't claim something renders correctly without having looked.
+- **A green browser run is not evidence that a gesture works.** Block reorder shipped three
+  device-only failures in a row that a Playwright drag reported as perfect every time: Android's
+  `ScrollView` swallowing the long-press, `onEnd`'s `success` flag arriving `false` for a cancelled
+  pan (web sends `END`, so the drop committed there and nowhere else), and `onLayout` never
+  populating the measurement array at all (it does fire on web). Each looked like a fixed feature
+  from here. If a change touches gesture arbitration, native layout measurement or touch targets,
+  a browser pass can only rule things *out* — say so rather than reporting it verified.
 
 Two constraints from `AGENTS.md` § "Platform constraints" bite hardest here, and are repeated because
 a browser check is exactly where they mislead: the web build has **no persistence** (an ephemeral

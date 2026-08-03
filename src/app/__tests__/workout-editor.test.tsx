@@ -120,6 +120,20 @@ describe('blocks', () => {
 
     expect(screen.getByText('0 blocks')).toBeTruthy();
   });
+
+  /**
+   * The drag handle shipped sized around its ⣿ glyph — 14×30dp, about 2.5mm wide on a phone against a
+   * ~9mm fingertip. Missing it is indistinguishable from a drag that refused to start, which is how it
+   * was reported: some rows "don't even give any feedback". `minWidth`/`minHeight` rather than
+   * `hitSlop`, since RNGH cannot expand a handler's area past the view's own bounds on Android.
+   */
+  it('gives the drag handle a full 44px touch target', async () => {
+    await renderScreen(<WorkoutEditorScreen />);
+    await fireEvent.press(screen.getByText('+ Add block'));
+    await fireEvent.press(screen.getByText('Pull-ups'));
+
+    expect(screen.getByLabelText('Reorder Pull-ups')).toHaveStyle({ minWidth: 44, minHeight: 44 });
+  });
 });
 
 describe('circuits', () => {

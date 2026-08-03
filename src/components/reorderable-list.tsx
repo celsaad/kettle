@@ -153,12 +153,26 @@ function ReorderableItem({
         'worklet';
         dragTranslateY.value = event.translationY;
       })
-      .onEnd((_event, success) => {
+      .onEnd(() => {
         'worklet';
         const from = activeIndex.value;
         activeIndex.value = -1;
-        const target = success && from >= 0 ? targetIndexFor(from, dragTranslateY.value, slots.value) : from;
-        if (from < 0 || target === from) {
+        // Deliberately *not* gated on `onEnd`'s `success` flag, which RNGH sets false for an ACTIVE →
+        // CANCELLED transition. Android routinely cancels an active pan that lives inside a scroller
+        // when the finger lifts, so gating on it meant no drop ever committed: every block sprang back
+        // to where it started. A browser reports END and looked perfectly fine, which is exactly why
+        // this needs a device.
+        //
+        // `from >= 0` is the check that actually carries the meaning — `onStart` only runs once the
+        // gesture has activated, so a press that never picked anything up cannot reach here with a
+        // real index. And a cancelled drag committing where the finger genuinely was is recoverable
+        // by dragging it back; never committing at all is not.
+        if (from < 0) {
+          dragTranslateY.value = withTiming(0, { duration: 150 });
+          return;
+        }
+        const target = targetIndexFor(from, dragTranslateY.value, slots.value);
+        if (target === from) {
           dragTranslateY.value = withTiming(0, { duration: 150 });
           return;
         }

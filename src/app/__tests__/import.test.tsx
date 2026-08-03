@@ -411,6 +411,79 @@ describe('the update diff', () => {
   });
 });
 
+/**
+ * A real hand-authored library runs to hundreds of ids, and re-importing one classifies *every* id as
+ * an update — so the preview's length is set by the file, not by how much actually changed. These pin
+ * the two things that keeps from costing: a wall of rows to read, and a Merge button pushed off the
+ * bottom of a screen that gives no sign it's down there.
+ */
+describe('a preview with more changes than fit', () => {
+  const many = Array.from({ length: 30 }, (_, i) => anExercise({ id: `ex-${i}`, name: `Exercise ${i}` }));
+
+  it('shows the first few and offers the rest by count', async () => {
+    picks(aLibrary({ exercises: many }));
+    await chooseFile();
+
+    expect(screen.getByText('ex-7')).toBeTruthy();
+    expect(screen.queryByText('ex-8')).toBeNull();
+    // The count is of the whole list, not of what's hidden — it answers "how long is this" rather
+    // than making the reader add two numbers to find out.
+    expect(screen.getByText('Show all 30 changes')).toBeTruthy();
+  });
+
+  it('reveals the rest on request, and can be collapsed again', async () => {
+    picks(aLibrary({ exercises: many }));
+    await chooseFile();
+    await fireEvent.press(screen.getByText('Show all 30 changes'));
+
+    expect(screen.getByText('ex-29')).toBeTruthy();
+
+    await fireEvent.press(screen.getByText('Show fewer'));
+    expect(screen.queryByText('ex-29')).toBeNull();
+  });
+
+  it('leaves the actions reachable without scrolling past the list', async () => {
+    picks(aLibrary({ exercises: many }));
+    await chooseFile();
+
+    // The real claim is a layout one, which a test tree can't measure. What it can prove is the
+    // structure the claim rests on: no ScrollView stands between Merge and the root, so no length of
+    // list can push it out of view. Moving the button back inside the scroll fails this.
+    const ancestors: string[] = [];
+    for (let node = screen.getByText('Merge & import').parent; node; node = node.parent) {
+      const { type } = node;
+      const named = type as { displayName?: string; name?: string };
+      ancestors.push(typeof type === 'string' ? type : (named.displayName ?? named.name ?? ''));
+    }
+
+    expect(ancestors.filter((name) => name.includes('ScrollView'))).toHaveLength(0);
+  });
+
+  it('carries the expansion into what landed, rather than re-collapsing under the reader', async () => {
+    picks(aLibrary({ exercises: many }));
+    await chooseFile();
+    await fireEvent.press(screen.getByText('Show all 30 changes'));
+    await fireEvent.press(screen.getByText('Merge & import'));
+
+    expect(screen.getByText('ex-29')).toBeTruthy();
+  });
+
+  it('offers no toggle when the list is short enough to read', async () => {
+    picks(aLibrary({ exercises: [dips] }));
+    await chooseFile();
+
+    expect(screen.queryByText(/Show all/)).toBeNull();
+  });
+
+  it('is translated', async () => {
+    await changeLanguage('pt');
+    picks(aLibrary({ exercises: many }));
+    await chooseFile();
+
+    expect(screen.getByText('Mostrar todas as 30 alterações')).toBeTruthy();
+  });
+});
+
 /** The outbound half: what gets sent to an assistant before any YAML exists to import. */
 describe('the assistant brief', () => {
   it('copies the schema and the library’s own ids', async () => {

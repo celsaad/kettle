@@ -314,6 +314,9 @@
       "sameValues": "no field changes — replaced with an identical definition"
     },
     "noChanges": "No changes — the imported file matches your current library.",
+    "showAll_one": "Show the {{count}} change",
+    "showAll_other": "Show all {{count}} changes",
+    "showFewer": "Show fewer",
     "applied": {
       "title": "Imported",
       "newCount_one": "{{count}} new item",

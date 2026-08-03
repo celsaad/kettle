@@ -26,6 +26,8 @@ type Props = {
   onChangeWeightKg: (weightKg: number) => void;
   notes?: string;
   next: RestPreview;
+  /** Names the action button honestly: back-to-back sets (rest_sec: 0) have no rest step to promise. */
+  restFollows: boolean;
   onPrev: () => void;
   onLogSet: () => void;
 };
@@ -44,6 +46,7 @@ export function SessionReps({
   onChangeWeightKg,
   notes,
   next,
+  restFollows,
   onPrev,
   onLogSet,
 }: Props) {
@@ -209,7 +212,7 @@ export function SessionReps({
         </Pressable>
         <Pressable onPress={onLogSet} accessibilityRole="button" style={styles.logButton}>
           <ThemedText type="heading" style={styles.logButtonLabel}>
-            {t('session.reps.logSet')}
+            {t(restFollows ? 'session.reps.logSet' : 'session.reps.logSetNoRest')}
           </ThemedText>
         </Pressable>
       </View>

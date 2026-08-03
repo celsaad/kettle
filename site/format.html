@@ -85,6 +85,7 @@
               <li><a href="#exercises">Exercises</a></li>
               <li><a href="#types">Exercise types</a></li>
               <li><a href="#workouts">Workouts</a></li>
+              <li><a href="#supersets">Supersets</a></li>
               <li><a href="#programs">Programs</a></li>
               <li><a href="#import">Import &amp; merge</a></li>
               <li><a href="#example">A complete example</a></li>
@@ -527,8 +528,73 @@
                   <code class="inl">pushups</code> with <code class="inl">sets: 3</code> in a 3-round circuit does 3 visits,
                   not 9.
                 </p>
+              </div>
+
+              <h3 id="supersets">Supersets</h3>
+              <p>
+                <strong>A superset is a two-member circuit.</strong> There is no separate superset block type, and you don't
+                need one — a circuit already runs its members round-robin, which is exactly what alternating A/B is. "3 × 8
+                chin-ups supersetted with 3 × 8 dips, 90s after each pair" is:
+              </p>
+              <div class="code-panel">
+                <div class="code-head">
+                  <span class="dot" aria-hidden="true"></span><span class="name">superset.yaml</span>
+                </div>
+                <pre
+                  tabindex="0"
+                  role="region"
+                  aria-label="Code sample"><code><span class="y-p">-</span> <span class="y-k">type</span><span class="y-p">:</span> <span class="y-s">circuit</span>
+  <span class="y-k">rounds</span><span class="y-p">:</span> <span class="y-n">3</span>                      <span class="y-c"># the set count: 3 of each</span>
+  <span class="y-k">rest_between_exercises_sec</span><span class="y-p">:</span> <span class="y-n">0</span>   <span class="y-c"># within the pair</span>
+  <span class="y-k">rest_between_rounds_sec</span><span class="y-p">:</span> <span class="y-n">90</span>     <span class="y-c"># after each pair</span>
+  <span class="y-k">exercises</span><span class="y-p">:</span>
+    <span class="y-p">-</span> <span class="y-k">exercise</span><span class="y-p">:</span> <span class="y-s">chinups</span>
+    <span class="y-p">-</span> <span class="y-k">exercise</span><span class="y-p">:</span> <span class="y-s">dips</span></code></pre>
+              </div>
+              <p>
+                That runs <code class="inl">chinups → dips → 90s → chinups → dips → 90s → chinups → dips</code>, with no
+                trailing rest after the last pair. The three fields map onto how you'd say it out loud:
+              </p>
+              <div class="table-scroll" tabindex="0" role="region" aria-label="Reference table">
+                <table class="ref">
+                  <thead>
+                    <tr>
+                      <th>You'd say</th>
+                      <th>Field</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>"3 sets of each"</td>
+                      <td><code>rounds: 3</code></td>
+                    </tr>
+                    <tr>
+                      <td>"no rest between the two"</td>
+                      <td><code>rest_between_exercises_sec: 0</code> (or omit it)</td>
+                    </tr>
+                    <tr>
+                      <td>"90 seconds after each pair"</td>
+                      <td><code>rest_between_rounds_sec: 90</code></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="callout">
                 <p>
-                  There is no separate superset concept: a superset is a two-member circuit with no rest between exercises.
+                  <strong>Don't set an exercise's own <code class="inl">rest_sec</code> to 0 to express a pairing.</strong>
+                  Per the rule above, a circuit member's own <code class="inl">sets</code> and
+                  <code class="inl">rest_sec</code> are ignored — so <code class="inl">chinups</code> keeps whatever values
+                  make sense for it on its own, in some other workout. Editing them changes that exercise everywhere it's
+                  used, and the pairing still won't happen.
+                </p>
+                <p>
+                  The mistake this replaces: writing the two exercises as separate
+                  <code class="inl">type: exercise</code> blocks and zeroing the first one's rest. That runs A, A, A, B, B, B
+                  — not a superset — and leaves the first exercise no rest at all between its own sets.
+                </p>
+                <p>
+                  Both members get the same number of sets. Unequal pairs — 2 sets of A against 3 of B — can't be expressed
+                  as one circuit today; author the common rounds as a circuit and the odd sets as a separate block after it.
                 </p>
               </div>
             </section>

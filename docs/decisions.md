@@ -442,6 +442,22 @@ constraint that outlived the work rather than a description of it.
   screenshot and break editing.
 - **Auto-scrolling the `ScrollView` when a drag reaches the viewport edge is out of scope.** Block
   lists are short enough in practice; it's a contained follow-up if that ever stops being true.
+- **`ReorderableList` measures rows with `measure()` on the UI thread, never `onLayout`.** Don't
+  "simplify" it back. Accumulating `onLayout` into a shared array left that array empty on device
+  while working in a browser, and with no geometry the hit test degenerates to "first position when
+  dragging up, last when dragging down" — which is how the bug was reported, and it masked a separate
+  arithmetic bug underneath. Why the layout event never landed is still unexplained; the fix routes
+  around it rather than understanding it, so treat a recurrence elsewhere as plausible. `measure`
+  requires `collapsable={false}` on the measured view, since Android flattens views it thinks draw
+  nothing and returns null for those.
+- **The drag handle's touch target is sized by `minWidth`/`minHeight`, not padding round the glyph.**
+  It shipped at 14×30dp — about 2.5mm against a ~9mm fingertip — and missing it is indistinguishable
+  from a drag refusing to start. `hitSlop` is not the alternative here: RNGH cannot expand a handler's
+  area past the view's own bounds on Android.
+- **The block drag deliberately outranks the scroll it sits in**, via the gesture-handler `ScrollView`
+  plus `blocksExternalGesture`. Android's scroller claims any touch drifting past ~8dp and decides
+  before the 150ms long-press elapses, so with `react-native`'s `ScrollView` most rows simply could
+  not be picked up. A list handed the wrong `ScrollView` silently keeps that bug.
 
 - ✅ **The package manager is pnpm, and Bun was measured and rejected.** Installs were the slowest
   part of the loop, so all three were benchmarked on the actual dependency tree, clean directory and

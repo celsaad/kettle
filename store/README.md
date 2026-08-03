@@ -17,6 +17,13 @@ cd -
 NODE_PATH=../kettle-store-tools/node_modules node store/build-assets.js
 ```
 
+**This one stays on npm even though the app itself uses pnpm.** `NODE_PATH` resolves against a flat
+directory, and pnpm's default isolated layout puts transitive deps under `.pnpm/` where `NODE_PATH`
+can't see them — `sharp` would resolve and its own dependencies would not. pnpm 11 reads `nodeLinker`
+only from `pnpm-workspace.yaml`; both `.npmrc` and `--node-linker=hoisted` on the command line are
+silently ignored, so there is no one-liner that fixes it. Adding a workspace file to a throwaway
+directory to work around that is worse than just using npm here.
+
 Output lands in `store/out/`, which is gitignored. The script fails rather than writes if an asset
 would breach a Play limit — see "What the limits actually are" below.
 

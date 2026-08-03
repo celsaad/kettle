@@ -48,16 +48,21 @@ current status.
 ## Development
 
 ```bash
-npm install
-npx expo start
+corepack enable      # once; pnpm is pinned by "packageManager" in package.json
+pnpm install
+pnpm expo start
 ```
+
+**pnpm, not npm.** `pnpm-workspace.yaml` sets `nodeLinker: hoisted`, which Metro and Gradle
+autolinking both need — installing with another manager works but drops the settings that keep the
+tree resolvable. See the decision log for the measurements behind the choice.
 
 The output offers a [development build](https://docs.expo.dev/develop/development-builds/introduction/),
 an [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/), an
 [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/), [Expo Go](https://expo.dev/go), or
 the web.
 
-**Web has no persistence.** `expo-file-system` doesn't support it, so `npx expo start --web` degrades
+**Web has no persistence.** `expo-file-system` doesn't support it, so `pnpm expo start --web` degrades
 to an ephemeral in-memory seed library rather than crashing.
 
 Routing is [Expo Router](https://docs.expo.dev/router/introduction) file-based; screens live under
@@ -87,10 +92,10 @@ store/                  Play listing copy and generated store graphics
 ## Scripts
 
 ```bash
-npm run typecheck     # tsc --noEmit
-npm run lint          # oxlint
-npm test              # jest, via jest-expo
-npm run format        # oxfmt (markdown and package.json are excluded on purpose)
+pnpm run typecheck    # tsc --noEmit
+pnpm run lint         # oxlint
+pnpm test             # jest, via jest-expo
+pnpm run format       # oxfmt (markdown and package.json are excluded on purpose)
 ```
 
 All three checks run in CI (`.github/workflows/ci.yml`) on every push and pull request. The suite

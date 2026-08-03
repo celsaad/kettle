@@ -9,15 +9,20 @@ plus an append-only local session log. No server, no account.
 
 ## Commands
 
-- `npm run typecheck` — `tsc --noEmit`
-- `npm run lint` — oxlint. **Keep it at zero warnings and zero errors.** A warning you genuinely
+**The package manager is pnpm, not npm** — `pnpm install`, never `npm install`. Installing with npm
+strips `nodeLinker: hoisted` out of the layout and typecheck starts failing on transitive imports;
+the reasoning and the benchmark are in the decision log. Trailing args need no `--` separator, so
+it's `pnpm test --ci`, not `npm test -- --ci`.
+
+- `pnpm run typecheck` — `tsc --noEmit`
+- `pnpm run lint` — oxlint. **Keep it at zero warnings and zero errors.** A warning you genuinely
   can't fix wants a one-line disable naming the reason, not a new accepted baseline.
-- `npm test` — jest via `jest-expo`. Covers the domain layer, the session runner, the highest-branch
-  screens and the stores. Under a minute, so run it. A single file is `npx jest <path>`.
-- `npm run format` — oxfmt (same Oxc toolchain as oxlint, so they agree). Run it instead of matching
-  the style by hand, and never reach for `npx prettier`, which has no config here and would reformat
-  the file to its own defaults. **Markdown and `package.json` are excluded on purpose** — see the
-  decision log before adding them.
+- `pnpm test` — jest via `jest-expo`. Covers the domain layer, the session runner, the highest-branch
+  screens and the stores. Under a minute, so run it. A single file is `pnpm jest <path>`.
+- `pnpm run format` — oxfmt (same Oxc toolchain as oxlint, so they agree). Run it instead of matching
+  the style by hand, and never reach for `pnpm dlx prettier`, which has no config here and would
+  reformat the file to its own defaults. **Markdown and `package.json` are excluded on purpose** —
+  see the decision log before adding them.
 
 ## Working on a feature
 
@@ -44,10 +49,10 @@ retrofit, so answer them out loud even when the answer is no.
       reseed of a corrupt library are the patterns to copy.
 - [ ] **Add tests if it makes sense.** Pure logic, error and empty branches, validation wiring: yes.
       Layout, animation, real audio and file writes: drive the running app instead. See "Writing tests".
-- [ ] `npm test`
-- [ ] `npm run typecheck`
-- [ ] `npm run format`
-- [ ] `npm run lint` — it comes back completely silent, so anything it prints is yours.
+- [ ] `pnpm test`
+- [ ] `pnpm run typecheck`
+- [ ] `pnpm run format`
+- [ ] `pnpm run lint` — it comes back completely silent, so anything it prints is yours.
 - [ ] **Push the branch and open a PR** (`gh pr create`). The commit message is the durable record —
       root cause, alternatives, deliberate scope cuts go there, not into the docs (see "Docs").
 
@@ -167,7 +172,7 @@ Shipping a whole new language is a six-place procedure of its own:
   `Alert.alert` call and runs the handler in its own `act` scope. `Alert` renders nothing, so its
   buttons aren't in the tree; and the handler writes to the store, so without `act` React reports an
   unwrapped update from inside the *store*, naming a file nowhere near the test that caused it.
-- Finish with `npm run format`; don't hand-align a new test file against the rest.
+- Finish with `pnpm run format`; don't hand-align a new test file against the rest.
 - `testTimeout` is 30s, not jest's 5s default. Screen tests pay a one-off lazy-init cost on the first
   render in a file (~0.5s locally, far more on CI's contended 2-core runner, where the default failed).
   It only costs time when something genuinely hangs.
@@ -183,7 +188,7 @@ should go to a cheaper subagent rather than being done inline. Point it at an ex
 and give it the exact list of cases; that's most of the quality.
 
 **Verify what comes back rather than trusting the report.** A subagent has reported pre-existing lint
-damage that its own edits caused. Re-run `npm test`, `npm run typecheck` and `npm run lint` yourself
+damage that its own edits caused. Re-run `pnpm test`, `pnpm run typecheck` and `pnpm run lint` yourself
 after any delegated change, and skim the diff.
 
 ## Changing the YAML format
@@ -277,7 +282,7 @@ And two about what doesn't get written down at all:
   existing bullet. If it needs prose, it needs the site.
 - **Never quote a hand-maintained count.** Test totals, key counts, file counts: they are wrong
   within two PRs, nothing fails when they are, and they were the specific claims the drift audit
-  above caught. Name the source instead — `npm test`, the locale bundles.
+  above caught. Name the source instead — `pnpm test`, the locale bundles.
 
 Keep open-work entries short. If the list starts wanting states and assignees, move it to GitHub
 issues (`origin` and `gh` are both available); until then the file is deliberately enough.

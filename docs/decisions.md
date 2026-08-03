@@ -35,7 +35,7 @@ decision assembled across several commits. Open work belongs in the sections at 
     tests fail against exactly that bug.
 
 - ✅ **Formatting is oxfmt's, and it deliberately does not own the docs.** The repo went a long time
-  with no formatter, which cost real time: reaching for `npx prettier` ad hoc reformats a file to
+  with no formatter, which cost real time: reaching for `pnpm dlx prettier` ad hoc reformats a file to
   Prettier's defaults and fights the whole codebase's style, and a subagent has no way to infer an
   unwritten convention. oxfmt was chosen over Prettier because the repo already lints with **oxlint,
   which is the same Oxc toolchain** — so the two agree instead of needing a compatibility shim. Vite+
@@ -49,8 +49,8 @@ decision assembled across several commits. Open work belongs in the sections at 
   - **Markdown.** oxfmt rewrites prose emphasis (`*raw*` → `_raw_`) and dropped the indent on a
     wrapped list continuation in AGENTS.md, which changes how it renders. The docs are hand-wrapped;
     that's a regression, not a normalization.
-  - **`package.json`.** npm rewrites its key order on install, so two tools owning it means a dirty
-    tree after every install.
+  - **`package.json`.** The package manager rewrites its key order on install, so two tools owning it
+    means a dirty tree after every install.
 
   `printWidth` is 125 because that's where the code already sat — 92 lines exceeded it against 145 at
   120, so it rewraps what is genuinely long rather than relitigating lines that were fine.
@@ -442,6 +442,33 @@ constraint that outlived the work rather than a description of it.
   screenshot and break editing.
 - **Auto-scrolling the `ScrollView` when a drag reaches the viewport edge is out of scope.** Block
   lists are short enough in practice; it's a contained follow-up if that ever stops being true.
+
+- ✅ **The package manager is pnpm, and Bun was measured and rejected.** Installs were the slowest
+  part of the loop, so all three were benchmarked on the actual dependency tree, clean directory and
+  warm cache each: **pnpm 30s, npm 137s, Bun 395s.** Bun was picked first on its general reputation
+  for speed and turned out to be **~3x slower than the npm it was replacing** here — consistently,
+  across cold, warm and clean-directory runs, with a correctly populated 590 MB cache and the default
+  `hardlink` backend. The machine's Defender query fails with `0x800106ba`, so a third-party scanner
+  is likely the multiplier, and it punishes file-copy-heavy installs worst. Recorded because the
+  reputation is real on Linux CI and will suggest Bun again; on this Windows box the measurement is
+  the answer. Bun is otherwise fine — the full suite passed under it before the switch.
+
+  Three things about pnpm that are not obvious and each cost a debugging round:
+
+  - **Settings live in `pnpm-workspace.yaml`, not `.npmrc`.** pnpm 10 began moving them and by 11 an
+    `.npmrc` entry is read as an npm setting and ignored. `--node-linker=hoisted` on the command line
+    is ignored too. Nothing errors — you just get the wrong layout and find out later.
+  - **`nodeLinker: hoisted` is required, not a preference.** Metro and Gradle autolinking both walk a
+    flat tree. Under the default isolated layout `src/hooks/safe-iap.ts` fails typecheck on
+    `expo-modules-core`, which it imports directly but which is only a dependency of `expo`.
+  - **`virtualStoreDirMaxLength: 60`.** The virtual store encodes a full package name plus a hash into
+    one directory name; at the default of 120 the longest `@babel` entries breach Windows' 260-char
+    path cap and the install dies with `ENOENT` on `mkdir`. `LongPathsEnabled` is off on this machine
+    and turning it on needs admin plus a reboot, so the cap is worked around rather than lifted.
+
+  The lockfile came from `pnpm import` against the existing `package-lock.json`, so the migration
+  changed the manager without re-resolving a single version. Verified past jest, which doesn't
+  exercise Metro: the web bundle was fetched from the dev server and built clean at 9.9 MB.
 
 ## Open questions from the product plan — all five settled
 

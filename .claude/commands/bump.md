@@ -1,7 +1,7 @@
 ---
-description: Bump the app version and Android versionCode, and commit the release
+description: Bump the app version and Android versionCode, close out the changelog, and commit the release
 argument-hint: "[patch|minor|major|<explicit version>]"
-allowed-tools: Read, Edit, Bash(git:*), Bash(pnpm run typecheck), Bash(pnpm run lint), Bash(pnpm test), Bash(gh pr:*)
+allowed-tools: Read, Edit, Bash(git:*), Bash(node:*), Bash(pnpm run typecheck), Bash(pnpm run lint), Bash(pnpm test), Bash(gh pr:*)
 ---
 
 Cut a release by bumping the version. The requested bump is: **$ARGUMENTS** (if that's empty, work out
@@ -10,7 +10,8 @@ and why before editing anything).
 
 ## Where the version lives
 
-**`app.json` is the only file to change.** Two fields, and they move together:
+**`app.json` is the only place the version number lives** (`CHANGELOG.md` also changes, but it
+records the release rather than defining it — see below). Two fields, and they move together:
 
 - `expo.version` — the human version, e.g. `0.3.0`.
 - `expo.android.versionCode` — an integer, **always +1**. Play rejects an upload whose versionCode
@@ -35,6 +36,39 @@ Read `git log --oneline <last release tag or commit>..HEAD` and judge by what a 
 A refactor with no behaviour change doesn't drive the decision on its own — note it in the message and
 let the user-facing work set the level.
 
+## The changelog
+
+`CHANGELOG.md` at the repo root is the other half of a release, and the bump is the moment it gets
+closed out. The whole design of that file is that `## Unreleased` is written up *as features ship*, so
+by now the writing should already be done and this is a promotion, not a drafting job.
+
+Turn the `## Unreleased` section into the release:
+
+1. **Rename the heading** to `## <version> — versionCode <n>, <date>`, matching `0.3.0`'s
+   (`## 0.3.0 — versionCode 6, 2 August 2026`). The date is the day you cut it, written out — `2 August
+   2026`, not `2026-08-02`. Use the same version and versionCode you just put in `app.json`.
+2. **Drop the "not in any build yet" paragraph** under the old heading. It's true only of Unreleased,
+   and left behind it says the opposite of what the section now means.
+3. **Open a fresh `## Unreleased` above it**, holding one line — `Nothing since <version>.` — so the
+   next feature has an obvious place to land and nobody has to reconstruct the section's shape.
+
+Then check the release notes that go up with it:
+
+- **They must exist.** If `## Unreleased` has a `### Play release notes` block, it's the copy for this
+  release and you're done. If it doesn't — or if the `### What changed` list has grown past what the
+  notes describe — that's a writing job, and it's the user's call how the release reads. Say what's
+  missing and stop before committing rather than drafting Play copy on your own.
+- **Recount if you touched them at all.** 500 characters per language block, and over-limit is a
+  *rejected upload*, not a truncated one. Count programmatically — `node -e` reading the file — and
+  update the "Counted at N (en-US) and N (pt-BR)" line to the real numbers. The numbers written beside
+  a block have been wrong before, which is why `store-copy.test.ts` asserts the limit; nothing asserts
+  the prose.
+- **Only include a `<pt-BR>` block if the listing carries that language.** An unsupported tag is
+  rejected on upload.
+
+Don't rewrite history: released sections above are the record of what testers actually read, so
+correcting an old one is a separate change with its own reason, not something a bump does in passing.
+
 ## Which branch
 
 Check what's in flight before deciding, and say which you're doing:
@@ -47,12 +81,15 @@ Check what's in flight before deciding, and say which you're doing:
 ## Then
 
 1. Edit `app.json` — both fields.
-2. Run `pnpm run typecheck` and `pnpm run lint`. They should be untouched by a version bump; if they
-   aren't clean, something else is wrong and the bump isn't the thing to fix it with.
-3. Commit as **`Release <version> (versionCode <n>)`**, matching every previous release. The body says
+2. Close out `CHANGELOG.md` as above.
+3. Run `pnpm test`, `pnpm run typecheck` and `pnpm run lint`. Typecheck and lint should be untouched by
+   a version bump; if they aren't clean, something else is wrong and the bump isn't the thing to fix it
+   with. `pnpm test` earns its place here because of the changelog edit — `store-copy.test.ts` reads
+   `CHANGELOG.md` and fails on a release-note block over 500 characters.
+4. Commit as **`Release <version> (versionCode <n>)`**, matching every previous release. The body says
    what's in it — the user-facing changes, by PR number where there is one — and why the level was
    patch/minor/major if that isn't obvious. Note anything deliberately excluded.
-4. Push. Open a PR only if you made a new branch; if you added the commit to an existing PR's branch,
+5. Push. Open a PR only if you made a new branch; if you added the commit to an existing PR's branch,
    say so rather than opening a second one.
 
 Don't tag, don't run a build, and don't touch the Play listing — none of that is in this repo.

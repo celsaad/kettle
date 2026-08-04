@@ -158,6 +158,85 @@ describe('first-run guidance', () => {
 });
 
 /**
+ * The block chips on the Next-up card.
+ *
+ * A real workout produces around twenty of them — one per block plus one per circuit member — and
+ * they wrap, so an uncapped row pushed `Start session` below the fold and behind the tab bar. A new
+ * user then had to scroll to reach the app's primary action on the screen that opens first.
+ *
+ * What's pinned is the cap and the summary, not the exact number that fits: `blockChips` still
+ * returns the whole list (`selectors-dst-chips.test.ts` owns that), and the slice is this screen's.
+ */
+describe('a long workout’s chips', () => {
+  /** Twelve blocks, which is an ordinary session rather than a contrived one. */
+  function setLongWorkout() {
+    const names = ['Squat', 'Bench', 'Row', 'Press', 'Curl', 'Dip', 'Lunge', 'Plank', 'Fly', 'Pulldown', 'Calf', 'Crunch'];
+    const exercises = names.map((name) => anExercise({ id: name.toLowerCase(), name }));
+    useLibraryStore.setState({
+      library: aLibrary({
+        exercises,
+        workouts: [
+          aWorkout({
+            name: 'Long day',
+            blocks: exercises.map((exercise) => ({ kind: 'exercise', exerciseId: exercise.id })),
+          }),
+        ],
+      }),
+      status: 'ready',
+    });
+  }
+
+  it('shows the first eight and summarises the rest', async () => {
+    setLongWorkout();
+
+    await renderScreen(<TodayScreen />);
+
+    expect(screen.getByText('Squat')).toBeTruthy();
+    expect(screen.getByText('Plank')).toBeTruthy();
+    // The ninth onwards are folded into the summary rather than rendered.
+    expect(screen.queryByText('Fly')).toBeNull();
+    expect(screen.queryByText('Crunch')).toBeNull();
+    expect(screen.getByText('+4 more')).toBeTruthy();
+  });
+
+  /**
+   * The regression this pins. Removing the cap fails it: `Start session` is still in the tree either
+   * way, so the assertion has to be about the chips that pushed it down rather than about the button.
+   */
+  it('keeps Start session above a row that would otherwise fill the card', async () => {
+    setLongWorkout();
+
+    await renderScreen(<TodayScreen />);
+
+    expect(screen.getByText('Start session')).toBeTruthy();
+    expect(screen.queryByText('Crunch')).toBeNull();
+  });
+
+  it('leaves a short workout alone, with no summary chip', async () => {
+    setSeededLibrary();
+
+    await renderScreen(<TodayScreen />);
+
+    expect(screen.queryByText(/more/)).toBeNull();
+  });
+
+  /**
+   * Driven in `pt` because an English assertion cannot tell `t('today.moreBlocks')` from a hardcoded
+   * literal — and a `+N more` built by hand is exactly the shape that gets hardcoded. It also proves
+   * the count runs through i18next's `count` rather than a `=== 1` ternary, since the plural form is
+   * what resolves the string at all.
+   */
+  it('is translated', async () => {
+    await changeLanguage('pt');
+    setLongWorkout();
+
+    await renderScreen(<TodayScreen />);
+
+    expect(screen.getByText('+4 a mais')).toBeTruthy();
+  });
+});
+
+/**
  * The way into a session with no pre-built workout. It sits outside the Next-up card's conditional so
  * both branches carry it — the empty-library case being the one where it earns its place, since with
  * no workouts at all it is the only way to train.

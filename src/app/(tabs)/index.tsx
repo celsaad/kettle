@@ -16,6 +16,20 @@ import { blockChips, currentStreak, nextUpView, recentSessionsView, thisWeekStat
 
 export { RouteErrorBoundary as ErrorBoundary } from '@/components/error-fallback';
 
+/**
+ * How many block chips the Next-up card shows before it summarises the rest.
+ *
+ * A real workout produces around twenty of these — one per block, plus one per circuit member — and
+ * they wrap, so an honest full list pushed `Start session` below the fold and behind the tab bar. A
+ * new user then had to scroll to find the app's primary action, on the screen that opens first.
+ *
+ * Eight is where two rows of chips end at a typical phone width, which is enough to tell one workout
+ * from another at a glance — which is all this row is for; the exact contents are one tap away in the
+ * runner. The cap is applied here rather than in `blockChips`, which keeps returning the whole list:
+ * the selector describes the workout, and how much of it fits on a card is this screen's problem.
+ */
+const VISIBLE_CHIP_LIMIT = 8;
+
 export default function TodayScreen() {
   const theme = useTheme();
   const { t } = useTranslation();
@@ -27,6 +41,8 @@ export default function TodayScreen() {
 
   const nextUp = library ? nextUpView(library, sessions) : null;
   const chips = nextUp ? blockChips(nextUp.workout, nextUp.exercises) : [];
+  const visibleChips = chips.slice(0, VISIBLE_CHIP_LIMIT);
+  const hiddenChipCount = chips.length - visibleChips.length;
   const summary = nextUp ? formatWorkoutShape(workoutShape(nextUp.workout, nextUp.exercises)) : '';
   const recentSessions = library ? recentSessionsView(sessions, library) : [];
   const streak = currentStreak(sessions);
@@ -114,7 +130,7 @@ export default function TodayScreen() {
               {nextUp.workout.name}
             </ThemedText>
             <View style={styles.chipRow}>
-              {chips.map((chip, index) => (
+              {visibleChips.map((chip, index) => (
                 <View
                   key={`${chip.name}-${index}`}
                   style={[styles.chip, { backgroundColor: chip.isRest ? theme.backgroundSelected : theme.accentSoft }]}>
@@ -123,6 +139,17 @@ export default function TodayScreen() {
                   </ThemedText>
                 </View>
               ))}
+              {/* A `View`, not a `Pressable`: it opens nothing, and neither do the chips beside it.
+                  An arrow or a tap target here would advertise a detail screen that doesn't exist.
+                  Styled like a rest chip rather than like an exercise, so it reads as part of the
+                  row's chrome instead of as another movement in the workout. */}
+              {hiddenChipCount > 0 && (
+                <View style={[styles.chip, { backgroundColor: theme.backgroundSelected }]}>
+                  <ThemedText type="small" themeColor="textSecondary">
+                    {t('today.moreBlocks', { count: hiddenChipCount })}
+                  </ThemedText>
+                </View>
+              )}
             </View>
             <ThemedText themeColor="textSecondary" style={styles.summaryLine}>
               {summary}

@@ -223,5 +223,8 @@ it('deletes a program once confirmed', async () => {
   await pressAlertButton(alert, 'destructive');
 
   expect(persisted().programs).toHaveLength(0);
-  expect(router.back).toHaveBeenCalled();
+  // Past the detail modal, not back onto it: it resolves the program by id and would render
+  // "Program not found" at the deleted one.
+  expect(router.dismissTo).toHaveBeenCalledWith('/programs');
+  expect(router.back).not.toHaveBeenCalled();
 });

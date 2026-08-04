@@ -113,7 +113,11 @@ export default function ProgramEditorScreen() {
             setError(t('common.deleteFailed', { detail: (err as Error).message }));
             return;
           }
-          close();
+          // dismissTo, not back: this editor is reached from the program *detail* modal, which is
+          // still on the stack and looks the program up by id. A plain back() landed on it with
+          // nothing to find, so deleting left the user staring at "Program not found". Dismissing
+          // the whole modal stack down to the tab is what the delete actually meant.
+          router.dismissTo('/programs');
         },
       },
     ]);

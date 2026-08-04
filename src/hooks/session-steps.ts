@@ -9,11 +9,33 @@ import type { BlockConfigOverride, Exercise, Workout } from '@/domain/types';
 
 export type IntervalVariant = 'hiit' | 'emom' | 'amrap' | 'cardio';
 
+/**
+ * Where a step sits inside its circuit block: which round, and which exercise of the round-robin.
+ * Absent on every step outside a circuit, which is what the runner tests to know it's in one.
+ *
+ * Attached during expansion rather than derived later, because the member numbering is over the
+ * *resolved* members — a circuit naming an exercise the library no longer has drops that member, so
+ * neither `block.members.length` nor a member's index in it survives. A step carries a `blockIndex`
+ * and nothing else about its block, so this is the last place the numbering is knowable.
+ *
+ * Rest steps take the position of the work they *follow*, not the work they lead to: mid-circuit, the
+ * honest answer to "where am I" is what's been done.
+ */
+export type CircuitPosition = {
+  round: number;
+  rounds: number;
+  /** 1-based, over the members that resolved to an exercise. */
+  member: number;
+  memberTotal: number;
+};
+
 export type RunnerStep =
   | {
       kind: 'hold';
       blockIndex: number;
       memberKey: string;
+      /** Set only inside a circuit block — see CircuitPosition. */
+      circuit?: CircuitPosition;
       exerciseId: string;
       exerciseName: string;
       /** The mark to cross, not the finish line — see `holdEndSec`. Absent on a max-effort hold. */
@@ -35,6 +57,8 @@ export type RunnerStep =
       kind: 'reps';
       blockIndex: number;
       memberKey: string;
+      /** Set only inside a circuit block — see CircuitPosition. */
+      circuit?: CircuitPosition;
       exerciseId: string;
       exerciseName: string;
       targetReps: number;
@@ -48,6 +72,8 @@ export type RunnerStep =
       kind: 'interval';
       blockIndex: number;
       memberKey: string;
+      /** Set only inside a circuit block — see CircuitPosition. */
+      circuit?: CircuitPosition;
       exerciseId: string;
       exerciseName: string;
       variant: IntervalVariant;
@@ -68,7 +94,16 @@ export type RunnerStep =
   // back-to-back sets got a flash of rest UI, the completion chime and a scheduled "Rest complete"
   // notification between every one of them — the thing that made a `rest_sec: 0` superset feel
   // broken. Standalone rest is exempt: it's a logged entry, and the schema permits `duration_sec: 0`.
-  | { kind: 'rest'; blockIndex: number; memberKey: string; exerciseId: string; standalone: boolean; seconds: number };
+  | {
+      kind: 'rest';
+      blockIndex: number;
+      memberKey: string;
+      /** Set only inside a circuit block — see CircuitPosition. */
+      circuit?: CircuitPosition;
+      exerciseId: string;
+      standalone: boolean;
+      seconds: number;
+    };
 
 /**
  * Where a circuit member's single visit sits in the circuit's rounds. Set only when expanding a
@@ -422,14 +457,25 @@ export function buildSteps(workout: Workout, exercises: Exercise[]): RunnerStep[
       .filter((entry): entry is typeof entry & { exercise: Exercise } => !!entry.exercise);
     if (members.length === 0) return;
 
+    // Numbered over `members` (the resolved ones), not `block.members` — see CircuitPosition.
+    const positionAt = (roundIndex: number, slot: number): CircuitPosition => ({
+      round: roundIndex + 1,
+      rounds: block.rounds,
+      member: slot + 1,
+      memberTotal: members.length,
+    });
+
     for (let round = 0; round < block.rounds; round++) {
       members.forEach(({ member, memberIndex, exercise }, i) => {
         const memberKey = `${blockIndex}:${memberIndex}`;
+        // Shared by the member's own steps and by the rest that follows it, which belongs to the work
+        // it follows rather than to what comes next.
+        const at = positionAt(round, i);
         steps.push(
           ...expandExercise(exercise, blockIndex, memberKey, member.configOverride, {
             index: round + 1,
             total: block.rounds,
-          }),
+          }).map((step): RunnerStep => ({ ...step, circuit: at })),
         );
         const isLastMember = i === members.length - 1;
         if (!isLastMember && block.restBetweenExercisesSec) {
@@ -437,6 +483,7 @@ export function buildSteps(workout: Workout, exercises: Exercise[]): RunnerStep[
             kind: 'rest',
             blockIndex,
             memberKey: `${blockIndex}:circuit-rest`,
+            circuit: at,
             exerciseId: exercise.id,
             standalone: false,
             seconds: block.restBetweenExercisesSec,
@@ -449,6 +496,7 @@ export function buildSteps(workout: Workout, exercises: Exercise[]): RunnerStep[
           kind: 'rest',
           blockIndex,
           memberKey: `${blockIndex}:circuit-rest`,
+          circuit: positionAt(round, members.length - 1),
           exerciseId: members[0].exercise.id,
           standalone: false,
           seconds: block.restBetweenRoundsSec,

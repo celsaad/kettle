@@ -151,6 +151,10 @@
       "replacing": "For the rest of {{name}}",
       "dismiss": "Keep the current exercise"
     },
+    "circuit": {
+      "crumb": "CIRCUIT · ROUND {{index}} OF {{total}}",
+      "accessibility": "Circuit, round {{index}} of {{total}}, exercise {{member}} of {{memberTotal}}"
+    },
     "countingUp": "counting up",
     "stepperAccessibility": "{{label}}: {{value}}. Tap to enter an exact value.",
     "complete": {

@@ -256,6 +256,55 @@ describe('circuits', () => {
     ]);
   });
 
+  // What the runner's circuit crumb reads. `setIndex` already carries the round, but nothing carried
+  // the place in the round-robin, which is the half of "where am I" the interleaving destroys.
+  it('stamps every circuit step with its round and its place in the round-robin', () => {
+    const steps = buildSteps(workoutOf(circuit()), exercises);
+    const work = steps.filter((step) => step.kind !== 'rest');
+    expect(work.map((step) => step.circuit)).toEqual([
+      { round: 1, rounds: 3, member: 1, memberTotal: 2 },
+      { round: 1, rounds: 3, member: 2, memberTotal: 2 },
+      { round: 2, rounds: 3, member: 1, memberTotal: 2 },
+      { round: 2, rounds: 3, member: 2, memberTotal: 2 },
+      { round: 3, rounds: 3, member: 1, memberTotal: 2 },
+      { round: 3, rounds: 3, member: 2, memberTotal: 2 },
+    ]);
+  });
+
+  // A rest belongs to the work it follows: mid-circuit, what you've done is the honest answer, and a
+  // between-rounds rest that already claimed the next round would put the crumb ahead of the runner.
+  it('gives a circuit rest the position of the work it follows', () => {
+    const steps = buildSteps(workoutOf(circuit()), exercises);
+    const rests = steps.flatMap((step) => (step.kind === 'rest' ? [[step.seconds, step.circuit]] : []));
+    expect(rests).toEqual([
+      [15, { round: 1, rounds: 3, member: 1, memberTotal: 2 }],
+      [60, { round: 1, rounds: 3, member: 2, memberTotal: 2 }],
+      [15, { round: 2, rounds: 3, member: 1, memberTotal: 2 }],
+      [60, { round: 2, rounds: 3, member: 2, memberTotal: 2 }],
+      [15, { round: 3, rounds: 3, member: 1, memberTotal: 2 }],
+    ]);
+  });
+
+  // The numbering is over the members that resolved, not over what the YAML listed — otherwise a
+  // circuit naming a deleted exercise reads "exercise 2 of 3" with only two exercises in it.
+  it('numbers members over the ones that resolved, skipping a missing exercise', () => {
+    const withGap: Workout['blocks'][number] = {
+      kind: 'circuit',
+      rounds: 1,
+      members: [{ exerciseId: 'pushups' }, { exerciseId: 'nope' }, { exerciseId: 'lsit' }],
+    };
+    const work = buildSteps(workoutOf(withGap), exercises).filter((step) => step.kind !== 'rest');
+    expect(work.map((step) => step.circuit)).toEqual([
+      { round: 1, rounds: 1, member: 1, memberTotal: 2 },
+      { round: 1, rounds: 1, member: 2, memberTotal: 2 },
+    ]);
+  });
+
+  it('leaves a step outside a circuit unstamped', () => {
+    const steps = buildSteps(workoutOf(single('pushups')), exercises);
+    expect(steps.every((step) => step.circuit === undefined)).toBe(true);
+  });
+
   // Two rounds against lsit's own `sets: 3`, so the total can only have come from the circuit.
   it('takes the total from the circuit rounds, not from the member own sets', () => {
     const pair: Workout['blocks'][number] = {

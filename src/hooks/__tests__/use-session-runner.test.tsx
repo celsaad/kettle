@@ -64,34 +64,67 @@ function resetStore() {
     entries: [],
   };
   mockCompleted = false;
+  mockPriorSessions = [];
 }
 
-jest.mock('@/state/session-history-store', () => ({
-  useSessionHistoryStore: (selector: (state: unknown) => unknown) =>
-    selector({
-      startSession: () => mockSession,
-      logEntry: (current: Session, entry: SessionEntry) => {
-        mockSession = { ...current, entries: [...current.entries, entry] };
-        return mockSession;
-      },
-      replaceEntry: (current: Session, index: number, entry: SessionEntry) => {
-        mockSession = {
-          ...current,
-          entries: current.entries.map((existing, position) => (position === index ? entry : existing)),
-        };
-        return mockSession;
-      },
-      removeLastEntry: (current: Session) => {
-        mockSession = { ...current, entries: current.entries.slice(0, -1) };
-        return mockSession;
-      },
-      completeSession: (current: Session) => {
-        mockCompleted = true;
-        mockSession = { ...current, endedAt: new Date().toISOString() };
-        return mockSession;
-      },
-    }),
+const mockSetTargetWeightKg = jest.fn(() => Promise.resolve());
+jest.mock('@/state/library-store', () => ({
+  useLibraryStore: { getState: () => ({ setTargetWeightKg: mockSetTargetWeightKg }) },
 }));
+
+jest.mock('@/state/session-history-store', () => ({
+  // Both call shapes, because the runner uses both: the hook form for actions, and `getState()` for
+  // the one-off history snapshot it takes at session start without subscribing.
+  useSessionHistoryStore: Object.assign((selector: (state: unknown) => unknown) => selector(mockStoreState()), {
+    getState: () => mockStoreState(),
+  }),
+}));
+
+/** The log the runner snapshots for "last time" and the live PR marker. Set per test. */
+let mockPriorSessions: Session[] = [];
+
+/**
+ * Keeps the in-flight session in `sessions` as the runner writes to it, which is what the real store
+ * does (`logEntry`/`replaceEntry` map over `sessions`). The stand-in used to leave `sessions` alone,
+ * so no test here could have caught a history read that saw the session it was in the middle of.
+ */
+function syncLiveSession() {
+  mockPriorSessions = mockPriorSessions.map((session) => (session.id === mockSession.id ? mockSession : session));
+}
+
+function mockStoreState() {
+  return {
+    sessions: mockPriorSessions,
+    startSession: () => {
+      mockPriorSessions = [mockSession, ...mockPriorSessions];
+      return mockSession;
+    },
+    logEntry: (current: Session, entry: SessionEntry) => {
+      mockSession = { ...current, entries: [...current.entries, entry] };
+      syncLiveSession();
+      return mockSession;
+    },
+    replaceEntry: (current: Session, index: number, entry: SessionEntry) => {
+      mockSession = {
+        ...current,
+        entries: current.entries.map((existing, position) => (position === index ? entry : existing)),
+      };
+      syncLiveSession();
+      return mockSession;
+    },
+    removeLastEntry: (current: Session) => {
+      mockSession = { ...current, entries: current.entries.slice(0, -1) };
+      syncLiveSession();
+      return mockSession;
+    },
+    completeSession: (current: Session) => {
+      mockCompleted = true;
+      mockSession = { ...current, endedAt: new Date().toISOString() };
+      syncLiveSession();
+      return mockSession;
+    },
+  };
+}
 
 const exercises: Exercise[] = [
   { id: 'burpees', name: 'Burpees', type: 'hiit', config: { workSec: 40, restSec: 20, rounds: 3 } },
@@ -662,5 +695,207 @@ describe('addRestSeconds', () => {
     expect(mockScheduleNotification).toHaveBeenCalled();
     const seconds = mockScheduleNotification.mock.calls.at(-1)?.[2];
     expect(seconds).toBe(60);
+  });
+});
+
+/**
+ * "Last time" on the set row, and the live marker beside it. Both read a snapshot of the log taken at
+ * session start, and the snapshot is the whole design: the runner writes every set straight through
+ * the store, so a live read would answer "last time" with the set finished two minutes ago.
+ */
+describe('last time on the set row', () => {
+  const finished = (id: string, entries: Session['entries']): Session => ({
+    version: 1,
+    id,
+    workout: 'w',
+    program: null,
+    programWeek: null,
+    programDay: null,
+    startedAt: '2026-07-20T09:00:00.000Z',
+    endedAt: '2026-07-20T10:00:00.000Z',
+    entries,
+  });
+
+  it('shows nothing on a first-ever session', async () => {
+    const { result } = await mount(workoutOf(single('pullups')));
+
+    expect(result.current.previousSet).toBeNull();
+  });
+
+  it('shows the matching set from the last time the exercise was trained', async () => {
+    mockPriorSessions = [
+      finished('older', [
+        {
+          exercise: 'pullups',
+          type: 'reps',
+          sets: [
+            { reps: 8, weightKg: 15, restTakenSec: 90 },
+            { reps: 6, weightKg: 15, restTakenSec: 90 },
+          ],
+        },
+      ]),
+    ];
+
+    const { result } = await mount(workoutOf(single('pullups')));
+
+    expect(result.current.previousSet).toEqual({ kind: 'reps', reps: 8, weightKg: 15 });
+  });
+
+  /**
+   * The trap the issue names: `persistMember` writes this session's entry to the store the moment a
+   * set is logged, so a naive lookup answers "last time" with the set from two minutes ago.
+   *
+   * **What this actually pins is `previousSetFor`'s unfinished-session skip**, which is the defence
+   * that carries the correctness. Verified by mutation, and the result was not what the first draft of
+   * this comment claimed: reintroducing a live store read on its own leaves the test green, because
+   * the in-flight session has no `ended_at` and is skipped either way. Only removing *both* the
+   * snapshot and that skip fails it — reporting the 40 kg just logged instead of last week's 15.
+   *
+   * The snapshot's own job is the half no assertion here can see: reading the store live would
+   * subscribe the runner to a store rewritten on every logged set, re-rendering the whole session
+   * screen mid-workout. That's a performance contract, not a behavioural one.
+   */
+  it('does not change when a set is logged mid-session', async () => {
+    mockPriorSessions = [
+      finished('older', [{ exercise: 'pullups', type: 'reps', sets: [{ reps: 8, weightKg: 15, restTakenSec: 90 }] }]),
+    ];
+
+    const { result } = await mount(workoutOf(single('pullups')));
+    await press(() => result.current.setWeightKg(40));
+    await press(result.current.logSet);
+    // Past the trailing rest, onto set 2 of the same exercise.
+    await press(result.current.skipRest);
+
+    expect(result.current.step?.kind).toBe('reps');
+    expect(result.current.previousSet).toEqual({ kind: 'reps', reps: 8, weightKg: 15 });
+  });
+
+  it('carries a hold set to the hold screen', async () => {
+    mockPriorSessions = [
+      finished('older', [{ exercise: 'lsit', type: 'timed_hold', sets: [{ holdSec: 22, restTakenSec: 60 }] }]),
+    ];
+
+    const { result } = await mount(workoutOf(single('lsit')));
+
+    expect(result.current.previousSet).toEqual({ kind: 'hold', holdSec: 22 });
+  });
+});
+
+describe('the live personal-best marker', () => {
+  const benchLog = (weightKg: number): Session[] => [
+    {
+      version: 1,
+      id: 'older',
+      workout: 'w',
+      program: null,
+      programWeek: null,
+      programDay: null,
+      startedAt: '2026-07-20T09:00:00.000Z',
+      endedAt: '2026-07-20T10:00:00.000Z',
+      entries: [{ exercise: 'pullups', type: 'reps', sets: [{ reps: 6, weightKg, restTakenSec: 90 }] }],
+    },
+  ];
+
+  // A first-ever entry is not a record — same rule as sessionRecords, so the set row and the
+  // completion screen can't disagree.
+  it('stays quiet with nothing to beat', async () => {
+    const { result } = await mount(workoutOf(single('pullups')));
+    await press(() => result.current.setWeightKg(200));
+
+    expect(result.current.beatsPersonalBest).toBe(false);
+  });
+
+  it('stays quiet on a tie', async () => {
+    mockPriorSessions = benchLog(20);
+    const { result } = await mount(workoutOf(single('pullups')));
+    await press(() => result.current.setWeightKg(20));
+
+    expect(result.current.beatsPersonalBest).toBe(false);
+  });
+
+  it('marks a load above anything ever logged', async () => {
+    mockPriorSessions = benchLog(20);
+    const { result } = await mount(workoutOf(single('pullups')));
+    await press(() => result.current.setWeightKg(22.5));
+
+    expect(result.current.beatsPersonalBest).toBe(true);
+  });
+
+  /**
+   * The bar rises with the session's own best, so three sets at a new top weight don't all claim a
+   * PR — only the set that actually moved the number. Without that, adding 2.5 kg and doing your
+   * three sets would light up three times.
+   */
+  it('does not re-mark the following set at the same new weight', async () => {
+    mockPriorSessions = benchLog(20);
+    const { result } = await mount(workoutOf(single('pullups')));
+
+    await press(() => result.current.setWeightKg(25));
+    expect(result.current.beatsPersonalBest).toBe(true);
+
+    await press(result.current.logSet);
+    await press(result.current.skipRest);
+
+    // Load carries across sets, so set 2 is at 25 kg too — matched, not beaten.
+    expect(result.current.weightKg).toBe(25);
+    expect(result.current.beatsPersonalBest).toBe(false);
+  });
+
+  it('marks again once the load goes up mid-session', async () => {
+    mockPriorSessions = benchLog(20);
+    const { result } = await mount(workoutOf(single('pullups')));
+
+    await press(() => result.current.setWeightKg(25));
+    await press(result.current.logSet);
+    await press(result.current.skipRest);
+    await press(() => result.current.setWeightKg(27.5));
+
+    expect(result.current.beatsPersonalBest).toBe(true);
+  });
+});
+
+describe(`adopting last time's load`, () => {
+  it('takes the load and writes it back as the new target', async () => {
+    mockPriorSessions = [
+      {
+        version: 1,
+        id: 'older',
+        workout: 'w',
+        program: null,
+        programWeek: null,
+        programDay: null,
+        startedAt: '2026-07-20T09:00:00.000Z',
+        endedAt: '2026-07-20T10:00:00.000Z',
+        entries: [{ exercise: 'pullups', type: 'reps', sets: [{ reps: 6, weightKg: 32.5, restTakenSec: 90 }] }],
+      },
+    ];
+
+    const { result } = await mount(workoutOf(single('pullups')));
+    await press(result.current.adoptPreviousLoad);
+
+    expect(result.current.weightKg).toBe(32.5);
+    // Kilograms straight through, with no display round trip — see setTargetWeightKg.
+    expect(mockSetTargetWeightKg).toHaveBeenCalledWith('pullups', 32.5);
+  });
+
+  it('does nothing when last time was bodyweight', async () => {
+    mockPriorSessions = [
+      {
+        version: 1,
+        id: 'older',
+        workout: 'w',
+        program: null,
+        programWeek: null,
+        programDay: null,
+        startedAt: '2026-07-20T09:00:00.000Z',
+        endedAt: '2026-07-20T10:00:00.000Z',
+        entries: [{ exercise: 'dips', type: 'reps', sets: [{ reps: 10, restTakenSec: 0 }] }],
+      },
+    ];
+
+    const { result } = await mount(workoutOf(single('dips')));
+    await press(result.current.adoptPreviousLoad);
+
+    expect(mockSetTargetWeightKg).not.toHaveBeenCalled();
   });
 });

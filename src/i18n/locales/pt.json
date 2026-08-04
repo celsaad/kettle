@@ -195,6 +195,8 @@
       "increaseLoad": "Aumentar carga",
       "rpe": "RPE",
       "rpeOption": "RPE {{value}}",
+      "adoptPrevious": "Usar a carga da última vez, {{weight}} {{unit}}, e salvar como novo alvo",
+      "beatsBest": "Supera seu recorde",
       "logSet": "Registrar série → Descanso",
       "logSetNoRest": "Registrar série →",
       "repsDone": "Reps feitas",
@@ -509,6 +511,11 @@
     "intervalsWithReps": "{{intervals}} · {{reps}}",
     "circuitShape": "{{rounds}} · {{between}}s / {{rounds_rest}}s de descanso",
     "adHocSession": "Sessão avulsa",
+    "previous": {
+      "loaded": "Da última vez · {{weight}} × {{reps}}",
+      "bodyweight": "Da última vez · {{reps}}",
+      "hold": "Da última vez · {{seconds}}"
+    },
     "record": {
       "heaviestSet": "Mais pesado até hoje · {{weight}} × {{reps}}",
       "mostReps": "Mais repetições até hoje · {{reps}}",

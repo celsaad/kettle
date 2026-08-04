@@ -10,6 +10,8 @@ import {
   scheduleStepCompleteNotification,
 } from '@/hooks/safe-notifications';
 import { useSessionSounds } from '@/hooks/use-session-sounds';
+import { useLibraryStore } from '@/state/library-store';
+import { personalBestFor, previousSetFor } from '@/state/selectors';
 import { useSessionHistoryStore } from '@/state/session-history-store';
 
 // The step model and workout→steps expansion live in session-steps.ts so they can be tested without
@@ -170,6 +172,19 @@ export function useSessionRunner(
   const [weightKg, setWeightKg] = useState(0);
   const [roundsCompleted, setRoundsCompleted] = useState(0);
   const [extraReps, setExtraReps] = useState(0);
+
+  /**
+   * The log as it stood when this session started, for "last time" and the live PR marker.
+   *
+   * **Snapshotted, never read live.** Every logged set writes through the store (`persistMember` →
+   * `logEntry`), so a live read would do two wrong things at once: show the set finished two minutes
+   * ago as "last time", and re-render the whole runner on every set. `getState()` is not a hook, so
+   * this reads without subscribing, and a lazy initialiser runs it exactly once — during the first
+   * render, which is before the `startSession` effect below has prepended the in-flight session.
+   * (`previousSetFor` and `personalBestFor` skip unfinished sessions anyway, so the exclusion holds
+   * from both ends.)
+   */
+  const [priorSessions] = useState(() => useSessionHistoryStore.getState().sessions);
 
   const step = steps[stepIndex];
   /**
@@ -680,6 +695,75 @@ export function useSessionRunner(
     onComplete(sessionRef.current);
   }, [step, commitCurrentStep, completeSession, onComplete]);
 
+  /** What this set looked like last time, matched on set number. Null on interval and rest steps. */
+  const previousSet = useMemo(
+    () =>
+      step?.kind === 'reps' || step?.kind === 'hold' ? previousSetFor(priorSessions, step.exerciseId, step.setIndex) : null,
+    [priorSessions, step],
+  );
+
+  /**
+   * The bar the live marker measures against: the best ever logged, raised by anything better this
+   * session has already put up.
+   *
+   * That second half is what stops three sets at a new top weight all claiming a PR — only the set
+   * that actually moves the number does. Keyed on `step`, which is the only thing that changes when a
+   * set is committed (`commitCurrentStep` pushes to the ref and advances in the same tick), so reading
+   * the ref here recomputes at exactly the right moments.
+   */
+  const bestToBeat = useMemo(() => {
+    if (step?.kind !== 'reps' && step?.kind !== 'hold') return null;
+    const best = personalBestFor(priorSessions, step.exerciseId);
+    const raise = (a: number | undefined, b: number | undefined) =>
+      a === undefined ? b : b === undefined ? a : Math.max(a, b);
+
+    const logged = memberSetsRef.current[step.memberKey] ?? [];
+    const holds = logged.flatMap((set) => ('holdSec' in set ? [set.holdSec] : []));
+    const loaded = logged.flatMap((set) => ('reps' in set && set.weightKg ? [set.weightKg] : []));
+    const bodyweight = logged.flatMap((set) => ('reps' in set && !set.weightKg ? [set.reps] : []));
+
+    return {
+      weightKg: raise(best.heaviestSetKg, loaded.length ? Math.max(...loaded) : undefined),
+      reps: raise(best.mostReps, bodyweight.length ? Math.max(...bodyweight) : undefined),
+      holdSec: raise(best.longestHoldSec, holds.length ? Math.max(...holds) : undefined),
+    };
+  }, [priorSessions, step]);
+
+  /**
+   * Whether what's on screen right now would beat everything ever logged for this exercise.
+   *
+   * Prospective rather than retrospective: it marks the set *while* you're on it, which needs no
+   * transient and no new timing in the runner's tick path — the completion screen owns the after-the-
+   * fact celebration. Undefined on either side means nothing to beat, and a first-ever entry is not a
+   * record, matching `sessionRecords`. Strictly greater, so a tie isn't one either.
+   */
+  const beatsPersonalBest = (() => {
+    if (!bestToBeat || !step) return false;
+    if (step.kind === 'hold') return bestToBeat.holdSec !== undefined && holdElapsedSec > bestToBeat.holdSec;
+    // Bodyweight competes on reps, loaded on load — the same split `entryBest` makes, and for the same
+    // reason: a bodyweight set logs no `weightKg` at all.
+    if (weightKg > 0) return bestToBeat.weightKg !== undefined && weightKg > bestToBeat.weightKg;
+    return bestToBeat.reps !== undefined && reps > bestToBeat.reps;
+  })();
+
+  /**
+   * Takes last time's load as this set's, and writes it back as the exercise's new target so the next
+   * session starts there without a trip to the editor.
+   *
+   * Reps are deliberately not adopted: they re-seed from the target every set (see the step-change
+   * block above) because varying reps is the normal thing being logged, and pinning last week's would
+   * fight double progression.
+   *
+   * `getState()` rather than a subscription — the runner has no reason to re-render when the library
+   * changes, least of all as a result of its own write. The value is already kilograms, straight off a
+   * logged set, so it goes to the store unconverted (see `setTargetWeightKg`).
+   */
+  const adoptPreviousLoad = useCallback(() => {
+    if (step?.kind !== 'reps' || previousSet?.kind !== 'reps' || !previousSet.weightKg) return;
+    setWeightKg(previousSet.weightKg);
+    useLibraryStore.getState().setTargetWeightKg(step.exerciseId, previousSet.weightKg);
+  }, [step, previousSet]);
+
   const addRestSeconds = useCallback(
     (amount: number) => {
       stepEndSecRef.current = Math.max(0, stepEndSecRef.current + amount);
@@ -716,6 +800,9 @@ export function useSessionRunner(
     // to be safe to assume one always did; back-to-back sets (rest_sec: 0) emit no rest step at all,
     // so the label has to ask rather than promise.
     restFollows: steps[stepIndex + 1]?.kind === 'rest',
+    previousSet,
+    beatsPersonalBest,
+    adoptPreviousLoad,
     doneSet: advance,
     logSet: advance,
     skipRest: advance,

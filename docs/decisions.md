@@ -446,6 +446,31 @@ decision assembled across several commits. Open work belongs in the sections at 
     it is a *local* notification — nothing about it may grow a transport without breaking the
     zero-data Play declaration.
 
+- ✅ **"Last time" on the set row: what adopt writes, and what the snapshot is actually for.** Three
+  constraints that outlive the commit, in rising order of how easily they get undone.
+
+  - **The adopt control writes the library's *base* `target_weight`, and is invisible under a program
+    week that overrides it.** `resolveWorkoutForWeek` hands the runner exercises with the week's
+    overrides already applied, so a week carrying `target_weight` wins over anything written to the
+    base exercise — the adopt takes effect in the session and then appears to do nothing next week.
+    Accepted rather than solved: the published example program overrides `sets`, not `target_weight`,
+    and the alternative is writing into the program's `overrides`, which are partial *raw* snake_case
+    patches (see the note in `AGENTS.md`) — a much larger change for a corner. If a program that
+    periodises load by week ever ships, this is the thing to revisit.
+  - **Adopt takes the load, never the reps.** Reps re-seed from the target on every set because
+    varying reps is the normal thing being logged; pinning last week's would fight double
+    progression, which is the progression model the `reps` config exists to express.
+  - **The snapshot is for the subscription, not for correctness — and the test can only see one of
+    those.** The runner reads the session log once at session start via `getState()`. Two separate
+    things defend "last time" against reporting the set you finished two minutes ago: this snapshot,
+    and `previousSetFor` skipping sessions with no `ended_at`. Mutation testing settled which is
+    load-bearing, and the answer was not the expected one — reintroducing a live store read leaves
+    every test green, because the in-flight session is unfinished and gets skipped either way. Only
+    removing *both* fails. What the snapshot uniquely buys is not subscribing to a store that is
+    rewritten on every logged set, which would re-render the whole session screen mid-workout; no
+    assertion in the suite can observe that, so it is recorded here instead.
+
+
 ---
 
 

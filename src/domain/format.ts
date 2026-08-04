@@ -149,6 +149,23 @@ export function formatOneRepMax(weight: string): string {
   return t('format.oneRepMax', { weight });
 }
 
+/**
+ * What was logged for this set last time, as data — see `previousSetFor`.
+ *
+ * `weight` arrives as a finished string for the same reason `RecordResult`'s does: this module can't
+ * reach the display-unit preference, so the view converts and hands the result down. Absent means the
+ * set was bodyweight, which reads differently rather than as "0 kg".
+ */
+export type PreviousSetResult = { kind: 'reps'; reps: number; weight?: string } | { kind: 'hold'; holdSec: number };
+
+export function formatPreviousSet(result: PreviousSetResult): string {
+  if (result.kind === 'hold') return t('format.previous.hold', { seconds: t('format.seconds', { n: result.holdSec }) });
+  const reps = t('format.rep', { count: result.reps });
+  return result.weight
+    ? t('format.previous.loaded', { weight: result.weight, reps })
+    : t('format.previous.bodyweight', { reps });
+}
+
 /** A circuit block's configuration, as data — see `circuitShape`. */
 export type CircuitShape = { rounds: number; restBetweenExercisesSec: number; restBetweenRoundsSec: number };
 

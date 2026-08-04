@@ -12,6 +12,19 @@ type LibraryStoreState = {
   replaceLibrary: (library: Library) => Promise<void>;
   /** Adds or updates (by id) a single exercise and persists the library. */
   saveExercise: (exercise: Exercise) => Promise<void>;
+  /**
+   * Sets a `reps` exercise's target load, in kilograms, and persists the library. The runner's
+   * one-tap adopt writes through here.
+   *
+   * **Kilograms in, kilograms out, with no display round trip.** The caller has a value straight off
+   * a logged set, which is already stored units — sending it through the exercise form's path instead
+   * would reintroduce the lossy conversion `previousWeightKg` exists to prevent
+   * (`domain/exercise-form.ts`), turning an adopted 100 kg into 100.02 for a pound user.
+   *
+   * A no-op for an unknown id or a non-`reps` exercise: only `RepsConfig` has a target weight, and the
+   * caller is a set row that can't reach the others.
+   */
+  setTargetWeightKg: (exerciseId: string, weightKg: number) => Promise<void>;
   /** Adds or updates (by id) a single workout and persists the library. */
   saveWorkout: (workout: Workout) => Promise<void>;
   /** Removes a workout by id and persists the library. */
@@ -48,6 +61,12 @@ export const useLibraryStore = create<LibraryStoreState>((set, get) => ({
     const next = { ...current, exercises };
     await saveLibrary(next);
     set({ library: next });
+  },
+  setTargetWeightKg: async (exerciseId, weightKg) => {
+    const current = get().library;
+    const exercise = current?.exercises.find((candidate) => candidate.id === exerciseId);
+    if (!current || exercise?.type !== 'reps') return;
+    await get().saveExercise({ ...exercise, config: { ...exercise.config, targetWeightKg: weightKg } });
   },
   saveWorkout: async (workout) => {
     const current = get().library;

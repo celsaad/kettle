@@ -45,20 +45,27 @@ let mockSession: Session;
 let mockSessions: Session[] = [];
 const mockAbandonActiveSession = jest.fn();
 jest.mock('@/state/session-history-store', () => ({
-  useSessionHistoryStore: (selector: (state: unknown) => unknown) =>
-    selector({
-      sessions: mockSessions,
-      startSession: () => mockSession,
-      logEntry: (current: Session, entry: SessionEntry) => ({ ...current, entries: [...current.entries, entry] }),
-      replaceEntry: (current: Session, index: number, entry: SessionEntry) => ({
-        ...current,
-        entries: current.entries.map((existing, position) => (position === index ? entry : existing)),
-      }),
-      removeLastEntry: (current: Session) => current,
-      completeSession: (current: Session) => current,
-      abandonActiveSession: mockAbandonActiveSession,
-    }),
+  // Both call shapes: the hook form for actions and the completion screen's `sessions`, and
+  // `getState()` for the history snapshot the runner takes at session start without subscribing.
+  useSessionHistoryStore: Object.assign((selector: (state: unknown) => unknown) => selector(mockStoreState()), {
+    getState: () => mockStoreState(),
+  }),
 }));
+
+function mockStoreState() {
+  return {
+    sessions: mockSessions,
+    startSession: () => mockSession,
+    logEntry: (current: Session, entry: SessionEntry) => ({ ...current, entries: [...current.entries, entry] }),
+    replaceEntry: (current: Session, index: number, entry: SessionEntry) => ({
+      ...current,
+      entries: current.entries.map((existing, position) => (position === index ? entry : existing)),
+    }),
+    removeLastEntry: (current: Session) => current,
+    completeSession: (current: Session) => current,
+    abandonActiveSession: mockAbandonActiveSession,
+  };
+}
 
 const exercises: Exercise[] = [
   { id: 'pullups', name: 'Pull-ups', type: 'reps', config: { sets: 3, targetRepsMin: 6, restSec: 90 } },

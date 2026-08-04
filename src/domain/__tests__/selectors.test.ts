@@ -14,6 +14,8 @@ import {
   historySessionsView,
   historyStats,
   nextWeekAfter,
+  personalBestFor,
+  previousSetFor,
   recentSessionsView,
   sessionEntryResult,
   sessionRecords,
@@ -618,5 +620,155 @@ describe('sessionRecords', () => {
     expect(record).toMatchObject({ kind: 'heaviestSet', weightKg: 100, reps: 1 });
     if (record.kind !== 'heaviestSet') throw new Error('expected a heaviestSet record');
     expect(record.oneRepMaxKg).toBeCloseTo(114, 5);
+  });
+});
+
+describe('previousSetFor', () => {
+  const benchSession = (startedAt: string, sets: { reps: number; weightKg?: number }[]): Session =>
+    makeSession({
+      startedAt,
+      id: `sess-${startedAt}`,
+      entries: [{ exercise: 'bench', type: 'reps', sets: sets.map((set) => ({ ...set, restTakenSec: 120 })) }],
+    });
+
+  it('has nothing to show on an empty log', () => {
+    expect(previousSetFor([], 'bench', 1)).toBeNull();
+  });
+
+  it('has nothing to show for an exercise never logged', () => {
+    expect(previousSetFor([benchSession('2026-07-17T09:00:00.000Z', [{ reps: 5, weightKg: 100 }])], 'squat', 1)).toBeNull();
+  });
+
+  // Set 3 shows set 3 of last time, not a summary of the whole entry — the number you are about to
+  // try to beat is the one from the same position in the session.
+  it('matches on set index', () => {
+    const session = benchSession('2026-07-17T09:00:00.000Z', [
+      { reps: 8, weightKg: 100 },
+      { reps: 7, weightKg: 100 },
+      { reps: 5, weightKg: 95 },
+    ]);
+
+    expect(previousSetFor([session], 'bench', 3)).toEqual({ kind: 'reps', reps: 5, weightKg: 95 });
+  });
+
+  // You did four sets today but only three last time: the honest answer for set 4 is what you were
+  // lifting by the end of that session, not nothing at all.
+  it('falls back to the last set when the previous entry was shorter', () => {
+    const session = benchSession('2026-07-17T09:00:00.000Z', [
+      { reps: 8, weightKg: 100 },
+      { reps: 6, weightKg: 100 },
+    ]);
+
+    expect(previousSetFor([session], 'bench', 4)).toEqual({ kind: 'reps', reps: 6, weightKg: 100 });
+  });
+
+  // Absent, not 0 — `commitCurrentStep` writes `weightKg: … || undefined`, and the set row reads the
+  // difference to choose between "60 kg × 8" and a bodyweight line.
+  it('carries a bodyweight set with no weight rather than a zero one', () => {
+    const session = makeSession({
+      startedAt: '2026-07-17T09:00:00.000Z',
+      entries: [{ exercise: 'pullups', type: 'reps', sets: [{ reps: 12, restTakenSec: 90 }] }],
+    });
+
+    expect(previousSetFor([session], 'pullups', 1)).toEqual({ kind: 'reps', reps: 12, weightKg: undefined });
+  });
+
+  it('reads a hold set', () => {
+    const session = makeSession({
+      startedAt: '2026-07-17T09:00:00.000Z',
+      entries: [
+        {
+          exercise: 'plank',
+          type: 'timed_hold',
+          sets: [
+            { holdSec: 60, restTakenSec: 60 },
+            { holdSec: 45, restTakenSec: 60 },
+          ],
+        },
+      ],
+    });
+
+    expect(previousSetFor([session], 'plank', 2)).toEqual({ kind: 'hold', holdSec: 45 });
+  });
+
+  // The newest *finished* one. An abandoned session is not part of the log the app reports on, and
+  // letting one answer "last time" would quote a set from a workout the user walked out of.
+  it('skips unfinished sessions and takes the most recent finished one', () => {
+    const abandoned = makeSession({
+      startedAt: '2026-07-23T09:00:00.000Z',
+      id: 'sess-abandoned',
+      endedAt: null,
+      entries: [{ exercise: 'bench', type: 'reps', sets: [{ reps: 1, weightKg: 200, restTakenSec: 120 }] }],
+    });
+    const older = benchSession('2026-07-17T09:00:00.000Z', [{ reps: 5, weightKg: 100 }]);
+
+    expect(previousSetFor([abandoned, older], 'bench', 1)).toEqual({ kind: 'reps', reps: 5, weightKg: 100 });
+  });
+
+  it('has nothing to show for interval work, which has no per-set number to carry', () => {
+    const session = makeSession({
+      startedAt: '2026-07-17T09:00:00.000Z',
+      entries: [{ exercise: 'burpees', type: 'amrap', roundsCompleted: 9 }],
+    });
+
+    expect(previousSetFor([session], 'burpees', 1)).toBeNull();
+  });
+});
+
+describe('personalBestFor', () => {
+  it('has no best for an exercise never logged', () => {
+    expect(personalBestFor([], 'bench')).toEqual({
+      heaviestSetKg: undefined,
+      mostReps: undefined,
+      longestHoldSec: undefined,
+    });
+  });
+
+  it('reports the highest value across every finished session', () => {
+    const sessions = [
+      makeSession({
+        startedAt: '2026-07-24T09:00:00.000Z',
+        id: 'a',
+        entries: [{ exercise: 'bench', type: 'reps', sets: [{ reps: 5, weightKg: 95, restTakenSec: 120 }] }],
+      }),
+      makeSession({
+        startedAt: '2026-07-17T09:00:00.000Z',
+        id: 'b',
+        entries: [{ exercise: 'bench', type: 'reps', sets: [{ reps: 5, weightKg: 105, restTakenSec: 120 }] }],
+      }),
+    ];
+
+    expect(personalBestFor(sessions, 'bench').heaviestSetKg).toBe(105);
+  });
+
+  // The same split entryBest makes: a bodyweight exercise competes on reps, a loaded one on load. The
+  // marker and the completion screen have to agree about this, which is why they share the traversal.
+  it('keeps the loaded and bodyweight bests apart', () => {
+    const session = makeSession({
+      startedAt: '2026-07-17T09:00:00.000Z',
+      entries: [{ exercise: 'pullups', type: 'reps', sets: [{ reps: 14, restTakenSec: 90 }] }],
+    });
+
+    expect(personalBestFor([session], 'pullups')).toEqual({
+      heaviestSetKg: undefined,
+      mostReps: 14,
+      longestHoldSec: undefined,
+    });
+  });
+
+  it('ignores unfinished sessions', () => {
+    const abandoned = makeSession({
+      startedAt: '2026-07-23T09:00:00.000Z',
+      id: 'sess-abandoned',
+      endedAt: null,
+      entries: [{ exercise: 'plank', type: 'timed_hold', sets: [{ holdSec: 300, restTakenSec: 60 }] }],
+    });
+    const finished = makeSession({
+      startedAt: '2026-07-17T09:00:00.000Z',
+      id: 'sess-finished',
+      entries: [{ exercise: 'plank', type: 'timed_hold', sets: [{ holdSec: 60, restTakenSec: 60 }] }],
+    });
+
+    expect(personalBestFor([abandoned, finished], 'plank').longestHoldSec).toBe(60);
   });
 });

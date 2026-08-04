@@ -6,9 +6,11 @@ import { ThemedText } from '@/components/themed-text';
 import { SessionNextCard } from '@/components/session-next-card';
 import { SessionNumberPad } from '@/components/session-number-pad';
 import { RunnerColors, Spacing } from '@/constants/theme';
+import { formatPreviousSet } from '@/domain/format';
 import { fromDisplayWeight, toDisplayWeight, weightStep } from '@/domain/units';
 import type { RestPreview } from '@/hooks/use-session-runner';
 import { useUnitSystem } from '@/state/preferences-store';
+import type { PreviousSet } from '@/state/selectors';
 
 const RPE_OPTIONS = [7, 8, 9];
 
@@ -28,6 +30,11 @@ type Props = {
   next: RestPreview;
   /** Names the action button honestly: back-to-back sets (rest_sec: 0) have no rest step to promise. */
   restFollows: boolean;
+  /** This set number, last time this exercise was trained. Null on a first-ever session. */
+  previousSet?: PreviousSet | null;
+  /** True while what's on screen would beat everything ever logged for this exercise. */
+  beatsPersonalBest?: boolean;
+  onAdoptPrevious?: () => void;
   onPrev: () => void;
   onLogSet: () => void;
 };
@@ -47,6 +54,9 @@ export function SessionReps({
   notes,
   next,
   restFollows,
+  previousSet,
+  beatsPersonalBest,
+  onAdoptPrevious,
   onPrev,
   onLogSet,
 }: Props) {
@@ -62,6 +72,18 @@ export function SessionReps({
   const setDisplayWeight = (value: number) => onChangeWeightKg(fromDisplayWeight(Math.max(0, value), unitSystem));
   const unitLabel = t(unitSystem === 'imperial' ? 'units.lb' : 'units.kg');
   const spokenUnit = t(unitSystem === 'imperial' ? 'units.lbSpoken' : 'units.kgSpoken');
+
+  // Last time's load, in kilograms as logged — converted for display and for the spoken label below,
+  // never converted on the way back into the log. Absent means that set was bodyweight.
+  const previousLoadKg = previousSet?.kind === 'reps' ? previousSet.weightKg : undefined;
+  const previousLabel =
+    previousSet?.kind === 'reps'
+      ? formatPreviousSet({
+          kind: 'reps',
+          reps: previousSet.reps,
+          weight: previousLoadKg === undefined ? undefined : `${toDisplayWeight(previousLoadKg, unitSystem)} ${unitLabel}`,
+        })
+      : null;
 
   return (
     <View style={styles.container}>
@@ -85,6 +107,45 @@ export function SessionReps({
           <ThemedText type="small" style={styles.notes}>
             {notes}
           </ThemedText>
+        )}
+        {/*
+          The line the whole feature exists for: load used to be seeded from the library target and
+          carried only within a session, so progressive overload meant hand-editing exercises.yaml
+          between workouts. Absent entirely on a first-ever session rather than showing an empty
+          placeholder — there is nothing to say yet.
+
+          Pressable only when there is a load to adopt: a bodyweight set has no weight to take, and a
+          control that does nothing is worse than no control.
+        */}
+        {previousSet && (
+          <View style={styles.previousRow}>
+            {previousLoadKg !== undefined ? (
+              <Pressable
+                onPress={onAdoptPrevious}
+                accessibilityRole="button"
+                // The visible text is a value, not an action, so it can't name this control itself.
+                accessibilityLabel={t('session.reps.adoptPrevious', {
+                  weight: toDisplayWeight(previousLoadKg, unitSystem),
+                  unit: spokenUnit,
+                })}
+                style={styles.previousButton}>
+                <ThemedText type="small" style={styles.previousLabel}>
+                  {previousLabel}
+                </ThemedText>
+              </Pressable>
+            ) : (
+              <ThemedText type="small" style={[styles.previousLabel, styles.previousStatic]}>
+                {previousLabel}
+              </ThemedText>
+            )}
+            {beatsPersonalBest && (
+              <View style={styles.bestPill}>
+                <ThemedText type="code" style={styles.bestPillLabel}>
+                  {t('session.complete.recordBadge')}
+                </ThemedText>
+              </View>
+            )}
+          </View>
         )}
       </View>
 
@@ -279,6 +340,43 @@ const styles = StyleSheet.create({
     marginTop: 4,
     color: RunnerColors.textSecondary,
     fontStyle: 'italic',
+  },
+  previousRow: {
+    marginTop: Spacing.two,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+  },
+  // minHeight rather than height, so the target survives a raised accessibility text size — and
+  // justifyContent so the label stays centred in the taller box it makes.
+  previousButton: {
+    minHeight: 44,
+    justifyContent: 'center',
+    paddingRight: Spacing.two,
+  },
+  previousLabel: {
+    color: RunnerColors.textSecondary,
+  },
+  // The non-pressable variant carries the row's height instead, so a bodyweight set doesn't make the
+  // header jump relative to a loaded one.
+  previousStatic: {
+    minHeight: 44,
+    lineHeight: 44,
+  },
+  // The calm accent, matching the record pill on session-complete.tsx — both tokens carry measured
+  // ratios against RunnerColors.background (constants/theme.ts), and the warm accent is already spoken
+  // for by the log button. The "PR" text is what actually carries the meaning; colour only supports it.
+  bestPill: {
+    backgroundColor: RunnerColors.accentCalmSoft,
+    borderWidth: 1,
+    borderColor: 'rgba(63,130,192,0.4)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+  },
+  bestPillLabel: {
+    color: RunnerColors.accentCalmOnSoft,
+    letterSpacing: 1.4,
   },
   middle: {
     flex: 1,

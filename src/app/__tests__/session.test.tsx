@@ -198,6 +198,73 @@ describe('step-kind dispatch', () => {
 });
 
 /**
+ * The second breadcrumb line, which exists because a circuit's steps are interleaved: the exercise
+ * name says what you're doing and the header dots say which block, but between them nothing said
+ * that two more rounds of this were coming. The round is on screen; the place in the round-robin is
+ * carried by the dots, so it's the accessibility label that has both to assert against.
+ */
+describe('the circuit crumb', () => {
+  const circuitWorkout = aWorkout({
+    id: 'w',
+    name: 'Session',
+    blocks: [
+      {
+        kind: 'circuit',
+        rounds: 2,
+        restBetweenExercisesSec: 15,
+        members: [{ exerciseId: 'pullups' }, { exerciseId: 'lsit' }],
+      },
+    ],
+  });
+
+  it('names the round and the place in the round-robin', async () => {
+    await start(circuitWorkout);
+
+    expect(screen.getByText('CIRCUIT · ROUND 1 OF 2')).toBeTruthy();
+    expect(screen.getByLabelText('Circuit, round 1 of 2, exercise 1 of 2')).toBeTruthy();
+  });
+
+  it('follows the round-robin across members and rounds', async () => {
+    await start(circuitWorkout);
+
+    // Through the between-exercises rest, which keeps the position of the work it followed rather
+    // than jumping ahead to what's next.
+    await fireEvent.press(screen.getByText('Log set → Rest'));
+    expect(screen.getByLabelText('Circuit, round 1 of 2, exercise 1 of 2')).toBeTruthy();
+
+    await fireEvent.press(screen.getByText('Skip rest →'));
+    expect(screen.getByLabelText('Circuit, round 1 of 2, exercise 2 of 2')).toBeTruthy();
+
+    // No between-rounds rest configured, so the hold hands straight over to round 2.
+    await fireEvent.press(screen.getByText('Done set →'));
+    expect(screen.getByText('CIRCUIT · ROUND 2 OF 2')).toBeTruthy();
+    expect(screen.getByLabelText('Circuit, round 2 of 2, exercise 1 of 2')).toBeTruthy();
+  });
+
+  // The crumb reserves the header control's width with an invisible copy of its label, so the row
+  // below lines up with the row above. Two "Finish" strings in the tree is the cost, and this is what
+  // stops the real control getting lost among them.
+  it('keeps the finish control uniquely addressable beside the crumb spacer', async () => {
+    await start(circuitWorkout);
+
+    expect(screen.getByLabelText('Finish session?')).toBeTruthy();
+  });
+
+  it('shows nothing outside a circuit', async () => {
+    await start(workoutOf('pullups'));
+
+    expect(screen.queryByText(/CIRCUIT/)).toBeNull();
+  });
+
+  it('renders in the active locale', async () => {
+    await changeLanguage('pt');
+    await start(circuitWorkout);
+
+    expect(screen.getByText('CIRCUITO · RODADA 1 DE 2')).toBeTruthy();
+  });
+});
+
+/**
  * The hand-off the completion screen depends on: the runner passes the session it just finished
  * writing, because nothing else can. React unmounts the runner and the ref holding that `Session` on
  * the same tick, and `completeSession` has already cleared `activeSessionId` by then — so a screen

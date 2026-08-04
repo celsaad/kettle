@@ -18,7 +18,7 @@ import { useSessionHistoryStore } from '@/state/session-history-store';
 
 // The step model and workout→steps expansion live in session-steps.ts so they can be tested without
 // this file's native imports. Re-exported here because they're part of the runner's public surface.
-export type { IntervalVariant, RunnerStep } from '@/hooks/session-steps';
+export type { CircuitPosition, IntervalVariant, RunnerStep } from '@/hooks/session-steps';
 export { buildSteps } from '@/hooks/session-steps';
 
 import type { RunnerStep } from '@/hooks/session-steps';
@@ -958,6 +958,12 @@ export function useSessionRunner(
     // An ad-hoc session's "blocks" are the exercises added so far, which is what keeps the progress
     // dots meaningful; SessionProgressDots already degrades to nothing at zero.
     blockTotal: workout ? workout.blocks.length : adhocCountRef.current,
+    /**
+     * Where the current step sits in its circuit, or null outside one. Read straight off the step:
+     * a circuit's steps are interleaved rather than contiguous, so "which part of the circuit" isn't
+     * derivable from the index alone (see CircuitPosition).
+     */
+    circuit: step?.circuit ?? null,
     /** Null for an ad-hoc session — `formatSessionName` owns the stand-in, not this layer. */
     workoutName: workout?.name ?? null,
     isAdHoc: !workout,

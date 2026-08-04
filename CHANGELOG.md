@@ -38,6 +38,12 @@ counted, so cutting the next version is a version bump rather than a writing job
 - The exercise picker grew a search field, since adding offers the whole library rather than the
   handful a swap filters to.
 
+**A circuit says where you are in it.**
+
+- The runner's header carries a second line inside a circuit: which round you're on, and which
+  exercise of the round-robin. It stays put through the rests between exercises and between rounds,
+  so the answer doesn't disappear at the moment you have time to look for it.
+
 **The log can be corrected.**
 
 - Edit a logged set from History: reps, load and RPE; hold seconds; HIIT and AMRAP rounds; cardio
@@ -50,6 +56,11 @@ counted, so cutting the next version is a version bump rather than a writing job
 - The pitch leads with the mixed-session runner rather than with the file format.
 - Screenshots re-captured against a populated library, the runner leading.
 - The log is no longer described as append-only anywhere, because it no longer is.
+
+**Fixed.**
+
+- Deleting a program returns to Programs, instead of the empty "Program not found" screen it used to
+  leave behind.
 
 ### Play release notes
 

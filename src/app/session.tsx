@@ -336,34 +336,86 @@ function ActiveSession({
     <SafeAreaView style={styles.safeArea} edges={['top', 'bottom', 'left', 'right']}>
       <View style={styles.content}>
         <View style={styles.header}>
-          <ThemedText type="small" style={styles.workoutName} numberOfLines={1}>
-            {formatSessionName(runner.workoutName)}
-          </ThemedText>
-          <View style={styles.headerRight}>
-            <SessionProgressDots total={runner.blockTotal} activeIndex={runner.blockIndex} />
-            {/* Ad-hoc only: a pre-built workout already knows what it contains. Here it is the only
-                way to queue anything, so it has to be reachable mid-step and not just at the end. */}
-            {runner.isAdHoc && (
+          <View style={styles.headerRow}>
+            <ThemedText type="small" style={styles.workoutName} numberOfLines={1}>
+              {formatSessionName(runner.workoutName)}
+            </ThemedText>
+            <View style={styles.headerRight}>
+              <SessionProgressDots total={runner.blockTotal} activeIndex={runner.blockIndex} />
+              {/* Ad-hoc only: a pre-built workout already knows what it contains. Here it is the only
+                  way to queue anything, so it has to be reachable mid-step and not just at the end. */}
+              {runner.isAdHoc && (
+                <Pressable
+                  onPress={() => setAdding(true)}
+                  hitSlop={8}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('session.adhoc.addExercise')}>
+                  <ThemedText type="code" style={styles.finishLabel}>
+                    {t('session.adhoc.addShort')}
+                  </ThemedText>
+                </Pressable>
+              )}
               <Pressable
-                onPress={() => setAdding(true)}
+                onPress={confirmFinish}
                 hitSlop={8}
                 accessibilityRole="button"
-                accessibilityLabel={t('session.adhoc.addExercise')}>
+                accessibilityLabel={t('session.finish.confirmTitle')}>
                 <ThemedText type="code" style={styles.finishLabel}>
-                  {t('session.adhoc.addShort')}
+                  {t('session.finish.label')}
                 </ThemedText>
               </Pressable>
-            )}
-            <Pressable
-              onPress={confirmFinish}
-              hitSlop={8}
-              accessibilityRole="button"
-              accessibilityLabel={t('session.finish.confirmTitle')}>
-              <ThemedText type="code" style={styles.finishLabel}>
-                {t('session.finish.label')}
-              </ThemedText>
-            </Pressable>
+            </View>
           </View>
+          {/*
+            The circuit crumb: a second breadcrumb line, present only inside a circuit. It repeats the
+            row above's shape — label left, dot track right — because a circuit's steps are
+            interleaved, so the block dots say which block and the exercise name says what you're
+            doing, but neither said that two more rounds of this were coming.
+
+            One accessibility node, since split it would announce a bare "circuit, round 2 of 3"
+            followed by an unnamed progress bar duplicating the header's.
+          */}
+          {runner.circuit && (
+            <View
+              style={styles.headerRow}
+              accessible
+              accessibilityRole="text"
+              accessibilityLabel={t('session.circuit.accessibility', {
+                index: runner.circuit.round,
+                total: runner.circuit.rounds,
+                member: runner.circuit.member,
+                memberTotal: runner.circuit.memberTotal,
+              })}>
+              <ThemedText type="code" style={styles.circuitLabel} numberOfLines={1}>
+                {t('session.circuit.crumb', { index: runner.circuit.round, total: runner.circuit.rounds })}
+              </ThemedText>
+              <View style={styles.headerRight}>
+                <SessionProgressDots
+                  total={runner.circuit.memberTotal}
+                  activeIndex={runner.circuit.member - 1}
+                  tone="calm"
+                />
+                {/*
+                  An invisible copy of the "Finish" label, purely to reserve its width so the two dot
+                  tracks line up in a column instead of the lower one sliding under the control. Same
+                  component and style as the real one, which is the point: a hardcoded width is wrong
+                  in the next locale ("Encerrar") and at the next font scale, and measuring it with
+                  onLayout costs a frame of visible misalignment on entry.
+
+                  Never coexists with the ad-hoc ADD control beside it: an ad-hoc session has no
+                  workout, so it has no blocks and therefore no circuit.
+
+                  `aria-hidden` rather than `accessibilityElementsHidden`/`importantForAccessibility`,
+                  which react-native-web drops (docs/verifying-in-the-browser.md) — a browser check
+                  found the spacer still reachable, so the web build announced "Encerrar" twice. RN
+                  maps `aria-hidden` onto both native equivalents.
+                */}
+                <ThemedText type="code" style={[styles.finishLabel, styles.finishSpacer]} aria-hidden>
+                  {t('session.finish.label')}
+                </ThemedText>
+              </View>
+            </View>
+          )}
         </View>
 
         {step.kind === 'hold' && (
@@ -500,13 +552,18 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.two,
     paddingBottom: Spacing.three,
   },
+  // A stack rather than the single row it used to be, so the circuit crumb can sit under the name
+  // and share its bottom margin instead of adding one of its own.
   header: {
+    gap: Spacing.one,
+    marginBottom: Spacing.four,
+  },
+  headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     // gap, not space-between: the name now flexes into whatever is left, so there is no free space
     // for space-between to distribute, and a long name would otherwise sit flush against the dots.
     gap: Spacing.two,
-    marginBottom: Spacing.four,
   },
   emptyState: {
     flex: 1,
@@ -555,6 +612,21 @@ const styles = StyleSheet.create({
   finishLabel: {
     color: RunnerColors.textSecondary,
     letterSpacing: 1,
+  },
+  // opacity, not display:none or a width — the element has to lay out at its natural size to reserve
+  // the column. Pointer events fall through to nothing here, so it needs no further disabling.
+  finishSpacer: {
+    opacity: 0,
+  },
+  // The calm accent, matching this line's dot track and the record pill: color is what separates the
+  // circuit crumb from the block row above it at a glance. Measured 6.78:1 on the runner background.
+  circuitLabel: {
+    color: RunnerColors.accentCalmOnSoft,
+    letterSpacing: 1,
+    // Shrinks and ellipsizes like the workout name above rather than pushing the dots out of the
+    // track they share with it.
+    flex: 1,
+    minWidth: 0,
   },
   adhocFinish: {
     marginTop: Spacing.two,

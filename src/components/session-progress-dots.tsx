@@ -26,14 +26,37 @@ function gapFor(total: number) {
   return 6;
 }
 
-export function SessionProgressDots({ total, activeIndex }: { total: number; activeIndex: number }) {
+/**
+ * `calm` is for the circuit crumb's track, which sits directly under the block track: two identical
+ * rows of dots a few pixels apart read as one control with a rendering fault, and the runner has an
+ * established second accent (the PR pill) to separate them with. The fill measures 4.47:1 on
+ * `background`, against the 3:1 WCAG asks of a meaningful graphic.
+ */
+type Tone = 'accent' | 'calm';
+
+export function SessionProgressDots({
+  total,
+  activeIndex,
+  tone = 'accent',
+}: {
+  total: number;
+  activeIndex: number;
+  tone?: Tone;
+}) {
   return (
     <View
       style={[styles.row, { gap: gapFor(total) }]}
       accessibilityRole="progressbar"
       accessibilityValue={{ min: 1, max: Math.max(total, 1), now: activeIndex + 1 }}>
       {Array.from({ length: total }).map((_, index) => (
-        <View key={index} style={[styles.dot, index === activeIndex && styles.dotActive]} />
+        <View
+          key={index}
+          style={[
+            styles.dot,
+            index === activeIndex && styles.dotActive,
+            index === activeIndex && tone === 'calm' && styles.dotActiveCalm,
+          ]}
+        />
       ))}
     </View>
   );
@@ -65,5 +88,8 @@ const styles = StyleSheet.create({
     flex: 2,
     maxWidth: ActiveDotWidth,
     backgroundColor: RunnerColors.accent,
+  },
+  dotActiveCalm: {
+    backgroundColor: RunnerColors.accentCalm,
   },
 });

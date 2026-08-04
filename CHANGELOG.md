@@ -17,8 +17,11 @@ language; an unsupported tag is rejected on upload. The limits and the upload fo
 
 ## Unreleased
 
-Everything below is on `master` and **not in any build yet**. The release notes are written and
-counted, so cutting the next version is a version bump rather than a writing job.
+Nothing since 0.4.0.
+
+---
+
+## 0.4.0 — versionCode 7, 4 August 2026
 
 ### What changed
 
@@ -38,6 +41,12 @@ counted, so cutting the next version is a version bump rather than a writing job
 - The exercise picker grew a search field, since adding offers the whole library rather than the
   handful a swap filters to.
 
+**A hold ends itself.**
+
+- A `timed_hold` now ends on its own at the top of its range, with a 3-2-1 of ticks into the end, so a
+  dead hang or an L-sit no longer logs the seconds you spent reaching for the phone.
+- `hold_sec_min` became optional: a hold can have no target at all.
+
 **A circuit says where you are in it.**
 
 - The runner's header carries a second line inside a circuit: which round you're on, and which
@@ -56,11 +65,22 @@ counted, so cutting the next version is a version bump rather than a writing job
 - The pitch leads with the mixed-session runner rather than with the file format.
 - Screenshots re-captured against a populated library, the runner leading.
 - The log is no longer described as append-only anywhere, because it no longer is.
+- Supersets are documented on both the site and the YAML reference, including the two things authors
+  get wrong: `rounds` carries the set count, and zeroing an exercise's own `rest_sec` doesn't pair
+  anything.
 
 **Fixed.**
 
 - Deleting a program returns to Programs, instead of the empty "Program not found" screen it used to
   leave behind.
+- `rest_sec: 0` no longer produces a flash of rest screen, a chime and a notification between every
+  back-to-back set — which is what made supersets feel broken.
+- Circuit visits are numbered by round.
+- A long workout name no longer pushes "Finish" off the session header.
+- Reordering blocks: a block lands where you dropped it rather than a position further on, the drag
+  handle wins over the scroll it sits in, and a drag Android interrupts still commits.
+- A long import preview no longer buries the Merge button below hundreds of rows.
+- Settings' data section leads with Import rather than with the exports.
 
 ### Play release notes
 

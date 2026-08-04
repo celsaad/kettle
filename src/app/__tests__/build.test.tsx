@@ -56,7 +56,7 @@ beforeEach(() => {
   });
   usePreferencesStore.setState({
     status: 'ready',
-    preferences: { unitSystem: 'metric', themePreference: 'system', listSort: DEFAULT_LIST_SORTS },
+    preferences: { unitSystem: 'metric', themePreference: 'system', listSort: DEFAULT_LIST_SORTS, restDayReminder: false },
   });
 });
 

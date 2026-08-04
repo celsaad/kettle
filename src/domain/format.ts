@@ -110,6 +110,45 @@ export function formatSetCount(sets: number): string {
   return t('format.set', { count: sets });
 }
 
+/**
+ * A personal record, as data — see `sessionRecords`.
+ *
+ * `weight` arrives as a finished string rather than as kilograms, which is the one departure from the
+ * descriptors above and is forced: a weight can't be rendered without the user's display-unit
+ * preference, that preference lives in a zustand store, and this module is imported by the domain
+ * layer and by tests that mount nothing. So the view converts through `toDisplayWeight` and hands the
+ * result down, exactly as `session-reps.tsx` already does for the live load.
+ */
+export type RecordResult =
+  | { kind: 'heaviestSet'; weight: string; reps: number }
+  | { kind: 'mostReps'; reps: number }
+  | { kind: 'longestHold'; holdSec: number }
+  | { kind: 'mostRounds'; rounds: number };
+
+export function formatRecord(result: RecordResult): string {
+  switch (result.kind) {
+    case 'heaviestSet':
+      return t('format.record.heaviestSet', { weight: result.weight, reps: t('format.rep', { count: result.reps }) });
+    case 'mostReps':
+      return t('format.record.mostReps', { reps: t('format.rep', { count: result.reps }) });
+    case 'longestHold':
+      return t('format.record.longestHold', { seconds: t('format.seconds', { n: result.holdSec }) });
+    case 'mostRounds':
+      return t('format.record.mostRounds', { rounds: t('format.round', { count: result.rounds }) });
+  }
+}
+
+/**
+ * The estimated one-rep max line. The formula's name is deliberately *not* in here: it belongs in the
+ * one-line note the screen renders below the records (`session.complete.oneRepMaxNote`), where it
+ * reads as the explanation it is. Inline, "(Epley)" competed with the number for attention while
+ * telling a lifter mid-celebration nothing they wanted at that moment — it only matters to someone
+ * who has already decided to question the figure, and that person will read the note.
+ */
+export function formatOneRepMax(weight: string): string {
+  return t('format.oneRepMax', { weight });
+}
+
 /** A circuit block's configuration, as data — see `circuitShape`. */
 export type CircuitShape = { rounds: number; restBetweenExercisesSec: number; restBetweenRoundsSec: number };
 

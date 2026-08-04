@@ -11,6 +11,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import type { ThemePreference } from '@/domain/preferences';
+import { REST_DAY_REMINDER_DAYS } from '@/domain/preferences';
 import type { UnitSystem } from '@/domain/units';
 import { useAppTheme } from '@/hooks/theme-context';
 import { useTheme } from '@/hooks/use-theme';
@@ -35,6 +36,14 @@ const APPEARANCE: { labelKey: string; value: ThemePreference }[] = [
 const UNITS: { labelKey: string; value: UnitSystem }[] = [
   { labelKey: 'settings.metric', value: 'metric' },
   { labelKey: 'settings.imperial', value: 'imperial' },
+];
+
+// Off first, so the default sits where the eye lands and the control reads as opt-in rather than as
+// something being switched off. Reuses Segmented rather than introducing the app's first Switch —
+// same a11y surface, already carrying accessibilityState.
+const REMINDER: { labelKey: string; value: 'off' | 'on' }[] = [
+  { labelKey: 'settings.reminderOff', value: 'off' },
+  { labelKey: 'settings.reminderOn', value: 'on' },
 ];
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
@@ -121,6 +130,8 @@ export default function SettingsScreen() {
   const { preference, setPreference, scheme } = useAppTheme();
   const unitSystem = useUnitSystem();
   const setUnitSystem = usePreferencesStore((state) => state.setUnitSystem);
+  const restDayReminder = usePreferencesStore((state) => state.preferences.restDayReminder);
+  const setRestDayReminder = usePreferencesStore((state) => state.setRestDayReminder);
   const library = useLibraryStore((state) => state.library);
   const sessions = useSessionHistoryStore((state) => state.sessions);
   const supporter = useTipStore((state) => state.supporter);
@@ -191,6 +202,20 @@ export default function SettingsScreen() {
             {/* The imperial copy spells out that storage doesn't change, because that's the surprising
                 half: switching units here does not rewrite a single number in exercises.yaml. */}
             {unitSystem === 'imperial' ? t('settings.unitsImperialNote') : t('settings.unitsMetricNote')}
+          </ThemedText>
+        </Section>
+
+        <Section title={t('settings.reminder')}>
+          <Segmented
+            options={REMINDER}
+            selected={restDayReminder ? 'on' : 'off'}
+            onSelect={(value) => setRestDayReminder(value === 'on')}
+          />
+          <ThemedText type="small" themeColor="textSecondary" style={styles.caption}>
+            {/* Spells out both halves of what makes this different from a daily alarm: it's a local
+                notification that never leaves the phone, and it only lands if you've actually gone
+                quiet. Someone training regularly will never see it, which is worth saying up front. */}
+            {t('settings.reminderNote', { count: REST_DAY_REMINDER_DAYS })}
           </ThemedText>
         </Section>
 

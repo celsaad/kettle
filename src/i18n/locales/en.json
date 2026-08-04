@@ -134,7 +134,9 @@
     "stepperAccessibility": "{{label}}: {{value}}. Tap to enter an exact value.",
     "complete": {
       "title": "Workout complete",
-      "done": "Done"
+      "done": "Done",
+      "recordBadge": "PR",
+      "oneRepMaxNote": "1RM estimated from your best set with the Epley formula."
     },
     "countdown": {
       "getReady": "GET READY"
@@ -149,7 +151,10 @@
       "restTitle": "Rest complete",
       "restBody": "{{workout}} · back to work",
       "holdTitle": "Hold complete",
-      "holdBody": "{{workout}} · you can come down"
+      "holdBody": "{{workout}} · you can come down",
+      "reminderTitle": "Ready when you are",
+      "reminderBody_one": "Your last session was a day ago. No pressure — Kettle is here when you want it.",
+      "reminderBody_other": "Your last session was {{count}} days ago. No pressure — Kettle is here when you want it."
     },
     "rest": {
       "label": "REST",
@@ -221,6 +226,11 @@
     "imperial": "Imperial",
     "unitsMetricNote": "Weights show in kilograms.",
     "unitsImperialNote": "Weights show in pounds. They are still stored in kilograms, so your exported library reads the same everywhere.",
+    "reminder": "Reminder",
+    "reminderOff": "Off",
+    "reminderOn": "On",
+    "reminderNote_one": "A notification on this device if a day passes without a session. Nothing is sent anywhere, and train regularly and you will never see it.",
+    "reminderNote_other": "A notification on this device if {{count}} days pass without a session. Nothing is sent anywhere, and train regularly and you will never see it.",
     "data": "Data",
     "exportLibrary": "Export library",
     "exportLibraryDetail": "Share exercises.yaml — every exercise, workout and program.",
@@ -498,7 +508,14 @@
     "roundsPlusReps": "{{rounds}} + {{reps}}",
     "intervalsWithReps": "{{intervals}} · {{reps}}",
     "circuitShape": "{{rounds}} · {{between}}s / {{rounds_rest}}s rest",
-    "adHocSession": "Ad-hoc session"
+    "adHocSession": "Ad-hoc session",
+    "record": {
+      "heaviestSet": "Heaviest ever · {{weight}} × {{reps}}",
+      "mostReps": "Most reps ever · {{reps}}",
+      "longestHold": "Longest hold ever · {{seconds}}",
+      "mostRounds": "Most rounds ever · {{rounds}}"
+    },
+    "oneRepMax": "Est. 1RM {{weight}}"
   },
   "summary": {
     "hiit": "{{work}}s work · {{rest}}s rest · ×{{rounds}}",

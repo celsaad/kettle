@@ -151,7 +151,12 @@ export function useSessionRunner(
   programId: string | null,
   programWeek: number | null,
   programDay: string | null,
-  onComplete: () => void,
+  /**
+   * Handed the session it just finished writing. The completion screen needs it to say what was beaten,
+   * and it can't read it back off the store: React unmounts this hook and the ref holding it on the
+   * same tick, and `completeSession` has already cleared `activeSessionId` by then.
+   */
+  onComplete: (session: Session | null) => void,
 ) {
   const steps = useMemo(() => buildSteps(workout, exercises), [workout, exercises]);
   const [stepIndex, setStepIndex] = useState(0);
@@ -488,7 +493,7 @@ export function useSessionRunner(
 
       if (nextIndex >= steps.length) {
         if (sessionRef.current) sessionRef.current = completeSession(sessionRef.current);
-        onComplete();
+        onComplete(sessionRef.current);
         return;
       }
 
@@ -672,7 +677,7 @@ export function useSessionRunner(
   const finishSession = useCallback(() => {
     if (step && sessionRef.current) commitCurrentStep(step);
     if (sessionRef.current) sessionRef.current = completeSession(sessionRef.current);
-    onComplete();
+    onComplete(sessionRef.current);
   }, [step, commitCurrentStep, completeSession, onComplete]);
 
   const addRestSeconds = useCallback(

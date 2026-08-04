@@ -69,3 +69,38 @@ export function cancelNotification(id: string): void {
   if (!notifications) return;
   notifications.cancelScheduledNotificationAsync(id).catch(() => {});
 }
+
+/**
+ * A fixed identifier rather than a generated one, so the rest-day reminder can be replaced and
+ * cancelled across app restarts without persisting an id anywhere — scheduling under the same
+ * identifier overwrites the pending request. Cancelling everything would have been the alternative,
+ * and it would have taken the runner's in-flight step notification with it.
+ */
+const REST_DAY_REMINDER_ID = 'kettle-rest-day-reminder';
+
+/**
+ * Schedules the opt-in rest-day nudge for an absolute local instant, replacing any pending one.
+ *
+ * A DATE trigger, not TIME_INTERVAL: the target is a wall-clock moment days away, and an interval
+ * computed now would drift across a DST boundary or a device clock change. Title and body are the
+ * caller's, translated.
+ */
+export async function scheduleRestDayReminder(title: string, body: string, date: Date): Promise<void> {
+  const notifications = getNotifications();
+  if (!notifications) return;
+  try {
+    await notifications.scheduleNotificationAsync({
+      identifier: REST_DAY_REMINDER_ID,
+      content: { title, body },
+      trigger: { type: notifications.SchedulableTriggerInputTypes.DATE, date },
+    });
+  } catch {
+    // Best effort — a reminder that couldn't be scheduled costs a nudge, not any workout data.
+  }
+}
+
+export function cancelRestDayReminder(): void {
+  const notifications = getNotifications();
+  if (!notifications) return;
+  notifications.cancelScheduledNotificationAsync(REST_DAY_REMINDER_ID).catch(() => {});
+}

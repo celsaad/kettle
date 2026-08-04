@@ -34,6 +34,7 @@ const stored = {
   unitSystem: 'imperial' as const,
   themePreference: 'dark' as const,
   listSort: { workouts: 'name' as const, programs: 'custom' as const, exercises: 'recent' as const },
+  restDayReminder: true,
 };
 
 beforeEach(() => {
@@ -62,6 +63,7 @@ describe('loadPreferences', () => {
       unitSystem: 'imperial',
       themePreference: 'system',
       listSort: DEFAULT_LIST_SORTS,
+      restDayReminder: false,
     });
   });
 
@@ -77,6 +79,7 @@ describe('loadPreferences', () => {
       unitSystem: 'imperial',
       themePreference: 'dark',
       listSort: DEFAULT_LIST_SORTS,
+      restDayReminder: false,
     });
   });
 
@@ -88,6 +91,7 @@ describe('loadPreferences', () => {
       unitSystem: 'metric',
       themePreference: 'dark',
       listSort: { workouts: 'name', programs: 'custom', exercises: 'custom' },
+      restDayReminder: false,
     });
   });
 

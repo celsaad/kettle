@@ -21,6 +21,7 @@ import '@/i18n';
 import { Colors, RunnerColors, MaxContentWidth, Spacing } from '@/constants/theme';
 import { ThemeOverrideProvider, useAppTheme } from '@/hooks/theme-context';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useRestDayReminder } from '@/hooks/use-rest-day-reminder';
 import { useLibraryStore } from '@/state/library-store';
 import { usePreferencesStore } from '@/state/preferences-store';
 import { useSessionHistoryStore } from '@/state/session-history-store';
@@ -69,6 +70,10 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
 
 function Navigation() {
   const { colors, scheme } = useAppTheme();
+  // Here rather than in the runner: the reminder has to be rescheduled when the *preference* changes
+  // too, and this is the one component that is mounted for both of its inputs and only after they've
+  // hydrated. It also means the schedule self-heals on every launch.
+  useRestDayReminder();
 
   // Base off the matching React Navigation theme rather than always DefaultTheme (its light one), so
   // the handful of colors not overridden below — and anything keying off the `dark` flag — don't pull

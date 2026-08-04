@@ -1,4 +1,5 @@
 import { act, fireEvent, screen } from '@testing-library/react-native';
+import { Alert } from 'react-native';
 import { changeLanguage } from 'i18next';
 
 import SessionScreen, { ErrorBoundary } from '@/app/session';
@@ -6,7 +7,7 @@ import type { Exercise, Session, SessionEntry, Workout } from '@/domain/types';
 import { useLibraryStore } from '@/state/library-store';
 import { router, setSearchParams } from '@/test-support/expo-router';
 import { aLibrary, aWorkout } from '@/test-support/library';
-import { renderScreen } from '@/test-support/render';
+import { pressAlertButton, renderScreen } from '@/test-support/render';
 
 /**
  * The screen's routing decisions, not the runner's timing — `use-session-runner.test.tsx` owns that.
@@ -40,10 +41,13 @@ jest.mock('@/hooks/safe-notifications', () => ({
 // into memory instead of writing files. Nothing here asserts on what was logged, apart from the
 // boundary's abandon call — `session-history-store.test.ts` owns what that actually writes.
 let mockSession: Session;
+/** The log the completion screen judges the finished session against — see the PR test below. */
+let mockSessions: Session[] = [];
 const mockAbandonActiveSession = jest.fn();
 jest.mock('@/state/session-history-store', () => ({
   useSessionHistoryStore: (selector: (state: unknown) => unknown) =>
     selector({
+      sessions: mockSessions,
       startSession: () => mockSession,
       logEntry: (current: Session, entry: SessionEntry) => ({ ...current, entries: [...current.entries, entry] }),
       replaceEntry: (current: Session, index: number, entry: SessionEntry) => ({
@@ -90,6 +94,7 @@ beforeEach(() => {
   jest.useFakeTimers();
   jest.setSystemTime(new Date('2026-07-27T09:00:00Z'));
   setSearchParams({ workoutId: 'w' });
+  mockSessions = [];
   mockSession = {
     version: 1,
     id: 'test-session',
@@ -182,6 +187,64 @@ describe('step-kind dispatch', () => {
     await start(workoutOf('pullups'));
 
     expect(screen.getByText('Encerrar')).toBeTruthy();
+  });
+});
+
+/**
+ * The hand-off the completion screen depends on: the runner passes the session it just finished
+ * writing, because nothing else can. React unmounts the runner and the ref holding that `Session` on
+ * the same tick, and `completeSession` has already cleared `activeSessionId` by then — so a screen
+ * that read it back off the store would find nothing to compare.
+ */
+describe('finishing a session', () => {
+  const finish = async () => {
+    const alert = jest.spyOn(Alert, 'alert');
+    await fireEvent.press(screen.getByLabelText('Finish session?'));
+    await pressAlertButton(alert, 'destructive');
+  };
+
+  it('lands on the completion screen', async () => {
+    await start(workoutOf('pullups'));
+
+    await finish();
+
+    expect(screen.getByText('Workout complete')).toBeTruthy();
+  });
+
+  it('reports what the finished session beat', async () => {
+    // Pull-ups are bodyweight (the runner seeds load from targetWeightKg, which this exercise has
+    // none of), so the record they compete for is reps — 6 seeded from the target, against 4 logged
+    // a week ago.
+    mockSessions = [
+      {
+        version: 1,
+        id: 'sess-earlier',
+        workout: 'w',
+        program: null,
+        programWeek: null,
+        programDay: null,
+        startedAt: '2026-07-20T09:00:00.000Z',
+        endedAt: '2026-07-20T10:00:00.000Z',
+        entries: [{ exercise: 'pullups', type: 'reps', sets: [{ reps: 4, restTakenSec: 90 }] }],
+      },
+    ];
+    await start(workoutOf('pullups'));
+
+    await finish();
+
+    expect(screen.getByText('PR')).toBeTruthy();
+    expect(screen.getByText('Pull-ups')).toBeTruthy();
+    expect(screen.getByText('Most reps ever · 6 reps')).toBeTruthy();
+  });
+
+  // The common case, and the one that must stay exactly as it was: nothing beaten, nothing added.
+  it('says nothing about records when none were set', async () => {
+    await start(workoutOf('pullups'));
+
+    await finish();
+
+    expect(screen.getByText('Workout complete')).toBeTruthy();
+    expect(screen.queryByText('PR')).toBeNull();
   });
 });
 

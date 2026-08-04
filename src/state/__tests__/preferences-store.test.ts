@@ -17,7 +17,7 @@ import { usePreferencesStore } from '@/state/preferences-store';
 beforeEach(() => {
   usePreferencesStore.setState({
     status: 'idle',
-    preferences: { unitSystem: 'metric', themePreference: 'system', listSort: DEFAULT_LIST_SORTS },
+    preferences: { unitSystem: 'metric', themePreference: 'system', listSort: DEFAULT_LIST_SORTS, restDayReminder: false },
   });
   mockLoad.mockReset().mockResolvedValue(null);
   mockSave.mockReset().mockResolvedValue(true);
@@ -100,6 +100,7 @@ describe('setUnitSystem', () => {
       unitSystem: 'imperial',
       themePreference: 'system',
       listSort: DEFAULT_LIST_SORTS,
+      restDayReminder: false,
     });
   });
 
@@ -123,6 +124,7 @@ describe('setThemePreference', () => {
       unitSystem: 'metric',
       themePreference: 'dark',
       listSort: DEFAULT_LIST_SORTS,
+      restDayReminder: false,
     });
   });
 
@@ -136,6 +138,7 @@ describe('setThemePreference', () => {
       unitSystem: 'imperial',
       themePreference: 'light',
       listSort: DEFAULT_LIST_SORTS,
+      restDayReminder: false,
     });
   });
 
@@ -166,5 +169,30 @@ describe('setListSort', () => {
       programs: 'custom',
       exercises: 'recent',
     });
+  });
+});
+
+describe('setRestDayReminder', () => {
+  // Off unless asked for. A local notification is the one thing this app does that reaches outside
+  // itself, and an opt-in that shipped as on would start notifying people who never chose it.
+  it('starts off', () => {
+    expect(usePreferencesStore.getState().preferences.restDayReminder).toBe(false);
+  });
+
+  it('persists the choice alongside the other preferences', async () => {
+    expect(await usePreferencesStore.getState().setRestDayReminder(true)).toBe(true);
+    expect(mockSave).toHaveBeenCalledWith({
+      unitSystem: 'metric',
+      themePreference: 'system',
+      listSort: DEFAULT_LIST_SORTS,
+      restDayReminder: true,
+    });
+  });
+
+  it('still applies the change when persistence fails, and says so', async () => {
+    mockSave.mockResolvedValue(false);
+
+    expect(await usePreferencesStore.getState().setRestDayReminder(true)).toBe(false);
+    expect(usePreferencesStore.getState().preferences.restDayReminder).toBe(true);
   });
 });

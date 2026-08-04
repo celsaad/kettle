@@ -22,6 +22,14 @@ type PreferencesStoreState = {
   setThemePreference: (themePreference: ThemePreference) => Promise<boolean>;
   /** Resolves false when the write failed; the change still applies for this run. */
   setListSort: (list: ListKind, sort: ListSort) => Promise<boolean>;
+  /** Resolves false when the write failed; the change still applies for this run. */
+  setRestDayReminder: (enabled: boolean) => Promise<boolean>;
+};
+
+const DEFAULT_PREFERENCES: Omit<Preferences, 'unitSystem'> = {
+  themePreference: 'system',
+  listSort: DEFAULT_LIST_SORTS,
+  restDayReminder: false,
 };
 
 /**
@@ -48,7 +56,7 @@ export const usePreferencesStore = create<PreferencesStoreState>((set, get) => {
 
   return {
     status: 'idle',
-    preferences: { unitSystem: 'metric', themePreference: 'system', listSort: DEFAULT_LIST_SORTS },
+    preferences: { unitSystem: 'metric', ...DEFAULT_PREFERENCES },
     hydrate: async () => {
       if (get().status === 'loading') return;
       set({ status: 'loading' });
@@ -57,11 +65,7 @@ export const usePreferencesStore = create<PreferencesStoreState>((set, get) => {
       const stored = await loadPreferences();
       set({
         status: 'ready',
-        preferences: stored ?? {
-          unitSystem: deviceUnitSystem(),
-          themePreference: 'system',
-          listSort: DEFAULT_LIST_SORTS,
-        },
+        preferences: stored ?? { unitSystem: deviceUnitSystem(), ...DEFAULT_PREFERENCES },
       });
     },
     setUnitSystem: (unitSystem) => applyAndPersist({ unitSystem }),
@@ -69,6 +73,7 @@ export const usePreferencesStore = create<PreferencesStoreState>((set, get) => {
     // Patches one list's entry rather than replacing the map, so setting Build's order can't reset
     // the two lists the user isn't looking at.
     setListSort: (list, sort) => applyAndPersist({ listSort: { ...get().preferences.listSort, [list]: sort } }),
+    setRestDayReminder: (restDayReminder) => applyAndPersist({ restDayReminder }),
   };
 });
 

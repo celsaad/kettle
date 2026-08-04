@@ -134,7 +134,9 @@
     "stepperAccessibility": "{{label}}: {{value}}. Toque para inserir um valor exato.",
     "complete": {
       "title": "Treino concluído",
-      "done": "Concluir"
+      "done": "Concluir",
+      "recordBadge": "RECORDE",
+      "oneRepMaxNote": "1RM estimado a partir da sua melhor série, pela fórmula de Epley."
     },
     "countdown": {
       "getReady": "PREPARE-SE"
@@ -149,7 +151,10 @@
       "restTitle": "Descanso concluído",
       "restBody": "{{workout}} · de volta ao treino",
       "holdTitle": "Isometria concluída",
-      "holdBody": "{{workout}} · pode descer"
+      "holdBody": "{{workout}} · pode descer",
+      "reminderTitle": "Quando você quiser",
+      "reminderBody_one": "Sua última sessão foi há um dia. Sem cobrança — o Kettle está aqui quando der vontade.",
+      "reminderBody_other": "Sua última sessão foi há {{count}} dias. Sem cobrança — o Kettle está aqui quando der vontade."
     },
     "rest": {
       "label": "DESCANSO",
@@ -221,6 +226,11 @@
     "imperial": "Imperial",
     "unitsMetricNote": "Os pesos aparecem em quilogramas.",
     "unitsImperialNote": "Os pesos aparecem em libras. Eles continuam salvos em quilogramas, então sua biblioteca exportada é lida igual em qualquer lugar.",
+    "reminder": "Lembrete",
+    "reminderOff": "Desligado",
+    "reminderOn": "Ligado",
+    "reminderNote_one": "Uma notificação neste aparelho se passar um dia sem sessão. Nada é enviado para lugar nenhum, e quem treina com regularidade nunca vai vê-la.",
+    "reminderNote_other": "Uma notificação neste aparelho se passarem {{count}} dias sem sessão. Nada é enviado para lugar nenhum, e quem treina com regularidade nunca vai vê-la.",
     "data": "Dados",
     "exportLibrary": "Exportar biblioteca",
     "exportLibraryDetail": "Compartilhe exercises.yaml — todos os exercícios, treinos e programas.",
@@ -498,7 +508,14 @@
     "roundsPlusReps": "{{rounds}} + {{reps}}",
     "intervalsWithReps": "{{intervals}} · {{reps}}",
     "circuitShape": "{{rounds}} · {{between}}s / {{rounds_rest}}s de descanso",
-    "adHocSession": "Sessão avulsa"
+    "adHocSession": "Sessão avulsa",
+    "record": {
+      "heaviestSet": "Mais pesado até hoje · {{weight}} × {{reps}}",
+      "mostReps": "Mais repetições até hoje · {{reps}}",
+      "longestHold": "Isometria mais longa até hoje · {{seconds}}",
+      "mostRounds": "Mais rodadas até hoje · {{rounds}}"
+    },
+    "oneRepMax": "1RM estimado {{weight}}"
   },
   "summary": {
     "hiit": "{{work}}s de trabalho · {{rest}}s de descanso · ×{{rounds}}",

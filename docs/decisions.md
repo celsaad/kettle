@@ -412,6 +412,40 @@ decision assembled across several commits. Open work belongs in the sections at 
   into a rejection those existing handlers catch. Fixes the crash on Library's export and the same
   latent hole in History's.
 
+- ✅ **What counts as a personal record, and why the nudge is a rest-day nudge.** Both halves of the
+  celebrate-progress work are judgment calls that the code can't explain on its own, and both are the
+  kind of thing that gets re-proposed by whoever reads the selector next.
+
+  - **A tie is not a record, and a first-ever entry is not a record.** `sessionRecords` compares
+    strictly greater against a *prior* value, so an exercise with no history produces nothing. The
+    alternative — celebrating the first entry — was rejected because it makes every exercise in a new
+    user's first week a PR, and a badge that fires on everything is read as decoration by session
+    three. The cost is real and accepted: the genuine first-ever lift of something is silent.
+  - **Four entry types compete, three deliberately don't.** `reps` (on load, or on reps when the sets
+    carry no `weightKg` at all), `timed_hold` and `amrap`. `hiit` rounds and `emom` minutes are both
+    bounded by the exercise's own config, so "more than last time" there reports that the user edited
+    the workout — a record that fires when you change a number is worse than none. `cardio` genuinely
+    has records and is out only until distance and duration have comparability rules of their own
+    (same distance across different routes is not the same comparison), so this one is a scope cut
+    rather than a refusal.
+  - **The estimated 1RM is Epley, is named on screen, and is never stored.** An unattributed 1RM is a
+    number people argue with — Epley, Brzycki and Lombardi disagree visibly on the same set — so the
+    formula's name ships with it, but as a single note under the record list rather than in
+    parentheses after each value. Inline it competed with the number for attention while telling a
+    lifter who has just finished a workout nothing they wanted at that moment; the attribution only
+    matters to someone who has already decided to question the figure, and that person reads the
+    note. It is recomputed from the log every time it is shown, so
+    changing the formula later can never leave the app disagreeing with its own history. It also
+    declines to answer above 12 reps, where Epley diverges far enough that the estimate is worse than
+    none.
+  - **The reminder fires relative to the last session, not on a clock.** One local notification, a
+    couple of days past the most recent session, replaced every time a session is logged — so someone
+    training regularly never receives it. A repeating `DAILY` trigger was the obvious alternative and
+    was rejected: it fires whether or not you trained, which is the nagging an app whose pitch is
+    "it doesn't bother anyone" cannot ship. It is off by default and stays off until asked for, and
+    it is a *local* notification — nothing about it may grow a transport without breaking the
+    zero-data Play declaration.
+
 ---
 
 

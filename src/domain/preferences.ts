@@ -44,12 +44,27 @@ export type ListSorts = Record<ListKind, ListSort>;
 
 export const DEFAULT_LIST_SORTS: ListSorts = { workouts: 'custom', programs: 'custom', exercises: 'custom' };
 
+/**
+ * How long after the last session the opt-in nudge lands, and the local hour it lands at.
+ *
+ * Two days, not one: a rest day is training, not a lapse, and a reminder that fires the morning after
+ * a heavy session is nagging someone who is doing the right thing. 18:00 because the notification is
+ * useful when there is still an evening left to train in.
+ */
+export const REST_DAY_REMINDER_DAYS = 2;
+export const REST_DAY_REMINDER_HOUR = 18;
+
 export type Preferences = {
   /** Display only — stored weights are always kilograms, see `domain/units.ts`. */
   unitSystem: UnitSystem;
   themePreference: ThemePreference;
   /** Per-list, not one shared setting: ordering exercises by name says nothing about programs. */
   listSort: ListSorts;
+  /**
+   * Off unless the user asks for it, and never on by default. A local notification is the one thing
+   * this app does that reaches outside itself, and its whole pitch is that it doesn't bother anyone.
+   */
+  restDayReminder: boolean;
 };
 
 export const preferencesSchema = z.object({
@@ -70,4 +85,8 @@ export const preferencesSchema = z.object({
       exercises: z.enum(LIST_SORTS).default('custom'),
     })
     .default(DEFAULT_LIST_SORTS),
+  // Defaulted for the same reason as the two above — it arrived after `preferences.json` was already
+  // being written in the field — and `false` is also the value the product wants: an opt-in that
+  // defaulted to true for existing installs would start notifying people who never asked.
+  restDayReminder: z.boolean().default(false),
 });

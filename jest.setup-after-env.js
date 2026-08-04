@@ -37,7 +37,18 @@ beforeEach(async () => {
 beforeEach(() => {
   const store = require('./src/state/preferences-store').usePreferencesStore;
   // A suite that mocks the store module outright has no setState, and nothing to reset either.
-  store?.setState?.({ status: 'idle', preferences: { unitSystem: 'metric', themePreference: 'system' } });
+  // The *whole* preferences object, not just the two fields a test is likely to care about: a partial
+  // reset leaves every other preference `undefined` between suites, which is a shape no running app
+  // ever has. `listSort` was already missing here before `restDayReminder` was added beside it.
+  store?.setState?.({
+    status: 'idle',
+    preferences: {
+      unitSystem: 'metric',
+      themePreference: 'system',
+      listSort: { workouts: 'custom', programs: 'custom', exercises: 'custom' },
+      restDayReminder: false,
+    },
+  });
 });
 
 // `domain/format.ts` renders through i18next, so it needs an initialised instance to return anything

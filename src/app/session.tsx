@@ -17,10 +17,11 @@ import { SessionRest } from '@/components/session-rest';
 import { ThemedText } from '@/components/themed-text';
 import { RunnerColors, MaxContentWidth, Spacing } from '@/constants/theme';
 import { resolveWorkoutForWeek } from '@/domain/program';
-import type { Exercise, Workout } from '@/domain/types';
+import type { Exercise, Session, Workout } from '@/domain/types';
 import { useSessionAnnouncements } from '@/hooks/use-session-announcements';
 import { buildSteps, useSessionRunner } from '@/hooks/use-session-runner';
 import { useLibraryStore } from '@/state/library-store';
+import { sessionRecords } from '@/state/selectors';
 import { useSessionHistoryStore } from '@/state/session-history-store';
 
 /**
@@ -70,12 +71,15 @@ export default function SessionScreen() {
   // the browser releases a screen wake lock on its own when the page/tab goes away.
   useKeepAwake(undefined, { suppressDeactivateWarnings: true });
   const { t } = useTranslation();
-  const [completed, setCompleted] = useState(false);
+  // The finished session doubles as the "are we done" flag: the runner hands it over on the same call
+  // that used to carry nothing, and it is what the completion screen reads to say what was beaten.
+  // `null` is still a completion — a workout with no runnable steps never created a session file.
+  const [completed, setCompleted] = useState<{ session: Session | null } | null>(null);
   // Doesn't navigate back directly — advance()/finishSession() in use-session-runner.ts already call
   // this the moment the workout is done (naturally or via "Finish"), and by then the session has
   // already saved. Showing a completion screen first (rather than snapping straight back to wherever
   // the session was started from) gives that moment somewhere to land instead of just vanishing.
-  const onComplete = useCallback(() => setCompleted(true), []);
+  const onComplete = useCallback((session: Session | null) => setCompleted({ session }), []);
   const library = useLibraryStore((state) => state.library);
   const { workoutId, programId, week, day } = useLocalSearchParams<{
     workoutId?: string;
@@ -154,7 +158,7 @@ export default function SessionScreen() {
     return (
       <SafeAreaView style={styles.safeArea} edges={['top', 'bottom', 'left', 'right']}>
         <View style={styles.content}>
-          <SessionComplete workoutName={workout.name} onDone={() => router.back()} />
+          <CompletedSession workoutName={workout.name} session={completed.session} onDone={() => router.back()} />
         </View>
       </SafeAreaView>
     );
@@ -172,6 +176,33 @@ export default function SessionScreen() {
   );
 }
 
+/**
+ * Its own component so the session log is subscribed to *after* the workout, not during it. Reading
+ * `sessions` up in SessionScreen would re-render the whole runner on every logged set, since each one
+ * writes through the store (`persistMember`) — the cost the runner's refs exist to avoid.
+ *
+ * The just-finished session is excluded from its own comparison inside `sessionRecords`; it's passed
+ * separately rather than filtered here so that rule lives with the rule about ties and first entries.
+ */
+function CompletedSession({
+  workoutName,
+  session,
+  onDone,
+}: {
+  workoutName: string;
+  session: Session | null;
+  onDone: () => void;
+}) {
+  const library = useLibraryStore((state) => state.library);
+  const sessions = useSessionHistoryStore((state) => state.sessions);
+  const records = useMemo(
+    () => (session ? sessionRecords(session, sessions, library?.exercises ?? []) : []),
+    [session, sessions, library],
+  );
+
+  return <SessionComplete workoutName={workoutName} records={records} onDone={onDone} />;
+}
+
 function ActiveSession({
   workout,
   exercises,
@@ -185,7 +216,7 @@ function ActiveSession({
   programId: string | null;
   programWeek: number | null;
   programDay: string | null;
-  onComplete: () => void;
+  onComplete: (session: Session | null) => void;
 }) {
   const runner = useSessionRunner(workout, exercises, programId, programWeek, programDay, onComplete);
   const { t } = useTranslation();

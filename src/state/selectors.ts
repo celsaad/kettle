@@ -10,7 +10,7 @@ function findExercise(exercises: Exercise[], id: string): Exercise | undefined {
   return exercises.find((exercise) => exercise.id === id);
 }
 
-function exerciseName(exercises: Exercise[], id: string): string {
+export function exerciseName(exercises: Exercise[], id: string): string {
   return findExercise(exercises, id)?.name ?? id;
 }
 
@@ -362,6 +362,13 @@ export type HistorySessionView = {
   durationLabel: string;
   setsLabel: string;
   mixed: boolean;
+  /**
+   * Whether the card offers its edit affordance. False while a session is still running: the runner
+   * owns that file and writes through its own copy, so an edit from History would be overwritten by
+   * the next set. `session-history-store`'s `editEntry` refuses the same case — this only keeps the
+   * screen from offering something that would be declined.
+   */
+  editable: boolean;
   entries: HistorySessionEntryView[];
 };
 
@@ -690,6 +697,7 @@ export function historySessionsView(sessions: Session[], library: Library): Hist
       durationLabel: formatSessionDuration(sessionDurationMinutes(session)),
       setsLabel: formatSetCount(sessionSetCount(session)),
       mixed: loggedTypes.size > 1,
+      editable: session.endedAt !== null,
       entries,
     };
   });

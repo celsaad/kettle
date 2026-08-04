@@ -577,6 +577,43 @@ decision assembled across several commits. Open work belongs in the sections at 
   storage question (correct-in-place versus append-a-correction), which is a smaller and more
   technical choice than the issue currently frames it as.
 
+- ✅ **A logged set is corrected in place, and the log stopped being append-only in fact.** The
+  storage question the entry above handed to #56, answered. A correction rewrites the entry where it
+  sits (`replaceSessionEntry`, already the runner's own write path for every set it logs) rather than
+  appending a correction record and rendering the resolved value.
+
+  Append-a-correction is the more faithful design if the append-only property is worth preserving,
+  and it isn't: no published claim rests on it any more, and buying it back would change the session
+  file format — which triggers the whole "Changing the YAML format" gate in `AGENTS.md`, three
+  hand-maintained mirrors plus `site/format.html`, in service of a promise nobody is owed. Every
+  reader of a session file would also need to learn to resolve corrections before it could read one.
+
+  So the phrase "the log is still append-only in fact" in the entry above **stopped being true here**,
+  and the word came out of `AGENTS.md`, `docs/product-plan.md`, `site/privacy.html` and
+  `site/format.html`. The privacy page now says what is actually guaranteed — the log is local, and
+  you can correct or delete what is in it. `product-plan.md`'s one-file-per-session note keeps its
+  "append-only-log benefits" wording, because those are properties of the *directory* (crash safety,
+  no partial-write corruption of history) and one session's file being rewritten doesn't touch them.
+
+- ✅ **An in-flight session refuses to be edited, and that is a constraint on anything else that ever
+  writes to history.** The runner holds the session it is writing to in a ref and writes through that
+  copy; the same session is also in the store's `sessions`, because `startSession` puts it there. So
+  any second writer that edits it from outside leaves the runner holding a copy without the edit, and
+  the runner's next `logEntry` spreads that stale copy back over the file. The correction disappears
+  one set later, with nothing said and nothing logged.
+
+  `editEntry`/`removeEntry` therefore refuse a session with no `ended_at`, and History hides the Edit
+  affordance on one. This is why those two actions take a **session id** where the runner's
+  `logEntry`/`replaceEntry` take a `Session`: the runner owns its object and needs the updated one
+  back, but a screen that was handed one could hold it past the next write, which is the same bug in
+  a different shape. `exerciseHistory` and `previousSetFor` already skip unfinished sessions on the
+  read side; this is the same line drawn on the write side.
+
+  Two smaller traps found while building it, both pinned by tests that fail if reintroduced. Entry
+  indices are into `session.entries` and **not** into what History renders, which filters `rest`
+  entries out — an editor built from the view sends corrections to whatever sits at that offset. And
+  removals have to be applied back to front, since each one shifts every later index down by one.
+
 
 
 

@@ -10,7 +10,7 @@
 > § "Changing the YAML format". The complete YAML samples on this page are parsed by
 > `docs-samples.test.ts` and the field tables by `format-mirrors.test.ts`; the prose is on you.
 
-A backend-free React Native app for planning and tracking workouts. Exercises and workout templates live in a hand-editable YAML library; completed sessions are written by the app to a local, append-only store. No server, no account — fully local, portable, and power-user friendly.
+A backend-free React Native app for planning and tracking workouts. Exercises and workout templates live in a hand-editable YAML library; completed sessions are written by the app to a local store, one file per session. No server, no account — fully local, portable, and power-user friendly.
 
 ---
 

@@ -1,7 +1,7 @@
 # Kettle
 
 Backend-free workout tracker. A hand-editable YAML library (exercises, workouts, multi-week programs)
-plus an append-only local session log. No server, no account.
+plus a local session log, one file per session. No server, no account.
 
 > **Expo HAS CHANGED.** Read the exact versioned docs at https://docs.expo.dev/versions/v57.0.0/
 > before writing any code. This applies to library choices too — verify what's current for SDK 57

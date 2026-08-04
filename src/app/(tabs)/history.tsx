@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import { memo, useCallback, useDeferredValue, useMemo, useState } from 'react';
 import { Alert, FlatList, Platform, Pressable, StyleSheet, View, type ListRenderItemInfo } from 'react-native';
 import { useTranslation } from 'react-i18next';
@@ -82,6 +83,19 @@ const SessionCard = memo(function SessionCard({
                 {t('common.delete')}
               </ThemedText>
             </Pressable>
+            {/* Hidden rather than disabled while a session is still running: the runner owns that file
+                and writes through its own copy, so an edit made here would be overwritten by the next
+                set logged. The store's `editEntry` refuses the same case. */}
+            {session.editable && (
+              <Pressable
+                onPress={() => router.push({ pathname: '/session-editor', params: { id: session.id } })}
+                accessibilityRole="button"
+                hitSlop={8}>
+                <ThemedText type="small" themeColor="textSecondary">
+                  {t('history.edit')}
+                </ThemedText>
+              </Pressable>
+            )}
             <Pressable onPress={() => exportSession(session.id).catch(() => {})} accessibilityRole="button" hitSlop={8}>
               <ThemedText type="small" themeColor="accentText">
                 {t('common.export')}

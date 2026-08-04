@@ -81,6 +81,7 @@
     "sets": "séries",
     "searchPlaceholder": "Buscar treinos",
     "mixed": "misto",
+    "edit": "Editar",
     "deleteConfirmTitle": "Excluir sessão?",
     "deleteConfirmBody": "\"{{name}}\" em {{day}} {{month}} será removida permanentemente.",
     "problemsTitle_one": "{{count}} arquivo de sessão não pôde ser lido ou gravado",
@@ -399,8 +400,40 @@
       "required": "Preencha o campo {{label}}.",
       "mustBeNumber": "{{label}} precisa ser um número.",
       "mustBeAtLeast": "{{label}} precisa ser pelo menos {{min}}.",
+      "mustBeAtMost": "{{label}} pode ser no máximo {{max}}.",
+      "mustBeWhole": "{{label}} precisa ser um número inteiro.",
       "holdMaxNeedsMin": "Uma faixa de isometria precisa de um mínimo além do máximo.",
       "holdMaxBelowMin": "A isometria máxima não pode ser menor que a mínima."
+    }
+  },
+  "sessionEditor": {
+    "title": "Editar sessão",
+    "subtitle": "{{name}} · {{day}} {{month}}",
+    "intro": "Corrija o que foi registrado. Nada é gravado até você tocar em Salvar.",
+    "notFoundTitle": "Sessão não encontrada",
+    "notFoundBody": "Ela pode ter sido excluída em outra tela. Nada foi alterado.",
+    "runningTitle": "Esta sessão ainda está em andamento",
+    "runningBody": "Encerre-a no treino primeiro. Ela ainda está sendo gravada, então uma alteração feita aqui seria sobrescrita pela próxima série registrada.",
+    "emptyTitle": "Nada para editar",
+    "emptyBody": "Esta sessão não tem séries registradas que possam ser corrigidas.",
+    "setLabel": "Série {{n}}",
+    "removeSet": "Remover série",
+    "removeEntry": "Remover exercício",
+    "removeEntryConfirmTitle": "Remover este exercício?",
+    "removeEntryConfirmBody": "\"{{name}}\" tem apenas uma série, então removê-la tira o exercício desta sessão.",
+    "readOnlyNote": "Registros minuto a minuto não são editáveis aqui.",
+    "field": {
+      "reps": "Reps",
+      "load": "Carga",
+      "rpe": "RPE",
+      "hold": "Isometria",
+      "rounds": "Rodadas",
+      "extraReps": "Reps extras",
+      "duration": "Duração",
+      "distance": "Distância"
+    },
+    "error": {
+      "cardioNeedsOne": "Informe uma duração ou uma distância."
     }
   },
   "exerciseEditor": {

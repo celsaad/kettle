@@ -102,3 +102,45 @@ it('renders the line and the adopt label in the active locale', async () => {
   // The user's own exercise name, never translated.
   expect(screen.getByText('Bench Press')).toBeTruthy();
 });
+
+/**
+ * The set-count controls. `use-session-runner.test.tsx` owns when they are *allowed*; this owns that
+ * they are reachable, named, and disabled rather than missing at the floor.
+ */
+describe('changing the set count', () => {
+  it('offers nothing when the runner says the count is fixed', async () => {
+    await renderScreen(<SessionReps {...props} />);
+
+    expect(screen.queryByLabelText(/sets/i)).toBeNull();
+  });
+
+  it('adds and drops through the controls', async () => {
+    const onAddSet = jest.fn();
+    const onDropSet = jest.fn();
+    await renderScreen(<SessionReps {...props} canAddSet canDropSet onAddSet={onAddSet} onDropSet={onDropSet} />);
+
+    await fireEvent.press(screen.getByLabelText('Increase sets'));
+    await fireEvent.press(screen.getByLabelText('Decrease sets'));
+
+    expect(onAddSet).toHaveBeenCalledTimes(1);
+    expect(onDropSet).toHaveBeenCalledTimes(1);
+  });
+
+  // Disabled rather than gone: a control that vanishes reflows the header right where the user is
+  // reading their set number.
+  it('keeps the drop control in place but disabled at the floor', async () => {
+    await renderScreen(<SessionReps {...props} canAddSet canDropSet={false} onDropSet={jest.fn()} />);
+
+    const drop = screen.getByLabelText('Decrease sets');
+    expect(drop).toBeTruthy();
+    expect(drop.props.accessibilityState).toMatchObject({ disabled: true });
+  });
+
+  it('names the controls in the active locale', async () => {
+    await changeLanguage('pt');
+    await renderScreen(<SessionReps {...props} canAddSet canDropSet />);
+
+    expect(screen.getByLabelText('Aumentar séries')).toBeTruthy();
+    expect(screen.getByLabelText('Diminuir séries')).toBeTruthy();
+  });
+});

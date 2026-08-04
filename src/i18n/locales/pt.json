@@ -130,6 +130,9 @@
       "body": "\"{{name}}\" não tem blocos, ou nenhum dos seus exercícios tem séries/rodadas/minutos configurados. Adicione um bloco em Montar, ou confira a configuração de cada exercício, e tente de novo."
     },
     "setOf": "Série {{index}} de {{total}}",
+    "sets": {
+      "label": "séries"
+    },
     "countingUp": "contando para cima",
     "stepperAccessibility": "{{label}}: {{value}}. Toque para inserir um valor exato.",
     "complete": {

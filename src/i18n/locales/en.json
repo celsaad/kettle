@@ -130,6 +130,9 @@
       "body": "\"{{name}}\" has no blocks, or none of its exercises have any sets/rounds/minutes configured. Add a block in Build, or check each exercise's config, then try again."
     },
     "setOf": "Set {{index}} of {{total}}",
+    "sets": {
+      "label": "sets"
+    },
     "countingUp": "counting up",
     "stepperAccessibility": "{{label}}: {{value}}. Tap to enter an exact value.",
     "complete": {

@@ -20,7 +20,7 @@ export type { IntervalVariant, RunnerStep } from '@/hooks/session-steps';
 export { buildSteps } from '@/hooks/session-steps';
 
 import type { RunnerStep } from '@/hooks/session-steps';
-import { buildSteps } from '@/hooks/session-steps';
+import { addSetForMember, buildSteps, dropLastSetForMember, setStepsForMember } from '@/hooks/session-steps';
 
 type LastCommitBuffer = 'sets' | 'hiit' | 'emom';
 
@@ -160,7 +160,17 @@ export function useSessionRunner(
    */
   onComplete: (session: Session | null) => void,
 ) {
-  const steps = useMemo(() => buildSteps(workout, exercises), [workout, exercises]);
+  /**
+   * State, not a `useMemo` over `buildSteps` — the list is mutable mid-session now (add/drop set), and
+   * a memo would throw those edits away on its next recompute.
+   *
+   * Losing the automatic rebuild is the point rather than a cost. `session.tsx` subscribes to the
+   * library store, so `exercises` got a fresh identity on any library write — including the adopt
+   * write-back on the set row — and re-ran `buildSteps` mid-workout. That was harmless (same length,
+   * same order, `stepIndex` is its own state) but it is not something a session should be exposed to
+   * once the list can be edited.
+   */
+  const [steps, setSteps] = useState(() => buildSteps(workout, exercises));
   const [stepIndex, setStepIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const [holdElapsedSec, setHoldElapsedSec] = useState(0);
@@ -764,6 +774,54 @@ export function useSessionRunner(
     useLibraryStore.getState().setTargetWeightKg(step.exerciseId, previousSet.weightKg);
   }, [step, previousSet]);
 
+  /**
+   * Whether the set count of the exercise on screen can be changed at all.
+   *
+   * False inside a circuit: there, `setIndex`/`setTotal` is the member's position in the circuit's
+   * *rounds*, and its steps are interleaved with the other members' — so "one more set" means "one
+   * more round" of the whole block, which is a different operation this doesn't implement. The block
+   * kind is the honest test, and the runner is the only layer that has it (the step carries a
+   * `blockIndex`, not a block).
+   */
+  const inCircuit = step ? workout.blocks[step.blockIndex]?.kind === 'circuit' : false;
+  const isSetStep = step?.kind === 'reps' || step?.kind === 'hold';
+  const canAddSet = isSetStep && !inCircuit;
+  /**
+   * The floor: everything this member has already logged, plus the one being performed. Dropping into
+   * that range would mean removing a set that is already in the session file, which is a different
+   * and much less welcome operation than "make it three sets".
+   */
+  const canDropSet =
+    canAddSet && step
+      ? setStepsForMember(steps, step.memberKey) > (memberSetsRef.current[step.memberKey]?.length ?? 0) + 1
+      : false;
+
+  /**
+   * Both mutations **must** clear `lastCommitRef`, and that is the single most dangerous line here.
+   * `resultingIndex` is an index into `steps` (see the LastCommit type), so any edit to the array
+   * invalidates it — a stale one sends the next `goPrev()` to undo a commit that now belongs to a
+   * different step, retracting a set the user did keep.
+   *
+   * The floor above means neither mutation can touch a step at or before `stepIndex`, so the index
+   * itself needs no adjustment.
+   */
+  const mutateSteps = useCallback((mutate: (current: RunnerStep[]) => RunnerStep[]) => {
+    lastCommitRef.current = null;
+    setSteps(mutate);
+  }, []);
+
+  const addSet = useCallback(() => {
+    if (!step) return;
+    const { memberKey } = step;
+    mutateSteps((current) => addSetForMember(current, memberKey));
+  }, [step, mutateSteps]);
+
+  const dropSet = useCallback(() => {
+    if (!step) return;
+    const { memberKey } = step;
+    mutateSteps((current) => dropLastSetForMember(current, memberKey));
+  }, [step, mutateSteps]);
+
   const addRestSeconds = useCallback(
     (amount: number) => {
       stepEndSecRef.current = Math.max(0, stepEndSecRef.current + amount);
@@ -803,6 +861,10 @@ export function useSessionRunner(
     previousSet,
     beatsPersonalBest,
     adoptPreviousLoad,
+    canAddSet,
+    canDropSet,
+    addSet,
+    dropSet,
     doneSet: advance,
     logSet: advance,
     skipRest: advance,

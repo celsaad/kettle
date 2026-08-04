@@ -470,6 +470,36 @@ decision assembled across several commits. Open work belongs in the sections at 
     rewritten on every logged set, which would re-render the whole session screen mid-workout; no
     assertion in the suite can observe that, so it is recorded here instead.
 
+- ✅ **The step list is mutable now, and there is one rule every future mutation inherits.** Add/drop
+  set promoted `steps` from a `useMemo` to state in the session runner. Three things came out of it
+  that the next mutation (swap-exercise) has to honour.
+
+  - **Any edit to `steps` must clear `lastCommitRef`.** `lastCommit.resultingIndex` is an *index into
+    the array*, and `goPrev()` consumes it to undo exactly one level. Mutate the array without
+    clearing it and the next Prev undoes a commit that now belongs to a different step — verified, not
+    theorised: removing the clear makes a logged set vanish from the session file entirely when the
+    user presses Prev after adding a set. That is data loss triggered by a navigation control, which
+    is why the clear lives in one `mutateSteps` wrapper that both operations go through rather than in
+    each of them.
+  - **Drop takes the member's last set, never the one in progress, and the floor is what has already
+    been logged.** The issue sketched `dropSet(stepIndex)`; an indexed drop overlaps with what Prev
+    and skip already do, and it can reach a set that has reached the session file. A −/+ pair that
+    changes "Set 2 of 4" to "of 3" is both the safer operation and the one that matches how a lifter
+    describes it.
+  - **Circuits are excluded, and that is structural rather than pending.** A circuit member's
+    `setIndex`/`setTotal` is its position in the block's *rounds*, and its steps are interleaved with
+    the other members' rather than contiguous — so "one more set" there means "one more round of the
+    whole block", a different operation on a different object. The runner tests the block kind, which
+    is the honest question; nothing in a `RunnerStep` alone can answer it, and adding a flag to the
+    step model to fake it would have encoded the wrong idea.
+
+  One smaller thing worth knowing, since it changes an existing behaviour without looking like it:
+  `steps` no longer rebuilds when the library changes mid-session. It used to, because `session.tsx`
+  subscribes to the library store and hands the runner a fresh `exercises` array on every write —
+  including the set row's own adopt write-back. That was harmless while the list was derived, and is
+  exactly what must not happen once the list can be edited.
+
+
 
 ---
 

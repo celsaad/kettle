@@ -36,6 +36,41 @@
   yet; `ErrorCode.UserCancelled` (kebab-case values — the `E_`-prefixed codes are long gone);
   `Product.displayPrice` (the store's localized string; `price` is `number | null` on Android, hence
   never used for ordering) and `Purchase.purchaseState: 'pending' | 'purchased' | 'unknown'`.
+- ✅ **`Directory.pickDirectoryAsync()` keeps its grant on Android and loses it on iOS.** This is the
+  question the backup folder rests on, and the two platforms answer it differently. Read out of the
+  installed native sources rather than from a device — **the pick / kill / relaunch test has not been
+  run**, so treat the Android half as very strongly evidenced rather than as observed.
+
+  - **Android persists.** `FilePickerContract.parseResult` calls
+    `contentResolver.takePersistableUriPermission(uri, takeFlags)` on the `ACTION_OPEN_DOCUMENT_TREE`
+    result, with `takeFlags` masked out of the result intent's own read/write grant. That is the
+    platform mechanism for a grant that outlives the process and the reboot, not an approximation of
+    one.
+  - **iOS does not.** `ios/FilePickingUtils.swift` calls only `startAccessingSecurityScopedResource()`
+    and never writes a security-scoped **bookmark**, so access dies with the app session. The bundled
+    type doc says as much outright. This is why `isBackupFolderSupported` in `storage/backup.ts` is
+    Android-only: a folder chosen on iOS would look set and quietly stop being written to.
+
+- ⚠️ **A SAF `content://` URI is not a `file://` URI, and three of the differences fail silently.**
+  Everything in `src/storage/` except `backup.ts` deals in `file://` and never meets these:
+
+  1. **`new File(directory, 'name.yaml')` does not address a child.** `Paths.join` treats the tree URI
+     as a URL and appends to its path, producing `…/tree/primary%3ADocs/name.yaml` — a document URI
+     has to look like `…/tree/primary%3ADocs/document/primary%3ADocs%2Fname.yaml`. Children come from
+     `directory.list()` or `directory.createFile(...)`, never from the constructor.
+  2. **`Directory.create()` throws on a `content://` URI** by explicit check in
+     `FileSystemDirectory.kt`, pointing at `createDirectory` instead. `ensureStorageReady`'s pattern
+     doesn't transfer.
+  3. **`createFile` on an existing name makes a duplicate, not an overwrite** — it goes through
+     `DocumentsContract.createDocument`, which uniquifies (`kettle-library (1).yaml`). Every write has
+     to be find-then-write against `list()`. `backup.test.ts` pins this one, because unguarded it
+     turns a backup folder into one file per session.
+
+  `File.name` does resolve correctly for these: `Paths.basename` decodes the pathname first, so a
+  document URI ending `…%2Fkettle-library.yaml` answers `kettle-library.yaml`. That holds for
+  providers whose document ids are paths (on-device storage, which is what this targets) and would not
+  for one using opaque ids.
+
 - ⚠️ **Web is not a persistence target.** `expo-file-system` has no web implementation. The storage
   layer detects this (`isFileStorageSupported` in `paths.ts`) and degrades gracefully: on web,
   `loadLibrary()` returns the seed library in-memory (no persistence, matching the old mock-data web

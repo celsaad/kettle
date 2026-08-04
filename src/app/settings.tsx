@@ -19,6 +19,8 @@ import { useLibraryStore } from '@/state/library-store';
 import { usePreferencesStore, useUnitSystem } from '@/state/preferences-store';
 import { useSessionHistoryStore } from '@/state/session-history-store';
 import { isTipJarSupported, useTipStore } from '@/state/tip-store';
+import type { BackupFailure } from '@/storage/backup';
+import { backUpNow, backupFolderLabel, isBackupFolderSupported, pickBackupFolder } from '@/storage/backup';
 import { exportLibrary, exportSessions } from '@/storage/export';
 import { isFileStorageSupported } from '@/storage/paths';
 
@@ -136,7 +138,13 @@ export default function SettingsScreen() {
   const sessions = useSessionHistoryStore((state) => state.sessions);
   const supporter = useTipStore((state) => state.supporter);
   const hydrateTips = useTipStore((state) => state.hydrate);
+  const backupFolderUri = usePreferencesStore((state) => state.preferences.backupFolderUri);
+  const setBackupFolderUri = usePreferencesStore((state) => state.setBackupFolderUri);
   const [exportError, setExportError] = useState<string | null>(null);
+  // One line for both outcomes rather than an error state and a separate success state: they are
+  // mutually exclusive answers to the same question, and two pieces of state would let a stale
+  // "backed up" sit under a fresh failure.
+  const [backupMessage, setBackupMessage] = useState<{ ok: boolean; text: string } | null>(null);
 
   // Cheap enough to do on open, and it's what lets the Support row acknowledge a past tip. The store
   // is deliberately absent from the root layout's startup gate — see the note in tip-store.ts.
@@ -166,6 +174,56 @@ export default function SettingsScreen() {
     } catch (error) {
       setExportError((error as Error).message);
     }
+  };
+
+  /**
+   * A failure turned into something to read. The only one carrying a platform string is
+   * `writeFailed` — there is no better phrasing available for "the OS refused, and here is why" —
+   * and it's interpolated rather than rendered bare so the sentence around it stays translated.
+   */
+  const describeBackupFailure = (failure: BackupFailure): string => {
+    switch (failure.kind) {
+      case 'unsupported':
+        return t('settings.backupUnsupported');
+      case 'noFolder':
+        return t('settings.backupNowNoFolder');
+      case 'unreachable':
+        return t('settings.backupUnreachable');
+      case 'writeFailed':
+        return t('settings.backupWriteFailed', { detail: failure.detail });
+    }
+  };
+
+  const runBackup = () => {
+    const failure = backUpNow(backupFolderUri, sessions);
+    setBackupMessage(
+      failure ? { ok: false, text: describeBackupFailure(failure) } : { ok: true, text: t('settings.backupDone') },
+    );
+  };
+
+  /**
+   * Opens the system picker and keeps what comes back.
+   *
+   * Backing out of the picker leaves everything as it was — `pickBackupFolder` answers null for that
+   * rather than treating it as an error, so a mis-tap can't clear a folder the user already chose.
+   * A folder that was chosen but couldn't be written to `preferences.json` is called out, because the
+   * grant itself survives the restart and the URI wouldn't: it would look set and stop working.
+   */
+  const chooseFolder = async () => {
+    setBackupMessage(null);
+    try {
+      const uri = await pickBackupFolder();
+      if (!uri) return;
+      const saved = await setBackupFolderUri(uri);
+      setBackupMessage(saved ? null : { ok: false, text: t('settings.backupFolderNotSaved') });
+    } catch (error) {
+      setBackupMessage({ ok: false, text: (error as Error).message });
+    }
+  };
+
+  const forgetFolder = async () => {
+    setBackupMessage(null);
+    await setBackupFolderUri(null);
   };
 
   const counts = [
@@ -276,19 +334,68 @@ export default function SettingsScreen() {
         )}
 
         {/*
-          The sync story, which the product plan leaves to the user and the app never explained. It
-          deliberately does not tell anyone to point a sync client at the app's folder: on Android
-          that path isn't reachable without adb, and this app declares no iOS file sharing either — so
-          export/import genuinely *is* the mechanism, and naming a directory would only send people
-          looking for something they can't open.
+          The sync story. It used to say export/import *was* the mechanism, which was true only
+          because the app couldn't reach outside its own folder — now it can, into one the user
+          nominates, so the copy describes that instead.
+
+          Hidden entirely where the folder can't be made to stick (see `isBackupFolderSupported`),
+          rather than shown greyed out: an iOS grant dies with the app session, so the row would be
+          advertising a backup that silently stops happening. The export rows above still work there.
         */}
         <Section title={t('settings.files')}>
-          <ThemedText type="small" themeColor="textSecondary">
-            {t('settings.filesLocal')}
-          </ThemedText>
-          <ThemedText type="small" themeColor="textSecondary" style={styles.caption}>
-            {t('settings.filesSync')}
-          </ThemedText>
+          {isBackupFolderSupported ? (
+            <>
+              <View style={styles.rowList}>
+                <ActionRow
+                  title={t('settings.backupFolder')}
+                  // The folder is the user's own path — rendered verbatim, never translated.
+                  detail={backupFolderUri ? backupFolderLabel(backupFolderUri) : t('settings.backupFolderNone')}
+                  onPress={chooseFolder}
+                />
+                <ActionRow
+                  title={t('settings.backupNow')}
+                  detail={backupFolderUri ? t('settings.backupNowDetail') : t('settings.backupNowNoFolder')}
+                  onPress={runBackup}
+                  disabled={!backupFolderUri}
+                />
+                {/* Only once there's something to forget. A row offering to undo a choice nobody has
+                    made is three rows where two would do. */}
+                {backupFolderUri && (
+                  <ActionRow
+                    title={t('settings.backupForget')}
+                    detail={t('settings.backupForgetDetail')}
+                    onPress={forgetFolder}
+                  />
+                )}
+              </View>
+              {backupMessage && (
+                <ThemedText
+                  type="small"
+                  style={[styles.caption, { color: backupMessage.ok ? theme.textSecondary : theme.accentText }]}>
+                  {backupMessage.text}
+                </ThemedText>
+              )}
+              <ThemedText type="small" themeColor="textSecondary" style={styles.caption}>
+                {t('settings.backupWhat')}
+              </ThemedText>
+              {/* The honest half, and the reason no string above says "restore": the library can be
+                  imported back, the log cannot — nothing in the app parses a session file. Promising
+                  a restore that doesn't exist is the one way this feature could cost someone
+                  everything it was built to protect. */}
+              <ThemedText type="small" themeColor="textSecondary" style={styles.caption}>
+                {t('settings.backupLimits')}
+              </ThemedText>
+            </>
+          ) : (
+            <>
+              <ThemedText type="small" themeColor="textSecondary">
+                {t('settings.filesLocal')}
+              </ThemedText>
+              <ThemedText type="small" themeColor="textSecondary" style={styles.caption}>
+                {t('settings.filesSync')}
+              </ThemedText>
+            </>
+          )}
         </Section>
 
         <Section title={t('settings.inYourLibrary')}>

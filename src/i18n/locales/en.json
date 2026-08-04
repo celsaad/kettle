@@ -161,7 +161,8 @@
       "title": "Workout complete",
       "done": "Done",
       "recordBadge": "PR",
-      "oneRepMaxNote": "1RM estimated from your best set with the Epley formula."
+      "oneRepMaxNote": "1RM estimated from your best set with the Epley formula.",
+      "backupFailed": "This session is saved on this device, but the copy to your backup folder didn't go through. Check Settings."
     },
     "countdown": {
       "getReady": "GET READY"
@@ -276,7 +277,21 @@
     "exercises": "Exercises",
     "sessions": "Sessions",
     "version": "Kettle {{version}}",
-    "support": "Support"
+    "support": "Support",
+    "backupFolder": "Backup folder",
+    "backupFolderNone": "Not chosen yet. Pick a folder on this device.",
+    "backupNow": "Back up now",
+    "backupNowDetail": "Write both files again straight away.",
+    "backupNowNoFolder": "Choose a folder first.",
+    "backupForget": "Forget this folder",
+    "backupForgetDetail": "Stop writing backups. Whatever is already there stays.",
+    "backupDone": "Backed up.",
+    "backupUnsupported": "Backing up to a folder isn't available on this device.",
+    "backupUnreachable": "That folder can't be reached any more. Choose it again.",
+    "backupWriteFailed": "Couldn't write the backup: {{detail}}",
+    "backupFolderNotSaved": "That folder was chosen but couldn't be saved, so it won't be remembered after a restart.",
+    "backupWhat": "Kettle writes kettle-library.yaml and kettle-history.yaml into the folder you choose, at the end of every session and whenever you tap Back up now. It overwrites those two files and touches nothing else in there. Point it at a folder your sync app already watches and your log leaves the phone without Kettle ever sending anything.",
+    "backupLimits": "The library file can be imported back into a fresh install. The session log can't — Kettle exports it to keep and read, but has nothing that reads one back in, so treat it as a record rather than as a restore."
   },
   "support": {
     "title": "Support Kettle",

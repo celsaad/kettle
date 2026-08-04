@@ -42,7 +42,13 @@ beforeEach(() => {
 it('has a stored scheme in effect on the first render', async () => {
   usePreferencesStore.setState({
     status: 'ready',
-    preferences: { unitSystem: 'metric', themePreference: 'dark', listSort: DEFAULT_LIST_SORTS, restDayReminder: false },
+    preferences: {
+      unitSystem: 'metric',
+      themePreference: 'dark',
+      listSort: DEFAULT_LIST_SORTS,
+      restDayReminder: false,
+      backupFolderUri: null,
+    },
   });
 
   const { result } = await renderHook(() => useAppTheme(), { wrapper });
@@ -56,7 +62,13 @@ it('keeps a pinned scheme when the device is set to the other one', async () => 
   mockColorScheme.mockReturnValue('dark');
   usePreferencesStore.setState({
     status: 'ready',
-    preferences: { unitSystem: 'metric', themePreference: 'light', listSort: DEFAULT_LIST_SORTS, restDayReminder: false },
+    preferences: {
+      unitSystem: 'metric',
+      themePreference: 'light',
+      listSort: DEFAULT_LIST_SORTS,
+      restDayReminder: false,
+      backupFolderUri: null,
+    },
   });
 
   const { result } = await renderHook(() => useAppTheme(), { wrapper });

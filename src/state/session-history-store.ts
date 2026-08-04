@@ -1,6 +1,9 @@
 import { create } from 'zustand';
 
 import type { Session, SessionEntry } from '@/domain/types';
+import { usePreferencesStore } from '@/state/preferences-store';
+import type { BackupFailure } from '@/storage/backup';
+import { backUpNow, isBackupFolderSupported } from '@/storage/backup';
 import {
   appendSessionEntry,
   createSession,
@@ -27,6 +30,15 @@ type SessionHistoryState = {
    * there's only ever one copy of the session itself, in `sessions`.
    */
   activeSessionId: string | null;
+  /**
+   * Why the backup taken at the end of the last session didn't land, or `null` if it did (or if the
+   * user has nominated no folder, which is nothing to report).
+   *
+   * Separate from `errors` on purpose: that list renders under a heading about *session files*, and a
+   * folder whose grant was revoked is not one of those. The completion screen reads this, which is
+   * the first moment after a workout where saying so costs nothing.
+   */
+  backupFailure: BackupFailure | null;
   hydrate: () => Promise<void>;
   /** Creates and flushes a new session file immediately (§7.2: never hold a live session only in memory). */
   startSession: (
@@ -94,11 +106,26 @@ function withWriteFailure(errors: string[]): string[] {
   return failure && !errors.includes(failure) ? [...errors, failure] : errors;
 }
 
+/**
+ * Backs the log up now that a session has ended, and answers with what went wrong.
+ *
+ * Skipped entirely when the user has nominated no folder — someone who never opted in has nothing to
+ * be told, and running it anyway would answer `noFolder` and light up a warning on every completion
+ * screen in the app. `backUpNow` cannot throw, which is load-bearing here: this runs inside the
+ * runner's `finishSession`.
+ */
+function backUpAfterSession(sessions: Session[]): BackupFailure | null {
+  const { backupFolderUri } = usePreferencesStore.getState().preferences;
+  if (!isBackupFolderSupported || !backupFolderUri) return null;
+  return backUpNow(backupFolderUri, sessions);
+}
+
 export const useSessionHistoryStore = create<SessionHistoryState>((set, get) => ({
   status: 'idle',
   sessions: [],
   errors: [],
   activeSessionId: null,
+  backupFailure: null,
   hydrate: async () => {
     set({ status: 'loading' });
     const { sessions, errors } = await listSessions();
@@ -136,10 +163,14 @@ export const useSessionHistoryStore = create<SessionHistoryState>((set, get) => 
   },
   completeSession: (session) => {
     const updated = finalizeSession(session, new Date().toISOString());
+    // Built before the `set` rather than inside it, because the backup has to carry the session that
+    // just ended — reading `get().sessions` from within would archive the log as it was one set ago.
+    const sessions = get().sessions.map((existing) => (existing.id === updated.id ? updated : existing));
     set({
-      sessions: get().sessions.map((existing) => (existing.id === updated.id ? updated : existing)),
+      sessions,
       errors: withWriteFailure(get().errors),
       activeSessionId: null,
+      backupFailure: backUpAfterSession(sessions),
     });
     return updated;
   },

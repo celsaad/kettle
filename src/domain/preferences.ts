@@ -65,6 +65,13 @@ export type Preferences = {
    * this app does that reaches outside itself, and its whole pitch is that it doesn't bother anyone.
    */
   restDayReminder: boolean;
+  /**
+   * The folder the user nominated for backups — a SAF `content://` tree URI on Android, `null` until
+   * they choose one. App-owned state, which is why it lives here rather than in the YAML library: the
+   * library is a file people export and share, and a recipient has no business inheriting a path into
+   * someone else's phone.
+   */
+  backupFolderUri: string | null;
 };
 
 export const preferencesSchema = z.object({
@@ -89,4 +96,8 @@ export const preferencesSchema = z.object({
   // being written in the field — and `false` is also the value the product wants: an opt-in that
   // defaulted to true for existing installs would start notifying people who never asked.
   restDayReminder: z.boolean().default(false),
+  // Same treatment again, and the stakes are higher than for the others: this arrived last, so *every*
+  // `preferences.json` in the field predates it, and a required key here would fail `safeParse` for
+  // every existing install at once — resetting appearance, units and list order along with it.
+  backupFolderUri: z.string().nullable().default(null),
 });

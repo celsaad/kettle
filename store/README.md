@@ -36,15 +36,23 @@ would breach a Play limit — see "What the limits actually are" below.
 | Phone screenshots | `screen-01..07-*.png` | `site/assets/img/*.jpg` |
 
 The screenshots are the **same captures the landing page uses**. One set of images, two consumers —
-re-capture once and both update.
+re-capture once and both update. `site/assets/img` holds more than the listing can show (Play caps a
+phone listing at eight), so `SHOTS` in the script is the chosen subset and its order is the listing's
+order.
 
 ## What the limits actually are
 
 Each of these cost a rejected upload or a wrong guess once, so they are asserted in the script:
 
-- **Screenshots: max dimension ≤ 2× min dimension.** The captures are 1080×2242 and 2×1080 is 2160,
-  so they are 82px too tall as taken. Trimmed from the bottom, which is the gesture-pill band.
-  Letterboxing to fit would put visible bars down both sides.
+- **Screenshots: max dimension ≤ 2× min dimension**, and **at most eight** per device type. 2×1080
+  is 2160, so that is the height ceiling; `build-assets.js` enforces both, the second with an explicit
+  throw so a ninth entry in `SHOTS` fails loudly rather than at upload.
+
+  The 2026-08-04 captures are cropped to 2160 at capture time — status bar and gesture pill both
+  removed, window centred on each screen's own content — so the extract in the script is a no-op guard
+  for them. Earlier captures were 1080x2242 and got trimmed from the bottom, the gesture-pill band
+  being the only strip with nothing worth keeping. Letterboxing to fit would put visible bars down
+  both sides, which is why neither approach does it.
 - **App icon: full square, no transparency, no baked corner radius or shadow.** Play applies its own
   30% radius and shadow, so pre-rounding doubles up. The script asserts zero non-opaque pixels.
 - **Feature graphic: no alpha channel.** Flattened explicitly.
@@ -296,8 +304,8 @@ do not resolve on a locally installed APK.
 
 ## Open
 
-- The lead screenshot (`today`) shows a zeroed streak and an empty Recent list. Capture it again with
-  a few sessions logged — it is the first image anyone sees.
-- `screen-07-import` predates the removal of the leading glyphs on that screen.
 - No `og:image` card for the site yet; if one is made, it is a website asset and outside Play's
   scope, but reusing it as a listing graphic would put it back in scope.
+- The captures are of a **real** library and log — 347 exercises, real workout names, actual history.
+  That is the populated state the listing wanted, and it is public once uploaded. Re-capturing against
+  seeded data is the alternative if that ever becomes unwanted.

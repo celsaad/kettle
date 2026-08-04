@@ -42,16 +42,33 @@ const ROOT = path.join(__dirname, '..');
 const OUT = path.join(__dirname, 'out');
 
 /**
- * Play: "Maximum dimension cannot exceed twice the minimum dimension." The captures are 1080x2242,
- * and 2 * 1080 is 2160, so they are 82px over and get rejected. Trimmed from the bottom, which is
- * the gesture-pill band and the only strip with nothing worth keeping — letterboxing to fit would
- * put visible bars down both sides instead.
+ * Play: "Maximum dimension cannot exceed twice the minimum dimension." 2 * 1080 is 2160, so that is
+ * the ceiling, and the extract below enforces it however tall the source happens to be.
+ *
+ * The captures used to be 1080x2242 and were trimmed here, from the bottom, because the gesture-pill
+ * band was the only strip with nothing worth keeping. The 2026-08-04 set is cropped to 2160 at
+ * capture time instead — both the status bar and the gesture pill removed, with the window centred on
+ * each screen's own content — so this extract is now a no-op guard rather than the thing doing the
+ * work. It stays for the next capture that arrives oversized. Letterboxing to fit would put visible
+ * bars down both sides, which is why neither approach does it.
  */
 const SHOT_W = 1080;
 const SHOT_H = 2160;
 
-/** Order matters: this is the order they appear in the listing. Runner first, after the hook. */
-const SHOTS = ['today', 'session-reps', 'session-hiit', 'workouts', 'programs', 'history', 'import'];
+/**
+ * Order matters: this is the order they appear in the listing, and Play caps a phone listing at
+ * **eight**. That cap is why this is a chosen subset rather than every screen that has a capture —
+ * `site/assets/img` also holds session-hold, library and settings, which the landing page can afford
+ * to show and the listing cannot.
+ *
+ * The runner leads, per the repositioned pitch (#58): the set row carrying "last time" and the PR
+ * marker is the single image that evidences the claim the listing now opens with, and the completion
+ * screen is the only one showing a named record with an estimated 1RM. Drop either of those before
+ * dropping a list screen and the copy is left unbacked.
+ */
+const SHOTS = ['session-reps', 'session-hiit', 'session-complete', 'today', 'workouts', 'programs', 'history', 'import'];
+
+if (SHOTS.length > 8) throw new Error(`Play allows 8 phone screenshots; SHOTS lists ${SHOTS.length}`);
 
 async function icon() {
   // 512x512 32-bit PNG, sRGB, under 1024 KB. The source is a full square with no transparency and

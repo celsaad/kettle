@@ -14,7 +14,9 @@ on:
   push:
     branches: [master]
     paths-ignore:
-      - '**/*.md'
+      # '**.md', not '**/*.md': GitHub's '**' matches any character including '/', so the latter
+      # still requires one and would miss CHANGELOG.md and the other root-level files entirely.
+      - '**.md'
       - 'docs/**'
       - 'site/**'
       - 'store/**'
@@ -79,12 +81,15 @@ jobs:
             ccache-android-${{ hashFiles('pnpm-lock.yaml') }}-
             ccache-android-
 
-      # ccache ships on the runner image; this only configures it. The sloppiness settings are what
-      # make it hit at all across runs: the NDK's __DATE__/__TIME__ macros and reanimated's generated
-      # stub PCH would otherwise miss every time. base_dir + hash_dir=false stop the absolute build
-      # path (which android/ regenerates) from being part of the hash.
-      - name: Configure ccache
+      # ccache is not on the ubuntu-24.04 image, so it's installed rather than just configured. The
+      # sloppiness settings are what make it hit at all across runs: the NDK's __DATE__/__TIME__
+      # macros and reanimated's generated stub PCH would otherwise miss every time. base_dir +
+      # hash_dir=false stop the absolute build path (which android/ regenerates) from being part of
+      # the hash.
+      - name: Install and configure ccache
         run: |
+          sudo apt-get update
+          sudo apt-get install -y ccache
           export CCACHE_DIR="$HOME/.ccache"
           echo "CCACHE_DIR=$CCACHE_DIR" >> "$GITHUB_ENV"
           ccache --set-config max_size=2G
@@ -143,9 +148,12 @@ jobs:
 
       # Read this on a warm run before believing any of the above. A hit rate near zero means the
       # compiler launcher never reached the CMake invocations and the cache is dead weight.
+      #
+      # Guarded on ccache existing: this runs even when an earlier step failed, and reporting on a
+      # cache that was never installed buries the real error under a second, louder one.
       - name: ccache stats
         if: always()
-        run: ccache --show-stats --verbose
+        run: command -v ccache >/dev/null && ccache --show-stats --verbose || echo 'ccache not installed'
 
       # Deleted before the artifact upload rather than after, so a failure in between can't sweep the
       # keystore into a partial artifact.

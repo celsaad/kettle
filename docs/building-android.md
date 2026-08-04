@@ -40,20 +40,30 @@ thing in this repo that needs EAS.
 
 ### 2. Put it in four repository secrets
 
-The keystore is binary, and secrets are text, so it goes in base64. On Windows:
+The keystore is binary and a secret is text, so it goes in base64. PowerShell, since that's what this
+is run from — `gh secret set NAME < file` is the documented form and PowerShell has no `<` redirect,
+so the encode and the upload are one expression instead and no `.b64` is left lying about:
 
 ```powershell
-[Convert]::ToBase64String([IO.File]::ReadAllBytes("upload.jks")) | Set-Content keystore.b64 -NoNewline
+gh secret set ANDROID_UPLOAD_KEYSTORE_BASE64 --body ([Convert]::ToBase64String([IO.File]::ReadAllBytes("upload.jks")))
 ```
 
-```sh
-gh secret set ANDROID_UPLOAD_KEYSTORE_BASE64 < keystore.b64
+The other three take no file and prompt, so they are the same everywhere. Their values come from what
+the download printed: `keystorePassword`, `keyAlias` and `keyPassword` in EAS's `credentials.json`
+naming.
+
+```powershell
 gh secret set ANDROID_UPLOAD_KEYSTORE_PASSWORD
 gh secret set ANDROID_UPLOAD_KEY_ALIAS
 gh secret set ANDROID_UPLOAD_KEY_PASSWORD
 ```
 
-Then delete `keystore.b64` and keep the `.jks` somewhere you'd still have it after a laptop dies.
+Confirm the alias and the keystore password against the file rather than against what you copied — a
+wrong alias fails half an hour into a build. `keytool -list -v -keystore upload.jks` prompts for the
+keystore password and prints `Alias name:`; `keytool -certreq -keystore upload.jks -alias <alias>` is
+the non-destructive way to check the *key* password, which `-list` never touches.
+
+Keep the `.jks` somewhere you'd still have it after a laptop dies.
 `*.jks` is gitignored, which stops the obvious accident and nothing else.
 
 **The repository being public doesn't expose these.** Secrets are never given to a workflow triggered
@@ -114,14 +124,21 @@ stage would populate a cache only that PR can use, and the post-merge build woul
 The only thing that warms the merge build is the *previous* merge build — which is why the trigger is
 `push: master` and not `pull_request`.
 
-Two things to know about the ccache setup, both of which will eventually be the reason it stops
-working:
+Three things to know about the ccache setup — what it buys, and the two knobs that will eventually be
+the reason it stops buying it:
 
-- **The stats step is not decoration.** It prints the hit rate at the end of every run. On a warm
-  run that number should be high; if it's near zero, `CMAKE_C_COMPILER_LAUNCHER` stopped reaching the
-  CMake invocations — CMake picks it up as the default for `CMAKE_<LANG>_COMPILER_LAUNCHER`, and a
-  module that sets that variable explicitly wins over it. The fallback is injecting `cmakeArgs` in
-  the prebuild patch, which is worse and hasn't been needed.
+- **What it's actually worth, measured.** Two back-to-back `apk` runs off an identical tree: cold
+  13m13s at a 2% hit rate, warm 11m14s at **30%**. Real, and well short of what an unchanged source
+  tree ought to give — 204 of 293 compilations still missed, with the preprocessed-mode fallback
+  salvaging none of them, so the inputs genuinely differ rather than just their paths. Codegen output
+  and the absolute include paths into Gradle's extracted prefab directories are the two suspects;
+  `CCACHE_DEBUG=1` dumps the reason per miss and is where to start. Not chased yet.
+- **The stats step is not decoration**, and read `Cacheable calls` before the hit rate. That line is
+  what proves `CMAKE_C_COMPILER_LAUNCHER` is still reaching the CMake invocations: if it stopped,
+  ccache would record *no calls at all* rather than a run of misses. CMake takes it as the default
+  for `CMAKE_<LANG>_COMPILER_LAUNCHER`, and a module setting that variable explicitly would win over
+  it. The fallback is injecting `cmakeArgs` in the prebuild patch, which is worse and hasn't been
+  needed.
 - **The sloppiness settings are load-bearing.** `time_macros` and the `include_file_*` pair are what
   stop the NDK headers missing on every run, and `pch_defines` covers reanimated's generated stub
   PCH. `base_dir` and `hash_dir=false` keep the regenerated absolute build path out of the hash.

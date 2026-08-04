@@ -40,20 +40,30 @@ thing in this repo that needs EAS.
 
 ### 2. Put it in four repository secrets
 
-The keystore is binary, and secrets are text, so it goes in base64. On Windows:
+The keystore is binary and a secret is text, so it goes in base64. PowerShell, since that's what this
+is run from — `gh secret set NAME < file` is the documented form and PowerShell has no `<` redirect,
+so the encode and the upload are one expression instead and no `.b64` is left lying about:
 
 ```powershell
-[Convert]::ToBase64String([IO.File]::ReadAllBytes("upload.jks")) | Set-Content keystore.b64 -NoNewline
+gh secret set ANDROID_UPLOAD_KEYSTORE_BASE64 --body ([Convert]::ToBase64String([IO.File]::ReadAllBytes("upload.jks")))
 ```
 
-```sh
-gh secret set ANDROID_UPLOAD_KEYSTORE_BASE64 < keystore.b64
+The other three take no file and prompt, so they are the same everywhere. Their values come from what
+the download printed: `keystorePassword`, `keyAlias` and `keyPassword` in EAS's `credentials.json`
+naming.
+
+```powershell
 gh secret set ANDROID_UPLOAD_KEYSTORE_PASSWORD
 gh secret set ANDROID_UPLOAD_KEY_ALIAS
 gh secret set ANDROID_UPLOAD_KEY_PASSWORD
 ```
 
-Then delete `keystore.b64` and keep the `.jks` somewhere you'd still have it after a laptop dies.
+Confirm the alias and the keystore password against the file rather than against what you copied — a
+wrong alias fails half an hour into a build. `keytool -list -v -keystore upload.jks` prompts for the
+keystore password and prints `Alias name:`; `keytool -certreq -keystore upload.jks -alias <alias>` is
+the non-destructive way to check the *key* password, which `-list` never touches.
+
+Keep the `.jks` somewhere you'd still have it after a laptop dies.
 `*.jks` is gitignored, which stops the obvious accident and nothing else.
 
 **The repository being public doesn't expose these.** Secrets are never given to a workflow triggered

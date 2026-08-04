@@ -5,6 +5,7 @@ import HistoryScreen from '@/app/(tabs)/history';
 import type { Session, SessionEntry } from '@/domain/types';
 import { useLibraryStore } from '@/state/library-store';
 import { useSessionHistoryStore } from '@/state/session-history-store';
+import { router } from '@/test-support/expo-router';
 import { aLibrary, anExercise, aWorkout } from '@/test-support/library';
 import { pressAlertButton, renderScreen } from '@/test-support/render';
 
@@ -145,4 +146,34 @@ it('stays quiet when there is no history at all', async () => {
   await renderScreen(<HistoryScreen />);
 
   expect(screen.queryByText('Nothing matched')).toBeNull();
+});
+
+/**
+ * The edit affordance (#56), and the one case where it must not appear.
+ *
+ * A session still being written to by the runner is in `sessions` — `startSession` puts it there — so
+ * History lists it like any other. Offering Edit on it would offer something the store refuses, since
+ * the runner writes through its own copy and would overwrite the correction on the next set.
+ */
+describe('editing a session', () => {
+  it('opens the editor for the session whose card is open', async () => {
+    await renderScreen(<HistoryScreen />);
+
+    await fireEvent.press(screen.getByText('Leg day'));
+    await fireEvent.press(screen.getByText('Edit'));
+
+    expect(router.push).toHaveBeenCalledWith({ pathname: '/session-editor', params: { id: 'legs-1' } });
+  });
+
+  it('offers no Edit on a session that is still running', async () => {
+    const running: Session = { ...push, id: 'running-1', endedAt: null };
+    useSessionHistoryStore.setState({ sessions: [running], errors: [], status: 'ready' });
+    await renderScreen(<HistoryScreen />);
+
+    await fireEvent.press(screen.getByText('Push day'));
+
+    // Delete stays: throwing away a session the runner is mid-way through is a coherent thing to want.
+    expect(screen.getByText('Delete')).toBeTruthy();
+    expect(screen.queryByText('Edit')).toBeNull();
+  });
 });

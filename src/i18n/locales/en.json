@@ -81,6 +81,7 @@
     "sets": "sets",
     "searchPlaceholder": "Search workouts",
     "mixed": "mixed",
+    "edit": "Edit",
     "deleteConfirmTitle": "Delete session?",
     "deleteConfirmBody": "\"{{name}}\" on {{day}} {{month}} will be permanently removed.",
     "problemsTitle_one": "{{count}} session file couldn't be read or written",
@@ -399,8 +400,40 @@
       "required": "{{label}} is required.",
       "mustBeNumber": "{{label}} must be a number.",
       "mustBeAtLeast": "{{label}} must be at least {{min}}.",
+      "mustBeAtMost": "{{label}} can be at most {{max}}.",
+      "mustBeWhole": "{{label}} must be a whole number.",
       "holdMaxNeedsMin": "A hold range needs a minimum as well as a maximum.",
       "holdMaxBelowMin": "The maximum hold can't be shorter than the minimum."
+    }
+  },
+  "sessionEditor": {
+    "title": "Edit session",
+    "subtitle": "{{name}} · {{day}} {{month}}",
+    "intro": "Correct what was logged. Nothing is saved until you press Save.",
+    "notFoundTitle": "Session not found",
+    "notFoundBody": "It may have been deleted from another screen. Nothing was changed.",
+    "runningTitle": "This session is still running",
+    "runningBody": "Finish it in the runner first. It's still being written to, so an edit made here would be overwritten by the next set you log.",
+    "emptyTitle": "Nothing to edit",
+    "emptyBody": "This session has no logged sets that can be corrected.",
+    "setLabel": "Set {{n}}",
+    "removeSet": "Remove set",
+    "removeEntry": "Remove exercise",
+    "removeEntryConfirmTitle": "Remove this exercise?",
+    "removeEntryConfirmBody": "\"{{name}}\" has one set left, so removing it takes the exercise out of this session.",
+    "readOnlyNote": "Minute-by-minute logs aren't editable here.",
+    "field": {
+      "reps": "Reps",
+      "load": "Load",
+      "rpe": "RPE",
+      "hold": "Hold",
+      "rounds": "Rounds",
+      "extraReps": "Extra reps",
+      "duration": "Duration",
+      "distance": "Distance"
+    },
+    "error": {
+      "cardioNeedsOne": "Enter a duration or a distance."
     }
   },
   "exerciseEditor": {

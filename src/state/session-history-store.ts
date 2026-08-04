@@ -8,6 +8,7 @@ import {
   finalizeSession,
   listSessions,
   removeLastSessionEntry,
+  removeSessionEntry,
   replaceSessionEntry,
   takeWriteFailure,
 } from '@/storage/session-files';
@@ -54,7 +55,33 @@ type SessionHistoryState = {
   abandonActiveSession: () => void;
   /** Deletes a session's file and drops it from history state. Takes an id rather than a Session since, unlike the other actions, there is no updated session to return. */
   deleteSession: (id: string) => void;
+  /**
+   * Corrects an already-logged entry on a **finished** session — the History editor's write path.
+   *
+   * Keyed by id rather than taking a `Session` like `replaceEntry` above, and the difference is not
+   * cosmetic. The runner owns the session object it is writing to and needs the updated one back;
+   * History owns no session, so handing it one to pass in would mean handing it something it could
+   * hold past the next write. These read the current session out of state instead.
+   */
+  editEntry: (sessionId: string, index: number, entry: SessionEntry) => void;
+  /** Drops one entry from a finished session — what `editEntry` can't express when an exercise's last set is removed. */
+  removeEntry: (sessionId: string, index: number) => void;
 };
+
+/**
+ * The session an id refers to, if it can be edited from outside the runner.
+ *
+ * **An in-flight session is refused.** While a session runs, the runner holds it in `sessionRef` and
+ * writes through that copy; the same session is also in `sessions`, because `startSession` puts it
+ * there. An edit from History would leave the runner holding a copy without it, and the runner's next
+ * `logEntry` would spread that stale copy back over the file — the edit would vanish, one set later,
+ * with nothing said. `exerciseHistory` and `previousSetFor` skip unfinished sessions for related
+ * reasons; this is the same line drawn at the write side.
+ */
+function finishedSession(sessions: Session[], id: string): Session | undefined {
+  const session = sessions.find((existing) => existing.id === id);
+  return session?.endedAt ? session : undefined;
+}
 
 /**
  * Merges any flush failure from the write that just happened into the store's own `errors`, which
@@ -145,5 +172,23 @@ export const useSessionHistoryStore = create<SessionHistoryState>((set, get) => 
       return;
     }
     set({ sessions: get().sessions.filter((session) => session.id !== id), errors: withWriteFailure(get().errors) });
+  },
+  editEntry: (sessionId, index, entry) => {
+    const session = finishedSession(get().sessions, sessionId);
+    if (!session) return;
+    const updated = replaceSessionEntry(session, index, entry);
+    set({
+      sessions: get().sessions.map((existing) => (existing.id === updated.id ? updated : existing)),
+      errors: withWriteFailure(get().errors),
+    });
+  },
+  removeEntry: (sessionId, index) => {
+    const session = finishedSession(get().sessions, sessionId);
+    if (!session) return;
+    const updated = removeSessionEntry(session, index);
+    set({
+      sessions: get().sessions.map((existing) => (existing.id === updated.id ? updated : existing)),
+      errors: withWriteFailure(get().errors),
+    });
   },
 }));

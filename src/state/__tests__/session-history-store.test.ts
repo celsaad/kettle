@@ -14,6 +14,10 @@ jest.mock('@/storage/session-files', () => ({
     ...session,
     entries: session.entries.map((existing, position) => (position === index ? entry : existing)),
   }),
+  removeSessionEntry: (session: Session, index: number) => ({
+    ...session,
+    entries: session.entries.filter((_, position) => position !== index),
+  }),
 }));
 
 import type { Session, SessionEntry } from '@/domain/types';
@@ -188,5 +192,118 @@ describe('abandonActiveSession', () => {
 
     expect(mockFinalizeSession).not.toHaveBeenCalled();
     expect(useSessionHistoryStore.getState().activeSessionId).toBeNull();
+  });
+});
+
+/**
+ * The History editor's write path (#56). These two are the only actions keyed by session *id* rather
+ * than handed a `Session`, and the reason is the in-flight guard below: History has no session object
+ * of its own, so letting it pass one in would let it pass a stale one.
+ */
+describe('editEntry', () => {
+  const pullUps: SessionEntry = { exercise: 'pull-ups', type: 'reps', sets: [{ reps: 8, restTakenSec: 60 }] };
+  const dips: SessionEntry = { exercise: 'dips', type: 'reps', sets: [{ reps: 10, restTakenSec: 60 }] };
+  const finished = (entries: SessionEntry[]) => aSession({ endedAt: '2026-07-29T10:00:00.000Z', entries });
+
+  it('rewrites the entry at the given index and leaves its neighbours alone', () => {
+    useSessionHistoryStore.setState({ sessions: [finished([pullUps, dips])] });
+
+    useSessionHistoryStore
+      .getState()
+      .editEntry('session-1', 1, { exercise: 'dips', type: 'reps', sets: [{ reps: 12, restTakenSec: 60 }] });
+
+    const entries = useSessionHistoryStore.getState().sessions[0].entries;
+    expect(entries[0]).toEqual(pullUps);
+    expect(entries[1]).toEqual({ exercise: 'dips', type: 'reps', sets: [{ reps: 12, restTakenSec: 60 }] });
+  });
+
+  /**
+   * The index is into `session.entries`, and `historySessionsView` filters `rest` entries out of what
+   * History shows — so a card's position on that screen is not this number. Passing a view index would
+   * rewrite whichever entry happened to sit at that offset, which here is the *rest* entry rather than
+   * the dips. Reintroduce the bug by having the editor index the filtered list and this fails.
+   */
+  it('indexes the raw entry list, which is not History’s rest-filtered view of it', () => {
+    const rest: SessionEntry = { exercise: 'rest', type: 'rest', restTakenSec: 120 };
+    useSessionHistoryStore.setState({ sessions: [finished([pullUps, rest, dips])] });
+
+    // Dips is at raw index 2, but at index 1 of what History renders.
+    useSessionHistoryStore
+      .getState()
+      .editEntry('session-1', 2, { exercise: 'dips', type: 'reps', sets: [{ reps: 12, restTakenSec: 60 }] });
+
+    const entries = useSessionHistoryStore.getState().sessions[0].entries;
+    expect(entries[1]).toEqual(rest);
+    expect(entries[2]).toEqual({ exercise: 'dips', type: 'reps', sets: [{ reps: 12, restTakenSec: 60 }] });
+  });
+
+  /**
+   * The runner holds an in-flight session in a ref and writes through that copy, and the same session
+   * is in `sessions` because `startSession` put it there. An edit accepted here would be overwritten
+   * by the runner's next `logEntry` — the correction would vanish one set later, silently. Remove the
+   * `endedAt` check in `finishedSession` and this fails.
+   */
+  it('refuses a session that is still running', () => {
+    useSessionHistoryStore.setState({ sessions: [aSession({ endedAt: null, entries: [pullUps] })] });
+
+    useSessionHistoryStore
+      .getState()
+      .editEntry('session-1', 0, { exercise: 'pull-ups', type: 'reps', sets: [{ reps: 99, restTakenSec: 60 }] });
+
+    expect(useSessionHistoryStore.getState().sessions[0].entries[0]).toEqual(pullUps);
+  });
+
+  it('does nothing when the session is gone', () => {
+    useSessionHistoryStore.setState({ sessions: [] });
+
+    useSessionHistoryStore.getState().editEntry('vanished', 0, pullUps);
+
+    expect(useSessionHistoryStore.getState().sessions).toEqual([]);
+  });
+
+  it('surfaces a flush failure the same way the runner’s writes do', () => {
+    useSessionHistoryStore.setState({ sessions: [finished([pullUps])] });
+    mockTakeWriteFailure.mockReturnValue('session-1: no space left on device');
+
+    useSessionHistoryStore.getState().editEntry('session-1', 0, dips);
+
+    expect(useSessionHistoryStore.getState().errors).toEqual(['session-1: no space left on device']);
+  });
+});
+
+describe('removeEntry', () => {
+  const pullUps: SessionEntry = { exercise: 'pull-ups', type: 'reps', sets: [{ reps: 8, restTakenSec: 60 }] };
+  const dips: SessionEntry = { exercise: 'dips', type: 'reps', sets: [{ reps: 10, restTakenSec: 60 }] };
+  const rows: SessionEntry = { exercise: 'rows', type: 'reps', sets: [{ reps: 12, restTakenSec: 60 }] };
+  const finished = (entries: SessionEntry[]) => aSession({ endedAt: '2026-07-29T10:00:00.000Z', entries });
+
+  it('drops the entry at the given index', () => {
+    useSessionHistoryStore.setState({ sessions: [finished([pullUps, dips, rows])] });
+
+    useSessionHistoryStore.getState().removeEntry('session-1', 1);
+
+    expect(useSessionHistoryStore.getState().sessions[0].entries).toEqual([pullUps, rows]);
+  });
+
+  /**
+   * Every removal shifts the indices after it down by one. The editor removes back to front for that
+   * reason; this pins what the store does under that order, so a future caller doing it front to back
+   * has something to fail against.
+   */
+  it('removes the intended two when called back to front', () => {
+    useSessionHistoryStore.setState({ sessions: [finished([pullUps, dips, rows])] });
+
+    useSessionHistoryStore.getState().removeEntry('session-1', 2);
+    useSessionHistoryStore.getState().removeEntry('session-1', 0);
+
+    expect(useSessionHistoryStore.getState().sessions[0].entries).toEqual([dips]);
+  });
+
+  it('refuses a session that is still running', () => {
+    useSessionHistoryStore.setState({ sessions: [aSession({ endedAt: null, entries: [pullUps, dips] })] });
+
+    useSessionHistoryStore.getState().removeEntry('session-1', 0);
+
+    expect(useSessionHistoryStore.getState().sessions[0].entries).toEqual([pullUps, dips]);
   });
 });

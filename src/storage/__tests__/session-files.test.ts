@@ -9,7 +9,7 @@ jest.mock('@/storage/paths', () => ({
 }));
 
 import type { SessionEntry } from '@/domain/types';
-import { appendSessionEntry, finalizeSession, takeWriteFailure } from '@/storage/session-files';
+import { appendSessionEntry, finalizeSession, removeSessionEntry, takeWriteFailure } from '@/storage/session-files';
 
 /**
  * The one guarantee this file exists for: **a session write can't abort a workout.**
@@ -66,4 +66,38 @@ it('reports nothing when the write succeeds', () => {
 
   expect(mockWrite).toHaveBeenCalled();
   expect(takeWriteFailure()).toBeNull();
+});
+
+/**
+ * Removing an entry at an arbitrary index — the session editor's path (#56), as opposed to
+ * `removeLastSessionEntry`'s undo of the write that just happened.
+ */
+describe('removeSessionEntry', () => {
+  const dips: SessionEntry = { exercise: 'dips', type: 'reps', sets: [{ reps: 10, restTakenSec: 0 }] };
+  const rows: SessionEntry = { exercise: 'rows', type: 'reps', sets: [{ reps: 12, restTakenSec: 0 }] };
+  const three = { ...session, entries: [entry, dips, rows] };
+
+  it('drops the one at the index and keeps the order of the rest', () => {
+    expect(removeSessionEntry(three, 1).entries).toEqual([entry, rows]);
+    expect(mockWrite).toHaveBeenCalled();
+  });
+
+  /**
+   * Matches `replaceSessionEntry`: the caller works from a session it read, so an index that doesn't
+   * exist means its bookkeeping is wrong. Deleting nothing is easier to notice than deleting the
+   * wrong entry, and far easier than deleting one silently.
+   */
+  it('leaves an out-of-range index alone rather than guessing', () => {
+    expect(removeSessionEntry(three, 7).entries).toEqual([entry, dips, rows]);
+    expect(removeSessionEntry(three, -1).entries).toEqual([entry, dips, rows]);
+  });
+
+  it('returns the updated session even when the disk refuses the write', () => {
+    mockWrite.mockImplementation(() => {
+      throw new Error('no space left on device');
+    });
+
+    expect(removeSessionEntry(three, 0).entries).toEqual([dips, rows]);
+    expect(takeWriteFailure()).toBe('session-1: no space left on device');
+  });
 });

@@ -22,7 +22,9 @@ it's `pnpm test --ci`, not `npm test -- --ci`.
 - `pnpm run format` — oxfmt (same Oxc toolchain as oxlint, so they agree). Run it instead of matching
   the style by hand, and never reach for `pnpm dlx prettier`, which has no config here and would
   reformat the file to its own defaults. **Markdown and `package.json` are excluded on purpose** —
-  see the decision log before adding them.
+  see the decision log before adding them. **`site/*.html` is not excluded**, and reads like it should
+  be: editing the landing site by hand and skipping `format` because "it's only HTML" is what broke
+  CI on #58, since `check` runs `oxfmt --check` over everything that isn't on that list.
 
 ## Working on a feature
 
@@ -63,7 +65,9 @@ format" below and [`docs/adding-a-language.md`](docs/adding-a-language.md).
 
 - `src/domain/` — pure logic, no I/O. `types.ts` (domain model), `schema.ts` (zod validation of raw
   YAML), `yaml-mapping.ts`, `merge.ts` (import merges by `id`, whole-object replace), `program.ts`
-  (week resolution + override application).
+  (week resolution + override application). The in-app forms keep their data models here too —
+  `exercise-form.ts` (editing an exercise's *plan*) and `session-entry-form.ts` (editing what was
+  actually *logged*) — so the screens stay thin and the parts worth testing need no React tree.
 - `src/storage/` — all file I/O, via `expo-file-system`'s **class-based `File`/`Directory` API**.
   One file per session (`session-files.ts`), so a mid-workout flush never rewrites history.
 - `src/state/` — zustand stores (`library-store`, `session-history-store`, `preferences-store`,
@@ -243,6 +247,11 @@ are the index, the banner is the contract.
   mean.
 - `docs/open-work.md` — the backlog, and only the backlog.
 - `docs/history.md` — write-ups of shipped work, split out so the backlog stays a backlog.
+- `CHANGELOG.md` — **at the repo root**, not in `docs/`. What shipped per release, plus the Play
+  release notes that went out with it. The `## Unreleased` section is where a shipped feature is
+  written up for *users*; the copy lives beside what it describes rather than in `store/README.md`,
+  which keeps only Play's rules. `store-copy.test.ts` asserts every block against its character
+  limit, so an over-length note fails the suite rather than the upload.
 - `docs/product-plan.md` — the data model, file formats and roadmap.
 - `docs/authoring-exercises-yaml.md` — the YAML reference, kept exact against `schema.ts`.
 - `docs/sdk-57-api-notes.md` — the `expo-file-system` / `expo-notifications` / `expo-iap` shapes
@@ -263,6 +272,12 @@ Three rules about keeping the plan files honest, in the order they get broken:
   something rejected so it isn't re-proposed, or a decision assembled across several commits. This
   has already failed twice, both times growing hundreds of lines of completed work under a
   forward-looking heading; the reason the rule is this strict is that it doesn't hold on its own.
+
+  **`CHANGELOG.md` is the exception, and the reason the rule can stay strict everywhere else.** A
+  shipped feature does get written up there, for users, under `## Unreleased` — that is what the file
+  is for. The rule above is about `docs/`, which is reference material and drowns when release notes
+  leak into it. If you catch yourself wanting to record that something shipped, the changelog is
+  where it goes.
 - **But do prune the open-work lists when you ship.** The rule above is about not *adding* and says
   nothing about subtracting, which reads as "touch no docs at all" — and leaves a shipped item in
   "planned work" claiming to be open. Shipped part of a multi-part entry? Leave the rest, say which

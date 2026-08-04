@@ -76,7 +76,7 @@ Lifting and conditioning on one timer. Your training, in a file you own.
 Musculação e condicionamento no mesmo cronômetro. Seu treino, no seu arquivo.
 ```
 
-### Full — en-US (3880)
+### Full — en-US (3960)
 
 ```
 Kettle runs your lifting and your conditioning in the same session, on one timer.
@@ -110,8 +110,8 @@ Group exercises into a circuit that runs round-robin for as many rounds as you l
 MULTI-WEEK PROGRAMS
 Schedule workouts across weeks and progress them with per-week overrides — add a set in week three, cut a circuit down for a deload — without duplicating anything. Kettle queues up what is next.
 
-HISTORY THAT IS YOURS
-Every set appends to a local log: what you did, when you did it. Streaks, weekly totals and per-exercise volume are calculated on your device from that log. Nothing is uploaded.
+HISTORY THAT IS YOURS, AND FIXABLE
+Every set goes to a local log: what you did, when you did it. Streaks, weekly totals and per-exercise volume are calculated on your device from that log. Nothing is uploaded. Tapped the wrong number? Open any past session and fix the reps, load or RPE, or remove a set you did not do.
 
 BRING YOUR OWN ASSISTANT
 Because the format is documented and checked against a published schema, you can ask any AI assistant to write a program for you and paste the result in. Kettle validates it on your device and tells you exactly what it would change before anything is saved. The app itself has no AI features and never contacts a model.
@@ -120,22 +120,22 @@ WHAT KETTLE DOES NOT DO
 No account. No cloud. No analytics. No crash reporting. No advertising. No third-party SDK that transmits anything. The app makes no network requests of its own, and it does not ask for the microphone, the camera, your location or your contacts. There is one optional reminder, off until you turn it on, and it is a notification on your own device.
 
 FREE, WITH AN OPTIONAL TIP JAR
-Every feature is unlocked for everyone. There is no paid tier, no subscription and no trial. An optional tip jar helps cover the developer account fee, and nothing whatsoever is gated behind it — export included.
+Every feature is unlocked for everyone. No paid tier, no subscription, no trial. An optional tip jar helps cover the developer account fee, and nothing is gated behind it — export included.
 
 Available in English and Portuguese.
 
-The library format is documented at celsaad.github.io/kettle, and the source is on GitHub under the MIT license, so you can check any of the above for yourself.
+The format is documented at celsaad.github.io/kettle, and the source is on GitHub under the MIT license, so you can check any of this yourself.
 ```
 
-### Full — pt-BR (3968)
+### Full — pt-BR (3950)
 
 ```
 O Kettle faz a musculação e o condicionamento na mesma sessão, no mesmo cronômetro.
 
-Séries, HIIT, EMOM, AMRAP, isometrias, cardio e descanso rodam no mesmo motor, medido pelo relógio real — então uma sessão que mistura tudo é só uma sessão. Não tem conta para criar, não tem servidor para confiar e não tem nada para sincronizar: seus exercícios, treinos e programas ficam em um arquivo de texto no seu aparelho, e as sessões concluídas vão para um registro local que só você vê.
+Séries, HIIT, EMOM, AMRAP, isometrias, cardio e descanso rodam no mesmo motor, medido pelo relógio real — uma sessão que mistura tudo é só uma sessão. Sem conta para criar, sem servidor para confiar, sem nada para sincronizar: seus exercícios, treinos e programas ficam em um arquivo de texto no seu aparelho, e as sessões concluídas vão para um registro local que só você vê.
 
 MONTE EM UM ARQUIVO QUE É SEU
-Sua biblioteca é YAML comum. Edite pelo app ou abra em qualquer editor de texto e escreva à mão. Importe um arquivo ou cole o texto direto: o Kettle junta ao que você já tem sem mexer no seu histórico. Exporte tudo quando quiser, em um formato que ainda vai abrir daqui a dez anos.
+Sua biblioteca é YAML comum. Edite pelo app ou abra em qualquer editor de texto. Importe um arquivo ou cole o texto direto: o Kettle junta ao que você já tem sem mexer no histórico. Exporte tudo quando quiser, em um formato que ainda vai abrir daqui a dez anos.
 
 UM EXECUTOR QUE ACOMPANHA
 Faça a sessão bloco a bloco, com cronômetros ao vivo e o próximo bloco sempre à vista:
@@ -147,35 +147,35 @@ Faça a sessão bloco a bloco, com cronômetros ao vivo e o próximo bloco sempr
 • Cardio — por duração ou distância
 • Descanso — cronometrado ao segundo
 
-O tempo é medido pelo relógio real, então sobrevive a você trocar de app. Sinais sonoros, vibração e uma contagem regressiva antes de começar fazem você quase não precisar olhar a tela. Cada série concluída é salva na hora: uma falha custa no máximo a série em andamento.
+O tempo é medido pelo relógio real, então sobrevive a você trocar de app. Sinais sonoros, vibração e uma contagem regressiva fazem você quase não precisar olhar a tela. Cada série é salva na hora: uma falha custa no máximo a série em andamento.
 
 ELE SE ADAPTA AO TREINO QUE VOCÊ ESTÁ FAZENDO
-Treino de verdade sai do script. Acrescente uma série quando ainda tiver gás, tire uma quando não tiver, ou troque um exercício quando o aparelho estiver ocupado — no meio do treino, sem mexer na biblioteca. Chegou sem plano? Comece uma sessão vazia e vá adicionando.
+Treino de verdade sai do script. Acrescente uma série quando ainda tiver gás, tire uma quando não tiver, ou troque um exercício se o aparelho estiver ocupado — no meio do treino, sem mexer na biblioteca. Chegou sem plano? Comece uma sessão vazia e vá adicionando.
 
 ELE LEMBRA O QUE VOCÊ LEVANTOU
-A linha mostra o que você fez da última vez — mesma série, mesmo exercício — e um toque vira o novo alvo, salvo na biblioteca para a próxima semana começar de lá. Superou seu recorde e a linha avisa na hora; ao terminar, o resumo nomeia o recorde e estima seu 1RM quando há carga.
+A linha mostra o que você fez da última vez — mesma série, mesmo exercício — e um toque vira o novo alvo, salvo na biblioteca para a próxima semana começar de lá. Superou seu recorde e a linha avisa na hora; ao terminar, o resumo nomeia o recorde e estima o 1RM quando há carga.
 
 CIRCUITOS E SUPERSÉRIES
-Junte exercícios em um circuito que roda alternando os movimentos pelo número de rounds que quiser, com descanso configurável entre exercícios e entre rounds. Uma supersérie é só um circuito sem descanso no meio.
+Junte exercícios em um circuito que roda alternando os movimentos pelo número de rounds que quiser, com descanso configurável entre exercícios e entre rounds. Uma supersérie é um circuito sem descanso no meio.
 
 PROGRAMAS DE VÁRIAS SEMANAS
-Distribua treinos ao longo das semanas e faça a progressão com ajustes por semana — mais uma série na semana três, um circuito menor para deload — sem duplicar nada. O Kettle já deixa o próximo na fila.
+Distribua treinos ao longo das semanas e progrida com ajustes por semana — mais uma série na semana três, um circuito menor para deload — sem duplicar nada. O Kettle já deixa o próximo na fila.
 
-UM HISTÓRICO QUE É SEU
-Cada série entra em um registro local: o que você fez e quando. Sequências, totais da semana e volume por exercício são calculados no seu aparelho a partir desse registro. Nada é enviado.
+UM HISTÓRICO QUE É SEU — E CORRIGÍVEL
+Cada série entra em um registro local: o que você fez e quando. Sequências, totais da semana e volume por exercício são calculados no seu aparelho a partir desse registro. Nada é enviado. Digitou errado? Abra qualquer sessão passada e corrija as repetições, a carga ou a PSE, ou remova uma série que você não fez.
 
 TRAGA SEU PRÓPRIO ASSISTENTE
-Como o formato é documentado e validado por um schema público, você pode pedir a qualquer assistente de IA que escreva um programa e colar o resultado. O Kettle valida no seu aparelho e mostra exatamente o que seria alterado antes de salvar. O app em si não tem recursos de IA e nunca conversa com nenhum modelo.
+Como o formato é documentado e validado por um schema público, você pode pedir a qualquer assistente de IA que escreva um programa e colar o resultado. O Kettle valida no seu aparelho e mostra o que seria alterado antes de salvar. O app não tem recursos de IA e nunca conversa com nenhum modelo.
 
 O QUE O KETTLE NÃO FAZ
-Sem conta. Sem nuvem. Sem análise de uso. Sem relatório de falhas. Sem anúncios. Sem nenhum SDK de terceiros que transmita qualquer coisa. O app não faz requisições de rede próprias e não pede microfone, câmera, localização nem contatos. Existe um único lembrete opcional, desligado até você ligar, e é uma notificação no seu aparelho.
+Sem conta. Sem nuvem. Sem análise de uso. Sem relatório de falhas. Sem anúncios. Sem nenhum SDK de terceiros que transmita qualquer coisa. O app não faz requisições de rede e não pede microfone, câmera, localização nem contatos. Existe um único lembrete opcional, desligado até você ligar, e é uma notificação no seu aparelho.
 
 GRATUITO, COM CAIXINHA OPCIONAL
-Todos os recursos estão liberados para todo mundo. Não há versão paga, assinatura nem teste. Uma caixinha opcional ajuda a cobrir a taxa da conta de desenvolvedor, e absolutamente nada fica trancado atrás dela — exportar incluído.
+Todos os recursos estão liberados. Não há versão paga, assinatura nem teste. Uma caixinha opcional ajuda a cobrir a taxa da conta de desenvolvedor, e nada fica trancado atrás dela — exportar incluído.
 
 Disponível em inglês e português.
 
-O formato da biblioteca está documentado em celsaad.github.io/kettle e o código-fonte está no GitHub sob a licença MIT, então você pode conferir tudo isso por conta própria.
+O formato está documentado em celsaad.github.io/kettle e o código-fonte está no GitHub sob a licença MIT, então você pode conferir tudo por conta própria.
 ```
 
 Deliberately absent from the listing copy, so it isn't re-added: **no competitor names** (fine on our
@@ -207,54 +207,15 @@ Recorded because the reasoning is not obvious from the answers, and each will be
 
 ## Release notes
 
-Per release, per language, 500 characters each. Not cumulative — the next version needs new ones.
+**The copy lives in [`CHANGELOG.md`](../CHANGELOG.md), next to what it describes.** Only the rules
+stay here, because they are Play's rather than ours.
 
-Include a `pt-BR` block only if the listing really has that language — an unsupported tag is
-rejected on upload. Both blocks below are within the limit as written (490 and 464 characters);
-re-count if you edit them.
+Per release, per language, **500 characters each, and not cumulative** — the next version needs new
+ones, and re-uploading the previous version's text is a rejection rather than a no-op.
 
-### 0.2.0 (versionCode 4)
-
-```
-<en-US>
-What's new in 0.2.0
-
-New here? Today opens with three short steps telling you where to start, and clears away once you finish your first session.
-
-Importing a library now says what it changed — how many items were added or updated, and which ones — instead of just closing.
-
-Today no longer goes blank if you delete every workout: it says so, and offers to build one.
-
-Please test starting a session, importing a library and exporting your history. Report anything that hangs or loses data.
-</en-US>
-<pt-BR>
-Novidades da 0.2.0
-
-Primeira vez? A tela Hoje abre com três passos curtos dizendo por onde começar, e some depois do seu primeiro treino.
-
-Importar uma biblioteca agora mostra o que mudou — quantos itens entraram ou foram atualizados, e quais — em vez de só fechar.
-
-A tela Hoje não fica mais em branco se você apagar todos os treinos: ela avisa e oferece criar um.
-
-Teste iniciar um treino, importar e exportar seu histórico. Relate travamentos ou perda de dados.
-</pt-BR>
-```
-
-While the app is in closed testing the last line is deliberately spent on direction rather than on
-positioning — a tester who is told what to exercise reports something, and "real feedback" is what
-the track is assessed on.
-
-### 0.1.0 (versionCode 3) — superseded, kept as the shape to copy
-
-```
-<en-US>
-First public build of Kettle.
-
-Plan workouts in a plain YAML file you own, then run them with live timers for all seven exercise types: reps, HIIT, EMOM, AMRAP, timed holds, cardio and rest. Multi-week programs with per-week progressions. Everything is stored on your device and never leaves it: no account, no server, no analytics, no ads.
-
-English and Portuguese. Please report anything that breaks.
-</en-US>
-```
+Include a `<pt-BR>` block only if the listing really carries that language; an unsupported tag is
+rejected on upload. The blocks in the changelog are wrapped in those tags in upload order, so a
+release is a copy-paste from there.
 
 ## Tip jar products
 

@@ -32,7 +32,8 @@ transmitted.
   Kettle never calls a model itself: it supplies the format and validates the result, and what you
   should actually be doing in a workout stays between you and whoever you asked.
 - **History and progression** — per-exercise volume charts, current streak and weekly totals, all
-  read back from the local log. Export the library or the whole log as plain files any time.
+  read back from the local log, and a mis-logged set can be corrected rather than only deleted.
+  Export the library or the whole log as plain files any time.
 - **English and Brazilian Portuguese**, the seeded starter library included, with dates, numbers,
   first day of week and kg/lb following the device locale. User data is never translated.
 - **Accessible by house rule** — roles and labels on every control, 44px targets, contrast-checked
@@ -75,7 +76,7 @@ Routing is [Expo Router](https://docs.expo.dev/router/introduction) file-based; 
 src/
   app/                  routes (Expo Router): (tabs)/ for the five tab screens, plus session,
                          import, settings, support, the program guide, and the exercise /
-                         workout / program editors and program detail as modal routes
+                         workout / program / session editors and program detail as modal routes
   components/           shared UI (themed primitives, session runner sub-views, kettle mark)
   constants/            theme tokens, with the measured contrast ratios recorded alongside them
   domain/               types, zod schemas, YAML<->domain mapping, library merge, display formatting,
@@ -96,7 +97,7 @@ store/                  Play listing copy and generated store graphics
 pnpm run typecheck    # tsc --noEmit
 pnpm run lint         # oxlint
 pnpm test             # jest, via jest-expo
-pnpm run format       # oxfmt (markdown and package.json are excluded on purpose)
+pnpm run format       # oxfmt (markdown and package.json are excluded; HTML is not)
 ```
 
 All three checks run in CI (`.github/workflows/ci.yml`) on every push and pull request. The suite
@@ -108,6 +109,7 @@ animation, real audio and file writes are verified by driving the running app in
 | Doc | What it's for |
 | --- | --- |
 | [`AGENTS.md`](AGENTS.md) | How to work in this repo — conventions, house rules, and the traps worth knowing before you start |
+| [`CHANGELOG.md`](CHANGELOG.md) | What shipped per release, plus the Play release notes that went out with it |
 | [`docs/product-plan.md`](docs/product-plan.md) | The product model: data model, file formats, roadmap |
 | [`docs/authoring-exercises-yaml.md`](docs/authoring-exercises-yaml.md) | YAML reference, kept exact against `schema.ts` |
 | [`docs/decisions.md`](docs/decisions.md) | The decision log — why things are the way they are |

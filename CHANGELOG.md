@@ -1,0 +1,189 @@
+# Changelog
+
+> **What shipped, per release, plus the Play release notes that went out with it.** Why things are
+> the way they are is in [`docs/decisions.md`](docs/decisions.md); what's still open is in
+> [`docs/open-work.md`](docs/open-work.md). This file is the record of *what changed and when* — it
+> is not a backlog and nothing here is planned work.
+
+Versions are the `version` / `android.versionCode` pair in `app.json`, which is the single source
+both the build and this file follow.
+
+**Play release notes are per release, per language, 500 characters each, and are not cumulative** —
+every version needs new ones. Include a `pt-BR` block only if the listing really carries that
+language; an unsupported tag is rejected on upload. The limits and the upload format live in
+[`store/README.md`](store/README.md); the copy itself lives here, next to what it describes.
+
+---
+
+## Unreleased
+
+Everything below is on `master` and **not in any build yet**. The release notes are written and
+counted, so cutting the next version is a version bump rather than a writing job.
+
+### What changed
+
+**The runner remembers what you lifted.**
+
+- The set row shows what you did on that same set number last time, and one tap adopts it as the new
+  target — written back to the library, so next week starts there.
+- A personal record is marked on the row as it happens, not only at the end.
+- The completion summary names the record, with an estimated 1RM for loaded sets (Epley).
+- An optional rest-day reminder, off until turned on, local notification only.
+
+**The runner bends mid-session.**
+
+- Add a set when you have another one in you, drop one when you don't.
+- Swap an exercise when the rack is taken, for the rest of that exercise only.
+- Start an empty session with nothing planned and add exercises as you go.
+- The exercise picker grew a search field, since adding offers the whole library rather than the
+  handful a swap filters to.
+
+**The log can be corrected.**
+
+- Edit a logged set from History: reps, load and RPE; hold seconds; HIIT and AMRAP rounds; cardio
+  duration and distance. An `emom` minute list is shown read-only.
+- Remove a set, or an exercise when its last set goes.
+- A session still being written to by the runner refuses to be edited — see the decision log.
+
+**Listing and site.**
+
+- The pitch leads with the mixed-session runner rather than with the file format.
+- Screenshots re-captured against a populated library, the runner leading.
+- The log is no longer described as append-only anywhere, because it no longer is.
+
+### Play release notes
+
+Counted at 468 (en-US) and 483 (pt-BR), against a limit of 500. Re-count programmatically if you edit
+them rather than trusting these numbers — the first draft of the en-US block came in at 507, which is
+a rejected upload rather than a truncated one, and the count written beside it was wrong too.
+
+```
+<en-US>
+What's new
+
+The set row now shows what you lifted last time on that same set — one tap makes it your target. Beat your best and Kettle says so as it happens, then names the record and estimates your 1RM at the end.
+
+The session bends: add a set, drop one, swap an exercise when the rack is taken, or start with nothing planned.
+
+Mis-logged a set? Fix it. Tap Edit on any past session instead of throwing the whole thing away.
+
+Report anything that hangs or loses data.
+</en-US>
+<pt-BR>
+Novidades
+
+A linha da série mostra o que você levantou da última vez na mesma série — um toque vira seu alvo. Superou seu recorde e o Kettle avisa na hora; ao terminar, nomeia o recorde e estima seu 1RM.
+
+A sessão se adapta: acrescente uma série, tire uma, troque um exercício se o aparelho estiver ocupado, ou comece sem plano nenhum.
+
+Registrou errado? Agora dá para corrigir. Toque em Editar em qualquer sessão passada em vez de apagar tudo.
+
+Relate travamentos ou perda de dados.
+</pt-BR>
+```
+
+---
+
+## 0.3.0 — versionCode 6, 2 August 2026
+
+### What changed
+
+- Search on every list, with an honest empty state when nothing matched.
+- The three library lists can be ordered.
+- Export the whole log, not one session at a time.
+- Stopped re-rendering every card on every keystroke — the four list screens became `FlatList`s with
+  memoised rows.
+- The step-exit arrow points forward rather than up.
+
+### Play release notes
+
+**Reconstructed from `git log`, not the published text.** The notes that actually went to Play for
+this version were written in the Play Console and never mirrored back here, so treat this as a record
+of what changed rather than as a copy of what testers read. Not re-counted, since it was never
+uploaded in this form.
+
+```
+<en-US>
+Search in Workouts, Library, Programs and History — and a clear answer when nothing matches, instead of a blank screen.
+
+Your workout, program and exercise lists can be put in the order you want.
+
+Export your whole history in one go rather than one session at a time.
+
+Long lists are faster to type into.
+</en-US>
+```
+
+---
+
+## 0.2.1 — versionCode 5
+
+### What changed
+
+- The step exit became the primary action on holds and count-up intervals.
+- Runner button labels centre instead of left-aligning when they wrap.
+
+### Play release notes
+
+**Reconstructed from `git log`, not the published text** — same caveat as 0.3.0 above.
+
+```
+<en-US>
+The button that ends a hold or a count-up interval is now the obvious one to press.
+
+Fixed button labels sitting off-centre when they wrapped onto two lines.
+</en-US>
+```
+
+---
+
+## 0.2.0 — versionCode 4
+
+### Play release notes
+
+The published text, as uploaded. 490 (en-US) and 464 (pt-BR).
+
+```
+<en-US>
+What's new in 0.2.0
+
+New here? Today opens with three short steps telling you where to start, and clears away once you finish your first session.
+
+Importing a library now says what it changed — how many items were added or updated, and which ones — instead of just closing.
+
+Today no longer goes blank if you delete every workout: it says so, and offers to build one.
+
+Please test starting a session, importing a library and exporting your history. Report anything that hangs or loses data.
+</en-US>
+<pt-BR>
+Novidades da 0.2.0
+
+Primeira vez? A tela Hoje abre com três passos curtos dizendo por onde começar, e some depois do seu primeiro treino.
+
+Importar uma biblioteca agora mostra o que mudou — quantos itens entraram ou foram atualizados, e quais — em vez de só fechar.
+
+A tela Hoje não fica mais em branco se você apagar todos os treinos: ela avisa e oferece criar um.
+
+Teste iniciar um treino, importar e exportar seu histórico. Relate travamentos ou perda de dados.
+</pt-BR>
+```
+
+While the app is in closed testing the last line is deliberately spent on direction rather than on
+positioning — a tester who is told what to exercise reports something, and "real feedback" is what
+the track is assessed on.
+
+---
+
+## 0.1.0 — versionCode 3
+
+First public build. Kept as the shape to copy for a first release.
+
+```
+<en-US>
+First public build of Kettle.
+
+Plan workouts in a plain YAML file you own, then run them with live timers for all seven exercise types: reps, HIIT, EMOM, AMRAP, timed holds, cardio and rest. Multi-week programs with per-week progressions. Everything is stored on your device and never leaves it: no account, no server, no analytics, no ads.
+
+English and Portuguese. Please report anything that breaks.
+</en-US>
+```

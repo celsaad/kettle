@@ -195,6 +195,8 @@
       "increaseLoad": "Increase load",
       "rpe": "RPE",
       "rpeOption": "RPE {{value}}",
+      "adoptPrevious": "Use last time's load, {{weight}} {{unit}}, and save it as the new target",
+      "beatsBest": "Beats your best",
       "logSet": "Log set → Rest",
       "logSetNoRest": "Log set →",
       "repsDone": "Reps done",
@@ -509,6 +511,11 @@
     "intervalsWithReps": "{{intervals}} · {{reps}}",
     "circuitShape": "{{rounds}} · {{between}}s / {{rounds_rest}}s rest",
     "adHocSession": "Ad-hoc session",
+    "previous": {
+      "loaded": "Last time · {{weight}} × {{reps}}",
+      "bodyweight": "Last time · {{reps}}",
+      "hold": "Last time · {{seconds}}"
+    },
     "record": {
       "heaviestSet": "Heaviest ever · {{weight}} × {{reps}}",
       "mostReps": "Most reps ever · {{reps}}",

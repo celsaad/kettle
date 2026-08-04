@@ -301,6 +301,8 @@ function ActiveSession({
             paused={runner.paused}
             notes={step.notes}
             next={runner.nextPreview}
+            previousSet={runner.previousSet}
+            beatsPersonalBest={runner.beatsPersonalBest}
             onTogglePause={runner.setPaused}
             onPrev={runner.goPrev}
             onDone={runner.doneSet}
@@ -323,6 +325,9 @@ function ActiveSession({
             notes={step.notes}
             next={runner.nextPreview}
             restFollows={runner.restFollows}
+            previousSet={runner.previousSet}
+            beatsPersonalBest={runner.beatsPersonalBest}
+            onAdoptPrevious={runner.adoptPreviousLoad}
             onPrev={runner.goPrev}
             onLogSet={runner.logSet}
           />

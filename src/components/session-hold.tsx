@@ -13,7 +13,9 @@ import Animated, {
 import { ThemedText } from '@/components/themed-text';
 import { SessionNextCard } from '@/components/session-next-card';
 import { RunnerColors, Spacing } from '@/constants/theme';
+import { formatPreviousSet } from '@/domain/format';
 import type { RestPreview } from '@/hooks/use-session-runner';
+import type { PreviousSet } from '@/state/selectors';
 
 type Props = {
   exerciseName: string;
@@ -25,6 +27,13 @@ type Props = {
   paused: boolean;
   notes?: string;
   next: RestPreview;
+  /**
+   * This set number, last time. Read-only here, unlike on the reps row: there is no load to adopt, and
+   * writing a hold duration back as `holdSecMin` would be a different feature with its own range rules.
+   */
+  previousSet?: PreviousSet | null;
+  /** True while the hold on screen has already run longer than any ever logged for this exercise. */
+  beatsPersonalBest?: boolean;
   onTogglePause: () => void;
   onPrev: () => void;
   onDone: () => void;
@@ -40,6 +49,8 @@ export function SessionHold({
   paused,
   notes,
   next,
+  previousSet,
+  beatsPersonalBest,
   onTogglePause,
   onPrev,
   onDone,
@@ -99,6 +110,21 @@ export function SessionHold({
           <ThemedText type="small" style={styles.notes}>
             {notes}
           </ThemedText>
+        )}
+        {/* Same gap the reps row closes, and the same rule: nothing at all on a first-ever session. */}
+        {previousSet?.kind === 'hold' && (
+          <View style={styles.previousRow}>
+            <ThemedText type="small" style={styles.previousLabel}>
+              {formatPreviousSet({ kind: 'hold', holdSec: previousSet.holdSec })}
+            </ThemedText>
+            {beatsPersonalBest && (
+              <View style={styles.bestPill}>
+                <ThemedText type="code" style={styles.bestPillLabel}>
+                  {t('session.complete.recordBadge')}
+                </ThemedText>
+              </View>
+            )}
+          </View>
         )}
       </View>
 
@@ -211,6 +237,29 @@ const styles = StyleSheet.create({
     marginTop: 4,
     color: RunnerColors.textSecondary,
     fontStyle: 'italic',
+  },
+  previousRow: {
+    marginTop: Spacing.two,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+  },
+  previousLabel: {
+    color: RunnerColors.textSecondary,
+  },
+  // Same pill as the reps row and session-complete.tsx — one look for "this is a record", wherever it
+  // appears. See the note there on why the tokens need no fresh contrast measurement.
+  bestPill: {
+    backgroundColor: RunnerColors.accentCalmSoft,
+    borderWidth: 1,
+    borderColor: 'rgba(63,130,192,0.4)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+  },
+  bestPillLabel: {
+    color: RunnerColors.accentCalmOnSoft,
+    letterSpacing: 1.4,
   },
   middle: {
     flex: 1,

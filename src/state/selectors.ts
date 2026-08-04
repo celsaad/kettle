@@ -464,6 +464,12 @@ export type SessionRecord =
 
 type RecordKind = SessionRecord['kind'];
 
+/**
+ * One set of a previously logged entry, as data — `session-reps.tsx` / `session-hold.tsx` render it,
+ * and the weight can't become a string until it has reached the user's display unit.
+ */
+export type PreviousSet = { kind: 'reps'; reps: number; weightKg?: number } | { kind: 'hold'; holdSec: number };
+
 type EntryBest = { kind: RecordKind; value: number; reps: number; oneRepMaxKg: number | null } | null;
 
 /**
@@ -525,6 +531,76 @@ function recordKey(exerciseId: string, kind: RecordKind): string {
 }
 
 /**
+ * The highest value each exercise has ever put up, per record kind, across the finished sessions in
+ * `sessions`. One traversal, shared by the completion screen's `sessionRecords` and by the runner's
+ * live marker, so "best so far" has exactly one definition — including which entry types compete at
+ * all (see `entryBest`) and the rule that an unfinished session doesn't count.
+ */
+function bestByExerciseAndKind(sessions: Session[], excludeSessionId?: string): Map<string, number> {
+  const best = new Map<string, number>();
+  for (const session of sessions) {
+    if (!session.endedAt || session.id === excludeSessionId) continue;
+    for (const entry of session.entries) {
+      const entryValue = entryBest(entry);
+      if (!entryValue) continue;
+      const key = recordKey(entry.exercise, entryValue.kind);
+      const seen = best.get(key);
+      if (seen === undefined || entryValue.value > seen) best.set(key, entryValue.value);
+    }
+  }
+  return best;
+}
+
+/** Absent rather than 0 for a kind never logged: "no best yet" is not "a best of nothing". */
+export type PersonalBest = { heaviestSetKg?: number; mostReps?: number; longestHoldSec?: number };
+
+/**
+ * One exercise's best-ever values, for the runner's live "this beats your best" marker.
+ *
+ * Same traversal and same rules as `sessionRecords` — a loaded exercise is judged on load and a
+ * bodyweight one on reps, unfinished sessions are skipped — so the marker on the set row and the
+ * record on the completion screen can never disagree about what counts.
+ */
+export function personalBestFor(sessions: Session[], exerciseId: string): PersonalBest {
+  const best = bestByExerciseAndKind(sessions);
+  return {
+    heaviestSetKg: best.get(recordKey(exerciseId, 'heaviestSet')),
+    mostReps: best.get(recordKey(exerciseId, 'mostReps')),
+    longestHoldSec: best.get(recordKey(exerciseId, 'longestHold')),
+  };
+}
+
+/**
+ * What was logged for `exerciseId` on this set number, the last time it was trained — the "last time:
+ * 60 kg × 8" the runner puts on the set row.
+ *
+ * Matched on **set index**, so set 3 shows set 3 of last time rather than a summary of the whole
+ * entry; a previous entry that was shorter falls back to its last set, which is the honest answer to
+ * "what was I lifting by then". Newest-first traversal with the same skips as `exerciseHistory`:
+ * unfinished sessions and `rest` entries are not part of the log the app reports on.
+ *
+ * Only `reps` and `timed_hold` have per-set values to show. Interval work is answered by its own
+ * screens, and there is no per-set number to carry across sessions.
+ */
+export function previousSetFor(sessions: Session[], exerciseId: string, setIndex: number): PreviousSet | null {
+  for (const session of sessions) {
+    if (!session.endedAt) continue;
+    for (const entry of session.entries) {
+      if (entry.exercise !== exerciseId) continue;
+      if (entry.type === 'reps') {
+        const set = entry.sets[setIndex - 1] ?? entry.sets.at(-1);
+        return set ? { kind: 'reps', reps: set.reps, weightKg: set.weightKg } : null;
+      }
+      if (entry.type === 'timed_hold') {
+        const set = entry.sets[setIndex - 1] ?? entry.sets.at(-1);
+        return set ? { kind: 'hold', holdSec: set.holdSec } : null;
+      }
+    }
+  }
+  return null;
+}
+
+/**
  * What `session` beat, judged against every *earlier finished* session in `priorSessions`.
  *
  * Two rules that between them decide what a record means here, both chosen deliberately:
@@ -541,17 +617,7 @@ function recordKey(exerciseId: string, kind: RecordKind): string {
  * from the same store.
  */
 export function sessionRecords(session: Session, priorSessions: Session[], exercises: Exercise[]): SessionRecord[] {
-  const bestBefore = new Map<string, number>();
-  for (const prior of priorSessions) {
-    if (!prior.endedAt || prior.id === session.id) continue;
-    for (const entry of prior.entries) {
-      const best = entryBest(entry);
-      if (!best) continue;
-      const key = recordKey(entry.exercise, best.kind);
-      const seen = bestBefore.get(key);
-      if (seen === undefined || best.value > seen) bestBefore.set(key, best.value);
-    }
-  }
+  const bestBefore = bestByExerciseAndKind(priorSessions, session.id);
 
   // One record per exercise+kind even when the session logged the same exercise in two blocks, which
   // is two entries under two member keys — otherwise the completion screen reports the same PR twice.

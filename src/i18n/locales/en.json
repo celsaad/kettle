@@ -291,7 +291,14 @@
     "backupWriteFailed": "Couldn't write the backup: {{detail}}",
     "backupFolderNotSaved": "That folder was chosen but couldn't be saved, so it won't be remembered after a restart.",
     "backupWhat": "Kettle writes kettle-library.yaml and kettle-history.yaml into the folder you choose, at the end of every session and whenever you tap Back up now. It overwrites those two files and touches nothing else in there. Point it at a folder your sync app already watches and your log leaves the phone without Kettle ever sending anything.",
-    "backupLimits": "The library file can be imported back into a fresh install. The session log can't — Kettle exports it to keep and read, but has nothing that reads one back in, so treat it as a record rather than as a restore."
+    "backupLimits": "The library file can be imported back into a fresh install. The session log can't — Kettle exports it to keep and read, but has nothing that reads one back in, so treat it as a record rather than as a restore.",
+    "contact": "Get in touch",
+    "contactEmail": "Email the developer",
+    "contactIssues": "Report an issue on GitHub",
+    "contactIssuesDetail": "Open a bug report or a request in the tracker.",
+    "contactSubject": "Kettle {{version}} feedback",
+    "contactCopied": "No app could open that, so {{value}} was copied to your clipboard instead.",
+    "contactNoApp": "No app on this device could open that, and it couldn't be copied either."
   },
   "support": {
     "title": "Support Kettle",

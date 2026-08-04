@@ -217,6 +217,39 @@ decision assembled across several commits. Open work belongs in the sections at 
   **native-only, and a browser check cannot see it**; the jest tests cover the wiring, and TalkBack on
   a device is the only thing that can confirm the rest. Don't "fix" the missing web actions.
 
+- ✅ **The public APK is signed with the Play App Signing key, not with the EAS keystore.** This is the
+  one decision in the repo that cannot be undone for anyone who acts on it before it is fixed, which
+  is the only reason it is written down at this length.
+
+  **The trap.** The Play build is an `app-bundle`, which Play App Signing **re-signs with Google's
+  key**. Android identifies an installed app by its signature, so an APK signed with any other key —
+  including the EAS keystore that `eas build --profile preview` uses by default — is a *different
+  app* to the OS. It refuses to install over a Play install, and the only way across is uninstall and
+  reinstall, which deletes the user's entire training log. The same applies in reverse: someone who
+  sideloads first cannot then move to Play.
+
+  **Why the Play key won.** The whole product rests on the data being the user's, and the backup
+  folder above exists specifically because losing the log is the worst thing that can happen to
+  someone using this app. Shipping a second artefact whose only failure mode is "you lose everything
+  when you switch channels" contradicts both. The Play-signed universal APK — Play Console → App
+  bundle explorer → Downloads → "Signed, universal APK" — carries the same signature Play installs, so
+  a sideload and a Play install are the same app in both directions.
+
+  **What it costs, so nobody re-proposes the alternative to save it.** That download is a manual
+  Console step with no API, so a release cannot be fully automated, and `/release` deliberately stops
+  and asks for the file rather than substituting an EAS build. Two alternatives were considered and
+  rejected: signing with the EAS keystore and simply warning people (the warning does not help anyone
+  who has already installed, and "you will lose your log" is not a footnote), and giving sideloaded
+  builds their own application id so the two coexist (no silent loss, but two ids to maintain and
+  moving between them is a manual library export — and the session log cannot move at all, see "The
+  session log is export-only").
+
+  **`eas.json`'s `preview` profile is unchanged and still useful** — it is how you get an APK onto
+  your own device for testing. It is just not what gets attached to a release.
+
+  **F-Droid is the same trap a third time**, and worth knowing before that conversation starts: it
+  re-signs with its own key. IzzyOnDroid, which republishes the developer's own binary, does not.
+
 - **Considered and rejected: consolidating `sessions/` into monthly files to reduce IO.** Would cut
   against the explicit "never rewrite all of history on save" rule (product plan §5.2) — the
   mid-workout incremental flush (`writeSession()` full-overwrites its file on every completed set)

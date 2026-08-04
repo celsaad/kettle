@@ -92,4 +92,6 @@ Check what's in flight before deciding, and say which you're doing:
 5. Push. Open a PR only if you made a new branch; if you added the commit to an existing PR's branch,
    say so rather than opening a second one.
 
-Don't tag, don't run a build, and don't touch the Play listing — none of that is in this repo.
+Don't tag, don't run a build, and don't touch the Play listing. Deciding a version and publishing an
+artefact are separate concerns, and folding them together means a bump you can't land without also
+being ready to ship a binary — so tagging and the signed APK are `/release`'s, not this command's.

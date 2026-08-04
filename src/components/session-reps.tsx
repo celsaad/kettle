@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { ThemedText } from '@/components/themed-text';
 import { SessionNextCard } from '@/components/session-next-card';
 import { SessionNumberPad } from '@/components/session-number-pad';
+import { SessionSetCount } from '@/components/session-set-count';
 import { RunnerColors, Spacing } from '@/constants/theme';
 import { formatPreviousSet } from '@/domain/format';
 import { fromDisplayWeight, toDisplayWeight, weightStep } from '@/domain/units';
@@ -35,6 +36,11 @@ type Props = {
   /** True while what's on screen would beat everything ever logged for this exercise. */
   beatsPersonalBest?: boolean;
   onAdoptPrevious?: () => void;
+  /** False inside a circuit — see SessionSetCount. */
+  canAddSet?: boolean;
+  canDropSet?: boolean;
+  onAddSet?: () => void;
+  onDropSet?: () => void;
   onPrev: () => void;
   onLogSet: () => void;
 };
@@ -57,6 +63,10 @@ export function SessionReps({
   previousSet,
   beatsPersonalBest,
   onAdoptPrevious,
+  canAddSet,
+  canDropSet,
+  onAddSet,
+  onDropSet,
   onPrev,
   onLogSet,
 }: Props) {
@@ -96,13 +106,17 @@ export function SessionReps({
         <ThemedText type="subtitle" style={styles.exerciseName}>
           {exerciseName}
         </ThemedText>
-        <ThemedText type="small" style={styles.setLabel}>
-          {t('session.reps.setLabel', {
+        <SessionSetCount
+          label={t('session.reps.setLabel', {
             index: setIndex,
             total: setTotal,
             target: targetRepsMax ? `${targetReps}–${targetRepsMax}` : targetReps,
           })}
-        </ThemedText>
+          canAdd={canAddSet}
+          canDrop={canDropSet}
+          onAdd={onAddSet}
+          onDrop={onDropSet}
+        />
         {notes && (
           <ThemedText type="small" style={styles.notes}>
             {notes}

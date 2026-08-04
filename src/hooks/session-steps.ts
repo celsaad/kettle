@@ -263,6 +263,87 @@ function expandExercise(
   }
 }
 
+// --- Mid-session mutation ---
+//
+// These live here rather than in the runner so they can be tested without pulling in expo-audio and
+// the native modules, which is the same reason `buildSteps` does. They are pure: a new array out, the
+// input untouched.
+//
+// **Circuit members are not a legal target and the caller is responsible for that.** A circuit
+// member's setIndex/setTotal is its position in the circuit's *rounds* (see CircuitVisit above), and
+// its steps are not contiguous in the list — "one more set" there means "one more round", which is a
+// different operation on a different object. The runner checks the block kind before offering the
+// control; nothing here can tell the difference from a step alone.
+
+/** A member's own work steps, in list order — the ones "Set 3 of 4" counts. */
+function setStepIndices(steps: RunnerStep[], memberKey: string): number[] {
+  return steps.flatMap((step, index) =>
+    step.memberKey === memberKey && (step.kind === 'reps' || step.kind === 'hold') ? [index] : [],
+  );
+}
+
+/** How many sets of this member the list currently holds. */
+export function setStepsForMember(steps: RunnerStep[], memberKey: string): number {
+  return setStepIndices(steps, memberKey).length;
+}
+
+/**
+ * Renumbers one member's set steps to 1..n. Both mutations end here, because `setIndex`/`setTotal`
+ * are baked into each step and drive the display *and* `previewFor` — a list that isn't renumbered
+ * reads "Set 3 of 3" on the fourth set.
+ */
+function renumber(steps: RunnerStep[], memberKey: string): RunnerStep[] {
+  const indices = setStepIndices(steps, memberKey);
+  const total = indices.length;
+  const position = new Map(indices.map((stepIndex, i) => [stepIndex, i + 1]));
+  return steps.map((step, index) => {
+    const setIndex = position.get(index);
+    return setIndex === undefined ? step : { ...step, setIndex, setTotal: total };
+  });
+}
+
+/**
+ * One more set of `memberKey`, appended after its current last one.
+ *
+ * The trailing rest is **cloned from one of the member's own rest steps** rather than rebuilt from
+ * config, which is what makes the back-to-back case fall out instead of needing to be remembered: an
+ * exercise authored `rest_sec: 0` emits no rest steps at all (see the note on the `rest` variant
+ * above), so there is nothing to clone and the new set correctly gets none — and `restFollows` in the
+ * runner keeps telling the truth about the log button's label.
+ */
+export function addSetForMember(steps: RunnerStep[], memberKey: string): RunnerStep[] {
+  const indices = setStepIndices(steps, memberKey);
+  const lastIndex = indices.at(-1);
+  if (lastIndex === undefined) return steps;
+
+  const template = steps[lastIndex];
+  const rest = steps.find((step) => step.kind === 'rest' && step.memberKey === memberKey && !step.standalone);
+
+  const inserted: RunnerStep[] = rest ? [{ ...rest }, { ...template }] : [{ ...template }];
+  const next = [...steps.slice(0, lastIndex + 1), ...inserted, ...steps.slice(lastIndex + 1)];
+  return renumber(next, memberKey);
+}
+
+/**
+ * One fewer set of `memberKey`, removing its last one and the rest that led into it.
+ *
+ * Never drops the member's only set. Whether it may drop the *last* one is the caller's call, not
+ * this function's: the runner holds the floor (what has been logged, plus the set in progress),
+ * because only it knows what has already reached the session file.
+ */
+export function dropLastSetForMember(steps: RunnerStep[], memberKey: string): RunnerStep[] {
+  const indices = setStepIndices(steps, memberKey);
+  if (indices.length <= 1) return steps;
+
+  const lastIndex = indices[indices.length - 1];
+  const before = steps[lastIndex - 1];
+  const dropsRest = before?.kind === 'rest' && before.memberKey === memberKey && !before.standalone;
+  const from = dropsRest ? lastIndex - 1 : lastIndex;
+
+  const next = [...steps.slice(0, from), ...steps.slice(lastIndex + 1)];
+  return renumber(next, memberKey);
+}
+
 /** Exported so callers (session.tsx) can check for a zero-step workout before ever starting a session. */
 export function buildSteps(workout: Workout, exercises: Exercise[]): RunnerStep[] {
   const steps: RunnerStep[] = [];

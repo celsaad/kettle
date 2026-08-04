@@ -1,7 +1,7 @@
 import type { Exercise, Workout } from '@/domain/types';
 // Imported from session-steps, not use-session-runner: the latter pulls in expo-audio/haptics, which
 // initialise native modules on import and fail under jest. That split is the whole point of the module.
-import { buildSteps } from '@/hooks/session-steps';
+import { addSetForMember, buildSteps, dropLastSetForMember, setStepsForMember } from '@/hooks/session-steps';
 
 /**
  * Assertions are on shape (kind / memberKey / setIndex), never on snapshots or display strings — the
@@ -275,5 +275,127 @@ describe('degenerate workouts', () => {
   it('returns no steps when every exercise is configured to zero work', () => {
     const zeroed: Exercise = { id: 'zero', name: 'Zero', type: 'reps', config: { sets: 0, targetRepsMin: 5, restSec: 30 } };
     expect(buildSteps(workoutOf(single('zero')), [...exercises, zeroed])).toEqual([]);
+  });
+});
+
+describe('adding a set mid-session', () => {
+  it('appends one more set of that member and renumbers the total', () => {
+    const before = buildSteps(workoutOf(single('pullups')), exercises);
+    const after = addSetForMember(before, '0');
+
+    const sets = after.filter((step) => step.kind === 'reps');
+    expect(sets.map((step) => step.setIndex)).toEqual([1, 2, 3, 4]);
+    expect(sets.every((step) => step.setTotal === 4)).toBe(true);
+  });
+
+  it('leads the new set with a rest, matching the ones already between sets', () => {
+    const before = buildSteps(workoutOf(single('pullups')), exercises);
+    const after = addSetForMember(before, '0');
+
+    expect(after.map((step) => step.kind)).toEqual(['reps', 'rest', 'reps', 'rest', 'reps', 'rest', 'reps']);
+    const rests = after.filter((step) => step.kind === 'rest');
+    expect(rests.every((step) => step.kind === 'rest' && step.seconds === 90)).toBe(true);
+  });
+
+  /**
+   * The back-to-back case, which falls out of cloning the member's own rest rather than rebuilding one
+   * from config: `rest_sec: 0` emits no rest steps at all, so there is nothing to clone. A rebuilt
+   * 0-second rest would put a flash of rest UI and a completion chime between every superset set.
+   */
+  it('adds no rest to an exercise that has none between its sets', () => {
+    const before = buildSteps(workoutOf(single('nonstop-reps')), exercises);
+    const after = addSetForMember(before, '0');
+
+    expect(after.map((step) => step.kind)).toEqual(['reps', 'reps', 'reps', 'reps']);
+  });
+
+  it('works on holds as well as reps', () => {
+    const before = buildSteps(workoutOf(single('lsit')), exercises);
+    const after = addSetForMember(before, '0');
+
+    const holds = after.filter((step) => step.kind === 'hold');
+    expect(holds.map((step) => step.setIndex)).toEqual([1, 2, 3, 4]);
+    expect(holds.every((step) => step.setTotal === 4)).toBe(true);
+  });
+
+  // memberKey is the primary key for every accumulating log in the runner (memberSetsRef,
+  // entryIndexRef and the rest). Reissuing one for work already logged is a data bug, not a display one.
+  it('keeps the member key of the exercise it is extending', () => {
+    const before = buildSteps(workoutOf(single('pullups')), exercises);
+    const after = addSetForMember(before, '0');
+
+    expect(after.every((step) => step.memberKey === '0')).toBe(true);
+  });
+
+  it('leaves every other block alone', () => {
+    const before = buildSteps(workoutOf(single('pullups'), single('pushups')), exercises);
+    const after = addSetForMember(before, '0');
+
+    // Kind first, then member: TypeScript infers a type predicate from a simple `filter` callback but
+    // not from a compound one, so the narrowing that gives `setIndex` its type is lost in a single
+    // `&&` pass.
+    const pushups = after.filter((step) => step.kind === 'reps').filter((step) => step.memberKey === '1');
+    expect(pushups.map((step) => step.setIndex)).toEqual([1, 2]);
+    expect(pushups.every((step) => step.setTotal === 2)).toBe(true);
+  });
+
+  it('does nothing for a member that has no sets in the list', () => {
+    const before = buildSteps(workoutOf(single('pullups')), exercises);
+    expect(addSetForMember(before, 'nope')).toEqual(before);
+  });
+});
+
+describe('dropping a set mid-session', () => {
+  it('removes the last set and the rest that led into it, renumbering the total', () => {
+    const before = buildSteps(workoutOf(single('pullups')), exercises);
+    const after = dropLastSetForMember(before, '0');
+
+    expect(after.map((step) => step.kind)).toEqual(['reps', 'rest', 'reps']);
+    const sets = after.filter((step) => step.kind === 'reps');
+    expect(sets.map((step) => step.setIndex)).toEqual([1, 2]);
+    expect(sets.every((step) => step.setTotal === 2)).toBe(true);
+  });
+
+  it('removes only the set when there was no rest before it', () => {
+    const before = buildSteps(workoutOf(single('nonstop-reps')), exercises);
+    const after = dropLastSetForMember(before, '0');
+
+    expect(after.map((step) => step.kind)).toEqual(['reps', 'reps']);
+  });
+
+  // The runner holds the real floor (what has been logged, plus the set in progress). This is the
+  // floor below which the list itself stops making sense.
+  it('never drops a member to zero sets', () => {
+    const before = buildSteps(workoutOf(single('pushups')), exercises);
+    const once = dropLastSetForMember(before, '0');
+    const twice = dropLastSetForMember(once, '0');
+
+    expect(once.filter((step) => step.kind === 'reps')).toHaveLength(1);
+    expect(twice).toEqual(once);
+  });
+
+  it('leaves the rest of the workout untouched', () => {
+    const before = buildSteps(workoutOf(single('pullups'), single('pushups')), exercises);
+    const after = dropLastSetForMember(before, '1');
+
+    const pullups = after.filter((step) => step.kind === 'reps').filter((step) => step.memberKey === '0');
+    expect(pullups.map((step) => step.setIndex)).toEqual([1, 2, 3]);
+    expect(pullups.every((step) => step.setTotal === 3)).toBe(true);
+  });
+
+  it('round-trips: adding then dropping returns the list it started from', () => {
+    const before = buildSteps(workoutOf(single('pullups')), exercises);
+    expect(dropLastSetForMember(addSetForMember(before, '0'), '0')).toEqual(before);
+  });
+});
+
+describe('setStepsForMember', () => {
+  it(`counts a member's own work steps, not its rests`, () => {
+    const steps = buildSteps(workoutOf(single('pullups')), exercises);
+    expect(setStepsForMember(steps, '0')).toBe(3);
+  });
+
+  it('is zero for a member that is not in the list', () => {
+    expect(setStepsForMember(buildSteps(workoutOf(single('pullups')), exercises), 'nope')).toBe(0);
   });
 });

@@ -12,6 +12,7 @@ import Animated, {
 
 import { ThemedText } from '@/components/themed-text';
 import { SessionNextCard } from '@/components/session-next-card';
+import { SessionSetCount } from '@/components/session-set-count';
 import { RunnerColors, Spacing } from '@/constants/theme';
 import { formatPreviousSet } from '@/domain/format';
 import type { RestPreview } from '@/hooks/use-session-runner';
@@ -34,6 +35,11 @@ type Props = {
   previousSet?: PreviousSet | null;
   /** True while the hold on screen has already run longer than any ever logged for this exercise. */
   beatsPersonalBest?: boolean;
+  /** False inside a circuit — see SessionSetCount. */
+  canAddSet?: boolean;
+  canDropSet?: boolean;
+  onAddSet?: () => void;
+  onDropSet?: () => void;
   onTogglePause: () => void;
   onPrev: () => void;
   onDone: () => void;
@@ -51,6 +57,10 @@ export function SessionHold({
   next,
   previousSet,
   beatsPersonalBest,
+  canAddSet,
+  canDropSet,
+  onAddSet,
+  onDropSet,
   onTogglePause,
   onPrev,
   onDone,
@@ -103,9 +113,13 @@ export function SessionHold({
         <ThemedText type="subtitle" style={styles.exerciseName}>
           {exerciseName}
         </ThemedText>
-        <ThemedText type="small" style={styles.setLabel}>
-          {t('session.setOf', { index: setIndex, total: setTotal })}
-        </ThemedText>
+        <SessionSetCount
+          label={t('session.setOf', { index: setIndex, total: setTotal })}
+          canAdd={canAddSet}
+          canDrop={canDropSet}
+          onAdd={onAddSet}
+          onDrop={onDropSet}
+        />
         {notes && (
           <ThemedText type="small" style={styles.notes}>
             {notes}

@@ -899,3 +899,164 @@ describe(`adopting last time's load`, () => {
     expect(mockSetTargetWeightKg).not.toHaveBeenCalled();
   });
 });
+
+/**
+ * Changing the set count mid-workout. The pure list surgery is covered in `build-steps.test.ts`; what
+ * is here is everything that surgery can break in the runner around it — the undo buffer, the session
+ * file, and the floor that keeps a logged set out of reach.
+ */
+describe('adding and dropping sets mid-session', () => {
+  it('offers the controls on a plain reps step', async () => {
+    const { result } = await mount(workoutOf(single('pullups')));
+
+    expect(result.current.canAddSet).toBe(true);
+    expect(result.current.canDropSet).toBe(true);
+  });
+
+  /**
+   * Inside a circuit, `setIndex`/`setTotal` is the member's position in the block's *rounds*, and its
+   * steps are interleaved with the other members'. "One more set" would mean "one more round of the
+   * whole block", which this does not implement — so the control is not offered rather than doing
+   * something the label doesn't describe.
+   */
+  it('offers nothing inside a circuit', async () => {
+    const circuit: Workout['blocks'][number] = {
+      kind: 'circuit',
+      rounds: 2,
+      members: [{ exerciseId: 'pullups' }, { exerciseId: 'dips' }],
+    };
+    const { result } = await mount(workoutOf(circuit));
+
+    expect(result.current.canAddSet).toBe(false);
+    expect(result.current.canDropSet).toBe(false);
+  });
+
+  it('adds a set to the exercise on screen', async () => {
+    const { result } = await mount(workoutOf(single('pullups')));
+    expect(result.current.step).toMatchObject({ setIndex: 1, setTotal: 3 });
+
+    await press(result.current.addSet);
+
+    expect(result.current.step).toMatchObject({ setIndex: 1, setTotal: 4 });
+    expect(result.current.totalSteps).toBe(7);
+  });
+
+  it('drops one, and stops at the set in progress', async () => {
+    const { result } = await mount(workoutOf(single('plank')));
+    expect(result.current.step).toMatchObject({ setIndex: 1, setTotal: 2 });
+
+    await press(result.current.dropSet);
+    expect(result.current.step).toMatchObject({ setIndex: 1, setTotal: 1 });
+
+    // Nothing left but the set being performed, so there is nothing further to give up.
+    expect(result.current.canDropSet).toBe(false);
+  });
+
+  /**
+   * The floor is what has reached the session file, plus the set in progress. Two sets logged out of
+   * three means the third is the one you are on, and dropping it would retract work already written.
+   */
+  it('will not drop below what has already been logged', async () => {
+    const { result } = await mount(workoutOf(single('pullups')));
+
+    await press(result.current.logSet);
+    await press(result.current.skipRest);
+    await press(result.current.logSet);
+    await press(result.current.skipRest);
+
+    expect(result.current.step).toMatchObject({ setIndex: 3, setTotal: 3 });
+    expect(result.current.canDropSet).toBe(false);
+  });
+
+  /**
+   * **The invariant-3 regression.** `lastCommit.resultingIndex` is an index into `steps`, so any edit
+   * to the array invalidates it — and a stale one sends the next `goPrev()` to undo a commit that now
+   * belongs to a different step. Removing the `lastCommitRef.current = null` in `mutateSteps` fails
+   * this: the logged set is retracted from the session file by a Prev the user pressed to look back.
+   */
+  it('does not retract a logged set when Prev follows a mutation', async () => {
+    const { result } = await mount(workoutOf(single('pullups')));
+
+    await press(() => result.current.setReps(9));
+    await press(result.current.logSet);
+    await press(result.current.addSet);
+    await press(result.current.goPrev);
+
+    expect(mockSession.entries).toHaveLength(1);
+    expect(mockSession.entries[0]).toMatchObject({ exercise: 'pullups', type: 'reps' });
+    const entry = mockSession.entries[0];
+    if (entry.type !== 'reps') throw new Error('expected a reps entry');
+    expect(entry.sets).toHaveLength(1);
+    expect(entry.sets[0].reps).toBe(9);
+  });
+
+  // One entry per exercise however many sets it grew to — the added set goes through the same
+  // replaceEntry path as every other, keyed by the memberKey the mutation deliberately preserves.
+  it('logs an added set into the same entry, not a second one', async () => {
+    const { result } = await mount(workoutOf(single('pullups')));
+
+    await press(result.current.addSet);
+    for (let i = 0; i < 4; i++) {
+      await press(result.current.logSet);
+      if (result.current.step?.kind === 'rest') await press(result.current.skipRest);
+    }
+
+    expect(mockSession.entries).toHaveLength(1);
+    const entry = mockSession.entries[0];
+    if (entry.type !== 'reps') throw new Error('expected a reps entry');
+    expect(entry.sets).toHaveLength(4);
+  });
+
+  // rest_sec: 0 emits no rest steps, so the added set gets none either — and the log button has to go
+  // on saying so.
+  it('keeps the log button honest after adding to a back-to-back exercise', async () => {
+    const { result } = await mount(workoutOf(single('dips')));
+    expect(result.current.restFollows).toBe(false);
+
+    await press(result.current.addSet);
+
+    expect(result.current.restFollows).toBe(false);
+    expect(result.current.step).toMatchObject({ setTotal: 4 });
+  });
+
+  /**
+   * The #53 interaction: "last time" matches on set index, and an added fourth set has no fourth set
+   * to match. `previousSetFor` already falls back to the previous entry's last set, which is the right
+   * answer — asserted here rather than left to be discovered.
+   */
+  it(`falls back to last time's final set for a set number that did not exist then`, async () => {
+    mockPriorSessions = [
+      {
+        version: 1,
+        id: 'older',
+        workout: 'w',
+        program: null,
+        programWeek: null,
+        programDay: null,
+        startedAt: '2026-07-20T09:00:00.000Z',
+        endedAt: '2026-07-20T10:00:00.000Z',
+        entries: [
+          {
+            exercise: 'pullups',
+            type: 'reps',
+            sets: [
+              { reps: 12, restTakenSec: 45 },
+              { reps: 10, restTakenSec: 45 },
+            ],
+          },
+        ],
+      },
+    ];
+
+    const { result } = await mount(workoutOf(single('pullups')));
+    await press(result.current.addSet);
+    await press(result.current.logSet);
+    await press(result.current.skipRest);
+    await press(result.current.logSet);
+    await press(result.current.skipRest);
+
+    // Set 3 of 4 — a set number the previous entry, which had two, never reached.
+    expect(result.current.step).toMatchObject({ setIndex: 3, setTotal: 4 });
+    expect(result.current.previousSet).toEqual({ kind: 'reps', reps: 10, weightKg: undefined });
+  });
+});

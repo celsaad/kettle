@@ -303,6 +303,10 @@ function ActiveSession({
             next={runner.nextPreview}
             previousSet={runner.previousSet}
             beatsPersonalBest={runner.beatsPersonalBest}
+            canAddSet={runner.canAddSet}
+            canDropSet={runner.canDropSet}
+            onAddSet={runner.addSet}
+            onDropSet={runner.dropSet}
             onTogglePause={runner.setPaused}
             onPrev={runner.goPrev}
             onDone={runner.doneSet}
@@ -328,6 +332,10 @@ function ActiveSession({
             previousSet={runner.previousSet}
             beatsPersonalBest={runner.beatsPersonalBest}
             onAdoptPrevious={runner.adoptPreviousLoad}
+            canAddSet={runner.canAddSet}
+            canDropSet={runner.canDropSet}
+            onAddSet={runner.addSet}
+            onDropSet={runner.dropSet}
             onPrev={runner.goPrev}
             onLogSet={runner.logSet}
           />

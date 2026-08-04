@@ -1,0 +1,180 @@
+name: Android build
+
+# Builds the Play bundle on the runner instead of on EAS: `expo prebuild` regenerates the gitignored
+# `android/` tree, Gradle builds it, and the artifact comes back attached to the run. Nothing here
+# talks to EAS, so there is no queue to wait behind — see docs/building-android.md for the one-time
+# keystore setup and for what to do when a build gets slow.
+
+on:
+  # Merging a PR is a push to master, and that build is doing two jobs: it proves the native build
+  # still works (nothing else in CI compiles a line of it), and it leaves a warm ccache behind.
+  # Actions caches don't flow from a branch to master, only the other way, so master's cache can only
+  # be warmed by a run *on master* — which is the whole reason this is a merge trigger and not a PR
+  # one. Skipping the prose-only merges keeps that from costing half an hour for nothing.
+  push:
+    branches: [master]
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+      - 'site/**'
+      - 'store/**'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+    inputs:
+      variant:
+        description: 'aab for a Play upload, apk to sideload'
+        type: choice
+        options: [aab, apk]
+        default: aab
+
+concurrency:
+  group: android-build
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    # A cold cache spends most of its time compiling C++ (reanimated, worklets and expo-modules-core
+    # all ship sources, not prebuilt .so files). 90 minutes is a hang, not a slow build.
+    timeout-minutes: 90
+
+    env:
+      # `inputs` is empty on the push trigger, so the merge build is an .aab: the same Gradle task the
+      # release runs, over the same four ABIs, which is what makes it a meaningful smoke test and a
+      # useful cache warmer. An .apk build would only warm a quarter of it.
+      VARIANT: ${{ inputs.variant || 'aab' }}
+
+    steps:
+      - uses: actions/checkout@v7
+
+      # Same ordering constraint as ci.yml: `cache: pnpm` shells out to pnpm to find the store.
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+
+      # Pinned rather than left to the runner image's default, which has changed under us before and
+      # would surface as an unrelated-looking Kotlin or AGP error. Expo SDK 57 is a JDK 17 toolchain.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      # Caches ~/.gradle across runs, keyed on the wrapper and the build scripts. It covers the
+      # dependency and wrapper downloads and, with --build-cache below, the Kotlin and Java work.
+      - uses: gradle/actions/setup-gradle@v4
+
+      # The NDK output can't ride in the Gradle cache: it lands in android/.cxx, which prebuild
+      # regenerates every run, and externalNativeBuild tasks aren't cacheable anyway. ccache works at
+      # the compiler instead, so it survives that. Rolling key — each run restores the newest cache
+      # and writes back a superset, since a cache entry is immutable once written.
+      - name: Restore ccache
+        uses: actions/cache@v4
+        with:
+          path: ~/.ccache
+          key: ccache-android-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.run_id }}
+          restore-keys: |
+            ccache-android-${{ hashFiles('pnpm-lock.yaml') }}-
+            ccache-android-
+
+      # ccache ships on the runner image; this only configures it. The sloppiness settings are what
+      # make it hit at all across runs: the NDK's __DATE__/__TIME__ macros and reanimated's generated
+      # stub PCH would otherwise miss every time. base_dir + hash_dir=false stop the absolute build
+      # path (which android/ regenerates) from being part of the hash.
+      - name: Configure ccache
+        run: |
+          export CCACHE_DIR="$HOME/.ccache"
+          echo "CCACHE_DIR=$CCACHE_DIR" >> "$GITHUB_ENV"
+          ccache --set-config max_size=2G
+          ccache --set-config sloppiness=time_macros,include_file_mtime,include_file_ctime,pch_defines,modules
+          ccache --set-config hash_dir=false
+          ccache --set-config base_dir="$GITHUB_WORKSPACE"
+          ccache --set-config compiler_check=content
+          ccache --zero-stats
+
+      - run: pnpm install --frozen-lockfile
+
+      # --no-install because the step above already installed, and prebuild would otherwise run the
+      # package manager a second time.
+      - name: Prebuild android/
+        run: pnpm exec expo prebuild --platform android --no-install
+
+      # The keystore only exists on disk for the length of the job. It is the *upload* key, not the
+      # app signing key — Play holds that one, so a leak here is recoverable by resetting the upload
+      # key, and losing this file is not fatal either. Both are still secrets.
+      - name: Restore the upload keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::error::ANDROID_UPLOAD_KEYSTORE_BASE64 is not set. See docs/building-android.md."
+            exit 1
+          fi
+          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/upload.jks"
+
+      - name: Sign the release build with it
+        run: node .github/scripts/inject-release-signing.mjs
+
+      # An .aab has to carry every ABI, since Play splits it per device. An .apk here is for
+      # sideloading onto a real phone, so it's built arm64-only — that is three quarters less C++ to
+      # compile, and no phone shipped in the last several years wants the other three.
+      - name: Build
+        working-directory: android
+        env:
+          KETTLE_UPLOAD_KEYSTORE: ${{ runner.temp }}/upload.jks
+          KETTLE_UPLOAD_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_PASSWORD }}
+          KETTLE_UPLOAD_KEY_ALIAS: ${{ secrets.ANDROID_UPLOAD_KEY_ALIAS }}
+          KETTLE_UPLOAD_KEY_PASSWORD: ${{ secrets.ANDROID_UPLOAD_KEY_PASSWORD }}
+          # CMake reads these as the default for CMAKE_<LANG>_COMPILER_LAUNCHER, which is the only
+          # way in without editing every module's externalNativeBuild block. If the stats step below
+          # reports zero hits on a warm run, this is what didn't take.
+          CMAKE_C_COMPILER_LAUNCHER: ccache
+          CMAKE_CXX_COMPILER_LAUNCHER: ccache
+        # No --no-daemon: gradle/actions manages the daemon's lifecycle itself, and killing it early
+        # costs the caching it sets up.
+        run: |
+          if [ "$VARIANT" = "apk" ]; then
+            ./gradlew :app:assembleRelease --build-cache -PreactNativeArchitectures=arm64-v8a
+          else
+            ./gradlew :app:bundleRelease --build-cache
+          fi
+
+      # Read this on a warm run before believing any of the above. A hit rate near zero means the
+      # compiler launcher never reached the CMake invocations and the cache is dead weight.
+      - name: ccache stats
+        if: always()
+        run: ccache --show-stats --verbose
+
+      # Deleted before the artifact upload rather than after, so a failure in between can't sweep the
+      # keystore into a partial artifact.
+      - name: Shred the keystore
+        if: always()
+        run: rm -f "$RUNNER_TEMP/upload.jks"
+
+      # The failure this catches is a build that silently fell back to the debug keystore: it produces
+      # a perfectly valid file that Play rejects on upload, half an hour later. Compare the printed
+      # SHA-256 against the upload certificate on Play Console › Setup › App integrity.
+      - name: Print the signing certificate
+        run: |
+          if [ "$VARIANT" = "apk" ]; then
+            "$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)/apksigner" verify --print-certs \
+              android/app/build/outputs/apk/release/app-release.apk
+          else
+            keytool -printcert -jarfile android/app/build/outputs/bundle/release/app-release.aab
+          fi
+
+      # Named with the run number because most of these share a versionCode: only a release commit
+      # bumps it, so a week of merge builds all produce "kettle 0.3.0 (6)" and the filename inside the
+      # artifact can't tell them apart.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kettle-${{ env.VARIANT }}-run${{ github.run_number }}
+          path: |
+            android/app/build/outputs/bundle/release/*.aab
+            android/app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
+          # An upload key is not a distribution key, so these are only useful to whoever can already
+          # push to Play. Short retention keeps stale builds from being mistaken for the current one.
+          retention-days: 14

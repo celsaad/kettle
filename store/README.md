@@ -56,24 +56,24 @@ Each of these cost a rejected upload or a wrong guess once, so they are asserted
 Short description is capped at **80 characters**, full at **4000**, release notes at **500 per
 language**. Only include a language tag the listing actually supports, or the release is rejected.
 
-### Short — en-US (77)
+### Short — en-US (72)
 
 ```
-Workout tracker with no account and no server. Your data stays on your phone.
+Lifting and conditioning on one timer. Your training, in a file you own.
 ```
 
-### Short — pt-BR (67)
+### Short — pt-BR (77)
 
 ```
-Treinos sem conta e sem servidor. Seus dados ficam no seu aparelho.
+Musculação e condicionamento no mesmo cronômetro. Seu treino, no seu arquivo.
 ```
 
-### Full — en-US (3068)
+### Full — en-US (3880)
 
 ```
-Kettle is a workout tracker for people who want to own their training data.
+Kettle runs your lifting and your conditioning in the same session, on one timer.
 
-There is no account to create, no server to trust and nothing to sync. Your exercises, workouts and programs live in a plain text file on your phone that you can read, edit, back up and take with you. Your completed sessions are written to a local log that only you can see.
+Reps, HIIT, EMOM, AMRAP, timed holds, cardio and rest all belong to one wall-clock engine, so a session that mixes them is just a session. There is no account to create, no server to trust and nothing to sync: your exercises, workouts and programs live in a plain text file on your phone, and your completed sessions are written to a local log only you can see.
 
 PLAN IN A FILE YOU CONTROL
 Your library is ordinary YAML. Edit it in the app, or open it in any text editor and write it by hand. Import a file or paste text straight in, and Kettle merges it into what you already have without touching your history. Export everything whenever you want, in a format that will still open in ten years.
@@ -90,6 +90,12 @@ Work through a session block by block, with live timers and the next block alway
 
 Timing is wall-clock based, so it survives you switching apps. Audio cues, haptics and a pre-session countdown mean you rarely need to look at the screen. Every finished set is saved as you go, so a crash costs you at most the set in progress.
 
+IT BENDS TO THE SESSION YOU ARE ACTUALLY HAVING
+Training deviates. Add a set when you have another one in you, drop one when you do not, or swap an exercise when the rack is taken — mid-workout, without editing your library. Walked in with no plan at all? Start an empty session and add exercises as you go.
+
+IT REMEMBERS WHAT YOU LIFTED
+The set row shows what you did last time — the same set number, the same exercise — and one tap makes it the new target, saved back to your library so next week starts there. Beat your best and the row says so as it happens; finish and the summary names the record, with an estimated 1RM for loaded sets.
+
 CIRCUITS AND SUPERSETS
 Group exercises into a circuit that runs round-robin for as many rounds as you like, with configurable rest between exercises and between rounds. A superset is just a circuit with no rest in between.
 
@@ -97,13 +103,13 @@ MULTI-WEEK PROGRAMS
 Schedule workouts across weeks and progress them with per-week overrides — add a set in week three, cut a circuit down for a deload — without duplicating anything. Kettle queues up what is next.
 
 HISTORY THAT IS YOURS
-Every set appends to a local log: what you did, when you did it. Streaks, weekly totals and per-exercise volume are calculated on your device from that log. Nothing is uploaded, and nothing is overwritten.
+Every set appends to a local log: what you did, when you did it. Streaks, weekly totals and per-exercise volume are calculated on your device from that log. Nothing is uploaded.
 
 BRING YOUR OWN ASSISTANT
 Because the format is documented and checked against a published schema, you can ask any AI assistant to write a program for you and paste the result in. Kettle validates it on your device and tells you exactly what it would change before anything is saved. The app itself has no AI features and never contacts a model.
 
 WHAT KETTLE DOES NOT DO
-No account. No cloud. No analytics. No crash reporting. No advertising. No third-party SDK that transmits anything. The app makes no network requests of its own, and it does not ask for the microphone, the camera, your location or your contacts.
+No account. No cloud. No analytics. No crash reporting. No advertising. No third-party SDK that transmits anything. The app makes no network requests of its own, and it does not ask for the microphone, the camera, your location or your contacts. There is one optional reminder, off until you turn it on, and it is a notification on your own device.
 
 FREE, WITH AN OPTIONAL TIP JAR
 Every feature is unlocked for everyone. There is no paid tier, no subscription and no trial. An optional tip jar helps cover the developer account fee, and nothing whatsoever is gated behind it — export included.
@@ -113,12 +119,12 @@ Available in English and Portuguese.
 The library format is documented at celsaad.github.io/kettle, and the source is on GitHub under the MIT license, so you can check any of the above for yourself.
 ```
 
-### Full — pt-BR (3145)
+### Full — pt-BR (3968)
 
 ```
-O Kettle é um app de treinos para quem quer ser dono dos próprios dados.
+O Kettle faz a musculação e o condicionamento na mesma sessão, no mesmo cronômetro.
 
-Não tem conta para criar, não tem servidor para confiar e não tem nada para sincronizar. Seus exercícios, treinos e programas ficam em um arquivo de texto no seu aparelho, que você pode ler, editar, salvar e levar com você. As sessões concluídas vão para um registro local que só você vê.
+Séries, HIIT, EMOM, AMRAP, isometrias, cardio e descanso rodam no mesmo motor, medido pelo relógio real — então uma sessão que mistura tudo é só uma sessão. Não tem conta para criar, não tem servidor para confiar e não tem nada para sincronizar: seus exercícios, treinos e programas ficam em um arquivo de texto no seu aparelho, e as sessões concluídas vão para um registro local que só você vê.
 
 MONTE EM UM ARQUIVO QUE É SEU
 Sua biblioteca é YAML comum. Edite pelo app ou abra em qualquer editor de texto e escreva à mão. Importe um arquivo ou cole o texto direto: o Kettle junta ao que você já tem sem mexer no seu histórico. Exporte tudo quando quiser, em um formato que ainda vai abrir daqui a dez anos.
@@ -135,6 +141,12 @@ Faça a sessão bloco a bloco, com cronômetros ao vivo e o próximo bloco sempr
 
 O tempo é medido pelo relógio real, então sobrevive a você trocar de app. Sinais sonoros, vibração e uma contagem regressiva antes de começar fazem você quase não precisar olhar a tela. Cada série concluída é salva na hora: uma falha custa no máximo a série em andamento.
 
+ELE SE ADAPTA AO TREINO QUE VOCÊ ESTÁ FAZENDO
+Treino de verdade sai do script. Acrescente uma série quando ainda tiver gás, tire uma quando não tiver, ou troque um exercício quando o aparelho estiver ocupado — no meio do treino, sem mexer na biblioteca. Chegou sem plano? Comece uma sessão vazia e vá adicionando.
+
+ELE LEMBRA O QUE VOCÊ LEVANTOU
+A linha mostra o que você fez da última vez — mesma série, mesmo exercício — e um toque vira o novo alvo, salvo na biblioteca para a próxima semana começar de lá. Superou seu recorde e a linha avisa na hora; ao terminar, o resumo nomeia o recorde e estima seu 1RM quando há carga.
+
 CIRCUITOS E SUPERSÉRIES
 Junte exercícios em um circuito que roda alternando os movimentos pelo número de rounds que quiser, com descanso configurável entre exercícios e entre rounds. Uma supersérie é só um circuito sem descanso no meio.
 
@@ -142,13 +154,13 @@ PROGRAMAS DE VÁRIAS SEMANAS
 Distribua treinos ao longo das semanas e faça a progressão com ajustes por semana — mais uma série na semana três, um circuito menor para deload — sem duplicar nada. O Kettle já deixa o próximo na fila.
 
 UM HISTÓRICO QUE É SEU
-Cada série entra em um registro local: o que você fez e quando. Sequências, totais da semana e volume por exercício são calculados no seu aparelho a partir desse registro. Nada é enviado e nada é sobrescrito.
+Cada série entra em um registro local: o que você fez e quando. Sequências, totais da semana e volume por exercício são calculados no seu aparelho a partir desse registro. Nada é enviado.
 
 TRAGA SEU PRÓPRIO ASSISTENTE
 Como o formato é documentado e validado por um schema público, você pode pedir a qualquer assistente de IA que escreva um programa e colar o resultado. O Kettle valida no seu aparelho e mostra exatamente o que seria alterado antes de salvar. O app em si não tem recursos de IA e nunca conversa com nenhum modelo.
 
 O QUE O KETTLE NÃO FAZ
-Sem conta. Sem nuvem. Sem análise de uso. Sem relatório de falhas. Sem anúncios. Sem nenhum SDK de terceiros que transmita qualquer coisa. O app não faz requisições de rede próprias e não pede microfone, câmera, localização nem contatos.
+Sem conta. Sem nuvem. Sem análise de uso. Sem relatório de falhas. Sem anúncios. Sem nenhum SDK de terceiros que transmita qualquer coisa. O app não faz requisições de rede próprias e não pede microfone, câmera, localização nem contatos. Existe um único lembrete opcional, desligado até você ligar, e é uma notificação no seu aparelho.
 
 GRATUITO, COM CAIXINHA OPCIONAL
 Todos os recursos estão liberados para todo mundo. Não há versão paga, assinatura nem teste. Uma caixinha opcional ajuda a cobrir a taxa da conta de desenvolvedor, e absolutamente nada fica trancado atrás dela — exportar incluído.

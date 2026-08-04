@@ -3,19 +3,19 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Kettle — a backend-free workout tracker for Android</title>
+    <title>Kettle — lifting and conditioning on one timer</title>
     <meta
       name="description"
-      content="Kettle is a workout tracker with no server, no account and no sync. Your exercises, workouts and programs live in a plain YAML file you own. Completed sessions are written to a local append-only log." />
+      content="Kettle runs your lifting and your conditioning in one session on one wall-clock timer — reps, HIIT, EMOM, AMRAP, holds and cardio. It shows what you lifted last time, adapts mid-workout, and keeps your library in a plain YAML file you own." />
     <meta name="color-scheme" content="light dark" />
     <link rel="icon" href="favicon.svg" type="image/svg+xml" />
     <link rel="canonical" href="https://celsaad.github.io/kettle/" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Kettle" />
-    <meta property="og:title" content="Kettle — a backend-free workout tracker" />
+    <meta property="og:title" content="Kettle — lifting and conditioning on one timer" />
     <meta
       property="og:description"
-      content="No server, no account, no sync. Your exercises, workouts and programs live in a plain YAML file you own." />
+      content="One session for reps, HIIT, EMOM, AMRAP, holds and cardio. Shows what you lifted last time. No server, no account." />
     <meta property="og:url" content="https://celsaad.github.io/kettle/" />
     <!-- og:image intentionally absent until a 1200x630 card exists; a broken preview image is worse than a text-only card. -->
     <meta name="twitter:card" content="summary" />
@@ -71,16 +71,17 @@
           <div class="hero-grid">
             <div class="hero-copy">
               <p class="eyebrow">Workout tracker · Android</p>
-              <h1>Your training, in a file you own.</h1>
+              <h1>Lifting and conditioning, on one timer.</h1>
               <p class="hero-lede">
-                Kettle has no server, no account and no sync. Exercises, workouts and multi-week programs live in a plain
-                YAML file you can hand-edit. Completed sessions are written to a local, append-only log. It collects nothing
-                and transmits nothing.
+                Reps, HIIT, EMOM, AMRAP, timed holds and cardio in a single session, run by one wall-clock engine. It shows
+                what you lifted last time, takes another set or a swapped exercise mid-workout, and starts with nothing
+                planned if that is the kind of day it is. Your library is a plain YAML file you own, and nothing leaves the
+                device.
               </p>
               <div class="hero-badges">
-                <span class="chip">No account</span>
-                <span class="chip">No server</span>
-                <span class="chip plain">Local log</span>
+                <span class="chip">Mixed sessions</span>
+                <span class="chip">Live timers</span>
+                <span class="chip plain">No account</span>
                 <span class="chip plain">Export anytime</span>
               </div>
               <!--
@@ -185,18 +186,24 @@
           <div class="reveal">
             <p class="eyebrow">What it does</p>
             <h2 style="font-size: clamp(28px, 4vw, 40px); max-width: 18ch">
-              A precise runner, driven by a file you can read.
+              A runner that keeps up with the session you're actually having.
             </h2>
           </div>
 
           <div style="margin-top: var(--s6)">
             <div class="feature reveal">
               <div class="feature-copy">
-                <h3>The session runner</h3>
+                <h3>One session, every kind of work</h3>
                 <p>
-                  Work through a workout block by block. Reps sets take a count, a load and an RPE; timed blocks — HIIT,
-                  EMOM, AMRAP, holds — run a live countdown with the next block always in view. No mid-workout typing you
-                  don't need.
+                  Lifting and conditioning run on the same timer. Reps sets take a count, a load and an RPE; timed blocks —
+                  HIIT, EMOM, AMRAP, holds — run a live countdown with the next block always in view. Timing is anchored to
+                  the wall clock, so it survives you leaving the app, and audio cues mean you rarely need to look at the
+                  screen.
+                </p>
+                <p>
+                  It bends, too. Add a set when you have another one in you, drop one when you don't, or swap an exercise
+                  when the rack is taken — mid-workout, without editing anything. Walked in with no plan? Start an empty
+                  session and add as you go.
                 </p>
                 <p><a href="format.html#types">See how blocks are defined →</a></p>
               </div>
@@ -297,11 +304,15 @@
 
             <div class="feature flip reveal">
               <div class="feature-copy">
-                <h3>History you keep</h3>
+                <h3>It remembers what you lifted</h3>
                 <p>
-                  Every finished set appends to a local log — date, exercise, what you actually did. Nothing is overwritten
-                  and nothing is uploaded. Streaks and weekly totals are read back from that log on the device, and you can
-                  export it as plain data any time.
+                  The set row shows what you did last time — "60 kg × 8", on the set you're on — and one tap makes it the
+                  new target, written back to your library so next week starts there. Beat your best and the row says so;
+                  finish and the summary names the record and an estimated 1RM.
+                </p>
+                <p>
+                  All of it is read back on the device from your own log: every finished set appends there with the date and
+                  what you actually did, nothing is uploaded, and you can export the whole thing as plain data any time.
                 </p>
               </div>
               <div class="feature-media">
@@ -364,7 +375,62 @@
         </div>
       </section>
 
-      <!-- YOUR DATA -->
+      <!-- BRING YOUR OWN ASSISTANT -->
+      <section class="section" id="assistant">
+        <div class="wrap">
+          <div class="assist">
+            <div class="reveal">
+              <p class="eyebrow">Bring your own assistant</p>
+              <h2 style="font-size: clamp(28px, 4vw, 40px); margin-bottom: var(--s3)">
+                Generate a program elsewhere. Paste it straight in.
+              </h2>
+              <p class="lede" style="margin-bottom: var(--s4)">
+                Because the library is a documented YAML format with a published JSON schema, any AI assistant can write a
+                valid program for you. Give it the format reference, describe your training, and paste the result into
+                Kettle.
+              </p>
+              <p style="color: var(--secondary); margin-bottom: var(--s4)">
+                Kettle itself has no AI features and never calls a model. This works because the format is open and legible —
+                not because anything phones home.
+              </p>
+              <a class="btn btn-ghost" href="format.html">Open the format reference</a>
+              <p class="disclaimer">
+                The app collects nothing and calls no external service, including no model. Whatever an assistant produces is
+                checked against the schema on import, on your device.
+              </p>
+            </div>
+            <div class="card reveal">
+              <div class="step">
+                <span class="num">1</span>
+                <p>
+                  Paste the <strong>format reference</strong> — or point the assistant at this site — so it knows the file
+                  shape and the seven types.
+                </p>
+              </div>
+              <div class="step">
+                <span class="num">2</span>
+                <p>
+                  Describe your goal in plain words:
+                  <strong>“a 4-week push/pull/legs program, dumbbells only, 40 minutes.”</strong>
+                </p>
+              </div>
+              <div class="step">
+                <span class="num">3</span>
+                <p>
+                  It returns YAML. <strong>Import it into Kettle</strong>, which validates against the schema and merges by
+                  <code class="inl">id</code>.
+                </p>
+              </div>
+              <div class="step">
+                <span class="num">4</span>
+                <p>Edit anything by hand afterwards. The file stays <strong>yours to read and change</strong>.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- YOUR DATA — deliberately last: privacy is the closing argument, not the opening one. -->
       <section class="section data-band" id="data">
         <div class="wrap">
           <div class="reveal" style="max-width: 46ch">
@@ -436,61 +502,6 @@
               </svg>
               <h4>Nothing transmitted</h4>
               <p>Zero analytics and zero trackers. The app makes no network requests — this site doesn't either.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- BRING YOUR OWN ASSISTANT -->
-      <section class="section" id="assistant">
-        <div class="wrap">
-          <div class="assist">
-            <div class="reveal">
-              <p class="eyebrow">Bring your own assistant</p>
-              <h2 style="font-size: clamp(28px, 4vw, 40px); margin-bottom: var(--s3)">
-                Generate a program elsewhere. Paste it straight in.
-              </h2>
-              <p class="lede" style="margin-bottom: var(--s4)">
-                Because the library is a documented YAML format with a published JSON schema, any AI assistant can write a
-                valid program for you. Give it the format reference, describe your training, and paste the result into
-                Kettle.
-              </p>
-              <p style="color: var(--secondary); margin-bottom: var(--s4)">
-                Kettle itself has no AI features and never calls a model. This works because the format is open and legible —
-                not because anything phones home.
-              </p>
-              <a class="btn btn-ghost" href="format.html">Open the format reference</a>
-              <p class="disclaimer">
-                The app collects nothing and calls no external service, including no model. Whatever an assistant produces is
-                checked against the schema on import, on your device.
-              </p>
-            </div>
-            <div class="card reveal">
-              <div class="step">
-                <span class="num">1</span>
-                <p>
-                  Paste the <strong>format reference</strong> — or point the assistant at this site — so it knows the file
-                  shape and the seven types.
-                </p>
-              </div>
-              <div class="step">
-                <span class="num">2</span>
-                <p>
-                  Describe your goal in plain words:
-                  <strong>“a 4-week push/pull/legs program, dumbbells only, 40 minutes.”</strong>
-                </p>
-              </div>
-              <div class="step">
-                <span class="num">3</span>
-                <p>
-                  It returns YAML. <strong>Import it into Kettle</strong>, which validates against the schema and merges by
-                  <code class="inl">id</code>.
-                </p>
-              </div>
-              <div class="step">
-                <span class="num">4</span>
-                <p>Edit anything by hand afterwards. The file stays <strong>yours to read and change</strong>.</p>
-              </div>
             </div>
           </div>
         </div>

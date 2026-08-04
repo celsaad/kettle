@@ -560,6 +560,23 @@ decision assembled across several commits. Open work belongs in the sections at 
   identity-based key would snap a rep count the user had just dialled in back to the target for the
   crime of asking for one more set. There is a test for that direction too.
 
+- ✅ **"Nothing is overwritten" is out of the published copy; "nothing is uploaded" stays.** Both
+  claims sat together in the Play full description and on the landing page. The second is the one
+  carrying the privacy weight and is a hard guarantee of the architecture. The first was a storage
+  detail — it mostly promised the app doesn't rewrite your history behind your back — and it is the
+  claim that blocks editing a mis-logged set (#56), because an edit path either breaks it or requires
+  it reworded.
+
+  Settled here rather than there because repositioning the pitch rewrites the very block it lives in,
+  and writing that sentence twice to unwrite it later is waste. Dropping it costs nothing today: every
+  remaining claim is still true, the log is still append-only in fact, and #56 is now free to add an
+  edit path without reopening published copy. If the log ever *does* gain an edit, nothing needs
+  saying — the promise was never made.
+
+  The corollary for whoever does #56: the product decision is made, so what is left there is the
+  storage question (correct-in-place versus append-a-correction), which is a smaller and more
+  technical choice than the issue currently frames it as.
+
 
 
 

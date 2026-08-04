@@ -1060,3 +1060,138 @@ describe('adding and dropping sets mid-session', () => {
     expect(result.current.previousSet).toEqual({ kind: 'reps', reps: 10, weightKg: undefined });
   });
 });
+
+/**
+ * Swapping an exercise for what's left of the current one. The list surgery is covered in
+ * `build-steps.test.ts`; what is here is the pair of invariants the issue names, which only exist at
+ * this layer — every accumulating log in the runner is keyed by `memberKey`, and `entryIndexRef`
+ * assumes entries are only ever appended at the end.
+ */
+describe('swapping an exercise mid-session', () => {
+  const repsEntry = (index: number) => {
+    const entry = mockSession.entries[index];
+    if (entry?.type !== 'reps') throw new Error(`entry ${index} is not a reps entry`);
+    return entry;
+  };
+
+  it('offers same-type candidates, minus the exercise on screen', async () => {
+    const { result } = await mount(workoutOf(single('pullups')));
+
+    expect(result.current.canSwapExercise).toBe(true);
+    expect(result.current.swapCandidates.map((exercise) => exercise.id)).toEqual(['dips']);
+  });
+
+  it('offers holds a hold, never a reps exercise', async () => {
+    const { result } = await mount(workoutOf(single('lsit')));
+
+    expect(result.current.swapCandidates.map((exercise) => exercise.id)).toEqual(['plank', 'deadhang']);
+  });
+
+  it('offers nothing inside a circuit', async () => {
+    const circuit: Workout['blocks'][number] = {
+      kind: 'circuit',
+      rounds: 2,
+      members: [{ exerciseId: 'pullups' }, { exerciseId: 'dips' }],
+    };
+    const { result } = await mount(workoutOf(circuit));
+
+    expect(result.current.canSwapExercise).toBe(false);
+  });
+
+  it('runs the substitute for what was left', async () => {
+    const { result } = await mount(workoutOf(single('pullups')));
+
+    await press(result.current.logSet);
+    await press(result.current.skipRest);
+    expect(result.current.step).toMatchObject({ setIndex: 2, setTotal: 3 });
+
+    await press(() => result.current.swapExercise('dips'));
+
+    // Two of three sets were left, so the substitute gets two — starting from its own set 1.
+    expect(result.current.step).toMatchObject({ exerciseId: 'dips', setIndex: 1, setTotal: 2 });
+  });
+
+  /**
+   * **Invariants 1 and 2 together.** The sets done before the swap stay in the original exercise's
+   * entry under its own member key, and the substitute appends a *second* entry at the end rather than
+   * growing the first. Reusing the member key would have merged them — pull-up sets silently becoming
+   * dip sets in the log.
+   */
+  it('keeps the work already done in its own entry and appends a new one', async () => {
+    const { result } = await mount(workoutOf(single('pullups')));
+
+    await press(() => result.current.setReps(7));
+    await press(result.current.logSet);
+    await press(result.current.skipRest);
+    await press(() => result.current.swapExercise('dips'));
+    await press(() => result.current.setReps(11));
+    await press(result.current.logSet);
+
+    expect(mockSession.entries).toHaveLength(2);
+    expect(repsEntry(0).exercise).toBe('pullups');
+    expect(repsEntry(0).sets.map((set) => set.reps)).toEqual([7]);
+    expect(repsEntry(1).exercise).toBe('dips');
+    expect(repsEntry(1).sets.map((set) => set.reps)).toEqual([11]);
+  });
+
+  /**
+   * Invariant 2 in its sharper form: `entryIndexRef` records where each member's entry sits and
+   * assumes nothing ever moves. A third exercise logged after the swap must land at index 2 and leave
+   * the first two exactly where they were.
+   */
+  it('does not disturb the index of an entry written before the swap', async () => {
+    const { result } = await mount(workoutOf(single('pullups'), single('plank')));
+
+    await press(result.current.logSet);
+    await press(result.current.skipRest);
+    await press(() => result.current.swapExercise('dips'));
+    await press(result.current.logSet);
+    await press(result.current.logSet);
+    // Onto the plank block, which is its own member and must still append cleanly after the swap.
+    await press(result.current.doneSet);
+
+    expect(mockSession.entries.map((entry) => entry.exercise)).toEqual(['pullups', 'dips', 'plank']);
+    expect(repsEntry(0).sets).toHaveLength(1);
+    expect(repsEntry(1).sets).toHaveLength(2);
+  });
+
+  /**
+   * The rule part 1 established, inherited here: `swapExercise` goes through `mutateSteps`, which
+   * clears `lastCommitRef` before touching the array. Bypassing it makes this Prev retract the set
+   * logged before the swap — verified against exactly that change.
+   */
+  it('does not retract a logged set when Prev follows a swap', async () => {
+    const { result } = await mount(workoutOf(single('pullups')));
+
+    await press(() => result.current.setReps(9));
+    await press(result.current.logSet);
+    await press(() => result.current.swapExercise('dips'));
+    await press(result.current.goPrev);
+
+    expect(mockSession.entries).toHaveLength(1);
+    expect(repsEntry(0).sets.map((set) => set.reps)).toEqual([9]);
+  });
+
+  // Swapping on set 1: the original never contributed anything, so it simply isn't in the session.
+  it('leaves the original out of the log entirely when nothing was done under it', async () => {
+    const { result } = await mount(workoutOf(single('pullups')));
+
+    await press(() => result.current.swapExercise('dips'));
+    await press(result.current.logSet);
+
+    expect(mockSession.entries.map((entry) => entry.exercise)).toEqual(['dips']);
+  });
+
+  // A second swap must not reissue the first substitute's key, for the same reason the first must not
+  // reissue the original's.
+  it('issues a fresh member key on every swap', async () => {
+    const { result } = await mount(workoutOf(single('pullups')));
+
+    await press(() => result.current.swapExercise('dips'));
+    await press(result.current.logSet);
+    await press(() => result.current.swapExercise('pullups'));
+    await press(result.current.logSet);
+
+    expect(mockSession.entries.map((entry) => entry.exercise)).toEqual(['dips', 'pullups']);
+  });
+});

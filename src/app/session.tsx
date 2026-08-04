@@ -9,6 +9,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ErrorFallback } from '@/components/error-fallback';
 import { SessionComplete } from '@/components/session-complete';
 import { SessionCountdown } from '@/components/session-countdown';
+import { SessionExercisePicker } from '@/components/session-exercise-picker';
 import { SessionHold } from '@/components/session-hold';
 import { SessionInterval } from '@/components/session-interval';
 import { SessionProgressDots } from '@/components/session-progress-dots';
@@ -220,6 +221,9 @@ function ActiveSession({
 }) {
   const runner = useSessionRunner(workout, exercises, programId, programWeek, programDay, onComplete);
   const { t } = useTranslation();
+  // Here rather than inside the two set screens: both offer the control, and which exercise is being
+  // substituted is a fact about the session, not about the row that happens to be on screen.
+  const [swapping, setSwapping] = useState(false);
 
   /**
    * One sentence per step, rebuilt only when the step itself changes — the hook dedupes, but keeping
@@ -305,8 +309,10 @@ function ActiveSession({
             beatsPersonalBest={runner.beatsPersonalBest}
             canAddSet={runner.canAddSet}
             canDropSet={runner.canDropSet}
+            canSwapExercise={runner.canSwapExercise}
             onAddSet={runner.addSet}
             onDropSet={runner.dropSet}
+            onSwapExercise={() => setSwapping(true)}
             onTogglePause={runner.setPaused}
             onPrev={runner.goPrev}
             onDone={runner.doneSet}
@@ -334,8 +340,10 @@ function ActiveSession({
             onAdoptPrevious={runner.adoptPreviousLoad}
             canAddSet={runner.canAddSet}
             canDropSet={runner.canDropSet}
+            canSwapExercise={runner.canSwapExercise}
             onAddSet={runner.addSet}
             onDropSet={runner.dropSet}
+            onSwapExercise={() => setSwapping(true)}
             onPrev={runner.goPrev}
             onLogSet={runner.logSet}
           />
@@ -365,6 +373,18 @@ function ActiveSession({
             next={runner.nextPreview}
             onPrev={runner.goPrev}
             onDone={runner.logInterval}
+          />
+        )}
+
+        {swapping && runner.canSwapExercise && (step.kind === 'reps' || step.kind === 'hold') && (
+          <SessionExercisePicker
+            replacing={step.exerciseName}
+            candidates={runner.swapCandidates}
+            onCancel={() => setSwapping(false)}
+            onSelect={(exerciseId) => {
+              runner.swapExercise(exerciseId);
+              setSwapping(false);
+            }}
           />
         )}
 

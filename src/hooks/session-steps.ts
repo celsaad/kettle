@@ -344,6 +344,61 @@ export function dropLastSetForMember(steps: RunnerStep[], memberKey: string): Ru
   return renumber(next, memberKey);
 }
 
+/**
+ * One exercise's steps on its own, outside any workout — what a mid-session substitute expands to.
+ *
+ * A thin wrapper over the same `expandExercise` the workout expansion uses, so a swapped-in exercise
+ * is built exactly the way it would have been had the workout named it in the first place: same rest
+ * interleaving, same target fields, same notes.
+ */
+export function buildStepsForExercise(exercise: Exercise, blockIndex: number, memberKey: string): RunnerStep[] {
+  return expandExercise(exercise, blockIndex, memberKey);
+}
+
+/**
+ * Substitutes `exercise` for whatever is left of `memberKey`, from `fromIndex` onward.
+ *
+ * The substitute gets the **remaining set count**, not its own configured one: three sets left means
+ * three sets of the new exercise. This is a substitution inside the workout rather than a rewrite of
+ * it, so the block keeps its shape — while the reps, load, hold and rest targets all come from the new
+ * exercise, which is what makes it a different exercise rather than a rename.
+ *
+ * Sized by reusing the part-1 mutations rather than reimplementing the trimming, which is why the
+ * `rest_sec: 0` rule and the renumbering hold here for free.
+ *
+ * The caller supplies `newMemberKey` and must never reuse the old one: every accumulating log in the
+ * runner is keyed by it, and reissuing a key for work already logged would make the substitute's sets
+ * grow the *original* exercise's session entry.
+ */
+export function swapExerciseForMember(
+  steps: RunnerStep[],
+  memberKey: string,
+  fromIndex: number,
+  exercise: Exercise,
+  newMemberKey: string,
+): RunnerStep[] {
+  const remaining = setStepIndices(steps, memberKey).filter((index) => index >= fromIndex).length;
+  if (remaining === 0) return steps;
+
+  const memberIndices = steps.flatMap((step, index) => (step.memberKey === memberKey ? [index] : []));
+  const lastIndex = memberIndices[memberIndices.length - 1];
+  // Non-circuit members are contiguous, which is what makes "the rest of this member" a slice at all —
+  // the runner is what refuses to offer this inside a circuit.
+  if (lastIndex === undefined || lastIndex < fromIndex) return steps;
+
+  const blockIndex = steps[fromIndex].blockIndex;
+  let replacement = buildStepsForExercise(exercise, blockIndex, newMemberKey);
+  if (replacement.length === 0) return steps;
+  while (setStepsForMember(replacement, newMemberKey) > remaining) {
+    replacement = dropLastSetForMember(replacement, newMemberKey);
+  }
+  while (setStepsForMember(replacement, newMemberKey) < remaining) {
+    replacement = addSetForMember(replacement, newMemberKey);
+  }
+
+  return [...steps.slice(0, fromIndex), ...replacement, ...steps.slice(lastIndex + 1)];
+}
+
 /** Exported so callers (session.tsx) can check for a zero-step workout before ever starting a session. */
 export function buildSteps(workout: Workout, exercises: Exercise[]): RunnerStep[] {
   const steps: RunnerStep[] = [];

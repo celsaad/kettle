@@ -499,6 +499,24 @@ decision assembled across several commits. Open work belongs in the sections at 
   including the set row's own adopt write-back. That was harmless while the list was derived, and is
   exactly what must not happen once the list can be edited.
 
+  **Swap-exercise, the second half, turns on one line: every swap issues a member key nothing has ever
+  used** (`` `${memberKey}~swap${n}` ``). That is the whole of invariants 1 and 2 from the issue, and
+  it is worth stating why rather than leaving it to look like hygiene. `memberSetsRef`,
+  `memberHiitRoundsRef`, `memberEmomMinutesRef` and `entryIndexRef` are all keyed by `memberKey`, so
+  reusing the original makes the substitute's sets grow the *replaced* exercise's session entry —
+  verified by doing it: one pull-up set and one dip set collapse into a single entry labelled `dips`,
+  which is a lie about what the user lifted, written to a file the product's whole pitch is that they
+  own. A fresh key leaves the original entry holding exactly the sets done under it, and the
+  substitute's first `persistMember` appends a new entry at the end, which is the only thing
+  `entryIndexRef`'s append-only assumption requires.
+
+  Two product decisions came with it. **The substitute gets the remaining set count, not its own** —
+  three sets left means three sets of the new exercise, because this is a substitution inside the
+  workout rather than a rewrite of it; its reps, load, hold and rest targets still come from its own
+  config, which is what makes it a different exercise. And **the picker offers the same type only**,
+  which is what makes "the remaining count" coherent at all (a HIIT's rounds are not sets) and keeps
+  the runner screen from changing kind under someone mid-set.
+
 
 
 ---

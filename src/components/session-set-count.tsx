@@ -11,8 +11,11 @@ type Props = {
   canAdd?: boolean;
   /** False at the floor: what has already been logged, plus the set in progress. Disables, not hides. */
   canDrop?: boolean;
+  /** False when the library holds no other exercise of this type — nothing to swap to. */
+  canSwap?: boolean;
   onAdd?: () => void;
   onDrop?: () => void;
+  onSwap?: () => void;
 };
 
 /**
@@ -24,7 +27,7 @@ type Props = {
  * Drop is disabled rather than hidden at the floor: a control that disappears reflows the header
  * mid-set, right where the user is reading their set number.
  */
-export function SessionSetCount({ label, canAdd, canDrop, onAdd, onDrop }: Props) {
+export function SessionSetCount({ label, canAdd, canDrop, canSwap, onAdd, onDrop, onSwap }: Props) {
   const { t } = useTranslation();
   const setsLabel = t('session.sets.label');
 
@@ -60,15 +63,26 @@ export function SessionSetCount({ label, canAdd, canDrop, onAdd, onDrop }: Props
           </Pressable>
         </View>
       )}
+      {canSwap && (
+        <Pressable onPress={onSwap} hitSlop={12} accessibilityRole="button" style={styles.swapButton}>
+          {/* Names itself from this text — no accessibilityLabel to drift from what's on screen. */}
+          <ThemedText type="code" style={styles.swapLabel}>
+            {t('session.swap.action')}
+          </ThemedText>
+        </Pressable>
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  // Wraps: the label already carries a target range, and a third control after it runs out of width
+  // on a narrow screen at a raised text size.
   row: {
     marginTop: 4,
     flexDirection: 'row',
     alignItems: 'center',
+    flexWrap: 'wrap',
     gap: Spacing.two,
   },
   label: {
@@ -91,6 +105,18 @@ const styles = StyleSheet.create({
   },
   buttonDisabled: {
     opacity: 0.4,
+  },
+  swapButton: {
+    minHeight: 26,
+    justifyContent: 'center',
+    paddingHorizontal: 10,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: RunnerColors.border,
+  },
+  swapLabel: {
+    color: RunnerColors.textSecondary,
+    letterSpacing: 1,
   },
   /**
    * No fixed `lineHeight`, and `includeFontPadding: false`.

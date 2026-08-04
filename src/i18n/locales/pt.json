@@ -133,6 +133,12 @@
     "sets": {
       "label": "séries"
     },
+    "swap": {
+      "action": "TROCAR",
+      "title": "TROCAR EXERCÍCIO",
+      "replacing": "No lugar do que resta de {{name}}",
+      "dismiss": "Manter o exercício atual"
+    },
     "countingUp": "contando para cima",
     "stepperAccessibility": "{{label}}: {{value}}. Toque para inserir um valor exato.",
     "complete": {

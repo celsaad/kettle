@@ -38,8 +38,10 @@ type Props = {
   /** False inside a circuit — see SessionSetCount. */
   canAddSet?: boolean;
   canDropSet?: boolean;
+  canSwapExercise?: boolean;
   onAddSet?: () => void;
   onDropSet?: () => void;
+  onSwapExercise?: () => void;
   onTogglePause: () => void;
   onPrev: () => void;
   onDone: () => void;
@@ -59,8 +61,10 @@ export function SessionHold({
   beatsPersonalBest,
   canAddSet,
   canDropSet,
+  canSwapExercise,
   onAddSet,
   onDropSet,
+  onSwapExercise,
   onTogglePause,
   onPrev,
   onDone,
@@ -117,8 +121,10 @@ export function SessionHold({
           label={t('session.setOf', { index: setIndex, total: setTotal })}
           canAdd={canAddSet}
           canDrop={canDropSet}
+          canSwap={canSwapExercise}
           onAdd={onAddSet}
           onDrop={onDropSet}
+          onSwap={onSwapExercise}
         />
         {notes && (
           <ThemedText type="small" style={styles.notes}>

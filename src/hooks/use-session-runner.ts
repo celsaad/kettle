@@ -20,7 +20,13 @@ export type { IntervalVariant, RunnerStep } from '@/hooks/session-steps';
 export { buildSteps } from '@/hooks/session-steps';
 
 import type { RunnerStep } from '@/hooks/session-steps';
-import { addSetForMember, buildSteps, dropLastSetForMember, setStepsForMember } from '@/hooks/session-steps';
+import {
+  addSetForMember,
+  buildSteps,
+  dropLastSetForMember,
+  setStepsForMember,
+  swapExerciseForMember,
+} from '@/hooks/session-steps';
 
 type LastCommitBuffer = 'sets' | 'hiit' | 'emom';
 
@@ -822,6 +828,52 @@ export function useSessionRunner(
     mutateSteps((current) => dropLastSetForMember(current, memberKey));
   }, [step, mutateSteps]);
 
+  /**
+   * What the exercise on screen could be swapped for: the same type, minus itself.
+   *
+   * Same type only, because that is what makes "the remaining set count" a coherent thing to give the
+   * substitute — a HIIT's rounds are not sets — and it keeps the runner screen from changing kind
+   * under someone mid-set. `exercises` is already the program-resolved list, so a week's overrides are
+   * applied to the candidates too.
+   */
+  const swapCandidates = useMemo(() => {
+    if (!canAddSet || !step || (step.kind !== 'reps' && step.kind !== 'hold')) return [];
+    const current = exercises.find((exercise) => exercise.id === step.exerciseId);
+    if (!current) return [];
+    return exercises.filter((exercise) => exercise.type === current.type && exercise.id !== current.id);
+  }, [canAddSet, step, exercises]);
+
+  const canSwapExercise = swapCandidates.length > 0;
+
+  /**
+   * Counts swaps so each one issues a member key nothing has used before.
+   *
+   * **This is what makes the swap safe**, and it is invariant 1 from the issue: `memberSetsRef`,
+   * `memberHiitRoundsRef`, `memberEmomMinutesRef` and `entryIndexRef` are all keyed by `memberKey`.
+   * Reissuing the original key would make the substitute's sets grow the *replaced* exercise's entry —
+   * bench press sets silently becoming dumbbell press ones in the log. A fresh key means the old
+   * entry keeps exactly the sets that were done under it, and the substitute starts its own.
+   *
+   * `~swap` cannot collide with anything `buildSteps` issues ("0", "0:1").
+   */
+  const swapCountRef = useRef(0);
+
+  const swapExercise = useCallback(
+    (exerciseId: string) => {
+      if (!step) return;
+      const exercise = exercises.find((candidate) => candidate.id === exerciseId);
+      if (!exercise) return;
+      const { memberKey } = step;
+      const index = stepIndexRef.current;
+      swapCountRef.current += 1;
+      const newMemberKey = `${memberKey}~swap${swapCountRef.current}`;
+      // Through mutateSteps like every other edit, so it inherits the lastCommitRef clear rather than
+      // restating it — see the note there on what a stale undo index costs.
+      mutateSteps((current) => swapExerciseForMember(current, memberKey, index, exercise, newMemberKey));
+    },
+    [step, exercises, mutateSteps],
+  );
+
   const addRestSeconds = useCallback(
     (amount: number) => {
       stepEndSecRef.current = Math.max(0, stepEndSecRef.current + amount);
@@ -865,6 +917,9 @@ export function useSessionRunner(
     canDropSet,
     addSet,
     dropSet,
+    canSwapExercise,
+    swapCandidates,
+    swapExercise,
     doneSet: advance,
     logSet: advance,
     skipRest: advance,

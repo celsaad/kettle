@@ -1,7 +1,13 @@
 import type { Exercise, Workout } from '@/domain/types';
 // Imported from session-steps, not use-session-runner: the latter pulls in expo-audio/haptics, which
 // initialise native modules on import and fail under jest. That split is the whole point of the module.
-import { addSetForMember, buildSteps, dropLastSetForMember, setStepsForMember } from '@/hooks/session-steps';
+import {
+  addSetForMember,
+  buildSteps,
+  dropLastSetForMember,
+  setStepsForMember,
+  swapExerciseForMember,
+} from '@/hooks/session-steps';
 
 /**
  * Assertions are on shape (kind / memberKey / setIndex), never on snapshots or display strings — the
@@ -397,5 +403,95 @@ describe('setStepsForMember', () => {
 
   it('is zero for a member that is not in the list', () => {
     expect(setStepsForMember(buildSteps(workoutOf(single('pullups')), exercises), 'nope')).toBe(0);
+  });
+});
+
+describe('swapping an exercise mid-session', () => {
+  const pushupsExercise = exercises.find((exercise) => exercise.id === 'pushups')!;
+  const nonstop = exercises.find((exercise) => exercise.id === 'nonstop-reps')!;
+
+  it('replaces the rest of the member and leaves what came before it alone', () => {
+    const before = buildSteps(workoutOf(single('pullups')), exercises);
+    // Index 2 is set 2 of pullups: set 1 and its rest are behind us.
+    const after = swapExerciseForMember(before, '0', 2, pushupsExercise, '0~swap1');
+
+    expect(after.slice(0, 2)).toEqual(before.slice(0, 2));
+    expect(after[0]).toMatchObject({ exerciseId: 'pullups', memberKey: '0' });
+    expect(after.slice(2).every((step) => step.exerciseId === 'pushups')).toBe(true);
+  });
+
+  it('gives the substitute the remaining count, not its own configured sets', () => {
+    const before = buildSteps(workoutOf(single('pullups')), exercises);
+    // Two of the three pullup sets are still ahead; pushups is a 2-set exercise anyway, so this also
+    // pins that the count comes from what is left rather than coinciding with it.
+    const after = swapExerciseForMember(before, '0', 2, pushupsExercise, '0~swap1');
+
+    // Kind first: TypeScript infers a type predicate from a simple `filter` callback but not a
+    // compound one, so `&&` here would lose the narrowing that gives `setIndex` its type.
+    const swapped = after.filter((step) => step.kind === 'reps').filter((step) => step.memberKey === '0~swap1');
+    expect(swapped).toHaveLength(2);
+    expect(swapped.map((step) => step.setIndex)).toEqual([1, 2]);
+    expect(swapped.every((step) => step.setTotal === 2)).toBe(true);
+  });
+
+  it('grows the substitute when more sets remain than it prescribes', () => {
+    // Four sets of pullups, swapped on set 1: four remain, pushups prescribes two.
+    const before = addSetForMember(buildSteps(workoutOf(single('pullups')), exercises), '0');
+    const after = swapExerciseForMember(before, '0', 0, pushupsExercise, '0~swap1');
+
+    const swapped = after.filter((step) => step.kind === 'reps').filter((step) => step.memberKey === '0~swap1');
+    expect(swapped).toHaveLength(4);
+    expect(swapped.map((step) => step.setIndex)).toEqual([1, 2, 3, 4]);
+  });
+
+  // The whole point of the substitution: a different exercise, with its own prescription.
+  it('takes targets and rest from the substitute', () => {
+    const before = buildSteps(workoutOf(single('pullups')), exercises);
+    const after = swapExerciseForMember(before, '0', 0, pushupsExercise, '0~swap1');
+
+    const first = after[0];
+    if (first.kind !== 'reps') throw new Error('expected a reps step');
+    expect(first).toMatchObject({ exerciseName: 'Push-ups', targetReps: 12 });
+    const rest = after.find((step) => step.kind === 'rest');
+    expect(rest).toMatchObject({ seconds: 45 });
+  });
+
+  /**
+   * Invariant 1: every accumulating log in the runner is keyed by `memberKey`. Reusing the original
+   * would make the substitute's sets grow the *replaced* exercise's session entry.
+   */
+  it('gives the substitute a member key of its own', () => {
+    const before = buildSteps(workoutOf(single('pullups')), exercises);
+    const after = swapExerciseForMember(before, '0', 2, pushupsExercise, '0~swap1');
+
+    expect(after.some((step) => step.memberKey === '0')).toBe(true);
+    expect(after.some((step) => step.memberKey === '0~swap1')).toBe(true);
+    expect(after.filter((step) => step.memberKey === '0~swap1').every((step) => step.exerciseId === 'pushups')).toBe(true);
+  });
+
+  it('leaves the blocks around it untouched', () => {
+    const before = buildSteps(workoutOf(single('pullups'), single('plank')), exercises);
+    const after = swapExerciseForMember(before, '0', 0, pushupsExercise, '0~swap1');
+
+    const planks = after.filter((step) => step.memberKey === '1');
+    expect(planks).toEqual(before.filter((step) => step.memberKey === '1'));
+  });
+
+  // Same rule as adding a set: a substitute authored rest_sec: 0 emits no rest steps.
+  it('adds no rest for a back-to-back substitute', () => {
+    const before = buildSteps(workoutOf(single('pullups')), exercises);
+    const after = swapExerciseForMember(before, '0', 0, nonstop, '0~swap1');
+
+    expect(after.map((step) => step.kind)).toEqual(['reps', 'reps', 'reps']);
+  });
+
+  it('does nothing when the member has nothing left to replace', () => {
+    const before = buildSteps(workoutOf(single('pullups')), exercises);
+    expect(swapExerciseForMember(before, '0', before.length, pushupsExercise, '0~swap1')).toEqual(before);
+  });
+
+  it('does nothing for a member that is not in the list', () => {
+    const before = buildSteps(workoutOf(single('pullups')), exercises);
+    expect(swapExerciseForMember(before, 'nope', 0, pushupsExercise, '0~swap1')).toEqual(before);
   });
 });

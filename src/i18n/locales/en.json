@@ -133,6 +133,12 @@
     "sets": {
       "label": "sets"
     },
+    "swap": {
+      "action": "SWAP",
+      "title": "SWAP EXERCISE",
+      "replacing": "For the rest of {{name}}",
+      "dismiss": "Keep the current exercise"
+    },
     "countingUp": "counting up",
     "stepperAccessibility": "{{label}}: {{value}}. Tap to enter an exact value.",
     "complete": {

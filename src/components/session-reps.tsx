@@ -39,8 +39,10 @@ type Props = {
   /** False inside a circuit — see SessionSetCount. */
   canAddSet?: boolean;
   canDropSet?: boolean;
+  canSwapExercise?: boolean;
   onAddSet?: () => void;
   onDropSet?: () => void;
+  onSwapExercise?: () => void;
   onPrev: () => void;
   onLogSet: () => void;
 };
@@ -65,8 +67,10 @@ export function SessionReps({
   onAdoptPrevious,
   canAddSet,
   canDropSet,
+  canSwapExercise,
   onAddSet,
   onDropSet,
+  onSwapExercise,
   onPrev,
   onLogSet,
 }: Props) {
@@ -114,8 +118,10 @@ export function SessionReps({
           })}
           canAdd={canAddSet}
           canDrop={canDropSet}
+          canSwap={canSwapExercise}
           onAdd={onAddSet}
           onDrop={onDropSet}
+          onSwap={onSwapExercise}
         />
         {notes && (
           <ThemedText type="small" style={styles.notes}>

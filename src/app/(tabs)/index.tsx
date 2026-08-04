@@ -175,8 +175,15 @@ export default function TodayScreen() {
         <Pressable
           onPress={() => router.push({ pathname: '/session', params: { adhoc: '1' } })}
           accessibilityRole="button"
-          style={({ pressed }) => [styles.emptySessionButton, pressed && styles.pressed]}>
-          <ThemedText type="smallMedium" themeColor="accentText">
+          style={({ pressed }) => [
+            styles.emptySessionButton,
+            { borderColor: theme.border, backgroundColor: theme.backgroundElement },
+            pressed && styles.pressed,
+          ]}>
+          <ThemedText type="heading" themeColor="accentText" style={styles.emptySessionGlyph}>
+            +
+          </ThemedText>
+          <ThemedText type="heading" themeColor="accentText">
             {t('today.startEmpty')}
           </ThemedText>
         </Pressable>
@@ -307,12 +314,29 @@ const styles = StyleSheet.create({
     borderTopColor: 'transparent',
     borderBottomColor: 'transparent',
   },
-  // minHeight, not height: the 44px target has to survive a raised accessibility text size.
+  /**
+   * Outlined rather than filled, and sized to match the card's own Start button.
+   *
+   * It shipped as a bare text link and was genuinely easy to miss on a real device — floating between
+   * the card and RECENT, it read as a caption rather than a control. An outline gives it an edge to
+   * recognise as tappable while leaving the filled accent button above it unambiguously primary,
+   * which is the point of the hierarchy rather than a compromise on it.
+   */
   emptySessionButton: {
-    marginTop: Spacing.two,
-    minHeight: 44,
+    marginTop: Spacing.three,
+    // minHeight, not height: a fixed one clips the label at large accessibility text sizes.
+    minHeight: 56,
+    borderRadius: 16,
+    borderWidth: 1,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: Spacing.two,
+  },
+  emptySessionGlyph: {
+    // The glyph is decorative — the label beside it already names the control — so it carries no
+    // separate accessible text.
+    lineHeight: 22,
   },
   sectionLabel: {
     marginTop: Spacing.four,

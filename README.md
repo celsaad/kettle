@@ -1,8 +1,9 @@
 # Kettle
 
-A backend-free workout tracker for Android. Exercises, workouts and multi-week programs live in a
-hand-editable YAML file you own; completed sessions are written by the app to a local, append-only
-log. No server, no account, nothing transmitted.
+A workout tracker for Android that runs your lifting and your conditioning in one session, on one
+wall-clock timer. Exercises, workouts and multi-week programs live in a hand-editable YAML file you
+own; completed sessions are written by the app to a local log. No server, no account, nothing
+transmitted.
 
 **[Landing site](https://celsaad.github.io/kettle/)** ·
 [format reference](https://celsaad.github.io/kettle/format.html) ·

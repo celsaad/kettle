@@ -11,6 +11,8 @@ import {
 } from '@/hooks/safe-notifications';
 import { useSessionSounds } from '@/hooks/use-session-sounds';
 import { useLibraryStore } from '@/state/library-store';
+import { formatSessionName } from '@/domain/format';
+
 import { personalBestFor, previousSetFor } from '@/state/selectors';
 import { useSessionHistoryStore } from '@/state/session-history-store';
 
@@ -24,6 +26,7 @@ import {
   addSetForMember,
   buildSteps,
   dropLastSetForMember,
+  buildStepsForExercise,
   setStepsForMember,
   swapExerciseForMember,
 } from '@/hooks/session-steps';
@@ -154,7 +157,12 @@ function upcomingPreview(steps: RunnerStep[], index: number): RestPreview {
 }
 
 export function useSessionRunner(
-  workout: Workout,
+  /**
+   * Null for an ad-hoc session — one started with no pre-built workout, which builds its step list as
+   * it goes. The data model always allowed it (`Session.workout` is `string | null`); nothing in the
+   * UI had ever produced the case.
+   */
+  workout: Workout | null,
   exercises: Exercise[],
   programId: string | null,
   programWeek: number | null,
@@ -176,7 +184,7 @@ export function useSessionRunner(
    * same order, `stepIndex` is its own state) but it is not something a session should be exposed to
    * once the list can be edited.
    */
-  const [steps, setSteps] = useState(() => buildSteps(workout, exercises));
+  const [steps, setSteps] = useState(() => (workout ? buildSteps(workout, exercises) : []));
   const [stepIndex, setStepIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const [holdElapsedSec, setHoldElapsedSec] = useState(0);
@@ -305,22 +313,41 @@ export function useSessionRunner(
   }, []);
 
   useEffect(() => {
-    if (workout.blocks.length === 0) return;
-    sessionRef.current = startSession(workout.id, programId, programWeek, programDay);
+    // A *real* workout with no blocks still creates nothing — session.tsx catches that case before it
+    // gets here. An ad-hoc session has no blocks by definition and must create its file up front:
+    // §7.2, never hold a live session only in memory.
+    if (workout && workout.blocks.length === 0) return;
+    sessionRef.current = startSession(workout?.id ?? null, programId, programWeek, programDay);
     // Runs once per mounted workout: session should exist before any set can be logged.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Reset per-step transient state whenever the active step changes (adjusting state during
-  // render on a key change, rather than in an effect — see https://react.dev/learn/you-might-not-need-an-effect).
-  // Seeded to -1 (never a real stepIndex) rather than stepIndex itself, so this also fires on the very
-  // first render: seeding it with stepIndex made the first step's target look identical to "no change",
-  // so stepEndSecRef stayed at its useRef(0) default for a countdown-type first step (hiit/emom/amrap,
-  // or a leading standalone rest block) — the ticking effect then saw remaining <= 0 almost immediately
-  // and auto-advanced before the timer ever really ran.
-  const [resetForStepIndex, setResetForStepIndex] = useState(-1);
-  if (resetForStepIndex !== stepIndex) {
-    setResetForStepIndex(stepIndex);
+  /**
+   * Reset per-step transient state whenever the active step changes (adjusting state during render on
+   * a key change, rather than in an effect — see https://react.dev/learn/you-might-not-need-an-effect).
+   *
+   * **Keyed on which step this is, not on where it sits.** `stepIndex` alone was enough while the list
+   * was immutable, and became wrong the moment it wasn't: swapping an exercise replaces the step at
+   * the *current* index, and adding one to a parked ad-hoc session lands it on the index the runner is
+   * already on. Neither moves `stepIndex`, so neither re-seeded — a substitute inherited the replaced
+   * exercise's reps and load, and an added exercise's first set inherited the parked state's zero,
+   * logging 0 reps. Both shipped, and the browser run for the second is what surfaced them.
+   *
+   * The identity deliberately stops at member + kind + set number rather than the step object, so the
+   * mutations that leave *this* set alone — add set, drop set, both of which rebuild the array —
+   * don't snap a rep count the user just dialled in back to the target.
+   *
+   * Starts at `''`, which no real identity can equal, so this still fires on the very first render.
+   * That mattered before for its own reason: seeding it with the initial value made the first step
+   * look unchanged, so `stepEndSecRef` stayed at its `useRef(0)` default for a countdown-type first
+   * step and the ticking effect auto-advanced before the timer ever ran.
+   */
+  const stepIdentity = step
+    ? `${stepIndex}:${step.memberKey}:${step.kind}:${'setIndex' in step ? step.setIndex : 0}`
+    : `${stepIndex}:none`;
+  const [resetForStep, setResetForStep] = useState('');
+  if (resetForStep !== stepIdentity) {
+    setResetForStep(stepIdentity);
     const now = Date.now();
     phaseStartedAtRef.current = now;
     pausedAtRef.current = paused ? now : null;
@@ -523,6 +550,15 @@ export function useSessionRunner(
       }
 
       if (nextIndex >= steps.length) {
+        // An ad-hoc session parks one past the end rather than completing: what comes next is the
+        // user's to decide, and the screen offers Add exercise / Finish there. Parking (rather than
+        // clamping) is what makes `addExercise` free — appending puts the new first step at exactly
+        // the index this already points to.
+        if (!workout) {
+          stepIndexRef.current = nextIndex;
+          setStepIndex(nextIndex);
+          return;
+        }
         if (sessionRef.current) sessionRef.current = completeSession(sessionRef.current);
         onComplete(sessionRef.current);
         return;
@@ -531,7 +567,7 @@ export function useSessionRunner(
       stepIndexRef.current = nextIndex;
       setStepIndex(nextIndex);
     }
-  }, [steps, onComplete, commitCurrentStep, completeSession, playExerciseChange]);
+  }, [steps, workout, onComplete, commitCurrentStep, completeSession, playExerciseChange]);
 
   useEffect(() => {
     if (!step || paused) return;
@@ -610,7 +646,9 @@ export function useSessionRunner(
     const remaining = Math.max(1, stepEndSecRef.current - computeElapsedSec());
     scheduleStepCompleteNotification(
       t(isHold ? 'session.notification.holdTitle' : 'session.notification.restTitle'),
-      t(isHold ? 'session.notification.holdBody' : 'session.notification.restBody', { workout: workout.name }),
+      t(isHold ? 'session.notification.holdBody' : 'session.notification.restBody', {
+        workout: formatSessionName(workout?.name ?? null),
+      }),
       remaining,
     ).then((id) => {
       if (!id) return;
@@ -627,7 +665,7 @@ export function useSessionRunner(
     // while every dep stayed equal, so the effect never re-ran and the notification still fired at the
     // original end time. Every place that moves the ref also sets this state — including a hold's own
     // seeding — so it stays a faithful signal.
-  }, [step, stepEndsItself, paused, restTargetSec, computeElapsedSec, workout.name]);
+  }, [step, stepEndsItself, paused, restTargetSec, computeElapsedSec, workout?.name]);
 
   const togglePause = useCallback(() => {
     setPaused((wasPaused) => {
@@ -789,7 +827,7 @@ export function useSessionRunner(
    * kind is the honest test, and the runner is the only layer that has it (the step carries a
    * `blockIndex`, not a block).
    */
-  const inCircuit = step ? workout.blocks[step.blockIndex]?.kind === 'circuit' : false;
+  const inCircuit = step ? workout?.blocks[step.blockIndex]?.kind === 'circuit' : false;
   const isSetStep = step?.kind === 'reps' || step?.kind === 'hold';
   const canAddSet = isSetStep && !inCircuit;
   /**
@@ -858,6 +896,35 @@ export function useSessionRunner(
    */
   const swapCountRef = useRef(0);
 
+  /**
+   * How many exercises an ad-hoc session has added, which is both the next `blockIndex` and the
+   * next member key's suffix.
+   *
+   * Same rule as the swap counter above, and for the same reason: a key nothing has used means the
+   * new exercise's sets start their own session entry instead of growing someone else's, and its
+   * first `persistMember` appends at the end — all `entryIndexRef`'s append-only assumption asks.
+   */
+  const adhocCountRef = useRef(0);
+
+  /**
+   * Appends an exercise to an ad-hoc session, which is the only way one gets any steps at all.
+   *
+   * Through `mutateSteps` like every other edit, so it inherits the `lastCommitRef` clear — appending
+   * doesn't invalidate an index the way a mid-list edit does, but routing every mutation through one
+   * place is what stops the next one forgetting.
+   */
+  const addExercise = useCallback(
+    (exerciseId: string) => {
+      const exercise = exercises.find((candidate) => candidate.id === exerciseId);
+      if (!exercise) return;
+      const blockIndex = adhocCountRef.current;
+      adhocCountRef.current += 1;
+      const memberKey = `adhoc${blockIndex}`;
+      mutateSteps((current) => [...current, ...buildStepsForExercise(exercise, blockIndex, memberKey)]);
+    },
+    [exercises, mutateSteps],
+  );
+
   const swapExercise = useCallback(
     (exerciseId: string) => {
       if (!step) return;
@@ -888,8 +955,13 @@ export function useSessionRunner(
     stepIndex,
     totalSteps: steps.length,
     blockIndex: step?.blockIndex ?? 0,
-    blockTotal: workout.blocks.length,
-    workoutName: workout.name,
+    // An ad-hoc session's "blocks" are the exercises added so far, which is what keeps the progress
+    // dots meaningful; SessionProgressDots already degrades to nothing at zero.
+    blockTotal: workout ? workout.blocks.length : adhocCountRef.current,
+    /** Null for an ad-hoc session — `formatSessionName` owns the stand-in, not this layer. */
+    workoutName: workout?.name ?? null,
+    isAdHoc: !workout,
+    addExercise,
     paused,
     setPaused: togglePause,
     holdElapsedSec,

@@ -165,6 +165,23 @@ export default function TodayScreen() {
         )}
 
         {/*
+          Outside the card's conditional on purpose, so it shows in both branches. The empty-library
+          state is where it earns its place: with no workouts at all you can still train, which the
+          "New workout" button above can't offer without a detour through the editor.
+
+          Text-weight rather than a second filled button — when there is a workout queued, that stays
+          the primary action.
+        */}
+        <Pressable
+          onPress={() => router.push({ pathname: '/session', params: { adhoc: '1' } })}
+          accessibilityRole="button"
+          style={({ pressed }) => [styles.emptySessionButton, pressed && styles.pressed]}>
+          <ThemedText type="smallMedium" themeColor="accentText">
+            {t('today.startEmpty')}
+          </ThemedText>
+        </Pressable>
+
+        {/*
           The heading goes with its list rather than standing alone: before this it rendered
           unconditionally, so a fresh install (and the empty library above) showed a "RECENT" label
           with nothing under it — which reads as content that failed to load.
@@ -289,6 +306,13 @@ const styles = StyleSheet.create({
     borderLeftWidth: 13,
     borderTopColor: 'transparent',
     borderBottomColor: 'transparent',
+  },
+  // minHeight, not height: the 44px target has to survive a raised accessibility text size.
+  emptySessionButton: {
+    marginTop: Spacing.two,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   sectionLabel: {
     marginTop: Spacing.four,

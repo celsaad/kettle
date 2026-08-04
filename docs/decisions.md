@@ -517,6 +517,50 @@ decision assembled across several commits. Open work belongs in the sections at 
   which is what makes "the remaining count" coherent at all (a HIIT's rounds are not sets) and keeps
   the runner screen from changing kind under someone mid-set.
 
+- ✅ **An ad-hoc session runs out of steps on purpose, and parks instead of ending.** A session with no
+  pre-built workout has an empty step list at the start and again after every exercise finishes. The
+  runner treats that as "waiting for the next decision", not as "done": `advance()` parks `stepIndex`
+  one past the end and the screen offers Add exercise / Finish there, with `finishSession` the only
+  thing that ends it.
+
+  Parking *one past the end* rather than clamping to the last step is what makes adding free — the
+  appended steps land at exactly the index the runner already points to, so no separate "jump to the
+  new exercise" path exists to get wrong. The alternative, completing when the list empties, would
+  have meant deciding the whole session up front, which is the thing ad-hoc exists to avoid.
+
+  Two smaller notes worth keeping:
+
+  - **Adding queues behind the current work rather than jumping to it.** Obvious in hindsight, and the
+    first draft of the test assumed otherwise. Adding mid-exercise is a way to plan the next thing
+    while resting, not a way to abandon the set you are on.
+  - **The display layer needed no changes at all**, which is worth recording because the issue asked
+    for an audit of it. `workoutNameFor` already returned null for a workout-less session and
+    `formatSessionName` already rendered the translated stand-in — both landed with the "ad-hoc" naming
+    work that predated this feature. History, Recent and `historyStats` were correct before this PR
+    touched anything; the tests added for them pin behaviour rather than introduce it.
+
+- ✅ **The runner's per-step reset keys on *which* step it is, not on where it sits — and it took two
+  shipped bugs to learn that.** `resetForStepIndex` compared `stepIndex` alone, which was sufficient
+  for exactly as long as the step list was immutable. Both of the mutations that followed break it by
+  changing the step *under* a stable index:
+
+  - **Swap** replaces the step at the current index, so the substitute inherited the replaced
+    exercise's seeded reps and load — a dumbbell press starting at the bench press's 20 kg.
+  - **Add-exercise** in an ad-hoc session lands the appended step on the index the runner parked at, so
+    the first set inherited the parked state's zero and logged **0 reps**.
+
+  Neither was caught by a test, because the tests that would have caught them were written against the
+  same assumption as the code. What caught the second was driving a real session in the browser and
+  reading the History entry — `Push-ups 0 · 8 · 8 reps` — which is the exact reason `AGENTS.md` says to
+  verify this file by running it rather than by reasoning about it. The first only surfaced because
+  fixing the second made it obvious the same hole existed one feature earlier.
+
+  The key is now `stepIndex : memberKey : kind : setIndex`. Stopping at set number rather than using
+  the step object's identity is deliberate: add-set and drop-set rebuild the array, so an
+  identity-based key would snap a rep count the user had just dialled in back to the target for the
+  crime of asking for one more set. There is a test for that direction too.
+
+
 
 
 ---

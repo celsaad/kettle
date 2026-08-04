@@ -17,6 +17,7 @@ import { SessionReps } from '@/components/session-reps';
 import { SessionRest } from '@/components/session-rest';
 import { ThemedText } from '@/components/themed-text';
 import { RunnerColors, MaxContentWidth, Spacing } from '@/constants/theme';
+import { formatSessionName } from '@/domain/format';
 import { resolveWorkoutForWeek } from '@/domain/program';
 import type { Exercise, Session, Workout } from '@/domain/types';
 import { useSessionAnnouncements } from '@/hooks/use-session-announcements';
@@ -82,16 +83,23 @@ export default function SessionScreen() {
   // the session was started from) gives that moment somewhere to land instead of just vanishing.
   const onComplete = useCallback((session: Session | null) => setCompleted({ session }), []);
   const library = useLibraryStore((state) => state.library);
-  const { workoutId, programId, week, day } = useLocalSearchParams<{
+  const { workoutId, programId, week, day, adhoc } = useLocalSearchParams<{
     workoutId?: string;
     programId?: string;
     week?: string;
     day?: string;
+    adhoc?: string;
   }>();
+  // An ad-hoc session: no workout, and a step list built as the user goes. Checked before every
+  // workout lookup below, since there is nothing to look up.
+  const isAdHoc = adhoc === '1';
   const [started, setStarted] = useState(false);
 
   const resolved = useMemo(() => {
     if (!library) return null;
+    if (isAdHoc) {
+      return { workout: null, exercises: library.exercises, programId: null, week: null, day: null };
+    }
     if (workoutId) {
       const found = library.workouts.find((candidate) => candidate.id === workoutId);
       return found ? { workout: found, exercises: library.exercises, programId: null, week: null, day: null } : null;
@@ -104,9 +112,9 @@ export default function SessionScreen() {
       return resolvedWeek ? { ...resolvedWeek, programId, week: weekNumber, day: day ?? null } : null;
     }
     return { workout: library.workouts[0], exercises: library.exercises, programId: null, week: null, day: null };
-  }, [library, workoutId, programId, week, day]);
+  }, [library, isAdHoc, workoutId, programId, week, day]);
 
-  const workout = resolved?.workout;
+  const workout = resolved?.workout ?? null;
   // resolved is already memoized (stable reference unless its own deps change), so memoizing off it
   // rather than `resolved?.exercises ?? []` directly keeps `exercises` from getting a fresh array
   // identity every render while resolved is null (before library loads).
@@ -117,9 +125,12 @@ export default function SessionScreen() {
   // with nothing to tap once the countdown finishes.
   const steps = useMemo(() => (workout ? buildSteps(workout, exercises) : []), [workout, exercises]);
 
-  if (!workout) return null;
+  // Still hydrating, or a workout id that resolved to nothing. An ad-hoc session legitimately has no
+  // workout, so it is exempt from both this and the zero-step guard below — an empty step list is its
+  // *starting* state rather than an error.
+  if (!resolved) return null;
 
-  if (steps.length === 0) {
+  if (!isAdHoc && workout && steps.length === 0) {
     return (
       <SafeAreaView style={styles.safeArea} edges={['top', 'bottom', 'left', 'right']}>
         <View style={styles.content}>
@@ -149,7 +160,7 @@ export default function SessionScreen() {
     return (
       <SafeAreaView style={styles.safeArea} edges={['top', 'bottom', 'left', 'right']}>
         <View style={styles.content}>
-          <SessionCountdown workoutName={workout.name} onDone={() => setStarted(true)} />
+          <SessionCountdown workoutName={formatSessionName(workout?.name ?? null)} onDone={() => setStarted(true)} />
         </View>
       </SafeAreaView>
     );
@@ -159,7 +170,11 @@ export default function SessionScreen() {
     return (
       <SafeAreaView style={styles.safeArea} edges={['top', 'bottom', 'left', 'right']}>
         <View style={styles.content}>
-          <CompletedSession workoutName={workout.name} session={completed.session} onDone={() => router.back()} />
+          <CompletedSession
+            workoutName={formatSessionName(workout?.name ?? null)}
+            session={completed.session}
+            onDone={() => router.back()}
+          />
         </View>
       </SafeAreaView>
     );
@@ -212,7 +227,7 @@ function ActiveSession({
   programDay,
   onComplete,
 }: {
-  workout: Workout;
+  workout: Workout | null;
   exercises: Exercise[];
   programId: string | null;
   programWeek: number | null;
@@ -224,6 +239,10 @@ function ActiveSession({
   // Here rather than inside the two set screens: both offer the control, and which exercise is being
   // substituted is a fact about the session, not about the row that happens to be on screen.
   const [swapping, setSwapping] = useState(false);
+  const [adding, setAdding] = useState(false);
+  // `rest` is a built-in pseudo-exercise rather than something the user wrote — the Library tab
+  // excludes it from its own count for the same reason.
+  const addCandidates = useMemo(() => exercises.filter((exercise) => exercise.type !== 'rest'), [exercises]);
 
   /**
    * One sentence per step, rebuilt only when the step itself changes — the hook dedupes, but keeping
@@ -271,17 +290,70 @@ function ActiveSession({
     ]);
   }, [runner.finishSession, t]);
 
-  if (!step) return null;
+  /**
+   * An ad-hoc session parks here whenever it runs out of steps — at the start, and again after each
+   * exercise finishes. A pre-built workout never reaches this: it completes instead.
+   */
+  if (!step) {
+    if (!runner.isAdHoc) return null;
+    return (
+      <SafeAreaView style={styles.safeArea} edges={['top', 'bottom', 'left', 'right']}>
+        <View style={styles.content}>
+          <View style={styles.emptyState}>
+            <ThemedText type="subtitle" style={styles.emptyStateTitle}>
+              {t('session.adhoc.title')}
+            </ThemedText>
+            <ThemedText type="small" style={styles.emptyStateBody}>
+              {t('session.adhoc.body')}
+            </ThemedText>
+            <Pressable onPress={() => setAdding(true)} style={styles.emptyStateButton} accessibilityRole="button">
+              <ThemedText type="heading" style={styles.emptyStateButtonLabel}>
+                {t('session.adhoc.addExercise')}
+              </ThemedText>
+            </Pressable>
+            <Pressable onPress={runner.finishSession} accessibilityRole="button" style={styles.adhocFinish}>
+              <ThemedText type="code" style={styles.finishLabel}>
+                {t('session.finish.label')}
+              </ThemedText>
+            </Pressable>
+          </View>
+        </View>
+        {adding && (
+          <SessionExercisePicker
+            candidates={addCandidates}
+            onCancel={() => setAdding(false)}
+            onSelect={(exerciseId) => {
+              runner.addExercise(exerciseId);
+              setAdding(false);
+            }}
+          />
+        )}
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'bottom', 'left', 'right']}>
       <View style={styles.content}>
         <View style={styles.header}>
           <ThemedText type="small" style={styles.workoutName} numberOfLines={1}>
-            {runner.workoutName}
+            {formatSessionName(runner.workoutName)}
           </ThemedText>
           <View style={styles.headerRight}>
             <SessionProgressDots total={runner.blockTotal} activeIndex={runner.blockIndex} />
+            {/* Ad-hoc only: a pre-built workout already knows what it contains. Here it is the only
+                way to queue anything, so it has to be reachable mid-step and not just at the end. */}
+            {runner.isAdHoc && (
+              <Pressable
+                onPress={() => setAdding(true)}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel={t('session.adhoc.addExercise')}>
+                <ThemedText type="code" style={styles.finishLabel}>
+                  {t('session.adhoc.addShort')}
+                </ThemedText>
+              </Pressable>
+            )}
             <Pressable
               onPress={confirmFinish}
               hitSlop={8}
@@ -373,6 +445,17 @@ function ActiveSession({
             next={runner.nextPreview}
             onPrev={runner.goPrev}
             onDone={runner.logInterval}
+          />
+        )}
+
+        {adding && (
+          <SessionExercisePicker
+            candidates={addCandidates}
+            onCancel={() => setAdding(false)}
+            onSelect={(exerciseId) => {
+              runner.addExercise(exerciseId);
+              setAdding(false);
+            }}
           />
         )}
 
@@ -472,5 +555,11 @@ const styles = StyleSheet.create({
   finishLabel: {
     color: RunnerColors.textSecondary,
     letterSpacing: 1,
+  },
+  adhocFinish: {
+    marginTop: Spacing.two,
+    minHeight: 44,
+    justifyContent: 'center',
+    paddingHorizontal: Spacing.three,
   },
 });

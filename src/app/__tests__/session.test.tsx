@@ -289,3 +289,56 @@ describe('ErrorBoundary', () => {
     expect(screen.queryByLabelText('Try again')).toBeNull();
   });
 });
+
+/**
+ * An ad-hoc session, started with `adhoc=1` and no workout. An empty step list is its *starting*
+ * state rather than the "Nothing to run" error a pre-built workout with no blocks gets.
+ */
+describe('an ad-hoc session', () => {
+  const startAdHoc = async () => {
+    setSearchParams({ adhoc: '1' });
+    setLibrary(workoutOf('pullups'));
+    await renderScreen(<SessionScreen />);
+    for (let second = 0; second < 3; second++) {
+      await act(async () => {
+        jest.advanceTimersByTime(1000);
+      });
+    }
+  };
+
+  it('counts in under the stand-in name rather than refusing to start', async () => {
+    setSearchParams({ adhoc: '1' });
+    setLibrary(workoutOf('pullups'));
+    await renderScreen(<SessionScreen />);
+
+    expect(screen.getByText('GET READY')).toBeTruthy();
+    expect(screen.getByText('Ad-hoc session')).toBeTruthy();
+    expect(screen.queryByText('Nothing to run')).toBeNull();
+  });
+
+  it('waits on the add-exercise state with nothing queued', async () => {
+    await startAdHoc();
+
+    expect(screen.getByText('Nothing queued')).toBeTruthy();
+    expect(screen.getByText('Add exercise')).toBeTruthy();
+  });
+
+  it('runs an exercise picked from the library', async () => {
+    await startAdHoc();
+
+    await fireEvent.press(screen.getByText('Add exercise'));
+    await fireEvent.press(screen.getByText('Pull-ups'));
+
+    expect(screen.getByText('REPS')).toBeTruthy();
+    expect(screen.getByText('Set 1 of 3 · target 6')).toBeTruthy();
+  });
+
+  // Driven in pt, since an English assertion can't tell `t('session.adhoc.title')` from the literal.
+  it('renders the add-exercise state in the active locale', async () => {
+    await changeLanguage('pt');
+    await startAdHoc();
+
+    expect(screen.getByText('Nada na fila')).toBeTruthy();
+    expect(screen.getByText('Adicionar exercício')).toBeTruthy();
+  });
+});

@@ -62,3 +62,62 @@ it('renders its own copy in the active locale, and the exercise names verbatim',
   expect(screen.getByText('No lugar do que resta de Bench Press')).toBeTruthy();
   expect(screen.getByText('Dips')).toBeTruthy();
 });
+
+/**
+ * Search. Only appears above a threshold: swapping filters to one exercise type and leaves a handful,
+ * where a field would be noise; adding to an ad-hoc session offers the whole library, where scrolling
+ * it mid-workout is worse than a keyboard.
+ */
+describe('searching a long list', () => {
+  const many: Exercise[] = Array.from({ length: 12 }, (_, index) => ({
+    id: `ex-${index}`,
+    name: index === 0 ? 'Dumbbell Floor Press' : index === 1 ? 'Agachamento Búlgaro' : `Exercise ${index}`,
+    type: 'reps' as const,
+    config: { sets: 3, targetRepsMin: 8, restSec: 60 },
+  }));
+
+  it('stays out of the way for a short list', async () => {
+    await renderScreen(<SessionExercisePicker {...props} />);
+
+    expect(screen.queryByLabelText('Search exercises')).toBeNull();
+  });
+
+  it('appears once the list is long enough to be a problem', async () => {
+    await renderScreen(<SessionExercisePicker {...props} candidates={many} />);
+
+    expect(screen.getByLabelText('Search exercises')).toBeTruthy();
+  });
+
+  it('matches anywhere in the name, not just the start', async () => {
+    await renderScreen(<SessionExercisePicker {...props} candidates={many} />);
+
+    await fireEvent.changeText(screen.getByLabelText('Search exercises'), 'press');
+
+    expect(screen.getByText('Dumbbell Floor Press')).toBeTruthy();
+    expect(screen.queryByText('Exercise 5')).toBeNull();
+  });
+
+  // Names come from the user's own YAML, so "agach" has to find "Agachamento" without the accent.
+  it('ignores case and accents', async () => {
+    await renderScreen(<SessionExercisePicker {...props} candidates={many} />);
+
+    await fireEvent.changeText(screen.getByLabelText('Search exercises'), 'bulgaro');
+
+    expect(screen.getByText('Agachamento Búlgaro')).toBeTruthy();
+  });
+
+  it('says so when nothing matches, rather than showing an empty sheet', async () => {
+    await renderScreen(<SessionExercisePicker {...props} candidates={many} />);
+
+    await fireEvent.changeText(screen.getByLabelText('Search exercises'), 'zzz');
+
+    expect(screen.getByText('No exercise matches "zzz"')).toBeTruthy();
+  });
+
+  it('is translated', async () => {
+    await changeLanguage('pt');
+    await renderScreen(<SessionExercisePicker {...props} candidates={many} />);
+
+    expect(screen.getByLabelText('Buscar exercícios')).toBeTruthy();
+  });
+});

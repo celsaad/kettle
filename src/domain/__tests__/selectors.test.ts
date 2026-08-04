@@ -772,3 +772,36 @@ describe('personalBestFor', () => {
     expect(personalBestFor([abandoned, finished], 'plank').longestHoldSec).toBe(60);
   });
 });
+
+/**
+ * A session with no workout behind it — what an ad-hoc session writes. This layer has been ready for
+ * it since `workoutNameFor` learned to return null, which is why #55 needed no changes here; these
+ * pin that, so a later "simplification" of the null path fails loudly instead of crashing History.
+ */
+describe('a session with no workout', () => {
+  const library: Library = { version: 1, exercises: [], workouts: [], programs: [] };
+  const adHoc = makeSession({
+    startedAt: '2026-07-24T09:00:00.000Z',
+    workout: null,
+    endedAt: '2026-07-24T09:45:00.000Z',
+    entries: [{ exercise: 'bench', type: 'reps', sets: [{ reps: 5, weightKg: 60, restTakenSec: 120 }] }],
+  });
+
+  it('renders in Recent under the translated stand-in', () => {
+    expect(recentSessionsView([adHoc], library)[0].workoutName).toBe('Ad-hoc session');
+  });
+
+  it('renders in History under the same stand-in', () => {
+    expect(historySessionsView([adHoc], library)[0].workoutName).toBe('Ad-hoc session');
+  });
+
+  it('counts towards the stats like any other session', () => {
+    expect(historyStats([adHoc])).toEqual({ sessions: 1, hours: 0, minutes: 45, sets: 1 });
+  });
+
+  // The stand-in is a translated string, not a hardcoded English one — `formatSessionName` owns it.
+  it('translates the stand-in', async () => {
+    await changeLanguage('pt');
+    expect(recentSessionsView([adHoc], library)[0].workoutName).toBe('Sessão avulsa');
+  });
+});

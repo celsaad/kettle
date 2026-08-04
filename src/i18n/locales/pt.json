@@ -58,7 +58,8 @@
       "step3Title": "Planeje semanas em Programas",
       "step3Body": "O Kettle já deixa o próximo na fila."
     },
-    "recent": "RECENTE"
+    "recent": "RECENTE",
+    "startEmpty": "Começar uma sessão vazia"
   },
   "build": {
     "title": "Treinos",
@@ -132,6 +133,16 @@
     "setOf": "Série {{index}} de {{total}}",
     "sets": {
       "label": "séries"
+    },
+    "adhoc": {
+      "title": "Nada na fila",
+      "body": "Adicione um exercício da sua biblioteca e registre nele. Encerre quando quiser.",
+      "addExercise": "Adicionar exercício",
+      "addShort": "ADICIONAR",
+      "pickerTitle": "ADICIONAR EXERCÍCIO",
+      "pickerBody": "Escolha um da sua biblioteca",
+      "search": "Buscar exercícios",
+      "noMatches": "Nenhum exercício corresponde a \"{{query}}\""
     },
     "swap": {
       "action": "TROCAR",

@@ -165,6 +165,30 @@ export default function TodayScreen() {
         )}
 
         {/*
+          Outside the card's conditional on purpose, so it shows in both branches. The empty-library
+          state is where it earns its place: with no workouts at all you can still train, which the
+          "New workout" button above can't offer without a detour through the editor.
+
+          Text-weight rather than a second filled button — when there is a workout queued, that stays
+          the primary action.
+        */}
+        <Pressable
+          onPress={() => router.push({ pathname: '/session', params: { adhoc: '1' } })}
+          accessibilityRole="button"
+          style={({ pressed }) => [
+            styles.emptySessionButton,
+            { borderColor: theme.border, backgroundColor: theme.backgroundElement },
+            pressed && styles.pressed,
+          ]}>
+          <ThemedText type="heading" themeColor="accentText" style={styles.emptySessionGlyph}>
+            +
+          </ThemedText>
+          <ThemedText type="heading" themeColor="accentText">
+            {t('today.startEmpty')}
+          </ThemedText>
+        </Pressable>
+
+        {/*
           The heading goes with its list rather than standing alone: before this it rendered
           unconditionally, so a fresh install (and the empty library above) showed a "RECENT" label
           with nothing under it — which reads as content that failed to load.
@@ -289,6 +313,30 @@ const styles = StyleSheet.create({
     borderLeftWidth: 13,
     borderTopColor: 'transparent',
     borderBottomColor: 'transparent',
+  },
+  /**
+   * Outlined rather than filled, and sized to match the card's own Start button.
+   *
+   * It shipped as a bare text link and was genuinely easy to miss on a real device — floating between
+   * the card and RECENT, it read as a caption rather than a control. An outline gives it an edge to
+   * recognise as tappable while leaving the filled accent button above it unambiguously primary,
+   * which is the point of the hierarchy rather than a compromise on it.
+   */
+  emptySessionButton: {
+    marginTop: Spacing.three,
+    // minHeight, not height: a fixed one clips the label at large accessibility text sizes.
+    minHeight: 56,
+    borderRadius: 16,
+    borderWidth: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.two,
+  },
+  emptySessionGlyph: {
+    // The glyph is decorative — the label beside it already names the control — so it carries no
+    // separate accessible text.
+    lineHeight: 22,
   },
   sectionLabel: {
     marginTop: Spacing.four,

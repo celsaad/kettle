@@ -95,7 +95,8 @@ function syncLiveSession() {
 function mockStoreState() {
   return {
     sessions: mockPriorSessions,
-    startSession: () => {
+    startSession: (workoutId: string | null) => {
+      mockSession = { ...mockSession, workout: workoutId };
       mockPriorSessions = [mockSession, ...mockPriorSessions];
       return mockSession;
     },
@@ -1193,5 +1194,158 @@ describe('swapping an exercise mid-session', () => {
     await press(result.current.logSet);
 
     expect(mockSession.entries.map((entry) => entry.exercise)).toEqual(['dips', 'pullups']);
+  });
+});
+
+/**
+ * An ad-hoc session: no pre-built workout, and a step list built as the user goes. The data model
+ * always allowed it — `Session.workout` is `string | null` — but nothing had ever produced the case.
+ */
+describe('an ad-hoc session', () => {
+  async function mountAdHoc(onComplete = jest.fn()) {
+    const { result } = await renderHook(() => useSessionRunner(null, exercises, null, null, null, onComplete));
+    return { result, onComplete };
+  }
+
+  it('creates a session file with no workout, and no steps to run', async () => {
+    const { result } = await mountAdHoc();
+
+    expect(mockSession.workout).toBeNull();
+    expect(result.current.totalSteps).toBe(0);
+    expect(result.current.step).toBeUndefined();
+    expect(result.current.isAdHoc).toBe(true);
+    // The stand-in is `formatSessionName`'s to render, not this layer's to assemble.
+    expect(result.current.workoutName).toBeNull();
+  });
+
+  it('runs an exercise once one is added', async () => {
+    const { result } = await mountAdHoc();
+
+    await press(() => result.current.addExercise('pullups'));
+
+    expect(result.current.step).toMatchObject({ exerciseId: 'pullups', setIndex: 1, setTotal: 3 });
+    expect(result.current.blockTotal).toBe(1);
+  });
+
+  /**
+   * The park, which is what makes an ad-hoc session usable: running out of steps waits for the next
+   * decision instead of ending the session. Auto-completing would mean choosing everything up front.
+   */
+  it('parks rather than completing when the added exercise runs out', async () => {
+    const { result, onComplete } = await mountAdHoc();
+
+    await press(() => result.current.addExercise('dips'));
+    // dips is three back-to-back sets, so three logs exhausts it.
+    await press(result.current.logSet);
+    await press(result.current.logSet);
+    await press(result.current.logSet);
+
+    expect(result.current.step).toBeUndefined();
+    expect(onComplete).not.toHaveBeenCalled();
+    expect(mockCompleted).toBe(false);
+  });
+
+  // Parking one past the end rather than clamping is what makes this free: the appended steps land
+  // exactly where the index already points.
+  it('picks straight up where it parked when another exercise is added', async () => {
+    const { result } = await mountAdHoc();
+
+    await press(() => result.current.addExercise('dips'));
+    await press(result.current.logSet);
+    await press(result.current.logSet);
+    await press(result.current.logSet);
+    await press(() => result.current.addExercise('pullups'));
+
+    expect(result.current.step).toMatchObject({ exerciseId: 'pullups', setIndex: 1 });
+    expect(result.current.blockTotal).toBe(2);
+  });
+
+  // Each added exercise is its own member, so each gets its own entry — the same rule swap relies on.
+  it('logs each added exercise into its own entry, in order', async () => {
+    const { result } = await mountAdHoc();
+
+    await press(() => result.current.addExercise('dips'));
+    // Adding queues behind the current work rather than jumping to it, so dips runs out first.
+    await press(result.current.logSet);
+    await press(() => result.current.addExercise('pullups'));
+    await press(result.current.logSet);
+    await press(result.current.logSet);
+    expect(result.current.step).toMatchObject({ exerciseId: 'pullups' });
+
+    await press(result.current.logSet);
+
+    expect(mockSession.entries.map((entry) => entry.exercise)).toEqual(['dips', 'pullups']);
+  });
+
+  it('is finished by hand, committing the set in progress', async () => {
+    const { result, onComplete } = await mountAdHoc();
+
+    await press(() => result.current.addExercise('pullups'));
+    await press(() => result.current.setReps(9));
+    await press(result.current.finishSession);
+
+    expect(mockCompleted).toBe(true);
+    expect(onComplete).toHaveBeenCalled();
+    const entry = mockSession.entries[0];
+    if (entry?.type !== 'reps') throw new Error('expected a reps entry');
+    expect(entry.sets.map((set) => set.reps)).toEqual([9]);
+  });
+
+  // Nothing added and nothing logged: still a real session file, just an empty one.
+  it('can be finished having added nothing at all', async () => {
+    const { result } = await mountAdHoc();
+
+    await press(result.current.finishSession);
+
+    expect(mockCompleted).toBe(true);
+    expect(mockSession.entries).toEqual([]);
+  });
+});
+
+/**
+ * What the per-step reset keys off. It used to be `stepIndex` alone, which is wrong the moment the
+ * step list can change *under* a stable index — both #54's swap and #55's add-exercise do exactly
+ * that, and the seeded reps/load/timers were silently carried over from the step that used to be there.
+ */
+describe('re-seeding when the step changes without the index moving', () => {
+  it('seeds reps from the exercise added to a parked ad-hoc session', async () => {
+    const { result } = await renderHook(() => useSessionRunner(null, exercises, null, null, null, jest.fn()));
+
+    await press(() => result.current.addExercise('pullups'));
+
+    // pullups targets 6. Parking had zeroed reps, and the index does not move when the appended step
+    // lands on it — so nothing re-seeded, and the first set logged 0.
+    expect(result.current.reps).toBe(6);
+  });
+
+  it('seeds reps from the substitute after a swap', async () => {
+    const { result } = await mount(workoutOf(single('pullups')));
+    expect(result.current.reps).toBe(6);
+
+    await press(() => result.current.swapExercise('dips'));
+
+    // dips targets 8; carrying pullups' 6 over would log the wrong prescription as the default.
+    expect(result.current.reps).toBe(8);
+  });
+
+  it('seeds the load from the substitute too', async () => {
+    const { result } = await mount(workoutOf(single('pullups')));
+    expect(result.current.weightKg).toBe(20);
+
+    await press(() => result.current.swapExercise('dips'));
+
+    // dips carries no target weight, so it is bodyweight rather than pullups' 20 kg.
+    expect(result.current.weightKg).toBe(0);
+  });
+
+  // The other side of the same coin: adding a set must NOT re-seed, or a rep count dialled in mid-set
+  // would snap back to the target the moment you decided to do one more.
+  it('leaves the set in progress alone when the set count changes', async () => {
+    const { result } = await mount(workoutOf(single('pullups')));
+
+    await press(() => result.current.setReps(14));
+    await press(result.current.addSet);
+
+    expect(result.current.reps).toBe(14);
   });
 });

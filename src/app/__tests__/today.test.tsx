@@ -156,3 +156,45 @@ describe('first-run guidance', () => {
     expect(screen.getByText('Planeje semanas em Programas')).toBeTruthy();
   });
 });
+
+/**
+ * The way into a session with no pre-built workout. It sits outside the Next-up card's conditional so
+ * both branches carry it — the empty-library case being the one where it earns its place, since with
+ * no workouts at all it is the only way to train.
+ */
+describe('starting an empty session', () => {
+  it('offers the entry point alongside a queued workout', async () => {
+    setSeededLibrary();
+
+    await renderScreen(<TodayScreen />);
+
+    expect(screen.getByText('Start an empty session')).toBeTruthy();
+  });
+
+  it('offers it with no workouts to run at all', async () => {
+    setEmptyLibrary();
+
+    await renderScreen(<TodayScreen />);
+
+    expect(screen.getByText('Nothing to run yet')).toBeTruthy();
+    expect(screen.getByText('Start an empty session')).toBeTruthy();
+  });
+
+  it('starts the session with the ad-hoc flag rather than a workout id', async () => {
+    setSeededLibrary();
+    await renderScreen(<TodayScreen />);
+
+    await fireEvent.press(screen.getByText('Start an empty session'));
+
+    expect(router.push).toHaveBeenCalledWith({ pathname: '/session', params: { adhoc: '1' } });
+  });
+
+  it('is translated', async () => {
+    await changeLanguage('pt');
+    setSeededLibrary();
+
+    await renderScreen(<TodayScreen />);
+
+    expect(screen.getByText('Começar uma sessão vazia')).toBeTruthy();
+  });
+});

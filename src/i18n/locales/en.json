@@ -58,7 +58,8 @@
       "step3Title": "Plan weeks in Programs",
       "step3Body": "Kettle queues up what comes next."
     },
-    "recent": "RECENT"
+    "recent": "RECENT",
+    "startEmpty": "Start an empty session"
   },
   "build": {
     "title": "Workouts",
@@ -132,6 +133,16 @@
     "setOf": "Set {{index}} of {{total}}",
     "sets": {
       "label": "sets"
+    },
+    "adhoc": {
+      "title": "Nothing queued",
+      "body": "Add an exercise from your library and log against it. Finish whenever you are done.",
+      "addExercise": "Add exercise",
+      "addShort": "ADD",
+      "pickerTitle": "ADD EXERCISE",
+      "pickerBody": "Pick one from your library",
+      "search": "Search exercises",
+      "noMatches": "No exercise matches \"{{query}}\""
     },
     "swap": {
       "action": "SWAP",

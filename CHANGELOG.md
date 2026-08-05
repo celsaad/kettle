@@ -17,7 +17,11 @@ language; an unsupported tag is rejected on upload. The limits and the upload fo
 
 ## Unreleased
 
-Not in any build yet.
+Nothing since 0.5.0.
+
+---
+
+## 0.5.0 — versionCode 8, 5 August 2026
 
 ### What changed
 
@@ -37,6 +41,50 @@ Not in any build yet.
   keep and to read. Settings says so rather than implying otherwise.
 - Android only for now. iOS hands out folder access that expires when the app closes, so a folder
   chosen there would stop being written to without saying anything.
+
+**A way to reach the developer.**
+
+- Two rows in Settings: an email address, and the GitHub issue tracker. The email opens with a
+  subject already carrying the app version, since that's the first thing any report needs and the
+  last thing anyone remembers. Subject only — no body, no device details, no logs.
+- If there's no mail app to open, the address goes on the clipboard instead and Kettle says so.
+- Kettle sends nothing itself: it hands off to the mail app or browser you already have, and you see
+  the whole message before it goes. The app still collects and shares no data.
+
+**Fixed.**
+
+- A long workout's chips no longer bury "Start session" on Today. The card shows eight and
+  summarises the rest as a "+N more" chip; the full list is one tap away in the runner.
+
+### Play release notes
+
+Counted at 463 (en-US) and 472 (pt-BR), against a limit of 500. Re-count programmatically if you edit
+them rather than trusting these numbers — over-limit copy is a rejected upload, not a truncated one.
+
+```
+<en-US>
+What's new
+
+Pick a folder and Kettle backs up your library and your log into it after every session — including a folder your sync app already watches. Nothing is uploaded and no account is involved. There's a "Back up now" button for when you don't want to wait.
+
+Something wrong? Settings now has a way to reach me directly, by email or on GitHub.
+
+A long workout no longer pushes "Start session" off the Today screen.
+
+Report anything that hangs or loses data.
+</en-US>
+<pt-BR>
+Novidades
+
+Escolha uma pasta e o Kettle salva sua biblioteca e seu histórico nela ao fim de cada sessão — inclusive uma pasta que seu app de sincronização já acompanha. Nada é enviado e não precisa de conta. Há um botão "Fazer backup agora" para quando não quiser esperar.
+
+Algo errado? Agora dá para falar comigo direto nos Ajustes, por e-mail ou no GitHub.
+
+Um treino longo não empurra mais "Iniciar sessão" para fora da tela Hoje.
+
+Relate travamentos ou perda de dados.
+</pt-BR>
+```
 
 ---
 

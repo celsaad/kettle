@@ -59,7 +59,9 @@
       "step3Body": "Kettle queues up what comes next."
     },
     "recent": "RECENT",
-    "startEmpty": "Start an empty session"
+    "startEmpty": "Start an empty session",
+    "moreBlocks_one": "+{{count}} more",
+    "moreBlocks_other": "+{{count}} more"
   },
   "build": {
     "title": "Workouts",

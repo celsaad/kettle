@@ -61,6 +61,14 @@ retrofit, so answer them out loud even when the answer is no.
 Touching the YAML format, or adding a language? Both have gates of their own — see "Changing the YAML
 format" below and [`docs/adding-a-language.md`](docs/adding-a-language.md).
 
+Cutting a release is three separate things, deliberately: `/bump` decides the version and closes out
+the changelog, `.github/workflows/android.yml` builds the `.aab` that goes to Play (see
+[`docs/building-android.md`](docs/building-android.md)), and `/release` tags the commit and publishes
+the APK for people who don't get their copy from Play. **Read the signing entry in the decision log
+before you publish an APK** — every APK this repo can build is signed with the *upload* key, the
+public one has to be the Play-signed universal APK from the Console, and the wrong key is the one
+mistake here that cannot be fixed for anyone who has already installed it.
+
 ## Where things live
 
 - `src/domain/` — pure logic, no I/O. `types.ts` (domain model), `schema.ts` (zod validation of raw
@@ -265,8 +273,8 @@ are the index, the banner is the contract.
   the notification shade, with no watch app and no data on the watch.
 - `docs/timed-hold-auto-end-plan.md` — executed; kept for its rationale, not as a backlog. Ending a
   `timed_hold` at the top of its range, and making `hold_sec_min` optional.
-- `docs/backup-folder-plan.md` — executed; kept for its rationale, and for the three device-only
-  questions it leaves open. Writing the library and the log into a folder the user picks once.
+- `docs/backup-folder-plan.md` — executed; kept for its rationale, and for the device-only checks it
+  leaves open. Writing the library and the log into a folder the user picks once.
 
 Three rules about keeping the plan files honest, in the order they get broken:
 

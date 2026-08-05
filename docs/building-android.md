@@ -72,6 +72,29 @@ already require write access. Don't add a `pull_request` trigger to it: that is 
 that would break the property, and it wouldn't buy the cache warming it looks like it would (see
 below).
 
+### 3. Record the app signing certificate
+
+**Play Console › Setup › App integrity** prints two SHA-256 fingerprints. Both belong here, and
+confusing them is the whole reason they are written down together rather than looked up separately
+each time:
+
+| | SHA-256 | What it is |
+| --- | --- | --- |
+| **Upload certificate** | `_(fill in from the Console)_` | What this workflow signs with. Every `.aab` and `.apk` built here carries it. Play strips it. |
+| **App signing certificate** | `_(fill in from the Console)_` | What Play re-signs with, and therefore what every installed copy actually carries. |
+
+Neither is a secret — they are public certificates, which is why they can live in the repo. It is the
+private keys they belong to that differ: Google holds the app signing one and will never release it.
+
+They earn their place here twice:
+
+- **The workflow's "Print the signing certificate" step** should match the *upload* row. That is the
+  smoke test for a build that silently fell back to the debug keystore, which produces a perfectly
+  valid file that Play rejects half an hour later.
+- **`/release` checks a candidate APK against the *app signing* row** before it is attached to a
+  GitHub Release. An APK matching the upload row instead is the one artefact that must never be
+  published — see the signing entry in [`decisions.md`](decisions.md).
+
 ## When it runs
 
 **On every merge to `master`**, skipping prose-only changes (`docs/`, `site/`, `store/`, any `.md`).
@@ -91,6 +114,12 @@ gh run watch
   install on an x86 emulator. It's signed with the same upload key, which is fine for a phone and
   is *not* enough for in-app purchases: `expo-iap` only resolves products in a build installed from
   Play (see `store/README.md` on licence testing).
+
+  **It is also not the APK that gets published**, and both reasons are silent. The upload-key
+  signature makes it a different app from a Play install, so nobody can move between the two without
+  uninstalling and losing their log; and `arm64-v8a` alone leaves out devices the Console's universal
+  APK covers. The public artefact is *downloaded* from Play rather than built here — see the signing
+  entry in [`decisions.md`](decisions.md), and `/release`.
 
 Both variants are the same signed release build; the merge trigger produces an `.aab`. The artifact
 is attached to the run for 14 days, named by run number rather than by version — only a release commit

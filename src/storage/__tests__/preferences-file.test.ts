@@ -35,6 +35,7 @@ const stored = {
   themePreference: 'dark' as const,
   listSort: { workouts: 'name' as const, programs: 'custom' as const, exercises: 'recent' as const },
   restDayReminder: true,
+  backupFolderUri: 'content://com.android.externalstorage.documents/tree/primary%3ADocuments%2FKettle',
 };
 
 beforeEach(() => {
@@ -64,6 +65,7 @@ describe('loadPreferences', () => {
       themePreference: 'system',
       listSort: DEFAULT_LIST_SORTS,
       restDayReminder: false,
+      backupFolderUri: null,
     });
   });
 
@@ -80,6 +82,7 @@ describe('loadPreferences', () => {
       themePreference: 'dark',
       listSort: DEFAULT_LIST_SORTS,
       restDayReminder: false,
+      backupFolderUri: null,
     });
   });
 
@@ -92,6 +95,7 @@ describe('loadPreferences', () => {
       themePreference: 'dark',
       listSort: { workouts: 'name', programs: 'custom', exercises: 'custom' },
       restDayReminder: false,
+      backupFolderUri: null,
     });
   });
 

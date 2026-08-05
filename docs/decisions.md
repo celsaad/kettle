@@ -217,6 +217,47 @@ decision assembled across several commits. Open work belongs in the sections at 
   **native-only, and a browser check cannot see it**; the jest tests cover the wiring, and TalkBack on
   a device is the only thing that can confirm the rest. Don't "fix" the missing web actions.
 
+- ✅ **Backups go into a folder the user nominates, not into anyone's cloud.** The gap this closes is
+  that a lost phone loses the entire training log, and "export anytime" is a manual ritual nobody
+  performs. Three options were on the table and two were rejected on the same constraint:
+
+  - **A cloud backend** — rejected. It is the one thing the app has never had, and adding it means an
+    account, a server to run, and a **Data Safety** declaration that ends "no data collected / no data
+    shared". That claim is printed on the store listing and is what distinguishes Kettle from Hevy,
+    Strong and Fitbod (see the tip-jar entry, which rejected RevenueCat on exactly this ground).
+  - **Android's platform auto-backup** — rejected, and this is the one worth recording because it
+    looks free. It is opaque to the user, it restores only onto a *fresh install of the same signing
+    identity*, there is no way to see whether it ran, and it silently does nothing for anyone with
+    backup switched off. A backup a user cannot see, verify or read is not the reassurance the gap
+    needs. It also interacts badly with the APK-vs-Play signing split recorded below.
+  - **A folder the user picks, written by us** — taken. The user's own filesystem, so no SDK, no
+    network call, and nothing to declare: the zero-data-collected claim is untouched. The files land
+    where whatever sync client they already run can see them, which means the choice of *where* stays
+    theirs, matching the data-ownership pitch the whole product rests on.
+
+  Three consequences that outlive the commit:
+
+  - **It is Android-only, and that is a platform fact rather than a scope cut.** Android takes a
+    persistable URI permission on the picked tree; iOS grants access for the app session only and
+    stores no bookmark. `docs/sdk-57-api-notes.md` has the evidence. A folder chosen on iOS would look
+    set and quietly stop being written to, so the section is hidden there rather than greyed out.
+  - **The copy may never say "restore".** Nothing imports a session log back (see "The session log is
+    export-only" below), so a backed-up `kettle-history.yaml` preserves the data in a readable form
+    and cannot be reloaded. The library can be re-imported; the log cannot. Session-restore is a
+    separate, larger job — the honest copy is what makes it a follow-up rather than a blocker.
+  - **The chosen folder is app-owned state and lives in `preferences.json`.** Never in the YAML
+    library, which is a file users export and share: a recipient has no business inheriting a path
+    into someone else's phone, and every backup would otherwise rewrite the file they hand-edit.
+  - **"Forget this folder" cannot give the folder back, and the copy is worded around that.** SDK 57
+    exposes `takePersistableUriPermission` — implicitly, inside the picker — but no
+    `releasePersistableUriPermission`, so the grant taken at pick time outlives the URI being dropped
+    from `preferences.json`. The app keeps write access to a folder the user has told it to forget,
+    and each fresh pick adds another grant against Android's per-app persisted-URI cap. Nothing here
+    can undo that, which is uncomfortable for a feature whose whole argument is about not holding
+    anything the user didn't hand over. So the row says what it actually does — Kettle stops writing
+    there and forgets where it was — and does not claim to hand the permission back. If the module
+    ever exposes a release call, this is the entry that says why to wire it up.
+
 - ✅ **The public APK is signed with the Play App Signing key, not with the EAS keystore.** This is the
   one decision in the repo that cannot be undone for anyone who acts on it before it is fixed, which
   is the only reason it is written down at this length.

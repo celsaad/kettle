@@ -107,17 +107,28 @@ function withWriteFailure(errors: string[]): string[] {
 }
 
 /**
- * Backs the log up now that a session has ended, and answers with what went wrong.
+ * Backs the log up now that a session has ended — **after the current tick**, not during it.
+ *
+ * Non-throwing was only half of "a backup must never interrupt a workout"; non-blocking is the other
+ * half. `backUpNow` is entirely synchronous — `list()` on the tree, `textSync()` of the library,
+ * serializing the whole log, and two SAF writes — and every one of those is content-provider IPC. The
+ * copy actively recommends pointing this at a folder the user's sync client watches, which is exactly
+ * how it lands on a cloud-backed provider where those calls take seconds. Run inline it would sit
+ * between the Finish tap and the completion screen, because `completeSession` is called straight from
+ * the runner's `finishSession`.
+ *
+ * `setTimeout(0)` yields to the event loop so React commits and paints first. Nothing waits on the
+ * result: `CompletedSession` already subscribes to this store, so the warning line simply appears when
+ * the answer arrives.
  *
  * Skipped entirely when the user has nominated no folder — someone who never opted in has nothing to
- * be told, and running it anyway would answer `noFolder` and light up a warning on every completion
- * screen in the app. `backUpNow` cannot throw, which is load-bearing here: this runs inside the
- * runner's `finishSession`.
+ * be told, and running it anyway would answer `noFolder` and light a warning on every completion
+ * screen in the app.
  */
-function backUpAfterSession(sessions: Session[]): BackupFailure | null {
+function backUpAfterSession(sessions: Session[], onResult: (failure: BackupFailure | null) => void): void {
   const { backupFolderUri } = usePreferencesStore.getState().preferences;
-  if (!isBackupFolderSupported || !backupFolderUri) return null;
-  return backUpNow(backupFolderUri, sessions);
+  if (!isBackupFolderSupported || !backupFolderUri) return;
+  setTimeout(() => onResult(backUpNow(backupFolderUri, sessions)), 0);
 }
 
 export const useSessionHistoryStore = create<SessionHistoryState>((set, get) => ({
@@ -166,12 +177,10 @@ export const useSessionHistoryStore = create<SessionHistoryState>((set, get) => 
     // Built before the `set` rather than inside it, because the backup has to carry the session that
     // just ended — reading `get().sessions` from within would archive the log as it was one set ago.
     const sessions = get().sessions.map((existing) => (existing.id === updated.id ? updated : existing));
-    set({
-      sessions,
-      errors: withWriteFailure(get().errors),
-      activeSessionId: null,
-      backupFailure: backUpAfterSession(sessions),
-    });
+    // Cleared rather than left: whatever the last session's backup did is not this one's answer, and a
+    // stale warning under a fresh completion screen would be worse than a moment with none.
+    set({ sessions, errors: withWriteFailure(get().errors), activeSessionId: null, backupFailure: null });
+    backUpAfterSession(sessions, (backupFailure) => set({ backupFailure }));
     return updated;
   },
   abandonActiveSession: () => {

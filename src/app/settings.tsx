@@ -154,6 +154,7 @@ export default function SettingsScreen() {
   // mutually exclusive answers to the same question, and two pieces of state would let a stale
   // "backed up" sit under a fresh failure.
   const [backupMessage, setBackupMessage] = useState<{ ok: boolean; text: string } | null>(null);
+  const [backingUp, setBackingUp] = useState(false);
   // Only ever set by the fallback path — there is nothing to say when the mail client opened, since
   // the mail client opening is the confirmation.
   const [contactMessage, setContactMessage] = useState<string | null>(null);
@@ -208,11 +209,22 @@ export default function SettingsScreen() {
     }
   };
 
+  /**
+   * Deferred for the same reason as the session-finish path: `backUpNow` is synchronous SAF IO, and
+   * the folder this points at may well be backed by a cloud provider, so it can take seconds. Run
+   * inline it blocks the press handler and the row simply looks dead. The `setTimeout` lets the busy
+   * state paint first, which is the only reason it exists.
+   */
   const runBackup = () => {
-    const failure = backUpNow(backupFolderUri, sessions);
-    setBackupMessage(
-      failure ? { ok: false, text: describeBackupFailure(failure) } : { ok: true, text: t('settings.backupDone') },
-    );
+    setBackupMessage(null);
+    setBackingUp(true);
+    setTimeout(() => {
+      const failure = backUpNow(backupFolderUri, sessions);
+      setBackupMessage(
+        failure ? { ok: false, text: describeBackupFailure(failure) } : { ok: true, text: t('settings.backupDone') },
+      );
+      setBackingUp(false);
+    }, 0);
   };
 
   /**
@@ -406,9 +418,15 @@ export default function SettingsScreen() {
                 />
                 <ActionRow
                   title={t('settings.backupNow')}
-                  detail={backupFolderUri ? t('settings.backupNowDetail') : t('settings.backupNowNoFolder')}
+                  detail={
+                    backingUp
+                      ? t('settings.backupInProgress')
+                      : backupFolderUri
+                        ? t('settings.backupNowDetail')
+                        : t('settings.backupNowNoFolder')
+                  }
                   onPress={runBackup}
-                  disabled={!backupFolderUri}
+                  disabled={!backupFolderUri || backingUp}
                 />
                 {/* Only once there's something to forget. A row offering to undo a choice nobody has
                     made is three rows where two would do. */}
@@ -420,9 +438,13 @@ export default function SettingsScreen() {
                   />
                 )}
               </View>
+              {/* Announced, not just rendered: this appears *after* a press, so without a live region
+                  a screen-reader user taps "Back up now", focus stays on the row, and nothing is read
+                  back at all — which for the failure cases is the whole message. */}
               {backupMessage && (
                 <ThemedText
                   type="small"
+                  accessibilityLiveRegion="polite"
                   style={[styles.caption, { color: backupMessage.ok ? theme.textSecondary : theme.accentText }]}>
                   {backupMessage.text}
                 </ThemedText>
@@ -467,8 +489,10 @@ export default function SettingsScreen() {
             <ActionRow title={t('settings.contactEmail')} detail={FEEDBACK_EMAIL} onPress={openEmail} />
             <ActionRow title={t('settings.contactIssues')} detail={t('settings.contactIssuesDetail')} onPress={openIssues} />
           </View>
+          {/* Same reasoning as the backup line: it only ever appears after a press, and it is the
+              fallback path — the one case where the user needs to be told something happened. */}
           {contactMessage && (
-            <ThemedText type="small" themeColor="textSecondary" style={styles.caption}>
+            <ThemedText type="small" themeColor="textSecondary" accessibilityLiveRegion="polite" style={styles.caption}>
               {contactMessage}
             </ThemedText>
           )}

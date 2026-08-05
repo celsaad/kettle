@@ -163,11 +163,34 @@ describe('activeSessionId', () => {
 describe('backing up when a session finishes', () => {
   const FOLDER = 'content://tree/primary%3ADocuments%2FKettle';
 
+  // The backup is deliberately deferred off the tick that finishes the session — see
+  // `backUpAfterSession` — so these have to drive the clock to see it happen at all.
+  beforeEach(() => jest.useFakeTimers());
+  afterEach(() => jest.useRealTimers());
+
+  /**
+   * The deferral itself, and the reason for it: `completeSession` is called straight from the
+   * runner's `finishSession`, and `backUpNow` is synchronous SAF IO against a folder that may be
+   * backed by a cloud provider. Run inline it sits between the Finish tap and the completion screen.
+   */
+  it('does not run the backup on the tick that finishes the session', () => {
+    setBackupFolder(FOLDER);
+    const session = useSessionHistoryStore.getState().startSession('w', null, null, null);
+
+    useSessionHistoryStore.getState().completeSession(session);
+
+    expect(mockBackUpNow).not.toHaveBeenCalled();
+
+    jest.runAllTimers();
+    expect(mockBackUpNow).toHaveBeenCalled();
+  });
+
   it('archives the session that just ended, not the log as it was one set ago', () => {
     setBackupFolder(FOLDER);
     const session = useSessionHistoryStore.getState().startSession('w', null, null, null);
 
     useSessionHistoryStore.getState().completeSession(session);
+    jest.runAllTimers();
 
     const [folderUri, sessions] = mockBackUpNow.mock.calls[0] as [string, Session[]];
     expect(folderUri).toBe(FOLDER);
@@ -194,19 +217,25 @@ describe('backing up when a session finishes', () => {
     const session = useSessionHistoryStore.getState().startSession('w', null, null, null);
 
     expect(() => useSessionHistoryStore.getState().completeSession(session)).not.toThrow();
+    jest.runAllTimers();
 
     expect(useSessionHistoryStore.getState().backupFailure).toEqual({ kind: 'unreachable' });
     // The session itself is untouched by a backup that didn't land — that's the whole point.
     expect(useSessionHistoryStore.getState().sessions[0].endedAt).not.toBeNull();
   });
 
-  it('clears a previous failure once a backup lands', () => {
+  // Cleared as the session finishes rather than when the backup answers, so the completion screen
+  // never shows the *previous* session's warning while this one's backup is still in flight.
+  it('clears a previous failure immediately, not only once the backup lands', () => {
     setBackupFolder(FOLDER);
     useSessionHistoryStore.setState({ backupFailure: { kind: 'unreachable' } });
     const session = useSessionHistoryStore.getState().startSession('w', null, null, null);
 
     useSessionHistoryStore.getState().completeSession(session);
 
+    expect(useSessionHistoryStore.getState().backupFailure).toBeNull();
+
+    jest.runAllTimers();
     expect(useSessionHistoryStore.getState().backupFailure).toBeNull();
   });
 });

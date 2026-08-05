@@ -6,11 +6,11 @@
  * here needs a Data Safety declaration; see the decision log for why that beat a cloud SDK.
  *
  * The `content://` URIs this deals in behave nothing like the `file://` ones the rest of
- * `src/storage/` uses, and each difference fails quietly rather than loudly. The three that matter
- * are recorded in `docs/sdk-57-api-notes.md`; the one this file has to work around on every write is
- * that `createFile` *uniquifies* rather than overwrites.
+ * `src/storage/` uses, and every difference fails quietly rather than loudly. All four are recorded
+ * in `docs/sdk-57-api-notes.md`; the two this file works around on every single write are that
+ * `createFile` *uniquifies* rather than overwrites, and that `write` does not truncate.
  */
-import { Directory, File } from 'expo-file-system';
+import { Directory, File, FileMode } from 'expo-file-system';
 import { Platform } from 'react-native';
 
 import type { Session } from '@/domain/types';
@@ -60,7 +60,28 @@ function writeChild(folder: Directory, children: (Directory | File)[], name: str
   // `new File(folder, name)` is not the alternative: `Paths.join` appends to the tree URI's path and
   // produces something that is not a document URI at all. Children come from `list()` or `createFile`.
   const file = existing ?? folder.createFile(name, 'application/x-yaml');
-  file.write(content);
+
+  // **Not `file.write(content)`**, and this is the SAF difference that costs data rather than just
+  // failing. On Android `write` opens the document with mode `"w"`, which overwrites from offset zero
+  // and *does not truncate*; `FileMode` in the same package spells out the distinction, since `"wt"`
+  // is the one documented as "Wipes file contents before writing". Every `file://` path in
+  // `src/storage/` gets truncation for free from `FileOutputStream(file, false)`, so nothing here had
+  // met this before.
+  //
+  // Left as `write`, any backup shorter than the last one — a deleted exercise, a shortened note, a
+  // deleted session — leaves the tail of the previous version welded onto the end of the new one. The
+  // result is a `kettle-library.yaml` that either won't parse or, worse, parses into something wrong,
+  // in the one artefact this feature promises can be re-imported.
+  //
+  // Truncate-and-write rather than delete-and-recreate: deleting first opens a window where the
+  // backup doesn't exist at all, which is the wrong trade for the file whose job is to be the copy
+  // that survives.
+  const handle = file.open(FileMode.Truncate);
+  try {
+    handle.writeBytes(new TextEncoder().encode(content));
+  } finally {
+    handle.close();
+  }
 }
 
 /**
@@ -101,7 +122,9 @@ export function backUpNow(folderUri: string | null, sessions: Session[]): Backup
 
     return null;
   } catch (error) {
-    return { kind: 'writeFailed', detail: (error as Error).message };
+    // `?? String(error)` because a native module can reject with something that has no `message` —
+    // and "Couldn't write the backup: undefined" is a worse answer than the raw object's own text.
+    return { kind: 'writeFailed', detail: (error as Error)?.message ?? String(error) };
   }
 }
 
@@ -129,11 +152,13 @@ export async function pickBackupFolder(): Promise<string | null> {
 export function backupFolderLabel(folderUri: string): string {
   try {
     const decoded = decodeURIComponent(folderUri);
-    // Everything after the volume marker. A tree URI's document id is `<volume>:<path>`, so the colon
-    // is the split point; a provider that doesn't follow that shape falls through to the raw URI,
-    // which is ugly but honest.
-    const afterVolume = decoded.slice(decoded.lastIndexOf(':') + 1).replace(/^\/+|\/+$/g, '');
-    return afterVolume || decoded;
+    // A tree URI's document id is `<volume>:<path>`, and that colon is the split point. Matched
+    // explicitly rather than with `lastIndexOf(':')`, which always finds the scheme's own colon and so
+    // would answer `//provider/tree/abc` for a provider using an opaque id — mangled rather than
+    // recognisable. No volume marker means there is no path to show, so the raw URI is the honest
+    // answer: ugly, but it is at least the thing the user picked.
+    const afterVolume = /:([^:]*)$/.exec(decoded.slice(decoded.indexOf('/tree/')));
+    return afterVolume?.[1].replace(/^\/+|\/+$/g, '') || decoded;
   } catch {
     return folderUri;
   }

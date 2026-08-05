@@ -286,7 +286,7 @@
     "backupNowDetail": "Write both files again straight away.",
     "backupNowNoFolder": "Choose a folder first.",
     "backupForget": "Forget this folder",
-    "backupForgetDetail": "Stop writing backups. Whatever is already there stays.",
+    "backupForgetDetail": "Kettle stops writing there and forgets where it was. The files already in the folder stay.",
     "backupDone": "Backed up.",
     "backupUnsupported": "Backing up to a folder isn't available on this device.",
     "backupUnreachable": "That folder can't be reached any more. Choose it again.",
@@ -300,7 +300,8 @@
     "contactIssuesDetail": "Open a bug report or a request in the tracker.",
     "contactSubject": "Kettle {{version}} feedback",
     "contactCopied": "No app could open that, so {{value}} was copied to your clipboard instead.",
-    "contactNoApp": "No app on this device could open that, and it couldn't be copied either."
+    "contactNoApp": "No app on this device could open that, and it couldn't be copied either.",
+    "backupInProgress": "Writing…"
   },
   "support": {
     "title": "Support Kettle",

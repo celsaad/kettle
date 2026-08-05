@@ -81,6 +81,11 @@ Flagged in the PR rather than assumed. None of these change the design; each cha
   the provider appends an extension of its own.
 - What `directory.exists` returns after the user revokes the grant in system settings, which is the
   path the "folder unreachable" message depends on.
+- **That the write truncates.** Back up a large library, delete half of it, back up again, and read
+  `kettle-library.yaml` back — it must end where the new content ends, with no tail of the old one.
+  This was a real bug (`File.write` opens SAF documents `"w"`, which does not truncate; see trap 4 in
+  the API notes), caught in review and fixed with `FileMode.Truncate`. The unit test models the
+  platform's behaviour rather than observing it, so this is the one that confirms the model was right.
 
 ## Design
 

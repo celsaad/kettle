@@ -286,7 +286,7 @@
     "backupNowDetail": "Escreve os dois arquivos de novo, na hora.",
     "backupNowNoFolder": "Escolha uma pasta primeiro.",
     "backupForget": "Esquecer esta pasta",
-    "backupForgetDetail": "Para de gravar backups. O que já está lá permanece.",
+    "backupForgetDetail": "O Kettle para de gravar lá e esquece o lugar. Os arquivos que já estão na pasta permanecem.",
     "backupDone": "Backup feito.",
     "backupUnsupported": "Backup em pasta não está disponível neste aparelho.",
     "backupUnreachable": "Não dá mais para acessar essa pasta. Escolha-a de novo.",
@@ -300,7 +300,8 @@
     "contactIssuesDetail": "Abra um relato de bug ou um pedido no rastreador.",
     "contactSubject": "Kettle {{version}} — comentários",
     "contactCopied": "Nenhum app pôde abrir isso, então {{value}} foi copiado para a área de transferência.",
-    "contactNoApp": "Nenhum app neste aparelho pôde abrir isso, e também não deu para copiar."
+    "contactNoApp": "Nenhum app neste aparelho pôde abrir isso, e também não deu para copiar.",
+    "backupInProgress": "Gravando…"
   },
   "support": {
     "title": "Apoie o Kettle",

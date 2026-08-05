@@ -35,7 +35,7 @@ jest.mock('@/storage/preferences-file', () => ({
   savePreferences: (...args: unknown[]) => mockSavePreferences(...args),
 }));
 
-import { fireEvent, screen } from '@testing-library/react-native';
+import { act, fireEvent, screen } from '@testing-library/react-native';
 // Named import rather than the default, matching the other screen tests.
 import { changeLanguage } from 'i18next';
 
@@ -135,6 +135,17 @@ describe('choosing a folder', () => {
 });
 
 describe('backing up now', () => {
+  /**
+   * `runBackup` defers the write off the press handler, so every assertion below has to drive the
+   * clock. Fake timers rather than an `await` that happens to work: with real ones these passed
+   * whether or not the deferral was there, which makes them worth nothing against a regression in it.
+   * The flush needs its own `act` because the callback sets state.
+   */
+  beforeEach(() => jest.useFakeTimers());
+  afterEach(() => jest.useRealTimers());
+
+  const flush = () => act(async () => void jest.runAllTimers());
+
   it('is disabled until a folder is chosen', async () => {
     await renderScreen(<SettingsScreen />);
 
@@ -146,9 +157,27 @@ describe('backing up now', () => {
 
     await renderScreen(<SettingsScreen />);
     await fireEvent.press(screen.getByText('Back up now'));
+    await flush();
 
     expect(mockBackUpNow).toHaveBeenCalledWith(FOLDER, []);
     expect(screen.getByText('Backed up.')).toBeTruthy();
+  });
+
+  /**
+   * The row can't just go quiet. `backUpNow` is synchronous SAF IO against a folder that may be
+   * cloud-backed, so it can take seconds — long enough that a row which neither responds nor changes
+   * reads as broken, and gets tapped again.
+   */
+  it('says it is working before the write comes back', async () => {
+    setFolder(FOLDER);
+
+    await renderScreen(<SettingsScreen />);
+    await fireEvent.press(screen.getByText('Back up now'));
+
+    expect(screen.getByText('Writing…')).toBeTruthy();
+
+    await flush();
+    expect(screen.queryByText('Writing…')).toBeNull();
   });
 
   // The one failure carrying a platform string. The sentence around it stays translated; only the
@@ -159,6 +188,7 @@ describe('backing up now', () => {
 
     await renderScreen(<SettingsScreen />);
     await fireEvent.press(screen.getByText('Back up now'));
+    await flush();
 
     expect(screen.getByText("Couldn't write the backup: disk full")).toBeTruthy();
   });
@@ -169,6 +199,7 @@ describe('backing up now', () => {
 
     await renderScreen(<SettingsScreen />);
     await fireEvent.press(screen.getByText('Back up now'));
+    await flush();
 
     expect(screen.getByText(/Choose it again/)).toBeTruthy();
   });

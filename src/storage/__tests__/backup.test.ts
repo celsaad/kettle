@@ -8,15 +8,51 @@
  * the session on the screen of someone who has just finished a workout, which is the failure the
  * whole non-throwing shape exists to prevent, so every way this can go wrong has a test.
  *
- * The second is that a repeated backup **overwrites** rather than accumulating. `createFile` goes
- * through the platform's `createDocument`, which uniquifies a name that already exists, so creating
- * unconditionally would leave `kettle-history (1).yaml` beside the original — one file per session,
- * in the folder whose whole job is to hold one good copy.
+ * The second is that a repeated backup **replaces** what was there, which SAF makes wrong in two
+ * independent ways and neither of them raises anything:
+ *
+ * - `createFile` goes through the platform's `createDocument`, which uniquifies a name that already
+ *   exists — so creating unconditionally leaves `kettle-history (1).yaml` beside the original, one
+ *   file per session, in the folder whose whole job is to hold one good copy.
+ * - `File.write` opens the document `"w"`, which overwrites from offset zero **without truncating**,
+ *   so a shorter backup keeps the tail of the longer one it replaced.
+ *
+ * The second is why `MockFile` below models bytes instead of spying on the call.
+ */
+/**
+ * Models the bytes on disk rather than spying on the call, which is the only way the truncation
+ * behaviour below is visible at all.
+ *
+ * The distinction it reproduces is the SAF one: `write()` opens the document `"w"`, which overwrites
+ * from offset zero and leaves anything past the new content in place, while `open(Truncate)` is
+ * `"wt"` and wipes it first. A plain `jest.fn()` for `write` can only assert *that* a write happened,
+ * which is exactly what let a non-truncating overwrite through the first time.
  */
 class MockFile {
-  write = jest.fn();
+  /** What is actually stored, so an assertion can read it back. */
+  contents = '';
+
   constructor(public name: string) {}
+
+  /** Overwrites in place without truncating — the trap. */
+  write = jest.fn((content: string) => {
+    this.contents = content + this.contents.slice(content.length);
+  });
+
+  open = jest.fn((mode: string) => {
+    if (mode === MOCK_TRUNCATE) this.contents = '';
+    return {
+      writeBytes: (bytes: Uint8Array) => {
+        const text = new TextDecoder().decode(bytes);
+        this.contents = text + this.contents.slice(text.length);
+      },
+      close: jest.fn(),
+    };
+  });
 }
+
+/** Mirrors `FileMode.Truncate`'s `'wt'`; the enum itself is mocked away with the module. */
+const MOCK_TRUNCATE = 'wt';
 
 // Prefixed `mock` because `jest.mock`'s factory is hoisted above every `const` and may only reach
 // out-of-scope names that start with it — see the note in AGENTS.md.
@@ -34,6 +70,7 @@ jest.mock('expo-file-system', () => ({
   // see what was handed over.
   Directory: jest.fn(() => mockFolder),
   File: MockFile,
+  FileMode: { Read: 'r', Write: 'w', Append: 'wa', Truncate: 'wt', ReadWrite: 'rw' },
 }));
 
 jest.mock('react-native', () => ({
@@ -103,7 +140,7 @@ describe('backUpNow', () => {
 
     const written = mockFolder.createFile.mock.results.map((result) => result.value as MockFile);
     expect(written.map((file) => file.name)).toEqual([LIBRARY_BACKUP_NAME, HISTORY_BACKUP_NAME]);
-    expect(written[0].write).toHaveBeenCalledWith('exercises: []\n');
+    expect(written[0].contents).toBe('exercises: []\n');
   });
 
   // Oldest-first, matching `exportSessions` — this is an archive read top to bottom somewhere else,
@@ -114,7 +151,7 @@ describe('backUpNow', () => {
     backUpNow(FOLDER, [july, june]);
 
     const history = mockFolder.createFile.mock.results[1].value as MockFile;
-    const archive = load(history.write.mock.calls[0][0] as string) as { sessions: { id: string }[] };
+    const archive = load(history.contents) as { sessions: { id: string }[] };
     expect(archive.sessions.map((session) => session.id)).toEqual(['june', 'july']);
   });
 
@@ -131,8 +168,30 @@ describe('backUpNow', () => {
     expect(backUpNow(FOLDER, [june])).toBeNull();
 
     expect(mockFolder.createFile).not.toHaveBeenCalled();
-    expect(existingLibrary.write).toHaveBeenCalledWith('exercises: []\n');
-    expect(existingHistory.write).toHaveBeenCalled();
+    expect(existingLibrary.contents).toBe('exercises: []\n');
+    expect(existingHistory.contents).not.toBe('');
+  });
+
+  /**
+   * The truncation regression, and the reason the mock models bytes instead of spying on the call.
+   *
+   * `File.write` opens a SAF document `"w"`, which overwrites from offset zero and does *not*
+   * truncate — only `open(FileMode.Truncate)`'s `"wt"` does. So a backup shorter than the one before
+   * it (delete an exercise, delete a session, shorten a note) used to leave the tail of the previous
+   * version welded onto the end, producing a `kettle-library.yaml` that either won't parse or parses
+   * into something wrong. Reintroducing `file.write(content)` here fails this test and only this one,
+   * which is how it was confirmed rather than assumed.
+   */
+  it('truncates, so a shorter backup leaves no tail of the previous one behind', () => {
+    const { backUpNow, LIBRARY_BACKUP_NAME } = backup();
+    const existing = new MockFile(LIBRARY_BACKUP_NAME);
+    existing.contents = 'exercises:\n  - id: one\n  - id: two\n  - id: three\n';
+    mockFolder.list.mockReturnValue([existing]);
+    mockLibraryFile.textSync.mockReturnValue('exercises: []\n');
+
+    backUpNow(FOLDER, []);
+
+    expect(existing.contents).toBe('exercises: []\n');
   });
 
   // The folder is the user's own, so it holds their files too. Matching on the name rather than on
@@ -144,7 +203,7 @@ describe('backUpNow', () => {
 
     backUpNow(FOLDER, [june]);
 
-    expect(strangerFile.write).not.toHaveBeenCalled();
+    expect(strangerFile.contents).toBe('');
   });
 
   it('skips the library when there is no library file to copy, and still archives the log', async () => {
@@ -219,9 +278,15 @@ describe('backupFolderLabel', () => {
     expect(backupFolderLabel(FOLDER)).toBe('Documents/Kettle');
   });
 
-  it('falls back to something rather than nothing for a URI it cannot read', async () => {
+  /**
+   * A provider whose document id isn't `<volume>:<path>` has no path to show, so the whole URI is
+   * what's left. Asserted exactly rather than with `toBeTruthy()`, which passed against the earlier
+   * `lastIndexOf(':')` version too — that found the *scheme's* colon and answered
+   * `//provider/tree/opaque-id`, mangled rather than recognisable, while still being truthy.
+   */
+  it('falls back to the whole URI, unmangled, when there is no volume marker to cut at', async () => {
     const { backupFolderLabel } = backup();
 
-    expect(backupFolderLabel('content://provider/tree/opaque-id')).toBeTruthy();
+    expect(backupFolderLabel('content://provider/tree/opaque-id')).toBe('content://provider/tree/opaque-id');
   });
 });

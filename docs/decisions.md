@@ -248,6 +248,15 @@ decision assembled across several commits. Open work belongs in the sections at 
   - **The chosen folder is app-owned state and lives in `preferences.json`.** Never in the YAML
     library, which is a file users export and share: a recipient has no business inheriting a path
     into someone else's phone, and every backup would otherwise rewrite the file they hand-edit.
+  - **"Forget this folder" cannot give the folder back, and the copy is worded around that.** SDK 57
+    exposes `takePersistableUriPermission` — implicitly, inside the picker — but no
+    `releasePersistableUriPermission`, so the grant taken at pick time outlives the URI being dropped
+    from `preferences.json`. The app keeps write access to a folder the user has told it to forget,
+    and each fresh pick adds another grant against Android's per-app persisted-URI cap. Nothing here
+    can undo that, which is uncomfortable for a feature whose whole argument is about not holding
+    anything the user didn't hand over. So the row says what it actually does — Kettle stops writing
+    there and forgets where it was — and does not claim to hand the permission back. If the module
+    ever exposes a release call, this is the entry that says why to wire it up.
 
 - **Considered and rejected: consolidating `sessions/` into monthly files to reduce IO.** Would cut
   against the explicit "never rewrite all of history on save" rule (product plan §5.2) — the

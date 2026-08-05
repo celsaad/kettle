@@ -51,7 +51,7 @@
     type doc says as much outright. This is why `isBackupFolderSupported` in `storage/backup.ts` is
     Android-only: a folder chosen on iOS would look set and quietly stop being written to.
 
-- ⚠️ **A SAF `content://` URI is not a `file://` URI, and three of the differences fail silently.**
+- ⚠️ **A SAF `content://` URI is not a `file://` URI, and four of the differences fail silently.**
   Everything in `src/storage/` except `backup.ts` deals in `file://` and never meets these:
 
   1. **`new File(directory, 'name.yaml')` does not address a child.** `Paths.join` treats the tree URI
@@ -65,6 +65,24 @@
      `DocumentsContract.createDocument`, which uniquifies (`kettle-library (1).yaml`). Every write has
      to be find-then-write against `list()`. `backup.test.ts` pins this one, because unguarded it
      turns a backup folder into one file per session.
+  4. **`File.write()` does not truncate**, so overwriting with something shorter leaves the tail of
+     the old content behind. `FileSystemFile.write` calls `outputStream(append = false)`, which for
+     SAF is `contentResolver.openOutputStream(uri, "w")` — and `"w"` overwrites from offset zero
+     without wiping. `FileMode` in the same package is where this is visible: `WRITE("w")` is
+     "Write-only", `TRUNCATE("wt")` is "Write-only. **Wipes file contents before writing**". The
+     `file://` half of the API is unaffected, because `JavaFile.outputStream(false)` is
+     `FileOutputStream(file, false)`, which truncates the way everyone expects — which is exactly why
+     nothing else in `src/storage/` has ever met this.
+
+     The fix is `file.open(FileMode.Truncate)` + `handle.writeBytes(...)`;
+     `FileSystemFileHandle.forContentURI` accepts `TRUNCATE` and maps it straight to
+     `openFileDescriptor(uri, "wt")`. Delete-and-recreate also works and is worse — it opens a window
+     with no file at all. `TextEncoder` is safe to encode with: it is a Hermes built-in (Expo's winter
+     runtime polyfills only `TextDecoder`, and says so in a comment).
+
+     Found in review, not on a device, and it is the most expensive of the four: it corrupts the one
+     artefact the backup feature promises can be re-imported, silently, and only when the new content
+     is *shorter* than the old — so a growing library never shows it.
 
   `File.name` does resolve correctly for these: `Paths.basename` decodes the pathname first, so a
   document URI ending `…%2Fkettle-library.yaml` answers `kettle-library.yaml`. That holds for

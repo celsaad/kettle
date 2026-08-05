@@ -80,11 +80,18 @@ each time:
 
 | | SHA-256 | What it is |
 | --- | --- | --- |
-| **Upload certificate** | `_(fill in from the Console)_` | What this workflow signs with. Every `.aab` and `.apk` built here carries it. Play strips it. |
+| **Upload certificate** | `48:0A:30:FE:53:E5:84:D0:AF:17:1F:1E:89:39:57:C2:86:12:E5:3E:90:29:44:38:36:5F:6E:E5:AA:0A:AA:54` | What this workflow signs with. Every `.aab` and `.apk` built here carries it. Play strips it. |
 | **App signing certificate** | `_(fill in from the Console)_` | What Play re-signs with, and therefore what every installed copy actually carries. |
 
 Neither is a secret — they are public certificates, which is why they can live in the repo. It is the
 private keys they belong to that differ: Google holds the app signing one and will never release it.
+
+**The app signing row is still empty, and until it is filled `/release` cannot do its job.** That row
+is the only positive check on a candidate APK; with a placeholder there, the check can prove a file
+is *wrong* — by matching the upload row above — but never that it is right. It comes from the Console
+and nowhere else. The upload row does have a second source, which is where the value above came from:
+the workflow's own "Print the signing certificate" step prints it on every run, so it can be read off
+a build log rather than looked up.
 
 They earn their place here twice:
 

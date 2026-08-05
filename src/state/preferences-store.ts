@@ -24,12 +24,15 @@ type PreferencesStoreState = {
   setListSort: (list: ListKind, sort: ListSort) => Promise<boolean>;
   /** Resolves false when the write failed; the change still applies for this run. */
   setRestDayReminder: (enabled: boolean) => Promise<boolean>;
+  /** `null` forgets the folder. Resolves false when the write failed; the change still applies for this run. */
+  setBackupFolderUri: (backupFolderUri: string | null) => Promise<boolean>;
 };
 
 const DEFAULT_PREFERENCES: Omit<Preferences, 'unitSystem'> = {
   themePreference: 'system',
   listSort: DEFAULT_LIST_SORTS,
   restDayReminder: false,
+  backupFolderUri: null,
 };
 
 /**
@@ -74,6 +77,10 @@ export const usePreferencesStore = create<PreferencesStoreState>((set, get) => {
     // the two lists the user isn't looking at.
     setListSort: (list, sort) => applyAndPersist({ listSort: { ...get().preferences.listSort, [list]: sort } }),
     setRestDayReminder: (restDayReminder) => applyAndPersist({ restDayReminder }),
+    // The one preference whose failed write genuinely costs something: the SAF grant itself survives,
+    // but a URI that never reached disk means the next launch has no folder to write to. Settings
+    // says so on a false, rather than leaving the row looking set.
+    setBackupFolderUri: (backupFolderUri) => applyAndPersist({ backupFolderUri }),
   };
 });
 

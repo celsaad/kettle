@@ -265,6 +265,8 @@ are the index, the banner is the contract.
   the notification shade, with no watch app and no data on the watch.
 - `docs/timed-hold-auto-end-plan.md` — executed; kept for its rationale, not as a backlog. Ending a
   `timed_hold` at the top of its range, and making `hold_sec_min` optional.
+- `docs/backup-folder-plan.md` — executed; kept for its rationale, and for the three device-only
+  questions it leaves open. Writing the library and the log into a folder the user picks once.
 
 Three rules about keeping the plan files honest, in the order they get broken:
 

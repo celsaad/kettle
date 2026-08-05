@@ -17,7 +17,13 @@ import { usePreferencesStore } from '@/state/preferences-store';
 beforeEach(() => {
   usePreferencesStore.setState({
     status: 'idle',
-    preferences: { unitSystem: 'metric', themePreference: 'system', listSort: DEFAULT_LIST_SORTS, restDayReminder: false },
+    preferences: {
+      unitSystem: 'metric',
+      themePreference: 'system',
+      listSort: DEFAULT_LIST_SORTS,
+      restDayReminder: false,
+      backupFolderUri: null,
+    },
   });
   mockLoad.mockReset().mockResolvedValue(null);
   mockSave.mockReset().mockResolvedValue(true);
@@ -101,6 +107,7 @@ describe('setUnitSystem', () => {
       themePreference: 'system',
       listSort: DEFAULT_LIST_SORTS,
       restDayReminder: false,
+      backupFolderUri: null,
     });
   });
 
@@ -125,6 +132,7 @@ describe('setThemePreference', () => {
       themePreference: 'dark',
       listSort: DEFAULT_LIST_SORTS,
       restDayReminder: false,
+      backupFolderUri: null,
     });
   });
 
@@ -139,6 +147,7 @@ describe('setThemePreference', () => {
       themePreference: 'light',
       listSort: DEFAULT_LIST_SORTS,
       restDayReminder: false,
+      backupFolderUri: null,
     });
   });
 
@@ -186,6 +195,7 @@ describe('setRestDayReminder', () => {
       themePreference: 'system',
       listSort: DEFAULT_LIST_SORTS,
       restDayReminder: true,
+      backupFolderUri: null,
     });
   });
 

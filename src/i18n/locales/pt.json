@@ -163,7 +163,8 @@
       "title": "Treino concluído",
       "done": "Concluir",
       "recordBadge": "RECORDE",
-      "oneRepMaxNote": "1RM estimado a partir da sua melhor série, pela fórmula de Epley."
+      "oneRepMaxNote": "1RM estimado a partir da sua melhor série, pela fórmula de Epley.",
+      "backupFailed": "Esta sessão está salva neste aparelho, mas a cópia para a sua pasta de backup não foi feita. Veja em Configurações."
     },
     "countdown": {
       "getReady": "PREPARE-SE"
@@ -278,7 +279,29 @@
     "exercises": "Exercícios",
     "sessions": "Sessões",
     "version": "Kettle {{version}}",
-    "support": "Apoio"
+    "support": "Apoio",
+    "backupFolder": "Pasta de backup",
+    "backupFolderNone": "Ainda não escolhida. Selecione uma pasta neste aparelho.",
+    "backupNow": "Fazer backup agora",
+    "backupNowDetail": "Escreve os dois arquivos de novo, na hora.",
+    "backupNowNoFolder": "Escolha uma pasta primeiro.",
+    "backupForget": "Esquecer esta pasta",
+    "backupForgetDetail": "O Kettle para de gravar lá e esquece o lugar. Os arquivos que já estão na pasta permanecem.",
+    "backupDone": "Backup feito.",
+    "backupUnsupported": "Backup em pasta não está disponível neste aparelho.",
+    "backupUnreachable": "Não dá mais para acessar essa pasta. Escolha-a de novo.",
+    "backupWriteFailed": "Não foi possível gravar o backup: {{detail}}",
+    "backupFolderNotSaved": "A pasta foi escolhida mas não pôde ser salva, então não será lembrada depois de reiniciar.",
+    "backupWhat": "O Kettle grava kettle-library.yaml e kettle-history.yaml na pasta que você escolher, ao fim de cada sessão e sempre que você tocar em Fazer backup agora. Ele sobrescreve esses dois arquivos e não mexe em mais nada por lá. Aponte para uma pasta que seu app de sincronização já acompanha e seu registro sai do celular sem que o Kettle envie coisa alguma.",
+    "backupLimits": "O arquivo da biblioteca pode ser importado de volta em uma instalação nova. O registro de sessões não — o Kettle o exporta para guardar e ler, mas não tem nada que leia um de volta, então trate-o como registro e não como restauração.",
+    "contact": "Fale com a gente",
+    "contactEmail": "Escrever para o desenvolvedor",
+    "contactIssues": "Relatar um problema no GitHub",
+    "contactIssuesDetail": "Abra um relato de bug ou um pedido no rastreador.",
+    "contactSubject": "Kettle {{version}} — comentários",
+    "contactCopied": "Nenhum app pôde abrir isso, então {{value}} foi copiado para a área de transferência.",
+    "contactNoApp": "Nenhum app neste aparelho pôde abrir isso, e também não deu para copiar.",
+    "backupInProgress": "Gravando…"
   },
   "support": {
     "title": "Apoie o Kettle",

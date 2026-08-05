@@ -13,6 +13,11 @@ type Props = {
   workoutName: string;
   /** Empty on most sessions, which is the point — this screen stays as it was when nothing was beaten. */
   records?: SessionRecord[];
+  /**
+   * The backup taken as this session ended didn't land. False for everyone who has nominated no
+   * folder — an opt-in nobody took is not a warning.
+   */
+  backupFailed?: boolean;
   onDone: () => void;
 };
 
@@ -21,7 +26,7 @@ type Props = {
  * layout family, deliberately a different scale (a checkmark + a large title, not a giant numeral)
  * since this is a different kind of moment, not another countdown.
  */
-export function SessionComplete({ workoutName, records = [], onDone }: Props) {
+export function SessionComplete({ workoutName, records = [], backupFailed = false, onDone }: Props) {
   const { t } = useTranslation();
   const unitSystem = useUnitSystem();
   const unitLabel = t(unitSystem === 'imperial' ? 'units.lb' : 'units.kg');
@@ -99,6 +104,15 @@ export function SessionComplete({ workoutName, records = [], onDone }: Props) {
         </View>
       )}
 
+      {/* A line, not a dialog. The session itself is safely on disk — this says only that the *copy*
+          into the user's folder didn't happen, which is worth knowing and worth nobody's attention
+          right now. The fix is in Settings, so that's where it points. */}
+      {backupFailed && (
+        <ThemedText type="small" style={styles.backupWarning}>
+          {t('session.complete.backupFailed')}
+        </ThemedText>
+      )}
+
       <Pressable onPress={onDone} accessibilityRole="button" style={styles.doneButton}>
         <ThemedText type="heading" style={styles.doneButtonLabel}>
           {t('session.complete.done')}
@@ -142,6 +156,15 @@ const styles = StyleSheet.create({
     marginTop: Spacing.three,
     width: '100%',
     gap: Spacing.two,
+  },
+  // The runner's calm accent rather than its warm one: warm is the checkmark and the Done button on
+  // this very screen, and a warning sharing their color would read as part of the celebration. No new
+  // color — `accentCalmOnSoft` measures 6.86 on `background`, better than the 5.75 recorded for it
+  // against the translucent pill it was mixed for, since this sits on the bare surface.
+  backupWarning: {
+    marginTop: Spacing.two,
+    color: RunnerColors.accentCalmOnSoft,
+    textAlign: 'center',
   },
   recordCard: {
     backgroundColor: RunnerColors.backgroundElement,

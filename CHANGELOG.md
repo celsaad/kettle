@@ -17,7 +17,26 @@ language; an unsupported tag is rejected on upload. The limits and the upload fo
 
 ## Unreleased
 
-Nothing since 0.4.0.
+Not in any build yet.
+
+### What changed
+
+**Backups into a folder you choose.**
+
+- Pick a folder once — anywhere on your device, including whatever folder your sync app already
+  watches — and Kettle writes `kettle-library.yaml` and `kettle-history.yaml` into it at the end of
+  every session. There's a "Back up now" button in Settings for when you don't want to wait.
+- It overwrites those two files and touches nothing else in the folder. Nothing is uploaded and no
+  account is involved: this is Kettle writing to your own storage, so the app still collects and
+  shares no data.
+- If a backup can't be written — the folder was moved, or the permission was withdrawn — the session
+  itself is unaffected and the completion screen says so afterwards. It will never interrupt a
+  workout.
+- Being straight about what this restores: the library file can be imported back into a fresh
+  install. The session log can't, because nothing in Kettle reads one back in yet — it's exported to
+  keep and to read. Settings says so rather than implying otherwise.
+- Android only for now. iOS hands out folder access that expires when the app closes, so a folder
+  chosen there would stop being written to without saying anything.
 
 ---
 

@@ -1,8 +1,9 @@
+import * as Clipboard from 'expo-clipboard';
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Linking, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -19,6 +20,8 @@ import { useLibraryStore } from '@/state/library-store';
 import { usePreferencesStore, useUnitSystem } from '@/state/preferences-store';
 import { useSessionHistoryStore } from '@/state/session-history-store';
 import { isTipJarSupported, useTipStore } from '@/state/tip-store';
+import type { BackupFailure } from '@/storage/backup';
+import { backUpNow, backupFolderLabel, isBackupFolderSupported, pickBackupFolder } from '@/storage/backup';
 import { exportLibrary, exportSessions } from '@/storage/export';
 import { isFileStorageSupported } from '@/storage/paths';
 
@@ -45,6 +48,14 @@ const REMINDER: { labelKey: string; value: 'off' | 'on' }[] = [
   { labelKey: 'settings.reminderOff', value: 'off' },
   { labelKey: 'settings.reminderOn', value: 'on' },
 ];
+
+/**
+ * The two ways to reach the developer. Constants rather than locale keys: an address and a URL are
+ * not prose, and a translator who "fixed" either one would break the only feedback channel the app
+ * has — there is no analytics behind it to notice.
+ */
+const FEEDBACK_EMAIL = 'kettleapp.feedback@gmail.com';
+const ISSUES_URL = 'https://github.com/celsaad/kettle/issues';
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -136,7 +147,19 @@ export default function SettingsScreen() {
   const sessions = useSessionHistoryStore((state) => state.sessions);
   const supporter = useTipStore((state) => state.supporter);
   const hydrateTips = useTipStore((state) => state.hydrate);
+  const backupFolderUri = usePreferencesStore((state) => state.preferences.backupFolderUri);
+  const setBackupFolderUri = usePreferencesStore((state) => state.setBackupFolderUri);
   const [exportError, setExportError] = useState<string | null>(null);
+  // One line for both outcomes rather than an error state and a separate success state: they are
+  // mutually exclusive answers to the same question, and two pieces of state would let a stale
+  // "backed up" sit under a fresh failure.
+  const [backupMessage, setBackupMessage] = useState<{ ok: boolean; text: string } | null>(null);
+  const [backingUp, setBackingUp] = useState(false);
+  // Only ever set by the fallback path — there is nothing to say when the mail client opened, since
+  // the mail client opening is the confirmation.
+  const [contactMessage, setContactMessage] = useState<string | null>(null);
+
+  const version = Constants.expoConfig?.version;
 
   // Cheap enough to do on open, and it's what lets the Support row acknowledge a past tip. The store
   // is deliberately absent from the root layout's startup gate — see the note in tip-store.ts.
@@ -168,6 +191,107 @@ export default function SettingsScreen() {
     }
   };
 
+  /**
+   * A failure turned into something to read. The only one carrying a platform string is
+   * `writeFailed` — there is no better phrasing available for "the OS refused, and here is why" —
+   * and it's interpolated rather than rendered bare so the sentence around it stays translated.
+   */
+  const describeBackupFailure = (failure: BackupFailure): string => {
+    switch (failure.kind) {
+      case 'unsupported':
+        return t('settings.backupUnsupported');
+      case 'noFolder':
+        return t('settings.backupNowNoFolder');
+      case 'unreachable':
+        return t('settings.backupUnreachable');
+      case 'writeFailed':
+        return t('settings.backupWriteFailed', { detail: failure.detail });
+    }
+  };
+
+  /**
+   * Deferred for the same reason as the session-finish path: `backUpNow` is synchronous SAF IO, and
+   * the folder this points at may well be backed by a cloud provider, so it can take seconds. Run
+   * inline it blocks the press handler and the row simply looks dead. The `setTimeout` lets the busy
+   * state paint first, which is the only reason it exists.
+   */
+  const runBackup = () => {
+    setBackupMessage(null);
+    setBackingUp(true);
+    setTimeout(() => {
+      const failure = backUpNow(backupFolderUri, sessions);
+      setBackupMessage(
+        failure ? { ok: false, text: describeBackupFailure(failure) } : { ok: true, text: t('settings.backupDone') },
+      );
+      setBackingUp(false);
+    }, 0);
+  };
+
+  /**
+   * Opens the system picker and keeps what comes back.
+   *
+   * Backing out of the picker leaves everything as it was — `pickBackupFolder` answers null for that
+   * rather than treating it as an error, so a mis-tap can't clear a folder the user already chose.
+   * A folder that was chosen but couldn't be written to `preferences.json` is called out, because the
+   * grant itself survives the restart and the URI wouldn't: it would look set and stop working.
+   */
+  const chooseFolder = async () => {
+    setBackupMessage(null);
+    try {
+      const uri = await pickBackupFolder();
+      if (!uri) return;
+      const saved = await setBackupFolderUri(uri);
+      setBackupMessage(saved ? null : { ok: false, text: t('settings.backupFolderNotSaved') });
+    } catch (error) {
+      setBackupMessage({ ok: false, text: (error as Error).message });
+    }
+  };
+
+  const forgetFolder = async () => {
+    setBackupMessage(null);
+    await setBackupFolderUri(null);
+  };
+
+  /**
+   * Opens a link, and falls back to the clipboard when nothing can handle it.
+   *
+   * `Linking.openURL` **rejects** on a device with no mail client rather than doing nothing, and a
+   * `mailto:` on an Android device without one is not rare. Left uncaught that surfaces as an
+   * unhandled rejection and the row simply appears broken — on the one screen whose whole job is to
+   * be the way out when something is broken. So the address goes to the clipboard instead and the row
+   * says where to find it, which is the same information by a slower route.
+   *
+   * `Clipboard.setStringAsync` reports a refusal with `false` rather than by throwing, same as the
+   * import screen's copy buttons — a "copied" claimed over that would be worse than the original
+   * failure.
+   */
+  const openOrCopy = async (url: string, fallbackText: string) => {
+    setContactMessage(null);
+    try {
+      await Linking.openURL(url);
+    } catch {
+      const copied = await Clipboard.setStringAsync(fallbackText).catch(() => false);
+      setContactMessage(copied ? t('settings.contactCopied', { value: fallbackText }) : t('settings.contactNoApp'));
+    }
+  };
+
+  /**
+   * Subject only, and nothing else.
+   *
+   * The version is prefilled because "which build was that on" is the first question every report
+   * needs and the last thing anyone remembers — and it is already on screen at the bottom of this
+   * page, so nothing is being disclosed that the user can't see. No body, no device model, no logs:
+   * the moment this gathers anything the user hasn't chosen to type, it stops being a mail client
+   * handoff and starts being data collection.
+   */
+  const openEmail = () =>
+    openOrCopy(
+      `mailto:${FEEDBACK_EMAIL}?subject=${encodeURIComponent(t('settings.contactSubject', { version }))}`,
+      FEEDBACK_EMAIL,
+    );
+
+  const openIssues = () => openOrCopy(ISSUES_URL, ISSUES_URL);
+
   const counts = [
     // Matches the Library tab's count: `rest` is a built-in pseudo-exercise, not something the user
     // wrote, so counting it would make the two screens disagree.
@@ -176,8 +300,6 @@ export default function SettingsScreen() {
     { label: t('programs.title'), value: library?.programs.length ?? 0 },
     { label: t('settings.sessions'), value: sessions.length },
   ];
-
-  const version = Constants.expoConfig?.version;
 
   return (
     <SafeAreaView
@@ -276,19 +398,104 @@ export default function SettingsScreen() {
         )}
 
         {/*
-          The sync story, which the product plan leaves to the user and the app never explained. It
-          deliberately does not tell anyone to point a sync client at the app's folder: on Android
-          that path isn't reachable without adb, and this app declares no iOS file sharing either — so
-          export/import genuinely *is* the mechanism, and naming a directory would only send people
-          looking for something they can't open.
+          The sync story. It used to say export/import *was* the mechanism, which was true only
+          because the app couldn't reach outside its own folder — now it can, into one the user
+          nominates, so the copy describes that instead.
+
+          Hidden entirely where the folder can't be made to stick (see `isBackupFolderSupported`),
+          rather than shown greyed out: an iOS grant dies with the app session, so the row would be
+          advertising a backup that silently stops happening. The export rows above still work there.
         */}
         <Section title={t('settings.files')}>
-          <ThemedText type="small" themeColor="textSecondary">
-            {t('settings.filesLocal')}
-          </ThemedText>
-          <ThemedText type="small" themeColor="textSecondary" style={styles.caption}>
-            {t('settings.filesSync')}
-          </ThemedText>
+          {isBackupFolderSupported ? (
+            <>
+              <View style={styles.rowList}>
+                <ActionRow
+                  title={t('settings.backupFolder')}
+                  // The folder is the user's own path — rendered verbatim, never translated.
+                  detail={backupFolderUri ? backupFolderLabel(backupFolderUri) : t('settings.backupFolderNone')}
+                  onPress={chooseFolder}
+                />
+                <ActionRow
+                  title={t('settings.backupNow')}
+                  detail={
+                    backingUp
+                      ? t('settings.backupInProgress')
+                      : backupFolderUri
+                        ? t('settings.backupNowDetail')
+                        : t('settings.backupNowNoFolder')
+                  }
+                  onPress={runBackup}
+                  disabled={!backupFolderUri || backingUp}
+                />
+                {/* Only once there's something to forget. A row offering to undo a choice nobody has
+                    made is three rows where two would do. */}
+                {backupFolderUri && (
+                  <ActionRow
+                    title={t('settings.backupForget')}
+                    detail={t('settings.backupForgetDetail')}
+                    onPress={forgetFolder}
+                  />
+                )}
+              </View>
+              {/* Announced, not just rendered: this appears *after* a press, so without a live region
+                  a screen-reader user taps "Back up now", focus stays on the row, and nothing is read
+                  back at all — which for the failure cases is the whole message. */}
+              {backupMessage && (
+                <ThemedText
+                  type="small"
+                  accessibilityLiveRegion="polite"
+                  style={[styles.caption, { color: backupMessage.ok ? theme.textSecondary : theme.accentText }]}>
+                  {backupMessage.text}
+                </ThemedText>
+              )}
+              <ThemedText type="small" themeColor="textSecondary" style={styles.caption}>
+                {t('settings.backupWhat')}
+              </ThemedText>
+              {/* The honest half, and the reason no string above says "restore": the library can be
+                  imported back, the log cannot — nothing in the app parses a session file. Promising
+                  a restore that doesn't exist is the one way this feature could cost someone
+                  everything it was built to protect. */}
+              <ThemedText type="small" themeColor="textSecondary" style={styles.caption}>
+                {t('settings.backupLimits')}
+              </ThemedText>
+            </>
+          ) : (
+            <>
+              <ThemedText type="small" themeColor="textSecondary">
+                {t('settings.filesLocal')}
+              </ThemedText>
+              <ThemedText type="small" themeColor="textSecondary" style={styles.caption}>
+                {t('settings.filesSync')}
+              </ThemedText>
+            </>
+          )}
+        </Section>
+
+        {/*
+          There was no way to reach the developer from inside the app at all: a tester's only channel
+          was a public Play review, and with no analytics there is nothing to fall back on when
+          something goes wrong quietly.
+
+          Neither row affects the Data Safety declaration, which is worth saying explicitly because
+          "contact the developer" sounds like it collects something. The app makes no request of its
+          own — `Linking.openURL` hands off to the mail client or the browser the user already has,
+          they see the whole message before it is sent, and they can edit or delete any of it. The
+          only thing prefilled is the version string, which is already printed at the bottom of this
+          screen. Nothing about the device is gathered.
+        */}
+        <Section title={t('settings.contact')}>
+          <View style={styles.rowList}>
+            <ActionRow title={t('settings.contactEmail')} detail={FEEDBACK_EMAIL} onPress={openEmail} />
+            <ActionRow title={t('settings.contactIssues')} detail={t('settings.contactIssuesDetail')} onPress={openIssues} />
+          </View>
+          {/* Same reasoning as the backup line: it only ever appears after a press, and it is the
+              fallback path — the one case where the user needs to be told something happened. */}
+          {contactMessage && (
+            <ThemedText type="small" themeColor="textSecondary" accessibilityLiveRegion="polite" style={styles.caption}>
+              {contactMessage}
+            </ThemedText>
+          )}
         </Section>
 
         <Section title={t('settings.inYourLibrary')}>

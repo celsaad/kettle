@@ -2,6 +2,14 @@ const mockCreateSession = jest.fn();
 const mockFinalizeSession = jest.fn();
 const mockTakeWriteFailure = jest.fn<string | null, []>(() => null);
 const mockDeleteSessionFile = jest.fn();
+const mockBackUpNow = jest.fn();
+let mockBackupSupported = true;
+jest.mock('@/storage/backup', () => ({
+  get isBackupFolderSupported() {
+    return mockBackupSupported;
+  },
+  backUpNow: (...args: unknown[]) => mockBackUpNow(...args),
+}));
 jest.mock('@/storage/session-files', () => ({
   appendSessionEntry: (session: unknown) => session,
   createSession: (...args: unknown[]) => mockCreateSession(...args),
@@ -20,7 +28,9 @@ jest.mock('@/storage/session-files', () => ({
   }),
 }));
 
+import { DEFAULT_LIST_SORTS } from '@/domain/preferences';
 import type { Session, SessionEntry } from '@/domain/types';
+import { usePreferencesStore } from '@/state/preferences-store';
 import { useSessionHistoryStore } from '@/state/session-history-store';
 
 /**
@@ -44,12 +54,34 @@ function aSession(overrides: Partial<Session> = {}): Session {
   };
 }
 
+function setBackupFolder(backupFolderUri: string | null) {
+  usePreferencesStore.setState({
+    status: 'ready',
+    preferences: {
+      unitSystem: 'metric',
+      themePreference: 'system',
+      listSort: DEFAULT_LIST_SORTS,
+      restDayReminder: false,
+      backupFolderUri,
+    },
+  });
+}
+
 beforeEach(() => {
-  useSessionHistoryStore.setState({ status: 'ready', sessions: [], errors: [], activeSessionId: null });
+  useSessionHistoryStore.setState({
+    status: 'ready',
+    sessions: [],
+    errors: [],
+    activeSessionId: null,
+    backupFailure: null,
+  });
   mockCreateSession.mockReset().mockImplementation((id: string) => aSession({ id }));
   mockFinalizeSession.mockReset().mockImplementation((session: Session, endedAt: string) => ({ ...session, endedAt }));
   mockTakeWriteFailure.mockReset().mockReturnValue(null);
   mockDeleteSessionFile.mockReset();
+  mockBackUpNow.mockReset().mockReturnValue(null);
+  mockBackupSupported = true;
+  setBackupFolder(null);
 });
 
 /**
@@ -116,6 +148,95 @@ describe('activeSessionId', () => {
     useSessionHistoryStore.getState().completeSession(session);
 
     expect(useSessionHistoryStore.getState().activeSessionId).toBeNull();
+  });
+});
+
+/**
+ * The backup that rides along with a finished session.
+ *
+ * This is the path the brief's "a failed backup must never interrupt a workout" is about:
+ * `completeSession` is reached from the runner's `finishSession`, which is an event handler, so a
+ * throw here would take the session down on the screen of someone who has just finished training.
+ * `backUpNow` is non-throwing by construction (its own suite pins that); what these pin is that the
+ * store calls it with the right log, and steps over the result rather than acting on it.
+ */
+describe('backing up when a session finishes', () => {
+  const FOLDER = 'content://tree/primary%3ADocuments%2FKettle';
+
+  // The backup is deliberately deferred off the tick that finishes the session — see
+  // `backUpAfterSession` — so these have to drive the clock to see it happen at all.
+  beforeEach(() => jest.useFakeTimers());
+  afterEach(() => jest.useRealTimers());
+
+  /**
+   * The deferral itself, and the reason for it: `completeSession` is called straight from the
+   * runner's `finishSession`, and `backUpNow` is synchronous SAF IO against a folder that may be
+   * backed by a cloud provider. Run inline it sits between the Finish tap and the completion screen.
+   */
+  it('does not run the backup on the tick that finishes the session', () => {
+    setBackupFolder(FOLDER);
+    const session = useSessionHistoryStore.getState().startSession('w', null, null, null);
+
+    useSessionHistoryStore.getState().completeSession(session);
+
+    expect(mockBackUpNow).not.toHaveBeenCalled();
+
+    jest.runAllTimers();
+    expect(mockBackUpNow).toHaveBeenCalled();
+  });
+
+  it('archives the session that just ended, not the log as it was one set ago', () => {
+    setBackupFolder(FOLDER);
+    const session = useSessionHistoryStore.getState().startSession('w', null, null, null);
+
+    useSessionHistoryStore.getState().completeSession(session);
+    jest.runAllTimers();
+
+    const [folderUri, sessions] = mockBackUpNow.mock.calls[0] as [string, Session[]];
+    expect(folderUri).toBe(FOLDER);
+    // The finished session, with its `ended_at` — reading `get().sessions` from inside the `set` gave
+    // the un-finalized copy, which is the bug this pins.
+    expect(sessions).toHaveLength(1);
+    expect(sessions[0].endedAt).not.toBeNull();
+  });
+
+  // Someone who never opted in has nothing to be told, and running it anyway would answer `noFolder`
+  // and light a warning on every completion screen in the app.
+  it('does not back up at all when no folder has been chosen', () => {
+    const session = useSessionHistoryStore.getState().startSession('w', null, null, null);
+
+    useSessionHistoryStore.getState().completeSession(session);
+
+    expect(mockBackUpNow).not.toHaveBeenCalled();
+    expect(useSessionHistoryStore.getState().backupFailure).toBeNull();
+  });
+
+  it('records a failure for the completion screen instead of raising it', () => {
+    setBackupFolder(FOLDER);
+    mockBackUpNow.mockReturnValue({ kind: 'unreachable' });
+    const session = useSessionHistoryStore.getState().startSession('w', null, null, null);
+
+    expect(() => useSessionHistoryStore.getState().completeSession(session)).not.toThrow();
+    jest.runAllTimers();
+
+    expect(useSessionHistoryStore.getState().backupFailure).toEqual({ kind: 'unreachable' });
+    // The session itself is untouched by a backup that didn't land — that's the whole point.
+    expect(useSessionHistoryStore.getState().sessions[0].endedAt).not.toBeNull();
+  });
+
+  // Cleared as the session finishes rather than when the backup answers, so the completion screen
+  // never shows the *previous* session's warning while this one's backup is still in flight.
+  it('clears a previous failure immediately, not only once the backup lands', () => {
+    setBackupFolder(FOLDER);
+    useSessionHistoryStore.setState({ backupFailure: { kind: 'unreachable' } });
+    const session = useSessionHistoryStore.getState().startSession('w', null, null, null);
+
+    useSessionHistoryStore.getState().completeSession(session);
+
+    expect(useSessionHistoryStore.getState().backupFailure).toBeNull();
+
+    jest.runAllTimers();
+    expect(useSessionHistoryStore.getState().backupFailure).toBeNull();
   });
 });
 

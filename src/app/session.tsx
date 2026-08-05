@@ -211,12 +211,16 @@ function CompletedSession({
 }) {
   const library = useLibraryStore((state) => state.library);
   const sessions = useSessionHistoryStore((state) => state.sessions);
+  // Set by `completeSession`, so it describes the backup this very session triggered. Here rather
+  // than mid-workout for the same reason a full disk isn't announced between two sets: the person was
+  // holding a plank, and this is the first moment where telling them costs nothing.
+  const backupFailed = useSessionHistoryStore((state) => state.backupFailure !== null);
   const records = useMemo(
     () => (session ? sessionRecords(session, sessions, library?.exercises ?? []) : []),
     [session, sessions, library],
   );
 
-  return <SessionComplete workoutName={workoutName} records={records} onDone={onDone} />;
+  return <SessionComplete workoutName={workoutName} records={records} backupFailed={backupFailed} onDone={onDone} />;
 }
 
 function ActiveSession({

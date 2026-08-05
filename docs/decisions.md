@@ -233,10 +233,10 @@ decision assembled across several commits. Open work belongs in the sections at 
   `eas build --profile preview` used the EAS keystore before it. Neither can produce the app signing
   key, because neither has it. Only Play does.
 
-  **Why the Play key won.** The whole product rests on the data being the user's, and the backup
-  folder above exists specifically because losing the log is the worst thing that can happen to
-  someone using this app. Shipping a second artefact whose only failure mode is "you lose everything
-  when you switch channels" contradicts both. The Play-signed universal APK — Play Console → App
+  **Why the Play key won.** The whole product rests on the data being the user's, and losing the
+  training log is the worst thing that can happen to someone using this app. Shipping a second
+  artefact whose only failure mode is "you lose everything when you switch channels" contradicts
+  both. The Play-signed universal APK — Play Console → App
   bundle explorer → Downloads → "Signed, universal APK" — carries the same signature Play installs, so
   a sideload and a Play install are the same app in both directions.
 

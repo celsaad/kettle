@@ -1,7 +1,7 @@
 ---
 description: Tag a version that has already been bumped, publish the signed APK, and cut the GitHub Release
 argument-hint: "[version, e.g. 0.4.0]"
-allowed-tools: Read, Bash(git:*), Bash(node:*), Bash(gh:*), Bash(sha256sum:*), Bash(unzip:*)
+allowed-tools: Read, Write, Bash(git:*), Bash(node:*), Bash(gh:*), Bash(sha256sum:*), Bash(apksigner:*), Bash(aapt:*)
 ---
 
 Cut the public release for: **$ARGUMENTS** (if that's empty, use the version currently in `app.json`).
@@ -36,54 +36,44 @@ Annotated, not lightweight — a lightweight tag carries no date or author, and 
 when a build went out. Tags are `v`-prefixed; the changelog headings are not. Don't retag a version
 that's already pushed; a mistake gets a new version, not a moved tag.
 
-## 2. The APK, and the one thing that is not recoverable
+## 2. The APK
 
-**Read this before uploading anything.** Getting it wrong cannot be fixed for anyone who has already
-installed the wrong file.
-
-The Play build is an **app-bundle**, which Play App Signing **re-signs with Google's key**. Android
-identifies an installed app by its signature, so an APK signed with any *other* key is a different
-app as far as the OS is concerned. It refuses to install over the Play version, and the only way
-across is uninstall-and-reinstall — which deletes the user's entire training log.
-
-**The decision, already taken (see `docs/decisions.md`): the public APK is the Play-signed universal
-APK**, downloaded from the Console. It is not built anywhere — not by CI, not by EAS.
+**The public APK is the Play-signed universal APK, downloaded from the Console.** It is not built
+anywhere — not by CI, not by EAS. **Why** is the signing entry in
+[`docs/decisions.md`](../../docs/decisions.md); read it once, and don't re-argue it here. The short
+version is that an APK signed with any other key cannot install over a Play install, and the only way
+across deletes the user's entire training log.
 
 Get it from **Play Console → Release → App bundle explorer → the versionCode for this release →
-Downloads → "Signed, universal APK"**. That file carries the app signing key, so it is byte-for-byte
-the same identity Play installs: someone can sideload it and later move to Play, or the reverse,
-keeping their data either way.
+Downloads → "Signed, universal APK"**.
 
 **This step is a human's, and this command must stop and ask for it rather than route around it.**
-There is no API for that download, and there is now a substitute sitting right there in the repo that
-looks exactly like the answer:
+There is no API for that download, and two substitutes look exactly like the answer:
+`gh workflow run android.yml -f variant=apk`, and `eas build --profile preview`. Both produce a real
+APK, both are signed with the upload key, and neither is a fallback when the Console is inconvenient.
 
-> ```
-> gh workflow run android.yml -f variant=apk      # ← NOT the release artefact
-> ```
->
-> `docs/building-android.md` calls that variant "sideloadable", and it is — onto *your own phone*. It
-> is wrong for a release twice over, and both are silent:
->
-> - **It is signed with the upload key**, which Play replaces with the app signing key on every
->   upload. So it has the one signature this decision exists to avoid.
-> - **It is `arm64-v8a` only**, built that way to save three quarters of the C++ compile. The
->   Console's universal APK carries every ABI. This one won't install on a 32-bit ARM or x86 device
->   and gives no useful reason why.
->
-> The workflow's 14-day artifact retention says the same thing in another way — the doc's own note is
-> "an upload key is not a distribution key, so these are only useful to whoever can already push to
-> Play." A release asset that expires in a fortnight was never the plan.
+### Prove it before you attach it
 
-`eas build --profile preview` is the same mistake by the older route. EAS no longer builds anything
-here (see `docs/building-android.md`); `eas.json` is kept only for one-off credentials access.
+The failure is silent and unrecoverable, so it gets a command rather than a warning. All three need
+the SDK build-tools on PATH.
 
-Once you have the file, before attaching it:
+```sh
+apksigner verify --print-certs <apk>          # signer certificate
+sha256sum <apk>                               # goes in the notes
+aapt dump badging <apk> | head -1             # versionCode
+```
 
-- Confirm the versionCode matches the tag (`unzip -p app.apk AndroidManifest.xml` won't read cleanly;
-  `aapt dump badging app.apk` is the readable one if the SDK build-tools are on PATH).
-- Record its `sha256sum` and put it in the release notes. It costs one line and it is the only way
-  anyone can check that what they downloaded is what you published.
+Three things have to hold, and **any one of them failing means you have the wrong file — go back to
+the Console**:
+
+- The signer's SHA-256 matches the **app signing certificate** recorded in
+  [`docs/building-android.md`](../../docs/building-android.md). This is the check that catches every
+  wrong-artefact path at once, including both substitutes above. It is the *app signing* certificate,
+  not the upload certificate printed beside it in the Console — matching the upload one means you are
+  holding exactly the file this must never publish.
+- The **versionCode matches the tag**.
+- The **sha256** goes into the release notes. It is the only way a reader can check that what they
+  downloaded is what you published.
 
 ## 3. The GitHub Release
 
@@ -99,18 +89,31 @@ Every release's notes must also carry, in plain words near the top:
 - **The sha256** of the attached file.
 - **Android only.** There is no iOS build (see the tip-jar entry in the decision log for why).
 
+**Draft first.** §2 makes the APK a manual Console download, so "the binary isn't in hand yet" is the
+normal case rather than the exception — 0.4.0 was cut exactly this way. Write the notes to a file,
+create the draft, and publish only once the file is attached and verified:
+
+```sh
+gh release create v<version> --draft --title "Kettle <version>" --notes-file <notes>
+gh release upload v<version> <apk>
+gh release edit v<version> --draft=false
 ```
-gh release create v<version> <apk> --title "Kettle <version>" --notes-file <notes>
-```
 
-Create it as a **draft** if the APK isn't in hand yet, so a published release never promises a
-download that isn't attached. Publishing is the last step, not the first.
+A published release promising a download that isn't attached is worse than no release, which is the
+whole reason the draft comes first. Publishing is the last step.
 
-## 4. Then
+## 4. Before you publish, and then
 
-Say what you did, and specifically **name anything you couldn't do** — an unattached APK is the whole
-point of the release, so a release created without one is not finished, however complete the notes
-are.
+Two things to check on the draft, both of which are only visible before the release goes out:
+
+- **No placeholder text is left.** The notes carry a `sha256` line; a draft published with it still
+  reading "added when the file is attached" advertises a verification path that doesn't exist, which
+  is worse than omitting it. Read the rendered draft, not the file you wrote.
+- **The asset is actually attached**, and it is the file §2's three checks passed on.
+
+Then say what you did, and specifically **name anything you couldn't do**. The APK is the whole point
+of the release, so a release created without one is not finished, however complete the notes are —
+leave it a draft and say so rather than publishing to look done.
 
 Out of scope here, deliberately: submitting to IzzyOnDroid, F-Droid or Accrescent. This establishes
 the artefact; where it gets distributed is a separate decision, and F-Droid in particular re-signs

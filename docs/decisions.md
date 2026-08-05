@@ -222,11 +222,16 @@ decision assembled across several commits. Open work belongs in the sections at 
   is the only reason it is written down at this length.
 
   **The trap.** The Play build is an `app-bundle`, which Play App Signing **re-signs with Google's
-  key**. Android identifies an installed app by its signature, so an APK signed with any other key —
-  including the EAS keystore that `eas build --profile preview` uses by default — is a *different
-  app* to the OS. It refuses to install over a Play install, and the only way across is uninstall and
-  reinstall, which deletes the user's entire training log. The same applies in reverse: someone who
-  sideloads first cannot then move to Play.
+  key**. Android identifies an installed app by its signature, so an APK signed with any other key is
+  a *different app* to the OS. It refuses to install over a Play install, and the only way across is
+  uninstall and reinstall, which deletes the user's entire training log. The same applies in reverse:
+  someone who sideloads first cannot then move to Play.
+
+  **Every APK this repo can build is signed with the wrong key**, and that is not an accident to be
+  fixed — it is what an upload key *is*. `.github/workflows/android.yml` signs with the upload
+  keystore (`docs/building-android.md`: "Google holds the signing key and re-signs every upload"), and
+  `eas build --profile preview` used the EAS keystore before it. Neither can produce the app signing
+  key, because neither has it. Only Play does.
 
   **Why the Play key won.** The whole product rests on the data being the user's, and the backup
   folder above exists specifically because losing the log is the worst thing that can happen to
@@ -244,8 +249,13 @@ decision assembled across several commits. Open work belongs in the sections at 
   moving between them is a manual library export — and the session log cannot move at all, see "The
   session log is export-only").
 
-  **`eas.json`'s `preview` profile is unchanged and still useful** — it is how you get an APK onto
-  your own device for testing. It is just not what gets attached to a release.
+  **The workflow's `variant=apk` is for your own phone, and is the likeliest way this goes wrong now.**
+  It is one `gh workflow run` away, it lives in this repo, and `docs/building-android.md` describes it
+  as "sideloadable" — which it is, onto a device you control. Two things make it unfit for a release
+  and neither announces itself: the upload-key signature above, and `arm64-v8a` only (deliberately, to
+  skip three quarters of the C++ compile), where the Console's universal APK carries every ABI. The
+  14-day artifact retention was set for the same reason and is worth reading as a hint: "an upload key
+  is not a distribution key."
 
   **F-Droid is the same trap a third time**, and worth knowing before that conversation starts: it
   re-signs with its own key. IzzyOnDroid, which republishes the developer's own binary, does not.

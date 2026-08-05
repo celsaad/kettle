@@ -61,10 +61,13 @@ retrofit, so answer them out loud even when the answer is no.
 Touching the YAML format, or adding a language? Both have gates of their own — see "Changing the YAML
 format" below and [`docs/adding-a-language.md`](docs/adding-a-language.md).
 
-Cutting a release is two commands, deliberately split: `/bump` decides the version and closes out the
-changelog, `/release` tags it and publishes the artefact. **Read the signing entry in the decision log
-before you publish an APK** — the wrong key is the one mistake here that cannot be fixed for anyone
-who has already installed it.
+Cutting a release is three separate things, deliberately: `/bump` decides the version and closes out
+the changelog, `.github/workflows/android.yml` builds the `.aab` that goes to Play (see
+[`docs/building-android.md`](docs/building-android.md)), and `/release` tags the commit and publishes
+the APK for people who don't get their copy from Play. **Read the signing entry in the decision log
+before you publish an APK** — every APK this repo can build is signed with the *upload* key, the
+public one has to be the Play-signed universal APK from the Console, and the wrong key is the one
+mistake here that cannot be fixed for anyone who has already installed it.
 
 ## Where things live
 

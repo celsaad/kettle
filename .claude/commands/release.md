@@ -16,6 +16,11 @@ So `/bump` has already run by the time you're here. `app.json` carries the versi
 `CHANGELOG.md` has a closed-out section for it, and the release commit is on `master`. If any of that
 isn't true, stop and run `/bump` first — **this command never edits `app.json` or the changelog.**
 
+Building the `.aab` that goes to Play is a third thing again, and also not this command's:
+`.github/workflows/android.yml` does it on every merge to `master`, and `docs/building-android.md`
+covers the keystore setup and the manual Play upload. What this command owns is the tag, and the
+artefact that goes to people who don't get their copy from Play.
+
 ## 1. Tag
 
 Tag the **`Release <version> (versionCode <n>)` commit itself**, not the merge commit above it: the
@@ -42,7 +47,7 @@ app as far as the OS is concerned. It refuses to install over the Play version, 
 across is uninstall-and-reinstall — which deletes the user's entire training log.
 
 **The decision, already taken (see `docs/decisions.md`): the public APK is the Play-signed universal
-APK.** Not an EAS build.
+APK**, downloaded from the Console. It is not built anywhere — not by CI, not by EAS.
 
 Get it from **Play Console → Release → App bundle explorer → the versionCode for this release →
 Downloads → "Signed, universal APK"**. That file carries the app signing key, so it is byte-for-byte
@@ -50,10 +55,28 @@ the same identity Play installs: someone can sideload it and later move to Play,
 keeping their data either way.
 
 **This step is a human's, and this command must stop and ask for it rather than route around it.**
-There is no API for that download, and the tempting substitute — `eas build --profile preview`, which
-does produce an APK — produces one signed with the **EAS keystore**, which is precisely the artefact
-this decision rejects. The `preview` profile stays useful for testing on your own device; it is not
-what gets attached to a release.
+There is no API for that download, and there is now a substitute sitting right there in the repo that
+looks exactly like the answer:
+
+> ```
+> gh workflow run android.yml -f variant=apk      # ← NOT the release artefact
+> ```
+>
+> `docs/building-android.md` calls that variant "sideloadable", and it is — onto *your own phone*. It
+> is wrong for a release twice over, and both are silent:
+>
+> - **It is signed with the upload key**, which Play replaces with the app signing key on every
+>   upload. So it has the one signature this decision exists to avoid.
+> - **It is `arm64-v8a` only**, built that way to save three quarters of the C++ compile. The
+>   Console's universal APK carries every ABI. This one won't install on a 32-bit ARM or x86 device
+>   and gives no useful reason why.
+>
+> The workflow's 14-day artifact retention says the same thing in another way — the doc's own note is
+> "an upload key is not a distribution key, so these are only useful to whoever can already push to
+> Play." A release asset that expires in a fortnight was never the plan.
+
+`eas build --profile preview` is the same mistake by the older route. EAS no longer builds anything
+here (see `docs/building-android.md`); `eas.json` is kept only for one-off credentials access.
 
 Once you have the file, before attaching it:
 

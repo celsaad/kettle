@@ -92,6 +92,12 @@ gh run watch
   is *not* enough for in-app purchases: `expo-iap` only resolves products in a build installed from
   Play (see `store/README.md` on licence testing).
 
+  **It is also not the APK that gets published**, and both reasons are silent. The upload-key
+  signature makes it a different app from a Play install, so nobody can move between the two without
+  uninstalling and losing their log; and `arm64-v8a` alone leaves out devices the Console's universal
+  APK covers. The public artefact is *downloaded* from Play rather than built here — see the signing
+  entry in [`decisions.md`](decisions.md), and `/release`.
+
 Both variants are the same signed release build; the merge trigger produces an `.aab`. The artifact
 is attached to the run for 14 days, named by run number rather than by version — only a release commit
 bumps `versionCode`, so a week of merge builds are all `kettle 0.3.0 (6)` and nothing inside the file

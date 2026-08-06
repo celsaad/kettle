@@ -34,8 +34,12 @@ language; an unsupported tag is rejected on upload. The limits and the upload fo
   week's workout and any overrides, since a rest day has neither.
 - **The starter programs and all four downloadable examples now write their weeks out in full**,
   rest days included — Foundations and Dumbbell Strength train on days 1, 3 and 5 and rest on the
-  other four. If you have already imported one of the examples, re-import it to pick up the rest
-  days; your logged history is untouched either way.
+  other four.
+- **Only a fresh install gets the rewritten starter programs**, though. Kettle writes the starter
+  library once, the first time it runs, and never touches it again — so if you already have Kettle,
+  your copy of Foundations and Dumbbell Strength keeps the weeks it has and behaves exactly as
+  before. Add rest days to them in the program editor, or re-import an example file to pick up its
+  new ones. Your logged history is untouched either way.
 - One thing this deliberately doesn't change: the day-streak counter still counts consecutive days
   you trained, so a rest day still resets it.
 

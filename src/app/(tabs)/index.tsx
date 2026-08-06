@@ -139,6 +139,12 @@ export default function TodayScreen() {
             <ThemedText type="subtitle" style={styles.workoutName}>
               {t('today.restDayTitle')}
             </ThemedText>
+            {/* The copy deliberately makes no claim about *when*. This card is what's next rather
+                than what today is: it appears the moment you finish the session before it (elapsed
+                is 0, so nothing is owed yet), and a run of consecutive rest slots — which both seeded
+                programs ship at the end of every week — means the next workout is not necessarily
+                tomorrow. "Nothing scheduled today, back tomorrow" was false in both cases, and the
+                day it does mean is already named in the label above. */}
             <ThemedText themeColor="textSecondary" style={styles.emptyBody}>
               {t('today.restDayBody')}
             </ThemedText>

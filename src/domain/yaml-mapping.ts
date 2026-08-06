@@ -293,9 +293,12 @@ function programWeekToDomain(raw: RawProgram['weeks'][number]): ProgramWeek {
   return {
     week: raw.week,
     day: raw.day,
-    // Non-null: the schema requires `workout` on every week that isn't a rest day, which is the branch
-    // above. zod can't express that back into the inferred type, so it stays optional there.
-    workoutId: raw.workout as string,
+    // The schema requires `workout` on every week that isn't a rest day, which is the branch above —
+    // but zod can't express that back into the inferred type, so it stays optional here. `?? ''`
+    // rather than a cast: the guarantee lives in a refinement two files away, and if that ever
+    // loosens, an empty id degrades to the same "every week needs a workout" the editor already
+    // reports, where an `undefined` would reach the domain claiming to be a string.
+    workoutId: raw.workout ?? '',
     notes: raw.notes,
     overrides: raw.overrides?.map(programOverrideToDomain),
   };

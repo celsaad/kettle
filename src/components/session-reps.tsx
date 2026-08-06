@@ -11,7 +11,7 @@ import { formatPreviousSet } from '@/domain/format';
 import { fromDisplayWeight, toDisplayWeight, weightStep } from '@/domain/units';
 import type { RestPreview } from '@/hooks/use-session-runner';
 import { useUnitSystem } from '@/state/preferences-store';
-import type { PreviousSet } from '@/state/selectors';
+import type { PreviousSet } from '@/state/selectors/records';
 
 const RPE_OPTIONS = [7, 8, 9];
 

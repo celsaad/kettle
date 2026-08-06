@@ -16,7 +16,7 @@ import { SessionSetCount } from '@/components/session-set-count';
 import { RunnerColors, Spacing } from '@/constants/theme';
 import { formatPreviousSet } from '@/domain/format';
 import type { RestPreview } from '@/hooks/use-session-runner';
-import type { PreviousSet } from '@/state/selectors';
+import type { PreviousSet } from '@/state/selectors/records';
 
 type Props = {
   exerciseName: string;

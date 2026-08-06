@@ -21,7 +21,7 @@ import type { ExerciseType } from '@/domain/types';
 import { useTheme } from '@/hooks/use-theme';
 import { useLibraryStore } from '@/state/library-store';
 import { useUnitSystem } from '@/state/preferences-store';
-import { exerciseHistory } from '@/state/selectors';
+import { exerciseHistory } from '@/state/selectors/history-views';
 import { useSessionHistoryStore } from '@/state/session-history-store';
 
 export { ModalErrorBoundary as ErrorBoundary } from '@/components/error-fallback';

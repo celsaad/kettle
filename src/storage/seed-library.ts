@@ -27,7 +27,7 @@ function restDay(week: number, day: string, notes?: string): ProgramWeek {
  * types have a live example. Three authoring constraints it has to respect, none of them local to
  * this file:
  *
- * - `foundations` must stay **first**: `activeProgram` (state/selectors.ts) falls back to
+ * - `foundations` must stay **first**: `activeProgram` (state/selectors/next-up.ts) falls back to
  *   `programs[0]` until a session has been run, and there is no starter-program picker — so the
  *   no-equipment program is what a fresh install lands on, and the dumbbell one is browse-only
  *   until it's explicitly started.

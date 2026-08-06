@@ -2,7 +2,7 @@ import { screen } from '@testing-library/react-native';
 import { changeLanguage } from 'i18next';
 
 import { SessionComplete } from '@/components/session-complete';
-import type { SessionRecord } from '@/state/selectors';
+import type { SessionRecord } from '@/state/selectors/records';
 import { usePreferencesStore } from '@/state/preferences-store';
 import { renderScreen } from '@/test-support/render';
 

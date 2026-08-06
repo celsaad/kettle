@@ -1,7 +1,7 @@
 import { mergeLibraries } from '@/domain/merge';
 import { programWeekNumbers } from '@/domain/program';
 import { parseLibraryYaml, serializeLibraryYaml } from '@/domain/yaml-mapping';
-import { nextWeekAfter } from '@/state/selectors';
+import { nextWeekAfter } from '@/state/selectors/next-up';
 import { seedLibrary, seedLibraryFor } from '@/storage/seed-library';
 import { seedTranslations, seedWeekKey } from '@/storage/seed-translations';
 import type { Library, Program, Session } from '@/domain/types';

@@ -3,7 +3,7 @@ import { changeLanguage } from 'i18next';
 
 import { SessionReps } from '@/components/session-reps';
 import { usePreferencesStore } from '@/state/preferences-store';
-import type { PreviousSet } from '@/state/selectors';
+import type { PreviousSet } from '@/state/selectors/records';
 import { renderScreen } from '@/test-support/render';
 
 /**

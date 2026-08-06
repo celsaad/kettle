@@ -5,22 +5,20 @@ import { useTranslation } from 'react-i18next';
 // The gesture-handler `ScrollView`, deliberately, not `react-native`'s: it is the only one RNGH can
 // make defer to the block-drag, and without that Android's scroller eats the long-press. See
 // `ScrollableRef` in `reorderable-list.tsx`.
-import { GestureDetector, ScrollView } from 'react-native-gesture-handler';
+import { ScrollView } from 'react-native-gesture-handler';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { circuitShape, ExerciseBadge, exerciseSummary } from '@/components/exercise-badge';
+import { ExercisePicker } from '@/components/exercise-picker';
 import { ModalHeader } from '@/components/modal-header';
-import { NewExerciseForm } from '@/components/new-exercise-form';
 import { ReorderableList } from '@/components/reorderable-list';
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
+import { WorkoutBlockRow } from '@/components/workout-block-row';
+import { WorkoutCircuitBlock } from '@/components/workout-circuit-block';
 import { Spacing, MaxContentWidth } from '@/constants/theme';
-import { formatCircuitShape } from '@/domain/format';
 import { slugify } from '@/domain/slug';
 import type { Exercise, Workout, WorkoutBlock } from '@/domain/types';
 import { useTheme } from '@/hooks/use-theme';
 import { findExerciseInLibrary, useLibraryStore } from '@/state/library-store';
-import { useUnitSystem } from '@/state/preferences-store';
 
 export { ModalErrorBoundary as ErrorBoundary } from '@/components/error-fallback';
 
@@ -29,7 +27,6 @@ const EMPTY_WORKOUT: Workout = { id: '', name: '', blocks: [] };
 export default function WorkoutEditorScreen() {
   const theme = useTheme();
   const { t } = useTranslation();
-  const unitSystem = useUnitSystem();
   const { id } = useLocalSearchParams<{ id?: string }>();
   const library = useLibraryStore((state) => state.library);
   const saveWorkout = useLibraryStore((state) => state.saveWorkout);
@@ -42,8 +39,6 @@ export default function WorkoutEditorScreen() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [circuitPickerOpen, setCircuitPickerOpen] = useState(false);
   const [circuitSelection, setCircuitSelection] = useState<string[]>([]);
-  const [openIdFields, setOpenIdFields] = useState<Set<number>>(new Set());
-  const [newExerciseOpen, setNewExerciseOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   if (!library) return null;
@@ -70,19 +65,19 @@ export default function WorkoutEditorScreen() {
     );
   };
 
-  // Persists a quick-added exercise to the library, then drops it into whichever picker triggered the
-  // form: a plain block (addBlock also closes that picker) or a circuit-in-progress member selection
-  // (kept open — building a circuit means picking several exercises, not just one).
-  const handleCreateExercise = async (exercise: Exercise) => {
+  // Persists a quick-added exercise to the library, then drops it into whichever picker asked for it:
+  // a plain block (addBlock also closes that picker) or a circuit-in-progress member selection (kept
+  // open — building a circuit means picking several exercises, not just one). Reports back whether it
+  // saved, since a picker keeps its form open on failure so the entered values aren't lost.
+  const createExercise = async (exercise: Exercise, add: (exerciseId: string) => void): Promise<boolean> => {
     try {
       await saveExercise(exercise);
     } catch (err) {
       setError(t('common.saveFailed', { detail: (err as Error).message }));
-      return;
+      return false;
     }
-    if (circuitPickerOpen) toggleCircuitMember(exercise.id);
-    else addBlock(exercise.id);
-    setNewExerciseOpen(false);
+    add(exercise.id);
+    return true;
   };
 
   const addCircuit = () => {
@@ -109,15 +104,6 @@ export default function WorkoutEditorScreen() {
       ...current,
       blocks: current.blocks.map((block, i) => (i === index && block.kind === 'circuit' ? { ...block, ...patch } : block)),
     }));
-  };
-
-  const toggleIdField = (index: number) => {
-    setOpenIdFields((current) => {
-      const next = new Set(current);
-      if (next.has(index)) next.delete(index);
-      else next.add(index);
-      return next;
-    });
   };
 
   const removeCircuitMember = (index: number, memberIndex: number) => {
@@ -224,202 +210,28 @@ export default function WorkoutEditorScreen() {
           }}
           style={styles.list}
           renderItem={(block, index, dragHandle) => {
-            if (block.kind === 'exercise') {
-              const exercise = findExerciseInLibrary(library, block.exerciseId);
-              if (!exercise) return null;
-              const isRest = exercise.type === 'rest';
-              const overrideSec = block.configOverride?.durationSec;
-              const summary =
-                isRest && overrideSec
-                  ? t('workoutEditor.overrideSeconds', { count: overrideSec })
-                  : exerciseSummary(exercise, unitSystem);
-
+            if (block.kind === 'circuit') {
               return (
-                <View
-                  style={[
-                    styles.row,
-                    isRest
-                      ? { borderWidth: 1, borderStyle: 'dashed', borderColor: theme.border }
-                      : { backgroundColor: theme.backgroundElement, borderWidth: 1, borderColor: theme.border },
-                  ]}>
-                  <GestureDetector gesture={dragHandle.gesture}>
-                    <View {...dragHandle.a11yProps} style={styles.dragHandleTouchArea}>
-                      <ThemedText themeColor="textSecondary" style={styles.dragHandle}>
-                        ⣿
-                      </ThemedText>
-                    </View>
-                  </GestureDetector>
-                  <View style={styles.rowText}>
-                    <ThemedText type={isRest ? 'default' : 'heading'}>{exercise.name}</ThemedText>
-                    <ThemedText type="small" themeColor="textSecondary">
-                      {summary}
-                    </ThemedText>
-                  </View>
-                  <ExerciseBadge
-                    type={exercise.type}
-                    overrideLabel={overrideSec ? t('workoutEditor.overrideBadge') : undefined}
-                  />
-                  <Pressable
-                    onPress={() => removeBlock(index)}
-                    hitSlop={8}
-                    accessibilityRole="button"
-                    accessibilityLabel={t('workoutEditor.removeAccessibility', { name: exercise.name })}
-                    style={styles.removeButton}>
-                    <ThemedText themeColor="textSecondary">✕</ThemedText>
-                  </Pressable>
-                </View>
+                <WorkoutCircuitBlock
+                  block={block}
+                  exercises={library.exercises}
+                  dragHandle={dragHandle}
+                  onChange={(patch) => updateCircuit(index, patch)}
+                  onRemove={() => removeBlock(index)}
+                  onRemoveMember={(memberIndex) => removeCircuitMember(index, memberIndex)}
+                />
               );
             }
 
+            const exercise = findExerciseInLibrary(library, block.exerciseId);
+            if (!exercise) return null;
             return (
-              <View style={[styles.circuitBlock, { borderColor: theme.border, backgroundColor: theme.backgroundElement }]}>
-                <View style={styles.circuitHeader}>
-                  <GestureDetector gesture={dragHandle.gesture}>
-                    <View {...dragHandle.a11yProps} style={styles.dragHandleTouchArea}>
-                      <ThemedText themeColor="textSecondary" style={styles.dragHandle}>
-                        ⣿
-                      </ThemedText>
-                    </View>
-                  </GestureDetector>
-                  <ThemedText type="heading" style={styles.circuitTitle}>
-                    {t('workoutEditor.circuit')}
-                  </ThemedText>
-                  <Pressable
-                    onPress={() => removeBlock(index)}
-                    hitSlop={8}
-                    accessibilityRole="button"
-                    accessibilityLabel={t('workoutEditor.removeCircuitAccessibility')}
-                    style={styles.removeButton}>
-                    <ThemedText themeColor="textSecondary">✕</ThemedText>
-                  </Pressable>
-                </View>
-
-                <View style={styles.circuitMembers}>
-                  {block.members.map((member, memberIndex) => {
-                    const exercise = findExerciseInLibrary(library, member.exerciseId);
-                    if (!exercise) return null;
-                    return (
-                      <View key={`${member.exerciseId}-${memberIndex}`} style={styles.circuitMemberRow}>
-                        <ThemedText type="small" themeColor="textSecondary" style={styles.circuitMemberIndex}>
-                          {memberIndex + 1}
-                        </ThemedText>
-                        <View style={styles.rowText}>
-                          <ThemedText type="smallMedium">{exercise.name}</ThemedText>
-                          <ThemedText type="small" themeColor="textSecondary">
-                            {exerciseSummary(exercise, unitSystem)}
-                          </ThemedText>
-                        </View>
-                        <ExerciseBadge type={exercise.type} />
-                        <Pressable
-                          onPress={() => removeCircuitMember(index, memberIndex)}
-                          hitSlop={8}
-                          accessibilityRole="button"
-                          accessibilityLabel={t('workoutEditor.removeFromCircuitAccessibility', { name: exercise.name })}
-                          style={styles.removeButton}>
-                          <ThemedText themeColor="textSecondary">✕</ThemedText>
-                        </Pressable>
-                      </View>
-                    );
-                  })}
-                </View>
-
-                <Pressable
-                  onPress={() => toggleIdField(index)}
-                  accessibilityRole="button"
-                  accessibilityState={{ expanded: openIdFields.has(index) }}
-                  style={styles.circuitIdToggle}
-                  hitSlop={4}>
-                  <ThemedText type="small" themeColor="textSecondary" style={styles.circuitFieldLabel}>
-                    {block.id
-                      ? t('workoutEditor.blockIdWithValue', { id: block.id })
-                      : t('workoutEditor.blockIdPlaceholder')}
-                  </ThemedText>
-                  <ThemedText type="small" themeColor="textSecondary">
-                    {openIdFields.has(index) ? '⌄' : '›'}
-                  </ThemedText>
-                </Pressable>
-                {openIdFields.has(index) && (
-                  <View style={styles.circuitIdField}>
-                    <ThemedText type="small" themeColor="textSecondary" style={styles.circuitIdHint}>
-                      {t('workoutEditor.blockIdHint')}
-                    </ThemedText>
-                    <TextInput
-                      value={block.id ?? ''}
-                      onChangeText={(text) => updateCircuit(index, { id: text.trim() || undefined })}
-                      placeholder={t('workoutEditor.blockIdInputPlaceholder')}
-                      placeholderTextColor={theme.textSecondary}
-                      autoCapitalize="none"
-                      autoCorrect={false}
-                      autoFocus
-                      style={[
-                        styles.smallInput,
-                        { borderColor: theme.border, backgroundColor: theme.background, color: theme.text },
-                      ]}
-                    />
-                  </View>
-                )}
-
-                <View style={styles.circuitConfigRow}>
-                  <View style={styles.circuitNumberField}>
-                    <ThemedText type="small" themeColor="textSecondary" style={styles.circuitFieldLabel}>
-                      {t('workoutEditor.rounds')}
-                    </ThemedText>
-                    <View style={styles.stepperRow}>
-                      <Pressable
-                        onPress={() => updateCircuit(index, { rounds: Math.max(1, block.rounds - 1) })}
-                        accessibilityRole="button"
-                        accessibilityLabel={t('common.decrease', { label: t('workoutEditor.rounds') })}
-                        style={[styles.stepperButton, { borderColor: theme.border }]}>
-                        <ThemedText themeColor="textSecondary">−</ThemedText>
-                      </Pressable>
-                      <ThemedText type="smallMedium" style={styles.stepperValue}>
-                        {block.rounds}
-                      </ThemedText>
-                      <Pressable
-                        onPress={() => updateCircuit(index, { rounds: block.rounds + 1 })}
-                        accessibilityRole="button"
-                        accessibilityLabel={t('common.increase', { label: t('workoutEditor.rounds') })}
-                        style={[styles.stepperButton, { borderColor: theme.border }]}>
-                        <ThemedText themeColor="textSecondary">+</ThemedText>
-                      </Pressable>
-                    </View>
-                  </View>
-
-                  <View style={styles.circuitNumberField}>
-                    <ThemedText type="small" themeColor="textSecondary" style={styles.circuitFieldLabel}>
-                      {t('workoutEditor.restPerExercise')}
-                    </ThemedText>
-                    <TextInput
-                      value={String(block.restBetweenExercisesSec ?? 0)}
-                      onChangeText={(text) => updateCircuit(index, { restBetweenExercisesSec: Number(text) || 0 })}
-                      keyboardType="numeric"
-                      style={[
-                        styles.smallInput,
-                        { borderColor: theme.border, backgroundColor: theme.background, color: theme.text },
-                      ]}
-                    />
-                  </View>
-
-                  <View style={styles.circuitNumberField}>
-                    <ThemedText type="small" themeColor="textSecondary" style={styles.circuitFieldLabel}>
-                      {t('workoutEditor.restPerRound')}
-                    </ThemedText>
-                    <TextInput
-                      value={String(block.restBetweenRoundsSec ?? 0)}
-                      onChangeText={(text) => updateCircuit(index, { restBetweenRoundsSec: Number(text) || 0 })}
-                      keyboardType="numeric"
-                      style={[
-                        styles.smallInput,
-                        { borderColor: theme.border, backgroundColor: theme.background, color: theme.text },
-                      ]}
-                    />
-                  </View>
-                </View>
-
-                <ThemedText type="small" themeColor="textSecondary" style={styles.circuitSummaryText}>
-                  {formatCircuitShape(circuitShape(block))}
-                </ThemedText>
-              </View>
+              <WorkoutBlockRow
+                exercise={exercise}
+                overrideSec={block.configOverride?.durationSec}
+                dragHandle={dragHandle}
+                onRemove={() => removeBlock(index)}
+              />
             );
           }}
         />
@@ -429,7 +241,6 @@ export default function WorkoutEditorScreen() {
             onPress={() => {
               setPickerOpen((current) => !current);
               setCircuitPickerOpen(false);
-              setNewExerciseOpen(false);
             }}
             accessibilityRole="button"
             accessibilityState={{ expanded: pickerOpen }}
@@ -448,7 +259,6 @@ export default function WorkoutEditorScreen() {
               setCircuitPickerOpen((current) => !current);
               setPickerOpen(false);
               setCircuitSelection([]);
-              setNewExerciseOpen(false);
             }}
             accessibilityRole="button"
             accessibilityState={{ expanded: circuitPickerOpen }}
@@ -465,99 +275,23 @@ export default function WorkoutEditorScreen() {
         </View>
 
         {pickerOpen && (
-          <View style={styles.picker}>
-            {newExerciseOpen ? (
-              <NewExerciseForm onCreate={handleCreateExercise} onCancel={() => setNewExerciseOpen(false)} />
-            ) : (
-              <>
-                <Pressable
-                  onPress={() => setNewExerciseOpen(true)}
-                  accessibilityRole="button"
-                  style={[styles.newExerciseButton, { borderColor: theme.border }]}>
-                  <ThemedText type="smallMedium" themeColor="textSecondary">
-                    {t('workoutEditor.newExercise')}
-                  </ThemedText>
-                </Pressable>
-                {library.exercises.map((exercise) => (
-                  <Pressable key={exercise.id} onPress={() => addBlock(exercise.id)} accessibilityRole="button">
-                    <ThemedView type="backgroundElement" style={[styles.pickerRow, { borderColor: theme.border }]}>
-                      <ThemedText type="smallMedium" style={styles.pickerRowText}>
-                        {exercise.name}
-                      </ThemedText>
-                      <ExerciseBadge type={exercise.type} />
-                    </ThemedView>
-                  </Pressable>
-                ))}
-              </>
-            )}
-          </View>
+          <ExercisePicker
+            mode="single"
+            exercises={library.exercises}
+            onPick={addBlock}
+            onCreate={(exercise) => createExercise(exercise, addBlock)}
+          />
         )}
 
         {circuitPickerOpen && (
-          <View style={styles.picker}>
-            {newExerciseOpen ? (
-              <NewExerciseForm onCreate={handleCreateExercise} onCancel={() => setNewExerciseOpen(false)} />
-            ) : (
-              <>
-                <ThemedText type="small" themeColor="textSecondary">
-                  {t('workoutEditor.selectAtLeast2')}
-                </ThemedText>
-                <Pressable
-                  onPress={() => setNewExerciseOpen(true)}
-                  accessibilityRole="button"
-                  style={[styles.newExerciseButton, { borderColor: theme.border }]}>
-                  <ThemedText type="smallMedium" themeColor="textSecondary">
-                    {t('workoutEditor.newExercise')}
-                  </ThemedText>
-                </Pressable>
-                {library.exercises.map((exercise) => {
-                  const selected = circuitSelection.includes(exercise.id);
-                  return (
-                    <Pressable
-                      key={exercise.id}
-                      onPress={() => toggleCircuitMember(exercise.id)}
-                      accessibilityRole="checkbox"
-                      accessibilityState={{ checked: selected }}>
-                      <ThemedView
-                        type="backgroundElement"
-                        style={[styles.pickerRow, { borderColor: selected ? theme.accent : theme.border }]}>
-                        <View
-                          style={[
-                            styles.checkbox,
-                            { borderColor: theme.border },
-                            selected && { backgroundColor: theme.accent, borderColor: theme.accent },
-                          ]}>
-                          {selected && (
-                            <ThemedText type="small" style={{ color: theme.onAccent }}>
-                              ✓
-                            </ThemedText>
-                          )}
-                        </View>
-                        <ThemedText type="smallMedium" style={styles.pickerRowText}>
-                          {exercise.name}
-                        </ThemedText>
-                        <ExerciseBadge type={exercise.type} />
-                      </ThemedView>
-                    </Pressable>
-                  );
-                })}
-                <Pressable
-                  onPress={addCircuit}
-                  disabled={circuitSelection.length < 2}
-                  accessibilityRole="button"
-                  accessibilityState={{ disabled: circuitSelection.length < 2 }}
-                  style={[
-                    styles.confirmCircuit,
-                    { backgroundColor: theme.accent },
-                    circuitSelection.length < 2 && styles.disabled,
-                  ]}>
-                  <ThemedText type="heading" style={{ color: theme.onAccent }}>
-                    {t('workoutEditor.addCircuitCount', { count: circuitSelection.length })}
-                  </ThemedText>
-                </Pressable>
-              </>
-            )}
-          </View>
+          <ExercisePicker
+            mode="multi"
+            exercises={library.exercises}
+            selected={circuitSelection}
+            onToggle={toggleCircuitMember}
+            onConfirm={addCircuit}
+            onCreate={(exercise) => createExercise(exercise, toggleCircuitMember)}
+          />
         )}
 
         {error && (
@@ -605,9 +339,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.three,
     paddingBottom: Spacing.four,
   },
-  disabled: {
-    opacity: 0.4,
-  },
   pressed: {
     opacity: 0.7,
   },
@@ -629,108 +360,6 @@ const styles = StyleSheet.create({
     marginTop: Spacing.three,
     gap: Spacing.two + 2,
   },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.two,
-    borderRadius: 16,
-    padding: Spacing.two + 6,
-  },
-  dragHandle: {
-    letterSpacing: -2,
-  },
-  // The whole target for picking a block up, so it is sized as a control rather than around the
-  // glyph: the ⣿ renders about 14×30dp, roughly 2.5mm wide on a phone against a ~9mm fingertip, and
-  // missing it looks exactly like a drag that refused to start. `minWidth`/`minHeight` rather than
-  // `hitSlop`, which RNGH cannot expand past the view's own bounds on Android.
-  dragHandleTouchArea: {
-    minWidth: 44,
-    minHeight: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: -Spacing.one,
-  },
-  rowText: {
-    flex: 1,
-    gap: 2,
-  },
-  removeButton: {
-    paddingLeft: Spacing.one,
-  },
-  circuitBlock: {
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: Spacing.two + 6,
-    gap: Spacing.two,
-  },
-  circuitHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.two,
-  },
-  circuitTitle: {
-    flex: 1,
-  },
-  circuitMembers: {
-    gap: Spacing.one + 2,
-    paddingLeft: Spacing.three,
-  },
-  circuitMemberRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.two - 2,
-  },
-  circuitMemberIndex: {
-    width: 16,
-  },
-  circuitIdToggle: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  circuitIdField: {
-    gap: 4,
-    marginTop: 2,
-  },
-  circuitIdHint: {
-    marginBottom: 2,
-  },
-  circuitConfigRow: {
-    flexDirection: 'row',
-    gap: Spacing.two,
-  },
-  circuitNumberField: {
-    flex: 1,
-    gap: 4,
-  },
-  circuitFieldLabel: {},
-  stepperRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.one,
-  },
-  stepperButton: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  stepperValue: {
-    minWidth: 20,
-    textAlign: 'center',
-  },
-  smallInput: {
-    height: 36,
-    borderRadius: 10,
-    borderWidth: 1,
-    paddingHorizontal: Spacing.one + 2,
-    fontSize: 14,
-  },
-  circuitSummaryText: {
-    marginTop: 2,
-  },
   addButtonsRow: {
     flexDirection: 'row',
     gap: Spacing.two - 2,
@@ -747,45 +376,6 @@ const styles = StyleSheet.create({
   addBlockHalf: {
     flex: 1,
   },
-  picker: {
-    marginTop: Spacing.two,
-    gap: Spacing.one + 2,
-  },
-  newExerciseButton: {
-    height: 40,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderStyle: 'dashed',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  pickerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: Spacing.two,
-    borderRadius: 12,
-    borderWidth: 1,
-    padding: Spacing.two,
-  },
-  pickerRowText: {
-    flex: 1,
-  },
-  checkbox: {
-    width: 20,
-    height: 20,
-    borderRadius: 5,
-    borderWidth: 1.5,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  confirmCircuit: {
-    height: 48,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: Spacing.one,
-  },
   error: {
     marginTop: Spacing.two,
   },
@@ -798,9 +388,9 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 52,
     borderRadius: 15,
-    borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1.5,
   },
   saveButton: {
     flex: 1.4,

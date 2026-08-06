@@ -202,6 +202,65 @@ describe('circuits', () => {
   });
 });
 
+/**
+ * The quick-add form embedded in both pickers. Each picker owns whether its form is open, so these
+ * pin the two things that follow from that: which picker the created exercise lands in, and that a
+ * refused save leaves the form up with the typed values still in it rather than discarding them.
+ */
+describe('quick-adding an exercise from a picker', () => {
+  /** Fills the embedded form for the default `reps` type and submits it. */
+  async function createExercise(name: string) {
+    await fireEvent.press(screen.getByText('+ New exercise'));
+    await fireEvent.changeText(screen.getByPlaceholderText('e.g. Front Lever'), name);
+    // The config inputs all placeholder "0", in CONFIG_FIELDS order: sets, target reps, target reps
+    // max, weight, rest. Only the first, second and last are required.
+    const configFields = screen.getAllByPlaceholderText('0');
+    await fireEvent.changeText(configFields[0], '3');
+    await fireEvent.changeText(configFields[1], '8');
+    await fireEvent.changeText(configFields[4], '90');
+    await fireEvent.press(screen.getByText('Create & add'));
+  }
+
+  it('adds the new exercise as a block and closes the picker', async () => {
+    await renderScreen(<WorkoutEditorScreen />);
+    await fireEvent.press(screen.getByText('+ Add block'));
+
+    await createExercise('Ring Row');
+
+    expect(screen.getByText('1 block')).toBeTruthy();
+    // One occurrence: the block row. The picker that listed it has closed, as it does for any pick.
+    expect(screen.getAllByText('Ring Row')).toHaveLength(1);
+  });
+
+  it('selects the new exercise as a circuit member and leaves the picker open for the next one', async () => {
+    await renderScreen(<WorkoutEditorScreen />);
+    await fireEvent.press(screen.getByText('+ New circuit'));
+
+    await createExercise('Ring Row');
+
+    // Building a circuit means picking several, so this picker stays up with the new exercise already
+    // counted in — one more press and the circuit is ready to add.
+    expect(screen.getByText('Add circuit (1)')).toBeTruthy();
+    await fireEvent.press(screen.getByText('Pull-ups'));
+    expect(screen.getByText('Add circuit (2)')).toBeTruthy();
+  });
+
+  it('keeps the form open with its values when the save is refused', async () => {
+    savedLibrary.mockRejectedValueOnce(new Error('disk full'));
+    await renderScreen(<WorkoutEditorScreen />);
+    await fireEvent.press(screen.getByText('+ Add block'));
+
+    await createExercise('Ring Row');
+
+    expect(screen.getByText("Couldn't save that: disk full")).toBeTruthy();
+    // Still the form, not the list: closing it would throw away everything just typed, and the name
+    // is what proves the values survived rather than the form having been rebuilt empty.
+    expect(screen.getByText('Create & add')).toBeTruthy();
+    expect(screen.getByDisplayValue('Ring Row')).toBeTruthy();
+    expect(screen.getByText('0 blocks')).toBeTruthy();
+  });
+});
+
 describe('deleting', () => {
   const inProgram = aProgram({ id: 'base', name: 'Base', weeks: [{ week: 1, workoutId: 'push-day' }] });
   let alert: jest.SpyInstance<ReturnType<typeof Alert.alert>, Parameters<typeof Alert.alert>>;

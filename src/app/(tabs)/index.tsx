@@ -40,10 +40,15 @@ export default function TodayScreen() {
   const sessions = useSessionHistoryStore((state) => state.sessions);
 
   const nextUp = library ? nextUpView(library, sessions) : null;
-  const chips = nextUp ? blockChips(nextUp.workout, nextUp.exercises) : [];
+  // Only a workout card has blocks to chip or a shape to summarise; a rest day has neither.
+  const queued = nextUp?.kind === 'workout' ? nextUp : null;
+  // Hoisted out of the JSX so the narrowing survives into the onPress closure, which it wouldn't as a
+  // property read off `nextUp`.
+  const skipTo = nextUp?.kind === 'rest' ? nextUp.skipTo : null;
+  const chips = queued ? blockChips(queued.workout, queued.exercises) : [];
   const visibleChips = chips.slice(0, VISIBLE_CHIP_LIMIT);
   const hiddenChipCount = chips.length - visibleChips.length;
-  const summary = nextUp ? formatWorkoutShape(workoutShape(nextUp.workout, nextUp.exercises)) : '';
+  const summary = queued ? formatWorkoutShape(workoutShape(queued.workout, queued.exercises)) : '';
   const recentSessions = library ? recentSessionsView(sessions, library) : [];
   const streak = currentStreak(sessions);
   const weekStats = thisWeekStats(sessions);
@@ -54,8 +59,9 @@ export default function TodayScreen() {
   //
   // Suppressed when there's nothing to run: the empty state below is itself a single clear
   // instruction, and two competing instruction blocks is worse than either alone. Step one would be
-  // pointing at a workout that isn't there.
-  const isFirstRun = sessions.length === 0 && nextUp !== null;
+  // pointing at a workout that isn't there — which a rest card doesn't have either, so it's `queued`
+  // that gates this rather than `nextUp`.
+  const isFirstRun = sessions.length === 0 && queued !== null;
 
   // Only the store still hydrating. A null `nextUp` is a different thing entirely — a library with no
   // workouts, which is reachable by deleting the seeded ones — and gets the empty card below. This
@@ -117,17 +123,56 @@ export default function TodayScreen() {
 
         {isFirstRun && <FirstRunCard />}
 
-        {nextUp ? (
+        {/*
+          A scheduled rest day. No chips, no shape summary and deliberately no Start button — the
+          program says today runs nothing, and a filled primary action would argue with that. The
+          escape hatch is a text-weight "Train anyway" that jumps to the next slot which does run
+          something, and "Start an empty session" below stays available as it always is.
+        */}
+        {nextUp?.kind === 'rest' && (
+          <ThemedView type="backgroundElement" style={[styles.nextUpCard, { borderColor: theme.border }]}>
+            <ThemedText type="label" themeColor="textSecondary">
+              {t('today.restDayWeek', {
+                week: `${t('programs.week', { n: nextUp.weekNumber })}${nextUp.weekDay ? ` · ${nextUp.weekDay}` : ''}`,
+              })}
+            </ThemedText>
+            <ThemedText type="subtitle" style={styles.workoutName}>
+              {t('today.restDayTitle')}
+            </ThemedText>
+            <ThemedText themeColor="textSecondary" style={styles.emptyBody}>
+              {t('today.restDayBody')}
+            </ThemedText>
+            {/* The week's own note — user data, rendered verbatim. Often the only thing that
+                distinguishes an active recovery day from a full day off. */}
+            {nextUp.weekNotes && (
+              <ThemedText type="small" themeColor="textSecondary" style={styles.summaryLine}>
+                {nextUp.weekNotes}
+              </ThemedText>
+            )}
+            {skipTo && (
+              <Pressable
+                onPress={() => router.push({ pathname: '/session', params: skipTo })}
+                accessibilityRole="button"
+                style={({ pressed }) => [styles.restSkipButton, { borderColor: theme.border }, pressed && styles.pressed]}>
+                <ThemedText type="heading" themeColor="accentText">
+                  {t('today.restDaySkip')}
+                </ThemedText>
+              </Pressable>
+            )}
+          </ThemedView>
+        )}
+
+        {queued ? (
           <ThemedView type="backgroundElement" style={[styles.nextUpCard, { borderColor: theme.border }]}>
             <ThemedText type="label" themeColor="accentText">
-              {nextUp.weekNumber !== null
+              {queued.weekNumber !== null
                 ? t('today.nextUpWeek', {
-                    week: `${t('programs.week', { n: nextUp.weekNumber })}${nextUp.weekDay ? ` · ${nextUp.weekDay}` : ''}`,
+                    week: `${t('programs.week', { n: queued.weekNumber })}${queued.weekDay ? ` · ${queued.weekDay}` : ''}`,
                   })
                 : t('today.nextUp')}
             </ThemedText>
             <ThemedText type="subtitle" style={styles.workoutName}>
-              {nextUp.workout.name}
+              {queued.workout.name}
             </ThemedText>
             <View style={styles.chipRow}>
               {visibleChips.map((chip, index) => (
@@ -154,13 +199,13 @@ export default function TodayScreen() {
             <ThemedText themeColor="textSecondary" style={styles.summaryLine}>
               {summary}
             </ThemedText>
-            {nextUp.weekNotes && (
+            {queued.weekNotes && (
               <ThemedText type="small" themeColor="textSecondary" style={styles.summaryLine}>
-                {nextUp.weekNotes}
+                {queued.weekNotes}
               </ThemedText>
             )}
             <Pressable
-              onPress={() => router.push({ pathname: '/session', params: nextUp.sessionParams })}
+              onPress={() => router.push({ pathname: '/session', params: queued.sessionParams })}
               accessibilityRole="button"
               style={({ pressed }) => [styles.startButton, { backgroundColor: theme.accent }, pressed && styles.pressed]}>
               <View style={[styles.playTriangle, { borderLeftColor: theme.onAccent }]} />
@@ -169,7 +214,9 @@ export default function TodayScreen() {
               </ThemedText>
             </Pressable>
           </ThemedView>
-        ) : (
+        ) : /* Only when there is nothing at all. A rest day has already rendered its own card above,
+               and following it with "your library has no workouts" would be both wrong and alarming. */
+        nextUp === null ? (
           <ThemedView type="backgroundElement" style={[styles.nextUpCard, { borderColor: theme.border }]}>
             <ThemedText type="subtitle">{t('today.emptyTitle')}</ThemedText>
             <ThemedText themeColor="textSecondary" style={styles.emptyBody}>
@@ -189,7 +236,7 @@ export default function TodayScreen() {
               </ThemedText>
             </Pressable>
           </ThemedView>
-        )}
+        ) : null}
 
         {/*
           Outside the card's conditional on purpose, so it shows in both branches. The empty-library
@@ -331,6 +378,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: Spacing.two,
+  },
+  /**
+   * Outlined and no play triangle, unlike the Start button it sits where. The rest card's whole claim
+   * is that today runs nothing; a filled accent button would contradict the sentence above it. Same
+   * `minHeight` reasoning as the others — a fixed height clips at large accessibility text sizes.
+   */
+  restSkipButton: {
+    marginTop: Spacing.three,
+    minHeight: 56,
+    borderRadius: 16,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   playTriangle: {
     width: 0,

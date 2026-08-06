@@ -145,6 +145,38 @@ describe('before the first step', () => {
     expect(screen.getByText('Nada para executar')).toBeTruthy();
   });
 
+  /**
+   * A rest week resolves to no workout, exactly like a broken reference does — so without its own
+   * branch this screen returns null and renders a blank page. Reachable by deep link, by the back
+   * stack, or by editing a week into a rest day while a link to it is still live.
+   */
+  it('explains a rest week rather than rendering a blank screen', async () => {
+    useLibraryStore.setState({
+      library: aLibrary({
+        exercises,
+        workouts: [workoutOf('pullups')],
+        programs: [
+          {
+            id: 'p',
+            name: 'P',
+            weeks: [
+              { week: 1, day: 'Day 1', workoutId: 'w' },
+              { week: 1, day: 'Day 2', restDay: true },
+            ],
+          },
+        ],
+      }),
+      status: 'ready',
+    });
+    setSearchParams({ programId: 'p', week: '1', day: 'Day 2' });
+    await renderScreen(<SessionScreen />);
+
+    expect(screen.getByText('Rest day')).toBeTruthy();
+    expect(screen.queryByText('GET READY')).toBeNull();
+    // Not the generic error: the program is fine, it just runs nothing today.
+    expect(screen.queryByText('Nothing to run')).toBeNull();
+  });
+
   it('counts in before starting the timers', async () => {
     setLibrary(workoutOf('pullups'));
     await renderScreen(<SessionScreen />);

@@ -18,7 +18,7 @@ import { SessionRest } from '@/components/session-rest';
 import { ThemedText } from '@/components/themed-text';
 import { RunnerColors, MaxContentWidth, Spacing } from '@/constants/theme';
 import { formatSessionName } from '@/domain/format';
-import { resolveWorkoutForWeek } from '@/domain/program';
+import { findProgramWeek, resolveWorkoutForWeek } from '@/domain/program';
 import type { Exercise, Session, Workout } from '@/domain/types';
 import { useSessionAnnouncements } from '@/hooks/use-session-announcements';
 import { buildSteps, useSessionRunner } from '@/hooks/use-session-runner';
@@ -114,6 +114,16 @@ export default function SessionScreen() {
     return { workout: library.workouts[0], exercises: library.exercises, programId: null, week: null, day: null };
   }, [library, isAdHoc, workoutId, programId, week, day]);
 
+  // Asked separately from `resolved`, which collapses "rest day" and "no such week" into the same
+  // null — see the note on resolveWorkoutForWeek.
+  const isRestWeek = useMemo(() => {
+    if (!library || isAdHoc || workoutId || !programId || !week) return false;
+    const program = library.programs.find((candidate) => candidate.id === programId);
+    const weekNumber = Number(week);
+    if (!program || Number.isNaN(weekNumber)) return false;
+    return findProgramWeek(program, weekNumber, day)?.restDay === true;
+  }, [library, isAdHoc, workoutId, programId, week, day]);
+
   const workout = resolved?.workout ?? null;
   // resolved is already memoized (stable reference unless its own deps change), so memoizing off it
   // rather than `resolved?.exercises ?? []` directly keeps `exercises` from getting a fresh array
@@ -124,6 +134,35 @@ export default function SessionScreen() {
   // caught before ever showing the pre-session countdown, instead of leaving the user on a blank screen
   // with nothing to tap once the countdown finishes.
   const steps = useMemo(() => (workout ? buildSteps(workout, exercises) : []), [workout, exercises]);
+
+  // A rest week resolves to null exactly like a broken reference does, but it isn't broken — it's the
+  // program saying today runs nothing. Reachable by deep link, or by navigating back to a week that
+  // has since been edited into a rest day; without this it renders as a blank screen.
+  if (isRestWeek) {
+    return (
+      <SafeAreaView style={styles.safeArea} edges={['top', 'bottom', 'left', 'right']}>
+        <View style={styles.content}>
+          <View style={styles.emptyState}>
+            <ThemedText type="subtitle" style={styles.emptyStateTitle}>
+              {t('session.restDay.title')}
+            </ThemedText>
+            <ThemedText type="small" style={styles.emptyStateBody}>
+              {t('session.restDay.body')}
+            </ThemedText>
+            <Pressable
+              onPress={() => router.back()}
+              style={styles.emptyStateButton}
+              accessibilityRole="button"
+              accessibilityLabel={t('common.close')}>
+              <ThemedText type="heading" style={styles.emptyStateButtonLabel}>
+                {t('common.close')}
+              </ThemedText>
+            </Pressable>
+          </View>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   // Still hydrating, or a workout id that resolved to nothing. An ad-hoc session legitimately has no
   // workout, so it is exempt from both this and the zero-step guard below — an empty step list is its

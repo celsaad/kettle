@@ -138,6 +138,11 @@ workouts:
 programs:
   # One hard session and one easy session a week, with the 2k test bookending
   # the block: week 1 sets the number, week 4 tries to beat it.
+  #
+  # Only two sessions, so five of the seven days are `rest_day: true` — and they
+  # are written out rather than left implicit. A rest entry runs nothing and logs
+  # nothing, but it holds its place in the rotation, which is how the two hard
+  # days stay two days apart instead of collapsing onto consecutive mornings.
   - id: cnd-4-weeks
     name: Conditioning · 4 Weeks
     weeks:
@@ -147,14 +152,45 @@ programs:
         notes: Set the baseline. Everything after this is measured against it.
       - week: 1
         day: Day 2
+        rest_day: true
+        notes: Hard days need the day after them. That is what this entry is for.
+      - week: 1
+        day: Day 3
+        rest_day: true
+      - week: 1
+        day: Day 4
         workout: cnd-steady
+      - week: 1
+        day: Day 5
+        rest_day: true
+      - week: 1
+        day: Day 6
+        rest_day: true
+      - week: 1
+        day: Day 7
+        rest_day: true
 
       - week: 2
         day: Day 1
         workout: cnd-intervals
       - week: 2
         day: Day 2
+        rest_day: true
+      - week: 2
+        day: Day 3
+        rest_day: true
+      - week: 2
+        day: Day 4
         workout: cnd-steady
+      - week: 2
+        day: Day 5
+        rest_day: true
+      - week: 2
+        day: Day 6
+        rest_day: true
+      - week: 2
+        day: Day 7
+        rest_day: true
 
       # An override patches the exercise's own config keys — here the timers
       # themselves get longer, and week 4 repeats what week 3 changed because
@@ -168,10 +204,25 @@ programs:
             config: { total_minutes: 15 }
       - week: 3
         day: Day 2
+        rest_day: true
+      - week: 3
+        day: Day 3
+        rest_day: true
+      - week: 3
+        day: Day 4
         workout: cnd-steady
         overrides:
           - exercise: cnd-easy-run
             config: { duration_sec: 2400 }
+      - week: 3
+        day: Day 5
+        rest_day: true
+      - week: 3
+        day: Day 6
+        rest_day: true
+      - week: 3
+        day: Day 7
+        rest_day: true
 
       - week: 4
         day: Day 1
@@ -179,7 +230,22 @@ programs:
         notes: Same test as week 1, rested. Compare the two entries in History.
       - week: 4
         day: Day 2
+        rest_day: true
+      - week: 4
+        day: Day 3
+        rest_day: true
+      - week: 4
+        day: Day 4
         workout: cnd-amrap
         overrides:
           - exercise: cnd-amrap-12
             config: { time_cap_sec: 900 }
+      - week: 4
+        day: Day 5
+        rest_day: true
+      - week: 4
+        day: Day 6
+        rest_day: true
+      - week: 4
+        day: Day 7
+        rest_day: true

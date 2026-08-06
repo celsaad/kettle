@@ -158,6 +158,56 @@ describe('referential integrity', () => {
     });
   });
 
+  /**
+   * A rest week names no workout, so there is nothing for the reference check to resolve. Without
+   * the guard that skips them, every rest day in an imported file fails as a dangling reference —
+   * which is the single most likely regression in this feature, since the check reads `week.workoutId`
+   * and a rest week simply doesn't have one.
+   */
+  it('accepts a rest week, which names no workout to resolve', () => {
+    const incoming: Library = {
+      version: 1,
+      exercises: [],
+      workouts: [{ id: 'c', name: 'C', blocks: [] }],
+      programs: [
+        {
+          id: 'with-rest',
+          name: 'With rest',
+          weeks: [
+            { week: 1, day: 'Day 1', workoutId: 'c' },
+            { week: 1, day: 'Day 2', restDay: true },
+          ],
+        },
+      ],
+    };
+    expect(mergeLibraries(base(), incoming).ok).toBe(true);
+  });
+
+  it('still catches a dangling workout in a program that also has rest weeks', () => {
+    const incoming: Library = {
+      version: 1,
+      exercises: [],
+      workouts: [],
+      programs: [
+        {
+          id: 'bad',
+          name: 'Bad',
+          weeks: [
+            { week: 1, day: 'Day 1', restDay: true },
+            { week: 1, day: 'Day 2', workoutId: 'ghost' },
+          ],
+        },
+      ],
+    };
+    expect(expectError(mergeLibraries(base(), incoming))).toEqual({
+      kind: 'unknownWorkout',
+      programId: 'bad',
+      week: 1,
+      day: 'Day 2',
+      workoutId: 'ghost',
+    });
+  });
+
   it('accepts a reference satisfied by the existing library rather than the incoming one', () => {
     const incoming: Library = {
       version: 1,

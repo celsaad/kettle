@@ -34,6 +34,11 @@ export function resolveWorkoutForWeek(
 ): ResolvedWeek | null {
   const week = findProgramWeek(program, weekNumber, day);
   if (!week) return null;
+  // A rest week resolves to nothing to run, which is the same `null` a missing week or a dangling
+  // workout id produces. Callers that need to tell those apart — the home screen's card and the
+  // session screen's guard — ask `findProgramWeek(...)?.restDay` instead; only two do, which is why
+  // this returns a plain null rather than a tagged result.
+  if (week.restDay) return null;
   const baseWorkout = library.workouts.find((candidate) => candidate.id === week.workoutId);
   if (!baseWorkout) return null;
 

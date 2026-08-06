@@ -71,7 +71,27 @@ export type Workout = {
 export type ProgramOverride =
   | { kind: 'exercise'; exerciseId: string; config: Record<string, number | string> }
   | { kind: 'block'; blockId: string; config: Record<string, number | string> };
-export type ProgramWeek = { week: number; day?: string; workoutId: string; notes?: string; overrides?: ProgramOverride[] };
+/**
+ * One slot in a program's rotation: either a workout to run, or a scheduled day off.
+ *
+ * A union rather than an optional `restDay` flag on one object, so every `week.workoutId` read has to
+ * be guarded — the compiler enumerating those sites is the whole point, since a rest week has no
+ * workout to look up and silently resolving one to `undefined` is exactly the bug this shape prevents.
+ *
+ * Not to be confused with the `rest` *exercise* type (intra-workout rest between sets) or with the
+ * opt-in rest-day reminder (a nudge derived from the log). This is the program saying "today you rest".
+ */
+export type ProgramWeek =
+  | {
+      week: number;
+      day?: string;
+      workoutId: string;
+      /** Present and false-y on a training week; the discriminant a narrowing check reads. */
+      restDay?: false;
+      notes?: string;
+      overrides?: ProgramOverride[];
+    }
+  | { week: number; day?: string; restDay: true; notes?: string };
 export type Program = { id: string; name: string; weeks: ProgramWeek[] };
 
 export type Library = {

@@ -215,8 +215,8 @@ exercise no rest at all between its own sets.
 ## Programs
 
 A program is a periodized, multi-week wrapper around workouts already defined above. Each week
-points at a `workout` id and can optionally layer per-exercise config overrides on top of the base
-`exercises:` definitions for that week only:
+points at a `workout` id — or declares itself a rest day — and can optionally layer per-exercise
+config overrides on top of the base `exercises:` definitions for that week only:
 
 ```yaml
 programs:
@@ -279,6 +279,50 @@ programs:
         - week: 2
           day: Thursday
           workout: pull-day
+  ```
+
+- A week entry can instead be a **rest day**: set `rest_day: true` and leave `workout` out. It runs
+  nothing, logs nothing and appears in no session history, but it holds its place in the rotation —
+  the home screen shows a rest card instead of queuing the next workout, and moves past it by itself
+  a day later. Rules, all enforced on import:
+  - `workout` is still **required on every week that isn't a rest day**. A dropped or misspelled
+    `workout:` line is an error, not a silent day off.
+  - A `rest_day: true` week may not also name a `workout`, and may not carry `overrides` — it runs
+    nothing, so there is nothing to override.
+  - `day` and `notes` work exactly as they do on any other week. A note is the natural place for
+    "walk 20 minutes" or "stretch"; there is no separate active-recovery type.
+  - A program must have at least one week that runs a workout.
+- **Write out every rest day you actually take**, including the ones at the end of the week. Kettle
+  spends one rest entry per calendar day, so a three-session week written as three entries rolls
+  into the next week the day after your last session. Seven entries make the week a week:
+
+  ```yaml
+  programs:
+    - id: full-body-week
+      name: Full Body · 3 Days
+      weeks:
+        - week: 1
+          day: Day 1
+          workout: full-body-a
+        - week: 1
+          day: Day 2
+          rest_day: true
+          notes: Walk, stretch, nothing heavy.
+        - week: 1
+          day: Day 3
+          workout: full-body-b
+        - week: 1
+          day: Day 4
+          rest_day: true
+        - week: 1
+          day: Day 5
+          workout: full-body-a
+        - week: 1
+          day: Day 6
+          rest_day: true
+        - week: 1
+          day: Day 7
+          rest_day: true
   ```
 
 ## Writing in another language
@@ -462,6 +506,9 @@ programs:
         overrides:
           - block: finisher-rounds
             config: { rounds: 2 }
+      - week: 7
+        rest_day: true
+        notes: Nothing scheduled. Start the block over from week 1 when you come back.
 ```
 
 ## Getting it into the app

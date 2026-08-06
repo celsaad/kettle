@@ -21,7 +21,7 @@ import type { Exercise, Library, Program } from '@/domain/types';
 export type SeedTranslation = {
   /**
    * Day labels are a closed set shared by every seeded program, so they map by their English label
-   * rather than being repeated on all 24 week entries. Any replacement has to sort in training order:
+   * rather than being repeated on every week entry. Any replacement has to sort in training order:
    * `nextWeekAfter` walks a multi-day week by `day.localeCompare`, so `Dia 1`/`Dia 2`/`Dia 3` is fine
    * and weekday names would not be.
    */
@@ -42,7 +42,15 @@ export function seedWeekKey(week: number, day: string | undefined): string {
 }
 
 const pt: SeedTranslation = {
-  days: { 'Day 1': 'Dia 1', 'Day 2': 'Dia 2', 'Day 3': 'Dia 3' },
+  days: {
+    'Day 1': 'Dia 1',
+    'Day 2': 'Dia 2',
+    'Day 3': 'Dia 3',
+    'Day 4': 'Dia 4',
+    'Day 5': 'Dia 5',
+    'Day 6': 'Dia 6',
+    'Day 7': 'Dia 7',
+  },
   exercises: {
     rest: { name: 'Descanso' },
     pushups: {
@@ -110,11 +118,12 @@ const pt: SeedTranslation = {
       name: 'Fundamentos · 4 Semanas · Sem Equipamento',
       weekNotes: {
         '1|Day 1': 'Semana de referência. Registre onde você realmente chega em cada faixa — ainda não persiga o topo dela.',
+        '1|Day 2': 'O descanso é onde a última sessão vira alguma coisa. Caminhe se quiser; nada pesado.',
         '2|Day 1': 'As mesmas três sessões. Busque uma repetição a mais do que registrou na semana 1, em todas as séries.',
         '3|Day 1':
           'Uma quarta série em tudo. Mantenha as repetições onde estavam em vez de forçar as duas coisas ao mesmo tempo.',
         '4|Day 1': 'Semana mais pesada do bloco. Agora leve as repetições em direção ao topo de cada faixa.',
-        '4|Day 3':
+        '4|Day 5':
           'Última sessão do bloco, com uma quarta rodada no finalizador. Concluí-la volta para a semana 1 — repita o bloco com o topo de cada faixa como seu novo piso.',
       },
     },
@@ -123,11 +132,12 @@ const pt: SeedTranslation = {
       weekNotes: {
         '1|Day 1':
           'Semana de referência. Escolha cargas com as quais você consiga parar 2 repetições antes da falha e registre-as em cada exercício.',
+        '1|Day 2': 'Um dia entre as sessões faz parte do plano, não é uma falha nele.',
         '2|Day 1':
           'A ordem A/B se inverte nesta semana. Adicione o menor incremento que você tiver a tudo em que alcançou o topo da faixa.',
         '3|Day 1': 'Uma quarta série em tudo. Mantenha as cargas onde estão nesta semana.',
         '4|Day 1': 'Semana mais pesada do bloco: quatro séries, e aumente a carga onde a semana 3 pareceu fácil.',
-        '4|Day 3':
+        '4|Day 5':
           'Última sessão do bloco. Concluí-la volta para a semana 1 — repita o bloco a partir das cargas com que você terminou.',
       },
     },

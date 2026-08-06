@@ -73,6 +73,7 @@ const library: Library = {
       weeks: [
         { week: 1, workoutId: 'full', notes: 'Baseline' },
         { week: 2, workoutId: 'full', day: 'Monday' },
+        { week: 2, day: 'Tuesday', restDay: true, notes: 'Walk, nothing heavy.' },
         {
           week: 3,
           workoutId: 'full',
@@ -364,5 +365,103 @@ programs: []
     const yaml = parsed.ok ? serializeLibraryYaml(parsed.data) : '';
     expect(yaml).not.toContain('hold_sec_min');
     expect(parseLibraryYaml(yaml).ok).toBe(true);
+  });
+});
+
+/**
+ * The four rules that make `rest_day` unambiguous. Each is a schema refinement rather than a
+ * convention, because each one is a file somebody would otherwise write and not find out about until
+ * the app scheduled it wrongly.
+ */
+describe('rest days in a program', () => {
+  const programYaml = (weeks: string) => `
+version: 1
+exercises:
+  - id: pushups
+    name: Push-ups
+    type: reps
+    config: { sets: 3, target_reps_min: 10, rest_sec: 45 }
+workouts:
+  - id: full
+    name: Full
+    blocks:
+      - type: exercise
+        exercise: pushups
+programs:
+  - id: prog
+    name: Prog
+    weeks:
+${weeks}
+`;
+
+  const trainingWeek = '      - week: 1\n        workout: full\n';
+
+  it('accepts a rest week that names no workout', () => {
+    const result = parseLibraryYaml(programYaml(`${trainingWeek}      - week: 2\n        rest_day: true\n`));
+    expect(result.ok).toBe(true);
+    const week = result.ok ? result.data.programs[0].weeks[1] : null;
+    expect(week?.restDay).toBe(true);
+  });
+
+  it('keeps `day` and `notes` on a rest week', () => {
+    const result = parseLibraryYaml(
+      programYaml(`${trainingWeek}      - week: 1\n        day: Day 2\n        rest_day: true\n        notes: Walk.\n`),
+    );
+    const week = result.ok ? result.data.programs[0].weeks[1] : null;
+    expect(week?.day).toBe('Day 2');
+    expect(week?.notes).toBe('Walk.');
+  });
+
+  // The reason rest is spelled with its own key instead of being inferred from a missing `workout`:
+  // a dropped or misspelled line has to stay an error.
+  it('still refuses a week with neither a workout nor rest_day', () => {
+    expect(parseLibraryYaml(programYaml(`${trainingWeek}      - week: 2\n`)).ok).toBe(false);
+  });
+
+  it('refuses a rest week that also names a workout', () => {
+    expect(
+      parseLibraryYaml(programYaml(`${trainingWeek}      - week: 2\n        rest_day: true\n        workout: full\n`)).ok,
+    ).toBe(false);
+  });
+
+  it('refuses a rest week carrying overrides, which it has nothing to apply to', () => {
+    const weeks = `${trainingWeek}      - week: 2\n        rest_day: true\n        overrides:\n          - exercise: pushups\n            config: { sets: 5 }\n`;
+    expect(parseLibraryYaml(programYaml(weeks)).ok).toBe(false);
+  });
+
+  it('refuses a program with nothing but rest weeks, which could never queue anything', () => {
+    expect(parseLibraryYaml(programYaml('      - week: 1\n        rest_day: true\n')).ok).toBe(false);
+  });
+
+  it('accepts a written-out `rest_day: false`, which is a training week spelled in full', () => {
+    const result = parseLibraryYaml(programYaml('      - week: 1\n        workout: full\n        rest_day: false\n'));
+    expect(result.ok).toBe(true);
+    expect(result.ok && result.data.programs[0].weeks[0].restDay).toBeFalsy();
+  });
+
+  /**
+   * Round-trip: a rest week must export without a `workout` key at all. `workout: null` would be
+   * refused by the schema on the next import, which is how an export could silently become
+   * un-importable.
+   */
+  it('round-trips a rest week without inventing a workout key', () => {
+    const parsed = parseLibraryYaml(
+      programYaml(`${trainingWeek}      - week: 2\n        rest_day: true\n        notes: Off.\n`),
+    );
+    const yaml = parsed.ok ? serializeLibraryYaml(parsed.data) : '';
+    expect(yaml).toContain('rest_day: true');
+    expect(yaml).not.toContain('workout: null');
+
+    const reparsed = parseLibraryYaml(yaml);
+    expect(reparsed.ok).toBe(true);
+    expect(reparsed.ok && reparsed.data.programs[0].weeks).toEqual(parsed.ok ? parsed.data.programs[0].weeks : null);
+  });
+
+  // A training week must not pick up `rest_day: false` on export: it would rewrite every program in
+  // a user's hand-authored file the first time the app saved one, for no meaning.
+  it('writes no rest_day key on a training week', () => {
+    const parsed = parseLibraryYaml(programYaml(trainingWeek));
+    const yaml = parsed.ok ? serializeLibraryYaml(parsed.data) : '';
+    expect(yaml).not.toContain('rest_day');
   });
 });

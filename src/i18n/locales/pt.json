@@ -46,6 +46,11 @@
     "thisWeek": "esta semana",
     "nextUp": "PRÓXIMO",
     "nextUpWeek": "PRÓXIMO · {{week}}",
+    "restDay": "DIA DE DESCANSO",
+    "restDayWeek": "DIA DE DESCANSO · {{week}}",
+    "restDayTitle": "Dia de descanso",
+    "restDayBody": "Nada programado hoje. Amanhã o programa continua de onde parou.",
+    "restDaySkip": "Treinar mesmo assim",
     "startSession": "Iniciar treino",
     "emptyTitle": "Nada para fazer ainda",
     "emptyBody": "Sua biblioteca não tem treinos. Monte um e ele aparece aqui.",
@@ -128,6 +133,10 @@
       "confirmTitle": "Encerrar o treino?",
       "confirmBody": "Tudo que você registrou, inclusive a série em andamento, será salvo.",
       "confirmAction": "Encerrar"
+    },
+    "restDay": {
+      "title": "Dia de descanso",
+      "body": "Esta semana do programa é um dia de descanso, então não há nada para executar. Volte e escolha um treino se quiser treinar hoje."
     },
     "nothingToRun": {
       "title": "Nada para executar",
@@ -521,7 +530,9 @@
     "weekCount_one": "{{count}} semana",
     "weekCount_other": "{{count}} semanas",
     "addAtLeastOneWeek": "Adicione pelo menos uma semana.",
-    "everyWeekNeedsWorkout": "Toda semana precisa de um treino.",
+    "everyWeekNeedsWorkout": "Toda semana precisa de um treino, a menos que seja um dia de descanso.",
+    "needsOneWorkoutWeek": "Pelo menos uma semana precisa ter um treino.",
+    "restDay": "Dia de descanso",
     "duplicateWeek": "A semana {{label}} está repetida — defina um dia diferente para uma delas ou remova a duplicada.",
     "deleteConfirmTitle": "Excluir programa?",
     "noWorkoutsHint": "Nenhum treino ainda — crie um em Montar primeiro e volte para adicionar semanas aqui.",
@@ -553,6 +564,7 @@
     "notFound": "Programa não encontrado.",
     "startThisWeek": "Iniciar esta semana",
     "startThisDay": "Iniciar este dia",
+    "restDay": "Dia de descanso",
     "edit": "Editar programa"
   },
   "tabs": {

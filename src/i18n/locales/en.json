@@ -46,6 +46,11 @@
     "thisWeek": "this week",
     "nextUp": "NEXT UP",
     "nextUpWeek": "NEXT UP · {{week}}",
+    "restDay": "REST DAY",
+    "restDayWeek": "REST DAY · {{week}}",
+    "restDayTitle": "Rest day",
+    "restDayBody": "Nothing scheduled today. The program picks up where it left off tomorrow.",
+    "restDaySkip": "Train anyway",
     "startSession": "Start session",
     "emptyTitle": "Nothing to run yet",
     "emptyBody": "Your library has no workouts. Build one and it will show up here.",
@@ -128,6 +133,10 @@
       "confirmTitle": "Finish session?",
       "confirmBody": "Everything you've logged, including the set you're on, will be saved.",
       "confirmAction": "Finish"
+    },
+    "restDay": {
+      "title": "Rest day",
+      "body": "This week of the program is a scheduled rest day, so there's nothing to run. Go back and pick a workout if you want to train today."
     },
     "nothingToRun": {
       "title": "Nothing to run",
@@ -521,7 +530,9 @@
     "weekCount_one": "{{count}} week",
     "weekCount_other": "{{count}} weeks",
     "addAtLeastOneWeek": "Add at least one week.",
-    "everyWeekNeedsWorkout": "Every week needs a workout.",
+    "everyWeekNeedsWorkout": "Every week needs a workout, unless it's a rest day.",
+    "needsOneWorkoutWeek": "At least one week has to run a workout.",
+    "restDay": "Rest day",
     "duplicateWeek": "Week {{label}} is used twice — give one a different day, or remove the duplicate.",
     "deleteConfirmTitle": "Delete program?",
     "noWorkoutsHint": "No workouts yet — create one in Build first, then come back to add weeks here.",
@@ -553,6 +564,7 @@
     "notFound": "Program not found.",
     "startThisWeek": "Start this week",
     "startThisDay": "Start this day",
+    "restDay": "Rest day",
     "edit": "Edit program"
   },
   "tabs": {

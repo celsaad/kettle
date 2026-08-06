@@ -698,6 +698,38 @@ decision assembled across several commits. Open work belongs in the sections at 
   entries out — an editor built from the view sends corrections to whatever sits at that offset. And
   removals have to be applied back to front, since each one shifts every later index down by one.
 
+- ✅ **A program's rest day clears itself by elapsed calendar days, and stores nothing.** A week with
+  `rest_day: true` holds a place in the rotation but is never run, so — unlike every other slot —
+  *nothing about it is ever logged*. That breaks the assumption the whole scheduler rests on:
+  `nextWeekAfter` derives "what's next" purely from the most recent tracked session, so a rest slot
+  would pin Today's card to itself forever. The rule that unpins it, with `R` consecutive rest slots
+  after the last session, is `restsServed = max(0, daysSince(lastSession) - 1)`; the card shows rest
+  slot `restsServed + 1` until `restsServed` reaches `R`. Train Monday and Tuesday is the rest day,
+  Wednesday is the next workout.
+
+  **Rejected: a persisted "rest day done" flag.** It never guesses, which is its whole appeal — but
+  web can't persist anything at all (see the platform constraints in `AGENTS.md`), so it would behave
+  differently there for no reason a user could see, and anyone who never taps the button stays stuck
+  on the rest card. **Rejected: skipping rest slots entirely** and showing them as a footnote on the
+  workout card. It cannot get stuck, and it is why the feature would have been pointless: the app
+  would never actually say today is a rest day. What replaces both is the card's "train anyway" link,
+  so the arithmetic being wrong for someone costs them one tap rather than blocking them.
+
+  Two consequences that shape anything built on top of this. **A program's rest slots have to equal
+  the real days off** — three sessions written as three entries roll into the next week the morning
+  after the last one — which is why both seeded programs and all four published examples now write
+  seven slots per week. And **`nextUpView` takes a `now: Date`**, the first selector to do so: the
+  rule is calendar arithmetic, and the caller owning the clock is what makes it testable without
+  faking a system clock. `nextWeekAfter` deliberately stayed clock-free and still returns the literal
+  next slot, rest included.
+
+  The type change is the load-bearing part of the rest. `ProgramWeek` became a **union** rather than
+  growing an optional flag, so every `week.workoutId` read had to be guarded before it compiled —
+  which is how the `merge.ts` reference check was found. That check refuses any week whose workout
+  doesn't exist, and a rest week has no workout to find, so without a guard **every rest day in an
+  imported file fails as a dangling reference**. It has its own regression test, verified by
+  reintroducing the bug.
+
 
 
 

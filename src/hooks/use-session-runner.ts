@@ -285,6 +285,17 @@ export function useSessionRunner(
    */
   const stepIndexRef = useRef(stepIndex);
   stepIndexRef.current = stepIndex;
+  /**
+   * Set the moment the session is handed to `onComplete`, so nothing can commit into it afterwards.
+   *
+   * The completion paths are the one place `stepIndexRef` stops being a usable "have we moved on"
+   * signal: they return without advancing it (there is nowhere to advance to), so the staleness guard
+   * the two timing effects rely on can't see that the session is over. Without this a second
+   * `advance()` in the same batch re-committed the *final* step — a 3-round HIIT logged 4 — and called
+   * `onComplete` twice. It also makes a double-tapped Finish, and a Finish landing in the same batch as
+   * the last auto-advance, no-ops rather than duplicate work.
+   */
+  const finishedRef = useRef(false);
   const repsRef = useRef(reps);
   const rpeRef = useRef(rpe);
   const weightKgRef = useRef(weightKg);
@@ -482,10 +493,18 @@ export function useSessionRunner(
             extraReps: extraRepsRef.current || undefined,
           });
         } else if (current.variant === 'cardio') {
+          // Clamped to the configured duration, exactly as a hold is clamped to its end above and for
+          // the same reason: a cardio step that ends while the app is backgrounded is only *noticed* on
+          // foreground return, so the raw elapsed there is however long you were away — a 60s row
+          // logged 600s in the test that found this. Only when it has a duration to be clamped to; a
+          // count-up cardio ends when the user says so, and its elapsed is the whole measurement.
+          // `restTakenSec` deliberately isn't clamped this way: "how long you rested" really is the
+          // time that passed, whereas "how long you rowed" is not.
+          const elapsed = computeElapsedSec();
           sessionRef.current = logEntry(sessionRef.current, {
             exercise: current.exerciseId,
             type: 'cardio',
-            durationSec: computeElapsedSec(),
+            durationSec: current.countUp ? elapsed : Math.min(elapsed, current.targetSec),
             distanceMeters: current.cardioDistanceMeters,
           });
         }
@@ -513,6 +532,7 @@ export function useSessionRunner(
   );
 
   const advance = useCallback(() => {
+    if (finishedRef.current) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
 
     {
@@ -559,6 +579,7 @@ export function useSessionRunner(
           setStepIndex(nextIndex);
           return;
         }
+        finishedRef.current = true;
         if (sessionRef.current) sessionRef.current = completeSession(sessionRef.current);
         onComplete(sessionRef.current);
         return;
@@ -571,7 +592,13 @@ export function useSessionRunner(
 
   useEffect(() => {
     if (!step || paused) return;
+    const indexAtSetup = stepIndexRef.current;
     const id = setInterval(() => {
+      // This callback decides whether the step has ended from `phaseStartedAtRef`/`stepEndSecRef`,
+      // which are re-seeded during render — so between an advance() and that render it is holding the
+      // *previous* step's clock and would conclude the new step has expired too. See the note on the
+      // AppState effect below for how the two of them get into that state together.
+      if (stepIndexRef.current !== indexAtSetup || finishedRef.current) return;
       if (step.kind === 'hold' || (step.kind === 'interval' && step.countUp)) {
         const elapsed = computeElapsedSec();
         setHoldElapsedSec(elapsed);
@@ -619,9 +646,20 @@ export function useSessionRunner(
   // its own sake: a hold is run with the phone on the floor and the screen asleep, so "the step ended
   // while we weren't ticking" is its *normal* case rather than an edge one. Without this the timer
   // resumes mid-hold and quietly runs long, which is the exact overrun the feature exists to remove.
+  //
+  // **Both this and the ticking effect must refuse to act on a step that has already been left**, and
+  // that is not a theoretical guard. React Native delivers a backlog of queued native calls to JS in
+  // one batch, so on resume a timer callback that came due while away and this AppState event can both
+  // run before React re-renders — and neither `phaseStartedAtRef` nor `stepEndSecRef` is re-seeded
+  // until it does. The first to run advances; the second, still reading the old step's clock, decides
+  // the new step has expired too and advances again, committing a step nobody performed. Advancing
+  // `stepIndexRef` eagerly (see its note) stops them repeating one another's commit but not this, which
+  // is the worse half: a set logged at 0 reps *and* skipped.
   useEffect(() => {
+    const indexAtSetup = stepIndexRef.current;
     const subscription = AppState.addEventListener('change', (nextState) => {
       if (nextState !== 'active' || !step || paused) return;
+      if (stepIndexRef.current !== indexAtSetup || finishedRef.current) return;
       if (step.kind === 'hold' || (step.kind === 'interval' && step.countUp)) {
         const elapsed = computeElapsedSec();
         if (step.kind === 'hold' && step.holdEndSec !== undefined && elapsed >= step.holdEndSec) advance();
@@ -744,10 +782,16 @@ export function useSessionRunner(
   // Ends the session on demand: the in-progress step is committed first, so the current set/round
   // (and everything already logged) is saved rather than discarded.
   const finishSession = useCallback(() => {
-    if (step && sessionRef.current) commitCurrentStep(step);
+    if (finishedRef.current) return;
+    finishedRef.current = true;
+    // Read through `stepIndexRef` rather than the render's `step`, for the reason its own note gives:
+    // an advance() in this same batch has already moved the position but not yet re-rendered, and
+    // committing the closure's step there would log the one it just committed a second time.
+    const current = steps[stepIndexRef.current];
+    if (current && sessionRef.current) commitCurrentStep(current);
     if (sessionRef.current) sessionRef.current = completeSession(sessionRef.current);
     onComplete(sessionRef.current);
-  }, [step, commitCurrentStep, completeSession, onComplete]);
+  }, [steps, commitCurrentStep, completeSession, onComplete]);
 
   /** What this set looked like last time, matched on set number. Null on interval and rest steps. */
   const previousSet = useMemo(

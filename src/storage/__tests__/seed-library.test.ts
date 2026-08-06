@@ -101,7 +101,7 @@ describe.each(seedLanguages)('the %s seed', (language) => {
         sessions.unshift({
           version: 1,
           id: `s${step}`,
-          workout: week.workoutId,
+          workout: week.restDay ? null : week.workoutId,
           program: program.id,
           programWeek: week.week,
           programDay: week.day ?? null,
@@ -194,7 +194,13 @@ function structureOf(library: Library) {
     workouts: library.workouts.map((workout) => ({ id: workout.id, blocks: workout.blocks })),
     programs: library.programs.map((program) => ({
       id: program.id,
-      weeks: program.weeks.map((week) => ({ week: week.week, workoutId: week.workoutId, overrides: week.overrides })),
+      // `restDay` belongs here too: which days are rest is structure, not string, and a translation
+      // that turned a training day into a day off would be exactly the kind of change this catches.
+      weeks: program.weeks.map((week) =>
+        week.restDay
+          ? { week: week.week, restDay: true }
+          : { week: week.week, workoutId: week.workoutId, overrides: week.overrides },
+      ),
     })),
   };
 }

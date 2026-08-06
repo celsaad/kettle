@@ -154,7 +154,9 @@ export default function WorkoutEditorScreen() {
 
   const confirmDelete = () => {
     if (!editing) return;
-    const usedBy = (library.programs ?? []).filter((program) => program.weeks.some((week) => week.workoutId === editing.id));
+    const usedBy = (library.programs ?? []).filter((program) =>
+      program.weeks.some((week) => !week.restDay && week.workoutId === editing.id),
+    );
     if (usedBy.length > 0) {
       Alert.alert(
         t('workoutEditor.inUseTitle'),

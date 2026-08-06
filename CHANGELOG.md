@@ -17,7 +17,31 @@ language; an unsupported tag is rejected on upload. The limits and the upload fo
 
 ## Unreleased
 
-Nothing since 0.5.0.
+### What changed
+
+**Programs can have rest days.**
+
+- A week in a program can now be a scheduled day off: it runs nothing, logs nothing, and never
+  appears in your history — but it holds its place in the plan. On the day, Today says "Rest day"
+  instead of queuing your next session.
+- The rest day steps aside by itself a day later, so a week written out in full runs the way it
+  reads. If you want to train anyway, the card has a button that jumps straight to the next real
+  session, and "Start an empty session" is where it always was.
+- Writing one by hand: `rest_day: true` on a week, with no `workout`. It can carry a `day` label and
+  a note ("walk, stretch, nothing heavy") like any other week. The published format reference and
+  the in-app guide both cover it.
+- In the app, every week in the program editor has a "Rest day" switch. Turning it on drops that
+  week's workout and any overrides, since a rest day has neither.
+- **The starter programs and all four downloadable examples now write their weeks out in full**,
+  rest days included — Foundations and Dumbbell Strength train on days 1, 3 and 5 and rest on the
+  other four.
+- **Only a fresh install gets the rewritten starter programs**, though. Kettle writes the starter
+  library once, the first time it runs, and never touches it again — so if you already have Kettle,
+  your copy of Foundations and Dumbbell Strength keeps the weeks it has and behaves exactly as
+  before. Add rest days to them in the program editor, or re-import an example file to pick up its
+  new ones. Your logged history is untouched either way.
+- One thing this deliberately doesn't change: the day-streak counter still counts consecutive days
+  you trained, so a rest day still resets it.
 
 ---
 

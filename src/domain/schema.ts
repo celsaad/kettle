@@ -154,16 +154,42 @@ const programOverrideSchema = z
     message: 'override must specify exactly one of `exercise` or `block`',
   });
 
-export const rawProgramWeekSchema = z.object({
-  week: z.number().int().positive(),
-  // Freeform label ("Monday", "Tue", ...) rather than a strict weekday enum, since not every
-  // multi-session-per-week program maps onto a literal calendar week. Omit for the common case of
-  // one session per week number.
-  day: z.string().optional(),
-  workout: idSchema,
-  notes: z.string().optional(),
-  overrides: z.array(programOverrideSchema).optional(),
-});
+/**
+ * A week entry is either a workout to run or a scheduled day off (`rest_day: true`).
+ *
+ * `workout` stays **required on every non-rest week**, which is why rest is spelled with its own key
+ * rather than inferred from an absent `workout` — a dropped or misspelled `workout:` line has to stay
+ * an import error instead of silently becoming a day off. `rest_day` rather than `rest` because `rest`
+ * is already an exercise type and `rest_sec` a config key in four of the seven; one word meaning two
+ * things in one file is how authors get it wrong.
+ *
+ * `rest_day: false` is accepted and means nothing — it's what an author writing the field out in full
+ * would type, and refusing it would be a rule with no purpose behind it.
+ */
+export const rawProgramWeekSchema = z
+  .object({
+    week: z.number().int().positive(),
+    // Freeform label ("Monday", "Tue", ...) rather than a strict weekday enum, since not every
+    // multi-session-per-week program maps onto a literal calendar week. Omit for the common case of
+    // one session per week number.
+    day: z.string().optional(),
+    workout: idSchema.optional(),
+    rest_day: z.boolean().optional(),
+    notes: z.string().optional(),
+    overrides: z.array(programOverrideSchema).optional(),
+  })
+  .refine((week) => week.rest_day === true || week.workout !== undefined, {
+    message: 'week needs a `workout` unless it sets `rest_day: true`',
+    path: ['workout'],
+  })
+  .refine((week) => !(week.rest_day === true && week.workout !== undefined), {
+    message: 'a `rest_day` week runs nothing, so it cannot also name a `workout`',
+    path: ['workout'],
+  })
+  .refine((week) => !(week.rest_day === true && week.overrides !== undefined), {
+    message: 'a `rest_day` week runs nothing, so it has nothing to override',
+    path: ['overrides'],
+  });
 
 export const rawProgramSchema = z
   .object({
@@ -182,7 +208,13 @@ export const rawProgramSchema = z
       return true;
     },
     { message: 'weeks must not repeat the same (week, day) pair', path: ['weeks'] },
-  );
+  )
+  // A program of nothing but rest days has nothing to queue, ever: the home screen would show a rest
+  // card whose "train anyway" link has nowhere to go. Refused at the door rather than handled forever.
+  .refine((program) => program.weeks.some((week) => week.rest_day !== true), {
+    message: 'a program needs at least one week that runs a workout',
+    path: ['weeks'],
+  });
 
 export const rawLibrarySchema = z.object({
   version: z.number().int().positive(),

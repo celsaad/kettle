@@ -275,6 +275,8 @@ are the index, the banner is the contract.
   `timed_hold` at the top of its range, and making `hold_sec_min` optional.
 - `docs/backup-folder-plan.md` — executed; kept for its rationale, and for the device-only checks it
   leaves open. Writing the library and the log into a folder the user picks once.
+- `docs/program-rest-days-plan.md` — executed; kept for its rationale. A program week that says
+  "today you rest" (`rest_day: true`, no `workout`), and how it clears itself off the home screen.
 
 Three rules about keeping the plan files honest, in the order they get broken:
 

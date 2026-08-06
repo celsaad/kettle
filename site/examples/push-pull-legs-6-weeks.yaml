@@ -225,6 +225,12 @@ programs:
   # Six weeks, every one of them written out, with the day labels ordered so the
   # week runs push → pull → legs (Kettle orders a multi-day week by its `day`
   # label, so `Push`/`Pull`/`Legs` on their own would run legs first).
+  #
+  # The three sessions run back to back and the remaining four days are written
+  # out as `rest_day: true`. A rest entry runs nothing and logs nothing; it holds
+  # its place in the rotation, so the home screen shows a rest card and picks the
+  # next week up four days later instead of the morning after legs. The numbered
+  # prefix is on the rest labels too, for the same sorting reason as above.
   - id: ppl-6-weeks
     name: Push/Pull/Legs · 6 Weeks
     weeks:
@@ -239,6 +245,20 @@ programs:
         day: Day 3 · Legs
         workout: ppl-legs
 
+      - week: 1
+        day: Day 4 · Rest
+        rest_day: true
+        notes: Four days off before the next block of three. Written out so Kettle counts them.
+      - week: 1
+        day: Day 5 · Rest
+        rest_day: true
+      - week: 1
+        day: Day 6 · Rest
+        rest_day: true
+      - week: 1
+        day: Day 7 · Rest
+        rest_day: true
+
       - week: 2
         day: Day 1 · Push
         workout: ppl-push
@@ -249,6 +269,19 @@ programs:
       - week: 2
         day: Day 3 · Legs
         workout: ppl-legs
+
+      - week: 2
+        day: Day 4 · Rest
+        rest_day: true
+      - week: 2
+        day: Day 5 · Rest
+        rest_day: true
+      - week: 2
+        day: Day 6 · Rest
+        rest_day: true
+      - week: 2
+        day: Day 7 · Rest
+        rest_day: true
 
       # Volume goes up here and stays up: an override applies to the week it is
       # written in and nothing else, so weeks 4 and 5 repeat it verbatim.
@@ -269,6 +302,19 @@ programs:
         day: Day 3 · Legs
         workout: ppl-legs
 
+      - week: 3
+        day: Day 4 · Rest
+        rest_day: true
+      - week: 3
+        day: Day 5 · Rest
+        rest_day: true
+      - week: 3
+        day: Day 6 · Rest
+        rest_day: true
+      - week: 3
+        day: Day 7 · Rest
+        rest_day: true
+
       - week: 4
         day: Day 1 · Push
         workout: ppl-push
@@ -284,6 +330,19 @@ programs:
       - week: 4
         day: Day 3 · Legs
         workout: ppl-legs
+
+      - week: 4
+        day: Day 4 · Rest
+        rest_day: true
+      - week: 4
+        day: Day 5 · Rest
+        rest_day: true
+      - week: 4
+        day: Day 6 · Rest
+        rest_day: true
+      - week: 4
+        day: Day 7 · Rest
+        rest_day: true
 
       - week: 5
         day: Day 1 · Push
@@ -306,6 +365,19 @@ programs:
           # circuit's keys, not an exercise's.
           - block: ppl-leg-finisher
             config: { rounds: 4 }
+
+      - week: 5
+        day: Day 4 · Rest
+        rest_day: true
+      - week: 5
+        day: Day 5 · Rest
+        rest_day: true
+      - week: 5
+        day: Day 6 · Rest
+        rest_day: true
+      - week: 5
+        day: Day 7 · Rest
+        rest_day: true
 
       # Deload: back to the base sets by simply not overriding them, and the
       # finisher cut to two rounds.
@@ -330,3 +402,15 @@ programs:
             config: { sets: 3 }
           - block: ppl-leg-finisher
             config: { rounds: 2 }
+      - week: 6
+        day: Day 4 · Rest
+        rest_day: true
+      - week: 6
+        day: Day 5 · Rest
+        rest_day: true
+      - week: 6
+        day: Day 6 · Rest
+        rest_day: true
+      - week: 6
+        day: Day 7 · Rest
+        rest_day: true

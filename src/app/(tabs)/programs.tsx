@@ -31,7 +31,9 @@ function weekRangeLabel(program: Program, t: TFunction): string {
 }
 
 function detailLabel(program: Program, t: TFunction): string | null {
-  const count = program.weeks.filter((week) => week.notes || (week.overrides && week.overrides.length > 0)).length;
+  const count = program.weeks.filter(
+    (week) => week.notes || (!week.restDay && week.overrides && week.overrides.length > 0),
+  ).length;
   if (count === 0) return null;
   return t('programs.weeksWithNotes', { count });
 }

@@ -125,15 +125,35 @@ export function workoutShape(workout: Workout, exercises: Exercise[]): WorkoutSh
   };
 }
 
-export type NextUpView = {
-  workout: Workout;
-  exercises: Exercise[];
-  /** Structured, not a sentence: the view composes the label so it can be translated. */
-  weekNumber: number | null;
-  weekDay: string | null;
-  weekNotes: string | null;
-  sessionParams: { workoutId: string } | { programId: string; week: string; day?: string };
-};
+/** Where the "start this" button on either card points. */
+export type SessionParams = { workoutId: string } | { programId: string; week: string; day?: string };
+
+/**
+ * What the home screen queues up. A union because a rest day has no workout, no exercises and nothing
+ * to start — modelling it as a `NextUpView` with null fields would put the burden of noticing on every
+ * reader of `.workout`, and the card is the one place that must not get this wrong.
+ *
+ * Week fields are structured rather than a sentence: the view composes the label so it can be
+ * translated, and the `day` inside it is user data that renders verbatim.
+ */
+export type NextUpView =
+  | {
+      kind: 'workout';
+      workout: Workout;
+      exercises: Exercise[];
+      weekNumber: number | null;
+      weekDay: string | null;
+      weekNotes: string | null;
+      sessionParams: SessionParams;
+    }
+  | {
+      kind: 'rest';
+      weekNumber: number;
+      weekDay: string | null;
+      weekNotes: string | null;
+      /** The next slot that actually runs something, for the card's "train anyway" escape hatch. */
+      skipTo: SessionParams | null;
+    };
 
 /**
  * Seeded by the day (not Math.random) so the pick is stable across re-renders within the same
@@ -150,6 +170,7 @@ function flatFallback(library: Library): NextUpView | null {
   if (library.workouts.length === 0) return null;
   const workout = workoutOfTheDay(library.workouts);
   return {
+    kind: 'workout',
     workout,
     exercises: library.exercises,
     weekNumber: null,
@@ -179,37 +200,127 @@ function activeProgram(library: Library, sessions: Session[]): Program | undefin
  * one). No matching session (brand new program, or every session predates week-tracking) starts from
  * the beginning; reaching the end wraps back to the start, so finishing a program restarts it.
  */
-export function nextWeekAfter(program: Program, sessions: Session[]): ProgramWeek {
+/** The rotation order: by week number, then by `day` label. File order is not the running order. */
+function sortedProgramWeeks(program: Program): ProgramWeek[] {
   // Sorts a copy — the spread is the copy oxlint can't see through (decision log: no `toSorted`).
   // oxlint-disable-next-line unicorn/no-array-sort
-  const sortedWeeks = [...program.weeks].sort((a, b) => a.week - b.week || (a.day ?? '').localeCompare(b.day ?? ''));
-  const lastSession = sessions.find((session) => session.program === program.id && session.programWeek != null);
+  return [...program.weeks].sort((a, b) => a.week - b.week || (a.day ?? '').localeCompare(b.day ?? ''));
+}
+
+/** The most recent session tracked against this program's weeks, or null. `sessions` is newest-first. */
+function lastTrackedSession(program: Program, sessions: Session[]): Session | null {
+  return sessions.find((session) => session.program === program.id && session.programWeek != null) ?? null;
+}
+
+/** Index into `sortedProgramWeeks` of the slot that comes after the last tracked session. */
+function nextWeekIndexAfter(sortedWeeks: ProgramWeek[], program: Program, sessions: Session[]): number {
+  const lastSession = lastTrackedSession(program, sessions);
   const lastIndex = lastSession
     ? sortedWeeks.findIndex((week) => week.week === lastSession.programWeek && (week.day ?? null) === lastSession.programDay)
     : -1;
-  return sortedWeeks[lastIndex === -1 ? 0 : (lastIndex + 1) % sortedWeeks.length];
+  return lastIndex === -1 ? 0 : (lastIndex + 1) % sortedWeeks.length;
+}
+
+export function nextWeekAfter(program: Program, sessions: Session[]): ProgramWeek {
+  const sortedWeeks = sortedProgramWeeks(program);
+  return sortedWeeks[nextWeekIndexAfter(sortedWeeks, program, sessions)];
+}
+
+/** How many rest slots sit in a row from `startIndex`, wrapping. Capped at the length: an all-rest
+ *  program (which the schema refuses on import but the in-app editor can still build) would otherwise
+ *  spin forever. */
+function restRunLength(sortedWeeks: ProgramWeek[], startIndex: number): number {
+  let run = 0;
+  while (run < sortedWeeks.length && sortedWeeks[(startIndex + run) % sortedWeeks.length].restDay) run += 1;
+  return run;
 }
 
 /**
- * Picks the workout for the home screen's "Next up" card: the next week of the active program (see
- * nextWeekAfter). Falls back to the first library workout when there's no program to follow.
+ * Whole calendar days from `startedAt` to `now`, both taken at local midnight.
+ *
+ * Rounds the millisecond difference rather than flooring it, which is what makes it survive DST: the
+ * two midnights either side of a boundary are 23 or 25 hours apart, and flooring 23/24 reports zero
+ * days for a day that genuinely passed. The same hazard `currentStreak` and `restDayReminderAt`
+ * handle, with the same reasoning and a different arithmetic.
  */
-export function nextUpView(library: Library, sessions: Session[]): NextUpView | null {
+function calendarDaysBetween(startedAt: string, now: Date): number {
+  const from = new Date(startedAt);
+  from.setHours(0, 0, 0, 0);
+  const to = new Date(now);
+  to.setHours(0, 0, 0, 0);
+  return Math.round((to.getTime() - from.getTime()) / 86_400_000);
+}
+
+/**
+ * Picks what the home screen's "Next up" card shows: the next slot of the active program (see
+ * nextWeekAfter). Falls back to a library workout when there's no program to follow, or when the
+ * program's next slot names a workout that no longer exists.
+ *
+ * **How a rest day clears itself.** Nothing about a rest day is ever logged, so the pointer arithmetic
+ * above — which is derived entirely from the log — would pin this card to the rest slot forever. What
+ * unpins it is elapsed calendar days: the day you train, the rest slot that follows is what's next; the
+ * day after, it's the rest day itself; the day after that, it's spent. In one line, with `R`
+ * consecutive rest slots:
+ *
+ *     restsServed = max(0, daysSince(lastSession) - 1)
+ *
+ * and the card shows rest slot `restsServed + 1` until `restsServed` reaches `R`. So two rest slots
+ * take two days, and a week written out in full behaves like a week.
+ *
+ * A persisted "rest day done" flag was the obvious alternative and was rejected: web can't persist
+ * anything, and a user who never taps the button is stuck. The card's "train anyway" link (`skipTo`)
+ * is the escape hatch instead, so nobody is ever blocked by this arithmetic disagreeing with their
+ * actual week.
+ *
+ * `now` is a parameter rather than a `new Date()` inside, so the rule is testable without mocking the
+ * clock — the same split `serializeSessionArchiveYaml` uses. The caller owns the clock.
+ */
+export function nextUpView(library: Library, sessions: Session[], now: Date = new Date()): NextUpView | null {
   const program = activeProgram(library, sessions);
   if (!program || program.weeks.length === 0) return flatFallback(library);
 
-  const targetWeek = nextWeekAfter(program, sessions);
+  const sortedWeeks = sortedProgramWeeks(program);
+  const startIndex = nextWeekIndexAfter(sortedWeeks, program, sessions);
+  const paramsFor = (week: ProgramWeek): SessionParams => ({
+    programId: program.id,
+    week: String(week.week),
+    day: week.day,
+  });
 
+  const restRun = restRunLength(sortedWeeks, startIndex);
+  if (restRun > 0) {
+    const trainingWeek = restRun < sortedWeeks.length ? sortedWeeks[(startIndex + restRun) % sortedWeeks.length] : null;
+    const lastSession = lastTrackedSession(program, sessions);
+    // No session ever tracked against this program means no anchor to count from, so a program that
+    // opens on a rest day shows that rest day until something is logged. "Train anyway" is the way
+    // out, and the first session logged gives every later day a real anchor.
+    const elapsed = lastSession ? calendarDaysBetween(lastSession.startedAt, now) : 0;
+    const restsServed = Math.max(0, elapsed - 1);
+
+    if (trainingWeek === null || restsServed < restRun) {
+      const restWeek = sortedWeeks[(startIndex + Math.min(restsServed, restRun - 1)) % sortedWeeks.length];
+      return {
+        kind: 'rest',
+        weekNumber: restWeek.week,
+        weekDay: restWeek.day ?? null,
+        weekNotes: restWeek.notes ?? null,
+        skipTo: trainingWeek ? paramsFor(trainingWeek) : null,
+      };
+    }
+  }
+
+  const targetWeek = sortedWeeks[(startIndex + restRun) % sortedWeeks.length];
   const resolved = resolveWorkoutForWeek(program, targetWeek.week, library, targetWeek.day);
   if (!resolved) return flatFallback(library);
 
   return {
+    kind: 'workout',
     workout: resolved.workout,
     exercises: resolved.exercises,
     weekNumber: targetWeek.week,
     weekDay: targetWeek.day ?? null,
     weekNotes: targetWeek.notes ?? null,
-    sessionParams: { programId: program.id, week: String(targetWeek.week), day: targetWeek.day },
+    sessionParams: paramsFor(targetWeek),
   };
 }
 

@@ -75,6 +75,9 @@ export function mergeLibraries(existing: Library, incoming: Library): MergeResul
   const workoutIds = new Set(library.workouts.map((workout) => workout.id));
   for (const program of library.programs) {
     for (const week of program.weeks) {
+      // A rest week names no workout, so there is nothing here to resolve. Without this guard every
+      // rest day in an imported file fails as a dangling reference.
+      if (week.restDay) continue;
       if (!workoutIds.has(week.workoutId)) {
         return {
           ok: false,

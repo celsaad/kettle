@@ -622,6 +622,11 @@
                 layer <code class="inl">overrides</code> on top of the base definitions for that week only. Overrides are how
                 a program progresses — add a set in week 3, cut the finisher in week 6 — without duplicating the workout.
               </p>
+              <p>
+                An entry can also be a <strong>rest day</strong>: <code class="inl">rest_day: true</code> and no
+                <code class="inl">workout</code>. It runs nothing and logs nothing, but it keeps its place in the rotation,
+                so the home screen shows a rest card rather than queuing your next session the morning after the last one.
+              </p>
               <div class="code-panel">
                 <div class="code-head">
                   <span class="dot" aria-hidden="true"></span><span class="name">program.yaml</span>
@@ -642,7 +647,10 @@
           <span class="y-p">-</span> <span class="y-k">exercise</span><span class="y-p">:</span> <span class="y-s">pullups</span>
             <span class="y-k">config</span><span class="y-p">:</span> <span class="y-p">{</span> <span class="y-k">sets</span><span class="y-p">:</span> <span class="y-n">5</span> <span class="y-p">}</span>
           <span class="y-p">-</span> <span class="y-k">block</span><span class="y-p">:</span> <span class="y-s">finisher-rounds</span>
-            <span class="y-k">config</span><span class="y-p">:</span> <span class="y-p">{</span> <span class="y-k">rounds</span><span class="y-p">:</span> <span class="y-n">2</span> <span class="y-p">}</span></code></pre>
+            <span class="y-k">config</span><span class="y-p">:</span> <span class="y-p">{</span> <span class="y-k">rounds</span><span class="y-p">:</span> <span class="y-n">2</span> <span class="y-p">}</span>
+      <span class="y-p">-</span> <span class="y-k">week</span><span class="y-p">:</span> <span class="y-n">3</span>
+        <span class="y-k">rest_day</span><span class="y-p">:</span> <span class="y-n">true</span>
+        <span class="y-k">notes</span><span class="y-p">:</span> <span class="y-s">Nothing scheduled. Walk, stretch, or do neither.</span></code></pre>
               </div>
               <div class="table-scroll" tabindex="0" role="region" aria-label="Reference table">
                 <table class="ref">
@@ -671,8 +679,16 @@
                     </tr>
                     <tr>
                       <td><code>weeks[].workout</code></td>
-                      <td>id</td>
-                      <td>The workout run that week.</td>
+                      <td>id · required unless <code>rest_day</code></td>
+                      <td>The workout run that week. A week that isn't a rest day must name one.</td>
+                    </tr>
+                    <tr>
+                      <td><code>weeks[].rest_day</code></td>
+                      <td>bool · optional</td>
+                      <td>
+                        <code>true</code> marks a scheduled day off: no <code>workout</code>, no <code>overrides</code>,
+                        nothing run and nothing logged. See the note below.
+                      </td>
                     </tr>
                     <tr>
                       <td><code>weeks[].day</code></td>
@@ -707,6 +723,14 @@
                 <p>
                   <strong>Overrides don't carry forward.</strong> Each week resolves independently against the base
                   definitions, so a change you want to persist from week 3 onward has to be repeated in every later week.
+                </p>
+                <p>
+                  <strong>Write out every rest day, including the ones at the end of the week.</strong> Kettle spends one
+                  rest entry per calendar day, so a three-session week written as three entries rolls into the next week the
+                  day after your last session. Seven entries — three workouts and four rest days — make the week a week. A
+                  rest entry may carry <code class="inl">day</code> and <code class="inl">notes</code>, but not
+                  <code class="inl">workout</code> or <code class="inl">overrides</code>, and a program needs at least one
+                  week that runs something.
                 </p>
                 <p>
                   An <code class="inl">exercise</code> override uses that exercise's own config keys; a
@@ -848,7 +872,10 @@
             <span class="y-k">config</span><span class="y-p">:</span> <span class="y-p">{</span> <span class="y-k">sets</span><span class="y-p">:</span> <span class="y-n">5</span> <span class="y-p">}</span>
       <span class="y-p">-</span> <span class="y-k">week</span><span class="y-p">:</span> <span class="y-n">3</span>
         <span class="y-k">workout</span><span class="y-p">:</span> <span class="y-s">conditioning</span>
-        <span class="y-k">notes</span><span class="y-p">:</span> <span class="y-s">Deload the pulling, keep the engine.</span></code></pre>
+        <span class="y-k">notes</span><span class="y-p">:</span> <span class="y-s">Deload the pulling, keep the engine.</span>
+      <span class="y-p">-</span> <span class="y-k">week</span><span class="y-p">:</span> <span class="y-n">4</span>
+        <span class="y-k">rest_day</span><span class="y-p">:</span> <span class="y-n">true</span>
+        <span class="y-k">notes</span><span class="y-p">:</span> <span class="y-s">A week off. Start again at week 1 when you come back.</span></code></pre>
               </div>
             </section>
 

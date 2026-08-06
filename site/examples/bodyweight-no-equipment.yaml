@@ -198,6 +198,10 @@ workouts:
         exercise: bw-plank-test
 
 programs:
+  # Three sessions and four days off, all seven written out. A `rest_day: true`
+  # entry runs nothing and logs nothing; it exists so the rotation has the right
+  # shape, and so the home screen shows a rest card rather than queuing the next
+  # session the morning after you trained.
   - id: bw-4-weeks
     name: Bodyweight · 4 Weeks · No Equipment
     weeks:
@@ -207,10 +211,23 @@ programs:
         notes: Baseline. Stop each set two reps short and see where that lands.
       - week: 1
         day: Day 2
-        workout: bw-lower
+        rest_day: true
+        notes: Nothing scheduled. Walk, stretch, or do neither.
       - week: 1
         day: Day 3
+        workout: bw-lower
+      - week: 1
+        day: Day 4
+        rest_day: true
+      - week: 1
+        day: Day 5
         workout: bw-quick
+      - week: 1
+        day: Day 6
+        rest_day: true
+      - week: 1
+        day: Day 7
+        rest_day: true
 
       - week: 2
         day: Day 1
@@ -218,10 +235,22 @@ programs:
         notes: Same rounds, more reps inside each range.
       - week: 2
         day: Day 2
-        workout: bw-lower
+        rest_day: true
       - week: 2
         day: Day 3
+        workout: bw-lower
+      - week: 2
+        day: Day 4
+        rest_day: true
+      - week: 2
+        day: Day 5
         workout: bw-quick
+      - week: 2
+        day: Day 6
+        rest_day: true
+      - week: 2
+        day: Day 7
+        rest_day: true
 
       # Rounds go up, by overriding the circuit block rather than the exercises
       # in it. A block override targets a circuit by its `id` and uses the
@@ -235,13 +264,25 @@ programs:
             config: { rounds: 4 }
       - week: 3
         day: Day 2
-        workout: bw-lower
+        rest_day: true
       - week: 3
         day: Day 3
+        workout: bw-lower
+      - week: 3
+        day: Day 4
+        rest_day: true
+      - week: 3
+        day: Day 5
         workout: bw-quick
         overrides:
           - block: bw-quick-circuit
             config: { rounds: 5 }
+      - week: 3
+        day: Day 6
+        rest_day: true
+      - week: 3
+        day: Day 7
+        rest_day: true
 
       # Week 4 repeats week 3's overrides — they don't carry forward on their
       # own — and adds a round to the core superset.
@@ -256,10 +297,22 @@ programs:
             config: { rounds: 4 }
       - week: 4
         day: Day 2
-        workout: bw-lower
+        rest_day: true
       - week: 4
         day: Day 3
+        workout: bw-lower
+      - week: 4
+        day: Day 4
+        rest_day: true
+      - week: 4
+        day: Day 5
         workout: bw-quick
         overrides:
           - block: bw-quick-circuit
             config: { rounds: 5 }
+      - week: 4
+        day: Day 6
+        rest_day: true
+      - week: 4
+        day: Day 7
+        rest_day: true

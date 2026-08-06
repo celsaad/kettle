@@ -89,7 +89,7 @@ programs:
             is conventional). {'\n'}• <ThemedText style={styles.inline}>name</ThemedText> — what shows in the Programs list.{' '}
             {'\n'}• <ThemedText style={styles.inline}>weeks</ThemedText> — a list; each entry needs a{' '}
             <ThemedText style={styles.inline}>week</ThemedText> number and a{' '}
-            <ThemedText style={styles.inline}>workout</ThemedText> id. {'\n'}•{' '}
+            <ThemedText style={styles.inline}>workout</ThemedText> id, unless it's a rest day (see below). {'\n'}•{' '}
             <ThemedText style={styles.inline}>notes</ThemedText> — optional freeform text shown on that week. {'\n'}•{' '}
             <ThemedText style={styles.inline}>overrides</ThemedText> — optional, see below.
           </ThemedText>
@@ -127,7 +127,33 @@ programs:
     workout: pull-day`}</CodeBlock>
         </Section>
 
-        <Section title="6. Import it">
+        <Section title="6. Rest days (optional)">
+          <ThemedText themeColor="textSecondary" style={styles.body}>
+            A week entry with <ThemedText style={styles.inline}>rest_day: true</ThemedText> and no{' '}
+            <ThemedText style={styles.inline}>workout</ThemedText> is a scheduled day off. It takes its place in the
+            rotation, so Today shows a rest card instead of queuing a workout — and it moves on by itself a day later.
+            Nothing is logged, and it can carry a <ThemedText style={styles.inline}>notes</ThemedText> line but no{' '}
+            <ThemedText style={styles.inline}>overrides</ThemedText>, since it runs nothing to override.
+          </ThemedText>
+          <CodeBlock>{`weeks:
+  - week: 1
+    day: Day 1
+    workout: push-day
+  - week: 1
+    day: Day 2
+    rest_day: true
+    notes: Walk, stretch, nothing heavy.
+  - week: 1
+    day: Day 3
+    workout: pull-day`}</CodeBlock>
+          <ThemedText themeColor="textSecondary" style={styles.body}>
+            Write out every day off you actually take, including the ones at the end of the week. Kettle counts a rest entry
+            as one day, so a three-day week written as three entries rolls straight into the next week the day after your
+            last session.
+          </ThemedText>
+        </Section>
+
+        <Section title="7. Import it">
           <ThemedText themeColor="textSecondary" style={styles.body}>
             Library tab → Import → pick your file → review the summary → Merge & import. Programs merge by id: a new id gets
             added, but re-importing an id that already exists replaces that whole program — all its weeks — with what's in

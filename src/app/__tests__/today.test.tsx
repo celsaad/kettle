@@ -277,3 +277,103 @@ describe('starting an empty session', () => {
     expect(screen.getByText('Começar uma sessão vazia')).toBeTruthy();
   });
 });
+
+/**
+ * The rest-day card.
+ *
+ * The program says today runs nothing, so the card must not offer a Start button — that is the whole
+ * claim of the feature, and the one thing a regression here would silently undo. The card's own
+ * "train anyway" link and the "start an empty session" button below it are what keep it from being a
+ * dead end.
+ *
+ * `startedAt` is built from the real clock rather than a fixed date: the screen calls `nextUpView`
+ * with its default `now`, and the rule that decides rest-versus-workout counts calendar days between
+ * the two. The arithmetic itself is pinned with an injected clock in `selectors.test.ts`.
+ */
+describe('a scheduled rest day', () => {
+  /** A three-slot week whose middle slot is rest, with the first slot logged today. */
+  function setRestDayProgram() {
+    useLibraryStore.setState({
+      library: aLibrary({
+        exercises: [anExercise()],
+        workouts: [aWorkout({ id: 'push-day', name: 'Push day' }), aWorkout({ id: 'pull-day', name: 'Pull day' })],
+        programs: [
+          {
+            id: 'base',
+            name: 'Base',
+            weeks: [
+              { week: 1, day: 'Day 1', workoutId: 'push-day' },
+              { week: 1, day: 'Day 2', restDay: true, notes: 'Walk, nothing heavy.' },
+              { week: 1, day: 'Day 3', workoutId: 'pull-day' },
+            ],
+          },
+        ],
+      }),
+      status: 'ready',
+    });
+    const startedAt = new Date().toISOString();
+    useSessionHistoryStore.setState({
+      sessions: [aSession({ startedAt, endedAt: startedAt, program: 'base', programWeek: 1, programDay: 'Day 1' })],
+      status: 'ready',
+    });
+  }
+
+  it('replaces the workout card and offers nothing to start', async () => {
+    setRestDayProgram();
+
+    await renderScreen(<TodayScreen />);
+
+    expect(screen.getByText('Rest day')).toBeTruthy();
+    expect(screen.getByText('REST DAY · Week 1 · Day 2')).toBeTruthy();
+    expect(screen.queryByText('Start session')).toBeNull();
+    expect(screen.queryByText('Pull day')).toBeNull();
+  });
+
+  it("shows the week's own note, which is the user's own text", async () => {
+    setRestDayProgram();
+
+    await renderScreen(<TodayScreen />);
+
+    expect(screen.getByText('Walk, nothing heavy.')).toBeTruthy();
+  });
+
+  it('does not follow the rest card with the empty-library state', async () => {
+    setRestDayProgram();
+
+    await renderScreen(<TodayScreen />);
+
+    expect(screen.queryByText('Nothing to run yet')).toBeNull();
+  });
+
+  it('jumps to the next slot that runs something when asked', async () => {
+    setRestDayProgram();
+
+    await renderScreen(<TodayScreen />);
+    await fireEvent.press(screen.getByText('Train anyway'));
+
+    expect(router.push).toHaveBeenCalledWith({
+      pathname: '/session',
+      params: { programId: 'base', week: '1', day: 'Day 3' },
+    });
+  });
+
+  it('leaves the empty session available, so a rest day is never a dead end', async () => {
+    setRestDayProgram();
+
+    await renderScreen(<TodayScreen />);
+
+    expect(screen.getByText('Start an empty session')).toBeTruthy();
+  });
+
+  it('is translated', async () => {
+    await changeLanguage('pt');
+    setRestDayProgram();
+
+    await renderScreen(<TodayScreen />);
+
+    expect(screen.getByText('Dia de descanso')).toBeTruthy();
+    expect(screen.getByText('Treinar mesmo assim')).toBeTruthy();
+    // User data stays in the language it was written in, translated screen or not.
+    expect(screen.getByText('Walk, nothing heavy.')).toBeTruthy();
+  });
+});

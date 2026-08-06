@@ -141,7 +141,26 @@ workouts:
         exercise: rest
         config: { duration_sec: 120 }   # per-block override
 
-programs: []                    # required key, even when empty
+programs:                       # required key; `[]` when you have none
+  - id: calisthenics-block
+    name: Calisthenics · 2 Weeks
+    weeks:
+      - week: 1
+        day: Day 1              # optional; needed only for 2+ sessions in one week
+        workout: calisthenics-a
+      - week: 1
+        day: Day 2
+        rest_day: true          # runs nothing, logs nothing, holds its place in the rotation
+        notes: Walk, stretch, nothing heavy.
+      - week: 2
+        day: Day 1
+        workout: calisthenics-a
+        overrides:              # partial, snake_case, this week only
+          - exercise: pullups
+            config: { sets: 5 }
+      - week: 2
+        day: Day 2
+        rest_day: true
 ```
 
 This sample is illustrative; [`authoring-exercises-yaml.md`](authoring-exercises-yaml.md) is the exact
@@ -311,7 +330,7 @@ Get the **live session engine** right — it's the differentiator.
 4. **Session history** — list past sessions from `sessions/` with basic stats. ✅, and per-exercise progression shipped after this was written: an exercise's edit screen has a "Recent" section listing the last few times it was logged, newest first (`exerciseHistory` in `selectors.ts`), above a per-exercise volume chart (`components/volume-chart.tsx`). See §11 phase 4 and the [decision log](decisions.md).
 5. **Import (merge) / export** — merge an imported library by `id`; export library or a single session. ✅
 
-**Beyond the original MVP scope**, already built: **multi-week programs** (periodized wrappers around workouts, with per-week per-exercise/per-circuit overrides and multi-session-per-week support via a `day` field) and **circuits/supersets** (round-robin block grouping with configurable rest between exercises and between rounds) — both were explicitly deferred below and shipped anyway. The home screen derives "next up" from the actual week/day a session was started under (stored on the session itself), not a completed-session count — the count-based version looked "random" once you jumped to a non-sequential week or redid one, since `program-detail.tsx` lets you start any week, not just the suggested one. The home screen also shows a small stats row: current daily streak and this week's session count/time.
+**Beyond the original MVP scope**, already built: **multi-week programs** (periodized wrappers around workouts, with per-week per-exercise/per-circuit overrides, multi-session-per-week support via a `day` field, and scheduled rest days via `rest_day: true` on a week that names no workout — it runs nothing and logs nothing, but holds its place in the rotation and clears itself off the home screen a calendar day after the last session) and **circuits/supersets** (round-robin block grouping with configurable rest between exercises and between rounds) — both were explicitly deferred below and shipped anyway. The home screen derives "next up" from the actual week/day a session was started under (stored on the session itself), not a completed-session count — the count-based version looked "random" once you jumped to a non-sequential week or redid one, since `program-detail.tsx` lets you start any week, not just the suggested one. The home screen also shows a small stats row: current daily streak and this week's session count/time.
 
 **Still deferred:** social, wearable sync, cloud backup. Charts were on this list and came off it — the
 per-exercise volume chart in item 4 is the one that shipped; nothing plots across exercises or over a

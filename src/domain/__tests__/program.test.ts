@@ -46,6 +46,7 @@ const program: Program = {
     { week: 1, workoutId: 'full' },
     { week: 2, workoutId: 'full', day: 'Monday' },
     { week: 2, workoutId: 'full', day: 'Tuesday' },
+    { week: 2, day: 'Wednesday', restDay: true, notes: 'Walk.' },
   ],
 };
 
@@ -112,5 +113,19 @@ describe('resolveWorkoutForWeek', () => {
   it('resolves the correct same-numbered week when day disambiguates', () => {
     const resolved = resolveWorkoutForWeek(program, 2, library, 'Tuesday');
     expect(resolved?.workout.id).toBe('full');
+  });
+
+  /**
+   * A rest week resolves to null like a missing one, but it is a real, findable entry — the home
+   * screen and the session screen both distinguish the two by asking `findProgramWeek` instead.
+   */
+  it('resolves a rest week to null while leaving it findable', () => {
+    expect(resolveWorkoutForWeek(program, 2, library, 'Wednesday')).toBeNull();
+    expect(findProgramWeek(program, 2, 'Wednesday')?.restDay).toBe(true);
+    expect(findProgramWeek(program, 2, 'Wednesday')?.notes).toBe('Walk.');
+  });
+
+  it('counts a rest week toward the program week numbers', () => {
+    expect(programWeekNumbers(program)).toContain(2);
   });
 });

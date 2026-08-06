@@ -1,5 +1,16 @@
-import type { Library } from '@/domain/types';
+import type { Library, ProgramWeek } from '@/domain/types';
 import { localizeSeed } from '@/storage/seed-translations';
+
+/**
+ * A scheduled day off, written out longhand everywhere it happens — including the two at the end of
+ * each week, which is the part that's easy to leave implicit and wrong to.
+ *
+ * The home screen spends one rest entry per calendar day, so a three-session week written as three
+ * entries rolls into the next week the day after the last session. Seven entries make the week a week.
+ */
+function restDay(week: number, day: string, notes?: string): ProgramWeek {
+  return { week, day, restDay: true, notes };
+}
 
 /**
  * Written to exercises.yaml the first time the app launches and no library file exists yet, so the
@@ -20,8 +31,9 @@ import { localizeSeed } from '@/storage/seed-translations';
  *   `programs[0]` until a session has been run, and there is no starter-program picker — so the
  *   no-equipment program is what a fresh install lands on, and the dumbbell one is browse-only
  *   until it's explicitly started.
- * - Day labels are `Day 1`/`Day 2`/`Day 3` because `nextWeekAfter` orders a multi-day week by
- *   `day.localeCompare` — `Monday`/`Wednesday`/`Friday` would walk the week Friday-first.
+ * - Day labels are `Day 1`…`Day 7` because `nextWeekAfter` orders a multi-day week by
+ *   `day.localeCompare` — `Monday`/`Wednesday`/`Friday` would walk the week Friday-first. Both
+ *   programs train on days 1, 3 and 5 and rest on the other four, so the label is also the position.
  * - Every week is enumerated and each override is repeated in every later week it still applies to:
  *   weeks resolve sparsely (a gap is skipped, not filled), and overrides don't carry forward.
  *
@@ -238,8 +250,12 @@ export const seedLibrary: Library = {
           workoutId: 'foundations-push',
           notes: 'Baseline week. Log where you actually land in each range — don’t chase the top of it yet.',
         },
-        { week: 1, day: 'Day 2', workoutId: 'foundations-legs' },
-        { week: 1, day: 'Day 3', workoutId: 'foundations-pull' },
+        restDay(1, 'Day 2', 'Rest is where the last session turns into something. Walk if you like; nothing heavy.'),
+        { week: 1, day: 'Day 3', workoutId: 'foundations-legs' },
+        restDay(1, 'Day 4'),
+        { week: 1, day: 'Day 5', workoutId: 'foundations-pull' },
+        restDay(1, 'Day 6'),
+        restDay(1, 'Day 7'),
 
         {
           week: 2,
@@ -247,8 +263,12 @@ export const seedLibrary: Library = {
           workoutId: 'foundations-push',
           notes: 'Same three sessions. Aim for one more rep than you logged in week 1, on every set.',
         },
-        { week: 2, day: 'Day 2', workoutId: 'foundations-legs' },
-        { week: 2, day: 'Day 3', workoutId: 'foundations-pull' },
+        restDay(2, 'Day 2'),
+        { week: 2, day: 'Day 3', workoutId: 'foundations-legs' },
+        restDay(2, 'Day 4'),
+        { week: 2, day: 'Day 5', workoutId: 'foundations-pull' },
+        restDay(2, 'Day 6'),
+        restDay(2, 'Day 7'),
 
         {
           week: 3,
@@ -260,21 +280,25 @@ export const seedLibrary: Library = {
             { kind: 'exercise', exerciseId: 'plank', config: { sets: 4 } },
           ],
         },
+        restDay(3, 'Day 2'),
         {
           week: 3,
-          day: 'Day 2',
+          day: 'Day 3',
           workoutId: 'foundations-legs',
           overrides: [
             { kind: 'exercise', exerciseId: 'bodyweight-squats', config: { sets: 4 } },
             { kind: 'exercise', exerciseId: 'split-squats', config: { sets: 4 } },
           ],
         },
+        restDay(3, 'Day 4'),
         {
           week: 3,
-          day: 'Day 3',
+          day: 'Day 5',
           workoutId: 'foundations-pull',
           overrides: [{ kind: 'exercise', exerciseId: 'inverted-rows', config: { sets: 4 } }],
         },
+        restDay(3, 'Day 6'),
+        restDay(3, 'Day 7'),
 
         // Week 4 repeats week 3's overrides verbatim: an override applies to its own week only.
         {
@@ -287,18 +311,20 @@ export const seedLibrary: Library = {
             { kind: 'exercise', exerciseId: 'plank', config: { sets: 4 } },
           ],
         },
+        restDay(4, 'Day 2'),
         {
           week: 4,
-          day: 'Day 2',
+          day: 'Day 3',
           workoutId: 'foundations-legs',
           overrides: [
             { kind: 'exercise', exerciseId: 'bodyweight-squats', config: { sets: 4 } },
             { kind: 'exercise', exerciseId: 'split-squats', config: { sets: 4 } },
           ],
         },
+        restDay(4, 'Day 4'),
         {
           week: 4,
-          day: 'Day 3',
+          day: 'Day 5',
           workoutId: 'foundations-pull',
           notes:
             'Last session of the block, and a fourth finisher round. Completing it loops back to week 1 — run it again with the top of each range as your new floor.',
@@ -307,6 +333,8 @@ export const seedLibrary: Library = {
             { kind: 'block', blockId: 'foundations-finisher', config: { rounds: 4 } },
           ],
         },
+        restDay(4, 'Day 6'),
+        restDay(4, 'Day 7'),
       ],
     },
     {
@@ -320,8 +348,12 @@ export const seedLibrary: Library = {
           workoutId: 'db-full-body-a',
           notes: 'Baseline week. Pick weights you could stop 2 reps shy of failure with, and write them into each exercise.',
         },
-        { week: 1, day: 'Day 2', workoutId: 'db-full-body-b' },
-        { week: 1, day: 'Day 3', workoutId: 'db-full-body-a' },
+        restDay(1, 'Day 2', 'A day between sessions is part of the plan, not a gap in it.'),
+        { week: 1, day: 'Day 3', workoutId: 'db-full-body-b' },
+        restDay(1, 'Day 4'),
+        { week: 1, day: 'Day 5', workoutId: 'db-full-body-a' },
+        restDay(1, 'Day 6'),
+        restDay(1, 'Day 7'),
 
         {
           week: 2,
@@ -329,8 +361,12 @@ export const seedLibrary: Library = {
           workoutId: 'db-full-body-b',
           notes: 'The A/B order flips this week. Add the smallest jump you own to anything you hit the top of the range on.',
         },
-        { week: 2, day: 'Day 2', workoutId: 'db-full-body-a' },
-        { week: 2, day: 'Day 3', workoutId: 'db-full-body-b' },
+        restDay(2, 'Day 2'),
+        { week: 2, day: 'Day 3', workoutId: 'db-full-body-a' },
+        restDay(2, 'Day 4'),
+        { week: 2, day: 'Day 5', workoutId: 'db-full-body-b' },
+        restDay(2, 'Day 6'),
+        restDay(2, 'Day 7'),
 
         {
           week: 3,
@@ -343,9 +379,10 @@ export const seedLibrary: Library = {
             { kind: 'exercise', exerciseId: 'db-row', config: { sets: 4 } },
           ],
         },
+        restDay(3, 'Day 2'),
         {
           week: 3,
-          day: 'Day 2',
+          day: 'Day 3',
           workoutId: 'db-full-body-b',
           overrides: [
             { kind: 'exercise', exerciseId: 'db-romanian-deadlift', config: { sets: 4 } },
@@ -353,9 +390,10 @@ export const seedLibrary: Library = {
             { kind: 'exercise', exerciseId: 'farmers-carry', config: { sets: 4 } },
           ],
         },
+        restDay(3, 'Day 4'),
         {
           week: 3,
-          day: 'Day 3',
+          day: 'Day 5',
           workoutId: 'db-full-body-a',
           overrides: [
             { kind: 'exercise', exerciseId: 'db-goblet-squat', config: { sets: 4 } },
@@ -363,6 +401,8 @@ export const seedLibrary: Library = {
             { kind: 'exercise', exerciseId: 'db-row', config: { sets: 4 } },
           ],
         },
+        restDay(3, 'Day 6'),
+        restDay(3, 'Day 7'),
 
         {
           week: 4,
@@ -375,9 +415,10 @@ export const seedLibrary: Library = {
             { kind: 'exercise', exerciseId: 'farmers-carry', config: { sets: 4 } },
           ],
         },
+        restDay(4, 'Day 2'),
         {
           week: 4,
-          day: 'Day 2',
+          day: 'Day 3',
           workoutId: 'db-full-body-a',
           overrides: [
             { kind: 'exercise', exerciseId: 'db-goblet-squat', config: { sets: 4 } },
@@ -385,9 +426,10 @@ export const seedLibrary: Library = {
             { kind: 'exercise', exerciseId: 'db-row', config: { sets: 4 } },
           ],
         },
+        restDay(4, 'Day 4'),
         {
           week: 4,
-          day: 'Day 3',
+          day: 'Day 5',
           workoutId: 'db-full-body-b',
           notes:
             'Last session of the block. Completing it loops back to week 1 — run it again from the weights you finished on.',
@@ -397,6 +439,8 @@ export const seedLibrary: Library = {
             { kind: 'exercise', exerciseId: 'farmers-carry', config: { sets: 4 } },
           ],
         },
+        restDay(4, 'Day 6'),
+        restDay(4, 'Day 7'),
       ],
     },
   ],

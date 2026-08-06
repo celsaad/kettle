@@ -3,7 +3,7 @@ import { changeLanguage } from 'i18next';
 import { Alert } from 'react-native';
 
 import ProgramEditorScreen from '@/app/program-editor';
-import type { Library, Program } from '@/domain/types';
+import type { Library, Program, ProgramWeek } from '@/domain/types';
 import { useLibraryStore } from '@/state/library-store';
 import { saveLibrary } from '@/storage/library-file';
 import { router, setSearchParams } from '@/test-support/expo-router';
@@ -29,6 +29,16 @@ const savedLibrary = saveLibrary as jest.MockedFunction<typeof saveLibrary>;
 function persisted(): Library {
   expect(savedLibrary).toHaveBeenCalled();
   return savedLibrary.mock.calls.at(-1)![0];
+}
+
+/**
+ * Narrows a persisted week to the kind that runs a workout, so an assertion about `workoutId` reads
+ * as one. Throws rather than returning undefined: a fixture that turned into a rest day would
+ * otherwise make the assertion below vacuously pass.
+ */
+function trainingWeek(week: ProgramWeek): Extract<ProgramWeek, { workoutId: string }> {
+  if (week.restDay) throw new Error(`expected a training week, got a rest day (week ${week.week})`);
+  return week;
 }
 
 const pushDay = aWorkout({ id: 'push-day', name: 'Push day' });
@@ -184,7 +194,7 @@ describe('weeks', () => {
     await fireEvent.press(screen.getAllByText('Pull day')[0]);
     await fireEvent.press(screen.getByText('Save'));
 
-    expect(persisted().programs[0].weeks[0].workoutId).toBe('pull-day');
+    expect(trainingWeek(persisted().programs[0].weeks[0]).workoutId).toBe('pull-day');
   });
 
   it('removes a week', async () => {
@@ -227,4 +237,95 @@ it('deletes a program once confirmed', async () => {
   // "Program not found" at the deleted one.
   expect(router.dismissTo).toHaveBeenCalledWith('/programs');
   expect(router.back).not.toHaveBeenCalled();
+});
+
+/**
+ * The rest-day toggle.
+ *
+ * Rest is a change of *kind*, not a flag: a rest week has no workout and no overrides, and the schema
+ * refuses a file carrying both. So the toggle has to drop those fields rather than hide them, and the
+ * editor has to stop asking for them.
+ */
+describe('rest days', () => {
+  it('hides the workout picker and the overrides editor once a week is rest', async () => {
+    await draftWith(1);
+
+    expect(screen.getByText('Workout')).toBeTruthy();
+    await fireEvent.press(screen.getByText('Rest day'));
+
+    expect(screen.queryByText('Workout')).toBeNull();
+    expect(screen.queryByText('Overrides · optional')).toBeNull();
+    // Week, day and notes survive: they mean the same thing on either kind of week.
+    expect(screen.getByText('Week')).toBeTruthy();
+    expect(screen.getByText('Notes · optional')).toBeTruthy();
+  });
+
+  it('persists a rest week with no workout on it', async () => {
+    await draftWith(2);
+
+    // The second week becomes the rest day; the first has to keep running something, or the program
+    // is refused entirely.
+    await fireEvent.press(screen.getAllByText('Rest day')[1]);
+    await fireEvent.press(screen.getByText('Save'));
+
+    const weeks = persisted().programs[0].weeks;
+    expect(weeks[0]).toMatchObject({ workoutId: 'push-day' });
+    expect(weeks[1]).toMatchObject({ restDay: true });
+    expect(weeks[1]).not.toHaveProperty('workoutId');
+  });
+
+  it('refuses a program of nothing but rest days, which could never queue anything', async () => {
+    await draftWith(1);
+
+    await fireEvent.press(screen.getByText('Rest day'));
+    await fireEvent.press(screen.getByText('Save'));
+
+    expect(screen.getByText('At least one week has to run a workout.')).toBeTruthy();
+    expect(savedLibrary).not.toHaveBeenCalled();
+  });
+
+  it('gives a week its workout back when rest is switched off again', async () => {
+    await draftWith(1);
+
+    await fireEvent.press(screen.getByText('Rest day'));
+    await fireEvent.press(screen.getByText('Rest day'));
+    await fireEvent.press(screen.getByText('Save'));
+
+    expect(trainingWeek(persisted().programs[0].weeks[0]).workoutId).toBe('push-day');
+  });
+
+  it('announces itself as a switch, with its state', async () => {
+    await draftWith(1);
+
+    const toggle = screen.getByRole('switch');
+    expect(toggle.props.accessibilityState).toMatchObject({ checked: false });
+
+    await fireEvent.press(toggle);
+    expect(screen.getByRole('switch').props.accessibilityState).toMatchObject({ checked: true });
+  });
+
+  it('is translated', async () => {
+    // Built by hand rather than through `draftWith`, whose selectors are the English ones.
+    await changeLanguage('pt');
+    await renderScreen(<ProgramEditorScreen />);
+    await fireEvent.press(screen.getByText('+ Adicionar semana'));
+
+    expect(screen.getByText('Dia de descanso')).toBeTruthy();
+  });
+});
+
+/**
+ * The header count is of distinct week *numbers*, not of the cards below it. A four-week program
+ * written out with rest days has 28 entries and read "28 weeks" — neither what the author has, nor
+ * what the Programs tab says about the same program.
+ */
+it('counts weeks rather than week entries', async () => {
+  await draftWith(2);
+  // Both entries are now week 1, distinguished by day: two cards, one week.
+  await fireEvent.press(screen.getAllByText('−')[1]);
+  const dayFields = screen.getAllByPlaceholderText('e.g. Monday — only needed for 2+ sessions in one week');
+  await fireEvent.changeText(dayFields[0], 'Day 1');
+  await fireEvent.changeText(dayFields[1], 'Day 2');
+
+  expect(screen.getByText('1 week')).toBeTruthy();
 });

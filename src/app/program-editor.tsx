@@ -9,8 +9,9 @@ import { ProgramOverrideEditor } from '@/components/program-override-editor';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { programWeekNumbers } from '@/domain/program';
 import { slugify } from '@/domain/slug';
-import type { Program, ProgramWeek } from '@/domain/types';
+import type { Program, ProgramOverride, ProgramWeek } from '@/domain/types';
 import { useTheme } from '@/hooks/use-theme';
 import { useLibraryStore } from '@/state/library-store';
 
@@ -38,11 +39,34 @@ export default function ProgramEditorScreen() {
 
   if (!library) return null;
 
-  const updateWeek = (index: number, patch: Partial<ProgramWeek>) => {
+  // Only the three fields both kinds of week share. Anything kind-specific — the workout, the
+  // overrides, rest itself — goes through its own setter below, so a patch can never leave a week
+  // half-rest and half-workout.
+  const updateWeek = (index: number, patch: Partial<Pick<ProgramWeek, 'week' | 'day' | 'notes'>>) => {
     setDraft((current) => ({
       ...current,
       weeks: current.weeks.map((week, i) => (i === index ? { ...week, ...patch } : week)),
     }));
+  };
+
+  /**
+   * Rest is a change of kind, not a flag: switching a week to rest drops its workout and any
+   * overrides, because a rest week has neither and the schema refuses a file that carries both.
+   * Switching back seeds the workout the same way `addWeek` does rather than restoring the old one —
+   * remembering it would mean keeping a shadow copy of a field the week no longer has.
+   */
+  const toggleRestDay = (index: number) => {
+    setDraft((current) => ({
+      ...current,
+      weeks: current.weeks.map((week, i) => {
+        if (i !== index) return week;
+        if (week.restDay) {
+          return { week: week.week, day: week.day, workoutId: library.workouts[0]?.id ?? '', notes: week.notes };
+        }
+        return { week: week.week, day: week.day, restDay: true, notes: week.notes };
+      }),
+    }));
+    setOpenWorkoutPicker(null);
   };
 
   const removeWeek = (index: number) => {
@@ -57,8 +81,22 @@ export default function ProgramEditorScreen() {
   };
 
   const selectWorkout = (index: number, workoutId: string) => {
-    updateWeek(index, { workoutId });
+    setDraft((current) => ({
+      ...current,
+      // The picker is only rendered for a non-rest week, so the guard is belt-and-braces against a
+      // stale index rather than a reachable state.
+      weeks: current.weeks.map((week, i) => (i === index && !week.restDay ? { ...week, workoutId } : week)),
+    }));
     setOpenWorkoutPicker(null);
+  };
+
+  const setOverrides = (index: number, overrides: ProgramOverride[]) => {
+    setDraft((current) => ({
+      ...current,
+      weeks: current.weeks.map((week, i) =>
+        i === index && !week.restDay ? { ...week, overrides: overrides.length ? overrides : undefined } : week,
+      ),
+    }));
   };
 
   const close = () => router.back();
@@ -72,8 +110,14 @@ export default function ProgramEditorScreen() {
       setError(t('programEditor.addAtLeastOneWeek'));
       return;
     }
-    if (draft.weeks.some((week) => !week.workoutId)) {
+    if (draft.weeks.some((week) => !week.restDay && !week.workoutId)) {
       setError(t('programEditor.everyWeekNeedsWorkout'));
+      return;
+    }
+    // Mirrors the schema's own refusal: a program of nothing but rest days can never queue anything,
+    // so the home screen would show a rest card with no way out of it.
+    if (!draft.weeks.some((week) => !week.restDay)) {
+      setError(t('programEditor.needsOneWorkoutWeek'));
       return;
     }
     const seen = new Set<string>();
@@ -145,7 +189,11 @@ export default function ProgramEditorScreen() {
         />
 
         <ThemedText themeColor="textSecondary" style={styles.weekCount}>
-          {t('programEditor.weekCount', { count: draft.weeks.length })}
+          {/* Distinct week *numbers*, not entries. A four-week program with seven slots a week read
+              "28 weeks", which is neither what the author has nor what the Programs tab says about
+              the same program ("Weeks 1–4"). It was already off for any multi-day program and rest
+              days made it three times worse. The cards below are still one per slot. */}
+          {t('programEditor.weekCount', { count: programWeekNumbers(draft).length })}
         </ThemedText>
 
         {noWorkouts && (
@@ -156,7 +204,7 @@ export default function ProgramEditorScreen() {
 
         <View style={styles.list}>
           {draft.weeks.map((week, index) => {
-            const workout = library.workouts.find((candidate) => candidate.id === week.workoutId);
+            const workout = week.restDay ? undefined : library.workouts.find((candidate) => candidate.id === week.workoutId);
 
             return (
               <View
@@ -209,36 +257,58 @@ export default function ProgramEditorScreen() {
                   ]}
                 />
 
-                <ThemedText type="small" themeColor="textSecondary" style={styles.weekFieldLabel}>
-                  {t('programEditor.workout')}
-                </ThemedText>
+                {/* A switch rather than a checkbox-ish button: it flips one week between two kinds,
+                    which is what `switch` announces, and `checked` is what a screen reader reads back. */}
                 <Pressable
-                  onPress={() => setOpenWorkoutPicker((current) => (current === index ? null : index))}
-                  accessibilityRole="button"
-                  accessibilityState={{ expanded: openWorkoutPicker === index }}
-                  style={[styles.workoutPickerButton, { borderColor: theme.border }]}>
-                  <ThemedText type="smallMedium">{workout?.name ?? t('programEditor.selectWorkout')}</ThemedText>
-                  <ThemedText themeColor="textSecondary">{openWorkoutPicker === index ? '⌄' : '›'}</ThemedText>
+                  onPress={() => toggleRestDay(index)}
+                  accessibilityRole="switch"
+                  accessibilityState={{ checked: week.restDay === true }}
+                  style={[
+                    styles.restToggle,
+                    { borderColor: week.restDay ? theme.accent : theme.border },
+                    week.restDay && { backgroundColor: theme.accentSoft },
+                  ]}>
+                  <ThemedText type="smallMedium" themeColor={week.restDay ? 'accentText' : 'textSecondary'}>
+                    {t('programEditor.restDay')}
+                  </ThemedText>
                 </Pressable>
-                {openWorkoutPicker === index && (
-                  <View style={styles.picker}>
-                    {library.workouts.map((candidate) => (
-                      <Pressable
-                        key={candidate.id}
-                        onPress={() => selectWorkout(index, candidate.id)}
-                        accessibilityRole="button"
-                        accessibilityState={{ selected: candidate.id === week.workoutId }}>
-                        <ThemedView
-                          type="backgroundElement"
-                          style={[
-                            styles.pickerRow,
-                            { borderColor: candidate.id === week.workoutId ? theme.accent : theme.border },
-                          ]}>
-                          <ThemedText type="smallMedium">{candidate.name}</ThemedText>
-                        </ThemedView>
-                      </Pressable>
-                    ))}
-                  </View>
+
+                {/* Everything below is a property of a week that runs something. A rest week keeps its
+                    number, day and notes and nothing else. */}
+                {!week.restDay && (
+                  <>
+                    <ThemedText type="small" themeColor="textSecondary" style={styles.weekFieldLabel}>
+                      {t('programEditor.workout')}
+                    </ThemedText>
+                    <Pressable
+                      onPress={() => setOpenWorkoutPicker((current) => (current === index ? null : index))}
+                      accessibilityRole="button"
+                      accessibilityState={{ expanded: openWorkoutPicker === index }}
+                      style={[styles.workoutPickerButton, { borderColor: theme.border }]}>
+                      <ThemedText type="smallMedium">{workout?.name ?? t('programEditor.selectWorkout')}</ThemedText>
+                      <ThemedText themeColor="textSecondary">{openWorkoutPicker === index ? '⌄' : '›'}</ThemedText>
+                    </Pressable>
+                    {openWorkoutPicker === index && (
+                      <View style={styles.picker}>
+                        {library.workouts.map((candidate) => (
+                          <Pressable
+                            key={candidate.id}
+                            onPress={() => selectWorkout(index, candidate.id)}
+                            accessibilityRole="button"
+                            accessibilityState={{ selected: candidate.id === week.workoutId }}>
+                            <ThemedView
+                              type="backgroundElement"
+                              style={[
+                                styles.pickerRow,
+                                { borderColor: candidate.id === week.workoutId ? theme.accent : theme.border },
+                              ]}>
+                              <ThemedText type="smallMedium">{candidate.name}</ThemedText>
+                            </ThemedView>
+                          </Pressable>
+                        ))}
+                      </View>
+                    )}
+                  </>
                 )}
 
                 <ThemedText type="small" themeColor="textSecondary" style={styles.weekFieldLabel}>
@@ -255,15 +325,19 @@ export default function ProgramEditorScreen() {
                   ]}
                 />
 
-                <ThemedText type="small" themeColor="textSecondary" style={styles.weekFieldLabel}>
-                  {t('programEditor.overridesOptional')}
-                </ThemedText>
-                <ProgramOverrideEditor
-                  library={library}
-                  workout={workout}
-                  overrides={week.overrides ?? []}
-                  onChange={(overrides) => updateWeek(index, { overrides: overrides.length ? overrides : undefined })}
-                />
+                {!week.restDay && (
+                  <>
+                    <ThemedText type="small" themeColor="textSecondary" style={styles.weekFieldLabel}>
+                      {t('programEditor.overridesOptional')}
+                    </ThemedText>
+                    <ProgramOverrideEditor
+                      library={library}
+                      workout={workout}
+                      overrides={week.overrides ?? []}
+                      onChange={(overrides) => setOverrides(index, overrides)}
+                    />
+                  </>
+                )}
               </View>
             );
           })}
@@ -392,6 +466,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     paddingHorizontal: Spacing.one + 4,
     fontSize: 14,
+  },
+  // 44px minimum via minHeight, not height — a fixed one clips the label at large text sizes.
+  restToggle: {
+    alignSelf: 'flex-start',
+    minHeight: 44,
+    justifyContent: 'center',
+    borderRadius: 10,
+    borderWidth: 1,
+    paddingHorizontal: Spacing.two,
+    marginTop: Spacing.two - 2,
   },
   workoutPickerButton: {
     flexDirection: 'row',

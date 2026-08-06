@@ -79,10 +79,12 @@ export default function ProgramDetailScreen() {
 
             <View style={styles.list}>
               {weeks.map((week) => {
-                const workout = library?.workouts.find((candidate) => candidate.id === week.workoutId);
-                const overrideText = (week.overrides ?? []).flatMap((override) =>
-                  overrideLines(override, library!, workout),
-                );
+                const workout = week.restDay
+                  ? undefined
+                  : library?.workouts.find((candidate) => candidate.id === week.workoutId);
+                const overrideText = week.restDay
+                  ? []
+                  : (week.overrides ?? []).flatMap((override) => overrideLines(override, library!, workout));
 
                 return (
                   <ThemedView
@@ -96,7 +98,7 @@ export default function ProgramDetailScreen() {
                           {week.day ? ` · ${week.day}` : ''}
                         </ThemedText>
                         <ThemedText type="small" themeColor="textSecondary">
-                          {workout?.name ?? week.workoutId}
+                          {week.restDay ? t('programDetail.restDay') : (workout?.name ?? week.workoutId)}
                         </ThemedText>
                       </View>
                     </View>
@@ -117,14 +119,18 @@ export default function ProgramDetailScreen() {
                       </View>
                     )}
 
-                    <Pressable
-                      onPress={() => startWeek(week)}
-                      accessibilityRole="button"
-                      style={[styles.startButton, { backgroundColor: theme.accent }]}>
-                      <ThemedText type="smallMedium" style={{ color: theme.onAccent }}>
-                        {week.day ? t('programDetail.startThisDay') : t('programDetail.startThisWeek')}
-                      </ThemedText>
-                    </Pressable>
+                    {/* A rest week has nothing to start, so it gets no button at all rather than a
+                        disabled one — the card's own "Rest day" line is the whole content. */}
+                    {!week.restDay && (
+                      <Pressable
+                        onPress={() => startWeek(week)}
+                        accessibilityRole="button"
+                        style={[styles.startButton, { backgroundColor: theme.accent }]}>
+                        <ThemedText type="smallMedium" style={{ color: theme.onAccent }}>
+                          {week.day ? t('programDetail.startThisDay') : t('programDetail.startThisWeek')}
+                        </ThemedText>
+                      </Pressable>
+                    )}
                   </ThemedView>
                 );
               })}

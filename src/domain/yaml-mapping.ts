@@ -282,17 +282,30 @@ function programOverrideToRaw(override: ProgramOverride): RawProgramOverride {
   return { exercise: override.exerciseId, config: override.config };
 }
 
+/**
+ * Both directions branch on rest, and neither carries the other shape's keys across: a rest week has
+ * no `workout` and no `overrides` (the schema refuses both), and a training week never writes
+ * `rest_day`. Emitting `rest_day: false` on every training week would rewrite every program in the
+ * user's file the first time the app saved one, for no meaning.
+ */
 function programWeekToDomain(raw: RawProgram['weeks'][number]): ProgramWeek {
+  if (raw.rest_day === true) return { week: raw.week, day: raw.day, restDay: true, notes: raw.notes };
   return {
     week: raw.week,
     day: raw.day,
-    workoutId: raw.workout,
+    // The schema requires `workout` on every week that isn't a rest day, which is the branch above —
+    // but zod can't express that back into the inferred type, so it stays optional here. `?? ''`
+    // rather than a cast: the guarantee lives in a refinement two files away, and if that ever
+    // loosens, an empty id degrades to the same "every week needs a workout" the editor already
+    // reports, where an `undefined` would reach the domain claiming to be a string.
+    workoutId: raw.workout ?? '',
     notes: raw.notes,
     overrides: raw.overrides?.map(programOverrideToDomain),
   };
 }
 
 function programWeekToRaw(week: ProgramWeek): RawProgram['weeks'][number] {
+  if (week.restDay) return { week: week.week, day: week.day, rest_day: true, notes: week.notes };
   return {
     week: week.week,
     day: week.day,

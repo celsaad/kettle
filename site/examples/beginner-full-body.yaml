@@ -131,6 +131,12 @@ workouts:
 programs:
   # Every week is listed and every day is labelled: Kettle walks the weeks you
   # write, in `day` alphabetical order, and never fills in one you left out.
+  #
+  # That includes the days off. A `rest_day: true` entry runs nothing and logs
+  # nothing, but it holds its place in the rotation — so the home screen says
+  # "rest day" instead of queuing the next session, and moves on a day later.
+  # Three sessions and four rest days is what makes this a week rather than
+  # three workouts back to back.
   - id: bfb-beginner-4-weeks
     name: Beginner Full Body · 4 Weeks
     weeks:
@@ -140,10 +146,23 @@ programs:
         notes: Baseline. Pick a weight you could stop two reps short with.
       - week: 1
         day: Day 2
-        workout: bfb-full-body-b
+        rest_day: true
+        notes: A full day between sessions is the plan working, not a day lost.
       - week: 1
         day: Day 3
+        workout: bfb-full-body-b
+      - week: 1
+        day: Day 4
+        rest_day: true
+      - week: 1
+        day: Day 5
         workout: bfb-full-body-a
+      - week: 1
+        day: Day 6
+        rest_day: true
+      - week: 1
+        day: Day 7
+        rest_day: true
 
       - week: 2
         day: Day 1
@@ -151,10 +170,22 @@ programs:
         notes: Same weights as week 1 if week 1 felt hard. Otherwise nudge them up.
       - week: 2
         day: Day 2
-        workout: bfb-full-body-a
+        rest_day: true
       - week: 2
         day: Day 3
+        workout: bfb-full-body-a
+      - week: 2
+        day: Day 4
+        rest_day: true
+      - week: 2
+        day: Day 5
         workout: bfb-full-body-b
+      - week: 2
+        day: Day 6
+        rest_day: true
+      - week: 2
+        day: Day 7
+        rest_day: true
 
       # Weeks 3 and 4 add a fourth set to the two main lifts. The override has to
       # be repeated in week 4 — a week resolves against the base definitions on
@@ -170,15 +201,27 @@ programs:
             config: { sets: 4 }
       - week: 3
         day: Day 2
-        workout: bfb-full-body-b
+        rest_day: true
       - week: 3
         day: Day 3
+        workout: bfb-full-body-b
+      - week: 3
+        day: Day 4
+        rest_day: true
+      - week: 3
+        day: Day 5
         workout: bfb-full-body-a
         overrides:
           - exercise: bfb-goblet-squat
             config: { sets: 4 }
           - exercise: bfb-floor-press
             config: { sets: 4 }
+      - week: 3
+        day: Day 6
+        rest_day: true
+      - week: 3
+        day: Day 7
+        rest_day: true
 
       - week: 4
         day: Day 1
@@ -186,6 +229,9 @@ programs:
         notes: Last week. Log honestly, then rewrite the file with what you learned.
       - week: 4
         day: Day 2
+        rest_day: true
+      - week: 4
+        day: Day 3
         workout: bfb-full-body-a
         overrides:
           - exercise: bfb-goblet-squat
@@ -193,5 +239,14 @@ programs:
           - exercise: bfb-floor-press
             config: { sets: 4 }
       - week: 4
-        day: Day 3
+        day: Day 4
+        rest_day: true
+      - week: 4
+        day: Day 5
         workout: bfb-full-body-b
+      - week: 4
+        day: Day 6
+        rest_day: true
+      - week: 4
+        day: Day 7
+        rest_day: true

@@ -15,7 +15,7 @@ import { lastTrainedByWorkout, sortForList } from '@/domain/list-sort';
 import type { Exercise, Workout } from '@/domain/types';
 import { useAppTheme } from '@/hooks/theme-context';
 import { useTheme } from '@/hooks/use-theme';
-import { workoutShape } from '@/state/selectors';
+import { workoutShape } from '@/state/selectors/workout-shape';
 import { useLibraryStore } from '@/state/library-store';
 import { useListSort, usePreferencesStore } from '@/state/preferences-store';
 import { useSessionHistoryStore } from '@/state/session-history-store';

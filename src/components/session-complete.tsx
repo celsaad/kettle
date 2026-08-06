@@ -6,7 +6,7 @@ import { RunnerColors, Spacing } from '@/constants/theme';
 import type { RecordResult } from '@/domain/format';
 import { formatOneRepMax, formatRecord } from '@/domain/format';
 import { toDisplayWeight } from '@/domain/units';
-import type { SessionRecord } from '@/state/selectors';
+import type { SessionRecord } from '@/state/selectors/records';
 import { useUnitSystem } from '@/state/preferences-store';
 
 type Props = {

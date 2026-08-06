@@ -23,7 +23,7 @@ import type { Exercise, Session, Workout } from '@/domain/types';
 import { useSessionAnnouncements } from '@/hooks/use-session-announcements';
 import { buildSteps, useSessionRunner } from '@/hooks/use-session-runner';
 import { useLibraryStore } from '@/state/library-store';
-import { sessionRecords } from '@/state/selectors';
+import { sessionRecords } from '@/state/selectors/records';
 import { useSessionHistoryStore } from '@/state/session-history-store';
 
 /**

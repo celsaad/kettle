@@ -13,7 +13,7 @@ import { useSessionSounds } from '@/hooks/use-session-sounds';
 import { useLibraryStore } from '@/state/library-store';
 import { formatSessionName } from '@/domain/format';
 
-import { personalBestFor, previousSetFor } from '@/state/selectors';
+import { personalBestFor, previousSetFor } from '@/state/selectors/records';
 import { useSessionHistoryStore } from '@/state/session-history-store';
 
 // The step model and workout→steps expansion live in session-steps.ts so they can be tested without

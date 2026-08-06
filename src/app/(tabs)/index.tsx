@@ -12,7 +12,10 @@ import { formatFullDate } from '@/i18n/format';
 import { useTheme } from '@/hooks/use-theme';
 import { useLibraryStore } from '@/state/library-store';
 import { useSessionHistoryStore } from '@/state/session-history-store';
-import { blockChips, currentStreak, nextUpView, recentSessionsView, thisWeekStats, workoutShape } from '@/state/selectors';
+import { currentStreak, thisWeekStats } from '@/state/selectors/history-stats';
+import { recentSessionsView } from '@/state/selectors/history-views';
+import { nextUpView } from '@/state/selectors/next-up';
+import { blockChips, workoutShape } from '@/state/selectors/workout-shape';
 
 export { RouteErrorBoundary as ErrorBoundary } from '@/components/error-fallback';
 

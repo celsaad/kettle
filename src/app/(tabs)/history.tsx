@@ -12,7 +12,8 @@ import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useLibraryStore } from '@/state/library-store';
 import { useSessionHistoryStore } from '@/state/session-history-store';
-import { historySessionsView, historyStats as historyStatsFor, type HistorySessionView } from '@/state/selectors';
+import { historyStats as historyStatsFor } from '@/state/selectors/history-stats';
+import { historySessionsView, type HistorySessionView } from '@/state/selectors/history-views';
 import { exportSession, exportSessions } from '@/storage/export';
 
 export { RouteErrorBoundary as ErrorBoundary } from '@/components/error-fallback';

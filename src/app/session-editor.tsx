@@ -23,7 +23,8 @@ import { formatMonthBadge } from '@/i18n/format';
 import { useTheme } from '@/hooks/use-theme';
 import { useLibraryStore } from '@/state/library-store';
 import { useUnitSystem } from '@/state/preferences-store';
-import { exerciseName, sessionEntryResult } from '@/state/selectors';
+import { exerciseName } from '@/state/selectors/exercise-lookup';
+import { sessionEntryResult } from '@/state/selectors/session-summary';
 import { useSessionHistoryStore } from '@/state/session-history-store';
 
 export { ModalErrorBoundary as ErrorBoundary } from '@/components/error-fallback';

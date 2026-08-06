@@ -127,9 +127,15 @@ wanting states and assignees, it wants GitHub issues instead.
     duplicated is JSX layout for a different container with different actions, and no logic has
     drifted — `validateConfig` is wired in both save paths.
   - **The long files stay until something needs changing in them.** No defect tracks to any of them,
-    and the two biggest are the two riskiest to touch (`use-session-runner.ts` is the timer path). If
-    `workout-editor.tsx` (785) is opened for a real reason, the seam is its two picker panels — they're
-    self-contained, and `new-exercise-form.tsx` already embeds inside them.
+    and the two biggest are the two riskiest to touch (`use-session-runner.ts` is the timer path).
+    Two have since been split on their own merits — `state/selectors.ts` into one module per concern,
+    and `workout-editor.tsx` into its block and picker components (the picker panels were the seam
+    named here; the two block editors inside `renderItem` turned out to be the larger half).
+    **`use-session-runner.ts` is the one to keep leaving alone**: a third of it is comments explaining
+    wall-clock anchoring, and its timing refs are read by the tick effect, the foreground-resume effect
+    and the notification fallback, so any split trades one long file for a coordination problem on the
+    path that can lose a workout in progress. `yaml-mapping.ts` likewise — splitting it separates
+    halves of a bijection that must be edited together.
 
 - **Color-code the session progress indicator.** The dots at the top of the runner
   (`session-progress-dots.tsx`) are one per **workout block** — `total` is `workout.blocks.length` — not

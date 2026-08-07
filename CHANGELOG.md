@@ -17,6 +17,12 @@ language; an unsupported tag is rejected on upload. The limits and the upload fo
 
 ## Unreleased
 
+Nothing since 0.6.0.
+
+---
+
+## 0.6.0 — versionCode 9, 7 August 2026
+
 ### What changed
 
 **Programs can have rest days.**
@@ -54,6 +60,33 @@ language; an unsupported tag is rejected on upload. The limits and the upload fo
   duration it was set for, or the honest elapsed time if you ended it early. Cardio with no set
   duration is unchanged: it counts up until you stop it, and that whole time is the measurement.
   Rest is unchanged too, and deliberately — the time you spent resting really was that long.
+
+### Play release notes
+
+Counted at 477 (en-US) and 486 (pt-BR), against a limit of 500. Re-count programmatically if you edit
+them rather than trusting these numbers — over-limit copy is a rejected upload, not a truncated one,
+and pt-BR is the tight one here with 14 characters spare.
+
+```
+<en-US>
+What's new
+
+A week in a program can now be a rest day: it runs nothing and logs nothing, but it keeps its place in the plan. Today says "Rest day" instead of queuing your next session, and steps aside on its own the day after. Every week in the program editor has a switch for it.
+
+Fixed: coming back to a timer that ran out while your phone was away no longer logs a set you never did, and cardio logs how long you actually went for.
+
+Report anything that hangs or loses data.
+</en-US>
+<pt-BR>
+Novidades
+
+Uma semana de um programa agora pode ser um dia de descanso: não executa nada e não registra nada, mas mantém seu lugar no plano. A tela Hoje mostra "Dia de descanso" em vez da próxima sessão e sai do caminho sozinha no dia seguinte. Cada semana no editor de programas tem um botão para isso.
+
+Corrigido: voltar a um timer que acabou com o celular guardado não registra mais uma série que você não fez, e o cardio registra o tempo real.
+
+Relate travamentos ou perda de dados.
+</pt-BR>
+```
 
 ---
 

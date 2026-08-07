@@ -136,6 +136,10 @@ const exercises: Exercise[] = [
   { id: 'plank', name: 'Plank', type: 'timed_hold', config: { sets: 2, holdSecMin: 15, holdSecMax: 25, restSec: 30 } },
   { id: 'deadhang', name: 'Dead Hang', type: 'timed_hold', config: { sets: 2, restSec: 30 } },
   { id: 'grinder', name: 'Grinder', type: 'amrap', config: { timeCapSec: 300 } },
+  // The two cardio shapes, which end differently: `row` counts a configured 60s down, `walk` counts up
+  // until the Done button ends it.
+  { id: 'row', name: 'Row', type: 'cardio', config: { durationSec: 60 } },
+  { id: 'walk', name: 'Walk', type: 'cardio', config: {} },
   // rest_sec: 0 — back-to-back sets, how half a hand-rolled superset is written.
   { id: 'dips', name: 'Dips', type: 'reps', config: { sets: 3, targetRepsMin: 8, restSec: 0 } },
 ];
@@ -274,6 +278,104 @@ describe('foreground catch-up', () => {
 
     expect(result.current.stepIndex).toBe(0);
     expect(result.current.holdElapsedSec).toBe(300);
+  });
+
+  it('logs the configured duration of a cardio step, not the time spent away', async () => {
+    const { result } = await mount(workoutOf(single('row'), single('pullups'))); // row is 60s
+    await act(async () => {
+      jest.setSystemTime(new Date('2026-07-27T09:10:00Z')); // 600s later
+      appStateHandlers.at(-1)?.('active');
+    });
+
+    expect(result.current.stepIndex).toBe(1);
+    const cardio = mockSession.entries.find((entry) => entry.type === 'cardio');
+    expect(cardio?.type === 'cardio' && cardio.durationSec).toBe(60);
+  });
+
+  it('still measures a count-up cardio by the clock, having no duration to clamp to', async () => {
+    const { result } = await mount(workoutOf(single('walk')));
+    await act(async () => {
+      jest.setSystemTime(new Date('2026-07-27T09:05:00Z'));
+      appStateHandlers.at(-1)?.('active');
+    });
+    await press(() => result.current.logInterval());
+
+    const cardio = mockSession.entries.find((entry) => entry.type === 'cardio');
+    expect(cardio?.type === 'cardio' && cardio.durationSec).toBe(300);
+  });
+
+  /**
+   * The resume race. React Native hands JS a backlog of queued native calls in one batch, so a timer
+   * callback that came due while backgrounded and the AppState event can both run before React
+   * re-renders — and the refs holding the current step's clock are only re-seeded by that render. Both
+   * therefore judge the *new* step against the *old* step's deadline and advance again.
+   *
+   * Driven inside one `act` scope, which is exactly that batch: two callbacks, no render between them.
+   * Without the staleness guard this logged a second pull-up set at 0 reps — one nobody performed — and
+   * skipped set 2 outright, landing on set 3.
+   */
+  it('does not advance twice when a queued tick lands in the same batch as the catch-up', async () => {
+    const { result } = await mount(workoutOf(single('pullups'))); // [set1, rest 90, set2, rest 90, set3]
+    await press(() => result.current.logSet());
+    expect(result.current.step?.kind).toBe('rest');
+
+    await act(async () => {
+      jest.setSystemTime(new Date('2026-07-27T09:05:00Z')); // 300s away, the rest was 90s
+      appStateHandlers.at(-1)?.('active');
+      jest.advanceTimersByTime(1000); // the tick that came due while away
+    });
+
+    expect(result.current.stepIndex).toBe(2); // set 2, not skipped past
+    const reps = mockSession.entries.find((entry) => entry.type === 'reps');
+    expect(reps?.type === 'reps' && reps.sets).toHaveLength(1);
+  });
+
+  /**
+   * The other ordering — which of the two runs first is not ours to choose.
+   *
+   * **This one passes without the guard as well, and is kept knowing that.** It cannot stage the batch:
+   * `advanceTimersByTime` flushes React's pending render along with the timer, so by the time the
+   * AppState handler runs the refs have been re-seeded and it is no longer stale. Only the reverse
+   * ordering — a handler called directly, then a timer — leaves two callbacks with no render between.
+   * So this holds the *other* half: that the guard doesn't suppress a catch-up that should still fire.
+   */
+  it('does not advance twice when the catch-up lands in the same batch as a queued tick', async () => {
+    const { result } = await mount(workoutOf(single('pullups')));
+    await press(() => result.current.logSet());
+
+    await act(async () => {
+      jest.setSystemTime(new Date('2026-07-27T09:05:00Z'));
+      jest.advanceTimersByTime(1000); // the tick first this time
+      appStateHandlers.at(-1)?.('active');
+    });
+
+    expect(result.current.stepIndex).toBe(2);
+    const reps = mockSession.entries.find((entry) => entry.type === 'reps');
+    expect(reps?.type === 'reps' && reps.sets).toHaveLength(1);
+  });
+
+  /**
+   * The same race on the last step, where it lands differently: `advance()` returns from the completion
+   * path without moving `stepIndexRef` — there is nowhere to move it to — so the guard above cannot see
+   * that the session is over, and the second call re-committed the final round. A 3-round HIIT logged 4.
+   */
+  it('completes once when the last step ends in that same batch', async () => {
+    const { result, onComplete } = await mount(workoutOf(single('burpees'))); // 3 rounds
+    await press(() => result.current.logInterval());
+    await press(() => result.current.skipRest());
+    await press(() => result.current.logInterval());
+    await press(() => result.current.skipRest());
+    expect(result.current.stepIndex).toBe(4);
+
+    await act(async () => {
+      jest.setSystemTime(new Date('2026-07-27T09:05:00Z'));
+      appStateHandlers.at(-1)?.('active');
+      jest.advanceTimersByTime(1000);
+    });
+
+    const hiit = mockSession.entries.find((entry) => entry.type === 'hiit');
+    expect(hiit?.type === 'hiit' && hiit.roundsCompleted).toBe(3);
+    expect(onComplete).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -602,6 +704,18 @@ describe('finishSession', () => {
     expect(reps?.type === 'reps' && reps.sets).toHaveLength(1);
     expect(reps?.type === 'reps' && reps.sets[0].reps).toBe(4);
     expect(mockCompleted).toBe(true);
+    expect(onComplete).toHaveBeenCalledTimes(1);
+  });
+
+  // The session is over after the first call, so the second has nothing to commit into it. Cheap to
+  // hold, and it covers the double-tap as well as a Finish landing in the same batch as an auto-advance.
+  it('logs nothing more when it is called a second time', async () => {
+    const { result, onComplete } = await mount(workoutOf(single('pullups')));
+    await press(() => result.current.finishSession());
+    await press(() => result.current.finishSession());
+
+    const reps = mockSession.entries.find((entry) => entry.type === 'reps');
+    expect(reps?.type === 'reps' && reps.sets).toHaveLength(1);
     expect(onComplete).toHaveBeenCalledTimes(1);
   });
 });

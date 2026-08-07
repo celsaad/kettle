@@ -270,7 +270,12 @@ structural ones:
   every commit/flush/`logEntry` now runs once in the event handler. The ref is advanced eagerly so two
   `advance()` calls in one tick (the ticking interval and the foreground catch-up can both fire) don't
   repeat a step. Verified by driving a full session with a `goPrev` and redo mid-way: one entry per
-  exercise and exactly 8 sets, where a duplicated commit would inflate both.
+  exercise and exactly 8 sets, where a duplicated commit would inflate both. **The eager ref was only
+  half of it**, though, and the half it left open was the worse one: it stops the two calls repeating
+  each other's commit, not the second one committing and skipping the step the first had just moved
+  to. Both timing effects now also refuse to act on a step the runner has already left, and a
+  `finishedRef` covers the completion paths, where the index stops being a usable signal because
+  `advance()` returns without moving it.
 - The **`currentStreak`** fix steps with `setDate()`. Its regression tests are honest about their
   limits: Node ignores `TZ` on Windows, so on a DST-free machine they pass whether or not the bug is
   present. CI sets `TZ` explicitly, which is where they actually bite.
@@ -294,3 +299,17 @@ structural ones:
   Native is unaffected and web is a dev/preview target, so this is logged rather than fixed. It does
   mean a browser check of any confirm flow proves nothing unless the script patches it, which is how
   session delete was actually verified end to end.
+
+Three found in the runner audit that produced the resume-race fix above, left out of it to keep that
+change to the two data faults:
+
+- **The milestone chime doesn't fire twice for the same step.** `milestoneFiredForStepRef` is keyed on
+  the step index and only ever moves forward, so stepping back with Prev and redoing a hold or an
+  interval gets no chime the second time. User-facing, and the smallest of the three.
+- **EMOM minutes seed their reps to 0**, though the step carries `targetReps` — while `reps` steps seed
+  from their target on the argument that the common case should be the cheapest to log. One of the two
+  is wrong; probably this one.
+- **Circuit rest is never recorded.** Its steps use `memberKey: '<block>:circuit-rest'`, which matches
+  no member's accumulating log, so `commitCurrentStep` finds nothing to attribute the rest to. Reads as
+  intended — `RunnerStep`'s own comment says inter-round rest is "folded into (or discarded after) the
+  surrounding work" — so this is a note, not a defect, until someone wants circuit rest in the log.

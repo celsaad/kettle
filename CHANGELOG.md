@@ -43,6 +43,18 @@ language; an unsupported tag is rejected on upload. The limits and the upload fo
 - One thing this deliberately doesn't change: the day-streak counter still counts consecutive days
   you trained, so a rest day still resets it.
 
+**Fixed.**
+
+- Coming back to Kettle after a timer ran out while your phone was away could skip the step that was
+  waiting for you and log it as done — a set you never performed, recorded at 0 reps. On the last
+  step of a workout it counted that step twice instead, so a three-round HIIT could finish saying
+  four. Both are gone; returning to a finished timer now lands you on the next step, once.
+- A cardio step with a set duration logged however long your phone had been away rather than how long
+  you actually went for — a 60-second row could land in your history as ten minutes. It now logs the
+  duration it was set for, or the honest elapsed time if you ended it early. Cardio with no set
+  duration is unchanged: it counts up until you stop it, and that whole time is the measurement.
+  Rest is unchanged too, and deliberately — the time you spent resting really was that long.
+
 ---
 
 ## 0.5.0 — versionCode 8, 5 August 2026

@@ -100,7 +100,10 @@
                   <div class="code-head">
                     <span class="dot" aria-hidden="true"></span><span class="name">beginner-full-body.yaml</span>
                   </div>
-                  <pre tabindex="0" role="region" aria-label="File contents"><code>Loading…</code></pre>
+                  <pre
+                    tabindex="0"
+                    role="region"
+                    aria-label="Contents of beginner-full-body.yaml"><code>Loading…</code></pre>
                 </div>
               </details>
             </article>
@@ -128,7 +131,10 @@
                   <div class="code-head">
                     <span class="dot" aria-hidden="true"></span><span class="name">push-pull-legs-6-weeks.yaml</span>
                   </div>
-                  <pre tabindex="0" role="region" aria-label="File contents"><code>Loading…</code></pre>
+                  <pre
+                    tabindex="0"
+                    role="region"
+                    aria-label="Contents of push-pull-legs-6-weeks.yaml"><code>Loading…</code></pre>
                 </div>
               </details>
             </article>
@@ -156,7 +162,10 @@
                   <div class="code-head">
                     <span class="dot" aria-hidden="true"></span><span class="name">bodyweight-no-equipment.yaml</span>
                   </div>
-                  <pre tabindex="0" role="region" aria-label="File contents"><code>Loading…</code></pre>
+                  <pre
+                    tabindex="0"
+                    role="region"
+                    aria-label="Contents of bodyweight-no-equipment.yaml"><code>Loading…</code></pre>
                 </div>
               </details>
             </article>
@@ -183,7 +192,7 @@
                   <div class="code-head">
                     <span class="dot" aria-hidden="true"></span><span class="name">conditioning-hiit.yaml</span>
                   </div>
-                  <pre tabindex="0" role="region" aria-label="File contents"><code>Loading…</code></pre>
+                  <pre tabindex="0" role="region" aria-label="Contents of conditioning-hiit.yaml"><code>Loading…</code></pre>
                 </div>
               </details>
             </article>
@@ -272,7 +281,7 @@
             <p style="margin-top: var(--s3)">A backend-free workout tracker for Android. Your data stays on your device.</p>
           </div>
           <div class="footer-col">
-            <h5>Project</h5>
+            <h3>Project</h3>
             <ul>
               <li><a href="https://github.com/celsaad/kettle">GitHub repository</a></li>
               <li><a href="https://github.com/celsaad/kettle/issues">Issues &amp; support</a></li>
@@ -282,7 +291,7 @@
             </ul>
           </div>
           <div class="footer-col">
-            <h5>Legal</h5>
+            <h3>Legal</h3>
             <ul>
               <li><a href="privacy.html">Privacy policy</a></li>
               <li><a href="https://github.com/celsaad/kettle/blob/HEAD/LICENSE">MIT license</a></li>
@@ -328,8 +337,12 @@
               }
               return (
                 code
+                  /* A key only ever opens a mapping entry: at the head of the line after any
+                     indentation and list dashes, or just inside a flow mapping. Matching `word:`
+                     anywhere would paint the second colon in `notes: Tempo: 3 down` as a key. */
+                  .replace(/^((?:\s|- )*)([A-Za-z_][\w-]*)(:)/, '$1<span class="y-k">$2</span><span class="y-p">:</span>')
+                  .replace(/([{,]\s*)([A-Za-z_][\w-]*)(:)/g, '$1<span class="y-k">$2</span><span class="y-p">:</span>')
                   .replace(/^(\s*)(- )/, '$1<span class="y-p">- </span>')
-                  .replace(/([A-Za-z_][\w-]*)(:)/g, '<span class="y-k">$1</span><span class="y-p">:</span>')
                   // Only a number that ends the value — so the `1` in a day label like `Day 1 · Push`
                   // is left as the string it is.
                   .replace(/(:<\/span>)( -?\d+(?:\.\d+)?)(?=\s*[,}]|$)/g, '$1<span class="y-n">$2</span>')

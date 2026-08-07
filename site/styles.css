@@ -681,7 +681,7 @@ code.inl {
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: var(--s4);
 }
-.data-item h4 {
+.data-item h3 {
   font-family: var(--font-display);
   font-size: 19px;
   margin-bottom: 6px;
@@ -765,7 +765,9 @@ code.inl {
   font-size: 15px;
   max-width: 34ch;
 }
-.footer-col h5 {
+/* h3 rather than the h5 its size suggests: the footer follows an h2 on every page, and heading level
+   is the document outline, not a type scale. */
+.footer-col h3 {
   font-family: var(--font-display);
   font-weight: 600;
   font-size: 13px;
@@ -819,7 +821,9 @@ code.inl {
   position: sticky;
   top: 84px;
 }
-.doc-nav h5 {
+/* A <p>, not a heading: the <nav> around it already carries "On this page" as its accessible name,
+   so a heading here would only add a duplicate — and at the level its size implies, a skipped one. */
+.doc-nav .label {
   font-family: var(--font-display);
   font-weight: 600;
   font-size: 12px;

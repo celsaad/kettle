@@ -39,7 +39,10 @@ wanting states and assignees, it wants GitHub issues instead.
   out if it's wrong. The README half of the positioning has landed too ("Bring your own assistant"),
   written to the ownership line in the decision log: it describes the format, the validation and the
   fact that the app never calls a model, and it closes by saying what happens *in* a workout isn't
-  Kettle's to prescribe. **What's left is the Play store listing**, which isn't in this repo:
+  Kettle's to prescribe. **The listing itself is now live**
+  ([`com.casco.kettle`](https://play.google.com/store/apps/details?id=com.casco.kettle)); whether its
+  description carries this positioning is the open half, and it can't be answered from the repo —
+  the listing copy isn't in it:
 
   - ~~**A paste path into import.**~~ ✅ Shipped. Both input sources funnel through one
     `review(text, source)`, so a paste is refused for the same reasons and in the same words as a

@@ -4,6 +4,8 @@ Everything the Google Play listing needs that isn't the app itself. The graphics
 not committed — `build-assets.js` derives all of them from sources already in the repo, so there is
 one copy of each thing rather than two that drift.
 
+The live listing is <https://play.google.com/store/apps/details?id=com.casco.kettle>.
+
 ## Regenerating
 
 `sharp` and `playwright` are deliberately not project dependencies. They are needed once per release

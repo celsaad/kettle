@@ -722,6 +722,12 @@ export function useSessionRunner(
   // it (i.e. we're stepping back onto the step that commit belongs to) — one level deep only. A
   // second goPrev() in a row (no intervening advance()) finds lastCommitRef already cleared and just
   // moves the index, same as today.
+  //
+  // Deliberately without the `finishedRef` guard advance()/finishSession() carry, because it can't be
+  // reached after completion: onComplete swaps SessionScreen over to SessionComplete, which unmounts
+  // the runner and every control that could call this. That unmount is the whole invariant — a
+  // completion screen rendered *alongside* a live runner would put this back in reach, retracting a
+  // commit from a session already written as ended.
   const goPrev = useCallback(() => {
     {
       const index = stepIndexRef.current;

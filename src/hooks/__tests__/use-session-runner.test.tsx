@@ -331,6 +331,30 @@ describe('foreground catch-up', () => {
   });
 
   /**
+   * The other ordering — which of the two runs first is not ours to choose.
+   *
+   * **This one passes without the guard as well, and is kept knowing that.** It cannot stage the batch:
+   * `advanceTimersByTime` flushes React's pending render along with the timer, so by the time the
+   * AppState handler runs the refs have been re-seeded and it is no longer stale. Only the reverse
+   * ordering — a handler called directly, then a timer — leaves two callbacks with no render between.
+   * So this holds the *other* half: that the guard doesn't suppress a catch-up that should still fire.
+   */
+  it('does not advance twice when the catch-up lands in the same batch as a queued tick', async () => {
+    const { result } = await mount(workoutOf(single('pullups')));
+    await press(() => result.current.logSet());
+
+    await act(async () => {
+      jest.setSystemTime(new Date('2026-07-27T09:05:00Z'));
+      jest.advanceTimersByTime(1000); // the tick first this time
+      appStateHandlers.at(-1)?.('active');
+    });
+
+    expect(result.current.stepIndex).toBe(2);
+    const reps = mockSession.entries.find((entry) => entry.type === 'reps');
+    expect(reps?.type === 'reps' && reps.sets).toHaveLength(1);
+  });
+
+  /**
    * The same race on the last step, where it lands differently: `advance()` returns from the completion
    * path without moving `stepIndexRef` — there is nowhere to move it to — so the guard above cannot see
    * that the session is over, and the second call re-committed the final round. A 3-round HIIT logged 4.

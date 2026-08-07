@@ -5,7 +5,8 @@ wall-clock timer. Exercises, workouts and multi-week programs live in a hand-edi
 own; completed sessions are written by the app to a local log. No server, no account, nothing
 transmitted.
 
-**[Landing site](https://celsaad.github.io/kettle/)** ·
+**[Get it on Google Play](https://play.google.com/store/apps/details?id=com.casco.kettle)** ·
+[landing site](https://celsaad.github.io/kettle/) ·
 [format reference](https://celsaad.github.io/kettle/format.html) ·
 [example libraries](https://celsaad.github.io/kettle/examples.html)
 
@@ -44,8 +45,8 @@ transmitted.
 
 ## Install
 
-Not on Google Play yet. iOS is not planned — [the site](https://celsaad.github.io/kettle/) carries
-current status.
+**[Google Play](https://play.google.com/store/apps/details?id=com.casco.kettle)** — `com.casco.kettle`.
+iOS is not planned.
 
 ## Development
 

@@ -87,21 +87,21 @@
               <!--
             STORE BADGES.
 
-            Kettle is not on either store yet, so both slots render as status text rather than a
-            badge. A badge linking nowhere is worse than no badge: it reads as broken, and Google's
-            brand guidelines don't allow the Play badge to be shown for an app that isn't listed.
+            Kettle is listed on Play, so the first slot is a real link. It is deliberately NOT the
+            official "Get it on Google Play" badge yet: that artwork has to come from Google's own
+            brand assets page, and the guidelines are specific about proportions and clear space, so
+            a redrawn one is worse than none. Text link now, badge when the PNG is in the repo.
 
-            To go live on Play: delete the .store-pending span below, uncomment the anchor under it,
-            and drop the official badge PNG at assets/img/google-play-badge.png. Get the badge from
-            Google's own brand assets page — don't redraw it, the guidelines are specific about
-            proportions and clear space.
+            To swap in the badge: drop the official PNG at assets/img/google-play-badge.png, then
+            replace the .store-cta anchor below with the .store-badge one that's commented out under
+            it. Both slots are sized to the same 56px badge height, so neither swap moves the layout.
 
             iOS is deliberately deferred (the App Store's yearly fee isn't worth it until the app
             shows traction), so the App Store slot keeps the row's shape without promising a date.
           -->
               <div class="store-badges">
-                <span class="store-pending">
-                  <svg viewBox="0 0 24 24" aria-hidden="true" width="18" height="18">
+                <a class="store-cta" href="https://play.google.com/store/apps/details?id=com.casco.kettle">
+                  <svg viewBox="0 0 24 24" aria-hidden="true" width="20" height="20">
                     <path
                       d="M3.6 2.3a1 1 0 0 0-.4.8v17.8a1 1 0 0 0 .4.8l.1.1L13.5 12v-.2L3.7 2.2z"
                       fill="currentColor"
@@ -112,9 +112,9 @@
                       opacity="0.55" />
                     <path d="m17.1 15.4-3.6-3.4L3.6 21.9c.4.4 1 .4 1.7 0l11.8-6.5" fill="currentColor" opacity="0.4" />
                   </svg>
-                  Coming to Google Play
-                </span>
-                <!-- <a class="store-badge" href="PLAY_STORE_URL"><img src="assets/img/google-play-badge.png" alt="Get it on Google Play" height="56"></a> -->
+                  Get it on Google Play
+                </a>
+                <!-- <a class="store-badge" href="https://play.google.com/store/apps/details?id=com.casco.kettle"><img src="assets/img/google-play-badge.png" alt="Get it on Google Play" height="56"></a> -->
 
                 <span class="store-pending muted">iOS not planned yet</span>
                 <!-- <a class="store-badge" href="APP_STORE_URL"><img src="assets/img/app-store-badge.svg" alt="Download on the App Store" height="56"></a> -->
@@ -572,6 +572,7 @@
           <div class="footer-col">
             <h3>Project</h3>
             <ul>
+              <li><a href="https://play.google.com/store/apps/details?id=com.casco.kettle">Get it on Google Play</a></li>
               <li><a href="https://github.com/celsaad/kettle">GitHub repository</a></li>
               <li><a href="https://github.com/celsaad/kettle/issues">Issues &amp; support</a></li>
               <li><a href="format.html">Format reference</a></li>

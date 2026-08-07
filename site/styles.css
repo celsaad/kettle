@@ -377,9 +377,11 @@ button:focus-visible {
 }
 
 /* ---- Store badges ----------------------------------------- *
- * Two slots, holding the row's shape while the app is unlisted. `.store-pending` is the placeholder
- * state; `.store-badge` is what the real store badge images get when they replace it. Both are sized
- * to the same 56px badge height so swapping one for the other doesn't move the layout. */
+ * Three states for one slot. `.store-cta` is a live link to a listed app, `.store-pending` the
+ * placeholder for one that isn't listed, and `.store-badge` what the official store artwork gets
+ * when it replaces either. `.store-cta` and `.store-badge` are both 56px — the official badge
+ * height — so swapping the link for the artwork doesn't move the row. `.store-pending` is shorter
+ * on purpose: it's a status, not an action, and shouldn't stand as tall as one. */
 .store-badges {
   display: flex;
   flex-wrap: wrap;
@@ -408,6 +410,34 @@ button:focus-visible {
 .store-pending.muted {
   color: #8f887a;
   font-weight: 400;
+}
+/* The one primary action on the page, so it carries the accent as a fill. Both colors are the
+   dark-scheme values written out rather than inherited, for the same reason `.store-pending` writes
+   its own: this sits on the always-dark hero, and the tokens would flip under a light scheme. The
+   near-black label on the accent fill is the app's own `--on-accent` pairing; #17140d on #e07d47
+   measures 6.30, and 4.97 against the darkened hover fill, so both clear AA. */
+.store-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 56px;
+  padding: 0 22px;
+  border-radius: 12px;
+  background: #e07d47;
+  color: #17140d;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 16px;
+  text-decoration: none;
+  transition: background 0.15s ease;
+}
+.store-cta:hover {
+  background: color-mix(in srgb, #e07d47 88%, #000);
+  color: #17140d;
+  text-decoration: none;
+}
+.store-cta:active {
+  transform: translateY(1px);
 }
 .store-badge {
   display: inline-flex;

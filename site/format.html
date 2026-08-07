@@ -70,16 +70,16 @@
           <p class="eyebrow">Reference</p>
           <h1>The library format</h1>
           <p class="lede">
-            Kettle reads and writes one YAML file: your library. It's a plain, human-editable document with a published JSON
-            schema. This page is the full reference — read it, edit against it, or paste it at an assistant and ask for a
-            program.
+            Kettle reads and writes one YAML file: your library. It's a plain, human-editable document, checked against a
+            strict schema every time it's loaded or imported. This page is the full reference — read it, edit against it, or
+            paste it at an assistant and ask for a program.
           </p>
           <p class="meta">Format version 1 · valid files declare <code class="inl">version: 1</code></p>
         </div>
 
         <div class="doc-layout">
           <nav class="doc-nav" aria-label="On this page">
-            <h5>On this page</h5>
+            <p class="label">On this page</p>
             <ul>
               <li><a href="#file-shape">File shape</a></li>
               <li><a href="#exercises">Exercises</a></li>
@@ -112,7 +112,7 @@
                 <pre
                   tabindex="0"
                   role="region"
-                  aria-label="Code sample"><code><span class="y-k">version</span><span class="y-p">:</span> <span class="y-n">1</span>
+                  aria-label="The shape of a library file"><code><span class="y-k">version</span><span class="y-p">:</span> <span class="y-n">1</span>
 
 <span class="y-k">exercises</span><span class="y-p">:</span> <span class="y-c"># the movements you do</span>
   <span class="y-p">-</span> <span class="y-k">id</span><span class="y-p">:</span> <span class="y-s">back-squat</span>
@@ -140,7 +140,7 @@
                 An exercise is a single movement with a <code class="inl">type</code> that determines which
                 <code class="inl">config</code> fields apply. These four keys are common to every exercise:
               </p>
-              <div class="table-scroll" tabindex="0" role="region" aria-label="Reference table">
+              <div class="table-scroll" tabindex="0" role="region" aria-label="Fields common to every exercise">
                 <table class="ref">
                   <thead>
                     <tr>
@@ -187,8 +187,9 @@
                 </table>
               </div>
               <p>
-                All durations are seconds and end in <code class="inl">_sec</code>; weights are unit-agnostic numbers you
-                interpret consistently. A missing optional field falls back to the app's default rather than erroring.
+                All durations are seconds and end in <code class="inl">_sec</code>; all weights are
+                <strong>in kilograms</strong>, whatever units the app is set to display. A missing optional field falls back
+                to the app's default rather than erroring.
               </p>
             </section>
 
@@ -201,7 +202,7 @@
 
               <h3>reps</h3>
               <p>Counted sets, for strength work. The runner takes a rep count, a load and an RPE per set.</p>
-              <div class="table-scroll" tabindex="0" role="region" aria-label="Reference table">
+              <div class="table-scroll" tabindex="0" role="region" aria-label="reps config fields">
                 <table class="ref">
                   <thead>
                     <tr>
@@ -242,7 +243,7 @@
 
               <h3>hiit</h3>
               <p>Alternating work and rest intervals over a number of rounds, run as a live countdown.</p>
-              <div class="table-scroll" tabindex="0" role="region" aria-label="Reference table">
+              <div class="table-scroll" tabindex="0" role="region" aria-label="hiit config fields">
                 <table class="ref">
                   <thead>
                     <tr>
@@ -273,7 +274,7 @@
 
               <h3>emom</h3>
               <p>Every minute on the minute: start a fixed task at the top of each interval, rest the remainder.</p>
-              <div class="table-scroll" tabindex="0" role="region" aria-label="Reference table">
+              <div class="table-scroll" tabindex="0" role="region" aria-label="emom config fields">
                 <table class="ref">
                   <thead>
                     <tr>
@@ -306,7 +307,7 @@
 
               <h3>amrap</h3>
               <p>As many rounds or reps as possible inside a single time cap.</p>
-              <div class="table-scroll" tabindex="0" role="region" aria-label="Reference table">
+              <div class="table-scroll" tabindex="0" role="region" aria-label="amrap config fields">
                 <table class="ref">
                   <thead>
                     <tr>
@@ -339,7 +340,7 @@
                 you write “hold as long as you can” and the only way a hold PR shows up in your history.
                 <code>hold_sec_max</code> on its own is refused: a range needs both ends.
               </p>
-              <div class="table-scroll" tabindex="0" role="region" aria-label="Reference table">
+              <div class="table-scroll" tabindex="0" role="region" aria-label="timed_hold config fields">
                 <table class="ref">
                   <thead>
                     <tr>
@@ -378,7 +379,7 @@
 
               <h3>cardio</h3>
               <p>A continuous effort tracked by time or distance.</p>
-              <div class="table-scroll" tabindex="0" role="region" aria-label="Reference table">
+              <div class="table-scroll" tabindex="0" role="region" aria-label="cardio config fields">
                 <table class="ref">
                   <thead>
                     <tr>
@@ -408,7 +409,7 @@
 
               <h3>rest</h3>
               <p>A standalone rest block between efforts, timed to the second.</p>
-              <div class="table-scroll" tabindex="0" role="region" aria-label="Reference table">
+              <div class="table-scroll" tabindex="0" role="region" aria-label="rest config fields">
                 <table class="ref">
                   <thead>
                     <tr>
@@ -449,7 +450,7 @@
                 <pre
                   tabindex="0"
                   role="region"
-                  aria-label="Code sample"><code><span class="y-k">workouts</span><span class="y-p">:</span>
+                  aria-label="A workout with a rest block and a circuit"><code><span class="y-k">workouts</span><span class="y-p">:</span>
   <span class="y-p">-</span> <span class="y-k">id</span><span class="y-p">:</span> <span class="y-s">calisthenics-a</span>
     <span class="y-k">name</span><span class="y-p">:</span> <span class="y-s">Calisthenics A</span>
     <span class="y-k">blocks</span><span class="y-p">:</span>
@@ -467,7 +468,7 @@
           <span class="y-p">-</span> <span class="y-k">exercise</span><span class="y-p">:</span> <span class="y-s">pushups</span>
           <span class="y-p">-</span> <span class="y-k">exercise</span><span class="y-p">:</span> <span class="y-s">l-sit</span></code></pre>
               </div>
-              <div class="table-scroll" tabindex="0" role="region" aria-label="Reference table">
+              <div class="table-scroll" tabindex="0" role="region" aria-label="Workout and block fields">
                 <table class="ref">
                   <thead>
                     <tr>
@@ -515,7 +516,10 @@
                       <td><code>blocks[].exercises</code></td>
                       <td>list</td>
                       <td>circuit blocks</td>
-                      <td>At least two members, each <code>{ exercise: &lt;id&gt; }</code>.</td>
+                      <td>
+                        At least two members, each <code>{ exercise: &lt;id&gt; }</code>. A member may carry its own
+                        <code>config</code> on the same terms as <code>blocks[].config</code> above.
+                      </td>
                     </tr>
                     <tr>
                       <td><code>rest_between_exercises_sec</code></td>
@@ -558,7 +562,7 @@
                 <pre
                   tabindex="0"
                   role="region"
-                  aria-label="Code sample"><code><span class="y-p">-</span> <span class="y-k">type</span><span class="y-p">:</span> <span class="y-s">circuit</span>
+                  aria-label="A superset written as a two-member circuit"><code><span class="y-p">-</span> <span class="y-k">type</span><span class="y-p">:</span> <span class="y-s">circuit</span>
   <span class="y-k">rounds</span><span class="y-p">:</span> <span class="y-n">3</span>                      <span class="y-c"># the set count: 3 of each</span>
   <span class="y-k">rest_between_exercises_sec</span><span class="y-p">:</span> <span class="y-n">0</span>   <span class="y-c"># within the pair</span>
   <span class="y-k">rest_between_rounds_sec</span><span class="y-p">:</span> <span class="y-n">90</span>     <span class="y-c"># after each pair</span>
@@ -570,7 +574,7 @@
                 That runs <code class="inl">chinups → dips → 90s → chinups → dips → 90s → chinups → dips</code>, with no
                 trailing rest after the last pair. The three fields map onto how you'd say it out loud:
               </p>
-              <div class="table-scroll" tabindex="0" role="region" aria-label="Reference table">
+              <div class="table-scroll" tabindex="0" role="region" aria-label="Superset fields in plain words">
                 <table class="ref">
                   <thead>
                     <tr>
@@ -634,7 +638,7 @@
                 <pre
                   tabindex="0"
                   role="region"
-                  aria-label="Code sample"><code><span class="y-k">programs</span><span class="y-p">:</span>
+                  aria-label="A program with overrides and a rest day"><code><span class="y-k">programs</span><span class="y-p">:</span>
   <span class="y-p">-</span> <span class="y-k">id</span><span class="y-p">:</span> <span class="y-s">pull-progression</span>
     <span class="y-k">name</span><span class="y-p">:</span> <span class="y-s">6-Week Pull Progression</span>
     <span class="y-k">weeks</span><span class="y-p">:</span>
@@ -652,7 +656,7 @@
         <span class="y-k">rest_day</span><span class="y-p">:</span> <span class="y-n">true</span>
         <span class="y-k">notes</span><span class="y-p">:</span> <span class="y-s">Nothing scheduled. Walk, stretch, or do neither.</span></code></pre>
               </div>
-              <div class="table-scroll" tabindex="0" role="region" aria-label="Reference table">
+              <div class="table-scroll" tabindex="0" role="region" aria-label="Program and week fields">
                 <table class="ref">
                   <thead>
                     <tr>
@@ -774,12 +778,13 @@
               <h2 id="example">A complete example</h2>
               <p>
                 Everything above, in one valid file: five exercises covering four types, a workout with a rest override and a
-                two-member circuit, and a program that progresses across three weeks. This is checked against the app's own
-                parser by the test suite, so it is known to import cleanly.
+                two-member circuit, and a program of three training slots closing on a rest day. This is checked against the
+                app's own parser by the test suite, so it is known to import cleanly.
               </p>
               <p>
-                For full programs rather than a demonstration — four of them, ready to import and edit — see the
-                <a href="examples.html">example libraries</a>.
+                It is sized to be read in one screen, which is why it doesn't write its rest days out in full — copy the
+                shape, not the schedule, and see the rest-day rule above. For four full programs, ready to import and edit,
+                see the <a href="examples.html">example libraries</a>.
               </p>
               <div class="code-panel">
                 <div class="code-head">
@@ -788,7 +793,7 @@
                 <pre
                   tabindex="0"
                   role="region"
-                  aria-label="Code sample"
+                  aria-label="A complete library file"
                   data-validate="library"><code><span class="y-k">version</span><span class="y-p">:</span> <span class="y-n">1</span>
 
 <span class="y-k">exercises</span><span class="y-p">:</span>
@@ -860,7 +865,7 @@
 
 <span class="y-k">programs</span><span class="y-p">:</span>
   <span class="y-p">-</span> <span class="y-k">id</span><span class="y-p">:</span> <span class="y-s">pull-progression</span>
-    <span class="y-k">name</span><span class="y-p">:</span> <span class="y-s">3-Week Pull Progression</span>
+    <span class="y-k">name</span><span class="y-p">:</span> <span class="y-s">4-Week Pull Progression</span>
     <span class="y-k">weeks</span><span class="y-p">:</span>
       <span class="y-p">-</span> <span class="y-k">week</span><span class="y-p">:</span> <span class="y-n">1</span>
         <span class="y-k">workout</span><span class="y-p">:</span> <span class="y-s">calisthenics-a</span>
@@ -942,7 +947,7 @@
             <p style="margin-top: var(--s3)">A backend-free workout tracker for Android. Your data stays on your device.</p>
           </div>
           <div class="footer-col">
-            <h5>Project</h5>
+            <h3>Project</h3>
             <ul>
               <li><a href="https://github.com/celsaad/kettle">GitHub repository</a></li>
               <li><a href="https://github.com/celsaad/kettle/issues">Issues &amp; support</a></li>
@@ -952,7 +957,7 @@
             </ul>
           </div>
           <div class="footer-col">
-            <h5>Legal</h5>
+            <h3>Legal</h3>
             <ul>
               <li><a href="privacy.html">Privacy policy</a></li>
               <li><a href="https://github.com/celsaad/kettle/blob/HEAD/LICENSE">MIT license</a></li>

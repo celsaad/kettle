@@ -44,7 +44,13 @@ export function Sparkline({ points }: { points: number[] }) {
               // gap where a session is missing.
               height: max <= 0 ? 2 : Math.max(2, Math.round((value / max) * PLOT_HEIGHT)),
               // The most recent bar is the one the row is about; the rest are context.
-              backgroundColor: index === shown.length - 1 ? theme.accent : theme.border,
+              //
+              // `textSecondary`, not `border`. The border token is a hairline colour — it measures
+              // 1.28:1 against the page, which is right for a 1px rule nobody reads and far too faint
+              // for a mark carrying the shape this row exists to show. At `textSecondary` the context
+              // bars are legible (5.4:1) and the latest one is still obviously the latest, separated
+              // by hue and saturation rather than by one of them being nearly invisible.
+              backgroundColor: index === shown.length - 1 ? theme.accent : theme.textSecondary,
             },
           ]}
         />

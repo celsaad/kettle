@@ -94,10 +94,17 @@ export function WeekBars({ weeks }: { weeks: WeekTally[] }) {
       <View style={styles.axisRow}>
         {weeks.map((week, index) => (
           <View key={week.weekStart.toISOString()} style={styles.column}>
-            {/* Every other label, and always the last one. Eight dates at phone width collide into an
-                unreadable smear; the ends are what a reader actually needs to date the span, and the
-                most recent week is the one they came here to find. */}
-            {(index % 2 === weeks.length % 2 || index === weeks.length - 1) && (
+            {/*
+              Every other label, counted *backwards from the last*. Eight dates at phone width collide
+              into an unreadable smear, and the most recent week is the one a reader came to find, so
+              the last column must always carry one.
+
+              Counting forwards and special-casing the last is what this did, and at an even count it
+              put labels on 0, 2, 4, 6 **and 7** — so the final pair sat side by side and overlapped.
+              Anchoring the parity to the last index instead makes it fall out of the rule rather than
+              being bolted on, and the labels stay evenly spaced at any number of weeks.
+            */}
+            {index % 2 === (weeks.length - 1) % 2 && (
               <ThemedText type="small" themeColor="textSecondary" style={styles.axisLabel} numberOfLines={1}>
                 {formatMonthDay(week.weekStart)}
               </ThemedText>

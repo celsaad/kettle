@@ -46,6 +46,51 @@ export function thisWeekStats(sessions: Session[]): HistoryStats {
   return historyStats(sessions.filter((session) => new Date(session.startedAt) >= weekStart));
 }
 
+/** One bar of the analytics screen's breakdown: a week, and how many sessions landed in it. */
+export type WeekTally = { weekStart: Date; sessions: number };
+
+/**
+ * Sessions per calendar week for the last `weeks` weeks, **oldest first** — the reading order of the
+ * chart it feeds.
+ *
+ * Every week in the window is present even when it has no sessions, which is the whole point: a gap
+ * is the most informative bar on a consistency chart, and silently omitting empty weeks would compress
+ * a month off training into a chart that looks unbroken. `startOfWeek` decides where a week begins, so
+ * this agrees with `thisWeekStats` about which sessions are "this week" rather than inventing a second
+ * definition.
+ *
+ * `now` is a parameter for the same reason `nextUpView` takes one: the rule is then testable without
+ * mocking the clock, and the caller owns the clock. Counting only — no duration or set totals — since
+ * the question this answers is "am I turning up", and a bar chart can carry exactly one measure.
+ */
+export function sessionsPerWeek(sessions: Session[], weeks: number, now: Date = new Date()): WeekTally[] {
+  const currentWeekStart = startOfWeek(now);
+
+  // Counts down so the array comes out oldest-first without a reverse: the arithmetic still walks
+  // backwards from the one week whose boundary is known, but the loop visits the oldest offset first.
+  // (`toReversed` is the lint rule's suggested fix and is off the table for the same reason `toSorted`
+  // is — see the decision log.)
+  const tallies: WeekTally[] = [];
+  for (let index = weeks - 1; index >= 0; index -= 1) {
+    // setDate() rather than subtracting 7 × 86_400_000: a week spanning a DST change is 167 or 169
+    // hours, and fixed-millisecond arithmetic drifts an hour each time until it crosses a midnight
+    // and lands in the wrong week. Same hazard `currentStreak` and `calendarDaysBetween` handle.
+    const weekStart = new Date(currentWeekStart);
+    weekStart.setDate(weekStart.getDate() - index * 7);
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekEnd.getDate() + 7);
+
+    const count = sessions.filter((session) => {
+      const startedAt = new Date(session.startedAt);
+      return startedAt >= weekStart && startedAt < weekEnd;
+    }).length;
+
+    tallies.push({ weekStart, sessions: count });
+  }
+
+  return tallies;
+}
+
 /**
  * Consecutive calendar days with at least one session, walking back from today. Today not having a
  * session yet doesn't break the streak (the day isn't over) — only a gap of a full day or more does.

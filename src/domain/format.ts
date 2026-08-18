@@ -111,6 +111,14 @@ export function formatSetCount(sets: number): string {
 }
 
 /**
+ * Same rule, same reason — History's header summary reintroduced "1 sessions" the first time it was
+ * written as one interpolated sentence, which is precisely how the bug above got in.
+ */
+export function formatSessionCount(sessions: number): string {
+  return t('format.session', { count: sessions });
+}
+
+/**
  * A personal record, as data — see `sessionRecords`.
  *
  * `weight` arrives as a finished string rather than as kilograms, which is the one departure from the

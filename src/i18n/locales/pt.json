@@ -41,9 +41,6 @@
     }
   },
   "today": {
-    "heading": "Hoje",
-    "dayStreak": "dias seguidos",
-    "thisWeek": "esta semana",
     "nextUp": "PRÓXIMO",
     "nextUpWeek": "PRÓXIMO · {{week}}",
     "restDayWeek": "DIA DE DESCANSO · {{week}}",
@@ -51,18 +48,15 @@
     "restDayBody": "Não há nada do programa para executar aqui. O Kettle coloca sua próxima sessão na fila quando for a hora.",
     "restDaySkip": "Treinar mesmo assim",
     "startSession": "Iniciar treino",
-    "emptyTitle": "Nada para fazer ainda",
-    "emptyBody": "Sua biblioteca não tem treinos. Monte um e ele aparece aqui.",
     "firstRun": {
       "title": "PRIMEIRA VEZ?",
       "step1Title": "Comece o treino abaixo",
       "step1Body": "Cronômetros e sinais sonoros conduzem tudo.",
-      "step2Title": "Deixe do seu jeito em Montar",
-      "step2Body": "Edite os treinos iniciais ou crie os seus.",
+      "step2Title": "Deixe do seu jeito",
+      "step2Body": "Toque em qualquer treino abaixo para editá-lo, ou crie os seus.",
       "step3Title": "Planeje semanas em Programas",
       "step3Body": "O Kettle já deixa o próximo na fila."
     },
-    "recent": "RECENTE",
     "startEmpty": "Começar uma sessão vazia",
     "moreBlocks_one": "+{{count}} a mais",
     "moreBlocks_other": "+{{count}} a mais"
@@ -81,6 +75,10 @@
     "title": "Histórico",
     "exportAll": "Exportar tudo",
     "allTime": "Todo o período",
+    "stats": "Números",
+    "summaryLine": "{{sessions}} · {{time}} · {{sets}}",
+    "thisWeekLabel": "Esta semana",
+    "streak": "dias seguidos",
     "matchCount": "{{shown}} de {{total}}",
     "sessions": "sessões",
     "time": "tempo",
@@ -92,6 +90,12 @@
     "deleteConfirmBody": "\"{{name}}\" em {{day}} {{month}} será removida permanentemente.",
     "problemsTitle_one": "{{count}} arquivo de sessão não pôde ser lido ou gravado",
     "problemsTitle_other": "{{count}} arquivos de sessão não puderam ser lidos ou gravados"
+  },
+  "analytics": {
+    "title": "Seus números",
+    "perWeek": "Sessões por semana · últimas {{count}} semanas",
+    "weekBarLabel_one": "Semana de {{week}}: {{count}} sessão",
+    "weekBarLabel_other": "Semana de {{week}}: {{count}} sessões"
   },
   "library": {
     "title": "Biblioteca",
@@ -139,7 +143,7 @@
     },
     "nothingToRun": {
       "title": "Nada para executar",
-      "body": "\"{{name}}\" não tem blocos, ou nenhum dos seus exercícios tem séries/rodadas/minutos configurados. Adicione um bloco em Montar, ou confira a configuração de cada exercício, e tente de novo."
+      "body": "\"{{name}}\" não tem blocos, ou nenhum dos seus exercícios tem séries/rodadas/minutos configurados. Adicione um bloco em Treinos, ou confira a configuração de cada exercício, e tente de novo."
     },
     "setOf": "Série {{index}} de {{total}}",
     "sets": {
@@ -534,7 +538,7 @@
     "restDay": "Dia de descanso",
     "duplicateWeek": "A semana {{label}} está repetida — defina um dia diferente para uma delas ou remova a duplicada.",
     "deleteConfirmTitle": "Excluir programa?",
-    "noWorkoutsHint": "Nenhum treino ainda — crie um em Montar primeiro e volte para adicionar semanas aqui.",
+    "noWorkoutsHint": "Nenhum treino ainda — crie um em Treinos primeiro e volte para adicionar semanas aqui.",
     "week": "Semana",
     "dayOptional": "Dia · opcional",
     "dayPlaceholder": "ex.: segunda — só é preciso para 2+ sessões na mesma semana",
@@ -567,9 +571,8 @@
     "edit": "Editar programa"
   },
   "tabs": {
-    "today": "Hoje",
+    "workouts": "Treinos",
     "library": "Biblioteca",
-    "build": "Montar",
     "history": "Histórico",
     "programs": "Programas"
   },
@@ -594,6 +597,8 @@
     "rep_other": "{{count}} repetições",
     "interval_one": "{{count}} intervalo",
     "interval_other": "{{count}} intervalos",
+    "session_one": "{{count}} sessão",
+    "session_other": "{{count}} sessões",
     "set_one": "{{count}} série",
     "set_other": "{{count}} séries",
     "seconds": "{{n}}s",

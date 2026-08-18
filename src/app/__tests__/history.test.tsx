@@ -1,4 +1,7 @@
 import { fireEvent, screen } from '@testing-library/react-native';
+// Named import rather than the default: `i18next.changeLanguage(...)` trips the same lint rule the
+// other screen tests note.
+import { changeLanguage } from 'i18next';
 import { Alert } from 'react-native';
 
 import HistoryScreen from '@/app/(tabs)/history';
@@ -124,7 +127,7 @@ it('narrows both the list and the stat tiles to what matched', async () => {
 
   expect(screen.queryByText('Push day')).toBeNull();
   expect(screen.getByText('Leg day')).toBeTruthy();
-  expect(screen.getByText('1 of 2')).toBeTruthy();
+  expect(screen.getByText(/^1 of 2 · /)).toBeTruthy();
 });
 
 // Before this, a search matching nothing left intact chrome over a blank body, which reads as a
@@ -135,7 +138,7 @@ it('says nothing matched instead of going blank', async () => {
   await fireEvent.changeText(screen.getByPlaceholderText('Search workouts'), 'zzz');
 
   expect(screen.getByText('Nothing matched')).toBeTruthy();
-  expect(screen.getByText('0 of 2')).toBeTruthy();
+  expect(screen.getByText(/^0 of 2 · /)).toBeTruthy();
 });
 
 // An empty log is what a new install *is*, and the tiles above already say so — a "nothing matched"
@@ -175,5 +178,79 @@ describe('editing a session', () => {
     // Delete stays: throwing away a session the runner is mid-way through is a coherent thing to want.
     expect(screen.getByText('Delete')).toBeTruthy();
     expect(screen.queryByText('Edit')).toBeNull();
+  });
+});
+
+/**
+ * The header's one summary line, and the way to the rest.
+ *
+ * This was six stat cards in two labelled rows, which filled a phone's entire first screen and pushed
+ * the session log below the fold on the tab whose whole job is the session log. The numbers weren't
+ * wrong, the real estate was: the same three all-time figures set as one line of text answer "is my
+ * history all here" just as well, and everything richer moved behind `Stats` to a screen with room
+ * for it (`analytics.test.tsx`).
+ */
+describe('the header summary', () => {
+  it('states the all-time totals in one line', async () => {
+    await renderScreen(<HistoryScreen />);
+
+    expect(screen.getByText(/^2 sessions · \d+h \d+m · 2 sets$/)).toBeTruthy();
+  });
+
+  // Six cards' worth of chrome is what this replaced, so the cards must be gone rather than merely
+  // rearranged — a stray label here means the header grew back.
+  it('draws no stat cards at all', async () => {
+    await renderScreen(<HistoryScreen />);
+
+    expect(screen.queryByText('This week')).toBeNull();
+    expect(screen.queryByText('All time')).toBeNull();
+    expect(screen.queryByText('day streak')).toBeNull();
+    expect(screen.queryByText('sets')).toBeNull();
+  });
+
+  // It still narrows with the search, exactly as the cards did — and says which set it is describing
+  // rather than presenting a filtered subtotal as a lifetime total.
+  it('names the filtered subset and totals it, while searching', async () => {
+    await renderScreen(<HistoryScreen />);
+
+    await fireEvent.changeText(screen.getByPlaceholderText('Search workouts'), 'leg');
+
+    // Singular, not "1 sessions" — the counts go through i18next's `count`, which is the whole
+    // reason this is composed from formatters rather than written as one interpolated sentence.
+    expect(screen.getByText(/^1 of 2 · 1 session · \d+h \d+m · 1 set$/)).toBeTruthy();
+  });
+
+  it('opens the stats screen', async () => {
+    await renderScreen(<HistoryScreen />);
+
+    await fireEvent.press(screen.getByText('Stats'));
+
+    expect(router.push).toHaveBeenCalledWith('/analytics');
+  });
+
+  // Offered even with nothing logged: arriving at zeros explains what the screen is, whereas a control
+  // that appears only once you have history is one you never learn about on the run that would have
+  // taught you. "Export all" is the opposite case and stays hidden — there is nothing to export.
+  it('offers the stats screen on an empty log, unlike export', async () => {
+    useSessionHistoryStore.setState({ sessions: [], errors: [], status: 'ready' });
+
+    await renderScreen(<HistoryScreen />);
+
+    expect(screen.getByText('Stats')).toBeTruthy();
+    expect(screen.queryByText('Export all')).toBeNull();
+  });
+
+  /**
+   * Driven in `pt` because an English-locale assertion cannot catch a hardcoded English string —
+   * `t('history.summaryLine')` and the literal it returns render identically. The summary is an
+   * interpolated sentence, which is exactly the shape that gets assembled by hand in the JSX.
+   */
+  it('is translated', async () => {
+    await changeLanguage('pt');
+
+    await renderScreen(<HistoryScreen />);
+
+    expect(screen.getByText(/^2 sessões · \d+h \d+m · 2 séries$/)).toBeTruthy();
+    expect(screen.getByText('Números')).toBeTruthy();
   });
 });

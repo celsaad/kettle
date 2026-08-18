@@ -84,7 +84,7 @@ export default function ProgramsScreen() {
   const sort = useListSort('programs');
   const setListSort = usePreferencesStore((state) => state.setListSort);
   const [query, setQuery] = useState('');
-  // Immediate value in the input, deferred value in the filter — see the note in build.tsx.
+  // Immediate value in the input, deferred value in the filter — see the note in (tabs)/index.tsx.
   const deferredQuery = useDeferredValue(query);
 
   const all = library?.programs ?? [];
@@ -92,7 +92,7 @@ export default function ProgramsScreen() {
     const needle = deferredQuery.trim().toLowerCase();
     if (!needle) return all;
     return all.filter((program) => program.name.toLowerCase().includes(needle));
-    // The library, not `all`, is the honest dependency — see the note in build.tsx.
+    // The library, not `all`, is the honest dependency — see the note in (tabs)/index.tsx.
     // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [library, deferredQuery]);
 
@@ -106,7 +106,7 @@ export default function ProgramsScreen() {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['top', 'left', 'right']}>
-      {/* The header is an element, not an inline `() => <Header/>` — see the note in build.tsx. */}
+      {/* The header is an element, not an inline `() => <Header/>` — see the note in (tabs)/index.tsx. */}
       <FlatList
         data={programs}
         keyExtractor={keyExtractor}
@@ -141,7 +141,7 @@ export default function ProgramsScreen() {
             {all.length > 1 && <SortPills sort={sort} onSelect={(next) => setListSort('programs', next)} />}
           </View>
         }
-        /* Two different empty states, told apart — see the note in build.tsx. This one matters more if
+        /* Two different empty states, told apart — see the note in (tabs)/index.tsx. This one matters more if
            anything: the first-run card invites you to go read the YAML guide, which is a strange
            answer to a mistyped program name. */
         ListEmptyComponent={

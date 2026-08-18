@@ -19,7 +19,7 @@ still only verified by driving the running app. Doing this wrong wastes a lot of
   Either dump `body.innerText` first and write selectors against what's actually there, or launch the
   context with `locale: 'en-US'` — but the pt run is the more valuable one, since an English pass
   can't catch a hardcoded English string (same reason the screen tests drive `pt`).
-- To get a session into history: Build tab → the small round play button on a workout card (starts it
+- To get a session into history: Workouts tab → the small round play button on a workout card (starts it
   ad-hoc) → repeatedly click whichever is visible of `Done set →`, `Log set → Rest`, `Skip rest →`,
   then `Done`.
 - **`react-native-web` implements only part of the a11y API**, so a browser check under-reports it:

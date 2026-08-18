@@ -54,7 +54,7 @@ export default function ProgramGuideScreen() {
         <Section title="1. Find your workout IDs">
           <ThemedText themeColor="textSecondary" style={styles.body}>
             A program points at workouts by their id, not their display name. A workout's id is set automatically from its
-            name when you create it in Build: lowercased, with anything that isn't a letter or number turned into a single
+            name when you create it in Workouts: lowercased, with anything that isn't a letter or number turned into a single
             hyphen. So a workout named <ThemedText style={styles.inline}>"Calisthenics A"</ThemedText> has the id{' '}
             <ThemedText style={styles.inline}>calisthenics-a</ThemedText>.
           </ThemedText>
@@ -107,9 +107,9 @@ programs:
     config: { rounds: 2 }`}</CodeBlock>
           <ThemedText themeColor="textSecondary" style={styles.body}>
             An exercise override only makes sense for a single exercise block. A block override only works on a circuit that
-            was given its own id in Build (the optional "Block ID" field when editing a circuit) — it patches the circuit's
-            own <ThemedText style={styles.inline}>rounds</ThemedText>/rest fields, not one member's config. Overrides don't
-            carry forward — repeat one in every later week you want it to keep applying to.
+            was given its own id in Workouts (the optional "Block ID" field when editing a circuit) — it patches the
+            circuit's own <ThemedText style={styles.inline}>rounds</ThemedText>/rest fields, not one member's config.
+            Overrides don't carry forward — repeat one in every later week you want it to keep applying to.
           </ThemedText>
         </Section>
 

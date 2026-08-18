@@ -17,7 +17,13 @@ language; an unsupported tag is rejected on upload. The limits and the upload fo
 
 ## Unreleased
 
-Nothing since 0.6.0.
+### Fixed
+
+- **A program with named weekdays now runs in the order you wrote it.** Days sharing a week number
+  were being put in alphabetical order, so a program labelled `Monday` through `Sunday` was run
+  starting from Friday — while the program's own screen listed it correctly, Monday first. Day labels
+  are now display text only: name them anything, and Kettle follows the order they appear in your
+  file. Numbered days past `Day 9` were affected the same way (`Day 10` came before `Day 2`).
 
 ---
 

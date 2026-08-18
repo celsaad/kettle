@@ -31,9 +31,11 @@ function restDay(week: number, day: string, notes?: string): ProgramWeek {
  *   `programs[0]` until a session has been run, and there is no starter-program picker — so the
  *   no-equipment program is what a fresh install lands on, and the dumbbell one is browse-only
  *   until it's explicitly started.
- * - Day labels are `Day 1`…`Day 7` because `nextWeekAfter` orders a multi-day week by
- *   `day.localeCompare` — `Monday`/`Wednesday`/`Friday` would walk the week Friday-first. Both
- *   programs train on days 1, 3 and 5 and rest on the other four, so the label is also the position.
+ * - **Weeks run in the order they are written here.** Both programs train on days 1, 3 and 5 and
+ *   rest on the other four, so a reordered block is a reordered week. (Day labels used to have to
+ *   sort alphabetically into training order too, which is why they are `Day 1`…`Day 7`;
+ *   `sortedProgramWeeks` no longer looks at the label at all, so that constraint is gone and the
+ *   names are now free.)
  * - Every week is enumerated and each override is repeated in every later week it still applies to:
  *   weeks resolve sparsely (a gap is skipped, not filled), and overrides don't carry forward.
  *

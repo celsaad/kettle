@@ -21,9 +21,9 @@ import type { Exercise, Library, Program } from '@/domain/types';
 export type SeedTranslation = {
   /**
    * Day labels are a closed set shared by every seeded program, so they map by their English label
-   * rather than being repeated on every week entry. Any replacement has to sort in training order:
-   * `nextWeekAfter` walks a multi-day week by `day.localeCompare`, so `Dia 1`/`Dia 2`/`Dia 3` is fine
-   * and weekday names would not be.
+   * rather than being repeated on every week entry. A replacement is pure display text and can say
+   * anything — weeks run in the order `seed-library.ts` writes them, not in label order, so a
+   * translation cannot reorder anyone's week.
    */
   days: Record<string, string>;
   exercises: Record<string, { name: string; notes?: string }>;

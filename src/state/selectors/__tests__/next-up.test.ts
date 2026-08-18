@@ -54,6 +54,72 @@ describe('nextWeekAfter', () => {
 });
 
 /**
+ * The days of one week number run in the order they were written, which is the whole contract — `day`
+ * is free user text and nothing else about it is interpreted.
+ *
+ * These pin a fix, not just a behaviour. The tiebreak used to be `day.localeCompare`, which ordered a
+ * multi-day week alphabetically: a program labelled `Monday`…`Sunday` — the obvious way to write a
+ * calendar week, and what a real imported program did — ran *Friday → Monday → Saturday → Sunday →
+ * Thursday → Tuesday → Wednesday*. `program-detail.tsx` sorts by week number alone and so always
+ * listed the same program in file order, leaving the two screens disagreeing with no way to tell
+ * which was authoritative.
+ *
+ * Every pre-existing case above uses `Day 1`/`Day 2`/`Day 3` written in order, which sorts the same
+ * either way — so none of them caught it, and each case here was confirmed to fail against the
+ * `localeCompare` version before the tiebreak came out.
+ */
+describe('the order the days of a week run in', () => {
+  const weekOf = (days: string[]): Program => ({
+    id: 'prog',
+    name: 'Prog',
+    weeks: days.map((day) => ({ week: 1, day, workoutId: 'full' })),
+  });
+
+  const after = (program: Program, day: string) =>
+    nextWeekAfter(program, [aSession({ startedAt: 't', program: 'prog', programWeek: 1, programDay: day })]).day;
+
+  const weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+  it('opens a calendar week on Monday rather than on whichever day sorts first', () => {
+    expect(nextWeekAfter(weekOf(weekdays), []).day).toBe('Monday');
+  });
+
+  it('advances a calendar week one weekday at a time', () => {
+    const program = weekOf(weekdays);
+    expect(after(program, 'Monday')).toBe('Tuesday');
+    expect(after(program, 'Saturday')).toBe('Sunday');
+  });
+
+  // The bug survives past nine even when the labels are numbered, which is the workaround the seed
+  // library used: `Day 10` sorts between `Day 1` and `Day 2` as text.
+  it('counts numbered days numerically past nine', () => {
+    const program = weekOf(Array.from({ length: 10 }, (_, index) => `Day ${index + 1}`));
+    expect(after(program, 'Day 1')).toBe('Day 2');
+    expect(after(program, 'Day 9')).toBe('Day 10');
+  });
+
+  // Pins the mechanism rather than a case: the fix relies on Array.prototype.sort being stable, so a
+  // sort that stopped preserving equal elements' input order would fail here and nowhere else.
+  it('preserves file order for labels with no order of their own', () => {
+    const program = weekOf(['C', 'A', 'B']);
+    expect(nextWeekAfter(program, []).day).toBe('C');
+    expect(after(program, 'C')).toBe('A');
+  });
+
+  it('still orders by week number first, whatever the days are called', () => {
+    const program: Program = {
+      id: 'prog',
+      name: 'Prog',
+      weeks: [
+        { week: 2, day: 'Monday', workoutId: 'full' },
+        { week: 1, day: 'Tuesday', workoutId: 'full' },
+      ],
+    };
+    expect(nextWeekAfter(program, []).week).toBe(1);
+  });
+});
+
+/**
  * How a rest day clears itself off the home screen, which is the one piece of this feature with no
  * anchor in the log — nothing about a rest day is ever recorded, so elapsed calendar days are what
  * move it along. The rule, with `R` consecutive rest slots:

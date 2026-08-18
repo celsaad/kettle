@@ -68,11 +68,26 @@ function activeProgram(library: Library, sessions: Session[]): Program | undefin
   return lastProgram ?? library.programs[0];
 }
 
-/** The rotation order: by week number, then by `day` label. File order is not the running order. */
+/**
+ * The rotation order: by week number, and **within one week number, the order the weeks were
+ * written**. Same order `program-detail.tsx` lists them in.
+ *
+ * The days of a week are ordered by nothing but their position in the file, which is load-bearing
+ * rather than lazy: `day` is free user text, so there is no ordering to read out of it. This used to
+ * break ties on `day.localeCompare`, which sorted a week alphabetically — `Monday`…`Sunday`, the
+ * obvious way to write a calendar week, ran *Friday → Monday → Saturday → Sunday → Thursday →
+ * Tuesday → Wednesday*, and numbered labels broke past `Day 9`. The seed library worked around it by
+ * labelling days `Day 1`…`Day 7`; an outside author got no warning and no way to discover the rule,
+ * and `program-detail.tsx` displayed the honest file order the whole time.
+ *
+ * Relies on `Array.prototype.sort` being **stable** (required since ES2019, honoured by Hermes) to
+ * leave equal week numbers in input order — so the comparator deliberately has no tiebreak, and
+ * adding one back would reintroduce the bug.
+ */
 function sortedProgramWeeks(program: Program): ProgramWeek[] {
   // Sorts a copy — the spread is the copy oxlint can't see through (decision log: no `toSorted`).
   // oxlint-disable-next-line unicorn/no-array-sort
-  return [...program.weeks].sort((a, b) => a.week - b.week || (a.day ?? '').localeCompare(b.day ?? ''));
+  return [...program.weeks].sort((a, b) => a.week - b.week);
 }
 
 /** The most recent session tracked against this program's weeks, or null. `sessions` is newest-first. */

@@ -15,6 +15,31 @@ find it. Add an entry only when the reasoning **isn't discoverable from a single
 constraint that shapes future work, something deliberately rejected (so it isn't re-proposed), or a
 decision assembled across several commits. Open work belongs in the sections at the bottom, not here.
 
+- ✅ **A program's weeks run in the order they are written, and `day` is never interpreted.**
+  `sortedProgramWeeks` (`state/selectors/next-up.ts`) sorts on `week` alone and leans on
+  `Array.prototype.sort` being stable to leave one week number's days in file order. It used to break
+  ties on `day.localeCompare`, and the failure is worth recording because **the workaround outlived
+  the discovery of the bug**: labelling a calendar week `Monday`…`Sunday` — the obvious way to write
+  one — ran it *Friday → Monday → Saturday → Sunday → Thursday → Tuesday → Wednesday*, and numbered
+  labels broke past `Day 9` (`Day 10` sorts before `Day 2`). Three things follow, and the middle one is
+  the reason this is an entry rather than a commit:
+
+  - **The seed library's `Day 1`…`Day 7` labels were the workaround, not a convention.** They were
+    chosen so the labels would sort into training order, and that constraint was written into
+    `seed-library.ts`, `seed-translations.ts` and this file — three places pinning a *symptom*. The
+    labels are now free text; the entries' order is what matters. Don't reintroduce a rule about what
+    days may be called.
+  - **It was only ever wrong on one of the two screens.** `program-detail.tsx` sorts by week number
+    alone and so always listed the honest file order, so a program displayed Monday-first and *ran*
+    Friday-first with nothing on screen admitting the disagreement. A bug that contradicts a
+    neighbouring screen is invisible in tests that only ever ask one of them.
+  - **The old cases couldn't catch it.** Every `next-up.test.ts` case used `Day 1`/`Day 2`/`Day 3`
+    written in order, which sorts identically under both comparators — a fixture chosen to dodge the
+    bug, so the suite passed either way. The replacements pin weekday names, ten numbered days, and
+    sort stability directly.
+
+  The comparator now has no tiebreak on purpose. Adding one back is the bug.
+
 - ✅ **The four list screens are `FlatList`s, and their chrome is a `ListHeaderComponent` *element*.**
   Build, Programs, Library and History all rendered every row into a plain `ScrollView` + `.map`, so
   any state change on the screen re-rendered every card that existed — fine at seed-library size, and
@@ -442,10 +467,10 @@ decision assembled across several commits. Open work belongs in the sections at 
   - **`programs[0]` is the default.** `activeProgram` (`selectors.ts`) falls back to the first library
     program when no session has been run yet, and there is no starter-program picker — so the
     no-equipment program stays first, and the dumbbell one is browse-only until explicitly started.
-  - **Multi-day weeks sort by `day.localeCompare`** (`nextWeekAfter`), so `Monday`/`Wednesday`/
-    `Friday` would walk a week as *Friday → Monday → Wednesday*. Day labels have to sort in training
-    order, hence `Day 1`/`Day 2`/`Day 3` — and `Dia 1`/`Dia 2`/`Dia 3` in the translation, which is
-    pinned per-language by the test rather than left to whoever writes the next one.
+  - **Weeks run in the order they are written**, so reordering a block in this file reorders someone's
+    week. (Until the `day` ordering fix below, they instead sorted by `day.localeCompare` within a week
+    number, which is why the seeded labels are `Day 1`/`Day 2`/`Day 3` — that constraint is retired and
+    the labels are now free text, but reordering the entries themselves still matters.)
   - **Weeks resolve sparsely and overrides don't carry forward.** Weeks 1/3/6 make "next up" skip 2, 4
     and 5 entirely, so a seeded program enumerates every week and repeats an override in each later
     week it should still apply to.

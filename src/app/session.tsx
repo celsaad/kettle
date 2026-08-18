@@ -12,7 +12,7 @@ import { SessionCountdown } from '@/components/session-countdown';
 import { SessionExercisePicker } from '@/components/session-exercise-picker';
 import { SessionHold } from '@/components/session-hold';
 import { SessionInterval } from '@/components/session-interval';
-import { SessionProgressDots } from '@/components/session-progress-dots';
+import { SessionProgressBar } from '@/components/session-progress';
 import { SessionReps } from '@/components/session-reps';
 import { SessionRest } from '@/components/session-rest';
 import { ThemedText } from '@/components/themed-text';
@@ -384,7 +384,7 @@ function ActiveSession({
               {formatSessionName(runner.workoutName)}
             </ThemedText>
             <View style={styles.headerRight}>
-              <SessionProgressDots total={runner.blockTotal} activeIndex={runner.blockIndex} />
+              <SessionProgressBar total={runner.blockTotal} activeIndex={runner.blockIndex} />
               {/* Ad-hoc only: a pre-built workout already knows what it contains. Here it is the only
                   way to queue anything, so it has to be reachable mid-step and not just at the end. */}
               {runner.isAdHoc && (
@@ -433,11 +433,7 @@ function ActiveSession({
                 {t('session.circuit.crumb', { index: runner.circuit.round, total: runner.circuit.rounds })}
               </ThemedText>
               <View style={styles.headerRight}>
-                <SessionProgressDots
-                  total={runner.circuit.memberTotal}
-                  activeIndex={runner.circuit.member - 1}
-                  tone="calm"
-                />
+                <SessionProgressBar total={runner.circuit.memberTotal} activeIndex={runner.circuit.member - 1} tone="calm" />
                 {/*
                   An invisible copy of the "Finish" label, purely to reserve its width so the two dot
                   tracks line up in a column instead of the lower one sliding under the control. Same

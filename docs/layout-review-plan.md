@@ -128,14 +128,20 @@ max circuit members: 27  ->  "03 - Stretch and mobility"
 - Four workouts have a single block, so the block track renders **one accent dash with nothing after
   it**, which reads as "finished" for the whole session.
 
-**Fix: make the circuit track proportional** — two flex children (`done` / `remaining`), which
-survives 2 members and 50. **Keep the block track discrete**: "which of 7 blocks" is a real quantity
-and the dots say it well at the counts that actually occur (max 9 here). Handle the single-block case
-by hiding the block track entirely — one segment communicates nothing.
+**Fix: both levels become one proportional bar** — two flex children (`done` / `remaining`), which
+survives 2 members and 50. Nothing renders below two steps, so a single-block workout no longer draws
+a permanently-full indicator that reads as finished from the first second.
 
-Keep the `calm` hue on the circuit level. §5 is right that hue was the only thing separating two
-near-identical strips; position, thickness and the adjacent label become the distinction, and the hue
-stays as reinforcement rather than as the sole signal.
+~~Keep the block track discrete: "which of 7 blocks" is a real quantity and the dots say it well at
+the counts that actually occur.~~ **Wrong, and caught on device.** Discrete dashes above a continuous
+bar, stacked twenty pixels apart in the same header, is two visual languages for the same kind of
+statement — it reads as a rendering fault, not as a distinction. Keeping the block count legible was
+not worth that, and §5 had it right: both are bars.
+
+The two levels are told apart by position (session on top), weight, and the kicker captioning the
+lower one. **Weight descends with scope** — 4px session, 3px circuit — which was also caught on
+device: the first attempt made the circuit bar *thicker*, and an inner bar outweighing the outer one
+states the hierarchy backwards. The `calm` hue stays as a fourth signal, never the only one.
 
 ### 3b. The duplicate advance control
 

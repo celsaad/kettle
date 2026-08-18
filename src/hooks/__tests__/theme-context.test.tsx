@@ -1,7 +1,6 @@
 import { act, renderHook } from '@testing-library/react-native';
 import type { ReactNode } from 'react';
 
-import { DEFAULT_LIST_SORTS } from '@/domain/preferences';
 import { ThemeOverrideProvider, useAppTheme } from '@/hooks/theme-context';
 import { usePreferencesStore } from '@/state/preferences-store';
 
@@ -45,7 +44,6 @@ it('has a stored scheme in effect on the first render', async () => {
     preferences: {
       unitSystem: 'metric',
       themePreference: 'dark',
-      listSort: DEFAULT_LIST_SORTS,
       restDayReminder: false,
       backupFolderUri: null,
     },
@@ -65,7 +63,6 @@ it('keeps a pinned scheme when the device is set to the other one', async () => 
     preferences: {
       unitSystem: 'metric',
       themePreference: 'light',
-      listSort: DEFAULT_LIST_SORTS,
       restDayReminder: false,
       backupFolderUri: null,
     },
@@ -95,7 +92,6 @@ it('persists a chosen scheme instead of holding it in memory', async () => {
   expect(mockSave).toHaveBeenCalledWith({
     unitSystem: 'metric',
     themePreference: 'dark',
-    listSort: DEFAULT_LIST_SORTS,
     restDayReminder: false,
   });
   expect(result.current.scheme).toBe('dark');

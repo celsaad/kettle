@@ -85,12 +85,28 @@ All four tabs stack the same header: title → count line → search → [filter
   native; on web the tab bar is `_layout.web.tsx`, and the title row is also what the header actions
   (Import/Export, Stats/Export all, `?`, the gear) are laid out against. Revisit after Phase 4 if the
   screens still read as crowded — it is a one-line change either way.
-- **Sort pills: collapse, do not delete.** §2 wants them gone with "move ordering into Settings if
-  anyone asks", which is worse — it is a per-list concern already persisted per list in
-  `preferences-store`, and Library would still stack two pill rows. Replace `SortPills` with a single
-  right-aligned control in the header action row naming the current sort, opening a menu. One
-  component, all three screens, keeps the pattern the `sort-pills.tsx` comment asks for, and buys back
-  a full row on the screen (Library) where two pill rows stack.
+- **Sort: deleted outright.** ~~Collapse, do not delete.~~ The collapse was built — a trigger in the
+  header opening a bottom sheet — and rejected on sight as worse than the pills it replaced: it turned
+  a control you could read at a glance into one you had to open, to choose between three options, on
+  a screen that also has a search box. §2 was right the first time. The whole feature goes: the
+  control, `domain/list-sort.ts`, and the `listSort` preference.
+
+  Every list now renders in **library file order**, which was already the shipped default (`custom` on
+  all three) and is the only order a hand-written, hand-shared file can be said to have an opinion
+  about. Nothing changes for anyone who never touched the control.
+
+  One compatibility note, now pinned by a test in `preferences-file.test.ts`: **every
+  `preferences.json` in the field still carries `listSort`**, since the field was removed from the app
+  and not from anyone's disk. Zod objects strip unknown keys rather than rejecting them, which is the
+  only reason those files still load — a `.strict()` there would turn every existing install into a
+  failed parse and silently reset the preferences they *did* set.
+
+- **Library's type shortcuts stay, and grow.** They are not sort; they are the one control on that
+  screen that answers a question the search box cannot ("show me the holds"). `emom`, `amrap` and
+  `cardio` join the four that were there, so the row now covers every `ExerciseType` except `rest`
+  (which is block structure and is filtered off the screen entirely). The row **scrolls horizontally**
+  rather than wrapping: seven pills wrap to two rows on a phone and to three at a raised text size, so
+  a row meant to save space started taking a variable amount of it.
 
 ## Phase 3 — the runner
 

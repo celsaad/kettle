@@ -17,12 +17,6 @@
     "decrease": "Diminuir {{label}}",
     "increase": "Aumentar {{label}}"
   },
-  "sort": {
-    "label": "Ordenar",
-    "custom": "Sua ordem",
-    "name": "A–Z",
-    "recent": "Recentes"
-  },
   "search": {
     "noMatchTitle": "Nada encontrado",
     "noMatchBody": "Nenhum resultado para \"{{query}}\". Confira a grafia, ou limpe a busca para ver tudo de novo.",
@@ -67,9 +61,10 @@
     "workoutCount_other": "{{count}} treinos",
     "emptyTitle": "Nenhum treino ainda",
     "emptyBody": "Monte um treino a partir dos exercícios da sua biblioteca.",
-    "searchPlaceholder": "Buscar treinos",
     "startAccessibility": "Iniciar {{name}}",
-    "newWorkout": "Novo treino"
+    "newWorkout": "Novo treino",
+    "searchPlaceholder_one": "Buscar {{count}} treino",
+    "searchPlaceholder_other": "Buscar {{count}} treinos"
   },
   "history": {
     "title": "Histórico",
@@ -101,12 +96,16 @@
     "title": "Biblioteca",
     "exerciseCount_one": "{{count}} exercício",
     "exerciseCount_other": "{{count}} exercícios",
-    "searchPlaceholder": "Buscar exercícios",
     "filterAll": "Todos",
     "filterHiit": "HIIT",
     "filterReps": "Reps",
     "filterHold": "Isometria",
-    "newExercise": "Novo exercício"
+    "newExercise": "Novo exercício",
+    "searchPlaceholder_one": "Buscar {{count}} exercício",
+    "searchPlaceholder_other": "Buscar {{count}} exercícios",
+    "filterEmom": "EMOM",
+    "filterAmrap": "AMRAP",
+    "filterCardio": "Cardio"
   },
   "programs": {
     "title": "Programas",
@@ -121,8 +120,9 @@
     "emptyTitle": "Nenhum programa ainda",
     "emptyBody": "Programas são planos de várias semanas que percorrem seus treinos. Crie um com o botão +, ou escreva um em YAML para mais controle (substituições por semana ainda não são editáveis no app).",
     "emptyYamlLink": "Escrever um em YAML →",
-    "searchPlaceholder": "Buscar programas",
-    "newProgram": "Novo programa"
+    "newProgram": "Novo programa",
+    "searchPlaceholder_one": "Buscar {{count}} programa",
+    "searchPlaceholder_other": "Buscar {{count}} programas"
   },
   "session": {
     "next": "PRÓXIMO",

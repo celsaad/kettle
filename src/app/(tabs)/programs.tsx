@@ -7,18 +7,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { NoResults } from '@/components/no-results';
 import { SearchBar } from '@/components/search-bar';
-import { SortPills } from '@/components/sort-pills';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
-import { lastTrainedByProgram, sortForList } from '@/domain/list-sort';
 import { programWeekNumbers } from '@/domain/program';
 import type { Program } from '@/domain/types';
 import { useAppTheme } from '@/hooks/theme-context';
 import { useTheme } from '@/hooks/use-theme';
 import { useLibraryStore } from '@/state/library-store';
-import { useListSort, usePreferencesStore } from '@/state/preferences-store';
-import { useSessionHistoryStore } from '@/state/session-history-store';
 
 export { RouteErrorBoundary as ErrorBoundary } from '@/components/error-fallback';
 
@@ -80,9 +76,6 @@ export default function ProgramsScreen() {
   const { scheme } = useAppTheme();
   const { t } = useTranslation();
   const library = useLibraryStore((state) => state.library);
-  const sessions = useSessionHistoryStore((state) => state.sessions);
-  const sort = useListSort('programs');
-  const setListSort = usePreferencesStore((state) => state.setListSort);
   const [query, setQuery] = useState('');
   // Immediate value in the input, deferred value in the filter — see the note in (tabs)/index.tsx.
   const deferredQuery = useDeferredValue(query);
@@ -96,19 +89,13 @@ export default function ProgramsScreen() {
     // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [library, deferredQuery]);
 
-  // Only `recent` reads the log, and reading it means walking every session ever logged — see Build.
-  const lastTrained = useMemo(
-    () => (sort === 'recent' ? lastTrainedByProgram(sessions) : new Map<string, string>()),
-    [sessions, sort],
-  );
-  const programs = useMemo(() => sortForList(matching, sort, lastTrained), [matching, sort, lastTrained]);
   const fabColor = scheme === 'dark' ? theme.accent : theme.text;
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['top', 'left', 'right']}>
       {/* The header is an element, not an inline `() => <Header/>` — see the note in (tabs)/index.tsx. */}
       <FlatList
-        data={programs}
+        data={matching}
         keyExtractor={keyExtractor}
         renderItem={renderItem}
         ItemSeparatorComponent={Separator}
@@ -117,28 +104,29 @@ export default function ProgramsScreen() {
           <View style={styles.listHeader}>
             <View style={styles.header}>
               <ThemedText type="subtitle">{t('programs.title')}</ThemedText>
-              <Pressable
-                onPress={() => router.push('/program-guide')}
-                hitSlop={8}
-                accessibilityRole="button"
-                accessibilityLabel={t('programs.helpLabel')}
-                style={styles.helpButton}>
-                <ThemedText type="heading" themeColor="textSecondary">
-                  ?
-                </ThemedText>
-              </Pressable>
+              <View style={styles.headerActions}>
+                <Pressable
+                  onPress={() => router.push('/program-guide')}
+                  hitSlop={8}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('programs.helpLabel')}
+                  style={styles.helpButton}>
+                  <ThemedText type="heading" themeColor="textSecondary">
+                    ?
+                  </ThemedText>
+                </Pressable>
+              </View>
             </View>
-            <ThemedText themeColor="textSecondary" style={styles.countLabel}>
-              {t('programs.count', { count: programs.length })}
-            </ThemedText>
 
-            {/* Both keyed off the whole library rather than what's visible — see Build. */}
+            {/* Keyed off the whole library rather than what's visible, and carrying the count that
+                used to be a line of its own — see Build. */}
             {all.length > 0 && (
-              <SearchBar value={query} onChangeText={setQuery} placeholder={t('programs.searchPlaceholder')} />
+              <SearchBar
+                value={query}
+                onChangeText={setQuery}
+                placeholder={t('programs.searchPlaceholder', { count: all.length })}
+              />
             )}
-
-            {/* See Build: nothing to order below two items. */}
-            {all.length > 1 && <SortPills sort={sort} onSelect={(next) => setListSort('programs', next)} />}
           </View>
         }
         /* Two different empty states, told apart — see the note in (tabs)/index.tsx. This one matters more if
@@ -201,8 +189,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  countLabel: {
-    marginTop: 2,
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
   },
   // What `styles.list`'s `marginTop` and `gap` became once the list stopped being one `View`.
   listHeader: {

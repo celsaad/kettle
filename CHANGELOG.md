@@ -32,6 +32,13 @@ language; an unsupported tag is rejected on upload. The limits and the upload fo
 - **The "Recent" list came off the home screen.** It was History's first five rows without the detail,
   the editing or the export, and History is one tap away.
 - The settings gear is where it always was, top-right of the first tab.
+- **Sorting is gone from Workouts, Library and Programs; your lists read in the order your file is
+  written.** That was already the default, so unless you'd changed it nothing moves. It buys every one
+  of those screens a row back, and the file is the one place the order is genuinely yours.
+- **The count moved into the search box** — "Search 26 workouts" — instead of sitting on a line of its
+  own under the title.
+- **Library's type shortcuts now cover every type**, with EMOM, AMRAP and Cardio joining HIIT, Reps
+  and Hold. The row scrolls sideways, so it stays one row however long your text is set.
 - **Orange now means one thing on the Workouts screen: start the workout that's queued.** The start
   button on each row of the list, and "Start an empty session" at the top, were competing with it for
   attention; they're still exactly where they were and still do exactly the same thing, just quietly.

@@ -40,7 +40,6 @@ import { act, fireEvent, screen } from '@testing-library/react-native';
 import { changeLanguage } from 'i18next';
 
 import SettingsScreen from '@/app/settings';
-import { DEFAULT_LIST_SORTS } from '@/domain/preferences';
 import { useLibraryStore } from '@/state/library-store';
 import { usePreferencesStore } from '@/state/preferences-store';
 import { useSessionHistoryStore } from '@/state/session-history-store';
@@ -55,7 +54,6 @@ function setFolder(backupFolderUri: string | null) {
     preferences: {
       unitSystem: 'metric',
       themePreference: 'system',
-      listSort: DEFAULT_LIST_SORTS,
       restDayReminder: false,
       backupFolderUri,
     },

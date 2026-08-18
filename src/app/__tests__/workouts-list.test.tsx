@@ -4,7 +4,6 @@ import { fireEvent, screen } from '@testing-library/react-native';
 import { changeLanguage } from 'i18next';
 
 import WorkoutsScreen from '@/app/(tabs)/index';
-import { DEFAULT_LIST_SORTS } from '@/domain/preferences';
 import type { Session } from '@/domain/types';
 import { useLibraryStore } from '@/state/library-store';
 import { usePreferencesStore } from '@/state/preferences-store';
@@ -60,7 +59,6 @@ beforeEach(() => {
     preferences: {
       unitSystem: 'metric',
       themePreference: 'system',
-      listSort: DEFAULT_LIST_SORTS,
       restDayReminder: false,
       backupFolderUri: null,
     },
@@ -84,69 +82,42 @@ function order(): string[] {
     .filter((child): child is string => typeof child === 'string');
 }
 
-it('lists workouts in the order the library file wrote them by default', async () => {
+/**
+ * The list has exactly one order now: the one the file is written in.
+ *
+ * It used to be three, behind a pill row (`custom` / A–Z / Recent) that this suite covered case by
+ * case. The control is gone — sorting a list that already has a search box was chrome on every one of
+ * these screens — so file order is not a default any more, it is the whole behaviour, and this is the
+ * test that pins it. A library is hand-written and hand-shared, so the order in the file is the order
+ * its author meant.
+ */
+it('lists workouts in the order the library file wrote them', async () => {
   await renderScreen(<WorkoutsScreen />);
 
   expect(order()).toEqual(['Zercher day', 'Bench day', 'Amrap day']);
 });
 
-it('reorders by name when A–Z is chosen', async () => {
-  await renderScreen(<WorkoutsScreen />);
-
-  await fireEvent.press(screen.getByText('A–Z'));
-
-  expect(order()).toEqual(['Amrap day', 'Bench day', 'Zercher day']);
-});
-
-// Never-trained workouts sink rather than disappearing — the thing a "recent" list most easily gets
-// wrong, since a brand-new workout is exactly the one you're about to run.
-it('puts the most recently trained first and the never-trained last', async () => {
-  await renderScreen(<WorkoutsScreen />);
-
-  await fireEvent.press(screen.getByText('Recent'));
-
-  expect(order()).toEqual(['Bench day', 'Zercher day', 'Amrap day']);
-});
-
-it('remembers the choice, so the next visit opens in the same order', async () => {
-  await renderScreen(<WorkoutsScreen />);
-
-  await fireEvent.press(screen.getByText('A–Z'));
-
-  expect(usePreferencesStore.getState().preferences.listSort.workouts).toBe('name');
-});
-
-// A control that can't change anything is worse than an absent one, and one workout is the state a
-// new install is closest to.
-it('stays away entirely when there is nothing to order', async () => {
-  useLibraryStore.setState({ library: aLibrary({ exercises: [anExercise()], workouts: [zercher] }), status: 'ready' });
-
-  await renderScreen(<WorkoutsScreen />);
-
-  expect(screen.queryByText('A–Z')).toBeNull();
-});
-
 /**
- * Driven in `pt` because an English-locale assertion cannot catch a hardcoded English string —
- * `t('sort.name')` and the literal it returns render identically. Only a rendered key path or an
- * untranslated word fails here.
+ * Driven in `pt` because an English-locale assertion cannot catch a hardcoded English string — the
+ * key and the literal it returns render identically. Only a rendered key path or an untranslated word
+ * fails here.
+ *
+ * The placeholder carries the count, which is what the deleted line under the title used to say, so
+ * this also pins the pluralised form actually reaching the field.
  */
 it('is translated', async () => {
   await changeLanguage('pt');
 
   await renderScreen(<WorkoutsScreen />);
 
-  expect(screen.getByText('Ordenar')).toBeTruthy();
-  expect(screen.getByText('Sua ordem')).toBeTruthy();
-  expect(screen.getByText('Recentes')).toBeTruthy();
-  expect(screen.getByPlaceholderText('Buscar treinos')).toBeTruthy();
+  expect(screen.getByPlaceholderText('Buscar 3 treinos')).toBeTruthy();
 });
 
 describe('search', () => {
   it('narrows the list to matching names', async () => {
     await renderScreen(<WorkoutsScreen />);
 
-    await fireEvent.changeText(screen.getByPlaceholderText('Search workouts'), 'bench');
+    await fireEvent.changeText(screen.getByPlaceholderText(/^Search [0-9]+ workouts?$/), 'bench');
 
     expect(order()).toEqual(['Bench day']);
   });
@@ -154,7 +125,7 @@ describe('search', () => {
   it('ignores case and matches anywhere in the name', async () => {
     await renderScreen(<WorkoutsScreen />);
 
-    await fireEvent.changeText(screen.getByPlaceholderText('Search workouts'), 'DAY');
+    await fireEvent.changeText(screen.getByPlaceholderText(/^Search [0-9]+ workouts?$/), 'DAY');
 
     expect(order()).toHaveLength(3);
   });
@@ -167,7 +138,7 @@ describe('search', () => {
   it('says nothing matched rather than claiming there are no workouts', async () => {
     await renderScreen(<WorkoutsScreen />);
 
-    await fireEvent.changeText(screen.getByPlaceholderText('Search workouts'), 'zzz');
+    await fireEvent.changeText(screen.getByPlaceholderText(/^Search [0-9]+ workouts?$/), 'zzz');
 
     expect(screen.getByText('Nothing matched')).toBeTruthy();
     expect(screen.queryByText('No workouts yet')).toBeNull();
@@ -188,17 +159,22 @@ describe('search', () => {
 
     await renderScreen(<WorkoutsScreen />);
 
-    expect(screen.queryByPlaceholderText('Search workouts')).toBeNull();
+    expect(screen.queryByPlaceholderText(/^Search [0-9]+ workouts?$/)).toBeNull();
   });
 
-  // Both controls key off the whole library, not the visible subset: tied to what's on screen they'd
+  // The box keys off the whole library, not the visible subset: tied to what's on screen it would
   // vanish the moment a query narrowed things, moving the list under the finger that's typing.
-  it('keeps both controls on screen while a search narrows the list to one', async () => {
+  //
+  // Its count does not narrow either, which the placeholder pattern here allows but the assertion
+  // below pins exactly — three workouts stay three while the list under them shows one. A count that
+  // tracked the results would be describing the search to someone who cannot see it, since a
+  // placeholder is hidden the moment there is text in the field.
+  it('keeps the search box, and its count, while a search narrows the list to one', async () => {
     await renderScreen(<WorkoutsScreen />);
 
-    await fireEvent.changeText(screen.getByPlaceholderText('Search workouts'), 'bench');
+    await fireEvent.changeText(screen.getByPlaceholderText(/^Search [0-9]+ workouts?$/), 'bench');
 
-    expect(screen.getByPlaceholderText('Search workouts')).toBeTruthy();
-    expect(screen.getByText('A–Z')).toBeTruthy();
+    expect(order()).toEqual(['Bench day']);
+    expect(screen.getByPlaceholderText('Search 3 workouts')).toBeTruthy();
   });
 });

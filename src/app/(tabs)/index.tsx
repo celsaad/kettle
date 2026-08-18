@@ -8,19 +8,16 @@ import { FirstRunCard } from '@/components/first-run-card';
 import { NextUpCard } from '@/components/next-up-card';
 import { NoResults } from '@/components/no-results';
 import { SearchBar } from '@/components/search-bar';
-import { SortPills } from '@/components/sort-pills';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { formatWorkoutShape } from '@/domain/format';
-import { lastTrainedByWorkout, sortForList } from '@/domain/list-sort';
 import type { Exercise, Workout } from '@/domain/types';
 import { useAppTheme } from '@/hooks/theme-context';
 import { useTheme } from '@/hooks/use-theme';
 import { workoutShape } from '@/state/selectors/workout-shape';
 import { nextUpView } from '@/state/selectors/next-up';
 import { useLibraryStore } from '@/state/library-store';
-import { useListSort, usePreferencesStore } from '@/state/preferences-store';
 import { useSessionHistoryStore } from '@/state/session-history-store';
 
 export { RouteErrorBoundary as ErrorBoundary } from '@/components/error-fallback';
@@ -109,8 +106,6 @@ export default function WorkoutsScreen() {
   const { t } = useTranslation();
   const library = useLibraryStore((state) => state.library);
   const sessions = useSessionHistoryStore((state) => state.sessions);
-  const sort = useListSort('workouts');
-  const setListSort = usePreferencesStore((state) => state.setListSort);
   const [query, setQuery] = useState('');
   /*
     The input keeps the immediate value so typing is never held back; only the filtering below runs on
@@ -130,16 +125,6 @@ export default function WorkoutsScreen() {
     // dependency — depending on `all` would re-filter on every render of an unhydrated screen.
     // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [library, deferredQuery]);
-
-  // `recent` is the only order that reads the log at all, so the map is built only when it's the one
-  // in effect — this walks every session ever logged, and this is a screen you land on to train.
-  const lastTrained = useMemo(
-    () => (sort === 'recent' ? lastTrainedByWorkout(sessions) : new Map<string, string>()),
-    [sessions, sort],
-  );
-  // Sorted after filtering: ordering the whole library to then throw most of it away is work nobody
-  // sees.
-  const workouts = useMemo(() => sortForList(matching, sort, lastTrained), [matching, sort, lastTrained]);
 
   // Memoised: this screen owns the search box, so it re-renders on every keystroke — twice, since
   // `useDeferredValue` renders the urgent pass and then the deferred one. `nextUpView` walks the whole
@@ -180,7 +165,7 @@ export default function WorkoutsScreen() {
         would silently eat every keystroke in the search box that lives up there.
       */}
       <FlatList
-        data={workouts}
+        data={matching}
         keyExtractor={keyExtractor}
         renderItem={renderItem}
         ItemSeparatorComponent={Separator}
@@ -238,10 +223,6 @@ export default function WorkoutsScreen() {
                 </Pressable>
               </View>
             </View>
-            <ThemedText themeColor="textSecondary" style={styles.countLabel}>
-              {t('build.workoutCount', { count: workouts.length })}
-            </ThemedText>
-
             {isFirstRun && <FirstRunCard />}
 
             {/* Nothing queued means an empty library, and the list's own empty state below says so
@@ -249,15 +230,23 @@ export default function WorkoutsScreen() {
                 duplicating the message above it. */}
             {nextUp && <NextUpCard nextUp={nextUp} />}
 
-            {/* Keyed off the whole library rather than what's visible, so neither control disappears
-                mid-search and moves the list under the finger that's typing. */}
-            {all.length > 0 && (
-              <SearchBar value={query} onChangeText={setQuery} placeholder={t('build.searchPlaceholder')} />
-            )}
+            {/*
+              Keyed off the whole library rather than what's visible, so the control doesn't disappear
+              mid-search and move the list under the finger that's typing.
 
-            {/* Hidden at one item and at none: there is nothing to order, and a control that changes
-                nothing when pressed is worse than an absent one. */}
-            {all.length > 1 && <SortPills sort={sort} onSelect={(next) => setListSort('workouts', next)} />}
+              The placeholder carries the count, which used to be a line of its own under the title.
+              It says the same thing in a row that was already there, and it says it where the eye is
+              going anyway. It is the *unfiltered* count on purpose: a placeholder is only visible
+              while the field is empty, which is exactly when the two are equal, so filtering it would
+              be work nobody can see.
+            */}
+            {all.length > 0 && (
+              <SearchBar
+                value={query}
+                onChangeText={setQuery}
+                placeholder={t('build.searchPlaceholder', { count: all.length })}
+              />
+            )}
           </View>
         }
         /*
@@ -316,9 +305,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  countLabel: {
-    marginTop: 2,
   },
   pressed: {
     opacity: 0.7,

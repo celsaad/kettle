@@ -23,12 +23,12 @@ language; an unsupported tag is rejected on upload. The limits and the upload fo
 
 - **Today and Build are one tab, called Workouts.** It opens with the same "next up" card as before —
   what your program has queued, or a rest day — and your whole workout list is right underneath it,
-  searchable and sortable as it always was. Starting from the card still carries the program week, so
-  that week's overrides apply; starting from the list still runs the workout as written.
-- **Your streak and this week's numbers moved to History**, which already showed the all-time versions
-  of the same three tiles. History now has two rows: `This week` (sessions, time, streak) and
-  `All time` (sessions, time, sets). Searching narrows the all-time row and hides the weekly one,
-  since a search result isn't a week.
+  searchable as it always was. Starting from the card still carries the program week, so that week's
+  overrides apply; starting from the list still runs the workout as written.
+- **The numbers have a screen of their own now, called Your numbers**, reached from `Stats` in
+  History's header. Your streak, this week and all time live there, with a chart of sessions per week
+  over the last eight — instead of six tiles filling the top of History and pushing the log itself
+  below the fold. History is back to being a log, with a one-line summary above it.
 - **The "Recent" list came off the home screen.** It was History's first five rows without the detail,
   the editing or the export, and History is one tap away.
 - The settings gear is where it always was, top-right of the first tab.
@@ -53,14 +53,13 @@ language; an unsupported tag is rejected on upload. The limits and the upload fo
   button on each row of the list, and "Start an empty session" at the top, were competing with it for
   attention; they're still exactly where they were and still do exactly the same thing, just quietly.
   The card itself is a little shorter, so more of your list fits above the fold.
-
-- **Stats can tell you whether you're getting stronger, not just how much you've done.** Under the
-  chart there's now a line per exercise you've trained more than once in the last eight weeks: what
-  you're lifting (or holding) now, the shape of how you got there, and what it changed by. That's a
-  fact you previously had to open nine sessions and do arithmetic to work out.
-- Strength work and holds only. HIIT and EMOM numbers are set by the workout rather than by you, so a
-  bigger one there means you edited the workout; cardio needs route-by-route comparison Kettle doesn't
-  do yet. Those are left out rather than half-answered.
+- **Your numbers can tell you whether you're getting stronger, not just how much you've done.** Under
+  the chart there's now a line per exercise you've trained more than once in the last eight weeks:
+  what you're lifting (or holding) now, the shape of how you got there, and what it changed by. That's
+  a fact you previously had to open nine sessions and do arithmetic to work out. Strength work and
+  holds only — HIIT and EMOM numbers are set by the workout rather than by you, so a bigger one there
+  means you edited the workout, and cardio needs route-by-route comparison Kettle doesn't do yet.
+  Those are left out rather than half-answered.
 
 ### Fixed
 

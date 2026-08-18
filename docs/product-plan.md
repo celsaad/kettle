@@ -367,12 +367,19 @@ See §13 for the concrete, current gap list.
 
 What's genuinely missing today, checked directly against the code:
 
-- **No analytics screen.** Nothing aggregates progress across exercises or across a program. The app's
-  only chart is the per-exercise volume sparkline in the exercise editor (§10 item 4), and the
-  cross-cutting numbers that do exist — `historyStats`, `currentStreak`, `thisWeekStats` — all render as
-  History's two tile rows rather than being collected anywhere. It branches off **History**
-  as a modal route rather than becoming a fifth tab. Scoped in the implementation plan's planned-work
-  list, including why **"analytics" here never means a telemetry SDK**: it's charts over the user's own
+- ~~**No analytics screen.**~~ ✅ Shipped as `app/analytics.tsx`, a modal route off History rather than
+  a fifth tab. It collects the cross-cutting numbers that were scattered across History's header
+  (`historyStats`, `currentStreak`, `thisWeekStats`), charts sessions per week, and answers the
+  question none of them could — whether each exercise is *moving*, via `exerciseProgress`.
+
+  Two limits worth keeping in view rather than reading as oversights. It covers **strength work and
+  holds only**: `entryBest` excludes `hiit` and `emom` because their numbers are bounded by the
+  exercise's own config, and `cardio` because comparing routes needs rules the app doesn't have. And
+  the push/pull/legs/core balance breakdown the design review asked for is **still not possible** —
+  it needs a muscle-group field the YAML format doesn't have, which is a format change with three
+  hand-maintained mirrors rather than a screen change.
+
+  As always here, **"analytics" never means a telemetry SDK**: these are charts over the user's own
   local sessions, and the zero-data-collected claim is unaffected.
 - ~~**No in-app cloud-sync guidance.**~~ ✅ Shipped — Settings has a "Backups and sync" section: the
   files are local and unsynced by design, and export/import is the mechanism. It deliberately names no

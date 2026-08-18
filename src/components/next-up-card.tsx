@@ -4,7 +4,6 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { formatWorkoutShape } from '@/domain/format';
 import { useTheme } from '@/hooks/use-theme';
@@ -44,7 +43,7 @@ function RestDayCard({ rest }: { rest: Extract<NextUpView, { kind: 'rest' }> }) 
   const skipTo = rest.skipTo;
 
   return (
-    <ThemedView type="backgroundElement" style={[styles.card, { borderColor: theme.border }]}>
+    <View style={styles.card}>
       <ThemedText type="label" themeColor="textSecondary">
         {t('today.restDayWeek', {
           week: `${t('programs.week', { n: rest.weekNumber })}${rest.weekDay ? ` · ${rest.weekDay}` : ''}`,
@@ -80,7 +79,7 @@ function RestDayCard({ rest }: { rest: Extract<NextUpView, { kind: 'rest' }> }) 
           </ThemedText>
         </Pressable>
       )}
-    </ThemedView>
+    </View>
   );
 }
 
@@ -97,7 +96,7 @@ function QueuedWorkoutCard({ queued }: { queued: Extract<NextUpView, { kind: 'wo
   );
 
   return (
-    <ThemedView type="backgroundElement" style={[styles.card, { borderColor: theme.border }]}>
+    <View style={styles.card}>
       <ThemedText type="label" themeColor="accentText">
         {queued.weekNumber !== null
           ? t('today.nextUpWeek', {
@@ -133,16 +132,25 @@ function QueuedWorkoutCard({ queued }: { queued: Extract<NextUpView, { kind: 'wo
           {t('today.startSession')}
         </ThemedText>
       </Pressable>
-    </ThemedView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  /**
+   * No fill, no border, no radius — this is the page's heading, not a box on it.
+   *
+   * It reads as primary from the type scale and from the one accent fill inside it, which is what
+   * marks the primary action on every screen in the app. The frame was redundant with that, and once
+   * the list below became rows it was the only drawn box left on the screen, which made it read as
+   * something left behind rather than as something privileged.
+   *
+   * Dropping the padding is the half that actually mattered on device: it sat *on top of* the
+   * screen's own 16px inset, so every line in here started 32px from the edge while every workout
+   * name below started at 16px. The card looked narrower than the list it introduced.
+   */
   card: {
     marginTop: Spacing.three,
-    borderRadius: 22,
-    padding: Spacing.three,
-    borderWidth: 1,
   },
   workoutName: {
     marginTop: Spacing.one,

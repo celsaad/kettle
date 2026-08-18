@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ModalHeader } from '@/components/modal-header';
+import { ListRowMinHeight, ListRowVerticalPadding } from '@/components/list-row';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
@@ -122,7 +123,7 @@ function ActionRow({
       accessibilityRole="button"
       accessibilityState={{ disabled }}
       style={({ pressed }) => pressed && styles.pressed}>
-      <ThemedView type="backgroundElement" style={[styles.row, { borderColor: theme.border }, disabled && styles.disabled]}>
+      <View style={[styles.row, { borderTopColor: theme.border }, disabled && styles.disabled]}>
         <View style={styles.rowText}>
           <ThemedText type="heading">{title}</ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
@@ -130,7 +131,7 @@ function ActionRow({
           </ThemedText>
         </View>
         {!disabled && <ThemedText themeColor="textSecondary">{'›'}</ThemedText>}
-      </ThemedView>
+      </View>
     </Pressable>
   );
 }
@@ -552,16 +553,24 @@ const styles = StyleSheet.create({
   caption: {
     marginTop: Spacing.two,
   },
-  rowList: {
-    gap: Spacing.two - 3,
-  },
+  rowList: {},
+  /**
+   * A row, matching the four list screens rather than the card this used to be — Settings was the
+   * last place still drawing a filled, bordered surface per item, which made it the odd screen out.
+   *
+   * A **top** hairline per row rather than a separator component: these are laid out as siblings in a
+   * section, some of them conditionally, so there is no list to hang `ItemSeparatorComponent` off and
+   * an index-aware "all but the first" would break the moment a row is conditionally absent. The line
+   * above the first row doubles as the rule under the section title, which is what the list screens'
+   * `ListHeaderRule` does too.
+   */
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.two,
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: Spacing.two + 6,
+    minHeight: ListRowMinHeight,
+    paddingVertical: ListRowVerticalPadding,
+    borderTopWidth: 1,
   },
   rowText: {
     flex: 1,

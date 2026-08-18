@@ -5,6 +5,7 @@ import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ListHeaderRule, ListRow, ListRowSeparator } from '@/components/list-row';
 import { NoResults } from '@/components/no-results';
 import { SearchBar } from '@/components/search-bar';
 import { ThemedText } from '@/components/themed-text';
@@ -36,7 +37,6 @@ function detailLabel(program: Program, t: TFunction): string | null {
 
 /** Memoised and module-level for the same reasons as Build's `WorkoutCard`; see the note there. */
 const ProgramCard = memo(function ProgramCard({ program }: { program: Program }) {
-  const theme = useTheme();
   const { t } = useTranslation();
   const detail = detailLabel(program, t);
 
@@ -44,7 +44,7 @@ const ProgramCard = memo(function ProgramCard({ program }: { program: Program })
     <Pressable
       onPress={() => router.push({ pathname: '/program-detail', params: { programId: program.id } })}
       accessibilityRole="button">
-      <ThemedView type="backgroundElement" style={[styles.card, { borderColor: theme.border }]}>
+      <ListRow>
         <View style={styles.cardText}>
           <ThemedText type="heading">{program.name}</ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
@@ -57,15 +57,10 @@ const ProgramCard = memo(function ProgramCard({ program }: { program: Program })
           )}
         </View>
         <ThemedText themeColor="textSecondary">{'›'}</ThemedText>
-      </ThemedView>
+      </ListRow>
     </Pressable>
   );
 });
-
-/** Reproduces the `gap` the old `styles.list` had, which a FlatList's cells don't inherit. */
-function Separator() {
-  return <View style={styles.separator} />;
-}
 
 const keyExtractor = (program: Program) => program.id;
 
@@ -98,7 +93,7 @@ export default function ProgramsScreen() {
         data={matching}
         keyExtractor={keyExtractor}
         renderItem={renderItem}
-        ItemSeparatorComponent={Separator}
+        ItemSeparatorComponent={ListRowSeparator}
         contentContainerStyle={styles.scrollContent}
         ListHeaderComponent={
           <View style={styles.listHeader}>
@@ -127,6 +122,8 @@ export default function ProgramsScreen() {
                 placeholder={t('programs.searchPlaceholder', { count: all.length })}
               />
             )}
+
+            <ListHeaderRule />
           </View>
         }
         /* Two different empty states, told apart — see the note in (tabs)/index.tsx. This one matters more if
@@ -175,7 +172,9 @@ const styles = StyleSheet.create({
     maxWidth: MaxContentWidth,
     paddingHorizontal: Spacing.three,
     paddingTop: Platform.select({ web: Spacing.six, default: Spacing.two }),
-    paddingBottom: Spacing.six,
+    // Clears the FAB, which floats 24px off the bottom and is 52 tall — a 64px inset left the last
+    // row permanently half-covered by it, and the last row is the one you scroll to reach.
+    paddingBottom: Spacing.six + Spacing.four,
   },
   header: {
     flexDirection: 'row',
@@ -194,13 +193,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.two,
   },
-  // What `styles.list`'s `marginTop` and `gap` became once the list stopped being one `View`.
-  listHeader: {
-    marginBottom: Spacing.three,
-  },
-  separator: {
-    height: Spacing.two - 3,
-  },
+  // The gap that used to sit here belongs to `ListHeaderRule`, above its line rather than below it.
+  listHeader: {},
   emptyState: {
     borderRadius: 16,
     borderWidth: 1,
@@ -217,14 +211,6 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.one + 2,
     paddingHorizontal: Spacing.two + 2,
     marginTop: 2,
-  },
-  card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.two,
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: Spacing.two + 6,
   },
   cardText: {
     flex: 1,

@@ -565,10 +565,9 @@
   },
   "programDetail": {
     "notFound": "Program not found.",
-    "startThisWeek": "Start this week",
-    "startThisDay": "Start this day",
     "restDay": "Rest day",
-    "edit": "Edit program"
+    "edit": "Edit program",
+    "startAccessibility": "Start {{week}}"
   },
   "tabs": {
     "workouts": "Workouts",

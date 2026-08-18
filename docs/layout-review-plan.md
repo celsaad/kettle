@@ -180,15 +180,47 @@ re-introduces exactly what that change fixed.
 §3's principle is right: *a card is for a single discrete privileged object; a list of peers is rows.*
 Applied narrowly.
 
-- **Workouts and Programs rows** → rows. `minHeight: 56`, one hairline separator in the existing
+- **Workouts, Programs *and* Library** → rows. `minHeight: 56`, one hairline separator in the existing
   `border` token, no fill, no radius. Both lines free to wrap.
-- **History session cards stay cards.** They expand in place (`expanded` / `onToggle`) — that is a
-  disclosure container holding per-exercise detail, not a peer row, and a card is the right shape for
-  it.
-- **Settings stays as-is.** `ActionRow` is already a row inside labelled sections, and the sectioning
-  is what makes that screen readable. §3 asks for chevrons; worth it, and that is the whole change.
-- **Library rows** deferred until Workouts has been seen on device. Same shape, but Library rows carry
-  a type badge and the badge may need the fill to read.
+
+  ~~Library deferred until Workouts has been seen on device, since its rows carry a type badge that
+  may need the fill to read.~~ **Done together instead.** The three screens held byte-identical copies
+  of the card style, so converting two of them would have shipped a deliberate mismatch between
+  sibling lists — which is the exact failure the runner's two progress indicators had just
+  demonstrated, twice, in Phase 3. The badge carries its own per-type background and reads fine
+  without a card behind it. All three now share one `ListRow`, so they cannot drift again.
+- ~~**History session cards stay cards**, since they expand in place and a disclosure container is
+  not a peer row.~~ **Converted too.** The argument was right about *shape* and wrong about *surface*:
+  History's row still expands and still holds its detail, but keeping the fill made it the one tab
+  whose list looked boxed while the other three did not. It uses the exported metrics rather than
+  `ListRow` itself, because its container is vertical with a pressable header inside.
+
+  The rule *inside* an expanded row went with the fill. At card weight it separated two parts of one
+  boxed object; against hairline-separated rows it read as the boundary between two rows and split the
+  session in half.
+- ~~**Settings needed nothing**, since `ActionRow` is already a row with a chevron.~~ **Half right.**
+  It has the chevron, but it drew itself on a filled bordered surface — a fourth copy of the card
+  style — which left Settings as the last screen still using the old language. It now takes a top
+  hairline per row instead. A **top border rather than a separator component**, because these are
+  conditionally-rendered siblings in a section rather than a `FlatList`, so there is nothing to hang
+  `ItemSeparatorComponent` off.
+
+- **Every list gains a `ListHeaderRule`** — the same hairline, closing the header. Without a fill on
+  the rows a list has no visible top edge: the search box just stops and names begin, so the first row
+  reads as one more piece of header.
+
+- **The next-up card is uncarded.** §2 asked for this and it was initially skipped, on the grounds
+  that the card is a single privileged object. Two things overturned that on device: once the list
+  below became rows it was the only drawn box on the screen, so it read as left over rather than as
+  privileged; and its own padding sat on top of the screen's, starting every line 32px from the edge
+  while every workout name below started at 16px — the card looked *narrower* than the list it
+  introduces. Type scale and the accent fill inside it mark it as primary; the frame was redundant.
+
+- **"Start an empty session" moved under the Start button after all** — the fourth home for this
+  control, and the one §2 named. Phase 1 kept it in the title row and argued placement was never the
+  complaint. That was answering the wrong objection: a bordered pill sharing a row with the screen
+  title and the settings gear has nowhere to go when the text size is raised, and that row overflows.
+  Left-aligned text weight, not a centred second button.
 
 ## Phase 5 — Stats, "am I getting stronger?"
 

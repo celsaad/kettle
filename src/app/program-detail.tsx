@@ -4,9 +4,10 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ListHeaderRule, ListRow, ListRowSeparator } from '@/components/list-row';
 import { ModalHeader } from '@/components/modal-header';
+import { RowStartButton } from '@/components/row-start-button';
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import type { Library, ProgramOverride, ProgramWeek, Workout } from '@/domain/types';
 import { useTheme } from '@/hooks/use-theme';
@@ -77,8 +78,12 @@ export default function ProgramDetailScreen() {
               </Pressable>
             </View>
 
+            {/* Starts the list the way every tab screen's does — without it the weeks begin under the
+                program's title with nothing marking where the heading stops. */}
+            <ListHeaderRule />
+
             <View style={styles.list}>
-              {weeks.map((week) => {
+              {weeks.map((week, index) => {
                 const workout = week.restDay
                   ? undefined
                   : library?.workouts.find((candidate) => candidate.id === week.workoutId);
@@ -86,52 +91,53 @@ export default function ProgramDetailScreen() {
                   ? []
                   : (week.overrides ?? []).flatMap((override) => overrideLines(override, library!, workout));
 
+                const weekLabel = `${t('programs.week', { n: week.week })}${week.day ? ` · ${week.day}` : ''}`;
+
                 return (
-                  <ThemedView
-                    key={`${week.week}-${week.day ?? ''}`}
-                    type="backgroundElement"
-                    style={[styles.card, { borderColor: theme.border }]}>
-                    <View style={styles.cardHeader}>
-                      <View style={styles.cardHeaderText}>
-                        <ThemedText type="heading">
-                          {t('programs.week', { n: week.week })}
-                          {week.day ? ` · ${week.day}` : ''}
-                        </ThemedText>
+                  <View key={`${week.week}-${week.day ?? ''}`}>
+                    {/* Between neighbours only, never above the first — this is a `map` rather than a
+                        `FlatList`, so there is no `ItemSeparatorComponent` to do it. */}
+                    {index > 0 && <ListRowSeparator />}
+
+                    <ListRow>
+                      <View style={styles.weekText}>
+                        <ThemedText type="heading">{weekLabel}</ThemedText>
                         <ThemedText type="small" themeColor="textSecondary">
                           {week.restDay ? t('programDetail.restDay') : (workout?.name ?? week.workoutId)}
                         </ThemedText>
-                      </View>
-                    </View>
 
-                    {week.notes && (
-                      <ThemedText type="small" themeColor="textSecondary" style={styles.notes}>
-                        {week.notes}
-                      </ThemedText>
-                    )}
-
-                    {overrideText.length > 0 && (
-                      <View style={styles.overrides}>
-                        {overrideText.map((line, index) => (
-                          <ThemedText key={index} type="small" themeColor="textSecondary">
-                            {line}
+                        {week.notes && (
+                          <ThemedText type="small" themeColor="textSecondary" style={styles.notes}>
+                            {week.notes}
                           </ThemedText>
-                        ))}
-                      </View>
-                    )}
+                        )}
 
-                    {/* A rest week has nothing to start, so it gets no button at all rather than a
-                        disabled one — the card's own "Rest day" line is the whole content. */}
-                    {!week.restDay && (
-                      <Pressable
-                        onPress={() => startWeek(week)}
-                        accessibilityRole="button"
-                        style={[styles.startButton, { backgroundColor: theme.accent }]}>
-                        <ThemedText type="smallMedium" style={{ color: theme.onAccent }}>
-                          {week.day ? t('programDetail.startThisDay') : t('programDetail.startThisWeek')}
-                        </ThemedText>
-                      </Pressable>
-                    )}
-                  </ThemedView>
+                        {overrideText.length > 0 && (
+                          <View style={styles.overrides}>
+                            {overrideText.map((line, lineIndex) => (
+                              <ThemedText key={lineIndex} type="small" themeColor="textSecondary">
+                                {line}
+                              </ThemedText>
+                            ))}
+                          </View>
+                        )}
+                      </View>
+
+                      {/* A rest week has nothing to start, so it gets no control at all rather than a
+                          disabled one — its own "Rest day" line is the whole content.
+
+                          The label has to say *which* week, unlike the full-width button this
+                          replaced: that one sat inside a card whose heading named the week, so "Start
+                          this day" was unambiguous in context. A row of identical unnamed play
+                          triangles is not, and this is the only text a screen reader gets. */}
+                      {!week.restDay && (
+                        <RowStartButton
+                          onPress={() => startWeek(week)}
+                          accessibilityLabel={t('programDetail.startAccessibility', { week: weekLabel })}
+                        />
+                      )}
+                    </ListRow>
+                  </View>
                 );
               })}
             </View>
@@ -175,21 +181,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  list: {
-    marginTop: Spacing.three,
-    gap: Spacing.two,
-  },
-  card: {
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: Spacing.two + 6,
-    gap: Spacing.two - 3,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  cardHeaderText: {
+  // The gap belongs to `ListHeaderRule` above, on the heading's side of the line.
+  list: {},
+  weekText: {
     flex: 1,
     gap: 2,
   },
@@ -198,13 +192,6 @@ const styles = StyleSheet.create({
   },
   overrides: {
     gap: 2,
-  },
-  startButton: {
-    marginTop: Spacing.one,
-    height: 44,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   closeButton: {
     marginTop: Spacing.four,

@@ -40,7 +40,10 @@ it('lists a training week with its workout and a way to start it', async () => {
   await renderScreen(<ProgramDetailScreen />);
 
   expect(screen.getByText('Push day')).toBeTruthy();
-  expect(screen.getByText('Start this day')).toBeTruthy();
+  // By label, not by text: the start control is an icon now, so the label is the only name it has —
+  // and the label has to say *which* week, since a column of identical triangles otherwise announces
+  // itself the same way all the way down.
+  expect(screen.getByLabelText('Start Week 1 · Day 1')).toBeTruthy();
 });
 
 it('names a rest week as one instead of looking its workout up', async () => {
@@ -53,13 +56,13 @@ it('names a rest week as one instead of looking its workout up', async () => {
 it('offers exactly one start button — the training week has one, the rest week does not', async () => {
   await renderScreen(<ProgramDetailScreen />);
 
-  expect(screen.getAllByText('Start this day')).toHaveLength(1);
+  expect(screen.getAllByLabelText(/^Start Week/)).toHaveLength(1);
 });
 
 it('starts the training week, not the rest week', async () => {
   await renderScreen(<ProgramDetailScreen />);
 
-  await fireEvent.press(screen.getByText('Start this day'));
+  await fireEvent.press(screen.getByLabelText('Start Week 1 · Day 1'));
 
   expect(router.push).toHaveBeenCalledWith({
     pathname: '/session',
@@ -75,7 +78,7 @@ it('is translated', async () => {
   await renderScreen(<ProgramDetailScreen />);
 
   expect(screen.getByText('Dia de descanso')).toBeTruthy();
-  expect(screen.getByText('Iniciar este dia')).toBeTruthy();
+  expect(screen.getByLabelText('Começar Semana 1 · Day 1')).toBeTruthy();
   // Day labels and notes are user data and stay in the language they were written in.
   expect(screen.getByText('Walk, nothing heavy.')).toBeTruthy();
 });

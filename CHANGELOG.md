@@ -32,6 +32,16 @@ language; an unsupported tag is rejected on upload. The limits and the upload fo
 - **The "Recent" list came off the home screen.** It was History's first five rows without the detail,
   the editing or the export, and History is one tap away.
 - The settings gear is where it always was, top-right of the first tab.
+- **Every list is rows now, not a stack of cards.** Workouts, exercises, programs, your history and
+  the Settings rows are all hairline-separated lines with no box around them — so more fits on a
+  screen, and names line up with everything else on the page instead of being indented inside a frame.
+- **A program's own screen is rows too**, so a four-week plan reads as a list of days rather than as
+  twelve stacked panels each with its own full-width orange button. Every day still starts from the
+  same place — it's the round start button the workout list uses.
+- **The "next up" panel lost its box too.** It's still the first thing on the Workouts tab and still
+  the only orange button, but it now starts at the same edge as everything below it.
+- **"Start an empty session" moved under the Start button**, where it reads as the alternative to it.
+  It was at the top of the screen next to the title, which ran out of room at larger text sizes.
 - **Sorting is gone from Workouts, Library and Programs; your lists read in the order your file is
   written.** That was already the default, so unless you'd changed it nothing moves. It buys every one
   of those screens a row back, and the file is the one place the order is genuinely yours.
@@ -58,7 +68,6 @@ language; an unsupported tag is rejected on upload. The limits and the upload fo
   what you're actually checking in those three seconds.
 - Long exercise notes are capped at two lines in the runner, so a paragraph can't push the timer down
   the screen. The full note is still on the exercise.
-
 - **A program with named weekdays now runs in the order you wrote it.** Days sharing a week number
   were being put in alphabetical order, so a program labelled `Monday` through `Sunday` was run
   starting from Friday — while the program's own screen listed it correctly, Monday first. Day labels

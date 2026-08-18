@@ -3,7 +3,7 @@ import { fireEvent, screen } from '@testing-library/react-native';
 // other screen tests note.
 import { changeLanguage } from 'i18next';
 
-import BuildScreen from '@/app/(tabs)/build';
+import WorkoutsScreen from '@/app/(tabs)/index';
 import { DEFAULT_LIST_SORTS } from '@/domain/preferences';
 import type { Session } from '@/domain/types';
 import { useLibraryStore } from '@/state/library-store';
@@ -13,9 +13,10 @@ import { aLibrary, anExercise, aWorkout } from '@/test-support/library';
 import { renderScreen } from '@/test-support/render';
 
 /**
- * The list-order control, from the tap to what the list actually shows.
+ * The workout list on the Workouts tab: ordering, searching, and the two empty states. The next-up
+ * card that sits above it in the same list header is `workouts-next-up.test.tsx`.
  *
- * Build is the one of the three screens where the ordering is easiest to read back — the cards are
+ * This is the one of the three list screens where ordering is easiest to read back — the rows are
  * plain workout names with nothing else that moves — so the wiring is pinned here once rather than
  * three times. `list-sort.test.ts` owns the comparators themselves; what's left for a screen test is
  * that the tap reaches them, that the choice persists, and that the control knows when to stay away.
@@ -68,24 +69,29 @@ beforeEach(() => {
 
 /**
  * The card headings top to bottom — the list's order as a reader sees it, read straight off the tree
- * rather than re-derived from the fixtures. Every fixture name ends in "day", and nothing else on the
- * screen does.
+ * rather than re-derived from the fixtures.
+ *
+ * By `testID` rather than by text, which is what it used when this screen was the Build tab. The
+ * next-up card now sits in the list header and renders a workout name of its own, so a `/day$/` text
+ * query returns four nodes for three rows — and *which* extra name it returns rotates by calendar day,
+ * because with no program active `workoutOfTheDay` picks by `Date.now()`. Matching the rows directly
+ * is what keeps this suite about ordering rather than about what day it is.
  */
 function order(): string[] {
   return screen
-    .getAllByText(/day$/)
+    .getAllByTestId('workout-card-name')
     .map((node) => node.props.children)
     .filter((child): child is string => typeof child === 'string');
 }
 
 it('lists workouts in the order the library file wrote them by default', async () => {
-  await renderScreen(<BuildScreen />);
+  await renderScreen(<WorkoutsScreen />);
 
   expect(order()).toEqual(['Zercher day', 'Bench day', 'Amrap day']);
 });
 
 it('reorders by name when A–Z is chosen', async () => {
-  await renderScreen(<BuildScreen />);
+  await renderScreen(<WorkoutsScreen />);
 
   await fireEvent.press(screen.getByText('A–Z'));
 
@@ -95,7 +101,7 @@ it('reorders by name when A–Z is chosen', async () => {
 // Never-trained workouts sink rather than disappearing — the thing a "recent" list most easily gets
 // wrong, since a brand-new workout is exactly the one you're about to run.
 it('puts the most recently trained first and the never-trained last', async () => {
-  await renderScreen(<BuildScreen />);
+  await renderScreen(<WorkoutsScreen />);
 
   await fireEvent.press(screen.getByText('Recent'));
 
@@ -103,7 +109,7 @@ it('puts the most recently trained first and the never-trained last', async () =
 });
 
 it('remembers the choice, so the next visit opens in the same order', async () => {
-  await renderScreen(<BuildScreen />);
+  await renderScreen(<WorkoutsScreen />);
 
   await fireEvent.press(screen.getByText('A–Z'));
 
@@ -115,7 +121,7 @@ it('remembers the choice, so the next visit opens in the same order', async () =
 it('stays away entirely when there is nothing to order', async () => {
   useLibraryStore.setState({ library: aLibrary({ exercises: [anExercise()], workouts: [zercher] }), status: 'ready' });
 
-  await renderScreen(<BuildScreen />);
+  await renderScreen(<WorkoutsScreen />);
 
   expect(screen.queryByText('A–Z')).toBeNull();
 });
@@ -128,7 +134,7 @@ it('stays away entirely when there is nothing to order', async () => {
 it('is translated', async () => {
   await changeLanguage('pt');
 
-  await renderScreen(<BuildScreen />);
+  await renderScreen(<WorkoutsScreen />);
 
   expect(screen.getByText('Ordenar')).toBeTruthy();
   expect(screen.getByText('Sua ordem')).toBeTruthy();
@@ -138,7 +144,7 @@ it('is translated', async () => {
 
 describe('search', () => {
   it('narrows the list to matching names', async () => {
-    await renderScreen(<BuildScreen />);
+    await renderScreen(<WorkoutsScreen />);
 
     await fireEvent.changeText(screen.getByPlaceholderText('Search workouts'), 'bench');
 
@@ -146,7 +152,7 @@ describe('search', () => {
   });
 
   it('ignores case and matches anywhere in the name', async () => {
-    await renderScreen(<BuildScreen />);
+    await renderScreen(<WorkoutsScreen />);
 
     await fireEvent.changeText(screen.getByPlaceholderText('Search workouts'), 'DAY');
 
@@ -159,7 +165,7 @@ describe('search', () => {
    * of someone with three workouts who mistyped one.
    */
   it('says nothing matched rather than claiming there are no workouts', async () => {
-    await renderScreen(<BuildScreen />);
+    await renderScreen(<WorkoutsScreen />);
 
     await fireEvent.changeText(screen.getByPlaceholderText('Search workouts'), 'zzz');
 
@@ -170,7 +176,7 @@ describe('search', () => {
   it('still tells a new library it has no workouts yet', async () => {
     useLibraryStore.setState({ library: aLibrary({ exercises: [anExercise()], workouts: [] }), status: 'ready' });
 
-    await renderScreen(<BuildScreen />);
+    await renderScreen(<WorkoutsScreen />);
 
     expect(screen.getByText('No workouts yet')).toBeTruthy();
     expect(screen.queryByText('Nothing matched')).toBeNull();
@@ -180,7 +186,7 @@ describe('search', () => {
   it('offers no search box on an empty library', async () => {
     useLibraryStore.setState({ library: aLibrary({ exercises: [anExercise()], workouts: [] }), status: 'ready' });
 
-    await renderScreen(<BuildScreen />);
+    await renderScreen(<WorkoutsScreen />);
 
     expect(screen.queryByPlaceholderText('Search workouts')).toBeNull();
   });
@@ -188,7 +194,7 @@ describe('search', () => {
   // Both controls key off the whole library, not the visible subset: tied to what's on screen they'd
   // vanish the moment a query narrowed things, moving the list under the finger that's typing.
   it('keeps both controls on screen while a search narrows the list to one', async () => {
-    await renderScreen(<BuildScreen />);
+    await renderScreen(<WorkoutsScreen />);
 
     await fireEvent.changeText(screen.getByPlaceholderText('Search workouts'), 'bench');
 

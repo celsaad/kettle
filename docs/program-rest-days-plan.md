@@ -174,7 +174,7 @@ and both already hold the week — the churn is not worth it.
 
 | file | change |
 | --- | --- |
-| [`index.tsx:120-192`](../src/app/(tabs)/index.tsx#L120-L192) | rest branch of the Next-up card: week/day label, notes, no chips, no summary line, no Start button, "Train anyway" link. The "Start an empty session" button below is untouched and stays the way to train on a rest day |
+| [`next-up-card.tsx`](../src/components/next-up-card.tsx) (`RestDayCard`) | rest branch of the Next-up card: week/day label, notes, no chips, no summary line, no Start button, "Train anyway" link. The "Start an empty session" button below is untouched and stays the way to train on a rest day. Lived in `(tabs)/index.tsx` when this shipped; it moved into its own component when the Today and Build tabs merged |
 | [`program-detail.tsx:81-130`](../src/app/program-detail.tsx#L81-L130) | rest weeks render as a card with a "Rest" badge in place of the workout name and **no Start button** |
 | [`program-editor.tsx`](../src/app/program-editor.tsx) | a "Rest day" toggle per week card (`accessibilityRole="switch"` + `accessibilityState.checked`); toggling on hides the workout picker and the override editor. `save()`'s `!week.workoutId` check ([:75](../src/app/program-editor.tsx#L75)) only applies to non-rest weeks, and gets a new check that at least one week is trainable |
 | [`session.tsx:107-115`](../src/app/session.tsx#L107-L115) | a deep link or stale navigation to a rest week currently resolves to null and renders a blank screen; it gets the existing "nothing to run" empty state with its own message |

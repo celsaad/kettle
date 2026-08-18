@@ -1,4 +1,7 @@
 import { fireEvent, screen } from '@testing-library/react-native';
+// Named import rather than the default: `i18next.changeLanguage(...)` trips the same lint rule the
+// other screen tests note.
+import { changeLanguage } from 'i18next';
 import { Alert } from 'react-native';
 
 import HistoryScreen from '@/app/(tabs)/history';
@@ -175,5 +178,69 @@ describe('editing a session', () => {
     // Delete stays: throwing away a session the runner is mid-way through is a coherent thing to want.
     expect(screen.getByText('Delete')).toBeTruthy();
     expect(screen.queryByText('Edit')).toBeNull();
+  });
+});
+
+/**
+ * The two stat rows.
+ *
+ * `THIS WEEK` (sessions, time, streak) moved here from the old Today tab, where it was a second,
+ * smaller copy of the `ALL TIME` row directly below it — same `historyStats` aggregator, one tab over.
+ * History owns the session log and the search that scopes it, so it owns the numbers too.
+ *
+ * The interesting part is what the search does to them. The all-time row narrows with the query, which
+ * it always has; the this-week row cannot, because "this week" over "everything matching push" is not
+ * a period and the numbers would be describing a set nobody asked about. So it hides outright rather
+ * than sitting there unchanged and quietly lying.
+ */
+describe('the stat tiles', () => {
+  it('shows this week above all time', async () => {
+    await renderScreen(<HistoryScreen />);
+
+    expect(screen.getByText('This week')).toBeTruthy();
+    expect(screen.getByText('All time')).toBeTruthy();
+    // One label each from the two rows, and one shared by both.
+    expect(screen.getByText('streak')).toBeTruthy();
+    expect(screen.getByText('sets')).toBeTruthy();
+    expect(screen.getAllByText('sessions')).toHaveLength(2);
+  });
+
+  it('drops the this-week row while a search is narrowing the list', async () => {
+    await renderScreen(<HistoryScreen />);
+
+    await fireEvent.changeText(screen.getByPlaceholderText('Search workouts'), 'push');
+
+    expect(screen.queryByText('This week')).toBeNull();
+    expect(screen.queryByText('streak')).toBeNull();
+    // The all-time row stays, because a filtered total is still a total — but it stops calling itself
+    // "all time", which would be the same lie in the other direction.
+    expect(screen.getByText('sets')).toBeTruthy();
+    expect(screen.queryByText('All time')).toBeNull();
+    expect(screen.getByText('1 of 2')).toBeTruthy();
+  });
+
+  it('brings it back when the search is cleared', async () => {
+    await renderScreen(<HistoryScreen />);
+
+    await fireEvent.changeText(screen.getByPlaceholderText('Search workouts'), 'push');
+    await fireEvent.changeText(screen.getByPlaceholderText('Search workouts'), '');
+
+    expect(screen.getByText('This week')).toBeTruthy();
+    expect(screen.getByText('All time')).toBeTruthy();
+  });
+
+  /**
+   * Driven in `pt` because an English-locale assertion cannot catch a hardcoded English string —
+   * `t('history.thisWeekLabel')` and the literal it returns render identically. Both keys are new, and
+   * a label typed straight into the JSX is exactly what this catches.
+   */
+  it('is translated', async () => {
+    await changeLanguage('pt');
+
+    await renderScreen(<HistoryScreen />);
+
+    expect(screen.getByText('Esta semana')).toBeTruthy();
+    expect(screen.getByText('Todo o período')).toBeTruthy();
+    expect(screen.getByText('dias seguidos')).toBeTruthy();
   });
 });

@@ -75,7 +75,7 @@ Routing is [Expo Router](https://docs.expo.dev/router/introduction) file-based; 
 
 ```
 src/
-  app/                  routes (Expo Router): (tabs)/ for the five tab screens, plus session,
+  app/                  routes (Expo Router): (tabs)/ for the four tab screens, plus session,
                          import, settings, support, the program guide, and the exercise /
                          workout / program / session editors and program detail as modal routes
   components/           shared UI (themed primitives, session runner sub-views, kettle mark)

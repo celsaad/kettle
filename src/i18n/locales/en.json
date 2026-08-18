@@ -41,9 +41,6 @@
     }
   },
   "today": {
-    "heading": "Today",
-    "dayStreak": "day streak",
-    "thisWeek": "this week",
     "nextUp": "NEXT UP",
     "nextUpWeek": "NEXT UP · {{week}}",
     "restDayWeek": "REST DAY · {{week}}",
@@ -51,18 +48,15 @@
     "restDayBody": "Nothing in the program to run here. Kettle queues your next session when it's due.",
     "restDaySkip": "Train anyway",
     "startSession": "Start session",
-    "emptyTitle": "Nothing to run yet",
-    "emptyBody": "Your library has no workouts. Build one and it will show up here.",
     "firstRun": {
       "title": "NEW HERE?",
       "step1Title": "Start the workout below",
       "step1Body": "Timers and audio cues run it, hands-free.",
-      "step2Title": "Make it yours in Build",
-      "step2Body": "Edit the starter workouts or add your own.",
+      "step2Title": "Make it yours",
+      "step2Body": "Tap any workout below to edit it, or add your own.",
       "step3Title": "Plan weeks in Programs",
       "step3Body": "Kettle queues up what comes next."
     },
-    "recent": "RECENT",
     "startEmpty": "Start an empty session",
     "moreBlocks_one": "+{{count}} more",
     "moreBlocks_other": "+{{count}} more"
@@ -81,6 +75,8 @@
     "title": "History",
     "exportAll": "Export all",
     "allTime": "All time",
+    "thisWeekLabel": "This week",
+    "streak": "streak",
     "matchCount": "{{shown}} of {{total}}",
     "sessions": "sessions",
     "time": "time",
@@ -139,7 +135,7 @@
     },
     "nothingToRun": {
       "title": "Nothing to run",
-      "body": "\"{{name}}\" has no blocks, or none of its exercises have any sets/rounds/minutes configured. Add a block in Build, or check each exercise's config, then try again."
+      "body": "\"{{name}}\" has no blocks, or none of its exercises have any sets/rounds/minutes configured. Add a block in Workouts, or check each exercise's config, then try again."
     },
     "setOf": "Set {{index}} of {{total}}",
     "sets": {
@@ -534,7 +530,7 @@
     "restDay": "Rest day",
     "duplicateWeek": "Week {{label}} is used twice — give one a different day, or remove the duplicate.",
     "deleteConfirmTitle": "Delete program?",
-    "noWorkoutsHint": "No workouts yet — create one in Build first, then come back to add weeks here.",
+    "noWorkoutsHint": "No workouts yet — create one in Workouts first, then come back to add weeks here.",
     "week": "Week",
     "dayOptional": "Day · optional",
     "dayPlaceholder": "e.g. Monday — only needed for 2+ sessions in one week",
@@ -567,9 +563,8 @@
     "edit": "Edit program"
   },
   "tabs": {
-    "today": "Today",
+    "workouts": "Workouts",
     "library": "Library",
-    "build": "Build",
     "history": "History",
     "programs": "Programs"
   },

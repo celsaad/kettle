@@ -3,7 +3,7 @@ import { fireEvent, screen } from '@testing-library/react-native';
 // other screen tests note.
 import { changeLanguage } from 'i18next';
 
-import TodayScreen from '@/app/(tabs)/index';
+import WorkoutsScreen from '@/app/(tabs)/index';
 import type { Session } from '@/domain/types';
 import { useLibraryStore } from '@/state/library-store';
 import { useSessionHistoryStore } from '@/state/session-history-store';
@@ -12,15 +12,22 @@ import { aLibrary, anExercise, aWorkout } from '@/test-support/library';
 import { renderScreen } from '@/test-support/render';
 
 /**
- * Today's empty state.
+ * The next-up half of the Workouts tab: the card that says what to run, and the empty state behind it.
+ * The list underneath it is `workouts-list.test.tsx`; the two were separate tabs and separate suites
+ * before the merge, and stayed separate suites because they fail for entirely different reasons.
  *
- * The screen used to `return null` whenever `nextUpView` came back null, and the only way it does
- * that is a library with no workouts — reachable by deleting the seeded programs and then the seeded
- * workouts, which is a normal reaction to example data. The result was a blank home tab: no wordmark,
- * no settings button, nothing to say why. Every other tab kept working, so it read as a crash.
+ * The empty state is the older story here. The screen used to `return null` whenever `nextUpView`
+ * came back null, and the only way it does that is a library with no workouts — reachable by deleting
+ * the seeded programs and then the seeded workouts, which is a normal reaction to example data. The
+ * result was a blank home tab: no title, no settings button, nothing to say why. Every other tab kept
+ * working, so it read as a crash.
  *
- * What's pinned here is that the chrome survives an empty library and that there's a way out of it.
- * The hydration guard (`library === null`) still returns null on purpose and is a different case.
+ * What's pinned is that the chrome survives an empty library and that there's a way out of it. The
+ * hydration guard (`library === null`) still returns null on purpose and is a different case.
+ *
+ * **Watch for names that now appear twice.** The card and the list render the same library, so a
+ * queued workout's name is in the tree twice — assertions about the *card* have to say something only
+ * the card says (its `NEXT UP` label, its `Start session` button) rather than a workout name.
  */
 jest.mock('@/storage/library-file', () => ({
   loadLibrary: jest.fn(),
@@ -65,46 +72,54 @@ describe('with no workouts', () => {
   it('keeps the screen chrome rather than rendering nothing', async () => {
     setEmptyLibrary();
 
-    await renderScreen(<TodayScreen />);
+    await renderScreen(<WorkoutsScreen />);
 
-    // The wordmark is the cheapest proof the screen rendered at all: it sits above everything the
-    // empty library affects, so it was the first casualty of the blank-screen bug.
-    expect(screen.getByText('Kettle')).toBeTruthy();
-    expect(screen.getByText('Today')).toBeTruthy();
-    expect(screen.getByText('Nothing to run yet')).toBeTruthy();
+    // The title and the gear are the cheapest proof the screen rendered at all: they sit above
+    // everything the empty library affects, so they were the first casualties of the blank-screen bug.
+    // The gear matters twice over — this screen is the app's only route to Settings, so losing it
+    // strands the user rather than just looking broken.
+    expect(screen.getByText('Workouts')).toBeTruthy();
+    expect(screen.getByLabelText('Settings')).toBeTruthy();
+    expect(screen.getByText('No workouts yet')).toBeTruthy();
     expect(screen.queryByText('Start session')).toBeNull();
+    // No card at all rather than a card saying the library is empty — the list's own empty state
+    // above already says it, and two of them is worse than either.
+    expect(screen.queryByText('NEXT UP')).toBeNull();
   });
 
   it('offers a way out, so the empty state is not a dead end', async () => {
     setEmptyLibrary();
 
-    await renderScreen(<TodayScreen />);
-    await fireEvent.press(screen.getByText('New workout'));
+    await renderScreen(<WorkoutsScreen />);
+    // The FAB is a bare "+", so its accessible name is the only thing that identifies it.
+    await fireEvent.press(screen.getByLabelText('New workout'));
 
     expect(router.push).toHaveBeenCalledWith('/workout-editor');
   });
 
   it('is translated', async () => {
-    // Driven in pt because an English assertion cannot tell `t('today.emptyTitle')` from a hardcoded
+    // Driven in pt because an English assertion cannot tell `t('build.emptyTitle')` from a hardcoded
     // literal — both render identically.
     await changeLanguage('pt');
     setEmptyLibrary();
 
-    await renderScreen(<TodayScreen />);
+    await renderScreen(<WorkoutsScreen />);
 
-    expect(screen.getByText('Nada para fazer ainda')).toBeTruthy();
-    expect(screen.getByText('Novo treino')).toBeTruthy();
+    expect(screen.getByText('Nenhum treino ainda')).toBeTruthy();
+    expect(screen.getByLabelText('Novo treino')).toBeTruthy();
   });
 });
 
 it('still suggests a workout when the library has one', async () => {
   setSeededLibrary();
 
-  await renderScreen(<TodayScreen />);
+  await renderScreen(<WorkoutsScreen />);
 
-  expect(screen.getByText('Push day')).toBeTruthy();
+  // Twice: once on the card, once in the list below it. Asserting a single match here would fail for
+  // the wrong reason the moment the card and the list agree, which is the normal case.
+  expect(screen.getAllByText('Push day')).toHaveLength(2);
   expect(screen.getByText('Start session')).toBeTruthy();
-  expect(screen.queryByText('Nothing to run yet')).toBeNull();
+  expect(screen.queryByText('No workouts yet')).toBeNull();
 });
 
 /**
@@ -116,11 +131,11 @@ describe('first-run guidance', () => {
   it('is shown to someone who has never logged a session', async () => {
     setSeededLibrary();
 
-    await renderScreen(<TodayScreen />);
+    await renderScreen(<WorkoutsScreen />);
 
     expect(screen.getByText('NEW HERE?')).toBeTruthy();
     expect(screen.getByText('Start the workout below')).toBeTruthy();
-    expect(screen.getByText('Make it yours in Build')).toBeTruthy();
+    expect(screen.getByText('Make it yours')).toBeTruthy();
     expect(screen.getByText('Plan weeks in Programs')).toBeTruthy();
   });
 
@@ -128,7 +143,7 @@ describe('first-run guidance', () => {
     setSeededLibrary();
     useSessionHistoryStore.setState({ sessions: [aSession()], status: 'ready' });
 
-    await renderScreen(<TodayScreen />);
+    await renderScreen(<WorkoutsScreen />);
 
     expect(screen.queryByText('NEW HERE?')).toBeNull();
     // The screen itself is still fine — this is the card going away, not the tab.
@@ -140,17 +155,17 @@ describe('first-run guidance', () => {
     // and nothing to run. Step one would point at a workout that isn't there.
     setEmptyLibrary();
 
-    await renderScreen(<TodayScreen />);
+    await renderScreen(<WorkoutsScreen />);
 
     expect(screen.queryByText('NEW HERE?')).toBeNull();
-    expect(screen.getByText('Nothing to run yet')).toBeTruthy();
+    expect(screen.getByText('No workouts yet')).toBeTruthy();
   });
 
   it('is translated', async () => {
     await changeLanguage('pt');
     setSeededLibrary();
 
-    await renderScreen(<TodayScreen />);
+    await renderScreen(<WorkoutsScreen />);
 
     expect(screen.getByText('PRIMEIRA VEZ?')).toBeTruthy();
     expect(screen.getByText('Planeje semanas em Programas')).toBeTruthy();
@@ -164,8 +179,12 @@ describe('first-run guidance', () => {
  * they wrap, so an uncapped row pushed `Start session` below the fold and behind the tab bar. A new
  * user then had to scroll to reach the app's primary action on the screen that opens first.
  *
+ * The cap tightened from eight to six when this card became the header of the workout list rather
+ * than a screen of its own: it now has to end near the fold or the list it introduces never shares a
+ * screen with it.
+ *
  * What's pinned is the cap and the summary, not the exact number that fits: `blockChips` still
- * returns the whole list (`selectors-dst-chips.test.ts` owns that), and the slice is this screen's.
+ * returns the whole list (`selectors-dst-chips.test.ts` owns that), and the slice is the card's.
  */
 describe('a long workout’s chips', () => {
   /** Twelve blocks, which is an ordinary session rather than a contrived one. */
@@ -186,17 +205,17 @@ describe('a long workout’s chips', () => {
     });
   }
 
-  it('shows the first eight and summarises the rest', async () => {
+  it('shows the first six and summarises the rest', async () => {
     setLongWorkout();
 
-    await renderScreen(<TodayScreen />);
+    await renderScreen(<WorkoutsScreen />);
 
     expect(screen.getByText('Squat')).toBeTruthy();
-    expect(screen.getByText('Plank')).toBeTruthy();
-    // The ninth onwards are folded into the summary rather than rendered.
-    expect(screen.queryByText('Fly')).toBeNull();
+    expect(screen.getByText('Dip')).toBeTruthy();
+    // The seventh onwards are folded into the summary rather than rendered.
+    expect(screen.queryByText('Lunge')).toBeNull();
     expect(screen.queryByText('Crunch')).toBeNull();
-    expect(screen.getByText('+4 more')).toBeTruthy();
+    expect(screen.getByText('+6 more')).toBeTruthy();
   });
 
   /**
@@ -206,7 +225,7 @@ describe('a long workout’s chips', () => {
   it('keeps Start session above a row that would otherwise fill the card', async () => {
     setLongWorkout();
 
-    await renderScreen(<TodayScreen />);
+    await renderScreen(<WorkoutsScreen />);
 
     expect(screen.getByText('Start session')).toBeTruthy();
     expect(screen.queryByText('Crunch')).toBeNull();
@@ -215,7 +234,7 @@ describe('a long workout’s chips', () => {
   it('leaves a short workout alone, with no summary chip', async () => {
     setSeededLibrary();
 
-    await renderScreen(<TodayScreen />);
+    await renderScreen(<WorkoutsScreen />);
 
     expect(screen.queryByText(/more/)).toBeNull();
   });
@@ -230,9 +249,84 @@ describe('a long workout’s chips', () => {
     await changeLanguage('pt');
     setLongWorkout();
 
-    await renderScreen(<TodayScreen />);
+    await renderScreen(<WorkoutsScreen />);
 
-    expect(screen.getByText('+4 a mais')).toBeTruthy();
+    expect(screen.getByText('+6 a mais')).toBeTruthy();
+  });
+});
+
+/**
+ * What keeps the card from growing without limit, now that it is the header of a list rather than a
+ * screen of its own.
+ *
+ * Everything capped here is capped with `numberOfLines` rather than a `maxHeight` on the card: a fixed
+ * height clips its own contents at large accessibility text sizes, the same reason every touch target
+ * in this codebase uses `minHeight`. So the assertions read the prop, which is the mechanism — there
+ * is no rendered height to measure in this environment, and a snapshot of one would prove nothing.
+ */
+describe('the card’s height caps', () => {
+  /** A note far longer than any card should render, which is what a real program week can carry. */
+  const longNote =
+    'Deload week: keep every working set at RPE 7 or below, add a set only if the last one moved fast, ' +
+    'and stop entirely if the bar speed drops. Sleep is the priority this week.';
+
+  function setProgramWithNote() {
+    useLibraryStore.setState({
+      library: aLibrary({
+        exercises: [anExercise()],
+        workouts: [aWorkout({ id: 'push-day', name: 'Push day' })],
+        programs: [{ id: 'base', name: 'Base', weeks: [{ week: 1, workoutId: 'push-day', notes: longNote }] }],
+      }),
+      status: 'ready',
+    });
+  }
+
+  it('caps a week’s note, which is unbounded user text', async () => {
+    setProgramWithNote();
+
+    await renderScreen(<WorkoutsScreen />);
+
+    expect(screen.getByText(longNote).props.numberOfLines).toBe(2);
+  });
+
+  it('caps the workout name, which is also the user’s to make as long as they like', async () => {
+    setProgramWithNote();
+
+    await renderScreen(<WorkoutsScreen />);
+
+    // The card's copy, not the list row's — the row has no cap and needs none, since it is one line of
+    // a scrolling list rather than the thing standing between the reader and the list.
+    const onCard = screen.getAllByText('Push day').find((node) => node.props.numberOfLines === 2);
+    expect(onCard).toBeTruthy();
+  });
+
+  it('caps a rest day’s note the same way', async () => {
+    useLibraryStore.setState({
+      library: aLibrary({
+        exercises: [anExercise()],
+        workouts: [aWorkout({ id: 'push-day', name: 'Push day' })],
+        programs: [
+          {
+            id: 'base',
+            name: 'Base',
+            weeks: [
+              { week: 1, day: 'Day 1', workoutId: 'push-day' },
+              { week: 1, day: 'Day 2', restDay: true, notes: longNote },
+            ],
+          },
+        ],
+      }),
+      status: 'ready',
+    });
+    const startedAt = new Date().toISOString();
+    useSessionHistoryStore.setState({
+      sessions: [aSession({ startedAt, endedAt: startedAt, program: 'base', programWeek: 1, programDay: 'Day 1' })],
+      status: 'ready',
+    });
+
+    await renderScreen(<WorkoutsScreen />);
+
+    expect(screen.getByText(longNote).props.numberOfLines).toBe(2);
   });
 });
 
@@ -245,7 +339,7 @@ describe('starting an empty session', () => {
   it('offers the entry point alongside a queued workout', async () => {
     setSeededLibrary();
 
-    await renderScreen(<TodayScreen />);
+    await renderScreen(<WorkoutsScreen />);
 
     expect(screen.getByText('Start an empty session')).toBeTruthy();
   });
@@ -253,15 +347,15 @@ describe('starting an empty session', () => {
   it('offers it with no workouts to run at all', async () => {
     setEmptyLibrary();
 
-    await renderScreen(<TodayScreen />);
+    await renderScreen(<WorkoutsScreen />);
 
-    expect(screen.getByText('Nothing to run yet')).toBeTruthy();
+    expect(screen.getByText('No workouts yet')).toBeTruthy();
     expect(screen.getByText('Start an empty session')).toBeTruthy();
   });
 
   it('starts the session with the ad-hoc flag rather than a workout id', async () => {
     setSeededLibrary();
-    await renderScreen(<TodayScreen />);
+    await renderScreen(<WorkoutsScreen />);
 
     await fireEvent.press(screen.getByText('Start an empty session'));
 
@@ -272,7 +366,7 @@ describe('starting an empty session', () => {
     await changeLanguage('pt');
     setSeededLibrary();
 
-    await renderScreen(<TodayScreen />);
+    await renderScreen(<WorkoutsScreen />);
 
     expect(screen.getByText('Começar uma sessão vazia')).toBeTruthy();
   });
@@ -321,18 +415,20 @@ describe('a scheduled rest day', () => {
   it('replaces the workout card and offers nothing to start', async () => {
     setRestDayProgram();
 
-    await renderScreen(<TodayScreen />);
+    await renderScreen(<WorkoutsScreen />);
 
     expect(screen.getByText('Rest day')).toBeTruthy();
     expect(screen.getByText('REST DAY · Week 1 · Day 2')).toBeTruthy();
     expect(screen.queryByText('Start session')).toBeNull();
-    expect(screen.queryByText('Pull day')).toBeNull();
+    // Not "Pull day is absent" — it is in the workout list below, as it should be. The claim is that
+    // the *card* isn't the workout one, and `NEXT UP` is the only thing that says so.
+    expect(screen.queryByText('NEXT UP')).toBeNull();
   });
 
   it("shows the week's own note, which is the user's own text", async () => {
     setRestDayProgram();
 
-    await renderScreen(<TodayScreen />);
+    await renderScreen(<WorkoutsScreen />);
 
     expect(screen.getByText('Walk, nothing heavy.')).toBeTruthy();
   });
@@ -340,15 +436,15 @@ describe('a scheduled rest day', () => {
   it('does not follow the rest card with the empty-library state', async () => {
     setRestDayProgram();
 
-    await renderScreen(<TodayScreen />);
+    await renderScreen(<WorkoutsScreen />);
 
-    expect(screen.queryByText('Nothing to run yet')).toBeNull();
+    expect(screen.queryByText('No workouts yet')).toBeNull();
   });
 
   it('jumps to the next slot that runs something when asked', async () => {
     setRestDayProgram();
 
-    await renderScreen(<TodayScreen />);
+    await renderScreen(<WorkoutsScreen />);
     await fireEvent.press(screen.getByText('Train anyway'));
 
     expect(router.push).toHaveBeenCalledWith({
@@ -360,7 +456,7 @@ describe('a scheduled rest day', () => {
   it('leaves the empty session available, so a rest day is never a dead end', async () => {
     setRestDayProgram();
 
-    await renderScreen(<TodayScreen />);
+    await renderScreen(<WorkoutsScreen />);
 
     expect(screen.getByText('Start an empty session')).toBeTruthy();
   });
@@ -369,7 +465,7 @@ describe('a scheduled rest day', () => {
     await changeLanguage('pt');
     setRestDayProgram();
 
-    await renderScreen(<TodayScreen />);
+    await renderScreen(<WorkoutsScreen />);
 
     expect(screen.getByText('Dia de descanso')).toBeTruthy();
     expect(screen.getByText('Treinar mesmo assim')).toBeTruthy();

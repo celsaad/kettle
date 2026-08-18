@@ -1,304 +1,265 @@
 import { router } from 'expo-router';
-import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { memo, useCallback, useDeferredValue, useMemo, useState } from 'react';
+import { FlatList, Platform, Pressable, StyleSheet, View, type ListRenderItemInfo } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { FirstRunCard } from '@/components/first-run-card';
+import { NextUpCard } from '@/components/next-up-card';
+import { NoResults } from '@/components/no-results';
+import { SearchBar } from '@/components/search-bar';
+import { SortPills } from '@/components/sort-pills';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { formatWorkoutShape } from '@/domain/format';
-import { formatFullDate } from '@/i18n/format';
+import { lastTrainedByWorkout, sortForList } from '@/domain/list-sort';
+import type { Exercise, Workout } from '@/domain/types';
+import { useAppTheme } from '@/hooks/theme-context';
 import { useTheme } from '@/hooks/use-theme';
-import { useLibraryStore } from '@/state/library-store';
-import { useSessionHistoryStore } from '@/state/session-history-store';
-import { currentStreak, thisWeekStats } from '@/state/selectors/history-stats';
-import { recentSessionsView } from '@/state/selectors/history-views';
+import { workoutShape } from '@/state/selectors/workout-shape';
 import { nextUpView } from '@/state/selectors/next-up';
-import { blockChips, workoutShape } from '@/state/selectors/workout-shape';
+import { useLibraryStore } from '@/state/library-store';
+import { useListSort, usePreferencesStore } from '@/state/preferences-store';
+import { useSessionHistoryStore } from '@/state/session-history-store';
 
 export { RouteErrorBoundary as ErrorBoundary } from '@/components/error-fallback';
 
 /**
- * How many block chips the Next-up card shows before it summarises the rest.
+ * One card, memoised, and defined at module level so its identity is stable across renders — a
+ * component declared inside the screen is a new type every render, which remounts every row and makes
+ * the memo worse than useless.
  *
- * A real workout produces around twenty of these — one per block, plus one per circuit member — and
- * they wrap, so an honest full list pushed `Start session` below the fold and behind the tab bar. A
- * new user then had to scroll to find the app's primary action, on the screen that opens first.
- *
- * Eight is where two rows of chips end at a typical phone width, which is enough to tell one workout
- * from another at a glance — which is all this row is for; the exact contents are one tap away in the
- * runner. The cap is applied here rather than in `blockChips`, which keeps returning the whole list:
- * the selector describes the workout, and how much of it fits on a card is this screen's problem.
+ * It navigates by itself rather than taking `onOpen`/`onStart` props, which is what keeps its props
+ * down to two values that don't change: a new lambda per row per render would defeat `memo` at the
+ * first prop comparison. `exercises` comes straight off the library, so its identity only changes when
+ * the library does.
  */
-const VISIBLE_CHIP_LIMIT = 8;
-
-export default function TodayScreen() {
+const WorkoutCard = memo(function WorkoutCard({ workout, exercises }: { workout: Workout; exercises: Exercise[] }) {
   const theme = useTheme();
   const { t } = useTranslation();
-  // Computed per render, not at module scope. It used to be a module-level const, which froze it at
-  // first import — leave the app open past midnight and "Today" showed yesterday's date.
-  const dateLabel = formatFullDate(new Date());
+  const shape = useMemo(() => formatWorkoutShape(workoutShape(workout, exercises)), [workout, exercises]);
+
+  return (
+    <ThemedView type="backgroundElement" style={[styles.card, { borderColor: theme.border }]}>
+      <Pressable
+        onPress={() => router.push({ pathname: '/workout-editor', params: { id: workout.id } })}
+        accessibilityRole="button"
+        style={styles.cardTextArea}>
+        <View style={styles.cardText}>
+          {/* The list's rows are the only place a workout name can be read back unambiguously: the
+              next-up card in the header renders a name too, and which workout it picks rotates by
+              calendar day when no program is active. A test asserting list order off the visible text
+              would quietly depend on today's date. */}
+          <ThemedText type="heading" testID="workout-card-name">
+            {workout.name}
+          </ThemedText>
+          <ThemedText type="small" themeColor="textSecondary">
+            {shape}
+          </ThemedText>
+        </View>
+      </Pressable>
+
+      <Pressable
+        onPress={() => router.push({ pathname: '/session', params: { workoutId: workout.id } })}
+        hitSlop={8}
+        accessibilityRole="button"
+        accessibilityLabel={t('build.startAccessibility', { name: workout.name })}
+        style={({ pressed }) => [styles.startButton, { backgroundColor: theme.accentSoft }, pressed && styles.pressed]}>
+        <View style={[styles.playTriangle, { borderLeftColor: theme.accent }]} />
+      </Pressable>
+    </ThemedView>
+  );
+});
+
+/** Reproduces the `gap` the old `styles.list` had, which a FlatList's cells don't inherit. */
+function Separator() {
+  return <View style={styles.separator} />;
+}
+
+const keyExtractor = (workout: Workout) => workout.id;
+
+/**
+ * The home tab: what to run next, and everything there is to run.
+ *
+ * This was two tabs — `Today` (a next-up card, three stat tiles and a copy of History's first five
+ * rows) and `Build` (the workout list). They merged because only one of the three things Today did
+ * was its own: the stats and the recent list were a smaller, worse copy of the History tab, while the
+ * next-up card is the *only* path that resolves which program week is due and starts a session with
+ * `programId`/`week`/`day` so that week's overrides actually apply. Starting a workout from the list
+ * below passes a bare `workoutId` and gets none of that, which is why the answer was to merge the two
+ * rather than to drop the tab.
+ *
+ * Five tabs became four, and the app opens on the screen where you pick something and start it.
+ */
+export default function WorkoutsScreen() {
+  const theme = useTheme();
+  const { scheme } = useAppTheme();
+  const { t } = useTranslation();
   const library = useLibraryStore((state) => state.library);
   const sessions = useSessionHistoryStore((state) => state.sessions);
+  const sort = useListSort('workouts');
+  const setListSort = usePreferencesStore((state) => state.setListSort);
+  const [query, setQuery] = useState('');
+  /*
+    The input keeps the immediate value so typing is never held back; only the filtering below runs on
+    the deferred one. A timer-based debounce was the alternative and would have added its full delay to
+    every list, including the seed library where filtering is already instant — this adds nothing until
+    the work is actually slow enough to notice, and then yields to the keystroke instead of blocking it.
+  */
+  const deferredQuery = useDeferredValue(query);
+
+  // Every hook here runs before the `!library` bail-out below, since hooks can't be conditional.
+  const all = library?.workouts ?? [];
+  const matching = useMemo(() => {
+    const needle = deferredQuery.trim().toLowerCase();
+    if (!needle) return all;
+    return all.filter((workout) => workout.name.toLowerCase().includes(needle));
+    // `all` is a fresh array literal whenever the library is null, so the library itself is the honest
+    // dependency — depending on `all` would re-filter on every render of an unhydrated screen.
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
+  }, [library, deferredQuery]);
+
+  // `recent` is the only order that reads the log at all, so the map is built only when it's the one
+  // in effect — this walks every session ever logged, and this is a screen you land on to train.
+  const lastTrained = useMemo(
+    () => (sort === 'recent' ? lastTrainedByWorkout(sessions) : new Map<string, string>()),
+    [sessions, sort],
+  );
+  // Sorted after filtering: ordering the whole library to then throw most of it away is work nobody
+  // sees.
+  const workouts = useMemo(() => sortForList(matching, sort, lastTrained), [matching, sort, lastTrained]);
 
   const nextUp = library ? nextUpView(library, sessions) : null;
-  // Only a workout card has blocks to chip or a shape to summarise; a rest day has neither.
-  const queued = nextUp?.kind === 'workout' ? nextUp : null;
-  // Hoisted out of the JSX so the narrowing survives into the onPress closure, which it wouldn't as a
-  // property read off `nextUp`.
-  const skipTo = nextUp?.kind === 'rest' ? nextUp.skipTo : null;
-  const chips = queued ? blockChips(queued.workout, queued.exercises) : [];
-  const visibleChips = chips.slice(0, VISIBLE_CHIP_LIMIT);
-  const hiddenChipCount = chips.length - visibleChips.length;
-  const summary = queued ? formatWorkoutShape(workoutShape(queued.workout, queued.exercises)) : '';
-  const recentSessions = library ? recentSessionsView(sessions, library) : [];
-  const streak = currentStreak(sessions);
-  const weekStats = thisWeekStats(sessions);
 
   // Never having finished a session is what "new here" actually means — it survives a reinstall's
   // seeded library and doesn't need a flag persisted anywhere, so web (which can't persist at all)
   // gets the same behaviour as native for free. It goes for good the moment the first session lands.
   //
-  // Suppressed when there's nothing to run: the empty state below is itself a single clear
-  // instruction, and two competing instruction blocks is worse than either alone. Step one would be
-  // pointing at a workout that isn't there — which a rest card doesn't have either, so it's `queued`
-  // that gates this rather than `nextUp`.
-  const isFirstRun = sessions.length === 0 && queued !== null;
+  // Suppressed when there's nothing queued: the list's own empty state below is a single clear
+  // instruction, and two competing instruction blocks is worse than either alone.
+  const isFirstRun = sessions.length === 0 && nextUp !== null;
 
-  // Only the store still hydrating. A null `nextUp` is a different thing entirely — a library with no
-  // workouts, which is reachable by deleting the seeded ones — and gets the empty card below. This
-  // screen used to return null for that too, so clearing your library blanked the home tab: no
-  // wordmark, no settings button, no way to find out why. Build already had the empty state; Today
-  // didn't, and a blank home tab reads as a crash rather than as an empty library.
+  const exercises = library?.exercises;
+  const renderItem = useCallback(
+    ({ item }: ListRenderItemInfo<Workout>) => <WorkoutCard workout={item} exercises={exercises ?? []} />,
+    [exercises],
+  );
+
   if (!library) return null;
+
+  const fabColor = scheme === 'dark' ? theme.accent : theme.text;
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['top', 'left', 'right']}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.header}>
-          <ThemedText type="title" style={styles.wordmark}>
-            Kettle
-          </ThemedText>
-          <Pressable
-            onPress={() => router.push('/settings')}
-            hitSlop={8}
-            accessibilityRole="button"
-            accessibilityLabel={t('common.settings')}
-            style={({ pressed }) => [
-              styles.settingsButton,
-              { borderColor: theme.border, backgroundColor: theme.backgroundElement },
-              pressed && styles.pressed,
-            ]}>
-            <ThemedText themeColor="textSecondary">⚙</ThemedText>
-          </Pressable>
-        </View>
-
-        <View style={styles.todayHeading}>
-          <ThemedText type="subtitle">{t('today.heading')}</ThemedText>
-          <ThemedText themeColor="textSecondary" style={styles.dateLabel}>
-            {dateLabel}
-          </ThemedText>
-        </View>
-
-        <View style={styles.statsRow}>
-          <ThemedView type="backgroundElement" style={[styles.statCard, { borderColor: theme.border }]}>
-            <ThemedText type="heading">{streak}</ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">
-              {t('today.dayStreak')}
-            </ThemedText>
-          </ThemedView>
-          <ThemedView type="backgroundElement" style={[styles.statCard, { borderColor: theme.border }]}>
-            <ThemedText type="heading">{weekStats.sessions}</ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">
-              {t('today.thisWeek')}
-            </ThemedText>
-          </ThemedView>
-          <ThemedView type="backgroundElement" style={[styles.statCard, { borderColor: theme.border }]}>
-            <ThemedText type="heading">
-              {weekStats.hours}h {weekStats.minutes}m
-            </ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">
-              {t('today.thisWeek')}
-            </ThemedText>
-          </ThemedView>
-        </View>
-
-        {isFirstRun && <FirstRunCard />}
-
-        {/*
-          A scheduled rest day. No chips, no shape summary and deliberately no Start button — the
-          program says today runs nothing, and a filled primary action would argue with that. The
-          escape hatch is a text-weight "Train anyway" that jumps to the next slot which does run
-          something, and "Start an empty session" below stays available as it always is.
-        */}
-        {nextUp?.kind === 'rest' && (
-          <ThemedView type="backgroundElement" style={[styles.nextUpCard, { borderColor: theme.border }]}>
-            <ThemedText type="label" themeColor="textSecondary">
-              {t('today.restDayWeek', {
-                week: `${t('programs.week', { n: nextUp.weekNumber })}${nextUp.weekDay ? ` · ${nextUp.weekDay}` : ''}`,
-              })}
-            </ThemedText>
-            <ThemedText type="subtitle" style={styles.workoutName}>
-              {t('today.restDayTitle')}
-            </ThemedText>
-            {/* The copy deliberately makes no claim about *when*. This card is what's next rather
-                than what today is: it appears the moment you finish the session before it (elapsed
-                is 0, so nothing is owed yet), and a run of consecutive rest slots — which both seeded
-                programs ship at the end of every week — means the next workout is not necessarily
-                tomorrow. "Nothing scheduled today, back tomorrow" was false in both cases, and the
-                day it does mean is already named in the label above. */}
-            <ThemedText themeColor="textSecondary" style={styles.emptyBody}>
-              {t('today.restDayBody')}
-            </ThemedText>
-            {/* The week's own note — user data, rendered verbatim. Often the only thing that
-                distinguishes an active recovery day from a full day off. */}
-            {nextUp.weekNotes && (
-              <ThemedText type="small" themeColor="textSecondary" style={styles.summaryLine}>
-                {nextUp.weekNotes}
-              </ThemedText>
-            )}
-            {skipTo && (
-              <Pressable
-                onPress={() => router.push({ pathname: '/session', params: skipTo })}
-                accessibilityRole="button"
-                style={({ pressed }) => [styles.restSkipButton, { borderColor: theme.border }, pressed && styles.pressed]}>
-                <ThemedText type="heading" themeColor="accentText">
-                  {t('today.restDaySkip')}
-                </ThemedText>
-              </Pressable>
-            )}
-          </ThemedView>
-        )}
-
-        {queued ? (
-          <ThemedView type="backgroundElement" style={[styles.nextUpCard, { borderColor: theme.border }]}>
-            <ThemedText type="label" themeColor="accentText">
-              {queued.weekNumber !== null
-                ? t('today.nextUpWeek', {
-                    week: `${t('programs.week', { n: queued.weekNumber })}${queued.weekDay ? ` · ${queued.weekDay}` : ''}`,
-                  })
-                : t('today.nextUp')}
-            </ThemedText>
-            <ThemedText type="subtitle" style={styles.workoutName}>
-              {queued.workout.name}
-            </ThemedText>
-            <View style={styles.chipRow}>
-              {visibleChips.map((chip, index) => (
-                <View
-                  key={`${chip.name}-${index}`}
-                  style={[styles.chip, { backgroundColor: chip.isRest ? theme.backgroundSelected : theme.accentSoft }]}>
-                  <ThemedText type="small" themeColor={chip.isRest ? 'textSecondary' : 'accentText'}>
-                    {chip.name}
-                  </ThemedText>
-                </View>
-              ))}
-              {/* A `View`, not a `Pressable`: it opens nothing, and neither do the chips beside it.
-                  An arrow or a tap target here would advertise a detail screen that doesn't exist.
-                  Styled like a rest chip rather than like an exercise, so it reads as part of the
-                  row's chrome instead of as another movement in the workout. */}
-              {hiddenChipCount > 0 && (
-                <View style={[styles.chip, { backgroundColor: theme.backgroundSelected }]}>
-                  <ThemedText type="small" themeColor="textSecondary">
-                    {t('today.moreBlocks', { count: hiddenChipCount })}
-                  </ThemedText>
-                </View>
-              )}
-            </View>
-            <ThemedText themeColor="textSecondary" style={styles.summaryLine}>
-              {summary}
-            </ThemedText>
-            {queued.weekNotes && (
-              <ThemedText type="small" themeColor="textSecondary" style={styles.summaryLine}>
-                {queued.weekNotes}
-              </ThemedText>
-            )}
-            <Pressable
-              onPress={() => router.push({ pathname: '/session', params: queued.sessionParams })}
-              accessibilityRole="button"
-              style={({ pressed }) => [styles.startButton, { backgroundColor: theme.accent }, pressed && styles.pressed]}>
-              <View style={[styles.playTriangle, { borderLeftColor: theme.onAccent }]} />
-              <ThemedText type="heading" style={{ color: theme.onAccent }}>
-                {t('today.startSession')}
-              </ThemedText>
-            </Pressable>
-          </ThemedView>
-        ) : /* Only when there is nothing at all. A rest day has already rendered its own card above,
-               and following it with "your library has no workouts" would be both wrong and alarming. */
-        nextUp === null ? (
-          <ThemedView type="backgroundElement" style={[styles.nextUpCard, { borderColor: theme.border }]}>
-            <ThemedText type="subtitle">{t('today.emptyTitle')}</ThemedText>
-            <ThemedText themeColor="textSecondary" style={styles.emptyBody}>
-              {t('today.emptyBody')}
-            </ThemedText>
+      {/*
+        The chrome is passed as an *element*, never as an inline `() => <Header/>`. An inline arrow is
+        a new component type on every render, so React unmounts and remounts the whole header — which
+        would silently eat every keystroke in the search box that lives up there.
+      */}
+      <FlatList
+        data={workouts}
+        keyExtractor={keyExtractor}
+        renderItem={renderItem}
+        ItemSeparatorComponent={Separator}
+        contentContainerStyle={styles.scrollContent}
+        ListHeaderComponent={
+          <View style={styles.listHeader}>
             {/*
-              Straight to the editor rather than to the Build tab: it's the same action Build's own
-              FAB takes, and it needs no cross-tab navigation. The editor can create exercises inline,
-              so this works even when the library was cleared out entirely.
+              The settings gear lives here because this screen is the app's only route to `/settings`
+              — it came across with the merge and has nowhere else to be. The `Kettle` wordmark that
+              used to sit above it did not: it cost a whole row on the screen that now has to fit a
+              card *and* a list, and the web build still shows one in its tab bar.
+            */}
+            <View style={styles.titleRow}>
+              <ThemedText type="subtitle">{t('build.title')}</ThemedText>
+              <Pressable
+                onPress={() => router.push('/settings')}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel={t('common.settings')}
+                style={({ pressed }) => [
+                  styles.settingsButton,
+                  { borderColor: theme.border, backgroundColor: theme.backgroundElement },
+                  pressed && styles.pressed,
+                ]}>
+                <ThemedText themeColor="textSecondary">⚙</ThemedText>
+              </Pressable>
+            </View>
+            <ThemedText themeColor="textSecondary" style={styles.countLabel}>
+              {t('build.workoutCount', { count: workouts.length })}
+            </ThemedText>
+
+            {isFirstRun && <FirstRunCard />}
+
+            {/* Nothing queued means an empty library, and the list's own empty state below says so
+                better than a second card would — so the card simply doesn't render rather than
+                duplicating the message above it. */}
+            {nextUp && <NextUpCard nextUp={nextUp} />}
+
+            {/*
+              Outside the card's conditional on purpose. The empty-library state is where it earns its
+              place: with no workouts at all you can still train, which nothing else on this screen
+              offers without a detour through the editor.
+
+              Text-weight rather than a second filled button — when there is a workout queued, that
+              stays the primary action.
             */}
             <Pressable
-              onPress={() => router.push('/workout-editor')}
+              onPress={() => router.push({ pathname: '/session', params: { adhoc: '1' } })}
               accessibilityRole="button"
-              style={({ pressed }) => [styles.startButton, { backgroundColor: theme.accent }, pressed && styles.pressed]}>
-              <ThemedText type="heading" style={{ color: theme.onAccent }}>
-                {t('build.newWorkout')}
+              style={({ pressed }) => [
+                styles.emptySessionButton,
+                { borderColor: theme.border, backgroundColor: theme.backgroundElement },
+                pressed && styles.pressed,
+              ]}>
+              <ThemedText type="heading" themeColor="accentText" style={styles.emptySessionGlyph}>
+                +
+              </ThemedText>
+              <ThemedText type="heading" themeColor="accentText">
+                {t('today.startEmpty')}
               </ThemedText>
             </Pressable>
-          </ThemedView>
-        ) : null}
 
-        {/*
-          Outside the card's conditional on purpose, so it shows in both branches. The empty-library
-          state is where it earns its place: with no workouts at all you can still train, which the
-          "New workout" button above can't offer without a detour through the editor.
+            {/* Keyed off the whole library rather than what's visible, so neither control disappears
+                mid-search and moves the list under the finger that's typing. */}
+            {all.length > 0 && (
+              <SearchBar value={query} onChangeText={setQuery} placeholder={t('build.searchPlaceholder')} />
+            )}
 
-          Text-weight rather than a second filled button — when there is a workout queued, that stays
-          the primary action.
-        */}
-        <Pressable
-          onPress={() => router.push({ pathname: '/session', params: { adhoc: '1' } })}
-          accessibilityRole="button"
-          style={({ pressed }) => [
-            styles.emptySessionButton,
-            { borderColor: theme.border, backgroundColor: theme.backgroundElement },
-            pressed && styles.pressed,
-          ]}>
-          <ThemedText type="heading" themeColor="accentText" style={styles.emptySessionGlyph}>
-            +
-          </ThemedText>
-          <ThemedText type="heading" themeColor="accentText">
-            {t('today.startEmpty')}
-          </ThemedText>
-        </Pressable>
-
-        {/*
-          The heading goes with its list rather than standing alone: before this it rendered
-          unconditionally, so a fresh install (and the empty library above) showed a "RECENT" label
-          with nothing under it — which reads as content that failed to load.
-        */}
-        {recentSessions.length > 0 && (
-          <ThemedText type="label" themeColor="textSecondary" style={styles.sectionLabel}>
-            {t('today.recent')}
-          </ThemedText>
-        )}
-        <View style={styles.recentList}>
-          {recentSessions.map((session) => (
-            <ThemedView key={session.id} type="backgroundElement" style={[styles.recentRow, { borderColor: theme.border }]}>
-              {/*
-                No trailing arrow: these rows aren't interactive (there's no per-session detail
-                screen to open), and an arrow on a non-tappable row just reads as a broken button —
-                same reason it came off SessionNextCard.
-              */}
-              <View style={styles.recentRowText}>
-                <ThemedText type="heading">{session.workoutName}</ThemedText>
-                <ThemedText type="small" themeColor="textSecondary">
-                  {session.dateLabel} · {session.durationLabel} · {session.setsLabel}
-                </ThemedText>
-              </View>
+            {/* Hidden at one item and at none: there is nothing to order, and a control that changes
+                nothing when pressed is worse than an absent one. */}
+            {all.length > 1 && <SortPills sort={sort} onSelect={(next) => setListSort('workouts', next)} />}
+          </View>
+        }
+        /*
+          Two different empty states, and telling them apart is the point. "No workouts yet — build one
+          from exercises in your library" is the right thing to say on a fresh install and exactly the
+          wrong thing to say to someone with forty workouts who mistyped one.
+        */
+        ListEmptyComponent={
+          all.length > 0 ? (
+            <NoResults query={deferredQuery} />
+          ) : (
+            <ThemedView type="backgroundElement" style={[styles.empty, { borderColor: theme.border }]}>
+              <ThemedText type="heading">{t('build.emptyTitle')}</ThemedText>
+              <ThemedText themeColor="textSecondary" style={styles.emptyBody}>
+                {t('build.emptyBody')}
+              </ThemedText>
             </ThemedView>
-          ))}
-        </View>
-      </ScrollView>
+          )
+        }
+      />
+
+      <Pressable
+        onPress={() => router.push('/workout-editor')}
+        accessibilityRole="button"
+        accessibilityLabel={t('build.newWorkout')}
+        style={({ pressed }) => [styles.fab, { backgroundColor: fabColor }, pressed && styles.pressed]}>
+        <ThemedText type="title" style={[styles.fabPlus, { color: theme.onAccent }]}>
+          +
+        </ThemedText>
+      </Pressable>
     </SafeAreaView>
   );
 }
@@ -315,13 +276,10 @@ const styles = StyleSheet.create({
     paddingTop: Platform.select({ web: Spacing.six, default: Spacing.two }),
     paddingBottom: Spacing.six,
   },
-  header: {
+  titleRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-  },
-  wordmark: {
-    fontSize: 22,
   },
   settingsButton: {
     width: 36,
@@ -331,90 +289,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  countLabel: {
+    marginTop: 2,
+  },
   pressed: {
     opacity: 0.7,
   },
-  todayHeading: {
-    marginTop: Spacing.four,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    gap: Spacing.two,
-    marginTop: Spacing.three,
-  },
-  statCard: {
-    flex: 1,
-    borderRadius: 14,
+  // No `marginTop` any more: the header below carries the gap that `styles.list` used to, and both
+  // would have stacked into double the space above the empty card.
+  empty: {
+    borderRadius: 16,
     borderWidth: 1,
-    padding: Spacing.two + 4,
-  },
-  dateLabel: {
-    marginTop: 2,
-  },
-  nextUpCard: {
-    marginTop: Spacing.three,
-    borderRadius: 22,
     padding: Spacing.three,
-    borderWidth: 1,
+    gap: 4,
   },
-  workoutName: {
-    marginTop: Spacing.one,
-  },
-  emptyBody: {
-    marginTop: Spacing.one,
-  },
-  chipRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.one,
-    marginTop: Spacing.three,
-  },
-  chip: {
-    paddingHorizontal: Spacing.two,
-    paddingVertical: 5,
-    borderRadius: 8,
-  },
-  summaryLine: {
-    marginTop: Spacing.three,
-  },
-  startButton: {
-    marginTop: Spacing.three,
-    // minHeight, not height: a fixed one clips the label at large accessibility text sizes, and this
-    // style now carries the empty state's button too.
-    minHeight: 56,
-    borderRadius: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: Spacing.two,
-  },
+  emptyBody: {},
   /**
-   * Outlined and no play triangle, unlike the Start button it sits where. The rest card's whole claim
-   * is that today runs nothing; a filled accent button would contradict the sentence above it. Same
-   * `minHeight` reasoning as the others — a fixed height clips at large accessibility text sizes.
-   */
-  restSkipButton: {
-    marginTop: Spacing.three,
-    minHeight: 56,
-    borderRadius: 16,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  playTriangle: {
-    width: 0,
-    height: 0,
-    borderTopWidth: 8,
-    borderBottomWidth: 8,
-    borderLeftWidth: 13,
-    borderTopColor: 'transparent',
-    borderBottomColor: 'transparent',
-  },
-  /**
-   * Outlined rather than filled, and sized to match the card's own Start button.
+   * Outlined rather than filled, and sized to match the next-up card's own Start button.
    *
    * It shipped as a bare text link and was genuinely easy to miss on a real device — floating between
-   * the card and RECENT, it read as a caption rather than a control. An outline gives it an edge to
+   * the card and the list, it read as a caption rather than a control. An outline gives it an edge to
    * recognise as tappable while leaving the filled accent button above it unambiguously primary,
    * which is the point of the hierarchy rather than a compromise on it.
    */
@@ -434,14 +328,14 @@ const styles = StyleSheet.create({
     // separate accessible text.
     lineHeight: 22,
   },
-  sectionLabel: {
-    marginTop: Spacing.four,
-    marginBottom: Spacing.two,
+  // What `styles.list`'s `marginTop` and `gap` became once the list stopped being one `View`.
+  listHeader: {
+    marginBottom: Spacing.three,
   },
-  recentList: {
-    gap: Spacing.two,
+  separator: {
+    height: Spacing.two - 3,
   },
-  recentRow: {
+  card: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.two,
@@ -449,8 +343,45 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     padding: Spacing.two + 6,
   },
-  recentRowText: {
+  cardTextArea: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+  },
+  cardText: {
     flex: 1,
     gap: 2,
+  },
+  startButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  playTriangle: {
+    width: 0,
+    height: 0,
+    marginLeft: 2,
+    borderTopWidth: 6,
+    borderBottomWidth: 6,
+    borderLeftWidth: 9,
+    borderTopColor: 'transparent',
+    borderBottomColor: 'transparent',
+  },
+  fab: {
+    position: 'absolute',
+    right: Spacing.three,
+    bottom: Spacing.four,
+    width: 52,
+    height: 52,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  fabPlus: {
+    fontSize: 26,
+    lineHeight: 28,
   },
 });

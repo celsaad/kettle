@@ -17,6 +17,22 @@ language; an unsupported tag is rejected on upload. The limits and the upload fo
 
 ## Unreleased
 
+### What changed
+
+**Four tabs instead of five, and the app opens where you start a workout.**
+
+- **Today and Build are one tab, called Workouts.** It opens with the same "next up" card as before —
+  what your program has queued, or a rest day — and your whole workout list is right underneath it,
+  searchable and sortable as it always was. Starting from the card still carries the program week, so
+  that week's overrides apply; starting from the list still runs the workout as written.
+- **Your streak and this week's numbers moved to History**, which already showed the all-time versions
+  of the same three tiles. History now has two rows: `This week` (sessions, time, streak) and
+  `All time` (sessions, time, sets). Searching narrows the all-time row and hides the weekly one,
+  since a search result isn't a week.
+- **The "Recent" list came off the home screen.** It was History's first five rows without the detail,
+  the editing or the export, and History is one tap away.
+- The settings gear is where it always was, top-right of the first tab.
+
 ### Fixed
 
 - **A program with named weekdays now runs in the order you wrote it.** Days sharing a week number

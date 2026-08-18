@@ -18,19 +18,16 @@ export default function TabLayout() {
       labelStyle={{ default: { color: theme.textSecondary }, selected: { color: theme.accentText } }}
       iconColor={{ default: theme.textSecondary, selected: theme.accentText }}
       tintColor={theme.accentText}>
+      {/* `house` rather than something workout-shaped: this is still the tab the app opens on, and
+          the icon's job is "home", not a second reading of the label beside it. */}
       <NativeTabs.Trigger name="index">
-        <NativeTabs.Trigger.Label>{t('tabs.today')}</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Label>{t('tabs.workouts')}</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf={{ default: 'house', selected: 'house.fill' }} md="home" />
       </NativeTabs.Trigger>
 
       <NativeTabs.Trigger name="library">
         <NativeTabs.Trigger.Label>{t('tabs.library')}</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf={{ default: 'book', selected: 'book.fill' }} md="menu_book" />
-      </NativeTabs.Trigger>
-
-      <NativeTabs.Trigger name="build">
-        <NativeTabs.Trigger.Label>{t('tabs.build')}</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon sf={{ default: 'hammer', selected: 'hammer.fill' }} md="construction" />
       </NativeTabs.Trigger>
 
       <NativeTabs.Trigger name="history">

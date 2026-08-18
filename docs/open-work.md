@@ -190,9 +190,11 @@ wanting states and assignees, it wants GitHub issues instead.
   analytics" read out of context is precisely the change that breaks the Data Safety declaration.
 
   **Placement is settled: it branches off History**, as a modal route pushed from that screen — not a
-  sixth tab. `(tabs)/_layout.tsx` already has five `NativeTabs.Trigger`s, which is the conventional
-  ceiling for a native tab bar, and History is where this belongs on the merits anyway: it owns the
-  session log and already carries the stat tiles and the search that narrows them. Concretely that means
+  fifth tab. The tab-count argument that originally settled this is gone — `(tabs)/_layout.tsx` is down
+  to four `NativeTabs.Trigger`s since Today and Build merged, so there is room now — but the conclusion
+  doesn't depend on it: History is where this belongs on the merits, and more so than before. It owns
+  the session log, the search that narrows them, and now *both* stat rows, since the same merge moved
+  `thisWeekStats` and `currentStreak` there off the old Today tab. Concretely that means
   a new `src/app/analytics.tsx` sibling registered in `_layout.tsx` with
   `presentation: 'modal', headerShown: false` and opened with the shared `ModalHeader` — the same shape
   as every other non-tab screen in the app, `program-detail.tsx` being the closest precedent (reached
@@ -202,7 +204,7 @@ wanting states and assignees, it wants GitHub issues instead.
   which is already full of sessions.
 
   Most of the math is already written and just isn't collected anywhere: `historyStats`, `thisWeekStats`
-  and `currentStreak` are on Today and History already, and `exerciseHistory` + `entryVolume` cover
+  and `currentStreak` all render on History already, and `exerciseHistory` + `entryVolume` cover
   per-exercise volume. Four things to settle before building, in rising order of cost:
 
   - **`entryVolume` and `sessionSetCount` are module-private** in `selectors.ts` and need exporting,

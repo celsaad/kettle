@@ -7,9 +7,8 @@ import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 
 const TABS = [
-  { name: 'index', href: '/' as const, labelKey: 'tabs.today' },
+  { name: 'index', href: '/' as const, labelKey: 'tabs.workouts' },
   { name: 'library', href: '/library' as const, labelKey: 'tabs.library' },
-  { name: 'build', href: '/build' as const, labelKey: 'tabs.build' },
   { name: 'history', href: '/history' as const, labelKey: 'tabs.history' },
   { name: 'programs', href: '/programs' as const, labelKey: 'tabs.programs' },
 ];

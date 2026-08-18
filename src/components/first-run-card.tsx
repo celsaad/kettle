@@ -10,17 +10,22 @@ import { useTheme } from '@/hooks/use-theme';
  * Three steps for someone who has just installed the app.
  *
  * Kettle opens on a seeded library, so a first run already has something to start — but nothing said
- * what the five tabs were for, and the surface area is the app's real onboarding problem: a runner, a
+ * what the tabs were for, and the surface area is the app's real onboarding problem: a runner, a
  * library, a builder, programs, history and an importer all arrive at once. So this names the three
  * that matter in order and stays quiet about the rest; Library and History are discoverable once you
  * have a reason to look for them.
  *
- * **Nothing here is tappable, deliberately.** Steps 2 and 3 name tabs that are one tap away in the tab
- * bar, and a card that duplicates navigation invites the broken-button look this codebase has already
- * removed twice (the arrows on Today's non-pressable Recent rows, and `SessionNextCard`'s). The tab
- * bar is the affordance; this is just the caption for it.
+ * **Nothing here is tappable, deliberately.** Step 3 names a tab that is one tap away in the tab bar,
+ * and a card that duplicates navigation invites the broken-button look this codebase has already
+ * removed twice (the arrows on the old Recent rows, and `SessionNextCard`'s). The tab bar is the
+ * affordance; this is just the caption for it.
  *
- * Who sees it is the caller's business — see `sessions.length === 0` in the Today screen.
+ * **Step 2 names no tab, which is a correction rather than a style choice.** It used to read "Make it
+ * yours in Build" — and when Build merged into this screen, that became an instruction to go to the
+ * tab you are already looking at. It now points at the workout list directly below the card, which is
+ * where editing actually starts.
+ *
+ * Who sees it is the caller's business — see `sessions.length === 0` in the Workouts screen.
  */
 export function FirstRunCard() {
   const theme = useTheme();

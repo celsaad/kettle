@@ -12,7 +12,7 @@ import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useLibraryStore } from '@/state/library-store';
 import { useSessionHistoryStore } from '@/state/session-history-store';
-import { historyStats as historyStatsFor } from '@/state/selectors/history-stats';
+import { currentStreak, historyStats as historyStatsFor, thisWeekStats } from '@/state/selectors/history-stats';
 import { historySessionsView, type HistorySessionView } from '@/state/selectors/history-views';
 import { exportSession, exportSessions } from '@/storage/export';
 
@@ -160,6 +160,10 @@ export default function HistoryScreen() {
     return historyStatsFor(sessions.filter((session) => visibleIds.has(session.id)));
   }, [sessions, visibleSessions, searching]);
 
+  // The other half of the tiles, and deliberately *not* narrowed by the search — see where it renders.
+  const weekStats = useMemo(() => thisWeekStats(sessions), [sessions]);
+  const streak = useMemo(() => currentStreak(sessions), [sessions]);
+
   // Both wrapped so every card can hold the same two function identities and stay memo-equal; without
   // that, one expand re-renders every card on screen.
   const confirmDelete = useCallback(
@@ -228,11 +232,61 @@ export default function HistoryScreen() {
           all-time numbers as if they were that month's. Searching narrows both the list and the
           tiles, so the label has to stop claiming "all time" and say what the subset is instead.
         */}
-            <ThemedText themeColor="textSecondary" style={styles.countLabel}>
-              {searching
-                ? t('history.matchCount', { shown: visibleSessions.length, total: sessions.length })
-                : t('history.allTime')}
-            </ThemedText>
+            {/*
+              Only while searching. This line used to carry the tiles' scope for both cases — a
+              hardcoded "July 2026" once, then "All time" / "N of M" — but now that two labelled rows
+              sit below it, "All time" here and again on the row it describes is the same word twice.
+              The scope wording moved down to the row; the match count stays up here, where it also
+              describes the list.
+            */}
+            {searching && (
+              <ThemedText themeColor="textSecondary" style={styles.countLabel}>
+                {t('history.matchCount', { shown: visibleSessions.length, total: sessions.length })}
+              </ThemedText>
+            )}
+
+            {/*
+              This week, and it does **not** narrow with the search — which is why it hides entirely
+              while one is active rather than sitting there with stale numbers. A search result set is
+              not a time period: "this week" over "everything matching 'push'" is a sentence with no
+              meaning, and leaving all-time-style numbers up there under a THIS WEEK label is the exact
+              dishonesty the `allTime` / `matchCount` switch below the title was written to avoid. The
+              all-time row keeps narrowing, because a filtered *total* is still a total.
+
+              These three moved here from the old Today tab, which showed them above its next-up card.
+              They were a second, smaller copy of the row below — same `historyStats` aggregator, one
+              tab over — and History is where they belong on the merits: it owns the session log and
+              the search that scopes it.
+            */}
+            {!searching && (
+              <>
+                <ThemedText type="label" themeColor="textSecondary" style={styles.statsLabel}>
+                  {t('history.thisWeekLabel')}
+                </ThemedText>
+                <View style={styles.statsRow}>
+                  <ThemedView type="backgroundElement" style={[styles.statCard, { borderColor: theme.border }]}>
+                    <ThemedText type="heading">{weekStats.sessions}</ThemedText>
+                    <ThemedText type="small" themeColor="textSecondary">
+                      {t('history.sessions')}
+                    </ThemedText>
+                  </ThemedView>
+                  <ThemedView type="backgroundElement" style={[styles.statCard, { borderColor: theme.border }]}>
+                    <ThemedText type="heading">
+                      {weekStats.hours}h {weekStats.minutes}m
+                    </ThemedText>
+                    <ThemedText type="small" themeColor="textSecondary">
+                      {t('history.time')}
+                    </ThemedText>
+                  </ThemedView>
+                  <ThemedView type="backgroundElement" style={[styles.statCard, { borderColor: theme.border }]}>
+                    <ThemedText type="heading">{streak}</ThemedText>
+                    <ThemedText type="small" themeColor="textSecondary">
+                      {t('history.streak')}
+                    </ThemedText>
+                  </ThemedView>
+                </View>
+              </>
+            )}
 
             {sessionErrors.length > 0 && (
               <View style={[styles.problemCard, { borderColor: theme.accentText }]}>
@@ -247,6 +301,14 @@ export default function HistoryScreen() {
               </View>
             )}
 
+            {/* Named only when it isn't the only row on screen. While searching the match count above
+                already says what these numbers cover, and calling a filtered subset "All time" would
+                be a lie. */}
+            {!searching && (
+              <ThemedText type="label" themeColor="textSecondary" style={styles.statsLabel}>
+                {t('history.allTime')}
+              </ThemedText>
+            )}
             <View style={styles.statsRow}>
               <ThemedView type="backgroundElement" style={[styles.statCard, { borderColor: theme.border }]}>
                 <ThemedText type="heading">{historyStats.sessions}</ThemedText>
@@ -315,7 +377,12 @@ const styles = StyleSheet.create({
   statsRow: {
     flexDirection: 'row',
     gap: Spacing.two,
-    marginTop: Spacing.three,
+    marginTop: Spacing.two,
+  },
+  // Sits tight to the row it names, with the gap above it instead — so the two labelled groups read as
+  // two groups rather than as one run of evenly spaced things.
+  statsLabel: {
+    marginTop: Spacing.four,
   },
   statCard: {
     flex: 1,

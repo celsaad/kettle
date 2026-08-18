@@ -213,7 +213,9 @@ describe('weeks', () => {
 
     await fireEvent.press(screen.getByText('+ Add week'));
 
-    expect(screen.getByText('No workouts yet — create one in Build first, then come back to add weeks here.')).toBeTruthy();
+    expect(
+      screen.getByText('No workouts yet — create one in Workouts first, then come back to add weeks here.'),
+    ).toBeTruthy();
     expect(screen.getByText('0 weeks')).toBeTruthy();
   });
 });

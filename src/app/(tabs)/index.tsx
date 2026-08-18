@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { FirstRunCard } from '@/components/first-run-card';
 import { NextUpCard } from '@/components/next-up-card';
+import { ListRow, ListRowSeparator } from '@/components/list-row';
 import { NoResults } from '@/components/no-results';
 import { SearchBar } from '@/components/search-bar';
 import { ThemedText } from '@/components/themed-text';
@@ -38,7 +39,7 @@ const WorkoutCard = memo(function WorkoutCard({ workout, exercises }: { workout:
   const shape = useMemo(() => formatWorkoutShape(workoutShape(workout, exercises)), [workout, exercises]);
 
   return (
-    <ThemedView type="backgroundElement" style={[styles.card, { borderColor: theme.border }]}>
+    <ListRow>
       <Pressable
         onPress={() => router.push({ pathname: '/workout-editor', params: { id: workout.id } })}
         accessibilityRole="button"
@@ -76,14 +77,9 @@ const WorkoutCard = memo(function WorkoutCard({ workout, exercises }: { workout:
         ]}>
         <View style={[styles.playTriangle, { borderLeftColor: theme.text }]} />
       </Pressable>
-    </ThemedView>
+    </ListRow>
   );
 });
-
-/** Reproduces the `gap` the old `styles.list` had, which a FlatList's cells don't inherit. */
-function Separator() {
-  return <View style={styles.separator} />;
-}
 
 const keyExtractor = (workout: Workout) => workout.id;
 
@@ -168,7 +164,7 @@ export default function WorkoutsScreen() {
         data={matching}
         keyExtractor={keyExtractor}
         renderItem={renderItem}
-        ItemSeparatorComponent={Separator}
+        ItemSeparatorComponent={ListRowSeparator}
         contentContainerStyle={styles.scrollContent}
         ListHeaderComponent={
           <View style={styles.listHeader}>
@@ -348,17 +344,6 @@ const styles = StyleSheet.create({
   // What `styles.list`'s `marginTop` and `gap` became once the list stopped being one `View`.
   listHeader: {
     marginBottom: Spacing.three,
-  },
-  separator: {
-    height: Spacing.two - 3,
-  },
-  card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.two,
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: Spacing.two + 6,
   },
   cardTextArea: {
     flex: 1,

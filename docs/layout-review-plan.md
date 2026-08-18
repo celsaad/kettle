@@ -180,15 +180,20 @@ re-introduces exactly what that change fixed.
 §3's principle is right: *a card is for a single discrete privileged object; a list of peers is rows.*
 Applied narrowly.
 
-- **Workouts and Programs rows** → rows. `minHeight: 56`, one hairline separator in the existing
+- **Workouts, Programs *and* Library** → rows. `minHeight: 56`, one hairline separator in the existing
   `border` token, no fill, no radius. Both lines free to wrap.
+
+  ~~Library deferred until Workouts has been seen on device, since its rows carry a type badge that
+  may need the fill to read.~~ **Done together instead.** The three screens held byte-identical copies
+  of the card style, so converting two of them would have shipped a deliberate mismatch between
+  sibling lists — which is the exact failure the runner's two progress indicators had just
+  demonstrated, twice, in Phase 3. The badge carries its own per-type background and reads fine
+  without a card behind it. All three now share one `ListRow`, so they cannot drift again.
 - **History session cards stay cards.** They expand in place (`expanded` / `onToggle`) — that is a
   disclosure container holding per-exercise detail, not a peer row, and a card is the right shape for
   it.
-- **Settings stays as-is.** `ActionRow` is already a row inside labelled sections, and the sectioning
-  is what makes that screen readable. §3 asks for chevrons; worth it, and that is the whole change.
-- **Library rows** deferred until Workouts has been seen on device. Same shape, but Library rows carry
-  a type badge and the badge may need the fill to read.
+- **Settings needed nothing.** §3 asks for rows with a chevron; `ActionRow` already is one, inside
+  labelled sections, with a `›` at the end. Checked rather than assumed.
 
 ## Phase 5 — Stats, "am I getting stronger?"
 

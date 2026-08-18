@@ -5,10 +5,10 @@ import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ExerciseBadge, exerciseSummary } from '@/components/exercise-badge';
+import { ListRow, ListRowSeparator } from '@/components/list-row';
 import { NoResults } from '@/components/no-results';
 import { SearchBar } from '@/components/search-bar';
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { ExerciseType, type Exercise } from '@/domain/types';
 import type { UnitSystem } from '@/domain/units';
@@ -43,13 +43,11 @@ const FILTERS: { labelKey: string; type: ExerciseType | 'all' }[] = [
  * search box whose every keystroke re-renders this screen.
  */
 const ExerciseCard = memo(function ExerciseCard({ exercise, unitSystem }: { exercise: Exercise; unitSystem: UnitSystem }) {
-  const theme = useTheme();
-
   return (
     <Pressable
       onPress={() => router.push({ pathname: '/exercise-editor', params: { id: exercise.id } })}
       accessibilityRole="button">
-      <ThemedView type="backgroundElement" style={[styles.card, { borderColor: theme.border }]}>
+      <ListRow>
         <View style={styles.cardText}>
           <ThemedText type="heading">{exercise.name}</ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
@@ -57,15 +55,10 @@ const ExerciseCard = memo(function ExerciseCard({ exercise, unitSystem }: { exer
           </ThemedText>
         </View>
         <ExerciseBadge type={exercise.type} />
-      </ThemedView>
+      </ListRow>
     </Pressable>
   );
 });
-
-/** Reproduces the `gap` the old `styles.list` had, which a FlatList's cells don't inherit. */
-function Separator() {
-  return <View style={styles.separator} />;
-}
 
 const keyExtractor = (exercise: Exercise) => exercise.id;
 
@@ -106,7 +99,7 @@ export default function LibraryScreen() {
         data={visible}
         keyExtractor={keyExtractor}
         renderItem={renderItem}
-        ItemSeparatorComponent={Separator}
+        ItemSeparatorComponent={ListRowSeparator}
         contentContainerStyle={styles.scrollContent}
         ListHeaderComponent={
           <View style={styles.listHeader}>
@@ -239,17 +232,6 @@ const styles = StyleSheet.create({
   // What `styles.list`'s `marginTop` and `gap` became once the list stopped being one `View`.
   listHeader: {
     marginBottom: Spacing.three,
-  },
-  separator: {
-    height: Spacing.two - 3,
-  },
-  card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.two,
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: Spacing.two + 6,
   },
   cardText: {
     flex: 1,

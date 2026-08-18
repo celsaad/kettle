@@ -1,7 +1,9 @@
 # Layout review plan
 
-> **Status: not executed.** Planned work, phase by phase. Phases are independent and land as separate
-> PRs; nothing here is a prerequisite for anything below it except where stated.
+> **Status: executed**, all five phases. Kept for its rationale rather than as a backlog — in
+> particular for the list of the review's claims that are *false*, checked against the code, and for
+> the four places the plan itself turned out to be wrong on device. Both lists exist so the same
+> arguments aren't made again from the same screenshots.
 
 ## Where this came from
 

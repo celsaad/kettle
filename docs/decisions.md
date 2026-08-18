@@ -15,6 +15,67 @@ find it. Add an entry only when the reasoning **isn't discoverable from a single
 constraint that shapes future work, something deliberately rejected (so it isn't re-proposed), or a
 decision assembled across several commits. Open work belongs in the sections at the bottom, not here.
 
+- ✅ **A card is for one privileged object; a list of peers is rows.** Every list in the app drew its
+  items as a filled surface with a 1px border and a 16px radius — Workouts, Library, Programs, History
+  and Settings each held a byte-identical copy of that style — so twenty-six workouts meant twenty-six
+  frames competing with the twenty-six names inside them. They are hairline-separated rows now, in
+  `components/list-row.tsx`, which exists as much to stop the five copies reappearing as to change
+  them. Three things worth knowing before adding a sixth list:
+
+  - **The metrics are exported** (`ListRowMinHeight`, `ListRowVerticalPadding`) because two screens
+    need a row that is *not* `ListRow`: History's expands in place, so it is a vertical container with
+    a pressable header inside, and Settings' are conditionally-rendered siblings in a section rather
+    than `FlatList` children. Share the numbers; don't retype them.
+  - **Rows carry no horizontal padding.** The card's own padding used to sit on top of the screen's,
+    indenting every name 30px while the title and search box above sat at 16px.
+  - **A list needs a drawn top edge** (`ListHeaderRule`). Without a fill on the rows the search box
+    just stops and names begin, so the first row reads as more header.
+
+  The rule has one apparent exception that isn't one: History's rows still *expand*, which is a
+  disclosure rather than a peer row — but the surface went anyway, because keeping it made History the
+  one tab whose list looked boxed while the other three did not. Sibling lists that look subtly unlike
+  each other read as a bug rather than as a distinction, which is the same failure the runner's two
+  progress indicators had at the same time.
+
+- ✅ **List sorting was built, collapsed, and then deleted. Don't rebuild it.** Workouts, Library and
+  Programs had a three-option order control (`custom` / A–Z / `recent`) in a permanent row of pills.
+  A design review called it chrome — "sorting a list you search is chrome" — and was right twice over:
+  the control cost each of those screens a permanent line to display two options nobody had chosen,
+  and on Library it sat directly under the type-filter row, so the screen opened with two
+  near-identical rows of pills doing unrelated things. An intermediate version collapsing it to a
+  header trigger that opened a bottom sheet was built and rejected on sight, for turning a control you
+  could read at a glance into one you had to open.
+
+  Every list now renders in **library file order**, which was already the shipped default on all three
+  and is the only order a hand-written, hand-shared file can be said to have an opinion about.
+
+  **One hazard outlives the feature.** `listSort` was a real persisted preference, so every
+  `preferences.json` in the field still carries it — it was removed from the app, not from anyone's
+  disk. Zod objects strip unknown keys rather than rejecting them, which is the only reason those
+  files still load; a `.strict()` on the preferences schema would turn every existing install into a
+  failed parse and silently reset the preferences they *did* set. `preferences-file.test.ts` pins
+  exactly that, and the same applies to any preference dropped in future.
+
+- ✅ **`entryBest` is the single definition of "doing more", and now has three consumers.** It decides
+  which entry types compete for a record and on what — a loaded exercise on load, a bodyweight one on
+  reps, a hold on seconds — for the completion screen's records, the runner's live best-marker, and
+  the Stats screen's per-exercise trend. It is exported for that third one rather than restated,
+  because three parts of the app disagreeing about whether a session was an improvement is a bug no
+  test would catch.
+
+  **Its omissions are inherited, not re-decided.** `hiit` rounds and `emom` minutes are bounded by the
+  exercise's own config, so a rise there reports that the *workout* was edited; `cardio` has real
+  records, but comparing distance across two routes needs rules the app doesn't have. That is why the
+  Stats screen covers strength work and holds and says so, rather than appearing to cover everything.
+
+- ✅ **The Stats screen deliberately does *not* inherit History's search.** `open-work.md` predicted the
+  opposite: History's stat tiles narrow to the visible subset and relabel themselves "N of M", so
+  charting an unfiltered set after arriving from a filtered list looked like it would break the same
+  expectation. It doesn't, because the premise differs — those tiles sat *above the filtered list* and
+  had to describe it. Stats is not looking at a list. It always reports the whole log, which is also
+  the only reading under which "this week" and a day streak mean anything: a streak scoped to a name
+  search is not a streak.
+
 - ✅ **A program's weeks run in the order they are written, and `day` is never interpreted.**
   `sortedProgramWeeks` (`state/selectors/next-up.ts`) sorts on `week` alone and leans on
   `Array.prototype.sort` being stable to leave one week number's days in file order. It used to break

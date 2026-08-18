@@ -140,25 +140,27 @@ wanting states and assignees, it wants GitHub issues instead.
     path that can lose a workout in progress. `yaml-mapping.ts` likewise — splitting it separates
     halves of a bijection that must be edited together.
 
-- **Color-code the session progress indicator.** The dots at the top of the runner
-  (`session-progress-dots.tsx`) are one per **workout block** — `total` is `workout.blocks.length` — not
-  one per circuit, so the first thing this has to settle is what a dot is colored *by*: a block is a
-  single exercise, a circuit, or a rest, and the middle one has no single type to color with. Three
-  constraints, none visible from the component itself:
+- **Colour-code the session progress indicator — mostly settled against, kept for the one live
+  constraint.** This entry used to argue about the runner's per-block dots: what a dot should be
+  coloured *by*, given a block can be a single exercise, a circuit or a rest, and the middle one has
+  no single type to colour with. The dots are gone — both indicators are proportional bars now
+  (`session-progress.tsx`), because one dash per member overflowed its track at 27 circuit members and
+  a single-block workout drew one permanently-full dash that read as finished. See the decision log.
 
-  - **The runner has two hues and they already mean something.** `RunnerColors` carries `accent` (warm)
-    and `accentCalm` (blue), and the split in use is work vs rest — `session-rest.tsx` is the only
-    screen on the calm one. A per-type scheme needs a categorical palette that doesn't exist yet; build
-    it through the `dataviz` skill's categorical procedure and run its validator against the runner's
-    fixed `background: '#17140d'` rather than picking seven hues by eye.
-  - **Hue can't be the only channel.** The dots are decorative geometry today — no label, no
-    screen-reader path, and a fixed `height: 4` that the a11y house rules exempt for exactly that
-    reason. The moment a color carries meaning that exemption lapses: it needs a second channel and it
-    stops being exempt from the contrast check.
-  - **Only the active dot is distinguished at all.** `dotActive` widens to 22 and takes `accent`;
-    completed and upcoming dots are an identical 9×4 at 22% opacity. So whether the useful thing to
-    encode is *type* or *progress* is the real question — both want the same channel, and progress is
-    the one a person mid-workout is actually asking about.
+  That change also answered the entry's own closing question. It ended "whether the useful thing to
+  encode is *type* or *progress* is the real question — both want the same channel, and progress is
+  the one a person mid-workout is actually asking about." Progress won, and it now owns the channel;
+  encoding type as well would need a second one.
+
+  The constraint that outlives it, and would apply to any categorical colour in the runner: **the
+  runner has two hues and they already mean something.** `RunnerColors` carries `accent` (warm) and
+  `accentCalm` (blue), and the split in use is session vs circuit on the bars, work vs rest on the
+  screens. A per-type scheme needs a categorical palette that doesn't exist yet — build it through
+  the `dataviz` skill's categorical procedure and run its validator against the runner's fixed
+  `background: '#17140d'` rather than picking hues by eye. And hue could not be the only channel:
+  these are decorative geometry with a fixed height, which the a11y house rules exempt from the touch
+  and contrast rules for exactly that reason, and the moment a colour carries meaning that exemption
+  lapses.
 
 - **Are seven exercise types enough?** Checked against the config shapes rather than brainstormed, so
   the survey doesn't get re-run: one candidate is genuinely a new type, and most of what sounds like one
@@ -183,52 +185,28 @@ wanting states and assignees, it wants GitHub issues instead.
   "parallel switches stay" entry was banking. `schema.ts`, `yaml-mapping.ts`, `TYPE_OPTIONS` and both
   locale bundles are the parts it can't catch for you.
 
-- **An analytics screen — progress across the whole log, rather than one exercise at a time.**
-  *Analytics* here means **charts over the user's own local sessions**, and the word is doing dangerous
-  double duty: an analytics *SDK* is a hard no (see the tip-jar entry — zero data collected/shared is a
-  printed store claim), and nothing in this entry sends anything anywhere. Spelled out because "add
-  analytics" read out of context is precisely the change that breaks the Data Safety declaration.
+- **The landing site's screenshots show an app that no longer exists.** `site/index.html` embeds eight
+  captures from `assets/img/`, and the layout work invalidated most of them — including
+  `today.jpg`, which is a tab that was merged away. What the current images still claim, in their own
+  alt text: a Today screen, block chips on the next-up card, streak and this-week tiles on the home
+  screen, and card-shaped list rows. None of those survive.
 
-  **Placement is settled: it branches off History**, as a modal route pushed from that screen — not a
-  fifth tab. The tab-count argument that originally settled this is gone — `(tabs)/_layout.tsx` is down
-  to four `NativeTabs.Trigger`s since Today and Build merged, so there is room now — but the conclusion
-  doesn't depend on it: History is where this belongs on the merits, and more so than before. It owns
-  the session log, the search that narrows them, and now *both* stat rows, since the same merge moved
-  `thisWeekStats` and `currentStreak` there off the old Today tab. Concretely that means
-  a new `src/app/analytics.tsx` sibling registered in `_layout.tsx` with
-  `presentation: 'modal', headerShown: false` and opened with the shared `ModalHeader` — the same shape
-  as every other non-tab screen in the app, `program-detail.tsx` being the closest precedent (reached
-  from a tab, not from another modal). Two consequences: adding the route file means regenerating
-  `.expo/types/router.d.ts` by briefly running the dev server, or `router.push('/analytics')` fails
-  typecheck; and the entry point wants to be a header control on History rather than a row in the list,
-  which is already full of sessions.
+  This needs device captures, which is why it is here rather than done: the alt text is accurate *to
+  the images*, so rewriting the prose without replacing the pictures would make it worse, not better.
+  Recapture on a real device in dark theme to match the existing set, then update the alt text with
+  them — it is the only description a screen-reader user or a search engine gets, and
+  `store/README.md` covers the same requirement for the Play listing's screenshots, which are a
+  separate set with the same problem.
 
-  Most of the math is already written and just isn't collected anywhere: `historyStats`, `thisWeekStats`
-  and `currentStreak` all render on History already, and `exerciseHistory` + `entryVolume` cover
-  per-exercise volume. Four things to settle before building, in rising order of cost:
-
-  - **`entryVolume` and `sessionSetCount` are module-private** in `selectors.ts` and need exporting,
-    exactly as `sessionEntrySummary` and `nextWeekAfter` did before them. The cheap part.
-  - **`VolumeChart` is the wrong component to reuse**, by its own design note: it's deliberately a
-    sparkline — no axes, direct value labels, sized to sit inline above a list that already states every
-    value. A screen-sized chart needs a scale, so it needs axes, gridlines and a tick strategy. That's a
-    new component built through the `dataviz` skill, not a wider `VolumeChart`.
-  - **Branching off History raises one question the tab version wouldn't have:** does the screen inherit
-    History's active search filter, or always aggregate all-time? History already sets a precedent in
-    the *other* direction — its stat tiles narrow to the visible subset, and the header switches from
-    "All time" to "N of M", because three all-time numbers above a filtered list would describe sessions
-    that aren't on screen. Arriving from a filtered History and showing unfiltered charts would break
-    that same expectation, so inheriting the filter is the consistent answer; it needs the same honest
-    header treatment rather than silently charting a subset.
-  - **This is the consumer that makes `listSessions()`'s O(all sessions ever logged) real.** It's in the
-    decision log as a risk with nothing exercising it; a screen whose whole job is aggregating all of
-    history is that something. The remedy named there still stands — lazy or paginated loading, or a
-    small index file — and explicitly *not* consolidating the per-session files.
-
-  One thing to decide up front rather than discover: an SVG chart has no screen-reader story, and the
-  precedent already set is that **the numbers ship as text as well** — the volume chart sits directly
-  above a list that spells out every value. A screen of charts with no textual equivalent would be the
-  first a11y regression since the house rules landed.
+- **The Stats screen made `listSessions()`'s cost real, and nothing has been done about it.** The
+  scaling risk is in the decision log with the remedies; what changed is that it now has a consumer.
+  `analytics.tsx` walks the whole log three times per render — `historyStats`, `sessionsPerWeek` and
+  `exerciseProgress` — deliberately unmemoised, because all three read the clock and a cache keyed on
+  the log alone would freeze them at whatever the date was when a session was last written. That is
+  the right call for a short-lived modal over a few hundred sessions and the wrong one over a few
+  thousand. Nothing is slow yet; measure before changing anything, and the remedy named in the
+  decision log (lazy or paginated loading, or a small index file) still stands — explicitly *not*
+  consolidating the per-session files.
 
 - **Drive a running session from the wrist.** Wear OS bridges phone notifications, action buttons
   included, so an ongoing notification carrying Done / Back / +30s is a watch remote with no watch app,

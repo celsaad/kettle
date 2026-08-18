@@ -6,7 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { FirstRunCard } from '@/components/first-run-card';
 import { NextUpCard } from '@/components/next-up-card';
-import { ListRow, ListRowSeparator } from '@/components/list-row';
+import { ListHeaderRule, ListRow, ListRowSeparator } from '@/components/list-row';
 import { NoResults } from '@/components/no-results';
 import { SearchBar } from '@/components/search-bar';
 import { ThemedText } from '@/components/themed-text';
@@ -176,55 +176,46 @@ export default function WorkoutsScreen() {
             */}
             <View style={styles.titleRow}>
               <ThemedText type="subtitle">{t('build.title')}</ThemedText>
-              {/*
-                "Start an empty session" rides in the title row rather than sitting under the card as a
-                full-width outlined button. It is a genuinely secondary action — the way to train when
-                nothing in the library fits — and as a button the width of the screen it read as a peer
-                of `Start session`, directly under it, while costing a whole row on the screen this
-                change exists to shorten. Labelled rather than icon-only: a bare `+` here would collide
-                with the FAB's, which creates a workout instead.
-
-                Its label is `textSecondary`, matching the gear beside it, so this row reads as one
-                group of chrome controls. It was `accentText`, which is what made it and the FAB read
-                as two competing offers of the same kind: the two are at opposite corners doing
-                unrelated things (start an unplanned session / create a workout), and the only thing
-                they had in common was the accent. See the note on `emptySessionButton` below for why
-                the fix is the colour rather than the placement.
-              */}
-              <View style={styles.titleActions}>
-                <Pressable
-                  onPress={() => router.push({ pathname: '/session', params: { adhoc: '1' } })}
-                  hitSlop={8}
-                  accessibilityRole="button"
-                  style={({ pressed }) => [
-                    styles.emptySessionButton,
-                    { borderColor: theme.border, backgroundColor: theme.backgroundElement },
-                    pressed && styles.pressed,
-                  ]}>
-                  <ThemedText type="smallMedium" themeColor="textSecondary">
-                    {t('today.startEmpty')}
-                  </ThemedText>
-                </Pressable>
-                <Pressable
-                  onPress={() => router.push('/settings')}
-                  hitSlop={8}
-                  accessibilityRole="button"
-                  accessibilityLabel={t('common.settings')}
-                  style={({ pressed }) => [
-                    styles.settingsButton,
-                    { borderColor: theme.border, backgroundColor: theme.backgroundElement },
-                    pressed && styles.pressed,
-                  ]}>
-                  <ThemedText themeColor="textSecondary">⚙</ThemedText>
-                </Pressable>
-              </View>
+              <Pressable
+                onPress={() => router.push('/settings')}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel={t('common.settings')}
+                style={({ pressed }) => [
+                  styles.settingsButton,
+                  { borderColor: theme.border, backgroundColor: theme.backgroundElement },
+                  pressed && styles.pressed,
+                ]}>
+                <ThemedText themeColor="textSecondary">⚙</ThemedText>
+              </Pressable>
             </View>
+
             {isFirstRun && <FirstRunCard />}
 
             {/* Nothing queued means an empty library, and the list's own empty state below says so
                 better than a second card would — so the card simply doesn't render rather than
                 duplicating the message above it. */}
             {nextUp && <NextUpCard nextUp={nextUp} />}
+
+            {/*
+              Directly under the card's Start button, which is the fourth place this control has
+              lived and the one the design review asked for. It rode in the title row until a device
+              check at a raised text size: a bordered pill sharing a row with the screen title and the
+              settings gear has nowhere to go when the words get wider, and that row overflowed.
+
+              The objection to this spot was that an earlier version — a bare caption-styled link —
+              was easy to miss. It is not the same thing here: it sits immediately beneath the
+              primary action, reading as its alternative, which is exactly what it is. Text weight
+              rather than a second button, so it cannot be mistaken for a peer of Start session.
+            */}
+            <Pressable
+              onPress={() => router.push({ pathname: '/session', params: { adhoc: '1' } })}
+              accessibilityRole="button"
+              style={({ pressed }) => [styles.emptySessionLink, pressed && styles.pressed]}>
+              <ThemedText type="smallMedium" themeColor="accentText">
+                {t('today.startEmpty')}
+              </ThemedText>
+            </Pressable>
 
             {/*
               Keyed off the whole library rather than what's visible, so the control doesn't disappear
@@ -243,6 +234,8 @@ export default function WorkoutsScreen() {
                 placeholder={t('build.searchPlaceholder', { count: all.length })}
               />
             )}
+
+            <ListHeaderRule />
           </View>
         }
         /*
@@ -287,7 +280,9 @@ const styles = StyleSheet.create({
     maxWidth: MaxContentWidth,
     paddingHorizontal: Spacing.three,
     paddingTop: Platform.select({ web: Spacing.six, default: Spacing.two }),
-    paddingBottom: Spacing.six,
+    // Clears the FAB, which floats 24px off the bottom and is 52 tall — a 64px inset left the last
+    // row permanently half-covered by it, and the last row is the one you scroll to reach.
+    paddingBottom: Spacing.six + Spacing.four,
   },
   titleRow: {
     flexDirection: 'row',
@@ -319,32 +314,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.two,
   },
-  /**
-   * Outlined rather than filled, and pill-shaped so it reads as a chip beside the title rather than as
-   * a second primary button.
-   *
-   * It has been three things now: a bare text link (genuinely easy to miss on a device — it read as a
-   * caption), then a full-width outlined button under the card (unmissable, but a peer of `Start
-   * session` in both width and position, which overstates a secondary action), and now this. The
-   * `minHeight` is the 44px target rather than the 56px a full-width button wants; padding does the
-   * rest, and `minHeight` never `height` so it survives large accessibility text sizes.
-   *
-   * A design review then read this control and the FAB as "too much" on one screen and proposed
-   * moving this one back under the card as a text link — which is the first of the three above, and
-   * was rejected there for being missable. The box is what makes it findable; the accent was what
-   * made it shout. So the label lost the accent and the placement stayed.
-   */
-  emptySessionButton: {
+  // Left-aligned to the screen's text column, not centred under the button: centring made it read as
+  // a second, weaker button rather than as the link it is, and it is the only centred thing on a
+  // screen where every other line starts at the same edge.
+  //
+  // `minHeight` never `height`, so the 44px target survives a raised text size — the exact failure
+  // that moved this control out of the title row in the first place. It is a floor, so the label sits
+  // in it without the control taking a button's worth of room.
+  emptySessionLink: {
     minHeight: 44,
-    paddingHorizontal: Spacing.two,
+    alignSelf: 'flex-start',
     justifyContent: 'center',
-    borderRadius: 12,
-    borderWidth: 1,
   },
-  // What `styles.list`'s `marginTop` and `gap` became once the list stopped being one `View`.
-  listHeader: {
-    marginBottom: Spacing.three,
-  },
+  // The gap that used to sit here belongs to `ListHeaderRule`, above its line rather than below it.
+  listHeader: {},
   cardTextArea: {
     flex: 1,
     flexDirection: 'row',

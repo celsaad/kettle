@@ -4,10 +4,10 @@ import { Alert, FlatList, Platform, Pressable, StyleSheet, View, type ListRender
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ListHeaderRule, ListRowMinHeight, ListRowSeparator, ListRowVerticalPadding } from '@/components/list-row';
 import { NoResults } from '@/components/no-results';
 import { SearchBar } from '@/components/search-bar';
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { formatSessionCount, formatSetCount } from '@/domain/format';
 import { useTheme } from '@/hooks/use-theme';
@@ -39,11 +39,10 @@ const SessionCard = memo(function SessionCard({
   onToggle: (id: string) => void;
   onDelete: (session: HistorySessionView) => void;
 }) {
-  const theme = useTheme();
   const { t } = useTranslation();
 
   return (
-    <ThemedView type="backgroundElement" style={[styles.card, { borderColor: theme.border }]}>
+    <View style={styles.card}>
       <Pressable
         onPress={() => onToggle(session.id)}
         accessibilityRole="button"
@@ -68,7 +67,7 @@ const SessionCard = memo(function SessionCard({
       </Pressable>
 
       {expanded && (
-        <View style={[styles.expandedContent, { borderTopColor: theme.border }]}>
+        <View style={styles.expandedContent}>
           {session.entries.map((entry, index) => (
             <View key={`${entry.exerciseName}-${index}`} style={styles.entryRow}>
               <ThemedText type="small" themeColor="textSecondary" numberOfLines={1} style={styles.entryLabel}>
@@ -106,14 +105,9 @@ const SessionCard = memo(function SessionCard({
           </View>
         </View>
       )}
-    </ThemedView>
+    </View>
   );
 });
-
-/** Reproduces the `gap` the old `styles.list` had, which a FlatList's cells don't inherit. */
-function Separator() {
-  return <View style={styles.separator} />;
-}
 
 const keyExtractor = (session: HistorySessionView) => session.id;
 
@@ -217,7 +211,7 @@ export default function HistoryScreen() {
         data={visibleSessions}
         keyExtractor={keyExtractor}
         renderItem={renderItem}
-        ItemSeparatorComponent={Separator}
+        ItemSeparatorComponent={ListRowSeparator}
         contentContainerStyle={styles.scrollContent}
         ListHeaderComponent={
           <View style={styles.listHeader}>
@@ -281,6 +275,8 @@ export default function HistoryScreen() {
             )}
 
             <SearchBar value={query} onChangeText={setQuery} placeholder={t('history.searchPlaceholder')} />
+
+            <ListHeaderRule />
           </View>
         }
         /* No first-run half, same as Library: an empty log is what a new install *is*, and the stat
@@ -328,20 +324,23 @@ const styles = StyleSheet.create({
     padding: Spacing.two,
   },
   // What `styles.list`'s `marginTop` and `gap` became once the list stopped being one `View`.
-  listHeader: {
-    marginBottom: Spacing.three,
-  },
-  separator: {
-    height: Spacing.two,
-  },
+  // The gap that used to sit here belongs to `ListHeaderRule`, above its line rather than below it.
+  listHeader: {},
+  /**
+   * A row, not a card — matching the three library lists, which stopped being cards in the same pass.
+   *
+   * This one stays a vertical container rather than using `ListRow` because it expands in place: the
+   * pressable header is a row *inside* it and the per-exercise detail unfolds underneath. It shares
+   * the metrics, which is the whole reason those are exported — History being the one tab whose list
+   * still looked boxed is exactly the mismatch this pass exists to remove.
+   */
   card: {
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: Spacing.two + 7,
+    paddingVertical: ListRowVerticalPadding,
   },
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+    minHeight: ListRowMinHeight,
     gap: Spacing.two + 4,
   },
   dateBadge: {
@@ -352,10 +351,14 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 2,
   },
+  /**
+   * No rule above the detail. It had one while this was a card, where the line separated two parts of
+   * one boxed object — but now that rows are divided by hairlines of exactly that weight, a second
+   * one *inside* an expanded row reads as the boundary between two rows and splits the session in
+   * half. The indent and the gap say "this belongs to the row above" without drawing anything.
+   */
   expandedContent: {
     marginTop: Spacing.two + 4,
-    paddingTop: Spacing.two + 4,
-    borderTopWidth: 1,
     gap: Spacing.one + 4,
   },
   entryRow: {

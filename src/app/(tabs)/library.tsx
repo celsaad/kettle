@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ExerciseBadge, exerciseSummary } from '@/components/exercise-badge';
-import { ListRow, ListRowSeparator } from '@/components/list-row';
+import { ListHeaderRule, ListRow, ListRowSeparator } from '@/components/list-row';
 import { NoResults } from '@/components/no-results';
 import { SearchBar } from '@/components/search-bar';
 import { ThemedText } from '@/components/themed-text';
@@ -166,6 +166,8 @@ export default function LibraryScreen() {
                 );
               })}
             </ScrollView>
+
+            <ListHeaderRule />
           </View>
         }
         /*
@@ -200,7 +202,9 @@ const styles = StyleSheet.create({
     maxWidth: MaxContentWidth,
     paddingHorizontal: Spacing.three,
     paddingTop: Platform.select({ web: Spacing.six, default: Spacing.two }),
-    paddingBottom: Spacing.six,
+    // Clears the FAB, which floats 24px off the bottom and is 52 tall — a 64px inset left the last
+    // row permanently half-covered by it, and the last row is the one you scroll to reach.
+    paddingBottom: Spacing.six + Spacing.four,
   },
   header: {
     flexDirection: 'row',
@@ -229,10 +233,8 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
     borderRadius: 999,
   },
-  // What `styles.list`'s `marginTop` and `gap` became once the list stopped being one `View`.
-  listHeader: {
-    marginBottom: Spacing.three,
-  },
+  // The gap that used to sit here belongs to `ListHeaderRule`, above its line rather than below it.
+  listHeader: {},
   cardText: {
     flex: 1,
     gap: 2,

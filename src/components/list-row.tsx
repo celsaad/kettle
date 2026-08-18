@@ -5,6 +5,18 @@ import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 /**
+ * The row's own metrics, exported because two screens need a row that is *not* this component.
+ *
+ * History's rows expand in place, so they are vertical containers with a pressable header inside
+ * rather than the horizontal flex box below; Settings' rows are grouped in sections rather than fed
+ * to a `FlatList`. Both should still be exactly as tall and as generously tappable as these, and the
+ * way to guarantee that is to share the numbers rather than to copy them — copying is what left four
+ * byte-identical card styles across the app in the first place.
+ */
+export const ListRowMinHeight = 56;
+export const ListRowVerticalPadding = Spacing.two + 2;
+
+/**
  * One row of one of the three library lists — a workout, a program, an exercise.
  *
  * **These used to be cards**: a filled surface with a 1px border and a 16px radius, one per item.
@@ -44,15 +56,36 @@ export function ListRowSeparator() {
   return <View style={[styles.separator, { backgroundColor: theme.border }]} />;
 }
 
+/**
+ * The hairline that ends a list's header and starts the list.
+ *
+ * Without a fill on the rows, a list has no visible top edge: the search box just stops and names
+ * begin, so the first row reads as one more piece of header. This is the same line as the separators
+ * between rows, which is the point — the list begins the way it continues.
+ *
+ * It carries the gap above it so the header's own `marginBottom` can go to zero; the space belongs
+ * above the line, not below, or the first row sits further from the line than every other row does.
+ */
+export function ListHeaderRule() {
+  return (
+    <View style={styles.headerRule}>
+      <ListRowSeparator />
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.two,
-    minHeight: 56,
-    paddingVertical: Spacing.two + 2,
+    minHeight: ListRowMinHeight,
+    paddingVertical: ListRowVerticalPadding,
   },
   separator: {
     height: 1,
+  },
+  headerRule: {
+    marginTop: Spacing.three,
   },
 });

@@ -17,12 +17,6 @@
     "decrease": "Decrease {{label}}",
     "increase": "Increase {{label}}"
   },
-  "sort": {
-    "label": "Sort",
-    "custom": "Your order",
-    "name": "A–Z",
-    "recent": "Recent"
-  },
   "search": {
     "noMatchTitle": "Nothing matched",
     "noMatchBody": "No results for \"{{query}}\". Check the spelling, or clear the search to see everything again.",
@@ -67,9 +61,10 @@
     "workoutCount_other": "{{count}} workouts",
     "emptyTitle": "No workouts yet",
     "emptyBody": "Build one from exercises in your library.",
-    "searchPlaceholder": "Search workouts",
     "startAccessibility": "Start {{name}}",
-    "newWorkout": "New workout"
+    "newWorkout": "New workout",
+    "searchPlaceholder_one": "Search {{count}} workout",
+    "searchPlaceholder_other": "Search {{count}} workouts"
   },
   "history": {
     "title": "History",
@@ -101,12 +96,16 @@
     "title": "Library",
     "exerciseCount_one": "{{count}} exercise",
     "exerciseCount_other": "{{count}} exercises",
-    "searchPlaceholder": "Search exercises",
     "filterAll": "All",
     "filterHiit": "HIIT",
     "filterReps": "Reps",
     "filterHold": "Hold",
-    "newExercise": "New exercise"
+    "newExercise": "New exercise",
+    "searchPlaceholder_one": "Search {{count}} exercise",
+    "searchPlaceholder_other": "Search {{count}} exercises",
+    "filterEmom": "EMOM",
+    "filterAmrap": "AMRAP",
+    "filterCardio": "Cardio"
   },
   "programs": {
     "title": "Programs",
@@ -121,8 +120,9 @@
     "emptyTitle": "No programs yet",
     "emptyBody": "Programs are multi-week plans that step through your workouts. Create one with the + button, or write one as YAML for finer control (per-week overrides aren't editable in-app yet).",
     "emptyYamlLink": "Writing one as YAML →",
-    "searchPlaceholder": "Search programs",
-    "newProgram": "New program"
+    "newProgram": "New program",
+    "searchPlaceholder_one": "Search {{count}} program",
+    "searchPlaceholder_other": "Search {{count}} programs"
   },
   "session": {
     "next": "NEXT",

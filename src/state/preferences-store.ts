@@ -1,12 +1,6 @@
 import { create } from 'zustand';
 
-import {
-  DEFAULT_LIST_SORTS,
-  type ListKind,
-  type ListSort,
-  type Preferences,
-  type ThemePreference,
-} from '@/domain/preferences';
+import { type Preferences, type ThemePreference } from '@/domain/preferences';
 import type { UnitSystem } from '@/domain/units';
 import { deviceUnitSystem } from '@/i18n';
 import { loadPreferences, savePreferences } from '@/storage/preferences-file';
@@ -21,8 +15,6 @@ type PreferencesStoreState = {
   /** Resolves false when the write failed; the change still applies for this run. */
   setThemePreference: (themePreference: ThemePreference) => Promise<boolean>;
   /** Resolves false when the write failed; the change still applies for this run. */
-  setListSort: (list: ListKind, sort: ListSort) => Promise<boolean>;
-  /** Resolves false when the write failed; the change still applies for this run. */
   setRestDayReminder: (enabled: boolean) => Promise<boolean>;
   /** `null` forgets the folder. Resolves false when the write failed; the change still applies for this run. */
   setBackupFolderUri: (backupFolderUri: string | null) => Promise<boolean>;
@@ -30,7 +22,6 @@ type PreferencesStoreState = {
 
 const DEFAULT_PREFERENCES: Omit<Preferences, 'unitSystem'> = {
   themePreference: 'system',
-  listSort: DEFAULT_LIST_SORTS,
   restDayReminder: false,
   backupFolderUri: null,
 };
@@ -75,7 +66,6 @@ export const usePreferencesStore = create<PreferencesStoreState>((set, get) => {
     setThemePreference: (themePreference) => applyAndPersist({ themePreference }),
     // Patches one list's entry rather than replacing the map, so setting Build's order can't reset
     // the two lists the user isn't looking at.
-    setListSort: (list, sort) => applyAndPersist({ listSort: { ...get().preferences.listSort, [list]: sort } }),
     setRestDayReminder: (restDayReminder) => applyAndPersist({ restDayReminder }),
     // The one preference whose failed write genuinely costs something: the SAF grant itself survives,
     // but a URI that never reached disk means the next launch has no folder to write to. Settings
@@ -94,6 +84,3 @@ export function useUnitSystem(): UnitSystem {
 }
 
 /** One list's chosen order. Narrow selector so a change on Build doesn't re-render Programs. */
-export function useListSort(list: ListKind): ListSort {
-  return usePreferencesStore((state) => state.preferences.listSort[list]);
-}

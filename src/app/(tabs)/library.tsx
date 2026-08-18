@@ -1,33 +1,40 @@
 import { router } from 'expo-router';
 import { memo, useCallback, useDeferredValue, useMemo, useState } from 'react';
-import { FlatList, Platform, Pressable, StyleSheet, View, type ListRenderItemInfo } from 'react-native';
+import { FlatList, Platform, Pressable, ScrollView, StyleSheet, View, type ListRenderItemInfo } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ExerciseBadge, exerciseSummary } from '@/components/exercise-badge';
 import { NoResults } from '@/components/no-results';
 import { SearchBar } from '@/components/search-bar';
-import { SortPills } from '@/components/sort-pills';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
-import { lastTrainedByExercise, sortForList } from '@/domain/list-sort';
 import { ExerciseType, type Exercise } from '@/domain/types';
 import type { UnitSystem } from '@/domain/units';
 import { useAppTheme } from '@/hooks/theme-context';
 import { useTheme } from '@/hooks/use-theme';
 import { useLibraryStore } from '@/state/library-store';
-import { useListSort, usePreferencesStore, useUnitSystem } from '@/state/preferences-store';
-import { useSessionHistoryStore } from '@/state/session-history-store';
+import { useUnitSystem } from '@/state/preferences-store';
 import { exportLibrary } from '@/storage/export';
 
 export { RouteErrorBoundary as ErrorBoundary } from '@/components/error-fallback';
 
+/**
+ * The type shortcuts, in the order a library tends to hold them.
+ *
+ * Every `ExerciseType` except `rest`, which is filtered off this screen entirely — it is block
+ * structure rather than something anyone browses for. The row scrolls sideways, so its length is no
+ * longer the constraint that kept this list to four.
+ */
 const FILTERS: { labelKey: string; type: ExerciseType | 'all' }[] = [
   { labelKey: 'library.filterAll', type: 'all' },
   { labelKey: 'library.filterHiit', type: 'hiit' },
   { labelKey: 'library.filterReps', type: 'reps' },
   { labelKey: 'library.filterHold', type: 'timed_hold' },
+  { labelKey: 'library.filterEmom', type: 'emom' },
+  { labelKey: 'library.filterAmrap', type: 'amrap' },
+  { labelKey: 'library.filterCardio', type: 'cardio' },
 ];
 
 /**
@@ -70,14 +77,11 @@ export default function LibraryScreen() {
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<ExerciseType | 'all'>('all');
   const library = useLibraryStore((state) => state.library);
-  const sessions = useSessionHistoryStore((state) => state.sessions);
-  const sort = useListSort('exercises');
-  const setListSort = usePreferencesStore((state) => state.setListSort);
   const exercises = useMemo(() => library?.exercises.filter((exercise) => exercise.type !== 'rest') ?? [], [library]);
   // Immediate value in the input, deferred value in the filter — see the note in (tabs)/index.tsx.
   const deferredQuery = useDeferredValue(query);
 
-  const filtered = useMemo(() => {
+  const visible = useMemo(() => {
     const needle = deferredQuery.trim().toLowerCase();
     return exercises.filter((exercise) => {
       const matchesFilter = filter === 'all' || exercise.type === filter;
@@ -85,15 +89,6 @@ export default function LibraryScreen() {
       return matchesFilter && matchesQuery;
     });
   }, [exercises, filter, deferredQuery]);
-
-  // Only `recent` reads the log, and reading it means walking every session ever logged — see Build.
-  const lastTrained = useMemo(
-    () => (sort === 'recent' ? lastTrainedByExercise(sessions) : new Map<string, string>()),
-    [sessions, sort],
-  );
-  // Sorted after filtering, not before: the two are independent, and ordering the whole library to
-  // then throw most of it away is work nobody sees.
-  const visible = useMemo(() => sortForList(filtered, sort, lastTrained), [filtered, sort, lastTrained]);
 
   const renderItem = useCallback(
     ({ item }: ListRenderItemInfo<Exercise>) => <ExerciseCard exercise={item} unitSystem={unitSystem} />,
@@ -130,13 +125,33 @@ export default function LibraryScreen() {
                 </Pressable>
               </View>
             </View>
-            <ThemedText themeColor="textSecondary" style={styles.countLabel}>
-              {t('library.exerciseCount', { count: visible.length })}
-            </ThemedText>
+            {/*
+              The count rides in the placeholder, where it used to be a line of its own — see Build.
+              `visible.length`, not the whole library: the type filter below narrows this list without
+              touching the search field, so with `Reps` selected and nothing typed the placeholder is
+              both visible *and* describing a subset, and the honest number is the one the filter left.
+            */}
+            <SearchBar
+              value={query}
+              onChangeText={setQuery}
+              placeholder={t('library.searchPlaceholder', { count: visible.length })}
+            />
 
-            <SearchBar value={query} onChangeText={setQuery} placeholder={t('library.searchPlaceholder')} />
+            {/*
+              Scrolls sideways rather than wrapping. Seven pills wrap to two rows on a phone, and at a
+              raised text size or in a locale with longer words ("Isometria") to three — so the row
+              that exists to save the screen room starts taking it, and how much it takes depends on
+              the reader's font. One scrolling row is a fixed cost whatever the type list grows to.
 
-            <View style={styles.filterRow}>
+              A horizontal `ScrollView` nested in the vertical `FlatList` is fine: they claim different
+              axes, so neither steals the other's gesture. Everything stays reachable to a screen
+              reader, which walks the children rather than the viewport.
+            */}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.filterScroll}
+              contentContainerStyle={styles.filterRow}>
               {FILTERS.map((item) => {
                 const active = item.type === filter;
                 return (
@@ -157,12 +172,7 @@ export default function LibraryScreen() {
                   </Pressable>
                 );
               })}
-            </View>
-
-            {/* Keyed off the whole library rather than what's currently visible: tied to `visible` the
-                control would vanish mid-search the moment a query narrowed things to one result,
-                moving the list under the finger that's typing. */}
-            {exercises.length > 1 && <SortPills sort={sort} onSelect={(next) => setListSort('exercises', next)} />}
+            </ScrollView>
           </View>
         }
         /*
@@ -202,22 +212,24 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'baseline',
+    alignItems: 'center',
   },
   headerActions: {
     flexDirection: 'row',
+    alignItems: 'center',
     gap: Spacing.two + 2,
-  },
-  countLabel: {
-    marginTop: 2,
   },
   pressed: {
     opacity: 0.7,
   },
+  // The marginTop belongs to the ScrollView; the gap belongs to its content. Splitting them is what
+  // stops the scroll container itself from inheriting a row gap it has no rows to space.
+  filterScroll: {
+    marginTop: Spacing.three,
+  },
   filterRow: {
     flexDirection: 'row',
     gap: Spacing.two,
-    marginTop: Spacing.three,
   },
   filterPill: {
     paddingHorizontal: Spacing.three - 3,

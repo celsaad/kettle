@@ -27,13 +27,11 @@ jest.mock('@/storage/paths', () => ({
   },
 }));
 
-import { DEFAULT_LIST_SORTS } from '@/domain/preferences';
 import { loadPreferences, savePreferences } from '@/storage/preferences-file';
 
 const stored = {
   unitSystem: 'imperial' as const,
   themePreference: 'dark' as const,
-  listSort: { workouts: 'name' as const, programs: 'custom' as const, exercises: 'recent' as const },
   restDayReminder: true,
   backupFolderUri: 'content://com.android.externalstorage.documents/tree/primary%3ADocuments%2FKettle',
 };
@@ -63,37 +61,29 @@ describe('loadPreferences', () => {
     expect(await loadPreferences()).toEqual({
       unitSystem: 'imperial',
       themePreference: 'system',
-      listSort: DEFAULT_LIST_SORTS,
       restDayReminder: false,
       backupFolderUri: null,
     });
   });
 
   /**
-   * The same regression one preference later, with a twist the first one didn't have: `listSort` is a
-   * nested object, so it needs a default on the *parent* as well as on each key. With only the inner
-   * defaults, a file predating it has no `listSort` at all, nothing runs them, and the parse fails
-   * into `null` — resetting the two choices this user did make.
+   * The mirror of the case above, and the one that matters right now: `listSort` was a real
+   * preference, so **every `preferences.json` in the field still carries it** — the sort control was
+   * removed from the app, not from anyone's disk. Zod objects strip unknown keys rather than
+   * rejecting them, which is the only reason those installs still load; a `.strict()` here would
+   * turn every one of them into a `null` parse and silently reset the choices they *did* make.
    */
-  it('reads a file written before listSort existed, keeping the choices it does have', async () => {
-    mockFile.text.mockResolvedValue(JSON.stringify({ unitSystem: 'imperial', themePreference: 'dark' }));
+  it('ignores a preference this build has dropped, rather than failing the whole file', async () => {
+    mockFile.text.mockResolvedValue(
+      JSON.stringify({
+        unitSystem: 'imperial',
+        themePreference: 'dark',
+        listSort: { workouts: 'name', programs: 'custom', exercises: 'recent' },
+      }),
+    );
     expect(await loadPreferences()).toEqual({
       unitSystem: 'imperial',
       themePreference: 'dark',
-      listSort: DEFAULT_LIST_SORTS,
-      restDayReminder: false,
-      backupFolderUri: null,
-    });
-  });
-
-  it('defaults only the lists a partially-written listSort leaves out', async () => {
-    mockFile.text.mockResolvedValue(
-      JSON.stringify({ unitSystem: 'metric', themePreference: 'dark', listSort: { workouts: 'name' } }),
-    );
-    expect(await loadPreferences()).toEqual({
-      unitSystem: 'metric',
-      themePreference: 'dark',
-      listSort: { workouts: 'name', programs: 'custom', exercises: 'custom' },
       restDayReminder: false,
       backupFolderUri: null,
     });
@@ -121,13 +111,6 @@ describe('loadPreferences', () => {
   // missing key, so it gets the file's usual all-or-nothing answer rather than the default above.
   it('returns null on a theme preference this build does not know', async () => {
     mockFile.text.mockResolvedValue(JSON.stringify({ unitSystem: 'metric', themePreference: 'sepia' }));
-    expect(await loadPreferences()).toBeNull();
-  });
-
-  it('returns null on a list order this build does not know, for the same reason', async () => {
-    mockFile.text.mockResolvedValue(
-      JSON.stringify({ unitSystem: 'metric', themePreference: 'dark', listSort: { workouts: 'by-vibes' } }),
-    );
     expect(await loadPreferences()).toBeNull();
   });
 

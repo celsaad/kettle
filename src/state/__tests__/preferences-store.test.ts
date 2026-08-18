@@ -11,7 +11,6 @@ jest.mock('@/i18n', () => ({
   deviceUnitSystem: () => mockDeviceUnitSystem(),
 }));
 
-import { DEFAULT_LIST_SORTS } from '@/domain/preferences';
 import { usePreferencesStore } from '@/state/preferences-store';
 
 beforeEach(() => {
@@ -20,7 +19,6 @@ beforeEach(() => {
     preferences: {
       unitSystem: 'metric',
       themePreference: 'system',
-      listSort: DEFAULT_LIST_SORTS,
       restDayReminder: false,
       backupFolderUri: null,
     },
@@ -105,7 +103,6 @@ describe('setUnitSystem', () => {
     expect(mockSave).toHaveBeenCalledWith({
       unitSystem: 'imperial',
       themePreference: 'system',
-      listSort: DEFAULT_LIST_SORTS,
       restDayReminder: false,
       backupFolderUri: null,
     });
@@ -130,7 +127,6 @@ describe('setThemePreference', () => {
     expect(mockSave).toHaveBeenCalledWith({
       unitSystem: 'metric',
       themePreference: 'dark',
-      listSort: DEFAULT_LIST_SORTS,
       restDayReminder: false,
       backupFolderUri: null,
     });
@@ -145,7 +141,6 @@ describe('setThemePreference', () => {
     expect(mockSave).toHaveBeenLastCalledWith({
       unitSystem: 'imperial',
       themePreference: 'light',
-      listSort: DEFAULT_LIST_SORTS,
       restDayReminder: false,
       backupFolderUri: null,
     });
@@ -161,26 +156,6 @@ describe('setThemePreference', () => {
   });
 });
 
-describe('setListSort', () => {
-  it('persists the choice', async () => {
-    expect(await usePreferencesStore.getState().setListSort('workouts', 'name')).toBe(true);
-    expect(usePreferencesStore.getState().preferences.listSort.workouts).toBe('name');
-  });
-
-  // The merge above goes one level deeper here: `listSort` is a map of three lists in one field, so a
-  // setter that replaced the whole object would reset the two lists the user isn't looking at.
-  it('leaves the other lists alone', async () => {
-    await usePreferencesStore.getState().setListSort('workouts', 'name');
-    await usePreferencesStore.getState().setListSort('exercises', 'recent');
-
-    expect(usePreferencesStore.getState().preferences.listSort).toEqual({
-      workouts: 'name',
-      programs: 'custom',
-      exercises: 'recent',
-    });
-  });
-});
-
 describe('setRestDayReminder', () => {
   // Off unless asked for. A local notification is the one thing this app does that reaches outside
   // itself, and an opt-in that shipped as on would start notifying people who never chose it.
@@ -193,7 +168,6 @@ describe('setRestDayReminder', () => {
     expect(mockSave).toHaveBeenCalledWith({
       unitSystem: 'metric',
       themePreference: 'system',
-      listSort: DEFAULT_LIST_SORTS,
       restDayReminder: true,
       backupFolderUri: null,
     });

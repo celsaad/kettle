@@ -1,7 +1,6 @@
 import { fireEvent, screen } from '@testing-library/react-native';
 
 import LibraryScreen from '@/app/(tabs)/library';
-import { DEFAULT_LIST_SORTS } from '@/domain/preferences';
 import { useLibraryStore } from '@/state/library-store';
 import { usePreferencesStore } from '@/state/preferences-store';
 import { useSessionHistoryStore } from '@/state/session-history-store';
@@ -32,7 +31,6 @@ beforeEach(() => {
     preferences: {
       unitSystem: 'metric',
       themePreference: 'system',
-      listSort: DEFAULT_LIST_SORTS,
       restDayReminder: false,
       backupFolderUri: null,
     },
@@ -42,7 +40,7 @@ beforeEach(() => {
 it('narrows the list to matching names', async () => {
   await renderScreen(<LibraryScreen />);
 
-  await fireEvent.changeText(screen.getByPlaceholderText('Search exercises'), 'dip');
+  await fireEvent.changeText(screen.getByPlaceholderText(/^Search [0-9]+ exercises?$/), 'dip');
 
   expect(screen.getByText('Dips')).toBeTruthy();
   expect(screen.queryByText('Pull-ups')).toBeNull();
@@ -51,7 +49,7 @@ it('narrows the list to matching names', async () => {
 it('quotes the query back when a search matched nothing', async () => {
   await renderScreen(<LibraryScreen />);
 
-  await fireEvent.changeText(screen.getByPlaceholderText('Search exercises'), 'zzz');
+  await fireEvent.changeText(screen.getByPlaceholderText(/^Search [0-9]+ exercises?$/), 'zzz');
 
   expect(screen.getByText('Nothing matched')).toBeTruthy();
   expect(screen.getByText(/No results for "zzz"/)).toBeTruthy();

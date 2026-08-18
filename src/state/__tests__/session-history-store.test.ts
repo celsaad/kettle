@@ -28,7 +28,6 @@ jest.mock('@/storage/session-files', () => ({
   }),
 }));
 
-import { DEFAULT_LIST_SORTS } from '@/domain/preferences';
 import type { Session, SessionEntry } from '@/domain/types';
 import { usePreferencesStore } from '@/state/preferences-store';
 import { useSessionHistoryStore } from '@/state/session-history-store';
@@ -60,7 +59,6 @@ function setBackupFolder(backupFolderUri: string | null) {
     preferences: {
       unitSystem: 'metric',
       themePreference: 'system',
-      listSort: DEFAULT_LIST_SORTS,
       restDayReminder: false,
       backupFolderUri,
     },

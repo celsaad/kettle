@@ -4,7 +4,6 @@ import { fireEvent, screen } from '@testing-library/react-native';
 import { changeLanguage } from 'i18next';
 
 import ProgramsScreen from '@/app/(tabs)/programs';
-import { DEFAULT_LIST_SORTS } from '@/domain/preferences';
 import { useLibraryStore } from '@/state/library-store';
 import { usePreferencesStore } from '@/state/preferences-store';
 import { useSessionHistoryStore } from '@/state/session-history-store';
@@ -38,7 +37,6 @@ beforeEach(() => {
     preferences: {
       unitSystem: 'metric',
       themePreference: 'system',
-      listSort: DEFAULT_LIST_SORTS,
       restDayReminder: false,
       backupFolderUri: null,
     },
@@ -55,7 +53,7 @@ it('lists every program', async () => {
 it('narrows the list to matching names', async () => {
   await renderScreen(<ProgramsScreen />);
 
-  await fireEvent.changeText(screen.getByPlaceholderText('Search programs'), 'peak');
+  await fireEvent.changeText(screen.getByPlaceholderText(/^Search [0-9]+ programs?$/), 'peak');
 
   expect(screen.getByText('Peak week')).toBeTruthy();
   expect(screen.queryByText('Base building')).toBeNull();
@@ -64,7 +62,7 @@ it('narrows the list to matching names', async () => {
 it('says nothing matched rather than offering to teach the YAML format', async () => {
   await renderScreen(<ProgramsScreen />);
 
-  await fireEvent.changeText(screen.getByPlaceholderText('Search programs'), 'zzz');
+  await fireEvent.changeText(screen.getByPlaceholderText(/^Search [0-9]+ programs?$/), 'zzz');
 
   expect(screen.getByText('Nothing matched')).toBeTruthy();
   expect(screen.queryByText('No programs yet')).toBeNull();
@@ -76,7 +74,7 @@ it('still tells a library with no programs that it has none yet', async () => {
   await renderScreen(<ProgramsScreen />);
 
   expect(screen.getByText('No programs yet')).toBeTruthy();
-  expect(screen.queryByPlaceholderText('Search programs')).toBeNull();
+  expect(screen.queryByPlaceholderText(/^Search [0-9]+ programs?$/)).toBeNull();
 });
 
 // An English-locale assertion can't catch a hardcoded English string, so the new copy is checked in pt.
@@ -84,7 +82,7 @@ it('is translated', async () => {
   await changeLanguage('pt');
 
   await renderScreen(<ProgramsScreen />);
-  await fireEvent.changeText(screen.getByPlaceholderText('Buscar programas'), 'zzz');
+  await fireEvent.changeText(screen.getByPlaceholderText(/^Buscar [0-9]+ programas?$/), 'zzz');
 
   expect(screen.getByText('Nada encontrado')).toBeTruthy();
 });

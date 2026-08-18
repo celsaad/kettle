@@ -127,7 +127,7 @@ it('narrows both the list and the stat tiles to what matched', async () => {
 
   expect(screen.queryByText('Push day')).toBeNull();
   expect(screen.getByText('Leg day')).toBeTruthy();
-  expect(screen.getByText('1 of 2')).toBeTruthy();
+  expect(screen.getByText(/^1 of 2 · /)).toBeTruthy();
 });
 
 // Before this, a search matching nothing left intact chrome over a blank body, which reads as a
@@ -138,7 +138,7 @@ it('says nothing matched instead of going blank', async () => {
   await fireEvent.changeText(screen.getByPlaceholderText('Search workouts'), 'zzz');
 
   expect(screen.getByText('Nothing matched')).toBeTruthy();
-  expect(screen.getByText('0 of 2')).toBeTruthy();
+  expect(screen.getByText(/^0 of 2 · /)).toBeTruthy();
 });
 
 // An empty log is what a new install *is*, and the tiles above already say so — a "nothing matched"
@@ -182,65 +182,75 @@ describe('editing a session', () => {
 });
 
 /**
- * The two stat rows.
+ * The header's one summary line, and the way to the rest.
  *
- * `THIS WEEK` (sessions, time, streak) moved here from the old Today tab, where it was a second,
- * smaller copy of the `ALL TIME` row directly below it — same `historyStats` aggregator, one tab over.
- * History owns the session log and the search that scopes it, so it owns the numbers too.
- *
- * The interesting part is what the search does to them. The all-time row narrows with the query, which
- * it always has; the this-week row cannot, because "this week" over "everything matching push" is not
- * a period and the numbers would be describing a set nobody asked about. So it hides outright rather
- * than sitting there unchanged and quietly lying.
+ * This was six stat cards in two labelled rows, which filled a phone's entire first screen and pushed
+ * the session log below the fold on the tab whose whole job is the session log. The numbers weren't
+ * wrong, the real estate was: the same three all-time figures set as one line of text answer "is my
+ * history all here" just as well, and everything richer moved behind `Stats` to a screen with room
+ * for it (`analytics.test.tsx`).
  */
-describe('the stat tiles', () => {
-  it('shows this week above all time', async () => {
+describe('the header summary', () => {
+  it('states the all-time totals in one line', async () => {
     await renderScreen(<HistoryScreen />);
 
-    expect(screen.getByText('This week')).toBeTruthy();
-    expect(screen.getByText('All time')).toBeTruthy();
-    // One label each from the two rows, and one shared by both.
-    expect(screen.getByText('day streak')).toBeTruthy();
-    expect(screen.getByText('sets')).toBeTruthy();
-    expect(screen.getAllByText('sessions')).toHaveLength(2);
+    expect(screen.getByText(/^2 sessions · \d+h \d+m · 2 sets$/)).toBeTruthy();
   });
 
-  it('drops the this-week row while a search is narrowing the list', async () => {
+  // Six cards' worth of chrome is what this replaced, so the cards must be gone rather than merely
+  // rearranged — a stray label here means the header grew back.
+  it('draws no stat cards at all', async () => {
     await renderScreen(<HistoryScreen />);
-
-    await fireEvent.changeText(screen.getByPlaceholderText('Search workouts'), 'push');
 
     expect(screen.queryByText('This week')).toBeNull();
-    expect(screen.queryByText('day streak')).toBeNull();
-    // The all-time row stays, because a filtered total is still a total — but it stops calling itself
-    // "all time", which would be the same lie in the other direction.
-    expect(screen.getByText('sets')).toBeTruthy();
     expect(screen.queryByText('All time')).toBeNull();
-    expect(screen.getByText('1 of 2')).toBeTruthy();
+    expect(screen.queryByText('day streak')).toBeNull();
+    expect(screen.queryByText('sets')).toBeNull();
   });
 
-  it('brings it back when the search is cleared', async () => {
+  // It still narrows with the search, exactly as the cards did — and says which set it is describing
+  // rather than presenting a filtered subtotal as a lifetime total.
+  it('names the filtered subset and totals it, while searching', async () => {
     await renderScreen(<HistoryScreen />);
 
-    await fireEvent.changeText(screen.getByPlaceholderText('Search workouts'), 'push');
-    await fireEvent.changeText(screen.getByPlaceholderText('Search workouts'), '');
+    await fireEvent.changeText(screen.getByPlaceholderText('Search workouts'), 'leg');
 
-    expect(screen.getByText('This week')).toBeTruthy();
-    expect(screen.getByText('All time')).toBeTruthy();
+    // Singular, not "1 sessions" — the counts go through i18next's `count`, which is the whole
+    // reason this is composed from formatters rather than written as one interpolated sentence.
+    expect(screen.getByText(/^1 of 2 · 1 session · \d+h \d+m · 1 set$/)).toBeTruthy();
+  });
+
+  it('opens the stats screen', async () => {
+    await renderScreen(<HistoryScreen />);
+
+    await fireEvent.press(screen.getByText('Stats'));
+
+    expect(router.push).toHaveBeenCalledWith('/analytics');
+  });
+
+  // Offered even with nothing logged: arriving at zeros explains what the screen is, whereas a control
+  // that appears only once you have history is one you never learn about on the run that would have
+  // taught you. "Export all" is the opposite case and stays hidden — there is nothing to export.
+  it('offers the stats screen on an empty log, unlike export', async () => {
+    useSessionHistoryStore.setState({ sessions: [], errors: [], status: 'ready' });
+
+    await renderScreen(<HistoryScreen />);
+
+    expect(screen.getByText('Stats')).toBeTruthy();
+    expect(screen.queryByText('Export all')).toBeNull();
   });
 
   /**
    * Driven in `pt` because an English-locale assertion cannot catch a hardcoded English string —
-   * `t('history.thisWeekLabel')` and the literal it returns render identically. Both keys are new, and
-   * a label typed straight into the JSX is exactly what this catches.
+   * `t('history.summaryLine')` and the literal it returns render identically. The summary is an
+   * interpolated sentence, which is exactly the shape that gets assembled by hand in the JSX.
    */
   it('is translated', async () => {
     await changeLanguage('pt');
 
     await renderScreen(<HistoryScreen />);
 
-    expect(screen.getByText('Esta semana')).toBeTruthy();
-    expect(screen.getByText('Todo o período')).toBeTruthy();
-    expect(screen.getByText('dias seguidos')).toBeTruthy();
+    expect(screen.getByText(/^2 sessões · \d+h \d+m · 2 séries$/)).toBeTruthy();
+    expect(screen.getByText('Números')).toBeTruthy();
   });
 });

@@ -184,18 +184,41 @@ export default function WorkoutsScreen() {
             */}
             <View style={styles.titleRow}>
               <ThemedText type="subtitle">{t('build.title')}</ThemedText>
-              <Pressable
-                onPress={() => router.push('/settings')}
-                hitSlop={8}
-                accessibilityRole="button"
-                accessibilityLabel={t('common.settings')}
-                style={({ pressed }) => [
-                  styles.settingsButton,
-                  { borderColor: theme.border, backgroundColor: theme.backgroundElement },
-                  pressed && styles.pressed,
-                ]}>
-                <ThemedText themeColor="textSecondary">⚙</ThemedText>
-              </Pressable>
+              {/*
+                "Start an empty session" rides in the title row rather than sitting under the card as a
+                full-width outlined button. It is a genuinely secondary action — the way to train when
+                nothing in the library fits — and as a button the width of the screen it read as a peer
+                of `Start session`, directly under it, while costing a whole row on the screen this
+                change exists to shorten. Labelled rather than icon-only: a bare `+` here would collide
+                with the FAB's, which creates a workout instead.
+              */}
+              <View style={styles.titleActions}>
+                <Pressable
+                  onPress={() => router.push({ pathname: '/session', params: { adhoc: '1' } })}
+                  hitSlop={8}
+                  accessibilityRole="button"
+                  style={({ pressed }) => [
+                    styles.emptySessionButton,
+                    { borderColor: theme.border, backgroundColor: theme.backgroundElement },
+                    pressed && styles.pressed,
+                  ]}>
+                  <ThemedText type="smallMedium" themeColor="accentText">
+                    {t('today.startEmpty')}
+                  </ThemedText>
+                </Pressable>
+                <Pressable
+                  onPress={() => router.push('/settings')}
+                  hitSlop={8}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('common.settings')}
+                  style={({ pressed }) => [
+                    styles.settingsButton,
+                    { borderColor: theme.border, backgroundColor: theme.backgroundElement },
+                    pressed && styles.pressed,
+                  ]}>
+                  <ThemedText themeColor="textSecondary">⚙</ThemedText>
+                </Pressable>
+              </View>
             </View>
             <ThemedText themeColor="textSecondary" style={styles.countLabel}>
               {t('build.workoutCount', { count: workouts.length })}
@@ -207,30 +230,6 @@ export default function WorkoutsScreen() {
                 better than a second card would — so the card simply doesn't render rather than
                 duplicating the message above it. */}
             {nextUp && <NextUpCard nextUp={nextUp} />}
-
-            {/*
-              Outside the card's conditional on purpose. The empty-library state is where it earns its
-              place: with no workouts at all you can still train, which nothing else on this screen
-              offers without a detour through the editor.
-
-              Text-weight rather than a second filled button — when there is a workout queued, that
-              stays the primary action.
-            */}
-            <Pressable
-              onPress={() => router.push({ pathname: '/session', params: { adhoc: '1' } })}
-              accessibilityRole="button"
-              style={({ pressed }) => [
-                styles.emptySessionButton,
-                { borderColor: theme.border, backgroundColor: theme.backgroundElement },
-                pressed && styles.pressed,
-              ]}>
-              <ThemedText type="heading" themeColor="accentText" style={styles.emptySessionGlyph}>
-                +
-              </ThemedText>
-              <ThemedText type="heading" themeColor="accentText">
-                {t('today.startEmpty')}
-              </ThemedText>
-            </Pressable>
 
             {/* Keyed off the whole library rather than what's visible, so neither control disappears
                 mid-search and moves the list under the finger that's typing. */}
@@ -315,29 +314,27 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   emptyBody: {},
-  /**
-   * Outlined rather than filled, and sized to match the next-up card's own Start button.
-   *
-   * It shipped as a bare text link and was genuinely easy to miss on a real device — floating between
-   * the card and the list, it read as a caption rather than a control. An outline gives it an edge to
-   * recognise as tappable while leaving the filled accent button above it unambiguously primary,
-   * which is the point of the hierarchy rather than a compromise on it.
-   */
-  emptySessionButton: {
-    marginTop: Spacing.three,
-    // minHeight, not height: a fixed one clips the label at large accessibility text sizes.
-    minHeight: 56,
-    borderRadius: 16,
-    borderWidth: 1,
+  titleActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
     gap: Spacing.two,
   },
-  emptySessionGlyph: {
-    // The glyph is decorative — the label beside it already names the control — so it carries no
-    // separate accessible text.
-    lineHeight: 22,
+  /**
+   * Outlined rather than filled, and pill-shaped so it reads as a chip beside the title rather than as
+   * a second primary button.
+   *
+   * It has been three things now: a bare text link (genuinely easy to miss on a device — it read as a
+   * caption), then a full-width outlined button under the card (unmissable, but a peer of `Start
+   * session` in both width and position, which overstates a secondary action), and now this. The
+   * `minHeight` is the 44px target rather than the 56px a full-width button wants; padding does the
+   * rest, and `minHeight` never `height` so it survives large accessibility text sizes.
+   */
+  emptySessionButton: {
+    minHeight: 44,
+    paddingHorizontal: Spacing.two,
+    justifyContent: 'center',
+    borderRadius: 12,
+    borderWidth: 1,
   },
   // What `styles.list`'s `marginTop` and `gap` became once the list stopped being one `View`.
   listHeader: {

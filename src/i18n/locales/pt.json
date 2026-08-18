@@ -75,6 +75,8 @@
     "title": "Histórico",
     "exportAll": "Exportar tudo",
     "allTime": "Todo o período",
+    "stats": "Números",
+    "summaryLine": "{{sessions}} · {{time}} · {{sets}}",
     "thisWeekLabel": "Esta semana",
     "streak": "dias seguidos",
     "matchCount": "{{shown}} de {{total}}",
@@ -88,6 +90,12 @@
     "deleteConfirmBody": "\"{{name}}\" em {{day}} {{month}} será removida permanentemente.",
     "problemsTitle_one": "{{count}} arquivo de sessão não pôde ser lido ou gravado",
     "problemsTitle_other": "{{count}} arquivos de sessão não puderam ser lidos ou gravados"
+  },
+  "analytics": {
+    "title": "Seus números",
+    "perWeek": "Sessões por semana · últimas {{count}} semanas",
+    "weekBarLabel_one": "Semana de {{week}}: {{count}} sessão",
+    "weekBarLabel_other": "Semana de {{week}}: {{count}} sessões"
   },
   "library": {
     "title": "Biblioteca",
@@ -589,6 +597,8 @@
     "rep_other": "{{count}} repetições",
     "interval_one": "{{count}} intervalo",
     "interval_other": "{{count}} intervalos",
+    "session_one": "{{count}} sessão",
+    "session_other": "{{count}} sessões",
     "set_one": "{{count}} série",
     "set_other": "{{count}} séries",
     "seconds": "{{n}}s",

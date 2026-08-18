@@ -9,10 +9,11 @@ import { SearchBar } from '@/components/search-bar';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { formatSessionCount, formatSetCount } from '@/domain/format';
 import { useTheme } from '@/hooks/use-theme';
 import { useLibraryStore } from '@/state/library-store';
 import { useSessionHistoryStore } from '@/state/session-history-store';
-import { currentStreak, historyStats as historyStatsFor, thisWeekStats } from '@/state/selectors/history-stats';
+import { historyStats as historyStatsFor } from '@/state/selectors/history-stats';
 import { historySessionsView, type HistorySessionView } from '@/state/selectors/history-views';
 import { exportSession, exportSessions } from '@/storage/export';
 
@@ -160,16 +161,21 @@ export default function HistoryScreen() {
     return historyStatsFor(sessions.filter((session) => visibleIds.has(session.id)));
   }, [sessions, visibleSessions, searching]);
 
-  // The other half of the tiles, and deliberately *not* narrowed by the search — see where it renders.
-  //
-  // **Computed per render, and deliberately not memoised on `sessions`.** Both read the clock inside:
-  // `thisWeekStats` calls `startOfWeek(new Date())` and `currentStreak` walks back from today. Keying
-  // a cache on the log alone freezes them at whatever the date was when the log last changed — leave
-  // the app open across midnight on the week boundary and THIS WEEK keeps reporting last week while
-  // the streak never rolls over. Exactly the bug the old Today screen's `dateLabel` had when it was a
-  // module-level const. They are cheap linear passes; the clock is the input that isn't in the deps.
-  const weekStats = thisWeekStats(sessions);
-  const streak = currentStreak(sessions);
+  // The whole header's numbers, as one sentence. Prefixed with the match count while searching, so a
+  // narrowed set says both what it is ("3 of 41") and what it adds up to, rather than quietly
+  // relabelling a subset.
+  // Each count is formatted before it is interpolated, never written into the sentence as a bare
+  // number: `{{sessions}} sessions` renders "1 sessions" the first week you use the app, which is the
+  // exact bug `formatSetCount`'s own note records History shipping once already. The separator and the
+  // ordering stay in the locale string so a translator can move them.
+  const totals = t('history.summaryLine', {
+    sessions: formatSessionCount(historyStats.sessions),
+    time: `${historyStats.hours}h ${historyStats.minutes}m`,
+    sets: formatSetCount(historyStats.sets),
+  });
+  const summaryLine = searching
+    ? `${t('history.matchCount', { shown: visibleSessions.length, total: sessions.length })} · ${totals}`
+    : totals;
 
   // Both wrapped so every card can hold the same two function identities and stay memo-equal; without
   // that, one expand re-renders every card on screen.
@@ -224,76 +230,42 @@ export default function HistoryScreen() {
             scroll apart meaning different amounts of data is the kind of thing you only find out
             about after sharing the wrong one.
           */}
-              {sessions.length > 0 && (
-                <Pressable onPress={() => exportSessions(sessions).catch(() => {})} accessibilityRole="button" hitSlop={8}>
+              <View style={styles.headerActions}>
+                {/* The way to the numbers that used to be six tiles at the top of this screen. Always
+                    offered, even with an empty log — arriving at zeros explains what the screen is,
+                    whereas a control that appears only once you have history is one you never learn
+                    about on the run that would have taught you. */}
+                <Pressable onPress={() => router.push('/analytics')} accessibilityRole="button" hitSlop={8}>
                   <ThemedText type="smallMedium" themeColor="accentText">
-                    {t('history.exportAll')}
+                    {t('history.stats')}
                   </ThemedText>
                 </Pressable>
-              )}
+                {sessions.length > 0 && (
+                  <Pressable onPress={() => exportSessions(sessions).catch(() => {})} accessibilityRole="button" hitSlop={8}>
+                    <ThemedText type="smallMedium" themeColor="accentText">
+                      {t('history.exportAll')}
+                    </ThemedText>
+                  </Pressable>
+                )}
+              </View>
             </View>
             {/*
-              Only while searching. This line used to carry the tiles' scope for both cases — a
-              hardcoded "July 2026" first, which was frozen to one month *and* labelled all-time
-              numbers as if they were that month's, then "All time" / "N of M". Now that two labelled
-              rows sit below it, "All time" here and again on the row it describes is the same word
-              twice, so the scope wording moved down onto its row. The match count stays up here,
-              where it describes the list as well as the tiles.
-            */}
-            {searching && (
-              <ThemedText themeColor="textSecondary" style={styles.countLabel}>
-                {t('history.matchCount', { shown: visibleSessions.length, total: sessions.length })}
-              </ThemedText>
-            )}
+              One line where six stat cards used to be.
 
-            {/*
-              This week, and it does **not** narrow with the search — which is why it hides entirely
-              while one is active rather than sitting there with stale numbers. A search result set is
-              not a time period: "this week" over "everything matching 'push'" is a sentence with no
-              meaning, and leaving all-time-style numbers up there under a THIS WEEK label is the exact
-              dishonesty the `allTime` / `matchCount` switch below the title was written to avoid. The
-              all-time row keeps narrowing, because a filtered *total* is still a total.
+              The cards were right about *what* to show and wrong about how much room it was worth: two
+              labelled rows of three filled the entire first screen of a phone, so the log this tab
+              exists for started below the fold. The same three all-time numbers set as one line of
+              text cost a single row and still answer "is my history all here", which is the only
+              question this line has to answer at a glance. The breakdown moved behind `Stats` above,
+              where it has room to be more than three numbers.
 
-              These three moved here from the old Today tab, which showed them above its next-up card.
-              They were a second, smaller copy of the row below — same `historyStats` aggregator, one
-              tab over — and History is where they belong on the merits: it owns the session log and
-              the search that scopes it.
+              It keeps narrowing with the search, exactly as the cards did, and says so — the count is
+              the honest label for a filtered subset, and calling one "all time" was the specific
+              dishonesty the hardcoded "July 2026" it replaced was guilty of.
             */}
-            {!searching && (
-              <>
-                <ThemedText type="label" themeColor="textSecondary" style={styles.statsLabel}>
-                  {t('history.thisWeekLabel')}
-                </ThemedText>
-                <View style={styles.statsRow}>
-                  <ThemedView type="backgroundElement" style={[styles.statCard, { borderColor: theme.border }]}>
-                    <ThemedText type="heading">{weekStats.sessions}</ThemedText>
-                    <ThemedText type="small" themeColor="textSecondary">
-                      {t('history.sessions')}
-                    </ThemedText>
-                  </ThemedView>
-                  <ThemedView type="backgroundElement" style={[styles.statCard, { borderColor: theme.border }]}>
-                    <ThemedText type="heading">
-                      {weekStats.hours}h {weekStats.minutes}m
-                    </ThemedText>
-                    <ThemedText type="small" themeColor="textSecondary">
-                      {t('history.time')}
-                    </ThemedText>
-                  </ThemedView>
-                  {/* "day streak", not "streak" — the only tile in this row that isn't scoped to the
-                      week, since `currentStreak` walks back as far as the log goes. Under a THIS WEEK
-                      heading a bare "streak" reads as a weekly count, so a 30-day run would announce
-                      itself as "30 · this week". It sits in this row anyway because both rows answer
-                      "how am I doing lately" and the all-time row is the archive, but the label has to
-                      carry its own scope. */}
-                  <ThemedView type="backgroundElement" style={[styles.statCard, { borderColor: theme.border }]}>
-                    <ThemedText type="heading">{streak}</ThemedText>
-                    <ThemedText type="small" themeColor="textSecondary">
-                      {t('history.streak')}
-                    </ThemedText>
-                  </ThemedView>
-                </View>
-              </>
-            )}
+            <ThemedText themeColor="textSecondary" style={styles.countLabel}>
+              {summaryLine}
+            </ThemedText>
 
             {sessionErrors.length > 0 && (
               <View style={[styles.problemCard, { borderColor: theme.accentText }]}>
@@ -307,37 +279,6 @@ export default function HistoryScreen() {
                 ))}
               </View>
             )}
-
-            {/* Named only when it isn't the only row on screen. While searching the match count above
-                already says what these numbers cover, and calling a filtered subset "All time" would
-                be a lie. */}
-            {!searching && (
-              <ThemedText type="label" themeColor="textSecondary" style={styles.statsLabel}>
-                {t('history.allTime')}
-              </ThemedText>
-            )}
-            <View style={styles.statsRow}>
-              <ThemedView type="backgroundElement" style={[styles.statCard, { borderColor: theme.border }]}>
-                <ThemedText type="heading">{historyStats.sessions}</ThemedText>
-                <ThemedText type="small" themeColor="textSecondary">
-                  {t('history.sessions')}
-                </ThemedText>
-              </ThemedView>
-              <ThemedView type="backgroundElement" style={[styles.statCard, { borderColor: theme.border }]}>
-                <ThemedText type="heading">
-                  {historyStats.hours}h {historyStats.minutes}m
-                </ThemedText>
-                <ThemedText type="small" themeColor="textSecondary">
-                  {t('history.time')}
-                </ThemedText>
-              </ThemedView>
-              <ThemedView type="backgroundElement" style={[styles.statCard, { borderColor: theme.border }]}>
-                <ThemedText type="heading">{historyStats.sets}</ThemedText>
-                <ThemedText type="small" themeColor="textSecondary">
-                  {t('history.sets')}
-                </ThemedText>
-              </ThemedView>
-            </View>
 
             <SearchBar value={query} onChangeText={setQuery} placeholder={t('history.searchPlaceholder')} />
           </View>
@@ -366,9 +307,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'baseline',
-    // Holds its height with no action button, so the scope label below doesn't jump when the first
+    // Holds its height with no action button, so the summary line below doesn't jump when the first
     // session lands and "Export all" appears.
     minHeight: 28,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: Spacing.three,
   },
   // Matches Library and Build, which both carry their count on its own line under the title.
   countLabel: {
@@ -380,22 +326,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 12,
     padding: Spacing.two,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    gap: Spacing.two,
-    marginTop: Spacing.two,
-  },
-  // Sits tight to the row it names, with the gap above it instead — so the two labelled groups read as
-  // two groups rather than as one run of evenly spaced things.
-  statsLabel: {
-    marginTop: Spacing.four,
-  },
-  statCard: {
-    flex: 1,
-    borderRadius: 14,
-    borderWidth: 1,
-    padding: Spacing.two + 4,
   },
   // What `styles.list`'s `marginTop` and `gap` became once the list stopped being one `View`.
   listHeader: {

@@ -9,40 +9,29 @@ import { Spacing } from '@/constants/theme';
 import { formatWorkoutShape } from '@/domain/format';
 import { useTheme } from '@/hooks/use-theme';
 import type { NextUpView } from '@/state/selectors/next-up';
-import { blockChips, workoutShape } from '@/state/selectors/workout-shape';
-
-/**
- * How many block chips the card shows before it summarises the rest.
- *
- * A real workout produces around twenty of these — one per block, plus one per circuit member — and
- * they wrap, so an honest full list pushed `Start session` below the fold and behind the tab bar. A
- * new user then had to scroll to find the app's primary action, on the screen that opens first.
- *
- * Two constraints now, which is why it's six rather than the eight it shipped at. The original one:
- * enough chips to tell one workout from another at a glance, which is all this row is for — the exact
- * contents are one tap away in the runner. The one the tab merge added: this card is the list header
- * on a screen whose whole point is the workout list underneath it, so the card has to end somewhere
- * near the fold or the list it introduces is never on screen with it.
- *
- * The cap is applied here rather than in `blockChips`, which keeps returning the whole list: the
- * selector describes the workout, and how much of it fits on a card is this component's problem.
- */
-const VISIBLE_CHIP_LIMIT = 6;
+import { workoutShape } from '@/state/selectors/workout-shape';
 
 /**
  * What the Workouts tab queues up: the next slot of the active program, or a scheduled rest day.
  *
- * Everything that can grow without limit is capped by `numberOfLines` rather than by a `maxHeight` on
- * the card. A fixed height would clip its own contents at large accessibility text sizes — the same
- * trap that keeps every touch target on `minHeight` — whereas line caps shrink the text budget and
- * leave the card free to grow with the reader's font.
+ * **It shows no block chips.** It used to open with a wrapping row of them, capped first at eight and
+ * then at six, and on a real device that row was most of the reason this card filled the screen — the
+ * workout list it introduces started two rows from the bottom. The chips were also close to redundant:
+ * the summary line directly beneath said "5 blocks · reps · ~10 min", which is the same claim in one
+ * line and one that stays true for a twenty-block session. What the chips added over that was the
+ * movement *names*, and those are one tap away in the runner, on the screen where you need them.
+ *
+ * Everything that can still grow is capped by `numberOfLines` rather than by a `maxHeight` on the
+ * card. A fixed height would clip its own contents at large accessibility text sizes — the same trap
+ * that keeps every touch target on `minHeight` — whereas line caps shrink the text budget and leave
+ * the card free to grow with the reader's font.
  */
 export function NextUpCard({ nextUp }: { nextUp: NextUpView }) {
   return nextUp.kind === 'rest' ? <RestDayCard rest={nextUp} /> : <QueuedWorkoutCard queued={nextUp} />;
 }
 
 /*
-  A scheduled rest day. No chips, no shape summary and deliberately no Start button — the program says
+  A scheduled rest day. No shape summary and deliberately no Start button — the program says
   today runs nothing, and a filled primary action would argue with that. The escape hatch is a
   text-weight "Train anyway" that jumps to the next slot which does run something, and "Start an empty
   session" below the card stays available as it always is.
@@ -99,17 +88,9 @@ function QueuedWorkoutCard({ queued }: { queued: Extract<NextUpView, { kind: 'wo
   const theme = useTheme();
   const { t } = useTranslation();
 
-  // Same reasoning as `WorkoutCard`'s in the Workouts screen, and it applies harder here: this card is
-  // the header of a list whose search box re-renders the whole screen on every keystroke, and both of
-  // these walk every block of the workout (and every member of every circuit). Neither depends on the
-  // query, so neither should run again for it.
-  const { visibleChips, hiddenChipCount } = useMemo(() => {
-    const chips = blockChips(queued.workout, queued.exercises);
-    return {
-      visibleChips: chips.slice(0, VISIBLE_CHIP_LIMIT),
-      hiddenChipCount: Math.max(0, chips.length - VISIBLE_CHIP_LIMIT),
-    };
-  }, [queued.workout, queued.exercises]);
+  // Memoised for the same reason `WorkoutCard` memoises its own: this card is the header of a list
+  // whose search box re-renders the whole screen on every keystroke, and `workoutShape` walks every
+  // block of the workout (and every member of every circuit). It does not depend on the query.
   const summary = useMemo(
     () => formatWorkoutShape(workoutShape(queued.workout, queued.exercises)),
     [queued.workout, queued.exercises],
@@ -124,33 +105,10 @@ function QueuedWorkoutCard({ queued }: { queued: Extract<NextUpView, { kind: 'wo
             })
           : t('today.nextUp')}
       </ThemedText>
-      {/* User data, so its length is theirs to decide — two lines names any workout and caps the one
-          field above the chips that could otherwise grow. */}
+      {/* User data, so its length is theirs to decide, and two lines names any workout. */}
       <ThemedText type="subtitle" style={styles.workoutName} numberOfLines={2}>
         {queued.workout.name}
       </ThemedText>
-      <View style={styles.chipRow}>
-        {visibleChips.map((chip, index) => (
-          <View
-            key={`${chip.name}-${index}`}
-            style={[styles.chip, { backgroundColor: chip.isRest ? theme.backgroundSelected : theme.accentSoft }]}>
-            <ThemedText type="small" themeColor={chip.isRest ? 'textSecondary' : 'accentText'}>
-              {chip.name}
-            </ThemedText>
-          </View>
-        ))}
-        {/* A `View`, not a `Pressable`: it opens nothing, and neither do the chips beside it. An arrow
-            or a tap target here would advertise a detail screen that doesn't exist. Styled like a rest
-            chip rather than like an exercise, so it reads as part of the row's chrome instead of as
-            another movement in the workout. */}
-        {hiddenChipCount > 0 && (
-          <View style={[styles.chip, { backgroundColor: theme.backgroundSelected }]}>
-            <ThemedText type="small" themeColor="textSecondary">
-              {t('today.moreBlocks', { count: hiddenChipCount })}
-            </ThemedText>
-          </View>
-        )}
-      </View>
       {/* Two, not one. `formatWorkoutShape` composes a fixed three-part string, so one line looked
           like plenty — and isn't: a mixed workout reads "5 blocks · mixed: reps + hold + hiit · ~13
           min" and a phone-width single line drops the tail, which is the estimated duration. Losing
@@ -191,17 +149,6 @@ const styles = StyleSheet.create({
   },
   emptyBody: {
     marginTop: Spacing.one,
-  },
-  chipRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.one,
-    marginTop: Spacing.three,
-  },
-  chip: {
-    paddingHorizontal: Spacing.two,
-    paddingVertical: 5,
-    borderRadius: 8,
   },
   summaryLine: {
     marginTop: Spacing.three,

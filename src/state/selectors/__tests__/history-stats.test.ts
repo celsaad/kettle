@@ -6,8 +6,8 @@ jest.mock('@/i18n', () => ({
   currentLocale: () => 'en',
 }));
 
-import type { SessionEntry } from '@/domain/types';
-import { currentStreak, historyStats, thisWeekStats } from '@/state/selectors/history-stats';
+import type { Session, SessionEntry } from '@/domain/types';
+import { currentStreak, historyStats, sessionsPerWeek, thisWeekStats } from '@/state/selectors/history-stats';
 import { aSession } from '@/test-support/sessions';
 
 afterEach(() => {
@@ -224,5 +224,72 @@ describe('thisWeekStats', () => {
       aSession({ startedAt: new Date(2026, 6, 27, 0, 5, 0).toISOString() }), // this week's Monday
     ];
     expect(thisWeekStats(sessions).sessions).toBe(1);
+  });
+});
+
+/**
+ * The analytics screen's per-week breakdown.
+ *
+ * `now` is injected rather than faked with timers — the windowing is the thing under test, and a
+ * parameter says so more clearly than a system clock does. The fixtures use a Wednesday so that
+ * whichever weekday the test locale starts its week on, the session is mid-week rather than sitting on
+ * a boundary that the first-weekday rule would move.
+ */
+describe('sessionsPerWeek', () => {
+  const wednesday = new Date(2026, 7, 12, 12, 0, 0); // 12 Aug 2026
+  const at = (date: Date, id = date.toISOString()): Session =>
+    aSession({ id, startedAt: date.toISOString(), endedAt: date.toISOString() });
+
+  const daysBefore = (days: number) => {
+    const date = new Date(wednesday);
+    date.setDate(date.getDate() - days);
+    return date;
+  };
+
+  it('returns one entry per week asked for, oldest first', () => {
+    const weeks = sessionsPerWeek([], 8, wednesday);
+
+    expect(weeks).toHaveLength(8);
+    expect(weeks[0].weekStart.getTime()).toBeLessThan(weeks[7].weekStart.getTime());
+  });
+
+  // The whole point of the chart: a week you didn't train is a bar of zero, not a missing bar. Dropping
+  // empty weeks would draw a month off training as an unbroken run.
+  it('keeps empty weeks rather than omitting them', () => {
+    const weeks = sessionsPerWeek([at(wednesday)], 4, wednesday);
+
+    expect(weeks.map((week) => week.sessions)).toEqual([0, 0, 0, 1]);
+  });
+
+  it('counts every session that falls in the same week', () => {
+    const sessions = [at(wednesday, 'a'), at(daysBefore(1), 'b'), at(daysBefore(2), 'c')];
+
+    expect(sessionsPerWeek(sessions, 4, wednesday).at(-1)?.sessions).toBe(3);
+  });
+
+  // Each session lands in exactly one bucket — a boundary that both included or both excluded would
+  // show up here as a total that isn't three.
+  it('puts each session in exactly one week', () => {
+    const sessions = [at(wednesday, 'a'), at(daysBefore(7), 'b'), at(daysBefore(14), 'c')];
+    const weeks = sessionsPerWeek(sessions, 6, wednesday);
+
+    expect(weeks.reduce((sum, week) => sum + week.sessions, 0)).toBe(3);
+    expect(weeks.filter((week) => week.sessions > 0)).toHaveLength(3);
+  });
+
+  it('ignores anything older than the window', () => {
+    const weeks = sessionsPerWeek([at(daysBefore(70))], 4, wednesday);
+
+    expect(weeks.every((week) => week.sessions === 0)).toBe(true);
+  });
+
+  // Weeks are seven calendar days apart, not 7 × 86_400_000 milliseconds — a window spanning a DST
+  // change is 167 or 169 hours, and fixed-ms arithmetic drifts until a bucket boundary crosses midnight.
+  it('steps by calendar weeks, so every week starts on the same weekday', () => {
+    const weeks = sessionsPerWeek([], 12, new Date(2026, 10, 18, 12, 0, 0)); // spans the Nov DST change
+    const weekdays = new Set(weeks.map((week) => week.weekStart.getDay()));
+
+    expect(weekdays.size).toBe(1);
+    expect(weeks.every((week) => week.weekStart.getHours() === 0)).toBe(true);
   });
 });

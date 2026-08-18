@@ -75,6 +75,8 @@
     "title": "History",
     "exportAll": "Export all",
     "allTime": "All time",
+    "stats": "Stats",
+    "summaryLine": "{{sessions}} · {{time}} · {{sets}}",
     "thisWeekLabel": "This week",
     "streak": "day streak",
     "matchCount": "{{shown}} of {{total}}",
@@ -88,6 +90,12 @@
     "deleteConfirmBody": "\"{{name}}\" on {{day}} {{month}} will be permanently removed.",
     "problemsTitle_one": "{{count}} session file couldn't be read or written",
     "problemsTitle_other": "{{count}} session files couldn't be read or written"
+  },
+  "analytics": {
+    "title": "Your numbers",
+    "perWeek": "Sessions per week · last {{count}} weeks",
+    "weekBarLabel_one": "Week of {{week}}: {{count}} session",
+    "weekBarLabel_other": "Week of {{week}}: {{count}} sessions"
   },
   "library": {
     "title": "Library",
@@ -589,6 +597,8 @@
     "rep_other": "{{count}} reps",
     "interval_one": "{{count}} interval",
     "interval_other": "{{count}} intervals",
+    "session_one": "{{count}} session",
+    "session_other": "{{count}} sessions",
     "set_one": "{{count}} set",
     "set_other": "{{count}} sets",
     "seconds": "{{n}}s",

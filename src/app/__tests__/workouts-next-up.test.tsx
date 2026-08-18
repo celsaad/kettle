@@ -211,20 +211,16 @@ describe('first-run guidance', () => {
 });
 
 /**
- * The block chips on the Next-up card.
+ * What a long workout looks like on the card, now that it has no chips.
  *
- * A real workout produces around twenty of them — one per block plus one per circuit member — and
- * they wrap, so an uncapped row pushed `Start session` below the fold and behind the tab bar. A new
- * user then had to scroll to reach the app's primary action on the screen that opens first.
- *
- * The cap tightened from eight to six when this card became the header of the workout list rather
- * than a screen of its own: it now has to end near the fold or the list it introduces never shares a
- * screen with it.
- *
- * What's pinned is the cap and the summary, not the exact number that fits: `blockChips` still
- * returns the whole list (`selectors-dst-chips.test.ts` owns that), and the slice is the card's.
+ * It used to open with a wrapping row of block chips, capped first at eight and then at six as the
+ * card kept overflowing; these cases pinned that cap. The chips are gone — on a device that row was
+ * most of the reason the card filled the screen, and the summary line beneath it already made the same
+ * claim in one line, for any length of workout. So what's pinned now is the opposite property: a
+ * twelve-block session takes no more vertical room than a three-block one, and the summary is what
+ * scales instead of the card.
  */
-describe('a long workout’s chips', () => {
+describe('a long workout', () => {
   /** Twelve blocks, which is an ordinary session rather than a contrived one. */
   function setLongWorkout() {
     const names = ['Squat', 'Bench', 'Row', 'Press', 'Curl', 'Dip', 'Lunge', 'Plank', 'Fly', 'Pulldown', 'Calf', 'Crunch'];
@@ -243,53 +239,33 @@ describe('a long workout’s chips', () => {
     });
   }
 
-  it('shows the first six and summarises the rest', async () => {
-    setLongWorkout();
-
-    await renderScreen(<WorkoutsScreen />);
-
-    expect(screen.getByText('Squat')).toBeTruthy();
-    expect(screen.getByText('Dip')).toBeTruthy();
-    // The seventh onwards are folded into the summary rather than rendered.
-    expect(screen.queryByText('Lunge')).toBeNull();
-    expect(screen.queryByText('Crunch')).toBeNull();
-    expect(screen.getByText('+6 more')).toBeTruthy();
-  });
-
   /**
-   * The regression this pins. Removing the cap fails it: `Start session` is still in the tree either
-   * way, so the assertion has to be about the chips that pushed it down rather than about the button.
+   * The regression that matters, and it fails against a card that lists its blocks: reintroducing the
+   * chip row puts every one of these names in the tree. The movement names belong in the runner, on
+   * the screen where you need to know them.
    */
-  it('keeps Start session above a row that would otherwise fill the card', async () => {
+  it('names no individual block on the card', async () => {
     setLongWorkout();
 
     await renderScreen(<WorkoutsScreen />);
 
-    expect(screen.getByText('Start session')).toBeTruthy();
+    expect(screen.queryByText('Squat')).toBeNull();
+    expect(screen.queryByText('Dip')).toBeNull();
     expect(screen.queryByText('Crunch')).toBeNull();
-  });
-
-  it('leaves a short workout alone, with no summary chip', async () => {
-    setSeededLibrary();
-
-    await renderScreen(<WorkoutsScreen />);
-
+    // Nor the "+N more" chip that used to stand in for the tail.
     expect(screen.queryByText(/more/)).toBeNull();
   });
 
-  /**
-   * Driven in `pt` because an English assertion cannot tell `t('today.moreBlocks')` from a hardcoded
-   * literal — and a `+N more` built by hand is exactly the shape that gets hardcoded. It also proves
-   * the count runs through i18next's `count` rather than a `=== 1` ternary, since the plural form is
-   * what resolves the string at all.
-   */
-  it('is translated', async () => {
-    await changeLanguage('pt');
+  // The one line that does have to scale with the workout, since it is now the only description of it.
+  it('describes it in a single summary line instead', async () => {
     setLongWorkout();
 
     await renderScreen(<WorkoutsScreen />);
 
-    expect(screen.getByText('+6 a mais')).toBeTruthy();
+    // Twice, like the workout's name: the card and the list row below it describe the same workout
+    // with the same one-liner, which is the point — it is the description that scales.
+    expect(screen.getAllByText(/12 blocks/)).toHaveLength(2);
+    expect(screen.getByText('Start session')).toBeTruthy();
   });
 });
 

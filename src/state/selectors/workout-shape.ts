@@ -1,23 +1,6 @@
 import type { WorkoutShape } from '@/domain/format';
 import type { Exercise, Workout, WorkoutBlock } from '@/domain/types';
-import { exerciseName, findExercise } from '@/state/selectors/exercise-lookup';
-
-export type BlockChip = { name: string; isRest: boolean };
-
-/**
- * Carries each chip's `isRest` alongside its name. Callers used to style rest chips by comparing the
- * rendered name to the literal `'Rest'` — the user's own exercise name, so renaming that exercise (or
- * authoring one in any other language) silently dropped the styling.
- */
-export function blockChips(workout: Workout, exercises: Exercise[]): BlockChip[] {
-  const chipFor = (exerciseId: string): BlockChip => ({
-    name: exerciseName(exercises, exerciseId),
-    isRest: findExercise(exercises, exerciseId)?.type === 'rest',
-  });
-  return workout.blocks.flatMap((block) =>
-    block.kind === 'circuit' ? block.members.map((member) => chipFor(member.exerciseId)) : [chipFor(block.exerciseId)],
-  );
-}
+import { findExercise } from '@/state/selectors/exercise-lookup';
 
 function estimateExerciseSeconds(exercise: Exercise, overrideDurationSec?: number): number {
   switch (exercise.type) {

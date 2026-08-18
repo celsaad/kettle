@@ -54,6 +54,14 @@ language; an unsupported tag is rejected on upload. The limits and the upload fo
   attention; they're still exactly where they were and still do exactly the same thing, just quietly.
   The card itself is a little shorter, so more of your list fits above the fold.
 
+- **Stats can tell you whether you're getting stronger, not just how much you've done.** Under the
+  chart there's now a line per exercise you've trained more than once in the last eight weeks: what
+  you're lifting (or holding) now, the shape of how you got there, and what it changed by. That's a
+  fact you previously had to open nine sessions and do arithmetic to work out.
+- Strength work and holds only. HIIT and EMOM numbers are set by the workout rather than by you, so a
+  bigger one there means you edited the workout; cardio needs route-by-route comparison Kettle doesn't
+  do yet. Those are left out rather than half-answered.
+
 ### Fixed
 
 - **The session runner's progress bars now work at any length.** A circuit with a lot of exercises —

@@ -90,7 +90,13 @@
     "title": "Seus números",
     "perWeek": "Sessões por semana · últimas {{count}} semanas",
     "weekBarLabel_one": "Semana de {{week}}: {{count}} sessão",
-    "weekBarLabel_other": "Semana de {{week}}: {{count}} sessões"
+    "weekBarLabel_other": "Semana de {{week}}: {{count}} sessões",
+    "progressFlat": "sem mudança",
+    "progressUp": "+{{value}}",
+    "progressDown": "−{{value}}",
+    "progressTitle": "Ficando mais forte",
+    "progressBody": "Mudança nas últimas {{count}} semanas, para tudo que você treinou mais de uma vez.",
+    "progressEmpty": "Treine algo duas vezes e a evolução aparece aqui."
   },
   "library": {
     "title": "Biblioteca",

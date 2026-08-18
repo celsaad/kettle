@@ -65,7 +65,6 @@ language; an unsupported tag is rejected on upload. The limits and the upload fo
   what you're actually checking in those three seconds.
 - Long exercise notes are capped at two lines in the runner, so a paragraph can't push the timer down
   the screen. The full note is still on the exercise.
-
 - **A program with named weekdays now runs in the order you wrote it.** Days sharing a week number
   were being put in alphabetical order, so a program labelled `Monday` through `Sunday` was run
   starting from Friday — while the program's own screen listed it correctly, Monday first. Day labels

@@ -35,6 +35,9 @@ language; an unsupported tag is rejected on upload. The limits and the upload fo
 - **Every list is rows now, not a stack of cards.** Workouts, exercises, programs, your history and
   the Settings rows are all hairline-separated lines with no box around them — so more fits on a
   screen, and names line up with everything else on the page instead of being indented inside a frame.
+- **A program's own screen is rows too**, so a four-week plan reads as a list of days rather than as
+  twelve stacked panels each with its own full-width orange button. Every day still starts from the
+  same place — it's the round start button the workout list uses.
 - **The "next up" panel lost its box too.** It's still the first thing on the Workouts tab and still
   the only orange button, but it now starts at the same edge as everything below it.
 - **"Start an empty session" moved under the Start button**, where it reads as the alternative to it.

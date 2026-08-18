@@ -8,6 +8,7 @@ import { FirstRunCard } from '@/components/first-run-card';
 import { NextUpCard } from '@/components/next-up-card';
 import { ListHeaderRule, ListRow, ListRowSeparator } from '@/components/list-row';
 import { NoResults } from '@/components/no-results';
+import { RowStartButton } from '@/components/row-start-button';
 import { SearchBar } from '@/components/search-bar';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -34,7 +35,6 @@ export { RouteErrorBoundary as ErrorBoundary } from '@/components/error-fallback
  * the library does.
  */
 const WorkoutCard = memo(function WorkoutCard({ workout, exercises }: { workout: Workout; exercises: Exercise[] }) {
-  const theme = useTheme();
   const { t } = useTranslation();
   const shape = useMemo(() => formatWorkoutShape(workoutShape(workout, exercises)), [workout, exercises]);
 
@@ -58,25 +58,10 @@ const WorkoutCard = memo(function WorkoutCard({ workout, exercises }: { workout:
         </View>
       </Pressable>
 
-      {/*
-        Neutral, not accent. This is one control per row, so on a twenty-workout library it was twenty
-        accent marks down a single screen — collectively the loudest thing on it, and louder than the
-        one primary action (the next-up card's Start button) that the accent is supposed to identify.
-        Starting a *specific* workout is a real action but not the screen's headline; the queued one
-        above is. The triangle keeps its shape and its label, so nothing about what it does changed.
-      */}
-      <Pressable
+      <RowStartButton
         onPress={() => router.push({ pathname: '/session', params: { workoutId: workout.id } })}
-        hitSlop={8}
-        accessibilityRole="button"
         accessibilityLabel={t('build.startAccessibility', { name: workout.name })}
-        style={({ pressed }) => [
-          styles.startButton,
-          { backgroundColor: theme.backgroundSelected },
-          pressed && styles.pressed,
-        ]}>
-        <View style={[styles.playTriangle, { borderLeftColor: theme.text }]} />
-      </Pressable>
+      />
     </ListRow>
   );
 });
@@ -337,23 +322,6 @@ const styles = StyleSheet.create({
   cardText: {
     flex: 1,
     gap: 2,
-  },
-  startButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  playTriangle: {
-    width: 0,
-    height: 0,
-    marginLeft: 2,
-    borderTopWidth: 6,
-    borderBottomWidth: 6,
-    borderLeftWidth: 9,
-    borderTopColor: 'transparent',
-    borderBottomColor: 'transparent',
   },
   fab: {
     position: 'absolute',

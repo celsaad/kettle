@@ -150,8 +150,15 @@ const styles = StyleSheet.create({
   emptyBody: {
     marginTop: Spacing.one,
   },
+  /**
+   * `Spacing.two`, not `Spacing.three`. The label, name, summary and week notes are one continuous
+   * reading — "week 2 · Tuesday / Foundations · Push / 5 blocks · reps · ~13 min" — and spacing them
+   * like separate sections cost three full gaps on the tallest element of the screen the workout list
+   * has to fit under. The gap above the Start button stays at `Spacing.three`: that one separates the
+   * text from the action, which is a boundary worth drawing.
+   */
   summaryLine: {
-    marginTop: Spacing.three,
+    marginTop: Spacing.two,
   },
   startButton: {
     marginTop: Spacing.three,

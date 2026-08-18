@@ -42,9 +42,21 @@ The screen the complaint was actually about: too crowded, and a `+` FAB competin
 ad-hoc session. They read as peers because they are *styled* as peers: one accent fill bottom-right,
 one accent-outlined pill in the title row. The fix is placement and weight, not deletion.
 
-- **"Start an empty session" leaves the title row.** It becomes a text-weight link directly beneath
-  the next-up card's Start button, where it reads as "or, instead of this one" — which is what it
-  means. Loses its accent outline. The title row is then just the settings gear.
+- **"Start an empty session" stays in the title row, and loses its accent.** Its label goes from
+  `accentText` to `textSecondary`, matching the gear beside it, so the title row reads as one row of
+  quiet chrome and the accent budget goes to the card's Start button.
+
+  This plan originally said to move it under the card as a text link. **That is wrong, and the reason
+  is recorded in the code**: the comment on `emptySessionButton` in
+  [index.tsx](../src/app/(tabs)/index.tsx) says the control has already been three things — a bare
+  text link under the card ("genuinely easy to miss on a device — it read as a caption"), then a
+  full-width outlined button there ("a peer of `Start session` in both width and position, which
+  overstates a secondary action"), and now the pill. Moving it back is re-treading a placement already
+  rejected on device.
+
+  The complaint was never that it is mispositioned; it is that it and the FAB compete. They compete
+  because **both wear the accent**, not because of where they sit. Take the accent off the secondary
+  one and the competition goes with it, at no cost in rows.
 - **The FAB keeps its accent fill.** It is the list's create action and belongs with the list.
   Rejecting §2's "make it the last row of the list": with 20+ workouts that is a scroll to reach a
   create action, and the FAB's overlap is better solved by list padding.

@@ -200,7 +200,7 @@ describe('the stat tiles', () => {
     expect(screen.getByText('This week')).toBeTruthy();
     expect(screen.getByText('All time')).toBeTruthy();
     // One label each from the two rows, and one shared by both.
-    expect(screen.getByText('streak')).toBeTruthy();
+    expect(screen.getByText('day streak')).toBeTruthy();
     expect(screen.getByText('sets')).toBeTruthy();
     expect(screen.getAllByText('sessions')).toHaveLength(2);
   });
@@ -211,7 +211,7 @@ describe('the stat tiles', () => {
     await fireEvent.changeText(screen.getByPlaceholderText('Search workouts'), 'push');
 
     expect(screen.queryByText('This week')).toBeNull();
-    expect(screen.queryByText('streak')).toBeNull();
+    expect(screen.queryByText('day streak')).toBeNull();
     // The all-time row stays, because a filtered total is still a total — but it stops calling itself
     // "all time", which would be the same lie in the other direction.
     expect(screen.getByText('sets')).toBeTruthy();

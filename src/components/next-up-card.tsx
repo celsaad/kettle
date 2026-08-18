@@ -1,4 +1,5 @@
 import { router } from 'expo-router';
+import { useMemo } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
@@ -98,10 +99,21 @@ function QueuedWorkoutCard({ queued }: { queued: Extract<NextUpView, { kind: 'wo
   const theme = useTheme();
   const { t } = useTranslation();
 
-  const chips = blockChips(queued.workout, queued.exercises);
-  const visibleChips = chips.slice(0, VISIBLE_CHIP_LIMIT);
-  const hiddenChipCount = chips.length - visibleChips.length;
-  const summary = formatWorkoutShape(workoutShape(queued.workout, queued.exercises));
+  // Same reasoning as `WorkoutCard`'s in the Workouts screen, and it applies harder here: this card is
+  // the header of a list whose search box re-renders the whole screen on every keystroke, and both of
+  // these walk every block of the workout (and every member of every circuit). Neither depends on the
+  // query, so neither should run again for it.
+  const { visibleChips, hiddenChipCount } = useMemo(() => {
+    const chips = blockChips(queued.workout, queued.exercises);
+    return {
+      visibleChips: chips.slice(0, VISIBLE_CHIP_LIMIT),
+      hiddenChipCount: Math.max(0, chips.length - VISIBLE_CHIP_LIMIT),
+    };
+  }, [queued.workout, queued.exercises]);
+  const summary = useMemo(
+    () => formatWorkoutShape(workoutShape(queued.workout, queued.exercises)),
+    [queued.workout, queued.exercises],
+  );
 
   return (
     <ThemedView type="backgroundElement" style={[styles.card, { borderColor: theme.border }]}>

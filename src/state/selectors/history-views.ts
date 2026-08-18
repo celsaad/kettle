@@ -1,6 +1,6 @@
 import { formatEntryResult, formatSessionDuration, formatSessionName, formatSetCount } from '@/domain/format';
 import type { Library, Session } from '@/domain/types';
-import { formatMonthBadge, formatMonthDay, formatWeekday } from '@/i18n/format';
+import { formatMonthBadge, formatMonthDay } from '@/i18n/format';
 import { exerciseName } from '@/state/selectors/exercise-lookup';
 import {
   entryVolume,
@@ -9,24 +9,6 @@ import {
   sessionSetCount,
   workoutNameFor,
 } from '@/state/selectors/session-summary';
-
-export type RecentSessionView = {
-  id: string;
-  workoutName: string;
-  dateLabel: string;
-  durationLabel: string;
-  setsLabel: string;
-};
-
-export function recentSessionsView(sessions: Session[], library: Library, limit = 5): RecentSessionView[] {
-  return sessions.slice(0, limit).map((session) => ({
-    id: session.id,
-    workoutName: formatSessionName(workoutNameFor(session, library)),
-    dateLabel: formatWeekday(new Date(session.startedAt)),
-    durationLabel: formatSessionDuration(sessionDurationMinutes(session)),
-    setsLabel: formatSetCount(sessionSetCount(session)),
-  }));
-}
 
 export type ExerciseHistoryEntry = { sessionId: string; dateLabel: string; summary: string; volume: number };
 

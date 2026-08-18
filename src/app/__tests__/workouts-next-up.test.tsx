@@ -161,6 +161,44 @@ describe('first-run guidance', () => {
     expect(screen.getByText('No workouts yet')).toBeTruthy();
   });
 
+  /**
+   * The gate is `queued`, not `nextUp`, and this is the case that tells them apart: a program whose
+   * very first slot is a rest day, opened by someone who has never logged a session. Both branches
+   * have something to show, so a `nextUp !== null` gate passes — and then step one reads "Start the
+   * workout below" directly above a card that says today runs nothing and offers no Start button.
+   *
+   * Reachable rather than theoretical: `nextUpView` shows a leading rest slot until something is
+   * logged (there is no anchor to count elapsed days from), so any imported program that starts on a
+   * rest day lands a new user here on first launch.
+   */
+  it('stays out of a rest day, which has no workout to point at', async () => {
+    useLibraryStore.setState({
+      library: aLibrary({
+        exercises: [anExercise()],
+        workouts: [aWorkout({ id: 'push-day', name: 'Push day' })],
+        programs: [
+          {
+            id: 'base',
+            name: 'Base',
+            weeks: [
+              { week: 1, day: 'Day 1', restDay: true },
+              { week: 1, day: 'Day 2', workoutId: 'push-day' },
+            ],
+          },
+        ],
+      }),
+      status: 'ready',
+    });
+
+    await renderScreen(<WorkoutsScreen />);
+
+    // The rest card is what's showing, and it has no Start button — so the guidance must not be here.
+    expect(screen.getByText('Rest day')).toBeTruthy();
+    expect(screen.queryByText('Start session')).toBeNull();
+    expect(screen.queryByText('NEW HERE?')).toBeNull();
+    expect(screen.queryByText('Start the workout below')).toBeNull();
+  });
+
   it('is translated', async () => {
     await changeLanguage('pt');
     setSeededLibrary();

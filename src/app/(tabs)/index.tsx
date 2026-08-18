@@ -130,15 +130,26 @@ export default function WorkoutsScreen() {
   // sees.
   const workouts = useMemo(() => sortForList(matching, sort, lastTrained), [matching, sort, lastTrained]);
 
-  const nextUp = library ? nextUpView(library, sessions) : null;
+  // Memoised: this screen owns the search box, so it re-renders on every keystroke — twice, since
+  // `useDeferredValue` renders the urgent pass and then the deferred one. `nextUpView` walks the whole
+  // session log, sorts the active program's weeks and runs `resolveWorkoutForWeek`, none of which
+  // depends on what's being typed. The old Today screen could get away with calling it bare because it
+  // had no text input on it; this one cannot, and leaving it bare would undo exactly what the
+  // `deferredQuery` note above is for.
+  const nextUp = useMemo(() => (library ? nextUpView(library, sessions) : null), [library, sessions]);
+  // Only a workout card has something to point at; a rest day has no Start button.
+  const queued = nextUp?.kind === 'workout' ? nextUp : null;
 
   // Never having finished a session is what "new here" actually means — it survives a reinstall's
   // seeded library and doesn't need a flag persisted anywhere, so web (which can't persist at all)
   // gets the same behaviour as native for free. It goes for good the moment the first session lands.
   //
-  // Suppressed when there's nothing queued: the list's own empty state below is a single clear
-  // instruction, and two competing instruction blocks is worse than either alone.
-  const isFirstRun = sessions.length === 0 && nextUp !== null;
+  // Gated on `queued`, **not** on `nextUp`: step one reads "Start the workout below", and a rest card
+  // has no workout and no Start button under it. A program whose first slot is `rest_day: true` puts
+  // a brand-new user in exactly that state, so this distinction is reachable rather than theoretical.
+  // Suppressed on an empty library for the related reason — the list's own empty state is already a
+  // single clear instruction, and two competing instruction blocks is worse than either alone.
+  const isFirstRun = sessions.length === 0 && queued !== null;
 
   const exercises = library?.exercises;
   const renderItem = useCallback(

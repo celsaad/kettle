@@ -8,7 +8,7 @@ import { changeLanguage } from 'i18next';
 
 import type { Library, SessionEntry } from '@/domain/types';
 import { historyStats } from '@/state/selectors/history-stats';
-import { exerciseHistory, historySessionsView, recentSessionsView } from '@/state/selectors/history-views';
+import { exerciseHistory, historySessionsView } from '@/state/selectors/history-views';
 import { sessionEntryResult } from '@/state/selectors/session-summary';
 import { aSession } from '@/test-support/sessions';
 
@@ -26,11 +26,7 @@ describe('a session with no workout', () => {
     entries: [{ exercise: 'bench', type: 'reps', sets: [{ reps: 5, weightKg: 60, restTakenSec: 120 }] }],
   });
 
-  it('renders in Recent under the translated stand-in', () => {
-    expect(recentSessionsView([adHoc], library)[0].workoutName).toBe('Ad-hoc session');
-  });
-
-  it('renders in History under the same stand-in', () => {
+  it('renders in History under the translated stand-in', () => {
     expect(historySessionsView([adHoc], library)[0].workoutName).toBe('Ad-hoc session');
   });
 
@@ -41,7 +37,7 @@ describe('a session with no workout', () => {
   // The stand-in is a translated string, not a hardcoded English one — `formatSessionName` owns it.
   it('translates the stand-in', async () => {
     await changeLanguage('pt');
-    expect(recentSessionsView([adHoc], library)[0].workoutName).toBe('Sessão avulsa');
+    expect(historySessionsView([adHoc], library)[0].workoutName).toBe('Sessão avulsa');
   });
 });
 

@@ -74,7 +74,7 @@ export default function LibraryScreen() {
   const sort = useListSort('exercises');
   const setListSort = usePreferencesStore((state) => state.setListSort);
   const exercises = useMemo(() => library?.exercises.filter((exercise) => exercise.type !== 'rest') ?? [], [library]);
-  // Immediate value in the input, deferred value in the filter — see the note in build.tsx.
+  // Immediate value in the input, deferred value in the filter — see the note in (tabs)/index.tsx.
   const deferredQuery = useDeferredValue(query);
 
   const filtered = useMemo(() => {
@@ -104,7 +104,7 @@ export default function LibraryScreen() {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['top', 'left', 'right']}>
-      {/* The header is an element, not an inline `() => <Header/>` — see the note in build.tsx. That
+      {/* The header is an element, not an inline `() => <Header/>` — see the note in (tabs)/index.tsx. That
           matters here and not only in principle: the search box below lives in it, and a remounted
           header loses focus on every keystroke. */}
       <FlatList

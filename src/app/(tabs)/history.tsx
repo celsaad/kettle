@@ -19,7 +19,7 @@ import { exportSession, exportSessions } from '@/storage/export';
 export { RouteErrorBoundary as ErrorBoundary } from '@/components/error-fallback';
 
 /**
- * One session card, memoised and module-level for the reasons in `build.tsx`'s note — and this is the
+ * One session card, memoised and module-level for the reasons in `(tabs)/index.tsx`'s note — and this is the
  * list where it pays: History is the only one that grows every time the app is used, and every card
  * carries an expandable body of per-exercise rows.
  *
@@ -131,7 +131,7 @@ export default function HistoryScreen() {
 
   const historySessions = useMemo(() => (library ? historySessionsView(sessions, library) : []), [sessions, library]);
 
-  // Immediate value in the input, deferred value in the filter — see the note in build.tsx. This is
+  // Immediate value in the input, deferred value in the filter — see the note in (tabs)/index.tsx. This is
   // the screen it was added for: the tiles below aggregate over every entry of every matching session,
   // so a keystroke here does real work on a long log rather than a name comparison.
   const deferredQuery = useDeferredValue(query);
@@ -161,8 +161,15 @@ export default function HistoryScreen() {
   }, [sessions, visibleSessions, searching]);
 
   // The other half of the tiles, and deliberately *not* narrowed by the search — see where it renders.
-  const weekStats = useMemo(() => thisWeekStats(sessions), [sessions]);
-  const streak = useMemo(() => currentStreak(sessions), [sessions]);
+  //
+  // **Computed per render, and deliberately not memoised on `sessions`.** Both read the clock inside:
+  // `thisWeekStats` calls `startOfWeek(new Date())` and `currentStreak` walks back from today. Keying
+  // a cache on the log alone freezes them at whatever the date was when the log last changed — leave
+  // the app open across midnight on the week boundary and THIS WEEK keeps reporting last week while
+  // the streak never rolls over. Exactly the bug the old Today screen's `dateLabel` had when it was a
+  // module-level const. They are cheap linear passes; the clock is the input that isn't in the deps.
+  const weekStats = thisWeekStats(sessions);
+  const streak = currentStreak(sessions);
 
   // Both wrapped so every card can hold the same two function identities and stay memo-equal; without
   // that, one expand re-renders every card on screen.
@@ -197,7 +204,7 @@ export default function HistoryScreen() {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['top', 'left', 'right']}>
-      {/* The header is an element, not an inline `() => <Header/>` — see the note in build.tsx. That
+      {/* The header is an element, not an inline `() => <Header/>` — see the note in (tabs)/index.tsx. That
           matters here and not only in principle: the search box below lives in it, and a remounted
           header loses focus on every keystroke. */}
       <FlatList
@@ -226,18 +233,12 @@ export default function HistoryScreen() {
               )}
             </View>
             {/*
-          Says "All time" rather than a month: the list below is every session ever, and the three
-          tiles are historyStats(sessions) over that same unfiltered set. This used to be a
-          hardcoded "July 2026", which was wrong twice over — frozen to one month, and labelling
-          all-time numbers as if they were that month's. Searching narrows both the list and the
-          tiles, so the label has to stop claiming "all time" and say what the subset is instead.
-        */}
-            {/*
               Only while searching. This line used to carry the tiles' scope for both cases — a
-              hardcoded "July 2026" once, then "All time" / "N of M" — but now that two labelled rows
-              sit below it, "All time" here and again on the row it describes is the same word twice.
-              The scope wording moved down to the row; the match count stays up here, where it also
-              describes the list.
+              hardcoded "July 2026" first, which was frozen to one month *and* labelled all-time
+              numbers as if they were that month's, then "All time" / "N of M". Now that two labelled
+              rows sit below it, "All time" here and again on the row it describes is the same word
+              twice, so the scope wording moved down onto its row. The match count stays up here,
+              where it describes the list as well as the tiles.
             */}
             {searching && (
               <ThemedText themeColor="textSecondary" style={styles.countLabel}>
@@ -278,6 +279,12 @@ export default function HistoryScreen() {
                       {t('history.time')}
                     </ThemedText>
                   </ThemedView>
+                  {/* "day streak", not "streak" — the only tile in this row that isn't scoped to the
+                      week, since `currentStreak` walks back as far as the log goes. Under a THIS WEEK
+                      heading a bare "streak" reads as a weekly count, so a 30-day run would announce
+                      itself as "30 · this week". It sits in this row anyway because both rows answer
+                      "how am I doing lately" and the all-time row is the archive, but the label has to
+                      carry its own scope. */}
                   <ThemedView type="backgroundElement" style={[styles.statCard, { borderColor: theme.border }]}>
                     <ThemedText type="heading">{streak}</ThemedText>
                     <ThemedText type="small" themeColor="textSecondary">

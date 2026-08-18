@@ -369,9 +369,9 @@ What's genuinely missing today, checked directly against the code:
 
 - **No analytics screen.** Nothing aggregates progress across exercises or across a program. The app's
   only chart is the per-exercise volume sparkline in the exercise editor (§10 item 4), and the
-  cross-cutting numbers that do exist — `historyStats`, `currentStreak`, `thisWeekStats` — are split
-  between Today's stat row and History's tiles rather than collected anywhere. It branches off **History**
-  as a modal route rather than becoming a sixth tab. Scoped in the implementation plan's planned-work
+  cross-cutting numbers that do exist — `historyStats`, `currentStreak`, `thisWeekStats` — all render as
+  History's two tile rows rather than being collected anywhere. It branches off **History**
+  as a modal route rather than becoming a fifth tab. Scoped in the implementation plan's planned-work
   list, including why **"analytics" here never means a telemetry SDK**: it's charts over the user's own
   local sessions, and the zero-data-collected claim is unaffected.
 - ~~**No in-app cloud-sync guidance.**~~ ✅ Shipped — Settings has a "Backups and sync" section: the

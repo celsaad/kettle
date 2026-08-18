@@ -1,7 +1,7 @@
 import { changeLanguage } from 'i18next';
 
 import type { Library } from '@/domain/types';
-import { exerciseHistory, historySessionsView, recentSessionsView } from '@/state/selectors/history-views';
+import { exerciseHistory, historySessionsView } from '@/state/selectors/history-views';
 import { aSession } from '@/test-support/sessions';
 
 /**
@@ -45,14 +45,12 @@ describe('session list labels', () => {
       ],
     });
     expect(historySessionsView([twoSets], library)[0].setsLabel).toBe('2 sets');
-    expect(recentSessionsView([oneSet], library)[0].setsLabel).toBe('1 set');
   });
 
   it('names a session after its workout, falling back to a label when it was started ad-hoc', () => {
     expect(historySessionsView([oneSet], library)[0].workoutName).toBe('Push day');
     const adHoc = aSession({ startedAt: '2026-07-24T09:00:00.000Z', workout: null });
     expect(historySessionsView([adHoc], library)[0].workoutName).toBe('Ad-hoc session');
-    expect(recentSessionsView([adHoc], library)[0].workoutName).toBe('Ad-hoc session');
   });
 
   // The workout is user data from their own YAML, so it stays as written whatever the locale is.
@@ -64,7 +62,7 @@ describe('session list labels', () => {
     expect(session.workoutName).toBe('Push day');
 
     const adHoc = aSession({ startedAt: '2026-07-24T09:00:00.000Z', workout: null });
-    expect(recentSessionsView([adHoc], library)[0].workoutName).toBe('Sessão avulsa');
+    expect(historySessionsView([adHoc], library)[0].workoutName).toBe('Sessão avulsa');
   });
 });
 

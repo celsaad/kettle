@@ -46,6 +46,19 @@ language; an unsupported tag is rejected on upload. The limits and the upload fo
 
 ### Fixed
 
+- **The session runner's progress bars now work at any length.** A circuit with a lot of exercises —
+  a mobility routine with 27 of them, say — used to draw more dashes than there was room for, so every
+  one of them collapsed to a sliver and you couldn't tell which was the current one. Both bars are now
+  continuous, so they read the same at three exercises or fifty.
+- **A single-block workout no longer looks finished before you start.** With only one block, the
+  progress bar was permanently full; it now stays out of the way, since there's no progress to show.
+- **One way to advance, instead of two.** The timed and interval screens had both a forward arrow and
+  a labelled button doing exactly the same thing, inches apart. The arrow is gone; the button stays.
+- The get-ready countdown leads with the **workout's name** rather than a huge number — the name is
+  what you're actually checking in those three seconds.
+- Long exercise notes are capped at two lines in the runner, so a paragraph can't push the timer down
+  the screen. The full note is still on the exercise.
+
 - **A program with named weekdays now runs in the order you wrote it.** Days sharing a week number
   were being put in alphabetical order, so a program labelled `Monday` through `Sunday` was run
   starting from Friday — while the program's own screen listed it correctly, Monday first. Day labels

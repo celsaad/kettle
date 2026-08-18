@@ -123,8 +123,15 @@ export function SessionReps({
           onDrop={onDropSet}
           onSwap={onSwapExercise}
         />
+        {/*
+          Capped at two lines. The note is the author's own and stays exactly as written — it is not
+          summarised or moved off the screen — but it sits in the band directly under the exercise
+          name, where the eye lands, and it is re-read on every set and every minute of an EMOM. An
+          unbounded one pushes the thing you are counting down the screen for the whole block. Two
+          lines is the reminder; the full text lives in the exercise, one tap away.
+        */}
         {notes && (
-          <ThemedText type="small" style={styles.notes}>
+          <ThemedText type="small" style={styles.notes} numberOfLines={2}>
             {notes}
           </ThemedText>
         )}
@@ -198,8 +205,15 @@ export function SessionReps({
             onPress={() => onChangeReps(reps + 1)}
             accessibilityRole="button"
             accessibilityLabel={t('common.increase', { label: t('session.reps.repsLabel') })}
-            style={[styles.stepperButton, styles.stepperButtonAccent]}>
-            <ThemedText type="title" style={[styles.stepperGlyph, styles.stepperGlyphAccent]}>
+            style={styles.stepperButton}>
+            {/*
+              Same treatment as the minus opposite it. It used to be accent-filled while that one was
+              a plain outline, which made a matched pair of nudges look like a primary action and its
+              afterthought — and put a second accent fill on the screen, competing with the log-set
+              button that actually ends the set. They do the same size of thing in opposite
+              directions, so they look the same.
+            */}
+            <ThemedText type="title" style={styles.stepperGlyph}>
               +
             </ThemedText>
           </Pressable>
@@ -418,16 +432,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  stepperButtonAccent: {
-    backgroundColor: RunnerColors.accentSoft,
-    borderColor: 'rgba(207,106,55,0.4)',
-  },
   stepperGlyph: {
     fontSize: 28,
     color: RunnerColors.textSecondary,
-  },
-  stepperGlyphAccent: {
-    color: RunnerColors.accent,
   },
   repsDisplay: {
     alignItems: 'center',

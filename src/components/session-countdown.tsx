@@ -43,11 +43,18 @@ export function SessionCountdown({ workoutName, onDone }: Props) {
       <ThemedText type="code" style={styles.label}>
         {t('session.countdown.getReady')}
       </ThemedText>
+      {/*
+        The name is the headline and the count is the caption, which is the opposite of how this
+        started. A 140px "2" is a number nobody needs: it is gone in a second, it says nothing the
+        three ticks haven't, and it was drawn eight times the size of the one thing a reader actually
+        checks here — whether the session about to start is the one they meant. User data, so it
+        renders verbatim and is free to wrap.
+      */}
+      <ThemedText type="subtitle" style={styles.workoutName}>
+        {workoutName}
+      </ThemedText>
       <ThemedText type="numeral" maxFontSizeMultiplier={1.3} style={styles.numeral}>
         {count}
-      </ThemedText>
-      <ThemedText type="small" style={styles.workoutName}>
-        {workoutName}
       </ThemedText>
     </View>
   );
@@ -65,11 +72,12 @@ const styles = StyleSheet.create({
     letterSpacing: 1.4,
   },
   numeral: {
-    fontSize: 140,
-    lineHeight: 140,
+    fontSize: 56,
+    lineHeight: 64,
     color: RunnerColors.accent,
   },
   workoutName: {
-    color: RunnerColors.textSecondary,
+    color: RunnerColors.text,
+    textAlign: 'center',
   },
 });

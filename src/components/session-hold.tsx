@@ -126,8 +126,15 @@ export function SessionHold({
           onDrop={onDropSet}
           onSwap={onSwapExercise}
         />
+        {/*
+          Capped at two lines. The note is the author's own and stays exactly as written — it is not
+          summarised or moved off the screen — but it sits in the band directly under the exercise
+          name, where the eye lands, and it is re-read on every set and every minute of an EMOM. An
+          unbounded one pushes the thing you are counting down the screen for the whole block. Two
+          lines is the reminder; the full text lives in the exercise, one tap away.
+        */}
         {notes && (
-          <ThemedText type="small" style={styles.notes}>
+          <ThemedText type="small" style={styles.notes} numberOfLines={2}>
             {notes}
           </ThemedText>
         )}
@@ -179,6 +186,13 @@ export function SessionHold({
 
       <SessionNextCard next={next} />
 
+      {/*
+        Back and Pause only. There used to be a third control here — a forward triangle wired to the
+        very same `onDone` as the full-width button directly below it, so the screen offered one
+        action in two shapes, a circle and a labelled button, inches apart. The button is the one that
+        survives: it carries a word rather than a glyph, and its weight already varies correctly with
+        what advancing means on this screen.
+      */}
       <View style={styles.controlsRow}>
         <Pressable
           onPress={onPrev}
@@ -191,13 +205,6 @@ export function SessionHold({
           <ThemedText type="heading" style={styles.pauseButtonLabel}>
             {paused ? t('session.resume') : t('session.pause')}
           </ThemedText>
-        </Pressable>
-        <Pressable
-          onPress={onDone}
-          accessibilityRole="button"
-          accessibilityLabel={t('session.doneNextStep')}
-          style={styles.circleButton}>
-          <View style={styles.iconNext} />
         </Pressable>
       </View>
       {/*
@@ -350,16 +357,6 @@ const styles = StyleSheet.create({
     borderTopColor: 'transparent',
     borderBottomColor: 'transparent',
     borderRightColor: RunnerColors.textSecondary,
-  },
-  iconNext: {
-    width: 0,
-    height: 0,
-    borderTopWidth: 6,
-    borderBottomWidth: 6,
-    borderLeftWidth: 9,
-    borderTopColor: 'transparent',
-    borderBottomColor: 'transparent',
-    borderLeftColor: RunnerColors.textSecondary,
   },
   pauseButton: {
     flex: 1,

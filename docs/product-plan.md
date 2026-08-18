@@ -170,6 +170,7 @@ the rep/hold *range* fields appear there and only in passing here.
 **Design notes:**
 
 - **`id` is a human-readable slug**, not a UUID — a hand-edited file stays legible, and sessions reference something meaningful.
+- **Order in the file is the running order.** Blocks run top to bottom, and so do the days sharing one `week` number — `day` is a display label and is never parsed, so `Monday`/`Tuesday` and `Day 1`/`Day 2` behave identically as long as they're written in the order they're trained.
 - **Per-block config overrides** reuse one definition with tweaks (e.g. longer rest on the last block) without duplicating definitions.
 - **Workouts live in the same file** so everything the user authors is in one place. If it grows, split into `workouts.yaml` later — the model doesn't change.
 

@@ -260,7 +260,9 @@ programs:
   strict weekday enum) for programs that run more than one session per week. Add `day` when two or
   more entries need to share the same `week` number; each `(week, day)` pair must be unique within
   a program. Programs with one session per week (the common case) can omit `day` entirely, and
-  behave exactly as before. For example, a 2-day/week split:
+  behave exactly as before. **The label is display text and is never parsed** — the days of one week
+  number run in the order you list them, so name them however you like but write them in the order
+  you train them. For example, a 2-day/week split:
 
   ```yaml
   programs:

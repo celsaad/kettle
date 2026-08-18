@@ -21,7 +21,7 @@ export type SessionRecord =
   | { kind: 'longestHold'; exerciseId: string; exerciseName: string; holdSec: number }
   | { kind: 'mostRounds'; exerciseId: string; exerciseName: string; rounds: number };
 
-type RecordKind = SessionRecord['kind'];
+export type RecordKind = SessionRecord['kind'];
 
 /**
  * One set of a previously logged entry, as data — `session-reps.tsx` / `session-hold.tsx` render it,
@@ -29,7 +29,7 @@ type RecordKind = SessionRecord['kind'];
  */
 export type PreviousSet = { kind: 'reps'; reps: number; weightKg?: number } | { kind: 'hold'; holdSec: number };
 
-type EntryBest = { kind: RecordKind; value: number; reps: number; oneRepMaxKg: number | null } | null;
+export type EntryBest = { kind: RecordKind; value: number; reps: number; oneRepMaxKg: number | null } | null;
 
 /**
  * The single number a logged entry puts up for a record, and which record it competes for.
@@ -45,8 +45,12 @@ type EntryBest = { kind: RecordKind; value: number; reps: number; oneRepMaxKg: n
  * distinction `entryVolume` makes). A bodyweight exercise competes on reps, a loaded one on load —
  * and because the two are separate kinds, adding load to a previously-bodyweight exercise finds no
  * baseline of its own kind and correctly reports nothing.
+ *
+ * Exported so `exercise-progress.ts` can ask the same question over a window that this file asks over
+ * all time. "What counts as doing more" has to have one definition, or the Stats screen and the
+ * completion screen would disagree about whether a session was an improvement.
  */
-function entryBest(entry: SessionEntry): EntryBest {
+export function entryBest(entry: SessionEntry): EntryBest {
   switch (entry.type) {
     case 'reps': {
       if (entry.sets.length === 0) return null;

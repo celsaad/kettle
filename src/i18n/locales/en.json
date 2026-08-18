@@ -90,7 +90,13 @@
     "title": "Your numbers",
     "perWeek": "Sessions per week · last {{count}} weeks",
     "weekBarLabel_one": "Week of {{week}}: {{count}} session",
-    "weekBarLabel_other": "Week of {{week}}: {{count}} sessions"
+    "weekBarLabel_other": "Week of {{week}}: {{count}} sessions",
+    "progressFlat": "no change",
+    "progressUp": "+{{value}}",
+    "progressDown": "−{{value}}",
+    "progressTitle": "Getting stronger",
+    "progressBody": "Change over the last {{count}} weeks, for everything you trained more than once.",
+    "progressEmpty": "Train something twice and its trend shows up here."
   },
   "library": {
     "title": "Library",

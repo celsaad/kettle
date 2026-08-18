@@ -184,3 +184,42 @@ export function formatCircuitShape(shape: CircuitShape): string {
     rounds_rest: shape.restBetweenRoundsSec,
   });
 }
+
+/**
+ * One value on the Stats screen's progress rows, as data.
+ *
+ * `weight` arrives as a finished string for the same reason `RecordResult`'s does: kilograms cannot
+ * be rendered without the user's display-unit preference, that preference lives in a zustand store,
+ * and this module is imported by the domain layer and by tests that mount nothing.
+ */
+export type ProgressReading =
+  | { kind: 'weight'; weight: string }
+  | { kind: 'reps'; reps: number }
+  | { kind: 'hold'; holdSec: number };
+
+export function formatProgressReading(reading: ProgressReading): string {
+  switch (reading.kind) {
+    case 'weight':
+      return reading.weight;
+    case 'reps':
+      return t('format.rep', { count: reading.reps });
+    case 'hold':
+      return t('format.seconds', { n: reading.holdSec });
+  }
+}
+
+/**
+ * The change over the window, signed.
+ *
+ * `reading` carries the *magnitude* — the caller passes an absolute value — because the sign is a
+ * separate argument: "-1 rep" has to pluralise on 1, and handing i18next a negative count asks it to
+ * decide a plural category for a number no locale has rules about.
+ *
+ * A flat window gets its own string rather than "+0". Zero change is a real answer to "am I moving",
+ * and a signed zero reads as a rounding artefact.
+ */
+export function formatProgressDelta(reading: ProgressReading, sign: number): string {
+  if (sign === 0) return t('analytics.progressFlat');
+  const value = formatProgressReading(reading);
+  return sign > 0 ? t('analytics.progressUp', { value }) : t('analytics.progressDown', { value });
+}

@@ -222,10 +222,9 @@ Applied narrowly.
   title and the settings gear has nowhere to go when the text size is raised, and that row overflows.
   Left-aligned text weight, not a centred second button.
 
-## Phase 5 — Stats, "am I getting stronger?"
+## Phase 5 — Stats, "am I getting stronger?" — **done**
 
-The one genuinely new idea in the review (§7) and a project of its own. Not started until Phases 1–4
-are on device.
+The one genuinely new idea in the review (§7).
 
 The current [analytics.tsx](../src/app/analytics.tsx) answers "am I turning up" (this-week tiles,
 all-time tiles, `WeekBars`). It has no answer at all to "am I getting stronger", which is the question
@@ -234,10 +233,25 @@ that would make the screen worth a second visit.
 Foundations already exist: `exerciseHistory`, `entryVolume`, `personalBestFor` in
 `state/selectors/`, and `VolumeChart`, currently used only by `exercise-editor.tsx`.
 
-Sketch, to be planned properly when it is reached: one hairline-separated row per exercise trained in
-the window — name + last set on the left, a small sparkline, and the delta over the window
-right-aligned. `Dumbbell RDL · 3×10 · 12 kg · +2 kg` is a fact that currently costs opening nine
-sessions and doing arithmetic.
+Built as sketched: one hairline-separated row per exercise trained more than once in the window — name
+and current value on the left, a seven-session sparkline, and the signed change right-aligned.
+
+Three rules the sketch didn't name, all decided while building and all pinned by tests:
+
+- **The measure is `entryBest`'s decision, not this screen's.** That function already owns "what counts
+  as doing more" for the completion screen's records and the runner's live best-marker, so it is
+  reused rather than restated — including its exclusions. `hiit` and `emom` are bounded by the
+  exercise's own config, so a rise there reports that the *workout* was edited; `cardio` needs
+  route-comparison rules the app doesn't have. Stats therefore covers strength work and holds, and
+  says nothing about conditioning.
+- **Last-minus-first, not best-minus-worst.** A peak-based delta reports a personal best as ongoing
+  progress forever after.
+- **One measure per exercise, taken from its most recent session.** An exercise that gained a dumbbell
+  mid-window has points in reps *and* kilograms; the older kind is dropped rather than converted.
+
+The delta deliberately has **no red/green pair** — the one number on the screen that can be negative
+is the one that would most tempt it. A dip is information, not a failure, and colouring it as one
+turns a deload week into a scolding.
 
 Deliberately deferred from §7: the `4w`/`12w`/`All` window control (needs the rows first to be worth
 switching), and the push/pull/legs/core balance breakdown (needs a muscle-group field the YAML format

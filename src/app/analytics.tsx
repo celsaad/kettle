@@ -4,13 +4,21 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ListRow, ListRowSeparator } from '@/components/list-row';
 import { ModalHeader } from '@/components/modal-header';
+import { Sparkline } from '@/components/sparkline';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { WeekBars } from '@/components/week-bars';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { formatProgressDelta, formatProgressReading, type ProgressReading } from '@/domain/format';
+import { toDisplayWeight } from '@/domain/units';
+import { exerciseProgress, type ExerciseProgress } from '@/state/selectors/exercise-progress';
+import { exerciseName } from '@/state/selectors/exercise-lookup';
 import { currentStreak, historyStats, sessionsPerWeek, thisWeekStats } from '@/state/selectors/history-stats';
+import { useLibraryStore } from '@/state/library-store';
+import { useUnitSystem } from '@/state/preferences-store';
 import { useSessionHistoryStore } from '@/state/session-history-store';
 
 export { RouteErrorBoundary as ErrorBoundary } from '@/components/error-fallback';
@@ -46,6 +54,7 @@ export default function AnalyticsScreen() {
   const theme = useTheme();
   const { t } = useTranslation();
   const sessions = useSessionHistoryStore((state) => state.sessions);
+  const library = useLibraryStore((state) => state.library);
 
   // Computed per render, deliberately. All three read the clock: `thisWeekStats` and `sessionsPerWeek`
   // resolve the current week's boundary and `currentStreak` walks back from today, so a cache keyed on
@@ -55,6 +64,7 @@ export default function AnalyticsScreen() {
   const allTime = historyStats(sessions);
   const streak = currentStreak(sessions);
   const weeks = useMemo(() => sessionsPerWeek(sessions, WEEKS_SHOWN), [sessions]);
+  const progress = useMemo(() => exerciseProgress(sessions, WEEKS_SHOWN), [sessions]);
 
   const hasHistory = sessions.length > 0;
 
@@ -106,8 +116,84 @@ export default function AnalyticsScreen() {
             </ThemedView>
           </>
         )}
+        {/*
+          The half of this screen that answers a question the tiles above cannot. Totals say how much
+          you have ever done — which nobody asks twice — where these say whether the number is moving,
+          per exercise, which is the reason to open Stats a second time.
+
+          Below the chart rather than above it: turning up is the precondition for getting stronger,
+          and a lapse explains a flat row better than a flat row explains itself.
+        */}
+        <ThemedText type="label" themeColor="textSecondary" style={styles.sectionLabel}>
+          {t('analytics.progressTitle')}
+        </ThemedText>
+
+        {progress.length === 0 ? (
+          <ThemedText type="small" themeColor="textSecondary">
+            {t('analytics.progressEmpty')}
+          </ThemedText>
+        ) : (
+          <>
+            <ThemedText type="small" themeColor="textSecondary" style={styles.progressBody}>
+              {t('analytics.progressBody', { count: WEEKS_SHOWN })}
+            </ThemedText>
+            {progress.map((row, index) => (
+              <View key={row.exerciseId}>
+                {index > 0 && <ListRowSeparator />}
+                <ProgressRow row={row} name={exerciseName(library?.exercises ?? [], row.exerciseId)} />
+              </View>
+            ))}
+          </>
+        )}
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+/**
+ * One exercise's trend: what it is at now, the shape of how it got there, and the change.
+ *
+ * The name is user data and renders verbatim. The weight branch is the only one that has to reach the
+ * unit preference, which is why this reads `useUnitSystem` rather than taking finished strings —
+ * `exerciseProgress` deals in kilograms, seconds and reps, and the conversion belongs here.
+ */
+function ProgressRow({ row, name }: { row: ExerciseProgress; name: string }) {
+  const { t } = useTranslation();
+  const unitSystem = useUnitSystem();
+  // Same lookup the runner's load row uses; there is no shared helper for it.
+  const unit = t(unitSystem === 'imperial' ? 'units.lb' : 'units.kg');
+
+  const reading = (value: number): ProgressReading => {
+    if (row.kind === 'longestHold') return { kind: 'hold', holdSec: Math.round(value) };
+    if (row.kind === 'heaviestSet') {
+      return { kind: 'weight', weight: `${toDisplayWeight(value, unitSystem)} ${unit}` };
+    }
+    return { kind: 'reps', reps: Math.round(value) };
+  };
+
+  const sign = Math.sign(row.delta);
+
+  return (
+    <ListRow>
+      <View style={styles.progressText}>
+        <ThemedText type="smallMedium">{name}</ThemedText>
+        <ThemedText type="small" themeColor="textSecondary">
+          {formatProgressReading(reading(row.latest))}
+        </ThemedText>
+      </View>
+
+      <Sparkline points={row.points} />
+
+      {/*
+        The one number on this screen that can be negative, so it is the one that would most tempt a
+        red/green pair — and it does not get one. A dip is information, not a failure, and colouring it
+        as one turns a deload week into a scolding. It takes the accent when something moved and a
+        secondary tone when nothing did, so the eye finds the rows that changed.
+      */}
+      <ThemedText type="smallMedium" themeColor={sign === 0 ? 'textSecondary' : 'accentText'} style={styles.progressDelta}>
+        {formatProgressDelta(reading(Math.abs(row.delta)), sign)}
+      </ThemedText>
+    </ListRow>
   );
 }
 
@@ -149,6 +235,19 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1,
     padding: Spacing.two + 4,
+  },
+  progressBody: {
+    marginBottom: Spacing.two,
+  },
+  progressText: {
+    flex: 1,
+    gap: 2,
+  },
+  // Right-aligned in a fixed column so the deltas line up down the screen instead of floating at the
+  // end of sparklines that are all the same width anyway.
+  progressDelta: {
+    minWidth: 72,
+    textAlign: 'right',
   },
   chartCard: {
     borderRadius: 14,

@@ -17,6 +17,12 @@ language; an unsupported tag is rejected on upload. The limits and the upload fo
 
 ## Unreleased
 
+Nothing since 0.7.0.
+
+---
+
+## 0.7.0 — versionCode 10, 18 August 2026
+
 ### What changed
 
 **Four tabs instead of five, and the app opens where you start a workout.**
@@ -80,6 +86,41 @@ language; an unsupported tag is rejected on upload. The limits and the upload fo
   starting from Friday — while the program's own screen listed it correctly, Monday first. Day labels
   are now display text only: name them anything, and Kettle follows the order they appear in your
   file. Numbered days past `Day 9` were affected the same way (`Day 10` came before `Day 2`).
+
+### Play release notes
+
+Counted at 463 (en-US) and 487 (pt-BR), against a limit of 500. Re-count programmatically if you edit
+them rather than trusting these numbers — over-limit copy is a rejected upload, not a truncated one,
+and pt-BR is the tight one here with 13 characters spare.
+
+```
+<en-US>
+What's new
+
+Today and Build are now one tab, Workouts. It opens with the same next-up card, with your whole workout list underneath.
+
+The numbers moved to their own screen, Your numbers, reached from Stats in History — now with a line per exercise showing whether you're getting stronger.
+
+Every list is rows instead of cards, so more fits on screen.
+
+Fixed: a program with named weekdays runs in the order you wrote it.
+
+Report anything that hangs or loses data.
+</en-US>
+<pt-BR>
+Novidades
+
+Hoje e Montar agora são uma aba só, Treinos. Ela abre com o mesmo cartão do próximo treino, com toda a sua lista logo abaixo.
+
+Os números ganharam uma tela própria, Seus números, a partir de Números no Histórico — agora com uma linha por exercício mostrando se você está ficando mais forte.
+
+Todas as listas são linhas em vez de cartões, então cabe mais na tela.
+
+Corrigido: um programa com dias nomeados roda na ordem que você escreveu.
+
+Relate travamentos ou perda de dados.
+</pt-BR>
+```
 
 ---
 

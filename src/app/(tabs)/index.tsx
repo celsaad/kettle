@@ -60,13 +60,24 @@ const WorkoutCard = memo(function WorkoutCard({ workout, exercises }: { workout:
         </View>
       </Pressable>
 
+      {/*
+        Neutral, not accent. This is one control per row, so on a twenty-workout library it was twenty
+        accent marks down a single screen — collectively the loudest thing on it, and louder than the
+        one primary action (the next-up card's Start button) that the accent is supposed to identify.
+        Starting a *specific* workout is a real action but not the screen's headline; the queued one
+        above is. The triangle keeps its shape and its label, so nothing about what it does changed.
+      */}
       <Pressable
         onPress={() => router.push({ pathname: '/session', params: { workoutId: workout.id } })}
         hitSlop={8}
         accessibilityRole="button"
         accessibilityLabel={t('build.startAccessibility', { name: workout.name })}
-        style={({ pressed }) => [styles.startButton, { backgroundColor: theme.accentSoft }, pressed && styles.pressed]}>
-        <View style={[styles.playTriangle, { borderLeftColor: theme.accent }]} />
+        style={({ pressed }) => [
+          styles.startButton,
+          { backgroundColor: theme.backgroundSelected },
+          pressed && styles.pressed,
+        ]}>
+        <View style={[styles.playTriangle, { borderLeftColor: theme.text }]} />
       </Pressable>
     </ThemedView>
   );
@@ -191,6 +202,13 @@ export default function WorkoutsScreen() {
                 of `Start session`, directly under it, while costing a whole row on the screen this
                 change exists to shorten. Labelled rather than icon-only: a bare `+` here would collide
                 with the FAB's, which creates a workout instead.
+
+                Its label is `textSecondary`, matching the gear beside it, so this row reads as one
+                group of chrome controls. It was `accentText`, which is what made it and the FAB read
+                as two competing offers of the same kind: the two are at opposite corners doing
+                unrelated things (start an unplanned session / create a workout), and the only thing
+                they had in common was the accent. See the note on `emptySessionButton` below for why
+                the fix is the colour rather than the placement.
               */}
               <View style={styles.titleActions}>
                 <Pressable
@@ -202,7 +220,7 @@ export default function WorkoutsScreen() {
                     { borderColor: theme.border, backgroundColor: theme.backgroundElement },
                     pressed && styles.pressed,
                   ]}>
-                  <ThemedText type="smallMedium" themeColor="accentText">
+                  <ThemedText type="smallMedium" themeColor="textSecondary">
                     {t('today.startEmpty')}
                   </ThemedText>
                 </Pressable>
@@ -328,6 +346,11 @@ const styles = StyleSheet.create({
    * session` in both width and position, which overstates a secondary action), and now this. The
    * `minHeight` is the 44px target rather than the 56px a full-width button wants; padding does the
    * rest, and `minHeight` never `height` so it survives large accessibility text sizes.
+   *
+   * A design review then read this control and the FAB as "too much" on one screen and proposed
+   * moving this one back under the card as a text link — which is the first of the three above, and
+   * was rejected there for being missable. The box is what makes it findable; the accent was what
+   * made it shout. So the label lost the accent and the placement stayed.
    */
   emptySessionButton: {
     minHeight: 44,

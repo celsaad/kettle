@@ -271,6 +271,9 @@ are the index, the banner is the contract.
 - `docs/testing-a11y-i18n-plan.md` — executed; kept for its rationale, not as a backlog.
 - `docs/watch-remote-plan.md` — **not executed.** Driving a running session from a Wear OS wrist via
   the notification shade, with no watch app and no data on the watch.
+- `docs/layout-review-plan.md` — **not executed.** Acting on an external design review of every
+  screen, in five phases. Half of it is the list of the review's claims that are *false*, checked
+  against the code, so they aren't re-proposed from the same screenshots.
 - `docs/timed-hold-auto-end-plan.md` — executed; kept for its rationale, not as a backlog. Ending a
   `timed_hold` at the top of its range, and making `hold_sec_min` optional.
 - `docs/backup-folder-plan.md` — executed; kept for its rationale, and for the device-only checks it

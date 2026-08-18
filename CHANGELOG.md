@@ -32,6 +32,10 @@ language; an unsupported tag is rejected on upload. The limits and the upload fo
 - **The "Recent" list came off the home screen.** It was History's first five rows without the detail,
   the editing or the export, and History is one tap away.
 - The settings gear is where it always was, top-right of the first tab.
+- **Orange now means one thing on the Workouts screen: start the workout that's queued.** The start
+  button on each row of the list, and "Start an empty session" at the top, were competing with it for
+  attention; they're still exactly where they were and still do exactly the same thing, just quietly.
+  The card itself is a little shorter, so more of your list fits above the fold.
 
 ### Fixed
 

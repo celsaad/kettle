@@ -22,12 +22,31 @@ export async function listSessions(): Promise<ListSessionsResult> {
   const sessions: Session[] = [];
   const errors: string[] = [];
 
-  for (const file of files) {
-    const text = await file.text();
-    const result = parseSessionYaml(text);
+  /*
+    Read in parallel rather than one `await` at a time. Each `file.text()` is a bridge round-trip,
+    and serialised they add up in the user's own training history: a log of several hundred sessions
+    paid for every one of those latencies end to end. Parsing stays serial below — it's CPU-bound and
+    the JS thread is single — so this only overlaps the part that was waiting.
+
+    `allSettled`, not `all`: this function's contract is that one bad file costs that file and not the
+    history, and a *read* that failed was the hole in it — a plain `await` in the old loop threw
+    straight out of `hydrate`, which has no catch, leaving the store stuck on `loading` forever. That
+    used to mean the app never painted at all, which at least said something was wrong; now that
+    history no longer gates first paint it would be a History tab that stayed empty with no reason
+    given. `Promise.all` would have made it worse still, losing every other file to one unreadable one.
+  */
+  const reads = await Promise.allSettled(files.map((file) => file.text()));
+
+  files.forEach((file, index) => {
+    const read = reads[index];
+    if (read.status === 'rejected') {
+      errors.push(`${file.name} (unreadable): ${(read.reason as Error).message}`);
+      return;
+    }
+    const result = parseSessionYaml(read.value);
     if (result.ok) sessions.push(result.data);
     else errors.push(`${file.name} (${result.error.kind}): ${result.error.detail}`);
-  }
+  });
 
   sessions.sort((a, b) => b.startedAt.localeCompare(a.startedAt));
   return { sessions, errors };

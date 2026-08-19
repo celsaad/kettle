@@ -9,6 +9,7 @@
  * what makes it testable.
  */
 import { t } from 'i18next';
+import { MaxRounds, MaxSets, MaxTotalMinutes } from '@/domain/schema';
 import type { Exercise, ExerciseType } from '@/domain/types';
 import { fromDisplayWeight, toDisplayWeight, type UnitSystem } from '@/domain/units';
 
@@ -16,12 +17,13 @@ import { fromDisplayWeight, toDisplayWeight, type UnitSystem } from '@/domain/un
  * `label` is an i18next key rather than display text, resolved with `t()` at the point of use
  * — this module has no React tree to hook `useTranslation()` into, and there's no in-app language
  * switch (the device locale is read once at startup, see `i18n/index.ts`), so resolving eagerly here
- * is safe. `min` is the smallest accepted value, defaulting to 1 — see validateConfig.
+ * is safe. `min` is the smallest accepted value, defaulting to 1, and `max` the largest, unbounded
+ * by default — see validateConfig.
  *
  * `unit` is the suffix shown next to the label. `'weight'` is the one entry that isn't literal: it
  * renders as kg or lb per the user's preference, and its value is converted on the way in and out.
  */
-export type FieldDef = { key: string; label: string; unit?: string; optional?: boolean; min?: number };
+export type FieldDef = { key: string; label: string; unit?: string; optional?: boolean; min?: number; max?: number };
 
 /** The form's only unit-converted field, named once so the three places that special-case it agree. */
 const WEIGHT_FIELD = 'targetWeightKg';
@@ -59,23 +61,23 @@ export const CONFIG_FIELDS: Record<ExerciseType, FieldDef[]> = {
   hiit: [
     { key: 'workSec', label: 'exerciseForm.field.work', unit: 'sec' },
     { key: 'restSec', label: 'exerciseForm.field.rest', unit: 'sec', min: 0 },
-    { key: 'rounds', label: 'exerciseForm.field.rounds' },
+    { key: 'rounds', label: 'exerciseForm.field.rounds', max: MaxRounds },
   ],
   emom: [
     { key: 'intervalSec', label: 'exerciseForm.field.interval', unit: 'sec' },
-    { key: 'totalMinutes', label: 'exerciseForm.field.total', unit: 'min' },
+    { key: 'totalMinutes', label: 'exerciseForm.field.total', unit: 'min', max: MaxTotalMinutes },
     { key: 'targetReps', label: 'exerciseForm.field.targetReps', optional: true },
   ],
   amrap: [{ key: 'timeCapSec', label: 'exerciseForm.field.timeCap', unit: 'sec' }],
   reps: [
-    { key: 'sets', label: 'exerciseForm.field.sets' },
+    { key: 'sets', label: 'exerciseForm.field.sets', max: MaxSets },
     { key: 'targetRepsMin', label: 'exerciseForm.field.targetReps' },
     { key: 'targetRepsMax', label: 'exerciseForm.field.targetRepsMax', optional: true },
     { key: WEIGHT_FIELD, label: 'exerciseForm.field.weight', unit: 'weight', optional: true },
     { key: 'restSec', label: 'exerciseForm.field.rest', unit: 'sec', min: 0 },
   ],
   timed_hold: [
-    { key: 'sets', label: 'exerciseForm.field.sets' },
+    { key: 'sets', label: 'exerciseForm.field.sets', max: MaxSets },
     // Optional, like cardio's duration below: left blank it's a max-effort hold that counts up until
     // you end it, which is the only way to express one.
     { key: 'holdSecMin', label: 'exerciseForm.field.hold', unit: 'sec', optional: true },
@@ -95,7 +97,8 @@ export const CONFIG_FIELDS: Record<ExerciseType, FieldDef[]> = {
  * exercise, but before this the editor happily could, and a workout made of those resolved to zero
  * runnable steps (the "Nothing to run" case in session.tsx).
  *
- * Required fields default to a minimum of 1, matching the schema's `positive()`. The rest-length
+ * Required fields default to a minimum of 1, matching the schema's `positive()`, and the set/round/
+ * minute counts carry the same `max` the schema does. The rest-length
  * fields carry an explicit `min: 0` because the schema allows a zero-length rest and rejecting that
  * would be stricter than the format itself. Returns the first problem found, or null if it's valid.
  *
@@ -116,6 +119,11 @@ export function validateConfig(type: ExerciseType, values: Record<string, string
     if (!Number.isFinite(parsed)) return t('exerciseForm.error.mustBeNumber', { label });
     const min = field.min ?? 1;
     if (parsed < min) return t('exerciseForm.error.mustBeAtLeast', { label, min });
+    // Only the counts the runner expands one step per unit of carry a max — see MaxSets in schema.ts
+    // for why an unbounded one is a crash rather than a long workout.
+    if (field.max !== undefined && parsed > field.max) {
+      return t('exerciseForm.error.mustBeAtMost', { label, max: field.max });
+    }
   }
 
   if (type === 'timed_hold') {

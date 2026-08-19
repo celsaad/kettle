@@ -544,3 +544,61 @@ describe('swapping an exercise mid-session', () => {
     expect(swapExerciseForMember(before, 'nope', 0, pushupsExercise, '0~swap1')).toEqual(before);
   });
 });
+
+/**
+ * The step array is bounded regardless of what reached it.
+ *
+ * `schema.ts` now caps sets/rounds/minutes, but three paths reach `buildSteps` without meeting it —
+ * program overrides, the in-app editors, and EMOM's derived interval count — so these exercises are
+ * built as domain objects directly, which is exactly what those paths hand over. Reintroducing the
+ * `steps.push(...expandExercise(…))` spread fails the first case with `RangeError`, which is how the
+ * bound was verified rather than assumed.
+ */
+describe('a count no validator bounded', () => {
+  const absurd: Exercise[] = [
+    { id: 'many-sets', name: 'Many Sets', type: 'reps', config: { sets: 200000, targetRepsMin: 5, restSec: 60 } },
+    { id: 'many-holds', name: 'Many Holds', type: 'timed_hold', config: { sets: 200000, holdSecMin: 10, restSec: 30 } },
+    { id: 'many-rounds', name: 'Many Rounds', type: 'hiit', config: { workSec: 30, restSec: 15, rounds: 200000 } },
+    // Two in-range values that multiply out: 60 minutes at a thousandth of a second is 3.6M intervals.
+    { id: 'fine-emom', name: 'Fine EMOM', type: 'emom', config: { intervalSec: 0.001, totalMinutes: 60 } },
+    { id: 'a', name: 'A', type: 'reps', config: { sets: 1, targetRepsMin: 5, restSec: 0 } },
+    { id: 'b', name: 'B', type: 'reps', config: { sets: 1, targetRepsMin: 5, restSec: 0 } },
+  ];
+
+  it.each(['many-sets', 'many-holds', 'many-rounds', 'fine-emom'])('builds %s without throwing', (id) => {
+    let steps: ReturnType<typeof buildSteps> = [];
+    expect(() => {
+      steps = buildSteps(workoutOf(single(id)), absurd);
+    }).not.toThrow();
+    expect(steps.length).toBeGreaterThan(0);
+    // Rests are interleaved between sets, so the array can be up to twice the per-exercise ceiling.
+    expect(steps.length).toBeLessThanOrEqual(4001);
+  });
+
+  it('bounds a circuit whose rounds came from a block override', () => {
+    const circuit: Workout['blocks'][number] = {
+      kind: 'circuit',
+      rounds: 200000,
+      members: [{ exerciseId: 'a' }, { exerciseId: 'b' }],
+    };
+    let steps: ReturnType<typeof buildSteps> = [];
+    expect(() => {
+      steps = buildSteps(workoutOf(circuit), absurd);
+    }).not.toThrow();
+    expect(steps.length).toBeLessThanOrEqual(4000);
+  });
+
+  it('reports the round count it will actually run, not the one it was asked for', () => {
+    const circuit: Workout['blocks'][number] = {
+      kind: 'circuit',
+      rounds: 200000,
+      members: [{ exerciseId: 'a' }, { exerciseId: 'b' }],
+    };
+    const steps = buildSteps(workoutOf(circuit), absurd);
+    const rounds = new Set(steps.map((step) => step.circuit?.rounds));
+
+    // "Round 1 of 200000" on a circuit that runs 2000 of them would be the truncation lying about
+    // itself — the position has to describe the workout that exists.
+    expect(rounds).toEqual(new Set([2000]));
+  });
+});

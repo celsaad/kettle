@@ -6,17 +6,37 @@
 import { z } from 'zod';
 
 const idSchema = z.string().min(1);
+
+/**
+ * Ceilings on every count that `buildSteps` materializes one runner step per unit of.
+ *
+ * Not authoring taste — the session runner allocates a step object per set, per round and per EMOM
+ * interval, so an unbounded count is a crash rather than a slow workout. `sets: 200000` passes
+ * `int().positive()` cleanly and then throws `RangeError` out of the session screen before its first
+ * render, and the library persists, so the error screen is all the user gets until they hand-edit the
+ * file back.
+ *
+ * The numbers sit far above anything a real workout expresses (500 sets at 30s each is over four
+ * hours) and exist only so a typo or a hostile import is refused at the gate with a readable message
+ * rather than unrecoverably downstream. `session-steps.ts` bounds the step array a second time,
+ * because program overrides and the in-app editors both reach the runner without passing through here.
+ *
+ * Mirrored by `CONFIG_FIELDS`' `max` in `domain/exercise-form.ts` for the in-app forms.
+ */
+export const MaxSets = 500;
+export const MaxRounds = 500;
+export const MaxTotalMinutes = 1440;
 const notesSchema = z.string().optional();
 
 const hiitConfigSchema = z.object({
   work_sec: z.number().positive(),
   rest_sec: z.number().nonnegative(),
-  rounds: z.number().int().positive(),
+  rounds: z.number().int().positive().max(MaxRounds),
 });
 
 const emomConfigSchema = z.object({
   interval_sec: z.number().positive(),
-  total_minutes: z.number().positive(),
+  total_minutes: z.number().positive().max(MaxTotalMinutes),
   target_reps: z.number().int().positive().optional(),
 });
 
@@ -26,7 +46,7 @@ const amrapConfigSchema = z.object({
 
 const repsConfigSchema = z
   .object({
-    sets: z.number().int().positive(),
+    sets: z.number().int().positive().max(MaxSets),
     target_reps_min: z.number().int().positive(),
     target_reps_max: z.number().int().positive().optional(),
     target_weight: z.number().nonnegative().optional(),
@@ -48,7 +68,7 @@ const repsConfigSchema = z
  */
 const timedHoldConfigSchema = z
   .object({
-    sets: z.number().int().positive(),
+    sets: z.number().int().positive().max(MaxSets),
     hold_sec_min: z.number().positive().optional(),
     hold_sec_max: z.number().positive().optional(),
     rest_sec: z.number().nonnegative(),
@@ -123,7 +143,7 @@ export const rawWorkoutBlockSchema = z.discriminatedUnion('type', [
     // regardless of their own `sets`/`hold_sec`/etc. multi-set config — the circuit's `rounds` is
     // the sole repeat driver for a member appearing in a circuit.
     id: idSchema.optional(),
-    rounds: z.number().int().positive(),
+    rounds: z.number().int().positive().max(MaxRounds),
     rest_between_exercises_sec: z.number().nonnegative().optional(),
     rest_between_rounds_sec: z.number().nonnegative().optional(),
     exercises: z.array(circuitMemberSchema).min(2),

@@ -28,3 +28,10 @@ export function setSearchParams(params: Record<string, string | undefined>) {
 }
 
 export const useLocalSearchParams = () => searchParams;
+
+/**
+ * Screen tests render one screen with no navigator above it, so nothing ever blurs it. Returning a
+ * constant `true` is what the real hook reports for the screen you are looking at, which is the
+ * state every one of these tests is describing.
+ */
+export const useIsFocused = () => true;

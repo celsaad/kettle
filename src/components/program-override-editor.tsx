@@ -2,7 +2,14 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
-import { buildExercise, CONFIG_FIELDS, configToStrings, fieldUnitLabel, type FieldDef } from '@/domain/exercise-form';
+import {
+  buildExercise,
+  CONFIG_FIELDS,
+  configToStrings,
+  fieldUnitLabel,
+  type FieldDef,
+  validateConfig,
+} from '@/domain/exercise-form';
 import { overrideLines } from '@/app/program-detail';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -59,6 +66,14 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
    * different number and invent an override nobody asked for (see UnitContext in exercise-form.ts).
    */
   const [seedWeightKg, setSeedWeightKg] = useState<number | undefined>(undefined);
+  /**
+   * The first problem with what's typed, or null. This form wrote straight to the program with no
+   * validation of any kind — unlike exercise-editor.tsx and new-exercise-form.tsx, which have run
+   * `validateConfig` all along. A patch it produced then went to `applyExerciseOverride`, which now
+   * refuses an invalid merge and silently keeps the base exercise; saying so here is what keeps that
+   * refusal from reading as "the override didn't save and nobody said why".
+   */
+  const [error, setError] = useState<string | null>(null);
 
   const seedFields = (exercise: Exercise) => {
     setFieldValues(configToStrings(exercise, unitSystem));
@@ -67,6 +82,7 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
 
   const close = () => {
     setStep('closed');
+    setError(null);
     setEditingIndex(null);
     setTarget(null);
     setFieldValues({});
@@ -122,12 +138,20 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
     onChange(overrides.filter((_, i) => i !== index));
   };
 
-  const setField = (key: string, text: string) => setFieldValues((prev) => ({ ...prev, [key]: text }));
+  const setField = (key: string, text: string) => {
+    setError(null);
+    setFieldValues((prev) => ({ ...prev, [key]: text }));
+  };
 
   const confirm = () => {
     if (!target) return;
     let nextOverride: ProgramOverride;
     if (target.kind === 'exercise') {
+      const configError = validateConfig(target.exercise.type, fieldValues);
+      if (configError) {
+        setError(configError);
+        return;
+      }
       const edited = buildExercise(
         target.exercise.id,
         target.exercise.name,
@@ -144,6 +168,9 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
     } else {
       const blockId = target.block.id;
       if (!blockId) return;
+      // No ceiling check on the circuit's rounds: the only way to change it here is a ±1 stepper, so
+      // there is no keystroke that can reach one. `applyBlockOverride` re-validates the merged block
+      // anyway, which is what covers a patch that arrived from hand-written YAML.
       const edited: CircuitBlock = {
         ...target.block,
         rounds: Number(fieldValues.rounds) || target.block.rounds,
@@ -343,6 +370,12 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
                 />
               </View>
             ))
+          )}
+
+          {error && (
+            <ThemedText type="small" style={{ color: theme.accentText }}>
+              {error}
+            </ThemedText>
           )}
 
           <View style={styles.fieldsButtonRow}>

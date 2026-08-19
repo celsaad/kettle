@@ -281,6 +281,28 @@ describe('parse failures', () => {
   });
 
   /**
+   * The other end of the same field. `buildSteps` materializes one runner step per set, per round and
+   * per EMOM interval, so an unbounded count is a crash rather than a long workout — `sets: 200000`
+   * passed `int().positive()` cleanly and then threw `RangeError` out of the session screen before its
+   * first render, on a library that persists. Removing the `.max()` calls in schema.ts fails these.
+   */
+  it.each([
+    ['sets: 5', 'sets: 501'],
+    ['rounds: 4', 'rounds: 501'],
+    ['total_minutes: 10', 'total_minutes: 1441'],
+  ])('rejects %s raised past its ceiling', (from, to) => {
+    expect(parseLibraryYaml(serializeLibraryYaml(library).replace(from, to)).ok).toBe(false);
+  });
+
+  it.each([
+    ['sets: 5', 'sets: 500'],
+    ['rounds: 4', 'rounds: 500'],
+    ['total_minutes: 10', 'total_minutes: 1440'],
+  ])('accepts %s at exactly its ceiling', (from, to) => {
+    expect(parseLibraryYaml(serializeLibraryYaml(library).replace(from, to)).ok).toBe(true);
+  });
+
+  /**
    * Pins the `maxAliases` load option, which js-yaml leaves off by default. Without it this document
    * parses fine and is refused a step later by zod as a `schemaMismatch`, so asserting `ok === false`
    * would pass either way — the error *kind* is the whole assertion.
@@ -463,5 +485,50 @@ ${weeks}
     const parsed = parseLibraryYaml(programYaml(trainingWeek));
     const yaml = parsed.ok ? serializeLibraryYaml(parsed.data) : '';
     expect(yaml).not.toContain('rest_day');
+  });
+});
+
+/**
+ * A program week's `overrides` are a free `record(string, number | string)` — deliberately raw, so a
+ * patch reads like the exercise it patches. The *merged result* is what has to meet the validator,
+ * and for a long time nothing did: every constraint on a base exercise was simply absent here, so an
+ * imported program could hand the session runner a config no importable exercise could express.
+ *
+ * Deleting the `safeParse` in `applyExerciseOverride` fails every case below, which is how these were
+ * checked rather than assumed.
+ */
+describe('an override that the schema would refuse', () => {
+  const base = exercises.find((exercise) => exercise.id === 'reps-full')!;
+  const hold = exercises.find((exercise) => exercise.id === 'hold-full')!;
+
+  it.each([
+    ['a set count past the ceiling', { sets: 200000 }],
+    ['a negative rest', { rest_sec: -5 }],
+    ['a fractional set count', { sets: 2.5 }],
+    ['a zero set count', { sets: 0 }],
+    // Type-punned rather than merely out of range: the record's value type permits a string, and
+    // `sets: "abc"` used to reach the runner as NaN and expand to no steps at all.
+    ['a set count that is not a number', { sets: 'abc' }],
+  ])('keeps the base exercise given %s', (_label, patch) => {
+    expect(applyExerciseOverride(base, patch)).toEqual(base);
+  });
+
+  it('keeps the base exercise when the patch breaks a cross-field rule', () => {
+    // hold_sec_max below hold_sec_min: refused on a base exercise by a refinement, and previously
+    // reachable here because refinements never ran on this path at all.
+    expect(applyExerciseOverride(hold, { hold_sec_max: 1 })).toEqual(hold);
+  });
+
+  it('still applies a patch the schema accepts', () => {
+    const edited = applyExerciseOverride(base, { sets: 6, rest_sec: 0 });
+    expect(edited.type === 'reps' && edited.config.sets).toBe(6);
+    expect(edited.type === 'reps' && edited.config.restSec).toBe(0);
+  });
+
+  it('keeps the base circuit when a block patch would break it', () => {
+    const circuit = library.workouts[0].blocks[2];
+    expect(applyBlockOverride(circuit, { rounds: 200000 })).toEqual(circuit);
+    expect(applyBlockOverride(circuit, { rounds: 0 })).toEqual(circuit);
+    expect(applyBlockOverride(circuit, { rest_between_rounds_sec: -1 })).toEqual(circuit);
   });
 });

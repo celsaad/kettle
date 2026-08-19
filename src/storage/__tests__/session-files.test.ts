@@ -1,15 +1,28 @@
 const mockWrite = jest.fn();
 const mockCreate = jest.fn();
+const mockList = jest.fn<unknown[], []>(() => []);
 
 jest.mock('@/storage/paths', () => ({
   isFileStorageSupported: true,
   ensureStorageReady: jest.fn(),
   sessionFile: () => ({ exists: true, create: mockCreate, write: mockWrite }),
-  storagePaths: {},
+  storagePaths: { sessionsDir: { list: () => mockList() } },
 }));
 
+// The stand-in lives in its own module because `jest.mock`'s factory is hoisted above every
+// declaration here — a `class` beside it would still be in its temporal dead zone when the factory
+// runs. Same reason, and same fix, as the shared `expo-router` stand-in.
+jest.mock('expo-file-system', () => require('@/test-support/expo-file-system'));
+
 import type { SessionEntry } from '@/domain/types';
-import { appendSessionEntry, finalizeSession, removeSessionEntry, takeWriteFailure } from '@/storage/session-files';
+import { File as MockFile } from '@/test-support/expo-file-system';
+import {
+  appendSessionEntry,
+  finalizeSession,
+  listSessions,
+  removeSessionEntry,
+  takeWriteFailure,
+} from '@/storage/session-files';
 
 /**
  * The one guarantee this file exists for: **a session write can't abort a workout.**
@@ -36,6 +49,7 @@ const entry: SessionEntry = { exercise: 'pullups', type: 'reps', sets: [{ reps: 
 beforeEach(() => {
   mockWrite.mockReset();
   mockCreate.mockReset();
+  mockList.mockReset().mockReturnValue([]);
   takeWriteFailure();
 });
 
@@ -99,5 +113,70 @@ describe('removeSessionEntry', () => {
 
     expect(removeSessionEntry(three, 0).entries).toEqual([dips, rows]);
     expect(takeWriteFailure()).toBe('session-1: no space left on device');
+  });
+});
+
+/**
+ * The docstring on `listSessions` has always promised that "one malformed file produces an error
+ * entry, not a crash" — and that held for a file that wouldn't *parse* but never for one that wouldn't
+ * *read*. A bare `await file.text()` threw straight out of `hydrate`, which has no catch, leaving the
+ * store on `loading` forever. That was survivable while history gated first paint, because the app
+ * simply never appeared; now that it doesn't, it would be a History tab that stayed empty in silence.
+ */
+describe('listSessions', () => {
+  const yamlFor = (id: string, startedAt: string) =>
+    `version: 1
+id: ${id}
+workout: push
+started_at: '${startedAt}'
+ended_at: null
+entries: []
+`;
+
+  it('reads every session file and returns them newest first', async () => {
+    mockList.mockReturnValue([
+      new MockFile('a.yaml', yamlFor('a', '2026-07-01T09:00:00.000Z')),
+      new MockFile('b.yaml', yamlFor('b', '2026-07-29T09:00:00.000Z')),
+    ]);
+
+    const { sessions, errors } = await listSessions();
+
+    expect(sessions.map((listed) => listed.id)).toEqual(['b', 'a']);
+    expect(errors).toEqual([]);
+  });
+
+  it('keeps the readable sessions when one file will not read at all', async () => {
+    mockList.mockReturnValue([
+      new MockFile('good.yaml', yamlFor('good', '2026-07-01T09:00:00.000Z')),
+      new MockFile('gone.yaml', new Error('ENOENT')),
+      new MockFile('later.yaml', yamlFor('later', '2026-07-29T09:00:00.000Z')),
+    ]);
+
+    const { sessions, errors } = await listSessions();
+
+    // Every other file survives: one unreadable session must not cost the whole history.
+    expect(sessions.map((listed) => listed.id)).toEqual(['later', 'good']);
+    expect(errors).toEqual(['gone.yaml (unreadable): ENOENT']);
+  });
+
+  it('still reports a file that reads but will not parse', async () => {
+    mockList.mockReturnValue([
+      new MockFile('good.yaml', yamlFor('good', '2026-07-01T09:00:00.000Z')),
+      new MockFile('bad.yaml', 'entries: [unclosed'),
+    ]);
+
+    const { sessions, errors } = await listSessions();
+
+    expect(sessions.map((listed) => listed.id)).toEqual(['good']);
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toContain('bad.yaml');
+  });
+
+  it('ignores directory entries that are not files', async () => {
+    mockList.mockReturnValue([{ name: 'nested.yaml' }, new MockFile('a.yaml', yamlFor('a', '2026-07-01T09:00:00.000Z'))]);
+
+    const { sessions } = await listSessions();
+
+    expect(sessions.map((listed) => listed.id)).toEqual(['a']);
   });
 });

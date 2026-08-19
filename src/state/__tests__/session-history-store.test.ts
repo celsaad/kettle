@@ -427,3 +427,90 @@ describe('removeEntry', () => {
     expect(useSessionHistoryStore.getState().sessions[0].entries).toEqual([pullUps, dips]);
   });
 });
+
+/**
+ * The id doubles as the session's filename, so a collision is one workout overwriting another's file
+ * with nothing said anywhere. A bare `new Date().toISOString()` collides whenever two sessions start
+ * in the same millisecond, and — more plausibly than that — whenever the device clock moves back over
+ * a stretch that already has files in it.
+ */
+describe('the session id', () => {
+  it('differs between two sessions started in the same millisecond', () => {
+    jest.useFakeTimers().setSystemTime(new Date('2026-07-29T09:00:00.000Z'));
+    try {
+      const ids = new Set<string>();
+      // Reset per call, since the store's own state is irrelevant to how the id is built.
+      for (let i = 0; i < 200; i++) {
+        mockCreateSession.mockImplementation((id: string) => aSession({ id }));
+        ids.add(useSessionHistoryStore.getState().startSession('w', null, null, null).id);
+      }
+      expect(ids.size).toBe(200);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it('still leads with the start timestamp, so the directory sorts by name', () => {
+    jest.useFakeTimers().setSystemTime(new Date('2026-07-29T09:00:00.000Z'));
+    try {
+      useSessionHistoryStore.getState().startSession('w', null, null, null);
+      expect(mockCreateSession.mock.calls.at(-1)?.[0]).toMatch(/^2026-07-29T09-00-00-000Z-[a-z0-9]{4}$/);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it('records the same instant it was built from', () => {
+    jest.useFakeTimers().setSystemTime(new Date('2026-07-29T09:00:00.000Z'));
+    try {
+      useSessionHistoryStore.getState().startSession('w', null, null, null);
+      const [id, , , , , startedAt] = mockCreateSession.mock.calls.at(-1)!;
+      expect(id).toContain('2026-07-29T09-00-00-000Z');
+      expect(startedAt).toBe('2026-07-29T09:00:00.000Z');
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+});
+
+/**
+ * Hydration no longer holds up first paint (see app/_layout.tsx), which means the app can be on
+ * screen — and a session can be started — while `listSessions` is still reading. The directory was
+ * listed before that session's file existed, so a plain `set({ sessions })` dropped the session the
+ * runner was actively appending to out of state, mid-workout, with the runner still writing to a copy
+ * nothing else could see. Restoring that assignment fails both cases below.
+ */
+describe('hydrating around a session that is already running', () => {
+  const listSessions = jest.requireMock('@/storage/session-files').listSessions as jest.Mock;
+
+  it('keeps the in-flight session that the read could not have seen', async () => {
+    const started = useSessionHistoryStore.getState().startSession('w', null, null, null);
+    listSessions.mockResolvedValue({
+      sessions: [aSession({ id: 'older', startedAt: '2026-07-01T09:00:00.000Z' })],
+      errors: [],
+    });
+
+    await useSessionHistoryStore.getState().hydrate();
+
+    const { sessions, activeSessionId } = useSessionHistoryStore.getState();
+    expect(activeSessionId).toBe(started.id);
+    expect(sessions.map((session) => session.id)).toContain(started.id);
+    expect(sessions.map((session) => session.id)).toContain('older');
+  });
+
+  it("prefers the runner's copy over the one that was read off disk", async () => {
+    const entry: SessionEntry = { exercise: 'pullups', type: 'reps', sets: [{ reps: 6, restTakenSec: 0 }] };
+    // Two sets logged in memory. Written through setState rather than `logEntry`, because this suite
+    // mocks `appendSessionEntry` out to the identity — the merge is what's under test, not the append.
+    const live = aSession({ id: 'running-1', entries: [entry] });
+    useSessionHistoryStore.setState({ sessions: [live], activeSessionId: 'running-1' });
+    // The same session as the disk had it a moment earlier: listed, but a set behind.
+    listSessions.mockResolvedValue({ sessions: [aSession({ id: 'running-1', entries: [] })], errors: [] });
+
+    await useSessionHistoryStore.getState().hydrate();
+
+    const merged = useSessionHistoryStore.getState().sessions.filter((session) => session.id === 'running-1');
+    expect(merged).toHaveLength(1);
+    expect(merged[0].entries).toEqual([entry]);
+  });
+});

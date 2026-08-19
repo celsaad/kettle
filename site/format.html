@@ -200,6 +200,17 @@
                 marked optional may be omitted.
               </p>
 
+              <div class="callout">
+                <p>
+                  <strong>The repeat counts have an upper bound as well as a lower one.</strong>
+                  <code class="inl">sets</code> and <code class="inl">rounds</code> cap at 500, and
+                  <code class="inl">total_minutes</code> at 1440. The session runner builds one step per set, per round and
+                  per interval before it draws anything, so an unbounded count is a workout that cannot be started at all
+                  rather than a long one. 500 sets at 30 seconds each is over four hours — if you are anywhere near the
+                  ceiling, what you want is several workouts.
+                </p>
+              </div>
+
               <h3>reps</h3>
               <p>Counted sets, for strength work. The runner takes a rep count, a load and an RPE per set.</p>
               <div class="table-scroll" tabindex="0" role="region" aria-label="reps config fields">
@@ -214,7 +225,7 @@
                   <tbody>
                     <tr>
                       <td><code>sets</code></td>
-                      <td>int &gt; 0</td>
+                      <td>int 1–500</td>
                       <td>Number of working sets.</td>
                     </tr>
                     <tr>
@@ -265,7 +276,7 @@
                     </tr>
                     <tr>
                       <td><code>rounds</code></td>
-                      <td>int &gt; 0</td>
+                      <td>int 1–500</td>
                       <td>Number of work/rest rounds.</td>
                     </tr>
                   </tbody>
@@ -291,7 +302,7 @@
                     </tr>
                     <tr>
                       <td><code>total_minutes</code></td>
-                      <td>number &gt; 0</td>
+                      <td>number &gt; 0, ≤ 1440</td>
                       <td>
                         How long the whole block runs. This is the field that ends it — there is no <code>rounds</code> here.
                       </td>
@@ -352,7 +363,7 @@
                   <tbody>
                     <tr>
                       <td><code>sets</code></td>
-                      <td>int &gt; 0</td>
+                      <td>int 1–500</td>
                       <td>Number of holds.</td>
                     </tr>
                     <tr>

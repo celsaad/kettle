@@ -31,6 +31,31 @@ describe('validateConfig', () => {
     expect(validateConfig('cardio', {})).toBeNull();
   });
 
+  /**
+   * The other end of `min`, and the one that isn't taste: the runner builds one step per set, per
+   * round and per EMOM minute, so an in-app editor writing 200000 of them produced a workout that
+   * could not be started at all. Mirrors the ceilings in schema.ts, which the same numbers come from.
+   */
+  it('rejects a count past its ceiling', () => {
+    expect(validateConfig('reps', { sets: '501', targetRepsMin: '10', restSec: '45' })).toBe('Sets can be at most 500.');
+    expect(validateConfig('timed_hold', { sets: '501', holdSecMin: '15', restSec: '30' })).toBe('Sets can be at most 500.');
+    expect(validateConfig('hiit', { workSec: '40', restSec: '20', rounds: '501' })).toBe('Rounds can be at most 500.');
+    expect(validateConfig('emom', { intervalSec: '60', totalMinutes: '1441' })).toBe('Total can be at most 1440.');
+  });
+
+  it('accepts a count at exactly its ceiling', () => {
+    expect(validateConfig('reps', { sets: '500', targetRepsMin: '10', restSec: '45' })).toBeNull();
+    expect(validateConfig('hiit', { workSec: '40', restSec: '20', rounds: '500' })).toBeNull();
+    expect(validateConfig('emom', { intervalSec: '60', totalMinutes: '1440' })).toBeNull();
+  });
+
+  // Only the counts that drive step expansion carry a max — a rest or a hold length is a duration,
+  // and capping one would be the form being stricter than the format for no reason.
+  it('leaves the fields with no ceiling uncapped', () => {
+    expect(validateConfig('reps', { sets: '3', targetRepsMin: '999999', restSec: '999999' })).toBeNull();
+    expect(validateConfig('amrap', { timeCapSec: '999999' })).toBeNull();
+  });
+
   it('returns null for a fully valid config', () => {
     expect(
       validateConfig('reps', { sets: '3', targetRepsMin: '10', targetRepsMax: '12', targetWeightKg: '60', restSec: '90' }),

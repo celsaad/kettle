@@ -20,6 +20,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { workoutShape } from '@/state/selectors/workout-shape';
 import { nextUpView } from '@/state/selectors/next-up';
 import { useLibraryStore } from '@/state/library-store';
+import { useSessionsWhenFocused } from '@/hooks/use-sessions-when-focused';
 import { useSessionHistoryStore } from '@/state/session-history-store';
 
 export { RouteErrorBoundary as ErrorBoundary } from '@/components/error-fallback';
@@ -86,7 +87,17 @@ export default function WorkoutsScreen() {
   const { scheme } = useAppTheme();
   const { t } = useTranslation();
   const library = useLibraryStore((state) => state.library);
-  const sessions = useSessionHistoryStore((state) => state.sessions);
+  // Held still while this tab sits unread under the session modal — see useSessionsWhenFocused.
+  const sessions = useSessionsWhenFocused();
+  /*
+    History no longer blocks first paint (see _layout.tsx), so this screen can render before the log
+    has been read — and every question it asks of `sessions` has a *wrong* answer at that moment
+    rather than an unknown one. An empty log makes `nextUpView` offer week 1 of a program the user
+    is six weeks into, and makes `isFirstRun` below light the new-here instructions for everyone.
+    Both would then swap out under the reader a beat later. Holding the slot empty until the read
+    lands is the honest version: nothing claimed, then the right thing.
+  */
+  const historyReady = useSessionHistoryStore((state) => state.status === 'ready' || state.status === 'error');
   const [query, setQuery] = useState('');
   /*
     The input keeps the immediate value so typing is never held back; only the filtering below runs on
@@ -113,7 +124,10 @@ export default function WorkoutsScreen() {
   // depends on what's being typed. The old Today screen could get away with calling it bare because it
   // had no text input on it; this one cannot, and leaving it bare would undo exactly what the
   // `deferredQuery` note above is for.
-  const nextUp = useMemo(() => (library ? nextUpView(library, sessions) : null), [library, sessions]);
+  const nextUp = useMemo(
+    () => (library && historyReady ? nextUpView(library, sessions) : null),
+    [library, sessions, historyReady],
+  );
   // Only a workout card has something to point at; a rest day has no Start button.
   const queued = nextUp?.kind === 'workout' ? nextUp : null;
 

@@ -160,10 +160,13 @@ are house rules here rather than a backlog — cheap as you go, tedious to retro
   through `i18n/format.ts` (never `toLocaleDateString('en-US', …)`).
 - **Never translate user data** — exercise, workout and program names, notes, and `ProgramWeek.day`
   come from the user's YAML and render verbatim. Key the English around them and interpolate the name.
-- Adding a key means adding it to **both** `en.json` and `pt.json`; they are kept at exact parity —
-  by hand, since nothing tests it. A key missing from one bundle doesn't fail anywhere; i18next's
-  `fallbackLng` quietly renders it in English. (No count is quoted here on purpose: the one that used
-  to be went stale, and the bundles are the only honest answer.)
+- Adding a key means adding it to **every** locale bundle — `en.json`, `pt.json` and `ja.json`.
+  `locale-bundles.test.ts` holds them at parity across every registered language and knows that
+  Japanese has one plural category where English and Portuguese have two, so a missing key now fails
+  the suite rather than rendering quietly in English through i18next's `fallbackLng`. This entry used
+  to say the parity was kept by hand "since nothing tests it"; that stopped being true when the test
+  landed, and an architecture review caught it still saying so. (No count is quoted here on purpose:
+  the one that used to be went stale, and the bundles are the only honest answer.)
 
 Shipping a whole new language is a six-place procedure of its own:
 [`docs/adding-a-language.md`](docs/adding-a-language.md).

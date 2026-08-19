@@ -159,6 +159,25 @@ decision assembled across several commits. Open work belongs in the sections at 
     claim** — treat zero declarations as a product constraint, not an accident.
   - **Tips must stay in-app.** Linking out to Ko-fi/PayPal violates the Play Payments policy for
     non-nonprofit developers. This is the policy risk, not the Data Safety form.
+  - **Android Auto Backup stays on, and that is a decision rather than a default.** Nothing in the
+    project sets `android:allowBackup` or ships data-extraction rules, so the generated manifest takes
+    Android's default of `true` and the app-private directory — `exercises.yaml` and every session
+    file — is eligible for the user's Google Drive device backup. That was arrived at by default, and
+    an architecture review flagged it for the reason it deserves flagging: this project treats "nothing
+    leaves the device" as a product claim and has turned SDKs down over it, so a setting that copies the
+    whole training log off-device should not be one nobody chose.
+
+    Kept on, deliberately. It is a **user-owned device backup**, restored to the same user on their next
+    phone by the platform, encrypted with their lock-screen credential and never readable by this app or
+    its developer — which is why Google does not require it in a Data Safety declaration, and why the
+    listing's "no data collected / no data shared" stays true. Turning it off would trade that for a
+    stronger literal reading of the claim and a worse product: the alternative migration path is the SAF
+    backup folder, which is opt-in, and someone who never nominated one would lose their entire history
+    on a new phone with no warning that they were about to.
+
+    The thing that would change the answer is the log becoming something the platform shouldn't hold —
+    it currently holds workout names, weights, timestamps and free-text notes. If a future field is more
+    sensitive than that, revisit this rather than inheriting it.
 
   Shape: three **consumable** tiers (`tip_small`/`tip_medium`/`tip_large`), so a repeat tip is
   possible — `finishTransaction({ isConsumable: true })` is load-bearing, since without it Play treats

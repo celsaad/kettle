@@ -173,6 +173,7 @@ the rep/hold *range* fields appear there and only in passing here.
 - **Order in the file is the running order.** Blocks run top to bottom, and so do the days sharing one `week` number — `day` is a display label and is never parsed, so `Monday`/`Tuesday` and `Day 1`/`Day 2` behave identically as long as they're written in the order they're trained.
 - **Per-block config overrides** reuse one definition with tweaks (e.g. longer rest on the last block) without duplicating definitions.
 - **Workouts live in the same file** so everything the user authors is in one place. If it grows, split into `workouts.yaml` later — the model doesn't change.
+- **The repeat counts are bounded**, not just positive: `sets` and `rounds` cap at 500 and `total_minutes` at 1440. The session runner materializes one step per set, per round and per interval before it renders, so an unbounded count is a workout that can't be started rather than a long one. The exact numbers live in `schema.ts`; the authoring reference carries them per type.
 
 ### 4.2 `sessions/<id>.yaml` — one file per session (app-written)
 

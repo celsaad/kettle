@@ -12,6 +12,7 @@ import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { formatSessionCount, formatSetCount } from '@/domain/format';
 import { useTheme } from '@/hooks/use-theme';
 import { useLibraryStore } from '@/state/library-store';
+import { useSessionsWhenFocused } from '@/hooks/use-sessions-when-focused';
 import { useSessionHistoryStore } from '@/state/session-history-store';
 import { historyStats as historyStatsFor } from '@/state/selectors/history-stats';
 import { historySessionsView, type HistorySessionView } from '@/state/selectors/history-views';
@@ -115,7 +116,8 @@ export default function HistoryScreen() {
   const theme = useTheme();
   const { t } = useTranslation();
   const library = useLibraryStore((state) => state.library);
-  const sessions = useSessionHistoryStore((state) => state.sessions);
+  // Held still while this tab sits unread under the session modal — see useSessionsWhenFocused.
+  const sessions = useSessionsWhenFocused();
   const deleteSession = useSessionHistoryStore((state) => state.deleteSession);
   // Collected since hydration existed and rendered nowhere: a session file that wouldn't parse, or one
   // the disk wouldn't take mid-workout, was known about and never mentioned. History is where a

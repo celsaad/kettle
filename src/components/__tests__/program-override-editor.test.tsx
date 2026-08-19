@@ -178,3 +178,57 @@ it('will not open an override whose target has gone', async () => {
   await fireEvent.press(screen.getByText('ghost: sets → 5'));
   expect(screen.queryByText('Save override')).toBeNull();
 });
+
+/**
+ * This form wrote its patch straight into the program with no validation of any kind — unlike
+ * exercise-editor.tsx and new-exercise-form.tsx, which have run `validateConfig` all along. So the
+ * one editor that could reach the runner without passing the schema was also the one that checked
+ * nothing, and `sets: 0` (a workout that resolves to no runnable steps) or `sets: 200000` (a session
+ * screen that throws before its first render) were both two taps away.
+ *
+ * `applyExerciseOverride` now refuses an invalid merge and silently keeps the base exercise, which is
+ * the right thing on the import path and the wrong thing to do without a word to someone who just
+ * typed it — hence the message, and hence the assertion that nothing was emitted.
+ */
+describe('a value the format would refuse', () => {
+  it('refuses it, says why, and emits no override', async () => {
+    const { onChange, rendered } = mount();
+    await rendered;
+
+    await fireEvent.press(screen.getByText('+ Add override'));
+    await fireEvent.press(screen.getByText('Pull-ups'));
+    await fireEvent.changeText(fieldShowing('4'), '501');
+    await fireEvent.press(screen.getByText('Add override'));
+
+    expect(screen.getByText('Sets can be at most 500.')).toBeTruthy();
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('refuses a zero, which resolves to a workout with nothing to run', async () => {
+    const { onChange, rendered } = mount();
+    await rendered;
+
+    await fireEvent.press(screen.getByText('+ Add override'));
+    await fireEvent.press(screen.getByText('Pull-ups'));
+    await fireEvent.changeText(fieldShowing('4'), '0');
+    await fireEvent.press(screen.getByText('Add override'));
+
+    expect(screen.getByText('Sets must be at least 1.')).toBeTruthy();
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('clears the message once the value is edited again', async () => {
+    const { rendered } = mount();
+    await rendered;
+
+    await fireEvent.press(screen.getByText('+ Add override'));
+    await fireEvent.press(screen.getByText('Pull-ups'));
+    await fireEvent.changeText(fieldShowing('4'), '501');
+    await fireEvent.press(screen.getByText('Add override'));
+    expect(screen.getByText('Sets can be at most 500.')).toBeTruthy();
+
+    await fireEvent.changeText(fieldShowing('501'), '5');
+
+    expect(screen.queryByText('Sets can be at most 500.')).toBeNull();
+  });
+});

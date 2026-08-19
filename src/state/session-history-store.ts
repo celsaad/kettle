@@ -107,6 +107,21 @@ function withWriteFailure(errors: string[]): string[] {
 }
 
 /**
+ * A session id: the start timestamp, plus four random characters.
+ *
+ * The id doubles as the filename, so a collision is not a duplicate row — it is one session's file
+ * being overwritten by another's, silently, with no error anywhere. A bare ISO timestamp collides
+ * whenever two sessions start in the same millisecond, and, more plausibly, whenever the device clock
+ * moves backwards over a stretch that already has files in it. Neither is likely; both lose data
+ * rather than reporting anything, which is what the suffix is for. The timestamp stays first so the
+ * directory still sorts chronologically by name.
+ */
+function newSessionId(startedAt: string): string {
+  const suffix = Math.random().toString(36).slice(2, 6).padEnd(4, '0');
+  return `${startedAt.replace(/[:.]/g, '-')}-${suffix}`;
+}
+
+/**
  * Backs the log up now that a session has ended — **after the current tick**, not during it.
  *
  * Non-throwing was only half of "a backup must never interrupt a workout"; non-blocking is the other
@@ -140,12 +155,29 @@ export const useSessionHistoryStore = create<SessionHistoryState>((set, get) => 
   hydrate: async () => {
     set({ status: 'loading' });
     const { sessions, errors } = await listSessions();
-    set({ status: 'ready', sessions, errors });
+    /*
+      Merged rather than assigned, and that matters now that the app paints before this resolves
+      (see _layout.tsx). A session started while the read was in flight is on disk but not in
+      `sessions` — the directory was listed before its file existed — so a plain assignment would
+      drop the session the runner is actively writing to out of state, mid-workout, while the runner
+      kept appending to a copy nothing else could see.
+
+      The in-flight session wins outright rather than being deduped by id: even if it *was* listed,
+      the copy on disk is a snapshot from before the sets logged since, and the runner's is current.
+    */
+    set((state) => {
+      const live = state.sessions.filter((session) => session.id === state.activeSessionId);
+      const liveIds = new Set(live.map((session) => session.id));
+      const merged = [...live, ...sessions.filter((session) => !liveIds.has(session.id))];
+      merged.sort((a, b) => b.startedAt.localeCompare(a.startedAt));
+      return { status: 'ready', sessions: merged, errors };
+    });
   },
   startSession: (workoutId, programId, programWeek, programDay) => {
-    const id = new Date().toISOString().replace(/[:.]/g, '-');
-    const session = createSession(id, workoutId, programId, programWeek, programDay, new Date().toISOString());
-    set({ sessions: [session, ...get().sessions], errors: withWriteFailure(get().errors), activeSessionId: id });
+    // One clock read for both, so the id and the recorded start can't disagree.
+    const startedAt = new Date().toISOString();
+    const session = createSession(newSessionId(startedAt), workoutId, programId, programWeek, programDay, startedAt);
+    set({ sessions: [session, ...get().sessions], errors: withWriteFailure(get().errors), activeSessionId: session.id });
     return session;
   },
   logEntry: (session, entry) => {

@@ -146,7 +146,6 @@ export default function RootLayout() {
 
   const libraryStatus = useLibraryStore((state) => state.status);
   const hydrateLibrary = useLibraryStore((state) => state.hydrate);
-  const sessionHistoryStatus = useSessionHistoryStore((state) => state.status);
   const hydrateSessionHistory = useSessionHistoryStore((state) => state.hydrate);
   // Gated alongside the data stores rather than hydrated on mount like the tip store: this one picks
   // the unit every weight renders in, so arriving late would swap the numbers under the user.
@@ -160,9 +159,20 @@ export default function RootLayout() {
   }, [hydrateLibrary, hydrateSessionHistory, hydratePreferences]);
 
   const dataReady = libraryStatus === 'ready' || libraryStatus === 'error';
-  const historyReady = sessionHistoryStatus === 'ready' || sessionHistoryStatus === 'error';
 
-  if (!fontsLoaded || !dataReady || !historyReady || preferencesStatus !== 'ready') return null;
+  /*
+    History is hydrated here but deliberately **not** gated on, unlike the library and preferences.
+
+    `listSessions` reads, parses and validates every session file the user has ever logged, so the
+    cost of this gate grows with their training history and never shrinks: three sessions a week for
+    three years is ~470 files, each a separate bridge round-trip, all of it in front of the splash
+    screen. The library and preferences are two files and a constant.
+
+    What paints without it is the whole app minus one card: the home screen holds its next-up slot
+    until the history store reports ready (see (tabs)/index.tsx) rather than flashing week 1 of a
+    program at someone mid-way through it, and History's own tiles fill in when the read lands.
+  */
+  if (!fontsLoaded || !dataReady || preferencesStatus !== 'ready') return null;
 
   // GestureHandlerRootView now lives inside Navigation, since it needs the active theme to paint its
   // background and that's only readable below ThemeOverrideProvider.

@@ -50,6 +50,21 @@ training to. Vibration is separate and stays on your phone's own settings.
 - **Buttons and text fields grow to fit their label.** "Adicionar bloco" was clipped in the workout
   editor in Portuguese; the same fixed heights would have cut off any long translation, and any label
   at a large accessibility text size.
+- **Kettle opens without waiting for your whole training history.** It used to read and check every
+  session file you had ever logged before drawing anything, so the wait grew a little with every
+  workout you finished. It now starts on your library and fills the history in behind you — the
+  difference is invisible in your first month and adds up over years.
+- **A workout with an impossible number of sets can no longer make the session screen unopenable.**
+  An exercise asking for tens of thousands of sets — a typo, or a file from someone else — used to
+  take the runner down every time you tried to start it, with no way back except editing the file by
+  hand. Sets and rounds now cap at 500 and EMOM blocks at 1440 minutes, refused when the file is
+  imported and refused in the editor.
+- **A program week can no longer override an exercise into something the format would reject.** Week
+  overrides skipped every check the rest of the file goes through, so a negative rest or a set count
+  in the thousands could get in that way. An override that doesn't hold up is now ignored and the
+  exercise runs as your library defines it, and the override editor says so rather than saving it.
+- **Two workouts started in the same instant get two files.** Sessions are named after the moment they
+  start, and two sharing a name meant one quietly overwriting the other.
 
 ---
 

@@ -362,11 +362,25 @@ export function serializeLibraryYaml(library: Library): string {
  * keys as the base exercise) on top of the exercise's base library definition, producing the
  * effective exercise for that week. Round-trips through the raw shape so the override keys line up
  * with what's hand-written in the yaml.
+ *
+ * **The merged result is re-validated, and that is the point of the round-trip.** A week's overrides
+ * are typed `record(string, number | string)` — deliberately raw, so a patch can be hand-written in
+ * the same snake_case as the exercise it patches. What was missing is that the *result* never met the
+ * validator: every constraint the schema puts on a base exercise (positive, integer, non-negative,
+ * the hold-range refinements) was simply absent on this path, so `sets: 200000`, `rest_sec: -5` and
+ * `sets: "abc"` all reached the runner having passed nothing stronger than "is a number or a string".
+ * The in-app override editor writes through here too, and validates no more than the YAML did.
+ *
+ * Falling back to the un-overridden exercise rather than throwing: this resolves during render, on a
+ * screen that is often the home screen, and the base exercise is both runnable and exactly what the
+ * library says. A week that loses its patch is a smaller loss than a program that can't be opened.
  */
 export function applyExerciseOverride(exercise: Exercise, config: Record<string, number | string>): Exercise {
   const raw = exerciseToRaw(exercise);
   const mergedConfig = { ...raw.config, ...config } as typeof raw.config;
-  return exerciseToDomain({ ...raw, config: mergedConfig } as RawExercise);
+  const result = rawExerciseSchema.safeParse({ ...raw, config: mergedConfig });
+  if (!result.success) return exercise;
+  return exerciseToDomain(result.data);
 }
 
 /**
@@ -377,8 +391,12 @@ export function applyExerciseOverride(exercise: Exercise, config: Record<string,
 export function applyBlockOverride(block: WorkoutBlock, config: Record<string, number | string>): WorkoutBlock {
   if (block.kind !== 'circuit') return block;
   const raw = workoutBlockToRaw(block);
-  const merged = { ...raw, ...config } as typeof raw;
-  return workoutBlockToDomain(merged);
+  const merged = { ...raw, ...config };
+  // Re-validated and falling back to the un-overridden block, for the same reasons as
+  // applyExerciseOverride above — a circuit's `rounds` drives one step per member per round.
+  const result = rawWorkoutBlockSchema.safeParse(merged);
+  if (!result.success) return block;
+  return workoutBlockToDomain(result.data);
 }
 
 /**

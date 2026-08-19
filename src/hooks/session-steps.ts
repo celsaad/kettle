@@ -118,6 +118,27 @@ export type RunnerStep =
  */
 type CircuitVisit = { index: number; total: number };
 
+/**
+ * Hard ceiling on the steps one exercise may expand into, held here as well as in `schema.ts`.
+ *
+ * The schema bounds sets/rounds/minutes, but three things reach this function without ever meeting
+ * it: a program week's `overrides` (a free record of numbers), the in-app editors (which write
+ * straight to the store), and EMOM's *derived* interval count, which divides by an `interval_sec`
+ * the schema only requires to be positive — `total_minutes: 60` with `interval_sec: 0.001` is 3.6M
+ * steps out of two perfectly in-range values.
+ *
+ * Truncating a workout is a degrade, and a poor one; the alternative it replaces is a `RangeError`
+ * thrown before the session screen's first render, on a library that persists. Sized above the
+ * schema's own ceilings so nothing importable can reach it — anything that does came from a path
+ * that skipped validation.
+ */
+const MaxStepsPerExercise = 2000;
+
+/** `count`, clamped to what one exercise is allowed to expand into. See MaxStepsPerExercise. */
+function boundedCount(count: number): number {
+  return Math.min(Math.max(0, Math.floor(count)), MaxStepsPerExercise);
+}
+
 function expandExercise(
   exercise: Exercise,
   blockIndex: number,
@@ -127,7 +148,7 @@ function expandExercise(
 ): RunnerStep[] {
   switch (exercise.type) {
     case 'timed_hold': {
-      const sets = visit ? 1 : exercise.config.sets;
+      const sets = visit ? 1 : boundedCount(exercise.config.sets);
       // A 0 (or negative) end would auto-advance on the very first tick, skipping the hold outright —
       // and nothing validates a program week's override config, so `hold_sec_min: 0` reaches here from
       // both the override schema (a free record of numbers) and the in-app override editor (no
@@ -164,7 +185,7 @@ function expandExercise(
       return steps;
     }
     case 'reps': {
-      const sets = visit ? 1 : exercise.config.sets;
+      const sets = visit ? 1 : boundedCount(exercise.config.sets);
       const steps: RunnerStep[] = [];
       for (let i = 0; i < sets; i++) {
         steps.push({
@@ -195,7 +216,8 @@ function expandExercise(
     }
     case 'hiit': {
       const steps: RunnerStep[] = [];
-      for (let i = 0; i < exercise.config.rounds; i++) {
+      const rounds = boundedCount(exercise.config.rounds);
+      for (let i = 0; i < rounds; i++) {
         steps.push({
           kind: 'interval',
           blockIndex,
@@ -206,10 +228,10 @@ function expandExercise(
           targetSec: exercise.config.workSec,
           countUp: false,
           setIndex: i + 1,
-          setTotal: exercise.config.rounds,
+          setTotal: rounds,
           notes: exercise.notes,
         });
-        if (i < exercise.config.rounds - 1 && exercise.config.restSec > 0) {
+        if (i < rounds - 1 && exercise.config.restSec > 0) {
           steps.push({
             kind: 'rest',
             blockIndex,
@@ -230,7 +252,7 @@ function expandExercise(
       // reported the honest `totalMinutes * 60`; the two silently disagreed for any interval but 60s.
       // Clamped to at least one so an interval longer than the whole block still runs once rather
       // than making the exercise vanish into the "nothing to run" path.
-      const intervalCount = Math.max(1, Math.floor((exercise.config.totalMinutes * 60) / exercise.config.intervalSec));
+      const intervalCount = boundedCount(Math.max(1, (exercise.config.totalMinutes * 60) / exercise.config.intervalSec));
       for (let i = 0; i < intervalCount; i++) {
         steps.push({
           kind: 'interval',
@@ -442,7 +464,12 @@ export function buildSteps(workout: Workout, exercises: Exercise[]): RunnerStep[
     if (block.kind === 'exercise') {
       const exercise = exercises.find((candidate) => candidate.id === block.exerciseId);
       if (!exercise) return;
-      steps.push(...expandExercise(exercise, blockIndex, `${blockIndex}`, block.configOverride));
+      // Appended one at a time rather than spread as arguments: `push(...arr)` passes every element
+      // as a separate argument and throws `RangeError` past the engine's limit, which turned a large
+      // set count into a crash instead of a long workout. See MaxStepsPerExercise.
+      for (const step of expandExercise(exercise, blockIndex, `${blockIndex}`, block.configOverride)) {
+        steps.push(step);
+      }
       return;
     }
 
@@ -457,26 +484,29 @@ export function buildSteps(workout: Workout, exercises: Exercise[]): RunnerStep[
       .filter((entry): entry is typeof entry & { exercise: Exercise } => !!entry.exercise);
     if (members.length === 0) return;
 
+    // Bounded for the same reason as MaxStepsPerExercise: a block override patches `rounds` without
+    // passing the schema, and each round emits one step per member. Everything below reports the
+    // bounded count, so a truncated circuit doesn't announce rounds it will never run.
+    const rounds = boundedCount(block.rounds);
+
     // Numbered over `members` (the resolved ones), not `block.members` — see CircuitPosition.
     const positionAt = (roundIndex: number, slot: number): CircuitPosition => ({
       round: roundIndex + 1,
-      rounds: block.rounds,
+      rounds,
       member: slot + 1,
       memberTotal: members.length,
     });
-
-    for (let round = 0; round < block.rounds; round++) {
+    for (let round = 0; round < rounds; round++) {
       members.forEach(({ member, memberIndex, exercise }, i) => {
         const memberKey = `${blockIndex}:${memberIndex}`;
         // Shared by the member's own steps and by the rest that follows it, which belongs to the work
         // it follows rather than to what comes next.
         const at = positionAt(round, i);
-        steps.push(
-          ...expandExercise(exercise, blockIndex, memberKey, member.configOverride, {
-            index: round + 1,
-            total: block.rounds,
-          }).map((step): RunnerStep => ({ ...step, circuit: at })),
-        );
+        const visitSteps = expandExercise(exercise, blockIndex, memberKey, member.configOverride, {
+          index: round + 1,
+          total: rounds,
+        });
+        for (const step of visitSteps) steps.push({ ...step, circuit: at });
         const isLastMember = i === members.length - 1;
         if (!isLastMember && block.restBetweenExercisesSec) {
           steps.push({
@@ -490,7 +520,7 @@ export function buildSteps(workout: Workout, exercises: Exercise[]): RunnerStep[
           });
         }
       });
-      const isLastRound = round === block.rounds - 1;
+      const isLastRound = round === rounds - 1;
       if (!isLastRound && block.restBetweenRoundsSec) {
         steps.push({
           kind: 'rest',

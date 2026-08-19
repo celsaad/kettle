@@ -483,6 +483,25 @@
       "cardioNeedsOne": "Enter a duration or a distance."
     }
   },
+  "exerciseArt": {
+    "pushups": "Push-up: hands under the shoulders, body in a straight line from heel to head.",
+    "bodyweight-squats": "Bodyweight squat: feet planted, hips back and down, arms reaching forward.",
+    "inverted-rows": "Inverted row: hanging under a bar, heels on the floor, body held straight.",
+    "split-squats": "Split squat: one foot forward, the rear knee dropped toward the floor.",
+    "glute-bridge": "Glute bridge: lying on the back, feet planted, hips lifted.",
+    "plank": "Plank: forearms on the floor, body held in a straight line.",
+    "mountain-climbers": "Mountain climber: push-up position with one knee drawn under the chest.",
+    "db-goblet-squat": "Goblet squat: a dumbbell held upright at the chest, hips back and down.",
+    "db-floor-press": "Floor press: lying on the back, knees bent, a dumbbell pressed up from the chest.",
+    "db-row": "Dumbbell row: torso hinged forward, elbow driven up past the back.",
+    "db-romanian-deadlift": "Romanian deadlift: legs long, hips pushed back, the dumbbell lowered down the shin.",
+    "db-overhead-press": "Overhead press: standing, dumbbells pressed straight overhead.",
+    "farmers-carry": "Farmer's carry: walking with a dumbbell held at each side.",
+    "burpees": "Burpee: down to the floor, then a jump with the arms overhead.",
+    "emom-pushups": "Push-ups on a timer: a stopwatch above a push-up.",
+    "amrap-12-bodyweight": "Rounds repeated against a clock: a looping arrow around a squatting figure.",
+    "easy-cardio": "Easy cardio: a running figure beside a heart."
+  },
   "exerciseEditor": {
     "newTitle": "New exercise",
     "editTitle": "Edit exercise",

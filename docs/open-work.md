@@ -220,9 +220,13 @@ wanting states and assignees, it wants GitHub issues instead.
   rest notification's hardcoded English — went with the timed-hold auto-end, which needed its own
   notification copy and wasn't going to add a second hardcoded string beside the first.)
 
-- **Images on exercises.** A move demonstrated beats a move described, and `notes` is the only place an
-  exercise can explain itself today. Nothing about the shape is decided; what *is* decided is the
-  constraint that picks it, so the survey doesn't get re-run from scratch:
+- **Images on exercises — the half that is still open.** The bundled set shipped: every *seeded*
+  exercise now carries a line drawing keyed by its id, described in both locale bundles and rendered
+  in the exercise editor. [`exercise-images-plan.md`](exercise-images-plan.md) has the reasoning.
+
+  What that deliberately does not reach is the case that actually needs a picture: an exercise from an
+  imported program, or one an assistant generated. The bundled art is first-run polish on the starter
+  library, not "teach me the move", and no amount of drawing gets it to a library the user built.
 
   **The app may not fetch a remote image.** Same line as the AI entry above — the listing declares zero
   data collected/shared (see the tip-jar entry in the decision log), and an `Image` with a
@@ -231,16 +235,10 @@ wanting states and assignees, it wants GitHub issues instead.
   basement gym with no signal. So `image: <url>` is simultaneously the cheapest option and the most
   expensive one; if it goes in at all, the Data Safety argument gets made first, not afterwards.
 
-  **The user-supplied photo is the rejected shape**, and the survey behind that — a filename in the
-  YAML, base64, or the folder from [`backup-folder-plan.md`](backup-folder-plan.md) — is in
-  [`exercise-images-plan.md`](exercise-images-plan.md) so it isn't run again. What that plan takes
-  instead is a **bundled line drawing per seeded exercise, keyed by id**: no format change, no
-  storage, no permission, and it works on web. Seed ids are language-independent, which is what makes
-  the map safe.
-
-  Be honest about what it buys: first-run polish on the starter library, not "teach me the move". It
-  cannot reach an imported or assistant-generated exercise, which is the case that actually needs a
-  picture — and the rejected shape stays the answer for that, with bundled art as its fallback.
+  That leaves the **user-supplied photo**, whose survey — a filename in the YAML, base64, or the folder
+  from [`backup-folder-plan.md`](backup-folder-plan.md) — is in the same plan so it isn't run again.
+  Nothing built for the bundled set gets thrown away if it comes back: a user's own image overrides the
+  drawing and the drawing becomes the fallback.
 
 - **More languages: Japanese first, and it is not an RTL project.** Worth stating plainly because the
   two arrived bundled together — modern Japanese is written left-to-right, and the vertical

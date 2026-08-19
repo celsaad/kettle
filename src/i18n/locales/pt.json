@@ -483,6 +483,25 @@
       "cardioNeedsOne": "Informe uma duração ou uma distância."
     }
   },
+  "exerciseArt": {
+    "pushups": "Flexão: mãos sob os ombros, corpo em linha reta do calcanhar à cabeça.",
+    "bodyweight-squats": "Agachamento livre: pés apoiados, quadril para trás e para baixo, braços à frente.",
+    "inverted-rows": "Remada invertida: pendurado sob uma barra, calcanhares no chão, corpo reto.",
+    "split-squats": "Afundo estático: um pé à frente, o joelho de trás descendo em direção ao chão.",
+    "glute-bridge": "Elevação de quadril: deitado de costas, pés apoiados, quadril elevado.",
+    "plank": "Prancha: antebraços no chão, corpo mantido em linha reta.",
+    "mountain-climbers": "Escalador: posição de flexão com um joelho puxado sob o peito.",
+    "db-goblet-squat": "Agachamento goblet: halter na vertical junto ao peito, quadril para trás e para baixo.",
+    "db-floor-press": "Supino no chão: deitado de costas, joelhos dobrados, halter empurrado a partir do peito.",
+    "db-row": "Remada com halter: tronco inclinado à frente, cotovelo subindo além das costas.",
+    "db-romanian-deadlift": "Levantamento terra romeno: pernas estendidas, quadril para trás, halter descendo pela canela.",
+    "db-overhead-press": "Desenvolvimento: em pé, halteres empurrados acima da cabeça.",
+    "farmers-carry": "Caminhada do fazendeiro: andando com um halter em cada mão.",
+    "burpees": "Burpee: descer até o chão e saltar com os braços acima da cabeça.",
+    "emom-pushups": "Flexões no relógio: um cronômetro acima de uma flexão.",
+    "amrap-12-bodyweight": "Rounds repetidos contra o relógio: uma seta em círculo ao redor de uma figura agachada.",
+    "easy-cardio": "Cardio leve: uma figura correndo ao lado de um coração."
+  },
   "exerciseEditor": {
     "newTitle": "Novo exercício",
     "editTitle": "Editar exercício",

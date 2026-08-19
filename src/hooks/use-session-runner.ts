@@ -107,7 +107,12 @@ function isDirectLogStep(step: RunnerStep): boolean {
  */
 type LastCommit = { resultingIndex: number; memberKey: string; exerciseId: string; buffer: LastCommitBuffer | null };
 
-export type RestPreview = { label: string; detail: string } | null;
+/**
+ * `exerciseId` rides along purely so the preview can show the bundled drawing. It's the step's own
+ * id rather than anything derived, which is what keeps the art correct in every language — see the
+ * note on `EXERCISE_ART`.
+ */
+export type RestPreview = { label: string; detail: string; exerciseId: string } | null;
 
 /** Null on a max-effort hold, which has no target to preview — the caller picks a different string. */
 function formatHoldTarget(step: Extract<RunnerStep, { kind: 'hold' }>): string | null {
@@ -128,18 +133,22 @@ function previewFor(step: RunnerStep | undefined): RestPreview {
       target === null
         ? t('preview.holdOpen', { index: step.setIndex, total: step.setTotal })
         : t('preview.hold', { index: step.setIndex, total: step.setTotal, target });
-    return { label: step.exerciseName, detail };
+    return { label: step.exerciseName, detail, exerciseId: step.exerciseId };
   }
   if (step.kind === 'reps') {
     const detail = t('preview.reps', { index: step.setIndex, total: step.setTotal, target: formatRepsTarget(step) });
-    return { label: step.exerciseName, detail };
+    return { label: step.exerciseName, detail, exerciseId: step.exerciseId };
   }
   if (step.kind === 'interval') {
     const progress =
       step.setTotal > 1
         ? t('preview.round', { index: step.setIndex, total: step.setTotal })
         : t('preview.seconds', { n: step.targetSec });
-    return { label: step.exerciseName, detail: t('preview.interval', { variant: step.variant, progress }) };
+    return {
+      label: step.exerciseName,
+      detail: t('preview.interval', { variant: step.variant, progress }),
+      exerciseId: step.exerciseId,
+    };
   }
   return null;
 }

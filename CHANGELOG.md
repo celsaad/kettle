@@ -17,6 +17,16 @@ language; an unsupported tag is rejected on upload. The limits and the upload fo
 
 ## Unreleased
 
+### What changed
+
+**The starter exercises come with a drawing.** Open any exercise from the library Kettle sets up on
+first launch — the push-ups, the dumbbell lifts, the burpees, the carries — and there is now a line
+drawing of the movement above the notes. It's drawn in whatever theme you're using, it stays with the
+exercise if you rename it, and screen readers get a description of the movement in your own language.
+
+Exercises you write yourself don't get one, and neither does Rest. Nothing is downloaded, nothing is
+stored, and none of it touches the file you export.
+
 ### Fixed
 
 - **EMOM minutes start at the rep count you prescribed.** They started at zero, so hitting the target

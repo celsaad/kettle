@@ -287,6 +287,10 @@ are the index, the banner is the contract.
   leaves open. Writing the library and the log into a folder the user picks once.
 - `docs/program-rest-days-plan.md` — executed; kept for its rationale. A program week that says
   "today you rest" (`rest_day: true`, no `workout`), and how it clears itself off the home screen.
+- `docs/exercise-images-plan.md` — **not executed.** A bundled line drawing per *seeded* exercise,
+  keyed by id, with no format change and no storage. Half of it is why the obvious version — a
+  user-supplied photo per exercise — was costed and cut, including the two `expo-file-system` picker
+  facts that survey turned up.
 
 Three rules about keeping the plan files honest, in the order they get broken:
 

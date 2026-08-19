@@ -220,6 +220,49 @@ wanting states and assignees, it wants GitHub issues instead.
   rest notification's hardcoded English — went with the timed-hold auto-end, which needed its own
   notification copy and wasn't going to add a second hardcoded string beside the first.)
 
+- **Images on exercises.** A move demonstrated beats a move described, and `notes` is the only place an
+  exercise can explain itself today. Nothing about the shape is decided; what *is* decided is the
+  constraint that picks it, so the survey doesn't get re-run from scratch:
+
+  **The app may not fetch a remote image.** Same line as the AI entry above — the listing declares zero
+  data collected/shared (see the tip-jar entry in the decision log), and an `Image` with a
+  `{ uri: 'https://…' }` source hands whatever host the YAML names the user's IP plus a timestamped
+  record of which exercise they were looking at. It also fails in the one place the app gets used: a
+  basement gym with no signal. So `image: <url>` is simultaneously the cheapest option and the most
+  expensive one; if it goes in at all, the Data Safety argument gets made first, not afterwards.
+
+  **The user-supplied photo is the rejected shape**, and the survey behind that — a filename in the
+  YAML, base64, or the folder from [`backup-folder-plan.md`](backup-folder-plan.md) — is in
+  [`exercise-images-plan.md`](exercise-images-plan.md) so it isn't run again. What that plan takes
+  instead is a **bundled line drawing per seeded exercise, keyed by id**: no format change, no
+  storage, no permission, and it works on web. Seed ids are language-independent, which is what makes
+  the map safe.
+
+  Be honest about what it buys: first-run polish on the starter library, not "teach me the move". It
+  cannot reach an imported or assistant-generated exercise, which is the case that actually needs a
+  picture — and the rejected shape stays the answer for that, with bundled art as its fallback.
+
+- **More languages: Japanese first, and it is not an RTL project.** Worth stating plainly because the
+  two arrived bundled together — modern Japanese is written left-to-right, and the vertical
+  right-to-left form is not something React Native lays out at all. So `ja` is the plain six-place
+  procedure in [`adding-a-language.md`](adding-a-language.md), with two wrinkles of its own: Japanese
+  has **no plural categories**, so every `count` key resolves to `_other` and a bundle written by
+  analogy with `en`/`pt` will carry `_one` keys that never render; and the seed table's day labels still
+  have to sort in training order under `localeCompare`, which `1日目 / 2日目` does and weekday names do
+  not. `slugify` already keeps the user's own script, so 腕立て伏せ gets a real id — that half is done.
+
+  **Arabic is the RTL project**, the one `adding-a-language.md` warns is not a bundle. What's already
+  known: the `I18nManager` plumbing was deferred deliberately, RN auto-flips the row/padding/gap
+  layouts so the physical-direction properties are the small half, and the real work is the drawn glyphs
+  that can't flip (the CSS triangles in `next-up-card.tsx`, `row-start-button.tsx`, `session-hold.tsx`
+  and `session-interval.tsx`) plus the arrows baked into copy (`grep '→' src/i18n/locales/en.json` —
+  getting those out of the strings is worth doing whether or not Arabic ever ships). Three that note
+  doesn't carry: `I18nManager.forceRTL` only takes effect after an app restart on Android, so the
+  in-app language switch cannot be the whole story; Arabic has **six** plural categories against en/pt's
+  two, which `intl-pluralrules` covers on Hermes but the bundles' key shape does not; and the runner is
+  where a half-flipped layout costs a workout rather than just looking wrong. Half-implemented RTL is
+  worse than none — the plan's words, still true.
+
 ## Open bugs
 
 Found while planning the tests/a11y/i18n work (see `testing-a11y-i18n-plan.md`), each verified against
@@ -282,6 +325,19 @@ structural ones:
   Native is unaffected and web is a dev/preview target, so this is logged rather than fixed. It does
   mean a browser check of any confirm flow proves nothing unless the script patches it, which is how
   session delete was actually verified end to end.
+
+- **The "add block" button clips its own label in Portuguese.** `+ Adicionar bloco` wraps to two lines
+  in the workout editor's half-width button and the second line is cut off; `+ Novo circuito` beside it
+  fits on one, so the row looks fine until you read it. Seen on device, in `pt`. The cause is a house
+  rule this repo already wrote down: `workout-editor.tsx`'s `addBlock` style sets `height: 48`, and the
+  a11y rules say `minHeight`, **never** `height`, precisely because a fixed box cannot grow to hold its
+  contents. English hides it — "+ Add block" is one line at any size — which is the same reason the
+  testing rules say to drive a screen in `pt`.
+
+  Worth fixing as a sweep rather than a one-liner: a grep for a bare `height:` on a control finds the
+  same shape across the editors and pickers (the save/cancel rows at 52, the inputs at 46, the picker
+  chips at 40). Every one of them is a clip waiting for a longer translation or a large accessibility
+  text size, and the second trigger applies in English too.
 
 Three found in the runner audit that produced the resume-race fix above, left out of it to keep that
 change to the two data faults:

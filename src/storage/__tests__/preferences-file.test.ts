@@ -33,6 +33,7 @@ const stored = {
   unitSystem: 'imperial' as const,
   themePreference: 'dark' as const,
   restDayReminder: true,
+  sessionSounds: false,
   backupFolderUri: 'content://com.android.externalstorage.documents/tree/primary%3ADocuments%2FKettle',
 };
 
@@ -62,6 +63,7 @@ describe('loadPreferences', () => {
       unitSystem: 'imperial',
       themePreference: 'system',
       restDayReminder: false,
+      sessionSounds: true,
       backupFolderUri: null,
     });
   });
@@ -85,6 +87,32 @@ describe('loadPreferences', () => {
       unitSystem: 'imperial',
       themePreference: 'dark',
       restDayReminder: false,
+      sessionSounds: true,
+      backupFolderUri: null,
+    });
+  });
+
+  /**
+   * The same shape one field later, and the case that is live right now: `sessionSounds` is the
+   * newest key, so *every* `preferences.json` on a phone predates it. Required rather than
+   * defaulted, it would fail `safeParse` for all of them at once — and a failed parse answers
+   * `null`, so shipping a mute switch would have reset everyone's units, theme and backup folder.
+   * The cues stay on, which is what someone who never asked for silence expects.
+   */
+  it('reads a file written before sessionSounds existed, leaving the cues on', async () => {
+    mockFile.text.mockResolvedValue(
+      JSON.stringify({
+        unitSystem: 'imperial',
+        themePreference: 'dark',
+        restDayReminder: true,
+        backupFolderUri: null,
+      }),
+    );
+    expect(await loadPreferences()).toEqual({
+      unitSystem: 'imperial',
+      themePreference: 'dark',
+      restDayReminder: true,
+      sessionSounds: true,
       backupFolderUri: null,
     });
   });

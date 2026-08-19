@@ -20,6 +20,7 @@ beforeEach(() => {
       unitSystem: 'metric',
       themePreference: 'system',
       restDayReminder: false,
+      sessionSounds: true,
       backupFolderUri: null,
     },
   });
@@ -104,6 +105,7 @@ describe('setUnitSystem', () => {
       unitSystem: 'imperial',
       themePreference: 'system',
       restDayReminder: false,
+      sessionSounds: true,
       backupFolderUri: null,
     });
   });
@@ -128,6 +130,7 @@ describe('setThemePreference', () => {
       unitSystem: 'metric',
       themePreference: 'dark',
       restDayReminder: false,
+      sessionSounds: true,
       backupFolderUri: null,
     });
   });
@@ -142,6 +145,7 @@ describe('setThemePreference', () => {
       unitSystem: 'imperial',
       themePreference: 'light',
       restDayReminder: false,
+      sessionSounds: true,
       backupFolderUri: null,
     });
   });
@@ -169,6 +173,7 @@ describe('setRestDayReminder', () => {
       unitSystem: 'metric',
       themePreference: 'system',
       restDayReminder: true,
+      sessionSounds: true,
       backupFolderUri: null,
     });
   });
@@ -178,5 +183,38 @@ describe('setRestDayReminder', () => {
 
     expect(await usePreferencesStore.getState().setRestDayReminder(true)).toBe(false);
     expect(usePreferencesStore.getState().preferences.restDayReminder).toBe(true);
+  });
+});
+
+describe('setSessionSounds', () => {
+  /**
+   * On for a fresh install, the opposite of the reminder above, and asserted through `hydrate` rather
+   * than off the initial state — the store's pre-hydration value is never rendered, so only this path
+   * proves what someone who has never opened Settings actually gets.
+   */
+  it('starts on for an install with nothing stored', async () => {
+    await usePreferencesStore.getState().hydrate();
+
+    expect(usePreferencesStore.getState().preferences.sessionSounds).toBe(true);
+  });
+
+  it('persists the choice alongside the other preferences', async () => {
+    expect(await usePreferencesStore.getState().setSessionSounds(false)).toBe(true);
+    expect(mockSave).toHaveBeenCalledWith({
+      unitSystem: 'metric',
+      themePreference: 'system',
+      restDayReminder: false,
+      sessionSounds: false,
+      backupFolderUri: null,
+    });
+  });
+
+  // Same as the settings above: the change stands for this run either way, and the boolean is how
+  // Settings could say it won't survive a relaunch.
+  it('still applies the change when persistence fails, and says so', async () => {
+    mockSave.mockResolvedValue(false);
+
+    expect(await usePreferencesStore.getState().setSessionSounds(false)).toBe(false);
+    expect(usePreferencesStore.getState().preferences.sessionSounds).toBe(false);
   });
 });

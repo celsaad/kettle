@@ -32,6 +32,7 @@ beforeEach(() => {
       unitSystem: 'metric',
       themePreference: 'system',
       restDayReminder: false,
+      sessionSounds: true,
       backupFolderUri: null,
     },
   });

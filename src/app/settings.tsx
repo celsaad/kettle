@@ -50,6 +50,16 @@ const REMINDER: { labelKey: string; value: 'off' | 'on' }[] = [
   { labelKey: 'settings.reminderOn', value: 'on' },
 ];
 
+// On first, for the same reason the reminder above puts Off first: the default belongs where the eye
+// lands. These two default opposite ways round, so the orders differ — see `Preferences.sessionSounds`.
+// Its own keys rather than the reminder's, even though today both read Off/On: they are separate
+// sentences to a translator, and a language that inflects the word for what it switches would need
+// them to be.
+const SOUNDS: { labelKey: string; value: 'on' | 'off' }[] = [
+  { labelKey: 'settings.soundsOn', value: 'on' },
+  { labelKey: 'settings.soundsOff', value: 'off' },
+];
+
 /**
  * The two ways to reach the developer. Constants rather than locale keys: an address and a URL are
  * not prose, and a translator who "fixed" either one would break the only feedback channel the app
@@ -144,6 +154,8 @@ export default function SettingsScreen() {
   const setUnitSystem = usePreferencesStore((state) => state.setUnitSystem);
   const restDayReminder = usePreferencesStore((state) => state.preferences.restDayReminder);
   const setRestDayReminder = usePreferencesStore((state) => state.setRestDayReminder);
+  const sessionSounds = usePreferencesStore((state) => state.preferences.sessionSounds);
+  const setSessionSounds = usePreferencesStore((state) => state.setSessionSounds);
   const library = useLibraryStore((state) => state.library);
   const sessions = useSessionHistoryStore((state) => state.sessions);
   const supporter = useTipStore((state) => state.supporter);
@@ -325,6 +337,20 @@ export default function SettingsScreen() {
             {/* The imperial copy spells out that storage doesn't change, because that's the surprising
                 half: switching units here does not rewrite a single number in exercises.yaml. */}
             {unitSystem === 'imperial' ? t('settings.unitsImperialNote') : t('settings.unitsMetricNote')}
+          </ThemedText>
+        </Section>
+
+        <Section title={t('settings.sounds')}>
+          <Segmented
+            options={SOUNDS}
+            selected={sessionSounds ? 'on' : 'off'}
+            onSelect={(value) => setSessionSounds(value === 'on')}
+          />
+          <ThemedText type="small" themeColor="textSecondary" style={styles.caption}>
+            {/* Says which three sounds these are, and why the phone's own silent switch isn't the
+                answer — that's the part nobody would guess. Vibration is named because turning the
+                sounds off and still feeling a buzz would otherwise read as the setting not working. */}
+            {t('settings.soundsNote')}
           </ThemedText>
         </Section>
 

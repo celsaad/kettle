@@ -45,6 +45,7 @@ it('has a stored scheme in effect on the first render', async () => {
       unitSystem: 'metric',
       themePreference: 'dark',
       restDayReminder: false,
+      sessionSounds: true,
       backupFolderUri: null,
     },
   });
@@ -64,6 +65,7 @@ it('keeps a pinned scheme when the device is set to the other one', async () => 
       unitSystem: 'metric',
       themePreference: 'light',
       restDayReminder: false,
+      sessionSounds: true,
       backupFolderUri: null,
     },
   });
@@ -93,6 +95,8 @@ it('persists a chosen scheme instead of holding it in memory', async () => {
     unitSystem: 'metric',
     themePreference: 'dark',
     restDayReminder: false,
+    sessionSounds: true,
+    backupFolderUri: null,
   });
   expect(result.current.scheme).toBe('dark');
 });

@@ -16,6 +16,8 @@ type PreferencesStoreState = {
   setThemePreference: (themePreference: ThemePreference) => Promise<boolean>;
   /** Resolves false when the write failed; the change still applies for this run. */
   setRestDayReminder: (enabled: boolean) => Promise<boolean>;
+  /** Resolves false when the write failed; the change still applies for this run. */
+  setSessionSounds: (enabled: boolean) => Promise<boolean>;
   /** `null` forgets the folder. Resolves false when the write failed; the change still applies for this run. */
   setBackupFolderUri: (backupFolderUri: string | null) => Promise<boolean>;
 };
@@ -23,6 +25,7 @@ type PreferencesStoreState = {
 const DEFAULT_PREFERENCES: Omit<Preferences, 'unitSystem'> = {
   themePreference: 'system',
   restDayReminder: false,
+  sessionSounds: true,
   backupFolderUri: null,
 };
 
@@ -64,9 +67,8 @@ export const usePreferencesStore = create<PreferencesStoreState>((set, get) => {
     },
     setUnitSystem: (unitSystem) => applyAndPersist({ unitSystem }),
     setThemePreference: (themePreference) => applyAndPersist({ themePreference }),
-    // Patches one list's entry rather than replacing the map, so setting Build's order can't reset
-    // the two lists the user isn't looking at.
     setRestDayReminder: (restDayReminder) => applyAndPersist({ restDayReminder }),
+    setSessionSounds: (sessionSounds) => applyAndPersist({ sessionSounds }),
     // The one preference whose failed write genuinely costs something: the SAF grant itself survives,
     // but a URI that never reached disk means the next launch has no folder to write to. Settings
     // says so on a false, rather than leaving the row looking set.

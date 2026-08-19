@@ -67,19 +67,24 @@ beforeEach(() => {
 // screen's assertions passed or failed on an unrelated module's imports. Registering it here makes
 // that independent of what a screen happens to pull in.
 //
-// `pt` is loaded alongside `en` but not selected. It's what makes it possible to test that a screen
-// is *genuinely* translated: an English-locale test cannot tell `t('x.y')` apart from the hardcoded
-// English literal it returns, so only switching locale distinguishes them. Three screens have shipped
-// with hardcoded strings that no English assertion could have caught.
+// `pt` and `ja` are loaded alongside `en` but not selected. That's what makes it possible to test
+// that a screen is *genuinely* translated: an English-locale test cannot tell `t('x.y')` apart from
+// the hardcoded English literal it returns, so only switching locale distinguishes them. Three
+// screens have shipped with hardcoded strings that no English assertion could have caught.
+//
+// Every shipped language belongs here, not just the one the tests happen to use: a bundle absent from
+// this map falls back to English, so a suite that switched to it would assert English against English
+// and pass no matter what the bundle says.
 require('intl-pluralrules');
 const i18next = require('i18next');
 const { initReactI18next } = require('react-i18next');
 const en = require('./src/i18n/locales/en.json');
 const pt = require('./src/i18n/locales/pt.json');
+const ja = require('./src/i18n/locales/ja.json');
 
 if (!i18next.isInitialized) {
   i18next.use(initReactI18next).init({
-    resources: { en: { translation: en }, pt: { translation: pt } },
+    resources: { en: { translation: en }, pt: { translation: pt }, ja: { translation: ja } },
     lng: 'en',
     fallbackLng: 'en',
     interpolation: { escapeValue: false },

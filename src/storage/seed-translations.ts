@@ -144,8 +144,112 @@ const pt: SeedTranslation = {
   },
 };
 
+const ja: SeedTranslation = {
+  /**
+   * `1日目` rather than `月曜日`, and the reason is `nextWeekAfter`: it orders a multi-day week by
+   * `day.localeCompare`, so weekday names would run the week in dictionary order. A numbered label
+   * sorts the way it reads, which is what `seed-library.test.ts` walks the whole program to prove.
+   */
+  days: {
+    'Day 1': '1日目',
+    'Day 2': '2日目',
+    'Day 3': '3日目',
+    'Day 4': '4日目',
+    'Day 5': '5日目',
+    'Day 6': '6日目',
+    'Day 7': '7日目',
+  },
+  exercises: {
+    rest: { name: '休憩' },
+    pushups: {
+      name: '腕立て伏せ',
+      notes: '限界の2レップ手前で止めます。全セットで15回に届く日が2回続いたら、より難しいバリエーションに進みましょう。',
+    },
+    'bodyweight-squats': { name: '自重スクワット' },
+    'inverted-rows': {
+      name: 'インバーテッドロウ',
+      notes: 'テーブルの下か低いバーで行います。可動域の上まで安定して出せるようになったら、足を前に出して負荷を上げます。',
+    },
+    'split-squats': {
+      name: 'スプリットスクワット',
+      notes: 'レップ数は片脚あたりです。弱いほうの脚を記録すると、次に超えるべき数字が正直なものになります。',
+    },
+    'glute-bridge': { name: 'ヒップリフト' },
+    plank: {
+      name: 'プランク',
+      notes: '全セットで45秒に届いたら、範囲全体を5秒引き上げます。',
+    },
+    'mountain-climbers': { name: 'マウンテンクライマー' },
+    'db-goblet-squat': {
+      name: 'ダンベル・ゴブレットスクワット',
+      notes:
+        '重量は最初から入っていません。初回のセッションで自分の重さを決め、全セットで12回に届いたら手持ちのいちばん小さい増分を足していきます。',
+    },
+    'db-floor-press': {
+      name: 'ダンベル・フロアプレス',
+      notes: '床から押すのでベンチは要りません。全セットで12回に届いたら重量を足します。',
+    },
+    'db-row': { name: 'ダンベルロウ', notes: 'レップ数は片側あたりです。' },
+    'db-romanian-deadlift': { name: 'ダンベル・ルーマニアンデッドリフト' },
+    'db-overhead-press': { name: 'ダンベル・オーバーヘッドプレス' },
+    'farmers-carry': { name: 'ファーマーズキャリー', notes: '重量を増やす前に、まず時間を伸ばします。' },
+    burpees: { name: 'バーピー' },
+    'emom-pushups': {
+      name: 'EMOM 腕立て伏せ',
+      notes: '毎分の開始で腕立て伏せ8回、残りの時間は休憩です。その1分のうちに終えられなくなったら目標を下げます。',
+    },
+    'amrap-12-bodyweight': {
+      name: 'AMRAP 12',
+      notes:
+        '1ラウンドは腕立て伏せ10回、自重スクワット15回、インバーテッドロウ10回です。制限時間の計測とラウンド数の記録はアプリが行います。AMRAP には種目リストがないので、動作はこのメモに書いてあります。',
+    },
+    'easy-cardio': {
+      name: '軽い有酸素のクールダウン',
+      notes:
+        'ランニング、バイク、ローイング、ウォーキング — できるものなら何でも。距離も記録したいなら、設定に距離を追加してください。',
+    },
+  },
+  workouts: {
+    'foundations-push': '基礎 · プッシュ',
+    'foundations-legs': '基礎 · レッグ',
+    'foundations-pull': '基礎 · プル',
+    'db-full-body-a': 'ダンベル全身 A',
+    'db-full-body-b': 'ダンベル全身 B',
+    'mixed-conditioning': 'ミックスコンディショニング',
+    'emom-10': 'EMOM 10',
+  },
+  programs: {
+    foundations: {
+      name: '基礎 · 4週間 · 器具なし',
+      weekNotes: {
+        '1|Day 1':
+          '基準になる週です。それぞれの範囲のどこに着地するかをそのまま記録してください。まだ上限を狙わなくて大丈夫です。',
+        '1|Day 2': '前のセッションが力になるのは休養している間です。歩くくらいは構いませんが、重いことはしないでください。',
+        '2|Day 1': '同じ3セッションです。全セットで、第1週に記録した数より1レップ多いところを狙います。',
+        '3|Day 1': 'すべて4セットにします。レップ数は据え置きにして、両方を同時に押し上げないようにします。',
+        '4|Day 1': 'ブロックでいちばんきつい週です。ここで各範囲の上限までレップ数を押し上げます。',
+        '4|Day 5':
+          'ブロック最後のセッションで、仕上げのサーキットは4ラウンドです。やり切ると第1週に戻ります。各範囲の上限を新しい下限として、もう一度ブロックを回してください。',
+      },
+    },
+    'dumbbell-strength': {
+      name: 'ダンベル筋力 · 4週間',
+      weekNotes: {
+        '1|Day 1': '基準になる週です。限界の2レップ手前で止められる重量を選び、各エクササイズに書き込んでください。',
+        '1|Day 2': 'セッションの間に1日空けるのは計画の一部で、計画の穴ではありません。',
+        '2|Day 1':
+          'この週は A と B の順番が入れ替わります。範囲の上限に届いたものには、手持ちのいちばん小さい増分を足します。',
+        '3|Day 1': 'すべて4セットにします。この週は重量を据え置きにします。',
+        '4|Day 1': 'ブロックでいちばんきつい週です。4セットにして、第3週が楽に感じたところは重量を足します。',
+        '4|Day 5':
+          'ブロック最後のセッションです。やり切ると第1週に戻ります。終えたときの重量から、もう一度ブロックを回してください。',
+      },
+    },
+  },
+};
+
 /** Keyed by language, not region, exactly as the locale bundles are: `pt` serves pt-BR and pt-PT. */
-export const seedTranslations: Record<string, SeedTranslation> = { pt };
+export const seedTranslations: Record<string, SeedTranslation> = { pt, ja };
 
 function localizeExercise(exercise: Exercise, strings: SeedTranslation): Exercise {
   const text = strings.exercises[exercise.id];

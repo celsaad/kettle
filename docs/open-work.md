@@ -240,14 +240,8 @@ wanting states and assignees, it wants GitHub issues instead.
   Nothing built for the bundled set gets thrown away if it comes back: a user's own image overrides the
   drawing and the drawing becomes the fallback.
 
-- **More languages: Japanese first, and it is not an RTL project.** Worth stating plainly because the
-  two arrived bundled together — modern Japanese is written left-to-right, and the vertical
-  right-to-left form is not something React Native lays out at all. So `ja` is the plain six-place
-  procedure in [`adding-a-language.md`](adding-a-language.md), with two wrinkles of its own: Japanese
-  has **no plural categories**, so every `count` key resolves to `_other` and a bundle written by
-  analogy with `en`/`pt` will carry `_one` keys that never render; and the seed table's day labels still
-  have to sort in training order under `localeCompare`, which `1日目 / 2日目` does and weekday names do
-  not. `slugify` already keeps the user's own script, so 腕立て伏せ gets a real id — that half is done.
+- **More languages.** Japanese shipped; the procedure and the two wrinkles it turned up are in
+  [`adding-a-language.md`](adding-a-language.md).
 
   **Arabic is the RTL project**, the one `adding-a-language.md` warns is not a bundle. What's already
   known: the `I18nManager` plumbing was deferred deliberately, RN auto-flips the row/padding/gap

@@ -35,7 +35,7 @@ transmitted.
 - **History and progression** — per-exercise volume charts, current streak and weekly totals, all
   read back from the local log, and a mis-logged set can be corrected rather than only deleted.
   Export the library or the whole log as plain files any time.
-- **English and Brazilian Portuguese**, the seeded starter library included, with dates, numbers,
+- **English, Brazilian Portuguese and Japanese**, the seeded starter library included, with dates, numbers,
   first day of week and kg/lb following the device locale. User data is never translated.
 - **Accessible by house rule** — roles and labels on every control, 44px targets, contrast-checked
   colors, screen-reader announcements in the runner, and reduce-motion support.

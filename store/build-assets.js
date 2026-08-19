@@ -54,6 +54,9 @@ const OUT = path.join(__dirname, 'out');
  */
 const SHOT_W = 1080;
 const SHOT_H = 2160;
+// Captures come off the device at 1080x2204, which is 2.041:1 and over Play's ceiling — so the
+// extract below is load-bearing, not the no-op it was for the 2160-tall 2026-08-04 set. It trims
+// from the bottom, where the tab bar's own padding is the only thing in the last 44px.
 
 /**
  * Order matters: this is the order they appear in the listing, and Play caps a phone listing at
@@ -61,12 +64,15 @@ const SHOT_H = 2160;
  * `site/assets/img` also holds session-hold, library and settings, which the landing page can afford
  * to show and the listing cannot.
  *
- * The runner leads, per the repositioned pitch (#58): the set row carrying "last time" and the PR
- * marker is the single image that evidences the claim the listing now opens with, and the completion
- * screen is the only one showing a named record with an estimated 1RM. Drop either of those before
- * dropping a list screen and the copy is left unbacked.
+ * The runner leads, per the repositioned pitch (#58): the set row carrying "last time" is the single
+ * image that evidences the claim the listing now opens with, and the completion screen is the only
+ * one naming a record. Drop either of those before dropping a list screen and the copy is left
+ * unbacked.
+ *
+ * `today` and `workouts` used to be two entries; the tabs merged, so one capture now serves both and
+ * `stats` takes the slot that freed — it is what backs "calculated on your device from that log".
  */
-const SHOTS = ['session-reps', 'session-hiit', 'session-complete', 'today', 'workouts', 'programs', 'history', 'import'];
+const SHOTS = ['session-reps', 'session-hiit', 'session-complete', 'workouts', 'programs', 'history', 'stats', 'import'];
 
 if (SHOTS.length > 8) throw new Error(`Play allows 8 phone screenshots; SHOTS lists ${SHOTS.length}`);
 

@@ -11,8 +11,8 @@ transmitted.
 [example libraries](https://celsaad.github.io/kettle/examples.html)
 
 <p>
-  <img src="site/assets/img/today.jpg" width="240"
-       alt="Kettle home screen showing today's workout queued as Week 1 Day 1 with a Start session button." />
+  <img src="site/assets/img/workouts.jpg" width="240"
+       alt="Kettle home screen showing the next workout queued as Week 2 Day 1 with a Start session button, above the workout list." />
   <img src="site/assets/img/session-hiit.jpg" width="240"
        alt="Session runner mid-HIIT: round 1 of 4, a large countdown, with Pause and Skip controls." />
   <img src="site/assets/img/import.jpg" width="240"

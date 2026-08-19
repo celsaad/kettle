@@ -50,11 +50,12 @@ Each of these cost a rejected upload or a wrong guess once, so they are asserted
   is 2160, so that is the height ceiling; `build-assets.js` enforces both, the second with an explicit
   throw so a ninth entry in `SHOTS` fails loudly rather than at upload.
 
-  The 2026-08-04 captures are cropped to 2160 at capture time — status bar and gesture pill both
-  removed, window centred on each screen's own content — so the extract in the script is a no-op guard
-  for them. Earlier captures were 1080x2242 and got trimmed from the bottom, the gesture-pill band
-  being the only strip with nothing worth keeping. Letterboxing to fit would put visible bars down
-  both sides, which is why neither approach does it.
+  The 2026-08-19 captures come off the device at 1080x2204, which is 2.041:1 — over the ceiling — so
+  the extract in the script does real work again and trims 44px from the bottom. The 2026-08-04 set
+  was cropped to 2160 at capture time and made that extract a no-op; don't read the code as though
+  that is still true. Earlier captures were 1080x2242 and got trimmed the same way, the gesture-pill
+  band being the only strip with nothing worth keeping. Letterboxing to fit would put visible bars
+  down both sides, which is why none of these approaches does it.
 - **App icon: full square, no transparency, no baked corner radius or shadow.** Play applies its own
   30% radius and shadow, so pre-rounding doubles up. The script asserts zero non-opaque pixels.
 - **Feature graphic: no alpha channel.** Flattened explicitly.
@@ -272,3 +273,11 @@ do not resolve on a locally installed APK.
 - The captures are of a **real** library and log — 347 exercises, real workout names, actual history.
   That is the populated state the listing wanted, and it is public once uploaded. Re-capturing against
   seeded data is the alternative if that ever becomes unwanted.
+- The 2026-08-19 log was built by running sessions back to back, so every session reads `0 min` in
+  History and Stats totals barely a minute. Nothing is wrong; it just doesn't look like a year of
+  training. Worth a slower log before the next upload — `history` and `stats` are 2 of the 8 slots.
+- `programs.jpg` was captured **before** the week-count fix and still shows the pre-fix
+  "8 weeks with notes or overrides" for a four-week program. Re-shoot it before the next upload.
+- The completion capture names two records but no estimated 1RM, both PRs being unloaded. The copy
+  says "for loaded sets", so it is accurate — but a `heaviest set` PR would demonstrate the whole
+  claim, and the 2026-08-04 capture did.

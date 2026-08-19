@@ -233,8 +233,16 @@ export function useSessionRunner(
   /**
    * Which step index the milestone chime has already sounded for. Both triggers are threshold
    * conditions ("elapsed past the target", "past halfway") that stay true for the rest of the step, so
-   * the 1Hz tick would otherwise re-fire them every second. Keyed on the step index rather than reset
-   * on change, so it's correct even if the ticking effect re-runs mid-step (pause/resume rebuilds it).
+   * the 1Hz tick would otherwise re-fire them every second. A ref rather than state for the reason the
+   * whole timing path is: it must be correct even if the ticking effect re-runs mid-step, which
+   * pause/resume does.
+   *
+   * **Cleared by the step-change block below, not left to be overwritten by the next step that
+   * fires.** Holding the last index it sounded for is enough to silence a repeat *within* a step and
+   * not enough to arm the next visit to one: step back with Prev over anything that doesn't chime —
+   * a rest, a reps set — and the ref still names the hold you just left, so redoing that hold passed
+   * its threshold in silence. Resetting on identity change means "has *this* visit chimed", which is
+   * the question being asked.
    */
   const milestoneFiredForStepRef = useRef(-1);
   const fireMilestone = useCallback(() => {
@@ -375,12 +383,21 @@ export function useSessionRunner(
             ? (step.holdEndSec ?? 0)
             : 0;
     stepEndSecRef.current = endSec;
+    // See the ref's own note: this is what makes it mean "has this visit chimed" rather than "which
+    // step chimed last", so a step redone via Prev sounds its milestone again.
+    milestoneFiredForStepRef.current = -1;
     setHoldElapsedSec(0);
     // Reps start at the set's target, not 0: hitting the target is the common case, so counting up
     // from zero one tap at a time made the expected outcome the most expensive one to record. Reps
     // re-seed from the target every set rather than carrying the last set's value, because varying
     // reps between sets is the normal thing being logged — unlike load, below.
-    setReps(step?.kind === 'reps' ? step.targetReps : 0);
+    //
+    // An EMOM minute seeds from its own target for exactly that reason, and used to seed 0 while the
+    // step carried a `targetReps` the screen was already showing as the prescription — so the common
+    // case cost a tap per rep, and an untouched minute logged nothing at all (`commitCurrentStep`
+    // writes `reps || undefined`). `targetReps` stays optional there: an EMOM may prescribe only the
+    // interval, and 0 keeps that minute out of the log rather than inventing a count for it.
+    setReps(step?.kind === 'reps' || step?.kind === 'interval' ? (step.targetReps ?? 0) : 0);
     // Load carries across sets of the same exercise: whatever was actually lifted on the previous set
     // is the best default for the next one, and snapping back to the configured target every set would
     // make any mid-workout adjustment need re-entering. Falls back to the target on the first set of

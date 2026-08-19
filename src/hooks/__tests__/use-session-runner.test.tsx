@@ -136,6 +136,10 @@ const exercises: Exercise[] = [
   { id: 'plank', name: 'Plank', type: 'timed_hold', config: { sets: 2, holdSecMin: 15, holdSecMax: 25, restSec: 30 } },
   { id: 'deadhang', name: 'Dead Hang', type: 'timed_hold', config: { sets: 2, restSec: 30 } },
   { id: 'grinder', name: 'Grinder', type: 'amrap', config: { timeCapSec: 300 } },
+  // The two EMOM shapes, which seed differently: `swings` prescribes a rep count per minute, `climb`
+  // prescribes only the interval and so has nothing to seed from.
+  { id: 'swings', name: 'KB Swings', type: 'emom', config: { intervalSec: 60, totalMinutes: 3, targetReps: 10 } },
+  { id: 'climb', name: 'Rope Climb', type: 'emom', config: { intervalSec: 60, totalMinutes: 2 } },
   // The two cardio shapes, which end differently: `row` counts a configured 60s down, `walk` counts up
   // until the Done button ends it.
   { id: 'row', name: 'Row', type: 'cardio', config: { durationSec: 60 } },
@@ -556,6 +560,37 @@ describe('logging', () => {
     expect(result.current.weightKg).toBe(30);
   });
 
+  /**
+   * The shipped bug: only `reps` steps seeded from their target, so every EMOM minute started at 0
+   * while the screen showed the prescription right above the counter. `commitCurrentStep` writes
+   * `reps || undefined`, so an untouched minute logged *nothing* — a whole EMOM could finish with an
+   * entry that recorded no work at all.
+   */
+  it('seeds an EMOM minute from its target, and logs it without a tap', async () => {
+    const { result } = await mount(workoutOf(single('swings')));
+    expect(result.current.reps).toBe(10);
+
+    await press(() => result.current.logInterval()); // minute 1, untouched
+    expect(result.current.reps).toBe(10); // re-seeded for minute 2, not carried
+    await press(() => result.current.setReps(8));
+    await press(() => result.current.logInterval()); // minute 2, corrected down
+    await press(() => result.current.logInterval()); // minute 3, back at the target
+
+    const emom = mockSession.entries.find((entry) => entry.type === 'emom');
+    expect(emom?.type === 'emom' && emom.minutes).toEqual([{ reps: 10 }, { reps: 8 }, { reps: 10 }]);
+  });
+
+  it('leaves an EMOM with no prescribed reps at zero, which logs the minute as unrecorded', async () => {
+    const { result } = await mount(workoutOf(single('climb')));
+    expect(result.current.reps).toBe(0);
+
+    await press(() => result.current.logInterval());
+    await press(() => result.current.logInterval());
+
+    const emom = mockSession.entries.find((entry) => entry.type === 'emom');
+    expect(emom?.type === 'emom' && emom.minutes).toEqual([{}, {}]);
+  });
+
   it('logs bodyweight as an absent weight rather than a zero load', async () => {
     const { result } = await mount(workoutOf(single('lsit'), single('pullups')));
     await press(() => result.current.doneSet());
@@ -775,6 +810,26 @@ describe('milestone chime', () => {
     await tick(120);
 
     expect(mockPlayMilestone).not.toHaveBeenCalled();
+  });
+
+  /**
+   * The shipped bug: the guard ref held *which step chimed last*, which silences a repeat inside a
+   * step but also silences the next visit to one. Stepping back over anything that doesn't chime —
+   * this rest — left the ref still naming the hold, so redoing that hold crossed its minimum in
+   * silence. Reintroduce it by dropping the reset in the step-change block and this fails.
+   */
+  it('sounds again on a hold redone with Prev', async () => {
+    const { result } = await mount(workoutOf(single('plank'))); // 15–25s, ends at 25
+    await tick(15);
+    expect(mockPlayMilestone).toHaveBeenCalledTimes(1);
+
+    await tick(10); // the hold ends itself at 25 -> rest, which never chimes
+    expect(result.current.step?.kind).toBe('rest');
+    await press(() => result.current.goPrev()); // back onto the hold, from the top
+    mockPlayMilestone.mockClear();
+
+    await tick(15);
+    expect(mockPlayMilestone).toHaveBeenCalledTimes(1);
   });
 
   it('stays silent through a rest countdown', async () => {

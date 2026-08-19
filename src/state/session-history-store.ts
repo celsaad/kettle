@@ -145,6 +145,15 @@ function newSessionId(startedAt: string): string {
  * be told, and running it anyway would answer `noFolder` and light a warning on every completion
  * screen in the app.
  */
+/**
+ * Whether this device would back up at all: the platform supports it *and* the user nominated a
+ * folder. Someone who never opted in has nothing to be told, which is why neither the backup nor its
+ * failures may be reported to them.
+ */
+function backupIsConfigured(): boolean {
+  return isBackupFolderSupported && !!usePreferencesStore.getState().preferences.backupFolderUri;
+}
+
 function backUpAfterSession(sessions: Session[], onResult: (failure: BackupFailure | null) => void): void {
   const { backupFolderUri } = usePreferencesStore.getState().preferences;
   if (!isBackupFolderSupported || !backupFolderUri) return;
@@ -263,7 +272,10 @@ export const useSessionHistoryStore = create<SessionHistoryState>((set, get) => 
     // one session they just finished — the same destructive shape the Settings row guards against,
     // on the path that runs without anyone pressing anything.
     if (selectHistoryComplete(get())) backUpAfterSession(sessions, (backupFailure) => set({ backupFailure }));
-    else set({ backupFailure: { kind: 'logUnread' } });
+    // Reported only to someone who actually has a backup to miss — `backupFailure` drives a warning on
+    // the completion screen, and lighting it for a user who never nominated a folder would be telling
+    // them a feature they never turned on had failed. Same rule `backUpAfterSession` applies above.
+    else if (backupIsConfigured()) set({ backupFailure: { kind: 'logUnread' } });
     return updated;
   },
   abandonActiveSession: () => {

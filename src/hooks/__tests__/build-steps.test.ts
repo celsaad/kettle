@@ -649,3 +649,53 @@ describe('a single block larger than the whole-workout ceiling', () => {
     expect([...rounds][0]).toBeLessThan(500);
   });
 });
+
+/**
+ * A circuit member's cost per visit is **not** one or two steps. `reps` and `timed_hold` collapse to a
+ * single set per visit, but `hiit`, `emom`, `amrap` and `cardio` deliberately ignore the visit flag and
+ * run their own full internal timing each time (see CircuitVisit) — so a `hiit` member at 500 rounds
+ * is ~999 steps per visit. An earlier ceiling predicted the per-round cost as `members × 2` and so did
+ * not fire at all here: two such members in a 500-round circuit built 999,000 steps, about 1.6s inside
+ * a render-time `useMemo`. Predicting the cost is what was wrong; this measures it.
+ */
+describe('a circuit whose members each expand into hundreds of steps', () => {
+  const interval: Exercise[] = [
+    { id: 'h1', name: 'H1', type: 'hiit', config: { workSec: 30, restSec: 10, rounds: 500 } },
+    { id: 'h2', name: 'H2', type: 'hiit', config: { workSec: 30, restSec: 10, rounds: 500 } },
+    { id: 'e1', name: 'E1', type: 'emom', config: { intervalSec: 60, totalMinutes: 500 } },
+  ];
+  const circuitOf = (...ids: string[]): Workout['blocks'][number] => ({
+    kind: 'circuit',
+    rounds: 500,
+    members: ids.map((exerciseId) => ({ exerciseId })),
+  });
+
+  it('stays within the whole-workout ceiling with two hiit members', () => {
+    const steps = buildSteps(workoutOf(circuitOf('h1', 'h2')), interval);
+
+    expect(steps.length).toBeLessThanOrEqual(5000);
+    expect(steps.length).toBeGreaterThan(0);
+  });
+
+  it('stays within it for emom members too, whose count is derived rather than written', () => {
+    const steps = buildSteps(workoutOf(circuitOf('e1', 'h1')), interval);
+
+    expect(steps.length).toBeLessThanOrEqual(5000);
+  });
+
+  it('runs at least one full round rather than refusing the block', () => {
+    const steps = buildSteps(workoutOf(circuitOf('h1', 'h2')), interval);
+
+    // Truncation must not become "this circuit does nothing" — the first round is what the user sees.
+    expect(steps.some((step) => step.exerciseId === 'h1')).toBe(true);
+    expect(steps.some((step) => step.exerciseId === 'h2')).toBe(true);
+  });
+
+  it('reports the rounds it will run, not the ones it was asked for', () => {
+    const steps = buildSteps(workoutOf(circuitOf('h1', 'h2')), interval);
+    const reported = new Set(steps.map((step) => step.circuit?.rounds));
+
+    expect(reported.size).toBe(1);
+    expect([...reported][0]).toBeLessThan(500);
+  });
+});

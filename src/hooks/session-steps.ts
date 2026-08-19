@@ -147,9 +147,16 @@ const MaxStepsPerExercise = 2000;
  * on the members. 500 rounds of a 1000-member circuit is a million steps out of a library the schema
  * accepts. Cheaper to bound the array itself once than to chase every shape that can grow it.
  *
- * Checked **inside** the circuit's round loop as well as between blocks. A between-blocks check alone
- * reads as a bound and is not one: it only ever fires on the block *after* the offending one, so the
- * single-circuit case above — the very case this constant was added for — sailed straight past it.
+ * Enforced by an actual check in the circuit's round loop, not by arithmetic done before it. The
+ * arithmetic version assumed a member visit costs at most two steps, which is true of `reps` and
+ * `timed_hold` and false of the rest: `hiit`, `emom`, `amrap` and `cardio` deliberately ignore the
+ * visit flag and run their own full internal timing once per visit (see CircuitVisit), so a `hiit`
+ * member at `rounds: 500` is ~999 steps *per visit*. Two of those in a 500-round circuit is 999,000
+ * steps — schema-valid, and about 1.6 seconds inside a render-time `useMemo`.
+ *
+ * So the budget is measured rather than predicted: one round is expanded, its real cost is counted,
+ * and that decides how many rounds fit. The loop still checks as it goes, because a measured cost is
+ * an assumption too.
  */
 const MaxStepsPerWorkout = 5000;
 
@@ -511,11 +518,18 @@ export function buildSteps(workout: Workout, exercises: Exercise[]): RunnerStep[
     // passing the schema, and each round emits one step per member. Everything below reports the
     // bounded count, so a truncated circuit doesn't announce rounds it will never run.
     //
-    // Rounds are additionally trimmed to what the workout has room for, so `rounds × members` cannot
-    // outrun MaxStepsPerWorkout — one round is at least one step per member, which is the ratio used
-    // to convert the remaining budget into a round count.
-    const budgetRounds = Math.max(1, Math.floor((MaxStepsPerWorkout - steps.length) / Math.max(1, members.length * 2)));
-    const rounds = Math.min(boundedCount(block.rounds), budgetRounds);
+    // The second bound is the workout's. A round's cost is *measured* rather than assumed — see
+    // MaxStepsPerWorkout for why assuming it was wrong — by expanding one round and counting it.
+    // Every round of a circuit expands identically, so one measurement is the whole answer.
+    const perRound = members.reduce(
+      (total, { member, exercise }) =>
+        total +
+        expandExercise(exercise, blockIndex, 'measure', member.configOverride, { index: 1, total: 1 }).length +
+        (block.restBetweenExercisesSec ? 1 : 0),
+      0,
+    );
+    const affordableRounds = Math.max(1, Math.floor((MaxStepsPerWorkout - steps.length) / Math.max(1, perRound)));
+    const rounds = Math.min(boundedCount(block.rounds), affordableRounds);
 
     // Numbered over `members` (the resolved ones), not `block.members` — see CircuitPosition.
     const positionAt = (roundIndex: number, slot: number): CircuitPosition => ({
@@ -525,7 +539,12 @@ export function buildSteps(workout: Workout, exercises: Exercise[]): RunnerStep[
       memberTotal: members.length,
     });
     for (let round = 0; round < rounds; round++) {
-      members.forEach(({ member, memberIndex, exercise }, i) => {
+      // The check the measurement above cannot replace: `perRound` is one expansion's worth of
+      // evidence, and this is what holds if it is ever wrong. A `for` loop rather than `forEach`
+      // below for the same reason — `forEach` cannot stop.
+      if (steps.length >= MaxStepsPerWorkout) break;
+      for (let i = 0; i < members.length; i++) {
+        const { member, memberIndex, exercise } = members[i];
         const memberKey = `${blockIndex}:${memberIndex}`;
         // Shared by the member's own steps and by the rest that follows it, which belongs to the work
         // it follows rather than to what comes next.
@@ -547,7 +566,7 @@ export function buildSteps(workout: Workout, exercises: Exercise[]): RunnerStep[
             seconds: block.restBetweenExercisesSec,
           });
         }
-      });
+      }
       const isLastRound = round === rounds - 1;
       if (!isLastRound && block.restBetweenRoundsSec) {
         steps.push({

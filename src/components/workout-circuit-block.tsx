@@ -8,6 +8,7 @@ import type { DragHandle } from '@/components/reorderable-list';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { formatCircuitShape } from '@/domain/format';
+import { MaxRounds } from '@/domain/schema';
 import type { Exercise, WorkoutBlock } from '@/domain/types';
 import { useTheme } from '@/hooks/use-theme';
 import { useUnitSystem } from '@/state/preferences-store';
@@ -127,7 +128,11 @@ export function WorkoutCircuitBlock({ block, exercises, dragHandle, onChange, on
               {block.rounds}
             </ThemedText>
             <Pressable
-              onPress={() => onChange({ rounds: block.rounds + 1 })}
+              // Clamped, because this writes straight to the library file: the schema caps a
+              // circuit's rounds at MaxRounds, and a stepper that walks past it persists a library
+              // that won't parse on the next launch — quarantine, then reseed. Same shape as the EMOM
+              // rule the forms had to mirror; a stepper is just a slower way to type a number.
+              onPress={() => onChange({ rounds: Math.min(MaxRounds, block.rounds + 1) })}
               accessibilityRole="button"
               accessibilityLabel={t('common.increase', { label: t('workoutEditor.rounds') })}
               style={[styles.stepperButton, { borderColor: theme.border }]}>

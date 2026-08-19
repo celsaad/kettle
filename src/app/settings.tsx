@@ -463,11 +463,15 @@ export default function SettingsScreen() {
                 <ActionRow
                   title={t('settings.backupNow')}
                   detail={
-                    backingUp || !historyComplete
+                    backingUp
                       ? t('settings.backupInProgress')
-                      : backupFolderUri
-                        ? t('settings.backupNowDetail')
-                        : t('settings.backupNowNoFolder')
+                      : !historyComplete
+                        ? // "Writing…" for a row that is not writing and never will be until the log
+                          // loads: the reason it is disabled is the one thing the line has to say.
+                          t('settings.backupLogUnread')
+                        : backupFolderUri
+                          ? t('settings.backupNowDetail')
+                          : t('settings.backupNowNoFolder')
                   }
                   onPress={runBackup}
                   disabled={!backupFolderUri || backingUp || !historyComplete}

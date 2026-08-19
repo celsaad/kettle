@@ -19,7 +19,7 @@ import { exerciseName } from '@/state/selectors/exercise-lookup';
 import { currentStreak, historyStats, sessionsPerWeek, thisWeekStats } from '@/state/selectors/history-stats';
 import { useLibraryStore } from '@/state/library-store';
 import { useUnitSystem } from '@/state/preferences-store';
-import { useSessionHistoryStore } from '@/state/session-history-store';
+import { selectHistoryComplete, selectHistoryRead, useSessionHistoryStore } from '@/state/session-history-store';
 
 export { RouteErrorBoundary as ErrorBoundary } from '@/components/error-fallback';
 
@@ -54,6 +54,18 @@ export default function AnalyticsScreen() {
   const theme = useTheme();
   const { t } = useTranslation();
   const sessions = useSessionHistoryStore((state) => state.sessions);
+  /*
+    Every number on this screen is a claim about the *whole* log — all-time totals, a day streak, a
+    per-week chart, and an empty state that says you have never trained. An unread log makes all of
+    them wrong in the same direction, and this screen has no gate of its own: it is reached from
+    History's "Stats" link, which is visible immediately.
+
+    `complete` rather than `read`, for the empty state's sake. A failed read is "done" and still has
+    no sessions in it, and "you haven't trained yet" is the one sentence here that a user could act
+    on by disbelieving the app.
+  */
+  const historyRead = useSessionHistoryStore(selectHistoryRead);
+  const historyComplete = useSessionHistoryStore(selectHistoryComplete);
   const library = useLibraryStore((state) => state.library);
 
   // Computed per render, deliberately. All three read the clock: `thisWeekStats` and `sessionsPerWeek`
@@ -80,43 +92,52 @@ export default function AnalyticsScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <ThemedText type="title">{t('analytics.title')}</ThemedText>
 
-        <ThemedText type="label" themeColor="textSecondary" style={styles.sectionLabel}>
-          {t('history.thisWeekLabel')}
-        </ThemedText>
-        <View style={styles.statsRow}>
-          <Tile value={String(weekStats.sessions)} label={t('history.sessions')} />
-          <Tile value={`${weekStats.hours}h ${weekStats.minutes}m`} label={t('history.time')} />
-          {/* "day streak" rather than "streak": it is the one number in this group `currentStreak`
+        {/* One line instead of a screenful of confident zeros. Split by cause: a read still running
+            will resolve on its own and says so, where one that failed will not and must not leave the
+            reader waiting for numbers that are never coming. */}
+        {!historyComplete ? (
+          <ThemedText type="small" themeColor="textSecondary">
+            {historyRead ? t('analytics.logUnavailable') : t('history.loading')}
+          </ThemedText>
+        ) : (
+          <>
+            <ThemedText type="label" themeColor="textSecondary" style={styles.sectionLabel}>
+              {t('history.thisWeekLabel')}
+            </ThemedText>
+            <View style={styles.statsRow}>
+              <Tile value={String(weekStats.sessions)} label={t('history.sessions')} />
+              <Tile value={`${weekStats.hours}h ${weekStats.minutes}m`} label={t('history.time')} />
+              {/* "day streak" rather than "streak": it is the one number in this group `currentStreak`
               doesn't scope to the week, so under a THIS WEEK heading a bare "streak" would read as a
               weekly count and a 30-day run would announce itself as "30 · this week". */}
-          <Tile value={String(streak)} label={t('history.streak')} />
-        </View>
+              <Tile value={String(streak)} label={t('history.streak')} />
+            </View>
 
-        <ThemedText type="label" themeColor="textSecondary" style={styles.sectionLabel}>
-          {t('history.allTime')}
-        </ThemedText>
-        <View style={styles.statsRow}>
-          <Tile value={String(allTime.sessions)} label={t('history.sessions')} />
-          <Tile value={`${allTime.hours}h ${allTime.minutes}m`} label={t('history.time')} />
-          <Tile value={String(allTime.sets)} label={t('history.sets')} />
-        </View>
+            <ThemedText type="label" themeColor="textSecondary" style={styles.sectionLabel}>
+              {t('history.allTime')}
+            </ThemedText>
+            <View style={styles.statsRow}>
+              <Tile value={String(allTime.sessions)} label={t('history.sessions')} />
+              <Tile value={`${allTime.hours}h ${allTime.minutes}m`} label={t('history.time')} />
+              <Tile value={String(allTime.sets)} label={t('history.sets')} />
+            </View>
 
-        {/*
+            {/*
           Hidden on an empty log rather than drawn as eight flat zeros. A chart of nothing is not a
           reading — it is a shape that says "no data" in the most expensive way available, and the
           tiles above already say it in three numbers. It appears with the first session.
         */}
-        {hasHistory && (
-          <>
-            <ThemedText type="label" themeColor="textSecondary" style={styles.sectionLabel}>
-              {t('analytics.perWeek', { count: WEEKS_SHOWN })}
-            </ThemedText>
-            <ThemedView type="backgroundElement" style={[styles.chartCard, { borderColor: theme.border }]}>
-              <WeekBars weeks={weeks} />
-            </ThemedView>
-          </>
-        )}
-        {/*
+            {hasHistory && (
+              <>
+                <ThemedText type="label" themeColor="textSecondary" style={styles.sectionLabel}>
+                  {t('analytics.perWeek', { count: WEEKS_SHOWN })}
+                </ThemedText>
+                <ThemedView type="backgroundElement" style={[styles.chartCard, { borderColor: theme.border }]}>
+                  <WeekBars weeks={weeks} />
+                </ThemedView>
+              </>
+            )}
+            {/*
           The half of this screen that answers a question the tiles above cannot. Totals say how much
           you have ever done — which nobody asks twice — where these say whether the number is moving,
           per exercise, which is the reason to open Stats a second time.
@@ -124,25 +145,27 @@ export default function AnalyticsScreen() {
           Below the chart rather than above it: turning up is the precondition for getting stronger,
           and a lapse explains a flat row better than a flat row explains itself.
         */}
-        <ThemedText type="label" themeColor="textSecondary" style={styles.sectionLabel}>
-          {t('analytics.progressTitle')}
-        </ThemedText>
-
-        {progress.length === 0 ? (
-          <ThemedText type="small" themeColor="textSecondary">
-            {t('analytics.progressEmpty')}
-          </ThemedText>
-        ) : (
-          <>
-            <ThemedText type="small" themeColor="textSecondary" style={styles.progressBody}>
-              {t('analytics.progressBody', { count: WEEKS_SHOWN })}
+            <ThemedText type="label" themeColor="textSecondary" style={styles.sectionLabel}>
+              {t('analytics.progressTitle')}
             </ThemedText>
-            {progress.map((row, index) => (
-              <View key={row.exerciseId}>
-                {index > 0 && <ListRowSeparator />}
-                <ProgressRow row={row} name={exerciseName(library?.exercises ?? [], row.exerciseId)} />
-              </View>
-            ))}
+
+            {progress.length === 0 ? (
+              <ThemedText type="small" themeColor="textSecondary">
+                {t('analytics.progressEmpty')}
+              </ThemedText>
+            ) : (
+              <>
+                <ThemedText type="small" themeColor="textSecondary" style={styles.progressBody}>
+                  {t('analytics.progressBody', { count: WEEKS_SHOWN })}
+                </ThemedText>
+                {progress.map((row, index) => (
+                  <View key={row.exerciseId}>
+                    {index > 0 && <ListRowSeparator />}
+                    <ProgressRow row={row} name={exerciseName(library?.exercises ?? [], row.exerciseId)} />
+                  </View>
+                ))}
+              </>
+            )}
           </>
         )}
       </ScrollView>

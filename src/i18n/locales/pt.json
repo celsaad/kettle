@@ -88,6 +88,7 @@
     "problemsTitle_other": "{{count}} arquivos de sessão não puderam ser lidos ou gravados"
   },
   "analytics": {
+    "logUnavailable": "Não foi possível carregar seu registro, então não há números para mostrar. Reabra o app para tentar de novo.",
     "title": "Seus números",
     "perWeek": "Sessões por semana · últimas {{count}} semanas",
     "weekBarLabel_one": "Semana de {{week}}: {{count}} sessão",

@@ -88,6 +88,7 @@
     "problemsTitle_other": "{{count}} session files couldn't be read or written"
   },
   "analytics": {
+    "logUnavailable": "Your log couldn't be loaded, so there are no numbers to show. Reopen the app to try again.",
     "title": "Your numbers",
     "perWeek": "Sessions per week · last {{count}} weeks",
     "weekBarLabel_one": "Week of {{week}}: {{count}} session",
@@ -458,7 +459,6 @@
       "mustBeAtMost": "{{label}} can be at most {{max}}.",
       "mustBeWhole": "{{label}} must be a whole number.",
       "holdMaxNeedsMin": "A hold range needs a minimum as well as a maximum.",
-      "tooManyIntervals": "That works out to more than {{max}} intervals. Use a longer interval or a shorter block.",
       "tooManyIntervals": "That works out to more than {{max}} intervals. Use a longer interval or a shorter block.",
       "holdMaxBelowMin": "The maximum hold can't be shorter than the minimum."
     }

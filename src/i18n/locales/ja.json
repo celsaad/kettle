@@ -84,6 +84,7 @@
     "problemsTitle_other": "{{count}}件のセッションファイルを読み書きできませんでした"
   },
   "analytics": {
+    "logUnavailable": "履歴を読み込めなかったため、表示できる数値がありません。アプリを開き直してお試しください。",
     "title": "あなたの数字",
     "perWeek": "週あたりのセッション · 直近{{count}}週",
     "weekBarLabel_other": "{{week}}の週: {{count}}セッション",

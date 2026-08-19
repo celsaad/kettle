@@ -103,3 +103,41 @@ it('is translated', async () => {
   // The exercise name is the user's and is never translated, sitting among strings that are.
   expect(screen.getByText('Dumbbell RDL')).toBeTruthy();
 });
+
+/**
+ * Every number here is a claim about the *whole* log, and this screen is reached from History's
+ * always-visible "Stats" link — so it is reachable before the log has been read. Against an unread or
+ * failed read it showed all-time totals, a 0-day streak and the never-trained empty state, all
+ * confidently wrong in the same direction.
+ */
+describe('before the log is available', () => {
+  it('says it is still loading rather than showing zeros', async () => {
+    withSessions([10, 12]);
+    useSessionHistoryStore.setState({ status: 'loading' });
+
+    await renderScreen(<AnalyticsScreen />);
+
+    expect(screen.getByText('Loading your log…')).toBeTruthy();
+    expect(screen.queryByText('All time')).toBeNull();
+  });
+
+  it('says the log could not be loaded when the read failed', async () => {
+    withSessions([10, 12]);
+    useSessionHistoryStore.setState({ status: 'error', sessions: [] });
+
+    await renderScreen(<AnalyticsScreen />);
+
+    // Distinct from "loading": a failed read will not resolve on its own, and leaving the reader
+    // waiting for numbers that are never coming is the worse of the two mistakes.
+    expect(screen.getByText(/couldn't be loaded/)).toBeTruthy();
+    expect(screen.queryByText('All time')).toBeNull();
+  });
+
+  it('shows the numbers once the read has landed', async () => {
+    withSessions([10, 12]);
+
+    await renderScreen(<AnalyticsScreen />);
+
+    expect(screen.getByText('All time')).toBeTruthy();
+  });
+});

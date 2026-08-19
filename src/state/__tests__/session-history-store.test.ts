@@ -613,3 +613,46 @@ describe('the backup that follows a finished session', () => {
     expect(useSessionHistoryStore.getState().backupFailure).toEqual({ kind: 'logUnread' });
   });
 });
+
+/**
+ * `backupFailure` lights a warning on the completion screen. Reporting `logUnread` to someone who
+ * never nominated a folder tells them a feature they never turned on has failed — the same reason
+ * `backUpAfterSession` skips silently in that case.
+ */
+describe('the unread-log backup warning', () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+  });
+  afterEach(() => jest.useRealTimers());
+
+  it('is raised when a folder was nominated and the log was not read', () => {
+    setBackupFolder('content://folder');
+    const session = useSessionHistoryStore.getState().startSession('w', null, null, null);
+    useSessionHistoryStore.setState({ status: 'error' });
+
+    useSessionHistoryStore.getState().completeSession(session);
+
+    expect(useSessionHistoryStore.getState().backupFailure).toEqual({ kind: 'logUnread' });
+  });
+
+  it('is not raised for someone who never chose a folder', () => {
+    setBackupFolder(null);
+    const session = useSessionHistoryStore.getState().startSession('w', null, null, null);
+    useSessionHistoryStore.setState({ status: 'error' });
+
+    useSessionHistoryStore.getState().completeSession(session);
+
+    expect(useSessionHistoryStore.getState().backupFailure).toBeNull();
+  });
+
+  it('is not raised where the platform has no backup folder at all', () => {
+    setBackupFolder('content://folder');
+    mockBackupSupported = false;
+    const session = useSessionHistoryStore.getState().startSession('w', null, null, null);
+    useSessionHistoryStore.setState({ status: 'error' });
+
+    useSessionHistoryStore.getState().completeSession(session);
+
+    expect(useSessionHistoryStore.getState().backupFailure).toBeNull();
+  });
+});

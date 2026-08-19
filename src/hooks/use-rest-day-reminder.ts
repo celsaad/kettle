@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { REST_DAY_REMINDER_DAYS, REST_DAY_REMINDER_HOUR } from '@/domain/preferences';
 import { cancelRestDayReminder, requestNotificationPermissions, scheduleRestDayReminder } from '@/hooks/safe-notifications';
 import { usePreferencesStore } from '@/state/preferences-store';
-import { useSessionHistoryStore } from '@/state/session-history-store';
+import { selectHistoryComplete, useSessionHistoryStore } from '@/state/session-history-store';
 
 /**
  * When the nudge should land: `REST_DAY_REMINDER_DAYS` calendar days after the last session, at a
@@ -50,13 +50,15 @@ export function useRestDayReminder(): void {
   // Sessions are newest-first (session-files.ts), so the head is the most recent one — including one
   // still in progress, whose start is already the right anchor.
   const lastSessionStartedAt = useSessionHistoryStore((state) => state.sessions[0]?.startedAt ?? null);
-  // "The log has been read", not "the log is non-empty" — the distinction this hook cannot make for
-  // itself, and the whole reason an unread log must not be acted on.
-  const historyRead = useSessionHistoryStore((state) => state.status === 'ready' || state.status === 'error');
+  // `complete`, not `read`. This hook reasons about the *absence* of sessions — no log means "never
+  // trained", which cancels the pending reminder — and a failed read produces exactly that absence
+  // without it being true. On `error` the honest move is to leave whatever is already scheduled
+  // alone, which is what the early return below does.
+  const historyComplete = useSessionHistoryStore(selectHistoryComplete);
 
   useEffect(() => {
     // Nothing is known yet, so nothing is decided yet: leave whatever is already scheduled alone.
-    if (!historyRead) return;
+    if (!historyComplete) return;
     if (!enabled || !lastSessionStartedAt) {
       cancelRestDayReminder();
       return;
@@ -76,5 +78,5 @@ export function useRestDayReminder(): void {
       t('session.notification.reminderBody', { count: REST_DAY_REMINDER_DAYS }),
       at,
     );
-  }, [enabled, lastSessionStartedAt, historyRead]);
+  }, [enabled, lastSessionStartedAt, historyComplete]);
 }

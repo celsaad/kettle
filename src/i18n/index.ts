@@ -12,6 +12,7 @@ import { initReactI18next } from 'react-i18next';
 
 import type { UnitSystem } from '@/domain/units';
 import en from '@/i18n/locales/en.json';
+import ja from '@/i18n/locales/ja.json';
 import pt from '@/i18n/locales/pt.json';
 
 /**
@@ -19,8 +20,17 @@ import pt from '@/i18n/locales/pt.json';
  * `languageCode` separately from `regionCode` for exactly this. Region still matters for *formatting*
  * — dates, numbers and the first day of the week come from the device locale via Intl, not from here,
  * so a pt-BR user gets a Sunday-start week while pt-PT gets Monday, both reading the same strings.
+ *
+ * **A bundle carries only the plural categories its own language has.** `ja` has one — CLDR gives it
+ * `other` and nothing else — so `ja.json` holds `x_other` and no `x_one`. Written by analogy with
+ * `en`/`pt` it would carry `_one` keys that never resolve and never get reviewed, which is the shape
+ * this note exists to prevent. JSON takes no comments, so it has to live here.
  */
-export const resources = { en: { translation: en }, pt: { translation: pt } } as const;
+export const resources = {
+  en: { translation: en },
+  pt: { translation: pt },
+  ja: { translation: ja },
+} as const;
 
 /**
  * The device's preferred language, narrowed to one we actually ship. `getLocales()` is ordered by the

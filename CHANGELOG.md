@@ -19,6 +19,14 @@ language; an unsupported tag is rejected on upload. The limits and the upload fo
 
 ### What changed
 
+**Kettle speaks Japanese.** Set your phone to Japanese and the whole app follows — every screen, the
+runner's spoken announcements, the notifications, and the starter library Kettle sets up on first
+launch, exercise names and coaching notes included. Dates, numbers and the first day of your week were
+already following your device and still do.
+
+Nothing you have written is touched. Your own exercise, workout and program names, your notes and your
+day labels are your data, and they read exactly as you typed them whatever language the app is in.
+
 **The starter exercises come with a drawing.** Open any exercise from the library Kettle sets up on
 first launch — the push-ups, the dumbbell lifts, the burpees, the carries — and there is now a line
 drawing of the movement above the notes. It's drawn in whatever theme you're using, it stays with the

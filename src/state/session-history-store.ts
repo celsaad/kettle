@@ -163,17 +163,18 @@ function backUpAfterSession(sessions: Session[], onResult: (failure: BackupFailu
 /**
  * Two different questions about the log, deliberately not the same boolean.
  *
- * `historyRead` is "stop waiting" — the read finished, whether or not it worked. It is what a
- * *display* should gate on, so a failed read shows an empty log rather than a spinner forever.
+ * `historyRead` is "the read finished, whether or not it worked". `app/_layout.tsx` is its only
+ * caller: it is what lets a *failed* read still start the app, rather than leaving the user with a
+ * splash screen and no way past it.
  *
- * `historyComplete` is "this is the user's whole log". Only a successful read earns it, and the
- * distinction is not academic: on the error path `sessions` is `[]` while the user has years of
- * training on disk, so anything that **writes the log somewhere** or reasons about a session's
- * *absence* has to gate on this one. Backing up an empty log truncates a good archive; treating an
- * unread log as "no prior sessions" marks every ordinary set as a personal best.
+ * `historyComplete` is "this is the user's whole log", and only a successful read earns it. Past the
+ * startup gate, `sessions` has always been read — but on the error path it is `[]` while the user has
+ * years of training on disk, so anything that **writes the log somewhere** or reasons about a
+ * session's *absence* still has to ask this one. Backing up an empty log truncates a good archive;
+ * treating an unread log as "no prior sessions" marks every ordinary set as a personal best.
  *
- * The first version of this PR had one `ready || error` flag doing both jobs, which meant the guard
- * on the destructive path was open in exactly the case it existed for.
+ * These were one `ready || error` flag doing both jobs, which left the guard on the destructive path
+ * open in exactly the case it existed for.
  */
 export const selectHistoryRead = (state: SessionHistoryState): boolean =>
   state.status === 'ready' || state.status === 'error';
@@ -190,12 +191,12 @@ export const useSessionHistoryStore = create<SessionHistoryState>((set, get) => 
     /*
       `listSessions` is non-throwing per file, but not per *call* — `ensureStorageReady()` and the
       directory `list()` both run before any of that and can throw on a storage layer that isn't
-      there. Uncaught, the rejection went nowhere and left `status` on `loading` forever. That was
-      survivable while this gated first paint, because the app simply never appeared; now that it
-      doesn't, it is a Next Up card that never arrives and a History tab that stays empty in silence.
+      there. Uncaught, the rejection went nowhere and left `status` on `loading` forever, which is the
+      startup gate's failure mode too: the app never leaves its splash screen and says nothing.
 
-      `error` is a real terminal state rather than decoration: the screens treat it as "the read is
-      over" exactly like `ready`, so an empty log stops being indistinguishable from an unread one.
+      `error` is a real terminal state rather than decoration. It is what lets a failed read past the
+      gate in `_layout.tsx`, so a storage problem costs the user their history rather than the app —
+      and `selectHistoryComplete` is how the operations that need a whole log still refuse it.
     */
     let read: Awaited<ReturnType<typeof listSessions>>;
     try {
@@ -206,11 +207,12 @@ export const useSessionHistoryStore = create<SessionHistoryState>((set, get) => 
     }
     const { sessions, errors } = read;
     /*
-      Merged rather than assigned, and that matters now that the app paints before this resolves
-      (see _layout.tsx). A session started while the read was in flight is on disk but not in
-      `sessions` — the directory was listed before its file existed — so a plain assignment would
-      drop the session the runner is actively writing to out of state, mid-workout, while the runner
-      kept appending to a copy nothing else could see.
+      Merged rather than assigned. `_layout.tsx` gates the tree on this resolving, so nothing can
+      start a session during the initial read — but that ordering is a property of one caller, not of
+      this function, and the cost of assuming it is losing a workout in progress. A session started
+      while a read is in flight is on disk but not in `sessions` (the directory was listed before its
+      file existed), so a plain assignment would drop the session the runner is actively writing to
+      out of state, mid-workout, while the runner kept appending to a copy nothing else could see.
 
       The in-flight session wins outright rather than being deduped by id: even if it *was* listed,
       the copy on disk is a snapshot from before the sets logged since, and the runner's is current.

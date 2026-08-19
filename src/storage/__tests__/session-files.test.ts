@@ -120,8 +120,8 @@ describe('removeSessionEntry', () => {
  * The docstring on `listSessions` has always promised that "one malformed file produces an error
  * entry, not a crash" — and that held for a file that wouldn't *parse* but never for one that wouldn't
  * *read*. A bare `await file.text()` threw straight out of `hydrate`, which has no catch, leaving the
- * store on `loading` forever. That was survivable while history gated first paint, because the app
- * simply never appeared; now that it doesn't, it would be a History tab that stayed empty in silence.
+ * store on `loading` forever — and the app waits on that store to start, so it is a splash screen
+ * with no way past it and nothing said.
  */
 describe('listSessions', () => {
   const yamlFor = (id: string, startedAt: string) =>

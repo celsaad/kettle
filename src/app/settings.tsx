@@ -159,15 +159,15 @@ export default function SettingsScreen() {
   const library = useLibraryStore((state) => state.library);
   const sessions = useSessionHistoryStore((state) => state.sessions);
   /*
-    History no longer holds up first paint (see app/_layout.tsx), so this screen is reachable while
-    the log is still being read — and `sessions` is *empty* rather than merely incomplete during that
-    window. That is harmless for a screen that only displays it and destructive for "Back up now":
-    `backUpNow` writes the archive with `FileMode.Truncate`, so running it here would replace the
-    user's whole backup with an empty one, in the folder they nominated precisely so it would survive
-    the app. Export History is safe by accident — it is already disabled at zero sessions.
+    `_layout.tsx` holds the whole tree until the log has been read, so `sessions` is never merely
+    *pending* here — but a read that **failed** still starts the app, deliberately, and leaves
+    `sessions` empty while the user's log sits intact on disk. That distinction is harmless for a
+    screen that only displays the log and destructive for "Back up now": `backUpNow` writes the
+    archive with `FileMode.Truncate`, so running it against an empty log would replace the user's whole
+    backup, in the folder they nominated precisely so it would survive the app.
 
-    `complete` rather than `read`: a read that *failed* leaves an empty `sessions` and is exactly the
-    case this must refuse, so the two are not interchangeable here. See the selectors' own note.
+    Hence `complete` rather than `read` — see the selectors' own note. Export History is safe by
+    accident: it is already disabled at zero sessions.
   */
   const historyComplete = useSessionHistoryStore(selectHistoryComplete);
   const supporter = useTipStore((state) => state.supporter);

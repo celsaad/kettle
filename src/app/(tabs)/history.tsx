@@ -117,10 +117,7 @@ export default function HistoryScreen() {
   const { t } = useTranslation();
   const library = useLibraryStore((state) => state.library);
   // Held still while this tab sits unread under the session modal — see useSessionsWhenFocused.
-  // `ready` comes from the same snapshot: without it this screen states "0 sessions · 0h 0m · 0 sets ·
-  // All time" to someone with years of training, confidently and in the past tense, for as long as the
-  // read takes. An unread log is not an empty one, and the header is the sentence that claims it is.
-  const { sessions, ready: historyRead } = useSessionsWhenFocused();
+  const sessions = useSessionsWhenFocused();
   const deleteSession = useSessionHistoryStore((state) => state.deleteSession);
   // Collected since hydration existed and rendered nowhere: a session file that wouldn't parse, or one
   // the disk wouldn't take mid-workout, was known about and never mentioned. History is where a
@@ -172,13 +169,9 @@ export default function HistoryScreen() {
     time: `${historyStats.hours}h ${historyStats.minutes}m`,
     sets: formatSetCount(historyStats.sets),
   });
-  // The totals only mean anything once the log has been read. Until then they are three zeros with a
-  // scope of "All time" attached, which is a claim rather than a placeholder.
-  const summaryLine = !historyRead
-    ? t('history.loading')
-    : searching
-      ? `${t('history.matchCount', { shown: visibleSessions.length, total: sessions.length })} · ${totals}`
-      : totals;
+  const summaryLine = searching
+    ? `${t('history.matchCount', { shown: visibleSessions.length, total: sessions.length })} · ${totals}`
+    : totals;
 
   // Both wrapped so every card can hold the same two function identities and stay memo-equal; without
   // that, one expand re-renders every card on screen.

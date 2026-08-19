@@ -25,13 +25,12 @@ export function restDayReminderAt(lastSessionStartedAt: string): Date {
  * Keeps the opt-in rest-day reminder in step with the log. Mounted once, from the root layout's
  * `Navigation`.
  *
- * That layout used to render only after all three stores had hydrated, and this hook was written
- * against that ordering. It no longer holds: session history is hydrated but not gated on, so this
- * now mounts while the log is still being read. Waiting for `status` is not a refinement of the old
- * behaviour but a restoration of it — without the wait, an empty log reads as "never trained", which
- * takes the `!lastSessionStartedAt` branch and **cancels the pending reminder** on every cold start,
- * rescheduling only once the read lands. An app killed inside that window loses the notification with
- * nothing to say so.
+ * The layout renders only after all three stores have hydrated, so the log has always been read by
+ * the time this mounts. What that does *not* guarantee is that the read worked: a failed one still
+ * starts the app and leaves `sessions` empty. This hook reads "no sessions" as "never trained" and
+ * **cancels the pending reminder**, which is the wrong answer to a log it simply could not load — so
+ * it waits for `complete`, not merely for the read to be over, and leaves whatever is scheduled alone
+ * otherwise.
  *
  * It is a *rest-day* nudge rather than a daily alarm on purpose: there is only ever one pending
  * notification and it sits a couple of days past the most recent session, so finishing a session

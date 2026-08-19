@@ -50,10 +50,8 @@ training to. Vibration is separate and stays on your phone's own settings.
 - **Buttons and text fields grow to fit their label.** "Adicionar bloco" was clipped in the workout
   editor in Portuguese; the same fixed heights would have cut off any long translation, and any label
   at a large accessibility text size.
-- **Kettle opens without waiting for your whole training history.** It used to read and check every
-  session file you had ever logged before drawing anything, so the wait grew a little with every
-  workout you finished. It now starts on your library and fills the history in behind you — the
-  difference is invisible in your first month and adds up over years.
+- **Kettle reads your training history faster on startup.** It loads your session files in parallel
+  rather than one after another, which is most of the wait if you have a lot of them.
 - **A workout with an impossible number of sets can no longer make the session screen unopenable.**
   An exercise asking for tens of thousands of sets — a typo, or a file from someone else — used to
   take the runner down every time you tried to start it, with no way back except editing the file by

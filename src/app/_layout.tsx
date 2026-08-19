@@ -24,7 +24,7 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useRestDayReminder } from '@/hooks/use-rest-day-reminder';
 import { useLibraryStore } from '@/state/library-store';
 import { usePreferencesStore } from '@/state/preferences-store';
-import { useSessionHistoryStore } from '@/state/session-history-store';
+import { selectHistoryRead, useSessionHistoryStore } from '@/state/session-history-store';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -146,6 +146,7 @@ export default function RootLayout() {
 
   const libraryStatus = useLibraryStore((state) => state.status);
   const hydrateLibrary = useLibraryStore((state) => state.hydrate);
+  const sessionHistoryRead = useSessionHistoryStore(selectHistoryRead);
   const hydrateSessionHistory = useSessionHistoryStore((state) => state.hydrate);
   // Gated alongside the data stores rather than hydrated on mount like the tip store: this one picks
   // the unit every weight renders in, so arriving late would swap the numbers under the user.
@@ -161,18 +162,28 @@ export default function RootLayout() {
   const dataReady = libraryStatus === 'ready' || libraryStatus === 'error';
 
   /*
-    History is hydrated here but deliberately **not** gated on, unlike the library and preferences.
+    Session history is gated on alongside the library and preferences, and it is worth saying why,
+    because the obvious optimisation here has been tried and reverted.
 
-    `listSessions` reads, parses and validates every session file the user has ever logged, so the
-    cost of this gate grows with their training history and never shrinks: three sessions a week for
-    three years is ~470 files, each a separate bridge round-trip, all of it in front of the splash
-    screen. The library and preferences are two files and a constant.
+    `listSessions` reads and validates every session file the user has ever logged, so this gate's
+    cost grows with their training history — ~470 files after three years of training three times a
+    week. Ungating it makes the app paint sooner and is *wrong*, because almost nothing downstream
+    can tell an unread log from an empty one. Five consumers reason about the absence of sessions:
+    the auto-backup and the Settings one truncate-write a whole archive, the runner snapshots the log
+    once to decide what counts as a personal best, the rest-day reminder cancels itself, and Home and
+    Analytics state totals in the past tense. Every one of them silently produces a *wrong* answer
+    rather than a missing one, and two of them lose data doing it. The decision log has the full
+    account under "History stays in the startup gate".
 
-    What paints without it is the whole app minus one card: the home screen holds its next-up slot
-    until the history store reports ready (see (tabs)/index.tsx) rather than flashing week 1 of a
-    program at someone mid-way through it, and History's own tiles fill in when the read lands.
+    What actually made startup faster was making the read faster — chunked parallel file reads in
+    `listSessions` — which is kept, and needs none of this.
+
+    `error` counts as read on purpose: a read that failed must not leave the app unable to start.
+    `selectHistoryComplete` is what the handful of operations that need the *whole* log test instead.
   */
-  if (!fontsLoaded || !dataReady || preferencesStatus !== 'ready') return null;
+  const historyRead = sessionHistoryRead;
+
+  if (!fontsLoaded || !dataReady || !historyRead || preferencesStatus !== 'ready') return null;
 
   // GestureHandlerRootView now lives inside Navigation, since it needs the active theme to paint its
   // background and that's only readable below ThemeOverrideProvider.

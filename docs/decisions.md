@@ -15,6 +15,46 @@ find it. Add an entry only when the reasoning **isn't discoverable from a single
 constraint that shapes future work, something deliberately rejected (so it isn't re-proposed), or a
 decision assembled across several commits. Open work belongs in the sections at the bottom, not here.
 
+- ✅ **History stays in the startup gate, and taking it out is not the optimisation it looks like.**
+  `app/_layout.tsx` renders `null` until the library, preferences **and** the full session log have
+  hydrated, and `listSessions` reads and validates every session file the user has ever logged. That
+  cost grows with their training history and never shrinks — roughly 470 files after three years of
+  training three times a week — so an architecture review flagged the gate as an O(history) wait in
+  front of the splash screen, which it is. Removing it was tried, and reverted.
+
+  **The reason it fails is that almost nothing downstream can tell an unread log from an empty one.**
+  `sessions` is `[]` in both cases, so every consumer that reasons about a session's *absence*
+  produces a confidently wrong answer rather than a missing one. Five did, and two of them lost data:
+
+  - The auto-backup after a finished session, and the Settings "Back up now" row, write the archive
+    with `FileMode.Truncate` — so an empty log **replaces** the user's whole backup in the folder they
+    nominated precisely so it would survive the app. The first ran without anyone pressing anything.
+  - `use-session-runner` snapshots the log once at first render to decide what counts as a personal
+    best. Against an unread one, every "last time" line disappears and every ordinary set is marked a
+    PR, for the whole workout.
+  - The rest-day reminder reads "no sessions" as "never trained" and cancels the pending
+    notification, rescheduling only once the read lands — and never, if the app is killed first.
+  - Home offered week 1 of a program to someone six weeks into it, and Analytics and History stated
+    all-time totals and a "you have never trained" empty state in the past tense.
+
+  Each was individually fixable and each *was* fixed; three review rounds then found more of the same
+  shape, which is the actual argument. The invariant "past startup, the log has been read" is worth
+  more than the milliseconds, because it is one thing to hold in your head instead of a rule every
+  future consumer of `sessions` has to be told about — and the failure mode for forgetting is silent
+  and sometimes destructive.
+
+  **What did make startup faster is kept**, and needed none of this: `listSessions` reads files in
+  chunks of 16 in parallel rather than one `await` at a time, which overlaps the bridge round-trips
+  that were the actual cost. If this is revisited, that is the direction — make the read cheaper, or
+  build a summary index, rather than letting the app run without its answer.
+
+  Two things survive the revert because they are not about the gate. `selectHistoryComplete` still
+  exists and the backup paths still test it: the gate admits a *failed* read (deliberately — a bad
+  read must not lock the user out of the app), and that leaves `sessions` empty past the gate, which
+  is the one case the destructive writes still have to refuse. And `useSessionsWhenFocused` still
+  freezes the log for unfocused tabs, which was always about the session modal keeping four screens
+  mounted, not about startup.
+
 - ✅ **A card is for one privileged object; a list of peers is rows.** Every list in the app drew its
   items as a filled surface with a 1px border and a 16px radius — Workouts, Library, Programs, History
   and Settings each held a byte-identical copy of that style — so twenty-six workouts meant twenty-six

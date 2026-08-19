@@ -67,7 +67,6 @@
     "searchPlaceholder_other": "Buscar {{count}} treinos"
   },
   "history": {
-    "loading": "Carregando seu registro…",
     "title": "Histórico",
     "exportAll": "Exportar tudo",
     "allTime": "Todo o período",

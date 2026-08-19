@@ -105,23 +105,13 @@ it('is translated', async () => {
 });
 
 /**
- * Every number here is a claim about the *whole* log, and this screen is reached from History's
- * always-visible "Stats" link — so it is reachable before the log has been read. Against an unread or
- * failed read it showed all-time totals, a 0-day streak and the never-trained empty state, all
- * confidently wrong in the same direction.
+ * Every number here is a claim about the *whole* log. `_layout.tsx` guarantees the log has been read
+ * before anything renders, but a read that *failed* still starts the app — deliberately, so a bad
+ * read can't lock the user out — and leaves `sessions` empty. Against that, this screen used to show
+ * all-time totals, a 0-day streak and the never-trained empty state, all confidently wrong.
  */
-describe('before the log is available', () => {
-  it('says it is still loading rather than showing zeros', async () => {
-    withSessions([10, 12]);
-    useSessionHistoryStore.setState({ status: 'loading' });
-
-    await renderScreen(<AnalyticsScreen />);
-
-    expect(screen.getByText('Loading your log…')).toBeTruthy();
-    expect(screen.queryByText('All time')).toBeNull();
-  });
-
-  it('says the log could not be loaded when the read failed', async () => {
+describe('when the log could not be read', () => {
+  it('says so rather than showing zeros', async () => {
     withSessions([10, 12]);
     useSessionHistoryStore.setState({ status: 'error', sessions: [] });
 

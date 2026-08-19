@@ -64,7 +64,6 @@
     "searchPlaceholder_other": "{{count}}件のワークアウトを検索"
   },
   "history": {
-    "loading": "履歴を読み込んでいます…",
     "title": "履歴",
     "exportAll": "すべて書き出し",
     "allTime": "全期間",

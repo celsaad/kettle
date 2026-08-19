@@ -37,10 +37,10 @@ export async function listSessions(): Promise<ListSessionsResult> {
 
     `allSettled`, not `all`: this function's contract is that one bad file costs that file and not the
     history, and a *read* that failed was the hole in it — a plain `await` in the old loop threw
-    straight out of `hydrate`, which has no catch, leaving the store stuck on `loading` forever. That
-    used to mean the app never painted at all, which at least said something was wrong; now that
-    history no longer gates first paint it would be a History tab that stayed empty with no reason
-    given. `Promise.all` would have made it worse still, losing every other file to one unreadable one.
+    straight out of `hydrate`, which had no catch, so one unreadable file left the store on `loading`
+    forever and the app on its splash screen with no way past. `hydrate` catches now and `listSessions`
+    reports the file instead of losing the read; `Promise.all` would have made it worse still, losing
+    every other file to that one.
 
     In **chunks** rather than all at once, and the chunk is what keeps this a latency win instead of a
     trade. Firing every read together on a log of several hundred files opens that many handles at

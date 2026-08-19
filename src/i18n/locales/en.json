@@ -67,7 +67,6 @@
     "searchPlaceholder_other": "Search {{count}} workouts"
   },
   "history": {
-    "loading": "Loading your log…",
     "title": "History",
     "exportAll": "Export all",
     "allTime": "All time",

@@ -30,7 +30,7 @@ jest.mock('@/storage/session-files', () => ({
 
 import type { Session, SessionEntry } from '@/domain/types';
 import { usePreferencesStore } from '@/state/preferences-store';
-import { useSessionHistoryStore } from '@/state/session-history-store';
+import { selectHistoryComplete, selectHistoryRead, useSessionHistoryStore } from '@/state/session-history-store';
 
 /**
  * `activeSessionId`/`abandonActiveSession` (which exist for one caller: `session.tsx`'s error
@@ -474,11 +474,12 @@ describe('the session id', () => {
 });
 
 /**
- * Hydration no longer holds up first paint (see app/_layout.tsx), which means the app can be on
- * screen — and a session can be started — while `listSessions` is still reading. The directory was
- * listed before that session's file existed, so a plain `set({ sessions })` dropped the session the
- * runner was actively appending to out of state, mid-workout, with the runner still writing to a copy
- * nothing else could see. Restoring that assignment fails both cases below.
+ * `_layout.tsx` gates the tree on hydration, so nothing starts a session during the *initial* read —
+ * but that is one caller's ordering, not a property of the store, and the cost of assuming it is a
+ * lost workout. A session started while a read is in flight is on disk and not in `sessions` (the
+ * directory was listed before its file existed), so a plain `set({ sessions })` drops the session the
+ * runner is actively appending to, mid-workout, while it writes on to a copy nothing else can see.
+ * Restoring that assignment fails both cases below.
  */
 describe('hydrating around a session that is already running', () => {
   const listSessions = jest.requireMock('@/storage/session-files').listSessions as jest.Mock;
@@ -546,9 +547,8 @@ describe('hydrating around a session that is already running', () => {
 
 /**
  * `listSessions` is non-throwing per *file*, but `ensureStorageReady()` and the directory listing run
- * before any of that. Uncaught, a throw there left `status` on `loading` forever — survivable while
- * this store gated first paint, because the app simply never appeared, and invisible now that it
- * doesn't: a Next Up card that never arrives and a History tab that stays empty in silence.
+ * before any of that. Uncaught, a throw there left `status` on `loading` forever — and since the app
+ * waits on this store to start, that is a splash screen with no way past it and nothing said.
  */
 describe('a read that fails outright', () => {
   const listSessions = jest.requireMock('@/storage/session-files').listSessions as jest.Mock;
@@ -577,10 +577,9 @@ describe('a read that fails outright', () => {
 
 /**
  * The auto-backup that runs when a session ends writes the whole archive with `FileMode.Truncate`, so
- * it has to gate on the log being **complete**, not merely read. After a failed `listSessions` the
- * store settles on `error` with an empty `sessions`, and finishing one workout would then truncate a
- * good archive down to that single session — with nobody pressing anything. Unreachable before
- * history stopped gating first paint, which is why nothing caught it.
+ * it has to gate on the log being **complete**, not merely read. A failed `listSessions` settles on
+ * `error` with an empty `sessions` and still lets the app start — deliberately — so finishing one
+ * workout would truncate a good archive down to that single session, with nobody pressing anything.
  */
 describe('the backup that follows a finished session', () => {
   beforeEach(() => {
@@ -654,5 +653,40 @@ describe('the unread-log backup warning', () => {
     useSessionHistoryStore.getState().completeSession(session);
 
     expect(useSessionHistoryStore.getState().backupFailure).toBeNull();
+  });
+});
+
+/**
+ * The two questions the rest of the app asks about the log, pinned because collapsing them back into
+ * one boolean is the mistake that has already been made once — and the one that matters is silent.
+ *
+ * `app/_layout.tsx` gates the whole tree on `read`, so past startup the log has always been read.
+ * `complete` is the narrower claim that the read also *worked*, which a failed one does not earn even
+ * though it is finished: `sessions` is empty then while the user's log is intact on disk.
+ */
+describe('the two readiness questions', () => {
+  const at = (status: 'idle' | 'loading' | 'ready' | 'error') => {
+    useSessionHistoryStore.setState({ status });
+    return {
+      read: selectHistoryRead(useSessionHistoryStore.getState()),
+      complete: selectHistoryComplete(useSessionHistoryStore.getState()),
+    };
+  };
+
+  it('treats a failed read as finished, so it cannot lock the app on the splash screen', () => {
+    expect(at('error').read).toBe(true);
+  });
+
+  it('does not treat a failed read as a complete log, whatever it lets past the gate', () => {
+    expect(at('error').complete).toBe(false);
+  });
+
+  it('answers no to both while the read is still running', () => {
+    expect(at('loading')).toEqual({ read: false, complete: false });
+    expect(at('idle')).toEqual({ read: false, complete: false });
+  });
+
+  it('answers yes to both only on a read that worked', () => {
+    expect(at('ready')).toEqual({ read: true, complete: true });
   });
 });

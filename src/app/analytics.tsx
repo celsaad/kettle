@@ -19,7 +19,7 @@ import { exerciseName } from '@/state/selectors/exercise-lookup';
 import { currentStreak, historyStats, sessionsPerWeek, thisWeekStats } from '@/state/selectors/history-stats';
 import { useLibraryStore } from '@/state/library-store';
 import { useUnitSystem } from '@/state/preferences-store';
-import { selectHistoryComplete, selectHistoryRead, useSessionHistoryStore } from '@/state/session-history-store';
+import { selectHistoryComplete, useSessionHistoryStore } from '@/state/session-history-store';
 
 export { RouteErrorBoundary as ErrorBoundary } from '@/components/error-fallback';
 
@@ -56,15 +56,13 @@ export default function AnalyticsScreen() {
   const sessions = useSessionHistoryStore((state) => state.sessions);
   /*
     Every number on this screen is a claim about the *whole* log — all-time totals, a day streak, a
-    per-week chart, and an empty state that says you have never trained. An unread log makes all of
-    them wrong in the same direction, and this screen has no gate of its own: it is reached from
-    History's "Stats" link, which is visible immediately.
+    per-week chart, and an empty state that says you have never trained.
 
-    `complete` rather than `read`, for the empty state's sake. A failed read is "done" and still has
-    no sessions in it, and "you haven't trained yet" is the one sentence here that a user could act
-    on by disbelieving the app.
+    `_layout.tsx` guarantees the log has been *read* before anything renders, but not that the read
+    worked: a failed one still lets the app start, deliberately, with an empty `sessions`. That is the
+    case this tests for. "You haven't trained yet" is the one sentence here a user could act on by
+    disbelieving the app, so it must not be shown to someone whose log merely failed to load.
   */
-  const historyRead = useSessionHistoryStore(selectHistoryRead);
   const historyComplete = useSessionHistoryStore(selectHistoryComplete);
   const library = useLibraryStore((state) => state.library);
 
@@ -92,12 +90,10 @@ export default function AnalyticsScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <ThemedText type="title">{t('analytics.title')}</ThemedText>
 
-        {/* One line instead of a screenful of confident zeros. Split by cause: a read still running
-            will resolve on its own and says so, where one that failed will not and must not leave the
-            reader waiting for numbers that are never coming. */}
+        {/* One line instead of a screenful of confident zeros. */}
         {!historyComplete ? (
           <ThemedText type="small" themeColor="textSecondary">
-            {historyRead ? t('analytics.logUnavailable') : t('history.loading')}
+            {t('analytics.logUnavailable')}
           </ThemedText>
         ) : (
           <>

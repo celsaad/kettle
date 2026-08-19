@@ -17,7 +17,15 @@ language; an unsupported tag is rejected on upload. The limits and the upload fo
 
 ## Unreleased
 
-Nothing since 0.7.0.
+### Fixed
+
+- **EMOM minutes start at the rep count you prescribed.** They started at zero, so hitting the target
+  meant tapping up to it every minute — and a minute you left alone recorded nothing at all.
+- **The chime for reaching a hold's target or an interval's halfway mark now sounds again if you go
+  back and redo that step**, instead of staying silent the second time through.
+- **Buttons and text fields grow to fit their label.** "Adicionar bloco" was clipped in the workout
+  editor in Portuguese; the same fixed heights would have cut off any long translation, and any label
+  at a large accessibility text size.
 
 ---
 

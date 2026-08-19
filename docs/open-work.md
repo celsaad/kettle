@@ -263,6 +263,33 @@ wanting states and assignees, it wants GitHub issues instead.
   where a half-flipped layout costs a workout rather than just looking wrong. Half-implemented RTL is
   worse than none — the plan's words, still true.
 
+
+- **A setting to mute the session sounds.** The runner plays three cues — the 3-2-1 tick, the
+  exercise-change ding and the milestone chime — and there is no way to turn them off short of the
+  system volume, which also silences whatever you are training to. `setAudioModeAsync` is called with
+  `playsInSilentMode: true`, deliberately (a timing cue you cannot hear is not a timing cue), so the
+  phone's own silent switch does not cover this either. That flag is exactly why the setting has to
+  exist: the app opted out of the platform's mute, so it owes the user one of its own.
+
+  Mostly plumbing, and the shape is already set by `restDayReminder`: a boolean on `Preferences`,
+  `z.boolean().default(…)` in `preferencesSchema` — **defaulted, never required**, or `safeParse` fails
+  on every `preferences.json` already in the field and silently resets units, theme and backup folder
+  along with it — a row in Settings, and a read in `use-session-sounds.ts` where the three `play*`
+  callbacks return early. Gate it there rather than at the call sites: the runner fires these from the
+  tick effect and from `advance()`, and a mute that has to be remembered at each one will be forgotten
+  by the fourth cue.
+
+  Two decisions worth taking before writing it, neither obvious:
+
+  - **Default on, unlike `restDayReminder`.** That one defaults off because a notification reaches
+    outside the app; these cues are the feature working as designed, and someone who has been using
+    the app expects the tick to keep ticking after an update. The "defaulted, not required" rule is
+    about the *schema*, not about which value to pick.
+  - **Whether one switch covers haptics too.** `use-session-runner.ts` also fires
+    `Haptics.impactAsync` on step change. A single "quiet mode" is one row and one preference; two
+    switches are honest about the fact that a silent gym and a pocketed phone are different problems.
+    Cheaper to decide now than to split a shipped boolean into two later.
+
 ## Open bugs
 
 Found while planning the tests/a11y/i18n work (see `testing-a11y-i18n-plan.md`), each verified against
@@ -274,8 +301,10 @@ side effects inside `setState` updaters; `addRestSeconds` not rescheduling its n
 per round (below); `today`/`dateLabel` freezing at module scope (fixed with the I18n-3 locale work —
 it's per-render now); `programs.tsx`'s stale "overrides aren't editable in-app" copy; the four
 duplicate `slugify` copies, now one `domain/slug.ts` that all four call sites import; and
-`sessionSetCount`, `slugify`'s ASCII-only ids and `session-hold.tsx`'s `NaN%` (below). Notes on the
-structural ones:
+`sessionSetCount`, `slugify`'s ASCII-only ids and `session-hold.tsx`'s `NaN%` (below); the milestone
+chime not re-firing on a step redone with Prev; EMOM minutes seeding their reps to 0; and the fixed
+`height` that clipped `+ Adicionar bloco` in the workout editor, swept across every text-bearing
+control. Notes on the structural ones:
 
 - **A crash mid-exercise lost that exercise's sets, not just the set in progress** — §7.2's "loses at
   most the in-progress set" was a claim the code didn't honour, since sets accumulated in memory until
@@ -326,28 +355,9 @@ structural ones:
   mean a browser check of any confirm flow proves nothing unless the script patches it, which is how
   session delete was actually verified end to end.
 
-- **The "add block" button clips its own label in Portuguese.** `+ Adicionar bloco` wraps to two lines
-  in the workout editor's half-width button and the second line is cut off; `+ Novo circuito` beside it
-  fits on one, so the row looks fine until you read it. Seen on device, in `pt`. The cause is a house
-  rule this repo already wrote down: `workout-editor.tsx`'s `addBlock` style sets `height: 48`, and the
-  a11y rules say `minHeight`, **never** `height`, precisely because a fixed box cannot grow to hold its
-  contents. English hides it — "+ Add block" is one line at any size — which is the same reason the
-  testing rules say to drive a screen in `pt`.
+One of the three found in the runner audit that produced the resume-race fix above is still here. The
+other two are fixed (see the roll-up above); this one stayed because it is not a defect:
 
-  Worth fixing as a sweep rather than a one-liner: a grep for a bare `height:` on a control finds the
-  same shape across the editors and pickers (the save/cancel rows at 52, the inputs at 46, the picker
-  chips at 40). Every one of them is a clip waiting for a longer translation or a large accessibility
-  text size, and the second trigger applies in English too.
-
-Three found in the runner audit that produced the resume-race fix above, left out of it to keep that
-change to the two data faults:
-
-- **The milestone chime doesn't fire twice for the same step.** `milestoneFiredForStepRef` is keyed on
-  the step index and only ever moves forward, so stepping back with Prev and redoing a hold or an
-  interval gets no chime the second time. User-facing, and the smallest of the three.
-- **EMOM minutes seed their reps to 0**, though the step carries `targetReps` — while `reps` steps seed
-  from their target on the argument that the common case should be the cheapest to log. One of the two
-  is wrong; probably this one.
 - **Circuit rest is never recorded.** Its steps use `memberKey: '<block>:circuit-rest'`, which matches
   no member's accumulating log, so `commitCurrentStep` finds nothing to attribute the rest to. Reads as
   intended — `RunnerStep`'s own comment says inter-round rest is "folded into (or discarded after) the

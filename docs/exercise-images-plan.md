@@ -1,6 +1,17 @@
 # Images on exercises — plan
 
-> **Not executed.** Forward-looking; nothing below has shipped. Written against the tree at `c62233d`.
+> **Executed, and kept for its rationale rather than as a backlog.** The bundled set shipped: one
+> drawing per seeded exercise, keyed by id, in the exercise editor and in the runner's next-up card.
+>
+> **Two things went differently from what's written below.** The set is **vector, not raster** — the
+> drawings are hand-authored `react-native-svg` components under `src/components/exercise-art/`, which
+> is the outcome the format spike was hoping for, reached by the "a model can author SVG directly"
+> route rather than by tracing. So the whole raster half — the alpha step, the `<id>@3x.png` naming,
+> the explicit-`require` constraint — is moot, and the resolution ceiling that constrained the design
+> never applied. And **the runner's next-up card shipped after all**, which this plan deferred: losing
+> the ceiling removed the legibility objection, and the card is a horizontal row where the
+> drawing sits beside the text rather than above it, so it costs almost no height on a screen that clips. The remaining caution stands
+> — the *step* screens still have no art, and would need their own pass on a device.
 >
 > **Revised once, and the revision is the point.** The first draft designed a user-supplied photo per
 > exercise: a file picker, an app-owned `images/` directory, a new YAML field and its three mirrors.

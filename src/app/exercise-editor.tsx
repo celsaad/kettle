@@ -4,6 +4,7 @@ import { Alert, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ExerciseArt } from '@/components/exercise-art';
 import { ModalHeader } from '@/components/modal-header';
 import { ThemedText } from '@/components/themed-text';
 import { VolumeChart } from '@/components/volume-chart';
@@ -194,6 +195,15 @@ export default function ExerciseEditorScreen() {
           })}
         </View>
 
+        {/* Only ever for a saved exercise: a new one has no id until it is named and saved, and
+            the bundled set is keyed by id. Absent from the map renders nothing at all — no frame,
+            no placeholder — which is the common case in a library the user built themselves. */}
+        {editing && (
+          <View style={styles.art}>
+            <ExerciseArt exerciseId={editing.id} />
+          </View>
+        )}
+
         <ThemedText type="small" themeColor="textSecondary" style={styles.label}>
           {t('exerciseEditor.notesOptional')}
         </ThemedText>
@@ -278,6 +288,10 @@ const styles = StyleSheet.create({
     maxWidth: MaxContentWidth,
     paddingHorizontal: Spacing.three,
     paddingBottom: Spacing.four,
+  },
+  art: {
+    marginTop: Spacing.three,
+    alignItems: 'center',
   },
   label: {
     marginTop: Spacing.three - 2,

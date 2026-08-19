@@ -7,6 +7,8 @@ import { Alert } from 'react-native';
 import ExerciseEditorScreen from '@/app/exercise-editor';
 import type { Library } from '@/domain/types';
 import type { UnitSystem } from '@/domain/units';
+import en from '@/i18n/locales/en.json';
+import pt from '@/i18n/locales/pt.json';
 import { useLibraryStore } from '@/state/library-store';
 import { usePreferencesStore } from '@/state/preferences-store';
 import { saveLibrary } from '@/storage/library-file';
@@ -227,5 +229,28 @@ describe('deleting', () => {
     await pressAlertButton(alert, 'destructive');
 
     expect(persisted().exercises).toHaveLength(0);
+  });
+});
+
+describe('the bundled drawing', () => {
+  it('shows the art for a seeded exercise, described in the active language', async () => {
+    // Driven in pt because an English assertion can't tell a translated string from a hardcoded one.
+    await changeLanguage('pt');
+    setSearchParams({ id: 'plank' });
+    useLibraryStore.setState({ library: aLibrary({ exercises: [anExercise({ id: 'plank', name: 'Prancha' })] }) });
+    await renderScreen(<ExerciseEditorScreen />);
+
+    expect(screen.getByLabelText(pt.exerciseArt.plank)).toBeTruthy();
+  });
+
+  it('shows nothing for an exercise the user wrote themselves', async () => {
+    // Most of a real library is this case. An empty frame or a placeholder glyph on every one of
+    // them would be worse than the silence.
+    setSearchParams({ id: 'pull-ups' });
+    useLibraryStore.setState({ library: aLibrary({ exercises: [anExercise()] }) });
+    await renderScreen(<ExerciseEditorScreen />);
+
+    expect(screen.queryByLabelText(en.exerciseArt.plank)).toBeNull();
+    expect(screen.queryByRole('image')).toBeNull();
   });
 });

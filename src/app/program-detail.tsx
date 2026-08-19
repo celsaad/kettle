@@ -195,7 +195,7 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     marginTop: Spacing.four,
-    height: 52,
+    minHeight: 52,
     borderRadius: 15,
     borderWidth: 1.5,
     alignItems: 'center',

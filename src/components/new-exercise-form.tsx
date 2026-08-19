@@ -170,7 +170,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   input: {
-    height: 40,
+    minHeight: 40,
     borderRadius: 10,
     borderWidth: 1,
     paddingHorizontal: Spacing.one + 4,
@@ -200,7 +200,7 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     flex: 1,
-    height: 40,
+    minHeight: 40,
     borderRadius: 10,
     borderWidth: 1,
     alignItems: 'center',
@@ -208,7 +208,7 @@ const styles = StyleSheet.create({
   },
   createButton: {
     flex: 1.4,
-    height: 40,
+    minHeight: 40,
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',

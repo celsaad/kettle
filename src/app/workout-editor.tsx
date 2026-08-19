@@ -250,7 +250,7 @@ export default function WorkoutEditorScreen() {
               { borderColor: theme.border },
               pressed && styles.pressed,
             ]}>
-            <ThemedText type="heading" themeColor="textSecondary">
+            <ThemedText type="heading" themeColor="textSecondary" style={styles.addBlockLabel}>
               {pickerOpen ? t('common.close') : t('workoutEditor.addBlock')}
             </ThemedText>
           </Pressable>
@@ -268,7 +268,7 @@ export default function WorkoutEditorScreen() {
               { borderColor: theme.border },
               pressed && styles.pressed,
             ]}>
-            <ThemedText type="heading" themeColor="textSecondary">
+            <ThemedText type="heading" themeColor="textSecondary" style={styles.addBlockLabel}>
               {circuitPickerOpen ? t('common.close') : t('workoutEditor.newCircuit')}
             </ThemedText>
           </Pressable>
@@ -347,7 +347,7 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.one,
   },
   input: {
-    height: 46,
+    minHeight: 46,
     borderRadius: 12,
     borderWidth: 1,
     paddingHorizontal: Spacing.two + 4,
@@ -366,12 +366,21 @@ const styles = StyleSheet.create({
     marginTop: Spacing.three,
   },
   addBlock: {
-    height: 48,
+    // `minHeight`, never `height`: at half width this label wraps in any language wordier than
+    // English — `+ Adicionar bloco` took two lines and a fixed 48 clipped the second one on device.
+    // The row has no `alignItems`, so the sibling stretches to match rather than the two disagreeing.
+    minHeight: 48,
+    paddingVertical: Spacing.two,
+    paddingHorizontal: Spacing.two,
     borderRadius: 14,
     borderWidth: 1.5,
     borderStyle: 'dashed',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  // Only matters once the label wraps: without it the second line sits left while the block is centred.
+  addBlockLabel: {
+    textAlign: 'center',
   },
   addBlockHalf: {
     flex: 1,
@@ -386,7 +395,7 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     flex: 1,
-    height: 52,
+    minHeight: 52,
     borderRadius: 15,
     alignItems: 'center',
     justifyContent: 'center',
@@ -394,7 +403,7 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     flex: 1.4,
-    height: 52,
+    minHeight: 52,
     borderRadius: 15,
     alignItems: 'center',
     justifyContent: 'center',

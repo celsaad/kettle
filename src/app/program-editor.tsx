@@ -407,7 +407,7 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.one,
   },
   input: {
-    height: 46,
+    minHeight: 46,
     borderRadius: 12,
     borderWidth: 1,
     paddingHorizontal: Spacing.two + 4,
@@ -461,7 +461,7 @@ const styles = StyleSheet.create({
     paddingLeft: Spacing.one,
   },
   smallInput: {
-    height: 40,
+    minHeight: 40,
     borderRadius: 10,
     borderWidth: 1,
     paddingHorizontal: Spacing.one + 4,
@@ -481,7 +481,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    height: 44,
+    minHeight: 44,
     borderRadius: 10,
     borderWidth: 1,
     paddingHorizontal: Spacing.two,
@@ -500,7 +500,7 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   addWeek: {
-    height: 48,
+    minHeight: 48,
     borderRadius: 14,
     borderWidth: 1.5,
     borderStyle: 'dashed',
@@ -518,7 +518,7 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     flex: 1,
-    height: 52,
+    minHeight: 52,
     borderRadius: 15,
     borderWidth: 1.5,
     alignItems: 'center',
@@ -526,7 +526,7 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     flex: 1.4,
-    height: 52,
+    minHeight: 52,
     borderRadius: 15,
     alignItems: 'center',
     justifyContent: 'center',

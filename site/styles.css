@@ -628,7 +628,7 @@ code.inl {
 .phone {
   width: 100%;
   max-width: 260px;
-  aspect-ratio: 1080 / 2242;
+  aspect-ratio: 1080 / 2204;
   background: var(--ink);
   border: 1px solid var(--border);
   border-radius: 30px;

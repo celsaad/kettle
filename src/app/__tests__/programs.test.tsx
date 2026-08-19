@@ -87,3 +87,27 @@ it('is translated', async () => {
 
   expect(screen.getByText('Nada encontrado')).toBeTruthy();
 });
+
+// `program.weeks` holds one entry per week *and day*, so counting entries over-reported: a four-week
+// program with notes or overrides on two days of every week claimed "8 weeks with notes or
+// overrides" next to a "Weeks 1–4" range. Reintroduce the bug by counting entries instead of
+// distinct week numbers and this fails on the 8.
+it('counts distinct weeks with notes or overrides, not the day entries inside them', async () => {
+  const everyWeekTwice = aProgram({
+    id: 'block',
+    name: 'Four week block',
+    weeks: [1, 2, 3, 4].flatMap((week) => [
+      { week, day: 'Day 1', workoutId: 'push-day', notes: 'Push a little harder.' },
+      { week, day: 'Day 3', workoutId: 'push-day', notes: 'And again.' },
+    ]),
+  });
+  useLibraryStore.setState({
+    library: aLibrary({ workouts: [aWorkout()], programs: [everyWeekTwice] }),
+    status: 'ready',
+  });
+
+  await renderScreen(<ProgramsScreen />);
+
+  expect(screen.getByText('Weeks 1–4')).toBeTruthy();
+  expect(screen.getByText('4 weeks with notes or overrides')).toBeTruthy();
+});

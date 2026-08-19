@@ -185,19 +185,6 @@ wanting states and assignees, it wants GitHub issues instead.
   "parallel switches stay" entry was banking. `schema.ts`, `yaml-mapping.ts`, `TYPE_OPTIONS` and both
   locale bundles are the parts it can't catch for you.
 
-- **The landing site's screenshots show an app that no longer exists.** `site/index.html` embeds eight
-  captures from `assets/img/`, and the layout work invalidated most of them — including
-  `today.jpg`, which is a tab that was merged away. What the current images still claim, in their own
-  alt text: a Today screen, block chips on the next-up card, streak and this-week tiles on the home
-  screen, and card-shaped list rows. None of those survive.
-
-  This needs device captures, which is why it is here rather than done: the alt text is accurate *to
-  the images*, so rewriting the prose without replacing the pictures would make it worse, not better.
-  Recapture on a real device in dark theme to match the existing set, then update the alt text with
-  them — it is the only description a screen-reader user or a search engine gets, and
-  `store/README.md` covers the same requirement for the Play listing's screenshots, which are a
-  separate set with the same problem.
-
 - **The Stats screen made `listSessions()`'s cost real, and nothing has been done about it.** The
   scaling risk is in the decision log with the remedies; what changed is that it now has a consumer.
   `analytics.tsx` walks the whole log three times per render — `historyStats`, `sessionsPerWeek` and

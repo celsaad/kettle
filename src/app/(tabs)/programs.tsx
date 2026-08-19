@@ -28,9 +28,14 @@ function weekRangeLabel(program: Program, t: TFunction): string {
 }
 
 function detailLabel(program: Program, t: TFunction): string | null {
-  const count = program.weeks.filter(
-    (week) => week.notes || (!week.restDay && week.overrides && week.overrides.length > 0),
-  ).length;
+  // De-duplicated by week number, because `program.weeks` holds one entry per week *and day* — the
+  // same shape `programWeekNumbers` collapses for the range above. Counting entries made a four-week
+  // program read "Weeks 1–4 / 8 weeks with notes or overrides", which can't be true of either label.
+  const count = new Set(
+    program.weeks
+      .filter((week) => week.notes || (!week.restDay && week.overrides && week.overrides.length > 0))
+      .map((week) => week.week),
+  ).size;
   if (count === 0) return null;
   return t('programs.weeksWithNotes', { count });
 }

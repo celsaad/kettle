@@ -217,7 +217,7 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   doneButton: {
-    height: 52,
+    minHeight: 52,
     borderRadius: 15,
     alignItems: 'center',
     justifyContent: 'center',

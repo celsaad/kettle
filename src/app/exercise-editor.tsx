@@ -284,7 +284,7 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.one,
   },
   input: {
-    height: 46,
+    minHeight: 46,
     borderRadius: 12,
     borderWidth: 1,
     paddingHorizontal: Spacing.two + 4,
@@ -321,7 +321,7 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
   },
   notesInput: {
-    height: 90,
+    minHeight: 90,
     paddingTop: Spacing.one + 4,
     textAlignVertical: 'top',
   },
@@ -335,7 +335,7 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     flex: 1,
-    height: 52,
+    minHeight: 52,
     borderRadius: 15,
     borderWidth: 1.5,
     alignItems: 'center',
@@ -343,7 +343,7 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     flex: 1.4,
-    height: 52,
+    minHeight: 52,
     borderRadius: 15,
     alignItems: 'center',
     justifyContent: 'center',

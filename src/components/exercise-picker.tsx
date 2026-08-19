@@ -145,7 +145,7 @@ const styles = StyleSheet.create({
     gap: Spacing.one + 2,
   },
   newExerciseButton: {
-    height: 40,
+    minHeight: 40,
     borderRadius: 10,
     borderWidth: 1,
     borderStyle: 'dashed',
@@ -173,7 +173,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   confirmCircuit: {
-    height: 48,
+    minHeight: 48,
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',

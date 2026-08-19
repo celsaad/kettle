@@ -117,7 +117,7 @@ export default function HistoryScreen() {
   const { t } = useTranslation();
   const library = useLibraryStore((state) => state.library);
   // Held still while this tab sits unread under the session modal — see useSessionsWhenFocused.
-  const sessions = useSessionsWhenFocused();
+  const { sessions } = useSessionsWhenFocused();
   const deleteSession = useSessionHistoryStore((state) => state.deleteSession);
   // Collected since hydration existed and rendered nowhere: a session file that wouldn't parse, or one
   // the disk wouldn't take mid-workout, was known about and never mentioned. History is where a

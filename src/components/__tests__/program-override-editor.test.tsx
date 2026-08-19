@@ -173,9 +173,12 @@ it('will not open an override whose target has gone', async () => {
   const { rendered } = mount([dangling]);
   await rendered;
 
-  expect(screen.getByText('ghost: sets → 5')).toBeDisabled();
+  // The line says *why* it is inert: the exercise it names is not in the library, which is a
+  // different problem from a value the format refuses and sends the reader somewhere different.
+  const line = 'ghost: sets → 5 · not applied, nothing in this week matches';
+  expect(screen.getByText(line)).toBeDisabled();
 
-  await fireEvent.press(screen.getByText('ghost: sets → 5'));
+  await fireEvent.press(screen.getByText(line));
   expect(screen.queryByText('Save override')).toBeNull();
 });
 

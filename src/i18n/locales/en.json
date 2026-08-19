@@ -117,6 +117,8 @@
     "title": "Programs",
     "helpLabel": "How to write a program",
     "noWeeks": "No weeks",
+    "overrideIgnoredInvalid": "not applied, this value isn't allowed",
+    "overrideIgnoredMissing": "not applied, nothing in this week matches",
     "week": "Week {{n}}",
     "weeksRange": "Weeks {{first}}–{{last}}",
     "weeksWithNotes_one": "{{count}} week with notes or overrides",

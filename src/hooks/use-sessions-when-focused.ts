@@ -5,6 +5,16 @@ import type { Session } from '@/domain/types';
 import { useSessionHistoryStore } from '@/state/session-history-store';
 
 /**
+ * The log and whether it has finished loading, always from the same moment.
+ *
+ * Returned together rather than read separately because a frozen `sessions` beside a live `ready` is
+ * a state that never existed: a screen that blurred before the read landed would see an empty log
+ * *and* be told the read was done, and would render the "week 1 to a six-week-in user" card that
+ * gating on readiness exists to prevent — correcting only once the screen was focused again.
+ */
+export type SessionsSnapshot = { sessions: Session[]; ready: boolean };
+
+/**
  * The session log, held at its last value while the calling screen is not the one on screen.
  *
  * `session` is a `presentation: 'modal'` route, so all four tab screens stay **mounted** underneath
@@ -23,10 +33,11 @@ import { useSessionHistoryStore } from '@/state/session-history-store';
  * Writing the ref during render is deliberate and idempotent: the same render inputs always produce
  * the same stored value, so a re-run of the render costs nothing and changes nothing.
  */
-export function useSessionsWhenFocused(): Session[] {
+export function useSessionsWhenFocused(): SessionsSnapshot {
   const sessions = useSessionHistoryStore((state) => state.sessions);
+  const ready = useSessionHistoryStore((state) => state.status === 'ready' || state.status === 'error');
   const isFocused = useIsFocused();
-  const held = useRef(sessions);
-  if (isFocused) held.current = sessions;
+  const held = useRef<SessionsSnapshot>({ sessions, ready });
+  if (isFocused) held.current = { sessions, ready };
   return held.current;
 }

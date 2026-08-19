@@ -95,6 +95,11 @@ function finishedSession(sessions: Session[], id: string): Session | undefined {
   return session?.endedAt ? session : undefined;
 }
 
+/** Keeps what was already reported alongside what a read just found, without duplicating either. */
+function withRetained(existing: string[], incoming: string[]): string[] {
+  return [...existing, ...incoming.filter((error) => !existing.includes(error))];
+}
+
 /**
  * Merges any flush failure from the write that just happened into the store's own `errors`, which
  * History renders. The writes themselves can't throw (see `writeSession`) — this is what keeps a disk
@@ -154,7 +159,24 @@ export const useSessionHistoryStore = create<SessionHistoryState>((set, get) => 
   backupFailure: null,
   hydrate: async () => {
     set({ status: 'loading' });
-    const { sessions, errors } = await listSessions();
+    /*
+      `listSessions` is non-throwing per file, but not per *call* — `ensureStorageReady()` and the
+      directory `list()` both run before any of that and can throw on a storage layer that isn't
+      there. Uncaught, the rejection went nowhere and left `status` on `loading` forever. That was
+      survivable while this gated first paint, because the app simply never appeared; now that it
+      doesn't, it is a Next Up card that never arrives and a History tab that stays empty in silence.
+
+      `error` is a real terminal state rather than decoration: the screens treat it as "the read is
+      over" exactly like `ready`, so an empty log stops being indistinguishable from an unread one.
+    */
+    let read: Awaited<ReturnType<typeof listSessions>>;
+    try {
+      read = await listSessions();
+    } catch (error) {
+      set((state) => ({ status: 'error', errors: withRetained(state.errors, [(error as Error).message]) }));
+      return;
+    }
+    const { sessions, errors } = read;
     /*
       Merged rather than assigned, and that matters now that the app paints before this resolves
       (see _layout.tsx). A session started while the read was in flight is on disk but not in
@@ -166,11 +188,16 @@ export const useSessionHistoryStore = create<SessionHistoryState>((set, get) => 
       the copy on disk is a snapshot from before the sets logged since, and the runner's is current.
     */
     set((state) => {
-      const live = state.sessions.filter((session) => session.id === state.activeSessionId);
-      const liveIds = new Set(live.map((session) => session.id));
-      const merged = [...live, ...sessions.filter((session) => !liveIds.has(session.id))];
+      // Every session already in memory wins, not just the active one. Anything here was created
+      // during this run and so is at least as fresh as a read that started before it existed — which
+      // covers the session the runner is mid-way through *and* one that was started and finished
+      // inside the window, which an active-only rule dropped from state until the next launch.
+      const heldIds = new Set(state.sessions.map((session) => session.id));
+      const merged = [...state.sessions, ...sessions.filter((session) => !heldIds.has(session.id))];
       merged.sort((a, b) => b.startedAt.localeCompare(a.startedAt));
-      return { status: 'ready', sessions: merged, errors };
+      // Unioned, not replaced: a write that failed during the window is the store's only record of a
+      // full disk, and assigning the read's own errors over it threw that away.
+      return { status: 'ready', sessions: merged, errors: withRetained(state.errors, errors) };
     });
   },
   startSession: (workoutId, programId, programWeek, programDay) => {

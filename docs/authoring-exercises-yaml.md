@@ -89,7 +89,13 @@ types are runnable end-to-end.
 The upper bounds on `sets`, `rounds` and `total_minutes` are not authoring taste. The session runner
 builds one step per set, per round and per interval before it draws anything, so an unbounded count is
 a workout that cannot be started at all rather than a long one. 500 sets at 30 seconds each is over
-four hours; if you are near the ceiling, what you want is several workouts.
+four hours; if you are near the ceiling, what you want is several workouts. A circuit block's own
+`rounds` is capped at 500 too.
+
+`emom` is bounded on what the two fields *multiply out to* rather than on either one alone: the runner
+derives `total_minutes × 60 ÷ interval_sec` intervals, so the pair has to come to **at most 500**.
+`total_minutes: 60` with `interval_sec: 1` is 3600 intervals and is refused, even though neither
+number looks unusual on its own.
 
 ### How a `timed_hold` ends
 
@@ -158,7 +164,8 @@ workouts:
 - `config` on a `type: exercise` block currently only supports overriding `duration_sec`, and only
   makes sense on a block referencing a `rest`-type exercise.
 - A `circuit` block runs its `exercises` **round-robin** — A, B, C, A, B, C, ... for `rounds` rounds —
-  not grouped by exercise (A, A, A, B, B, B, ...). It needs at least 2 members.
+  not grouped by exercise (A, A, A, B, B, B, ...). It needs at least 2 members, and `rounds` is
+  capped at 500 for the same reason the per-exercise counts are (see the note under the type table).
   `rest_between_exercises_sec` is the rest between consecutive members within a round (omit it, or
   set it to `0`, for back-to-back work with no rest). `rest_between_rounds_sec` is the rest taken
   after finishing all members of a round, before the next round starts; both rest fields are

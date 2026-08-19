@@ -34,11 +34,26 @@ const hiitConfigSchema = z.object({
   rounds: z.number().int().positive().max(MaxRounds),
 });
 
-const emomConfigSchema = z.object({
-  interval_sec: z.number().positive(),
-  total_minutes: z.number().positive().max(MaxTotalMinutes),
-  target_reps: z.number().int().positive().optional(),
-});
+/**
+ * EMOM is the one type whose step count is **derived** rather than written down: the runner builds
+ * `total_minutes * 60 / interval_sec` intervals, so bounding the two fields separately does not bound
+ * what they produce. `total_minutes: 60` with `interval_sec: 1` is 3600 intervals out of two values
+ * that are individually unremarkable, and `interval_sec: 0.001` is 3.6 million.
+ *
+ * So the refinement bounds the product, not the factors. It is what lets `MaxStepsPerExercise` in
+ * session-steps.ts sit *above* everything the schema admits, which is the difference between that
+ * clamp being a backstop for the unvalidated paths and it silently truncating an imported workout.
+ */
+const emomConfigSchema = z
+  .object({
+    interval_sec: z.number().positive(),
+    total_minutes: z.number().positive().max(MaxTotalMinutes),
+    target_reps: z.number().int().positive().optional(),
+  })
+  .refine((config) => (config.total_minutes * 60) / config.interval_sec <= MaxRounds, {
+    message: `total_minutes / interval_sec must come to at most ${MaxRounds} intervals`,
+    path: ['interval_sec'],
+  });
 
 const amrapConfigSchema = z.object({
   time_cap_sec: z.number().positive(),

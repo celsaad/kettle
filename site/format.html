@@ -203,11 +203,18 @@
               <div class="callout">
                 <p>
                   <strong>The repeat counts have an upper bound as well as a lower one.</strong>
-                  <code class="inl">sets</code> and <code class="inl">rounds</code> cap at 500, and
-                  <code class="inl">total_minutes</code> at 1440. The session runner builds one step per set, per round and
-                  per interval before it draws anything, so an unbounded count is a workout that cannot be started at all
-                  rather than a long one. 500 sets at 30 seconds each is over four hours — if you are anywhere near the
-                  ceiling, what you want is several workouts.
+                  <code class="inl">sets</code> and <code class="inl">rounds</code> cap at 500 — including a circuit block's
+                  own <code class="inl">rounds</code> — and <code class="inl">total_minutes</code> at 1440. The session
+                  runner builds one step per set, per round and per interval before it draws anything, so an unbounded count
+                  is a workout that cannot be started at all rather than a long one. 500 sets at 30 seconds each is over four
+                  hours — if you are anywhere near the ceiling, what you want is several workouts.
+                </p>
+                <p>
+                  <code class="inl">emom</code> is bounded on what its two fields <em>multiply out to</em> rather than on
+                  either alone: the runner derives <code class="inl">total_minutes × 60 ÷ interval_sec</code> intervals, so
+                  the pair must come to <strong>at most 500</strong>. <code class="inl">total_minutes: 60</code> with
+                  <code class="inl">interval_sec: 1</code> is 3600 intervals and is refused, though neither number looks
+                  unusual by itself.
                 </p>
               </div>
 
@@ -519,7 +526,7 @@
                     </tr>
                     <tr>
                       <td><code>blocks[].rounds</code></td>
-                      <td>int</td>
+                      <td>int 1–500</td>
                       <td>circuit blocks</td>
                       <td>How many times the circuit cycles its members.</td>
                     </tr>

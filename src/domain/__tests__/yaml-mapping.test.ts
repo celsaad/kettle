@@ -297,9 +297,24 @@ describe('parse failures', () => {
   it.each([
     ['sets: 5', 'sets: 500'],
     ['rounds: 4', 'rounds: 500'],
-    ['total_minutes: 10', 'total_minutes: 1440'],
   ])('accepts %s at exactly its ceiling', (from, to) => {
     expect(parseLibraryYaml(serializeLibraryYaml(library).replace(from, to)).ok).toBe(true);
+  });
+
+  /**
+   * EMOM is bounded on the **product**, because that is what the runner expands: bounding
+   * `total_minutes` and `interval_sec` separately leaves `60 × 60 ÷ 1` = 3600 steps out of two
+   * unremarkable numbers, which is more than `MaxStepsPerExercise` and so used to be silently
+   * truncated on import. Dropping the refinement in schema.ts fails the first two cases.
+   */
+  it.each([
+    ['refuses 3600 intervals from two in-range fields', 'interval_sec: 1', 'total_minutes: 60', false],
+    ['refuses a sub-second interval', 'interval_sec: 0.001', 'total_minutes: 1', false],
+    ['accepts exactly 500 intervals', 'interval_sec: 60', 'total_minutes: 500', true],
+    ['accepts a long block with a long interval', 'interval_sec: 180', 'total_minutes: 1440', true],
+  ])('%s', (_label, interval, minutes, expected) => {
+    const yaml = serializeLibraryYaml(library).replace('interval_sec: 60', interval).replace('total_minutes: 10', minutes);
+    expect(parseLibraryYaml(yaml).ok).toBe(expected);
   });
 
   /**

@@ -23,7 +23,15 @@ export function restDayReminderAt(lastSessionStartedAt: string): Date {
 
 /**
  * Keeps the opt-in rest-day reminder in step with the log. Mounted once, from the root layout's
- * `Navigation`, which renders only after all three stores have hydrated.
+ * `Navigation`.
+ *
+ * That layout used to render only after all three stores had hydrated, and this hook was written
+ * against that ordering. It no longer holds: session history is hydrated but not gated on, so this
+ * now mounts while the log is still being read. Waiting for `status` is not a refinement of the old
+ * behaviour but a restoration of it — without the wait, an empty log reads as "never trained", which
+ * takes the `!lastSessionStartedAt` branch and **cancels the pending reminder** on every cold start,
+ * rescheduling only once the read lands. An app killed inside that window loses the notification with
+ * nothing to say so.
  *
  * It is a *rest-day* nudge rather than a daily alarm on purpose: there is only ever one pending
  * notification and it sits a couple of days past the most recent session, so finishing a session
@@ -42,8 +50,13 @@ export function useRestDayReminder(): void {
   // Sessions are newest-first (session-files.ts), so the head is the most recent one — including one
   // still in progress, whose start is already the right anchor.
   const lastSessionStartedAt = useSessionHistoryStore((state) => state.sessions[0]?.startedAt ?? null);
+  // "The log has been read", not "the log is non-empty" — the distinction this hook cannot make for
+  // itself, and the whole reason an unread log must not be acted on.
+  const historyRead = useSessionHistoryStore((state) => state.status === 'ready' || state.status === 'error');
 
   useEffect(() => {
+    // Nothing is known yet, so nothing is decided yet: leave whatever is already scheduled alone.
+    if (!historyRead) return;
     if (!enabled || !lastSessionStartedAt) {
       cancelRestDayReminder();
       return;
@@ -63,5 +76,5 @@ export function useRestDayReminder(): void {
       t('session.notification.reminderBody', { count: REST_DAY_REMINDER_DAYS }),
       at,
     );
-  }, [enabled, lastSessionStartedAt]);
+  }, [enabled, lastSessionStartedAt, historyRead]);
 }

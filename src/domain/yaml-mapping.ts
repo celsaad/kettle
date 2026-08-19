@@ -376,11 +376,34 @@ export function serializeLibraryYaml(library: Library): string {
  * library says. A week that loses its patch is a smaller loss than a program that can't be opened.
  */
 export function applyExerciseOverride(exercise: Exercise, config: Record<string, number | string>): Exercise {
+  const merged = mergedExerciseRaw(exercise, config);
+  return merged ? exerciseToDomain(merged) : exercise;
+}
+
+/** The merged, re-validated raw exercise, or null if the patch produced something the schema refuses. */
+function mergedExerciseRaw(exercise: Exercise, config: Record<string, number | string>): RawExercise | null {
   const raw = exerciseToRaw(exercise);
   const mergedConfig = { ...raw.config, ...config } as typeof raw.config;
   const result = rawExerciseSchema.safeParse({ ...raw, config: mergedConfig });
-  if (!result.success) return exercise;
-  return exerciseToDomain(result.data);
+  return result.success ? result.data : null;
+}
+
+/**
+ * Whether an override will actually reach the runner — the same question `applyExerciseOverride` and
+ * `applyBlockOverride` answer by falling back, asked without having to compare two exercises to find
+ * out. Exists because a patch that is dropped must not still be *displayed* as if it applied: the
+ * program screen listed every authored key verbatim, so a refused `rest_sec: -5` was advertised on
+ * the week it would never affect.
+ */
+export function overrideApplies(
+  target: Exercise | WorkoutBlock,
+  config: Record<string, number | string>,
+  kind: 'exercise' | 'block',
+): boolean {
+  if (kind === 'exercise') return mergedExerciseRaw(target as Exercise, config) !== null;
+  const block = target as WorkoutBlock;
+  if (block.kind !== 'circuit') return false;
+  return rawWorkoutBlockSchema.safeParse({ ...workoutBlockToRaw(block), ...config }).success;
 }
 
 /**

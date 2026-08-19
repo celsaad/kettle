@@ -128,11 +128,26 @@ type CircuitVisit = { index: number; total: number };
  * steps out of two perfectly in-range values.
  *
  * Truncating a workout is a degrade, and a poor one; the alternative it replaces is a `RangeError`
- * thrown before the session screen's first render, on a library that persists. Sized above the
- * schema's own ceilings so nothing importable can reach it — anything that does came from a path
- * that skipped validation.
+ * thrown before the session screen's first render, on a library that persists.
+ *
+ * Sized above everything the schema admits, so that nothing *importable* is ever truncated and this
+ * only ever fires on a path that skipped validation. The worst schema-valid case is 500 sets with a
+ * rest between each, which is 999 steps; EMOM's derived interval count is capped at 500 by a
+ * refinement in `schema.ts` written for exactly this reason — bounding `total_minutes` and
+ * `interval_sec` separately does not bound their quotient, and an earlier version of this constant
+ * sat *below* what a legal `total_minutes: 60, interval_sec: 1` derives.
  */
 const MaxStepsPerExercise = 2000;
+
+/**
+ * The same ceiling for the whole workout, because bounding each exercise does not bound their sum.
+ *
+ * A circuit is the case that gets past the per-exercise clamp: its members expand one step per visit,
+ * so the block's size is `rounds × members`, and `exercises: z.array(...).min(2)` sets no upper bound
+ * on the members. 500 rounds of a 1000-member circuit is a million steps out of a library the schema
+ * accepts. Cheaper to bound the array itself once than to chase every shape that can grow it.
+ */
+const MaxStepsPerWorkout = 5000;
 
 /** `count`, clamped to what one exercise is allowed to expand into. See MaxStepsPerExercise. */
 function boundedCount(count: number): number {
@@ -461,6 +476,10 @@ export function buildSteps(workout: Workout, exercises: Exercise[]): RunnerStep[
   const steps: RunnerStep[] = [];
 
   workout.blocks.forEach((block, blockIndex) => {
+    // Whole-workout ceiling, checked per block rather than per push: a block either fits or it is the
+    // one that gets dropped, which keeps a truncated workout made of complete blocks instead of one
+    // that stops mid-circuit. See MaxStepsPerWorkout.
+    if (steps.length >= MaxStepsPerWorkout) return;
     if (block.kind === 'exercise') {
       const exercise = exercises.find((candidate) => candidate.id === block.exerciseId);
       if (!exercise) return;

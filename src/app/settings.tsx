@@ -158,6 +158,15 @@ export default function SettingsScreen() {
   const setSessionSounds = usePreferencesStore((state) => state.setSessionSounds);
   const library = useLibraryStore((state) => state.library);
   const sessions = useSessionHistoryStore((state) => state.sessions);
+  /*
+    History no longer holds up first paint (see app/_layout.tsx), so this screen is reachable while
+    the log is still being read — and `sessions` is *empty* rather than merely incomplete during that
+    window. That is harmless for a screen that only displays it and destructive for "Back up now":
+    `backUpNow` writes the archive with `FileMode.Truncate`, so running it here would replace the
+    user's whole backup with an empty one, in the folder they nominated precisely so it would survive
+    the app. Export History is safe by accident — it is already disabled at zero sessions.
+  */
+  const historyReady = useSessionHistoryStore((state) => state.status === 'ready' || state.status === 'error');
   const supporter = useTipStore((state) => state.supporter);
   const hydrateTips = useTipStore((state) => state.hydrate);
   const backupFolderUri = usePreferencesStore((state) => state.preferences.backupFolderUri);
@@ -229,6 +238,9 @@ export default function SettingsScreen() {
    * state paint first, which is the only reason it exists.
    */
   const runBackup = () => {
+    // Belt as well as braces: the row is disabled below, and this is the guard that survives someone
+    // wiring another caller to it. Truncating a good archive with an unread log is not recoverable.
+    if (!historyReady) return;
     setBackupMessage(null);
     setBackingUp(true);
     setTimeout(() => {
@@ -446,14 +458,14 @@ export default function SettingsScreen() {
                 <ActionRow
                   title={t('settings.backupNow')}
                   detail={
-                    backingUp
+                    backingUp || !historyReady
                       ? t('settings.backupInProgress')
                       : backupFolderUri
                         ? t('settings.backupNowDetail')
                         : t('settings.backupNowNoFolder')
                   }
                   onPress={runBackup}
-                  disabled={!backupFolderUri || backingUp}
+                  disabled={!backupFolderUri || backingUp || !historyReady}
                 />
                 {/* Only once there's something to forget. A row offering to undo a choice nobody has
                     made is three rows where two would do. */}

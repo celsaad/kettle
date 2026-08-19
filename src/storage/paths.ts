@@ -8,6 +8,7 @@ type ResolvedPaths = {
   root: Directory;
   sessionsDir: Directory;
   libraryFile: File;
+  quarantinedLibraryFile: File;
   supporterFile: File;
   preferencesFile: File;
 };
@@ -21,11 +22,16 @@ function resolvePaths(): ResolvedPaths {
     const root = new Directory(Paths.document, 'exercise-tracker');
     const sessionsDir = new Directory(root, 'sessions');
     const libraryFile = new File(root, 'exercises.yaml');
+    // Where a library that no longer parses is set aside before the reseed overwrites it. Same
+    // directory and a `.yaml` name on purpose: the recovery is "open it, fix the line the warning
+    // named, import it back", and a file in the cache dir or under a name the picker filters out
+    // would not survive long enough to be recovered. See `quarantineLibrary` in library-file.ts.
+    const quarantinedLibraryFile = new File(root, 'exercises.unreadable.yaml');
     // JSON, not YAML: app-owned purchase state, deliberately outside the library the user hand-edits.
     const supporterFile = new File(root, 'supporter.json');
     // Same reasoning: app settings aren't part of the library the user exports and shares.
     const preferencesFile = new File(root, 'preferences.json');
-    resolved = { root, sessionsDir, libraryFile, supporterFile, preferencesFile };
+    resolved = { root, sessionsDir, libraryFile, quarantinedLibraryFile, supporterFile, preferencesFile };
   }
   return resolved;
 }
@@ -39,6 +45,9 @@ export const storagePaths = {
   },
   get libraryFile() {
     return resolvePaths().libraryFile;
+  },
+  get quarantinedLibraryFile() {
+    return resolvePaths().quarantinedLibraryFile;
   },
   get supporterFile() {
     return resolvePaths().supporterFile;

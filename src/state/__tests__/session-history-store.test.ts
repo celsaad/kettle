@@ -498,6 +498,35 @@ describe('hydrating around a session that is already running', () => {
     expect(sessions.map((session) => session.id)).toContain('older');
   });
 
+  it('keeps a session that was started and finished inside the window', async () => {
+    // `activeSessionId` is already null by the time the read lands, so a merge that retained only the
+    // *active* session dropped this one from state until the next launch — the file is on disk, but
+    // History would not list the workout the user just finished.
+    const finished = aSession({ id: 'quick-1', endedAt: '2026-07-29T09:20:00.000Z' });
+    useSessionHistoryStore.setState({ sessions: [finished], activeSessionId: null });
+    listSessions.mockResolvedValue({
+      sessions: [aSession({ id: 'older', startedAt: '2026-07-01T09:00:00.000Z' })],
+      errors: [],
+    });
+
+    await useSessionHistoryStore.getState().hydrate();
+
+    expect(useSessionHistoryStore.getState().sessions.map((session) => session.id)).toEqual(['quick-1', 'older']);
+  });
+
+  it('keeps a write failure reported during the window', async () => {
+    useSessionHistoryStore.setState({ errors: ['session-1: no space left on device'] });
+    listSessions.mockResolvedValue({ sessions: [], errors: ['bad.yaml (invalidYaml): nope'] });
+
+    await useSessionHistoryStore.getState().hydrate();
+
+    // Assigning the read's own errors over the store's threw away the only record of a full disk.
+    expect(useSessionHistoryStore.getState().errors).toEqual([
+      'session-1: no space left on device',
+      'bad.yaml (invalidYaml): nope',
+    ]);
+  });
+
   it("prefers the runner's copy over the one that was read off disk", async () => {
     const entry: SessionEntry = { exercise: 'pullups', type: 'reps', sets: [{ reps: 6, restTakenSec: 0 }] };
     // Two sets logged in memory. Written through setState rather than `logEntry`, because this suite
@@ -512,5 +541,36 @@ describe('hydrating around a session that is already running', () => {
     const merged = useSessionHistoryStore.getState().sessions.filter((session) => session.id === 'running-1');
     expect(merged).toHaveLength(1);
     expect(merged[0].entries).toEqual([entry]);
+  });
+});
+
+/**
+ * `listSessions` is non-throwing per *file*, but `ensureStorageReady()` and the directory listing run
+ * before any of that. Uncaught, a throw there left `status` on `loading` forever — survivable while
+ * this store gated first paint, because the app simply never appeared, and invisible now that it
+ * doesn't: a Next Up card that never arrives and a History tab that stays empty in silence.
+ */
+describe('a read that fails outright', () => {
+  const listSessions = jest.requireMock('@/storage/session-files').listSessions as jest.Mock;
+
+  it('settles on error rather than loading forever', async () => {
+    listSessions.mockRejectedValue(new Error('storage is not available'));
+
+    await useSessionHistoryStore.getState().hydrate();
+
+    const { status, errors } = useSessionHistoryStore.getState();
+    expect(status).toBe('error');
+    expect(errors).toContain('storage is not available');
+  });
+
+  it('leaves an in-flight session alone', async () => {
+    const started = useSessionHistoryStore.getState().startSession('w', null, null, null);
+    listSessions.mockRejectedValue(new Error('storage is not available'));
+
+    await useSessionHistoryStore.getState().hydrate();
+
+    // The read failing says nothing about the workout in progress, which is still being written to.
+    expect(useSessionHistoryStore.getState().sessions.map((session) => session.id)).toEqual([started.id]);
+    expect(useSessionHistoryStore.getState().activeSessionId).toBe(started.id);
   });
 });

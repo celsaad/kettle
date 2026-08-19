@@ -110,6 +110,8 @@
     "title": "プログラム",
     "helpLabel": "プログラムの書き方",
     "noWeeks": "週がありません",
+    "overrideIgnoredInvalid": "適用されません（この値は使用できません）",
+    "overrideIgnoredMissing": "適用されません（この週に該当するものがありません）",
     "week": "第{{n}}週",
     "weeksRange": "第{{first}}〜{{last}}週",
     "weeksWithNotes_other": "メモまたは上書きのある週 {{count}}件",

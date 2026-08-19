@@ -21,7 +21,6 @@ import { workoutShape } from '@/state/selectors/workout-shape';
 import { nextUpView } from '@/state/selectors/next-up';
 import { useLibraryStore } from '@/state/library-store';
 import { useSessionsWhenFocused } from '@/hooks/use-sessions-when-focused';
-import { useSessionHistoryStore } from '@/state/session-history-store';
 
 export { RouteErrorBoundary as ErrorBoundary } from '@/components/error-fallback';
 
@@ -87,9 +86,10 @@ export default function WorkoutsScreen() {
   const { scheme } = useAppTheme();
   const { t } = useTranslation();
   const library = useLibraryStore((state) => state.library);
-  // Held still while this tab sits unread under the session modal — see useSessionsWhenFocused.
-  const sessions = useSessionsWhenFocused();
   /*
+    Held still while this tab sits unread under the session modal (see useSessionsWhenFocused), and
+    the two halves come from one snapshot so they can never describe different moments.
+
     History no longer blocks first paint (see _layout.tsx), so this screen can render before the log
     has been read — and every question it asks of `sessions` has a *wrong* answer at that moment
     rather than an unknown one. An empty log makes `nextUpView` offer week 1 of a program the user
@@ -97,7 +97,7 @@ export default function WorkoutsScreen() {
     Both would then swap out under the reader a beat later. Holding the slot empty until the read
     lands is the honest version: nothing claimed, then the right thing.
   */
-  const historyReady = useSessionHistoryStore((state) => state.status === 'ready' || state.status === 'error');
+  const { sessions, ready: historyReady } = useSessionsWhenFocused();
   const [query, setQuery] = useState('');
   /*
     The input keeps the immediate value so typing is never held back; only the filtering below runs on

@@ -24,7 +24,7 @@ import { useSessionAnnouncements } from '@/hooks/use-session-announcements';
 import { buildSteps, useSessionRunner } from '@/hooks/use-session-runner';
 import { useLibraryStore } from '@/state/library-store';
 import { sessionRecords } from '@/state/selectors/records';
-import { useSessionHistoryStore } from '@/state/session-history-store';
+import { selectHistoryRead, useSessionHistoryStore } from '@/state/session-history-store';
 
 /**
  * The one screen where a render throw costs data, so its boundary does more than apologise.
@@ -83,6 +83,7 @@ export default function SessionScreen() {
   // the session was started from) gives that moment somewhere to land instead of just vanishing.
   const onComplete = useCallback((session: Session | null) => setCompleted({ session }), []);
   const library = useLibraryStore((state) => state.library);
+  const historyRead = useSessionHistoryStore(selectHistoryRead);
   const { workoutId, programId, week, day, adhoc } = useLocalSearchParams<{
     workoutId?: string;
     programId?: string;
@@ -164,10 +165,19 @@ export default function SessionScreen() {
     );
   }
 
-  // Still hydrating, or a workout id that resolved to nothing. An ad-hoc session legitimately has no
-  // workout, so it is exempt from both this and the zero-step guard below — an empty step list is its
-  // *starting* state rather than an error.
-  if (!resolved) return null;
+  /*
+    Still hydrating, or a workout id that resolved to nothing. An ad-hoc session legitimately has no
+    workout, so it is exempt from both this and the zero-step guard below — an empty step list is its
+    *starting* state rather than an error.
+
+    `historyRead` is part of the same wait, and it is the runner rather than this screen that needs
+    it: `use-session-runner` snapshots `priorSessions` once, on its first render, deliberately and
+    for good reasons. Mounting it against a log that hasn't been read yet makes that snapshot empty,
+    which silently costs every "last time" line and marks every ordinary set as a personal best for
+    the whole workout. Holding the mount for the tail of one directory read is far cheaper than a
+    session that quietly lies about every set in it.
+  */
+  if (!resolved || !historyRead) return null;
 
   if (!isAdHoc && workout && steps.length === 0) {
     return (

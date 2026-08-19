@@ -126,6 +126,23 @@ export function validateConfig(type: ExerciseType, values: Record<string, string
     }
   }
 
+  /*
+    EMOM's bound is on the *product*, so the per-field loop above cannot express it — exactly like the
+    hold range below, and missed when the refinement was added to `schema.ts`. The cost of missing it
+    is not a rejected import: the editor writes straight to the library file, so a config the schema
+    refuses is written to disk and then fails to parse on the next launch, which now sends the user's
+    whole library through the quarantine-and-reseed path. The in-app forms have to mirror every rule
+    the schema has, and a cross-field one is the easiest kind to forget.
+  */
+  if (type === 'emom') {
+    const intervalSec = Number(values.intervalSec);
+    const totalMinutes = Number(values.totalMinutes);
+    if (Number.isFinite(intervalSec) && Number.isFinite(totalMinutes) && intervalSec > 0) {
+      const intervals = (totalMinutes * 60) / intervalSec;
+      if (intervals > MaxRounds) return t('exerciseForm.error.tooManyIntervals', { max: MaxRounds });
+    }
+  }
+
   if (type === 'timed_hold') {
     const holdMin = values.holdSecMin?.trim() ?? '';
     const holdMax = values.holdSecMax?.trim() ?? '';

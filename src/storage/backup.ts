@@ -40,6 +40,11 @@ export const isBackupFolderSupported = Platform.OS === 'android' && isFileStorag
 export type BackupFailure =
   | { kind: 'unsupported' }
   | { kind: 'noFolder' }
+  // The log hasn't been read, so there is nothing safe to write: the archive is a *truncating* whole-
+  // file write, and backing up a partial log would replace a good archive with a worse one. Reported
+  // rather than skipped silently, because a backup that quietly stops happening is the failure mode
+  // this whole feature exists to prevent.
+  | { kind: 'logUnread' }
   | { kind: 'unreachable' }
   | { kind: 'writeFailed'; detail: string };
 

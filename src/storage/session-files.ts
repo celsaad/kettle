@@ -7,6 +7,13 @@ import { ensureStorageReady, isFileStorageSupported, sessionFile, storagePaths }
 export type ListSessionsResult = { sessions: Session[]; errors: string[] };
 
 /**
+ * How many session files `listSessions` reads at once. Enough to hide the per-file bridge latency,
+ * small enough that a long training history doesn't open hundreds of handles or hold every file's
+ * text in memory at the same moment — both of which land during startup.
+ */
+const ReadConcurrency = 16;
+
+/**
  * Reads every session file. One malformed file produces an error entry, not a crash.
  * On web (unsupported by expo-file-system) this degrades to an empty, non-persisted history.
  */
@@ -34,19 +41,29 @@ export async function listSessions(): Promise<ListSessionsResult> {
     used to mean the app never painted at all, which at least said something was wrong; now that
     history no longer gates first paint it would be a History tab that stayed empty with no reason
     given. `Promise.all` would have made it worse still, losing every other file to one unreadable one.
-  */
-  const reads = await Promise.allSettled(files.map((file) => file.text()));
 
-  files.forEach((file, index) => {
-    const read = reads[index];
-    if (read.status === 'rejected') {
-      errors.push(`${file.name} (unreadable): ${(read.reason as Error).message}`);
-      return;
-    }
-    const result = parseSessionYaml(read.value);
-    if (result.ok) sessions.push(result.data);
-    else errors.push(`${file.name} (${result.error.kind}): ${result.error.detail}`);
-  });
+    In **chunks** rather than all at once, and the chunk is what keeps this a latency win instead of a
+    trade. Firing every read together on a log of several hundred files opens that many handles at
+    once and holds every file's text in memory simultaneously — at startup, on the device least able
+    to afford it. A window of ${ReadConcurrency} recovers nearly all of the overlap (the round-trips
+    are latency-bound, not throughput-bound) with a bounded footprint, and each chunk is parsed and
+    released before the next is read.
+  */
+  for (let start = 0; start < files.length; start += ReadConcurrency) {
+    const chunk = files.slice(start, start + ReadConcurrency);
+    const reads = await Promise.allSettled(chunk.map((file) => file.text()));
+
+    chunk.forEach((file, index) => {
+      const read = reads[index];
+      if (read.status === 'rejected') {
+        errors.push(`${file.name} (unreadable): ${(read.reason as Error).message}`);
+        return;
+      }
+      const result = parseSessionYaml(read.value);
+      if (result.ok) sessions.push(result.data);
+      else errors.push(`${file.name} (${result.error.kind}): ${result.error.detail}`);
+    });
+  }
 
   sessions.sort((a, b) => b.startedAt.localeCompare(a.startedAt));
   return { sessions, errors };

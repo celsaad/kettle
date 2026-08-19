@@ -151,6 +151,25 @@ function backUpAfterSession(sessions: Session[], onResult: (failure: BackupFailu
   setTimeout(() => onResult(backUpNow(backupFolderUri, sessions)), 0);
 }
 
+/**
+ * Two different questions about the log, deliberately not the same boolean.
+ *
+ * `historyRead` is "stop waiting" — the read finished, whether or not it worked. It is what a
+ * *display* should gate on, so a failed read shows an empty log rather than a spinner forever.
+ *
+ * `historyComplete` is "this is the user's whole log". Only a successful read earns it, and the
+ * distinction is not academic: on the error path `sessions` is `[]` while the user has years of
+ * training on disk, so anything that **writes the log somewhere** or reasons about a session's
+ * *absence* has to gate on this one. Backing up an empty log truncates a good archive; treating an
+ * unread log as "no prior sessions" marks every ordinary set as a personal best.
+ *
+ * The first version of this PR had one `ready || error` flag doing both jobs, which meant the guard
+ * on the destructive path was open in exactly the case it existed for.
+ */
+export const selectHistoryRead = (state: SessionHistoryState): boolean =>
+  state.status === 'ready' || state.status === 'error';
+export const selectHistoryComplete = (state: SessionHistoryState): boolean => state.status === 'ready';
+
 export const useSessionHistoryStore = create<SessionHistoryState>((set, get) => ({
   status: 'idle',
   sessions: [],
@@ -239,7 +258,12 @@ export const useSessionHistoryStore = create<SessionHistoryState>((set, get) => 
     // Cleared rather than left: whatever the last session's backup did is not this one's answer, and a
     // stale warning under a fresh completion screen would be worse than a moment with none.
     set({ sessions, errors: withWriteFailure(get().errors), activeSessionId: null, backupFailure: null });
-    backUpAfterSession(sessions, (backupFailure) => set({ backupFailure }));
+    // Gated on the log being *complete*, not merely read. `backUpNow` truncate-writes the whole
+    // archive, so running it after a failed `listSessions` would replace the user's backup with the
+    // one session they just finished — the same destructive shape the Settings row guards against,
+    // on the path that runs without anyone pressing anything.
+    if (selectHistoryComplete(get())) backUpAfterSession(sessions, (backupFailure) => set({ backupFailure }));
+    else set({ backupFailure: { kind: 'logUnread' } });
     return updated;
   },
   abandonActiveSession: () => {

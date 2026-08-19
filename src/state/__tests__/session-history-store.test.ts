@@ -574,3 +574,42 @@ describe('a read that fails outright', () => {
     expect(useSessionHistoryStore.getState().activeSessionId).toBe(started.id);
   });
 });
+
+/**
+ * The auto-backup that runs when a session ends writes the whole archive with `FileMode.Truncate`, so
+ * it has to gate on the log being **complete**, not merely read. After a failed `listSessions` the
+ * store settles on `error` with an empty `sessions`, and finishing one workout would then truncate a
+ * good archive down to that single session — with nobody pressing anything. Unreachable before
+ * history stopped gating first paint, which is why nothing caught it.
+ */
+describe('the backup that follows a finished session', () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+    setBackupFolder('content://folder');
+  });
+
+  afterEach(() => jest.useRealTimers());
+
+  it('runs when the log was read successfully', () => {
+    useSessionHistoryStore.setState({ status: 'ready' });
+    const session = useSessionHistoryStore.getState().startSession('w', null, null, null);
+
+    useSessionHistoryStore.getState().completeSession(session);
+    jest.runOnlyPendingTimers();
+
+    expect(mockBackUpNow).toHaveBeenCalled();
+  });
+
+  it('refuses to run when the read failed, and says so', () => {
+    const session = useSessionHistoryStore.getState().startSession('w', null, null, null);
+    useSessionHistoryStore.setState({ status: 'error' });
+
+    useSessionHistoryStore.getState().completeSession(session);
+    jest.runOnlyPendingTimers();
+
+    expect(mockBackUpNow).not.toHaveBeenCalled();
+    // Reported rather than skipped in silence: a backup that quietly stops happening is the exact
+    // failure this feature exists to prevent.
+    expect(useSessionHistoryStore.getState().backupFailure).toEqual({ kind: 'logUnread' });
+  });
+});

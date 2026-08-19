@@ -57,8 +57,13 @@ training to. Vibration is separate and stays on your phone's own settings.
 - **A workout with an impossible number of sets can no longer make the session screen unopenable.**
   An exercise asking for tens of thousands of sets — a typo, or a file from someone else — used to
   take the runner down every time you tried to start it, with no way back except editing the file by
-  hand. Sets and rounds now cap at 500 and EMOM blocks at 1440 minutes, refused when the file is
-  imported and refused in the editor.
+  hand. Sets and rounds now cap at 500, and an EMOM block at 500 intervals — so a 60-minute block
+  needs intervals of at least seven seconds. Both are refused when a file is imported and in the
+  editor, so a limit can't be crossed in one place and discovered in the other.
+- **If your library ever fails to load, Kettle keeps a copy of it.** It has always started you over
+  with the built-in library rather than leaving you on a blank screen; now the file it couldn't read
+  is saved next to it as `exercises.unreadable.yaml`, so you can fix the line and import it back
+  instead of losing what you wrote.
 - **A program week can no longer override an exercise into something the format would reject.** Week
   overrides skipped every check the rest of the file goes through, so a negative rest or a set count
   in the thousands could get in that way. An override that doesn't hold up is now ignored and the

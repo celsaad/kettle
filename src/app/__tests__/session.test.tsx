@@ -50,10 +50,16 @@ jest.mock('@/state/session-history-store', () => ({
   useSessionHistoryStore: Object.assign((selector: (state: unknown) => unknown) => selector(mockStoreState()), {
     getState: () => mockStoreState(),
   }),
+  // The screen holds the runner's mount until the log has been read, so that its one-shot
+  // `priorSessions` snapshot can't be taken from an empty store — see the note beside the guard.
+  // These stand in for the real selectors; `mockStoreState` supplies the `status` they read.
+  selectHistoryRead: (state: { status: string }) => state.status === 'ready' || state.status === 'error',
+  selectHistoryComplete: (state: { status: string }) => state.status === 'ready',
 }));
 
 function mockStoreState() {
   return {
+    status: 'ready' as const,
     sessions: mockSessions,
     startSession: () => mockSession,
     logEntry: (current: Session, entry: SessionEntry) => ({ ...current, entries: [...current.entries, entry] }),

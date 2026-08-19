@@ -595,10 +595,57 @@ describe('a count no validator bounded', () => {
       members: [{ exerciseId: 'a' }, { exerciseId: 'b' }],
     };
     const steps = buildSteps(workoutOf(circuit), absurd);
+    const reported = new Set(steps.map((step) => step.circuit?.rounds));
+    const actual = new Set(steps.map((step) => step.circuit?.round));
+
+    // "Round 1 of 200000" on a circuit that runs a fraction of them would be the truncation lying
+    // about itself. Asserted against the rounds actually built rather than a literal, so the two
+    // ceilings that shape this number can move without turning a real check into a stale one.
+    expect(reported.size).toBe(1);
+    expect([...reported][0]).toBe(actual.size);
+    expect(actual.size).toBeLessThan(200000);
+  });
+});
+
+/**
+ * The whole-workout ceiling has to bind *inside* a block as well as between blocks. Checking only
+ * between them reads as a bound and is not one — it fires on the block after the offending one, so a
+ * single oversized circuit, which is the case the constant was added for, went straight past it.
+ */
+describe('a single block larger than the whole-workout ceiling', () => {
+  const members = Array.from({ length: 200 }, (_, i) => ({ id: `m${i}`, name: `M${i}` }));
+  const manyMembers: Exercise[] = members.map(({ id, name }) => ({
+    id,
+    name,
+    type: 'reps' as const,
+    config: { sets: 1, targetRepsMin: 5, restSec: 0 },
+  }));
+
+  it('bounds a 500-round circuit with 200 members', () => {
+    const circuit: Workout['blocks'][number] = {
+      kind: 'circuit',
+      rounds: 500,
+      members: members.map(({ id }) => ({ exerciseId: id })),
+    };
+
+    const steps = buildSteps(workoutOf(circuit), manyMembers);
+
+    // Without the in-loop check this builds 100,000.
+    expect(steps.length).toBeLessThanOrEqual(5000);
+    expect(steps.length).toBeGreaterThan(0);
+  });
+
+  it('still reports the round count it will actually run', () => {
+    const circuit: Workout['blocks'][number] = {
+      kind: 'circuit',
+      rounds: 500,
+      members: members.map(({ id }) => ({ exerciseId: id })),
+    };
+
+    const steps = buildSteps(workoutOf(circuit), manyMembers);
     const rounds = new Set(steps.map((step) => step.circuit?.rounds));
 
-    // "Round 1 of 200000" on a circuit that runs 2000 of them would be the truncation lying about
-    // itself — the position has to describe the workout that exists.
-    expect(rounds).toEqual(new Set([2000]));
+    expect(rounds.size).toBe(1);
+    expect([...rounds][0]).toBeLessThan(500);
   });
 });

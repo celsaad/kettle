@@ -1,5 +1,6 @@
 import { buildExercise, configToStrings, fieldUnitLabel, CONFIG_FIELDS, validateConfig } from '@/domain/exercise-form';
 import type { Exercise, ExerciseType } from '@/domain/types';
+import { parseLibraryYaml } from '@/domain/yaml-mapping';
 import { UNIT_SYSTEMS, type UnitSystem } from '@/domain/units';
 
 const metric = { unitSystem: 'metric' as const };
@@ -46,7 +47,51 @@ describe('validateConfig', () => {
   it('accepts a count at exactly its ceiling', () => {
     expect(validateConfig('reps', { sets: '500', targetRepsMin: '10', restSec: '45' })).toBeNull();
     expect(validateConfig('hiit', { workSec: '40', restSec: '20', rounds: '500' })).toBeNull();
-    expect(validateConfig('emom', { intervalSec: '60', totalMinutes: '1440' })).toBeNull();
+    // No `emom` line here on purpose: `total_minutes` has a ceiling of its own, but the ≤500-interval
+    // rule binds first at any ordinary interval — 1440 minutes of 60-second intervals is 1440 of them.
+    // The pair is covered by the interval tests above, which is where the operative bound actually is.
+  });
+
+  /**
+   * The schema bounds EMOM on `total_minutes × 60 ÷ interval_sec`, which the per-field loop cannot
+   * express — and which this function did not mirror when that refinement landed. The gap is not a
+   * rejected import: the in-app editors write straight to the library file, so a config the schema
+   * refuses gets persisted and then fails to parse on the *next launch*, taking the user's whole
+   * library through quarantine-and-reseed. Removing the `type === 'emom'` block fails these.
+   */
+  it('rejects an interval and length that multiply out past the ceiling', () => {
+    expect(validateConfig('emom', { intervalSec: '30', totalMinutes: '300' })).toBe(
+      'That works out to more than 500 intervals. Use a longer interval or a shorter block.',
+    );
+    expect(validateConfig('emom', { intervalSec: '1', totalMinutes: '60' })).not.toBeNull();
+  });
+
+  it('accepts an EMOM at exactly the interval ceiling', () => {
+    expect(validateConfig('emom', { intervalSec: '60', totalMinutes: '500' })).toBeNull();
+    expect(validateConfig('emom', { intervalSec: '180', totalMinutes: '1440' })).toBeNull();
+  });
+
+  /**
+   * The editor and the schema have to agree in both directions, so this asserts the pair rather than
+   * either alone: anything the form accepts must survive a round-trip through `parseLibraryYaml`.
+   */
+  it.each([
+    ['30', '300'],
+    ['1', '60'],
+    ['60', '500'],
+    ['180', '1440'],
+  ])('agrees with the schema for interval_sec %s / total_minutes %s', (intervalSec, totalMinutes) => {
+    const accepted = validateConfig('emom', { intervalSec, totalMinutes }) === null;
+    const yaml = `version: 1
+exercises:
+  - id: e
+    name: E
+    type: emom
+    config: { interval_sec: ${intervalSec}, total_minutes: ${totalMinutes} }
+workouts: []
+programs: []
+`;
+    expect(accepted).toBe(parseLibraryYaml(yaml).ok);
   });
 
   // Only the counts that drive step expansion carry a max — a rest or a hold length is a duration,

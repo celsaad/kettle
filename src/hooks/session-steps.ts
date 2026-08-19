@@ -146,6 +146,10 @@ const MaxStepsPerExercise = 2000;
  * so the block's size is `rounds × members`, and `exercises: z.array(...).min(2)` sets no upper bound
  * on the members. 500 rounds of a 1000-member circuit is a million steps out of a library the schema
  * accepts. Cheaper to bound the array itself once than to chase every shape that can grow it.
+ *
+ * Checked **inside** the circuit's round loop as well as between blocks. A between-blocks check alone
+ * reads as a bound and is not one: it only ever fires on the block *after* the offending one, so the
+ * single-circuit case above — the very case this constant was added for — sailed straight past it.
  */
 const MaxStepsPerWorkout = 5000;
 
@@ -506,7 +510,12 @@ export function buildSteps(workout: Workout, exercises: Exercise[]): RunnerStep[
     // Bounded for the same reason as MaxStepsPerExercise: a block override patches `rounds` without
     // passing the schema, and each round emits one step per member. Everything below reports the
     // bounded count, so a truncated circuit doesn't announce rounds it will never run.
-    const rounds = boundedCount(block.rounds);
+    //
+    // Rounds are additionally trimmed to what the workout has room for, so `rounds × members` cannot
+    // outrun MaxStepsPerWorkout — one round is at least one step per member, which is the ratio used
+    // to convert the remaining budget into a round count.
+    const budgetRounds = Math.max(1, Math.floor((MaxStepsPerWorkout - steps.length) / Math.max(1, members.length * 2)));
+    const rounds = Math.min(boundedCount(block.rounds), budgetRounds);
 
     // Numbered over `members` (the resolved ones), not `block.members` — see CircuitPosition.
     const positionAt = (roundIndex: number, slot: number): CircuitPosition => ({

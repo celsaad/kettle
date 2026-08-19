@@ -19,7 +19,7 @@ import { useAppTheme } from '@/hooks/theme-context';
 import { useTheme } from '@/hooks/use-theme';
 import { useLibraryStore } from '@/state/library-store';
 import { usePreferencesStore, useUnitSystem } from '@/state/preferences-store';
-import { useSessionHistoryStore } from '@/state/session-history-store';
+import { selectHistoryComplete, useSessionHistoryStore } from '@/state/session-history-store';
 import { isTipJarSupported, useTipStore } from '@/state/tip-store';
 import type { BackupFailure } from '@/storage/backup';
 import { backUpNow, backupFolderLabel, isBackupFolderSupported, pickBackupFolder } from '@/storage/backup';
@@ -165,8 +165,11 @@ export default function SettingsScreen() {
     `backUpNow` writes the archive with `FileMode.Truncate`, so running it here would replace the
     user's whole backup with an empty one, in the folder they nominated precisely so it would survive
     the app. Export History is safe by accident — it is already disabled at zero sessions.
+
+    `complete` rather than `read`: a read that *failed* leaves an empty `sessions` and is exactly the
+    case this must refuse, so the two are not interchangeable here. See the selectors' own note.
   */
-  const historyReady = useSessionHistoryStore((state) => state.status === 'ready' || state.status === 'error');
+  const historyComplete = useSessionHistoryStore(selectHistoryComplete);
   const supporter = useTipStore((state) => state.supporter);
   const hydrateTips = useTipStore((state) => state.hydrate);
   const backupFolderUri = usePreferencesStore((state) => state.preferences.backupFolderUri);
@@ -224,6 +227,8 @@ export default function SettingsScreen() {
         return t('settings.backupUnsupported');
       case 'noFolder':
         return t('settings.backupNowNoFolder');
+      case 'logUnread':
+        return t('settings.backupLogUnread');
       case 'unreachable':
         return t('settings.backupUnreachable');
       case 'writeFailed':
@@ -240,7 +245,7 @@ export default function SettingsScreen() {
   const runBackup = () => {
     // Belt as well as braces: the row is disabled below, and this is the guard that survives someone
     // wiring another caller to it. Truncating a good archive with an unread log is not recoverable.
-    if (!historyReady) return;
+    if (!historyComplete) return;
     setBackupMessage(null);
     setBackingUp(true);
     setTimeout(() => {
@@ -458,14 +463,14 @@ export default function SettingsScreen() {
                 <ActionRow
                   title={t('settings.backupNow')}
                   detail={
-                    backingUp || !historyReady
+                    backingUp || !historyComplete
                       ? t('settings.backupInProgress')
                       : backupFolderUri
                         ? t('settings.backupNowDetail')
                         : t('settings.backupNowNoFolder')
                   }
                   onPress={runBackup}
-                  disabled={!backupFolderUri || backingUp || !historyReady}
+                  disabled={!backupFolderUri || backingUp || !historyComplete}
                 />
                 {/* Only once there's something to forget. A row offering to undo a choice nobody has
                     made is three rows where two would do. */}

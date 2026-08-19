@@ -64,6 +64,7 @@
     "searchPlaceholder_other": "{{count}}件のワークアウトを検索"
   },
   "history": {
+    "loading": "履歴を読み込んでいます…",
     "title": "履歴",
     "exportAll": "すべて書き出し",
     "allTime": "全期間",
@@ -301,6 +302,7 @@
     "backupDone": "バックアップしました。",
     "backupUnsupported": "この端末ではフォルダへのバックアップを利用できません。",
     "backupUnreachable": "そのフォルダにはもうアクセスできません。もう一度選んでください。",
+    "backupLogUnread": "履歴の読み込みが終わっていなかったため、安全にバックアップできるものがありませんでした。履歴が表示されてからもう一度お試しください。",
     "backupWriteFailed": "バックアップを書き込めませんでした: {{detail}}",
     "backupFolderNotSaved": "フォルダは選ばれましたが保存できなかったため、再起動後には記憶されていません。",
     "backupWhat": "Kettle は選んだフォルダに kettle-library.yaml と kettle-history.yaml を書き込みます。書き込むのはセッションが終わるたびと、「今すぐバックアップ」をタップしたときです。その2つのファイルを上書きするだけで、フォルダ内の他のものには触れません。同期アプリがすでに見ているフォルダを指定すれば、Kettle 自身は何も送信しないまま、記録が端末の外に残ります。",
@@ -437,6 +439,7 @@
       "mustBeAtMost": "{{label}}は{{max}}以下にしてください。",
       "mustBeWhole": "{{label}}は整数で入力してください。",
       "holdMaxNeedsMin": "ホールドの範囲には、上限だけでなく下限も必要です。",
+      "tooManyIntervals": "インターバルが{{max}}回を超えます。インターバルを長くするか、ブロックを短くしてください。",
       "holdMaxBelowMin": "ホールドの上限は下限より短くできません。"
     }
   },

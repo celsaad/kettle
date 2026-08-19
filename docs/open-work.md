@@ -220,6 +220,28 @@ wanting states and assignees, it wants GitHub issues instead.
   rest notification's hardcoded English — went with the timed-hold auto-end, which needed its own
   notification copy and wasn't going to add a second hardcoded string beside the first.)
 
+- **Images on exercises.** A move demonstrated beats a move described, and `notes` is the only place an
+  exercise can explain itself today. Nothing about the shape is decided; what *is* decided is the
+  constraint that picks it, so the survey doesn't get re-run from scratch:
+
+  **The app may not fetch a remote image.** Same line as the AI entry above — the listing declares zero
+  data collected/shared (see the tip-jar entry in the decision log), and an `Image` with a
+  `{ uri: 'https://…' }` source hands whatever host the YAML names the user's IP plus a timestamped
+  record of which exercise they were looking at. It also fails in the one place the app gets used: a
+  basement gym with no signal. So `image: <url>` is simultaneously the cheapest option and the most
+  expensive one; if it goes in at all, the Data Safety argument gets made first, not afterwards.
+
+  **The user-supplied photo is the rejected shape**, and the survey behind that — a filename in the
+  YAML, base64, or the folder from [`backup-folder-plan.md`](backup-folder-plan.md) — is in
+  [`exercise-images-plan.md`](exercise-images-plan.md) so it isn't run again. What that plan takes
+  instead is a **bundled line drawing per seeded exercise, keyed by id**: no format change, no
+  storage, no permission, and it works on web. Seed ids are language-independent, which is what makes
+  the map safe.
+
+  Be honest about what it buys: first-run polish on the starter library, not "teach me the move". It
+  cannot reach an imported or assistant-generated exercise, which is the case that actually needs a
+  picture — and the rejected shape stays the answer for that, with bundled art as its fallback.
+
 ## Open bugs
 
 Found while planning the tests/a11y/i18n work (see `testing-a11y-i18n-plan.md`), each verified against

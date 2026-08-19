@@ -60,6 +60,7 @@ function setBackupFolder(backupFolderUri: string | null) {
       unitSystem: 'metric',
       themePreference: 'system',
       restDayReminder: false,
+      sessionSounds: true,
       backupFolderUri,
     },
   });

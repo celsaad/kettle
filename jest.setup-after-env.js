@@ -37,14 +37,20 @@ beforeEach(async () => {
 beforeEach(() => {
   const store = require('./src/state/preferences-store').usePreferencesStore;
   // A suite that mocks the store module outright has no setState, and nothing to reset either.
-  // The *whole* preferences object, not just the two fields a test is likely to care about: a partial
-  // reset leaves every other preference `undefined` between suites, which is a shape no running app
+  //
+  // **Every field, not just the ones a test is likely to care about.** A partial reset leaves the rest
+  // `undefined` between suites, which is a shape no running app has — and `undefined` reads as false,
+  // so a suite that never touches preferences gets the *opposite* of any boolean that defaults on. This
+  // had already drifted once: `backupFolderUri` was missing here from the day it shipped. Adding a
+  // preference means adding it here, and `Preferences` is the list.
   store?.setState?.({
     status: 'idle',
     preferences: {
       unitSystem: 'metric',
       themePreference: 'system',
       restDayReminder: false,
+      sessionSounds: true,
+      backupFolderUri: null,
     },
   });
 });

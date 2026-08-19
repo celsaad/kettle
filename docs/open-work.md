@@ -261,33 +261,6 @@ wanting states and assignees, it wants GitHub issues instead.
   where a half-flipped layout costs a workout rather than just looking wrong. Half-implemented RTL is
   worse than none — the plan's words, still true.
 
-
-- **A setting to mute the session sounds.** The runner plays three cues — the 3-2-1 tick, the
-  exercise-change ding and the milestone chime — and there is no way to turn them off short of the
-  system volume, which also silences whatever you are training to. `setAudioModeAsync` is called with
-  `playsInSilentMode: true`, deliberately (a timing cue you cannot hear is not a timing cue), so the
-  phone's own silent switch does not cover this either. That flag is exactly why the setting has to
-  exist: the app opted out of the platform's mute, so it owes the user one of its own.
-
-  Mostly plumbing, and the shape is already set by `restDayReminder`: a boolean on `Preferences`,
-  `z.boolean().default(…)` in `preferencesSchema` — **defaulted, never required**, or `safeParse` fails
-  on every `preferences.json` already in the field and silently resets units, theme and backup folder
-  along with it — a row in Settings, and a read in `use-session-sounds.ts` where the three `play*`
-  callbacks return early. Gate it there rather than at the call sites: the runner fires these from the
-  tick effect and from `advance()`, and a mute that has to be remembered at each one will be forgotten
-  by the fourth cue.
-
-  Two decisions worth taking before writing it, neither obvious:
-
-  - **Default on, unlike `restDayReminder`.** That one defaults off because a notification reaches
-    outside the app; these cues are the feature working as designed, and someone who has been using
-    the app expects the tick to keep ticking after an update. The "defaulted, not required" rule is
-    about the *schema*, not about which value to pick.
-  - **Whether one switch covers haptics too.** `use-session-runner.ts` also fires
-    `Haptics.impactAsync` on step change. A single "quiet mode" is one row and one preference; two
-    switches are honest about the fact that a silent gym and a pocketed phone are different problems.
-    Cheaper to decide now than to split a shipped boolean into two later.
-
 ## Open bugs
 
 Found while planning the tests/a11y/i18n work (see `testing-a11y-i18n-plan.md`), each verified against

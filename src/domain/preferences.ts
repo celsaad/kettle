@@ -44,6 +44,18 @@ export type Preferences = {
    */
   restDayReminder: boolean;
   /**
+   * The runner's audio cues — the countdown tick, the exercise-change ding and the milestone chime.
+   *
+   * On by default, unlike the reminder above: a reminder reaches outside the app and has to be asked
+   * for, while these are the timer working as designed, and someone who has been training with them
+   * expects the tick to keep ticking after an update. The setting exists at all because
+   * `setAudioModeAsync({ playsInSilentMode: true })` opts the runner out of the phone's own mute —
+   * having taken the platform's switch away, the app owes the user one of its own.
+   *
+   * Sound only. Haptics stay on the OS's switch, since the runner never overrode that one.
+   */
+  sessionSounds: boolean;
+  /**
    * The folder the user nominated for backups — a SAF `content://` tree URI on Android, `null` until
    * they choose one. App-owned state, which is why it lives here rather than in the YAML library: the
    * library is a file people export and share, and a recipient has no business inheriting a path into
@@ -63,6 +75,11 @@ export const preferencesSchema = z.object({
   // being written in the field — and `false` is also the value the product wants: an opt-in that
   // defaulted to true for existing installs would start notifying people who never asked.
   restDayReminder: z.boolean().default(false),
+  // Defaulted for the same reason as every field above it, and the reason is worth separating from
+  // the value: `true` is what the product wants (see the note on the type), while the `.default()`
+  // is what stops a `preferences.json` written before this shipped from failing `safeParse` and
+  // taking units, appearance and the backup folder down with it.
+  sessionSounds: z.boolean().default(true),
   // Same treatment again, and the stakes are higher than for the others: this arrived last, so *every*
   // `preferences.json` in the field predates it, and a required key here would fail `safeParse` for
   // every existing install at once — resetting appearance, units and list order along with it.

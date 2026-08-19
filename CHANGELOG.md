@@ -27,6 +27,12 @@ exercise if you rename it, and screen readers get a description of the movement 
 Exercises you write yourself don't get one, and neither does Rest. Nothing is downloaded, nothing is
 stored, and none of it touches the file you export.
 
+**You can turn the session sounds off.** Settings has a new *Session sounds* switch that silences the
+countdown tick, the ding when the exercise changes and the chime at a halfway mark. It's on unless you
+say otherwise. Kettle plays those cues even when your phone is on silent — a timing cue you can't hear
+isn't a timing cue — so this is the only way to quiet them without turning down whatever you're
+training to. Vibration is separate and stays on your phone's own settings.
+
 ### Fixed
 
 - **EMOM minutes start at the rep count you prescribed.** They started at zero, so hitting the target

@@ -75,16 +75,27 @@ marked *optional* is required.
 
 | type | config fields | notes |
 |---|---|---|
-| `hiit` | `work_sec` (>0), `rest_sec` (≥0), `rounds` (int >0) | work/rest interval repeated `rounds` times |
-| `emom` | `interval_sec` (>0), `total_minutes` (>0), `target_reps` (int >0, *optional*) | every-minute-on-the-minute |
+| `hiit` | `work_sec` (>0), `rest_sec` (≥0), `rounds` (int 1–500) | work/rest interval repeated `rounds` times |
+| `emom` | `interval_sec` (>0), `total_minutes` (>0, ≤1440), `target_reps` (int >0, *optional*) | every-minute-on-the-minute |
 | `amrap` | `time_cap_sec` (>0) | as-many-rounds-as-possible within the cap |
-| `reps` | `sets` (int >0), `target_reps_min` (int >0), `target_reps_max` (int >0, *optional*, ≥ `target_reps_min`), `target_weight` (≥0, *optional*, kg), `rest_sec` (≥0) | e.g. bench press; give only `target_reps_min` for a fixed target, or add `target_reps_max` for a range like "5 to 10 reps" |
-| `timed_hold` | `sets` (int >0), `hold_sec_min` (>0, *optional*), `hold_sec_max` (>0, *optional*, ≥ `hold_sec_min`, needs `hold_sec_min`), `rest_sec` (≥0) | e.g. L-sit, plank; same fixed-vs-range shape as `reps`, and the hold **ends itself** at the top of the range — omit both targets for a max-effort hold that counts up until you tap Done |
+| `reps` | `sets` (int 1–500), `target_reps_min` (int >0), `target_reps_max` (int >0, *optional*, ≥ `target_reps_min`), `target_weight` (≥0, *optional*, kg), `rest_sec` (≥0) | e.g. bench press; give only `target_reps_min` for a fixed target, or add `target_reps_max` for a range like "5 to 10 reps" |
+| `timed_hold` | `sets` (int 1–500), `hold_sec_min` (>0, *optional*), `hold_sec_max` (>0, *optional*, ≥ `hold_sec_min`, needs `hold_sec_min`), `rest_sec` (≥0) | e.g. L-sit, plank; same fixed-vs-range shape as `reps`, and the hold **ends itself** at the top of the range — omit both targets for a max-effort hold that counts up until you tap Done |
 | `cardio` | `duration_sec` (>0, *optional*), `distance_meters` (>0, *optional*) | give either, both, or neither — an empty `config: {}` is valid and runs as a plain count-up stopwatch |
 | `rest` | `duration_sec` (≥0) | a standalone rest block between exercises — see below |
 
 All 7 types run step-by-step in the session screen — there's no longer any limitation on which
 types are runnable end-to-end.
+
+The upper bounds on `sets`, `rounds` and `total_minutes` are not authoring taste. The session runner
+builds one step per set, per round and per interval before it draws anything, so an unbounded count is
+a workout that can't be started at all rather than a long one. 500 sets at 30 seconds each is over four
+hours; if you're anywhere near the ceiling, what you want is several workouts. A circuit block's own
+`rounds` is capped at 500 too.
+
+`emom` is bounded on what its two fields *multiply out to* rather than on either one alone: the runner
+derives `total_minutes × 60 ÷ interval_sec` intervals, so the pair has to come to **at most 500**.
+`total_minutes: 60` with `interval_sec: 1` is 3600 intervals and is refused, even though neither
+number looks unusual on its own.
 
 ### How a `timed_hold` ends
 
@@ -153,7 +164,8 @@ workouts:
 - `config` on a `type: exercise` block currently only supports overriding `duration_sec`, and only
   makes sense on a block referencing a `rest`-type exercise.
 - A `circuit` block runs its `exercises` **round-robin** — A, B, C, A, B, C, ... for `rounds` rounds —
-  not grouped by exercise (A, A, A, B, B, B, ...). It needs at least 2 members.
+  not grouped by exercise (A, A, A, B, B, B, ...). It needs at least 2 members, and `rounds` is
+  capped at 500 for the same reason the per-exercise counts are (see the note under the type table).
   `rest_between_exercises_sec` is the rest between consecutive members within a round (omit it, or
   set it to `0`, for back-to-back work with no rest). `rest_between_rounds_sec` is the rest taken
   after finishing all members of a round, before the next round starts; both rest fields are

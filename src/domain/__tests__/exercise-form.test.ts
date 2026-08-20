@@ -226,3 +226,35 @@ describe('weight conversion in the exercise form', () => {
     expect(built.type === 'reps' && built.config.targetWeightKg).toBeUndefined();
   });
 });
+
+/**
+ * The in-app forms write straight to the library file, so they mirror the schema's ceilings rather
+ * than relying on the import path to catch them: a config the schema refuses would be written to disk
+ * and then fail to parse on the next launch, sending the whole library through the reseed path.
+ */
+describe('validateConfig ceilings', () => {
+  it('rejects a set count past the ceiling, and accepts the ceiling itself', () => {
+    expect(validateConfig('reps', { sets: '501', targetRepsMin: '5', restSec: '60' })).toBe('Sets can be at most 500.');
+    expect(validateConfig('reps', { sets: '500', targetRepsMin: '5', restSec: '60' })).toBeNull();
+  });
+
+  it('rejects a round count past the ceiling', () => {
+    expect(validateConfig('hiit', { workSec: '40', restSec: '20', rounds: '501' })).toBe('Rounds can be at most 500.');
+  });
+
+  it('rejects a block longer than the day-length ceiling', () => {
+    expect(validateConfig('emom', { intervalSec: '300', totalMinutes: '1441' })).toBe('Total can be at most 1440.');
+  });
+
+  /**
+   * EMOM's bound is on the *product*, so the per-field loop can't express it — the same shape as the
+   * hold range, and the easiest kind of rule to forget when mirroring the schema by hand. Both values
+   * below are individually in range.
+   */
+  it('rejects an emom whose interval count multiplies out past the ceiling', () => {
+    expect(validateConfig('emom', { intervalSec: '1', totalMinutes: '60' })).toBe(
+      'That works out to more than 500 intervals. Use a longer interval or a shorter block.',
+    );
+    expect(validateConfig('emom', { intervalSec: '60', totalMinutes: '500' })).toBeNull();
+  });
+});

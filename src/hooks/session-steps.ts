@@ -128,11 +128,11 @@ function expandExercise(
   switch (exercise.type) {
     case 'timed_hold': {
       const sets = visit ? 1 : exercise.config.sets;
-      // A 0 (or negative) end would auto-advance on the very first tick, skipping the hold outright —
-      // and nothing validates a program week's override config, so `hold_sec_min: 0` reaches here from
-      // both the override schema (a free record of numbers) and the in-app override editor (no
-      // validateConfig). Degrading to a no-auto-end hold keeps the set runnable by hand, which is what
-      // it did before holds could end themselves; vanishing mid-workout would not be a degrade.
+      // A 0 (or negative) end would auto-advance on the very first tick, skipping the hold outright.
+      // Both paths that could produce one are gated now — applyExerciseOverride re-validates a merged
+      // override and the in-app override editor runs validateConfig — but the degrade stays: it keeps
+      // the set runnable by hand, which is what it did before holds could end themselves, and a hold
+      // vanishing mid-workout would not be a degrade.
       const configuredEnd = exercise.config.holdSecMax ?? exercise.config.holdSecMin;
       const holdEndSec = configuredEnd !== undefined && configuredEnd > 0 ? configuredEnd : undefined;
       const steps: RunnerStep[] = [];
@@ -442,7 +442,12 @@ export function buildSteps(workout: Workout, exercises: Exercise[]): RunnerStep[
     if (block.kind === 'exercise') {
       const exercise = exercises.find((candidate) => candidate.id === block.exerciseId);
       if (!exercise) return;
-      steps.push(...expandExercise(exercise, blockIndex, `${blockIndex}`, block.configOverride));
+      // Appended one at a time rather than spread as arguments: `push(...arr)` passes every element as
+      // a separate argument and throws `RangeError` past the engine's argument limit, which turned a
+      // large set count into a crash before the session screen's first render instead of a long workout.
+      for (const step of expandExercise(exercise, blockIndex, `${blockIndex}`, block.configOverride)) {
+        steps.push(step);
+      }
       return;
     }
 
@@ -471,12 +476,12 @@ export function buildSteps(workout: Workout, exercises: Exercise[]): RunnerStep[
         // Shared by the member's own steps and by the rest that follows it, which belongs to the work
         // it follows rather than to what comes next.
         const at = positionAt(round, i);
-        steps.push(
-          ...expandExercise(exercise, blockIndex, memberKey, member.configOverride, {
-            index: round + 1,
-            total: block.rounds,
-          }).map((step): RunnerStep => ({ ...step, circuit: at })),
-        );
+        // One at a time, for the same reason as the exercise block above.
+        const visitSteps = expandExercise(exercise, blockIndex, memberKey, member.configOverride, {
+          index: round + 1,
+          total: block.rounds,
+        });
+        for (const step of visitSteps) steps.push({ ...step, circuit: at });
         const isLastMember = i === members.length - 1;
         if (!isLastMember && block.restBetweenExercisesSec) {
           steps.push({

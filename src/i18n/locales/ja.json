@@ -434,6 +434,7 @@
       "mustBeAtLeast": "{{label}}は{{min}}以上にしてください。",
       "mustBeAtMost": "{{label}}は{{max}}以下にしてください。",
       "mustBeWhole": "{{label}}は整数で入力してください。",
+      "tooManyIntervals": "インターバルが{{max}}回を超えます。インターバルを長くするか、ブロックを短くしてください。",
       "holdMaxNeedsMin": "ホールドの範囲には、上限だけでなく下限も必要です。",
       "holdMaxBelowMin": "ホールドの上限は下限より短くできません。"
     }

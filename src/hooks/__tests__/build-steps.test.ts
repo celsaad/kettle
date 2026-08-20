@@ -544,3 +544,43 @@ describe('swapping an exercise mid-session', () => {
     expect(swapExerciseForMember(before, 'nope', 0, pushupsExercise, '0~swap1')).toEqual(before);
   });
 });
+
+/**
+ * `steps.push(...expandExercise(...))` spread the expansion as *arguments*, which throws a
+ * `RangeError` past the engine's argument limit — so a large count crashed the session screen before
+ * its first render rather than producing a long workout.
+ *
+ * Both call sites are pinned, and the counts are deliberately far above what `schema.ts` now admits:
+ * these expansions are reached from paths that never met the schema, and the schema's own ceiling is
+ * covered in yaml-mapping.test.ts. `restSec: 0` keeps the expansion to one step per set.
+ */
+describe('very large expansions', () => {
+  const HUGE = 200_000;
+
+  it('builds an exercise block far past the engine argument limit without throwing', () => {
+    const many: Exercise = { id: 'many', name: 'Many', type: 'reps', config: { sets: HUGE, targetRepsMin: 5, restSec: 0 } };
+    const steps = buildSteps(workoutOf(single('many')), [many]);
+
+    expect(steps).toHaveLength(HUGE);
+    expect(steps[HUGE - 1].kind).toBe('reps');
+  });
+
+  it('builds an oversized circuit member visit without throwing either', () => {
+    // A hiit member ignores the visit flag and runs its own full round count once per visit, which is
+    // what makes a single visit big enough to reach the limit on the circuit's own push.
+    const many: Exercise = { id: 'many', name: 'Many', type: 'hiit', config: { workSec: 30, restSec: 0, rounds: HUGE } };
+    const partner: Exercise = {
+      id: 'partner',
+      name: 'Partner',
+      type: 'reps',
+      config: { sets: 1, targetRepsMin: 5, restSec: 0 },
+    };
+    const steps = buildSteps(
+      workoutOf({ kind: 'circuit', rounds: 1, members: [{ exerciseId: 'many' }, { exerciseId: 'partner' }] }),
+      [many, partner],
+    );
+
+    expect(steps).toHaveLength(HUGE + 1);
+    expect(steps[0].circuit).toEqual({ round: 1, rounds: 1, member: 1, memberTotal: 2 });
+  });
+});

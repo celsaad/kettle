@@ -453,6 +453,7 @@
       "mustBeAtLeast": "{{label}} precisa ser pelo menos {{min}}.",
       "mustBeAtMost": "{{label}} pode ser no máximo {{max}}.",
       "mustBeWhole": "{{label}} precisa ser um número inteiro.",
+      "tooManyIntervals": "Isso dá mais de {{max}} intervalos. Use um intervalo maior ou um bloco mais curto.",
       "holdMaxNeedsMin": "Uma faixa de isometria precisa de um mínimo além do máximo.",
       "holdMaxBelowMin": "A isometria máxima não pode ser menor que a mínima."
     }

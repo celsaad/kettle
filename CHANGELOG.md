@@ -43,6 +43,16 @@ training to. Vibration is separate and stays on your phone's own settings.
 
 ### Fixed
 
+- **A workout with an impossible number of sets no longer makes that workout unstartable.** A library
+  that asked for tens of thousands of sets — a stray digit in a hand-edited file, usually — was
+  accepted on import and then failed to open every time you tried to start it, and the file stuck
+  around, so it kept failing until you found and fixed the line yourself. Sets and rounds are now
+  capped at 500 and an EMOM block at 24 hours, and a file over the line is refused on import, where
+  the message tells you which field it was. A program week's overrides are checked against the same
+  rules: one that asks for something impossible is now ignored for that week, and the exercise runs
+  as your library has it, rather than breaking the workout.
+- **The override editor tells you when a number won't do.** Setting a program week to 0 sets used to
+  save quietly and produce a week with nothing in it; it now says so and keeps the panel open.
 - **EMOM minutes start at the rep count you prescribed.** They started at zero, so hitting the target
   meant tapping up to it every minute — and a minute you left alone recorded nothing at all.
 - **The chime for reaching a hold's target or an interval's halfway mark now sounds again if you go

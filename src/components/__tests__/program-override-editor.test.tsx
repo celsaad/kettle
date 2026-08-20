@@ -178,3 +178,53 @@ it('will not open an override whose target has gone', async () => {
   await fireEvent.press(screen.getByText('ghost: sets → 5'));
   expect(screen.queryByText('Save override')).toBeNull();
 });
+
+/**
+ * This was the one editor in the app that ran no validation at all, so `sets: 0` was two taps from
+ * the program file. It matters more now than it did: `applyExerciseOverride` re-validates the merged
+ * config and silently keeps the base exercise when it fails, so an unvalidated patch would save,
+ * display, and quietly do nothing on the week it claims to change.
+ */
+describe('config validation on confirm', () => {
+  it('refuses to emit an override the schema would reject, and says why', async () => {
+    const { onChange, rendered } = mount();
+    await rendered;
+
+    await fireEvent.press(screen.getByText('+ Add override'));
+    await fireEvent.press(screen.getByText('Pull-ups'));
+    await fireEvent.changeText(fieldShowing('4'), '0');
+    await fireEvent.press(screen.getByText('Add override'));
+
+    expect(onChange).not.toHaveBeenCalled();
+    expect(screen.getByText('Sets must be at least 1.')).toBeTruthy();
+  });
+
+  it('refuses a count past the ceiling too', async () => {
+    const { onChange, rendered } = mount();
+    await rendered;
+
+    await fireEvent.press(screen.getByText('+ Add override'));
+    await fireEvent.press(screen.getByText('Pull-ups'));
+    await fireEvent.changeText(fieldShowing('4'), '501');
+    await fireEvent.press(screen.getByText('Add override'));
+
+    expect(onChange).not.toHaveBeenCalled();
+    expect(screen.getByText('Sets can be at most 500.')).toBeTruthy();
+  });
+
+  it('clears the message once the field is edited again, and then saves', async () => {
+    const { onChange, rendered } = mount();
+    await rendered;
+
+    await fireEvent.press(screen.getByText('+ Add override'));
+    await fireEvent.press(screen.getByText('Pull-ups'));
+    await fireEvent.changeText(fieldShowing('4'), '0');
+    await fireEvent.press(screen.getByText('Add override'));
+    await fireEvent.changeText(fieldShowing('0'), '5');
+
+    expect(screen.queryByText('Sets must be at least 1.')).toBeNull();
+
+    await fireEvent.press(screen.getByText('Add override'));
+    expect(onChange).toHaveBeenCalledWith([{ kind: 'exercise', exerciseId: 'pull-ups', config: { sets: 5 } }]);
+  });
+});

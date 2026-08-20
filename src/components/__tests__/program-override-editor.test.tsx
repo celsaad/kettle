@@ -228,3 +228,55 @@ describe('config validation on confirm', () => {
     expect(onChange).toHaveBeenCalledWith([{ kind: 'exercise', exerciseId: 'pull-ups', config: { sets: 5 } }]);
   });
 });
+
+describe('the circuit branch is gated too', () => {
+  it('refuses a negative rest rather than saving one the merge will drop', async () => {
+    const { onChange, rendered } = mount();
+    await rendered;
+
+    await fireEvent.press(screen.getByText('+ Add override'));
+    await fireEvent.press(screen.getByText('finisher'));
+    await fireEvent.changeText(fieldShowing('15'), '-5');
+    await fireEvent.press(screen.getByText('Add override'));
+
+    expect(onChange).not.toHaveBeenCalled();
+    expect(screen.getByText('Rest/exercise (sec) must be at least 0.')).toBeTruthy();
+  });
+
+  it('still saves a circuit patch the schema accepts', async () => {
+    const { onChange, rendered } = mount();
+    await rendered;
+
+    await fireEvent.press(screen.getByText('+ Add override'));
+    await fireEvent.press(screen.getByText('finisher'));
+    await fireEvent.changeText(fieldShowing('15'), '0');
+    await fireEvent.press(screen.getByText('Add override'));
+
+    expect(onChange).toHaveBeenCalledWith([
+      { kind: 'block', blockId: 'finisher', config: { rest_between_exercises_sec: 0 } },
+    ]);
+  });
+});
+
+/**
+ * The overrides list stays mounted behind the edit panel, so a row tap can swap the target out from
+ * under a message that named the old one — leaving "Sets must be at least 1." above a circuit's
+ * fields, or above a different exercise entirely.
+ */
+it('drops a stale error when the panel moves to another target', async () => {
+  const overrides: ProgramOverride[] = [
+    { kind: 'exercise', exerciseId: 'pull-ups', config: { sets: 5 } },
+    { kind: 'exercise', exerciseId: 'dips', config: { sets: 3 } },
+  ];
+  const { rendered } = mount(overrides);
+  await rendered;
+
+  await fireEvent.press(screen.getByText('Pull-ups: sets → 5'));
+  await fireEvent.changeText(fieldShowing('5'), '0');
+  await fireEvent.press(screen.getByText('Save override'));
+  expect(screen.getByText('Sets must be at least 1.')).toBeTruthy();
+
+  await fireEvent.press(screen.getByText('Dips: sets → 3'));
+
+  expect(screen.queryByText('Sets must be at least 1.')).toBeNull();
+});

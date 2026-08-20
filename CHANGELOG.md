@@ -51,8 +51,16 @@ training to. Vibration is separate and stays on your phone's own settings.
   the message tells you which field it was. A program week's overrides are checked against the same
   rules: one that asks for something impossible is now ignored for that week, and the exercise runs
   as your library has it, rather than breaking the workout.
-- **The override editor tells you when a number won't do.** Setting a program week to 0 sets used to
-  save quietly and produce a week with nothing in it; it now says so and keeps the panel open.
+- **A half a set no longer costs you your library.** Typing `2.5` into Sets — or a fraction into
+  reps or rounds — used to save, and then Kettle couldn't read the file on the next launch and
+  started you over with the built-in library. The editors now say a whole number is needed, which is
+  what the format has always required.
+- **The override editor tells you when a number won't do.** Setting a program week to 0 sets, a rep
+  range that runs backwards, or a negative rest on a circuit used to save quietly and then do nothing
+  on the week it claimed to change; each now says so and keeps the panel open.
+- **An exercise recorded at a weight of 0 can be saved and overridden again.** The editors insisted on
+  at least 1, so an exercise written as bodyweight-with-no-load was stuck on a field you hadn't
+  touched.
 - **EMOM minutes start at the rep count you prescribed.** They started at zero, so hitting the target
   meant tapping up to it every minute — and a minute you left alone recorded nothing at all.
 - **The chime for reaching a hold's target or an interval's halfway mark now sounds again if you go

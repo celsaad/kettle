@@ -8,6 +8,7 @@ import {
   configToStrings,
   fieldUnitLabel,
   type FieldDef,
+  validateBlockConfig,
   validateConfig,
 } from '@/domain/exercise-form';
 import { overrideLines } from '@/app/program-detail';
@@ -90,6 +91,7 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
   };
 
   const startAdd = () => {
+    setError(null);
     setEditingIndex(null);
     setTarget(null);
     setFieldValues({});
@@ -98,6 +100,7 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
   };
 
   const chooseTarget = (next: Target) => {
+    setError(null);
     setTarget(next);
     if (next.kind === 'exercise') seedFields(next.exercise);
     else
@@ -110,6 +113,7 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
   };
 
   const startEdit = (index: number) => {
+    setError(null);
     const override = overrides[index];
     if (override.kind === 'exercise') {
       const base = library.exercises.find((candidate) => candidate.id === override.exerciseId);
@@ -168,9 +172,14 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
     } else {
       const blockId = target.block.id;
       if (!blockId) return;
-      // No ceiling check on the circuit's rounds: the only way to change it here is a ±1 stepper, so
-      // no realistic number of taps reaches one. `applyBlockOverride` re-validates the merged block
-      // anyway, which is what covers a patch that arrived from hand-written YAML.
+      // Gated like the exercise branch. The rounds stepper can't reach a bad value, but both rest
+      // fields are free text, and a negative one used to be written to the program file and then
+      // silently dropped by `applyBlockOverride`'s re-parse — saved, displayed, and doing nothing.
+      const configError = validateBlockConfig(fieldValues);
+      if (configError) {
+        setError(configError);
+        return;
+      }
       const edited: CircuitBlock = {
         ...target.block,
         rounds: Number(fieldValues.rounds) || target.block.rounds,

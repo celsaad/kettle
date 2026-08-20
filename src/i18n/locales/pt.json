@@ -454,6 +454,7 @@
       "mustBeAtMost": "{{label}} pode ser no máximo {{max}}.",
       "mustBeWhole": "{{label}} precisa ser um número inteiro.",
       "tooManyIntervals": "Isso dá mais de {{max}} intervalos. Use um intervalo maior ou um bloco mais curto.",
+      "repsMaxBelowMin": "O máximo de repetições não pode ser menor que o mínimo.",
       "holdMaxNeedsMin": "Uma faixa de isometria precisa de um mínimo além do máximo.",
       "holdMaxBelowMin": "A isometria máxima não pode ser menor que a mínima."
     }

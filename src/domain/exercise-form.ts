@@ -17,13 +17,21 @@ import { fromDisplayWeight, toDisplayWeight, type UnitSystem } from '@/domain/un
  * `label` is an i18next key rather than display text, resolved with `t()` at the point of use
  * — this module has no React tree to hook `useTranslation()` into, and there's no in-app language
  * switch (the device locale is read once at startup, see `i18n/index.ts`), so resolving eagerly here
- * is safe. `min` is the smallest accepted value, defaulting to 1, and `max` the largest, unbounded
- * by default — see validateConfig.
+ * is safe. `min` is the smallest accepted value, defaulting to 1, `max` the largest (unbounded by
+ * default), and `integer` mirrors the schema's `int()` — see validateConfig.
  *
  * `unit` is the suffix shown next to the label. `'weight'` is the one entry that isn't literal: it
  * renders as kg or lb per the user's preference, and its value is converted on the way in and out.
  */
-export type FieldDef = { key: string; label: string; unit?: string; optional?: boolean; min?: number; max?: number };
+export type FieldDef = {
+  key: string;
+  label: string;
+  unit?: string;
+  optional?: boolean;
+  min?: number;
+  max?: number;
+  integer?: boolean;
+};
 
 /** The form's only unit-converted field, named once so the three places that special-case it agree. */
 const WEIGHT_FIELD = 'targetWeightKg';
@@ -61,23 +69,26 @@ export const CONFIG_FIELDS: Record<ExerciseType, FieldDef[]> = {
   hiit: [
     { key: 'workSec', label: 'exerciseForm.field.work', unit: 'sec' },
     { key: 'restSec', label: 'exerciseForm.field.rest', unit: 'sec', min: 0 },
-    { key: 'rounds', label: 'exerciseForm.field.rounds', max: MaxRounds },
+    { key: 'rounds', label: 'exerciseForm.field.rounds', max: MaxRounds, integer: true },
   ],
   emom: [
     { key: 'intervalSec', label: 'exerciseForm.field.interval', unit: 'sec' },
     { key: 'totalMinutes', label: 'exerciseForm.field.total', unit: 'min', max: MaxTotalMinutes },
-    { key: 'targetReps', label: 'exerciseForm.field.targetReps', optional: true },
+    { key: 'targetReps', label: 'exerciseForm.field.targetReps', optional: true, integer: true },
   ],
   amrap: [{ key: 'timeCapSec', label: 'exerciseForm.field.timeCap', unit: 'sec' }],
   reps: [
-    { key: 'sets', label: 'exerciseForm.field.sets', max: MaxSets },
-    { key: 'targetRepsMin', label: 'exerciseForm.field.targetReps' },
-    { key: 'targetRepsMax', label: 'exerciseForm.field.targetRepsMax', optional: true },
-    { key: WEIGHT_FIELD, label: 'exerciseForm.field.weight', unit: 'weight', optional: true },
+    { key: 'sets', label: 'exerciseForm.field.sets', max: MaxSets, integer: true },
+    { key: 'targetRepsMin', label: 'exerciseForm.field.targetReps', integer: true },
+    { key: 'targetRepsMax', label: 'exerciseForm.field.targetRepsMax', optional: true, integer: true },
+    // `min: 0` because the schema's `nonnegative()` allows it: a weight of 0 is "bodyweight, no added
+    // load" spelled out, and the default floor of 1 made an exercise stored that way unsaveable — and,
+    // once the override editor started validating, un-overridable.
+    { key: WEIGHT_FIELD, label: 'exerciseForm.field.weight', unit: 'weight', optional: true, min: 0 },
     { key: 'restSec', label: 'exerciseForm.field.rest', unit: 'sec', min: 0 },
   ],
   timed_hold: [
-    { key: 'sets', label: 'exerciseForm.field.sets', max: MaxSets },
+    { key: 'sets', label: 'exerciseForm.field.sets', max: MaxSets, integer: true },
     // Optional, like cardio's duration below: left blank it's a max-effort hold that counts up until
     // you end it, which is the only way to express one.
     { key: 'holdSecMin', label: 'exerciseForm.field.hold', unit: 'sec', optional: true },
@@ -90,6 +101,37 @@ export const CONFIG_FIELDS: Record<ExerciseType, FieldDef[]> = {
   ],
   rest: [{ key: 'durationSec', label: 'exerciseForm.field.duration', unit: 'sec', min: 0 }],
 };
+
+/**
+ * The per-field half of both validators below: the checks a `FieldDef` can express on its own.
+ *
+ * Shared rather than written twice because the drift is the whole problem — this loop is the mirror
+ * of `schema.ts` for every path that writes to the library without parsing it, and a rule that
+ * exists in one copy and not the other is invisible until a user's file fails to load.
+ */
+function validateFields(fields: FieldDef[], values: Record<string, string>): string | null {
+  for (const field of fields) {
+    const raw = values[field.key]?.trim() ?? '';
+    const label = t(field.label);
+    if (!raw) {
+      if (field.optional) continue;
+      return t('exerciseForm.error.required', { label });
+    }
+    const parsed = Number(raw);
+    if (!Number.isFinite(parsed)) return t('exerciseForm.error.mustBeNumber', { label });
+    const min = field.min ?? 1;
+    if (parsed < min) return t('exerciseForm.error.mustBeAtLeast', { label, min });
+    // Only the counts the runner expands one step per unit of carry a max — see MaxSets in schema.ts
+    // for why an unbounded one is a workout that can't be started rather than a long one.
+    if (field.max !== undefined && parsed > field.max)
+      return t('exerciseForm.error.mustBeAtMost', { label, max: field.max });
+    // The schema's `int()`. A fractional `sets` is refused on import, which meant the editor could
+    // write one and the *next launch* would fail to parse the library and reseed it — the form's
+    // silence here cost the user their whole file, not their edit.
+    if (field.integer && !Number.isInteger(parsed)) return t('exerciseForm.error.mustBeWhole', { label });
+  }
+  return null;
+}
 
 /**
  * Mirrors the zod config constraints in `domain/schema.ts` for the in-app forms, which write straight
@@ -105,36 +147,31 @@ export const CONFIG_FIELDS: Record<ExerciseType, FieldDef[]> = {
  * The per-field loop can't see the schema's *cross-field* refinements, which is how the hold range
  * went unchecked on this path entirely: an editor could write `hold_sec_max` below `hold_sec_min`,
  * or without one at all, and the store took both — the same file would then be refused on import.
- * Those two rules are enforced after the loop.
+ * Every such rule is enforced after the loop, and there are three of them: EMOM's derived interval
+ * count, the rep range and the hold range.
  */
 export function validateConfig(type: ExerciseType, values: Record<string, string>): string | null {
-  for (const field of CONFIG_FIELDS[type]) {
-    const raw = values[field.key]?.trim() ?? '';
-    const label = t(field.label);
-    if (!raw) {
-      if (field.optional) continue;
-      return t('exerciseForm.error.required', { label });
-    }
-    const parsed = Number(raw);
-    if (!Number.isFinite(parsed)) return t('exerciseForm.error.mustBeNumber', { label });
-    const min = field.min ?? 1;
-    if (parsed < min) return t('exerciseForm.error.mustBeAtLeast', { label, min });
-    // Only the counts the runner expands one step per unit of carry a max — see MaxSets in schema.ts
-    // for why an unbounded one is a workout that can't be started rather than a long one.
-    if (field.max !== undefined && parsed > field.max)
-      return t('exerciseForm.error.mustBeAtMost', { label, max: field.max });
-  }
+  const fieldError = validateFields(CONFIG_FIELDS[type], values);
+  if (fieldError) return fieldError;
 
-  // EMOM's ceiling is on the *product*, so the per-field loop can't express it — the same shape as the
-  // hold range below. Missing it here would not cost a rejected import: this form writes straight to
-  // the library file, so a config the schema refuses is written to disk and then fails to parse on the
-  // next launch, which sends the user's whole library through the reseed path in library-file.ts.
+  // EMOM's ceiling is on the *product*, so the per-field loop can't express it. Missing it here would
+  // not cost a rejected import: this form writes straight to the library file, so a config the schema
+  // refuses is written to disk and then fails to parse on the next launch, which sends the user's
+  // whole library through the reseed path in library-file.ts.
   if (type === 'emom') {
     const intervalSec = Number(values.intervalSec);
     const totalMinutes = Number(values.totalMinutes);
     if (Number.isFinite(intervalSec) && Number.isFinite(totalMinutes) && intervalSec > 0) {
       if ((totalMinutes * 60) / intervalSec > MaxRounds) return t('exerciseForm.error.tooManyIntervals', { max: MaxRounds });
     }
+  }
+
+  if (type === 'reps') {
+    const repsMin = values.targetRepsMin?.trim() ?? '';
+    const repsMax = values.targetRepsMax?.trim() ?? '';
+    // The twin of the hold range below, and missed for as long. Unlike the hold's, a bare `max` is
+    // legal here — `target_reps_min` is required — so the only rule is the ordering.
+    if (repsMin && repsMax && Number(repsMax) < Number(repsMin)) return t('exerciseForm.error.repsMaxBelowMin');
   }
 
   if (type === 'timed_hold') {
@@ -145,6 +182,26 @@ export function validateConfig(type: ExerciseType, values: Record<string, string
   }
 
   return null;
+}
+
+/**
+ * The circuit-block equivalent, for the one form that edits a block's own params rather than an
+ * exercise's: the override editor's block branch.
+ *
+ * It needs its own field list because a circuit's config isn't an exercise's — and it needs one at
+ * all because that branch validated nothing, so a negative rest typed into either free-text field
+ * was written to the program file and then silently discarded by `applyBlockOverride`'s re-parse.
+ * Labels are the keys the panel itself renders — which already carry their unit, so no `unit` here:
+ * the message names the field exactly as the user sees it above the input.
+ */
+export const BLOCK_CONFIG_FIELDS: FieldDef[] = [
+  { key: 'rounds', label: 'exerciseForm.field.rounds', max: MaxRounds, integer: true },
+  { key: 'restBetweenExercisesSec', label: 'overrideEditor.restPerExercise', min: 0 },
+  { key: 'restBetweenRoundsSec', label: 'overrideEditor.restPerRound', min: 0 },
+];
+
+export function validateBlockConfig(values: Record<string, string>): string | null {
+  return validateFields(BLOCK_CONFIG_FIELDS, values);
 }
 
 /** Config → the string map a form holds. Weight is converted to the user's unit; nothing else is. */

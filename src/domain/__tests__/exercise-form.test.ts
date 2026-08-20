@@ -1,4 +1,11 @@
-import { buildExercise, configToStrings, fieldUnitLabel, CONFIG_FIELDS, validateConfig } from '@/domain/exercise-form';
+import {
+  buildExercise,
+  configToStrings,
+  fieldUnitLabel,
+  CONFIG_FIELDS,
+  validateBlockConfig,
+  validateConfig,
+} from '@/domain/exercise-form';
 import type { Exercise, ExerciseType } from '@/domain/types';
 import { UNIT_SYSTEMS, type UnitSystem } from '@/domain/units';
 
@@ -256,5 +263,79 @@ describe('validateConfig ceilings', () => {
       'That works out to more than 500 intervals. Use a longer interval or a shorter block.',
     );
     expect(validateConfig('emom', { intervalSec: '60', totalMinutes: '500' })).toBeNull();
+  });
+});
+
+/**
+ * The schema's `int()`, which this mirror had never carried. The cost of the gap wasn't a rejected
+ * edit: the form writes straight to the library *file*, so `sets: 2.5` was saved, and the next launch
+ * failed to parse it and reseeded — the user lost the whole library, not the one exercise.
+ */
+describe('validateConfig whole-number fields', () => {
+  it.each([
+    ['reps', { sets: '2.5', targetRepsMin: '5', restSec: '60' }, 'Sets must be a whole number.'],
+    ['reps', { sets: '3', targetRepsMin: '5.5', restSec: '60' }, 'Target reps must be a whole number.'],
+    ['timed_hold', { sets: '1.5', holdSecMin: '30', restSec: '60' }, 'Sets must be a whole number.'],
+    ['hiit', { workSec: '40', restSec: '20', rounds: '4.5' }, 'Rounds must be a whole number.'],
+    ['emom', { intervalSec: '60', totalMinutes: '10', targetReps: '3.5' }, 'Target reps must be a whole number.'],
+  ])('rejects a fractional %s field', (type, values, message) => {
+    expect(validateConfig(type as ExerciseType, values)).toBe(message);
+  });
+
+  // The fields the schema leaves as plain `number` stay fractional: a 2.5-second interval is legal.
+  it('leaves the non-integer fields alone', () => {
+    expect(validateConfig('hiit', { workSec: '40.5', restSec: '20.5', rounds: '4' })).toBeNull();
+    expect(validateConfig('timed_hold', { sets: '3', holdSecMin: '30.5', restSec: '60' })).toBeNull();
+  });
+});
+
+describe('validateConfig cross-field rules', () => {
+  /**
+   * The twin of the hold range, and missed for as long. It matters more now that the override editor
+   * validates: a max below the min passes a per-field check, and `applyExerciseOverride` then drops
+   * the whole override without saying so.
+   */
+  it('rejects a rep range whose maximum is below its minimum', () => {
+    expect(validateConfig('reps', { sets: '3', targetRepsMin: '10', targetRepsMax: '5', restSec: '60' })).toBe(
+      "The maximum reps can't be fewer than the minimum.",
+    );
+  });
+
+  it('accepts a rep range that is equal at both ends, as the schema does', () => {
+    expect(validateConfig('reps', { sets: '3', targetRepsMin: '5', targetRepsMax: '5', restSec: '60' })).toBeNull();
+  });
+});
+
+/**
+ * `target_weight` is `nonnegative()`, so 0 — "bodyweight, no added load", spelled out — is a legal
+ * stored value. The form's default floor of 1 made such an exercise unsaveable, and once the override
+ * editor started validating, un-overridable: the weight field is seeded from the exercise, so every
+ * confirm failed on a field the user never touched.
+ */
+it('accepts a target weight of 0, which the schema allows', () => {
+  expect(validateConfig('reps', { sets: '3', targetRepsMin: '5', targetWeightKg: '0', restSec: '60' })).toBeNull();
+});
+
+/**
+ * The override editor's block branch validated nothing at all, so a negative rest reached the program
+ * file and was then silently discarded by `applyBlockOverride`'s re-parse.
+ */
+describe('validateBlockConfig', () => {
+  const valid = { rounds: '3', restBetweenExercisesSec: '15', restBetweenRoundsSec: '60' };
+
+  it('accepts a circuit config the schema accepts, zero rest included', () => {
+    expect(validateBlockConfig(valid)).toBeNull();
+    expect(validateBlockConfig({ ...valid, restBetweenExercisesSec: '0', restBetweenRoundsSec: '0' })).toBeNull();
+  });
+
+  it('rejects a negative rest in either field', () => {
+    expect(validateBlockConfig({ ...valid, restBetweenExercisesSec: '-5' })).toBe('Rest/exercise (sec) must be at least 0.');
+    expect(validateBlockConfig({ ...valid, restBetweenRoundsSec: '-5' })).toBe('Rest/round (sec) must be at least 0.');
+  });
+
+  it('rejects a round count the schema would refuse', () => {
+    expect(validateBlockConfig({ ...valid, rounds: '0' })).toBe('Rounds must be at least 1.');
+    expect(validateBlockConfig({ ...valid, rounds: '501' })).toBe('Rounds can be at most 500.');
+    expect(validateBlockConfig({ ...valid, rounds: '2.5' })).toBe('Rounds must be a whole number.');
   });
 });

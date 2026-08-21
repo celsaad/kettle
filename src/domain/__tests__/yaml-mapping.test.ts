@@ -465,3 +465,83 @@ ${weeks}
     expect(yaml).not.toContain('rest_day');
   });
 });
+
+/**
+ * The ceilings on `sets`, `rounds` and `total_minutes` — see MaxSets in schema.ts. `sets: 200000`
+ * passed `int().positive()` and then threw `RangeError` out of the session screen before its first
+ * render, on a library that persists, so the workout stayed unstartable until the file was hand-edited.
+ */
+describe('bounded repeat counts', () => {
+  const libraryWithExercise = (type: string, config: Record<string, unknown>): string =>
+    [
+      'version: 1',
+      'exercises:',
+      '  - id: a',
+      '    name: A',
+      `    type: ${type}`,
+      '    config:',
+      ...Object.entries(config).map(([key, value]) => `      ${key}: ${value}`),
+      'workouts: []',
+      'programs: []',
+      '',
+    ].join('\n');
+
+  const repsWith = (sets: number) => libraryWithExercise('reps', { sets, target_reps_min: 5, rest_sec: 60 });
+  const holdWith = (sets: number) => libraryWithExercise('timed_hold', { sets, hold_sec_min: 30, rest_sec: 60 });
+  const hiitWith = (rounds: number) => libraryWithExercise('hiit', { work_sec: 40, rest_sec: 20, rounds });
+
+  it('refuses a set count past the ceiling, in both types that have one', () => {
+    expect(parseLibraryYaml(repsWith(501)).ok).toBe(false);
+    expect(parseLibraryYaml(holdWith(501)).ok).toBe(false);
+  });
+
+  it('accepts the ceiling itself, so the bound is inclusive', () => {
+    expect(parseLibraryYaml(repsWith(500)).ok).toBe(true);
+    expect(parseLibraryYaml(holdWith(500)).ok).toBe(true);
+    expect(parseLibraryYaml(hiitWith(500)).ok).toBe(true);
+  });
+
+  it('refuses a round count past the ceiling', () => {
+    expect(parseLibraryYaml(hiitWith(501)).ok).toBe(false);
+  });
+
+  it('refuses a circuit block whose rounds are past the ceiling', () => {
+    const yaml = `version: 1
+exercises:
+  - id: a
+    name: A
+    type: reps
+    config: { sets: 3, target_reps_min: 5, rest_sec: 60 }
+  - id: b
+    name: B
+    type: reps
+    config: { sets: 3, target_reps_min: 5, rest_sec: 60 }
+workouts:
+  - id: w
+    name: W
+    blocks:
+      - type: circuit
+        rounds: 501
+        exercises:
+          - exercise: a
+          - exercise: b
+programs: []
+`;
+    expect(parseLibraryYaml(yaml).ok).toBe(false);
+    expect(parseLibraryYaml(yaml.replace('rounds: 501', 'rounds: 500')).ok).toBe(true);
+  });
+
+  /**
+   * EMOM's step count is *derived*, so bounding the two fields separately doesn't bound what they
+   * produce: both refused pairs below are individually in range and only the product gives them away.
+   */
+  it('refuses an emom whose interval count is derived past the ceiling', () => {
+    expect(parseLibraryYaml(libraryWithExercise('emom', { interval_sec: 1, total_minutes: 60 })).ok).toBe(false);
+    expect(parseLibraryYaml(libraryWithExercise('emom', { interval_sec: 0.001, total_minutes: 1 })).ok).toBe(false);
+    expect(parseLibraryYaml(libraryWithExercise('emom', { interval_sec: 60, total_minutes: 500 })).ok).toBe(true);
+  });
+
+  it('refuses an emom longer than the day-length ceiling on its own', () => {
+    expect(parseLibraryYaml(libraryWithExercise('emom', { interval_sec: 300, total_minutes: 1441 })).ok).toBe(false);
+  });
+});

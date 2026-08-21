@@ -453,6 +453,8 @@
       "mustBeAtLeast": "{{label}} must be at least {{min}}.",
       "mustBeAtMost": "{{label}} can be at most {{max}}.",
       "mustBeWhole": "{{label}} must be a whole number.",
+      "tooManyIntervals": "That works out to more than {{max}} intervals. Use a longer interval or a shorter block.",
+      "repsMaxBelowMin": "The maximum reps can't be fewer than the minimum.",
       "holdMaxNeedsMin": "A hold range needs a minimum as well as a maximum.",
       "holdMaxBelowMin": "The maximum hold can't be shorter than the minimum."
     }

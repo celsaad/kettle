@@ -8,6 +8,7 @@ import type { DragHandle } from '@/components/reorderable-list';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { formatCircuitShape } from '@/domain/format';
+import { MaxRounds } from '@/domain/schema';
 import type { Exercise, WorkoutBlock } from '@/domain/types';
 import { useTheme } from '@/hooks/use-theme';
 import { useUnitSystem } from '@/state/preferences-store';
@@ -127,7 +128,10 @@ export function WorkoutCircuitBlock({ block, exercises, dragHandle, onChange, on
               {block.rounds}
             </ThemedText>
             <Pressable
-              onPress={() => onChange({ rounds: block.rounds + 1 })}
+              // Clamped to the schema's ceiling. This stepper is the only way to set a circuit's rounds,
+              // and workout-editor.tsx's save() validates the name and nothing else — so an unbounded one
+              // wrote a library that failed to parse on the next launch and was silently reseeded.
+              onPress={() => onChange({ rounds: Math.min(MaxRounds, block.rounds + 1) })}
               accessibilityRole="button"
               accessibilityLabel={t('common.increase', { label: t('workoutEditor.rounds') })}
               style={[styles.stepperButton, { borderColor: theme.border }]}>

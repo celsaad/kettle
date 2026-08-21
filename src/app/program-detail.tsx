@@ -14,7 +14,7 @@ import { RowStartButton } from '@/components/row-start-button';
 import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import type { Library, ProgramOverride, ProgramWeek, Workout } from '@/domain/types';
-import { overrideStatus } from '@/domain/yaml-mapping';
+import { overrideReport } from '@/domain/yaml-mapping';
 import { useTheme } from '@/hooks/use-theme';
 import { useLibraryStore } from '@/state/library-store';
 
@@ -41,18 +41,23 @@ export function overrideLines(override: ProgramOverride, library: Library, worko
     override.kind === 'exercise' ? (target ? (target as { name: string }).name : override.exerciseId) : 'Circuit';
   const name = override.kind === 'block' && !target ? override.blockId : label;
 
-  const lines = Object.entries(override.config).map(([key, value]) => `${name}: ${key} → ${value}`);
-  if (!target) return [...lines, translate('programs.overrideIgnoredMissing')];
-  // Three outcomes, not two: a key the target doesn't have is stripped by zod rather than refused, so
-  // it parses, changes nothing, and needs its own answer — see OverrideStatus.
-  switch (overrideStatus(target, override.config, override.kind)) {
-    case 'invalidValue':
-      return [...lines, translate('programs.overrideIgnoredInvalid')];
-    case 'unknownKey':
-      return [...lines, translate('programs.overrideIgnoredUnknownKey')];
-    default:
-      return lines;
+  const line = (key: string, value: number | string) => `${name}: ${key} → ${value}`;
+  const entries = Object.entries(override.config);
+  if (!target) return [...entries.map(([key, value]) => line(key, value)), translate('programs.overrideIgnoredMissing')];
+
+  // Whole-override problems get a trailing line; per-key ones get a note on their own key. A refused
+  // merge drops the *whole* patch, so its keys are reported together — but an unknown key is stripped
+  // on its own while the rest of the patch still runs, and saying "not applied" over all of them told
+  // the user a change wasn't happening while it happened.
+  const report = overrideReport(target, override.config, override.kind);
+  if (report.refused) {
+    return [...entries.map(([key, value]) => line(key, value)), translate('programs.overrideIgnoredInvalid')];
   }
+  return entries.map(([key, value]) =>
+    report.unknownKeys.includes(key)
+      ? `${line(key, value)} · ${translate('programs.overrideIgnoredUnknownKey')}`
+      : line(key, value),
+  );
 }
 
 export default function ProgramDetailScreen() {

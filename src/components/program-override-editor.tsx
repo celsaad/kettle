@@ -16,7 +16,13 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { MaxRounds } from '@/domain/schema';
-import { diffBlockOverride, diffExerciseOverride, mergeBlockOverride, mergeExerciseOverride } from '@/domain/yaml-mapping';
+import {
+  diffBlockOverride,
+  diffExerciseOverride,
+  mergeBlockOverride,
+  mergeExerciseOverride,
+  overrideReport,
+} from '@/domain/yaml-mapping';
 import type { Exercise, Library, ProgramOverride, Workout, WorkoutBlock } from '@/domain/types';
 import { useTheme } from '@/hooks/use-theme';
 import { useUnitSystem } from '@/state/preferences-store';
@@ -161,10 +167,34 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
    */
   const editedRest = (key: string, base: number | undefined): number | undefined => {
     const raw = fieldValues[key]?.trim() ?? '';
-    if (!raw) return undefined;
-    const value = Number(raw);
+    // A cleared field means "no rest here", which is `0` — the same thing the input shows when the
+    // block declares none. Returning `undefined` for it read as "unchanged" to `diffBlockOverride`,
+    // so clearing a rest the circuit *does* declare emitted no key at all and saved an empty override.
+    const value = raw ? Number(raw) : 0;
     if (!Number.isFinite(value)) return base;
+    // The guard is only about the seed: the panel shows `?? 0`, so a zero on a block with no rest is
+    // the untouched seed rather than a change. On a block that declares one, zero is a real edit.
     return value === 0 && base === undefined ? undefined : value;
+  };
+
+  /**
+   * The keys of the override being edited that the form has nowhere to put — a misspelling, or a
+   * circuit's structural keys.
+   *
+   * Carried through the save rather than dropped. `exerciseToDomain` discards what the type doesn't
+   * have, so an all-unknown override seeded the base values and diffed to `{}` — erasing the user's
+   * patch, down the path the "not applied" label now actively invites them onto. The editor must not
+   * destroy what it cannot display; the row's own ✕ is how you delete one deliberately.
+   */
+  const unrepresentable = (): Record<string, number | string> => {
+    if (editingIndex === null || !target) return {};
+    const existing = overrides[editingIndex];
+    const kept = overrideReport(
+      target.kind === 'exercise' ? target.exercise : target.block,
+      existing.config,
+      target.kind,
+    ).unknownKeys;
+    return Object.fromEntries(Object.entries(existing.config).filter(([key]) => kept.includes(key)));
   };
 
   const setField = (key: string, text: string) => {
@@ -192,7 +222,7 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
       nextOverride = {
         kind: 'exercise',
         exerciseId: target.exercise.id,
-        config: diffExerciseOverride(target.exercise, edited),
+        config: { ...unrepresentable(), ...diffExerciseOverride(target.exercise, edited) },
       };
     } else {
       const blockId = target.block.id;
@@ -211,12 +241,21 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
         restBetweenExercisesSec: editedRest('restBetweenExercisesSec', target.block.restBetweenExercisesSec),
         restBetweenRoundsSec: editedRest('restBetweenRoundsSec', target.block.restBetweenRoundsSec),
       };
-      nextOverride = { kind: 'block', blockId, config: diffBlockOverride(target.block, edited) };
+      nextOverride = {
+        kind: 'block',
+        blockId,
+        config: { ...unrepresentable(), ...diffBlockOverride(target.block, edited) },
+      };
     }
+    // An override with no keys is not an override: it saves without complaint, renders as a blank
+    // unnamed row and changes nothing. Editing one down to nothing removes it; adding one adds nothing.
+    const empty = Object.keys(nextOverride.config).length === 0;
     onChange(
       editingIndex !== null
-        ? overrides.map((existing, i) => (i === editingIndex ? nextOverride : existing))
-        : [...overrides, nextOverride],
+        ? overrides.flatMap((existing, i) => (i === editingIndex ? (empty ? [] : [nextOverride]) : [existing]))
+        : empty
+          ? overrides
+          : [...overrides, nextOverride],
     );
     close();
   };

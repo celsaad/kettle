@@ -7,7 +7,7 @@ import {
   diffExerciseOverride,
   mergeBlockOverride,
   mergeExerciseOverride,
-  overrideStatus,
+  overrideReport,
   parseLibraryYaml,
   parseSessionYaml,
   serializeLibraryYaml,
@@ -594,7 +594,7 @@ describe('overrides are re-validated after merging', () => {
  * stating something it isn't doing — and it lands hardest on files that imported cleanly before this
  * rule existed, since `programOverrideSchema` types `config` as a free record.
  */
-describe('overrideStatus', () => {
+describe('overrideReport', () => {
   const reps = exercises.find((exercise) => exercise.id === 'reps-full')!;
   const holdBare = exercises.find((exercise) => exercise.id === 'hold-bare')!;
   const circuit = library.workouts[0].blocks[2];
@@ -605,7 +605,8 @@ describe('overrideStatus', () => {
       number | string
     >[]) {
       const applied = applyExerciseOverride(reps, config) !== reps;
-      expect(overrideStatus(reps, config, 'exercise') === 'applies').toBe(applied);
+      const report = overrideReport(reps, config, 'exercise');
+      expect(!report.refused && report.unknownKeys.length === 0).toBe(applied);
     }
   });
 
@@ -617,20 +618,20 @@ describe('overrideStatus', () => {
    */
   it('reports a key the target does not have, which parses but does nothing', () => {
     // A `reps` exercise has `target_reps_min`, not `reps`.
-    expect(overrideStatus(reps, { reps: 12 }, 'exercise')).toBe('unknownKey');
+    expect(overrideReport(reps, { reps: 12 }, 'exercise').unknownKeys).not.toEqual([]);
     expect(applyExerciseOverride(reps, { reps: 12 })).toEqual(reps);
   });
 
   it('reports a structural key on a block, which used to throw rather than parse', () => {
     // `config: { exercises: 2 }` is a legal patch shape, and spreading it over the raw block replaced
     // the member list with a number — `raw.exercises.map is not a function`, inside a press handler.
-    expect(overrideStatus(circuit, { exercises: 2 }, 'block')).toBe('unknownKey');
+    expect(overrideReport(circuit, { exercises: 2 }, 'block').unknownKeys).not.toEqual([]);
     expect(() => applyBlockOverride(circuit, { exercises: 2 })).not.toThrow();
     expect(applyBlockOverride(circuit, { exercises: 2 })).toEqual(circuit);
   });
 
   it('still applies the keys it does know alongside nothing else', () => {
-    expect(overrideStatus(circuit, { rounds: 2, exercises: 2 }, 'block')).toBe('unknownKey');
+    expect(overrideReport(circuit, { rounds: 2, exercises: 2 }, 'block').unknownKeys).not.toEqual([]);
     const merged = applyBlockOverride(circuit, { rounds: 2, exercises: 2 });
     // The known half is honoured — it is the *reporting* that has to tell the truth, not the merge
     // that has to be all-or-nothing.
@@ -648,14 +649,16 @@ describe('overrideStatus', () => {
     const bareMax = { hold_sec_max: 60 };
     const noMin: Exercise = { ...holdBare, config: { ...holdBare.config, holdSecMin: undefined } } as Exercise;
 
-    expect(overrideStatus(noMin, bareMax, 'exercise')).toBe('invalidValue');
+    expect(overrideReport(noMin, bareMax, 'exercise').refused).toBe(true);
     expect(applyExerciseOverride(noMin, bareMax)).toEqual(noMin);
   });
 
   it('answers for blocks too, and says no for a non-circuit', () => {
-    expect(overrideStatus(circuit, { rounds: 2 }, 'block')).toBe('applies');
-    expect(overrideStatus(circuit, { rounds: 0 }, 'block')).toBe('invalidValue');
-    expect(overrideStatus({ kind: 'exercise', exerciseId: 'reps-bare' }, { rounds: 2 }, 'block')).toBe('unknownKey');
+    expect(overrideReport(circuit, { rounds: 2 }, 'block')).toEqual({ refused: false, unknownKeys: [] });
+    expect(overrideReport(circuit, { rounds: 0 }, 'block').refused).toBe(true);
+    expect(overrideReport({ kind: 'exercise', exerciseId: 'reps-bare' }, { rounds: 2 }, 'block').unknownKeys).not.toEqual(
+      [],
+    );
   });
 });
 

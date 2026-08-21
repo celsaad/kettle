@@ -472,15 +472,19 @@ export function applyExerciseOverride(exercise: Exercise, config: Record<string,
 }
 
 /**
- * Why an override does or doesn't reach the runner.
+ * What actually happened to an override, at the granularity each part of it happens at.
  *
- * `unknownKey` is its own answer rather than folded into `invalidValue` because it is a different
- * mistake with a different fix, and it is the **likelier** one in a hand-written program: zod strips
- * keys it doesn't know instead of refusing them, so `config: { reps: 12 }` on a `reps` exercise (the
- * field is `target_reps_min`) parses perfectly, changes nothing, and used to render with no note at
- * all — the app stating a change it wasn't making, through the strip path rather than the reject one.
+ * `refused` is whole-patch by nature: the merge is re-parsed as a unit, and a cross-field rule like
+ * "hold_sec_max needs hold_sec_min" can only fail for the config together. When it fails, *nothing*
+ * reaches the runner.
+ *
+ * `unknownKeys` is per key, and reporting it per *override* got the thesis of this whole change
+ * backwards. Zod strips keys it doesn't know rather than refusing them, so `{ rounds: 2, exercisez: 2 }`
+ * applies the rounds and silently drops the typo — and a whole-override "not applied" told the user a
+ * change wasn't happening while it happened. Per key, or it says the wrong thing in the one case that
+ * mixes them.
  */
-export type OverrideStatus = 'applies' | 'unknownKey' | 'invalidValue';
+export type OverrideReport = { refused: boolean; unknownKeys: string[] };
 
 /**
  * One override merge, in the forms its callers need — so there is exactly one implementation of
@@ -492,7 +496,7 @@ export type OverrideStatus = 'applies' | 'unknownKey' | 'invalidValue';
  * Nothing that reaches the runner may use it. Keeping it as a field of this result rather than as its
  * own export is the point — you have to name it to get it.
  */
-export type OverrideMerge<T> = { effective: T; asAuthored: T; status: OverrideStatus };
+export type OverrideMerge<T> = { effective: T; asAuthored: T; report: OverrideReport };
 
 /**
  * The keys a **block** override may target: a circuit's own repeat and rest params, exactly as the
@@ -506,31 +510,30 @@ export type OverrideMerge<T> = { effective: T; asAuthored: T; status: OverrideSt
  */
 const BLOCK_OVERRIDE_KEYS = ['rounds', 'rest_between_exercises_sec', 'rest_between_rounds_sec'] as const;
 
-/** The subset of `config` whose keys `known` actually has, plus whether anything was left out. */
+/** The subset of `config` whose keys `known` actually has, and the names of the ones left out. */
 function splitByKnownKeys(
   config: Record<string, number | string>,
   known: readonly string[],
-): { patch: Record<string, number | string>; hasUnknown: boolean } {
+): { patch: Record<string, number | string>; unknownKeys: string[] } {
   const patch: Record<string, number | string> = {};
-  let hasUnknown = false;
+  const unknownKeys: string[] = [];
   for (const [key, value] of Object.entries(config)) {
     if (known.includes(key)) patch[key] = value;
-    else hasUnknown = true;
+    else unknownKeys.push(key);
   }
-  return { patch, hasUnknown };
+  return { patch, unknownKeys };
 }
 
 export function mergeExerciseOverride(exercise: Exercise, config: Record<string, number | string>): OverrideMerge<Exercise> {
   const raw = exerciseToRaw(exercise);
   // Derived from the exercise itself rather than listed: `exerciseToRaw` emits every key of the type,
-  // undefined ones included, so `in` is an honest test of "is this a field this type has".
-  const { patch, hasUnknown } = splitByKnownKeys(config, Object.keys(raw.config));
+  // undefined ones included, so this is an honest test of "is this a field this type has".
+  const { patch, unknownKeys } = splitByKnownKeys(config, Object.keys(raw.config));
   const asAuthored = exerciseToDomain({ ...raw, config: { ...raw.config, ...config } } as RawExercise);
 
   const parsed = rawExerciseSchema.safeParse({ ...raw, config: { ...raw.config, ...patch } });
-  if (!parsed.success) return { effective: exercise, asAuthored, status: 'invalidValue' };
-  const effective = exerciseToDomain(parsed.data);
-  return { effective, asAuthored, status: hasUnknown ? 'unknownKey' : 'applies' };
+  if (!parsed.success) return { effective: exercise, asAuthored, report: { refused: true, unknownKeys } };
+  return { effective: exerciseToDomain(parsed.data), asAuthored, report: { refused: false, unknownKeys } };
 }
 
 export function mergeBlockOverride(
@@ -538,15 +541,16 @@ export function mergeBlockOverride(
   config: Record<string, number | string>,
 ): OverrideMerge<WorkoutBlock> {
   // A plain `exercise` block has no config of its own — those are addressed with an exercise override.
-  if (block.kind !== 'circuit') return { effective: block, asAuthored: block, status: 'unknownKey' };
+  if (block.kind !== 'circuit') {
+    return { effective: block, asAuthored: block, report: { refused: false, unknownKeys: Object.keys(config) } };
+  }
   const raw = workoutBlockToRaw(block);
-  const { patch, hasUnknown } = splitByKnownKeys(config, BLOCK_OVERRIDE_KEYS);
+  const { patch, unknownKeys } = splitByKnownKeys(config, BLOCK_OVERRIDE_KEYS);
   const asAuthored = workoutBlockToDomain({ ...raw, ...patch } as RawWorkoutBlock);
 
   const parsed = rawWorkoutBlockSchema.safeParse({ ...raw, ...patch });
-  if (!parsed.success) return { effective: block, asAuthored, status: 'invalidValue' };
-  const effective = workoutBlockToDomain(parsed.data);
-  return { effective, asAuthored, status: hasUnknown ? 'unknownKey' : 'applies' };
+  if (!parsed.success) return { effective: block, asAuthored, report: { refused: true, unknownKeys } };
+  return { effective: workoutBlockToDomain(parsed.data), asAuthored, report: { refused: false, unknownKeys } };
 }
 
 /**
@@ -559,14 +563,14 @@ export function mergeBlockOverride(
  * `hold_sec_max` — which used to work, because the runner read `holdSecMax ?? holdSecMin` — still
  * imports cleanly and is now refused at merge. Those weeks have to say so rather than lie.
  */
-export function overrideStatus(
+export function overrideReport(
   target: Exercise | WorkoutBlock,
   config: Record<string, number | string>,
   kind: 'exercise' | 'block',
-): OverrideStatus {
+): OverrideReport {
   return kind === 'exercise'
-    ? mergeExerciseOverride(target as Exercise, config).status
-    : mergeBlockOverride(target as WorkoutBlock, config).status;
+    ? mergeExerciseOverride(target as Exercise, config).report
+    : mergeBlockOverride(target as WorkoutBlock, config).report;
 }
 
 /**

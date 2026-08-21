@@ -6,7 +6,7 @@ import { changeLanguage } from 'i18next';
 import ProgramDetailScreen from '@/app/program-detail';
 import { useLibraryStore } from '@/state/library-store';
 import { router, setSearchParams } from '@/test-support/expo-router';
-import { aLibrary, aWorkout } from '@/test-support/library';
+import { aLibrary, anExercise, aProgram, aWorkout } from '@/test-support/library';
 import { renderScreen } from '@/test-support/render';
 
 /**
@@ -81,4 +81,52 @@ it('is translated', async () => {
   expect(screen.getByLabelText('Começar Semana 1 · Day 1')).toBeTruthy();
   // Day labels and notes are user data and stay in the language they were written in.
   expect(screen.getByText('Walk, nothing heavy.')).toBeTruthy();
+});
+
+/**
+ * `unknownKey` is a per-key condition, and reporting it per-override inverted this PR's own thesis:
+ * the screen said a change wasn't happening while it happened.
+ */
+describe('an override where only some keys are unknown', () => {
+  it('marks only the key that does nothing', async () => {
+    useLibraryStore.setState({
+      library: aLibrary({
+        exercises: [anExercise({ id: 'pull-ups', name: 'Pull-ups' })],
+        workouts: [
+          aWorkout({
+            id: 'w',
+            name: 'W',
+            blocks: [
+              {
+                kind: 'circuit',
+                id: 'finisher',
+                rounds: 3,
+                members: [{ exerciseId: 'pull-ups' }, { exerciseId: 'pull-ups' }],
+              },
+            ],
+          }),
+        ],
+        programs: [
+          aProgram({
+            id: 'p',
+            name: 'P',
+            weeks: [
+              {
+                week: 1,
+                workoutId: 'w',
+                overrides: [{ kind: 'block', blockId: 'finisher', config: { rounds: 2, exercisez: 2 } }],
+              },
+            ],
+          }),
+        ],
+      }),
+      status: 'ready',
+    });
+    setSearchParams({ programId: 'p' });
+    await renderScreen(<ProgramDetailScreen />);
+
+    // `rounds: 2` genuinely reaches the runner, so it must not carry a "not applied" note.
+    expect(screen.getByText('Circuit: rounds → 2')).toBeTruthy();
+    expect(screen.getByText(/exercisez → 2.*there is no such setting/)).toBeTruthy();
+  });
 });

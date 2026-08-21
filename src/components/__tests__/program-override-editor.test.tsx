@@ -336,8 +336,9 @@ it('marks a misspelled key as not applied, not as applied', async () => {
   const { rendered } = mount([{ kind: 'exercise', exerciseId: 'pull-ups', config: { reps: 12 } }]);
   await rendered;
 
-  expect(screen.getByText('Pull-ups: reps → 12')).toBeTruthy();
-  expect(screen.getByText('not applied — there is no such setting to change')).toBeTruthy();
+  // The note sits on the key's own line — an unknown key is stripped on its own while the rest of
+  // the patch still runs, so marking the whole override would be wrong the moment one is mixed in.
+  expect(screen.getByText('Pull-ups: reps → 12 · not applied — there is no such setting to change')).toBeTruthy();
 });
 
 /**
@@ -349,9 +350,9 @@ it('survives a structural key on a circuit override', async () => {
   const { rendered } = mount([{ kind: 'block', blockId: 'finisher', config: { exercises: 2 } }]);
   await rendered;
 
-  expect(screen.getByText('not applied — there is no such setting to change')).toBeTruthy();
+  const row = screen.getByText('Circuit: exercises → 2 · not applied — there is no such setting to change');
   // The row opens rather than taking the screen down with it.
-  await fireEvent.press(screen.getByText('Circuit: exercises → 2'));
+  await fireEvent.press(row);
   expect(screen.getByText('Circuit (finisher)')).toBeTruthy();
 });
 
@@ -383,4 +384,57 @@ it('does not invent a rest override on a circuit that declares none', async () =
   await fireEvent.press(screen.getByText('Add override'));
 
   expect(onChange).toHaveBeenCalledWith([{ kind: 'block', blockId: 'bare', config: { rounds: 4 } }]);
+});
+
+/**
+ * The seed/diff asymmetry, which has now produced a bug in three consecutive rounds: the form seeds a
+ * concrete value, `diff*Override` compares against the base's `undefined`, and "the form couldn't show
+ * it" is indistinguishable from "the user didn't change it".
+ *
+ * An override with no keys is the shared symptom — it saves without error, renders as a blank row, and
+ * does nothing.
+ */
+describe('an override the form cannot fully represent', () => {
+  it('clears a rest the circuit does declare, rather than saving an empty override', async () => {
+    const { onChange, rendered } = mount();
+    await rendered;
+
+    await fireEvent.press(screen.getByText('+ Add override'));
+    await fireEvent.press(screen.getByText('finisher'));
+    // The circuit declares 15s. Clearing the field means "no rest", which is `0` — not "unchanged".
+    await fireEvent.changeText(screen.getByDisplayValue('15'), '');
+    await fireEvent.press(screen.getByText('Add override'));
+
+    expect(onChange).toHaveBeenCalledWith([
+      { kind: 'block', blockId: 'finisher', config: { rest_between_exercises_sec: 0 } },
+    ]);
+  });
+
+  it('keeps a key the form cannot show instead of erasing it on save', async () => {
+    // `reps` is not a field of a `reps` exercise, so the form has nowhere to put it — and dropping it
+    // silently on save is the same destruction the invalidValue path was fixed for, down the path the
+    // "not applied" label now invites the user onto.
+    const typo: ProgramOverride[] = [{ kind: 'exercise', exerciseId: 'pull-ups', config: { reps: 12 } }];
+    const { onChange, rendered } = mount(typo);
+    await rendered;
+
+    await fireEvent.press(screen.getByText(/Pull-ups: reps → 12/));
+    await fireEvent.changeText(fieldShowing('4'), '5');
+    await fireEvent.press(screen.getByText('Save override'));
+
+    expect(onChange).toHaveBeenCalledWith([{ kind: 'exercise', exerciseId: 'pull-ups', config: { reps: 12, sets: 5 } }]);
+  });
+
+  it('removes an override that ends up with nothing in it rather than saving a blank row', async () => {
+    const typo: ProgramOverride[] = [{ kind: 'exercise', exerciseId: 'dips', config: { sets: 5 } }];
+    const { onChange, rendered } = mount(typo);
+    await rendered;
+
+    await fireEvent.press(screen.getByText('Dips: sets → 5'));
+    // Back to the base value, so there is no longer an override to store.
+    await fireEvent.changeText(fieldShowing('5'), '4');
+    await fireEvent.press(screen.getByText('Save override'));
+
+    expect(onChange).toHaveBeenCalledWith([]);
+  });
 });

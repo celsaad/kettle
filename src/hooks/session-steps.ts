@@ -5,6 +5,7 @@
  * dependencies (expo-audio, expo-haptics, notifications) — those made these otherwise-pure functions
  * untestable, since merely importing them initialised native modules. No behaviour changed in the move.
  */
+import { emomIntervalCount } from '@/domain/schema';
 import type { BlockConfigOverride, Exercise, Workout } from '@/domain/types';
 
 export type IntervalVariant = 'hiit' | 'emom' | 'amrap' | 'cardio';
@@ -287,7 +288,7 @@ function expandExercise(
       // truncation put the "too long to run in full" screen in front of ordinary workouts —
       // `interval_sec: 45, total_minutes: 10` is 13⅓ intervals and 13 is the honest answer.
       const intervalCount = bounded(
-        Math.max(1, Math.floor((exercise.config.totalMinutes * 60) / exercise.config.intervalSec)),
+        Math.max(1, emomIntervalCount(exercise.config.intervalSec, exercise.config.totalMinutes)),
       );
       for (let i = 0; i < intervalCount; i++) {
         steps.push({

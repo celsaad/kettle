@@ -2,6 +2,7 @@ import { dump, load } from 'js-yaml';
 import type { z } from 'zod';
 
 import {
+  emomIntervalCount,
   MaxRounds,
   rawExerciseSchema,
   rawLibrarySchema,
@@ -437,8 +438,12 @@ function clampEmomIntervals(doc: unknown): boolean {
     const intervalSec = exercise.config.interval_sec;
     const totalMinutes = exercise.config.total_minutes;
     if (typeof intervalSec !== 'number' || typeof totalMinutes !== 'number' || intervalSec <= 0) continue;
-    if (Math.floor((totalMinutes * 60) / intervalSec) <= MaxRounds) continue;
-    exercise.config.total_minutes = (intervalSec * MaxRounds) / 60;
+    if (emomIntervalCount(intervalSec, totalMinutes) <= MaxRounds) continue;
+    // Checked against the same helper rather than trusted: this is the inverse of a floored division,
+    // and the value it produces is the one the whole repair has to survive being re-parsed with.
+    let minutes = (intervalSec * MaxRounds) / 60;
+    if (emomIntervalCount(intervalSec, minutes) > MaxRounds) minutes = (intervalSec * (MaxRounds - 1)) / 60;
+    exercise.config.total_minutes = minutes;
     changed = true;
   }
   return changed;

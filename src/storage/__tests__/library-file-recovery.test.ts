@@ -24,6 +24,7 @@ jest.mock('@/storage/paths', () => ({
 
 import { loadLibrary } from '@/storage/library-file';
 import { parseLibraryYaml } from '@/domain/yaml-mapping';
+import { validateConfig } from '@/domain/exercise-form';
 
 /**
  * **Recovering from a library the app can no longer read must not destroy it.**
@@ -251,4 +252,65 @@ programs: []
   await loadLibrary();
 
   expect(mockQuarantineWrite).toHaveBeenCalled();
+});
+
+/**
+ * The end-to-end shape of the repair, across every layer that has ever disagreed about an interval
+ * count: the repair writes a value, the library loads, and the in-app editor accepts that same value
+ * without the user changing anything. Before `emomIntervalCount`, the form refused it.
+ */
+it('writes an emom the editor will also accept', async () => {
+  mockLibraryText = `version: 1
+exercises:
+  - id: emom
+    name: EMOM
+    type: emom
+    config: { interval_sec: 1, total_minutes: 60 }
+workouts: []
+programs: []
+`;
+  const result = await loadLibrary();
+
+  if (!result.ok) throw new Error('expected a library');
+  const emom = result.library.exercises[0];
+  if (emom.type !== 'emom') throw new Error('expected an emom');
+
+  expect(
+    validateConfig('emom', {
+      intervalSec: String(emom.config.intervalSec),
+      totalMinutes: String(emom.config.totalMinutes),
+    }),
+  ).toBeNull();
+});
+
+/**
+ * A load-bearing and non-obvious ordering invariant: the `too_big` loop clamps `total_minutes` to the
+ * 1440 ceiling *before* `clampEmomIntervals` reads it, and the emom clamp only fires when the count is
+ * still over — which cannot happen above `interval_sec: 172.8`, since 1440 minutes of intervals that
+ * long is under 500 of them. So the emom repair can never write a `total_minutes` back over the day
+ * ceiling, and the repair never needs a second pass.
+ */
+it('never repairs an emom into a value over the day ceiling', async () => {
+  for (const intervalSec of [1, 60, 172, 173, 500, 3600]) {
+    mockLibraryWrite.mockReset();
+    mockQuarantineWrite.mockReset();
+    mockLibraryText = `version: 1
+exercises:
+  - id: emom
+    name: EMOM
+    type: emom
+    config: { interval_sec: ${intervalSec}, total_minutes: 99999 }
+workouts: []
+programs: []
+`;
+    const result = await loadLibrary();
+
+    if (!result.ok) throw new Error('expected a library');
+    const emom = result.library.exercises[0];
+    expect(emom.type === 'emom' && emom.config.totalMinutes).toBeLessThanOrEqual(1440);
+    // Repaired rather than rescued, at every interval — reaching quarantine means a repair that
+    // produced something the schema still refuses.
+    expect(mockQuarantineWrite).not.toHaveBeenCalled();
+    expect(parseLibraryYaml(written()).ok).toBe(true);
+  }
 });

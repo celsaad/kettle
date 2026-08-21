@@ -24,6 +24,28 @@ export const MaxSets = 500;
 export const MaxRounds = 500;
 export const MaxTotalMinutes = 1440;
 
+/**
+ * How many intervals `buildSteps` will actually build for an EMOM — the quantity `MaxRounds` bounds
+ * for this type, and the only correct way to ask for it.
+ *
+ * **Never write this division out again.** It lived in four places and three of them floored
+ * differently, which is one bug that surfaced three times: the schema refused a legal block over a
+ * rounding error in the thirteenth decimal, the runner reported an unevenly-dividing interval as a
+ * truncated workout and warned before every ordinary start, and the in-app form rejected a config
+ * `repairLibraryBounds` had itself written one launch earlier. The fourth copy was introduced by the
+ * commit that fixed the first three.
+ *
+ * The count is an integer because a partial trailing interval never runs — `interval_sec: 45` over
+ * ten minutes is thirteen intervals and a third of one that nobody does. The floor is the rule, not a
+ * defensive round, which is why every layer has to agree on it.
+ *
+ * Callers guard `intervalSec > 0` themselves; the schema does it with `positive()` before this is
+ * ever reached.
+ */
+export function emomIntervalCount(intervalSec: number, totalMinutes: number): number {
+  return Math.floor((totalMinutes * 60) / intervalSec);
+}
+
 const notesSchema = z.string().optional();
 
 const hiitConfigSchema = z.object({
@@ -50,7 +72,7 @@ const emomConfigSchema = z
     total_minutes: z.number().positive().max(MaxTotalMinutes),
     target_reps: z.number().int().positive().optional(),
   })
-  .refine((config) => Math.floor((config.total_minutes * 60) / config.interval_sec) <= MaxRounds, {
+  .refine((config) => emomIntervalCount(config.interval_sec, config.total_minutes) <= MaxRounds, {
     message: `total_minutes / interval_sec must come to at most ${MaxRounds} intervals`,
     path: ['interval_sec'],
   });

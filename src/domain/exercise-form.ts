@@ -9,7 +9,7 @@
  * what makes it testable.
  */
 import { t } from 'i18next';
-import { MaxRounds, MaxSets, MaxTotalMinutes } from '@/domain/schema';
+import { emomIntervalCount, MaxRounds, MaxSets, MaxTotalMinutes } from '@/domain/schema';
 import type { Exercise, ExerciseType } from '@/domain/types';
 import { fromDisplayWeight, toDisplayWeight, type UnitSystem } from '@/domain/units';
 
@@ -149,7 +149,9 @@ export function validateConfig(type: ExerciseType, values: Record<string, string
     const intervalSec = Number(values.intervalSec);
     const totalMinutes = Number(values.totalMinutes);
     if (Number.isFinite(intervalSec) && Number.isFinite(totalMinutes) && intervalSec > 0) {
-      if ((totalMinutes * 60) / intervalSec > MaxRounds) return t('exerciseForm.error.tooManyIntervals', { max: MaxRounds });
+      if (emomIntervalCount(intervalSec, totalMinutes) > MaxRounds) {
+        return t('exerciseForm.error.tooManyIntervals', { max: MaxRounds });
+      }
     }
   }
 

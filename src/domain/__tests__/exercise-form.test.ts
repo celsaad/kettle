@@ -1,6 +1,7 @@
 import { buildExercise, configToStrings, fieldUnitLabel, CONFIG_FIELDS, validateConfig } from '@/domain/exercise-form';
 import type { Exercise, ExerciseType } from '@/domain/types';
 import { UNIT_SYSTEMS, type UnitSystem } from '@/domain/units';
+import { parseLibraryYaml } from '@/domain/yaml-mapping';
 
 const metric = { unitSystem: 'metric' as const };
 
@@ -307,4 +308,51 @@ describe('validateConfig cross-field rules', () => {
  */
 it('accepts a target weight of 0, which the schema allows', () => {
   expect(validateConfig('reps', { sets: '3', targetRepsMin: '5', targetWeightKg: '0', restSec: '60' })).toBeNull();
+});
+
+/**
+ * The form's copy of the EMOM interval count, which floored differently from the schema's and the
+ * runner's — the fourth instance of one bug, introduced by the commit that fixed the other three.
+ * All four now go through `emomIntervalCount`.
+ */
+describe('the form agrees with the schema about interval counts', () => {
+  const library = (interval_sec: number, total_minutes: number) =>
+    `version: 1
+exercises:
+  - id: e
+    name: E
+    type: emom
+    config: { interval_sec: ${interval_sec}, total_minutes: ${total_minutes} }
+workouts: []
+programs: []
+`;
+
+  /**
+   * The reachable case, and the reason this is not a rounding curiosity: `repairLibraryBounds` writes
+   * exactly `intervalSec * 500 / 60` when it clamps an over-long EMOM. That file loads. Opening the
+   * exercise and pressing Save then refused it — on a value the app itself had written one launch
+   * earlier.
+   */
+  // Only intervals up to 172 are reachable this way: above that, `intervalSec * 500 / 60` exceeds the
+  // 1440-minute ceiling, and the repair's own guard has already stopped — see the invariant test in
+  // library-file-recovery.test.ts.
+  it.each([1, 2, 4, 8, 16, 32, 64, 125])('accepts what the repair writes at interval_sec: %s', (intervalSec) => {
+    const totalMinutes = (intervalSec * 500) / 60;
+
+    expect(parseLibraryYaml(library(intervalSec, totalMinutes)).ok).toBe(true);
+    expect(validateConfig('emom', { intervalSec: String(intervalSec), totalMinutes: String(totalMinutes) })).toBeNull();
+  });
+
+  it('accepts a partial trailing interval, exactly as the schema does', () => {
+    // 500⅔ intervals: the runner builds 500, which is the ceiling, so the block is legal.
+    expect(parseLibraryYaml(library(45, 375.5)).ok).toBe(true);
+    expect(validateConfig('emom', { intervalSec: '45', totalMinutes: '375.5' })).toBeNull();
+  });
+
+  it('still refuses a block that is genuinely over the count', () => {
+    expect(parseLibraryYaml(library(1, 60)).ok).toBe(false);
+    expect(validateConfig('emom', { intervalSec: '1', totalMinutes: '60' })).toBe(
+      'That works out to more than 500 intervals. Use a longer interval or a shorter block.',
+    );
+  });
 });

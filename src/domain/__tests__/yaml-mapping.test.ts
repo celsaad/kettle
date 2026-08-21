@@ -545,3 +545,42 @@ programs: []
     expect(parseLibraryYaml(libraryWithExercise('emom', { interval_sec: 300, total_minutes: 1441 })).ok).toBe(false);
   });
 });
+
+/**
+ * EMOM's interval count is the only *derived* bound in the format, and every bug it has produced came
+ * from an interval that doesn't divide its block evenly. Both cases below use one that doesn't, on
+ * purpose: the earlier tests all used 30 and 60, which divide exactly and cannot fail either way.
+ */
+describe('emom intervals that do not divide evenly', () => {
+  const emom = (interval_sec: number, total_minutes: number) =>
+    `version: 1
+exercises:
+  - id: e
+    name: E
+    type: emom
+    config: { interval_sec: ${interval_sec}, total_minutes: ${total_minutes} }
+workouts: []
+programs: []
+`;
+
+  /**
+   * 500 one-second intervals is `total_minutes: 8.333333333333334`, whose raw quotient round-trips to
+   * 500.00000000000006. The refinement compared that quotient, so a legal block was refused for a
+   * rounding error thirteen decimal places down — and, worse, it was the value `repairLibraryBounds`
+   * produces, so the repair landed back outside the schema and the library was reseeded anyway.
+   */
+  it('accepts exactly the interval count the runner will build', () => {
+    expect(parseLibraryYaml(emom(1, (1 * 500) / 60)).ok).toBe(true);
+    expect(parseLibraryYaml(emom(2, (2 * 500) / 60)).ok).toBe(true);
+  });
+
+  it('still refuses a block that really is over the count', () => {
+    // 60 minutes of one-second intervals is 3600 of them, and no rounding gets that under 500.
+    expect(parseLibraryYaml(emom(1, 60)).ok).toBe(false);
+  });
+
+  it('accepts a partial trailing interval, which is a normal thing to write', () => {
+    // 13⅓ intervals: the runner runs 13 and the last third was never going to happen.
+    expect(parseLibraryYaml(emom(45, 10)).ok).toBe(true);
+  });
+});

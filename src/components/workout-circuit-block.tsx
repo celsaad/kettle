@@ -33,6 +33,8 @@ export function WorkoutCircuitBlock({ block, exercises, dragHandle, onChange, on
   // Local to the block rather than a set of open indices held by the screen: the field is a disclosure
   // on this card and nothing outside it reads whether it's open.
   const [idFieldOpen, setIdFieldOpen] = useState(false);
+  /** A circuit of one is not a circuit, and the schema refuses it — see the remove control below. */
+  const canRemoveMember = block.members.length > 2;
 
   return (
     <View style={[styles.circuitBlock, { borderColor: theme.border, backgroundColor: theme.backgroundElement }]}>
@@ -67,12 +69,18 @@ export function WorkoutCircuitBlock({ block, exercises, dragHandle, onChange, on
                 </ThemedText>
               </View>
               <ExerciseBadge type={exercise.type} />
+              {/* Disabled rather than silently doing nothing at two members: the schema needs at least
+                  two (`exercises` is `.min(2)`), and a control that is rendered enabled, reads as
+                  enabled to a screen reader and then ignores the tap is worse than one that is plainly
+                  unavailable. Deleting the whole block is how you get below two. */}
               <Pressable
                 onPress={() => onRemoveMember(memberIndex)}
+                disabled={!canRemoveMember}
                 hitSlop={8}
                 accessibilityRole="button"
                 accessibilityLabel={t('workoutEditor.removeFromCircuitAccessibility', { name: exercise.name })}
-                style={styles.removeButton}>
+                accessibilityState={{ disabled: !canRemoveMember }}
+                style={[styles.removeButton, !canRemoveMember && styles.removeButtonDisabled]}>
                 <ThemedText themeColor="textSecondary">✕</ThemedText>
               </Pressable>
             </View>
@@ -196,6 +204,9 @@ const styles = StyleSheet.create({
   },
   removeButton: {
     paddingLeft: Spacing.one,
+  },
+  removeButtonDisabled: {
+    opacity: 0.4,
   },
   circuitMembers: {
     gap: Spacing.one + 2,

@@ -4,6 +4,7 @@ import type { Exercise, Workout } from '@/domain/types';
 import {
   addSetForMember,
   buildSteps,
+  buildStepsWithLimits,
   dropLastSetForMember,
   setStepsForMember,
   swapExerciseForMember,
@@ -631,5 +632,45 @@ describe('the whole-workout step ceiling', () => {
     const steps = buildSteps(workoutOf(single('pullups'), single('burpees'), single('clean')), exercises);
     expect(steps.map((step) => step.kind)).toContain('reps');
     expect(steps.length).toBeLessThan(100);
+  });
+});
+
+/**
+ * The flag that puts the "too long to run in full" screen in front of a workout, and the reason it
+ * has to be exact: it is a blocking screen, so a false positive costs every ordinary start.
+ */
+describe('what counts as truncated', () => {
+  it('does not flag an emom whose interval simply does not divide the block', () => {
+    // 13⅓ intervals. The floor is not a clamp — the last third of an interval was never going to run —
+    // and reporting it as truncation warned before every start of a perfectly ordinary workout.
+    const emom: Exercise = { id: 'e', name: 'E', type: 'emom', config: { intervalSec: 45, totalMinutes: 10 } };
+    const built = buildStepsWithLimits(workoutOf(single('e')), [emom]);
+
+    expect(built.steps).toHaveLength(13);
+    expect(built.truncated).toBe(false);
+  });
+
+  it('does flag an emom the per-exercise ceiling really does cut short', () => {
+    const emom: Exercise = { id: 'e', name: 'E', type: 'emom', config: { intervalSec: 0.5, totalMinutes: 1000 } };
+    const built = buildStepsWithLimits(workoutOf(single('e')), [emom]);
+
+    expect(built.truncated).toBe(true);
+  });
+
+  it('does not flag any ordinary workout', () => {
+    const built = buildStepsWithLimits(workoutOf(single('pullups'), single('burpees'), single('clean')), exercises);
+    expect(built.truncated).toBe(false);
+  });
+
+  /**
+   * The case a list-length test cannot see, and the reason truncation is reported out of
+   * `expandExercise`: 3000 sets clamps to 2000 and yields 3999 steps, far under the workout ceiling.
+   */
+  it('flags a per-exercise clamp that leaves the list well under the workout ceiling', () => {
+    const many: Exercise = { id: 'm', name: 'M', type: 'reps', config: { sets: 3000, targetRepsMin: 5, restSec: 60 } };
+    const built = buildStepsWithLimits(workoutOf(single('m')), [many]);
+
+    expect(built.steps.length).toBeLessThan(5000);
+    expect(built.truncated).toBe(true);
   });
 });

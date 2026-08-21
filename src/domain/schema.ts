@@ -38,7 +38,11 @@ const hiitConfigSchema = z.object({
  * what they produce. `total_minutes: 60` with `interval_sec: 1` is 3600 intervals out of two values
  * that are individually unremarkable, and `interval_sec: 0.001` is 3.6 million.
  *
- * So the refinement bounds the product, not the factors.
+ * So the refinement bounds the product, not the factors — and bounds the *floored* product, which is
+ * the integer `buildSteps` actually loops to. Comparing the raw quotient instead was both subtly
+ * wrong and float-fragile: 500 one-second intervals is `total_minutes: 8.333333333333334`, whose
+ * quotient round-trips to 500.00000000000006 and was refused for a rounding error in the thirteenth
+ * decimal place. Every legal interval count is a whole number; nothing else was ever the rule.
  */
 const emomConfigSchema = z
   .object({
@@ -46,7 +50,7 @@ const emomConfigSchema = z
     total_minutes: z.number().positive().max(MaxTotalMinutes),
     target_reps: z.number().int().positive().optional(),
   })
-  .refine((config) => (config.total_minutes * 60) / config.interval_sec <= MaxRounds, {
+  .refine((config) => Math.floor((config.total_minutes * 60) / config.interval_sec) <= MaxRounds, {
     message: `total_minutes / interval_sec must come to at most ${MaxRounds} intervals`,
     path: ['interval_sec'],
   });

@@ -212,13 +212,28 @@ describe('circuits', () => {
    * so a one-member circuit was written to the library file and then failed to parse on the next
    * launch, which used to cost the user the whole library. A circuit of one is also not a circuit;
    * the way to get there is to delete the block.
+   *
+   * The *disabled state* is what's asserted, not just the no-op. A control that renders enabled,
+   * announces itself as enabled and then ignores the tap is a worse bug than the one it patched, and
+   * an assertion on the no-op alone would have pinned exactly that.
    */
-  it('refuses to leave a circuit with a single member', async () => {
+  it('marks the remove control unavailable on a two-member circuit', async () => {
     await buildCircuit();
 
-    await fireEvent.press(screen.getByLabelText('Remove Dips from circuit'));
+    const remove = screen.getByLabelText('Remove Dips from circuit');
+    expect(remove.props.accessibilityState?.disabled).toBe(true);
 
+    await fireEvent.press(remove);
     expect(screen.getByText('Dips')).toBeTruthy();
+  });
+
+  it('leaves it available while there is a member to spare', async () => {
+    await fireEvent.press(screen.getByText('Pull-ups'));
+    await fireEvent.press(screen.getByText('Dips'));
+    await fireEvent.press(screen.getByText('Rows'));
+    await fireEvent.press(screen.getByText('Add circuit (3)'));
+
+    expect(screen.getByLabelText('Remove Dips from circuit').props.accessibilityState?.disabled).toBe(false);
   });
 
   it('keeps a negative circuit rest out of the library', async () => {

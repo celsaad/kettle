@@ -282,7 +282,13 @@ function expandExercise(
       // reported the honest `totalMinutes * 60`; the two silently disagreed for any interval but 60s.
       // Clamped to at least one so an interval longer than the whole block still runs once rather
       // than making the exercise vanish into the "nothing to run" path.
-      const intervalCount = bounded(Math.max(1, (exercise.config.totalMinutes * 60) / exercise.config.intervalSec));
+      // Floored *before* `bounded`, because the floor is not a clamp: an interval that doesn't divide
+      // the block evenly leaves a partial one that was never going to run, and reporting that as
+      // truncation put the "too long to run in full" screen in front of ordinary workouts —
+      // `interval_sec: 45, total_minutes: 10` is 13⅓ intervals and 13 is the honest answer.
+      const intervalCount = bounded(
+        Math.max(1, Math.floor((exercise.config.totalMinutes * 60) / exercise.config.intervalSec)),
+      );
       for (let i = 0; i < intervalCount; i++) {
         steps.push({
           kind: 'interval',

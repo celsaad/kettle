@@ -47,8 +47,9 @@ training to. Vibration is separate and stays on your phone's own settings.
   that asked for tens of thousands of sets — a stray digit in a hand-edited file, usually — was
   accepted on import and then failed to open every time you tried to start it, and the file stuck
   around, so it kept failing until you found and fixed the line yourself. Sets and rounds are now
-  capped at 500 and an EMOM block at 24 hours, and a file over the line is refused on import, where
-  the message tells you which field it was.
+  capped at 500, and an EMOM block at 500 intervals — long ones stay long, but a block can't ask for
+  more intervals than a session can hold. A file over the line is refused on import, where the message
+  tells you which field it was.
 - **A half a set no longer costs you your library.** Typing `2.5` into Sets — or a fraction into
   reps or rounds — used to save, and then Kettle couldn't read the file on the next launch and
   started you over with the built-in library. The editors now say a whole number is needed, which is

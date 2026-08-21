@@ -180,3 +180,75 @@ it('leaves a library that parses completely alone', async () => {
   expect(mockLibraryWrite).not.toHaveBeenCalled();
   expect(mockQuarantineWrite).not.toHaveBeenCalled();
 });
+
+/**
+ * The repair's own arithmetic, on an interval that does not divide its block evenly. The first version
+ * of the emom repair produced `total_minutes` whose quotient round-tripped to 500.00000000000006, so
+ * the repaired library was refused again and the user was reseeded anyway — the exact destructive
+ * upgrade this function exists to prevent. The original test used `interval_sec: 30`, which divides
+ * exactly and passes either way.
+ */
+it('repairs an emom at an interval that does not divide evenly, and the result parses', async () => {
+  mockLibraryText = `version: 1
+exercises:
+  - id: emom
+    name: EMOM
+    type: emom
+    config: { interval_sec: 1, total_minutes: 60 }
+workouts: []
+programs: []
+`;
+  const result = await loadLibrary();
+
+  if (!result.ok) throw new Error('expected a library');
+  const emom = result.library.exercises[0];
+  expect(emom.type === 'emom' && emom.config.intervalSec).toBe(1);
+  expect(parseLibraryYaml(written()).ok).toBe(true);
+  // Repaired, not rescued: reaching quarantine here means the repair produced something still invalid.
+  expect(mockQuarantineWrite).not.toHaveBeenCalled();
+});
+
+/**
+ * The narrow promise, made structural: the repair acts on zod's `too_big` issues, which carry the
+ * ceiling that was breached. Anything invalid for another reason produces another issue code and is
+ * left exactly as the user wrote it.
+ */
+it('leaves an in-range fractional total_minutes alone while repairing something else', async () => {
+  mockLibraryText = `version: 1
+exercises:
+  - id: emom
+    name: EMOM
+    type: emom
+    config: { interval_sec: 60, total_minutes: 7.5 }
+  - id: bench
+    name: Bench
+    type: reps
+    config: { sets: 200000, target_reps_min: 5, rest_sec: 60 }
+workouts: []
+programs: []
+`;
+  const result = await loadLibrary();
+
+  if (!result.ok) throw new Error('expected a library');
+  const emom = result.library.exercises.find((exercise) => exercise.id === 'emom');
+  // 7.5 is legal — the schema never asked total_minutes to be whole — so the repair must not round it.
+  expect(emom?.type === 'emom' && emom.config.totalMinutes).toBe(7.5);
+  const bench = result.library.exercises.find((exercise) => exercise.id === 'bench');
+  expect(bench?.type === 'reps' && bench.config.sets).toBe(500);
+});
+
+it('does not repair a violation the ceilings did not cause', async () => {
+  // `sets: 0` is `too_small`, and was refused long before this change — so it quarantines, as it did.
+  mockLibraryText = `version: 1
+exercises:
+  - id: bench
+    name: Bench
+    type: reps
+    config: { sets: 0, target_reps_min: 5, rest_sec: 60 }
+workouts: []
+programs: []
+`;
+  await loadLibrary();
+
+  expect(mockQuarantineWrite).toHaveBeenCalled();
+});

@@ -2,6 +2,9 @@ import { dump, load } from 'js-yaml';
 import type { z } from 'zod';
 
 import {
+  MaxRounds,
+  MaxSets,
+  MaxTotalMinutes,
   rawExerciseSchema,
   rawLibrarySchema,
   rawProgramSchema,
@@ -355,6 +358,82 @@ export function parseLibraryYaml(text: string): ParseResult<Library> {
 
 export function serializeLibraryYaml(library: Library): string {
   return dump(libraryToRaw(library), { noRefs: true, sortKeys: false });
+}
+
+/**
+ * Clamps a library that predates the repeat-count ceilings back into range, returning the rewritten
+ * YAML — or null if there was nothing to repair, or nothing parseable to repair it in.
+ *
+ * **This exists because adding the ceilings is otherwise a destructive upgrade.** A file holding
+ * `sets: 200000` parsed cleanly before them and does not after, and `loadLibrary` responds to a parse
+ * failure by reseeding — so the release that fixes the unstartable workout would have replaced the
+ * user's entire library with the starter one on next launch. That is a worse outcome than the bug.
+ *
+ * It repairs **only the constraints this change introduced**, deliberately. A file that was already
+ * invalid stays invalid and goes to quarantine, exactly as before: repairing those too would quietly
+ * turn every past and future schema tightening into a silent rewrite of the user's data, which is a
+ * much larger promise than "the ceilings we just added won't cost you your library".
+ *
+ * Values are clamped rather than dropped, so an absurd `sets` becomes a long-but-legal one and every
+ * other field the user wrote survives untouched.
+ */
+export function repairLibraryBounds(text: string): string | null {
+  let doc: unknown;
+  try {
+    doc = load(text, LOAD_OPTIONS);
+  } catch {
+    // A syntax error, not an out-of-range value — there is no document to walk.
+    return null;
+  }
+  let changed = false;
+
+  /** Clamps `key` into 1..max, rounding a fraction down. Reports whether it touched anything. */
+  const clamp = (config: Record<string, unknown>, key: string, max: number) => {
+    const value = config[key];
+    if (typeof value !== 'number' || !Number.isFinite(value)) return;
+    const next = Math.min(Math.max(1, Math.floor(value)), max);
+    if (next === value) return;
+    config[key] = next;
+    changed = true;
+  };
+
+  const asRecord = (value: unknown): Record<string, unknown> | null =>
+    typeof value === 'object' && value !== null && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
+
+  const root = asRecord(doc);
+  if (!root) return null;
+
+  for (const raw of Array.isArray(root.exercises) ? root.exercises : []) {
+    const exercise = asRecord(raw);
+    const config = exercise && asRecord(exercise.config);
+    if (!config) continue;
+    if (exercise.type === 'reps' || exercise.type === 'timed_hold') clamp(config, 'sets', MaxSets);
+    if (exercise.type === 'hiit') clamp(config, 'rounds', MaxRounds);
+    if (exercise.type === 'emom') {
+      clamp(config, 'total_minutes', MaxTotalMinutes);
+      // The derived interval count has its own ceiling, and `interval_sec` is the more meaningful of
+      // the two fields — a 30-second EMOM is the thing the user wrote down — so the block is shortened
+      // rather than the interval stretched.
+      const intervalSec = config.interval_sec;
+      const totalMinutes = config.total_minutes;
+      if (typeof intervalSec === 'number' && typeof totalMinutes === 'number' && intervalSec > 0) {
+        if ((totalMinutes * 60) / intervalSec > MaxRounds) {
+          config.total_minutes = (intervalSec * MaxRounds) / 60;
+          changed = true;
+        }
+      }
+    }
+  }
+
+  for (const rawWorkout of Array.isArray(root.workouts) ? root.workouts : []) {
+    const workout = asRecord(rawWorkout);
+    for (const rawBlock of workout && Array.isArray(workout.blocks) ? workout.blocks : []) {
+      const block = asRecord(rawBlock);
+      if (block?.type === 'circuit') clamp(block, 'rounds', MaxRounds);
+    }
+  }
+
+  return changed ? dump(doc, { noRefs: true, sortKeys: false }) : null;
 }
 
 /**

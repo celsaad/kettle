@@ -21,7 +21,7 @@ import { formatSessionName } from '@/domain/format';
 import { findProgramWeek, resolveWorkoutForWeek } from '@/domain/program';
 import type { Exercise, Session, Workout } from '@/domain/types';
 import { useSessionAnnouncements } from '@/hooks/use-session-announcements';
-import { buildSteps, stepsWereTruncated, useSessionRunner } from '@/hooks/use-session-runner';
+import { buildStepsWithLimits, useSessionRunner } from '@/hooks/use-session-runner';
 import { useLibraryStore } from '@/state/library-store';
 import { sessionRecords } from '@/state/selectors/records';
 import { useSessionHistoryStore } from '@/state/session-history-store';
@@ -94,6 +94,8 @@ export default function SessionScreen() {
   // workout lookup below, since there is nothing to look up.
   const isAdHoc = adhoc === '1';
   const [started, setStarted] = useState(false);
+  /** Whether the "this workout will stop early" screen has been dismissed — see the guard below. */
+  const [acknowledgedLength, setAcknowledgedLength] = useState(false);
 
   const resolved = useMemo(() => {
     if (!library) return null;
@@ -133,7 +135,11 @@ export default function SessionScreen() {
   // to zero runnable steps — no blocks, or every block's exercise has sets/rounds/minutes at 0 — can be
   // caught before ever showing the pre-session countdown, instead of leaving the user on a blank screen
   // with nothing to tap once the countdown finishes.
-  const steps = useMemo(() => (workout ? buildSteps(workout, exercises) : []), [workout, exercises]);
+  const built = useMemo(
+    () => (workout ? buildStepsWithLimits(workout, exercises) : { steps: [], truncated: false }),
+    [workout, exercises],
+  );
+  const steps = built.steps;
 
   // A rest week resolves to null exactly like a broken reference does, but it isn't broken — it's the
   // program saying today runs nothing. Reachable by deep link, or by navigating back to a week that
@@ -195,19 +201,51 @@ export default function SessionScreen() {
     );
   }
 
+  /**
+   * The step list is capped (see MaxStepsPerWorkout), and a workout over the cap stops partway and is
+   * written to the log as a finished session. Said *before* the countdown, and with a control, rather
+   * than as a banner beside it: the countdown auto-advances in three seconds, so a banner there is
+   * gone before it is read and invisible to a screen reader, and this is the last moment where the
+   * answer is still "run something shorter" instead of "your log is wrong".
+   *
+   * Not a hard stop — running most of a workout is a legitimate thing to want, and refusing would take
+   * away the only option left. It just cannot be the silent default.
+   */
+  if (!started && !acknowledgedLength && built.truncated) {
+    return (
+      <SafeAreaView style={styles.safeArea} edges={['top', 'bottom', 'left', 'right']}>
+        <View style={styles.content}>
+          <View style={styles.emptyState}>
+            <ThemedText type="subtitle" style={styles.emptyStateTitle} accessibilityRole="header">
+              {t('session.tooLong.title')}
+            </ThemedText>
+            <ThemedText type="small" style={styles.emptyStateBody}>
+              {t('session.tooLong.body', { name: workout?.name ?? '' })}
+            </ThemedText>
+            <Pressable
+              onPress={() => setAcknowledgedLength(true)}
+              style={styles.emptyStateButton}
+              accessibilityRole="button">
+              <ThemedText type="heading" style={styles.emptyStateButtonLabel}>
+                {t('session.tooLong.startAnyway')}
+              </ThemedText>
+            </Pressable>
+            <Pressable onPress={() => router.back()} style={styles.tooLongBack} accessibilityRole="button">
+              <ThemedText type="small" style={styles.emptyStateBody}>
+                {t('common.close')}
+              </ThemedText>
+            </Pressable>
+          </View>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   if (!started) {
     return (
       <SafeAreaView style={styles.safeArea} edges={['top', 'bottom', 'left', 'right']}>
         <View style={styles.content}>
           <SessionCountdown workoutName={formatSessionName(workout?.name ?? null)} onDone={() => setStarted(true)} />
-          {/* The step list is capped (see MaxStepsPerWorkout), and a workout that hits the cap stops
-              partway and is logged as finished. Said here rather than mid-workout: this is the last
-              moment the answer is still "run something shorter" rather than "your log is wrong". */}
-          {stepsWereTruncated(steps) && (
-            <ThemedText type="small" style={styles.truncationNotice}>
-              {t('session.tooLong.notice')}
-            </ThemedText>
-          )}
         </View>
       </SafeAreaView>
     );
@@ -625,10 +663,10 @@ const styles = StyleSheet.create({
     color: RunnerColors.textSecondary,
     textAlign: 'center',
   },
-  truncationNotice: {
-    color: RunnerColors.textSecondary,
-    textAlign: 'center',
-    paddingBottom: Spacing.three,
+  tooLongBack: {
+    marginTop: Spacing.two,
+    minHeight: 44,
+    justifyContent: 'center',
   },
   emptyStateButton: {
     marginTop: Spacing.two,

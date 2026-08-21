@@ -443,17 +443,18 @@ describe('an ad-hoc session', () => {
 });
 
 /**
- * The step list is capped, and before this a workout that hit the cap simply stopped partway through
- * and was written to the log as a finished session. Silent truncation in the one file AGENTS.md calls
- * make-or-break — so it is said on the countdown, the last moment where the answer is still "run
- * something shorter".
+ * The step list is capped (see MaxStepsPerWorkout / MaxStepsPerExercise), and before this a workout
+ * over the cap simply stopped partway through and was written to the log as a finished session.
+ *
+ * Said before the countdown, and with a control: the countdown auto-advances in three seconds, so a
+ * banner beside it is gone before it can be read and says nothing to a screen reader.
  */
 describe('a workout too long to run in full', () => {
-  const huge: Exercise[] = [
+  const circuit: Exercise[] = [
     { id: 'h', name: 'H', type: 'hiit', config: { workSec: 30, restSec: 20, rounds: 500 } },
     { id: 'h2', name: 'H2', type: 'hiit', config: { workSec: 30, restSec: 20, rounds: 500 } },
   ];
-  const hugeWorkout = aWorkout({
+  const overWorkoutCap = aWorkout({
     id: 'w',
     name: 'Session',
     blocks: [
@@ -467,14 +468,36 @@ describe('a workout too long to run in full', () => {
     ],
   });
 
-  // In pt, because an English assertion can't tell `t('session.tooLong.notice')` from the literal it
+  /**
+   * The case a length test could never see: `sets: 3000` clamps to 2000 and yields 3999 steps, far
+   * under the workout ceiling — so the session ran two thirds of the sets and reported nothing. It is
+   * why truncation is reported out of `expandExercise` rather than inferred.
+   */
+  const overExerciseCap = [
+    { id: 'many', name: 'Many', type: 'reps', config: { sets: 3000, targetRepsMin: 5, restSec: 60 } } as Exercise,
+  ];
+  const manySets = aWorkout({ id: 'w', name: 'Session', blocks: [{ kind: 'exercise', exerciseId: 'many' }] });
+
+  // In pt, because an English assertion cannot tell `t('session.tooLong.title')` from the literal it
   // returns — the same reason the empty-state test above is driven in pt.
-  it('says so on the countdown, in the active locale', async () => {
+  it.each([
+    ['the workout ceiling', circuit, overWorkoutCap],
+    ['the per-exercise ceiling', overExerciseCap, manySets],
+  ])('warns before the countdown when %s cuts it short', async (_label, library, workout) => {
     await changeLanguage('pt');
-    useLibraryStore.setState({ library: aLibrary({ exercises: huge, workouts: [hugeWorkout] }), status: 'ready' });
+    useLibraryStore.setState({ library: aLibrary({ exercises: library, workouts: [workout] }), status: 'ready' });
     await renderScreen(<SessionScreen />);
 
-    expect(screen.getByText(/longo demais/)).toBeTruthy();
+    expect(screen.getByText('Longo demais para fazer inteiro')).toBeTruthy();
+  });
+
+  it('lets the session go ahead, because running most of it is a legitimate thing to want', async () => {
+    useLibraryStore.setState({ library: aLibrary({ exercises: circuit, workouts: [overWorkoutCap] }), status: 'ready' });
+    await renderScreen(<SessionScreen />);
+
+    await fireEvent.press(screen.getByText('Start anyway'));
+
+    expect(screen.queryByText('Too long to run in full')).toBeNull();
   });
 
   it('says nothing on a workout that fits, which is every real one', async () => {
@@ -482,6 +505,6 @@ describe('a workout too long to run in full', () => {
     setLibrary(workoutOf('pullups'));
     await renderScreen(<SessionScreen />);
 
-    expect(screen.queryByText(/longo demais/)).toBeNull();
+    expect(screen.queryByText('Longo demais para fazer inteiro')).toBeNull();
   });
 });

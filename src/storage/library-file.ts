@@ -5,9 +5,9 @@
 // uninitialised instance reports no language and falls back to the English seed.
 import i18next from 'i18next';
 
-import { parseLibraryYaml, serializeLibraryYaml } from '@/domain/yaml-mapping';
+import { parseLibraryYaml, repairLibraryBounds, serializeLibraryYaml } from '@/domain/yaml-mapping';
 import type { Library } from '@/domain/types';
-import { ensureStorageReady, isFileStorageSupported, storagePaths } from '@/storage/paths';
+import { ensureStorageReady, isFileStorageSupported, quarantineFile, storagePaths } from '@/storage/paths';
 import { seedLibraryFor } from '@/storage/seed-library';
 
 export type LoadLibraryResult = { ok: true; library: Library } | { ok: false; error: string };
@@ -36,15 +36,47 @@ export async function loadLibrary(): Promise<LoadLibraryResult> {
 
   const text = await storagePaths.libraryFile.text();
   const result = parseLibraryYaml(text);
-  if (!result.ok) {
-    // The persisted file predates a breaking schema change (or is otherwise corrupt) — this is the
-    // app's own auto-loaded storage, not a user-picked import, so self-heal by reseeding rather than
-    // leaving the app stuck on a blank screen. Hand-edited imports still get a hard error (see import.tsx).
-    console.warn(`exercises.yaml failed to parse (${result.error.kind}), reseeding: ${result.error.detail}`);
-    await saveLibrary(seed);
-    return { ok: true, library: seed };
+  if (result.ok) return { ok: true, library: result.data };
+
+  // The persisted file predates a breaking schema change, or is otherwise corrupt. This is the app's
+  // own auto-loaded storage rather than a user-picked import, so it self-heals instead of leaving the
+  // app on a blank screen — but "self-heal" used to mean overwriting the only copy of the user's
+  // library with the seed, which is a destructive recovery.
+  //
+  // So: repair first. Adding the repeat-count ceilings is exactly the kind of change that turns a
+  // file which parsed yesterday into one that doesn't, and clamping it back into range keeps
+  // everything else the user wrote (see repairLibraryBounds).
+  const repaired = repairLibraryBounds(text);
+  if (repaired) {
+    const retry = parseLibraryYaml(repaired);
+    if (retry.ok) {
+      console.warn(`exercises.yaml held out-of-range values (${result.error.detail}); clamped them and kept the rest`);
+      await saveLibrary(retry.data);
+      return { ok: true, library: retry.data };
+    }
   }
-  return { ok: true, library: result.data };
+
+  // Beyond repair. Reseed, but never over the top of it — the file moves aside first, so the recovery
+  // costs the user their *access* to the library and not the library.
+  console.warn(`exercises.yaml failed to parse (${result.error.kind}), quarantining and reseeding: ${result.error.detail}`);
+  quarantine(text);
+  await saveLibrary(seed);
+  return { ok: true, library: seed };
+}
+
+/**
+ * Copies the unreadable library aside before it is replaced. Never throws: this runs on the recovery
+ * path, and a failure to *rescue* the old file must not also block the reseed that gets the app
+ * running again. A failed rescue is logged and the user is no worse off than before this existed.
+ */
+function quarantine(text: string): void {
+  try {
+    const file = quarantineFile(new Date().toISOString().replaceAll(/[:.]/g, '-'));
+    if (!file.exists) file.create({ intermediates: true, overwrite: true });
+    file.write(text);
+  } catch (error) {
+    console.warn(`could not quarantine the unreadable exercises.yaml: ${(error as Error).message}`);
+  }
 }
 
 export async function saveLibrary(library: Library): Promise<void> {

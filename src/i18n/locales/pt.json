@@ -148,7 +148,9 @@
       "body": "Esta semana do programa é um dia de descanso, então não há nada para executar. Volte e escolha um treino se quiser treinar hoje."
     },
     "tooLong": {
-      "notice": "Este treino é longo demais para o Kettle rodar de uma vez, então ele vai parar no meio. Divida em treinos menores para fazer tudo."
+      "title": "Longo demais para fazer inteiro",
+      "body": "\"{{name}}\" pede mais do que o Kettle consegue rodar numa sessão, então ele vai parar no meio e ser registrado como concluído nesse ponto. Divida em treinos menores para fazer tudo.",
+      "startAnyway": "Começar mesmo assim"
     },
     "nothingToRun": {
       "title": "Nada para executar",

@@ -143,32 +143,42 @@ const MaxStepsPerExercise = 2000;
 export const MaxStepsPerWorkout = 20_000;
 
 /**
- * Whether `buildSteps` stopped early on this workout — so the session screen can say so before the
- * countdown, rather than the workout just ending in the middle and being logged as finished.
- *
- * Length rather than a flag threaded back out of `buildSteps`: every truncation path stops *because*
- * the list already reached the ceiling, so reaching it is the fact. The one false positive is a
- * workout that ends at exactly the ceiling with nothing left to add, which is a workout nobody has.
+ * The step list, and whether either ceiling cut it short — so the session screen can say so before
+ * the countdown, rather than the workout ending in the middle and being logged as finished.
  */
-export function stepsWereTruncated(steps: RunnerStep[]): boolean {
-  return steps.length >= MaxStepsPerWorkout;
-}
+export type StepBuildResult = { steps: RunnerStep[]; truncated: boolean };
 
 /** `count`, clamped to what one exercise may expand into. See MaxStepsPerExercise. */
 function boundedCount(count: number): number {
   return Math.min(Math.max(0, Math.floor(count)), MaxStepsPerExercise);
 }
 
+/**
+ * Expands one exercise, reporting whether `MaxStepsPerExercise` cut it short.
+ *
+ * Reported rather than inferred from the length, because a per-exercise clamp is invisible at the
+ * workout level: `sets: 3000` clamps to 2000 and produces 3999 steps, far under
+ * `MaxStepsPerWorkout` — so a length test says "not truncated" while the session runs two thirds of
+ * the sets and is logged as finished.
+ */
 function expandExercise(
   exercise: Exercise,
   blockIndex: number,
   memberKey: string,
   configOverride?: BlockConfigOverride,
   visit?: CircuitVisit,
-): RunnerStep[] {
+): { steps: RunnerStep[]; truncated: boolean } {
+  // Wrapped so the clamp reports itself as it happens, rather than being recomputed by a second copy
+  // of the same arithmetic that could drift from this one.
+  let truncated = false;
+  const bounded = (count: number): number => {
+    const next = boundedCount(count);
+    if (next < count) truncated = true;
+    return next;
+  };
   switch (exercise.type) {
     case 'timed_hold': {
-      const sets = visit ? 1 : boundedCount(exercise.config.sets);
+      const sets = visit ? 1 : bounded(exercise.config.sets);
       // A 0 (or negative) end would auto-advance on the very first tick, skipping the hold outright —
       // and nothing validates a program week's override config, so `hold_sec_min: 0` reaches here from
       // both the override schema (a free record of numbers) and the in-app override editor (no
@@ -202,10 +212,10 @@ function expandExercise(
           });
         }
       }
-      return steps;
+      return { steps, truncated };
     }
     case 'reps': {
-      const sets = visit ? 1 : boundedCount(exercise.config.sets);
+      const sets = visit ? 1 : bounded(exercise.config.sets);
       const steps: RunnerStep[] = [];
       for (let i = 0; i < sets; i++) {
         steps.push({
@@ -232,11 +242,11 @@ function expandExercise(
           });
         }
       }
-      return steps;
+      return { steps, truncated };
     }
     case 'hiit': {
       const steps: RunnerStep[] = [];
-      const rounds = boundedCount(exercise.config.rounds);
+      const rounds = bounded(exercise.config.rounds);
       for (let i = 0; i < rounds; i++) {
         steps.push({
           kind: 'interval',
@@ -262,7 +272,7 @@ function expandExercise(
           });
         }
       }
-      return steps;
+      return { steps, truncated };
     }
     case 'emom': {
       const steps: RunnerStep[] = [];
@@ -272,7 +282,7 @@ function expandExercise(
       // reported the honest `totalMinutes * 60`; the two silently disagreed for any interval but 60s.
       // Clamped to at least one so an interval longer than the whole block still runs once rather
       // than making the exercise vanish into the "nothing to run" path.
-      const intervalCount = boundedCount(Math.max(1, (exercise.config.totalMinutes * 60) / exercise.config.intervalSec));
+      const intervalCount = bounded(Math.max(1, (exercise.config.totalMinutes * 60) / exercise.config.intervalSec));
       for (let i = 0; i < intervalCount; i++) {
         steps.push({
           kind: 'interval',
@@ -289,54 +299,63 @@ function expandExercise(
           notes: exercise.notes,
         });
       }
-      return steps;
+      return { steps, truncated };
     }
     case 'amrap':
-      return [
-        {
-          kind: 'interval',
-          blockIndex,
-          memberKey,
-          exerciseId: exercise.id,
-          exerciseName: exercise.name,
-          variant: 'amrap',
-          targetSec: exercise.config.timeCapSec,
-          countUp: false,
-          setIndex: 1,
-          setTotal: 1,
-          notes: exercise.notes,
-        },
-      ];
+      return {
+        truncated,
+        steps: [
+          {
+            kind: 'interval',
+            blockIndex,
+            memberKey,
+            exerciseId: exercise.id,
+            exerciseName: exercise.name,
+            variant: 'amrap',
+            targetSec: exercise.config.timeCapSec,
+            countUp: false,
+            setIndex: 1,
+            setTotal: 1,
+            notes: exercise.notes,
+          },
+        ],
+      };
     case 'cardio': {
       const hasDuration = exercise.config.durationSec !== undefined;
-      return [
-        {
-          kind: 'interval',
-          blockIndex,
-          memberKey,
-          exerciseId: exercise.id,
-          exerciseName: exercise.name,
-          variant: 'cardio',
-          targetSec: exercise.config.durationSec ?? 0,
-          countUp: !hasDuration,
-          setIndex: 1,
-          setTotal: 1,
-          cardioDistanceMeters: exercise.config.distanceMeters,
-          notes: exercise.notes,
-        },
-      ];
+      return {
+        truncated,
+        steps: [
+          {
+            kind: 'interval',
+            blockIndex,
+            memberKey,
+            exerciseId: exercise.id,
+            exerciseName: exercise.name,
+            variant: 'cardio',
+            targetSec: exercise.config.durationSec ?? 0,
+            countUp: !hasDuration,
+            setIndex: 1,
+            setTotal: 1,
+            cardioDistanceMeters: exercise.config.distanceMeters,
+            notes: exercise.notes,
+          },
+        ],
+      };
     }
     case 'rest':
-      return [
-        {
-          kind: 'rest',
-          blockIndex,
-          memberKey,
-          exerciseId: exercise.id,
-          standalone: true,
-          seconds: configOverride?.durationSec ?? exercise.config.durationSec,
-        },
-      ];
+      return {
+        truncated,
+        steps: [
+          {
+            kind: 'rest',
+            blockIndex,
+            memberKey,
+            exerciseId: exercise.id,
+            standalone: true,
+            seconds: configOverride?.durationSec ?? exercise.config.durationSec,
+          },
+        ],
+      };
   }
 }
 
@@ -429,7 +448,10 @@ export function dropLastSetForMember(steps: RunnerStep[], memberKey: string): Ru
  * interleaving, same target fields, same notes.
  */
 export function buildStepsForExercise(exercise: Exercise, blockIndex: number, memberKey: string): RunnerStep[] {
-  return expandExercise(exercise, blockIndex, memberKey);
+  // The clamp flag is dropped here on purpose: a mid-session substitute is sized by the sets it
+  // *replaces* (see swapExerciseForMember), so the new exercise's own count is trimmed to fit anyway
+  // and "was it clamped" is not a question about the workout the user is running.
+  return expandExercise(exercise, blockIndex, memberKey).steps;
 }
 
 /**
@@ -476,23 +498,32 @@ export function swapExerciseForMember(
   return [...steps.slice(0, fromIndex), ...replacement, ...steps.slice(lastIndex + 1)];
 }
 
-/** Exported so callers (session.tsx) can check for a zero-step workout before ever starting a session. */
-export function buildSteps(workout: Workout, exercises: Exercise[]): RunnerStep[] {
+/**
+ * The whole workout, expanded, plus whether either ceiling cut it short.
+ *
+ * `buildSteps` below is the plain-array form that almost everything wants; the session screen takes
+ * this one, because it is the only caller that has to tell the user the workout will stop early.
+ */
+export function buildStepsWithLimits(workout: Workout, exercises: Exercise[]): StepBuildResult {
   const steps: RunnerStep[] = [];
+  let truncated = false;
 
   workout.blocks.forEach((block, blockIndex) => {
     // Checked per block rather than per push, so a truncated workout is made of whole blocks. `blocks`
     // has no upper bound in the schema, so this is reachable without a circuit at all.
-    if (steps.length >= MaxStepsPerWorkout) return;
+    if (steps.length >= MaxStepsPerWorkout) {
+      truncated = true;
+      return;
+    }
     if (block.kind === 'exercise') {
       const exercise = exercises.find((candidate) => candidate.id === block.exerciseId);
       if (!exercise) return;
       // Appended one at a time rather than spread as arguments: `push(...arr)` passes every element as
       // a separate argument and throws `RangeError` past the engine's argument limit, which turned a
       // large set count into a crash before the session screen's first render instead of a long workout.
-      for (const step of expandExercise(exercise, blockIndex, `${blockIndex}`, block.configOverride)) {
-        steps.push(step);
-      }
+      const expanded = expandExercise(exercise, blockIndex, `${blockIndex}`, block.configOverride);
+      if (expanded.truncated) truncated = true;
+      for (const step of expanded.steps) steps.push(step);
       return;
     }
 
@@ -520,20 +551,27 @@ export function buildSteps(workout: Workout, exercises: Exercise[]): RunnerStep[
       // has no upper bound either, so one round of a huge circuit is unbounded on its own. A `for`
       // loop over the members rather than `forEach`, which cannot stop. Overshoot is one member visit,
       // which `boundedCount` caps.
-      if (steps.length >= MaxStepsPerWorkout) break;
+      if (steps.length >= MaxStepsPerWorkout) {
+        truncated = true;
+        break;
+      }
       for (let i = 0; i < members.length; i++) {
-        if (steps.length >= MaxStepsPerWorkout) break;
+        if (steps.length >= MaxStepsPerWorkout) {
+          truncated = true;
+          break;
+        }
         const { member, memberIndex, exercise } = members[i];
         const memberKey = `${blockIndex}:${memberIndex}`;
         // Shared by the member's own steps and by the rest that follows it, which belongs to the work
         // it follows rather than to what comes next.
         const at = positionAt(round, i);
         // One at a time, for the same reason as the exercise block above.
-        const visitSteps = expandExercise(exercise, blockIndex, memberKey, member.configOverride, {
+        const visit = expandExercise(exercise, blockIndex, memberKey, member.configOverride, {
           index: round + 1,
           total: block.rounds,
         });
-        for (const step of visitSteps) steps.push({ ...step, circuit: at });
+        if (visit.truncated) truncated = true;
+        for (const step of visit.steps) steps.push({ ...step, circuit: at });
         const isLastMember = i === members.length - 1;
         if (!isLastMember && block.restBetweenExercisesSec) {
           steps.push({
@@ -562,5 +600,10 @@ export function buildSteps(workout: Workout, exercises: Exercise[]): RunnerStep[
     }
   });
 
-  return steps;
+  return { steps, truncated };
+}
+
+/** Exported so callers (session.tsx) can check for a zero-step workout before ever starting a session. */
+export function buildSteps(workout: Workout, exercises: Exercise[]): RunnerStep[] {
+  return buildStepsWithLimits(workout, exercises).steps;
 }

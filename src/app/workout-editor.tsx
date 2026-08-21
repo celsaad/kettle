@@ -106,11 +106,16 @@ export default function WorkoutEditorScreen() {
     }));
   };
 
+  /**
+   * Removing the second-to-last member would leave a one-member circuit, which the schema refuses
+   * (`exercises` is `.min(2)`) — so the editor wrote a library that failed to parse on the next
+   * launch. A circuit of one is also not a circuit; the way to get there is to delete the block.
+   */
   const removeCircuitMember = (index: number, memberIndex: number) => {
     setDraft((current) => ({
       ...current,
       blocks: current.blocks.map((block, i) =>
-        i === index && block.kind === 'circuit'
+        i === index && block.kind === 'circuit' && block.members.length > 2
           ? { ...block, members: block.members.filter((_, mi) => mi !== memberIndex) }
           : block,
       ),

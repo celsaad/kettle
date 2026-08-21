@@ -146,7 +146,10 @@ export function WorkoutCircuitBlock({ block, exercises, dragHandle, onChange, on
           </ThemedText>
           <TextInput
             value={String(block.restBetweenExercisesSec ?? 0)}
-            onChangeText={(text) => onChange({ restBetweenExercisesSec: Number(text) || 0 })}
+            // `Math.max(0, …)` because `Number('-5') || 0` is -5, not 0: the schema is
+            // `nonnegative()`, so a typed minus sign wrote a library that failed to parse on the next
+            // launch. Same clamp on the round rest below.
+            onChangeText={(text) => onChange({ restBetweenExercisesSec: Math.max(0, Number(text) || 0) })}
             keyboardType="numeric"
             style={[styles.smallInput, { borderColor: theme.border, backgroundColor: theme.background, color: theme.text }]}
           />
@@ -158,7 +161,7 @@ export function WorkoutCircuitBlock({ block, exercises, dragHandle, onChange, on
           </ThemedText>
           <TextInput
             value={String(block.restBetweenRoundsSec ?? 0)}
-            onChangeText={(text) => onChange({ restBetweenRoundsSec: Number(text) || 0 })}
+            onChangeText={(text) => onChange({ restBetweenRoundsSec: Math.max(0, Number(text) || 0) })}
             keyboardType="numeric"
             style={[styles.smallInput, { borderColor: theme.border, backgroundColor: theme.background, color: theme.text }]}
           />

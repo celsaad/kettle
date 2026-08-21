@@ -53,9 +53,16 @@ training to. Vibration is separate and stays on your phone's own settings.
   reps or rounds — used to save, and then Kettle couldn't read the file on the next launch and
   started you over with the built-in library. The editors now say a whole number is needed, which is
   what the format has always required. A rep range that runs backwards is caught the same way.
-- **A workout too long to run in full now says so before you start it.** It would previously stop
-  partway through and be written to your log as a finished session, with nothing anywhere saying it
-  had been cut short.
+- **A workout too long to run in full now says so before you start it**, and asks whether you want
+  to run it anyway. It would previously stop partway through and be written to your log as a finished
+  session, with nothing anywhere saying it had been cut short.
+- **A library Kettle can't read is never thrown away any more.** It used to be replaced by the
+  starter library on the next launch, with no copy kept — so one unreadable line cost you everything.
+  Now the file is repaired where it can be, and where it can't, it's set aside as
+  `exercises.invalid-<date>.yaml` next to your library so you can open it, fix it and import it back.
+- **A circuit can't be edited into a shape Kettle refuses to load.** A negative rest, or removing the
+  second-to-last exercise from a circuit, both used to save and then make the whole library
+  unreadable on the next launch.
 - **A circuit's rounds stop at 500, where the format stops.** The workout editor's stepper had no
   ceiling, so it could write a workout Kettle then couldn't read on the next launch — and starting a
   very long circuit could take the app down before the first screen of it appeared. Long workouts run

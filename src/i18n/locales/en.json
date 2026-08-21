@@ -148,7 +148,9 @@
       "body": "This week of the program is a scheduled rest day, so there's nothing to run. Go back and pick a workout if you want to train today."
     },
     "tooLong": {
-      "notice": "This workout is too long for Kettle to run in one go, so it will stop partway through. Split it into shorter workouts to run all of it."
+      "title": "Too long to run in full",
+      "body": "\"{{name}}\" asks for more than Kettle can run in one session, so it will stop partway through and be logged as finished at that point. Split it into shorter workouts to run all of it.",
+      "startAnyway": "Start anyway"
     },
     "nothingToRun": {
       "title": "Nothing to run",

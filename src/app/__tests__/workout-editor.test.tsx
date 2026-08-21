@@ -41,10 +41,12 @@ function persistedWorkout(id: string): Workout | undefined {
 
 const pullUps = anExercise({ id: 'pull-ups', name: 'Pull-ups' });
 const dips = anExercise({ id: 'dips', name: 'Dips' });
+/** A third member, so a removal test has a circuit it is allowed to remove from. */
+const rows = anExercise({ id: 'rows', name: 'Rows' });
 
 beforeEach(() => {
   setSearchParams({});
-  useLibraryStore.setState({ library: aLibrary({ exercises: [pullUps, dips] }), status: 'ready' });
+  useLibraryStore.setState({ library: aLibrary({ exercises: [pullUps, dips, rows] }), status: 'ready' });
 });
 
 describe('saving', () => {
@@ -192,13 +194,42 @@ describe('circuits', () => {
   });
 
   it('removes a member without removing the circuit', async () => {
-    await buildCircuit();
+    // Three members, because removing from a circuit of two is refused — see the test below.
+    await fireEvent.press(screen.getByText('Pull-ups'));
+    await fireEvent.press(screen.getByText('Dips'));
+    await fireEvent.press(screen.getByText('Rows'));
+    await fireEvent.press(screen.getByText('Add circuit (3)'));
 
     await fireEvent.press(screen.getByLabelText('Remove Dips from circuit'));
 
     expect(screen.getByText('Circuit')).toBeTruthy();
     expect(screen.getByText('1 block')).toBeTruthy();
     expect(screen.queryByText('Dips')).toBeNull();
+  });
+
+  /**
+   * The schema has `exercises: z.array(...).min(2)`, and nothing stopped the editor going below it —
+   * so a one-member circuit was written to the library file and then failed to parse on the next
+   * launch, which used to cost the user the whole library. A circuit of one is also not a circuit;
+   * the way to get there is to delete the block.
+   */
+  it('refuses to leave a circuit with a single member', async () => {
+    await buildCircuit();
+
+    await fireEvent.press(screen.getByLabelText('Remove Dips from circuit'));
+
+    expect(screen.getByText('Dips')).toBeTruthy();
+  });
+
+  it('keeps a negative circuit rest out of the library', async () => {
+    // `Number('-5') || 0` is -5, not 0, and the schema is `nonnegative()` — so this reached the file.
+    await buildCircuit();
+    await fireEvent.changeText(screen.getByDisplayValue('15'), '-5');
+    await fireEvent.changeText(screen.getByPlaceholderText('e.g. Push day'), 'Circuit day');
+    await fireEvent.press(screen.getByText('Save'));
+
+    const block = persistedWorkout('circuit-day')?.blocks[0];
+    expect(block?.kind === 'circuit' && block.restBetweenExercisesSec).toBe(0);
   });
 });
 

@@ -16,12 +16,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { MaxRounds } from '@/domain/schema';
-import {
-  diffBlockOverride,
-  diffExerciseOverride,
-  mergedBlockUnchecked,
-  mergedExerciseUnchecked,
-} from '@/domain/yaml-mapping';
+import { diffBlockOverride, diffExerciseOverride, mergeBlockOverride, mergeExerciseOverride } from '@/domain/yaml-mapping';
 import type { Exercise, Library, ProgramOverride, Workout, WorkoutBlock } from '@/domain/types';
 import { useTheme } from '@/hooks/use-theme';
 import { useUnitSystem } from '@/state/preferences-store';
@@ -131,14 +126,14 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
       // refuses be read, corrected and saved, which is the only way out of one for a file that
       // imported cleanly before this rule existed.
       setTarget({ kind: 'exercise', exercise: base });
-      seedFields(mergedExerciseUnchecked(base, override.config));
+      seedFields(mergeExerciseOverride(base, override.config).asAuthored);
     } else {
       const block = workout?.blocks.find(
         (candidate): candidate is CircuitBlock => candidate.kind === 'circuit' && candidate.id === override.blockId,
       );
       if (!block) return;
       // Unchecked, for the same reason as the exercise branch above.
-      const effective = mergedBlockUnchecked(block, override.config) as CircuitBlock;
+      const effective = mergeBlockOverride(block, override.config).asAuthored as CircuitBlock;
       setTarget({ kind: 'block', block });
       setFieldValues({
         rounds: String(effective.rounds),
@@ -152,6 +147,24 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
 
   const removeOverride = (index: number) => {
     onChange(overrides.filter((_, i) => i !== index));
+  };
+
+  /**
+   * A circuit rest field, as edited — `undefined` where the block declares none and the seeded zero
+   * was never touched.
+   *
+   * The panel seeds an absent rest as "0" so the input isn't blank, and `diffBlockOverride` compares
+   * against `undefined` — so changing only `rounds` on a circuit with no rest also emitted
+   * `rest_between_exercises_sec: 0` and `rest_between_rounds_sec: 0`, inventing two patches the user
+   * never asked for. Same shape as `previousWeightKg` in exercise-form.ts, and the same reasoning:
+   * an untouched field must not be rewritten by the round trip through the form.
+   */
+  const editedRest = (key: string, base: number | undefined): number | undefined => {
+    const raw = fieldValues[key]?.trim() ?? '';
+    if (!raw) return undefined;
+    const value = Number(raw);
+    if (!Number.isFinite(value)) return base;
+    return value === 0 && base === undefined ? undefined : value;
   };
 
   const setField = (key: string, text: string) => {
@@ -195,8 +208,8 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
       const edited: CircuitBlock = {
         ...target.block,
         rounds: Number(fieldValues.rounds) || target.block.rounds,
-        restBetweenExercisesSec: Number(fieldValues.restBetweenExercisesSec) || 0,
-        restBetweenRoundsSec: Number(fieldValues.restBetweenRoundsSec) || 0,
+        restBetweenExercisesSec: editedRest('restBetweenExercisesSec', target.block.restBetweenExercisesSec),
+        restBetweenRoundsSec: editedRest('restBetweenRoundsSec', target.block.restBetweenRoundsSec),
       };
       nextOverride = { kind: 'block', blockId, config: diffBlockOverride(target.block, edited) };
     }

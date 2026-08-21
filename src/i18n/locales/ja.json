@@ -110,6 +110,7 @@
     "title": "プログラム",
     "helpLabel": "プログラムの書き方",
     "overrideIgnoredInvalid": "未適用 — この値は使用できません",
+    "overrideIgnoredUnknownKey": "未適用 — 変更できる設定がありません",
     "overrideIgnoredMissing": "未適用 — この週に該当するものがありません",
     "noWeeks": "週がありません",
     "week": "第{{n}}週",

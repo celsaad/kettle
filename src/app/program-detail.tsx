@@ -14,7 +14,7 @@ import { RowStartButton } from '@/components/row-start-button';
 import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import type { Library, ProgramOverride, ProgramWeek, Workout } from '@/domain/types';
-import { overrideApplies } from '@/domain/yaml-mapping';
+import { overrideStatus } from '@/domain/yaml-mapping';
 import { useTheme } from '@/hooks/use-theme';
 import { useLibraryStore } from '@/state/library-store';
 
@@ -43,10 +43,16 @@ export function overrideLines(override: ProgramOverride, library: Library, worko
 
   const lines = Object.entries(override.config).map(([key, value]) => `${name}: ${key} → ${value}`);
   if (!target) return [...lines, translate('programs.overrideIgnoredMissing')];
-  if (!overrideApplies(target, override.config, override.kind)) {
-    return [...lines, translate('programs.overrideIgnoredInvalid')];
+  // Three outcomes, not two: a key the target doesn't have is stripped by zod rather than refused, so
+  // it parses, changes nothing, and needs its own answer — see OverrideStatus.
+  switch (overrideStatus(target, override.config, override.kind)) {
+    case 'invalidValue':
+      return [...lines, translate('programs.overrideIgnoredInvalid')];
+    case 'unknownKey':
+      return [...lines, translate('programs.overrideIgnoredUnknownKey')];
+    default:
+      return lines;
   }
-  return lines;
 }
 
 export default function ProgramDetailScreen() {

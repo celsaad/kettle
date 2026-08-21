@@ -468,40 +468,89 @@ function clampEmomIntervals(doc: unknown): boolean {
  * that loses its patch is a smaller loss than a program that can't be opened.
  */
 export function applyExerciseOverride(exercise: Exercise, config: Record<string, number | string>): Exercise {
-  const merged = mergedExerciseRaw(exercise, config);
-  return merged ? exerciseToDomain(merged) : exercise;
+  return mergeExerciseOverride(exercise, config).effective;
 }
 
 /**
- * The merge **without** the gate, for the one caller that has to show a patch it cannot yet save: the
- * override editor, seeding its fields for editing.
+ * Why an override does or doesn't reach the runner.
  *
- * Exactly what `applyExerciseOverride` did before it re-validated, cast and all — kept as its own
- * named export rather than left as a second unlabelled cast, because the difference between the two
- * is the whole point. Nothing that reaches the runner may use this; a value here can be any shape the
- * YAML held, and the form turns all of it into strings on the way to the inputs.
+ * `unknownKey` is its own answer rather than folded into `invalidValue` because it is a different
+ * mistake with a different fix, and it is the **likelier** one in a hand-written program: zod strips
+ * keys it doesn't know instead of refusing them, so `config: { reps: 12 }` on a `reps` exercise (the
+ * field is `target_reps_min`) parses perfectly, changes nothing, and used to render with no note at
+ * all — the app stating a change it wasn't making, through the strip path rather than the reject one.
  */
-export function mergedExerciseUnchecked(exercise: Exercise, config: Record<string, number | string>): Exercise {
-  const raw = exerciseToRaw(exercise);
-  return exerciseToDomain({ ...raw, config: { ...raw.config, ...config } } as RawExercise);
+export type OverrideStatus = 'applies' | 'unknownKey' | 'invalidValue';
+
+/**
+ * One override merge, in the forms its callers need — so there is exactly one implementation of
+ * "merge a patch onto a target" per kind, rather than a gated function and an ungated lookalike
+ * sitting next to each other for a caller to pick the wrong one out of.
+ *
+ * `asAuthored` is the ungated merge and is **for editing only**: it is what the override editor seeds
+ * its fields from, because a patch the schema now refuses still has to be readable and correctable.
+ * Nothing that reaches the runner may use it. Keeping it as a field of this result rather than as its
+ * own export is the point — you have to name it to get it.
+ */
+export type OverrideMerge<T> = { effective: T; asAuthored: T; status: OverrideStatus };
+
+/**
+ * The keys a **block** override may target: a circuit's own repeat and rest params, exactly as the
+ * authoring reference describes them.
+ *
+ * Spelled out rather than inferred from the raw block, because that object also carries `type`, `id`
+ * and `exercises` — and a patch is a free record of numbers and strings, so `config: { exercises: 2 }`
+ * imports cleanly. Spreading that over the raw block replaced the member list with a number and threw
+ * `raw.exercises.map is not a function` out of a press handler, where no error boundary catches it.
+ * An allowlist makes the structural keys unreachable instead of dangerous.
+ */
+const BLOCK_OVERRIDE_KEYS = ['rounds', 'rest_between_exercises_sec', 'rest_between_rounds_sec'] as const;
+
+/** The subset of `config` whose keys `known` actually has, plus whether anything was left out. */
+function splitByKnownKeys(
+  config: Record<string, number | string>,
+  known: readonly string[],
+): { patch: Record<string, number | string>; hasUnknown: boolean } {
+  const patch: Record<string, number | string> = {};
+  let hasUnknown = false;
+  for (const [key, value] of Object.entries(config)) {
+    if (known.includes(key)) patch[key] = value;
+    else hasUnknown = true;
+  }
+  return { patch, hasUnknown };
 }
 
-/** The same, for a circuit block. See mergedExerciseUnchecked. */
-export function mergedBlockUnchecked(block: WorkoutBlock, config: Record<string, number | string>): WorkoutBlock {
-  if (block.kind !== 'circuit') return block;
-  return workoutBlockToDomain({ ...workoutBlockToRaw(block), ...config } as RawWorkoutBlock);
+export function mergeExerciseOverride(exercise: Exercise, config: Record<string, number | string>): OverrideMerge<Exercise> {
+  const raw = exerciseToRaw(exercise);
+  // Derived from the exercise itself rather than listed: `exerciseToRaw` emits every key of the type,
+  // undefined ones included, so `in` is an honest test of "is this a field this type has".
+  const { patch, hasUnknown } = splitByKnownKeys(config, Object.keys(raw.config));
+  const asAuthored = exerciseToDomain({ ...raw, config: { ...raw.config, ...config } } as RawExercise);
+
+  const parsed = rawExerciseSchema.safeParse({ ...raw, config: { ...raw.config, ...patch } });
+  if (!parsed.success) return { effective: exercise, asAuthored, status: 'invalidValue' };
+  const effective = exerciseToDomain(parsed.data);
+  return { effective, asAuthored, status: hasUnknown ? 'unknownKey' : 'applies' };
 }
 
-/** The merged, re-validated raw exercise, or null if the patch produced something the schema refuses. */
-function mergedExerciseRaw(exercise: Exercise, config: Record<string, number | string>): RawExercise | null {
-  const raw = exerciseToRaw(exercise);
-  const mergedConfig = { ...raw.config, ...config } as typeof raw.config;
-  const result = rawExerciseSchema.safeParse({ ...raw, config: mergedConfig });
-  return result.success ? result.data : null;
+export function mergeBlockOverride(
+  block: WorkoutBlock,
+  config: Record<string, number | string>,
+): OverrideMerge<WorkoutBlock> {
+  // A plain `exercise` block has no config of its own — those are addressed with an exercise override.
+  if (block.kind !== 'circuit') return { effective: block, asAuthored: block, status: 'unknownKey' };
+  const raw = workoutBlockToRaw(block);
+  const { patch, hasUnknown } = splitByKnownKeys(config, BLOCK_OVERRIDE_KEYS);
+  const asAuthored = workoutBlockToDomain({ ...raw, ...patch } as RawWorkoutBlock);
+
+  const parsed = rawWorkoutBlockSchema.safeParse({ ...raw, ...patch });
+  if (!parsed.success) return { effective: block, asAuthored, status: 'invalidValue' };
+  const effective = workoutBlockToDomain(parsed.data);
+  return { effective, asAuthored, status: hasUnknown ? 'unknownKey' : 'applies' };
 }
 
 /**
- * Whether an override will actually reach the runner — the same question the two `apply*Override`
+ * Why an override will or won't reach the runner — the same question the two `apply*Override`
  * functions answer by falling back, asked without having to compare two objects to find out.
  *
  * **This is the other half of the silent fallback, not a nicety.** Dropping a patch and still
@@ -510,15 +559,14 @@ function mergedExerciseRaw(exercise: Exercise, config: Record<string, number | s
  * `hold_sec_max` — which used to work, because the runner read `holdSecMax ?? holdSecMin` — still
  * imports cleanly and is now refused at merge. Those weeks have to say so rather than lie.
  */
-export function overrideApplies(
+export function overrideStatus(
   target: Exercise | WorkoutBlock,
   config: Record<string, number | string>,
   kind: 'exercise' | 'block',
-): boolean {
-  if (kind === 'exercise') return mergedExerciseRaw(target as Exercise, config) !== null;
-  const block = target as WorkoutBlock;
-  if (block.kind !== 'circuit') return false;
-  return rawWorkoutBlockSchema.safeParse({ ...workoutBlockToRaw(block), ...config }).success;
+): OverrideStatus {
+  return kind === 'exercise'
+    ? mergeExerciseOverride(target as Exercise, config).status
+    : mergeBlockOverride(target as WorkoutBlock, config).status;
 }
 
 /**
@@ -527,12 +575,7 @@ export function overrideApplies(
  * applyExerciseOverride instead, since their only "config" is the underlying exercise's.
  */
 export function applyBlockOverride(block: WorkoutBlock, config: Record<string, number | string>): WorkoutBlock {
-  if (block.kind !== 'circuit') return block;
-  const merged = { ...workoutBlockToRaw(block), ...config };
-  // Re-validated, falling back to the un-overridden block, for the same reasons as
-  // applyExerciseOverride above — a circuit's `rounds` drives one step per member per round.
-  const result = rawWorkoutBlockSchema.safeParse(merged);
-  return result.success ? workoutBlockToDomain(result.data) : block;
+  return mergeBlockOverride(block, config).effective;
 }
 
 /**

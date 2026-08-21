@@ -53,7 +53,8 @@ training to. Vibration is separate and stays on your phone's own settings.
 - **A program week's overrides are checked against the same rules.** One that asks for something the
   format doesn't allow is ignored for that week — the exercise runs as your library has it, rather
   than breaking the workout — and the program screen now marks it as not applied instead of listing
-  it as though it were.
+  it as though it were. A misspelled setting name is called out the same way, rather than sitting in
+  the list looking like it does something.
 - **The override editor tells you when a number won't do.** Setting a program week to 0 sets, a rep
   range that runs backwards, or a negative rest on a circuit used to save quietly and then do nothing
   on the week it claimed to change; each now says so and keeps the panel open.

@@ -117,6 +117,7 @@
     "title": "Programas",
     "helpLabel": "Como escrever um programa",
     "overrideIgnoredInvalid": "não aplicado — este valor não é permitido",
+    "overrideIgnoredUnknownKey": "não aplicado — não existe essa configuração para alterar",
     "overrideIgnoredMissing": "não aplicado — nada nesta semana corresponde",
     "noWeeks": "Sem semanas",
     "week": "Semana {{n}}",

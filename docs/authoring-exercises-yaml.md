@@ -266,6 +266,10 @@ programs:
   tables applies to the merged whole, cross-field ones included, so `{ sets: 0 }`,
   `{ rest_sec: -5 }` and a `{ hold_sec_max: 60 }` on a hold with no `hold_sec_min` are all dropped.
   Patch what you must, but patch it into something valid.
+- **A key the target doesn't have is ignored, not an error.** `config: { reps: 12 }` on a `reps`
+  exercise — whose field is `target_reps_min` — imports, changes nothing, and is shown as not
+  applied. A block override may only target a circuit's own `rounds`,
+  `rest_between_exercises_sec` and `rest_between_rounds_sec`; anything else is ignored the same way.
 - A block override only makes sense against a `type: circuit` block that has an `id`; it has nothing
   to patch on a `type: exercise` block (use an exercise override for that instead).
 - **Week numbers are taken literally, not as a schedule to fill in.** The example above jumps 1 → 3 →

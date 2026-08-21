@@ -779,6 +779,14 @@
                     <code class="inl">{ hold_sec_max: 60 }</code> on a hold with no <code class="inl">hold_sec_min</code>
                     are all dropped. Patch what you must, but patch it into something valid.
                   </p>
+                  <p>
+                    A key the target does not have is <em>ignored</em> rather than refused.
+                    <code class="inl">{ reps: 12 }</code> on a <code class="inl">reps</code> exercise — whose field is
+                    <code class="inl">target_reps_min</code> — imports, changes nothing, and is shown as not applied. A
+                    <code class="inl">block</code> override may only target a circuit's own <code class="inl">rounds</code>,
+                    <code class="inl">rest_between_exercises_sec</code> and <code class="inl">rest_between_rounds_sec</code>;
+                    anything else is ignored the same way.
+                  </p>
                 </div>
               </div>
             </section>

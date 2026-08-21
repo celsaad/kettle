@@ -325,3 +325,62 @@ describe('an override the merge now refuses', () => {
     expect(onChange).toHaveBeenCalledWith([{ kind: 'exercise', exerciseId: 'pull-ups', config: { sets: 6 } }]);
   });
 });
+
+/**
+ * Zod strips a key it doesn't recognise instead of refusing it, so a typo parses, changes nothing, and
+ * used to render exactly like a working override — the PR's own thesis leaking through the strip path
+ * rather than the reject path.
+ */
+it('marks a misspelled key as not applied, not as applied', async () => {
+  // A `reps` exercise's field is `target_reps_min`; `reps` is nothing.
+  const { rendered } = mount([{ kind: 'exercise', exerciseId: 'pull-ups', config: { reps: 12 } }]);
+  await rendered;
+
+  expect(screen.getByText('Pull-ups: reps → 12')).toBeTruthy();
+  expect(screen.getByText('not applied — there is no such setting to change')).toBeTruthy();
+});
+
+/**
+ * `config: { exercises: 2 }` is a legal patch shape under `programOverrideSchema`, and spreading it
+ * over the raw block replaced the member list with a number: `raw.exercises.map is not a function`,
+ * thrown inside a press handler where no error boundary catches it.
+ */
+it('survives a structural key on a circuit override', async () => {
+  const { rendered } = mount([{ kind: 'block', blockId: 'finisher', config: { exercises: 2 } }]);
+  await rendered;
+
+  expect(screen.getByText('not applied — there is no such setting to change')).toBeTruthy();
+  // The row opens rather than taking the screen down with it.
+  await fireEvent.press(screen.getByText('Circuit: exercises → 2'));
+  expect(screen.getByText('Circuit (finisher)')).toBeTruthy();
+});
+
+/**
+ * The panel seeds an absent rest as "0" so the input isn't blank, and `diffBlockOverride` compares
+ * against `undefined` — so changing only the rounds invented two rest patches nobody asked for.
+ */
+it('does not invent a rest override on a circuit that declares none', async () => {
+  const bare = {
+    kind: 'circuit' as const,
+    id: 'bare',
+    rounds: 3,
+    members: [{ exerciseId: 'pull-ups' }, { exerciseId: 'dips' }],
+  };
+  const bareWorkout = aWorkout({ id: 'bare-day', name: 'Bare day', blocks: [bare] });
+  const onChange = jest.fn();
+  await renderScreen(
+    <ProgramOverrideEditor
+      library={aLibrary({ exercises: [pullUps, dips], workouts: [bareWorkout] })}
+      workout={bareWorkout}
+      overrides={[]}
+      onChange={onChange}
+    />,
+  );
+
+  await fireEvent.press(screen.getByText('+ Add override'));
+  await fireEvent.press(screen.getByText('bare'));
+  await fireEvent.press(screen.getByText('+'));
+  await fireEvent.press(screen.getByText('Add override'));
+
+  expect(onChange).toHaveBeenCalledWith([{ kind: 'block', blockId: 'bare', config: { rounds: 4 } }]);
+});

@@ -5,9 +5,9 @@ import {
   applyExerciseOverride,
   diffBlockOverride,
   diffExerciseOverride,
-  mergedBlockUnchecked,
-  mergedExerciseUnchecked,
-  overrideApplies,
+  mergeBlockOverride,
+  mergeExerciseOverride,
+  overrideStatus,
   parseLibraryYaml,
   parseSessionYaml,
   serializeLibraryYaml,
@@ -594,7 +594,7 @@ describe('overrides are re-validated after merging', () => {
  * stating something it isn't doing — and it lands hardest on files that imported cleanly before this
  * rule existed, since `programOverrideSchema` types `config` as a free record.
  */
-describe('overrideApplies', () => {
+describe('overrideStatus', () => {
   const reps = exercises.find((exercise) => exercise.id === 'reps-full')!;
   const holdBare = exercises.find((exercise) => exercise.id === 'hold-bare')!;
   const circuit = library.workouts[0].blocks[2];
@@ -605,8 +605,37 @@ describe('overrideApplies', () => {
       number | string
     >[]) {
       const applied = applyExerciseOverride(reps, config) !== reps;
-      expect(overrideApplies(reps, config, 'exercise')).toBe(applied);
+      expect(overrideStatus(reps, config, 'exercise') === 'applies').toBe(applied);
     }
+  });
+
+  /**
+   * Zod strips a key it doesn't know instead of refusing it, so a typo parses cleanly, changes nothing
+   * and used to render with no note — the same "the app says it did something it didn't" this whole
+   * change exists to close, reached through the strip path rather than the reject path. On a
+   * hand-written program a typo is the likelier way in of the two.
+   */
+  it('reports a key the target does not have, which parses but does nothing', () => {
+    // A `reps` exercise has `target_reps_min`, not `reps`.
+    expect(overrideStatus(reps, { reps: 12 }, 'exercise')).toBe('unknownKey');
+    expect(applyExerciseOverride(reps, { reps: 12 })).toEqual(reps);
+  });
+
+  it('reports a structural key on a block, which used to throw rather than parse', () => {
+    // `config: { exercises: 2 }` is a legal patch shape, and spreading it over the raw block replaced
+    // the member list with a number — `raw.exercises.map is not a function`, inside a press handler.
+    expect(overrideStatus(circuit, { exercises: 2 }, 'block')).toBe('unknownKey');
+    expect(() => applyBlockOverride(circuit, { exercises: 2 })).not.toThrow();
+    expect(applyBlockOverride(circuit, { exercises: 2 })).toEqual(circuit);
+  });
+
+  it('still applies the keys it does know alongside nothing else', () => {
+    expect(overrideStatus(circuit, { rounds: 2, exercises: 2 }, 'block')).toBe('unknownKey');
+    const merged = applyBlockOverride(circuit, { rounds: 2, exercises: 2 });
+    // The known half is honoured — it is the *reporting* that has to tell the truth, not the merge
+    // that has to be all-or-nothing.
+    expect(merged.kind === 'circuit' && merged.rounds).toBe(2);
+    expect(merged.kind === 'circuit' && merged.members).toEqual(circuit.kind === 'circuit' && circuit.members);
   });
 
   /**
@@ -619,14 +648,14 @@ describe('overrideApplies', () => {
     const bareMax = { hold_sec_max: 60 };
     const noMin: Exercise = { ...holdBare, config: { ...holdBare.config, holdSecMin: undefined } } as Exercise;
 
-    expect(overrideApplies(noMin, bareMax, 'exercise')).toBe(false);
+    expect(overrideStatus(noMin, bareMax, 'exercise')).toBe('invalidValue');
     expect(applyExerciseOverride(noMin, bareMax)).toEqual(noMin);
   });
 
   it('answers for blocks too, and says no for a non-circuit', () => {
-    expect(overrideApplies(circuit, { rounds: 2 }, 'block')).toBe(true);
-    expect(overrideApplies(circuit, { rounds: 0 }, 'block')).toBe(false);
-    expect(overrideApplies({ kind: 'exercise', exerciseId: 'reps-bare' }, { rounds: 2 }, 'block')).toBe(false);
+    expect(overrideStatus(circuit, { rounds: 2 }, 'block')).toBe('applies');
+    expect(overrideStatus(circuit, { rounds: 0 }, 'block')).toBe('invalidValue');
+    expect(overrideStatus({ kind: 'exercise', exerciseId: 'reps-bare' }, { rounds: 2 }, 'block')).toBe('unknownKey');
   });
 });
 
@@ -638,13 +667,13 @@ describe('unchecked merges', () => {
   const reps = exercises.find((exercise) => exercise.id === 'reps-full')!;
 
   it('keeps a value the schema refuses, where the gated merge discards it', () => {
-    const merged = mergedExerciseUnchecked(reps, { sets: 0 });
+    const merged = mergeExerciseOverride(reps, { sets: 0 }).asAuthored;
     expect(merged.type === 'reps' && merged.config.sets).toBe(0);
     expect(applyExerciseOverride(reps, { sets: 0 })).toEqual(reps);
   });
 
   it('keeps a refused circuit patch as well', () => {
-    const merged = mergedBlockUnchecked(library.workouts[0].blocks[2], { rounds: 0 });
+    const merged = mergeBlockOverride(library.workouts[0].blocks[2], { rounds: 0 }).asAuthored;
     expect(merged.kind === 'circuit' && merged.rounds).toBe(0);
   });
 });

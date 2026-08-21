@@ -762,6 +762,24 @@
                   circuit's keys (<code class="inl">rounds</code>, <code class="inl">rest_between_exercises_sec</code>,
                   <code class="inl">rest_between_rounds_sec</code>). Give only the keys you're changing.
                 </p>
+                <div class="callout">
+                  <p>
+                    <strong
+                      >The merged result has to be valid on its own, and that is checked when the week runs — not on
+                      import.</strong
+                    >
+                    The patch itself only has to be a map of numbers and strings, which is what lets it be partial. So a week
+                    whose merged config the schema would refuse still imports, and is then <strong>ignored</strong>: that
+                    week runs the exercise exactly as <code class="inl">exercises</code>
+                    defines it, and the app marks the override as not applied.
+                  </p>
+                  <p>
+                    Every rule in the type tables above applies to the merged whole, cross-field rules included — so
+                    <code class="inl">{ sets: 0 }</code>, <code class="inl">{ rest_sec: -5 }</code> and a
+                    <code class="inl">{ hold_sec_max: 60 }</code> on a hold with no <code class="inl">hold_sec_min</code>
+                    are all dropped. Patch what you must, but patch it into something valid.
+                  </p>
+                </div>
               </div>
             </section>
 

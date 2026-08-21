@@ -1,4 +1,8 @@
 import { router, useLocalSearchParams } from 'expo-router';
+// Straight from i18next rather than the `useTranslation` below, matching `domain/format.ts`:
+// `overrideLines` is a module-level function with no React tree to hook into. Aliased because the
+// screen further down has its own `t` from the hook, and lint runs at zero warnings.
+import { t as translate } from 'i18next';
 import { useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
@@ -10,20 +14,39 @@ import { RowStartButton } from '@/components/row-start-button';
 import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import type { Library, ProgramOverride, ProgramWeek, Workout } from '@/domain/types';
+import { overrideApplies } from '@/domain/yaml-mapping';
 import { useTheme } from '@/hooks/use-theme';
 import { useLibraryStore } from '@/state/library-store';
 
 export { ModalErrorBoundary as ErrorBoundary } from '@/components/error-fallback';
 
+/**
+ * One line per patched key, plus — when the patch will not actually reach the runner — a line saying
+ * so.
+ *
+ * That last line is the display half of `applyExerciseOverride`'s silent fallback, and it is not
+ * cosmetic: without it the program screen states a change the week does not make. It reads worst on
+ * files that were fine before the merge was validated, since `programOverrideSchema` types `config`
+ * as a free record and still imports them — a bare `hold_sec_max` among them.
+ *
+ * The keys and values themselves stay untranslated: they are the user's own YAML, rendered verbatim
+ * like every other piece of their data.
+ */
 export function overrideLines(override: ProgramOverride, library: Library, workout: Workout | undefined): string[] {
-  if (override.kind === 'exercise') {
-    const exercise = library.exercises.find((candidate) => candidate.id === override.exerciseId);
-    const name = exercise?.name ?? override.exerciseId;
-    return Object.entries(override.config).map(([key, value]) => `${name}: ${key} → ${value}`);
+  const target =
+    override.kind === 'exercise'
+      ? library.exercises.find((candidate) => candidate.id === override.exerciseId)
+      : workout?.blocks.find((candidate) => candidate.kind === 'circuit' && candidate.id === override.blockId);
+  const label =
+    override.kind === 'exercise' ? (target ? (target as { name: string }).name : override.exerciseId) : 'Circuit';
+  const name = override.kind === 'block' && !target ? override.blockId : label;
+
+  const lines = Object.entries(override.config).map(([key, value]) => `${name}: ${key} → ${value}`);
+  if (!target) return [...lines, translate('programs.overrideIgnoredMissing')];
+  if (!overrideApplies(target, override.config, override.kind)) {
+    return [...lines, translate('programs.overrideIgnoredInvalid')];
   }
-  const block = workout?.blocks.find((candidate) => candidate.kind === 'circuit' && candidate.id === override.blockId);
-  const label = block ? 'Circuit' : override.blockId;
-  return Object.entries(override.config).map(([key, value]) => `${label}: ${key} → ${value}`);
+  return lines;
 }
 
 export default function ProgramDetailScreen() {

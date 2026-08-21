@@ -180,11 +180,11 @@ function expandExercise(
   switch (exercise.type) {
     case 'timed_hold': {
       const sets = visit ? 1 : bounded(exercise.config.sets);
-      // A 0 (or negative) end would auto-advance on the very first tick, skipping the hold outright —
-      // and nothing validates a program week's override config, so `hold_sec_min: 0` reaches here from
-      // both the override schema (a free record of numbers) and the in-app override editor (no
-      // validateConfig). Degrading to a no-auto-end hold keeps the set runnable by hand, which is what
-      // it did before holds could end themselves; vanishing mid-workout would not be a degrade.
+      // A 0 (or negative) end would auto-advance on the very first tick, skipping the hold outright.
+      // Both paths that could produce one are gated now — applyExerciseOverride re-validates a merged
+      // override and the in-app override editor runs validateConfig — but the degrade stays: it keeps
+      // the set runnable by hand, which is what it did before holds could end themselves, and a hold
+      // vanishing mid-workout would not be a degrade.
       const configuredEnd = exercise.config.holdSecMax ?? exercise.config.holdSecMin;
       const holdEndSec = configuredEnd !== undefined && configuredEnd > 0 ? configuredEnd : undefined;
       const steps: RunnerStep[] = [];

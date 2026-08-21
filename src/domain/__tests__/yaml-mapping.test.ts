@@ -5,6 +5,9 @@ import {
   applyExerciseOverride,
   diffBlockOverride,
   diffExerciseOverride,
+  mergedBlockUnchecked,
+  mergedExerciseUnchecked,
+  overrideApplies,
   parseLibraryYaml,
   parseSessionYaml,
   serializeLibraryYaml,
@@ -543,6 +546,106 @@ programs: []
 
   it('refuses an emom longer than the day-length ceiling on its own', () => {
     expect(parseLibraryYaml(libraryWithExercise('emom', { interval_sec: 300, total_minutes: 1441 })).ok).toBe(false);
+  });
+});
+
+/**
+ * A week's overrides are a free `record(string, number | string)`, so before this the *merged* config
+ * met no validator at all: every constraint the schema puts on a base exercise was absent on this
+ * path, and `sets: 200000`, `rest_sec: -5` and `sets: "abc"` reached the runner unchallenged.
+ */
+describe('overrides are re-validated after merging', () => {
+  const reps = exercises.find((exercise) => exercise.id === 'reps-full')!;
+  const circuit = library.workouts[0].blocks[2];
+
+  it('still applies a patch the schema accepts', () => {
+    const edited = applyExerciseOverride(reps, { sets: 6 });
+    expect(edited.type === 'reps' && edited.config.sets).toBe(6);
+  });
+
+  it.each([
+    ['past the set ceiling', { sets: 200000 }],
+    ['zero sets', { sets: 0 }],
+    ['a negative rest', { rest_sec: -5 }],
+    ['a non-numeric value', { sets: 'abc' }],
+  ])('drops an override carrying %s, keeping the library definition', (_label, config) => {
+    expect(applyExerciseOverride(reps, config as Record<string, number | string>)).toEqual(reps);
+  });
+
+  it('refuses a rep range the base exercise itself would be refused for', () => {
+    // target_reps_max < target_reps_min is a cross-field refinement, so it only fails once the merge is
+    // parsed as a whole — a per-key check would let it through.
+    expect(applyExerciseOverride(reps, { target_reps_max: 1 })).toEqual(reps);
+  });
+
+  it('drops a block override past the round ceiling, keeping the circuit as authored', () => {
+    expect(applyBlockOverride(circuit, { rounds: 200000 })).toEqual(circuit);
+    expect(applyBlockOverride(circuit, { rounds: 0 })).toEqual(circuit);
+  });
+
+  it('still applies a block patch the schema accepts', () => {
+    const edited = applyBlockOverride(circuit, { rounds: 2 });
+    expect(edited.kind === 'circuit' && edited.rounds).toBe(2);
+  });
+});
+
+/**
+ * The display half of the fallback. Dropping a patch and still rendering it as applied is the app
+ * stating something it isn't doing — and it lands hardest on files that imported cleanly before this
+ * rule existed, since `programOverrideSchema` types `config` as a free record.
+ */
+describe('overrideApplies', () => {
+  const reps = exercises.find((exercise) => exercise.id === 'reps-full')!;
+  const holdBare = exercises.find((exercise) => exercise.id === 'hold-bare')!;
+  const circuit = library.workouts[0].blocks[2];
+
+  it('agrees with what applyExerciseOverride actually did', () => {
+    for (const config of [{ sets: 6 }, { sets: 0 }, { rest_sec: -5 }, { sets: 'abc' }] as Record<
+      string,
+      number | string
+    >[]) {
+      const applied = applyExerciseOverride(reps, config) !== reps;
+      expect(overrideApplies(reps, config, 'exercise')).toBe(applied);
+    }
+  });
+
+  /**
+   * The regression an existing user would actually hit: a bare `hold_sec_max` worked before the merge
+   * was validated — the runner reads `holdSecMax ?? holdSecMin` — and the schema refuses it, so the
+   * week silently stops applying. It has to be *reported* as not applied, not just dropped.
+   */
+  it('reports a bare hold_sec_max as not applying, which is the case that used to work', () => {
+    expect(holdBare.type === 'timed_hold' && holdBare.config.holdSecMin).toBeDefined();
+    const bareMax = { hold_sec_max: 60 };
+    const noMin: Exercise = { ...holdBare, config: { ...holdBare.config, holdSecMin: undefined } } as Exercise;
+
+    expect(overrideApplies(noMin, bareMax, 'exercise')).toBe(false);
+    expect(applyExerciseOverride(noMin, bareMax)).toEqual(noMin);
+  });
+
+  it('answers for blocks too, and says no for a non-circuit', () => {
+    expect(overrideApplies(circuit, { rounds: 2 }, 'block')).toBe(true);
+    expect(overrideApplies(circuit, { rounds: 0 }, 'block')).toBe(false);
+    expect(overrideApplies({ kind: 'exercise', exerciseId: 'reps-bare' }, { rounds: 2 }, 'block')).toBe(false);
+  });
+});
+
+/**
+ * The merge without the gate, which the override editor seeds its fields from — see
+ * `mergedExerciseUnchecked`. Seeding from the *gated* one silently erased the user's patch on save.
+ */
+describe('unchecked merges', () => {
+  const reps = exercises.find((exercise) => exercise.id === 'reps-full')!;
+
+  it('keeps a value the schema refuses, where the gated merge discards it', () => {
+    const merged = mergedExerciseUnchecked(reps, { sets: 0 });
+    expect(merged.type === 'reps' && merged.config.sets).toBe(0);
+    expect(applyExerciseOverride(reps, { sets: 0 })).toEqual(reps);
+  });
+
+  it('keeps a refused circuit patch as well', () => {
+    const merged = mergedBlockUnchecked(library.workouts[0].blocks[2], { rounds: 0 });
+    expect(merged.kind === 'circuit' && merged.rounds).toBe(0);
   });
 });
 

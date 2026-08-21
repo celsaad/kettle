@@ -178,3 +178,150 @@ it('will not open an override whose target has gone', async () => {
   await fireEvent.press(screen.getByText('ghost: sets → 5'));
   expect(screen.queryByText('Save override')).toBeNull();
 });
+
+/**
+ * This was the one editor in the app that ran no validation at all, so `sets: 0` was two taps from
+ * the program file. It matters more now than it did: `applyExerciseOverride` re-validates the merged
+ * config and silently keeps the base exercise when it fails, so an unvalidated patch would save,
+ * display, and quietly do nothing on the week it claims to change.
+ */
+describe('config validation on confirm', () => {
+  it('refuses to emit an override the schema would reject, and says why', async () => {
+    const { onChange, rendered } = mount();
+    await rendered;
+
+    await fireEvent.press(screen.getByText('+ Add override'));
+    await fireEvent.press(screen.getByText('Pull-ups'));
+    await fireEvent.changeText(fieldShowing('4'), '0');
+    await fireEvent.press(screen.getByText('Add override'));
+
+    expect(onChange).not.toHaveBeenCalled();
+    expect(screen.getByText('Sets must be at least 1.')).toBeTruthy();
+  });
+
+  it('refuses a count past the ceiling too', async () => {
+    const { onChange, rendered } = mount();
+    await rendered;
+
+    await fireEvent.press(screen.getByText('+ Add override'));
+    await fireEvent.press(screen.getByText('Pull-ups'));
+    await fireEvent.changeText(fieldShowing('4'), '501');
+    await fireEvent.press(screen.getByText('Add override'));
+
+    expect(onChange).not.toHaveBeenCalled();
+    expect(screen.getByText('Sets can be at most 500.')).toBeTruthy();
+  });
+
+  it('clears the message once the field is edited again, and then saves', async () => {
+    const { onChange, rendered } = mount();
+    await rendered;
+
+    await fireEvent.press(screen.getByText('+ Add override'));
+    await fireEvent.press(screen.getByText('Pull-ups'));
+    await fireEvent.changeText(fieldShowing('4'), '0');
+    await fireEvent.press(screen.getByText('Add override'));
+    await fireEvent.changeText(fieldShowing('0'), '5');
+
+    expect(screen.queryByText('Sets must be at least 1.')).toBeNull();
+
+    await fireEvent.press(screen.getByText('Add override'));
+    expect(onChange).toHaveBeenCalledWith([{ kind: 'exercise', exerciseId: 'pull-ups', config: { sets: 5 } }]);
+  });
+});
+
+describe('the circuit branch is gated too', () => {
+  it('refuses a negative rest rather than saving one the merge will drop', async () => {
+    const { onChange, rendered } = mount();
+    await rendered;
+
+    await fireEvent.press(screen.getByText('+ Add override'));
+    await fireEvent.press(screen.getByText('finisher'));
+    await fireEvent.changeText(fieldShowing('15'), '-5');
+    await fireEvent.press(screen.getByText('Add override'));
+
+    expect(onChange).not.toHaveBeenCalled();
+    expect(screen.getByText('Rest/exercise (sec) must be at least 0.')).toBeTruthy();
+  });
+
+  it('still saves a circuit patch the schema accepts', async () => {
+    const { onChange, rendered } = mount();
+    await rendered;
+
+    await fireEvent.press(screen.getByText('+ Add override'));
+    await fireEvent.press(screen.getByText('finisher'));
+    await fireEvent.changeText(fieldShowing('15'), '0');
+    await fireEvent.press(screen.getByText('Add override'));
+
+    expect(onChange).toHaveBeenCalledWith([
+      { kind: 'block', blockId: 'finisher', config: { rest_between_exercises_sec: 0 } },
+    ]);
+  });
+});
+
+/**
+ * The overrides list stays mounted behind the edit panel, so a row tap can swap the target out from
+ * under a message that named the old one — leaving "Sets must be at least 1." above a circuit's
+ * fields, or above a different exercise entirely.
+ */
+it('drops a stale error when the panel moves to another target', async () => {
+  const overrides: ProgramOverride[] = [
+    { kind: 'exercise', exerciseId: 'pull-ups', config: { sets: 5 } },
+    { kind: 'exercise', exerciseId: 'dips', config: { sets: 3 } },
+  ];
+  const { rendered } = mount(overrides);
+  await rendered;
+
+  await fireEvent.press(screen.getByText('Pull-ups: sets → 5'));
+  await fireEvent.changeText(fieldShowing('5'), '0');
+  await fireEvent.press(screen.getByText('Save override'));
+  expect(screen.getByText('Sets must be at least 1.')).toBeTruthy();
+
+  await fireEvent.press(screen.getByText('Dips: sets → 3'));
+
+  expect(screen.queryByText('Sets must be at least 1.')).toBeNull();
+});
+
+/**
+ * An override the schema refuses is dropped at merge time, and the editor has to be the way *out* of
+ * one rather than the thing that destroys it.
+ *
+ * Reachable without doing anything wrong: `programOverrideSchema` types `config` as a free record, so
+ * a file written before the merge was validated still imports and lands here.
+ */
+describe('an override the merge now refuses', () => {
+  const refused: ProgramOverride[] = [{ kind: 'exercise', exerciseId: 'pull-ups', config: { sets: 0 } }];
+
+  it('is listed as not applied rather than as though it ran', async () => {
+    const { rendered } = mount(refused);
+    await rendered;
+
+    expect(screen.getByText('Pull-ups: sets → 0')).toBeTruthy();
+    expect(screen.getByText("not applied — this value isn't allowed")).toBeTruthy();
+  });
+
+  /**
+   * The destructive one. `applyExerciseOverride` returns the base untouched when it refuses, so
+   * seeding from it showed the *pre-override* numbers — and confirming then diffed base against base
+   * and emitted `config: {}`, erasing the patch and leaving an empty row.
+   */
+  it('opens showing what was authored, not the base it fell back to', async () => {
+    const { rendered } = mount(refused);
+    await rendered;
+
+    await fireEvent.press(screen.getByText('Pull-ups: sets → 0'));
+
+    // 0 is what the user wrote; 4 is the base this would have silently reverted to.
+    expect(screen.getByDisplayValue('0')).toBeTruthy();
+  });
+
+  it('can be corrected and saved, instead of being emptied', async () => {
+    const { onChange, rendered } = mount(refused);
+    await rendered;
+
+    await fireEvent.press(screen.getByText('Pull-ups: sets → 0'));
+    await fireEvent.changeText(screen.getByDisplayValue('0'), '6');
+    await fireEvent.press(screen.getByText('Save override'));
+
+    expect(onChange).toHaveBeenCalledWith([{ kind: 'exercise', exerciseId: 'pull-ups', config: { sets: 6 } }]);
+  });
+});

@@ -1,4 +1,11 @@
-import { buildExercise, configToStrings, fieldUnitLabel, CONFIG_FIELDS, validateConfig } from '@/domain/exercise-form';
+import {
+  buildExercise,
+  configToStrings,
+  fieldUnitLabel,
+  CONFIG_FIELDS,
+  validateBlockConfig,
+  validateConfig,
+} from '@/domain/exercise-form';
 import type { Exercise, ExerciseType } from '@/domain/types';
 import { UNIT_SYSTEMS, type UnitSystem } from '@/domain/units';
 import { parseLibraryYaml } from '@/domain/yaml-mapping';
@@ -308,6 +315,40 @@ describe('validateConfig cross-field rules', () => {
  */
 it('accepts a target weight of 0, which the schema allows', () => {
   expect(validateConfig('reps', { sets: '3', targetRepsMin: '5', targetWeightKg: '0', restSec: '60' })).toBeNull();
+});
+
+/**
+ * The override editor's block branch validated nothing at all, so a negative rest reached the program
+ * file and was then silently discarded by `applyBlockOverride`'s re-parse.
+ */
+describe('validateBlockConfig', () => {
+  const valid = { rounds: '3', restBetweenExercisesSec: '15', restBetweenRoundsSec: '60' };
+
+  it('accepts a circuit config the schema accepts, zero rest included', () => {
+    expect(validateBlockConfig(valid)).toBeNull();
+    expect(validateBlockConfig({ ...valid, restBetweenExercisesSec: '0', restBetweenRoundsSec: '0' })).toBeNull();
+  });
+
+  it('rejects a negative rest in either field', () => {
+    expect(validateBlockConfig({ ...valid, restBetweenExercisesSec: '-5' })).toBe('Rest/exercise (sec) must be at least 0.');
+    expect(validateBlockConfig({ ...valid, restBetweenRoundsSec: '-5' })).toBe('Rest/round (sec) must be at least 0.');
+  });
+
+  it('rejects a round count the schema would refuse', () => {
+    expect(validateBlockConfig({ ...valid, rounds: '0' })).toBe('Rounds must be at least 1.');
+    expect(validateBlockConfig({ ...valid, rounds: '501' })).toBe('Rounds can be at most 500.');
+    expect(validateBlockConfig({ ...valid, rounds: '2.5' })).toBe('Rounds must be a whole number.');
+  });
+});
+
+/**
+ * Both circuit rest fields are `.optional()` in the schema, and the panel seeds them from the block —
+ * so clearing one is how a user says "no rest here", and it had always read back as 0. Marking them
+ * required turned that into a blocked save.
+ */
+it('treats a cleared circuit rest as absent, not as a missing required field', () => {
+  expect(validateBlockConfig({ rounds: '3', restBetweenExercisesSec: '', restBetweenRoundsSec: '' })).toBeNull();
+  expect(validateBlockConfig({ rounds: '3' })).toBeNull();
 });
 
 /**

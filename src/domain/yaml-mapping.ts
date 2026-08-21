@@ -454,11 +454,71 @@ function clampEmomIntervals(doc: unknown): boolean {
  * keys as the base exercise) on top of the exercise's base library definition, producing the
  * effective exercise for that week. Round-trips through the raw shape so the override keys line up
  * with what's hand-written in the yaml.
+ *
+ * **The merged result is re-validated, and that is what the round-trip is for.** A week's overrides
+ * are typed `record(string, number | string)` — deliberately raw, so a patch reads in the same
+ * snake_case as the exercise it patches. What was missing is that the *result* met no validator at
+ * all: every constraint the schema puts on a base exercise (positive, integer, non-negative, the
+ * bounds above, the hold-range refinements) was simply absent on this path, so `sets: 200000`,
+ * `rest_sec: -5` and `sets: "abc"` all reached the runner having passed nothing stronger than "is a
+ * number or a string". The raw-patch asymmetry stays; the missing gate goes behind it.
+ *
+ * Falling back to the un-overridden exercise rather than throwing: this resolves during render, often
+ * on the home screen, and the base exercise is both runnable and exactly what the library says. A week
+ * that loses its patch is a smaller loss than a program that can't be opened.
  */
 export function applyExerciseOverride(exercise: Exercise, config: Record<string, number | string>): Exercise {
+  const merged = mergedExerciseRaw(exercise, config);
+  return merged ? exerciseToDomain(merged) : exercise;
+}
+
+/**
+ * The merge **without** the gate, for the one caller that has to show a patch it cannot yet save: the
+ * override editor, seeding its fields for editing.
+ *
+ * Exactly what `applyExerciseOverride` did before it re-validated, cast and all — kept as its own
+ * named export rather than left as a second unlabelled cast, because the difference between the two
+ * is the whole point. Nothing that reaches the runner may use this; a value here can be any shape the
+ * YAML held, and the form turns all of it into strings on the way to the inputs.
+ */
+export function mergedExerciseUnchecked(exercise: Exercise, config: Record<string, number | string>): Exercise {
+  const raw = exerciseToRaw(exercise);
+  return exerciseToDomain({ ...raw, config: { ...raw.config, ...config } } as RawExercise);
+}
+
+/** The same, for a circuit block. See mergedExerciseUnchecked. */
+export function mergedBlockUnchecked(block: WorkoutBlock, config: Record<string, number | string>): WorkoutBlock {
+  if (block.kind !== 'circuit') return block;
+  return workoutBlockToDomain({ ...workoutBlockToRaw(block), ...config } as RawWorkoutBlock);
+}
+
+/** The merged, re-validated raw exercise, or null if the patch produced something the schema refuses. */
+function mergedExerciseRaw(exercise: Exercise, config: Record<string, number | string>): RawExercise | null {
   const raw = exerciseToRaw(exercise);
   const mergedConfig = { ...raw.config, ...config } as typeof raw.config;
-  return exerciseToDomain({ ...raw, config: mergedConfig } as RawExercise);
+  const result = rawExerciseSchema.safeParse({ ...raw, config: mergedConfig });
+  return result.success ? result.data : null;
+}
+
+/**
+ * Whether an override will actually reach the runner — the same question the two `apply*Override`
+ * functions answer by falling back, asked without having to compare two objects to find out.
+ *
+ * **This is the other half of the silent fallback, not a nicety.** Dropping a patch and still
+ * rendering it is the app stating something it isn't doing, and it lands hardest on files that were
+ * fine yesterday: `programOverrideSchema` types `config` as a free record, so a bare
+ * `hold_sec_max` — which used to work, because the runner read `holdSecMax ?? holdSecMin` — still
+ * imports cleanly and is now refused at merge. Those weeks have to say so rather than lie.
+ */
+export function overrideApplies(
+  target: Exercise | WorkoutBlock,
+  config: Record<string, number | string>,
+  kind: 'exercise' | 'block',
+): boolean {
+  if (kind === 'exercise') return mergedExerciseRaw(target as Exercise, config) !== null;
+  const block = target as WorkoutBlock;
+  if (block.kind !== 'circuit') return false;
+  return rawWorkoutBlockSchema.safeParse({ ...workoutBlockToRaw(block), ...config }).success;
 }
 
 /**
@@ -468,9 +528,11 @@ export function applyExerciseOverride(exercise: Exercise, config: Record<string,
  */
 export function applyBlockOverride(block: WorkoutBlock, config: Record<string, number | string>): WorkoutBlock {
   if (block.kind !== 'circuit') return block;
-  const raw = workoutBlockToRaw(block);
-  const merged = { ...raw, ...config } as typeof raw;
-  return workoutBlockToDomain(merged);
+  const merged = { ...workoutBlockToRaw(block), ...config };
+  // Re-validated, falling back to the un-overridden block, for the same reasons as
+  // applyExerciseOverride above — a circuit's `rounds` drives one step per member per round.
+  const result = rawWorkoutBlockSchema.safeParse(merged);
+  return result.success ? workoutBlockToDomain(result.data) : block;
 }
 
 /**

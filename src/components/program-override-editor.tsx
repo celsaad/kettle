@@ -2,12 +2,26 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
-import { buildExercise, CONFIG_FIELDS, configToStrings, fieldUnitLabel, type FieldDef } from '@/domain/exercise-form';
+import {
+  buildExercise,
+  CONFIG_FIELDS,
+  configToStrings,
+  fieldUnitLabel,
+  type FieldDef,
+  validateBlockConfig,
+  validateConfig,
+} from '@/domain/exercise-form';
 import { overrideLines } from '@/app/program-detail';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
-import { applyBlockOverride, applyExerciseOverride, diffBlockOverride, diffExerciseOverride } from '@/domain/yaml-mapping';
+import { MaxRounds } from '@/domain/schema';
+import {
+  diffBlockOverride,
+  diffExerciseOverride,
+  mergedBlockUnchecked,
+  mergedExerciseUnchecked,
+} from '@/domain/yaml-mapping';
 import type { Exercise, Library, ProgramOverride, Workout, WorkoutBlock } from '@/domain/types';
 import { useTheme } from '@/hooks/use-theme';
 import { useUnitSystem } from '@/state/preferences-store';
@@ -59,6 +73,14 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
    * different number and invent an override nobody asked for (see UnitContext in exercise-form.ts).
    */
   const [seedWeightKg, setSeedWeightKg] = useState<number | undefined>(undefined);
+  /**
+   * The first problem with what's typed, or null. This was the one editor in the app that ran no
+   * validation at all — exercise-editor.tsx and new-exercise-form.tsx have both called
+   * `validateConfig` all along — so `sets: 0` was two taps away. Now that `applyExerciseOverride`
+   * refuses an invalid merge and silently keeps the base exercise, saying so here is what stops that
+   * refusal reading as "the override didn't save and nobody said why".
+   */
+  const [error, setError] = useState<string | null>(null);
 
   const seedFields = (exercise: Exercise) => {
     setFieldValues(configToStrings(exercise, unitSystem));
@@ -67,6 +89,7 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
 
   const close = () => {
     setStep('closed');
+    setError(null);
     setEditingIndex(null);
     setTarget(null);
     setFieldValues({});
@@ -74,6 +97,7 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
   };
 
   const startAdd = () => {
+    setError(null);
     setEditingIndex(null);
     setTarget(null);
     setFieldValues({});
@@ -82,6 +106,7 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
   };
 
   const chooseTarget = (next: Target) => {
+    setError(null);
     setTarget(next);
     if (next.kind === 'exercise') seedFields(next.exercise);
     else
@@ -94,19 +119,26 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
   };
 
   const startEdit = (index: number) => {
+    setError(null);
     const override = overrides[index];
     if (override.kind === 'exercise') {
       const base = library.exercises.find((candidate) => candidate.id === override.exerciseId);
       if (!base) return;
-      const effective = applyExerciseOverride(base, override.config);
+      // Seeded from the *unchecked* merge. `applyExerciseOverride` returns the base untouched when it
+      // refuses a patch, and seeding from that was destructive: the fields showed the pre-override
+      // numbers, so confirming diffed base against base and wrote `config: {}` — erasing the user's
+      // patch and leaving an empty row. Showing what was authored is what lets a patch the schema now
+      // refuses be read, corrected and saved, which is the only way out of one for a file that
+      // imported cleanly before this rule existed.
       setTarget({ kind: 'exercise', exercise: base });
-      seedFields(effective);
+      seedFields(mergedExerciseUnchecked(base, override.config));
     } else {
       const block = workout?.blocks.find(
         (candidate): candidate is CircuitBlock => candidate.kind === 'circuit' && candidate.id === override.blockId,
       );
       if (!block) return;
-      const effective = applyBlockOverride(block, override.config) as CircuitBlock;
+      // Unchecked, for the same reason as the exercise branch above.
+      const effective = mergedBlockUnchecked(block, override.config) as CircuitBlock;
       setTarget({ kind: 'block', block });
       setFieldValues({
         rounds: String(effective.rounds),
@@ -122,12 +154,20 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
     onChange(overrides.filter((_, i) => i !== index));
   };
 
-  const setField = (key: string, text: string) => setFieldValues((prev) => ({ ...prev, [key]: text }));
+  const setField = (key: string, text: string) => {
+    setError(null);
+    setFieldValues((prev) => ({ ...prev, [key]: text }));
+  };
 
   const confirm = () => {
     if (!target) return;
     let nextOverride: ProgramOverride;
     if (target.kind === 'exercise') {
+      const configError = validateConfig(target.exercise.type, fieldValues);
+      if (configError) {
+        setError(configError);
+        return;
+      }
       const edited = buildExercise(
         target.exercise.id,
         target.exercise.name,
@@ -144,6 +184,14 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
     } else {
       const blockId = target.block.id;
       if (!blockId) return;
+      // Gated like the exercise branch. The rounds stepper can't reach a bad value, but both rest
+      // fields are free text, and a negative one used to be written to the program file and then
+      // silently dropped by `applyBlockOverride`'s re-parse — saved, displayed, and doing nothing.
+      const configError = validateBlockConfig(fieldValues);
+      if (configError) {
+        setError(configError);
+        return;
+      }
       const edited: CircuitBlock = {
         ...target.block,
         rounds: Number(fieldValues.rounds) || target.block.rounds,
@@ -286,7 +334,7 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
                     {fieldValues.rounds ?? '1'}
                   </ThemedText>
                   <Pressable
-                    onPress={() => setField('rounds', String((Number(fieldValues.rounds) || 1) + 1))}
+                    onPress={() => setField('rounds', String(Math.min(MaxRounds, (Number(fieldValues.rounds) || 1) + 1)))}
                     accessibilityRole="button"
                     accessibilityLabel={t('common.increase', { label: t('workoutEditor.rounds') })}
                     style={[styles.stepperButton, { borderColor: theme.border }]}>
@@ -343,6 +391,12 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
                 />
               </View>
             ))
+          )}
+
+          {error && (
+            <ThemedText type="small" style={{ color: theme.accentText }}>
+              {error}
+            </ThemedText>
           )}
 
           <View style={styles.fieldsButtonRow}>

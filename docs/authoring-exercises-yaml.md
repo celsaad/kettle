@@ -258,6 +258,14 @@ programs:
   overridden: an exercise override uses that exercise's own config keys (e.g. `sets`,
   `target_reps_min`, `rest_sec` for a `reps` exercise); a block override uses the circuit's own keys
   (`rounds`, `rest_between_exercises_sec`, `rest_between_rounds_sec`) — only the keys you're changing.
+- **The result of an override has to be a config the schema would accept on its own**, and this is
+  checked when the week is resolved rather than on import. The patch itself is only required to be a
+  map of numbers and strings — that is what lets it be partial — so a week whose merged result is
+  invalid still imports, and is then **ignored**: that week runs the exercise exactly as `exercises:`
+  defines it, and the program screen marks the override as not applied. Every rule from the type
+  tables applies to the merged whole, cross-field ones included, so `{ sets: 0 }`,
+  `{ rest_sec: -5 }` and a `{ hold_sec_max: 60 }` on a hold with no `hold_sec_min` are all dropped.
+  Patch what you must, but patch it into something valid.
 - A block override only makes sense against a `type: circuit` block that has an `id`; it has nothing
   to patch on a `type: exercise` block (use an exercise override for that instead).
 - **Week numbers are taken literally, not as a schedule to fill in.** The example above jumps 1 → 3 →

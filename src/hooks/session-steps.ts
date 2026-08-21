@@ -140,7 +140,19 @@ type CircuitVisit = { index: number; total: number };
  * better one — the alternative on the only libraries that reach it is the app dying mid-render.
  */
 const MaxStepsPerExercise = 2000;
-const MaxStepsPerWorkout = 20_000;
+export const MaxStepsPerWorkout = 20_000;
+
+/**
+ * Whether `buildSteps` stopped early on this workout — so the session screen can say so before the
+ * countdown, rather than the workout just ending in the middle and being logged as finished.
+ *
+ * Length rather than a flag threaded back out of `buildSteps`: every truncation path stops *because*
+ * the list already reached the ceiling, so reaching it is the fact. The one false positive is a
+ * workout that ends at exactly the ceiling with nothing left to add, which is a workout nobody has.
+ */
+export function stepsWereTruncated(steps: RunnerStep[]): boolean {
+  return steps.length >= MaxStepsPerWorkout;
+}
 
 /** `count`, clamped to what one exercise may expand into. See MaxStepsPerExercise. */
 function boundedCount(count: number): number {

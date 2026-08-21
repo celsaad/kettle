@@ -21,7 +21,7 @@ import { formatSessionName } from '@/domain/format';
 import { findProgramWeek, resolveWorkoutForWeek } from '@/domain/program';
 import type { Exercise, Session, Workout } from '@/domain/types';
 import { useSessionAnnouncements } from '@/hooks/use-session-announcements';
-import { buildSteps, useSessionRunner } from '@/hooks/use-session-runner';
+import { buildSteps, stepsWereTruncated, useSessionRunner } from '@/hooks/use-session-runner';
 import { useLibraryStore } from '@/state/library-store';
 import { sessionRecords } from '@/state/selectors/records';
 import { useSessionHistoryStore } from '@/state/session-history-store';
@@ -200,6 +200,14 @@ export default function SessionScreen() {
       <SafeAreaView style={styles.safeArea} edges={['top', 'bottom', 'left', 'right']}>
         <View style={styles.content}>
           <SessionCountdown workoutName={formatSessionName(workout?.name ?? null)} onDone={() => setStarted(true)} />
+          {/* The step list is capped (see MaxStepsPerWorkout), and a workout that hits the cap stops
+              partway and is logged as finished. Said here rather than mid-workout: this is the last
+              moment the answer is still "run something shorter" rather than "your log is wrong". */}
+          {stepsWereTruncated(steps) && (
+            <ThemedText type="small" style={styles.truncationNotice}>
+              {t('session.tooLong.notice')}
+            </ThemedText>
+          )}
         </View>
       </SafeAreaView>
     );
@@ -616,6 +624,11 @@ const styles = StyleSheet.create({
   emptyStateBody: {
     color: RunnerColors.textSecondary,
     textAlign: 'center',
+  },
+  truncationNotice: {
+    color: RunnerColors.textSecondary,
+    textAlign: 'center',
+    paddingBottom: Spacing.three,
   },
   emptyStateButton: {
     marginTop: Spacing.two,

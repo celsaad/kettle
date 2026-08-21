@@ -147,6 +147,9 @@
       "title": "Rest day",
       "body": "This week of the program is a scheduled rest day, so there's nothing to run. Go back and pick a workout if you want to train today."
     },
+    "tooLong": {
+      "notice": "This workout is too long for Kettle to run in one go, so it will stop partway through. Split it into shorter workouts to run all of it."
+    },
     "nothingToRun": {
       "title": "Nothing to run",
       "body": "\"{{name}}\" has no blocks, or none of its exercises have any sets/rounds/minutes configured. Add a block in Workouts, or check each exercise's config, then try again."

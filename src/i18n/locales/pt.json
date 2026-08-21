@@ -147,6 +147,9 @@
       "title": "Dia de descanso",
       "body": "Esta semana do programa é um dia de descanso, então não há nada para executar. Volte e escolha um treino se quiser treinar hoje."
     },
+    "tooLong": {
+      "notice": "Este treino é longo demais para o Kettle rodar de uma vez, então ele vai parar no meio. Divida em treinos menores para fazer tudo."
+    },
     "nothingToRun": {
       "title": "Nada para executar",
       "body": "\"{{name}}\" não tem blocos, ou nenhum dos seus exercícios tem séries/rodadas/minutos configurados. Adicione um bloco em Treinos, ou confira a configuração de cada exercício, e tente de novo."

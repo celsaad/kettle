@@ -441,3 +441,47 @@ describe('an ad-hoc session', () => {
     expect(screen.getByText('Adicionar exercício')).toBeTruthy();
   });
 });
+
+/**
+ * The step list is capped, and before this a workout that hit the cap simply stopped partway through
+ * and was written to the log as a finished session. Silent truncation in the one file AGENTS.md calls
+ * make-or-break — so it is said on the countdown, the last moment where the answer is still "run
+ * something shorter".
+ */
+describe('a workout too long to run in full', () => {
+  const huge: Exercise[] = [
+    { id: 'h', name: 'H', type: 'hiit', config: { workSec: 30, restSec: 20, rounds: 500 } },
+    { id: 'h2', name: 'H2', type: 'hiit', config: { workSec: 30, restSec: 20, rounds: 500 } },
+  ];
+  const hugeWorkout = aWorkout({
+    id: 'w',
+    name: 'Session',
+    blocks: [
+      {
+        kind: 'circuit',
+        rounds: 500,
+        restBetweenExercisesSec: 15,
+        restBetweenRoundsSec: 60,
+        members: [{ exerciseId: 'h' }, { exerciseId: 'h2' }],
+      },
+    ],
+  });
+
+  // In pt, because an English assertion can't tell `t('session.tooLong.notice')` from the literal it
+  // returns — the same reason the empty-state test above is driven in pt.
+  it('says so on the countdown, in the active locale', async () => {
+    await changeLanguage('pt');
+    useLibraryStore.setState({ library: aLibrary({ exercises: huge, workouts: [hugeWorkout] }), status: 'ready' });
+    await renderScreen(<SessionScreen />);
+
+    expect(screen.getByText(/longo demais/)).toBeTruthy();
+  });
+
+  it('says nothing on a workout that fits, which is every real one', async () => {
+    await changeLanguage('pt');
+    setLibrary(workoutOf('pullups'));
+    await renderScreen(<SessionScreen />);
+
+    expect(screen.queryByText(/longo demais/)).toBeNull();
+  });
+});

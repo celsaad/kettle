@@ -31,81 +31,36 @@ import {
   swapExerciseForMember,
 } from '@/hooks/session-steps';
 
-type LastCommitBuffer = 'sets' | 'hiit' | 'emom';
-
-// Forces a compile error at every call site below if RunnerStep/IntervalVariant grows a case that
-// isn't handled — a new exercise type silently falling through to "no undo support" is a data-loss
-// bug, not just a missing feature, so this is enforced rather than left to a comment.
+// Forces a compile error in `commitCurrentStep`/`goPrev` below if RunnerStep/IntervalVariant grows a
+// case that isn't handled — a new exercise type silently committing nothing, or falling through to "no
+// undo support", is a data-loss bug rather than just a missing feature, so this is enforced rather
+// than left to a comment.
 function assertNever(value: never): never {
   throw new Error(`Unhandled RunnerStep/variant case: ${JSON.stringify(value)}`);
 }
 
 /**
- * Which of the member's accumulating logs (if any) a step's `commitCurrentStep` call grows. Used by
- * `goPrev()` to undo precisely one level: the most recent `advance()`, no further.
- */
-function bufferForStep(step: RunnerStep): LastCommitBuffer | null {
-  switch (step.kind) {
-    case 'hold':
-    case 'reps':
-      return 'sets';
-    case 'interval':
-      switch (step.variant) {
-        case 'hiit':
-          return 'hiit';
-        case 'emom':
-          return 'emom';
-        case 'amrap':
-        case 'cardio':
-          return null;
-        default:
-          return assertNever(step.variant);
-      }
-    case 'rest':
-      return null;
-    default:
-      return assertNever(step);
-  }
-}
-
-/** True for step kinds whose commit logs a one-shot entry rather than growing a member's accumulating log. */
-function isDirectLogStep(step: RunnerStep): boolean {
-  switch (step.kind) {
-    case 'hold':
-    case 'reps':
-      return false;
-    case 'interval':
-      switch (step.variant) {
-        case 'amrap':
-        case 'cardio':
-          return true;
-        case 'hiit':
-        case 'emom':
-          return false;
-        default:
-          return assertNever(step.variant);
-      }
-    case 'rest':
-      return step.standalone;
-    default:
-      return assertNever(step);
-  }
-}
-
-/**
- * A record of what the most recent `advance()` committed, precise enough for `goPrev()` to reverse
- * it exactly one level deep (a second `goPrev()` without an intervening `advance()` reverses nothing
- * further — see `goPrev` below).
+ * What one step's commit added to the session, held in `contributionsRef` under that step's own index.
  *
- * Every commit reaches the session file (see `persistMember`), so what varies is *how* to take it
- * back, not whether anything was written:
+ * **Keyed by step index because a step can be committed more than once.** Stepping back onto a step
+ * and redoing it commits it again, and so does Finish pressed from a stepped-back position; before
+ * this was keyed, every one of those appended a *second* set/minute/entry for a step that already had
+ * one — three sets logged against a two-set plan, or a duplicate amrap entry carrying whatever the
+ * screen had been re-seeded to. Recording where the first commit landed is what lets the second
+ * overwrite it instead, so committing a step twice means the same as committing it once.
  *
- * - `buffer` set: the commit grew that member's accumulating log, so undo shrinks it back by one and
- *   rewrites the member's entry — or retracts the entry entirely if that was its first contribution.
- * - `buffer: null`: a one-shot `logEntry` (amrap/cardio/standalone rest), which has no accumulating
- *   buffer behind it — undo just removes the entry it appended.
+ * The position/`entryIndex` each kind carries is that landing spot. It is also what makes undo safe to
+ * refuse: `goPrev` only takes a contribution back when it is still the newest of its kind, since
+ * removing one from the middle would leave every later contribution pointing at the wrong slot.
+ *
+ * Non-standalone rest records nothing — it overwrites the previous set's `restTakenSec` rather than
+ * adding anything, so it is already idempotent and has nothing to take back.
  */
-type LastCommit = { resultingIndex: number; memberKey: string; exerciseId: string; buffer: LastCommitBuffer | null };
+type Contribution =
+  | { kind: 'sets'; memberKey: string; exerciseId: string; position: number }
+  | { kind: 'hiit'; memberKey: string; exerciseId: string; round: number }
+  | { kind: 'emom'; memberKey: string; exerciseId: string; position: number }
+  | { kind: 'direct'; entryIndex: number };
 
 /**
  * `exerciseId` rides along purely so the preview can show the bundled drawing. It's the step's own
@@ -286,8 +241,21 @@ export function useSessionRunner(
    * `goPrev`), so a recorded index stays valid for the life of the session.
    */
   const entryIndexRef = useRef<Record<string, number>>({});
-  // What the last advance() committed — consumed and cleared by goPrev() to undo exactly one level.
-  const lastCommitRef = useRef<LastCommit | null>(null);
+  /**
+   * What each step's commit has already put into the session, keyed by step index — see Contribution.
+   * Committing the same step twice overwrites its contribution rather than adding a second one.
+   */
+  const contributionsRef = useRef<Record<number, Contribution>>({});
+  /**
+   * The step index the most recent commit belongs to, or null when the last one contributed nothing.
+   *
+   * This is the *undo window* and nothing else: `goPrev()` takes a contribution back only when it is
+   * stepping straight back onto the step that just committed — one level, exactly as before. What
+   * changed is that correctness no longer rests on it. Getting back to a step any other way (two
+   * Prevs, Finish from a stepped-back position) leaves the contribution standing, and re-committing
+   * now overwrites it instead of logging the set a second time.
+   */
+  const lastCommitIndexRef = useRef<number | null>(null);
   /**
    * The authoritative "where are we now" for advance()/goPrev().
    *
@@ -472,89 +440,172 @@ export function useSessionRunner(
     [entryForMember, logEntry, replaceEntry],
   );
 
-  // Records `current`'s own contribution (the set/round/minute just finished, or the rest just
-  // taken) into its member's log and straight through to the session file, or logs a one-shot entry
-  // for the step kinds that have no accumulating log behind them.
+  /**
+   * Records `current`'s own contribution — the set/round/minute just finished, or the rest just taken —
+   * into its member's log and straight through to the session file, or logs a one-shot entry for the
+   * step kinds that have no accumulating log behind them.
+   *
+   * **Committing the same step twice means the same as committing it once**, which is what `index` is
+   * for: the contribution it recorded the first time is overwritten in place rather than joined by a
+   * second one. Getting back onto a committed step is not rare — two Prevs, or Finish from a
+   * stepped-back position — and appending there logged a set that was performed once as two.
+   */
   const commitCurrentStep = useCallback(
-    (current: RunnerStep) => {
-      if (!sessionRef.current) return;
-      if (current.kind === 'hold') {
-        const sets = memberSetsRef.current[current.memberKey] ?? [];
-        // Clamped to the hold's own end, which is not the same as the elapsed clock. A hold that ends
-        // while the app is backgrounded is only *noticed* on foreground return, so the raw elapsed
-        // there is however long you were away — a 25s plank logged 60s in the test that found this.
-        // The same clamp covers a throttled tick arriving a second or two late in the foreground.
-        // Ending early by hand is unaffected: elapsed is below the end, and the honest number wins.
-        const elapsed = computeElapsedSec();
-        const holdSec = current.holdEndSec === undefined ? elapsed : Math.min(elapsed, current.holdEndSec);
-        sets.push({ holdSec, restTakenSec: 0 });
-        memberSetsRef.current[current.memberKey] = sets;
-        persistMember(current.memberKey, current.exerciseId);
-      } else if (current.kind === 'reps') {
-        const sets = memberSetsRef.current[current.memberKey] ?? [];
-        // `|| undefined` so bodyweight (0) stays absent from the log rather than recording a 0 kg load —
-        // entryVolume distinguishes the two, summing reps×weight only when a weight is actually present.
-        sets.push({
-          reps: repsRef.current,
-          weightKg: weightKgRef.current || undefined,
-          rpe: rpeRef.current,
-          restTakenSec: 0,
-        });
-        memberSetsRef.current[current.memberKey] = sets;
-        persistMember(current.memberKey, current.exerciseId);
-      } else if (current.kind === 'interval') {
-        if (current.variant === 'hiit') {
-          memberHiitRoundsRef.current[current.memberKey] = (memberHiitRoundsRef.current[current.memberKey] ?? 0) + 1;
-          persistMember(current.memberKey, current.exerciseId);
-        } else if (current.variant === 'emom') {
-          const minutes = memberEmomMinutesRef.current[current.memberKey] ?? [];
-          minutes.push({ reps: repsRef.current || undefined });
-          memberEmomMinutesRef.current[current.memberKey] = minutes;
-          persistMember(current.memberKey, current.exerciseId);
-        } else if (current.variant === 'amrap') {
-          sessionRef.current = logEntry(sessionRef.current, {
-            exercise: current.exerciseId,
-            type: 'amrap',
-            roundsCompleted: roundsCompletedRef.current,
-            extraReps: extraRepsRef.current || undefined,
-          });
-        } else if (current.variant === 'cardio') {
-          // Clamped to the configured duration, exactly as a hold is clamped to its end above and for
-          // the same reason: a cardio step that ends while the app is backgrounded is only *noticed* on
-          // foreground return, so the raw elapsed there is however long you were away — a 60s row
-          // logged 600s in the test that found this. Only when it has a duration to be clamped to; a
-          // count-up cardio ends when the user says so, and its elapsed is the whole measurement.
-          // `restTakenSec` deliberately isn't clamped this way: "how long you rested" really is the
-          // time that passed, whereas "how long you rowed" is not.
-          const elapsed = computeElapsedSec();
-          sessionRef.current = logEntry(sessionRef.current, {
-            exercise: current.exerciseId,
-            type: 'cardio',
-            durationSec: current.countUp ? elapsed : Math.min(elapsed, current.targetSec),
-            distanceMeters: current.cardioDistanceMeters,
-          });
+    (current: RunnerStep, index: number) => {
+      // Captured rather than read through the ref inside the closures below: at most one entry write
+      // happens per commit, so this cannot go stale within the call, and it keeps the non-null
+      // narrowing that a closure would throw away.
+      const session = sessionRef.current;
+      if (!session) {
+        lastCommitIndexRef.current = null;
+        return;
+      }
+      const previous = contributionsRef.current[index];
+
+      /**
+       * Puts a set in the slot this step's earlier commit took, or on the end if it has none yet.
+       *
+       * `restTakenSec` carries over from the slot rather than resetting to 0: the rest after a set is
+       * recorded by the *next* step, so a set redone on its own would otherwise lose it. The bounds
+       * and member checks are belt and braces — a position that no longer fits can only mean
+       * bookkeeping something else already invalidated, and appending is the safe reading of that.
+       */
+      const putSet = (set: TimedHoldSetLog | RepsSetLog): Contribution => {
+        const { memberKey, exerciseId } = current;
+        const sets = memberSetsRef.current[memberKey] ?? [];
+        const at =
+          previous?.kind === 'sets' && previous.memberKey === memberKey && previous.position < sets.length
+            ? previous.position
+            : sets.length;
+        const carriedRest = sets[at]?.restTakenSec;
+        sets[at] = carriedRest === undefined ? set : { ...set, restTakenSec: carriedRest };
+        memberSetsRef.current[memberKey] = sets;
+        persistMember(memberKey, exerciseId);
+        return { kind: 'sets', memberKey, exerciseId, position: at };
+      };
+
+      /** The same for a one-shot entry: rewrite the one the first commit appended rather than appending another. */
+      const logDirect = (entry: SessionEntry): Contribution => {
+        if (previous?.kind === 'direct' && previous.entryIndex < session.entries.length) {
+          sessionRef.current = replaceEntry(session, previous.entryIndex, entry);
+          return previous;
         }
-      } else if (current.kind === 'rest') {
-        const takenSec = computeElapsedSec();
-        if (current.standalone) {
-          sessionRef.current = logEntry(sessionRef.current, {
-            exercise: current.exerciseId,
-            type: 'rest',
-            restTakenSec: takenSec,
-          });
-        } else {
-          // Attributes the rest to the set it followed. The set is already on disk without it, so the
-          // entry has to be rewritten — otherwise `rest_taken_sec` would be the one field that only
-          // survived if the exercise ran to completion.
-          const sets = memberSetsRef.current[current.memberKey];
-          if (sets && sets.length > 0) {
-            sets[sets.length - 1].restTakenSec = takenSec;
-            persistMember(current.memberKey, current.exerciseId);
+        sessionRef.current = logEntry(session, entry);
+        return { kind: 'direct', entryIndex: session.entries.length };
+      };
+
+      // Exhaustive on purpose (see assertNever): a new step kind has to say what it commits, since
+      // falling through to "nothing" would lose the work silently.
+      const contribution = ((): Contribution | null => {
+        switch (current.kind) {
+          case 'hold': {
+            // Clamped to the hold's own end, which is not the same as the elapsed clock. A hold that ends
+            // while the app is backgrounded is only *noticed* on foreground return, so the raw elapsed
+            // there is however long you were away — a 25s plank logged 60s in the test that found this.
+            // The same clamp covers a throttled tick arriving a second or two late in the foreground.
+            // Ending early by hand is unaffected: elapsed is below the end, and the honest number wins.
+            const elapsed = computeElapsedSec();
+            const holdSec = current.holdEndSec === undefined ? elapsed : Math.min(elapsed, current.holdEndSec);
+            return putSet({ holdSec, restTakenSec: 0 });
           }
+          case 'reps':
+            // `|| undefined` so bodyweight (0) stays absent from the log rather than recording a 0 kg load —
+            // entryVolume distinguishes the two, summing reps×weight only when a weight is actually present.
+            return putSet({
+              reps: repsRef.current,
+              weightKg: weightKgRef.current || undefined,
+              rpe: rpeRef.current,
+              restTakenSec: 0,
+            });
+          case 'interval':
+            switch (current.variant) {
+              case 'hiit': {
+                const { memberKey, exerciseId } = current;
+                // A round already counted is not a second round when the step is redone, and there is
+                // nothing to rewrite — the count is the whole entry.
+                if (previous?.kind === 'hiit') return previous;
+                const round = (memberHiitRoundsRef.current[memberKey] ?? 0) + 1;
+                memberHiitRoundsRef.current[memberKey] = round;
+                persistMember(memberKey, exerciseId);
+                return { kind: 'hiit', memberKey, exerciseId, round };
+              }
+              case 'emom': {
+                const { memberKey, exerciseId } = current;
+                const minutes = memberEmomMinutesRef.current[memberKey] ?? [];
+                const at =
+                  previous?.kind === 'emom' && previous.memberKey === memberKey && previous.position < minutes.length
+                    ? previous.position
+                    : minutes.length;
+                minutes[at] = { reps: repsRef.current || undefined };
+                memberEmomMinutesRef.current[memberKey] = minutes;
+                persistMember(memberKey, exerciseId);
+                return { kind: 'emom', memberKey, exerciseId, position: at };
+              }
+              case 'amrap':
+                return logDirect({
+                  exercise: current.exerciseId,
+                  type: 'amrap',
+                  roundsCompleted: roundsCompletedRef.current,
+                  extraReps: extraRepsRef.current || undefined,
+                });
+              case 'cardio': {
+                // Clamped to the configured duration, exactly as a hold is clamped to its end above and for
+                // the same reason: a cardio step that ends while the app is backgrounded is only *noticed* on
+                // foreground return, so the raw elapsed there is however long you were away — a 60s row
+                // logged 600s in the test that found this. Only when it has a duration to be clamped to; a
+                // count-up cardio ends when the user says so, and its elapsed is the whole measurement.
+                // `restTakenSec` deliberately isn't clamped this way: "how long you rested" really is the
+                // time that passed, whereas "how long you rowed" is not.
+                const elapsed = computeElapsedSec();
+                return logDirect({
+                  exercise: current.exerciseId,
+                  type: 'cardio',
+                  durationSec: current.countUp ? elapsed : Math.min(elapsed, current.targetSec),
+                  distanceMeters: current.cardioDistanceMeters,
+                });
+              }
+              default:
+                return assertNever(current.variant);
+            }
+          case 'rest': {
+            const takenSec = computeElapsedSec();
+            if (current.standalone) {
+              return logDirect({ exercise: current.exerciseId, type: 'rest', restTakenSec: takenSec });
+            }
+            // Attributes the rest to the set it followed — the set the step *before this one*
+            // contributed, rather than whatever sits on the end of the member's log. Those are the same
+            // set right up until one is redone out of order, at which point the end of the log belongs
+            // to a later set and the rest would land on that one instead.
+            //
+            // The set is already on disk without it, so the entry has to be rewritten — otherwise
+            // `rest_taken_sec` would be the one field that only survived if the exercise ran to completion.
+            const preceding = contributionsRef.current[index - 1];
+            const sets = memberSetsRef.current[current.memberKey];
+            const at =
+              preceding?.kind === 'sets' && preceding.memberKey === current.memberKey
+                ? preceding.position
+                : (sets?.length ?? 0) - 1;
+            if (sets && at >= 0 && at < sets.length) {
+              sets[at].restTakenSec = takenSec;
+              persistMember(current.memberKey, current.exerciseId);
+            }
+            // Nothing to take back: this overwrote a field rather than adding anything, so redoing it
+            // simply overwrites it again.
+            return null;
+          }
+          default:
+            return assertNever(current);
         }
+      })();
+
+      if (contribution) {
+        contributionsRef.current[index] = contribution;
+        lastCommitIndexRef.current = index;
+      } else {
+        lastCommitIndexRef.current = null;
       }
     },
-    [computeElapsedSec, logEntry, persistMember],
+    [computeElapsedSec, logEntry, replaceEntry, persistMember],
   );
 
   const advance = useCallback(() => {
@@ -568,9 +619,7 @@ export function useSessionRunner(
       const nextIndex = index + 1;
 
       if (current && sessionRef.current) {
-        const buffer = bufferForStep(current);
-        const directLog = isDirectLogStep(current);
-        commitCurrentStep(current);
+        commitCurrentStep(current, index);
 
         // A distinct cue from the plain countdown tick, so a change of exercise is audible even
         // without looking at the screen — but not for every set/round within the same exercise. In a
@@ -578,21 +627,8 @@ export function useSessionRunner(
         // about *writing* hangs off it any more, now that each set writes itself.
         const changingExercise = !next || next.memberKey !== current.memberKey;
         if (changingExercise && next) playExerciseChange();
-
-        // Track exactly what this advance() committed so goPrev() can undo it precisely (one level
-        // only — see the LastCommit type doc).
-        const commitContext = { resultingIndex: nextIndex, memberKey: current.memberKey, exerciseId: current.exerciseId };
-        if (directLog) {
-          lastCommitRef.current = { ...commitContext, buffer: null };
-        } else if (buffer) {
-          lastCommitRef.current = { ...commitContext, buffer };
-        } else {
-          // Non-standalone rest: overwrites the previous set's restTakenSec rather than adding
-          // anything, so redoing it later just overwrites that field again — nothing to undo.
-          lastCommitRef.current = null;
-        }
       } else {
-        lastCommitRef.current = null;
+        lastCommitIndexRef.current = null;
       }
 
       if (nextIndex >= steps.length) {
@@ -747,10 +783,14 @@ export function useSessionRunner(
     });
   }, []);
 
-  // Undoes exactly what the most recent advance() committed, if goPrev() is called immediately after
-  // it (i.e. we're stepping back onto the step that commit belongs to) — one level deep only. A
-  // second goPrev() in a row (no intervening advance()) finds lastCommitRef already cleared and just
-  // moves the index, same as today.
+  // Takes back what the most recent advance() committed, if goPrev() is called immediately after it
+  // (i.e. we're stepping back onto the step that commit belongs to) — one level deep only. A second
+  // goPrev() in a row (no intervening advance()) finds the undo window closed and just moves the index.
+  //
+  // **That window is a convenience now, not a correctness guard.** It used to be both: a step reached
+  // any other way still had its commit standing, and committing it again appended a second set. The
+  // commit is idempotent per step index now (see Contribution), so the worst a closed window costs is
+  // a set staying in the log until it is redone in place.
   //
   // Deliberately without the `finishedRef` guard advance()/finishSession() carry, because it can't be
   // reached after completion: onComplete swaps SessionScreen over to SessionComplete, which unmounts
@@ -758,60 +798,66 @@ export function useSessionRunner(
   // completion screen rendered *alongside* a live runner would put this back in reach, retracting a
   // commit from a session already written as ended.
   const goPrev = useCallback(() => {
-    {
-      const index = stepIndexRef.current;
-      const commit = lastCommitRef.current;
-      if (commit && commit.resultingIndex === index && sessionRef.current) {
-        const buffer = commit.buffer;
-        switch (buffer) {
-          case 'sets': {
-            const sets = memberSetsRef.current[commit.memberKey];
-            if (sets && sets.length > 0) sets.pop();
-            break;
-          }
-          case 'hiit': {
-            const count = memberHiitRoundsRef.current[commit.memberKey];
-            if (count !== undefined) {
-              if (count > 1) memberHiitRoundsRef.current[commit.memberKey] = count - 1;
-              else delete memberHiitRoundsRef.current[commit.memberKey];
-            }
-            break;
-          }
-          case 'emom': {
-            const minutes = memberEmomMinutesRef.current[commit.memberKey];
-            if (minutes && minutes.length > 0) minutes.pop();
-            break;
-          }
-          // A one-shot entry (amrap/cardio/standalone rest) with no accumulating log behind it: the
-          // commit appended it and nothing has been appended since, so removing the last entry
-          // removes exactly that one.
-          case null:
-            sessionRef.current = removeLastEntry(sessionRef.current);
-            break;
-          default:
-            assertNever(buffer);
+    const index = stepIndexRef.current;
+    const committedIndex = lastCommitIndexRef.current;
+    const contribution = committedIndex === index - 1 ? contributionsRef.current[index - 1] : undefined;
+    if (contribution && sessionRef.current) {
+      // Each kind checks that its contribution is still the newest of its kind before taking it back.
+      // Within the undo window it always is; the check is what keeps that an invariant of the data
+      // rather than of the window, since removing one from the middle would leave every later
+      // contribution pointing at the wrong slot.
+      switch (contribution.kind) {
+        case 'sets': {
+          const sets = memberSetsRef.current[contribution.memberKey];
+          if (sets && contribution.position === sets.length - 1) sets.pop();
+          break;
         }
-
-        if (buffer !== null) {
-          // Rewrite what the member has left, or retract its entry if that set was all it had. The
-          // retraction can only ever hit the *last* entry: this undoes the most recent commit, so
-          // whatever it appended is still the newest thing in the session.
-          if (entryForMember(commit.memberKey, commit.exerciseId)) {
-            persistMember(commit.memberKey, commit.exerciseId);
-          } else {
-            sessionRef.current = removeLastEntry(sessionRef.current);
-            // Forget where its entry was, so redoing the set appends a fresh one instead of trying to
-            // rewrite an index that no longer holds it.
-            delete entryIndexRef.current[commit.memberKey];
+        case 'hiit': {
+          const count = memberHiitRoundsRef.current[contribution.memberKey];
+          if (count === contribution.round) {
+            if (count > 1) memberHiitRoundsRef.current[contribution.memberKey] = count - 1;
+            else delete memberHiitRoundsRef.current[contribution.memberKey];
           }
+          break;
         }
-        lastCommitRef.current = null;
+        case 'emom': {
+          const minutes = memberEmomMinutesRef.current[contribution.memberKey];
+          if (minutes && contribution.position === minutes.length - 1) minutes.pop();
+          break;
+        }
+        // A one-shot entry (amrap/cardio/standalone rest) with no accumulating log behind it: nothing
+        // has been appended since, so removing the last entry removes exactly that one.
+        case 'direct':
+          if (contribution.entryIndex === sessionRef.current.entries.length - 1) {
+            sessionRef.current = removeLastEntry(sessionRef.current);
+          }
+          break;
+        default:
+          assertNever(contribution);
       }
 
-      const prevIndex = Math.max(0, index - 1);
-      stepIndexRef.current = prevIndex;
-      setStepIndex(prevIndex);
+      if (contribution.kind !== 'direct') {
+        // Rewrite what the member has left, or retract its entry if that set was all it had. The
+        // retraction can only ever hit the *last* entry: this undoes the most recent commit, so
+        // whatever it appended is still the newest thing in the session.
+        if (entryForMember(contribution.memberKey, contribution.exerciseId)) {
+          persistMember(contribution.memberKey, contribution.exerciseId);
+        } else {
+          sessionRef.current = removeLastEntry(sessionRef.current);
+          // Forget where its entry was, so redoing the set appends a fresh one instead of trying to
+          // rewrite an index that no longer holds it.
+          delete entryIndexRef.current[contribution.memberKey];
+        }
+      }
+      // Gone from the log, so gone from the bookkeeping too — redoing this step contributes afresh
+      // rather than overwriting a slot that no longer exists.
+      delete contributionsRef.current[index - 1];
+      lastCommitIndexRef.current = null;
     }
+
+    const prevIndex = Math.max(0, index - 1);
+    stepIndexRef.current = prevIndex;
+    setStepIndex(prevIndex);
   }, [removeLastEntry, entryForMember, persistMember]);
 
   // Ends the session on demand: the in-progress step is committed first, so the current set/round
@@ -822,8 +868,12 @@ export function useSessionRunner(
     // Read through `stepIndexRef` rather than the render's `step`, for the reason its own note gives:
     // an advance() in this same batch has already moved the position but not yet re-rendered, and
     // committing the closure's step there would log the one it just committed a second time.
-    const current = steps[stepIndexRef.current];
-    if (current && sessionRef.current) commitCurrentStep(current);
+    //
+    // Finishing from a step that has already been committed — stepped back onto, then Finish rather
+    // than redone — is the other way this used to double-log, and is now the same overwrite any redo is.
+    const index = stepIndexRef.current;
+    const current = steps[index];
+    if (current && sessionRef.current) commitCurrentStep(current, index);
     if (sessionRef.current) sessionRef.current = completeSession(sessionRef.current);
     onComplete(sessionRef.current);
   }, [steps, commitCurrentStep, completeSession, onComplete]);
@@ -920,16 +970,18 @@ export function useSessionRunner(
       : false;
 
   /**
-   * Both mutations **must** clear `lastCommitRef`, and that is the single most dangerous line here.
-   * `resultingIndex` is an index into `steps` (see the LastCommit type), so any edit to the array
-   * invalidates it — a stale one sends the next `goPrev()` to undo a commit that now belongs to a
-   * different step, retracting a set the user did keep.
+   * Both mutations **must** clear the commit bookkeeping, and that is the single most dangerous line
+   * here. Contributions are keyed by index into `steps` (see Contribution), so any edit to the array
+   * invalidates every one of them — a stale key sends the next `goPrev()` to undo a commit that now
+   * belongs to a different step, retracting a set the user did keep, and would have the next commit
+   * overwrite a slot that is no longer the one it wrote.
    *
    * The floor above means neither mutation can touch a step at or before `stepIndex`, so the index
    * itself needs no adjustment.
    */
   const mutateSteps = useCallback((mutate: (current: RunnerStep[]) => RunnerStep[]) => {
-    lastCommitRef.current = null;
+    contributionsRef.current = {};
+    lastCommitIndexRef.current = null;
     setSteps(mutate);
   }, []);
 
@@ -988,7 +1040,7 @@ export function useSessionRunner(
   /**
    * Appends an exercise to an ad-hoc session, which is the only way one gets any steps at all.
    *
-   * Through `mutateSteps` like every other edit, so it inherits the `lastCommitRef` clear — appending
+   * Through `mutateSteps` like every other edit, so it inherits the bookkeeping clear — appending
    * doesn't invalidate an index the way a mid-list edit does, but routing every mutation through one
    * place is what stops the next one forgetting.
    */
@@ -1013,7 +1065,7 @@ export function useSessionRunner(
       const index = stepIndexRef.current;
       swapCountRef.current += 1;
       const newMemberKey = `${memberKey}~swap${swapCountRef.current}`;
-      // Through mutateSteps like every other edit, so it inherits the lastCommitRef clear rather than
+      // Through mutateSteps like every other edit, so it inherits the bookkeeping clear rather than
       // restating it — see the note there on what a stale undo index costs.
       mutateSteps((current) => swapExerciseForMember(current, memberKey, index, exercise, newMemberKey));
     },

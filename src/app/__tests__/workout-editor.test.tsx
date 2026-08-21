@@ -302,3 +302,44 @@ describe('deleting', () => {
     expect(router.back).toHaveBeenCalled();
   });
 });
+
+/**
+ * The one write path the schema mirror missed. `save()` validates the name and nothing else, so an
+ * unbounded stepper wrote `rounds: 501` into the library file — which then failed to parse on the
+ * next launch and was silently reseeded, costing the user everything, not just the circuit.
+ *
+ * Seeded at the ceiling rather than pressed up to it: 500 awaited presses is the same assertion at
+ * five hundred times the cost.
+ */
+it('does not let rounds climb past the schema ceiling', async () => {
+  setSearchParams({ id: 'push-day' });
+  useLibraryStore.setState({
+    library: aLibrary({
+      exercises: [pullUps, dips],
+      workouts: [
+        aWorkout({
+          id: 'push-day',
+          name: 'Push day',
+          blocks: [
+            {
+              kind: 'circuit',
+              rounds: 500,
+              restBetweenExercisesSec: 15,
+              restBetweenRoundsSec: 60,
+              members: [{ exerciseId: 'pull-ups' }, { exerciseId: 'dips' }],
+            },
+          ],
+        }),
+      ],
+    }),
+  });
+  await renderScreen(<WorkoutEditorScreen />);
+
+  expect(screen.getByText('500 rounds · 15s / 60s rest')).toBeTruthy();
+
+  await fireEvent.press(screen.getByText('+'));
+  await fireEvent.press(screen.getByText('Save'));
+
+  const block = persistedWorkout('push-day')?.blocks[0];
+  expect(block?.kind === 'circuit' && block.rounds).toBe(500);
+});

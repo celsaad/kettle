@@ -118,6 +118,35 @@ export type RunnerStep =
  */
 type CircuitVisit = { index: number; total: number };
 
+/**
+ * Ceilings on what one expansion may allocate, held here as well as in `schema.ts`.
+ *
+ * Dropping the spread-push fixed the crash but left a worse residual than it first looked. A `hiit`
+ * or `emom` circuit member ignores the visit flag and runs its own full round count *once per visit*
+ * (see CircuitVisit), so a 500-round circuit of two 500-round `hiit` members — every number of it
+ * schema-legal — expands to 999,999 steps. Measured: ~1s and ~117MB of heap, synchronously, inside a
+ * render-time `useMemo`. On a phone that is an OOM or an ANR, not a slow workout, and calling it
+ * "slow" was the wrong read: `push(...arr)` at least failed fast.
+ *
+ * `MaxStepsPerExercise` sits above everything the schema admits on its own — the worst single
+ * exercise is 500 sets with a rest between each, 999 steps — so it only ever fires on a path that
+ * skipped validation.
+ *
+ * `MaxStepsPerWorkout` is the one that can truncate something importable, because neither `blocks`
+ * nor a circuit's `exercises` has an upper bound and no per-exercise ceiling bounds their sum. It is
+ * set where it is on measured cost: ~120 bytes a step, so 20,000 steps is ~2.4MB and a few
+ * milliseconds, while sitting roughly sixty times above the longest workout anyone would write (a
+ * four-hour session at 30s a step is under 500). Truncating is a poor degrade and it is still the
+ * better one — the alternative on the only libraries that reach it is the app dying mid-render.
+ */
+const MaxStepsPerExercise = 2000;
+const MaxStepsPerWorkout = 20_000;
+
+/** `count`, clamped to what one exercise may expand into. See MaxStepsPerExercise. */
+function boundedCount(count: number): number {
+  return Math.min(Math.max(0, Math.floor(count)), MaxStepsPerExercise);
+}
+
 function expandExercise(
   exercise: Exercise,
   blockIndex: number,
@@ -127,7 +156,7 @@ function expandExercise(
 ): RunnerStep[] {
   switch (exercise.type) {
     case 'timed_hold': {
-      const sets = visit ? 1 : exercise.config.sets;
+      const sets = visit ? 1 : boundedCount(exercise.config.sets);
       // A 0 (or negative) end would auto-advance on the very first tick, skipping the hold outright.
       // Both paths that could produce one are gated now — applyExerciseOverride re-validates a merged
       // override and the in-app override editor runs validateConfig — but the degrade stays: it keeps
@@ -164,7 +193,7 @@ function expandExercise(
       return steps;
     }
     case 'reps': {
-      const sets = visit ? 1 : exercise.config.sets;
+      const sets = visit ? 1 : boundedCount(exercise.config.sets);
       const steps: RunnerStep[] = [];
       for (let i = 0; i < sets; i++) {
         steps.push({
@@ -195,7 +224,8 @@ function expandExercise(
     }
     case 'hiit': {
       const steps: RunnerStep[] = [];
-      for (let i = 0; i < exercise.config.rounds; i++) {
+      const rounds = boundedCount(exercise.config.rounds);
+      for (let i = 0; i < rounds; i++) {
         steps.push({
           kind: 'interval',
           blockIndex,
@@ -206,10 +236,10 @@ function expandExercise(
           targetSec: exercise.config.workSec,
           countUp: false,
           setIndex: i + 1,
-          setTotal: exercise.config.rounds,
+          setTotal: rounds,
           notes: exercise.notes,
         });
-        if (i < exercise.config.rounds - 1 && exercise.config.restSec > 0) {
+        if (i < rounds - 1 && exercise.config.restSec > 0) {
           steps.push({
             kind: 'rest',
             blockIndex,
@@ -230,7 +260,7 @@ function expandExercise(
       // reported the honest `totalMinutes * 60`; the two silently disagreed for any interval but 60s.
       // Clamped to at least one so an interval longer than the whole block still runs once rather
       // than making the exercise vanish into the "nothing to run" path.
-      const intervalCount = Math.max(1, Math.floor((exercise.config.totalMinutes * 60) / exercise.config.intervalSec));
+      const intervalCount = boundedCount(Math.max(1, (exercise.config.totalMinutes * 60) / exercise.config.intervalSec));
       for (let i = 0; i < intervalCount; i++) {
         steps.push({
           kind: 'interval',
@@ -439,6 +469,9 @@ export function buildSteps(workout: Workout, exercises: Exercise[]): RunnerStep[
   const steps: RunnerStep[] = [];
 
   workout.blocks.forEach((block, blockIndex) => {
+    // Checked per block rather than per push, so a truncated workout is made of whole blocks. `blocks`
+    // has no upper bound in the schema, so this is reachable without a circuit at all.
+    if (steps.length >= MaxStepsPerWorkout) return;
     if (block.kind === 'exercise') {
       const exercise = exercises.find((candidate) => candidate.id === block.exerciseId);
       if (!exercise) return;
@@ -471,7 +504,14 @@ export function buildSteps(workout: Workout, exercises: Exercise[]): RunnerStep[
     });
 
     for (let round = 0; round < block.rounds; round++) {
-      members.forEach(({ member, memberIndex, exercise }, i) => {
+      // Both loops check, and both matter: rounds are what a `hiit` member multiplies, and `exercises`
+      // has no upper bound either, so one round of a huge circuit is unbounded on its own. A `for`
+      // loop over the members rather than `forEach`, which cannot stop. Overshoot is one member visit,
+      // which `boundedCount` caps.
+      if (steps.length >= MaxStepsPerWorkout) break;
+      for (let i = 0; i < members.length; i++) {
+        if (steps.length >= MaxStepsPerWorkout) break;
+        const { member, memberIndex, exercise } = members[i];
         const memberKey = `${blockIndex}:${memberIndex}`;
         // Shared by the member's own steps and by the rest that follows it, which belongs to the work
         // it follows rather than to what comes next.
@@ -494,7 +534,7 @@ export function buildSteps(workout: Workout, exercises: Exercise[]): RunnerStep[
             seconds: block.restBetweenExercisesSec,
           });
         }
-      });
+      }
       const isLastRound = round === block.rounds - 1;
       if (!isLastRound && block.restBetweenRoundsSec) {
         steps.push({

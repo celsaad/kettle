@@ -196,8 +196,11 @@ export function validateConfig(type: ExerciseType, values: Record<string, string
  */
 export const BLOCK_CONFIG_FIELDS: FieldDef[] = [
   { key: 'rounds', label: 'exerciseForm.field.rounds', max: MaxRounds, integer: true },
-  { key: 'restBetweenExercisesSec', label: 'overrideEditor.restPerExercise', min: 0 },
-  { key: 'restBetweenRoundsSec', label: 'overrideEditor.restPerRound', min: 0 },
+  // `optional`, because the schema has both `.optional()` — and because the panel seeds them from
+  // the block, clearing one is how a user says "no rest here". Marking them required turned that into
+  // a blocked save, where it had always read as 0.
+  { key: 'restBetweenExercisesSec', label: 'overrideEditor.restPerExercise', min: 0, optional: true },
+  { key: 'restBetweenRoundsSec', label: 'overrideEditor.restPerRound', min: 0, optional: true },
 ];
 
 export function validateBlockConfig(values: Record<string, string>): string | null {

@@ -58,6 +58,10 @@ training to. Vibration is separate and stays on your phone's own settings.
 - **The override editor tells you when a number won't do.** Setting a program week to 0 sets, a rep
   range that runs backwards, or a negative rest on a circuit used to save quietly and then do nothing
   on the week it claimed to change; each now says so and keeps the panel open.
+- **A circuit's rounds stop at 500, where the format stops.** The workout editor's stepper had no
+  ceiling, so it could write a workout Kettle then couldn't read on the next launch — and starting a
+  very long circuit could take the app down before the first screen of it appeared. Long workouts run
+  as they always did.
 - **An exercise recorded at a weight of 0 can be saved and overridden again.** The editors insisted on
   at least 1, so an exercise written as bodyweight-with-no-load was stuck on a field you hadn't
   touched.

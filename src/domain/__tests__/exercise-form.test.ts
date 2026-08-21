@@ -339,3 +339,13 @@ describe('validateBlockConfig', () => {
     expect(validateBlockConfig({ ...valid, rounds: '2.5' })).toBe('Rounds must be a whole number.');
   });
 });
+
+/**
+ * Both circuit rest fields are `.optional()` in the schema, and the panel seeds them from the block —
+ * so clearing one is how a user says "no rest here", and it had always read back as 0. Marking them
+ * required turned that into a blocked save.
+ */
+it('treats a cleared circuit rest as absent, not as a missing required field', () => {
+  expect(validateBlockConfig({ rounds: '3', restBetweenExercisesSec: '', restBetweenRoundsSec: '' })).toBeNull();
+  expect(validateBlockConfig({ rounds: '3' })).toBeNull();
+});

@@ -15,6 +15,7 @@ import { overrideLines } from '@/app/program-detail';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
+import { MaxRounds } from '@/domain/schema';
 import { applyBlockOverride, applyExerciseOverride, diffBlockOverride, diffExerciseOverride } from '@/domain/yaml-mapping';
 import type { Exercise, Library, ProgramOverride, Workout, WorkoutBlock } from '@/domain/types';
 import { useTheme } from '@/hooks/use-theme';
@@ -322,7 +323,7 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
                     {fieldValues.rounds ?? '1'}
                   </ThemedText>
                   <Pressable
-                    onPress={() => setField('rounds', String((Number(fieldValues.rounds) || 1) + 1))}
+                    onPress={() => setField('rounds', String(Math.min(MaxRounds, (Number(fieldValues.rounds) || 1) + 1)))}
                     accessibilityRole="button"
                     accessibilityLabel={t('common.increase', { label: t('workoutEditor.rounds') })}
                     style={[styles.stepperButton, { borderColor: theme.border }]}>

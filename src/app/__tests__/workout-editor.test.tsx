@@ -41,10 +41,12 @@ function persistedWorkout(id: string): Workout | undefined {
 
 const pullUps = anExercise({ id: 'pull-ups', name: 'Pull-ups' });
 const dips = anExercise({ id: 'dips', name: 'Dips' });
+/** A third member, so a removal test has a circuit it is allowed to remove from. */
+const rows = anExercise({ id: 'rows', name: 'Rows' });
 
 beforeEach(() => {
   setSearchParams({});
-  useLibraryStore.setState({ library: aLibrary({ exercises: [pullUps, dips] }), status: 'ready' });
+  useLibraryStore.setState({ library: aLibrary({ exercises: [pullUps, dips, rows] }), status: 'ready' });
 });
 
 describe('saving', () => {
@@ -192,13 +194,57 @@ describe('circuits', () => {
   });
 
   it('removes a member without removing the circuit', async () => {
-    await buildCircuit();
+    // Three members, because removing from a circuit of two is refused — see the test below.
+    await fireEvent.press(screen.getByText('Pull-ups'));
+    await fireEvent.press(screen.getByText('Dips'));
+    await fireEvent.press(screen.getByText('Rows'));
+    await fireEvent.press(screen.getByText('Add circuit (3)'));
 
     await fireEvent.press(screen.getByLabelText('Remove Dips from circuit'));
 
     expect(screen.getByText('Circuit')).toBeTruthy();
     expect(screen.getByText('1 block')).toBeTruthy();
     expect(screen.queryByText('Dips')).toBeNull();
+  });
+
+  /**
+   * The schema has `exercises: z.array(...).min(2)`, and nothing stopped the editor going below it —
+   * so a one-member circuit was written to the library file and then failed to parse on the next
+   * launch, which used to cost the user the whole library. A circuit of one is also not a circuit;
+   * the way to get there is to delete the block.
+   *
+   * The *disabled state* is what's asserted, not just the no-op. A control that renders enabled,
+   * announces itself as enabled and then ignores the tap is a worse bug than the one it patched, and
+   * an assertion on the no-op alone would have pinned exactly that.
+   */
+  it('marks the remove control unavailable on a two-member circuit', async () => {
+    await buildCircuit();
+
+    const remove = screen.getByLabelText('Remove Dips from circuit');
+    expect(remove.props.accessibilityState?.disabled).toBe(true);
+
+    await fireEvent.press(remove);
+    expect(screen.getByText('Dips')).toBeTruthy();
+  });
+
+  it('leaves it available while there is a member to spare', async () => {
+    await fireEvent.press(screen.getByText('Pull-ups'));
+    await fireEvent.press(screen.getByText('Dips'));
+    await fireEvent.press(screen.getByText('Rows'));
+    await fireEvent.press(screen.getByText('Add circuit (3)'));
+
+    expect(screen.getByLabelText('Remove Dips from circuit').props.accessibilityState?.disabled).toBe(false);
+  });
+
+  it('keeps a negative circuit rest out of the library', async () => {
+    // `Number('-5') || 0` is -5, not 0, and the schema is `nonnegative()` — so this reached the file.
+    await buildCircuit();
+    await fireEvent.changeText(screen.getByDisplayValue('15'), '-5');
+    await fireEvent.changeText(screen.getByPlaceholderText('e.g. Push day'), 'Circuit day');
+    await fireEvent.press(screen.getByText('Save'));
+
+    const block = persistedWorkout('circuit-day')?.blocks[0];
+    expect(block?.kind === 'circuit' && block.restBetweenExercisesSec).toBe(0);
   });
 });
 
@@ -301,4 +347,45 @@ describe('deleting', () => {
     expect(persisted().workouts).toHaveLength(0);
     expect(router.back).toHaveBeenCalled();
   });
+});
+
+/**
+ * The one write path the schema mirror missed. `save()` validates the name and nothing else, so an
+ * unbounded stepper wrote `rounds: 501` into the library file — which then failed to parse on the
+ * next launch and was silently reseeded, costing the user everything, not just the circuit.
+ *
+ * Seeded at the ceiling rather than pressed up to it: 500 awaited presses is the same assertion at
+ * five hundred times the cost.
+ */
+it('does not let rounds climb past the schema ceiling', async () => {
+  setSearchParams({ id: 'push-day' });
+  useLibraryStore.setState({
+    library: aLibrary({
+      exercises: [pullUps, dips],
+      workouts: [
+        aWorkout({
+          id: 'push-day',
+          name: 'Push day',
+          blocks: [
+            {
+              kind: 'circuit',
+              rounds: 500,
+              restBetweenExercisesSec: 15,
+              restBetweenRoundsSec: 60,
+              members: [{ exerciseId: 'pull-ups' }, { exerciseId: 'dips' }],
+            },
+          ],
+        }),
+      ],
+    }),
+  });
+  await renderScreen(<WorkoutEditorScreen />);
+
+  expect(screen.getByText('500 rounds · 15s / 60s rest')).toBeTruthy();
+
+  await fireEvent.press(screen.getByText('+'));
+  await fireEvent.press(screen.getByText('Save'));
+
+  const block = persistedWorkout('push-day')?.blocks[0];
+  expect(block?.kind === 'circuit' && block.rounds).toBe(500);
 });

@@ -2,6 +2,8 @@ import { dump, load } from 'js-yaml';
 import type { z } from 'zod';
 
 import {
+  emomIntervalCount,
+  MaxRounds,
   rawExerciseSchema,
   rawLibrarySchema,
   rawProgramSchema,
@@ -355,6 +357,96 @@ export function parseLibraryYaml(text: string): ParseResult<Library> {
 
 export function serializeLibraryYaml(library: Library): string {
   return dump(libraryToRaw(library), { noRefs: true, sortKeys: false });
+}
+
+/**
+ * Clamps a library that predates the repeat-count ceilings back into range, returning the rewritten
+ * YAML — or null if there was nothing to repair, or nothing parseable to repair it in.
+ *
+ * **This exists because adding the ceilings is otherwise a destructive upgrade.** A file holding
+ * `sets: 200000` parsed cleanly before them and does not after, and `loadLibrary` responds to a parse
+ * failure by reseeding — so the release that fixes the unstartable workout would have replaced the
+ * user's entire library with the starter one on next launch. That is a worse outcome than the bug.
+ *
+ * **Driven by the schema's own complaints rather than by a list of fields.** The first version walked
+ * the document clamping `sets`, `rounds` and `total_minutes` by name, which made it a fourth
+ * hand-maintained copy of `schema.ts` — the exact thing that has cost this codebase the most. Zod
+ * reports an out-of-range value as a `too_big` issue carrying both the `path` and the `maximum`, which
+ * is everything a repair needs, so the ceiling is read off the schema at the moment it is violated and
+ * a ceiling added later is handled without touching this function.
+ *
+ * That also makes the narrow promise structural instead of careful: **only `too_big` is repaired.** A
+ * value that was already invalid before the ceilings — a zero, a fraction where the schema wants an
+ * integer, a missing field — produces some other issue code, is left alone, and still goes to
+ * quarantine. Repairing those too would quietly turn every future schema tightening into a silent
+ * rewrite of the user's data, which is a far larger promise than "the ceilings we just added won't
+ * cost you your library".
+ */
+export function repairLibraryBounds(text: string): string | null {
+  let doc: unknown;
+  try {
+    doc = load(text, LOAD_OPTIONS);
+  } catch {
+    // A syntax error, not an out-of-range value — there is no document to walk.
+    return null;
+  }
+
+  const result = rawLibrarySchema.safeParse(doc);
+  if (result.success) return null;
+
+  let changed = false;
+  for (const issue of result.error.issues) {
+    if (issue.code !== 'too_big') continue;
+    if (setAtPath(doc, issue.path, Number(issue.maximum))) changed = true;
+  }
+  if (clampEmomIntervals(doc)) changed = true;
+
+  return changed ? dump(doc, { noRefs: true, sortKeys: false }) : null;
+}
+
+/** Writes `value` at a zod issue path. Reports false if the path doesn't lead anywhere writable. */
+function setAtPath(doc: unknown, path: readonly PropertyKey[], value: number): boolean {
+  if (path.length === 0 || !Number.isFinite(value)) return false;
+  let cursor: unknown = doc;
+  for (const key of path.slice(0, -1)) {
+    if (typeof cursor !== 'object' || cursor === null) return false;
+    cursor = (cursor as Record<PropertyKey, unknown>)[key];
+  }
+  if (typeof cursor !== 'object' || cursor === null) return false;
+  const leaf = path[path.length - 1];
+  if ((cursor as Record<PropertyKey, unknown>)[leaf] === value) return false;
+  (cursor as Record<PropertyKey, unknown>)[leaf] = value;
+  return true;
+}
+
+/**
+ * The one ceiling the loop above cannot see: EMOM's interval count is *derived*, so it is a refinement
+ * rather than a `.max()` and carries no `maximum` to read. Handled explicitly, and deliberately the
+ * only such case — if a second derived rule ever appears, it belongs here beside this one rather than
+ * as a general-purpose document walk.
+ *
+ * `interval_sec` is the more meaningful of the two fields — a 30-second EMOM is the thing the user
+ * wrote down — so the block is shortened rather than the interval stretched.
+ */
+function clampEmomIntervals(doc: unknown): boolean {
+  const root = doc as { exercises?: unknown };
+  if (!Array.isArray(root?.exercises)) return false;
+  let changed = false;
+  for (const raw of root.exercises) {
+    const exercise = raw as { type?: unknown; config?: Record<string, unknown> };
+    if (exercise?.type !== 'emom' || typeof exercise.config !== 'object' || exercise.config === null) continue;
+    const intervalSec = exercise.config.interval_sec;
+    const totalMinutes = exercise.config.total_minutes;
+    if (typeof intervalSec !== 'number' || typeof totalMinutes !== 'number' || intervalSec <= 0) continue;
+    if (emomIntervalCount(intervalSec, totalMinutes) <= MaxRounds) continue;
+    // Checked against the same helper rather than trusted: this is the inverse of a floored division,
+    // and the value it produces is the one the whole repair has to survive being re-parsed with.
+    let minutes = (intervalSec * MaxRounds) / 60;
+    if (emomIntervalCount(intervalSec, minutes) > MaxRounds) minutes = (intervalSec * (MaxRounds - 1)) / 60;
+    exercise.config.total_minutes = minutes;
+    changed = true;
+  }
+  return changed;
 }
 
 /**

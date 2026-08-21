@@ -4,6 +4,7 @@ import type { Exercise, Workout } from '@/domain/types';
 import {
   addSetForMember,
   buildSteps,
+  buildStepsWithLimits,
   dropLastSetForMember,
   setStepsForMember,
   swapExerciseForMember,
@@ -542,5 +543,134 @@ describe('swapping an exercise mid-session', () => {
   it('does nothing for a member that is not in the list', () => {
     const before = buildSteps(workoutOf(single('pullups')), exercises);
     expect(swapExerciseForMember(before, 'nope', 0, pushupsExercise, '0~swap1')).toEqual(before);
+  });
+});
+
+/**
+ * The per-exercise clamp, and what these tests can and cannot prove.
+ *
+ * They were written to pin the spread-push: `steps.push(...expandExercise(…))` spread the expansion
+ * as *arguments* and threw `RangeError` past the engine's argument limit, so a large count crashed
+ * the session screen before its first render. Adding `MaxStepsPerExercise` subsumed that — no single
+ * expansion now reaches the argument limit, so appending one at a time and spreading behave
+ * identically here, and **these tests can no longer fail against the spread-push**.
+ *
+ * The per-item append stays anyway, because the ceiling is a constant somebody will raise one day:
+ * with `MaxStepsPerExercise` lifted out of the way the `RangeError` returns immediately, which is how
+ * that was checked. What is pinned below is the clamp itself.
+ */
+describe('very large expansions', () => {
+  const HUGE = 200_000;
+
+  it('clamps an exercise block rather than allocating what it asks for', () => {
+    const many: Exercise = { id: 'many', name: 'Many', type: 'reps', config: { sets: HUGE, targetRepsMin: 5, restSec: 0 } };
+    const steps = buildSteps(workoutOf(single('many')), [many]);
+
+    expect(steps.length).toBeLessThan(HUGE);
+    expect(steps.length).toBeGreaterThan(1000);
+    expect(steps.every((step) => step.kind === 'reps')).toBe(true);
+  });
+
+  it('clamps an oversized circuit member visit too', () => {
+    // A hiit member ignores the visit flag and runs its own full round count once per visit, which is
+    // what makes a single visit the biggest thing one expansion can produce.
+    const many: Exercise = { id: 'many', name: 'Many', type: 'hiit', config: { workSec: 30, restSec: 0, rounds: HUGE } };
+    const partner: Exercise = {
+      id: 'partner',
+      name: 'Partner',
+      type: 'reps',
+      config: { sets: 1, targetRepsMin: 5, restSec: 0 },
+    };
+    const steps = buildSteps(
+      workoutOf({ kind: 'circuit', rounds: 1, members: [{ exerciseId: 'many' }, { exerciseId: 'partner' }] }),
+      [many, partner],
+    );
+
+    expect(steps.length).toBeLessThan(HUGE);
+    expect(steps[0].circuit).toEqual({ round: 1, rounds: 1, member: 1, memberTotal: 2 });
+  });
+});
+
+/**
+ * The residual that dropping the spread-push left behind, and that the first pass wrongly called
+ * "slow": a `hiit` or `emom` circuit member ignores the visit flag and runs its own full round count
+ * once per visit, so the case below — every number of it schema-legal — expanded to 999,999 steps in
+ * ~1s and ~117MB of heap, synchronously, inside a render-time `useMemo`. That is an OOM or an ANR on
+ * a phone. `push(...arr)` at least failed fast.
+ */
+describe('the whole-workout step ceiling', () => {
+  const hiit500: Exercise = { id: 'h', name: 'H', type: 'hiit', config: { workSec: 30, restSec: 20, rounds: 500 } };
+  const other: Exercise = { id: 'h2', name: 'H2', type: 'hiit', config: { workSec: 30, restSec: 20, rounds: 500 } };
+
+  it('bounds a schema-legal circuit that would otherwise expand to a million steps', () => {
+    const steps = buildSteps(
+      workoutOf({
+        kind: 'circuit',
+        rounds: 500,
+        restBetweenExercisesSec: 15,
+        restBetweenRoundsSec: 60,
+        members: [{ exerciseId: 'h' }, { exerciseId: 'h2' }],
+      }),
+      [hiit500, other],
+    );
+
+    // The exact figure is the ceiling's business; that it is bounded at all is the contract. The slack
+    // is one member visit, which the per-exercise clamp caps.
+    expect(steps.length).toBeLessThanOrEqual(22_000);
+    expect(steps.length).toBeGreaterThan(1000);
+  });
+
+  it('bounds a workout whose block list is what runs away, with no circuit involved', () => {
+    // `blocks` has no upper bound in the schema either, so the per-block check is not redundant with
+    // the two inside the circuit loop.
+    const blocks = Array.from({ length: 200 }, () => single('h'));
+    expect(buildSteps(workoutOf(...blocks), [hiit500]).length).toBeLessThanOrEqual(22_000);
+  });
+
+  it('leaves an ordinary workout completely untouched', () => {
+    // The ceiling sits far above anything anyone would write; nothing here should notice it exists.
+    const steps = buildSteps(workoutOf(single('pullups'), single('burpees'), single('clean')), exercises);
+    expect(steps.map((step) => step.kind)).toContain('reps');
+    expect(steps.length).toBeLessThan(100);
+  });
+});
+
+/**
+ * The flag that puts the "too long to run in full" screen in front of a workout, and the reason it
+ * has to be exact: it is a blocking screen, so a false positive costs every ordinary start.
+ */
+describe('what counts as truncated', () => {
+  it('does not flag an emom whose interval simply does not divide the block', () => {
+    // 13⅓ intervals. The floor is not a clamp — the last third of an interval was never going to run —
+    // and reporting it as truncation warned before every start of a perfectly ordinary workout.
+    const emom: Exercise = { id: 'e', name: 'E', type: 'emom', config: { intervalSec: 45, totalMinutes: 10 } };
+    const built = buildStepsWithLimits(workoutOf(single('e')), [emom]);
+
+    expect(built.steps).toHaveLength(13);
+    expect(built.truncated).toBe(false);
+  });
+
+  it('does flag an emom the per-exercise ceiling really does cut short', () => {
+    const emom: Exercise = { id: 'e', name: 'E', type: 'emom', config: { intervalSec: 0.5, totalMinutes: 1000 } };
+    const built = buildStepsWithLimits(workoutOf(single('e')), [emom]);
+
+    expect(built.truncated).toBe(true);
+  });
+
+  it('does not flag any ordinary workout', () => {
+    const built = buildStepsWithLimits(workoutOf(single('pullups'), single('burpees'), single('clean')), exercises);
+    expect(built.truncated).toBe(false);
+  });
+
+  /**
+   * The case a list-length test cannot see, and the reason truncation is reported out of
+   * `expandExercise`: 3000 sets clamps to 2000 and yields 3999 steps, far under the workout ceiling.
+   */
+  it('flags a per-exercise clamp that leaves the list well under the workout ceiling', () => {
+    const many: Exercise = { id: 'm', name: 'M', type: 'reps', config: { sets: 3000, targetRepsMin: 5, restSec: 60 } };
+    const built = buildStepsWithLimits(workoutOf(single('m')), [many]);
+
+    expect(built.steps.length).toBeLessThan(5000);
+    expect(built.truncated).toBe(true);
   });
 });

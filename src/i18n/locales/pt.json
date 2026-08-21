@@ -147,6 +147,11 @@
       "title": "Dia de descanso",
       "body": "Esta semana do programa é um dia de descanso, então não há nada para executar. Volte e escolha um treino se quiser treinar hoje."
     },
+    "tooLong": {
+      "title": "Longo demais para fazer inteiro",
+      "body": "\"{{name}}\" pede mais do que o Kettle consegue rodar numa sessão, então ele vai parar no meio e ser registrado como concluído nesse ponto. Divida em treinos menores para fazer tudo.",
+      "startAnyway": "Começar mesmo assim"
+    },
     "nothingToRun": {
       "title": "Nada para executar",
       "body": "\"{{name}}\" não tem blocos, ou nenhum dos seus exercícios tem séries/rodadas/minutos configurados. Adicione um bloco em Treinos, ou confira a configuração de cada exercício, e tente de novo."
@@ -453,6 +458,8 @@
       "mustBeAtLeast": "{{label}} precisa ser pelo menos {{min}}.",
       "mustBeAtMost": "{{label}} pode ser no máximo {{max}}.",
       "mustBeWhole": "{{label}} precisa ser um número inteiro.",
+      "tooManyIntervals": "Isso dá mais de {{max}} intervalos. Use um intervalo maior ou um bloco mais curto.",
+      "repsMaxBelowMin": "O máximo de repetições não pode ser menor que o mínimo.",
       "holdMaxNeedsMin": "Uma faixa de isometria precisa de um mínimo além do máximo.",
       "holdMaxBelowMin": "A isometria máxima não pode ser menor que a mínima."
     }

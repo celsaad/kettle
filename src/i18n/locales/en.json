@@ -147,6 +147,11 @@
       "title": "Rest day",
       "body": "This week of the program is a scheduled rest day, so there's nothing to run. Go back and pick a workout if you want to train today."
     },
+    "tooLong": {
+      "title": "Too long to run in full",
+      "body": "\"{{name}}\" asks for more than Kettle can run in one session, so it will stop partway through and be logged as finished at that point. Split it into shorter workouts to run all of it.",
+      "startAnyway": "Start anyway"
+    },
     "nothingToRun": {
       "title": "Nothing to run",
       "body": "\"{{name}}\" has no blocks, or none of its exercises have any sets/rounds/minutes configured. Add a block in Workouts, or check each exercise's config, then try again."
@@ -453,6 +458,8 @@
       "mustBeAtLeast": "{{label}} must be at least {{min}}.",
       "mustBeAtMost": "{{label}} can be at most {{max}}.",
       "mustBeWhole": "{{label}} must be a whole number.",
+      "tooManyIntervals": "That works out to more than {{max}} intervals. Use a longer interval or a shorter block.",
+      "repsMaxBelowMin": "The maximum reps can't be fewer than the minimum.",
       "holdMaxNeedsMin": "A hold range needs a minimum as well as a maximum.",
       "holdMaxBelowMin": "The maximum hold can't be shorter than the minimum."
     }

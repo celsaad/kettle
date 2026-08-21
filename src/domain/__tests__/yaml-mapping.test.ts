@@ -465,3 +465,122 @@ ${weeks}
     expect(yaml).not.toContain('rest_day');
   });
 });
+
+/**
+ * The ceilings on `sets`, `rounds` and `total_minutes` — see MaxSets in schema.ts. `sets: 200000`
+ * passed `int().positive()` and then threw `RangeError` out of the session screen before its first
+ * render, on a library that persists, so the workout stayed unstartable until the file was hand-edited.
+ */
+describe('bounded repeat counts', () => {
+  const libraryWithExercise = (type: string, config: Record<string, unknown>): string =>
+    [
+      'version: 1',
+      'exercises:',
+      '  - id: a',
+      '    name: A',
+      `    type: ${type}`,
+      '    config:',
+      ...Object.entries(config).map(([key, value]) => `      ${key}: ${value}`),
+      'workouts: []',
+      'programs: []',
+      '',
+    ].join('\n');
+
+  const repsWith = (sets: number) => libraryWithExercise('reps', { sets, target_reps_min: 5, rest_sec: 60 });
+  const holdWith = (sets: number) => libraryWithExercise('timed_hold', { sets, hold_sec_min: 30, rest_sec: 60 });
+  const hiitWith = (rounds: number) => libraryWithExercise('hiit', { work_sec: 40, rest_sec: 20, rounds });
+
+  it('refuses a set count past the ceiling, in both types that have one', () => {
+    expect(parseLibraryYaml(repsWith(501)).ok).toBe(false);
+    expect(parseLibraryYaml(holdWith(501)).ok).toBe(false);
+  });
+
+  it('accepts the ceiling itself, so the bound is inclusive', () => {
+    expect(parseLibraryYaml(repsWith(500)).ok).toBe(true);
+    expect(parseLibraryYaml(holdWith(500)).ok).toBe(true);
+    expect(parseLibraryYaml(hiitWith(500)).ok).toBe(true);
+  });
+
+  it('refuses a round count past the ceiling', () => {
+    expect(parseLibraryYaml(hiitWith(501)).ok).toBe(false);
+  });
+
+  it('refuses a circuit block whose rounds are past the ceiling', () => {
+    const yaml = `version: 1
+exercises:
+  - id: a
+    name: A
+    type: reps
+    config: { sets: 3, target_reps_min: 5, rest_sec: 60 }
+  - id: b
+    name: B
+    type: reps
+    config: { sets: 3, target_reps_min: 5, rest_sec: 60 }
+workouts:
+  - id: w
+    name: W
+    blocks:
+      - type: circuit
+        rounds: 501
+        exercises:
+          - exercise: a
+          - exercise: b
+programs: []
+`;
+    expect(parseLibraryYaml(yaml).ok).toBe(false);
+    expect(parseLibraryYaml(yaml.replace('rounds: 501', 'rounds: 500')).ok).toBe(true);
+  });
+
+  /**
+   * EMOM's step count is *derived*, so bounding the two fields separately doesn't bound what they
+   * produce: both refused pairs below are individually in range and only the product gives them away.
+   */
+  it('refuses an emom whose interval count is derived past the ceiling', () => {
+    expect(parseLibraryYaml(libraryWithExercise('emom', { interval_sec: 1, total_minutes: 60 })).ok).toBe(false);
+    expect(parseLibraryYaml(libraryWithExercise('emom', { interval_sec: 0.001, total_minutes: 1 })).ok).toBe(false);
+    expect(parseLibraryYaml(libraryWithExercise('emom', { interval_sec: 60, total_minutes: 500 })).ok).toBe(true);
+  });
+
+  it('refuses an emom longer than the day-length ceiling on its own', () => {
+    expect(parseLibraryYaml(libraryWithExercise('emom', { interval_sec: 300, total_minutes: 1441 })).ok).toBe(false);
+  });
+});
+
+/**
+ * EMOM's interval count is the only *derived* bound in the format, and every bug it has produced came
+ * from an interval that doesn't divide its block evenly. Both cases below use one that doesn't, on
+ * purpose: the earlier tests all used 30 and 60, which divide exactly and cannot fail either way.
+ */
+describe('emom intervals that do not divide evenly', () => {
+  const emom = (interval_sec: number, total_minutes: number) =>
+    `version: 1
+exercises:
+  - id: e
+    name: E
+    type: emom
+    config: { interval_sec: ${interval_sec}, total_minutes: ${total_minutes} }
+workouts: []
+programs: []
+`;
+
+  /**
+   * 500 one-second intervals is `total_minutes: 8.333333333333334`, whose raw quotient round-trips to
+   * 500.00000000000006. The refinement compared that quotient, so a legal block was refused for a
+   * rounding error thirteen decimal places down — and, worse, it was the value `repairLibraryBounds`
+   * produces, so the repair landed back outside the schema and the library was reseeded anyway.
+   */
+  it('accepts exactly the interval count the runner will build', () => {
+    expect(parseLibraryYaml(emom(1, (1 * 500) / 60)).ok).toBe(true);
+    expect(parseLibraryYaml(emom(2, (2 * 500) / 60)).ok).toBe(true);
+  });
+
+  it('still refuses a block that really is over the count', () => {
+    // 60 minutes of one-second intervals is 3600 of them, and no rounding gets that under 500.
+    expect(parseLibraryYaml(emom(1, 60)).ok).toBe(false);
+  });
+
+  it('accepts a partial trailing interval, which is a normal thing to write', () => {
+    // 13⅓ intervals: the runner runs 13 and the last third was never going to happen.
+    expect(parseLibraryYaml(emom(45, 10)).ok).toBe(true);
+  });
+});

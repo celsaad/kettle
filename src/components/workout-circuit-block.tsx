@@ -8,6 +8,7 @@ import type { DragHandle } from '@/components/reorderable-list';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { formatCircuitShape } from '@/domain/format';
+import { MaxRounds } from '@/domain/schema';
 import type { Exercise, WorkoutBlock } from '@/domain/types';
 import { useTheme } from '@/hooks/use-theme';
 import { useUnitSystem } from '@/state/preferences-store';
@@ -32,6 +33,8 @@ export function WorkoutCircuitBlock({ block, exercises, dragHandle, onChange, on
   // Local to the block rather than a set of open indices held by the screen: the field is a disclosure
   // on this card and nothing outside it reads whether it's open.
   const [idFieldOpen, setIdFieldOpen] = useState(false);
+  /** A circuit of one is not a circuit, and the schema refuses it — see the remove control below. */
+  const canRemoveMember = block.members.length > 2;
 
   return (
     <View style={[styles.circuitBlock, { borderColor: theme.border, backgroundColor: theme.backgroundElement }]}>
@@ -66,12 +69,18 @@ export function WorkoutCircuitBlock({ block, exercises, dragHandle, onChange, on
                 </ThemedText>
               </View>
               <ExerciseBadge type={exercise.type} />
+              {/* Disabled rather than silently doing nothing at two members: the schema needs at least
+                  two (`exercises` is `.min(2)`), and a control that is rendered enabled, reads as
+                  enabled to a screen reader and then ignores the tap is worse than one that is plainly
+                  unavailable. Deleting the whole block is how you get below two. */}
               <Pressable
                 onPress={() => onRemoveMember(memberIndex)}
+                disabled={!canRemoveMember}
                 hitSlop={8}
                 accessibilityRole="button"
                 accessibilityLabel={t('workoutEditor.removeFromCircuitAccessibility', { name: exercise.name })}
-                style={styles.removeButton}>
+                accessibilityState={{ disabled: !canRemoveMember }}
+                style={[styles.removeButton, !canRemoveMember && styles.removeButtonDisabled]}>
                 <ThemedText themeColor="textSecondary">✕</ThemedText>
               </Pressable>
             </View>
@@ -127,7 +136,10 @@ export function WorkoutCircuitBlock({ block, exercises, dragHandle, onChange, on
               {block.rounds}
             </ThemedText>
             <Pressable
-              onPress={() => onChange({ rounds: block.rounds + 1 })}
+              // Clamped to the schema's ceiling. This stepper is the only way to set a circuit's rounds,
+              // and workout-editor.tsx's save() validates the name and nothing else — so an unbounded one
+              // wrote a library that failed to parse on the next launch and was silently reseeded.
+              onPress={() => onChange({ rounds: Math.min(MaxRounds, block.rounds + 1) })}
               accessibilityRole="button"
               accessibilityLabel={t('common.increase', { label: t('workoutEditor.rounds') })}
               style={[styles.stepperButton, { borderColor: theme.border }]}>
@@ -142,7 +154,10 @@ export function WorkoutCircuitBlock({ block, exercises, dragHandle, onChange, on
           </ThemedText>
           <TextInput
             value={String(block.restBetweenExercisesSec ?? 0)}
-            onChangeText={(text) => onChange({ restBetweenExercisesSec: Number(text) || 0 })}
+            // `Math.max(0, …)` because `Number('-5') || 0` is -5, not 0: the schema is
+            // `nonnegative()`, so a typed minus sign wrote a library that failed to parse on the next
+            // launch. Same clamp on the round rest below.
+            onChangeText={(text) => onChange({ restBetweenExercisesSec: Math.max(0, Number(text) || 0) })}
             keyboardType="numeric"
             style={[styles.smallInput, { borderColor: theme.border, backgroundColor: theme.background, color: theme.text }]}
           />
@@ -154,7 +169,7 @@ export function WorkoutCircuitBlock({ block, exercises, dragHandle, onChange, on
           </ThemedText>
           <TextInput
             value={String(block.restBetweenRoundsSec ?? 0)}
-            onChangeText={(text) => onChange({ restBetweenRoundsSec: Number(text) || 0 })}
+            onChangeText={(text) => onChange({ restBetweenRoundsSec: Math.max(0, Number(text) || 0) })}
             keyboardType="numeric"
             style={[styles.smallInput, { borderColor: theme.border, backgroundColor: theme.background, color: theme.text }]}
           />
@@ -189,6 +204,9 @@ const styles = StyleSheet.create({
   },
   removeButton: {
     paddingLeft: Spacing.one,
+  },
+  removeButtonDisabled: {
+    opacity: 0.4,
   },
   circuitMembers: {
     gap: Spacing.one + 2,

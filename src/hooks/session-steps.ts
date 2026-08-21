@@ -5,6 +5,7 @@
  * dependencies (expo-audio, expo-haptics, notifications) — those made these otherwise-pure functions
  * untestable, since merely importing them initialised native modules. No behaviour changed in the move.
  */
+import { emomIntervalCount } from '@/domain/schema';
 import type { BlockConfigOverride, Exercise, Workout } from '@/domain/types';
 
 export type IntervalVariant = 'hiit' | 'emom' | 'amrap' | 'cardio';
@@ -118,16 +119,67 @@ export type RunnerStep =
  */
 type CircuitVisit = { index: number; total: number };
 
+/**
+ * Ceilings on what one expansion may allocate, held here as well as in `schema.ts`.
+ *
+ * Dropping the spread-push fixed the crash but left a worse residual than it first looked. A `hiit`
+ * or `emom` circuit member ignores the visit flag and runs its own full round count *once per visit*
+ * (see CircuitVisit), so a 500-round circuit of two 500-round `hiit` members — every number of it
+ * schema-legal — expands to 999,999 steps. Measured: ~1s and ~117MB of heap, synchronously, inside a
+ * render-time `useMemo`. On a phone that is an OOM or an ANR, not a slow workout, and calling it
+ * "slow" was the wrong read: `push(...arr)` at least failed fast.
+ *
+ * `MaxStepsPerExercise` sits above everything the schema admits on its own — the worst single
+ * exercise is 500 sets with a rest between each, 999 steps — so it only ever fires on a path that
+ * skipped validation.
+ *
+ * `MaxStepsPerWorkout` is the one that can truncate something importable, because neither `blocks`
+ * nor a circuit's `exercises` has an upper bound and no per-exercise ceiling bounds their sum. It is
+ * set where it is on measured cost: ~120 bytes a step, so 20,000 steps is ~2.4MB and a few
+ * milliseconds, while sitting roughly sixty times above the longest workout anyone would write (a
+ * four-hour session at 30s a step is under 500). Truncating is a poor degrade and it is still the
+ * better one — the alternative on the only libraries that reach it is the app dying mid-render.
+ */
+const MaxStepsPerExercise = 2000;
+export const MaxStepsPerWorkout = 20_000;
+
+/**
+ * The step list, and whether either ceiling cut it short — so the session screen can say so before
+ * the countdown, rather than the workout ending in the middle and being logged as finished.
+ */
+export type StepBuildResult = { steps: RunnerStep[]; truncated: boolean };
+
+/** `count`, clamped to what one exercise may expand into. See MaxStepsPerExercise. */
+function boundedCount(count: number): number {
+  return Math.min(Math.max(0, Math.floor(count)), MaxStepsPerExercise);
+}
+
+/**
+ * Expands one exercise, reporting whether `MaxStepsPerExercise` cut it short.
+ *
+ * Reported rather than inferred from the length, because a per-exercise clamp is invisible at the
+ * workout level: `sets: 3000` clamps to 2000 and produces 3999 steps, far under
+ * `MaxStepsPerWorkout` — so a length test says "not truncated" while the session runs two thirds of
+ * the sets and is logged as finished.
+ */
 function expandExercise(
   exercise: Exercise,
   blockIndex: number,
   memberKey: string,
   configOverride?: BlockConfigOverride,
   visit?: CircuitVisit,
-): RunnerStep[] {
+): { steps: RunnerStep[]; truncated: boolean } {
+  // Wrapped so the clamp reports itself as it happens, rather than being recomputed by a second copy
+  // of the same arithmetic that could drift from this one.
+  let truncated = false;
+  const bounded = (count: number): number => {
+    const next = boundedCount(count);
+    if (next < count) truncated = true;
+    return next;
+  };
   switch (exercise.type) {
     case 'timed_hold': {
-      const sets = visit ? 1 : exercise.config.sets;
+      const sets = visit ? 1 : bounded(exercise.config.sets);
       // A 0 (or negative) end would auto-advance on the very first tick, skipping the hold outright —
       // and nothing validates a program week's override config, so `hold_sec_min: 0` reaches here from
       // both the override schema (a free record of numbers) and the in-app override editor (no
@@ -161,10 +213,10 @@ function expandExercise(
           });
         }
       }
-      return steps;
+      return { steps, truncated };
     }
     case 'reps': {
-      const sets = visit ? 1 : exercise.config.sets;
+      const sets = visit ? 1 : bounded(exercise.config.sets);
       const steps: RunnerStep[] = [];
       for (let i = 0; i < sets; i++) {
         steps.push({
@@ -191,11 +243,12 @@ function expandExercise(
           });
         }
       }
-      return steps;
+      return { steps, truncated };
     }
     case 'hiit': {
       const steps: RunnerStep[] = [];
-      for (let i = 0; i < exercise.config.rounds; i++) {
+      const rounds = bounded(exercise.config.rounds);
+      for (let i = 0; i < rounds; i++) {
         steps.push({
           kind: 'interval',
           blockIndex,
@@ -206,10 +259,10 @@ function expandExercise(
           targetSec: exercise.config.workSec,
           countUp: false,
           setIndex: i + 1,
-          setTotal: exercise.config.rounds,
+          setTotal: rounds,
           notes: exercise.notes,
         });
-        if (i < exercise.config.rounds - 1 && exercise.config.restSec > 0) {
+        if (i < rounds - 1 && exercise.config.restSec > 0) {
           steps.push({
             kind: 'rest',
             blockIndex,
@@ -220,7 +273,7 @@ function expandExercise(
           });
         }
       }
-      return steps;
+      return { steps, truncated };
     }
     case 'emom': {
       const steps: RunnerStep[] = [];
@@ -230,7 +283,13 @@ function expandExercise(
       // reported the honest `totalMinutes * 60`; the two silently disagreed for any interval but 60s.
       // Clamped to at least one so an interval longer than the whole block still runs once rather
       // than making the exercise vanish into the "nothing to run" path.
-      const intervalCount = Math.max(1, Math.floor((exercise.config.totalMinutes * 60) / exercise.config.intervalSec));
+      // Floored *before* `bounded`, because the floor is not a clamp: an interval that doesn't divide
+      // the block evenly leaves a partial one that was never going to run, and reporting that as
+      // truncation put the "too long to run in full" screen in front of ordinary workouts —
+      // `interval_sec: 45, total_minutes: 10` is 13⅓ intervals and 13 is the honest answer.
+      const intervalCount = bounded(
+        Math.max(1, emomIntervalCount(exercise.config.intervalSec, exercise.config.totalMinutes)),
+      );
       for (let i = 0; i < intervalCount; i++) {
         steps.push({
           kind: 'interval',
@@ -247,54 +306,63 @@ function expandExercise(
           notes: exercise.notes,
         });
       }
-      return steps;
+      return { steps, truncated };
     }
     case 'amrap':
-      return [
-        {
-          kind: 'interval',
-          blockIndex,
-          memberKey,
-          exerciseId: exercise.id,
-          exerciseName: exercise.name,
-          variant: 'amrap',
-          targetSec: exercise.config.timeCapSec,
-          countUp: false,
-          setIndex: 1,
-          setTotal: 1,
-          notes: exercise.notes,
-        },
-      ];
+      return {
+        truncated,
+        steps: [
+          {
+            kind: 'interval',
+            blockIndex,
+            memberKey,
+            exerciseId: exercise.id,
+            exerciseName: exercise.name,
+            variant: 'amrap',
+            targetSec: exercise.config.timeCapSec,
+            countUp: false,
+            setIndex: 1,
+            setTotal: 1,
+            notes: exercise.notes,
+          },
+        ],
+      };
     case 'cardio': {
       const hasDuration = exercise.config.durationSec !== undefined;
-      return [
-        {
-          kind: 'interval',
-          blockIndex,
-          memberKey,
-          exerciseId: exercise.id,
-          exerciseName: exercise.name,
-          variant: 'cardio',
-          targetSec: exercise.config.durationSec ?? 0,
-          countUp: !hasDuration,
-          setIndex: 1,
-          setTotal: 1,
-          cardioDistanceMeters: exercise.config.distanceMeters,
-          notes: exercise.notes,
-        },
-      ];
+      return {
+        truncated,
+        steps: [
+          {
+            kind: 'interval',
+            blockIndex,
+            memberKey,
+            exerciseId: exercise.id,
+            exerciseName: exercise.name,
+            variant: 'cardio',
+            targetSec: exercise.config.durationSec ?? 0,
+            countUp: !hasDuration,
+            setIndex: 1,
+            setTotal: 1,
+            cardioDistanceMeters: exercise.config.distanceMeters,
+            notes: exercise.notes,
+          },
+        ],
+      };
     }
     case 'rest':
-      return [
-        {
-          kind: 'rest',
-          blockIndex,
-          memberKey,
-          exerciseId: exercise.id,
-          standalone: true,
-          seconds: configOverride?.durationSec ?? exercise.config.durationSec,
-        },
-      ];
+      return {
+        truncated,
+        steps: [
+          {
+            kind: 'rest',
+            blockIndex,
+            memberKey,
+            exerciseId: exercise.id,
+            standalone: true,
+            seconds: configOverride?.durationSec ?? exercise.config.durationSec,
+          },
+        ],
+      };
   }
 }
 
@@ -387,7 +455,10 @@ export function dropLastSetForMember(steps: RunnerStep[], memberKey: string): Ru
  * interleaving, same target fields, same notes.
  */
 export function buildStepsForExercise(exercise: Exercise, blockIndex: number, memberKey: string): RunnerStep[] {
-  return expandExercise(exercise, blockIndex, memberKey);
+  // The clamp flag is dropped here on purpose: a mid-session substitute is sized by the sets it
+  // *replaces* (see swapExerciseForMember), so the new exercise's own count is trimmed to fit anyway
+  // and "was it clamped" is not a question about the workout the user is running.
+  return expandExercise(exercise, blockIndex, memberKey).steps;
 }
 
 /**
@@ -434,15 +505,32 @@ export function swapExerciseForMember(
   return [...steps.slice(0, fromIndex), ...replacement, ...steps.slice(lastIndex + 1)];
 }
 
-/** Exported so callers (session.tsx) can check for a zero-step workout before ever starting a session. */
-export function buildSteps(workout: Workout, exercises: Exercise[]): RunnerStep[] {
+/**
+ * The whole workout, expanded, plus whether either ceiling cut it short.
+ *
+ * `buildSteps` below is the plain-array form that almost everything wants; the session screen takes
+ * this one, because it is the only caller that has to tell the user the workout will stop early.
+ */
+export function buildStepsWithLimits(workout: Workout, exercises: Exercise[]): StepBuildResult {
   const steps: RunnerStep[] = [];
+  let truncated = false;
 
   workout.blocks.forEach((block, blockIndex) => {
+    // Checked per block rather than per push, so a truncated workout is made of whole blocks. `blocks`
+    // has no upper bound in the schema, so this is reachable without a circuit at all.
+    if (steps.length >= MaxStepsPerWorkout) {
+      truncated = true;
+      return;
+    }
     if (block.kind === 'exercise') {
       const exercise = exercises.find((candidate) => candidate.id === block.exerciseId);
       if (!exercise) return;
-      steps.push(...expandExercise(exercise, blockIndex, `${blockIndex}`, block.configOverride));
+      // Appended one at a time rather than spread as arguments: `push(...arr)` passes every element as
+      // a separate argument and throws `RangeError` past the engine's argument limit, which turned a
+      // large set count into a crash before the session screen's first render instead of a long workout.
+      const expanded = expandExercise(exercise, blockIndex, `${blockIndex}`, block.configOverride);
+      if (expanded.truncated) truncated = true;
+      for (const step of expanded.steps) steps.push(step);
       return;
     }
 
@@ -466,17 +554,31 @@ export function buildSteps(workout: Workout, exercises: Exercise[]): RunnerStep[
     });
 
     for (let round = 0; round < block.rounds; round++) {
-      members.forEach(({ member, memberIndex, exercise }, i) => {
+      // Both loops check, and both matter: rounds are what a `hiit` member multiplies, and `exercises`
+      // has no upper bound either, so one round of a huge circuit is unbounded on its own. A `for`
+      // loop over the members rather than `forEach`, which cannot stop. Overshoot is one member visit,
+      // which `boundedCount` caps.
+      if (steps.length >= MaxStepsPerWorkout) {
+        truncated = true;
+        break;
+      }
+      for (let i = 0; i < members.length; i++) {
+        if (steps.length >= MaxStepsPerWorkout) {
+          truncated = true;
+          break;
+        }
+        const { member, memberIndex, exercise } = members[i];
         const memberKey = `${blockIndex}:${memberIndex}`;
         // Shared by the member's own steps and by the rest that follows it, which belongs to the work
         // it follows rather than to what comes next.
         const at = positionAt(round, i);
-        steps.push(
-          ...expandExercise(exercise, blockIndex, memberKey, member.configOverride, {
-            index: round + 1,
-            total: block.rounds,
-          }).map((step): RunnerStep => ({ ...step, circuit: at })),
-        );
+        // One at a time, for the same reason as the exercise block above.
+        const visit = expandExercise(exercise, blockIndex, memberKey, member.configOverride, {
+          index: round + 1,
+          total: block.rounds,
+        });
+        if (visit.truncated) truncated = true;
+        for (const step of visit.steps) steps.push({ ...step, circuit: at });
         const isLastMember = i === members.length - 1;
         if (!isLastMember && block.restBetweenExercisesSec) {
           steps.push({
@@ -489,7 +591,7 @@ export function buildSteps(workout: Workout, exercises: Exercise[]): RunnerStep[
             seconds: block.restBetweenExercisesSec,
           });
         }
-      });
+      }
       const isLastRound = round === block.rounds - 1;
       if (!isLastRound && block.restBetweenRoundsSec) {
         steps.push({
@@ -505,5 +607,10 @@ export function buildSteps(workout: Workout, exercises: Exercise[]): RunnerStep[
     }
   });
 
-  return steps;
+  return { steps, truncated };
+}
+
+/** Exported so callers (session.tsx) can check for a zero-step workout before ever starting a session. */
+export function buildSteps(workout: Workout, exercises: Exercise[]): RunnerStep[] {
+  return buildStepsWithLimits(workout, exercises).steps;
 }

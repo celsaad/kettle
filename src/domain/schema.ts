@@ -6,19 +6,76 @@
 import { z } from 'zod';
 
 const idSchema = z.string().min(1);
+
+/**
+ * Ceilings on every count the session runner materializes one step per unit of.
+ *
+ * Not authoring taste. `buildSteps` allocates a step object per set, per round and per EMOM interval
+ * before the session screen renders, so an unbounded count is a workout that cannot be started rather
+ * than a long one — and the library persists, so the failure survives a restart until the file is
+ * hand-edited back. `sets: 200000` passed `int().positive()` cleanly.
+ *
+ * The numbers sit far above anything a real workout expresses (500 sets at 30s each is over four
+ * hours) and exist only so a typo or a hostile import is refused at the gate with a readable message.
+ * Mirrored by `CONFIG_FIELDS`' `max` in `domain/exercise-form.ts`, which is the path that writes
+ * straight to the library file without passing through here.
+ */
+export const MaxSets = 500;
+export const MaxRounds = 500;
+export const MaxTotalMinutes = 1440;
+
+/**
+ * How many intervals `buildSteps` will actually build for an EMOM — the quantity `MaxRounds` bounds
+ * for this type, and the only correct way to ask for it.
+ *
+ * **Never write this division out again.** It lived in four places and three of them floored
+ * differently, which is one bug that surfaced three times: the schema refused a legal block over a
+ * rounding error in the thirteenth decimal, the runner reported an unevenly-dividing interval as a
+ * truncated workout and warned before every ordinary start, and the in-app form rejected a config
+ * `repairLibraryBounds` had itself written one launch earlier. The fourth copy was introduced by the
+ * commit that fixed the first three.
+ *
+ * The count is an integer because a partial trailing interval never runs — `interval_sec: 45` over
+ * ten minutes is thirteen intervals and a third of one that nobody does. The floor is the rule, not a
+ * defensive round, which is why every layer has to agree on it.
+ *
+ * Callers guard `intervalSec > 0` themselves; the schema does it with `positive()` before this is
+ * ever reached.
+ */
+export function emomIntervalCount(intervalSec: number, totalMinutes: number): number {
+  return Math.floor((totalMinutes * 60) / intervalSec);
+}
+
 const notesSchema = z.string().optional();
 
 const hiitConfigSchema = z.object({
   work_sec: z.number().positive(),
   rest_sec: z.number().nonnegative(),
-  rounds: z.number().int().positive(),
+  rounds: z.number().int().positive().max(MaxRounds),
 });
 
-const emomConfigSchema = z.object({
-  interval_sec: z.number().positive(),
-  total_minutes: z.number().positive(),
-  target_reps: z.number().int().positive().optional(),
-});
+/**
+ * EMOM is the one type whose step count is **derived** rather than written down: the runner builds
+ * `total_minutes * 60 / interval_sec` intervals, so bounding the two fields separately does not bound
+ * what they produce. `total_minutes: 60` with `interval_sec: 1` is 3600 intervals out of two values
+ * that are individually unremarkable, and `interval_sec: 0.001` is 3.6 million.
+ *
+ * So the refinement bounds the product, not the factors — and bounds the *floored* product, which is
+ * the integer `buildSteps` actually loops to. Comparing the raw quotient instead was both subtly
+ * wrong and float-fragile: 500 one-second intervals is `total_minutes: 8.333333333333334`, whose
+ * quotient round-trips to 500.00000000000006 and was refused for a rounding error in the thirteenth
+ * decimal place. Every legal interval count is a whole number; nothing else was ever the rule.
+ */
+const emomConfigSchema = z
+  .object({
+    interval_sec: z.number().positive(),
+    total_minutes: z.number().positive().max(MaxTotalMinutes),
+    target_reps: z.number().int().positive().optional(),
+  })
+  .refine((config) => emomIntervalCount(config.interval_sec, config.total_minutes) <= MaxRounds, {
+    message: `total_minutes / interval_sec must come to at most ${MaxRounds} intervals`,
+    path: ['interval_sec'],
+  });
 
 const amrapConfigSchema = z.object({
   time_cap_sec: z.number().positive(),
@@ -26,7 +83,7 @@ const amrapConfigSchema = z.object({
 
 const repsConfigSchema = z
   .object({
-    sets: z.number().int().positive(),
+    sets: z.number().int().positive().max(MaxSets),
     target_reps_min: z.number().int().positive(),
     target_reps_max: z.number().int().positive().optional(),
     target_weight: z.number().nonnegative().optional(),
@@ -48,7 +105,7 @@ const repsConfigSchema = z
  */
 const timedHoldConfigSchema = z
   .object({
-    sets: z.number().int().positive(),
+    sets: z.number().int().positive().max(MaxSets),
     hold_sec_min: z.number().positive().optional(),
     hold_sec_max: z.number().positive().optional(),
     rest_sec: z.number().nonnegative(),
@@ -123,7 +180,7 @@ export const rawWorkoutBlockSchema = z.discriminatedUnion('type', [
     // regardless of their own `sets`/`hold_sec`/etc. multi-set config — the circuit's `rounds` is
     // the sole repeat driver for a member appearing in a circuit.
     id: idSchema.optional(),
-    rounds: z.number().int().positive(),
+    rounds: z.number().int().positive().max(MaxRounds),
     rest_between_exercises_sec: z.number().nonnegative().optional(),
     rest_between_rounds_sec: z.number().nonnegative().optional(),
     exercises: z.array(circuitMemberSchema).min(2),

@@ -19,7 +19,7 @@ import { useSessionHistoryStore } from '@/state/session-history-store';
 // The step model and workout→steps expansion live in session-steps.ts so they can be tested without
 // this file's native imports. Re-exported here because they're part of the runner's public surface.
 export type { CircuitPosition, IntervalVariant, RunnerStep } from '@/hooks/session-steps';
-export { buildSteps } from '@/hooks/session-steps';
+export { buildSteps, buildStepsWithLimits } from '@/hooks/session-steps';
 
 import type { RunnerStep } from '@/hooks/session-steps';
 import {

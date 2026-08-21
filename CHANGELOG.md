@@ -43,6 +43,33 @@ training to. Vibration is separate and stays on your phone's own settings.
 
 ### Fixed
 
+- **A workout with an impossible number of sets no longer makes that workout unstartable.** A library
+  that asked for tens of thousands of sets — a stray digit in a hand-edited file, usually — was
+  accepted on import and then failed to open every time you tried to start it, and the file stuck
+  around, so it kept failing until you found and fixed the line yourself. Sets and rounds are now
+  capped at 500, and an EMOM block at 500 intervals — long ones stay long, but a block can't ask for
+  more intervals than a session can hold. A file over the line is refused on import, where the message
+  tells you which field it was.
+- **A half a set no longer costs you your library.** Typing `2.5` into Sets — or a fraction into
+  reps or rounds — used to save, and then Kettle couldn't read the file on the next launch and
+  started you over with the built-in library. The editors now say a whole number is needed, which is
+  what the format has always required. A rep range that runs backwards is caught the same way.
+- **A workout too long to run in full now says so before you start it**, and asks whether you want
+  to run it anyway. It would previously stop partway through and be written to your log as a finished
+  session, with nothing anywhere saying it had been cut short.
+- **A library Kettle can't read is never thrown away any more.** It used to be replaced by the
+  starter library on the next launch, with no copy kept — so one unreadable line cost you everything.
+  Now the file is repaired where it can be, and where it can't, it's set aside as
+  `exercises.invalid-<date>.yaml` next to your library so you can open it, fix it and import it back.
+- **A circuit can't be edited into a shape Kettle refuses to load.** A negative rest, or removing the
+  second-to-last exercise from a circuit, both used to save and then make the whole library
+  unreadable on the next launch.
+- **A circuit's rounds stop at 500, where the format stops.** The workout editor's stepper had no
+  ceiling, so it could write a workout Kettle then couldn't read on the next launch — and starting a
+  very long circuit could take the app down before the first screen of it appeared. Long workouts run
+  as they always did.
+- **An exercise recorded at a weight of 0 can be saved again.** The editors insisted on at least 1, so
+  an exercise written as bodyweight-with-no-load was stuck on a field you hadn't touched.
 - **EMOM minutes start at the rep count you prescribed.** They started at zero, so hitting the target
   meant tapping up to it every minute — and a minute you left alone recorded nothing at all.
 - **The chime for reaching a hold's target or an interval's halfway mark now sounds again if you go

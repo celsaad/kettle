@@ -82,6 +82,19 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
    * refusal reading as "the override didn't save and nobody said why".
    */
   const [error, setError] = useState<string | null>(null);
+  /**
+   * The config of the override being edited, captured when the panel opened.
+   *
+   * `overrides` is a prop, so an index into it is only valid until the parent re-renders — and
+   * `unrepresentable()` read `overrides[editingIndex].config` on every save. Deleting a row (or the
+   * program editor re-rendering with a shorter list) left that index past the end and threw
+   * `Cannot read properties of undefined` out of a press handler, which `program-editor.tsx`'s
+   * `ModalErrorBoundary` turns into the whole editor replaced by the fallback, unsaved draft included.
+   *
+   * Captured rather than guarded because the guard only stops the crash: a *shifted* index writes the
+   * edit onto the wrong override, just as quietly. Same shape as `seedWeightKg` above.
+   */
+  const [editingConfig, setEditingConfig] = useState<Record<string, number | string>>({});
 
   const seedFields = (exercise: Exercise) => {
     setFieldValues(configToStrings(exercise, unitSystem));
@@ -92,6 +105,7 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
     setStep('closed');
     setError(null);
     setEditingIndex(null);
+    setEditingConfig({});
     setTarget(null);
     setFieldValues({});
     setSeedWeightKg(undefined);
@@ -100,6 +114,7 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
   const startAdd = () => {
     setError(null);
     setEditingIndex(null);
+    setEditingConfig({});
     setTarget(null);
     setFieldValues({});
     setSeedWeightKg(undefined);
@@ -122,6 +137,8 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
   const startEdit = (index: number) => {
     setError(null);
     const override = overrides[index];
+    if (!override) return;
+    setEditingConfig(override.config);
     if (override.kind === 'exercise') {
       const base = library.exercises.find((candidate) => candidate.id === override.exerciseId);
       if (!base) return;
@@ -188,13 +205,12 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
    */
   const unrepresentable = (): Record<string, number | string> => {
     if (editingIndex === null || !target) return {};
-    const existing = overrides[editingIndex];
     const kept = overrideReport(
       target.kind === 'exercise' ? target.exercise : target.block,
-      existing.config,
+      editingConfig,
       target.kind,
     ).unknownKeys;
-    return Object.fromEntries(Object.entries(existing.config).filter(([key]) => kept.includes(key)));
+    return Object.fromEntries(Object.entries(editingConfig).filter(([key]) => kept.includes(key)));
   };
 
   const setField = (key: string, text: string) => {
@@ -278,13 +294,17 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
               override.kind === 'exercise'
                 ? library.exercises.some((exercise) => exercise.id === override.exerciseId)
                 : !!workout?.blocks.some((block) => block.kind === 'circuit' && block.id === override.blockId);
+            // Inert while the add/edit panel is open. The rows stay mounted above it, and both of
+            // their controls mutate the list `editingIndex` points into — so leaving them live is
+            // what made a stale index reachable at all, rather than only through the parent.
+            const listLocked = step !== 'closed';
             return (
               <View key={index} style={[styles.overrideRow, { borderColor: theme.border }]}>
                 <Pressable
-                  onPress={() => resolvable && startEdit(index)}
-                  disabled={!resolvable}
+                  onPress={() => resolvable && !listLocked && startEdit(index)}
+                  disabled={!resolvable || listLocked}
                   accessibilityRole="button"
-                  accessibilityState={{ disabled: !resolvable }}
+                  accessibilityState={{ disabled: !resolvable || listLocked }}
                   style={styles.overrideRowText}>
                   {lines.map((line, lineIndex) => (
                     <ThemedText key={lineIndex} type="small" themeColor="textSecondary">
@@ -294,9 +314,12 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
                 </Pressable>
                 <Pressable
                   onPress={() => removeOverride(index)}
+                  disabled={listLocked}
                   hitSlop={8}
                   accessibilityRole="button"
-                  accessibilityLabel={t('overrideEditor.removeAccessibility')}>
+                  accessibilityLabel={t('overrideEditor.removeAccessibility')}
+                  accessibilityState={{ disabled: listLocked }}
+                  style={listLocked && styles.disabled}>
                   <ThemedText themeColor="textSecondary">✕</ThemedText>
                 </Pressable>
               </View>

@@ -276,6 +276,8 @@ it('drops a stale error when the panel moves to another target', async () => {
   await fireEvent.press(screen.getByText('Save override'));
   expect(screen.getByText('Sets must be at least 1.')).toBeTruthy();
 
+  // Via Cancel, because the rows are inert while the panel is open — see the stale-index tests below.
+  await fireEvent.press(screen.getByText('Cancel'));
   await fireEvent.press(screen.getByText('Dips: sets → 3'));
 
   expect(screen.queryByText('Sets must be at least 1.')).toBeNull();
@@ -350,7 +352,7 @@ it('survives a structural key on a circuit override', async () => {
   const { rendered } = mount([{ kind: 'block', blockId: 'finisher', config: { exercises: 2 } }]);
   await rendered;
 
-  const row = screen.getByText('Circuit: exercises → 2 · not applied — there is no such setting to change');
+  const row = screen.getByText('Circuit (finisher): exercises → 2 · not applied — there is no such setting to change');
   // The row opens rather than taking the screen down with it.
   await fireEvent.press(row);
   expect(screen.getByText('Circuit (finisher)')).toBeTruthy();
@@ -436,5 +438,72 @@ describe('an override the form cannot fully represent', () => {
     await fireEvent.press(screen.getByText('Save override'));
 
     expect(onChange).toHaveBeenCalledWith([]);
+  });
+});
+
+/**
+ * **Stale index across an interaction that mutates the list.** The rows stay mounted above the open
+ * panel and `removeOverride` doesn't close it, so `editingIndex` can outlive the override it points
+ * at. `unrepresentable()` then dereferenced `overrides[editingIndex].config` and threw out of a press
+ * handler — `program-editor.tsx` wraps this in a `ModalErrorBoundary`, so the whole program editor is
+ * replaced by the fallback and the unsaved draft goes with it.
+ *
+ * Three of the last four review rounds found a stale-state crash in a press handler in this
+ * component. These pin the *class*, not the instance.
+ */
+describe('the list changing while the panel is open', () => {
+  const two: ProgramOverride[] = [
+    { kind: 'exercise', exerciseId: 'pull-ups', config: { sets: 5 } },
+    { kind: 'exercise', exerciseId: 'dips', config: { sets: 3 } },
+  ];
+
+  it('will not let a row be removed while one is being edited', async () => {
+    const { onChange, rendered } = mount(two);
+    await rendered;
+
+    await fireEvent.press(screen.getByText('Pull-ups: sets → 5'));
+    const remove = screen.getAllByLabelText('Remove override')[0];
+    expect(remove.props.accessibilityState?.disabled).toBe(true);
+
+    await fireEvent.press(remove);
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('will not let another row be opened while one is being edited', async () => {
+    const { rendered } = mount(two);
+    await rendered;
+
+    await fireEvent.press(screen.getByText('Pull-ups: sets → 5'));
+    expect(screen.getByText('Dips: sets → 3').parent?.props.accessibilityState?.disabled).toBe(true);
+  });
+
+  /**
+   * The crash itself, reached the way the parent can still reach it: `overrides` is a prop, so the
+   * program editor re-rendering with a shorter list leaves `editingIndex` pointing past the end. The
+   * guards above stop the *user* getting here; this stops the component from caring either way.
+   */
+  it('does not throw when the list shrinks underneath the open panel', async () => {
+    const { rerender } = await renderScreen(
+      <ProgramOverrideEditor library={library} workout={workout} overrides={two} onChange={jest.fn()} />,
+    );
+
+    await fireEvent.press(screen.getByText('Dips: sets → 3'));
+    await rerender(<ProgramOverrideEditor library={library} workout={workout} overrides={[]} onChange={jest.fn()} />);
+
+    // Threw `Cannot read properties of undefined (reading 'config')` out of the press handler, which
+    // program-editor.tsx's ModalErrorBoundary turns into the whole editor being replaced, draft gone.
+    await fireEvent.press(screen.getByText('Save override'));
+    expect(screen.queryByText('Save override')).toBeNull();
+  });
+
+  it('saves against the override it opened, not whatever now sits at that index', async () => {
+    const { onChange, rendered } = mount(two);
+    await rendered;
+
+    await fireEvent.press(screen.getByText('Dips: sets → 3'));
+    await fireEvent.changeText(fieldShowing('3'), '6');
+    await fireEvent.press(screen.getByText('Save override'));
+
+    expect(onChange).toHaveBeenCalledWith([two[0], { kind: 'exercise', exerciseId: 'dips', config: { sets: 6 } }]);
   });
 });

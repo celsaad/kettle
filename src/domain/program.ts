@@ -6,6 +6,23 @@ import type { Exercise, Library, Program, ProgramWeek, Workout } from '@/domain/
  * programs can have several entries sharing a week number). Falls back to a week-only match when
  * `day` is omitted, so single-session-per-week programs (no `day` anywhere) resolve exactly as before.
  */
+/**
+ * Whether `workout` actually runs `exerciseId`, directly or as a circuit member.
+ *
+ * What makes an exercise override *addressable* by a week: an override naming an exercise the week
+ * doesn't run resolves against the library, merges cleanly and changes nothing — so the program
+ * screen showed it as applied. Two taps away, because changing a week's workout in the editor keeps
+ * its existing overrides.
+ */
+export function workoutRunsExercise(workout: Workout | undefined, exerciseId: string): boolean {
+  if (!workout) return false;
+  return workout.blocks.some((block) =>
+    block.kind === 'exercise'
+      ? block.exerciseId === exerciseId
+      : block.members.some((member) => member.exerciseId === exerciseId),
+  );
+}
+
 export function findProgramWeek(program: Program, weekNumber: number, day?: string): ProgramWeek | undefined {
   if (day !== undefined) return program.weeks.find((week) => week.week === weekNumber && week.day === day);
   return program.weeks.find((week) => week.week === weekNumber);

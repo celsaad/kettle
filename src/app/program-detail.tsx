@@ -14,6 +14,7 @@ import { RowStartButton } from '@/components/row-start-button';
 import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import type { Library, ProgramOverride, ProgramWeek, Workout } from '@/domain/types';
+import { workoutRunsExercise } from '@/domain/program';
 import { overrideReport } from '@/domain/yaml-mapping';
 import { useTheme } from '@/hooks/use-theme';
 import { useLibraryStore } from '@/state/library-store';
@@ -33,13 +34,21 @@ export { ModalErrorBoundary as ErrorBoundary } from '@/components/error-fallback
  * like every other piece of their data.
  */
 export function overrideLines(override: ProgramOverride, library: Library, workout: Workout | undefined): string[] {
+  // Scoped to the week's own workout, not the library: the block branch has always resolved this way,
+  // and an exercise override naming something the week doesn't run merged cleanly and changed nothing
+  // — showing as applied, which is the failure this whole function exists to report.
   const target =
     override.kind === 'exercise'
-      ? library.exercises.find((candidate) => candidate.id === override.exerciseId)
+      ? workoutRunsExercise(workout, override.exerciseId)
+        ? library.exercises.find((candidate) => candidate.id === override.exerciseId)
+        : undefined
       : workout?.blocks.find((candidate) => candidate.kind === 'circuit' && candidate.id === override.blockId);
-  const label =
-    override.kind === 'exercise' ? (target ? (target as { name: string }).name : override.exerciseId) : 'Circuit';
-  const name = override.kind === 'block' && !target ? override.blockId : label;
+  const name =
+    override.kind === 'exercise'
+      ? ((target as { name: string } | undefined)?.name ?? override.exerciseId)
+      : target
+        ? translate('overrideEditor.circuitTitle', { id: override.blockId })
+        : override.blockId;
 
   const line = (key: string, value: number | string) => `${name}: ${key} → ${value}`;
   const entries = Object.entries(override.config);

@@ -2,12 +2,27 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
-import { buildExercise, CONFIG_FIELDS, configToStrings, fieldUnitLabel, type FieldDef } from '@/domain/exercise-form';
+import {
+  buildExercise,
+  CONFIG_FIELDS,
+  configToStrings,
+  fieldUnitLabel,
+  type FieldDef,
+  validateBlockConfig,
+  validateConfig,
+} from '@/domain/exercise-form';
 import { overrideLines } from '@/app/program-detail';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
-import { applyBlockOverride, applyExerciseOverride, diffBlockOverride, diffExerciseOverride } from '@/domain/yaml-mapping';
+import { MaxRounds } from '@/domain/schema';
+import {
+  diffBlockOverride,
+  diffExerciseOverride,
+  mergeBlockOverride,
+  mergeExerciseOverride,
+  overrideReport,
+} from '@/domain/yaml-mapping';
 import type { Exercise, Library, ProgramOverride, Workout, WorkoutBlock } from '@/domain/types';
 import { useTheme } from '@/hooks/use-theme';
 import { useUnitSystem } from '@/state/preferences-store';
@@ -59,6 +74,27 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
    * different number and invent an override nobody asked for (see UnitContext in exercise-form.ts).
    */
   const [seedWeightKg, setSeedWeightKg] = useState<number | undefined>(undefined);
+  /**
+   * The first problem with what's typed, or null. This was the one editor in the app that ran no
+   * validation at all — exercise-editor.tsx and new-exercise-form.tsx have both called
+   * `validateConfig` all along — so `sets: 0` was two taps away. Now that `applyExerciseOverride`
+   * refuses an invalid merge and silently keeps the base exercise, saying so here is what stops that
+   * refusal reading as "the override didn't save and nobody said why".
+   */
+  const [error, setError] = useState<string | null>(null);
+  /**
+   * The config of the override being edited, captured when the panel opened.
+   *
+   * `overrides` is a prop, so an index into it is only valid until the parent re-renders — and
+   * `unrepresentable()` read `overrides[editingIndex].config` on every save. Deleting a row (or the
+   * program editor re-rendering with a shorter list) left that index past the end and threw
+   * `Cannot read properties of undefined` out of a press handler, which `program-editor.tsx`'s
+   * `ModalErrorBoundary` turns into the whole editor replaced by the fallback, unsaved draft included.
+   *
+   * Captured rather than guarded because the guard only stops the crash: a *shifted* index writes the
+   * edit onto the wrong override, just as quietly. Same shape as `seedWeightKg` above.
+   */
+  const [editingConfig, setEditingConfig] = useState<Record<string, number | string>>({});
 
   const seedFields = (exercise: Exercise) => {
     setFieldValues(configToStrings(exercise, unitSystem));
@@ -67,14 +103,18 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
 
   const close = () => {
     setStep('closed');
+    setError(null);
     setEditingIndex(null);
+    setEditingConfig({});
     setTarget(null);
     setFieldValues({});
     setSeedWeightKg(undefined);
   };
 
   const startAdd = () => {
+    setError(null);
     setEditingIndex(null);
+    setEditingConfig({});
     setTarget(null);
     setFieldValues({});
     setSeedWeightKg(undefined);
@@ -82,6 +122,7 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
   };
 
   const chooseTarget = (next: Target) => {
+    setError(null);
     setTarget(next);
     if (next.kind === 'exercise') seedFields(next.exercise);
     else
@@ -94,19 +135,28 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
   };
 
   const startEdit = (index: number) => {
+    setError(null);
     const override = overrides[index];
+    if (!override) return;
+    setEditingConfig(override.config);
     if (override.kind === 'exercise') {
       const base = library.exercises.find((candidate) => candidate.id === override.exerciseId);
       if (!base) return;
-      const effective = applyExerciseOverride(base, override.config);
+      // Seeded from the *unchecked* merge. `applyExerciseOverride` returns the base untouched when it
+      // refuses a patch, and seeding from that was destructive: the fields showed the pre-override
+      // numbers, so confirming diffed base against base and wrote `config: {}` — erasing the user's
+      // patch and leaving an empty row. Showing what was authored is what lets a patch the schema now
+      // refuses be read, corrected and saved, which is the only way out of one for a file that
+      // imported cleanly before this rule existed.
       setTarget({ kind: 'exercise', exercise: base });
-      seedFields(effective);
+      seedFields(mergeExerciseOverride(base, override.config).asAuthored);
     } else {
       const block = workout?.blocks.find(
         (candidate): candidate is CircuitBlock => candidate.kind === 'circuit' && candidate.id === override.blockId,
       );
       if (!block) return;
-      const effective = applyBlockOverride(block, override.config) as CircuitBlock;
+      // Unchecked, for the same reason as the exercise branch above.
+      const effective = mergeBlockOverride(block, override.config).asAuthored as CircuitBlock;
       setTarget({ kind: 'block', block });
       setFieldValues({
         rounds: String(effective.rounds),
@@ -122,12 +172,61 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
     onChange(overrides.filter((_, i) => i !== index));
   };
 
-  const setField = (key: string, text: string) => setFieldValues((prev) => ({ ...prev, [key]: text }));
+  /**
+   * A circuit rest field, as edited — `undefined` where the block declares none and the seeded zero
+   * was never touched.
+   *
+   * The panel seeds an absent rest as "0" so the input isn't blank, and `diffBlockOverride` compares
+   * against `undefined` — so changing only `rounds` on a circuit with no rest also emitted
+   * `rest_between_exercises_sec: 0` and `rest_between_rounds_sec: 0`, inventing two patches the user
+   * never asked for. Same shape as `previousWeightKg` in exercise-form.ts, and the same reasoning:
+   * an untouched field must not be rewritten by the round trip through the form.
+   */
+  const editedRest = (key: string, base: number | undefined): number | undefined => {
+    const raw = fieldValues[key]?.trim() ?? '';
+    // A cleared field means "no rest here", which is `0` — the same thing the input shows when the
+    // block declares none. Returning `undefined` for it read as "unchanged" to `diffBlockOverride`,
+    // so clearing a rest the circuit *does* declare emitted no key at all and saved an empty override.
+    const value = raw ? Number(raw) : 0;
+    if (!Number.isFinite(value)) return base;
+    // The guard is only about the seed: the panel shows `?? 0`, so a zero on a block with no rest is
+    // the untouched seed rather than a change. On a block that declares one, zero is a real edit.
+    return value === 0 && base === undefined ? undefined : value;
+  };
+
+  /**
+   * The keys of the override being edited that the form has nowhere to put — a misspelling, or a
+   * circuit's structural keys.
+   *
+   * Carried through the save rather than dropped. `exerciseToDomain` discards what the type doesn't
+   * have, so an all-unknown override seeded the base values and diffed to `{}` — erasing the user's
+   * patch, down the path the "not applied" label now actively invites them onto. The editor must not
+   * destroy what it cannot display; the row's own ✕ is how you delete one deliberately.
+   */
+  const unrepresentable = (): Record<string, number | string> => {
+    if (editingIndex === null || !target) return {};
+    const kept = overrideReport(
+      target.kind === 'exercise' ? target.exercise : target.block,
+      editingConfig,
+      target.kind,
+    ).unknownKeys;
+    return Object.fromEntries(Object.entries(editingConfig).filter(([key]) => kept.includes(key)));
+  };
+
+  const setField = (key: string, text: string) => {
+    setError(null);
+    setFieldValues((prev) => ({ ...prev, [key]: text }));
+  };
 
   const confirm = () => {
     if (!target) return;
     let nextOverride: ProgramOverride;
     if (target.kind === 'exercise') {
+      const configError = validateConfig(target.exercise.type, fieldValues);
+      if (configError) {
+        setError(configError);
+        return;
+      }
       const edited = buildExercise(
         target.exercise.id,
         target.exercise.name,
@@ -139,23 +238,40 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
       nextOverride = {
         kind: 'exercise',
         exerciseId: target.exercise.id,
-        config: diffExerciseOverride(target.exercise, edited),
+        config: { ...unrepresentable(), ...diffExerciseOverride(target.exercise, edited) },
       };
     } else {
       const blockId = target.block.id;
       if (!blockId) return;
+      // Gated like the exercise branch. The rounds stepper can't reach a bad value, but both rest
+      // fields are free text, and a negative one used to be written to the program file and then
+      // silently dropped by `applyBlockOverride`'s re-parse — saved, displayed, and doing nothing.
+      const configError = validateBlockConfig(fieldValues);
+      if (configError) {
+        setError(configError);
+        return;
+      }
       const edited: CircuitBlock = {
         ...target.block,
         rounds: Number(fieldValues.rounds) || target.block.rounds,
-        restBetweenExercisesSec: Number(fieldValues.restBetweenExercisesSec) || 0,
-        restBetweenRoundsSec: Number(fieldValues.restBetweenRoundsSec) || 0,
+        restBetweenExercisesSec: editedRest('restBetweenExercisesSec', target.block.restBetweenExercisesSec),
+        restBetweenRoundsSec: editedRest('restBetweenRoundsSec', target.block.restBetweenRoundsSec),
       };
-      nextOverride = { kind: 'block', blockId, config: diffBlockOverride(target.block, edited) };
+      nextOverride = {
+        kind: 'block',
+        blockId,
+        config: { ...unrepresentable(), ...diffBlockOverride(target.block, edited) },
+      };
     }
+    // An override with no keys is not an override: it saves without complaint, renders as a blank
+    // unnamed row and changes nothing. Editing one down to nothing removes it; adding one adds nothing.
+    const empty = Object.keys(nextOverride.config).length === 0;
     onChange(
       editingIndex !== null
-        ? overrides.map((existing, i) => (i === editingIndex ? nextOverride : existing))
-        : [...overrides, nextOverride],
+        ? overrides.flatMap((existing, i) => (i === editingIndex ? (empty ? [] : [nextOverride]) : [existing]))
+        : empty
+          ? overrides
+          : [...overrides, nextOverride],
     );
     close();
   };
@@ -178,13 +294,17 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
               override.kind === 'exercise'
                 ? library.exercises.some((exercise) => exercise.id === override.exerciseId)
                 : !!workout?.blocks.some((block) => block.kind === 'circuit' && block.id === override.blockId);
+            // Inert while the add/edit panel is open. The rows stay mounted above it, and both of
+            // their controls mutate the list `editingIndex` points into — so leaving them live is
+            // what made a stale index reachable at all, rather than only through the parent.
+            const listLocked = step !== 'closed';
             return (
               <View key={index} style={[styles.overrideRow, { borderColor: theme.border }]}>
                 <Pressable
-                  onPress={() => resolvable && startEdit(index)}
-                  disabled={!resolvable}
+                  onPress={() => resolvable && !listLocked && startEdit(index)}
+                  disabled={!resolvable || listLocked}
                   accessibilityRole="button"
-                  accessibilityState={{ disabled: !resolvable }}
+                  accessibilityState={{ disabled: !resolvable || listLocked }}
                   style={styles.overrideRowText}>
                   {lines.map((line, lineIndex) => (
                     <ThemedText key={lineIndex} type="small" themeColor="textSecondary">
@@ -194,9 +314,12 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
                 </Pressable>
                 <Pressable
                   onPress={() => removeOverride(index)}
+                  disabled={listLocked}
                   hitSlop={8}
                   accessibilityRole="button"
-                  accessibilityLabel={t('overrideEditor.removeAccessibility')}>
+                  accessibilityLabel={t('overrideEditor.removeAccessibility')}
+                  accessibilityState={{ disabled: listLocked }}
+                  style={listLocked && styles.disabled}>
                   <ThemedText themeColor="textSecondary">✕</ThemedText>
                 </Pressable>
               </View>
@@ -286,7 +409,7 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
                     {fieldValues.rounds ?? '1'}
                   </ThemedText>
                   <Pressable
-                    onPress={() => setField('rounds', String((Number(fieldValues.rounds) || 1) + 1))}
+                    onPress={() => setField('rounds', String(Math.min(MaxRounds, (Number(fieldValues.rounds) || 1) + 1)))}
                     accessibilityRole="button"
                     accessibilityLabel={t('common.increase', { label: t('workoutEditor.rounds') })}
                     style={[styles.stepperButton, { borderColor: theme.border }]}>
@@ -343,6 +466,12 @@ export function ProgramOverrideEditor({ library, workout, overrides, onChange }:
                 />
               </View>
             ))
+          )}
+
+          {error && (
+            <ThemedText type="small" style={{ color: theme.accentText }}>
+              {error}
+            </ThemedText>
           )}
 
           <View style={styles.fieldsButtonRow}>

@@ -116,6 +116,9 @@
   "programs": {
     "title": "Programs",
     "helpLabel": "How to write a program",
+    "overrideIgnoredInvalid": "not applied — this value isn't allowed",
+    "overrideIgnoredUnknownKey": "not applied — there is no such setting to change",
+    "overrideIgnoredMissing": "not applied — nothing in this week matches",
     "noWeeks": "No weeks",
     "week": "Week {{n}}",
     "weeksRange": "Weeks {{first}}–{{last}}",

@@ -178,3 +178,332 @@ it('will not open an override whose target has gone', async () => {
   await fireEvent.press(screen.getByText('ghost: sets → 5'));
   expect(screen.queryByText('Save override')).toBeNull();
 });
+
+/**
+ * This was the one editor in the app that ran no validation at all, so `sets: 0` was two taps from
+ * the program file. It matters more now than it did: `applyExerciseOverride` re-validates the merged
+ * config and silently keeps the base exercise when it fails, so an unvalidated patch would save,
+ * display, and quietly do nothing on the week it claims to change.
+ */
+describe('config validation on confirm', () => {
+  it('refuses to emit an override the schema would reject, and says why', async () => {
+    const { onChange, rendered } = mount();
+    await rendered;
+
+    await fireEvent.press(screen.getByText('+ Add override'));
+    await fireEvent.press(screen.getByText('Pull-ups'));
+    await fireEvent.changeText(fieldShowing('4'), '0');
+    await fireEvent.press(screen.getByText('Add override'));
+
+    expect(onChange).not.toHaveBeenCalled();
+    expect(screen.getByText('Sets must be at least 1.')).toBeTruthy();
+  });
+
+  it('refuses a count past the ceiling too', async () => {
+    const { onChange, rendered } = mount();
+    await rendered;
+
+    await fireEvent.press(screen.getByText('+ Add override'));
+    await fireEvent.press(screen.getByText('Pull-ups'));
+    await fireEvent.changeText(fieldShowing('4'), '501');
+    await fireEvent.press(screen.getByText('Add override'));
+
+    expect(onChange).not.toHaveBeenCalled();
+    expect(screen.getByText('Sets can be at most 500.')).toBeTruthy();
+  });
+
+  it('clears the message once the field is edited again, and then saves', async () => {
+    const { onChange, rendered } = mount();
+    await rendered;
+
+    await fireEvent.press(screen.getByText('+ Add override'));
+    await fireEvent.press(screen.getByText('Pull-ups'));
+    await fireEvent.changeText(fieldShowing('4'), '0');
+    await fireEvent.press(screen.getByText('Add override'));
+    await fireEvent.changeText(fieldShowing('0'), '5');
+
+    expect(screen.queryByText('Sets must be at least 1.')).toBeNull();
+
+    await fireEvent.press(screen.getByText('Add override'));
+    expect(onChange).toHaveBeenCalledWith([{ kind: 'exercise', exerciseId: 'pull-ups', config: { sets: 5 } }]);
+  });
+});
+
+describe('the circuit branch is gated too', () => {
+  it('refuses a negative rest rather than saving one the merge will drop', async () => {
+    const { onChange, rendered } = mount();
+    await rendered;
+
+    await fireEvent.press(screen.getByText('+ Add override'));
+    await fireEvent.press(screen.getByText('finisher'));
+    await fireEvent.changeText(fieldShowing('15'), '-5');
+    await fireEvent.press(screen.getByText('Add override'));
+
+    expect(onChange).not.toHaveBeenCalled();
+    expect(screen.getByText('Rest/exercise (sec) must be at least 0.')).toBeTruthy();
+  });
+
+  it('still saves a circuit patch the schema accepts', async () => {
+    const { onChange, rendered } = mount();
+    await rendered;
+
+    await fireEvent.press(screen.getByText('+ Add override'));
+    await fireEvent.press(screen.getByText('finisher'));
+    await fireEvent.changeText(fieldShowing('15'), '0');
+    await fireEvent.press(screen.getByText('Add override'));
+
+    expect(onChange).toHaveBeenCalledWith([
+      { kind: 'block', blockId: 'finisher', config: { rest_between_exercises_sec: 0 } },
+    ]);
+  });
+});
+
+/**
+ * The overrides list stays mounted behind the edit panel, so a row tap can swap the target out from
+ * under a message that named the old one — leaving "Sets must be at least 1." above a circuit's
+ * fields, or above a different exercise entirely.
+ */
+it('drops a stale error when the panel moves to another target', async () => {
+  const overrides: ProgramOverride[] = [
+    { kind: 'exercise', exerciseId: 'pull-ups', config: { sets: 5 } },
+    { kind: 'exercise', exerciseId: 'dips', config: { sets: 3 } },
+  ];
+  const { rendered } = mount(overrides);
+  await rendered;
+
+  await fireEvent.press(screen.getByText('Pull-ups: sets → 5'));
+  await fireEvent.changeText(fieldShowing('5'), '0');
+  await fireEvent.press(screen.getByText('Save override'));
+  expect(screen.getByText('Sets must be at least 1.')).toBeTruthy();
+
+  // Via Cancel, because the rows are inert while the panel is open — see the stale-index tests below.
+  await fireEvent.press(screen.getByText('Cancel'));
+  await fireEvent.press(screen.getByText('Dips: sets → 3'));
+
+  expect(screen.queryByText('Sets must be at least 1.')).toBeNull();
+});
+
+/**
+ * An override the schema refuses is dropped at merge time, and the editor has to be the way *out* of
+ * one rather than the thing that destroys it.
+ *
+ * Reachable without doing anything wrong: `programOverrideSchema` types `config` as a free record, so
+ * a file written before the merge was validated still imports and lands here.
+ */
+describe('an override the merge now refuses', () => {
+  const refused: ProgramOverride[] = [{ kind: 'exercise', exerciseId: 'pull-ups', config: { sets: 0 } }];
+
+  it('is listed as not applied rather than as though it ran', async () => {
+    const { rendered } = mount(refused);
+    await rendered;
+
+    expect(screen.getByText('Pull-ups: sets → 0')).toBeTruthy();
+    expect(screen.getByText("not applied — this value isn't allowed")).toBeTruthy();
+  });
+
+  /**
+   * The destructive one. `applyExerciseOverride` returns the base untouched when it refuses, so
+   * seeding from it showed the *pre-override* numbers — and confirming then diffed base against base
+   * and emitted `config: {}`, erasing the patch and leaving an empty row.
+   */
+  it('opens showing what was authored, not the base it fell back to', async () => {
+    const { rendered } = mount(refused);
+    await rendered;
+
+    await fireEvent.press(screen.getByText('Pull-ups: sets → 0'));
+
+    // 0 is what the user wrote; 4 is the base this would have silently reverted to.
+    expect(screen.getByDisplayValue('0')).toBeTruthy();
+  });
+
+  it('can be corrected and saved, instead of being emptied', async () => {
+    const { onChange, rendered } = mount(refused);
+    await rendered;
+
+    await fireEvent.press(screen.getByText('Pull-ups: sets → 0'));
+    await fireEvent.changeText(screen.getByDisplayValue('0'), '6');
+    await fireEvent.press(screen.getByText('Save override'));
+
+    expect(onChange).toHaveBeenCalledWith([{ kind: 'exercise', exerciseId: 'pull-ups', config: { sets: 6 } }]);
+  });
+});
+
+/**
+ * Zod strips a key it doesn't recognise instead of refusing it, so a typo parses, changes nothing, and
+ * used to render exactly like a working override — the PR's own thesis leaking through the strip path
+ * rather than the reject path.
+ */
+it('marks a misspelled key as not applied, not as applied', async () => {
+  // A `reps` exercise's field is `target_reps_min`; `reps` is nothing.
+  const { rendered } = mount([{ kind: 'exercise', exerciseId: 'pull-ups', config: { reps: 12 } }]);
+  await rendered;
+
+  // The note sits on the key's own line — an unknown key is stripped on its own while the rest of
+  // the patch still runs, so marking the whole override would be wrong the moment one is mixed in.
+  expect(screen.getByText('Pull-ups: reps → 12 · not applied — there is no such setting to change')).toBeTruthy();
+});
+
+/**
+ * `config: { exercises: 2 }` is a legal patch shape under `programOverrideSchema`, and spreading it
+ * over the raw block replaced the member list with a number: `raw.exercises.map is not a function`,
+ * thrown inside a press handler where no error boundary catches it.
+ */
+it('survives a structural key on a circuit override', async () => {
+  const { rendered } = mount([{ kind: 'block', blockId: 'finisher', config: { exercises: 2 } }]);
+  await rendered;
+
+  const row = screen.getByText('Circuit (finisher): exercises → 2 · not applied — there is no such setting to change');
+  // The row opens rather than taking the screen down with it.
+  await fireEvent.press(row);
+  expect(screen.getByText('Circuit (finisher)')).toBeTruthy();
+});
+
+/**
+ * The panel seeds an absent rest as "0" so the input isn't blank, and `diffBlockOverride` compares
+ * against `undefined` — so changing only the rounds invented two rest patches nobody asked for.
+ */
+it('does not invent a rest override on a circuit that declares none', async () => {
+  const bare = {
+    kind: 'circuit' as const,
+    id: 'bare',
+    rounds: 3,
+    members: [{ exerciseId: 'pull-ups' }, { exerciseId: 'dips' }],
+  };
+  const bareWorkout = aWorkout({ id: 'bare-day', name: 'Bare day', blocks: [bare] });
+  const onChange = jest.fn();
+  await renderScreen(
+    <ProgramOverrideEditor
+      library={aLibrary({ exercises: [pullUps, dips], workouts: [bareWorkout] })}
+      workout={bareWorkout}
+      overrides={[]}
+      onChange={onChange}
+    />,
+  );
+
+  await fireEvent.press(screen.getByText('+ Add override'));
+  await fireEvent.press(screen.getByText('bare'));
+  await fireEvent.press(screen.getByText('+'));
+  await fireEvent.press(screen.getByText('Add override'));
+
+  expect(onChange).toHaveBeenCalledWith([{ kind: 'block', blockId: 'bare', config: { rounds: 4 } }]);
+});
+
+/**
+ * The seed/diff asymmetry, which has now produced a bug in three consecutive rounds: the form seeds a
+ * concrete value, `diff*Override` compares against the base's `undefined`, and "the form couldn't show
+ * it" is indistinguishable from "the user didn't change it".
+ *
+ * An override with no keys is the shared symptom — it saves without error, renders as a blank row, and
+ * does nothing.
+ */
+describe('an override the form cannot fully represent', () => {
+  it('clears a rest the circuit does declare, rather than saving an empty override', async () => {
+    const { onChange, rendered } = mount();
+    await rendered;
+
+    await fireEvent.press(screen.getByText('+ Add override'));
+    await fireEvent.press(screen.getByText('finisher'));
+    // The circuit declares 15s. Clearing the field means "no rest", which is `0` — not "unchanged".
+    await fireEvent.changeText(screen.getByDisplayValue('15'), '');
+    await fireEvent.press(screen.getByText('Add override'));
+
+    expect(onChange).toHaveBeenCalledWith([
+      { kind: 'block', blockId: 'finisher', config: { rest_between_exercises_sec: 0 } },
+    ]);
+  });
+
+  it('keeps a key the form cannot show instead of erasing it on save', async () => {
+    // `reps` is not a field of a `reps` exercise, so the form has nowhere to put it — and dropping it
+    // silently on save is the same destruction the invalidValue path was fixed for, down the path the
+    // "not applied" label now invites the user onto.
+    const typo: ProgramOverride[] = [{ kind: 'exercise', exerciseId: 'pull-ups', config: { reps: 12 } }];
+    const { onChange, rendered } = mount(typo);
+    await rendered;
+
+    await fireEvent.press(screen.getByText(/Pull-ups: reps → 12/));
+    await fireEvent.changeText(fieldShowing('4'), '5');
+    await fireEvent.press(screen.getByText('Save override'));
+
+    expect(onChange).toHaveBeenCalledWith([{ kind: 'exercise', exerciseId: 'pull-ups', config: { reps: 12, sets: 5 } }]);
+  });
+
+  it('removes an override that ends up with nothing in it rather than saving a blank row', async () => {
+    const typo: ProgramOverride[] = [{ kind: 'exercise', exerciseId: 'dips', config: { sets: 5 } }];
+    const { onChange, rendered } = mount(typo);
+    await rendered;
+
+    await fireEvent.press(screen.getByText('Dips: sets → 5'));
+    // Back to the base value, so there is no longer an override to store.
+    await fireEvent.changeText(fieldShowing('5'), '4');
+    await fireEvent.press(screen.getByText('Save override'));
+
+    expect(onChange).toHaveBeenCalledWith([]);
+  });
+});
+
+/**
+ * **Stale index across an interaction that mutates the list.** The rows stay mounted above the open
+ * panel and `removeOverride` doesn't close it, so `editingIndex` can outlive the override it points
+ * at. `unrepresentable()` then dereferenced `overrides[editingIndex].config` and threw out of a press
+ * handler — `program-editor.tsx` wraps this in a `ModalErrorBoundary`, so the whole program editor is
+ * replaced by the fallback and the unsaved draft goes with it.
+ *
+ * Three of the last four review rounds found a stale-state crash in a press handler in this
+ * component. These pin the *class*, not the instance.
+ */
+describe('the list changing while the panel is open', () => {
+  const two: ProgramOverride[] = [
+    { kind: 'exercise', exerciseId: 'pull-ups', config: { sets: 5 } },
+    { kind: 'exercise', exerciseId: 'dips', config: { sets: 3 } },
+  ];
+
+  it('will not let a row be removed while one is being edited', async () => {
+    const { onChange, rendered } = mount(two);
+    await rendered;
+
+    await fireEvent.press(screen.getByText('Pull-ups: sets → 5'));
+    const remove = screen.getAllByLabelText('Remove override')[0];
+    expect(remove.props.accessibilityState?.disabled).toBe(true);
+
+    await fireEvent.press(remove);
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('will not let another row be opened while one is being edited', async () => {
+    const { rendered } = mount(two);
+    await rendered;
+
+    await fireEvent.press(screen.getByText('Pull-ups: sets → 5'));
+    expect(screen.getByText('Dips: sets → 3').parent?.props.accessibilityState?.disabled).toBe(true);
+  });
+
+  /**
+   * The crash itself, reached the way the parent can still reach it: `overrides` is a prop, so the
+   * program editor re-rendering with a shorter list leaves `editingIndex` pointing past the end. The
+   * guards above stop the *user* getting here; this stops the component from caring either way.
+   */
+  it('does not throw when the list shrinks underneath the open panel', async () => {
+    const { rerender } = await renderScreen(
+      <ProgramOverrideEditor library={library} workout={workout} overrides={two} onChange={jest.fn()} />,
+    );
+
+    await fireEvent.press(screen.getByText('Dips: sets → 3'));
+    await rerender(<ProgramOverrideEditor library={library} workout={workout} overrides={[]} onChange={jest.fn()} />);
+
+    // Threw `Cannot read properties of undefined (reading 'config')` out of the press handler, which
+    // program-editor.tsx's ModalErrorBoundary turns into the whole editor being replaced, draft gone.
+    await fireEvent.press(screen.getByText('Save override'));
+    expect(screen.queryByText('Save override')).toBeNull();
+  });
+
+  it('saves against the override it opened, not whatever now sits at that index', async () => {
+    const { onChange, rendered } = mount(two);
+    await rendered;
+
+    await fireEvent.press(screen.getByText('Dips: sets → 3'));
+    await fireEvent.changeText(fieldShowing('3'), '6');
+    await fireEvent.press(screen.getByText('Save override'));
+
+    expect(onChange).toHaveBeenCalledWith([two[0], { kind: 'exercise', exerciseId: 'dips', config: { sets: 6 } }]);
+  });
+});

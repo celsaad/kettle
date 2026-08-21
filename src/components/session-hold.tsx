@@ -88,10 +88,10 @@ export function SessionHold({
   //
   // Those are guarded the same way session-interval.tsx's bar is: a 0 target makes this NaN before
   // the clock starts (0/0) and Infinity after it, and `width: "NaN%"` is an invalid style rather
-  // than a no-op. validateConfig keeps the in-app editor from writing a 0-second hold, but a program
-  // week's `hold_sec_min: 0` override reaches here unchecked from either direction — the override
-  // schema types `config` as a free record of numbers, and the in-app override editor doesn't run
-  // validateConfig either.
+  // than a no-op. Both paths that could produce one are gated now — `applyExerciseOverride`
+  // re-validates a merged override against the real schema, and the in-app override editor runs
+  // validateConfig — so this is defence in depth rather than the only check, and it stays: the cost
+  // of being wrong here is an invalid style string mid-workout.
   //
   // The bar spans the *top* of the range, not the bottom (§12.2, settled): a range hold scaled to its
   // minimum pegged at 100% the moment the minimum was reached and stayed there for the whole span the

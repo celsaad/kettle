@@ -103,24 +103,14 @@ export const CONFIG_FIELDS: Record<ExerciseType, FieldDef[]> = {
 };
 
 /**
- * Mirrors the zod config constraints in `domain/schema.ts` for the in-app forms, which write straight
- * to the library store and so never pass through the schema — imported YAML can't produce a 0-set
- * exercise, but before this the editor happily could, and a workout made of those resolved to zero
- * runnable steps (the "Nothing to run" case in session.tsx).
+ * The per-field half of both validators below: the checks a `FieldDef` can express on its own.
  *
- * Required fields default to a minimum of 1, matching the schema's `positive()`, and the set, round
- * and minute counts carry the same ceiling it does. The rest-length fields carry an explicit `min: 0`
- * because the schema allows a zero-length rest and rejecting that would be stricter than the format
- * itself. Returns the first problem found, or null if it's valid.
- *
- * The per-field loop can't see the schema's *cross-field* refinements, which is how the hold range
- * went unchecked on this path entirely: an editor could write `hold_sec_max` below `hold_sec_min`,
- * or without one at all, and the store took both — the same file would then be refused on import.
- * Every such rule is enforced after the loop, and there are three of them: EMOM's derived interval
- * count, the rep range and the hold range.
+ * Shared rather than written twice because the drift is the whole problem — this loop is the mirror
+ * of `schema.ts` for every path that writes to the library without parsing it, and a rule that
+ * exists in one copy and not the other is invisible until a user's file fails to load.
  */
-export function validateConfig(type: ExerciseType, values: Record<string, string>): string | null {
-  for (const field of CONFIG_FIELDS[type]) {
+function validateFields(fields: FieldDef[], values: Record<string, string>): string | null {
+  for (const field of fields) {
     const raw = values[field.key]?.trim() ?? '';
     const label = t(field.label);
     if (!raw) {
@@ -140,6 +130,29 @@ export function validateConfig(type: ExerciseType, values: Record<string, string
     // silence here cost the user their whole file, not their edit.
     if (field.integer && !Number.isInteger(parsed)) return t('exerciseForm.error.mustBeWhole', { label });
   }
+  return null;
+}
+
+/**
+ * Mirrors the zod config constraints in `domain/schema.ts` for the in-app forms, which write straight
+ * to the library store and so never pass through the schema — imported YAML can't produce a 0-set
+ * exercise, but before this the editor happily could, and a workout made of those resolved to zero
+ * runnable steps (the "Nothing to run" case in session.tsx).
+ *
+ * Required fields default to a minimum of 1, matching the schema's `positive()`, and the set, round
+ * and minute counts carry the same ceiling it does. The rest-length fields carry an explicit `min: 0`
+ * because the schema allows a zero-length rest and rejecting that would be stricter than the format
+ * itself. Returns the first problem found, or null if it's valid.
+ *
+ * The per-field loop can't see the schema's *cross-field* refinements, which is how the hold range
+ * went unchecked on this path entirely: an editor could write `hold_sec_max` below `hold_sec_min`,
+ * or without one at all, and the store took both — the same file would then be refused on import.
+ * Every such rule is enforced after the loop, and there are three of them: EMOM's derived interval
+ * count, the rep range and the hold range.
+ */
+export function validateConfig(type: ExerciseType, values: Record<string, string>): string | null {
+  const fieldError = validateFields(CONFIG_FIELDS[type], values);
+  if (fieldError) return fieldError;
 
   // EMOM's ceiling is on the *product*, so the per-field loop can't express it. Missing it here would
   // not cost a rejected import: this form writes straight to the library file, so a config the schema
@@ -171,6 +184,29 @@ export function validateConfig(type: ExerciseType, values: Record<string, string
   }
 
   return null;
+}
+
+/**
+ * The circuit-block equivalent, for the one form that edits a block's own params rather than an
+ * exercise's: the override editor's block branch.
+ *
+ * It needs its own field list because a circuit's config isn't an exercise's — and it needs one at
+ * all because that branch validated nothing, so a negative rest typed into either free-text field
+ * was written to the program file and then silently discarded by `applyBlockOverride`'s re-parse.
+ * Labels are the keys the panel itself renders — which already carry their unit, so no `unit` here:
+ * the message names the field exactly as the user sees it above the input.
+ */
+export const BLOCK_CONFIG_FIELDS: FieldDef[] = [
+  { key: 'rounds', label: 'exerciseForm.field.rounds', max: MaxRounds, integer: true },
+  // `optional`, because the schema has both `.optional()` — and because the panel seeds them from
+  // the block, clearing one is how a user says "no rest here". Marking them required turned that into
+  // a blocked save, where it had always read as 0.
+  { key: 'restBetweenExercisesSec', label: 'overrideEditor.restPerExercise', min: 0, optional: true },
+  { key: 'restBetweenRoundsSec', label: 'overrideEditor.restPerRound', min: 0, optional: true },
+];
+
+export function validateBlockConfig(values: Record<string, string>): string | null {
+  return validateFields(BLOCK_CONFIG_FIELDS, values);
 }
 
 /** Config → the string map a form holds. Weight is converted to the user's unit; nothing else is. */

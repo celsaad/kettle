@@ -454,11 +454,123 @@ function clampEmomIntervals(doc: unknown): boolean {
  * keys as the base exercise) on top of the exercise's base library definition, producing the
  * effective exercise for that week. Round-trips through the raw shape so the override keys line up
  * with what's hand-written in the yaml.
+ *
+ * **The merged result is re-validated, and that is what the round-trip is for.** A week's overrides
+ * are typed `record(string, number | string)` — deliberately raw, so a patch reads in the same
+ * snake_case as the exercise it patches. What was missing is that the *result* met no validator at
+ * all: every constraint the schema puts on a base exercise (positive, integer, non-negative, the
+ * bounds above, the hold-range refinements) was simply absent on this path, so `sets: 200000`,
+ * `rest_sec: -5` and `sets: "abc"` all reached the runner having passed nothing stronger than "is a
+ * number or a string". The raw-patch asymmetry stays; the missing gate goes behind it.
+ *
+ * Falling back to the un-overridden exercise rather than throwing: this resolves during render, often
+ * on the home screen, and the base exercise is both runnable and exactly what the library says. A week
+ * that loses its patch is a smaller loss than a program that can't be opened.
  */
 export function applyExerciseOverride(exercise: Exercise, config: Record<string, number | string>): Exercise {
+  return mergeExerciseOverride(exercise, config).effective;
+}
+
+/**
+ * What actually happened to an override, at the granularity each part of it happens at.
+ *
+ * `refused` is whole-patch by nature: the merge is re-parsed as a unit, and a cross-field rule like
+ * "hold_sec_max needs hold_sec_min" can only fail for the config together. When it fails, *nothing*
+ * reaches the runner.
+ *
+ * `unknownKeys` is per key, and reporting it per *override* got the thesis of this whole change
+ * backwards. Zod strips keys it doesn't know rather than refusing them, so `{ rounds: 2, exercisez: 2 }`
+ * applies the rounds and silently drops the typo — and a whole-override "not applied" told the user a
+ * change wasn't happening while it happened. Per key, or it says the wrong thing in the one case that
+ * mixes them.
+ */
+export type OverrideReport = { refused: boolean; unknownKeys: string[] };
+
+/**
+ * One override merge, in the forms its callers need — so there is exactly one implementation of
+ * "merge a patch onto a target" per kind, rather than a gated function and an ungated lookalike
+ * sitting next to each other for a caller to pick the wrong one out of.
+ *
+ * `asAuthored` is the ungated merge and is **for editing only**: it is what the override editor seeds
+ * its fields from, because a patch the schema now refuses still has to be readable and correctable.
+ * Nothing that reaches the runner may use it. Keeping it as a field of this result rather than as its
+ * own export is the point — you have to name it to get it.
+ */
+export type OverrideMerge<T> = { effective: T; asAuthored: T; report: OverrideReport };
+
+/**
+ * The keys a **block** override may target: a circuit's own repeat and rest params, exactly as the
+ * authoring reference describes them.
+ *
+ * Spelled out rather than inferred from the raw block, because that object also carries `type`, `id`
+ * and `exercises` — and a patch is a free record of numbers and strings, so `config: { exercises: 2 }`
+ * imports cleanly. Spreading that over the raw block replaced the member list with a number and threw
+ * `raw.exercises.map is not a function` out of a press handler, where no error boundary catches it.
+ * An allowlist makes the structural keys unreachable instead of dangerous.
+ */
+const BLOCK_OVERRIDE_KEYS = ['rounds', 'rest_between_exercises_sec', 'rest_between_rounds_sec'] as const;
+
+/** The subset of `config` whose keys `known` actually has, and the names of the ones left out. */
+function splitByKnownKeys(
+  config: Record<string, number | string>,
+  known: readonly string[],
+): { patch: Record<string, number | string>; unknownKeys: string[] } {
+  const patch: Record<string, number | string> = {};
+  const unknownKeys: string[] = [];
+  for (const [key, value] of Object.entries(config)) {
+    if (known.includes(key)) patch[key] = value;
+    else unknownKeys.push(key);
+  }
+  return { patch, unknownKeys };
+}
+
+export function mergeExerciseOverride(exercise: Exercise, config: Record<string, number | string>): OverrideMerge<Exercise> {
   const raw = exerciseToRaw(exercise);
-  const mergedConfig = { ...raw.config, ...config } as typeof raw.config;
-  return exerciseToDomain({ ...raw, config: mergedConfig } as RawExercise);
+  // Derived from the exercise itself rather than listed: `exerciseToRaw` emits every key of the type,
+  // undefined ones included, so this is an honest test of "is this a field this type has".
+  const { patch, unknownKeys } = splitByKnownKeys(config, Object.keys(raw.config));
+  const asAuthored = exerciseToDomain({ ...raw, config: { ...raw.config, ...config } } as RawExercise);
+
+  const parsed = rawExerciseSchema.safeParse({ ...raw, config: { ...raw.config, ...patch } });
+  if (!parsed.success) return { effective: exercise, asAuthored, report: { refused: true, unknownKeys } };
+  return { effective: exerciseToDomain(parsed.data), asAuthored, report: { refused: false, unknownKeys } };
+}
+
+export function mergeBlockOverride(
+  block: WorkoutBlock,
+  config: Record<string, number | string>,
+): OverrideMerge<WorkoutBlock> {
+  // A plain `exercise` block has no config of its own — those are addressed with an exercise override.
+  if (block.kind !== 'circuit') {
+    return { effective: block, asAuthored: block, report: { refused: false, unknownKeys: Object.keys(config) } };
+  }
+  const raw = workoutBlockToRaw(block);
+  const { patch, unknownKeys } = splitByKnownKeys(config, BLOCK_OVERRIDE_KEYS);
+  const asAuthored = workoutBlockToDomain({ ...raw, ...patch } as RawWorkoutBlock);
+
+  const parsed = rawWorkoutBlockSchema.safeParse({ ...raw, ...patch });
+  if (!parsed.success) return { effective: block, asAuthored, report: { refused: true, unknownKeys } };
+  return { effective: workoutBlockToDomain(parsed.data), asAuthored, report: { refused: false, unknownKeys } };
+}
+
+/**
+ * Why an override will or won't reach the runner — the same question the two `apply*Override`
+ * functions answer by falling back, asked without having to compare two objects to find out.
+ *
+ * **This is the other half of the silent fallback, not a nicety.** Dropping a patch and still
+ * rendering it is the app stating something it isn't doing, and it lands hardest on files that were
+ * fine yesterday: `programOverrideSchema` types `config` as a free record, so a bare
+ * `hold_sec_max` — which used to work, because the runner read `holdSecMax ?? holdSecMin` — still
+ * imports cleanly and is now refused at merge. Those weeks have to say so rather than lie.
+ */
+export function overrideReport(
+  target: Exercise | WorkoutBlock,
+  config: Record<string, number | string>,
+  kind: 'exercise' | 'block',
+): OverrideReport {
+  return kind === 'exercise'
+    ? mergeExerciseOverride(target as Exercise, config).report
+    : mergeBlockOverride(target as WorkoutBlock, config).report;
 }
 
 /**
@@ -467,10 +579,7 @@ export function applyExerciseOverride(exercise: Exercise, config: Record<string,
  * applyExerciseOverride instead, since their only "config" is the underlying exercise's.
  */
 export function applyBlockOverride(block: WorkoutBlock, config: Record<string, number | string>): WorkoutBlock {
-  if (block.kind !== 'circuit') return block;
-  const raw = workoutBlockToRaw(block);
-  const merged = { ...raw, ...config } as typeof raw;
-  return workoutBlockToDomain(merged);
+  return mergeBlockOverride(block, config).effective;
 }
 
 /**

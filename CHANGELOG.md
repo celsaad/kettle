@@ -50,6 +50,14 @@ training to. Vibration is separate and stays on your phone's own settings.
   capped at 500, and an EMOM block at 500 intervals — long ones stay long, but a block can't ask for
   more intervals than a session can hold. A file over the line is refused on import, where the message
   tells you which field it was.
+- **A program week's overrides are checked against the same rules.** One that asks for something the
+  format doesn't allow is ignored for that week — the exercise runs as your library has it, rather
+  than breaking the workout — and the program screen now marks it as not applied instead of listing
+  it as though it were. A misspelled setting name is called out the same way, rather than sitting in
+  the list looking like it does something.
+- **The override editor tells you when a number won't do.** Setting a program week to 0 sets, a rep
+  range that runs backwards, or a negative rest on a circuit used to save quietly and then do nothing
+  on the week it claimed to change; each now says so and keeps the panel open.
 - **A half a set no longer costs you your library.** Typing `2.5` into Sets — or a fraction into
   reps or rounds — used to save, and then Kettle couldn't read the file on the next launch and
   started you over with the built-in library. The editors now say a whole number is needed, which is

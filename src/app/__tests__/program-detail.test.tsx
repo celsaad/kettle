@@ -6,7 +6,7 @@ import { changeLanguage } from 'i18next';
 import ProgramDetailScreen from '@/app/program-detail';
 import { useLibraryStore } from '@/state/library-store';
 import { router, setSearchParams } from '@/test-support/expo-router';
-import { aLibrary, aWorkout } from '@/test-support/library';
+import { aLibrary, anExercise, aProgram, aWorkout } from '@/test-support/library';
 import { renderScreen } from '@/test-support/render';
 
 /**
@@ -81,4 +81,147 @@ it('is translated', async () => {
   expect(screen.getByLabelText('Começar Semana 1 · Day 1')).toBeTruthy();
   // Day labels and notes are user data and stay in the language they were written in.
   expect(screen.getByText('Walk, nothing heavy.')).toBeTruthy();
+});
+
+/**
+ * `unknownKey` is a per-key condition, and reporting it per-override inverted this PR's own thesis:
+ * the screen said a change wasn't happening while it happened.
+ */
+describe('an override where only some keys are unknown', () => {
+  it('marks only the key that does nothing', async () => {
+    useLibraryStore.setState({
+      library: aLibrary({
+        exercises: [anExercise({ id: 'pull-ups', name: 'Pull-ups' })],
+        workouts: [
+          aWorkout({
+            id: 'w',
+            name: 'W',
+            blocks: [
+              {
+                kind: 'circuit',
+                id: 'finisher',
+                rounds: 3,
+                members: [{ exerciseId: 'pull-ups' }, { exerciseId: 'pull-ups' }],
+              },
+            ],
+          }),
+        ],
+        programs: [
+          aProgram({
+            id: 'p',
+            name: 'P',
+            weeks: [
+              {
+                week: 1,
+                workoutId: 'w',
+                overrides: [{ kind: 'block', blockId: 'finisher', config: { rounds: 2, exercisez: 2 } }],
+              },
+            ],
+          }),
+        ],
+      }),
+      status: 'ready',
+    });
+    setSearchParams({ programId: 'p' });
+    await renderScreen(<ProgramDetailScreen />);
+
+    // `rounds: 2` genuinely reaches the runner, so it must not carry a "not applied" note.
+    expect(screen.getByText('Circuit (finisher): rounds → 2')).toBeTruthy();
+    expect(screen.getByText(/exercisez → 2.*there is no such setting/)).toBeTruthy();
+  });
+});
+
+/**
+ * An exercise override was resolved against the whole library rather than against the week's own
+ * workout, so one naming an exercise the week doesn't run merged cleanly, changed nothing, and
+ * rendered as applied — the failure this function exists to report, from the one direction it wasn't
+ * checking. The block branch has always scoped to the workout.
+ *
+ * Two taps away: changing a week's workout in the editor keeps the overrides it already had.
+ */
+it('marks an exercise override the week does not run as not applied', async () => {
+  const pullUps = anExercise({ id: 'pull-ups', name: 'Pull-ups' });
+  const dips = anExercise({ id: 'dips', name: 'Dips' });
+  useLibraryStore.setState({
+    library: aLibrary({
+      exercises: [pullUps, dips],
+      // The week runs pull-ups; the override names dips, which is in the library but not in the week.
+      workouts: [aWorkout({ id: 'w', name: 'W', blocks: [{ kind: 'exercise', exerciseId: 'pull-ups' }] })],
+      programs: [
+        aProgram({
+          id: 'p',
+          name: 'P',
+          weeks: [{ week: 1, workoutId: 'w', overrides: [{ kind: 'exercise', exerciseId: 'dips', config: { sets: 5 } }] }],
+        }),
+      ],
+    }),
+    status: 'ready',
+  });
+  setSearchParams({ programId: 'p' });
+  await renderScreen(<ProgramDetailScreen />);
+
+  expect(screen.getByText('not applied — nothing in this week matches')).toBeTruthy();
+});
+
+it('still names an exercise the week does run', async () => {
+  const pullUps = anExercise({ id: 'pull-ups', name: 'Pull-ups' });
+  useLibraryStore.setState({
+    library: aLibrary({
+      exercises: [pullUps],
+      workouts: [aWorkout({ id: 'w', name: 'W', blocks: [{ kind: 'exercise', exerciseId: 'pull-ups' }] })],
+      programs: [
+        aProgram({
+          id: 'p',
+          name: 'P',
+          weeks: [
+            { week: 1, workoutId: 'w', overrides: [{ kind: 'exercise', exerciseId: 'pull-ups', config: { sets: 5 } }] },
+          ],
+        }),
+      ],
+    }),
+    status: 'ready',
+  });
+  setSearchParams({ programId: 'p' });
+  await renderScreen(<ProgramDetailScreen />);
+
+  expect(screen.getByText('Pull-ups: sets → 5')).toBeTruthy();
+  expect(screen.queryByText(/not applied/)).toBeNull();
+});
+
+// Driven in pt: an English assertion cannot tell `t('overrideEditor.circuitTitle')` from the literal
+// 'Circuit' it replaced, which is how that string sat hardcoded on a line of otherwise-translated ones.
+it('translates the circuit label', async () => {
+  await changeLanguage('pt');
+  const pullUps = anExercise({ id: 'pull-ups', name: 'Pull-ups' });
+  useLibraryStore.setState({
+    library: aLibrary({
+      exercises: [pullUps],
+      workouts: [
+        aWorkout({
+          id: 'w',
+          name: 'W',
+          blocks: [
+            {
+              kind: 'circuit',
+              id: 'finisher',
+              rounds: 3,
+              members: [{ exerciseId: 'pull-ups' }, { exerciseId: 'pull-ups' }],
+            },
+          ],
+        }),
+      ],
+      programs: [
+        aProgram({
+          id: 'p',
+          name: 'P',
+          weeks: [{ week: 1, workoutId: 'w', overrides: [{ kind: 'block', blockId: 'finisher', config: { rounds: 2 } }] }],
+        }),
+      ],
+    }),
+    status: 'ready',
+  });
+  setSearchParams({ programId: 'p' });
+  await renderScreen(<ProgramDetailScreen />);
+
+  expect(screen.getByText(/Circuito \(finisher\): rounds → 2/)).toBeTruthy();
 });

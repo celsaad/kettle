@@ -6,6 +6,7 @@ import ImportScreen from '@/app/import';
 import type { Exercise, Library } from '@/domain/types';
 import { serializeLibraryYaml } from '@/domain/yaml-mapping';
 import { useLibraryStore } from '@/state/library-store';
+import { contentPacks } from '@/storage/content-packs';
 import { saveLibrary } from '@/storage/library-file';
 import { router } from '@/test-support/expo-router';
 import { aLibrary, anExercise, aProgram, aWorkout } from '@/test-support/library';
@@ -599,5 +600,76 @@ describe('after a successful merge', () => {
     // English takes the plural. Precisely what i18next's `count` handles and a `=== 1` ternary
     // would get wrong in one of the two shipped languages.
     expect(screen.getByText('1 item novo · 0 atualizado')).toBeTruthy();
+  });
+});
+
+/**
+ * The bundled packs. What matters here isn't the content — `content-packs.test.ts` holds that — but
+ * that the row on this screen goes through the same preview, the same merge and the same refusals a
+ * hand-written file does, and that a pack lands in the language the user is reading.
+ */
+describe('the bundled starter packs', () => {
+  const steadyStrength = contentPacks.find((pack) => pack.id === 'steady-strength');
+  if (!steadyStrength) throw new Error('the steady-strength pack has been renamed; this suite names it deliberately');
+
+  it('lists every pack with what it would add', async () => {
+    await renderScreen(<ImportScreen />);
+
+    expect(screen.getByText('Steady & Strong')).toBeTruthy();
+    expect(screen.getByText('Barbell Gym')).toBeTruthy();
+    expect(screen.getByText('Kettlebell Basics')).toBeTruthy();
+    // Three separately-pluralised parts: nine and one, in one line, is what a single `count` would
+    // get wrong.
+    expect(screen.getByText('9 exercises · 3 workouts · 1 program')).toBeTruthy();
+  });
+
+  it('previews a pack rather than merging it on the tap', async () => {
+    await renderScreen(<ImportScreen />);
+    await fireEvent.press(screen.getByText('Steady & Strong'));
+
+    expect(screen.getByText('Merge & import')).toBeTruthy();
+    // Nothing is written until the second tap — the pack row is a pick, not a commit.
+    expect(savedLibrary).not.toHaveBeenCalled();
+  });
+
+  it('adds a pack without touching anything already in the library', async () => {
+    await renderScreen(<ImportScreen />);
+    await fireEvent.press(screen.getByText('Steady & Strong'));
+    await fireEvent.press(screen.getByText('Merge & import'));
+
+    // The whole safety promise of the id prefixes, checked where the user would see it break: the
+    // existing `pull-ups` is untouched, and every landed id is the pack's own.
+    expect(screen.getByText('13 new items · 0 updated')).toBeTruthy();
+    const merged = useLibraryStore.getState().library;
+    expect(merged?.exercises.find((exercise) => exercise.id === 'pull-ups')?.name).toBe('Pull-ups');
+    expect(merged?.exercises.some((exercise) => exercise.id === 'ss-sit-to-stand')).toBe(true);
+  });
+
+  it('merges the pack in the language being read, and freezes it there', async () => {
+    // Driven in pt on purpose: the pack row is UI and follows the language, but what it *writes* is
+    // user data from the moment it lands. An English-locale assertion could not tell the two apart.
+    await changeLanguage('pt');
+    await renderScreen(<ImportScreen />);
+    await fireEvent.press(screen.getByText('Firme e Forte'));
+    await fireEvent.press(screen.getByText('Mesclar e importar'));
+
+    const merged = useLibraryStore.getState().library;
+    expect(merged?.exercises.find((exercise) => exercise.id === 'ss-sit-to-stand')?.name).toBe('Levantar da Cadeira');
+
+    // Back to English, and the merged content stays Portuguese — it is the user's data now, and
+    // renaming it on a language change is exactly what the never-translate-user-data rule forbids.
+    await changeLanguage('en');
+    expect(useLibraryStore.getState().library?.exercises.find((e) => e.id === 'ss-sit-to-stand')?.name).toBe(
+      'Levantar da Cadeira',
+    );
+  });
+
+  it('refuses a pack the same way it refuses a file when the library has not loaded', async () => {
+    useLibraryStore.setState({ library: null, status: 'loading' });
+    await renderScreen(<ImportScreen />);
+    await fireEvent.press(screen.getByText('Steady & Strong'));
+
+    expect(screen.getByText(t('import.libraryNotLoaded'))).toBeTruthy();
+    expect(savedLibrary).not.toHaveBeenCalled();
   });
 });

@@ -559,6 +559,44 @@ decision assembled across several commits. Open work belongs in the sections at 
     device language comes back in the new one. Accepted rather than overlooked: the content is being
     regenerated from scratch anyway, and the alternative is reseeding into a language the user is no
     longer reading.
+- ✅ **New shipped content goes in a bundled pack, not in the seed — the seed cannot reach an install
+  that already exists.** `loadLibrary` writes the seed on the one launch that finds no
+  `exercises.yaml`, so everything added to `seed-library.ts` is visible only to people who have not
+  installed the app yet. That is the whole argument, and it is structural rather than a preference:
+  the population most likely to want more content is precisely the one the seed cannot serve. The
+  second argument is the entry above — the seed is also the web build's entire library and the reseed
+  target for a corrupt file, so every exercise added to it enlarges what a recovery hands back.
+
+  So `storage/content-packs.ts` holds curated libraries the app ships **without seeding**, listed on
+  the import screen and merged in on a tap. Three today: a low-impact one (chair and wall support,
+  nothing on the floor), a barbell one, and a kettlebell one. Four rules any new pack has to respect:
+
+  - **Every id carries the pack's prefix**, declared on the pack as `idPrefix` rather than inferred
+    from the content — inferring it would make the test agree with a typo. `mergeLibraries` replaces
+    whole objects by id, so an unprefixed `squat` silently overwrites one somebody has been logging
+    against for months. This is the same promise `site/examples/*.yaml` makes, and
+    `content-packs.test.ts` holds it in both directions: prefixed, and colliding with nothing in the
+    seed or in another pack.
+  - **A pack ships its own rest exercise.** Referencing the seed's `rest` looks like sensible reuse
+    and is a defect: a merge validates references against the *merged* library, so the pack would be
+    refused outright for anyone who had deleted or renamed it.
+  - **The pack goes through the ordinary import path**, not a shortcut. `reviewLibrary` is the single
+    entry point and a YAML file is parsed into it — so there is no second path that could accept
+    something the file path would refuse, and a pack gets the same preview, diff and confirmation.
+  - **Strings are picked at merge time and then frozen**, exactly as the seed's are, and for the same
+    reason: what lands is the user's data from that instant. The pack's *row on the import screen* is
+    the opposite case and does live in `en.json`/`pt.json`/`ja.json` under `import.packs.<id>` — that
+    text is never written anywhere, so it is free to follow the UI language.
+
+  The table shape and `localizeLibrary` moved to `storage/library-translation.ts` when the second body
+  of shipped content appeared. Shared rather than copied, because the field a second implementation
+  would get wrong is `restDay`: "translatable" versus "structural" there is the difference between a
+  day off and a training day.
+
+  **What was rejected:** growing the seed (reaches nobody who has the app, and enlarges the reseed);
+  and fetching packs from the site over the network, which is the obvious way to ship content without
+  an app update and is refused by the zero-data-collected declaration — see the tip-jar entry. Packs
+  are in the bundle, so a pack costs an app update and costs nothing at runtime.
 - ✅ **The app authors format, never training intent — it owns nothing the user could call theirs.**
   Settled while scoping the AI-authoring work, where the open question was whether shipping a prompt
   template would make Kettle the owner of the advice that template produces. It doesn't, provided the

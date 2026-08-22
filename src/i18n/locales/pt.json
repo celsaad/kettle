@@ -364,6 +364,29 @@
     "pasteToggle": "Colar YAML",
     "pasteToggleDetail": "De um assistente ou de qualquer editor de texto",
     "pastePlaceholder": "Cole aqui o exercises.yaml completo",
+    "packs": {
+      "title": "Pacotes iniciais",
+      "detail": "Vêm com o app. Todos os ids têm prefixo, então nada do que você já tem é substituído.",
+      "sourceDetail": "Pacote inicial que vem com o app",
+      "exerciseCount_one": "{{count}} exercício",
+      "exerciseCount_other": "{{count}} exercícios",
+      "workoutCount_one": "{{count}} treino",
+      "workoutCount_other": "{{count}} treinos",
+      "programCount_one": "{{count}} programa",
+      "programCount_other": "{{count}} programas",
+      "steady-strength": {
+        "name": "Firme e Forte",
+        "detail": "Cadeira e parede como apoio, nada no chão. Três sessões por semana durante quatro semanas."
+      },
+      "barbell-gym": {
+        "name": "Academia com Barra",
+        "detail": "Seis exercícios em dois dias alternados: agachamento, supino, terra, desenvolvimento, remada e barra fixa."
+      },
+      "kettlebell-basics": {
+        "name": "Kettlebell Essencial",
+        "detail": "Um único kettlebell — swings, agachamentos goblet, cleans e caminhadas, em quatro semanas."
+      }
+    },
     "reviewPaste": "Revisar texto colado",
     "pastedTitle": "YAML colado",
     "pastedLines_one": "{{count}} linha colada",
@@ -514,7 +537,29 @@
     "burpees": "Burpee: descer até o chão e saltar com os braços acima da cabeça.",
     "emom-pushups": "Flexões no relógio: um cronômetro acima de uma flexão.",
     "amrap-12-bodyweight": "Rounds repetidos contra o relógio: uma seta em círculo ao redor de uma figura agachada.",
-    "easy-cardio": "Cardio leve: uma figura correndo ao lado de um coração."
+    "easy-cardio": "Cardio leve: uma figura correndo ao lado de um coração.",
+    "ss-sit-to-stand": "Levantar da cadeira: erguendo-se de uma cadeira, quadris pouco acima do assento.",
+    "ss-wall-pushup": "Flexão na parede: em pé à distância de um braço da parede, corpo em linha reta.",
+    "ss-heel-raises": "Elevação de calcanhares: na ponta dos pés, uma das mãos em um apoio.",
+    "ss-seated-march": "Marcha sentada: sentado com o tronco ereto e um joelho elevado.",
+    "ss-standing-balance": "Equilíbrio em pé: apoiado em uma perna, braços abertos, o outro pé fora do chão.",
+    "ss-band-row": "Remada com elástico: em pé, puxando um elástico em direção às costelas.",
+    "ss-hip-hinge": "Flexão de quadril: inclinando o tronco à frente com as mãos no encosto de uma cadeira.",
+    "ss-walk": "Caminhada: uma figura ereta em meio a uma passada.",
+    "gym-back-squat": "Agachamento com barra: no fundo do agachamento, com a barra apoiada nos ombros.",
+    "gym-bench-press": "Supino reto: deitado em um banco, empurrando a barra para cima.",
+    "gym-deadlift": "Levantamento terra: quadril flexionado, com a barra na altura das canelas.",
+    "gym-overhead-press": "Desenvolvimento militar: em pé, empurrando a barra até a extensão acima da cabeça.",
+    "gym-barbell-row": "Remada curvada: tronco inclinado, puxando a barra em direção ao corpo.",
+    "gym-pullups": "Barra fixa: pendurado na barra, puxando para cima com os pés fora do chão.",
+    "gym-cooldown": "Volta à calma: movimento leve em ritmo constante.",
+    "kb-swing": "Swing com kettlebell: quadril flexionado, com o kettlebell à frente na altura do peito.",
+    "kb-goblet-squat": "Agachamento goblet: no fundo do agachamento, com o kettlebell de cabeça para baixo junto ao peito.",
+    "kb-clean-press": "Clean e desenvolvimento: um kettlebell estendido acima da cabeça e o outro braço solto.",
+    "kb-single-leg-deadlift": "Levantamento terra unilateral: equilibrado em uma perna, a outra estendida para trás, kettlebell pendurado.",
+    "kb-row": "Remada com kettlebell: tronco inclinado, cotovelo para cima e para trás, o kettlebell pendurado abaixo.",
+    "kb-halo": "Halo: um kettlebell descrevendo um círculo ao redor da cabeça.",
+    "kb-carry": "Caminhada em rack: caminhando com um kettlebell junto ao peito."
   },
   "exerciseEditor": {
     "newTitle": "Novo exercício",

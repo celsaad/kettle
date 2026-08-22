@@ -1,4 +1,6 @@
-import type { Exercise, Library, Program } from '@/domain/types';
+import type { Library } from '@/domain/types';
+import type { LibraryTranslation } from '@/storage/library-translation';
+import { libraryWeekKey, localizeLibrary, translationFor } from '@/storage/library-translation';
 
 /**
  * Per-language strings for the seed library, applied over the single English structural definition in
@@ -6,7 +8,7 @@ import type { Exercise, Library, Program } from '@/domain/types';
  *
  * **Why a string table rather than one `Library` literal per language:** structure is what makes the
  * seed correct — ids wire blocks to exercises, weeks resolve sparsely, overrides repeat per week — and
- * a second literal would fork all of it to change 51 strings. Here a content edit changes structure
+ * a second literal would fork all of it to change the strings. Here a content edit changes structure
  * once, and `seed-library.test.ts` fails the language that wasn't updated with it.
  *
  * **Why not `en.json`/`pt.json`:** the seed is written to `exercises.yaml` and becomes the user's own
@@ -17,29 +19,15 @@ import type { Exercise, Library, Program } from '@/domain/types';
  * The content bar is the seed's own (see the decision log): `notes` describe the app's progression
  * model and nothing else — no form cues, no injury or diet advice — so a translation stays a
  * translation.
+ *
+ * The table *shape* and the code that applies it live in `library-translation.ts`, shared with the
+ * bundled content packs — one implementation, so the seed and the packs cannot come to disagree about
+ * which fields a translation may touch.
  */
-export type SeedTranslation = {
-  /**
-   * Day labels are a closed set shared by every seeded program, so they map by their English label
-   * rather than being repeated on every week entry. A replacement is pure display text and can say
-   * anything — weeks run in the order `seed-library.ts` writes them, not in label order, so a
-   * translation cannot reorder anyone's week.
-   */
-  days: Record<string, string>;
-  exercises: Record<string, { name: string; notes?: string }>;
-  /** Workouts have no translatable text beyond their name, so the value is the name itself. */
-  workouts: Record<string, string>;
-  programs: Record<string, { name: string; weekNotes?: Record<string, string> }>;
-};
+export type SeedTranslation = LibraryTranslation;
 
-/**
- * Program weeks are the one thing that can't be keyed by id: `ProgramWeek` has none, and a week is
- * addressed by its `(week, day)` pair — the same pair the schema requires to be unique within a
- * program. Keyed on the **English** day label, since that's what the structural definition holds.
- */
-export function seedWeekKey(week: number, day: string | undefined): string {
-  return `${week}|${day ?? ''}`;
-}
+/** The seed's own name for the shared week key, so call sites keep reading as being about the seed. */
+export const seedWeekKey = libraryWeekKey;
 
 const pt: SeedTranslation = {
   days: {
@@ -251,46 +239,11 @@ const ja: SeedTranslation = {
 /** Keyed by language, not region, exactly as the locale bundles are: `pt` serves pt-BR and pt-PT. */
 export const seedTranslations: Record<string, SeedTranslation> = { pt, ja };
 
-function localizeExercise(exercise: Exercise, strings: SeedTranslation): Exercise {
-  const text = strings.exercises[exercise.id];
-  if (!text) return exercise;
-  // `notes` falls back rather than being dropped: a half-finished table should degrade to English on
-  // the strings it's missing, not silently delete the seed's coaching model. The parity test is what
-  // stops that from shipping; this is what keeps it harmless if it does.
-  return { ...exercise, name: text.name, notes: text.notes ?? exercise.notes };
-}
-
-function localizeProgram(program: Program, strings: SeedTranslation): Program {
-  const text = strings.programs[program.id];
-  if (!text) return program;
-  return {
-    ...program,
-    name: text.name,
-    weeks: program.weeks.map((week) => ({
-      ...week,
-      day: week.day === undefined ? undefined : (strings.days[week.day] ?? week.day),
-      notes: text.weekNotes?.[seedWeekKey(week.week, week.day)] ?? week.notes,
-    })),
-  };
-}
-
 /**
  * The seed library with `language`'s strings applied, or unchanged English for a language we ship no
- * table for. `language` is a tag like `pt-BR`, narrowed to its base subtag here so callers can hand
- * over whatever i18next is holding.
- *
- * Only `name`, `notes` and `day` are touched. Everything else — ids, types, configs, block structure,
- * week layout, overrides — is language-agnostic by construction, which is the whole reason this is a
- * string table and not a second library.
+ * table for. `language` is a tag like `pt-BR`, narrowed to its base subtag by `translationFor`, so
+ * callers can hand over whatever i18next is holding.
  */
 export function localizeSeed(library: Library, language: string | undefined): Library {
-  const strings = seedTranslations[(language ?? '').split('-')[0]];
-  if (!strings) return library;
-
-  return {
-    ...library,
-    exercises: library.exercises.map((exercise) => localizeExercise(exercise, strings)),
-    workouts: library.workouts.map((workout) => ({ ...workout, name: strings.workouts[workout.id] ?? workout.name })),
-    programs: library.programs.map((program) => localizeProgram(program, strings)),
-  };
+  return localizeLibrary(library, translationFor(seedTranslations, language));
 }

@@ -207,9 +207,10 @@ wanting states and assignees, it wants GitHub issues instead.
   rest notification's hardcoded English — went with the timed-hold auto-end, which needed its own
   notification copy and wasn't going to add a second hardcoded string beside the first.)
 
-- **Images on exercises — the half that is still open.** The bundled set shipped: every *seeded*
-  exercise now carries a line drawing keyed by its id, described in both locale bundles and rendered
-  in the exercise editor. [`exercise-images-plan.md`](exercise-images-plan.md) has the reasoning.
+- **Images on exercises — the half that is still open.** The bundled set shipped: every exercise the
+  app itself ships — seeded, or in one of the bundled content packs — now carries a line drawing keyed
+  by its id, described in every locale bundle and rendered in the exercise editor.
+  [`exercise-images-plan.md`](exercise-images-plan.md) has the reasoning.
 
   What that deliberately does not reach is the case that actually needs a picture: an exercise from an
   imported program, or one an assistant generated. The bundled art is first-run polish on the starter

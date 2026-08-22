@@ -5,7 +5,9 @@ import { changeLanguage } from 'i18next';
 
 import { EXERCISE_ART, ExerciseArt, NO_ART } from '@/components/exercise-art';
 import en from '@/i18n/locales/en.json';
+import ja from '@/i18n/locales/ja.json';
 import pt from '@/i18n/locales/pt.json';
+import { contentPacks } from '@/storage/content-packs';
 import { seedLibrary } from '@/storage/seed-library';
 import { renderScreen } from '@/test-support/render';
 
@@ -16,12 +18,19 @@ import { renderScreen } from '@/test-support/render';
  * languages, and that an id with no drawing degrades to nothing rather than to a crash.
  */
 
-describe('coverage of the seed', () => {
-  it('draws every seeded exercise, or says out loud that it does not', () => {
-    // The failure this pins is silent by nature: a new seeded exercise simply renders without art,
+/**
+ * Everything the app itself ships as content — the seed a first launch lands on, and the packs the
+ * import screen offers. Both are ours, both render in the same lists, and an exercise with no drawing
+ * beside neighbours that have one is the same defect whichever library it came out of.
+ */
+const shippedExercises = [...seedLibrary.exercises, ...contentPacks.flatMap((pack) => pack.library.exercises)];
+
+describe('coverage of the shipped content', () => {
+  it('draws every shipped exercise, or says out loud that it does not', () => {
+    // The failure this pins is silent by nature: a new shipped exercise simply renders without art,
     // which looks like a deliberate omission from every angle except this one. Landing on NO_ART is
     // then a decision someone made, rather than a step someone forgot.
-    const undrawn = seedLibrary.exercises
+    const undrawn = shippedExercises
       .map((exercise) => exercise.id)
       .filter((id) => !(id in EXERCISE_ART) && !NO_ART.includes(id));
 
@@ -31,24 +40,37 @@ describe('coverage of the seed', () => {
   it('keeps NO_ART honest', () => {
     // An id here that no longer exists, or that has since been drawn, would quietly buy the test
     // above a pass it hasn't earned.
-    const seeded = new Set(seedLibrary.exercises.map((exercise) => exercise.id));
-    expect(NO_ART.filter((id) => !seeded.has(id) || id in EXERCISE_ART)).toEqual([]);
+    const shipped = new Set(shippedExercises.map((exercise) => exercise.id));
+    expect(NO_ART.filter((id) => !shipped.has(id) || id in EXERCISE_ART)).toEqual([]);
+  });
+
+  it('draws nothing for an id nothing ships', () => {
+    // The other direction, and the one a rename breaks: a drawing keyed to an id that no longer
+    // exists is dead weight nobody would notice, since a map lookup that misses renders nothing.
+    const shipped = new Set(shippedExercises.map((exercise) => exercise.id));
+    expect(Object.keys(EXERCISE_ART).filter((id) => !shipped.has(id))).toEqual([]);
   });
 });
 
 describe('descriptions', () => {
   const ids = Object.keys(EXERCISE_ART);
+  // Every shipped bundle, not just the two the app started with: a drawing that announces itself in
+  // English to a Japanese reader is the same defect as one that announces itself in English to a
+  // Portuguese one, and adding a language is the moment that stops being hypothetical.
+  const bundles = Object.entries({ en, pt, ja });
 
-  it.each(ids)('describes %s in both bundles', (id) => {
+  it.each(ids)('describes %s in every bundle', (id) => {
     // Nothing fails when a key is missing from one bundle — i18next's fallbackLng renders it in
     // English and the screen looks fine — so parity is only ever caught here.
-    expect(typeof (en.exerciseArt as Record<string, string>)[id]).toBe('string');
-    expect(typeof (pt.exerciseArt as Record<string, string>)[id]).toBe('string');
+    for (const [language, bundle] of bundles) {
+      expect([language, typeof (bundle.exerciseArt as Record<string, string>)[id]]).toEqual([language, 'string']);
+    }
   });
 
   it('adds no description for a drawing that does not exist', () => {
-    expect(Object.keys(en.exerciseArt).filter((id) => !(id in EXERCISE_ART))).toEqual([]);
-    expect(Object.keys(pt.exerciseArt).filter((id) => !(id in EXERCISE_ART))).toEqual([]);
+    for (const [language, bundle] of bundles) {
+      expect([language, Object.keys(bundle.exerciseArt).filter((id) => !(id in EXERCISE_ART))]).toEqual([language, []]);
+    }
   });
 });
 

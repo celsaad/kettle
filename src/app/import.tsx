@@ -7,6 +7,7 @@ import { AccessibilityInfo, ActivityIndicator, Pressable, ScrollView, StyleSheet
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ListHeaderRule, ListRow, ListRowSeparator } from '@/components/list-row';
 import { ModalHeader } from '@/components/modal-header';
 import { ThemedText } from '@/components/themed-text';
 import { buildAssistantBrief } from '@/domain/assistant-brief';
@@ -21,6 +22,8 @@ import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useLibraryStore } from '@/state/library-store';
 import { useUnitSystem } from '@/state/preferences-store';
+import type { ContentPack } from '@/storage/content-packs';
+import { contentPackCounts, contentPackLibrary, contentPacks } from '@/storage/content-packs';
 
 export { ModalErrorBoundary as ErrorBoundary } from '@/components/error-fallback';
 
@@ -142,7 +145,7 @@ function errorMessage(t: TFunction, error: ParseError | MergeError): string {
 
 export default function ImportScreen() {
   const theme = useTheme();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const currentLibrary = useLibraryStore((state) => state.library);
   const replaceLibrary = useLibraryStore((state) => state.replaceLibrary);
   // The diff prints a target weight, and a weight is never formatted without going through the
@@ -219,7 +222,26 @@ export default function ImportScreen() {
   };
 
   /**
-   * The only path from raw YAML to a confirmed preview. Both input sources land here, so a paste is
+   * The only path from a parsed library to a confirmed preview. Every source lands here, so a pack is
+   * merged, validated and previewed by exactly the code a hand-written file goes through — which is
+   * the point of shipping packs as libraries rather than as a special case: there is no second import
+   * path that could accept something this one would refuse.
+   */
+  const reviewLibrary = (library: Library, source: Source) => {
+    if (!currentLibrary) {
+      refuse(t('import.libraryNotLoaded'));
+      return;
+    }
+    const merge = mergeLibraries(currentLibrary, library);
+    if (!merge.ok) {
+      refuseContent(merge.error);
+      return;
+    }
+    setReady({ picked: source, library: merge.library, summary: merge.summary });
+  };
+
+  /**
+   * The only path from raw YAML to a confirmed preview. Both text sources land here, so a paste is
    * refused for the same reasons and in the same words as a file — the two differ in where the text
    * came from and in nothing else.
    */
@@ -229,16 +251,44 @@ export default function ImportScreen() {
       refuseContent(parsed.error);
       return;
     }
-    if (!currentLibrary) {
-      refuse(t('import.libraryNotLoaded'));
-      return;
-    }
-    const merge = mergeLibraries(currentLibrary, parsed.data);
-    if (!merge.ok) {
-      refuseContent(merge.error);
-      return;
-    }
-    setReady({ picked: source, library: merge.library, summary: merge.summary });
+    reviewLibrary(parsed.data, source);
+  };
+
+  /**
+   * A bundled pack, previewed like anything else.
+   *
+   * The language is read here and frozen into the preview, rather than at render: what a merge writes
+   * becomes the user's own data the moment it lands, and re-picking it on a later language change is
+   * the exact rename the never-translate-user-data rule exists to prevent. The pack's *row* is the
+   * opposite case and does follow the UI language — it is never written anywhere.
+   *
+   * No `busy` and no failure of its own: the content is in the bundle, already type-checked, and the
+   * only thing that can refuse it is the merge.
+   */
+  const reviewPack = (pack: ContentPack) => {
+    setError(null);
+    setReady(null);
+    reviewLibrary(contentPackLibrary(pack, i18n.language), {
+      title: t(`import.packs.${pack.id}.name`),
+      detail: t('import.packs.sourceDetail'),
+    });
+  };
+
+  /**
+   * "9 exercises · 3 workouts · 1 program", counted off the pack's own structure.
+   *
+   * Three separately-pluralised parts rather than one sentence with three placeholders, because
+   * i18next's `count` pluralises the whole string against a single number — a pack with one program
+   * and nine exercises has no single number to pluralise against, and English is not the language
+   * this would go wrong in.
+   */
+  const packCountLine = (pack: ContentPack) => {
+    const counts = contentPackCounts(pack);
+    return [
+      t('import.packs.exerciseCount', { count: counts.exercises }),
+      t('import.packs.workoutCount', { count: counts.workouts }),
+      t('import.packs.programCount', { count: counts.programs }),
+    ].join(' · ');
   };
 
   const pickFile = async () => {
@@ -481,7 +531,43 @@ export default function ImportScreen() {
             )}
 
             {/*
-              Sits under both input sources rather than beside them, because it isn't one: it's what
+              A list of peers, so rows rather than the two dashed pick boxes above: those are two
+              *actions* on the same screen, these are three interchangeable things to choose between.
+              The heading rule is what gives the list a top edge — without a fill on the rows, the
+              first name would otherwise read as one more line of the section's own caption.
+            */}
+            <View style={styles.packsHeader}>
+              <ThemedText type="heading">{t('import.packs.title')}</ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">
+                {t('import.packs.detail')}
+              </ThemedText>
+            </View>
+            <ListHeaderRule />
+            {contentPacks.map((pack, index) => (
+              <View key={pack.id}>
+                {index > 0 && <ListRowSeparator />}
+                <Pressable
+                  onPress={() => reviewPack(pack)}
+                  // No `accessibilityLabel`: the two lines inside name it, and a duplicate would drift
+                  // from the counts it quotes. Voice Control matches the visible words either way.
+                  accessibilityRole="button">
+                  <ListRow>
+                    <View style={styles.fileText}>
+                      <ThemedText type="heading">{t(`import.packs.${pack.id}.name`)}</ThemedText>
+                      <ThemedText type="small" themeColor="textSecondary">
+                        {t(`import.packs.${pack.id}.detail`)}
+                      </ThemedText>
+                      <ThemedText type="small" themeColor="textSecondary">
+                        {packCountLine(pack)}
+                      </ThemedText>
+                    </View>
+                  </ListRow>
+                </Pressable>
+              </View>
+            ))}
+
+            {/*
+              Sits under every input source rather than beside them, because it isn't one: it's what
               you send *before* there's any YAML to bring in. Only rendered with a library loaded —
               the brief's whole point is the ids in it, and offering it empty would hand an assistant
               a confident list of nothing.
@@ -775,6 +861,12 @@ const styles = StyleSheet.create({
   },
   fileText: {
     flex: 1,
+    gap: 2,
+  },
+  // Only the gap above: `ListHeaderRule` carries the space below it, so that the first row sits the
+  // same distance from the line as every other row does from its separator.
+  packsHeader: {
+    marginTop: Spacing.three,
     gap: 2,
   },
   fileName: {},

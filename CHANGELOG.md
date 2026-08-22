@@ -82,6 +82,12 @@ training to. Vibration is separate and stays on your phone's own settings.
   meant tapping up to it every minute — and a minute you left alone recorded nothing at all.
 - **The chime for reaching a hold's target or an interval's halfway mark now sounds again if you go
   back and redo that step**, instead of staying silent the second time through.
+- **Going back more than one step and redoing it no longer logs the set twice.** Tapping Prev once
+  and redoing has always been safe; going back two or more — past a rest, say — left the set you had
+  already logged in place, so redoing it added a second one and the exercise finished with more sets
+  than it has. Finishing the session from a step you had stepped back onto did the same. A set is now
+  recorded once however you get back to it, and correcting one rewrites what is there. An interval
+  exercise redone this way used to gain a whole extra entry, sometimes an empty one.
 - **Buttons and text fields grow to fit their label.** "Adicionar bloco" was clipped in the workout
   editor in Portuguese; the same fixed heights would have cut off any long translation, and any label
   at a large accessibility text size.

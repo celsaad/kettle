@@ -134,9 +134,15 @@ const pt: SeedTranslation = {
 
 const ja: SeedTranslation = {
   /**
-   * `1日目` rather than `月曜日`, and the reason is `nextWeekAfter`: it orders a multi-day week by
-   * `day.localeCompare`, so weekday names would run the week in dictionary order. A numbered label
-   * sorts the way it reads, which is what `seed-library.test.ts` walks the whole program to prove.
+   * `1日目` rather than `月曜日`, and **not for ordering.** `sortedProgramWeeks` breaks no ties at
+   * all — it sorts on week number and leans on a stable sort to leave a week in the order
+   * `seed-library.ts` writes it — so no label can reorder anybody's week, and weekday names are
+   * refused here for a plainer reason: a numbered label reads in the order it runs, while
+   * `月曜日`…`日曜日` only does for a reader whose week starts where the program's does.
+   *
+   * (This used to cite a `day.localeCompare` tiebreak, which was real, ordered a calendar week
+   * *Friday → Monday → Saturday*, broke past `Day 9`, and was removed. See `next-up.ts`: adding one
+   * back would reintroduce the bug, so nothing here should be read as asking for one.)
    */
   days: {
     'Day 1': '1日目',

@@ -111,9 +111,10 @@ describe.each(contentPacks.map((pack) => [pack.id, pack] as const))('the %s pack
         });
 
         it('walks its weeks in training order', () => {
-          // `nextWeekAfter` orders a multi-day week by `day.localeCompare`, so a translation that
-          // reached for weekday names would run the week in dictionary order. Walking the whole
-          // program is what proves the labels sort the way they read, per language.
+          // Rotation order is the order the weeks are *written* — `sortedProgramWeeks` sorts on week
+          // number with no tiebreak and leans on a stable sort for the rest. So this proves the pack
+          // is written in the order it should run, and, running per language, that applying a
+          // translation leaves that order alone. Day labels are display text; nothing sorts on them.
           const visited: string[] = [];
           const sessions: Session[] = [];
           for (let step = 0; step < program.weeks.length; step += 1) {

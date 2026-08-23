@@ -1,4 +1,4 @@
-import { fireEvent, screen } from '@testing-library/react-native';
+import { act, fireEvent, screen } from '@testing-library/react-native';
 import { changeLanguage, t } from 'i18next';
 import { AccessibilityInfo } from 'react-native';
 
@@ -658,7 +658,14 @@ describe('the bundled starter packs', () => {
 
     // Back to English, and the merged content stays Portuguese — it is the user's data now, and
     // renaming it on a language change is exactly what the never-translate-user-data rule forbids.
-    await changeLanguage('en');
+    //
+    // Wrapped, because the screen is still mounted: `changeLanguage` re-renders every subscriber
+    // through i18next rather than through an interaction RNTL knows about, so an unwrapped call
+    // leaks three "not wrapped in act(...)" errors that surface as a flake in some later test,
+    // naming a file nowhere near this one.
+    await act(async () => {
+      await changeLanguage('en');
+    });
     expect(useLibraryStore.getState().library?.exercises.find((e) => e.id === 'ss-sit-to-stand')?.name).toBe(
       'Levantar da Cadeira',
     );

@@ -87,8 +87,9 @@ const steadyStrengthPt: LibraryTranslation = {
 };
 
 const steadyStrengthJa: LibraryTranslation = {
-  // `1日目` rather than a weekday name, for the same reason the seed uses it: a numbered label sorts
-  // the way it reads, and `nextWeekAfter` orders a multi-day week by `day.localeCompare`.
+  // `1日目` rather than a weekday name, for the same reason the seed uses it — which is legibility,
+  // not ordering. Weeks run in the order `content-packs.ts` writes them and no label is ever read
+  // for sorting (see `next-up.ts`); a numbered label simply reads in the order it runs.
   days: {
     'Day 1': '1日目',
     'Day 2': '2日目',

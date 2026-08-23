@@ -519,10 +519,19 @@ export default function ImportScreen() {
                 />
                 <Pressable
                   onPress={reviewPaste}
-                  disabled={!pasted.trim()}
+                  // `busy` as well as the empty check, for the same reason the pack rows below carry
+                  // it: `pickFile` stays busy across the picker *and* the read that follows it, and a
+                  // second source reviewed inside that window is overwritten by the file's merge when
+                  // it lands. The user would then confirm a merge for the source they walked away
+                  // from. Narrow — the OS picker covers the screen for most of it — but the fix is a
+                  // prop, and only the read is uncovered.
+                  disabled={busy || !pasted.trim()}
                   accessibilityRole="button"
                   accessibilityLabel={t('import.reviewPaste')}
-                  style={[styles.reviewButton, { backgroundColor: theme.accentSoft, opacity: pasted.trim() ? 1 : 0.5 }]}>
+                  style={[
+                    styles.reviewButton,
+                    { backgroundColor: theme.accentSoft, opacity: busy || !pasted.trim() ? 0.5 : 1 },
+                  ]}>
                   <ThemedText type="heading" themeColor="accentText">
                     {t('import.reviewPaste')}
                   </ThemedText>
@@ -548,6 +557,11 @@ export default function ImportScreen() {
                 {index > 0 && <ListRowSeparator />}
                 <Pressable
                   onPress={() => reviewPack(pack)}
+                  // A pack review is instant, so this isn't about *its* I/O — it's that `pickFile`
+                  // holds `busy` across the picker and the file read after it, and a pack picked
+                  // inside that window is silently replaced when the file's merge resolves into the
+                  // same `ready`. Merge & import would then land the file.
+                  disabled={busy}
                   // No `accessibilityLabel`: the two lines inside name it, and a duplicate would drift
                   // from the counts it quotes. Voice Control matches the visible words either way.
                   accessibilityRole="button">

@@ -77,7 +77,12 @@ mistake here that cannot be fixed for anyone who has already installed it.
   `exercise-form.ts` (editing an exercise's *plan*) and `session-entry-form.ts` (editing what was
   actually *logged*) — so the screens stay thin and the parts worth testing need no React tree.
 - `src/storage/` — all file I/O, via `expo-file-system`'s **class-based `File`/`Directory` API**.
-  One file per session (`session-files.ts`), so a mid-workout flush never rewrites history.
+  One file per session (`session-files.ts`), so a mid-workout flush never rewrites history. It also
+  holds the content the app *ships*: `seed-library.ts` (written on a first launch with no library) and
+  `content-packs.ts` (bundled libraries the import screen offers, merged in on a tap). **New shipped
+  content goes in a pack, not in the seed** — the seed can only ever reach a fresh install — and both
+  are one English structure plus a per-language string table (`library-translation.ts`). See the
+  decision log for the four rules a pack has to respect; the prefixed-id one is the load-bearing one.
 - `src/state/` — zustand stores (`library-store`, `session-history-store`, `preferences-store`,
   `tip-store`) and
   `selectors.ts`, which holds most derived/display logic.

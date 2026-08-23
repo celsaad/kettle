@@ -364,6 +364,29 @@
     "pasteToggle": "Paste YAML instead",
     "pasteToggleDetail": "From an assistant, or any text editor",
     "pastePlaceholder": "Paste the whole exercises.yaml here",
+    "packs": {
+      "title": "Starter packs",
+      "detail": "Bundled with the app. Every id is prefixed, so nothing you already have is replaced.",
+      "sourceDetail": "Starter pack bundled with the app",
+      "exerciseCount_one": "{{count}} exercise",
+      "exerciseCount_other": "{{count}} exercises",
+      "workoutCount_one": "{{count}} workout",
+      "workoutCount_other": "{{count}} workouts",
+      "programCount_one": "{{count}} program",
+      "programCount_other": "{{count}} programs",
+      "steady-strength": {
+        "name": "Steady & Strong",
+        "detail": "Chair and wall for support, nothing on the floor. Three sessions a week for four weeks."
+      },
+      "barbell-gym": {
+        "name": "Barbell Gym",
+        "detail": "Six lifts across two alternating days: squat, bench, deadlift, press, row, pull-up."
+      },
+      "kettlebell-basics": {
+        "name": "Kettlebell Basics",
+        "detail": "One bell — swings, goblet squats, cleans and carries, over four weeks."
+      }
+    },
     "reviewPaste": "Review paste",
     "pastedTitle": "Pasted YAML",
     "pastedLines_one": "{{count}} line pasted",
@@ -514,7 +537,29 @@
     "burpees": "Burpee: down to the floor, then a jump with the arms overhead.",
     "emom-pushups": "Push-ups on a timer: a stopwatch above a push-up.",
     "amrap-12-bodyweight": "Rounds repeated against a clock: a looping arrow around a squatting figure.",
-    "easy-cardio": "Easy cardio: a running figure beside a heart."
+    "easy-cardio": "Easy cardio: a running figure beside a heart.",
+    "ss-sit-to-stand": "Sit to stand: rising from a chair, hips just clear of the seat.",
+    "ss-wall-pushup": "Wall push-up: standing at arm’s length from a wall, body in a straight line.",
+    "ss-heel-raises": "Heel raises: standing on the toes, one hand on a support.",
+    "ss-seated-march": "Seated march: sitting upright with one knee lifted.",
+    "ss-standing-balance": "Standing balance: standing on one leg, arms out, the other foot clear of the floor.",
+    "ss-band-row": "Band row: standing and pulling a band back toward the ribs.",
+    "ss-hip-hinge": "Hip hinge: bending forward at the hips with hands on a chair back.",
+    "ss-walk": "Walk: an upright figure mid-stride.",
+    "gym-back-squat": "Back squat: at the bottom of a squat with a barbell across the shoulders.",
+    "gym-bench-press": "Bench press: lying on a bench, pressing a barbell overhead.",
+    "gym-deadlift": "Deadlift: hinged at the hips with a barbell at the shins.",
+    "gym-overhead-press": "Overhead press: standing, pressing a barbell to lockout above the head.",
+    "gym-barbell-row": "Barbell row: bent over, pulling a barbell up toward the torso.",
+    "gym-pullups": "Pull-up: hanging from a bar, pulling upward with the feet off the floor.",
+    "gym-cooldown": "Cooldown: easy movement at a steady pace.",
+    "kb-swing": "Kettlebell swing: hinged at the hips with the bell out in front at chest height.",
+    "kb-goblet-squat": "Goblet squat: at the bottom of a squat with a kettlebell held upside down at the chest.",
+    "kb-clean-press": "Clean and press: one kettlebell locked out overhead, the other arm hanging.",
+    "kb-single-leg-deadlift": "Single-leg deadlift: balanced on one leg, the other extended back, kettlebell hanging.",
+    "kb-row": "Kettlebell row: bent over, elbow up and back, the bell hanging below.",
+    "kb-halo": "Halo: a kettlebell travelling in a circle around the head.",
+    "kb-carry": "Rack carry: walking with a kettlebell held at the chest."
   },
   "exerciseEditor": {
     "newTitle": "New exercise",

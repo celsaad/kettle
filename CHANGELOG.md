@@ -19,6 +19,31 @@ language; an unsupported tag is rejected on upload. The limits and the upload fo
 
 ### What changed
 
+**Three starter packs you can add whenever you like.** Import — from the Library tab, or Settings →
+*Import a library* — now lists three ready-made libraries that come with the app:
+
+- **Steady & Strong** — chair and wall for support, nothing on the floor. Sit-to-stands, wall
+  push-ups, heel raises, a seated march, standing balance, a band row, a hip hinge and a walk.
+- **Barbell Gym** — squat, bench, deadlift, overhead press, barbell row and pull-ups, across two
+  alternating days.
+- **Kettlebell Basics** — swings, goblet squats, cleans and presses, single-leg deadlifts, rows,
+  halos and a rack carry, all with a single bell.
+
+Each one is a four-week program with its own workouts and exercises, and every movement in them has
+a line drawing, the same as the starter library's.
+
+Tapping a pack shows you exactly what it would add before anything is written, just like importing a
+file — and nothing you already have is replaced. Every exercise, workout and program in a pack
+carries its own name prefix, so your own squat stays your own squat, even if you added all three.
+
+A pack arrives in whatever language the app is in and then stays put: one you added in Portuguese
+does not turn into English when you switch the app to English, because from the moment it lands it is
+your data, not ours.
+
+This is also how new starter content reaches a phone that already has Kettle on it. The library
+Kettle writes on a first launch is written *once*, so it could never grow for anyone who was already
+using the app; packs come with an app update instead, and it is up to you whether to take them.
+
 **Kettle speaks Japanese.** Set your phone to Japanese and the whole app follows — every screen, the
 runner's spoken announcements, the notifications, and the starter library Kettle sets up on first
 launch, exercise names and coaching notes included. Dates, numbers and the first day of your week were

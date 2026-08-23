@@ -87,11 +87,11 @@ describe.each(seedLanguages)('the %s seed', (language) => {
     });
 
     it('walks its weeks in training order', () => {
-      // nextWeekAfter orders a multi-day week by day.localeCompare, so weekday names would run
-      // Friday → Monday → Wednesday. Walking the whole program is what actually proves the labels
-      // chosen here sort the way they read — including a translated set, which is why this runs per
-      // language: `Dia 1`/`Dia 2`/`Dia 3` sorts, and a translation that reached for weekday names
-      // would fail right here.
+      // Rotation order is the order the weeks are *written*: `sortedProgramWeeks` sorts on week
+      // number with no tiebreak and relies on a stable sort for the rest. So what this proves is
+      // that the seed is written in the order it should run, and — since it runs per language —
+      // that applying a translation doesn't disturb that order. It is not about the day labels:
+      // they are display text that nothing sorts on.
       const visited: string[] = [];
       const sessions: Session[] = [];
       for (let step = 0; step < program.weeks.length; step += 1) {

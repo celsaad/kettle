@@ -4,8 +4,9 @@ The standing a11y/i18n house rules live in `AGENTS.md`; this is the one-off proc
 new UI language.
 
 Six places, and only the first two are load-bearing enough to fail loudly if you miss them. Verified
-against the code rather than recalled — and re-checked when `ja` went in as the third, which is the
-one change since: step 1's parity is now machine-checked rather than eyeballed.
+against the code rather than recalled, and re-checked when `ja` went in as the third. Two changes
+since: step 1's parity is now machine-checked rather than eyeballed, and step 6 turned out to be both
+wrong and skipped — the listing copy does live in this repo, and `ja` shipped in the app without it.
 
 1. **`src/i18n/locales/<code>.json`** — the new bundle, at full parity with `en.json`.
    `i18n/__tests__/locale-bundles.test.ts` holds that parity in both directions against every language
@@ -26,7 +27,13 @@ one change since: step 1's parity is now machine-checked rather than eyeballed.
    test that touches formatting). A new language isn't visible to tests until it's added here too —
    and a suite that switches to a missing one asserts English against English and passes regardless.
 5. **`README.md`** — the sentence naming which languages the UI and the seed library ship in.
-6. **The Play listing**, which isn't in this repo.
+6. **The Play listing.** The *copy* is in this repo — `store/README.md` carries a short and a full
+   description per language, and `store-copy.test.ts` checks each block against Play's limit and
+   against the length its own heading declares, so a new language has to be named in that test or
+   its copy is unchecked. The listing copy also names which languages the app ships in, and the tip
+   jar products need the new language too, keyed to the same tier labels the app renders. **Adding
+   the language in the Play Console is a separate act**, and until it is done a release note tagged
+   with the new locale is rejected on upload rather than ignored.
 
 Two things that are *not* on the list, checked rather than assumed: `app.json` has no per-locale
 config (the `expo-localization` plugin is language-agnostic), and nothing about date, number, weekday

@@ -9,9 +9,10 @@ Versions are the `version` / `android.versionCode` pair in `app.json`, which is 
 both the build and this file follow.
 
 **Play release notes are per release, per language, 500 characters each, and are not cumulative** —
-every version needs new ones. Include a `pt-BR` block only if the listing really carries that
-language; an unsupported tag is rejected on upload. The limits and the upload format live in
-[`store/README.md`](store/README.md); the copy itself lives here, next to what it describes.
+every version needs new ones. Copy is written for en-US, pt-BR and ja-JP; include a language tag only
+once the Play Console really carries that language, since an unsupported tag is rejected on upload.
+The limits and the upload format live in [`store/README.md`](store/README.md); the copy itself lives
+here, next to what it describes.
 
 ---
 

@@ -18,6 +18,12 @@ here, next to what it describes.
 
 ## Unreleased
 
+Nothing since 0.8.0.
+
+---
+
+## 0.8.0 — versionCode 11, 25 August 2026
+
 ### What changed
 
 **Three starter packs you can add whenever you like.** Import — from the Library tab, or Settings →
@@ -111,6 +117,40 @@ training to. Vibration is separate and stays on your phone's own settings.
 - **Buttons and text fields grow to fit their label.** "Adicionar bloco" was clipped in the workout
   editor in Portuguese; the same fixed heights would have cut off any long translation, and any label
   at a large accessibility text size.
+
+### Play release notes
+
+Counted at 204 (en-US) and 200 (pt-BR), against a limit of 500. Re-count programmatically if you
+edit them rather than trusting these numbers — over-limit copy is a rejected upload, not a truncated
+one.
+
+Deliberately vague: the release is a large one, and the notes describe it as small on purpose rather
+than because anything was overlooked. Deliberately two blocks rather than three, too — this is the
+release where the app starts speaking Japanese, but the Play listing does not carry ja-JP, so a
+`<ja-JP>` block here would be a rejected upload rather than an ignored tag. The copy for it is
+written and waiting in [`store/README.md`](store/README.md) for whenever the language is added in
+the Console.
+
+```
+<en-US>
+What's new
+
+A few interface updates and quality-of-life improvements across the app.
+
+Plus a round of fixes for things that weren't behaving the way they should.
+
+Report anything that hangs or loses data.
+</en-US>
+<pt-BR>
+Novidades
+
+Algumas atualizações de interface e melhorias de uso pelo app.
+
+Além de uma rodada de correções para coisas que não estavam funcionando como deveriam.
+
+Relate travamentos ou perda de dados.
+</pt-BR>
+```
 
 ---
 

@@ -37,9 +37,11 @@ function declaredLength(heading: string): number {
   return Number(match[1]);
 }
 
+// Every language the listing carries. A language whose copy is in `store/README.md` but not named
+// here is copy nothing checks, which is the state pt-BR's counts went stale in.
 const HEADINGS = {
-  short: ['### Short — en-US', '### Short — pt-BR'],
-  full: ['### Full — en-US', '### Full — pt-BR'],
+  short: ['### Short — en-US', '### Short — pt-BR', '### Short — ja-JP'],
+  full: ['### Full — en-US', '### Full — pt-BR', '### Full — ja-JP'],
 };
 
 /** The heading as written, including its count, found by prefix so the count itself isn't hardcoded. */
@@ -76,7 +78,7 @@ describe('Play listing copy', () => {
 
 describe('Play release notes', () => {
   const blocks: { lang: string; index: number; text: string }[] = [];
-  for (const lang of ['en-US', 'pt-BR']) {
+  for (const lang of ['en-US', 'pt-BR', 'ja-JP']) {
     const pattern = new RegExp(`<${lang}>\\n([\\s\\S]*?)\\n</${lang}>`, 'g');
     let match = pattern.exec(changelog);
     let index = 0;

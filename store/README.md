@@ -79,7 +79,13 @@ Lifting and conditioning on one timer. Your training, in a file you own.
 Musculação e condicionamento no mesmo cronômetro. Seu treino, no seu arquivo.
 ```
 
-### Full — en-US (3960)
+### Short — ja-JP (46)
+
+```
+筋トレもコンディショニングも、1つのタイマーで。あなたのトレーニングは、あなたのファイルに。
+```
+
+### Full — en-US (3956)
 
 ```
 Kettle runs your lifting and your conditioning in the same session, on one timer.
@@ -114,7 +120,7 @@ MULTI-WEEK PROGRAMS
 Schedule workouts across weeks and progress them with per-week overrides — add a set in week three, cut a circuit down for a deload — without duplicating anything. Kettle queues up what is next.
 
 HISTORY THAT IS YOURS, AND FIXABLE
-Every set goes to a local log: what you did, when you did it. Streaks, weekly totals and per-exercise volume are calculated on your device from that log. Nothing is uploaded. Tapped the wrong number? Open any past session and fix the reps, load or RPE, or remove a set you did not do.
+Every set goes to a local log: what you did, when you did it. Streaks, weekly totals and per-exercise volume are calculated on your device. Nothing is uploaded. Tapped the wrong number? Open any past session and fix the reps, load or RPE, or remove a set you did not do.
 
 BRING YOUR OWN ASSISTANT
 Because the format is documented and checked against a published schema, you can ask any AI assistant to write a program for you and paste the result in. Kettle validates it on your device and tells you exactly what it would change before anything is saved. The app itself has no AI features and never contacts a model.
@@ -125,12 +131,12 @@ No account. No cloud. No analytics. No crash reporting. No advertising. No third
 FREE, WITH AN OPTIONAL TIP JAR
 Every feature is unlocked for everyone. No paid tier, no subscription, no trial. An optional tip jar helps cover the developer account fee, and nothing is gated behind it — export included.
 
-Available in English and Portuguese.
+Available in English, Portuguese and Japanese.
 
 The format is documented at celsaad.github.io/kettle, and the source is on GitHub under the MIT license, so you can check any of this yourself.
 ```
 
-### Full — pt-BR (3950)
+### Full — pt-BR (3959)
 
 ```
 O Kettle faz a musculação e o condicionamento na mesma sessão, no mesmo cronômetro.
@@ -176,9 +182,60 @@ Sem conta. Sem nuvem. Sem análise de uso. Sem relatório de falhas. Sem anúnci
 GRATUITO, COM CAIXINHA OPCIONAL
 Todos os recursos estão liberados. Não há versão paga, assinatura nem teste. Uma caixinha opcional ajuda a cobrir a taxa da conta de desenvolvedor, e nada fica trancado atrás dela — exportar incluído.
 
-Disponível em inglês e português.
+Disponível em inglês, português e japonês.
 
 O formato está documentado em celsaad.github.io/kettle e o código-fonte está no GitHub sob a licença MIT, então você pode conferir tudo por conta própria.
+```
+
+### Full — ja-JP (1993)
+
+```
+Kettle は、筋トレもコンディショニングも同じセッションの中で、1つのタイマーで動かします。
+
+レップ、HIIT、EMOM、AMRAP、ホールド、カーディオ、休憩は、すべて同じ実時間エンジンで動きます。だから、それらが混ざった日も「ただのセッション」です。作るアカウントも、預けるサーバーも、同期するものもありません。エクササイズ、ワークアウト、プログラムは端末の中のテキストファイルにあり、終えたセッションはあなたにしか見えないローカルの記録に残ります。
+
+自分の手の中のファイルで組み立てる
+ライブラリはごく普通の YAML です。アプリで編集しても、好きなテキストエディタで開いて手で書いてもかまいません。ファイルを読み込んでも、テキストを貼り付けても、Kettle は履歴に触れずに今あるものへ統合します。書き出しはいつでもでき、10年後でも開ける形式です。
+
+ペースについてくる実行画面
+ライブのタイマーと、常に見えている次のブロックとで、セッションをブロックごとに進めます。
+• レップ — 回数、負荷、RPE を記録するセット
+• HIIT — 運動と休憩をラウンドで繰り返す
+• EMOM — 毎分、分の頭から
+• AMRAP — 制限時間内にできるだけ多くのラウンドを
+• ホールド — プランク、ぶら下がり、空気椅子、キャリー
+• カーディオ — 時間または距離で
+• 休憩 — 秒単位で計測
+
+計測は実時間なので、他のアプリに切り替えても狂いません。音の合図、振動、開始前のカウントダウンがあるので、画面を見続ける必要はほとんどありません。終えたセットはその場で保存されるため、落ちても失うのは進行中のセットだけです。
+
+その日の実際のトレーニングに合わせられる
+トレーニングは計画どおりにはいきません。もう1セットできる日は足し、できない日は減らし、ラックが埋まっていればエクササイズを入れ替える。すべてトレーニング中に、ライブラリを書き換えずにできます。何も決めずに来た日は、空のセッションを始めて、その場で足していってください。
+
+前回挙げた重さを覚えている
+セットの行には前回の記録が出ます。同じセット番号、同じエクササイズです。ひとタップでそれが新しい目標になり、ライブラリに保存されるので、来週はそこから始まります。自己ベストを超えればその場で行が知らせ、終了時の要約が記録の名前を挙げ、負荷のあるセットには推定 1RM も出します。
+
+サーキットとスーパーセット
+エクササイズをまとめてサーキットにすると、好きなラウンド数だけ順ぐりに回ります。エクササイズ間とラウンド間の休憩は、それぞれ設定できます。スーパーセットは、間に休憩を入れないサーキットのことです。
+
+数週間のプログラム
+ワークアウトを週にわたって並べ、週ごとの上書きで進めていけます。第3週でセットを1つ足す、ディロードでサーキットを短くする。どれも中身を複製せずにできます。次に何をするかは Kettle が用意します。
+
+あなたのもので、直せる履歴
+すべてのセットがローカルの記録に入ります。何をしたか、いつしたか。連続日数、週の合計、エクササイズごとのボリュームは、その記録から端末の中で計算されます。どこにもアップロードされません。数字を打ち間違えたら、過去のセッションを開いてレップ、負荷、RPE を直せますし、やっていないセットは削除できます。
+
+好きな AI アシスタントを連れてくる
+形式は文書化され、公開されたスキーマで検証されているので、どの AI アシスタントにプログラムを書いてもらっても、結果を貼り付けるだけで済みます。Kettle は端末の中で検証し、保存する前に何がどう変わるかを正確に伝えます。アプリ自体に AI 機能はなく、モデルに接続することもありません。
+
+Kettle がしないこと
+アカウントなし。クラウドなし。利用状況の分析なし。クラッシュレポートなし。広告なし。何かを送信する第三者 SDK もなし。アプリは自分からネットワークに接続せず、マイク、カメラ、位置情報、連絡先も要求しません。リマインダーが1つだけありますが、自分でオンにするまで動かず、それも端末の中の通知です。
+
+無料、チップは任意
+すべての機能が誰にでも開放されています。有料版も、サブスクも、試用期間もありません。任意のチップはデベロッパー登録料の足しになりますが、その裏に隠れている機能はありません。書き出しも含めてです。
+
+英語・ポルトガル語・日本語に対応しています。
+
+形式は celsaad.github.io/kettle に文書化されており、ソースコードは MIT ライセンスで GitHub にあります。ここに書いたことは、すべて自分で確かめられます。
 ```
 
 Deliberately absent from the listing copy, so it isn't re-added: **no competitor names** (fine on our
@@ -216,9 +273,11 @@ stay here, because they are Play's rather than ours.
 Per release, per language, **500 characters each, and not cumulative** — the next version needs new
 ones, and re-uploading the previous version's text is a rejection rather than a no-op.
 
-Include a `<pt-BR>` block only if the listing really carries that language; an unsupported tag is
-rejected on upload. The blocks in the changelog are wrapped in those tags in upload order, so a
-release is a copy-paste from there.
+Copy is written here for **en-US, pt-BR and ja-JP**. That is not the same claim as the listing
+carrying all three: a language exists for upload only once it is added in the Console, and a tag the
+Console does not know is rejected rather than ignored. ja-JP was written when the app shipped
+Japanese, so check the Console before tagging a block with it. The blocks in the changelog are
+wrapped in those tags in upload order, so a release is a copy-paste from there.
 
 ## Tip jar products
 
@@ -232,13 +291,23 @@ sibling **Monetisation setup** page and is the step with real lead time, since i
 | `tip_medium` | $3 | Medium tip | A thank-you for Kettle, and a hand with the developer account fee. Nothing is unlocked; every feature is already free. |
 | `tip_large` | $5 | Large tip | A generous thank-you for Kettle. Nothing is unlocked — the whole app is free, with no ads and no account. |
 
-Portuguese, for listings that have it:
+Portuguese and Japanese, each only for a listing that carries the language:
+
+Portuguese:
 
 | Product ID | Name | Description |
 |---|---|---|
 | `tip_small` | Gorjeta pequena | Um obrigado pelo Kettle. Nada é desbloqueado — todos os recursos já são gratuitos e seus dados ficam no seu aparelho. |
 | `tip_medium` | Gorjeta média | Um obrigado pelo Kettle e uma ajuda com a taxa da conta de desenvolvedor. Nada é desbloqueado; tudo já é gratuito. |
 | `tip_large` | Gorjeta grande | Um obrigado generoso pelo Kettle. Nada é desbloqueado — o app inteiro é gratuito, sem anúncios e sem conta. |
+
+Japanese:
+
+| Product ID | Name | Description |
+|---|---|---|
+| `tip_small` | 少額のチップ | Kettle への少しばかりのお礼です。解放される機能はありません。すべての機能はもともと無料で、データは端末の中にとどまります。 |
+| `tip_medium` | 中くらいのチップ | Kettle へのお礼と、デベロッパー登録料の足しです。解放される機能はありません。すべての機能はもともと無料です。 |
+| `tip_large` | 多めのチップ | Kettle への大きなお礼です。解放される機能はありません。アプリ全体が無料で、広告もアカウントもありません。 |
 
 Why these, and what not to change casually:
 
@@ -259,7 +328,8 @@ Why these, and what not to change casually:
   the SKU as owned and refuses every later purchase of that tier — so "buy the same tier twice" is
   the test that actually proves the tip jar works, not "buy one".
 - Play auto-converts to other currencies and its rounding is occasionally odd. Worth checking the
-  BRL figures by hand, Portuguese being one of the two shipped languages. The app renders
+  BRL and JPY figures by hand, Portuguese and Japanese being two of the three shipped languages. The
+  app renders
   `displayPrice` straight from the store, so whatever Play decides is what users see.
 
 Testing needs **Licence testing** (account level — back out of the app, then `Setup › Licence

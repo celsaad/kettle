@@ -178,18 +178,38 @@ describe('first-run guidance', () => {
 
   /**
    * Step 3 asserts the library is a file you own and can have an assistant write, and the card is
-   * untappable by design — so the claim is only honest if the way to act on it is on screen. That is
-   * the starter-pack link directly beneath, which is why this pair is pinned rather than left to the
-   * two components' separate cases: they are gated independently, and nothing else would notice if
-   * one of them stopped rendering next to the other.
+   * untappable by design — so what makes the claim honest is the starter-pack link directly beneath
+   * it.
+   *
+   * **The pair rendering at all is not what this pins**, and an earlier version of this case claimed
+   * it was. That intersection is structural: `isFirstRun` requires `queued !== null`, which requires
+   * a workout, so the card cannot render without `showStarterPacks` holding as well — and the two
+   * halves are already asserted separately from this same setup. What is *not* structural is the
+   * order. Move the link below the next-up card and every other case in this file still passes,
+   * while the comment in `first-run-card.tsx` that promises "directly under this card" quietly
+   * becomes false. So the order is the assertion.
    */
-  it('puts the ownership claim above something that acts on it', async () => {
+  it('renders the ownership claim directly above the link that acts on it', async () => {
     setSeededLibrary();
 
     await renderScreen(<WorkoutsScreen />);
 
-    expect(screen.getByText('Your library is a file')).toBeTruthy();
-    expect(screen.getByText('Add a starter program')).toBeTruthy();
+    // One query for all three, because a query returns its matches in tree order — so the order of
+    // what comes back *is* the order on screen. Asserting the whole array covers presence too: a
+    // missing claim or a missing link changes the array rather than passing quietly.
+    //
+    // The next-up card's label is the third anchor, and it is the one that makes this a test rather
+    // than a formality. Claim-before-link holds wherever the link sits, since the claim is inside the
+    // card above it; what says *directly* under the card is that the link comes before the next-up
+    // card too, with nothing rendered between them.
+    //
+    // Not `JSON.stringify(screen.toJSON())`, which is the obvious version and throws on a circular
+    // structure — the tree carries context providers that close a cycle.
+    const rendered = screen
+      .getAllByText(/^(Your library is a file|Add a starter program|NEXT UP)$/)
+      .map((node) => node.props.children);
+
+    expect(rendered).toEqual(['Your library is a file', 'Add a starter program', 'NEXT UP']);
   });
 
   it('stays out of the empty state, which is its own single instruction', async () => {

@@ -36,6 +36,12 @@ import { useTheme } from '@/hooks/use-theme';
  * as the listing words it). And it may not carry training intent — see the ownership entry in
  * `docs/decisions.md`. Format, never advice.
  *
+ * **Step 3 is false on the web build, knowingly.** There is no persistence there — no file to open in
+ * any editor, and Settings disables Export for the same reason — and since nothing is ever logged,
+ * `sessions.length === 0` always holds, so every web visitor sees it. Web is not a published surface,
+ * so this buys no guard; it is recorded because web *is* what `docs/verifying-in-the-browser.md`
+ * drives, and reading a false sentence there is otherwise a bug report waiting to be written.
+ *
  * Who sees it is the caller's business — see `sessions.length === 0` in the Workouts screen.
  */
 export function FirstRunCard() {

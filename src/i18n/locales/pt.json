@@ -52,6 +52,7 @@
       "step3Body": "O Kettle já deixa o próximo na fila."
     },
     "startEmpty": "Começar uma sessão vazia",
+    "starterPacks": "Adicionar um programa inicial",
     "moreBlocks_one": "+{{count}} a mais",
     "moreBlocks_other": "+{{count}} a mais"
   },
@@ -112,6 +113,9 @@
     "filterEmom": "EMOM",
     "filterAmrap": "AMRAP",
     "filterCardio": "Cardio"
+  },
+  "programGuide": {
+    "openImport": "Abrir importação"
   },
   "programs": {
     "title": "Programas",

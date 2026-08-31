@@ -1,6 +1,15 @@
 import { router } from 'expo-router';
 import { memo, useCallback, useDeferredValue, useMemo, useState } from 'react';
-import { FlatList, Platform, Pressable, StyleSheet, View, type ListRenderItemInfo } from 'react-native';
+import {
+  FlatList,
+  Platform,
+  Pressable,
+  StyleSheet,
+  View,
+  type ListRenderItemInfo,
+  type StyleProp,
+  type ViewStyle,
+} from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -69,6 +78,33 @@ const WorkoutCard = memo(function WorkoutCard({ workout, exercises }: { workout:
 const keyExtractor = (workout: Workout) => workout.id;
 
 /**
+ * The way into the bundled starter packs.
+ *
+ * One component rather than a copy in each of its two homes: they are mutually exclusive by
+ * `showStarterPacks`, so this only ever renders once per screen, and two copies would be two things
+ * to keep pointed at the same route with the same words. A duplicated version of this shipped for
+ * exactly as long as it took a review to notice the empty-state copy had no test behind it.
+ *
+ * The margin belongs to the caller. One instance sits in the header column, where every sibling
+ * spaces itself with `Spacing.three`; the other sits inside the empty card, whose own `gap` already
+ * separates it from the line above.
+ */
+function StarterPackLink({ style }: { style?: StyleProp<ViewStyle> }) {
+  const { t } = useTranslation();
+
+  return (
+    <Pressable
+      onPress={() => router.push('/import')}
+      accessibilityRole="button"
+      style={({ pressed }) => [styles.starterPackLink, style, pressed && styles.pressed]}>
+      <ThemedText type="smallMedium" themeColor="accentText">
+        {t('today.starterPacks')}
+      </ThemedText>
+    </Pressable>
+  );
+}
+
+/**
  * The home tab: what to run next, and everything there is to run.
  *
  * This was two tabs — `Today` (a next-up card, three stat tiles and a copy of History's first five
@@ -128,6 +164,17 @@ export default function WorkoutsScreen() {
   // single clear instruction, and two competing instruction blocks is worse than either alone.
   const isFirstRun = sessions.length === 0 && queued !== null;
 
+  // The starter-pack link deliberately does **not** reuse `isFirstRun`, and the difference is the
+  // rest-day case above: `queued` is null there, so a brand-new user on a program that opens with a
+  // rest day would get no invitation at all — and, having workouts, no empty state either. That gate
+  // is shaped for a step reading "Start the workout below", which genuinely needs a Start button
+  // under it; an invitation to add content has no such dependency.
+  //
+  // `all.length > 0` is the other half: with an empty library the list's own empty state carries this
+  // same link, so gating on `sessions.length === 0` alone would render two invitations at once —
+  // which is the thing `isFirstRun`'s own suppression exists to avoid.
+  const showStarterPacks = sessions.length === 0 && all.length > 0;
+
   const exercises = library?.exercises;
   const renderItem = useCallback(
     ({ item }: ListRenderItemInfo<Workout>) => <WorkoutCard workout={item} exercises={exercises ?? []} />,
@@ -176,6 +223,19 @@ export default function WorkoutsScreen() {
             </View>
 
             {isFirstRun && <FirstRunCard />}
+
+            {/*
+              Under the card rather than beside the empty-session link below, which is the tempting
+              spot and the wrong one: the note above that control argues it works *because* it sits
+              directly under Start and reads as its alternative, and a second `accentText` link in the
+              same column gives it a peer and takes that reading away. Here it reads as the
+              continuation of the block whose whole job is orienting someone new — and it is outside
+              `FirstRunCard` on purpose, since that card is untappable by design.
+
+              The label names what arrives, not the machinery it arrives through. "Import" is the
+              right word on the destination screen and the wrong one on the invitation.
+            */}
+            {showStarterPacks && <StarterPackLink style={styles.starterPackLinkHeader} />}
 
             {/* Nothing queued means an empty library, and the list's own empty state below says so
                 better than a second card would — so the card simply doesn't render rather than
@@ -237,6 +297,12 @@ export default function WorkoutsScreen() {
               <ThemedText themeColor="textSecondary" style={styles.emptyBody}>
                 {t('build.emptyBody')}
               </ThemedText>
+              {/*
+                Building one from scratch is the honest instruction above and the slow one. This is
+                the same offer the header link makes, to the user the header link stays away from —
+                the two are mutually exclusive by `showStarterPacks`, so nobody sees both.
+              */}
+              <StarterPackLink />
             </ThemedView>
           )
         }
@@ -310,6 +376,23 @@ const styles = StyleSheet.create({
     minHeight: 44,
     alignSelf: 'flex-start',
     justifyContent: 'center',
+  },
+  // The same metrics as `emptySessionLink`, for the same reasons — a 44px floor rather than a fixed
+  // height, left-aligned to the screen's text column. Its own entry rather than a shared one because
+  // the two controls sit in different blocks and are argued for separately; a shared style would move
+  // both the next time one of them is nudged.
+  starterPackLink: {
+    minHeight: 44,
+    alignSelf: 'flex-start',
+    justifyContent: 'center',
+  },
+  // Only the header instance. Every other child of the header column — the first-run card, the
+  // next-up card, the search box, the rule — carries the same `Spacing.three`, and without it this
+  // link sits flush under the title row on the rest-day path and against the first-run card's bottom
+  // border on a first run. The empty-state instance takes none: it lives inside the empty card, whose
+  // own `gap` already separates it from the line above.
+  starterPackLinkHeader: {
+    marginTop: Spacing.three,
   },
   // The gap that used to sit here belongs to `ListHeaderRule`, above its line rather than below it.
   listHeader: {},

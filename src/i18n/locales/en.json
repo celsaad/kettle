@@ -52,6 +52,7 @@
       "step3Body": "Kettle queues up what comes next."
     },
     "startEmpty": "Start an empty session",
+    "starterPacks": "Add a starter program",
     "moreBlocks_one": "+{{count}} more",
     "moreBlocks_other": "+{{count}} more"
   },
@@ -112,6 +113,9 @@
     "filterEmom": "EMOM",
     "filterAmrap": "AMRAP",
     "filterCardio": "Cardio"
+  },
+  "programGuide": {
+    "openImport": "Open import"
   },
   "programs": {
     "title": "Programs",

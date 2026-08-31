@@ -53,6 +53,32 @@ function setSeededLibrary() {
   });
 }
 
+/**
+ * A program whose very first slot is a rest day. Shared by the two describes below because they pull
+ * in opposite directions on it: the first-run card must stay away (its step one points at a Start
+ * button that isn't there) and the starter-pack link must not, which is the whole reason the two are
+ * gated differently.
+ */
+function setRestDayLibrary() {
+  useLibraryStore.setState({
+    library: aLibrary({
+      exercises: [anExercise()],
+      workouts: [aWorkout({ id: 'push-day', name: 'Push day' })],
+      programs: [
+        {
+          id: 'base',
+          name: 'Base',
+          weeks: [
+            { week: 1, day: 'Day 1', restDay: true },
+            { week: 1, day: 'Day 2', workoutId: 'push-day' },
+          ],
+        },
+      ],
+    }),
+    status: 'ready',
+  });
+}
+
 function aSession(overrides: Partial<Session> = {}): Session {
   return {
     version: 1,
@@ -172,23 +198,7 @@ describe('first-run guidance', () => {
    * rest day lands a new user here on first launch.
    */
   it('stays out of a rest day, which has no workout to point at', async () => {
-    useLibraryStore.setState({
-      library: aLibrary({
-        exercises: [anExercise()],
-        workouts: [aWorkout({ id: 'push-day', name: 'Push day' })],
-        programs: [
-          {
-            id: 'base',
-            name: 'Base',
-            weeks: [
-              { week: 1, day: 'Day 1', restDay: true },
-              { week: 1, day: 'Day 2', workoutId: 'push-day' },
-            ],
-          },
-        ],
-      }),
-      status: 'ready',
-    });
+    setRestDayLibrary();
 
     await renderScreen(<WorkoutsScreen />);
 
@@ -207,6 +217,99 @@ describe('first-run guidance', () => {
 
     expect(screen.getByText('PRIMEIRA VEZ?')).toBeTruthy();
     expect(screen.getByText('Planeje semanas em Programas')).toBeTruthy();
+  });
+});
+
+/**
+ * The way into the bundled starter packs, for someone who has logged nothing.
+ *
+ * It exists because the listing sells a library you own and can have an assistant write, and the app
+ * reached that promise through a caption in the Library header and a row in Settings. What's pinned
+ * here is mostly the *gate*, which is `sessions.length === 0 && all.length > 0` rather than the
+ * `isFirstRun` next door, and both halves of that have a case below.
+ */
+describe('the starter-pack link', () => {
+  it('is offered to someone who has never logged a session', async () => {
+    setSeededLibrary();
+
+    await renderScreen(<WorkoutsScreen />);
+
+    expect(screen.getByText('Add a starter program')).toBeTruthy();
+  });
+
+  it('opens import', async () => {
+    setSeededLibrary();
+
+    await renderScreen(<WorkoutsScreen />);
+    await fireEvent.press(screen.getByText('Add a starter program'));
+
+    expect(router.push).toHaveBeenCalledWith('/import');
+  });
+
+  it('is gone once a session has been logged', async () => {
+    setSeededLibrary();
+    useSessionHistoryStore.setState({ sessions: [aSession()], status: 'ready' });
+
+    await renderScreen(<WorkoutsScreen />);
+
+    expect(screen.queryByText('Add a starter program')).toBeNull();
+  });
+
+  /**
+   * The case the `isFirstRun` gate gets wrong, and the reason this control has a gate of its own.
+   * `isFirstRun` is `sessions.length === 0 && queued !== null`, and `queued` is null on a rest day —
+   * so a brand-new user on a program that opens with one would see no first-run card and, having
+   * workouts, no empty state either. Reusing that gate here leaves them nothing at all.
+   *
+   * Verified by reintroducing it: swap `showStarterPacks` for `isFirstRun` and this is the case that
+   * fails.
+   */
+  it('is offered on a rest day, which the first-run card stays out of', async () => {
+    setRestDayLibrary();
+
+    await renderScreen(<WorkoutsScreen />);
+
+    expect(screen.getByText('Rest day')).toBeTruthy();
+    expect(screen.queryByText('NEW HERE?')).toBeNull();
+    expect(screen.getByText('Add a starter program')).toBeTruthy();
+  });
+
+  /**
+   * The other half of the gate. An empty library gets this offer from the list's own empty state, so
+   * the header link stands down — `getAllByText` rather than `getByText` because the failure being
+   * pinned is *two* invitations on one screen, which `getByText` would report as an ambiguous match
+   * rather than as the duplication it is.
+   */
+  it('appears exactly once on an empty library, from the empty state', async () => {
+    setEmptyLibrary();
+
+    await renderScreen(<WorkoutsScreen />);
+
+    expect(screen.getByText('No workouts yet')).toBeTruthy();
+    expect(screen.getAllByText('Add a starter program')).toHaveLength(1);
+  });
+
+  /**
+   * The same assertion as "opens import" above, against the other instance. Both come from one
+   * component now, so this looks redundant — it is not: the two used to be copies, and the copy in
+   * the empty state was the one nothing pressed. Retargeting it left the suite green.
+   */
+  it('opens import from the empty state too', async () => {
+    setEmptyLibrary();
+
+    await renderScreen(<WorkoutsScreen />);
+    await fireEvent.press(screen.getByText('Add a starter program'));
+
+    expect(router.push).toHaveBeenCalledWith('/import');
+  });
+
+  it('is translated', async () => {
+    await changeLanguage('pt');
+    setSeededLibrary();
+
+    await renderScreen(<WorkoutsScreen />);
+
+    expect(screen.getByText('Adicionar um programa inicial')).toBeTruthy();
   });
 });
 

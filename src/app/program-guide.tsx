@@ -155,11 +155,26 @@ programs:
 
         <Section title="7. Import it">
           <ThemedText themeColor="textSecondary" style={styles.body}>
-            Library tab → Import → pick your file → review the summary → Merge & import. Programs merge by id: a new id gets
-            added, but re-importing an id that already exists replaces that whole program — all its weeks — with what's in
-            the file, it doesn't merge week-by-week. So to add or change one week, include the program's complete, up-to-date
-            week list in the file you import, not just the changed week.
+            Pick your file, review the summary, and merge. Programs merge by id: a new id gets added, but re-importing an id
+            that already exists replaces that whole program — all its weeks — with what's in the file, it doesn't merge
+            week-by-week. So to add or change one week, include the program's complete, up-to-date week list in the file you
+            import, not just the changed week.
           </ThemedText>
+          {/*
+           * The step this page builds up to, as the control rather than as directions to it. It used
+           * to read "Library tab → Import → pick your file → …", which asks someone who has just
+           * finished writing a program to go and find the screen that accepts it.
+           *
+           * `replace`, not `push`: both this screen and import are modals, so pushing leaves the user
+           * two deep and returns them mid-scroll into a guide they're done with. Replacing means
+           * dismissing import lands on Programs, which is where the imported program has appeared.
+           */}
+          <Pressable
+            onPress={() => router.replace('/import')}
+            accessibilityRole="button"
+            style={[styles.importButton, { borderColor: theme.border }]}>
+            <ThemedText type="smallMedium">{t('programGuide.openImport')}</ThemedText>
+          </Pressable>
         </Section>
 
         {/*
@@ -215,6 +230,18 @@ const styles = StyleSheet.create({
     fontFamily: 'monospace',
     fontSize: 12.5,
     lineHeight: 18,
+  },
+  // Bordered rather than filled: the filled accent button on this screen is Done, and a second solid
+  // button would read as a peer of it. 44px floor via `minHeight`, like every other control here.
+  importButton: {
+    minHeight: 44,
+    borderRadius: 15,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: Spacing.two,
+    paddingHorizontal: Spacing.three,
+    alignSelf: 'flex-start',
   },
   doneButton: {
     minHeight: 52,

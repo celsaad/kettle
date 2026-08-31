@@ -10,14 +10,17 @@
  * and then imports `router` / `setSearchParams` from here directly. Same resolved path, same module
  * instance, so assertions see the calls the screen made.
  *
- * `back`, `push` and `dismissTo` are the only navigation calls anywhere in `src/` (the last one from
- * the two places that have to leave a modal *and* land on a tab: `session.tsx`'s error boundary, and
- * deleting a program), and `clearMocks` in the jest config resets them between tests.
+ * `back`, `push`, `dismissTo` and `replace` are the only navigation calls anywhere in `src/`
+ * (`dismissTo` for the two places that have to leave a modal *and* land on a tab: `session.tsx`'s
+ * error boundary, and deleting a program; `replace` for the program guide handing off to import,
+ * which are both modals and would otherwise stack), and `clearMocks` in the jest config resets them
+ * between tests.
  */
 export const router = {
   back: jest.fn(),
   push: jest.fn(),
   dismissTo: jest.fn(),
+  replace: jest.fn(),
 };
 
 let searchParams: Record<string, string | undefined> = {};

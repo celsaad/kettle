@@ -52,6 +52,7 @@
       "step3Body": "次に何をやるかは Kettle が用意します。"
     },
     "startEmpty": "空のセッションを開始",
+    "starterPacks": "スタータープログラムを追加",
     "moreBlocks_other": "他 {{count}} 件"
   },
   "build": {
@@ -105,6 +106,9 @@
     "filterEmom": "EMOM",
     "filterAmrap": "AMRAP",
     "filterCardio": "カーディオ"
+  },
+  "programGuide": {
+    "openImport": "インポートを開く"
   },
   "programs": {
     "title": "プログラム",

@@ -6,6 +6,7 @@ import ImportScreen from '@/app/import';
 import type { Exercise, Library } from '@/domain/types';
 import { serializeLibraryYaml } from '@/domain/yaml-mapping';
 import { useLibraryStore } from '@/state/library-store';
+import { useSessionHistoryStore } from '@/state/session-history-store';
 import { contentPacks } from '@/storage/content-packs';
 import { saveLibrary } from '@/storage/library-file';
 import { router } from '@/test-support/expo-router';
@@ -62,6 +63,8 @@ const current = aLibrary({ exercises: [pullUps], workouts: [pushDay] });
 
 beforeEach(() => {
   useLibraryStore.setState({ library: current, status: 'ready' });
+  // Reset explicitly: zustand outlives a test, and the source order below reads this store.
+  useSessionHistoryStore.setState({ sessions: [], status: 'ready' });
 });
 
 // Driving the picker is navigation, not an assertion, so it goes through `t` — that's what lets the
@@ -678,5 +681,70 @@ describe('the bundled starter packs', () => {
 
     expect(screen.getByText(t('import.libraryNotLoaded'))).toBeTruthy();
     expect(savedLibrary).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * Which source this screen leads with, which is the one thing on it that depends on who is looking.
+ *
+ * The packs are the only offer here that costs no file and no typing, and they sat third, under two
+ * verbs naming machinery — on the screen the Workouts tab's own first-run link now points at. So for
+ * someone with nothing logged they come first, and for everyone else the file path keeps the lead:
+ * a returning user opened this to import a file, and demoting that would trade a real job for a
+ * first-run nicety.
+ */
+describe('the order of the input sources', () => {
+  /** The three sections, queried in one go so what comes back is in tree order. */
+  function sourceOrder() {
+    return screen
+      .getAllByText(new RegExp(`^(${t('import.packs.title')}|${t('import.chooseFile')}|${t('import.copyBrief')})$`))
+      .map((node) => node.props.children);
+  }
+
+  function hasLoggedASession() {
+    useSessionHistoryStore.setState({
+      sessions: [
+        {
+          version: 1,
+          id: 'session-1',
+          workout: 'push-day',
+          program: null,
+          programWeek: null,
+          programDay: null,
+          startedAt: '2026-07-29T09:00:00.000Z',
+          endedAt: '2026-07-29T09:40:00.000Z',
+          entries: [],
+        },
+      ],
+      status: 'ready',
+    });
+  }
+
+  it('leads with the packs for someone who has logged nothing', async () => {
+    await renderScreen(<ImportScreen />);
+
+    expect(sourceOrder()).toEqual(['Starter packs', 'Choose exercises.yaml', 'Copy the format for an assistant']);
+  });
+
+  it('leads with the file path once a session has been logged', async () => {
+    hasLoggedASession();
+
+    await renderScreen(<ImportScreen />);
+
+    expect(sourceOrder()).toEqual(['Choose exercises.yaml', 'Starter packs', 'Copy the format for an assistant']);
+  });
+
+  /**
+   * The brief is last in both, and that is the assertion above rather than a separate case — it is
+   * the power-user affordance on this screen and the one thing a first-timer is least likely to
+   * want, so promoting it alongside the packs would put "copy a JSON Schema" in front of exactly the
+   * reader the reorder exists to serve.
+   */
+  it('still merges whichever source is picked, whatever the order', async () => {
+    await renderScreen(<ImportScreen />);
+    await fireEvent.press(screen.getByText('Steady & Strong'));
+    await fireEvent.press(screen.getByText('Merge & import'));
+
+    expect(useLibraryStore.getState().library?.exercises.some((exercise) => exercise.id.startsWith('ss-'))).toBe(true);
   });
 });

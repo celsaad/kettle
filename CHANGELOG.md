@@ -30,6 +30,11 @@ workouts yet" card makes the same offer, so there is a way back that isn't build
 Import screen lives and leave you to walk there. It now opens it for you, and closing it puts you back
 on Programs, where what you just imported is waiting.
 
+**Import leads with the packs until you have trained.** Until your first logged session, the three
+starter packs sit at the top of the Import screen, above choosing a file and pasting text — they are
+the only thing there you can take without writing anything. Once you have a session behind you the
+file path leads again, which is what you came for.
+
 **The first-run card says what your library actually is.** Its last step used to point at the Programs
 tab, which the tab bar was already doing. It now says the thing that is easy to miss: your library is
 an ordinary file, yours to edit in the app, open in any text editor, or have an AI draft for you.

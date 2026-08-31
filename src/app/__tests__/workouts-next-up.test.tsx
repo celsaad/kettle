@@ -162,7 +162,7 @@ describe('first-run guidance', () => {
     expect(screen.getByText('NEW HERE?')).toBeTruthy();
     expect(screen.getByText('Start the workout below')).toBeTruthy();
     expect(screen.getByText('Make it yours')).toBeTruthy();
-    expect(screen.getByText('Plan weeks in Programs')).toBeTruthy();
+    expect(screen.getByText('Your library is a file')).toBeTruthy();
   });
 
   it('is gone once a session has been logged', async () => {
@@ -174,6 +174,22 @@ describe('first-run guidance', () => {
     expect(screen.queryByText('NEW HERE?')).toBeNull();
     // The screen itself is still fine — this is the card going away, not the tab.
     expect(screen.getByText('Start session')).toBeTruthy();
+  });
+
+  /**
+   * Step 3 asserts the library is a file you own and can have an assistant write, and the card is
+   * untappable by design — so the claim is only honest if the way to act on it is on screen. That is
+   * the starter-pack link directly beneath, which is why this pair is pinned rather than left to the
+   * two components' separate cases: they are gated independently, and nothing else would notice if
+   * one of them stopped rendering next to the other.
+   */
+  it('puts the ownership claim above something that acts on it', async () => {
+    setSeededLibrary();
+
+    await renderScreen(<WorkoutsScreen />);
+
+    expect(screen.getByText('Your library is a file')).toBeTruthy();
+    expect(screen.getByText('Add a starter program')).toBeTruthy();
   });
 
   it('stays out of the empty state, which is its own single instruction', async () => {
@@ -216,7 +232,7 @@ describe('first-run guidance', () => {
     await renderScreen(<WorkoutsScreen />);
 
     expect(screen.getByText('PRIMEIRA VEZ?')).toBeTruthy();
-    expect(screen.getByText('Planeje semanas em Programas')).toBeTruthy();
+    expect(screen.getByText('Sua biblioteca é um arquivo')).toBeTruthy();
   });
 });
 

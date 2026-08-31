@@ -30,6 +30,11 @@ workouts yet" card makes the same offer, so there is a way back that isn't build
 Import screen lives and leave you to walk there. It now opens it for you, and closing it puts you back
 on Programs, where what you just imported is waiting.
 
+**The first-run card says what your library actually is.** Its last step used to point at the Programs
+tab, which the tab bar was already doing. It now says the thing that is easy to miss: your library is
+an ordinary file, yours to edit in the app, open in any text editor, or have an AI draft for you.
+Programs hasn't moved — it is still a tab, and still explains itself when you get there.
+
 ---
 
 ## 0.8.0 — versionCode 11, 25 August 2026

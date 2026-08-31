@@ -42,8 +42,9 @@ retrofit, so answer them out loud even when the answer is no.
 - [ ] **Does it need a11y and i18n?** For anything with UI, assume yes: `accessibilityRole` + a label on
       every interactive element, `accessibilityState` where it's selected/expanded, 44px targets via
       `minHeight`, new colors contrast-checked, and no user-facing string outside the locale bundles —
-      keys go into **both** `en.json` and `pt.json`. User data is never translated. See "Conventions
-      and house rules"; these are cheap now and tedious later, which is why they're a checklist item.
+      keys go into **all three** of `en.json`, `pt.json` and `ja.json`. User data is never
+      translated. See "Conventions and house rules"; these are cheap now and tedious later, which is
+      why they're a checklist item.
 - [ ] **Does it need error checks, an error boundary, or a graceful degrade?** Ask per layer: does a
       storage call need an `isFileStorageSupported` guard; does an in-app form need `validateConfig`-style
       validation (the zod schema does *not* run on that path); can a render throw here cost a workout in
@@ -165,10 +166,12 @@ are house rules here rather than a backlog — cheap as you go, tedious to retro
   through `i18n/format.ts` (never `toLocaleDateString('en-US', …)`).
 - **Never translate user data** — exercise, workout and program names, notes, and `ProgramWeek.day`
   come from the user's YAML and render verbatim. Key the English around them and interpolate the name.
-- Adding a key means adding it to **both** `en.json` and `pt.json`; they are kept at exact parity —
-  by hand, since nothing tests it. A key missing from one bundle doesn't fail anywhere; i18next's
-  `fallbackLng` quietly renders it in English. (No count is quoted here on purpose: the one that used
-  to be went stale, and the bundles are the only honest answer.)
+- Adding a key means adding it to **all three** bundles — `en.json`, `pt.json` and `ja.json`. `en` and
+  `pt` are kept at exact parity; **`ja` carries only the `_other` form of a plural**, since Japanese
+  has no separate singular category, so it sits a few dozen keys below the other two and that is
+  correct rather than a gap. All of it by hand, since nothing tests it. A key missing from a bundle
+  doesn't fail anywhere; i18next's `fallbackLng` quietly renders it in English. (No count is quoted
+  here on purpose: the one that used to be went stale, and the bundles are the only honest answer.)
 
 Shipping a whole new language is a six-place procedure of its own:
 [`docs/adding-a-language.md`](docs/adding-a-language.md).

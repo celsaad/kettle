@@ -128,6 +128,17 @@ export default function WorkoutsScreen() {
   // single clear instruction, and two competing instruction blocks is worse than either alone.
   const isFirstRun = sessions.length === 0 && queued !== null;
 
+  // The starter-pack link deliberately does **not** reuse `isFirstRun`, and the difference is the
+  // rest-day case above: `queued` is null there, so a brand-new user on a program that opens with a
+  // rest day would get no invitation at all — and, having workouts, no empty state either. That gate
+  // is shaped for a step reading "Start the workout below", which genuinely needs a Start button
+  // under it; an invitation to add content has no such dependency.
+  //
+  // `all.length > 0` is the other half: with an empty library the list's own empty state carries this
+  // same link, so gating on `sessions.length === 0` alone would render two invitations at once —
+  // which is the thing `isFirstRun`'s own suppression exists to avoid.
+  const showStarterPacks = sessions.length === 0 && all.length > 0;
+
   const exercises = library?.exercises;
   const renderItem = useCallback(
     ({ item }: ListRenderItemInfo<Workout>) => <WorkoutCard workout={item} exercises={exercises ?? []} />,
@@ -176,6 +187,28 @@ export default function WorkoutsScreen() {
             </View>
 
             {isFirstRun && <FirstRunCard />}
+
+            {/*
+              Under the card rather than beside the empty-session link below, which is the tempting
+              spot and the wrong one: the note above that control argues it works *because* it sits
+              directly under Start and reads as its alternative, and a second `accentText` link in the
+              same column gives it a peer and takes that reading away. Here it reads as the
+              continuation of the block whose whole job is orienting someone new — and it is outside
+              `FirstRunCard` on purpose, since that card is untappable by design.
+
+              The label names what arrives, not the machinery it arrives through. "Import" is the
+              right word on the destination screen and the wrong one on the invitation.
+            */}
+            {showStarterPacks && (
+              <Pressable
+                onPress={() => router.push('/import')}
+                accessibilityRole="button"
+                style={({ pressed }) => [styles.starterPackLink, pressed && styles.pressed]}>
+                <ThemedText type="smallMedium" themeColor="accentText">
+                  {t('today.starterPacks')}
+                </ThemedText>
+              </Pressable>
+            )}
 
             {/* Nothing queued means an empty library, and the list's own empty state below says so
                 better than a second card would — so the card simply doesn't render rather than
@@ -237,6 +270,22 @@ export default function WorkoutsScreen() {
               <ThemedText themeColor="textSecondary" style={styles.emptyBody}>
                 {t('build.emptyBody')}
               </ThemedText>
+              {/*
+                Building one from scratch is the honest instruction above and the slow one. This is
+                the same offer the header link makes, to the user the header link stays away from —
+                the two are mutually exclusive by `showStarterPacks`, so nobody sees both.
+
+                Same string rather than a second one worded for this spot: one label for one
+                destination can't drift, and two would.
+              */}
+              <Pressable
+                onPress={() => router.push('/import')}
+                accessibilityRole="button"
+                style={({ pressed }) => [styles.starterPackLink, pressed && styles.pressed]}>
+                <ThemedText type="smallMedium" themeColor="accentText">
+                  {t('today.starterPacks')}
+                </ThemedText>
+              </Pressable>
             </ThemedView>
           )
         }
@@ -307,6 +356,15 @@ const styles = StyleSheet.create({
   // that moved this control out of the title row in the first place. It is a floor, so the label sits
   // in it without the control taking a button's worth of room.
   emptySessionLink: {
+    minHeight: 44,
+    alignSelf: 'flex-start',
+    justifyContent: 'center',
+  },
+  // The same metrics as `emptySessionLink`, for the same reasons — a 44px floor rather than a fixed
+  // height, left-aligned to the screen's text column. Its own entry rather than a shared one because
+  // the two controls sit in different blocks and are argued for separately; a shared style would move
+  // both the next time one of them is nudged.
+  starterPackLink: {
     minHeight: 44,
     alignSelf: 'flex-start',
     justifyContent: 'center',

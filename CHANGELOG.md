@@ -18,7 +18,17 @@ here, next to what it describes.
 
 ## Unreleased
 
-Nothing since 0.8.0.
+### What changed
+
+**The starter packs are easier to find.** They have been in Import since 0.8.0, which is a fine place
+for them once you know it exists and no place at all before that. So until you have logged your first
+session, the home screen offers them directly — one tap to the three ready-made libraries, without
+going looking for a screen named after a file operation. Cleared your library out entirely? The "no
+workouts yet" card makes the same offer, so there is a way back that isn't building one from scratch.
+
+**Writing a program by hand ends where it should.** The guide's last step used to tell you where the
+Import screen lives and leave you to walk there. It now opens it for you, and closing it puts you back
+on Programs, where what you just imported is waiting.
 
 ---
 

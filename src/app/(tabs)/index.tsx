@@ -1,6 +1,15 @@
 import { router } from 'expo-router';
 import { memo, useCallback, useDeferredValue, useMemo, useState } from 'react';
-import { FlatList, Platform, Pressable, StyleSheet, View, type ListRenderItemInfo } from 'react-native';
+import {
+  FlatList,
+  Platform,
+  Pressable,
+  StyleSheet,
+  View,
+  type ListRenderItemInfo,
+  type StyleProp,
+  type ViewStyle,
+} from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -67,6 +76,33 @@ const WorkoutCard = memo(function WorkoutCard({ workout, exercises }: { workout:
 });
 
 const keyExtractor = (workout: Workout) => workout.id;
+
+/**
+ * The way into the bundled starter packs.
+ *
+ * One component rather than a copy in each of its two homes: they are mutually exclusive by
+ * `showStarterPacks`, so this only ever renders once per screen, and two copies would be two things
+ * to keep pointed at the same route with the same words. A duplicated version of this shipped for
+ * exactly as long as it took a review to notice the empty-state copy had no test behind it.
+ *
+ * The margin belongs to the caller. One instance sits in the header column, where every sibling
+ * spaces itself with `Spacing.three`; the other sits inside the empty card, whose own `gap` already
+ * separates it from the line above.
+ */
+function StarterPackLink({ style }: { style?: StyleProp<ViewStyle> }) {
+  const { t } = useTranslation();
+
+  return (
+    <Pressable
+      onPress={() => router.push('/import')}
+      accessibilityRole="button"
+      style={({ pressed }) => [styles.starterPackLink, style, pressed && styles.pressed]}>
+      <ThemedText type="smallMedium" themeColor="accentText">
+        {t('today.starterPacks')}
+      </ThemedText>
+    </Pressable>
+  );
+}
 
 /**
  * The home tab: what to run next, and everything there is to run.
@@ -199,16 +235,7 @@ export default function WorkoutsScreen() {
               The label names what arrives, not the machinery it arrives through. "Import" is the
               right word on the destination screen and the wrong one on the invitation.
             */}
-            {showStarterPacks && (
-              <Pressable
-                onPress={() => router.push('/import')}
-                accessibilityRole="button"
-                style={({ pressed }) => [styles.starterPackLink, pressed && styles.pressed]}>
-                <ThemedText type="smallMedium" themeColor="accentText">
-                  {t('today.starterPacks')}
-                </ThemedText>
-              </Pressable>
-            )}
+            {showStarterPacks && <StarterPackLink style={styles.starterPackLinkHeader} />}
 
             {/* Nothing queued means an empty library, and the list's own empty state below says so
                 better than a second card would — so the card simply doesn't render rather than
@@ -274,18 +301,8 @@ export default function WorkoutsScreen() {
                 Building one from scratch is the honest instruction above and the slow one. This is
                 the same offer the header link makes, to the user the header link stays away from —
                 the two are mutually exclusive by `showStarterPacks`, so nobody sees both.
-
-                Same string rather than a second one worded for this spot: one label for one
-                destination can't drift, and two would.
               */}
-              <Pressable
-                onPress={() => router.push('/import')}
-                accessibilityRole="button"
-                style={({ pressed }) => [styles.starterPackLink, pressed && styles.pressed]}>
-                <ThemedText type="smallMedium" themeColor="accentText">
-                  {t('today.starterPacks')}
-                </ThemedText>
-              </Pressable>
+              <StarterPackLink />
             </ThemedView>
           )
         }
@@ -368,6 +385,14 @@ const styles = StyleSheet.create({
     minHeight: 44,
     alignSelf: 'flex-start',
     justifyContent: 'center',
+  },
+  // Only the header instance. Every other child of the header column — the first-run card, the
+  // next-up card, the search box, the rule — carries the same `Spacing.three`, and without it this
+  // link sits flush under the title row on the rest-day path and against the first-run card's bottom
+  // border on a first run. The empty-state instance takes none: it lives inside the empty card, whose
+  // own `gap` already separates it from the line above.
+  starterPackLinkHeader: {
+    marginTop: Spacing.three,
   },
   // The gap that used to sit here belongs to `ListHeaderRule`, above its line rather than below it.
   listHeader: {},

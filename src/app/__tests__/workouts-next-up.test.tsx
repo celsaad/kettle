@@ -289,6 +289,20 @@ describe('the starter-pack link', () => {
     expect(screen.getAllByText('Add a starter program')).toHaveLength(1);
   });
 
+  /**
+   * The same assertion as "opens import" above, against the other instance. Both come from one
+   * component now, so this looks redundant — it is not: the two used to be copies, and the copy in
+   * the empty state was the one nothing pressed. Retargeting it left the suite green.
+   */
+  it('opens import from the empty state too', async () => {
+    setEmptyLibrary();
+
+    await renderScreen(<WorkoutsScreen />);
+    await fireEvent.press(screen.getByText('Add a starter program'));
+
+    expect(router.push).toHaveBeenCalledWith('/import');
+  });
+
   it('is translated', async () => {
     await changeLanguage('pt');
     setSeededLibrary();

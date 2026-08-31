@@ -1,8 +1,10 @@
 # Making the import path prominent — plan
 
-> **Not executed.** A forward-looking plan; nothing below has shipped. Written against the tree at
-> `5859d1c`, which is the commit that creates the problem it solves. The deliverables in "The slices"
-> are meant to ship as separate PRs, in the order given.
+> **Partly executed. D1, D3 and D4 have shipped; D2 and D5 are open.** Written against the tree at
+> `5859d1c`, which is the commit that creates the problem it solves. The slices ship as separate PRs,
+> in the order given — D1 and D3 in #108, D4 here. What has shipped is kept for its rationale rather
+> than as a backlog; the "not in scope" list applies to all of it and is the part most likely to be
+> re-proposed.
 
 ## The problem
 

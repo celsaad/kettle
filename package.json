@@ -82,6 +82,7 @@
       ".css$": "<rootDir>/jest.style-mock.js"
     },
     "resolver": "<rootDir>/jest.resolver.js",
+    "cacheDirectory": "<rootDir>/.jest-cache",
     "testTimeout": 30000
   },
   "private": true

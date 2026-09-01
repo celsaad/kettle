@@ -45,6 +45,27 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      # Roughly half this job is babel, not tests. `transformIgnorePatterns` deliberately sends 88
+      # node_modules packages through it — react-native, reanimated, worklets, svg, every expo-* —
+      # and a cold cache re-transpiles the lot: measured locally at 74s cold against 36s warm, at
+      # this same --maxWorkers=2. Only ~26% of the suite's time is test bodies at all; the rest is
+      # module graphs being rebuilt, which is exactly what this cache holds (~32MB).
+      #
+      # Rolling key, same shape as the ccache entry in android.yml and for the same reason: a cache
+      # entry is immutable once written, so a fixed key would freeze whatever the first run happened
+      # to populate, and every src file touched since would miss forever. Each run restores the
+      # newest and writes back a superset. Restoring a stale one is safe — jest keys each cached
+      # transform by the file's own content and config hash, so a miss costs a transpile, never a
+      # wrong result.
+      - name: Restore jest transform cache
+        uses: actions/cache@v4
+        with:
+          path: .jest-cache
+          key: jest-${{ hashFiles('pnpm-lock.yaml', 'package.json') }}-${{ github.run_id }}
+          restore-keys: |
+            jest-${{ hashFiles('pnpm-lock.yaml', 'package.json') }}-
+            jest-
+
       # --ci fails rather than writes on a missing snapshot; the worker cap keeps jest from
       # over-subscribing the 2-core runner, where spawning more workers is slower, not faster.
       # TZ is set here as well as in jest.setup.js because that file's process.env assignment is a

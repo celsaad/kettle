@@ -20,6 +20,10 @@ web-build/
 # Metro
 .metro-health-check*
 
+# Jest's transform cache. Pinned to the repo rather than left in the OS temp dir so CI can restore
+# it between runs; see the cache step in .github/workflows/ci.yml.
+.jest-cache/
+
 # debug
 npm-debug.*
 yarn-debug.*

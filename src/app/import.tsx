@@ -21,6 +21,7 @@ import { parseLibraryYaml } from '@/domain/yaml-mapping';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useLibraryStore } from '@/state/library-store';
+import { useSessionHistoryStore } from '@/state/session-history-store';
 import { useUnitSystem } from '@/state/preferences-store';
 import type { ContentPack } from '@/storage/content-packs';
 import { contentPackCounts, contentPackLibrary, contentPacks } from '@/storage/content-packs';
@@ -147,6 +148,10 @@ export default function ImportScreen() {
   const theme = useTheme();
   const { t, i18n } = useTranslation();
   const currentLibrary = useLibraryStore((state) => state.library);
+  // Nothing logged is what "new here" means everywhere else in the app (see the Workouts screen), and
+  // it costs no stored flag. It reads the count rather than subscribing to the sessions themselves,
+  // so a session landing while this screen is open cannot reorder it under the user.
+  const packsFirst = useSessionHistoryStore((state) => state.sessions.length) === 0;
   const replaceLibrary = useLibraryStore((state) => state.replaceLibrary);
   // The diff prints a target weight, and a weight is never formatted without going through the
   // preference — a kilogram figure shown to somebody working in pounds describes a change they didn't
@@ -452,6 +457,56 @@ export default function ImportScreen() {
     copied?.target === target && copied.status === 'copied' ? t('import.copied') : idle;
   const copyFailed = (target: CopyTarget) => copied?.target === target && copied.status === 'failed';
 
+  // Lifted out of the idle block so it can render in either of two places, never both. Someone with
+  // nothing logged is met by three programs they can add in one tap; someone returning came here to
+  // import a file, and demoting the file path for them would trade a real job for a first-run
+  // nicety. Only the three source blocks reorder -- the assistant brief stays last for everyone,
+  // being the one thing here a first-timer is least likely to want.
+  const starterPacks = (
+    <>
+      {/*
+      A list of peers, so rows rather than the two dashed pick boxes above: those are two
+      *actions* on the same screen, these are three interchangeable things to choose between.
+      The heading rule is what gives the list a top edge — without a fill on the rows, the
+      first name would otherwise read as one more line of the section's own caption.
+    */}
+      <View style={styles.packsHeader}>
+        <ThemedText type="heading">{t('import.packs.title')}</ThemedText>
+        <ThemedText type="small" themeColor="textSecondary">
+          {t('import.packs.detail')}
+        </ThemedText>
+      </View>
+      <ListHeaderRule />
+      {contentPacks.map((pack, index) => (
+        <View key={pack.id}>
+          {index > 0 && <ListRowSeparator />}
+          <Pressable
+            onPress={() => reviewPack(pack)}
+            // A pack review is instant, so this isn't about *its* I/O — it's that `pickFile`
+            // holds `busy` across the picker and the file read after it, and a pack picked
+            // inside that window is silently replaced when the file's merge resolves into the
+            // same `ready`. Merge & import would then land the file.
+            disabled={busy}
+            // No `accessibilityLabel`: the two lines inside name it, and a duplicate would drift
+            // from the counts it quotes. Voice Control matches the visible words either way.
+            accessibilityRole="button">
+            <ListRow>
+              <View style={styles.fileText}>
+                <ThemedText type="heading">{t(`import.packs.${pack.id}.name`)}</ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">
+                  {t(`import.packs.${pack.id}.detail`)}
+                </ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">
+                  {packCountLine(pack)}
+                </ThemedText>
+              </View>
+            </ListRow>
+          </Pressable>
+        </View>
+      ))}
+    </>
+  );
+
   return (
     <SafeAreaView
       style={[styles.safeArea, { backgroundColor: theme.background }]}
@@ -462,6 +517,13 @@ export default function ImportScreen() {
 
         {!ready && !applied && (
           <>
+            {/*
+              First for someone who has logged nothing. The packs are the only offer on this screen
+              that costs no file and no typing, and they sat third, under two verbs naming machinery
+              — on the screen the app's own first-run link now points at.
+            */}
+            {packsFirst && starterPacks}
+
             <Pressable
               onPress={pickFile}
               disabled={busy}
@@ -539,46 +601,7 @@ export default function ImportScreen() {
               </>
             )}
 
-            {/*
-              A list of peers, so rows rather than the two dashed pick boxes above: those are two
-              *actions* on the same screen, these are three interchangeable things to choose between.
-              The heading rule is what gives the list a top edge — without a fill on the rows, the
-              first name would otherwise read as one more line of the section's own caption.
-            */}
-            <View style={styles.packsHeader}>
-              <ThemedText type="heading">{t('import.packs.title')}</ThemedText>
-              <ThemedText type="small" themeColor="textSecondary">
-                {t('import.packs.detail')}
-              </ThemedText>
-            </View>
-            <ListHeaderRule />
-            {contentPacks.map((pack, index) => (
-              <View key={pack.id}>
-                {index > 0 && <ListRowSeparator />}
-                <Pressable
-                  onPress={() => reviewPack(pack)}
-                  // A pack review is instant, so this isn't about *its* I/O — it's that `pickFile`
-                  // holds `busy` across the picker and the file read after it, and a pack picked
-                  // inside that window is silently replaced when the file's merge resolves into the
-                  // same `ready`. Merge & import would then land the file.
-                  disabled={busy}
-                  // No `accessibilityLabel`: the two lines inside name it, and a duplicate would drift
-                  // from the counts it quotes. Voice Control matches the visible words either way.
-                  accessibilityRole="button">
-                  <ListRow>
-                    <View style={styles.fileText}>
-                      <ThemedText type="heading">{t(`import.packs.${pack.id}.name`)}</ThemedText>
-                      <ThemedText type="small" themeColor="textSecondary">
-                        {t(`import.packs.${pack.id}.detail`)}
-                      </ThemedText>
-                      <ThemedText type="small" themeColor="textSecondary">
-                        {packCountLine(pack)}
-                      </ThemedText>
-                    </View>
-                  </ListRow>
-                </Pressable>
-              </View>
-            ))}
+            {!packsFirst && starterPacks}
 
             {/*
               Sits under every input source rather than beside them, because it isn't one: it's what

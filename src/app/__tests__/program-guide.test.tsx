@@ -6,13 +6,17 @@ import { router } from '@/test-support/expo-router';
 import { renderScreen } from '@/test-support/render';
 
 /**
- * The program guide is a page of reference prose with two controls on it, and only the controls are
- * worth a test — the prose is deliberately English-only (see the testing plan's out-of-scope list),
- * so there is nothing here for a `pt` run to catch except the buttons themselves.
+ * The program guide: a page of reference prose with two controls on it, and — since D5 of the
+ * import-prominence plan — a locale bundle of its own. Both halves are worth a case, for unrelated
+ * reasons.
  *
- * The import hand-off is the case that matters. The guide used to end by *describing* the route —
- * "Library tab → Import → pick your file" — to someone who had just finished writing a program and
+ * The import hand-off is the one that matters most. The guide used to end by *describing* the route
+ * — "Library tab → Import → pick your file" — to someone who had just finished writing a program and
  * had nowhere to put it.
+ *
+ * The prose cases guard the two things about translating a reference page that a wording change
+ * can't tell you it broke: the code spans, and the samples that must not follow the UI language. See
+ * the `describe` below.
  */
 jest.mock('expo-router', () => require('@/test-support/expo-router'));
 

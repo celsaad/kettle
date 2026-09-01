@@ -399,6 +399,7 @@
     "pickedFrom": "{{size}} · picked from Files",
     "pasteToggle": "Paste YAML instead",
     "pasteToggleDetail": "From an assistant, or any text editor",
+    "pasteFromClipboard": "Paste from clipboard",
     "pastePlaceholder": "Paste the whole exercises.yaml here",
     "packs": {
       "title": "Starter packs",
@@ -430,6 +431,8 @@
     "libraryNotLoaded": "Library is not loaded yet.",
     "repairPrompt": "Kettle refused this exercises.yaml on import. Please fix the YAML and send back the corrected file.",
     "copyBrief": "Copy the format for an assistant",
+    "copyBriefInstead": "Copy it instead",
+    "shareBrief": "Send the format to an assistant",
     "copyBriefDetail": "The schema plus the ids already in your library",
     "brief": {
       "prompt": "This is the file format the Kettle workout app imports, and the ids already in my library. Reply with YAML matching the schema below. Reuse an existing id to replace that item; use a new id to add one. The app validates a few cross-field rules the schema can't express — if it refuses the file, it says why, and I'll paste that back to you.",
@@ -444,6 +447,9 @@
     "copied": "Copied",
     "copiedAnnouncement": "Error copied to the clipboard",
     "copyFailed": "Couldn't reach the clipboard.",
+    "shareFailed": "Couldn’t open the share sheet.",
+    "clipboardEmpty": "Nothing on the clipboard yet.",
+    "clipboardFailed": "Couldn’t read the clipboard.",
     "new": "new",
     "updated": "updated",
     "workoutNoun_one": "workout",

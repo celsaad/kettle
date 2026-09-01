@@ -139,6 +139,11 @@ activation moment for people who will never type YAML.
   on this screen and the one thing here a first-timer is least likely to want; moving it up would
   also put "copy a JSON Schema" in front of the reader this slice exists to serve. Only the three
   source blocks above it reorder.
+
+  **Half-reversed since, deliberately — see the share-sheet entry in [`decisions.md`](decisions.md).**
+  The block now rides up between the two file rows *for a returning user*, because the share sheet
+  made it the thing they came for rather than a schema to copy. The half that mattered here holds
+  unchanged: at zero sessions it is still last, under the packs, for exactly the reason above.
 - **Tests:** [`import.test.tsx`](../src/app/__tests__/import.test.tsx) — assert rendered order at zero
   sessions and at one.
 - **Done when:** the first thing a new user sees on `/import` is three programs, not two file verbs.

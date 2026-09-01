@@ -613,6 +613,27 @@ decision assembled across several commits. Open work belongs in the sections at 
   nothing to stand behind a training claim with, and the moment it ships one, the contents of the
   user's library stop being solely theirs.
 
+- ✅ **The brief goes out through the OS share sheet, and never through a URL to a named assistant.**
+  Recorded because the URL version is the obvious idea, is proposed roughly every time this screen
+  comes up, and is refused on two independent grounds — either of which alone settles it.
+
+  **It doesn't fit.** `buildAssistantBrief` measures **~16.3 KB** against the seed library alone
+  (14.7 KB of that is `z.toJSONSchema(rawLibrarySchema)`) and grows with the user's own ids. No
+  `?q=`-style deep link survives that at any length limit worth targeting, so the feature would ship
+  truncated — which for a schema means silently wrong YAML coming back.
+
+  **And it would be Kettle transmitting.** A share sheet is the OS listing apps that accept text and
+  the user picking one; a prefilled URL is *this app* constructing a request carrying the user's
+  exercise and workout names to a third party it chose. That is the line the zero-data-collected
+  declaration draws (see the tip-jar entry), and it is also why no vendor is named anywhere in the
+  UI. The hard constraint in [`open-work.md`](open-work.md) — the app must never call a model — is
+  untouched by either: nothing here contacts anything.
+
+  Text rather than a file, unlike `storage/export.ts`, which shares by URI because a library *is* a
+  file. This is a prompt: a chat target takes text into its compose box, and mostly ignores an
+  attached `.md`. The clipboard button stays beside it as the fallback, because a share target is
+  free to truncate 16 KB and some do.
+
 - ✅ **Fixed: `exportLibrary`/`exportSession` threw past their own `.catch()`.** Resolving `.uri`
   constructs an `expo-file-system` `File`, which has no web implementation and throws *synchronously* —
   before `share()`'s async body is entered — so the throw escaped the returned promise and every

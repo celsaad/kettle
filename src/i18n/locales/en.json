@@ -115,6 +115,38 @@
     "filterCardio": "Cardio"
   },
   "programGuide": {
+    "title": "Writing a program by hand",
+    "intro": "Programs — multi-week plans that step through your workouts, optionally tweaking sets/reps/rounds as weeks go by — can be built right in the app, from the + button on the Programs tab. This page is for the other way: writing one as YAML and importing the file, which is handy for drafting a long block on a real keyboard or sharing it with someone else.",
+    "ids": {
+      "title": "1. Find your workout IDs",
+      "body": "A program points at workouts by their id, not their display name. A workout's id is set automatically from its name when you create it in Workouts: lowercased, with anything that isn't a letter or number turned into a single hyphen. So a workout named <c>\"Calisthenics A\"</c> has the id <c>calisthenics-a</c>."
+    },
+    "write": {
+      "title": "2. Write the program",
+      "body": "Save this as a .yaml file, filling in your own workout ids:"
+    },
+    "fields": {
+      "title": "3. Fields",
+      "body": "• <c>id</c> — the program's own slug, hand-typed (lowercase-with-hyphens is conventional).\n• <c>name</c> — what shows in the Programs list.\n• <c>weeks</c> — a list; each entry needs a <c>week</c> number and a <c>workout</c> id, unless it's a rest day (see below).\n• <c>notes</c> — optional freeform text shown on that week.\n• <c>overrides</c> — optional, see below."
+    },
+    "overrides": {
+      "title": "4. Overrides (optional)",
+      "intro": "Each entry targets exactly one exercise or one circuit block, by id, with a partial config patch using that exercise's/circuit's own field names:",
+      "body": "An exercise override only makes sense for a single exercise block. A block override only works on a circuit that was given its own id in Workouts (the optional \"Block ID\" field when editing a circuit) — it patches the circuit's own <c>rounds</c>/rest fields, not one member's config. Overrides don't carry forward — repeat one in every later week you want it to keep applying to."
+    },
+    "multiDay": {
+      "title": "5. More than one session a week (optional)",
+      "body": "Add a freeform <c>day</c> label when two weeks share the same week number — e.g. a push/pull split:"
+    },
+    "restDays": {
+      "title": "6. Rest days (optional)",
+      "body": "A week entry with <c>rest_day: true</c> and no <c>workout</c> is a scheduled day off. It takes its place in the rotation, so Workouts shows a rest card instead of queuing a session — and it moves on by itself a day later. Nothing is logged, and it can carry a <c>notes</c> line but no <c>overrides</c>, since it runs nothing to override.",
+      "tail": "Write out every day off you actually take, including the ones at the end of the week. Kettle counts a rest entry as one day, so a three-day week written as three entries rolls straight into the next week the day after your last session."
+    },
+    "importIt": {
+      "title": "7. Import it",
+      "body": "Pick your file, review the summary, and merge. Programs merge by id: a new id gets added, but re-importing an id that already exists replaces that whole program — all its weeks — with what's in the file, it doesn't merge week-by-week. So to add or change one week, include the program's complete, up-to-date week list in the file you import, not just the changed week."
+    },
     "openImport": "Open import"
   },
   "programs": {

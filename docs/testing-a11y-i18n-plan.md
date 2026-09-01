@@ -147,5 +147,13 @@ implemented RTL is worse than none.
 ## Deliberately out of scope
 
 Vitest; snapshot tests; Detox; extracting a state machine from the session runner before tests exist;
-coverage thresholds on day one; real-filesystem storage tests; RTL plumbing; a real second locale;
-translating `program-guide.tsx`'s prose; exhaustive `accessibilityHint` coverage; a web ARIA audit.
+coverage thresholds on day one; real-filesystem storage tests; RTL plumbing; exhaustive
+`accessibilityHint` coverage; a web ARIA audit.
+
+**Two of these have since been done deliberately, and are struck from the list rather than left to
+read as live constraints** — the banner above says this section governs new work, so a shipped item
+sitting in it is a false one. ~~A real second locale~~ shipped as pt and then ja, with
+[`adding-a-language.md`](adding-a-language.md) as the procedure that came out of it. ~~Translating
+`program-guide.tsx`'s prose~~ shipped as D5 of
+[`import-prominence-plan.md`](import-prominence-plan.md), once that plan started routing readers into
+the guide. Everything else above still stands.

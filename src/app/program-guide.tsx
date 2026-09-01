@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import type { ReactNode } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { useTranslation } from 'react-i18next';
+import { Pressable, ScrollView, StyleSheet, View, type StyleProp, type TextStyle } from 'react-native';
+import { Trans, useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ModalHeader } from '@/components/modal-header';
@@ -18,6 +18,25 @@ function CodeBlock({ children }: { children: string }) {
     <ThemedView type="backgroundElement" style={[styles.codeBlock, { borderColor: theme.border }]}>
       <ThemedText style={styles.codeText}>{children}</ThemedText>
     </ThemedView>
+  );
+}
+
+/**
+ * A paragraph of the guide, with `<c>` in the string rendered as a code span.
+ *
+ * `Trans` rather than cutting each sentence at its tokens and concatenating the pieces: the tokens
+ * are YAML field names sitting mid-sentence, and a language that orders the clause differently has to
+ * be able to move them — a fixed sequence of fragments is precisely the thing that cannot be
+ * translated. This is the only screen that needs it; everywhere else in the app the interpolated
+ * values are whole strings rather than styled fragments.
+ *
+ * The tokens themselves stay put in every locale, being YAML keys rather than words.
+ */
+function Body({ id, style }: { id: string; style?: StyleProp<TextStyle> }) {
+  return (
+    <ThemedText themeColor="textSecondary" style={style ?? styles.body}>
+      <Trans i18nKey={id} components={{ c: <ThemedText style={styles.inline} /> }} />
+    </ThemedText>
   );
 }
 
@@ -43,27 +62,15 @@ export default function ProgramGuideScreen() {
       edges={['top', 'bottom', 'left', 'right']}>
       <ModalHeader onClose={close} />
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <ThemedText type="subtitle">Writing a program by hand</ThemedText>
-        <ThemedText themeColor="textSecondary" style={styles.intro}>
-          Programs — multi-week plans that step through your workouts, optionally tweaking sets/reps/ rounds as weeks go by —
-          can be built right in the app, from the + button on the Programs tab. This page is for the other way: writing one
-          as YAML and importing the file, which is handy for drafting a long block on a real keyboard or sharing it with
-          someone else.
-        </ThemedText>
+        <ThemedText type="subtitle">{t('programGuide.title')}</ThemedText>
+        <Body id="programGuide.intro" style={styles.intro} />
 
-        <Section title="1. Find your workout IDs">
-          <ThemedText themeColor="textSecondary" style={styles.body}>
-            A program points at workouts by their id, not their display name. A workout's id is set automatically from its
-            name when you create it in Workouts: lowercased, with anything that isn't a letter or number turned into a single
-            hyphen. So a workout named <ThemedText style={styles.inline}>"Calisthenics A"</ThemedText> has the id{' '}
-            <ThemedText style={styles.inline}>calisthenics-a</ThemedText>.
-          </ThemedText>
+        <Section title={t('programGuide.ids.title')}>
+          <Body id="programGuide.ids.body" />
         </Section>
 
-        <Section title="2. Write the program">
-          <ThemedText themeColor="textSecondary" style={styles.body}>
-            Save this as a .yaml file, filling in your own workout ids:
-          </ThemedText>
+        <Section title={t('programGuide.write.title')}>
+          <Body id="programGuide.write.body" />
           <CodeBlock>{`version: 1
 
 programs:
@@ -83,41 +90,22 @@ programs:
         notes: Deload.`}</CodeBlock>
         </Section>
 
-        <Section title="3. Fields">
-          <ThemedText themeColor="textSecondary" style={styles.body}>
-            • <ThemedText style={styles.inline}>id</ThemedText> — the program's own slug, hand-typed (lowercase-with-hyphens
-            is conventional). {'\n'}• <ThemedText style={styles.inline}>name</ThemedText> — what shows in the Programs list.{' '}
-            {'\n'}• <ThemedText style={styles.inline}>weeks</ThemedText> — a list; each entry needs a{' '}
-            <ThemedText style={styles.inline}>week</ThemedText> number and a{' '}
-            <ThemedText style={styles.inline}>workout</ThemedText> id, unless it's a rest day (see below). {'\n'}•{' '}
-            <ThemedText style={styles.inline}>notes</ThemedText> — optional freeform text shown on that week. {'\n'}•{' '}
-            <ThemedText style={styles.inline}>overrides</ThemedText> — optional, see below.
-          </ThemedText>
+        <Section title={t('programGuide.fields.title')}>
+          <Body id="programGuide.fields.body" />
         </Section>
 
-        <Section title="4. Overrides (optional)">
-          <ThemedText themeColor="textSecondary" style={styles.body}>
-            Each entry targets exactly one exercise or one circuit block, by id, with a partial config patch using that
-            exercise's/circuit's own field names:
-          </ThemedText>
+        <Section title={t('programGuide.overrides.title')}>
+          <Body id="programGuide.overrides.intro" />
           <CodeBlock>{`overrides:
   - exercise: pullups
     config: { sets: 5 }
   - block: finisher-rounds
     config: { rounds: 2 }`}</CodeBlock>
-          <ThemedText themeColor="textSecondary" style={styles.body}>
-            An exercise override only makes sense for a single exercise block. A block override only works on a circuit that
-            was given its own id in Workouts (the optional "Block ID" field when editing a circuit) — it patches the
-            circuit's own <ThemedText style={styles.inline}>rounds</ThemedText>/rest fields, not one member's config.
-            Overrides don't carry forward — repeat one in every later week you want it to keep applying to.
-          </ThemedText>
+          <Body id="programGuide.overrides.body" />
         </Section>
 
-        <Section title="5. More than one session a week (optional)">
-          <ThemedText themeColor="textSecondary" style={styles.body}>
-            Add a freeform <ThemedText style={styles.inline}>day</ThemedText> label when two weeks share the same week number
-            — e.g. a push/pull split:
-          </ThemedText>
+        <Section title={t('programGuide.multiDay.title')}>
+          <Body id="programGuide.multiDay.body" />
           <CodeBlock>{`weeks:
   - week: 1
     day: Monday
@@ -127,14 +115,8 @@ programs:
     workout: pull-day`}</CodeBlock>
         </Section>
 
-        <Section title="6. Rest days (optional)">
-          <ThemedText themeColor="textSecondary" style={styles.body}>
-            A week entry with <ThemedText style={styles.inline}>rest_day: true</ThemedText> and no{' '}
-            <ThemedText style={styles.inline}>workout</ThemedText> is a scheduled day off. It takes its place in the
-            rotation, so Today shows a rest card instead of queuing a workout — and it moves on by itself a day later.
-            Nothing is logged, and it can carry a <ThemedText style={styles.inline}>notes</ThemedText> line but no{' '}
-            <ThemedText style={styles.inline}>overrides</ThemedText>, since it runs nothing to override.
-          </ThemedText>
+        <Section title={t('programGuide.restDays.title')}>
+          <Body id="programGuide.restDays.body" />
           <CodeBlock>{`weeks:
   - week: 1
     day: Day 1
@@ -146,20 +128,11 @@ programs:
   - week: 1
     day: Day 3
     workout: pull-day`}</CodeBlock>
-          <ThemedText themeColor="textSecondary" style={styles.body}>
-            Write out every day off you actually take, including the ones at the end of the week. Kettle counts a rest entry
-            as one day, so a three-day week written as three entries rolls straight into the next week the day after your
-            last session.
-          </ThemedText>
+          <Body id="programGuide.restDays.tail" />
         </Section>
 
-        <Section title="7. Import it">
-          <ThemedText themeColor="textSecondary" style={styles.body}>
-            Pick your file, review the summary, and merge. Programs merge by id: a new id gets added, but re-importing an id
-            that already exists replaces that whole program — all its weeks — with what's in the file, it doesn't merge
-            week-by-week. So to add or change one week, include the program's complete, up-to-date week list in the file you
-            import, not just the changed week.
-          </ThemedText>
+        <Section title={t('programGuide.importIt.title')}>
+          <Body id="programGuide.importIt.body" />
           {/*
            * The step this page builds up to, as the control rather than as directions to it. It used
            * to read "Library tab → Import → pick your file → …", which asks someone who has just
@@ -177,10 +150,6 @@ programs:
           </Pressable>
         </Section>
 
-        {/*
-         * The guide's prose is deliberately English-only (see the testing plan's out-of-scope list),
-         * but its one control is not prose and has no reason to be.
-         */}
         <Pressable onPress={close} accessibilityRole="button" style={[styles.doneButton, { backgroundColor: theme.accent }]}>
           <ThemedText type="heading" style={{ color: theme.onAccent }}>
             {t('common.done')}

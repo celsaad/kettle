@@ -115,6 +115,38 @@
     "filterCardio": "Cardio"
   },
   "programGuide": {
+    "title": "Escrevendo um programa à mão",
+    "intro": "Programas — planos de várias semanas que percorrem seus treinos, ajustando séries/repetições/rodadas ao longo delas — podem ser criados no próprio app, pelo botão + na aba Programas. Esta página é sobre o outro caminho: escrever um em YAML e importar o arquivo, útil para rascunhar um bloco longo num teclado de verdade ou compartilhar com outra pessoa.",
+    "ids": {
+      "title": "1. Encontre os IDs dos seus treinos",
+      "body": "Um programa aponta para treinos pelo id, não pelo nome exibido. O id de um treino é definido automaticamente a partir do nome quando você o cria em Treinos: tudo em minúsculas, com qualquer caractere que não seja letra ou número virando um único hífen. Então um treino chamado <c>\"Calistenia A\"</c> tem o id <c>calistenia-a</c>."
+    },
+    "write": {
+      "title": "2. Escreva o programa",
+      "body": "Salve isto como um arquivo .yaml, preenchendo com os ids dos seus treinos:"
+    },
+    "fields": {
+      "title": "3. Campos",
+      "body": "• <c>id</c> — o slug do próprio programa, digitado à mão (minúsculas-com-hifens é o convencional).\n• <c>name</c> — o que aparece na lista de Programas.\n• <c>weeks</c> — uma lista; cada entrada precisa de um número em <c>week</c> e de um id em <c>workout</c>, a menos que seja um dia de descanso (veja abaixo).\n• <c>notes</c> — texto livre opcional exibido naquela semana.\n• <c>overrides</c> — opcional, veja abaixo."
+    },
+    "overrides": {
+      "title": "4. Overrides (opcional)",
+      "intro": "Cada entrada mira exatamente um exercício ou um bloco de circuito, por id, com um patch parcial de config usando os nomes de campo do próprio exercício ou circuito:",
+      "body": "Um override de exercício só faz sentido para um bloco de exercício único. Um override de bloco só funciona em um circuito que recebeu seu próprio id em Treinos (o campo opcional \"ID do bloco\" ao editar um circuito) — ele altera os campos <c>rounds</c>/descanso do próprio circuito, não a config de um dos membros. Overrides não se propagam — repita o mesmo em cada semana seguinte em que ele deva continuar valendo."
+    },
+    "multiDay": {
+      "title": "5. Mais de uma sessão por semana (opcional)",
+      "body": "Adicione um rótulo livre em <c>day</c> quando duas semanas tiverem o mesmo número — por exemplo, uma divisão push/pull:"
+    },
+    "restDays": {
+      "title": "6. Dias de descanso (opcional)",
+      "body": "Uma entrada de semana com <c>rest_day: true</c> e sem <c>workout</c> é uma folga programada. Ela ocupa seu lugar no rodízio, então Treinos mostra um cartão de descanso em vez de enfileirar uma sessão — e passa sozinha um dia depois. Nada é registrado, e ela pode levar uma linha de <c>notes</c>, mas nenhum <c>overrides</c>, já que não roda nada para alterar.",
+      "tail": "Escreva todas as folgas que você realmente tira, inclusive as do fim da semana. O Kettle conta uma entrada de descanso como um dia, então uma semana de três dias escrita como três entradas emenda na semana seguinte no dia seguinte à sua última sessão."
+    },
+    "importIt": {
+      "title": "7. Importe",
+      "body": "Escolha o arquivo, confira o resumo e mescle. Programas são mesclados por id: um id novo é adicionado, mas reimportar um id que já existe substitui o programa inteiro — todas as suas semanas — pelo que está no arquivo; não há mesclagem semana a semana. Então, para adicionar ou mudar uma semana, inclua a lista completa e atualizada de semanas do programa no arquivo que você importar, não apenas a semana alterada."
+    },
     "openImport": "Abrir importação"
   },
   "programs": {

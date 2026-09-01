@@ -1,9 +1,9 @@
 # Making the import path prominent — plan
 
-> **Executed apart from D5. D1, D2, D3 and D4 have shipped; D5 is open and separate.** Written
-> against the tree at `5859d1c`, which is the commit that creates the problem it solves. The slices
-> shipped as separate PRs, in the order given — D1 and D3 in #108, D4 in #110, D2 here. What has
-> shipped is kept for its rationale rather than as a backlog; the "not in scope" list applies to all of it and is the part most likely to be
+> **Executed; kept for its rationale, not as a backlog.** Written against the tree at `5859d1c`,
+> which is the commit that creates the problem it solves. The slices shipped as separate PRs in the
+> order given — D1 and D3 in #108, D4 in #110, D2 in #111, D5 here. What shipped is kept for its
+> rationale rather than as a backlog; the "not in scope" list applies to all of it and is the part most likely to be
 > re-proposed.
 
 ## The problem

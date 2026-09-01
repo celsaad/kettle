@@ -284,8 +284,10 @@ English resources, so `format.test.ts` keeps asserting plain English and never n
 accommodate the change.
 
 **Not translated, by design:** exercise, workout and program names, notes, and `ProgramWeek.day` — all
-user data from their own YAML, rendered verbatim. `program-guide.tsx`'s ~194 lines of prose are still
-English and want their own namespace.
+user data from their own YAML, rendered verbatim. `program-guide.tsx`'s prose was the one exception
+that wasn't by design — it kept its own namespace as D5 of the import-prominence plan, and the YAML
+samples inside it stay English on the same rule as the rest of this paragraph: they are the file the
+reader is about to write, not the page's own words.
 
 ## ✅ A11y-3: dynamic type
 

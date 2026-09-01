@@ -30,6 +30,11 @@ workouts yet" card makes the same offer, so there is a way back that isn't build
 Import screen lives and leave you to walk there. It now opens it for you, and closing it puts you back
 on Programs, where what you just imported is waiting.
 
+**"Writing a program by hand" now speaks Portuguese and Japanese.** The whole guide — every section,
+not just its buttons — follows the app's language like the rest of Kettle. The YAML samples in it
+stay exactly as they are, because they are the file you are about to write, and a translated
+`rest_day` would be refused on import.
+
 **Import leads with the packs until you have trained.** Until your first logged session, the three
 starter packs sit at the top of the Import screen, above choosing a file and pasting text — they are
 the only thing there you can take without writing anything. Once you have a session behind you the

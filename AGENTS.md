@@ -285,10 +285,10 @@ are the index, the banner is the contract.
 - `docs/testing-a11y-i18n-plan.md` — executed; kept for its rationale, not as a backlog.
 - `docs/watch-remote-plan.md` — **not executed.** Driving a running session from a Wear OS wrist via
   the notification shade, with no watch app and no data on the watch.
-- `docs/import-prominence-plan.md` — **executed apart from D5**, which is separate and open. Closing
-  the gap between a listing that led with the file-you-own wedge and an app that reached it through a
-  header link and a Settings row. Four copy-and-a-link slices, plus the list of louder options
-  refused and why — which applies to the shipped ones too.
+- `docs/import-prominence-plan.md` — executed; kept for its rationale. Closing the gap between a
+  listing that led with the file-you-own wedge and an app that reached it through a header link and a
+  Settings row. Four copy-and-a-link slices and one translation, plus the list of louder options
+  refused and why — which is the half that still applies.
 - `docs/layout-review-plan.md` — executed; kept for its rationale. Acting on an external design
   review of every screen. Half of it is the list of the review's claims that are *false*, checked
   against the code, plus the four places the plan itself was wrong on device — both so the same

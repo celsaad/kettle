@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { ErrorCode, finishTransaction, useIAP, type Purchase } from 'expo-iap';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -9,7 +9,7 @@ import { ModalHeader } from '@/components/modal-header';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
-import { TIP_SKU_LIST, tierForSku, toTipTierOffers, type TipTier } from '@/domain/tip';
+import { TIP_SKU_LIST, tierForSku, tipPurchaseRequest, tipStoreCopyKeys, toTipTierOffers, type TipTier } from '@/domain/tip';
 import { useTheme } from '@/hooks/use-theme';
 import { isIapAvailable } from '@/hooks/safe-iap';
 import { useTipStore } from '@/state/tip-store';
@@ -22,11 +22,14 @@ const TIER_LABEL_KEYS: Record<TipTier, string> = {
   large: 'support.tierLarge',
 };
 
+/** Which store this build's copy names — see `tipStoreCopyKeys` for why it's a key and not a string. */
+const STORE_COPY = tipStoreCopyKeys(Platform.OS);
+
 /** Transient outcome of the last purchase attempt. Cancellation returns to `null`, not an error. */
 type Outcome = { kind: 'pending' } | { kind: 'failed' } | { kind: 'notSaved' } | null;
 
 /**
- * Everything that touches Play Billing, split out so `useIAP` is only ever mounted where the native
+ * Everything that touches the store, split out so `useIAP` is only ever mounted where the native
  * module exists — hooks can't be called conditionally, so the check has to be a component boundary
  * rather than an `if` inside one. See `safe-iap.ts` for why the module can be missing.
  */
@@ -42,9 +45,9 @@ function TipTiers({ onRecorded }: { onRecorded: (tier: TipTier) => Promise<boole
   const onPurchaseSuccess = async (purchase: Purchase) => {
     setPurchasingSku(null);
 
-    // Slow payment methods (boleto, some cards) land here before any money moves. Acknowledging it
-    // as a tip would thank the user for a payment that can still fail, and finishing the transaction
-    // now would consume a purchase Play hasn't completed.
+    // Slow payment methods (boleto, some cards, Ask to Buy) land here before any money moves.
+    // Acknowledging it as a tip would thank the user for a payment that can still fail, and finishing
+    // the transaction now would consume a purchase the store hasn't completed.
     if (purchase.purchaseState === 'pending') {
       setOutcome({ kind: 'pending' });
       return;
@@ -56,8 +59,8 @@ function TipTiers({ onRecorded }: { onRecorded: (tier: TipTier) => Promise<boole
     const saved = await onRecorded(tier);
     setOutcome(saved ? null : { kind: 'notSaved' });
 
-    // `isConsumable` is what makes a tip repeatable: without it Play treats the SKU as owned and
-    // refuses every subsequent purchase of the same tier.
+    // `isConsumable` is what makes a tip repeatable: without it the store treats the SKU as owned
+    // and refuses every subsequent purchase of the same tier.
     await finishTransaction({ purchase, isConsumable: true });
   };
 
@@ -65,7 +68,7 @@ function TipTiers({ onRecorded }: { onRecorded: (tier: TipTier) => Promise<boole
     onPurchaseSuccess,
     onPurchaseError: (error) => {
       setPurchasingSku(null);
-      // Backing out of the Play sheet is the common path, not a failure worth a red message.
+      // Backing out of the store's sheet is the common path, not a failure worth a red message.
       setOutcome(error.code === ErrorCode.UserCancelled ? null : { kind: 'failed' });
     },
     onError: () => setStoreFailed(true),
@@ -83,7 +86,7 @@ function TipTiers({ onRecorded }: { onRecorded: (tier: TipTier) => Promise<boole
     setOutcome(null);
     setPurchasingSku(sku);
     try {
-      await requestPurchase({ request: { google: { skus: [sku] } }, type: 'in-app' });
+      await requestPurchase(tipPurchaseRequest(sku));
     } catch {
       // onPurchaseError covers the store's own failures; this only catches a rejected call.
       setPurchasingSku(null);
@@ -101,7 +104,7 @@ function TipTiers({ onRecorded }: { onRecorded: (tier: TipTier) => Promise<boole
       {storeFailed ? (
         <View style={styles.stateBlock}>
           <ThemedText type="small" style={{ color: theme.accentText }}>
-            {t('support.storeUnavailable')}
+            {t(STORE_COPY.unavailable)}
           </ThemedText>
         </View>
       ) : offers.length === 0 ? (
@@ -181,7 +184,7 @@ export default function SupportScreen() {
           {t('support.pitch')}
         </ThemedText>
         <ThemedText themeColor="textSecondary" style={styles.paragraph}>
-          {t('support.why')}
+          {t(STORE_COPY.why)}
         </ThemedText>
 
         {/* A past tip is still worth acknowledging even when the store can't be reached now. */}
@@ -199,7 +202,7 @@ export default function SupportScreen() {
         ) : (
           <View style={styles.stateBlock}>
             <ThemedText type="small" style={{ color: theme.accentText }}>
-              {t('support.storeUnavailable')}
+              {t(STORE_COPY.unavailable)}
             </ThemedText>
           </View>
         )}

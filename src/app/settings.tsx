@@ -22,7 +22,13 @@ import { usePreferencesStore, useUnitSystem } from '@/state/preferences-store';
 import { useSessionHistoryStore } from '@/state/session-history-store';
 import { isTipJarSupported, useTipStore } from '@/state/tip-store';
 import type { BackupFailure } from '@/storage/backup';
-import { backUpNow, backupFolderLabel, isBackupFolderSupported, pickBackupFolder } from '@/storage/backup';
+import {
+  backUpNow,
+  backupFolderLabel,
+  isBackupFolderSupported,
+  isDocumentsFolderShared,
+  pickBackupFolder,
+} from '@/storage/backup';
 import { exportLibrary, exportSessions } from '@/storage/export';
 import { isFileStorageSupported } from '@/storage/paths';
 
@@ -492,9 +498,24 @@ export default function SettingsScreen() {
               <ThemedText type="small" themeColor="textSecondary">
                 {t('settings.filesLocal')}
               </ThemedText>
+              {/* The iOS answer to what the folder picker above does on Android, and the reason that
+                  row is absent here rather than broken: the folder is already reachable, so there is
+                  nothing to choose and nothing to run. Copy only — see `isDocumentsFolderShared`. */}
+              {isDocumentsFolderShared && (
+                <ThemedText type="small" themeColor="textSecondary" style={styles.caption}>
+                  {t('settings.filesInFilesApp')}
+                </ThemedText>
+              )}
               <ThemedText type="small" themeColor="textSecondary" style={styles.caption}>
                 {t('settings.filesSync')}
               </ThemedText>
+              {/* The same honest limit the backup branch carries: the library comes back, the log
+                  doesn't. It matters more here, where the files look like a backup already. */}
+              {isDocumentsFolderShared && (
+                <ThemedText type="small" themeColor="textSecondary" style={styles.caption}>
+                  {t('settings.backupLimits')}
+                </ThemedText>
+              )}
             </>
           )}
         </Section>

@@ -383,10 +383,13 @@ What's genuinely missing today, checked directly against the code:
 
   As always here, **"analytics" never means a telemetry SDK**: these are charts over the user's own
   local sessions, and the zero-data-collected claim is unaffected.
-- ~~**No in-app cloud-sync guidance.**~~ ✅ Shipped — Settings has a "Backups and sync" section: the
-  files are local and unsynced by design, and export/import is the mechanism. It deliberately names no
-  directory, because the app's folder isn't reachable on Android without adb and this app declares no
-  iOS file sharing, so pointing a sync client at it isn't a thing anyone can do.
+- ~~**No in-app cloud-sync guidance.**~~ ✅ Shipped — Settings has a "Backups and sync" section, and
+  what it says now depends on the platform. On Android it names the folder the user picked, since a
+  picked folder survives there. On iOS it names the Files app: `UIFileSharingEnabled` and
+  `LSSupportsOpeningDocumentsInPlace` publish the app's Documents folder, so a sync client *can* be
+  pointed at it and the copy says how to find it. Everywhere else it stays generic — export and import
+  are the mechanism, and the app's own folder is unreachable without adb. (This paragraph used to say
+  the app "declares no iOS file sharing", which was true until it wasn't; see `ios-plan.md` §2.4.)
 - ~~**Merge conflict view has no field-level diff**~~ ✅ Shipped — see open question 5 above.
 - ~~**Timed-hold display direction was never revisited**~~ ✅ Settled — see open question 2 above.
 - **Web has no persistence** — `expo-file-system` doesn't support web, so the web build runs on an ephemeral in-memory seed library. This is a platform constraint, not a product gap.

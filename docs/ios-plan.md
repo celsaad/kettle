@@ -1,9 +1,10 @@
 # Shipping Kettle on iOS — plan
 
-> **Partly executed.** Written against the tree at `d80e5e7`, SDK 57. **Three of Phase 2's six
-> changes have shipped** — 2.1, 2.2 and 2.5, marked *Shipped* where they appear — along with the
-> `app.json` block Phase 1 asks for, minus `supportsTablet`. Everything else is still forward-looking:
-> nothing has been built, run, signed or submitted, and no simulator has ever opened this app.
+> **Partly executed.** Written against the tree at `d80e5e7`, SDK 57. **Five of Phase 2's six changes have
+> shipped** — everything but 2.3, which is store-side work in App Store Connect — along with the
+> `app.json` block Phase 1 asks for (minus `supportsTablet`) and the notification half of Phase 4.
+> What is left is what money, a Mac or a device gates: nothing here has been built, run, signed or
+> submitted, and no simulator has ever opened this app.
 >
 > Nothing about the *decision* has changed with it. The two that mattered were bugs on the shipping
 > Android app rather than iOS work, and they were worth fixing either way. The decision log still says
@@ -14,7 +15,7 @@ The app is closer to iOS than the docs suggest. There is no `ios/` tree to write
 port, and no storage layer to rethink: `expo prebuild --platform ios` generates the native project the
 same way [`android.yml`](../.github/workflows/android.yml) generates `android/`, and every storage
 guard in the app is `Platform.OS !== 'web'` rather than `=== 'android'`. What was missing is six
-small code changes — three of them now in — a set of deliberate decisions about background
+small code changes — five of them now in — a set of deliberate decisions about background
 behaviour, and about $99/yr plus a Mac.
 
 **Two of those six were latent bugs rather than iOS work** — a purchase request that could only
@@ -141,7 +142,7 @@ listing copy must not call them "donations" — that word carries a nonprofit re
 Worth costing while here: Apple's **Small Business Program** drops the commission from 30% to 15% for
 developers under $1M/yr. It is an application, not automatic.
 
-### 2.4 iOS has no backup story, and the fix is config
+### 2.4 iOS has no backup story, and the fix is config — *shipped*
 
 [`backup.ts:33`](../src/storage/backup.ts#L33) hides the backup-folder feature on iOS, and the decision
 log is right about why — iOS grants the picked folder for the app session only and stores no bookmark,
@@ -154,10 +155,21 @@ in the Files app, where the user's own iCloud Drive, Dropbox or Working Copy can
 is a better fit for the data-ownership pitch than the Android SAF dance: the user doesn't nominate a
 folder, they just *have* the folder, and the app writes where it always wrote.
 
-It needs its own Settings copy (the Android section's strings are about choosing and forgetting a
-folder, none of which applies), and it falsifies the claim at
-[`product-plan.md:389`](product-plan.md#L389) that "this app declares no iOS file sharing" — that line
-gets updated in Phase 6, not left to rot.
+Both keys are in [`app.json`](../app.json)'s `ios.infoPlist`, and `isDocumentsFolderShared` in
+[`backup.ts`](../src/storage/backup.ts) gates the Settings copy on them — a flag that governs a
+paragraph rather than any behaviour, which is why `app-config.test.ts` asserts the keys are still
+there: delete one and the sentence stays on screen describing a folder nothing can see. The copy is
+its own (the Android strings are about choosing and forgetting a folder, none of which applies) and
+ends on the same warning the Android branch does, which matters more here — files sitting in the
+Files app look like a backup already, and the session log still cannot be read back in.
+
+The claim at [`product-plan.md:389`](product-plan.md#L389) that "this app declares no iOS file
+sharing" is updated rather than left to rot, and the decision log's backup entry has the paragraph
+this route earns.
+
+**What no test here can check is the OS half.** The paragraph promises the folder appears in Files
+under the device's own storage; that wants a simulator, and it is the second thing owed there after
+2.5's language flip.
 
 **This is also the honest version of "iCloud sync" for v1.** See the next section.
 
@@ -211,7 +223,7 @@ This also meant **anything that adds a language has a seventh place to update**,
 step 3 and `app-config.test.ts` diffing that list against `resources` so the omission fails a test
 rather than a phone.
 
-### 2.6 Every option `share()` passes is the Android one
+### 2.6 Every option `share()` passes is the Android one — *shipped, bar the iPad half*
 
 Found by auditing the code rather than by the first pass through this plan, which is why it is
 numbered after the five and why the table above was overclaiming.
@@ -223,17 +235,19 @@ android`, `dialogTitle` is android and web). The two iOS ones are not passed:
 - **`UTI`** — iOS types a file by Uniform Type Identifier, and with none given it infers from the
   extension. There is no system UTI for `.yaml`, so it falls back to something generic and the share
   sheet offers a narrower set of apps than it should for what is plainly a text file.
-  `UTI: 'public.plain-text'` is the candidate; `public.yaml` is not a system type and declaring one
-  is an Info.plist exercise this doesn't need. **Decide it in the simulator by looking at the sheet
-  with and without**, the same way `supportsTablet` gets decided — the failure here is a shorter
-  app list, which reasoning cannot rank.
-- **`anchor`** — on iPad a share sheet is a popover and needs a source rect. This is only reachable
-  if `supportsTablet` goes on, so it is that decision's tail rather than a separate one, but it is
-  the kind of thing that presents wrong (or throws) the first time anyone opens the app on an iPad.
+  ✅ `UTI: 'public.plain-text'` now goes in every call. `public.yaml` was refused: it is not a system
+  type, and declaring one is an Info.plist exercise that buys an icon, where saying "it's text" —
+  which it is — buys every text-capable app. **The simulator still ranks it**: the failure mode is a
+  shorter app list in the sheet, which no test can see, so look at it with and without.
+- **`anchor`** — still open, deliberately. On iPad a share sheet is a popover and needs a source
+  rect, but that is only reachable if `supportsTablet` goes on, so it is that decision's tail rather
+  than a separate one. Turning tablets on without this is how the app presents wrong (or throws) the
+  first time anyone shares from an iPad.
 
-The Android options stay: they are read on Android and ignored on iOS, so this is additive.
-`dialogTitle` has a problem of its own that is *not* iOS's — it is three hardcoded English strings
-in the logic layer, logged under Open bugs in [`open-work.md`](open-work.md).
+The Android options stay: they are read on Android and ignored on iOS, so this was additive.
+`dialogTitle` had a problem of its own that was *not* iOS's — three hardcoded English strings in the
+logic layer, shown in Android's chooser — and that is fixed in the same pass, from the bundles, with
+the session id interpolated rather than translated.
 
 ## Phase 3 — iCloud, and the sync question it reopens
 
@@ -285,9 +299,13 @@ Android that works. On iOS, once the app is suspended, `setInterval` stops **and
 silent, so the only thing left is the local-notification fallback — and as configured it will not cue
 anyone:
 
-- `scheduleStepCompleteNotification` ([`safe-notifications.ts:53`](../src/hooks/safe-notifications.ts#L53))
-  sets no `sound` on the notification content, so a rest ending in a pocket produces a silent banner.
-  **This is the whole of the pocket failure, and `sound: 'default'` is the whole of the fix.**
+- ✅ **Shipped.** `scheduleStepCompleteNotification` ([`safe-notifications.ts`](../src/hooks/safe-notifications.ts))
+  set no `sound` on the notification content, so a rest ending in a pocket produced a silent banner.
+  **That was the whole of the pocket failure, and `sound: 'default'` was the whole of the fix**, with
+  `interruptionLevel: 'timeSensitive'` beside it so a Focus mode doesn't eat the cue. Both are inert
+  on Android — 8+ takes a notification's sound from its channel and has no interruption levels — which
+  is why this could land without a device: it cannot regress the platform that ships. The rest-day
+  reminder deliberately gets neither; a nudge days out has no claim on Focus.
 
   The `shouldPlaySound: false` in the same file's `setNotificationHandler` looks like a second cause
   and is not: on iOS that handler runs **only while the app is foregrounded**, and a suspended app's
@@ -484,9 +502,9 @@ constraints that shape future work, and claims that become **false** the moment 
 | Phase | Gate | Cost |
 |---|---|---|
 | 1 Simulator bring-up | A Mac | Free. Highest information per hour in the whole plan |
-| 2 The six code changes | — | **3 of 6 shipped** (2.1, 2.2, 2.5 — both latent bugs among them). 2.3 is store-side; 2.4 and 2.6 open |
+| 2 The six code changes | — | **5 of 6 shipped.** Only 2.3 is left, and it is a form in App Store Connect rather than code |
 | 3 iCloud | — | **Cut.** No SDK 57 surface; 2.4 is what ships instead |
-| 4 Background cues | **A real device** | Highest risk. Notification route first, background audio evaluated on top |
+| 4 Background cues | **A real device** | Notification route ✅ shipped (inert on Android). Background audio still wants a device, and both halves of it |
 | 5 Build, sign, submit | **$99/yr + certificate** | The money gate. Runner minutes are free — the repo is public |
 | 6 Docs and commands | — | Small, and the rules above make it non-optional. `/bump` done; the rest waits on shipping |
 

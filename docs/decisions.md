@@ -327,6 +327,16 @@ decision assembled across several commits. Open work belongs in the sections at 
     persistable URI permission on the picked tree; iOS grants access for the app session only and
     stores no bookmark. `docs/sdk-57-api-notes.md` has the evidence. A folder chosen on iOS would look
     set and quietly stop being written to, so the section is hidden there rather than greyed out.
+
+    **That stays true about folder *picking*, and iOS has a different answer to the same question.**
+    `UIFileSharingEnabled` and `LSSupportsOpeningDocumentsInPlace` put the app's own Documents folder
+    in the Files app, where the user's iCloud Drive, Dropbox or Working Copy can already reach it. It
+    is a better fit for the ownership pitch than the SAF dance rather than a consolation prize: the
+    user doesn't nominate a folder, they *have* one, there is no second copy to drift, no grant to
+    expire, and Kettle keeps writing where it always wrote. Two Info.plist keys and a paragraph of
+    Settings copy, no code that runs. The three consequences below are unaffected — in particular the
+    copy still may never say "restore", and it matters more there, since files sitting in the Files
+    app look like a backup already.
   - **The copy may never say "restore".** Nothing imports a session log back (see "The session log is
     export-only" below), so a backed-up `kettle-history.yaml` preserves the data in a readable form
     and cannot be reloaded. The library can be re-imported; the log cannot. Session-restore is a

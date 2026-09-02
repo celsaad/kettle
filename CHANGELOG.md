@@ -156,6 +156,8 @@ training to. Vibration is separate and stays on your phone's own settings.
 - **Buttons and text fields grow to fit their label.** "Adicionar bloco" was clipped in the workout
   editor in Portuguese; the same fixed heights would have cut off any long translation, and any label
   at a large accessibility text size.
+- **The share sheet's title is in your language.** Exporting a library, a session or the whole log
+  opened a chooser headed in English whatever the rest of the app was set to.
 
 ### Play release notes
 

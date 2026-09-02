@@ -15,9 +15,11 @@ jest.mock('expo-sharing', () => ({
 }));
 
 import { load } from 'js-yaml';
+import { changeLanguage } from 'i18next';
 
 import type { Session } from '@/domain/types';
-import { exportSessions } from '@/storage/export';
+import pt from '@/i18n/locales/pt.json';
+import { exportLibrary, exportSession, exportSessions } from '@/storage/export';
 
 /**
  * `expo-sharing` hands over one URI, so exporting a whole log means assembling a file that doesn't
@@ -74,4 +76,45 @@ it('overwrites the previous export rather than failing on it', async () => {
   await exportSessions([june]);
 
   expect(mockCreate).toHaveBeenCalledWith(expect.objectContaining({ overwrite: true }));
+});
+
+/**
+ * Every option in the share call is read by exactly one platform, so the ones that don't apply are
+ * invisible in whatever build you happen to be looking at. That is how `UTI` stayed missing: on
+ * Android nothing about a share looks wrong without it.
+ */
+describe('the share options', () => {
+  it('types the file for both platforms', async () => {
+    await exportLibrary();
+
+    expect(mockShareAsync).toHaveBeenCalledWith(
+      'file:///exercises.yaml',
+      expect.objectContaining({ mimeType: 'application/x-yaml', UTI: 'public.plain-text' }),
+    );
+  });
+
+  // Android renders this in the chooser, so it is user-facing copy and cannot be a literal. An
+  // English-locale assertion cannot tell `t(…)` from the hardcoded string it replaced — hence `pt`.
+  it('translates the chooser title', async () => {
+    await changeLanguage('pt');
+
+    await exportLibrary();
+
+    expect(mockShareAsync).toHaveBeenCalledWith(
+      'file:///exercises.yaml',
+      expect.objectContaining({ dialogTitle: pt.settings.shareLibraryTitle }),
+    );
+  });
+
+  // The id is the user's own file name. It gets interpolated into the sentence, never translated.
+  it('names the session by id without translating it', async () => {
+    await changeLanguage('pt');
+
+    await exportSession('2026-08-02T09-00-00');
+
+    expect(mockShareAsync).toHaveBeenCalledWith(
+      'file:///sessions/2026-08-02T09-00-00.yaml',
+      expect.objectContaining({ dialogTitle: expect.stringContaining('2026-08-02T09-00-00') }),
+    );
+  });
 });

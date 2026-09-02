@@ -1,5 +1,5 @@
 ---
-description: Bump the app version and Android versionCode, close out the changelog, and commit the release
+description: Bump the app version and both store build numbers, close out the changelog, and commit the release
 argument-hint: "[patch|minor|major|<explicit version>]"
 allowed-tools: Read, Edit, Bash(git:*), Bash(node:*), Bash(pnpm run typecheck), Bash(pnpm run lint), Bash(pnpm test), Bash(gh pr:*)
 ---
@@ -11,11 +11,20 @@ and why before editing anything).
 ## Where the version lives
 
 **`app.json` is the only place the version number lives** (`CHANGELOG.md` also changes, but it
-records the release rather than defining it — see below). Two fields, and they move together:
+records the release rather than defining it — see below). Three fields, and they move together:
 
 - `expo.version` — the human version, e.g. `0.3.0`.
 - `expo.android.versionCode` — an integer, **always +1**. Play rejects an upload whose versionCode
   isn't higher than the last one it accepted, and it never resets when the human version changes.
+- `expo.ios.buildNumber` — **a string**, holding the same integer as the versionCode. App Store
+  Connect rejects a duplicate build number the way Play rejects a non-incremented versionCode, so it
+  has to move too. Keeping the two numerically identical is deliberate: one integer serves both
+  stores, and the changelog heading below can keep naming just the versionCode without becoming
+  half-true. `app-config.test.ts` asserts they match, so moving one alone fails `pnpm test` rather
+  than reaching a store — but the point is to move both, not to be caught.
+
+  If a rejected submission ever needs a *second* build of the same version, raise both again. An
+  Android versionCode that skips an integer costs nothing; the invariant costs something.
 
 Two files that look like they should change and must not:
 
@@ -80,12 +89,13 @@ Check what's in flight before deciding, and say which you're doing:
 
 ## Then
 
-1. Edit `app.json` — both fields.
+1. Edit `app.json` — all three fields.
 2. Close out `CHANGELOG.md` as above.
 3. Run `pnpm test`, `pnpm run typecheck` and `pnpm run lint`. Typecheck and lint should be untouched by
    a version bump; if they aren't clean, something else is wrong and the bump isn't the thing to fix it
-   with. `pnpm test` earns its place here because of the changelog edit — `store-copy.test.ts` reads
-   `CHANGELOG.md` and fails on a release-note block over 500 characters.
+   with. `pnpm test` earns its place here because of the two files this command edits —
+   `store-copy.test.ts` reads `CHANGELOG.md` and fails on a release-note block over 500 characters,
+   and `app-config.test.ts` reads `app.json` and fails on a build number left behind.
 4. Commit as **`Release <version> (versionCode <n>)`**, matching every previous release. The body says
    what's in it — the user-facing changes, by PR number where there is one — and why the level was
    patch/minor/major if that isn't obvious. Note anything deliberately excluded.

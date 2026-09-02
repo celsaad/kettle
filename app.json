@@ -8,7 +8,12 @@
     "scheme": "kettle",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "bundleIdentifier": "com.casco.kettle",
+      "buildNumber": "11",
+      "config": {
+        "usesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.casco.kettle",
@@ -52,7 +57,14 @@
           "enableBackgroundPlayback": false
         }
       ],
-      "expo-localization",
+      [
+        "expo-localization",
+        {
+          "supportedLocales": {
+            "ios": ["en", "pt", "ja"]
+          }
+        }
+      ],
       "expo-iap"
     ],
     "experiments": {

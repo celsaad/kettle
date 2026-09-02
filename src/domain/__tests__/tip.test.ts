@@ -5,9 +5,12 @@ import {
   hasTipped,
   supporterStateSchema,
   tierForSku,
+  tipPurchaseRequest,
+  tipStoreCopyKeys,
   toTipTierOffers,
   withTipRecorded,
 } from '@/domain/tip';
+import en from '@/i18n/locales/en.json';
 
 describe('toTipTierOffers', () => {
   const product = (id: string, displayPrice: string) => ({ id, displayPrice });
@@ -68,6 +71,56 @@ describe('withTipRecorded', () => {
     withTipRecorded(EMPTY_SUPPORTER_STATE, 'small', new Date());
 
     expect(EMPTY_SUPPORTER_STATE).toEqual({ tipCount: 0, lastTipAt: null, lastTier: null });
+  });
+});
+
+describe('tipPurchaseRequest', () => {
+  /**
+   * The regression this pins: the request used to carry `google` alone, which on iOS asks StoreKit
+   * for nothing and fails on the one screen that asks the user for money. Nothing else in the app
+   * would have noticed — every other line of the purchase path is platform-neutral.
+   */
+  it('names the SKU to both stores, each in its own shape', () => {
+    expect(tipPurchaseRequest(TIP_SKUS.medium)).toEqual({
+      request: { apple: { sku: 'tip_medium' }, google: { skus: ['tip_medium'] } },
+      type: 'in-app',
+    });
+  });
+
+  // 'in-app' rather than 'subs' is what keeps a tip a one-off: nothing here is a subscription.
+  it('requests a one-off purchase for every published tier', () => {
+    for (const sku of TIP_SKU_LIST) {
+      const request = tipPurchaseRequest(sku);
+      expect(request.type).toBe('in-app');
+      expect(request.request.apple.sku).toBe(sku);
+      expect(request.request.google.skus).toEqual([sku]);
+    }
+  });
+});
+
+describe('tipStoreCopyKeys', () => {
+  it('names the App Store on iOS and Play everywhere else', () => {
+    expect(tipStoreCopyKeys('ios')).toEqual({
+      why: 'support.whyAppStore',
+      unavailable: 'support.storeUnavailableAppStore',
+    });
+    expect(tipStoreCopyKeys('android')).toEqual({ why: 'support.whyPlay', unavailable: 'support.storeUnavailablePlay' });
+    expect(tipStoreCopyKeys('web')).toEqual({ why: 'support.whyPlay', unavailable: 'support.storeUnavailablePlay' });
+  });
+
+  /**
+   * A key path nothing holds renders as the path itself, silently — the same failure mode
+   * `locale-bundles.test.ts` guards between bundles, which it can't see here because the producer is
+   * the thing that could be wrong. Against `en` only: parity with `pt` and `ja` is that test's job.
+   */
+  it('returns key paths that exist', () => {
+    const support: Record<string, string> = en.support;
+    for (const os of ['ios', 'android', 'web']) {
+      const { why, unavailable } = tipStoreCopyKeys(os);
+      expect(Object.keys(support)).toEqual(
+        expect.arrayContaining([why, unavailable].map((path) => path.replace('support.', ''))),
+      );
+    }
   });
 });
 

@@ -173,8 +173,10 @@ are house rules here rather than a backlog — cheap as you go, tedious to retro
   doesn't fail anywhere; i18next's `fallbackLng` quietly renders it in English. (No count is quoted
   here on purpose: the one that used to be went stale, and the bundles are the only honest answer.)
 
-Shipping a whole new language is a six-place procedure of its own:
-[`docs/adding-a-language.md`](docs/adding-a-language.md).
+Shipping a whole new language is a seven-place procedure of its own:
+[`docs/adding-a-language.md`](docs/adding-a-language.md). The newest of the seven is `app.json`, and
+it costs nothing to miss and everything to ship missing — an undeclared locale is unreachable on iOS
+with every test still green.
 
 ## Writing tests
 
@@ -278,17 +280,19 @@ are the index, the banner is the contract.
 - `docs/authoring-exercises-yaml.md` — the YAML reference, kept exact against `schema.ts`.
 - `docs/sdk-57-api-notes.md` — the `expo-file-system` / `expo-notifications` / `expo-iap` shapes
   confirmed from `node_modules`, because the published docs are wrong for two of the three.
-- `docs/adding-a-language.md` — the six-place procedure for shipping a new UI language.
+- `docs/adding-a-language.md` — the seven-place procedure for shipping a new UI language.
 - `docs/building-android.md` — building the Play bundle on GitHub Actions rather than on EAS, and
   the keystore setup it needs first.
 - `docs/verifying-in-the-browser.md` — driving the running app under Playwright.
 - `docs/testing-a11y-i18n-plan.md` — executed; kept for its rationale, not as a backlog.
 - `docs/watch-remote-plan.md` — **not executed.** Driving a running session from a Wear OS wrist via
   the notification shade, with no watch app and no data on the watch.
-- `docs/ios-plan.md` — **not executed.** Shipping to the App Store: what already works unchanged, the
-  five code changes that don't (two of which are bugs today), and the background-cue and iCloud
-  decisions. Names the claims in this file, the decision log and the README that stop being true the
-  day it ships.
+- `docs/ios-plan.md` — **partly executed.** Shipping to the App Store: what already works unchanged,
+  the five code changes that don't, and the background-cue and iCloud decisions. Three of those five
+  have landed — the Play-only purchase request and the undeclared localizations, both of which were
+  bugs on the shipping app, plus the store-name copy. Everything gated on a Mac, a device or the $99
+  is untouched, and the banner in the file says which is which. Names the claims in this file, the
+  decision log and the README that stop being true the day it ships.
 - `docs/import-prominence-plan.md` — executed; kept for its rationale. Closing the gap between a
   listing that led with the file-you-own wedge and an app that reached it through a header link and a
   Settings row. Four copy-and-a-link slices and one translation, plus the list of louder options

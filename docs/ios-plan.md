@@ -1,20 +1,26 @@
 # Shipping Kettle on iOS — plan
 
-> **Not executed.** This is a forward-looking plan; nothing below has shipped. Written against the
-> tree at `d80e5e7`, SDK 57. The decision log currently says iOS is deferred
-> ([`decisions.md`](decisions.md), the tip-jar entry) and the README says it isn't planned — both are
-> accurate as of writing, and **Phase 5 is where they get changed**, not before.
+> **Partly executed.** Written against the tree at `d80e5e7`, SDK 57. **Three of Phase 2's five
+> changes have shipped** — 2.1, 2.2 and 2.5, marked *Shipped* where they appear — along with the
+> `app.json` block Phase 1 asks for, minus `supportsTablet`. Everything else is still forward-looking:
+> nothing has been built, run, signed or submitted, and no simulator has ever opened this app.
+>
+> Nothing about the *decision* has changed with it. The two that mattered were bugs on the shipping
+> Android app rather than iOS work, and they were worth fixing either way. The decision log still says
+> iOS is deferred ([`decisions.md`](decisions.md), the tip-jar entry) and the README still says it
+> isn't planned — both remain accurate, and **Phase 5 is where they get changed**, not before.
 
 The app is closer to iOS than the docs suggest. There is no `ios/` tree to write, no architecture to
 port, and no storage layer to rethink: `expo prebuild --platform ios` generates the native project the
 same way [`android.yml`](../.github/workflows/android.yml) generates `android/`, and every storage
-guard in the app is `Platform.OS !== 'web'` rather than `=== 'android'`. What's actually missing is
-five small code changes, a set of deliberate decisions about background behaviour, and about $99/yr
-plus a Mac.
+guard in the app is `Platform.OS !== 'web'` rather than `=== 'android'`. What was missing is five
+small code changes — three of them now in — a set of deliberate decisions about background
+behaviour, and about $99/yr plus a Mac.
 
-**Two of those five are latent bugs rather than iOS work** — a purchase request that can only succeed
-on Play (2.1), and a localization gap that would ship the app in English to every Portuguese and
-Japanese device (2.5). Both are worth fixing whether or not the App Store decision ever goes ahead.
+**Two of those five were latent bugs rather than iOS work** — a purchase request that could only
+succeed on Play (2.1), and a localization gap that would ship the app in English to every Portuguese
+and Japanese device (2.5). Both were worth fixing whether or not the App Store decision ever goes
+ahead, which is why they are fixed and the decision is still open.
 
 The expensive part is not the code. It's the build infrastructure and the review surface, which is why
 those get phases of their own and the code gets one.
@@ -45,12 +51,13 @@ three locale bundles are platform-neutral, and VoiceOver reads the same props Ta
 Everything here is free and needs no Apple Developer account. Do it first: it converts the $99
 decision from a guess into a judgement about a build you have actually driven.
 
-Add the `ios` block to [`app.json`](../app.json), which today has only `ios.icon`:
+The `ios` block in [`app.json`](../app.json) is **shipped**, bar one field:
 
-- **`bundleIdentifier`** — `com.casco.kettle`. The App Store and Play namespaces are independent, so
+- **`bundleIdentifier`** — `com.casco.kettle`. ✅ The App Store and Play namespaces are independent, so
   reusing the Android package is fine and keeps one identifier in the head. Permanent once submitted.
-- **`buildNumber`** — iOS's `versionCode`. String, not integer. See Phase 6; `/bump` doesn't know it
-  exists yet.
+- **`buildNumber`** — iOS's `versionCode`. String, not integer. ✅ At `"11"`, the same integer as
+  `android.versionCode`, so one number serves both stores. `/bump` now edits all three fields and
+  `app-config.test.ts` fails if the two ever drift apart — the Phase 6 item below is closed.
 - **`supportsTablet`** — **decide this by looking, not by reasoning.** The tempting argument is that
   the layouts already cap themselves with `MaxContentWidth` so an iPad gets a centred column rather
   than stretched rows. But `MaxContentWidth` is **480** ([`theme.ts:96`](../src/constants/theme.ts#L96)),
@@ -82,9 +89,9 @@ silent switch, and notification delivery are all Phase 4, on a real device.
 
 Small, contained, and testable inline. This is the whole of the iOS-specific application code.
 
-### 2.1 The purchase call is Android-shaped
+### 2.1 The purchase call is Android-shaped — *shipped*
 
-[`support.tsx:86`](../src/app/support.tsx#L86) sends:
+[`support.tsx:86`](../src/app/support.tsx#L86) sent:
 
 ```ts
 await requestPurchase({ request: { google: { skus: [sku] } }, type: 'in-app' });
@@ -93,19 +100,25 @@ await requestPurchase({ request: { google: { skus: [sku] } }, type: 'in-app' });
 `expo-iap` 4.7.2 backs iOS with StoreKit 2 (`openiap-apple`) and takes `apple: { sku }` — singular
 `sku`, not a `skus` array. Everything wrapped around this call is already platform-neutral and does not
 move: `finishTransaction({ isConsumable: true })`, the `purchaseState === 'pending'` guard, the
-`ErrorCode.UserCancelled` branch, and `toTipTierOffers`. Pass both keys in the one request object so
-the store picks its own, and pin the shape with a test — this is the one line where a silent iOS-only
-failure lands on the screen that asks the user for money.
+`ErrorCode.UserCancelled` branch, and `toTipTierOffers`. Both keys now go in the one request object
+so the store picks its own, built by `tipPurchaseRequest` in [`tip.ts`](../src/domain/tip.ts) — which
+puts it where typecheck can check it against expo-iap's `RequestPurchaseProps` and where a test can
+pin the shape without a React tree. This was the one line where a silent iOS-only failure lands on
+the screen that asks the user for money.
 
 `isTipJarSupported` ([`tip-store.ts:11`](../src/state/tip-store.ts#L11)) is already `!== 'web'`, so it
 needs nothing. `safe-iap.ts`'s `requireOptionalNativeModule('ExpoIap')` guard works identically on iOS.
 
-### 2.2 Two locale strings name Google Play
+### 2.2 Two locale strings name Google Play — *shipped*
 
 `support.why` ("A tip helps cover the Google Play developer fee") and `support.storeUnavailable`
 ("Couldn't reach the Play Store") in [`en.json`](../src/i18n/locales/en.json) and both siblings. House
 rule is that no user-facing string lives outside the bundles, so this is a platform-keyed pair of keys
 in all three files, not a `Platform.select` over literals.
+
+They are now `whyPlay`/`whyAppStore` and `storeUnavailablePlay`/`storeUnavailableAppStore`, chosen by
+`tipStoreCopyKeys(Platform.OS)` — which takes the platform as an argument rather than reading it, so
+both branches are testable without rendering anything. Web takes the Play wording deliberately.
 
 Note the copy is about to become *more* true, not less: on iOS the developer fee is $99/yr recurring
 rather than $25 once, which is the strongest version of the argument that screen makes.
@@ -148,7 +161,7 @@ gets updated in Phase 6, not left to rot.
 
 **This is also the honest version of "iCloud sync" for v1.** See the next section.
 
-### 2.5 The app would very likely ship English-only, and nothing would fail
+### 2.5 The app would very likely ship English-only, and nothing would fail — *shipped*
 
 The most invisible item in this plan, and the cheapest to fix.
 
@@ -170,19 +183,33 @@ designed, which is the same property AGENTS.md already flags about a key missing
 failure is silent by construction. Two thirds of the translation work in this repo would sit in the
 binary, unreachable.
 
-The fix is one line:
+The fix is one option, and it is **keyed by platform rather than the bare array** this plan first
+quoted:
 
 ```json
-["expo-localization", { "supportedLocales": ["en", "pt", "ja"] }]
+["expo-localization", { "supportedLocales": { "ios": ["en", "pt", "ja"] } }]
 ```
+
+The bare array is not equivalent, and the difference is invisible from the diff. `supportedLocales`
+feeds *both* platform mods: on Android it writes `app/src/main/res/xml/locales_config.xml`, sets
+`android:localeConfig` on the manifest and appends `resourceConfigurations` to `build.gradle`'s
+`defaultConfig` (`plugin/build/withExpoLocalization.js:69-103`), which strips other locales'
+resources from the APK. None of that is wrong — per-app language on Android 13+ is worth having — but
+it changes the *shipping* platform's build, and this fix is about the one that ships nothing yet. The
+object form does the iOS half alone. Android per-app language is its own decision, and `open-work.md`
+is where it goes if it's wanted.
 
 **Verify rather than trust the reasoning** — the exact filtering behaviour of `Locale.preferredLanguages`
 is the part worth seeing rather than arguing about, and flipping the simulator's language is already
-Phase 1 step 6. Do it once before and once after adding the option; if the language changes, the
-mechanism is confirmed and so is the fix.
+Phase 1 step 6. **This is still owed**: the option is in `app.json` and the reasoning behind it is
+unchanged, but nobody has yet watched a Portuguese simulator come up Portuguese. Do it once with the
+option removed and once with it back; if the language changes, the mechanism is confirmed and so is
+the fix.
 
-This also means **anything that adds a language now has a seventh place to update**. When it lands,
-[`docs/adding-a-language.md`](adding-a-language.md) stops being a six-place procedure.
+This also meant **anything that adds a language has a seventh place to update**, and it does:
+[`docs/adding-a-language.md`](adding-a-language.md) is a seven-place procedure, with `app.json` as
+step 3 and `app-config.test.ts` diffing that list against `resources` so the omission fails a test
+rather than a phone.
 
 ## Phase 3 — iCloud, and the sync question it reopens
 
@@ -362,7 +389,7 @@ It is still a secret; it just isn't that particular unrecoverable one.
 ### Submission
 
 - App Store Connect record, bundle id, and the three consumable IAPs from 2.3.
-- **`ios.config.usesNonExemptEncryption: false` in [`app.json`](../app.json).** One line, and without
+- **`ios.config.usesNonExemptEncryption: false` in [`app.json`](../app.json).** ✅ Shipped. Without
   it *every* build prompts the export-compliance question in App Store Connect and blocks the
   submission until someone answers it by hand. The app genuinely uses no non-exempt encryption —
   there is no network call to encrypt anything for.
@@ -399,13 +426,14 @@ constraints that shape future work, and claims that become **false** the moment 
 - **`docs/building-ios.md`** — new, mirroring `building-android.md`: the certificate setup, the
   workflow, and what it costs.
 - **[`watch-remote-plan.md`](watch-remote-plan.md)** — per Phase 4.
-- **[`/bump`](../.claude/commands/bump.md)** — currently states that `app.json` holds "two fields, and
-  they move together", `expo.version` and `expo.android.versionCode`. There is now a third,
-  `expo.ios.buildNumber`, and it does not move in lockstep with the Android one: App Store Connect
-  rejects a duplicate build number the way Play rejects a non-incremented versionCode. The command's
-  changelog heading format (`## <version> — versionCode <n>, <date>`) also names only the Android
-  number. Both need a decision, and the simplest is to keep the two build numbers **numerically
-  identical** so one integer serves both and the heading stays readable.
+- **[`/bump`](../.claude/commands/bump.md)** — ✅ done, ahead of the rest of this phase, because
+  `expo.ios.buildNumber` went into `app.json` the moment Phase 1's block did and a documented
+  invariant nothing enforces is worth less than no invariant. The command now names three fields, and
+  the decision this entry called for went the way it predicted: the two build numbers are kept
+  **numerically identical**, so one integer serves both stores and the changelog heading
+  (`## <version> — versionCode <n>, <date>`) can keep naming only the versionCode without becoming
+  half-true. `app-config.test.ts` asserts the match rather than trusting it, and says what to do if a
+  rejected submission ever needs a second build of one version: raise both.
 - **[`store-copy.test.ts`](../src/domain/__tests__/store-copy.test.ts)** — a bigger job than a changed
   constant. It asserts Play's whole shape: 80 characters for short, 4000 for full, 500 per release-note
   block, that each heading *declares its own real length*, and that full descriptions keep 30
@@ -426,16 +454,19 @@ constraints that shape future work, and claims that become **false** the moment 
 | Phase | Gate | Cost |
 |---|---|---|
 | 1 Simulator bring-up | A Mac | Free. Highest information per hour in the whole plan |
-| 2 The five code changes | — | Small, testable inline, no device needed. Two are latent bugs |
+| 2 The five code changes | — | **3 of 5 shipped** (2.1, 2.2, 2.5 — both latent bugs among them). 2.3 is store-side, 2.4 still open |
 | 3 iCloud | — | **Cut.** No SDK 57 surface; 2.4 is what ships instead |
 | 4 Background cues | **A real device** | Highest risk. Notification route first, background audio evaluated on top |
 | 5 Build, sign, submit | **$99/yr + certificate** | The money gate. Runner minutes are free — the repo is public |
-| 6 Docs and commands | — | Small, and the rules above make it non-optional |
+| 6 Docs and commands | — | Small, and the rules above make it non-optional. `/bump` done; the rest waits on shipping |
 
-Phases 1 and 2 are worth doing regardless of whether the App Store decision ever goes ahead: they cost
-nothing, they either prove or disprove the premise, and **two of the five changes are bugs the app has
-today** — 2.1 breaks the purchase path on any store but Play, and 2.5 would hand a Portuguese or
-Japanese user an English app while every test in the suite passes.
+Phases 1 and 2 were worth doing regardless of whether the App Store decision ever goes ahead: they
+cost nothing, they either prove or disprove the premise, and **two of the five changes were bugs the
+app had** — 2.1 broke the purchase path on any store but Play, and 2.5 would have handed a Portuguese
+or Japanese user an English app while every test in the suite passed. Those are fixed. Phase 1 itself
+is untouched: it needs a Mac, and the simulator checks it lists — the tab bar in both schemes, the
+modal sheet, the runner, safe-area insets, and the language flip that 2.5 still owes — have not
+happened.
 
 ## Out of scope, deliberately
 

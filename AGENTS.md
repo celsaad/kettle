@@ -288,7 +288,7 @@ are the index, the banner is the contract.
 - `docs/watch-remote-plan.md` — **not executed.** Driving a running session from a Wear OS wrist via
   the notification shade, with no watch app and no data on the watch.
 - `docs/ios-plan.md` — **partly executed.** Shipping to the App Store: what already works unchanged,
-  the five code changes that don't, and the background-cue and iCloud decisions. Three of those five
+  the six code changes that don't, and the background-cue and iCloud decisions. Three of those six
   have landed — the Play-only purchase request and the undeclared localizations, both of which were
   bugs on the shipping app, plus the store-name copy. Everything gated on a Mac, a device or the $99
   is untouched, and the banner in the file says which is which. Names the claims in this file, the

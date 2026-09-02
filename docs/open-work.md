@@ -237,11 +237,31 @@ wanting states and assignees, it wants GitHub issues instead.
   that can't flip (the CSS triangles in `next-up-card.tsx`, `row-start-button.tsx`, `session-hold.tsx`
   and `session-interval.tsx`) plus the arrows baked into copy (`grep '→' src/i18n/locales/en.json` —
   getting those out of the strings is worth doing whether or not Arabic ever ships). Three that note
-  doesn't carry: `I18nManager.forceRTL` only takes effect after an app restart on Android, so the
-  in-app language switch cannot be the whole story; Arabic has **six** plural categories against en/pt's
+  doesn't carry: `I18nManager.forceRTL` only takes effect after an app restart, and Kettle reads its
+  language from the device once at init and never switches it, so the first launch after a phone goes
+  Arabic comes up in Arabic and still laid out left-to-right; Arabic has **six** plural categories against en/pt's
   two, which `intl-pluralrules` covers on Hermes but the bundles' key shape does not; and the runner is
   where a half-flipped layout costs a workout rather than just looking wrong. Half-implemented RTL is
   worse than none — the plan's words, still true.
+
+- **Android per-app language.** Android 13+ lets the user set a language for one app, in system
+  Settings, independent of the device's. Kettle doesn't appear there: it needs `android:localeConfig`
+  on the manifest and a `locales_config.xml` listing the bundles, both of which `expo-localization`'s
+  `supportedLocales` writes — the same option `app.json` already passes, keyed to `ios` alone. Making
+  it `{ ios: [...], android: [...] }` is the whole change, plus a line in
+  [`adding-a-language.md`](adding-a-language.md) step 3.
+
+  It was scoped to iOS deliberately rather than by oversight: the option also appends
+  `resourceConfigurations` to `build.gradle`'s `defaultConfig`, which strips every other locale's
+  resources out of the APK — smaller build, and nothing of Kettle's own is lost since its strings are
+  in the JS bundle, but it is a change to the *shipping* platform's binary that had no business
+  riding along with an iOS fix. It wants its own build and its own look at the result.
+
+  What makes it worth more than it looks: Kettle has **no in-app language switch**. `i18n/index.ts`
+  reads `deviceLanguage()` once at init and never calls `changeLanguage` again, so a user whose phone
+  is in English cannot see the Portuguese or Japanese bundles at all. The system per-app picker would
+  be the only override there is — which is a feature, not a duplicate, and cheaper than building the
+  Settings row it would otherwise take.
 
 ## Open bugs
 
@@ -301,6 +321,14 @@ control. Notes on the structural ones:
   for the next 0-config bug: nothing validates a program week's override config — the schema types it
   as a free record of numbers and the in-app override editor doesn't call `validateConfig` — so the
   runner screens can't assume the constraints `validateConfig`/`schema.ts` enforce elsewhere.
+
+- **The share sheet's title is hardcoded English.** `storage/export.ts` passes `dialogTitle` as a
+  literal — `'Export exercises.yaml'`, `'Export history'`, and one interpolating a session id —
+  which is a user-facing string in the logic layer, the one thing the i18n house rule forbids. It
+  shows in Android's app chooser, so a Portuguese or Japanese user gets an English title on a screen
+  that is otherwise fully translated. Three keys and a `t()` at the call site; the id stays verbatim,
+  being user data. (iOS ignores `dialogTitle` entirely — it is Android and web only — so this is an
+  Android bug found while auditing the iOS surface, not an iOS one.)
 
 - **`Alert.alert` is a no-op on web.** react-native-web ships `class Alert { static alert() {} }`, so
   every confirm dialog silently does nothing in the browser — all the deletes and finish-session.

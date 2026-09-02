@@ -1,6 +1,6 @@
 # Shipping Kettle on iOS — plan
 
-> **Partly executed.** Written against the tree at `d80e5e7`, SDK 57. **Three of Phase 2's five
+> **Partly executed.** Written against the tree at `d80e5e7`, SDK 57. **Three of Phase 2's six
 > changes have shipped** — 2.1, 2.2 and 2.5, marked *Shipped* where they appear — along with the
 > `app.json` block Phase 1 asks for, minus `supportsTablet`. Everything else is still forward-looking:
 > nothing has been built, run, signed or submitted, and no simulator has ever opened this app.
@@ -13,11 +13,11 @@
 The app is closer to iOS than the docs suggest. There is no `ios/` tree to write, no architecture to
 port, and no storage layer to rethink: `expo prebuild --platform ios` generates the native project the
 same way [`android.yml`](../.github/workflows/android.yml) generates `android/`, and every storage
-guard in the app is `Platform.OS !== 'web'` rather than `=== 'android'`. What was missing is five
+guard in the app is `Platform.OS !== 'web'` rather than `=== 'android'`. What was missing is six
 small code changes — three of them now in — a set of deliberate decisions about background
 behaviour, and about $99/yr plus a Mac.
 
-**Two of those five were latent bugs rather than iOS work** — a purchase request that could only
+**Two of those six were latent bugs rather than iOS work** — a purchase request that could only
 succeed on Play (2.1), and a localization gap that would ship the app in English to every Portuguese
 and Japanese device (2.5). Both were worth fixing whether or not the App Store decision ever goes
 ahead, which is why they are fixed and the decision is still open.
@@ -39,7 +39,7 @@ these were missing:
 | Session timing | [`use-session-runner.ts`](../src/hooks/use-session-runner.ts) | Recomputes from `Date.now()` on every `AppState` change instead of accumulating ticks. Written for Android throttling; it is exactly what survives iOS *suspending* the app |
 | Confirm dialogs | everywhere `Alert.alert` is used | Real on iOS. The no-op is web only |
 | Keyboard | [`session-exercise-picker.tsx:74`](../src/components/session-exercise-picker.tsx#L74) | Already branches `Platform.OS === 'ios' ? 'padding' : undefined` |
-| Export / share | [`storage/export.ts`](../src/storage/export.ts) | `expo-sharing` is the iOS share sheet |
+| Export / share | [`storage/export.ts`](../src/storage/export.ts) | `expo-sharing` is the iOS share sheet. It opens; **what it offers is 2.6** |
 | Privacy posture | nothing in `src/` transmits | The App Privacy label mirrors the Play declaration verbatim: nothing collected, nothing shared |
 
 Two consequences worth stating: **the a11y and i18n work carries over free** (roles, labels and the
@@ -85,7 +85,7 @@ What to look at, in this order — these are where a first iOS run actually brea
 **The simulator cannot verify the thing this feature most needs verified** — background audio, the
 silent switch, and notification delivery are all Phase 4, on a real device.
 
-## Phase 2 — The five code changes
+## Phase 2 — The six code changes
 
 Small, contained, and testable inline. This is the whole of the iOS-specific application code.
 
@@ -211,6 +211,30 @@ This also meant **anything that adds a language has a seventh place to update**,
 step 3 and `app-config.test.ts` diffing that list against `resources` so the omission fails a test
 rather than a phone.
 
+### 2.6 Every option `share()` passes is the Android one
+
+Found by auditing the code rather than by the first pass through this plan, which is why it is
+numbered after the five and why the table above was overclaiming.
+
+[`export.ts`](../src/storage/export.ts) calls `Sharing.shareAsync(uri, { mimeType, dialogTitle })`.
+Both of those are **Android-only** (`expo-sharing`'s `SharingOptions`: `mimeType` is `@platform
+android`, `dialogTitle` is android and web). The two iOS ones are not passed:
+
+- **`UTI`** — iOS types a file by Uniform Type Identifier, and with none given it infers from the
+  extension. There is no system UTI for `.yaml`, so it falls back to something generic and the share
+  sheet offers a narrower set of apps than it should for what is plainly a text file.
+  `UTI: 'public.plain-text'` is the candidate; `public.yaml` is not a system type and declaring one
+  is an Info.plist exercise this doesn't need. **Decide it in the simulator by looking at the sheet
+  with and without**, the same way `supportsTablet` gets decided — the failure here is a shorter
+  app list, which reasoning cannot rank.
+- **`anchor`** — on iPad a share sheet is a popover and needs a source rect. This is only reachable
+  if `supportsTablet` goes on, so it is that decision's tail rather than a separate one, but it is
+  the kind of thing that presents wrong (or throws) the first time anyone opens the app on an iPad.
+
+The Android options stay: they are read on Android and ignored on iOS, so this is additive.
+`dialogTitle` has a problem of its own that is *not* iOS's — it is three hardcoded English strings
+in the logic layer, logged under Open bugs in [`open-work.md`](open-work.md).
+
 ## Phase 3 — iCloud, and the sync question it reopens
 
 The user's own filesystem via the Files app (2.4) is sync by the same mechanism the Android backup
@@ -293,6 +317,12 @@ So there are two routes, and they are not exclusive:
 - **`UIBackgroundModes: ['audio']`** plus flipping `enableBackgroundPlayback` to `true`, so the real
   3-2-1 tick plays from the pocket. Better UX, and defensible for a timer app, but App Review does
   scrutinise that key and the audio session has to genuinely be doing something.
+
+  **That flag alone does nothing.** The config plugin writes the Info.plist key; the audio *session*
+  is separate and defaults off — `AudioMode.shouldPlayInBackground` is `false`
+  (`expo-audio/build/Audio.types.d.ts:560`), and [`use-session-sounds.ts:43`](../src/hooks/use-session-sounds.ts#L43)
+  currently calls `setAudioModeAsync({ playsInSilentMode: true, interruptionMode: 'duckOthers' })`
+  without it. Both halves or neither, and the runtime half is the one that reads as already done.
 
 Recommendation: **ship the first, evaluate the second on device.** The notification route removes the
 "no cue at all" failure outright, which is the one that costs a workout; the background-audio route is
@@ -454,14 +484,14 @@ constraints that shape future work, and claims that become **false** the moment 
 | Phase | Gate | Cost |
 |---|---|---|
 | 1 Simulator bring-up | A Mac | Free. Highest information per hour in the whole plan |
-| 2 The five code changes | — | **3 of 5 shipped** (2.1, 2.2, 2.5 — both latent bugs among them). 2.3 is store-side, 2.4 still open |
+| 2 The six code changes | — | **3 of 6 shipped** (2.1, 2.2, 2.5 — both latent bugs among them). 2.3 is store-side; 2.4 and 2.6 open |
 | 3 iCloud | — | **Cut.** No SDK 57 surface; 2.4 is what ships instead |
 | 4 Background cues | **A real device** | Highest risk. Notification route first, background audio evaluated on top |
 | 5 Build, sign, submit | **$99/yr + certificate** | The money gate. Runner minutes are free — the repo is public |
 | 6 Docs and commands | — | Small, and the rules above make it non-optional. `/bump` done; the rest waits on shipping |
 
 Phases 1 and 2 were worth doing regardless of whether the App Store decision ever goes ahead: they
-cost nothing, they either prove or disprove the premise, and **two of the five changes were bugs the
+cost nothing, they either prove or disprove the premise, and **two of the six changes were bugs the
 app had** — 2.1 broke the purchase path on any store but Play, and 2.5 would have handed a Portuguese
 or Japanese user an English app while every test in the suite passed. Those are fixed. Phase 1 itself
 is untouched: it needs a Mac, and the simulator checks it lists — the tab bar in both schemes, the

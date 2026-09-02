@@ -285,6 +285,10 @@ are the index, the banner is the contract.
 - `docs/testing-a11y-i18n-plan.md` — executed; kept for its rationale, not as a backlog.
 - `docs/watch-remote-plan.md` — **not executed.** Driving a running session from a Wear OS wrist via
   the notification shade, with no watch app and no data on the watch.
+- `docs/ios-plan.md` — **not executed.** Shipping to the App Store: what already works unchanged, the
+  five code changes that don't (two of which are bugs today), and the background-cue and iCloud
+  decisions. Names the claims in this file, the decision log and the README that stop being true the
+  day it ships.
 - `docs/import-prominence-plan.md` — executed; kept for its rationale. Closing the gap between a
   listing that led with the file-you-own wedge and an app that reached it through a header link and a
   Settings row. Four copy-and-a-link slices and one translation, plus the list of louder options

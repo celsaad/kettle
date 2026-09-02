@@ -430,7 +430,7 @@
     "copiedAnnouncement": "エラーをクリップボードにコピーしました",
     "copyFailed": "クリップボードにアクセスできませんでした。",
     "shareFailed": "共有メニューを開けませんでした。",
-    "clipboardEmpty": "クリップボードにはまだ何もありません。",
+    "clipboardEmpty": "貼り付けるものがありません — クリップボードが空か、アクセスが拒否されています。",
     "clipboardFailed": "クリップボードを読み取れませんでした。",
     "new": "新規",
     "updated": "更新",

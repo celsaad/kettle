@@ -574,6 +574,17 @@ describe('the assistant brief', () => {
     expect(screen.getByText('Copied')).toBeTruthy();
   });
 
+  it('treats backing out of the sheet as a cancel, not a failure to open one', async () => {
+    // Native resolves on dismissal, but react-native-web forwards to `navigator.share`, which
+    // rejects `AbortError` — so on mobile web this is the ordinary path of someone changing their
+    // mind, and reporting it as a failure would accuse the sheet that worked.
+    mockShare.mockRejectedValue(Object.assign(new Error('Share canceled'), { name: 'AbortError' }));
+    await renderScreen(<ImportScreen />);
+    await fireEvent.press(screen.getByText('Send the format to an assistant'));
+
+    expect(screen.queryByText('Couldn’t open the share sheet.')).toBeNull();
+  });
+
   it('is translated', async () => {
     await changeLanguage('pt');
     await renderScreen(<ImportScreen />);
@@ -610,15 +621,30 @@ describe('pasting from the clipboard', () => {
     expect(screen.getByText('Pasted YAML')).toBeTruthy();
   });
 
-  it('says the clipboard is empty rather than doing nothing', async () => {
+  it('says nothing came back rather than doing nothing, without claiming to know why', async () => {
     // `getStringAsync` resolves '' rather than throwing, so without this branch the tap is silent and
     // reads as a dead button. Whitespace counts as empty for the same reason `reviewPaste` trims.
+    //
+    // The wording is the load-bearing part: on iOS 16+ a *denied* paste also resolves '' and
+    // expo-clipboard's own docs say the two cannot be told apart, so "the clipboard is empty" would
+    // be a confident lie to someone looking at their YAML sitting in it.
     mockGetString.mockResolvedValue('  \n ');
     await openPasteBox();
     await fireEvent.press(screen.getByText('Paste from clipboard'));
 
-    expect(screen.getByText('Nothing on the clipboard yet.')).toBeTruthy();
+    expect(screen.getByText('Nothing to paste — the clipboard is empty, or paste access was denied.')).toBeTruthy();
     expect(screen.getByPlaceholderText(t('import.pastePlaceholder')).props.value).toBe('');
+  });
+
+  it('clears the note once the box is filled by hand', async () => {
+    // The note describes one attempt at filling this box. Left standing it sits beside a full box
+    // still claiming there was nothing to paste — and typing is exactly what someone does next.
+    mockGetString.mockResolvedValue('');
+    await openPasteBox();
+    await fireEvent.press(screen.getByText('Paste from clipboard'));
+    await fireEvent.changeText(screen.getByPlaceholderText(t('import.pastePlaceholder')), 'exercises: []');
+
+    expect(screen.queryByText(/^Nothing to paste/)).toBeNull();
   });
 
   it('says so when the clipboard cannot be read at all', async () => {

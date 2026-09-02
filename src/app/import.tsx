@@ -90,8 +90,15 @@ const COLLAPSED_CHANGES = 8;
  * hidden there rather than offered and refused, and the clipboard button keeps its full label (see
  * `import.copyBrief` vs `import.copyBriefInstead`) because nothing above it names the brief.
  *
- * Read once at module scope: it cannot change while the app is running, and `navigator` is absent
- * entirely on native, so the `typeof` guard is load-bearing rather than defensive.
+ * The `typeof` guard is load-bearing rather than defensive: `navigator` is absent entirely on native.
+ *
+ * **Read once at module scope, which is not free on web.** `app.json` sets `web.output: "static"`, so
+ * a prerender runs this in Node — where `navigator` is undefined — and bakes `false` into the HTML; a
+ * share-capable browser then hydrates `true`, and the share row and the copy button's label differ
+ * between the two trees for one frame. Accepted rather than fixed with `useState` + `useEffect`:
+ * it needs a direct load of a prerendered `/import`, and web is the platform with no persistence at
+ * all (see the storage guards), so a label settling after hydration is the least of what is degraded
+ * there. Anything that makes web load-bearing should revisit this.
  */
 const canShareText =
   Platform.OS !== 'web' ||
@@ -275,16 +282,22 @@ export default function ImportScreen() {
    * library *is* a file; this is a prompt, and a chat target takes text into its compose box while an
    * attached `.md` mostly doesn't.
    *
-   * Dismissing the sheet resolves normally on both platforms, so a rejection here is a genuine
-   * failure to open it — and the clipboard button below is the working fallback either way, which is
-   * why this degrades to a note rather than a refusal.
+   * Dismissing the sheet resolves normally on native but *not* on web, which is why the `AbortError`
+   * check below is load-bearing rather than defensive — see the comment on it. Every other rejection
+   * is a genuine failure to open the sheet, and the clipboard button below is the working fallback,
+   * which is why that degrades to a note rather than a refusal.
    */
   const shareTheBrief = async (text: string) => {
     setCopied(null);
     setShareFailed(false);
     try {
       await Share.share({ message: text });
-    } catch {
+    } catch (err) {
+      // Backing out of the sheet is not a failure to open one. Native resolves on dismissal, but
+      // react-native-web forwards straight to `navigator.share`, which rejects with an `AbortError`
+      // — so without this, cancelling a sheet that opened perfectly well on mobile Safari or Chrome
+      // leaves "Couldn't open the share sheet" on screen.
+      if ((err as Error | undefined)?.name === 'AbortError') return;
       setShareFailed(true);
     }
   };
@@ -296,8 +309,14 @@ export default function ImportScreen() {
    * lets someone see they pasted the chat's prose along with the YAML, and the preview behind
    * "Review paste" is the only thing standing between arbitrary text and their library.
    *
-   * `getStringAsync` resolves `''` for an empty clipboard rather than throwing, so the two silent
-   * outcomes are told apart here — the alternative is a button that visibly does nothing.
+   * `getStringAsync` resolves `''` rather than throwing when it has nothing to give, so the silent
+   * outcome gets a note — the alternative is a button that visibly does nothing.
+   *
+   * **That empty string does not only mean "empty".** On iOS 16+ a paste is permission-gated behind
+   * a system prompt, and a denial resolves `''` too — expo-clipboard's own docs say there is no way
+   * to tell the two apart. So the note is worded to cover both, because the honest message here is a
+   * disjunction: telling someone their clipboard is empty while their YAML sits in it is worse than
+   * naming both possibilities.
    */
   const pasteFromClipboard = async () => {
     setPasteNote(null);
@@ -309,7 +328,8 @@ export default function ImportScreen() {
       }
       setPasted(text);
     } catch {
-      // Web again: the read half of the clipboard is permission-gated and throws when denied.
+      // Web's read half is permission-gated and *throws* when denied, unlike iOS's. Reachable only
+      // there, which is why this is the branch that can still say "couldn't read" outright.
       setPasteNote('failed');
     }
   };
@@ -415,6 +435,7 @@ export default function ImportScreen() {
   const reviewPaste = () => {
     setError(null);
     setReady(null);
+    setPasteNote(null);
     const text = pasted.trim();
     if (!text) return;
     review(text, {
@@ -731,7 +752,13 @@ export default function ImportScreen() {
               <>
                 <TextInput
                   value={pasted}
-                  onChangeText={setPasted}
+                  // Typing clears the clipboard note as well as setting the text: it describes one
+                  // attempt at filling this box, and left standing it sits beside a box the user
+                  // has since filled by hand, still claiming there was nothing to paste.
+                  onChangeText={(text) => {
+                    setPasted(text);
+                    setPasteNote(null);
+                  }}
                   multiline
                   autoCapitalize="none"
                   autoCorrect={false}

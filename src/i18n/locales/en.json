@@ -448,7 +448,7 @@
     "copiedAnnouncement": "Error copied to the clipboard",
     "copyFailed": "Couldn't reach the clipboard.",
     "shareFailed": "Couldn’t open the share sheet.",
-    "clipboardEmpty": "Nothing on the clipboard yet.",
+    "clipboardEmpty": "Nothing to paste — the clipboard is empty, or paste access was denied.",
     "clipboardFailed": "Couldn’t read the clipboard.",
     "new": "new",
     "updated": "updated",

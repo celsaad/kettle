@@ -3,7 +3,17 @@ import { File } from 'expo-file-system';
 import { router } from 'expo-router';
 import type { TFunction } from 'i18next';
 import { useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, ActivityIndicator, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import {
+  AccessibilityInfo,
+  ActivityIndicator,
+  Platform,
+  Pressable,
+  ScrollView,
+  Share,
+  StyleSheet,
+  TextInput,
+  View,
+} from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -70,6 +80,29 @@ type CopyTarget = 'brief' | 'report';
  * a small phone, which is the only thing the number is chosen for.
  */
 const COLLAPSED_CHANGES = 8;
+
+/**
+ * Whether a share sheet exists to send the brief to.
+ *
+ * Native always has one. react-native-web's `Share` is not a degraded implementation but a hard
+ * refusal — it rejects with "Share is not supported in this browser" unless the browser implements
+ * `navigator.share`, which desktop Firefox and most desktop Chrome builds do not. So the row is
+ * hidden there rather than offered and refused, and the clipboard button keeps its full label (see
+ * `import.copyBrief` vs `import.copyBriefInstead`) because nothing above it names the brief.
+ *
+ * The `typeof` guard is load-bearing rather than defensive: `navigator` is absent entirely on native.
+ *
+ * **Read once at module scope, which is not free on web.** `app.json` sets `web.output: "static"`, so
+ * a prerender runs this in Node — where `navigator` is undefined — and bakes `false` into the HTML; a
+ * share-capable browser then hydrates `true`, and the share row and the copy button's label differ
+ * between the two trees for one frame. Accepted rather than fixed with `useState` + `useEffect`:
+ * it needs a direct load of a prerendered `/import`, and web is the platform with no persistence at
+ * all (see the storage guards), so a label settling after hydration is the least of what is degraded
+ * there. Anything that makes web load-bearing should revisit this.
+ */
+const canShareText =
+  Platform.OS !== 'web' ||
+  (typeof navigator !== 'undefined' && typeof (navigator as { share?: unknown }).share === 'function');
 
 /**
  * The indented "what moved" block under an updated id.
@@ -167,6 +200,14 @@ export default function ImportScreen() {
   // Keyed by which button copied, since there are two of them: a "Copied" that isn't tied to a target
   // would confirm the wrong one the moment the screen has both on it.
   const [copied, setCopied] = useState<{ target: CopyTarget; status: 'copied' | 'failed' } | null>(null);
+  // Kept apart from `copied` rather than folded into it: a share that couldn't open says nothing
+  // about the clipboard, and reusing that flag would put "Couldn't reach the clipboard" under a
+  // button that never touched it.
+  const [shareFailed, setShareFailed] = useState(false);
+  // Why the clipboard didn't fill the box — the two outcomes that leave it empty. An empty clipboard
+  // is not an error, but silence after a tap reads as a dead button, which is what this exists to
+  // avoid.
+  const [pasteNote, setPasteNote] = useState<'empty' | 'failed' | null>(null);
   // One flag for both lists rather than one each: they never render together, and carrying the
   // expansion across the merge is the honest default — someone who opened the full list to find an id
   // is the same person reading what landed. It needs no reset between files, because there is no
@@ -205,6 +246,7 @@ export default function ImportScreen() {
    * to say something both ends already know. The `brief` is built in `domain/assistant-brief.ts`.
    */
   const copy = async (target: CopyTarget, text: string) => {
+    setShareFailed(false);
     try {
       // The boolean is the API's own way of saying it didn't take, distinct from throwing — so a
       // "Copied" claimed over a false here would be the one thing these buttons must never do.
@@ -223,6 +265,72 @@ export default function ImportScreen() {
       // report that means the error it would replace is the one still worth reading, so both degrade
       // to a note beside the button rather than taking the screen over.
       setCopied({ target, status: 'failed' });
+    }
+  };
+
+  /**
+   * The same brief, handed to the OS share sheet instead of the clipboard.
+   *
+   * This is the one change that collapses the round trip: copy-then-leave-then-find-the-app-then-paste
+   * becomes one tap that lands the text in whichever assistant the user has. **Kettle still never
+   * calls a model** — the share sheet is the OS listing apps that accept text, so no vendor is named
+   * here or anywhere else, and nothing is transmitted by the app itself. A prefilled URL to a named
+   * assistant was the obvious alternative and is impossible regardless: the brief measures ~16 KB
+   * against the seed library and grows with the user's, which no URL survives.
+   *
+   * Sharing plain text rather than a file on purpose. `storage/export.ts` shares by URI because a
+   * library *is* a file; this is a prompt, and a chat target takes text into its compose box while an
+   * attached `.md` mostly doesn't.
+   *
+   * Dismissing the sheet resolves normally on native but *not* on web, which is why the `AbortError`
+   * check below is load-bearing rather than defensive — see the comment on it. Every other rejection
+   * is a genuine failure to open the sheet, and the clipboard button below is the working fallback,
+   * which is why that degrades to a note rather than a refusal.
+   */
+  const shareTheBrief = async (text: string) => {
+    setCopied(null);
+    setShareFailed(false);
+    try {
+      await Share.share({ message: text });
+    } catch (err) {
+      // Backing out of the sheet is not a failure to open one. Native resolves on dismissal, but
+      // react-native-web forwards straight to `navigator.share`, which rejects with an `AbortError`
+      // — so without this, cancelling a sheet that opened perfectly well on mobile Safari or Chrome
+      // leaves "Couldn't open the share sheet" on screen.
+      if ((err as Error | undefined)?.name === 'AbortError') return;
+      setShareFailed(true);
+    }
+  };
+
+  /**
+   * Fills the paste box from the clipboard, which is the return leg of that same trip.
+   *
+   * Deliberately stops at filling the box rather than going straight to `review`: the box is what
+   * lets someone see they pasted the chat's prose along with the YAML, and the preview behind
+   * "Review paste" is the only thing standing between arbitrary text and their library.
+   *
+   * `getStringAsync` resolves `''` rather than throwing when it has nothing to give, so the silent
+   * outcome gets a note — the alternative is a button that visibly does nothing.
+   *
+   * **That empty string does not only mean "empty".** On iOS 16+ a paste is permission-gated behind
+   * a system prompt, and a denial resolves `''` too — expo-clipboard's own docs say there is no way
+   * to tell the two apart. So the note is worded to cover both, because the honest message here is a
+   * disjunction: telling someone their clipboard is empty while their YAML sits in it is worse than
+   * naming both possibilities.
+   */
+  const pasteFromClipboard = async () => {
+    setPasteNote(null);
+    try {
+      const text = await Clipboard.getStringAsync();
+      if (!text.trim()) {
+        setPasteNote('empty');
+        return;
+      }
+      setPasted(text);
+    } catch {
+      // Web's read half is permission-gated and *throws* when denied, unlike iOS's. Reachable only
+      // there, which is why this is the branch that can still say "couldn't read" outright.
+      setPasteNote('failed');
     }
   };
 
@@ -327,6 +435,7 @@ export default function ImportScreen() {
   const reviewPaste = () => {
     setError(null);
     setReady(null);
+    setPasteNote(null);
     const text = pasted.trim();
     if (!text) return;
     review(text, {
@@ -462,6 +571,19 @@ export default function ImportScreen() {
   // import a file, and demoting the file path for them would trade a real job for a first-run
   // nicety. Only the three source blocks reorder -- the assistant brief stays last for everyone,
   // being the one thing here a first-timer is least likely to want.
+  /**
+   * The line under the copy button: whichever of the two failures just happened, or the caption.
+   *
+   * The caption is suppressed when the share row is up, because that row already carries the same
+   * `copyBriefDetail` sentence and repeating it under the fallback button puts it on screen twice
+   * three lines apart. Where there is no share row it is the only description of what gets copied,
+   * so it stays — which is also why `shareFailed` can't be reached in that branch.
+   */
+  let briefNote: string | null = null;
+  if (shareFailed) briefNote = t('import.shareFailed');
+  else if (copyFailed('brief')) briefNote = t('import.copyFailed');
+  else if (!canShareText) briefNote = t('import.copyBriefDetail');
+
   const starterPacks = (
     <>
       {/*
@@ -470,8 +592,16 @@ export default function ImportScreen() {
       The heading rule is what gives the list a top edge — without a fill on the rows, the
       first name would otherwise read as one more line of the section's own caption.
     */}
+      {/*
+        `label`, not `heading`: this is a section marker, and at `heading` it was the same 20px in the
+        same color as "Choose exercises.yaml" above it and "Steady & Strong" below it — three peers,
+        so it read as one more item rather than as the title of the list under it. `label` +
+        `textSecondary` is what Settings' `Section` and Analytics already use for exactly this.
+      */}
       <View style={styles.packsHeader}>
-        <ThemedText type="heading">{t('import.packs.title')}</ThemedText>
+        <ThemedText type="label" themeColor="textSecondary">
+          {t('import.packs.title')}
+        </ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
           {t('import.packs.detail')}
         </ThemedText>
@@ -504,6 +634,61 @@ export default function ImportScreen() {
           </Pressable>
         </View>
       ))}
+    </>
+  );
+
+  /**
+   * What goes *out* to an assistant, before there is any YAML to bring in — so not an input source,
+   * whatever its position on the screen.
+   *
+   * Rendered only with a library loaded: the brief's whole point is the ids in it, and offering it
+   * empty would hand an assistant a confident list of nothing.
+   *
+   * **Its position is the one thing that moves with `packsFirst`, and it moves the opposite way to
+   * the packs.** For someone returning it sits between the two file rows, because that is the order
+   * of the trip — send the format out, paste the YAML back — and it is the affordance they came for.
+   * For someone with nothing logged it stays last, under everything: the packs are the offer that
+   * costs no typing, and putting "send a JSON Schema somewhere" above them would put the screen's
+   * most technical control in front of exactly the reader the packs-first order exists to serve.
+   */
+  const assistantBlock = currentLibrary && (
+    <>
+      {canShareText && (
+        <Pressable
+          onPress={() => shareTheBrief(buildAssistantBrief(currentLibrary))}
+          accessibilityRole="button"
+          // No `accessibilityLabel`: the two lines inside name it, and a duplicate would drift from
+          // them and break Voice Control, which matches the visible words.
+          style={[styles.fileRow, styles.pickRow, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
+          <View style={styles.fileText}>
+            <ThemedText type="heading">{t('import.shareBrief')}</ThemedText>
+            <ThemedText type="small" themeColor="textSecondary">
+              {t('import.copyBriefDetail')}
+            </ThemedText>
+          </View>
+        </Pressable>
+      )}
+      <View style={styles.briefRow}>
+        <Pressable
+          onPress={() => copy('brief', buildAssistantBrief(currentLibrary))}
+          accessibilityRole="button"
+          style={[styles.copyButton, { borderColor: theme.border }]}>
+          <ThemedText type="smallMedium" themeColor="textSecondary">
+            {/*
+              Two labels for one button, because what it needs to say depends on whether the row
+              above exists. Beneath the share row it is the fallback and "Copy it instead" is the
+              whole sentence; with no share sheet on the platform it is the only way to the brief and
+              has to name what it copies.
+            */}
+            {copyLabel('brief', canShareText ? t('import.copyBriefInstead') : t('import.copyBrief'))}
+          </ThemedText>
+        </Pressable>
+        {briefNote && (
+          <ThemedText type="small" themeColor="textSecondary" style={styles.copyFailed}>
+            {briefNote}
+          </ThemedText>
+        )}
+      </View>
     </>
   );
 
@@ -543,6 +728,8 @@ export default function ImportScreen() {
               {busy && <ActivityIndicator color={theme.accentText} />}
             </Pressable>
 
+            {!packsFirst && assistantBlock}
+
             <Pressable
               onPress={() => setPasting((open) => !open)}
               accessibilityRole="button"
@@ -565,7 +752,13 @@ export default function ImportScreen() {
               <>
                 <TextInput
                   value={pasted}
-                  onChangeText={setPasted}
+                  // Typing clears the clipboard note as well as setting the text: it describes one
+                  // attempt at filling this box, and left standing it sits beside a box the user
+                  // has since filled by hand, still claiming there was nothing to paste.
+                  onChangeText={(text) => {
+                    setPasted(text);
+                    setPasteNote(null);
+                  }}
                   multiline
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -579,6 +772,29 @@ export default function ImportScreen() {
                     { borderColor: theme.border, backgroundColor: theme.backgroundElement, color: theme.text },
                   ]}
                 />
+                {/*
+                  The return leg of the trip the share row starts, and the reason it sits here rather
+                  than beside Review: on a phone the alternative is a long-press, a "Paste" bubble and
+                  a caret placed in a box that already has focus — for text that arrived from another
+                  app seconds ago. It fills the box and stops there; `reviewPaste` stays the only way
+                  past, because the box is where you see that the chat's prose came along with the
+                  YAML.
+                */}
+                <View style={styles.briefRow}>
+                  <Pressable
+                    onPress={pasteFromClipboard}
+                    accessibilityRole="button"
+                    style={[styles.copyButton, { borderColor: theme.border }]}>
+                    <ThemedText type="smallMedium" themeColor="accentText">
+                      {t('import.pasteFromClipboard')}
+                    </ThemedText>
+                  </Pressable>
+                  {pasteNote && (
+                    <ThemedText type="small" themeColor="textSecondary" style={styles.copyFailed}>
+                      {pasteNote === 'empty' ? t('import.clipboardEmpty') : t('import.clipboardFailed')}
+                    </ThemedText>
+                  )}
+                </View>
                 <Pressable
                   onPress={reviewPaste}
                   // `busy` as well as the empty check, for the same reason the pack rows below carry
@@ -603,27 +819,7 @@ export default function ImportScreen() {
 
             {!packsFirst && starterPacks}
 
-            {/*
-              Sits under every input source rather than beside them, because it isn't one: it's what
-              you send *before* there's any YAML to bring in. Only rendered with a library loaded —
-              the brief's whole point is the ids in it, and offering it empty would hand an assistant
-              a confident list of nothing.
-            */}
-            {currentLibrary && (
-              <View style={styles.briefRow}>
-                <Pressable
-                  onPress={() => copy('brief', buildAssistantBrief(currentLibrary))}
-                  accessibilityRole="button"
-                  style={[styles.copyButton, { borderColor: theme.border }]}>
-                  <ThemedText type="smallMedium" themeColor="textSecondary">
-                    {copyLabel('brief', t('import.copyBrief'))}
-                  </ThemedText>
-                </Pressable>
-                <ThemedText type="small" themeColor="textSecondary">
-                  {copyFailed('brief') ? t('import.copyFailed') : t('import.copyBriefDetail')}
-                </ThemedText>
-              </View>
-            )}
+            {packsFirst && assistantBlock}
           </>
         )}
 
@@ -902,9 +1098,11 @@ const styles = StyleSheet.create({
   },
   // Only the gap above: `ListHeaderRule` carries the space below it, so that the first row sits the
   // same distance from the line as every other row does from its separator.
+  // `Spacing.two` under the label rather than the 2px a heading took: an uppercase tracked marker
+  // needs air under it to read as a marker, and it is what Settings' own section titles use.
   packsHeader: {
     marginTop: Spacing.three,
-    gap: 2,
+    gap: Spacing.two,
   },
   fileName: {},
   error: {

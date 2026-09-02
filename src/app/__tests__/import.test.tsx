@@ -1,6 +1,6 @@
 import { act, fireEvent, screen } from '@testing-library/react-native';
 import { changeLanguage, t } from 'i18next';
-import { AccessibilityInfo } from 'react-native';
+import { AccessibilityInfo, Share } from 'react-native';
 
 import ImportScreen from '@/app/import';
 import type { Exercise, Library } from '@/domain/types';
@@ -32,12 +32,29 @@ jest.mock('@/storage/library-file', () => ({
 jest.mock('expo-router', () => require('@/test-support/expo-router'));
 
 const mockSetString = jest.fn<Promise<boolean>, [string]>();
-jest.mock('expo-clipboard', () => ({ setStringAsync: (...args: [string]) => mockSetString(...args) }));
+const mockGetString = jest.fn<Promise<string>, []>();
+jest.mock('expo-clipboard', () => ({
+  setStringAsync: (...args: [string]) => mockSetString(...args),
+  getStringAsync: () => mockGetString(),
+}));
+
+/**
+ * The share sheet is the OS's, so there is nothing to render and nothing to assert but the call.
+ * Spied rather than module-mocked: everything else `react-native` exports here is the real thing.
+ *
+ * **Re-spied per test rather than once at module scope.** `restoreMocks` is on, so a module-scope spy
+ * stops intercepting after the first test in the file — and the real `Share.share` then rejects on
+ * its own in this environment, which is the exact state the "will not open" case asserts. That case
+ * passed while testing nothing until this moved into `beforeEach`.
+ */
+let mockShare: jest.SpyInstance<ReturnType<typeof Share.share>, Parameters<typeof Share.share>>;
 
 const savedLibrary = saveLibrary as jest.MockedFunction<typeof saveLibrary>;
 
 beforeEach(() => {
   mockSetString.mockResolvedValue(true);
+  mockGetString.mockResolvedValue('');
+  mockShare = jest.spyOn(Share, 'share').mockResolvedValue({ action: 'sharedAction' });
 });
 
 /** Stands in for the picked file. Serialising a real Library keeps the fixture and the schema in step. */
@@ -492,7 +509,7 @@ describe('a preview with more changes than fit', () => {
 describe('the assistant brief', () => {
   it('copies the schema and the library’s own ids', async () => {
     await renderScreen(<ImportScreen />);
-    await fireEvent.press(screen.getByText('Copy the format for an assistant'));
+    await fireEvent.press(screen.getByText('Copy it instead'));
 
     const copied = mockSetString.mock.calls.at(-1)![0];
     expect(copied).toContain('pull-ups (reps)');
@@ -509,7 +526,7 @@ describe('the assistant brief', () => {
     // Both copy buttons are on screen at once here. A shared "copied" flag would light up the wrong
     // one — the brief's label must still read as un-copied.
     expect(screen.getByText('Copied')).toBeTruthy();
-    expect(screen.getByText('Copy the format for an assistant')).toBeTruthy();
+    expect(screen.getByText('Copy it instead')).toBeTruthy();
   });
 
   it('is not offered before the library has loaded', async () => {
@@ -518,7 +535,133 @@ describe('the assistant brief', () => {
     useLibraryStore.setState({ library: null, status: 'loading' });
     await renderScreen(<ImportScreen />);
 
-    expect(screen.queryByText('Copy the format for an assistant')).toBeNull();
+    expect(screen.queryByText('Copy it instead')).toBeNull();
+    expect(screen.queryByText('Send the format to an assistant')).toBeNull();
+  });
+
+  it('hands the same brief to the share sheet', async () => {
+    await renderScreen(<ImportScreen />);
+    await fireEvent.press(screen.getByText('Send the format to an assistant'));
+
+    // The share sheet gets the brief itself, not a summary or a link — this is the whole payload,
+    // and the OS decides which app it lands in. Nothing here names a vendor, and nothing is sent by
+    // the app: the sheet is the user picking a destination.
+    const shared = mockShare.mock.calls.at(-1)![0] as { message: string };
+    expect(shared.message).toContain('pull-ups (reps)');
+    expect(shared.message).toContain('"$schema"');
+    // Identical to what the clipboard button copies. Two payloads that could drift is the failure
+    // this pins: they are one `buildAssistantBrief` call apiece and must stay so.
+    await fireEvent.press(screen.getByText('Copy it instead'));
+    expect(mockSetString.mock.calls.at(-1)![0]).toBe(shared.message);
+  });
+
+  it('degrades to a note when the share sheet will not open, keeping the clipboard path', async () => {
+    // react-native-web rejects outright where the browser has no `navigator.share`, and a native
+    // sheet can fail too. The fallback is the button directly below it, so this must never take the
+    // screen over the way a refusal does.
+    mockShare.mockRejectedValue(new Error('Share is not supported in this browser'));
+    await renderScreen(<ImportScreen />);
+    await fireEvent.press(screen.getByText('Send the format to an assistant'));
+
+    expect(screen.getByText('Couldn’t open the share sheet.')).toBeTruthy();
+    expect(screen.queryByText(/^Invalid YAML:/)).toBeNull();
+
+    await fireEvent.press(screen.getByText('Copy it instead'));
+
+    expect(mockSetString.mock.calls.at(-1)![0]).toContain('"$schema"');
+    // The stale share failure has to clear, or it sits under a button that just succeeded.
+    expect(screen.queryByText('Couldn’t open the share sheet.')).toBeNull();
+    expect(screen.getByText('Copied')).toBeTruthy();
+  });
+
+  it('treats backing out of the sheet as a cancel, not a failure to open one', async () => {
+    // Native resolves on dismissal, but react-native-web forwards to `navigator.share`, which
+    // rejects `AbortError` — so on mobile web this is the ordinary path of someone changing their
+    // mind, and reporting it as a failure would accuse the sheet that worked.
+    mockShare.mockRejectedValue(Object.assign(new Error('Share canceled'), { name: 'AbortError' }));
+    await renderScreen(<ImportScreen />);
+    await fireEvent.press(screen.getByText('Send the format to an assistant'));
+
+    expect(screen.queryByText('Couldn’t open the share sheet.')).toBeNull();
+  });
+
+  it('is translated', async () => {
+    await changeLanguage('pt');
+    await renderScreen(<ImportScreen />);
+
+    expect(screen.getByText('Enviar o formato para um assistente')).toBeTruthy();
+    expect(screen.getByText('Copiar em vez disso')).toBeTruthy();
+  });
+});
+
+/**
+ * The return leg of the trip the share row starts: the YAML is in a chat window, and getting it into
+ * the box meant a long-press and a caret on a phone. What is worth pinning is the two outcomes that
+ * leave the box empty, since a button that silently does nothing is the failure this control has.
+ */
+describe('pasting from the clipboard', () => {
+  async function openPasteBox() {
+    await renderScreen(<ImportScreen />);
+    await fireEvent.press(screen.getByText(t('import.pasteToggle')));
+  }
+
+  it('fills the box from the clipboard, and stops there', async () => {
+    const yaml = serializeLibraryYaml(aLibrary({ exercises: [dips] }));
+    mockGetString.mockResolvedValue(yaml);
+    await openPasteBox();
+    await fireEvent.press(screen.getByText('Paste from clipboard'));
+
+    expect(screen.getByPlaceholderText(t('import.pastePlaceholder')).props.value).toBe(yaml);
+    // Deliberately not previewed yet: the box is where you see that the chat's prose came along with
+    // the YAML, and `reviewPaste` stays the only way past it.
+    expect(screen.queryByText('Pasted YAML')).toBeNull();
+
+    await fireEvent.press(screen.getByText(t('import.reviewPaste')));
+
+    expect(screen.getByText('Pasted YAML')).toBeTruthy();
+  });
+
+  it('says nothing came back rather than doing nothing, without claiming to know why', async () => {
+    // `getStringAsync` resolves '' rather than throwing, so without this branch the tap is silent and
+    // reads as a dead button. Whitespace counts as empty for the same reason `reviewPaste` trims.
+    //
+    // The wording is the load-bearing part: on iOS 16+ a *denied* paste also resolves '' and
+    // expo-clipboard's own docs say the two cannot be told apart, so "the clipboard is empty" would
+    // be a confident lie to someone looking at their YAML sitting in it.
+    mockGetString.mockResolvedValue('  \n ');
+    await openPasteBox();
+    await fireEvent.press(screen.getByText('Paste from clipboard'));
+
+    expect(screen.getByText('Nothing to paste — the clipboard is empty, or paste access was denied.')).toBeTruthy();
+    expect(screen.getByPlaceholderText(t('import.pastePlaceholder')).props.value).toBe('');
+  });
+
+  it('clears the note once the box is filled by hand', async () => {
+    // The note describes one attempt at filling this box. Left standing it sits beside a full box
+    // still claiming there was nothing to paste — and typing is exactly what someone does next.
+    mockGetString.mockResolvedValue('');
+    await openPasteBox();
+    await fireEvent.press(screen.getByText('Paste from clipboard'));
+    await fireEvent.changeText(screen.getByPlaceholderText(t('import.pastePlaceholder')), 'exercises: []');
+
+    expect(screen.queryByText(/^Nothing to paste/)).toBeNull();
+  });
+
+  it('says so when the clipboard cannot be read at all', async () => {
+    // Web's read half is permission-gated and throws when denied — a different sentence from an
+    // empty clipboard, because the user can do something about one of them.
+    mockGetString.mockRejectedValue(new Error('Read permission denied'));
+    await openPasteBox();
+    await fireEvent.press(screen.getByText('Paste from clipboard'));
+
+    expect(screen.getByText('Couldn’t read the clipboard.')).toBeTruthy();
+  });
+
+  it('is translated', async () => {
+    await changeLanguage('pt');
+    await openPasteBox();
+
+    expect(screen.getByText('Colar da área de transferência')).toBeTruthy();
   });
 });
 
@@ -697,7 +840,7 @@ describe('the order of the input sources', () => {
   /** The three sections, queried in one go so what comes back is in tree order. */
   function sourceOrder() {
     return screen
-      .getAllByText(new RegExp(`^(${t('import.packs.title')}|${t('import.chooseFile')}|${t('import.copyBrief')})$`))
+      .getAllByText(new RegExp(`^(${t('import.packs.title')}|${t('import.chooseFile')}|${t('import.shareBrief')})$`))
       .map((node) => node.props.children);
   }
 
@@ -723,7 +866,7 @@ describe('the order of the input sources', () => {
   it('leads with the packs for someone who has logged nothing', async () => {
     await renderScreen(<ImportScreen />);
 
-    expect(sourceOrder()).toEqual(['Starter packs', 'Choose exercises.yaml', 'Copy the format for an assistant']);
+    expect(sourceOrder()).toEqual(['Starter packs', 'Choose exercises.yaml', 'Send the format to an assistant']);
   });
 
   it('leads with the file path once a session has been logged', async () => {
@@ -731,7 +874,7 @@ describe('the order of the input sources', () => {
 
     await renderScreen(<ImportScreen />);
 
-    expect(sourceOrder()).toEqual(['Choose exercises.yaml', 'Starter packs', 'Copy the format for an assistant']);
+    expect(sourceOrder()).toEqual(['Choose exercises.yaml', 'Send the format to an assistant', 'Starter packs']);
   });
 
   /**

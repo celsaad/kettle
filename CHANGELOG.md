@@ -45,6 +45,20 @@ tab, which the tab bar was already doing. It now says the thing that is easy to 
 an ordinary file, yours to edit in the app, open in any text editor, or have an AI draft for you.
 Programs hasn't moved — it is still a tab, and still explains itself when you get there.
 
+**Handing your library's format to an assistant is one tap now.** Import has a *Send the format to an
+assistant* row that opens your phone's own share sheet, so the schema and your existing ids go
+straight into whichever app you use — no copying, switching and pasting. *Copy it instead* is still
+there for when you want the clipboard. Kettle still never talks to an AI itself and never has: it
+hands you the text, your phone decides where it goes, and nothing leaves your device unless you send
+it.
+
+**Pasting the YAML back takes one tap too.** The paste box has a *Paste from clipboard* button, so
+the file an assistant just wrote for you goes in without a long-press. It still shows you the text
+and the summary of what would change before anything touches your library.
+
+**"Starter packs" reads as a heading again.** It was the same size and weight as the pack names under
+it, so the section title looked like a fourth pack.
+
 ---
 
 ## 0.8.0 — versionCode 11, 25 August 2026

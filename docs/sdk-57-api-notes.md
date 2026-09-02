@@ -97,3 +97,26 @@
   instances at module-import time, which crashed `expo export --platform web` (and would have crashed
   the web runtime too); fixed by making path resolution lazy.
 
+
+- ⚠️ **`Clipboard.getStringAsync()` resolves `''` for a denied paste as well as an empty clipboard,
+  and the two cannot be told apart.** Confirmed from
+  `node_modules/expo-clipboard/build/Clipboard.d.ts`, which says so outright: on iOS 16+ a paste is
+  behind a system permission prompt, and a denial returns an empty string, with "no way to
+  distinguish between an empty clipboard and denied permission". So the natural reading of that
+  return — "the clipboard is empty" — is wrong on the platform where a user is most likely to hit it,
+  and would tell someone their clipboard is empty while their YAML sits in it.
+
+  Import's "paste from clipboard" note is worded as a disjunction for exactly this reason
+  (`import.clipboardEmpty` names both possibilities). Anything that tightens it back to a single
+  confident claim is reintroducing the bug. The **web** read half is different and does throw when
+  denied, which is why `pasteFromClipboard`'s `catch` is the one branch that can still say
+  "couldn't read" outright.
+
+- ⚠️ **`Share.share()` rejects on cancel on web, but resolves on cancel on native.** React Native's
+  `Share` reports dismissal as `{ action: 'dismissedAction' }`; `react-native-web`'s forwards
+  straight to `window.navigator.share`
+  (`node_modules/react-native-web/dist/exports/Share/index.js`), which rejects with an `AbortError`
+  when the user backs out. So a `catch` that treats every rejection as a failure reports one for the
+  ordinary cancel path on mobile web. Import filters `AbortError` for that reason. The same file is
+  why sharing is feature-detected rather than attempted: with no `navigator.share`, it rejects
+  outright with "Share is not supported in this browser" rather than degrading.

@@ -399,6 +399,7 @@
     "pickedFrom": "{{size}} · selecionado dos Arquivos",
     "pasteToggle": "Colar YAML",
     "pasteToggleDetail": "De um assistente ou de qualquer editor de texto",
+    "pasteFromClipboard": "Colar da área de transferência",
     "pastePlaceholder": "Cole aqui o exercises.yaml completo",
     "packs": {
       "title": "Pacotes iniciais",
@@ -430,6 +431,8 @@
     "libraryNotLoaded": "A biblioteca ainda não foi carregada.",
     "repairPrompt": "O Kettle recusou este exercises.yaml na importação. Corrija o YAML e devolva o arquivo corrigido.",
     "copyBrief": "Copiar o formato para um assistente",
+    "copyBriefInstead": "Copiar em vez disso",
+    "shareBrief": "Enviar o formato para um assistente",
     "copyBriefDetail": "O schema e os ids que já estão na sua biblioteca",
     "brief": {
       "prompt": "Este é o formato de arquivo que o app de treinos Kettle importa e os ids que já estão na minha biblioteca. Responda com YAML que siga o schema abaixo. Reutilize um id existente para substituir aquele item; use um id novo para adicionar um. O app valida algumas regras entre campos que o schema não consegue expressar — se ele recusar o arquivo, ele diz o motivo, e eu colo isso de volta para você.",
@@ -444,6 +447,9 @@
     "copied": "Copiado",
     "copiedAnnouncement": "Erro copiado para a área de transferência",
     "copyFailed": "Não foi possível acessar a área de transferência.",
+    "shareFailed": "Não foi possível abrir o menu de compartilhamento.",
+    "clipboardEmpty": "Nada para colar — a área de transferência está vazia ou o acesso foi negado.",
+    "clipboardFailed": "Não foi possível ler a área de transferência.",
     "new": "novo",
     "updated": "atualizado",
     "workoutNoun_one": "treino",

@@ -385,6 +385,7 @@
     "pickedFrom": "{{size}} · ファイルから選択",
     "pasteToggle": "代わりに YAML を貼り付ける",
     "pasteToggleDetail": "アシスタントや、任意のテキストエディタから",
+    "pasteFromClipboard": "クリップボードから貼り付け",
     "pastePlaceholder": "exercises.yaml の全文をここに貼り付けてください",
     "packs": {
       "title": "スターターパック",
@@ -412,6 +413,8 @@
     "libraryNotLoaded": "ライブラリがまだ読み込まれていません。",
     "repairPrompt": "Kettle がこの exercises.yaml の読み込みを拒否しました。YAML を修正して、直したファイルを返してください。",
     "copyBrief": "アシスタント用にフォーマットをコピー",
+    "copyBriefInstead": "代わりにコピー",
+    "shareBrief": "フォーマットをアシスタントに送る",
     "copyBriefDetail": "スキーマと、ライブラリにすでにある ID",
     "brief": {
       "prompt": "これは、ワークアウトアプリ Kettle が読み込むファイル形式と、私のライブラリにすでにある ID です。下のスキーマに合う YAML で返答してください。既存の ID を使えばその項目を置き換え、新しい ID を使えば追加になります。アプリはスキーマでは表現できない項目間のルールもいくつか検証します。ファイルが拒否された場合は理由が表示されるので、それを貼り付けてお伝えします。",
@@ -426,6 +429,9 @@
     "copied": "コピーしました",
     "copiedAnnouncement": "エラーをクリップボードにコピーしました",
     "copyFailed": "クリップボードにアクセスできませんでした。",
+    "shareFailed": "共有メニューを開けませんでした。",
+    "clipboardEmpty": "貼り付けるものがありません — クリップボードが空か、アクセスが拒否されています。",
+    "clipboardFailed": "クリップボードを読み取れませんでした。",
     "new": "新規",
     "updated": "更新",
     "workoutNoun_other": "ワークアウト",

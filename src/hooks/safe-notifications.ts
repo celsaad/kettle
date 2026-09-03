@@ -49,31 +49,39 @@ export async function requestNotificationPermissions(): Promise<void> {
 /**
  * Title and body are the caller's, translated: this schedules any step's completion cue, not rest's.
  *
- * `sound` and `interruptionLevel` are what make this a *cue* rather than a banner nobody sees. When
- * the app is suspended the in-app audio in `use-session-sounds.ts` is gone and this is all that's
- * left, so a rest ending with the phone in a pocket is silent without them. Both are iOS-only in
- * effect — Android 8+ takes a notification's sound from its channel and ignores the content field,
- * and `interruptionLevel` is an iOS concept — so this changes nothing on the platform that ships
- * today and everything on the one that doesn't yet.
+ * `sound` is what makes this a *cue* rather than a banner nobody sees. Once the app is suspended the
+ * in-app audio in `use-session-sounds.ts` is gone and this is all that's left, so a rest ending with
+ * the phone in a pocket is silent without it — but it is also the same ding `use-session-sounds.ts`
+ * plays, so it answers to the same switch. The caller passes the preference in rather than this
+ * module reading it: `safe-notifications` has no other store dependency and is imported by code that
+ * runs before any store is hydrated.
  *
- * `timeSensitive` breaks through Focus modes, which a rest timer the user started seconds ago has a
- * real claim to. Not `critical`: that bypasses the mute switch and needs a special entitlement, and
- * this is a workout, not an alarm.
+ * `interruptionLevel: 'timeSensitive'` lets a rest cue through a Focus mode, which a timer the user
+ * started seconds ago has a real claim to. **It is not free**: iOS downgrades it to `active` unless
+ * the app carries `com.apple.developer.usernotifications.time-sensitive`, which
+ * `expo-notifications`' own plugin does not write (it writes `aps-environment` and nothing else).
+ * That entitlement is declared in `app.json`'s `ios.entitlements` and asserted by
+ * `app-config.test.ts`, because the failure is silent in exactly the way this whole file is about —
+ * the flag stays in the code, the cue keeps being swallowed, and nothing says so. Not `critical`,
+ * which bypasses the mute switch and needs Apple's approval; this is a workout, not an alarm.
  *
- * The `shouldPlaySound: false` in `setNotificationHandler` above is not a contradiction. On iOS that
- * handler runs only while the app is *foregrounded*, where `use-session-sounds.ts` is already playing
- * the real cue — flipping it would double up.
+ * Both fields are inert on Android, which takes a notification's sound from its channel and has no
+ * interruption levels.
+ *
+ * The `shouldPlaySound: false` in `setNotificationHandler` above is not a contradiction: on iOS that
+ * handler runs only while the app is *foregrounded*, where the real cue is already playing.
  */
 export async function scheduleStepCompleteNotification(
   title: string,
   body: string,
   seconds: number,
+  sound: boolean,
 ): Promise<string | null> {
   const notifications = getNotifications();
   if (!notifications) return null;
   try {
     return await notifications.scheduleNotificationAsync({
-      content: { title, body, sound: 'default', interruptionLevel: 'timeSensitive' },
+      content: { title, body, sound: sound && 'default', interruptionLevel: 'timeSensitive' },
       trigger: { type: notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds, repeats: false },
     });
   } catch {

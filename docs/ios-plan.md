@@ -171,7 +171,13 @@ this route earns.
 under the device's own storage; that wants a simulator, and it is the second thing owed there after
 2.5's language flip.
 
-**This is also the honest version of "iCloud sync" for v1.** See the next section.
+**It is access, not sync, and the copy has to say so.** A sync client on iOS syncs its *own*
+container; it cannot watch another app's Documents folder the way a desktop client watches a
+directory. So dragging the folder into iCloud Drive or Dropbox takes a snapshot, and Kettle keeps
+writing to the original — which is the opposite of the Android backup folder, where the app rewrites
+the user's chosen directory on every session. The shipped Settings copy says exactly that; an earlier
+draft of it said "drag it into iCloud Drive" and stopped there, which would have left someone
+believing they had a backup that was updating itself.
 
 ### 2.5 The app would very likely ship English-only, and nothing would fail — *shipped*
 
@@ -251,9 +257,11 @@ the session id interpolated rather than translated.
 
 ## Phase 3 — iCloud, and the sync question it reopens
 
-The user's own filesystem via the Files app (2.4) is sync by the same mechanism the Android backup
-folder uses: *the user's* sync client, watching a folder, with the app transmitting nothing. That keeps
-the zero-data claim exactly as it is and needs no entitlement, no container, and no review question.
+The Files app (2.4) is **not** what the first draft of this section called it — "sync by the same
+mechanism the Android backup folder uses". It isn't. Android's picked folder is a directory the app
+rewrites, so whatever watches it stays current; iOS publishes a folder a person can open and copy
+*from*, and no sync client can subscribe to it. Both keep the zero-data claim, need no entitlement and
+raise no review question, but only one of them keeps working while the user isn't looking.
 
 Real iCloud is a step past that, and it splits into two very different features that should not be
 confused:
@@ -279,8 +287,10 @@ three subjects are documented wrong upstream.)
 So **both halves of iCloud drop out of the launch**, for different reasons — iCloud Drive because it
 needs native work this plan won't carry, CloudKit because it is session-restore wearing a sync costume
 and session-restore is already a named follow-up in the backup decision entry. What ships instead is
-2.4: the Files app, the user's own sync client, and nothing transmitted. That is most of what "iCloud
-sync" means to a user, at the cost of two Info.plist keys.
+2.4: the Files app, a folder the user can reach, and nothing transmitted. That is **not** most of
+what "iCloud sync" means to a user — it is the access half without the automatic half, at the cost of
+two Info.plist keys. Worth shipping, worth not overselling; the gap is why iCloud Drive stays on the
+list rather than being closed out by this.
 
 If iCloud is picked up later it is its own plan, and this paragraph is why it isn't this one. The
 practical consequence for Phase 5 is that **no iCloud container entitlement is needed**, which keeps
@@ -306,6 +316,14 @@ anyone:
   on Android — 8+ takes a notification's sound from its channel and has no interruption levels — which
   is why this could land without a device: it cannot regress the platform that ships. The rest-day
   reminder deliberately gets neither; a nudge days out has no claim on Focus.
+
+  Two things that were missed the first time and are now in: `timeSensitive` is **not free** — iOS
+  downgrades it to `active` without `com.apple.developer.usernotifications.time-sensitive`, which
+  `expo-notifications`' plugin does not write (only `aps-environment`), so it is declared in
+  `app.json`'s `ios.entitlements` and asserted by `app-config.test.ts`; and the cue now carries the
+  **"Session sounds" preference**, since a notification with `sound: 'default'` is the same ding to
+  the user as the in-app one, and `settings.soundsNote` promises that switch is the only way to quiet
+  them.
 
   The `shouldPlaySound: false` in the same file's `setNotificationHandler` looks like a second cause
   and is not: on iOS that handler runs **only while the app is foregrounded**, and a suspended app's
@@ -437,6 +455,9 @@ It is still a secret; it just isn't that particular unrecoverable one.
 ### Submission
 
 - App Store Connect record, bundle id, and the three consumable IAPs from 2.3.
+- **Time Sensitive Notifications on the App ID.** The entitlement is declared in `app.json`, but the
+  capability also has to be switched on for the identifier in the developer portal or the profile
+  won't include it and the build won't sign. Nothing in the repo can check that half.
 - **`ios.config.usesNonExemptEncryption: false` in [`app.json`](../app.json).** ✅ Shipped. Without
   it *every* build prompts the export-compliance question in App Store Connect and blocks the
   submission until someone answers it by hand. The app genuinely uses no non-exempt encryption —

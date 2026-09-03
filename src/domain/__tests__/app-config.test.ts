@@ -15,7 +15,7 @@ const { readFileSync } = require('node:fs');
 
 const config = JSON.parse(readFileSync(`${__dirname}/../../../app.json`, 'utf8')).expo as {
   version: string;
-  ios: { buildNumber: string; infoPlist: Record<string, unknown> };
+  ios: { buildNumber: string; infoPlist: Record<string, unknown>; entitlements: Record<string, unknown> };
   android: { versionCode: number };
   plugins: (string | [string, Record<string, unknown>])[];
 };
@@ -50,6 +50,20 @@ describe('the Files app declaration', () => {
   it('publishes the documents folder both ways', () => {
     expect(config.ios.infoPlist.UIFileSharingEnabled).toBe(true);
     expect(config.ios.infoPlist.LSSupportsOpeningDocumentsInPlace).toBe(true);
+  });
+});
+
+/**
+ * `interruptionLevel: 'timeSensitive'` on the rest cue is a request, not a setting: iOS downgrades it
+ * to `active` unless the app carries this entitlement, and `expo-notifications`' config plugin writes
+ * only `aps-environment`. Nothing observable changes when it's missing — the flag stays in the code,
+ * the notification still arrives, and Focus still swallows it — so the declaration is asserted here
+ * rather than trusted. (The capability also has to be enabled on the App ID; that half is Phase 5's,
+ * and no test can see it.)
+ */
+describe('the time-sensitive entitlement', () => {
+  it('is declared, because the notification asks for the level it grants', () => {
+    expect(config.ios.entitlements['com.apple.developer.usernotifications.time-sensitive']).toBe(true);
   });
 });
 

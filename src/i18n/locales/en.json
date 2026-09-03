@@ -343,7 +343,7 @@
     "shareLibraryTitle": "Export exercises.yaml",
     "shareHistoryTitle": "Export history",
     "shareSessionTitle": "Export session {{id}}",
-    "filesInFilesApp": "That folder is in the Files app — open Browse, look under this device's own storage, and Kettle is there. Anything that can reach your files can reach it: drag it into iCloud Drive or Dropbox, open exercises.yaml in a text editor, or copy it to a computer. Kettle keeps writing where it always wrote, so what you see there is the real thing rather than a copy.",
+    "filesInFilesApp": "That folder is in the Files app: open Browse, look under this device's own storage, and Kettle is there — your library and every session are inside it, in a folder called exercise-tracker. Open exercises.yaml in a text editor, copy the folder to a computer, or send any file on from there. Copying it into iCloud Drive or Dropbox makes a snapshot rather than a live link: Kettle keeps writing here, so come back for a fresh copy.",
     "filesSync": "Export sends exercises.yaml wherever you keep files — a cloud drive, a git repo, a mail to yourself. History exports the same way, one session at a time or the whole log as one file. Import merges a library back in by id, so a returning file updates only the items it names; a session log is exported for keeping and reading, not for importing.",
     "inYourLibrary": "In your library",
     "exercises": "Exercises",

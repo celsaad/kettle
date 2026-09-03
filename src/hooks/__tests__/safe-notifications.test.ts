@@ -30,13 +30,25 @@ beforeEach(() => {
 });
 
 it('makes the step cue audible and lets it through Focus', async () => {
-  await scheduleStepCompleteNotification('Rest done', 'Back to it', 30);
+  await scheduleStepCompleteNotification('Rest done', 'Back to it', 30, true);
 
   expect(mockSchedule).toHaveBeenCalledWith(
     expect.objectContaining({
       content: { title: 'Rest done', body: 'Back to it', sound: 'default', interruptionLevel: 'timeSensitive' },
     }),
   );
+});
+
+/**
+ * The switch in Settings says it is the only way to quiet the cues, and this is one of them — it just
+ * arrives while the app is suspended. The banner still comes through Focus; it simply doesn't ding.
+ */
+it('schedules a silent cue when session sounds are off', async () => {
+  await scheduleStepCompleteNotification('Rest done', 'Back to it', 30, false);
+
+  const content = mockSchedule.mock.calls[0][0].content;
+  expect(content.sound).toBe(false);
+  expect(content.interruptionLevel).toBe('timeSensitive');
 });
 
 /**

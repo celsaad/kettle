@@ -11,17 +11,18 @@
  * assertion here can check. What this pins is the wiring — the right branch, from the bundles, and
  * not on top of the Android rows.
  */
-const mockBackUpNow = jest.fn();
-
 jest.mock('expo-router', () => require('@/test-support/expo-router'));
 
-// The two flags are mutually exclusive by construction (`Platform.OS === 'android'` against
-// `=== 'ios'`), and the screen has to keep them that way: two answers to "where are my files" is
-// worse than either one.
+// A getter, not a literal: the paragraph is only interesting if it can be shown to *not* render, and
+// a hardcoded `true` would make the negative case assert this mock instead of the screen. The folder
+// flag stays false throughout — that branch is `settings-backup.test.tsx`'s.
+let mockDocumentsShared = true;
 jest.mock('@/storage/backup', () => ({
   isBackupFolderSupported: false,
-  isDocumentsFolderShared: true,
-  backUpNow: (...args: unknown[]) => mockBackUpNow(...args),
+  get isDocumentsFolderShared() {
+    return mockDocumentsShared;
+  },
+  backUpNow: jest.fn(),
   pickBackupFolder: jest.fn(),
   backupFolderLabel: (uri: string) => uri,
 }));
@@ -40,6 +41,7 @@ import { screen } from '@testing-library/react-native';
 import { changeLanguage } from 'i18next';
 
 import SettingsScreen from '@/app/settings';
+import en from '@/i18n/locales/en.json';
 import pt from '@/i18n/locales/pt.json';
 import { useLibraryStore } from '@/state/library-store';
 import { useSessionHistoryStore } from '@/state/session-history-store';
@@ -47,6 +49,7 @@ import { aLibrary, anExercise } from '@/test-support/library';
 import { renderScreen } from '@/test-support/render';
 
 beforeEach(() => {
+  mockDocumentsShared = true;
   useLibraryStore.setState({ library: aLibrary({ exercises: [anExercise()] }), status: 'ready' });
   useSessionHistoryStore.setState({ sessions: [], status: 'ready' });
 });
@@ -71,12 +74,19 @@ it('carries the same warning about what can be restored', async () => {
   expect(screen.getByText(pt.settings.backupLimits)).toBeTruthy();
 });
 
-// Not an alternative to the folder picker — the replacement for it. A build showing both would be
-// offering two mechanisms where one of them cannot work.
-it('offers none of the folder rows', async () => {
+/**
+ * Where the paragraph must *not* appear: Android has the folder rows instead, and the web build has
+ * no filesystem at all. Telling either one to look in the Files app describes something that isn't
+ * there — and since this is copy with no behaviour behind it, the wrong branch is invisible to
+ * everything except a reader.
+ */
+it('says nothing about the Files app where the folder is not published', async () => {
+  mockDocumentsShared = false;
+
   await renderScreen(<SettingsScreen />);
 
-  expect(screen.queryByText('Backup folder')).toBeNull();
-  expect(screen.queryByText('Back up now')).toBeNull();
-  expect(mockBackUpNow).not.toHaveBeenCalled();
+  expect(screen.queryByText(en.settings.filesInFilesApp)).toBeNull();
+  // The generic sentences stay: this branch loses a paragraph, not the section.
+  expect(screen.getByText(en.settings.filesLocal)).toBeTruthy();
+  expect(screen.getByText(en.settings.filesSync)).toBeTruthy();
 });

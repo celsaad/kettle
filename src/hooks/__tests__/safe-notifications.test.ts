@@ -23,7 +23,7 @@ jest.mock('expo-notifications', () => ({
   SchedulableTriggerInputTypes: { TIME_INTERVAL: 'timeInterval', DATE: 'date' },
 }));
 
-import { scheduleRestDayReminder, scheduleStepCompleteNotification } from '@/hooks/safe-notifications';
+import { scheduleRestDayReminder, scheduleStepCompleteNotification, stepCueContent } from '@/hooks/safe-notifications';
 
 beforeEach(() => {
   mockSchedule.mockResolvedValue('notification-id');
@@ -41,7 +41,8 @@ it('makes the step cue audible and lets it through Focus', async () => {
 
 /**
  * The switch in Settings says it is the only way to quiet the cues, and this is one of them — it just
- * arrives while the app is suspended. The banner still comes through Focus; it simply doesn't ding.
+ * arrives while the app is suspended. On iOS (which is what jest runs these as) the banner still
+ * arrives and still breaks through Focus; it simply doesn't ding.
  */
 it('schedules a silent cue when session sounds are off', async () => {
   await scheduleStepCompleteNotification('Rest done', 'Back to it', 30, false);
@@ -49,6 +50,42 @@ it('schedules a silent cue when session sounds are off', async () => {
   const content = mockSchedule.mock.calls[0][0].content;
   expect(content.sound).toBe(false);
   expect(content.interruptionLevel).toBe('timeSensitive');
+});
+
+/**
+ * The same preference has to mean two different payloads, because `false` is not neutral on Android:
+ * a boolean `sound` with no `vibrate` key makes `ExpoNotificationBuilder` call `setSilent(true)`,
+ * which on O+ drops the heads-up alert as well — "regardless of channel", in its own words. A rest
+ * cue landing quietly in the shade is the exact failure this feature exists to prevent, so Android
+ * keeps its channel and gets no key at all.
+ *
+ * Pure, because jest runs every hook here as iOS: the Android arm has no other way to be seen, and a
+ * module-level `Platform` mock costs a second file and leaves `expo-modules-core` warning through
+ * every run.
+ */
+describe('stepCueContent', () => {
+  it('asks for the default sound on both platforms when the switch is on', () => {
+    expect(stepCueContent('t', 'b', true, 'ios').sound).toBe('default');
+    expect(stepCueContent('t', 'b', true, 'android').sound).toBe('default');
+  });
+
+  it('silences iOS explicitly', () => {
+    expect(stepCueContent('t', 'b', false, 'ios').sound).toBe(false);
+  });
+
+  // Absent, not present-and-undefined: the Android builder reads a boolean straight out of the
+  // payload, so an undefined that survives serialization is a `false` with extra steps.
+  it('sends Android no sound key at all, leaving the channel in charge', () => {
+    expect(Object.keys(stepCueContent('t', 'b', false, 'android'))).not.toContain('sound');
+  });
+
+  it('always asks for the level, on both', () => {
+    for (const os of ['ios', 'android']) {
+      for (const on of [true, false]) {
+        expect(stepCueContent('t', 'b', on, os).interruptionLevel).toBe('timeSensitive');
+      }
+    }
+  });
 });
 
 /**

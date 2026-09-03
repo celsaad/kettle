@@ -312,10 +312,18 @@ anyone:
 - ✅ **Shipped.** `scheduleStepCompleteNotification` ([`safe-notifications.ts`](../src/hooks/safe-notifications.ts))
   set no `sound` on the notification content, so a rest ending in a pocket produced a silent banner.
   **That was the whole of the pocket failure, and `sound: 'default'` was the whole of the fix**, with
-  `interruptionLevel: 'timeSensitive'` beside it so a Focus mode doesn't eat the cue. Both are inert
-  on Android — 8+ takes a notification's sound from its channel and has no interruption levels — which
-  is why this could land without a device: it cannot regress the platform that ships. The rest-day
-  reminder deliberately gets neither; a nudge days out has no claim on Focus.
+  `interruptionLevel: 'timeSensitive'` beside it so a Focus mode doesn't eat the cue. Android takes a
+  notification's sound from its channel and has no interruption levels, so the payload that ships
+  there is unchanged and this could land without a device. The rest-day reminder deliberately gets
+  neither; a nudge days out has no claim on Focus.
+
+  **"Inert on Android" is true of `sound: 'default'` and false of `sound: false`**, which is the trap
+  the preference walked into. A boolean `sound` is read straight out of the payload, and with no
+  `vibrate` key `ExpoNotificationBuilder` reads "no sound and no vibration" as `setSilent(true)` —
+  which on O+ drops the *heads-up alert*, "regardless of channel" in its own comment. Silencing the
+  toggle that way would have taken the alert off the one cue meant to reach a pocketed phone, on the
+  platform that actually ships. So the payload is built by `stepCueContent`, pure and tested on both
+  arms: iOS gets `false`, Android gets no key at all and keeps its channel.
 
   Two things that were missed the first time and are now in: `timeSensitive` is **not free** — iOS
   downgrades it to `active` without `com.apple.developer.usernotifications.time-sensitive`, which
@@ -525,7 +533,7 @@ constraints that shape future work, and claims that become **false** the moment 
 | 1 Simulator bring-up | A Mac | Free. Highest information per hour in the whole plan |
 | 2 The six code changes | — | **5 of 6 shipped.** Only 2.3 is left, and it is a form in App Store Connect rather than code |
 | 3 iCloud | — | **Cut.** No SDK 57 surface; 2.4 is what ships instead |
-| 4 Background cues | **A real device** | Notification route ✅ shipped (inert on Android). Background audio still wants a device, and both halves of it |
+| 4 Background cues | **A real device** | Notification route ✅ shipped, Android payload unchanged. Background audio still wants a device, and both halves of it |
 | 5 Build, sign, submit | **$99/yr + certificate** | The money gate. Runner minutes are free — the repo is public |
 | 6 Docs and commands | — | Small, and the rules above make it non-optional. `/bump` done; the rest waits on shipping |
 

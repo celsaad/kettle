@@ -7,6 +7,7 @@
  * depends on to function.
  */
 import Constants, { ExecutionEnvironment } from 'expo-constants';
+import { Platform } from 'react-native';
 
 type NotificationsModule = typeof import('expo-notifications');
 
@@ -47,26 +48,60 @@ export async function requestNotificationPermissions(): Promise<void> {
 }
 
 /**
+ * The cue's content, as a pure function so both platforms' payloads are visible without a device or a
+ * `Platform` mock — jest runs every hook here as iOS, so the Android arm has no other way to be seen.
+ *
+ * The asymmetry in `sound` is load-bearing, not tidiness. On iOS the app owns the sound: no `sound`
+ * key means a silent banner, so the preference maps straight onto it and `false` is the documented
+ * way to ask for silence.
+ *
+ * On Android the *channel* owns it, and `false` is not the neutral value it looks like. A boolean
+ * `sound` comes back as-is from `ArgumentsNotificationContentBuilder.shouldPlayDefaultSound`, and
+ * with no `vibrate` key `shouldUseDefaultVibrationPattern` is false too — that one is inverted
+ * upstream, so `vibrate: true` doesn't rescue it — and `ExpoNotificationBuilder` turns "neither sound
+ * nor vibration" into `setSilent(true)`, whose own comment says *regardless of channel*. On O+ that
+ * drops the heads-up alert, not just the noise, and the cue whose entire job is to reach a pocketed
+ * phone would land quietly in the shade.
+ *
+ * So Android gets no `sound` key at all and the channel keeps governing, exactly as before any of
+ * this. Its users already have a per-channel control in system settings; taking their heads-up away
+ * to honour an in-app toggle is a product decision worth making deliberately, and not here.
+ *
+ * The key has to be *absent* rather than present-and-undefined, which is why this builds the object
+ * rather than the caller inlining it: an undefined that survives serialization is a `false` with
+ * extra steps.
+ *
+ * `interruptionLevel: 'timeSensitive'` lets the cue through a Focus mode, which a timer the user
+ * started seconds ago has a real claim to. **It is not free**: iOS downgrades it to `active` unless
+ * the app carries `com.apple.developer.usernotifications.time-sensitive`, which `expo-notifications`'
+ * own plugin does not write (it writes `aps-environment` and nothing else). That entitlement is
+ * declared in `app.json`'s `ios.entitlements` and asserted by `app-config.test.ts`, because the
+ * failure is silent in exactly the way this whole file is about — the flag stays in the code, the cue
+ * keeps being swallowed, and nothing says so. Not `critical`, which bypasses the mute switch and
+ * needs Apple's approval; this is a workout, not an alarm. Android has no interruption levels and
+ * ignores it.
+ */
+export function stepCueContent(
+  title: string,
+  body: string,
+  soundsOn: boolean,
+  os: string,
+): { title: string; body: string; interruptionLevel: 'timeSensitive'; sound?: 'default' | false } {
+  const base = { title, body, interruptionLevel: 'timeSensitive' as const };
+  if (soundsOn) return { ...base, sound: 'default' };
+  return os === 'ios' ? { ...base, sound: false } : base;
+}
+
+/**
  * Title and body are the caller's, translated: this schedules any step's completion cue, not rest's.
  *
- * `sound` is what makes this a *cue* rather than a banner nobody sees. Once the app is suspended the
- * in-app audio in `use-session-sounds.ts` is gone and this is all that's left, so a rest ending with
- * the phone in a pocket is silent without it — but it is also the same ding `use-session-sounds.ts`
- * plays, so it answers to the same switch. The caller passes the preference in rather than this
- * module reading it: `safe-notifications` has no other store dependency and is imported by code that
- * runs before any store is hydrated.
+ * The sound is what makes this a *cue* rather than a banner nobody sees — once the app is suspended
+ * the in-app audio in `use-session-sounds.ts` is gone and this is all that's left, so a rest ending
+ * with the phone in a pocket cues nothing without it. It is also the same ding to the user, so it
+ * answers to the same switch; `stepCueContent` above has what that means on each platform.
  *
- * `interruptionLevel: 'timeSensitive'` lets a rest cue through a Focus mode, which a timer the user
- * started seconds ago has a real claim to. **It is not free**: iOS downgrades it to `active` unless
- * the app carries `com.apple.developer.usernotifications.time-sensitive`, which
- * `expo-notifications`' own plugin does not write (it writes `aps-environment` and nothing else).
- * That entitlement is declared in `app.json`'s `ios.entitlements` and asserted by
- * `app-config.test.ts`, because the failure is silent in exactly the way this whole file is about —
- * the flag stays in the code, the cue keeps being swallowed, and nothing says so. Not `critical`,
- * which bypasses the mute switch and needs Apple's approval; this is a workout, not an alarm.
- *
- * Both fields are inert on Android, which takes a notification's sound from its channel and has no
- * interruption levels.
+ * The preference is passed in rather than read here: this module has no other store dependency and is
+ * imported by code that runs before anything is hydrated.
  *
  * The `shouldPlaySound: false` in `setNotificationHandler` above is not a contradiction: on iOS that
  * handler runs only while the app is *foregrounded*, where the real cue is already playing.
@@ -81,7 +116,7 @@ export async function scheduleStepCompleteNotification(
   if (!notifications) return null;
   try {
     return await notifications.scheduleNotificationAsync({
-      content: { title, body, sound: sound && 'default', interruptionLevel: 'timeSensitive' },
+      content: stepCueContent(title, body, sound, Platform.OS),
       trigger: { type: notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds, repeats: false },
     });
   } catch {

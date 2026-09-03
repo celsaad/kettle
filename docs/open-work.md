@@ -277,7 +277,8 @@ duplicate `slugify` copies, now one `domain/slug.ts` that all four call sites im
 `sessionSetCount`, `slugify`'s ASCII-only ids and `session-hold.tsx`'s `NaN%` (below); the milestone
 chime not re-firing on a step redone with Prev; EMOM minutes seeding their reps to 0; and the fixed
 `height` that clipped `+ Adicionar bloco` in the workout editor, swept across every text-bearing
-control. Notes on the structural ones:
+control; and the share sheet's hardcoded English chooser title, now three keys with the session id
+interpolated rather than translated. Notes on the structural ones:
 
 - **A crash mid-exercise lost that exercise's sets, not just the set in progress** — §7.2's "loses at
   most the in-progress set" was a claim the code didn't honour, since sets accumulated in memory until
@@ -321,14 +322,6 @@ control. Notes on the structural ones:
   for the next 0-config bug: nothing validates a program week's override config — the schema types it
   as a free record of numbers and the in-app override editor doesn't call `validateConfig` — so the
   runner screens can't assume the constraints `validateConfig`/`schema.ts` enforce elsewhere.
-
-- **The share sheet's title is hardcoded English.** `storage/export.ts` passes `dialogTitle` as a
-  literal — `'Export exercises.yaml'`, `'Export history'`, and one interpolating a session id —
-  which is a user-facing string in the logic layer, the one thing the i18n house rule forbids. It
-  shows in Android's app chooser, so a Portuguese or Japanese user gets an English title on a screen
-  that is otherwise fully translated. Three keys and a `t()` at the call site; the id stays verbatim,
-  being user data. (iOS ignores `dialogTitle` entirely — it is Android and web only — so this is an
-  Android bug found while auditing the iOS surface, not an iOS one.)
 
 - **`Alert.alert` is a no-op on web.** react-native-web ships `class Alert { static alert() {} }`, so
   every confirm dialog silently does nothing in the browser — all the deletes and finish-session.

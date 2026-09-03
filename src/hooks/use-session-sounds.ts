@@ -61,5 +61,8 @@ export function useSessionSounds() {
     milestonePlayer.play();
   }, [enabled, milestonePlayer]);
 
-  return { playTick, playExerciseChange, playMilestone };
+  // `enabled` goes out with the players because the *background* cue answers to the same switch and
+  // is scheduled elsewhere (`safe-notifications.ts`, via the runner). Reading the preference a second
+  // time there would let the two drift; this way there is still one reader.
+  return { playTick, playExerciseChange, playMilestone, enabled };
 }

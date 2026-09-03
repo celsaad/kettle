@@ -33,6 +33,22 @@ export const HISTORY_BACKUP_NAME = 'kettle-history.yaml';
 export const isBackupFolderSupported = Platform.OS === 'android' && isFileStorageSupported;
 
 /**
+ * iOS only, and the answer to the same question `isBackupFolderSupported` refuses.
+ *
+ * iOS can't keep a folder the user picks, but it doesn't need to: `UIFileSharingEnabled` and
+ * `LSSupportsOpeningDocumentsInPlace` (both in `app.json`'s `ios.infoPlist`) publish the app's own
+ * Documents folder to the Files app, where the user's iCloud Drive, Dropbox or Working Copy can
+ * already reach it. The user doesn't nominate a folder, they just have one — and Kettle keeps
+ * writing exactly where it always wrote, so there is no second copy to keep in sync and nothing here
+ * to run.
+ *
+ * That means this flag governs *copy*, not behaviour: it says whether Settings may tell the user
+ * their files are reachable. `app-config.test.ts` asserts both keys are still in `app.json`, because
+ * removing one would leave this sentence on screen and false.
+ */
+export const isDocumentsFolderShared = Platform.OS === 'ios' && isFileStorageSupported;
+
+/**
  * Why a backup didn't happen. A code rather than a message because the caller renders it — the one
  * place a raw platform string reaches the screen is `writeFailed`, which carries the reason the OS
  * gave and has no better phrasing available.

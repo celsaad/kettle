@@ -237,7 +237,7 @@ export function useSessionRunner(
    */
   const stepEndsItself = isCountdownStep || (step?.kind === 'hold' && step.holdEndSec !== undefined);
 
-  const { playTick, playExerciseChange, playMilestone } = useSessionSounds();
+  const { playTick, playExerciseChange, playMilestone, enabled: soundsEnabled } = useSessionSounds();
 
   /**
    * Which step index the milestone chime has already sounded for. Both triggers are threshold
@@ -714,6 +714,9 @@ export function useSessionRunner(
         workout: formatSessionName(workout?.name ?? null),
       }),
       remaining,
+      // Same switch that silences the in-app cues. Backgrounded or not, it is the same ding to the
+      // user, and `settings.soundsNote` promises the toggle is the only way to quiet them.
+      soundsEnabled,
     ).then((id) => {
       if (!id) return;
       if (cancelled) cancelNotification(id);
@@ -729,7 +732,7 @@ export function useSessionRunner(
     // while every dep stayed equal, so the effect never re-ran and the notification still fired at the
     // original end time. Every place that moves the ref also sets this state — including a hold's own
     // seeding — so it stays a faithful signal.
-  }, [step, stepEndsItself, paused, restTargetSec, computeElapsedSec, workout?.name]);
+  }, [step, stepEndsItself, paused, restTargetSec, computeElapsedSec, workout?.name, soundsEnabled]);
 
   const togglePause = useCallback(() => {
     setPaused((wasPaused) => {

@@ -24,22 +24,30 @@ jest.mock('expo-haptics', () => ({
 const mockPlayTick = jest.fn();
 const mockPlayExerciseChange = jest.fn();
 const mockPlayMilestone = jest.fn();
+// The hook reports the "Session sounds" preference alongside the players, because the background cue
+// is scheduled from here and has to answer to the same switch.
+let mockSoundsEnabled = true;
 jest.mock('@/hooks/use-session-sounds', () => ({
   useSessionSounds: () => ({
     playTick: mockPlayTick,
     playExerciseChange: mockPlayExerciseChange,
     playMilestone: mockPlayMilestone,
+    get enabled() {
+      return mockSoundsEnabled;
+    },
   }),
 }));
 
 // Typed parameters, not inferred from a zero-arg factory — the assertion below reads the third
 // argument (the delay in seconds), which an inferred `[]` tuple makes inaccessible.
-const mockScheduleNotification = jest.fn((_title: string, _body: string, _seconds: number) => Promise.resolve('notif-id'));
+const mockScheduleNotification = jest.fn((_title: string, _body: string, _seconds: number, _sound: boolean) =>
+  Promise.resolve('notif-id'),
+);
 const mockCancelNotification = jest.fn();
 jest.mock('@/hooks/safe-notifications', () => ({
   requestNotificationPermissions: jest.fn(() => Promise.resolve()),
-  scheduleStepCompleteNotification: (title: string, body: string, seconds: number) =>
-    mockScheduleNotification(title, body, seconds),
+  scheduleStepCompleteNotification: (title: string, body: string, seconds: number, sound: boolean) =>
+    mockScheduleNotification(title, body, seconds, sound),
   cancelNotification: (id: string) => mockCancelNotification(id),
 }));
 
@@ -191,6 +199,7 @@ let appStateHandlers: ((state: string) => void)[] = [];
 beforeEach(() => {
   jest.useFakeTimers();
   jest.setSystemTime(new Date('2026-07-27T09:00:00Z'));
+  mockSoundsEnabled = true;
   resetStore();
 
   appStateHandlers = [];
@@ -865,6 +874,26 @@ describe('addRestSeconds', () => {
     expect(mockScheduleNotification).toHaveBeenCalled();
     const seconds = mockScheduleNotification.mock.calls.at(-1)?.[2];
     expect(seconds).toBe(60);
+  });
+
+  /**
+   * The background cue is the same ding to the user as the foreground one — it just arrives while the
+   * app is suspended — so "Session sounds: Off" has to reach it too. `settings.soundsNote` tells the
+   * user the toggle is the *only* way to quiet them, and until the notification carried a sound at
+   * all that was true by accident.
+   */
+  it('passes the sounds preference to the background cue', async () => {
+    await mount(workoutOf(single('burpees')));
+
+    expect(mockScheduleNotification.mock.calls.at(-1)?.[3]).toBe(true);
+  });
+
+  it('asks for a silent notification when session sounds are off', async () => {
+    mockSoundsEnabled = false;
+
+    await mount(workoutOf(single('burpees')));
+
+    expect(mockScheduleNotification.mock.calls.at(-1)?.[3]).toBe(false);
   });
 });
 

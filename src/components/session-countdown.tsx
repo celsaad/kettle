@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
+import { FirstSessionHint } from '@/components/first-session-hint';
 import { ThemedText } from '@/components/themed-text';
 import { RunnerColors, Spacing } from '@/constants/theme';
 import { useSessionSounds } from '@/hooks/use-session-sounds';
@@ -56,6 +57,12 @@ export function SessionCountdown({ workoutName, onDone }: Props) {
       <ThemedText type="numeral" maxFontSizeMultiplier={1.3} style={styles.numeral}>
         {count}
       </ThemedText>
+      {/*
+        Below the numeral, not above it: the name is what a reader checks here, and pushing it further
+        from the top for a line that only ever shows once would trade the screen's steady job for its
+        first-run one. Renders nothing for everyone past their first session — see the component.
+      */}
+      <FirstSessionHint />
     </View>
   );
 }

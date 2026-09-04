@@ -229,7 +229,8 @@
       "backupFailed": "This session is saved on this device, but the copy to your backup folder didn't go through. Check Settings."
     },
     "countdown": {
-      "getReady": "GET READY"
+      "getReady": "GET READY",
+      "firstTimeHint": "Put the phone down — you'll hear each countdown and exercise change."
     },
     "hold": {
       "label": "HOLD",

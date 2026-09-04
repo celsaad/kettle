@@ -26,6 +26,13 @@ session, the home screen offers them directly — one tap to the three ready-mad
 going looking for a screen named after a file operation. Cleared your library out entirely? The "no
 workouts yet" card makes the same offer, so there is a way back that isn't building one from scratch.
 
+**Your first count-in tells you to put the phone down.** Kettle's timers and cues are built to be run
+without watching the screen, which is not something you would try unless someone said so. So on the
+3-2-1 before your first session — and only that one — a single line says you will hear each countdown
+and each exercise change. Once you have a session logged it never appears again, and it stays away
+entirely if you have turned session sounds off, since it would be promising a sound that no longer
+plays.
+
 **Writing a program by hand ends where it should.** The guide's last step used to tell you where the
 Import screen lives and leave you to walk there. It now opens it for you, and closing it puts you back
 on Programs, where what you just imported is waiting.

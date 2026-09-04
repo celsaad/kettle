@@ -738,6 +738,114 @@ describe('goPrev undo', () => {
   });
 });
 
+/**
+ * Committing a step twice has to mean the same as committing it once.
+ *
+ * The undo window is one level deep, and every one of these gets back onto a step from outside it —
+ * two Prevs, or Finish from a stepped-back position. Before contributions were keyed by step index
+ * the commit simply appended again there, so a set performed once was logged twice and an exercise
+ * finished with more sets than its plan has. Each case below fails against that bug, verified by
+ * reintroducing it.
+ */
+describe('redoing a step already committed', () => {
+  it('rewrites the set rather than logging a second one for the same step', async () => {
+    const { result } = await mount(workoutOf(single('pullups')));
+    await press(() => result.current.setReps(5));
+    await press(() => result.current.logSet());
+    await press(() => result.current.skipRest()); // closes the undo window: rest adds nothing to take back
+    await press(() => result.current.goPrev()); // back onto the rest step
+    await press(() => result.current.goPrev()); // back onto set 1, whose commit stands
+    expect(result.current.stepIndex).toBe(0);
+
+    await press(() => result.current.setReps(7));
+    await press(() => result.current.logSet());
+
+    const reps = mockSession.entries.filter((entry) => entry.type === 'reps');
+    expect(reps).toHaveLength(1);
+    expect(reps[0].type === 'reps' && reps[0].sets).toEqual([{ reps: 7, weightKg: 20, rpe: 8, restTakenSec: 0 }]);
+  });
+
+  it('keeps the rest already recorded against a set that is redone', async () => {
+    const { result } = await mount(workoutOf(single('pullups')));
+    await press(() => result.current.logSet());
+    await tick(40);
+    await press(() => result.current.skipRest()); // 40s of rest, recorded against set 1
+    await press(() => result.current.goPrev());
+    await press(() => result.current.goPrev());
+    await press(() => result.current.setReps(7));
+    await press(() => result.current.logSet());
+
+    // The rest was taken; only the set was redone. Re-seeding it to 0 would quietly rewrite history.
+    const reps = mockSession.entries.find((entry) => entry.type === 'reps');
+    expect(reps?.type === 'reps' && reps.sets).toEqual([{ reps: 7, weightKg: 20, rpe: 8, restTakenSec: 40 }]);
+  });
+
+  it('attributes the rest to the set it followed, not to whatever is on the end of the log', async () => {
+    const { result } = await mount(workoutOf(single('pullups')));
+    await press(() => result.current.logSet()); // set 1
+    await press(() => result.current.skipRest());
+    await press(() => result.current.logSet()); // set 2
+    await press(() => result.current.goPrev()); // undo set 2 (in the window)
+    await press(() => result.current.goPrev()); // onto the rest step
+    await press(() => result.current.goPrev()); // onto set 1, whose commit stands
+    await press(() => result.current.logSet()); // redone in place, at position 0
+    await tick(25);
+    await press(() => result.current.skipRest());
+
+    // Set 1's rest belongs to set 1. Reading "the last set logged" would have put it on set 2 once
+    // the redo stopped being the newest thing in the member's log.
+    const reps = mockSession.entries.find((entry) => entry.type === 'reps');
+    expect(reps?.type === 'reps' && reps.sets.map((set) => set.restTakenSec)).toEqual([25]);
+  });
+
+  it('does not count a HIIT round twice', async () => {
+    const { result } = await mount(workoutOf(single('burpees'))); // 3 rounds: work, rest, work, rest, work
+    await press(() => result.current.logInterval()); // round 1
+    await press(() => result.current.logInterval()); // its rest
+    await press(() => result.current.goPrev());
+    await press(() => result.current.goPrev());
+    await press(() => result.current.logInterval()); // round 1 again — the same round, not another
+    for (let i = 0; i < 4; i++) await press(() => result.current.logInterval());
+
+    const hiit = mockSession.entries.filter((entry) => entry.type === 'hiit');
+    expect(hiit).toHaveLength(1);
+    expect(hiit[0]).toMatchObject({ roundsCompleted: 3 });
+  });
+
+  it('rewrites an EMOM minute rather than logging an extra one', async () => {
+    const { result } = await mount(workoutOf(single('swings'))); // 3 minutes, 10 reps each
+    await press(() => result.current.logInterval()); // minute 1
+    await press(() => result.current.logInterval()); // minute 2
+    await press(() => result.current.goPrev()); // undoes minute 2 (in the window)
+    await press(() => result.current.goPrev()); // onto minute 1, whose commit stands
+    await press(() => result.current.setReps(5));
+    await press(() => result.current.logInterval());
+
+    const emom = mockSession.entries.find((entry) => entry.type === 'emom');
+    expect(emom?.type === 'emom' && emom.minutes).toEqual([{ reps: 5 }]);
+  });
+
+  /**
+   * The one-shot kinds (amrap/cardio/standalone rest) were the worst off: with no accumulating log
+   * behind them, a redo appended a whole second *entry* rather than a duplicate set — and one carrying
+   * whatever the re-seeded screen held, so a 4-round amrap gained a 0-round twin.
+   */
+  it('rewrites a one-shot entry rather than logging a second one', async () => {
+    const { result } = await mount(workoutOf(single('grinder'), single('pullups')));
+    await press(() => result.current.setRoundsCompleted(4));
+    await press(() => result.current.doneSet()); // amrap logged
+    await press(() => result.current.logSet()); // pull-ups set 1
+    await press(() => result.current.goPrev()); // undoes that set (in the window)
+    await press(() => result.current.goPrev()); // onto the amrap, whose entry stands
+    await press(() => result.current.setRoundsCompleted(6));
+    await press(() => result.current.doneSet());
+
+    const amrap = mockSession.entries.filter((entry) => entry.type === 'amrap');
+    expect(amrap).toHaveLength(1);
+    expect(amrap[0]).toMatchObject({ exercise: 'grinder', roundsCompleted: 6 });
+  });
+});
+
 describe('finishSession', () => {
   it('commits the in-progress set rather than discarding it', async () => {
     const { result, onComplete } = await mount(workoutOf(single('pullups')));
@@ -749,6 +857,23 @@ describe('finishSession', () => {
     expect(reps?.type === 'reps' && reps.sets[0].reps).toBe(4);
     expect(mockCompleted).toBe(true);
     expect(onComplete).toHaveBeenCalledTimes(1);
+  });
+
+  // Finish from a step whose commit already stands: the same double-log the redo cases above cover,
+  // reached without redoing anything. Two Prevs put the step back on screen with its set still logged,
+  // and Finish commits the step it lands on.
+  it('does not log the set twice when Finish follows two Prevs', async () => {
+    const { result } = await mount(workoutOf(single('pullups')));
+    await press(() => result.current.setReps(5));
+    await press(() => result.current.logSet());
+    await press(() => result.current.skipRest());
+    await press(() => result.current.goPrev());
+    await press(() => result.current.goPrev());
+    await press(() => result.current.finishSession());
+
+    const reps = mockSession.entries.filter((entry) => entry.type === 'reps');
+    expect(reps).toHaveLength(1);
+    expect(reps[0].type === 'reps' && reps[0].sets).toHaveLength(1);
   });
 
   // The session is over after the first call, so the second has nothing to commit into it. Cheap to

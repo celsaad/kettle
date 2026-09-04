@@ -2,7 +2,7 @@
 
 > **Executed; kept for its rationale, not as a backlog.** Written against the tree at `5859d1c`,
 > which is the commit that creates the problem it solves. The slices shipped as separate PRs in the
-> order given — D1 and D3 in #108, D4 in #110, D2 in #111, D5 here. What shipped is kept for its
+> order given — D1 and D3 in #108, D4 in #110, D2 in #111, D5 in #112. What shipped is kept for its
 > rationale rather than as a backlog; the "not in scope" list applies to all of it and is the part most likely to be
 > re-proposed.
 
@@ -177,8 +177,9 @@ empty-state visitors.
   Programs, where the imported program has just appeared. Settings → Import is the precedent for
   stacking, but Settings is one short screen and the guide is not. The device check is the Android
   back button and the swipe-dismiss, both on the replaced stack.
-- **One caveat on that guide:** its prose is hardcoded English (see D5). The control this slice adds
-  gets a proper key in all three bundles anyway — a new string does not inherit the file's debt.
+- **One caveat on that guide, true when this was written and since closed by D5:** its prose was
+  hardcoded English. The control this slice adds gets a proper key in all three bundles anyway — a new
+  string does not inherit the file's debt.
 - **Done when:** neither the empty library nor a reader who has just finished the guide has to
   already know where import lives.
 
@@ -203,13 +204,24 @@ empty-state visitors.
 
 ## Adjacent, and deliberately separate
 
-### D5 — `program-guide.tsx` is 226 lines of hardcoded English
+### D5 — `program-guide.tsx` was 226 lines of hardcoded English
 
-One `t()` call in the whole file, for `common.done`. This is a known gap rather than a discovery —
-[`history.md`](history.md) records the prose as "still English and want their own namespace" — but
-this plan is what makes it matter more, since D3 routes more people through that screen. It stays its
-own PR: ~200 lines of prose across three bundles is larger than every slice above put together, and
-bundling it would hide four cheap reversible changes behind one expensive one.
+**Shipped in #112**, as its own PR, which is what the rest of this section argued for. The guide now
+has a full `programGuide.*` namespace in `en`, `pt` and `ja`; the YAML samples inside it stay English
+on purpose, being the file the reader is about to write.
+
+The case, as it stood: one `t()` call in the whole file, for `common.done`. That was a known gap
+rather than a discovery — [`history.md`](history.md) recorded the prose as "still English and want
+their own namespace" — but this plan is what made it matter more, since D3 routes more people through
+that screen. It stayed its own PR because ~200 lines of prose across three bundles is larger than
+every slice above put together, and bundling it would have hidden four cheap reversible changes behind
+one expensive one.
+
+> Left in the past tense rather than deleted, because this section is why the work was split out at
+> all. It is also the one that has already misled a reader: written in the present tense under a banner
+> that said "executed", it reads as open work, and the guide was re-proposed for translation on the
+> strength of it long after #112. The lesson is the banner's, and it is `AGENTS.md`'s — verify against
+> the code before believing any plan file, in either direction.
 
 ## Sequencing and risk
 

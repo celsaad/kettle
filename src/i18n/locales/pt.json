@@ -229,7 +229,8 @@
       "backupFailed": "Esta sessão está salva neste aparelho, mas a cópia para a sua pasta de backup não foi feita. Veja em Configurações."
     },
     "countdown": {
-      "getReady": "PREPARE-SE"
+      "getReady": "PREPARE-SE",
+      "firstTimeHint": "Pode largar o celular — você ouve cada contagem e cada troca de exercício."
     },
     "hold": {
       "label": "ISOMETRIA",

@@ -39,10 +39,14 @@ it('shows the hint before the first session', async () => {
 });
 
 /**
- * The whole point of deriving from the log rather than persisting a "seen" flag. One finished session
- * is enough — the hint is about the runner existing at all, not about mastering it.
+ * The whole point of deriving from the log rather than persisting a "seen" flag. One session on
+ * record is enough — the hint is about the runner existing at all, not about mastering it.
+ *
+ * Named for the log having an entry rather than for anything being *finished*, which is the gate's
+ * actual rule: the runner creates its session on mount, so an abandoned first run counts here too.
+ * See the component for why that matches the other first-run gates rather than filtering on `endedAt`.
  */
-it('stays away once anything has been logged', async () => {
+it('stays away once the log holds a session', async () => {
   useSessionHistoryStore.setState({ sessions: [aSession({ startedAt: '2026-01-05T09:00:00.000Z' })], status: 'ready' });
   await renderScreen(<FirstSessionHint />);
 

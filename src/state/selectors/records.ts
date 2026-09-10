@@ -87,7 +87,8 @@ export function entryBest(entry: SessionEntry): EntryBest {
   }
 }
 
-function recordKey(exerciseId: string, kind: RecordKind): string {
+/** Exported so `exercise-progress.ts` keys its own record walk the same way. */
+export function recordKey(exerciseId: string, kind: RecordKind): string {
   // Serialized rather than joined on a separator: exercise ids come out of the user's hand-written
   // YAML, so any character picked as a separator is one two different ids could collide on.
   return JSON.stringify([exerciseId, kind]);

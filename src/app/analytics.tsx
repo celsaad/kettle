@@ -64,7 +64,8 @@ export default function AnalyticsScreen() {
   const allTime = historyStats(sessions);
   const streak = currentStreak(sessions);
   const weeks = useMemo(() => sessionsPerWeek(sessions, WEEKS_SHOWN), [sessions]);
-  const progress = useMemo(() => exerciseProgress(sessions, WEEKS_SHOWN), [sessions]);
+  const progressView = useMemo(() => exerciseProgress(sessions, library?.exercises ?? [], WEEKS_SHOWN), [sessions, library]);
+  const progress = [...progressView.movers, ...progressView.steady];
 
   const hasHistory = sessions.length > 0;
 

@@ -7,7 +7,14 @@ jest.mock('@/i18n', () => ({
 }));
 
 import type { Session, SessionEntry } from '@/domain/types';
-import { currentStreak, historyStats, sessionsPerWeek, thisWeekStats } from '@/state/selectors/history-stats';
+import {
+  calendarLevel,
+  currentStreak,
+  historyStats,
+  sessionsPerWeek,
+  thisWeekStats,
+  trainingCalendar,
+} from '@/state/selectors/history-stats';
 import { aSession } from '@/test-support/sessions';
 
 afterEach(() => {
@@ -291,5 +298,126 @@ describe('sessionsPerWeek', () => {
 
     expect(weekdays.size).toBe(1);
     expect(weeks.every((week) => week.weekStart.getHours() === 0)).toBe(true);
+  });
+});
+
+/**
+ * The Stats screen's training calendar.
+ *
+ * Same conventions as `sessionsPerWeek` above: `now` is injected, and the fixture is a Wednesday so a
+ * session sits mid-week whichever weekday the calendar starts on — except where the first weekday is
+ * the thing under test, and then it is set explicitly.
+ */
+describe('trainingCalendar', () => {
+  const wednesday = new Date(2026, 7, 12, 12, 0, 0); // Wed 12 Aug 2026
+  const setFirstWeekday = (day: number) => mockFirstWeekdayIndex.mockReturnValue(day);
+
+  /** A finished session starting at `start` and lasting `minutes`. */
+  const lasting = (start: Date, minutes: number, id = start.toISOString()): Session =>
+    aSession({
+      id,
+      startedAt: start.toISOString(),
+      endedAt: new Date(start.getTime() + minutes * 60_000).toISOString(),
+    });
+
+  const onDay = (daysBefore: number, hour = 9) => {
+    const date = new Date(wednesday);
+    date.setDate(date.getDate() - daysBefore);
+    date.setHours(hour, 0, 0, 0);
+    return date;
+  };
+
+  afterEach(() => setFirstWeekday(1));
+
+  it('returns the weeks asked for, oldest first, seven consecutive days each', () => {
+    const weeks = trainingCalendar([], 4, wednesday);
+
+    expect(weeks).toHaveLength(4);
+    expect(weeks[0].weekStart.getTime()).toBeLessThan(weeks[3].weekStart.getTime());
+    for (const week of weeks) {
+      expect(week.days).toHaveLength(7);
+      expect(week.days[0].date.toDateString()).toBe(week.weekStart.toDateString());
+    }
+    const allDays = weeks.flatMap((week) => week.days.map((day) => day.date));
+    for (let index = 1; index < allDays.length; index += 1) {
+      const expected = new Date(allDays[index - 1]);
+      expected.setDate(expected.getDate() + 1);
+      expect(allDays[index].toDateString()).toBe(expected.toDateString());
+    }
+  });
+
+  it('starts each row on Monday when the calendar says so', () => {
+    setFirstWeekday(1);
+
+    expect(trainingCalendar([], 1, wednesday)[0].days[0].date.getDay()).toBe(1);
+  });
+
+  it('starts each row on Sunday when the calendar says so', () => {
+    setFirstWeekday(0);
+
+    expect(trainingCalendar([], 1, wednesday)[0].days[0].date.getDay()).toBe(0);
+  });
+
+  // A double day is one cell, but two sessions: the cell's shade is the day's total time, and the row's
+  // count is what the THIS WEEK tile counts.
+  it('sums a day with two sessions into one cell, and counts both', () => {
+    const weeks = trainingCalendar([lasting(onDay(0, 7), 20, 'a'), lasting(onDay(0, 18), 25, 'b')], 1, wednesday);
+    const today = weeks[0].days.find((day) => day.isToday)!;
+
+    expect(today).toMatchObject({ sessions: 2, minutes: 45, level: 3 });
+    expect(weeks[0]).toMatchObject({ sessions: 2, minutes: 45 });
+  });
+
+  it('shades by fixed minute buckets', () => {
+    expect([0, 29, 30, 44, 45, 120].map((minutes) => calendarLevel(1, minutes))).toEqual([1, 1, 2, 2, 3, 3]);
+    expect(calendarLevel(0, 0)).toBe(0);
+  });
+
+  // An unfinished session has no duration. Shading its day as rest would say you didn't turn up.
+  it('shades a day with only an unfinished session as trained', () => {
+    const unfinished = aSession({ startedAt: onDay(1).toISOString(), endedAt: null });
+    const day = trainingCalendar([unfinished], 1, wednesday)[0].days.find((each) => each.sessions === 1);
+
+    expect(day).toMatchObject({ minutes: 0, level: 1 });
+  });
+
+  it('flags today, and the days after it as still to come', () => {
+    setFirstWeekday(1);
+    const days = trainingCalendar([], 1, wednesday)[0].days;
+
+    expect(days.map((day) => day.isToday)).toEqual([false, false, true, false, false, false, false]);
+    expect(days.map((day) => day.isFuture)).toEqual([false, false, false, true, true, true, true]);
+  });
+
+  // The THIS WEEK tile and the calendar's last row show the same week, so they must count it the same
+  // way — including a session that was never finished.
+  it('counts the current week the way the THIS WEEK tile does', () => {
+    jest.useFakeTimers();
+    jest.setSystemTime(wednesday);
+    const sessions = [
+      lasting(onDay(0), 30, 'a'),
+      lasting(onDay(1), 40, 'b'),
+      aSession({ id: 'c', startedAt: onDay(2).toISOString(), endedAt: null }),
+      lasting(onDay(9), 30, 'd'),
+    ];
+
+    expect(trainingCalendar(sessions, 4, wednesday).at(-1)!.sessions).toBe(thisWeekStats(sessions).sessions);
+  });
+
+  it('ignores anything older than the window', () => {
+    const weeks = trainingCalendar([lasting(onDay(70), 30)], 4, wednesday);
+
+    expect(weeks.every((week) => week.sessions === 0)).toBe(true);
+  });
+
+  // Every cell is a whole calendar day even when the window crosses a DST change, where a day is 23 or
+  // 25 hours and millisecond stepping would slide a cell onto the wrong date. Bites on CI, where TZ is
+  // set; on a DST-free machine it passes either way.
+  it('keeps every day at local midnight across a DST change', () => {
+    const weeks = trainingCalendar([], 12, new Date(2026, 10, 18, 12, 0, 0)); // spans the Nov change
+    const days = weeks.flatMap((week) => week.days);
+
+    expect(days.every((day) => day.date.getHours() === 0)).toBe(true);
+    expect(new Set(days.map((day) => day.date.toDateString())).size).toBe(days.length);
   });
 });

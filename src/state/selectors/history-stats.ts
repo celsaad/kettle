@@ -92,6 +92,105 @@ export function sessionsPerWeek(sessions: Session[], weeks: number, now: Date = 
 }
 
 /**
+ * The minutes at which a trained day's shade steps up. Exported so the legend interpolates the same
+ * numbers the shading uses, rather than restating them in three locale bundles where they could drift.
+ */
+export const CALENDAR_MINUTES = { mid: 30, long: 45 } as const;
+
+/** 0 is a day with no session; 1–3 are under 30 minutes, 30–44, and 45 or more. */
+export type CalendarLevel = 0 | 1 | 2 | 3;
+
+export type CalendarDay = {
+  /** The day's local midnight. */
+  date: Date;
+  sessions: number;
+  minutes: number;
+  level: CalendarLevel;
+  isToday: boolean;
+  isFuture: boolean;
+};
+
+/** One row of the Stats screen's training calendar. */
+export type CalendarWeek = { weekStart: Date; sessions: number; minutes: number; days: CalendarDay[] };
+
+/**
+ * Fixed buckets rather than a scale relative to the user's own longest day: fixed is what a legend can
+ * name, and a relative scale would re-shade a whole month after one long session. The cost is that
+ * minutes aren't effort, so a long stretching session shades like a hard one — the log has nothing
+ * better to measure effort by.
+ *
+ * A trained day is never level 0, even at zero minutes. An unfinished session has no duration, and
+ * shading it as rest would say you didn't turn up on a day you did.
+ */
+export function calendarLevel(sessions: number, minutes: number): CalendarLevel {
+  if (sessions === 0) return 0;
+  if (minutes < CALENDAR_MINUTES.mid) return 1;
+  if (minutes < CALENDAR_MINUTES.long) return 2;
+  return 3;
+}
+
+/**
+ * The last `weeks` calendar weeks, **oldest first**, each as seven days — the rows of the Stats
+ * screen's training calendar.
+ *
+ * Built on `startOfWeek`, so it agrees with `thisWeekStats` about where a week begins, and it counts
+ * sessions the way that does too — unfinished ones included — so the THIS WEEK tile and the calendar's
+ * last row can never disagree about the week they both show. Every day is present whether or not you
+ * trained: a gap is the most informative cell on a consistency chart, the same argument that kept
+ * empty weeks in `sessionsPerWeek`.
+ *
+ * `now` is a parameter for the same reason `nextUpView` takes one: the rule is testable without
+ * mocking the clock, and the caller owns the clock.
+ */
+export function trainingCalendar(sessions: Session[], weeks: number, now: Date = new Date()): CalendarWeek[] {
+  const byDay = new Map<string, { sessions: number; minutes: number }>();
+  for (const session of sessions) {
+    const key = new Date(session.startedAt).toDateString();
+    const day = byDay.get(key) ?? { sessions: 0, minutes: 0 };
+    day.sessions += 1;
+    day.minutes += sessionDurationMinutes(session);
+    byDay.set(key, day);
+  }
+
+  const todayKey = now.toDateString();
+  const currentWeekStart = startOfWeek(now);
+  const calendar: CalendarWeek[] = [];
+  for (let index = weeks - 1; index >= 0; index -= 1) {
+    // setDate() for both steps rather than adding milliseconds: a week spanning a DST change is 167 or
+    // 169 hours, and fixed-ms arithmetic drifts until a day boundary crosses midnight. Same hazard
+    // `sessionsPerWeek` and `currentStreak` handle.
+    const weekStart = new Date(currentWeekStart);
+    weekStart.setDate(weekStart.getDate() - index * 7);
+
+    const days: CalendarDay[] = [];
+    for (let offset = 0; offset < 7; offset += 1) {
+      const date = new Date(weekStart);
+      date.setDate(date.getDate() + offset);
+      const logged = byDay.get(date.toDateString()) ?? { sessions: 0, minutes: 0 };
+      // Compared as date strings rather than timestamps: where DST starts at midnight (Brazil did, until
+      // 2019) that day has no 00:00, and a timestamp comparison against "today at midnight" misses.
+      const isToday = date.toDateString() === todayKey;
+      days.push({
+        date,
+        ...logged,
+        level: calendarLevel(logged.sessions, logged.minutes),
+        isToday,
+        isFuture: !isToday && date > now,
+      });
+    }
+
+    calendar.push({
+      weekStart,
+      sessions: days.reduce((sum, day) => sum + day.sessions, 0),
+      minutes: days.reduce((sum, day) => sum + day.minutes, 0),
+      days,
+    });
+  }
+
+  return calendar;
+}
+
+/**
  * Consecutive calendar days with at least one session, walking back from today. Today not having a
  * session yet doesn't break the streak (the day isn't over) — only a gap of a full day or more does.
  */

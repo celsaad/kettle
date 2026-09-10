@@ -187,9 +187,11 @@ wanting states and assignees, it wants GitHub issues instead.
 
 - **The Stats screen made `listSessions()`'s cost real, and nothing has been done about it.** The
   scaling risk is in the decision log with the remedies; what changed is that it now has a consumer.
-  `analytics.tsx` walks the whole log three times per render — `historyStats`, `sessionsPerWeek` and
-  `exerciseProgress` — deliberately unmemoised, because all three read the clock and a cache keyed on
-  the log alone would freeze them at whatever the date was when a session was last written. That is
+  `analytics.tsx` walks the whole log four times per render. `thisWeekStats`, `currentStreak` and
+  `trainingCalendar` are deliberately unmemoised, because they read the clock and a cache keyed on the
+  log alone would freeze them at whatever the date was when a session was last written;
+  `exerciseProgress` is memoised on the log, but since the Stats redesign walks all of it rather than
+  its window, because "best ever" depends on everything before the window. That is
   the right call for a short-lived modal over a few hundred sessions and the wrong one over a few
   thousand. Nothing is slow yet; measure before changing anything, and the remedy named in the
   decision log (lazy or paginated loading, or a small index file) still stands — explicitly *not*

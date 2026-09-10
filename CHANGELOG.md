@@ -20,6 +20,14 @@ here, next to what it describes.
 
 ### What changed
 
+**Your numbers shows what's moving, and when you trained.** The weekly bar chart is now a calendar of
+the last four weeks: a square per day, shaded by how long you trained, with each week's session count
+beside it, so rest days and gaps read as easily as busy weeks. Getting stronger lists only the
+exercises that changed, biggest improvement first, and marks the ones at their best ever; the ones
+that held steady fold into a single row you can open. Holds that stop at a set time are left out,
+since they can't go up — for anyone who stretches, that was most of the list. The all-time totals are
+gone from this screen; History's header still has them.
+
 **The starter packs are easier to find.** They have been in Import since 0.8.0, which is a fine place
 for them once you know it exists and no place at all before that. So until you have logged your first
 session, the home screen offers them directly — one tap to the three ready-made libraries, without

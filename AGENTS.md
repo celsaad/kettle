@@ -312,10 +312,11 @@ are the index, the banner is the contract.
   rather than the raster the plan assumed, which is why the alpha and `@3x` half of it reads as moot.
   The rest is why the obvious version — a user-supplied photo per exercise — was costed and cut,
   including the two `expo-file-system` picker facts that survey turned up.
-- `docs/stats-redesign-plan.md` — **not executed.** Reworking the Stats screen: a four-week training
-  calendar in place of the weekly bars, Getting stronger narrowed to what actually moved (fixed-length
-  holds out, flat rows folded into one), records marked inline, and the all-time totals dropped.
-  Names what is left for later, including the per-exercise chart modal.
+- `docs/stats-redesign-plan.md` — executed; kept for its rationale. Reworking the Stats screen: a
+  four-week training calendar in place of the weekly bars, Getting stronger narrowed to what actually
+  moved (fixed-length holds out, flat rows folded into one), records marked inline, and the all-time
+  totals dropped. Names what is left for later, including the per-exercise chart modal, and the two
+  checks still open: the site screenshot and a large-text pass on a device.
 
 Three rules about keeping the plan files honest, in the order they get broken:
 

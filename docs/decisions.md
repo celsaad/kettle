@@ -68,6 +68,15 @@ decision assembled across several commits. Open work belongs in the sections at 
   records, but comparing distance across two routes needs rules the app doesn't have. That is why the
   Stats screen covers strength work and holds and says so, rather than appearing to cover everything.
 
+  **The Stats trend drops one more thing, and deliberately not through `entryBest`:** a `timed_hold`
+  with `hold_sec_min` and no `hold_sec_max`. The runner ends it at that target and clamps the logged
+  time to it, so its number is its config rather than a measurement — the `hiit`/`emom` argument
+  exactly, and on a mobility-heavy log it was most of the screen. The rule sits in `exerciseProgress`,
+  which has the library, because records and the runner's live marker can't fire on a fixed hold
+  anyway: nothing beats a full hold, and a tie is not a record. Putting it in `entryBest` would thread
+  the library into the runner for no change in behaviour. It judges the **current** config, since the
+  log doesn't record the one a session ran under.
+
 - ✅ **The Stats screen deliberately does *not* inherit History's search.** `open-work.md` predicted the
   opposite: History's stat tiles narrow to the visible subset and relabel themselves "N of M", so
   charting an unfiltered set after arriving from a filtered list looked like it would break the same

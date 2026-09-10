@@ -1,11 +1,22 @@
 # Stats redesign — plan
 
-> **Not executed.** The approach for reworking the Stats screen ("Your numbers",
-> [`analytics.tsx`](../src/app/analytics.tsx)), written down and agreed before any code. The target
-> layout is Option A of the design canvas, at four weeks rather than the eight it was drawn with
-> (https://claude.ai/code/artifact/18cbce3e-f39b-431c-af3b-3e1064c43c60 — the owner's private
-> link). The canvas's other two options are recorded under "Not doing" so they aren't re-proposed,
-> and one of them is the named follow-up.
+> **Executed; kept for its rationale, not as a backlog.** The approach for reworking the Stats screen
+> ("Your numbers", [`analytics.tsx`](../src/app/analytics.tsx)), written down and agreed before any
+> code. The target layout was Option A of the design canvas, at four weeks rather than the eight it
+> was drawn with (https://claude.ai/code/artifact/18cbce3e-f39b-431c-af3b-3e1064c43c60 — the owner's
+> private link). The canvas's other two options are recorded under "Not doing" so they aren't
+> re-proposed, and one of them is the named follow-up. The reasoning that outlives the commits — why
+> the fixed-hold rule sits in `exerciseProgress` and not `entryBest` — is in
+> [`decisions.md`](decisions.md).
+>
+> Four things came out differently from the plan below. `sessionsPerWeek` was deleted together with
+> `WeekBars` in the screen commit rather than in step 2, so that every commit builds on its own. Steps
+> 4 and 5 landed as one commit, since the old screen tests asserted the flat rows the rework hides.
+> The held-steady toggle is text ("Show" / "Hide"), following import's "Show all", rather than the
+> chevron the canvas drew. And the THIS WEEK tile's "2h 0m" moved into a locale key along the way,
+> because the calendar's row label needed one. **Not done:** the site screenshot
+> (`site/assets/img/stats.jpg`) and its alt text still show the bar chart, since the image needs a
+> device capture, and the large-text check on a device is still open.
 
 ## The problem
 

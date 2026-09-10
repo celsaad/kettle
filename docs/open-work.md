@@ -195,6 +195,13 @@ wanting states and assignees, it wants GitHub issues instead.
   decision log (lazy or paginated loading, or a small index file) still stands — explicitly *not*
   consolidating the per-session files.
 
+- **An exercise's own progress, one tap from Stats.** Tapping a Getting stronger row opens a modal
+  with that exercise's chart across the window: every session's value as a line, new bests marked,
+  scaled from zero the way the sparkline is. Designed alongside the Stats redesign (Option C in
+  [`stats-redesign-plan.md`](stats-redesign-plan.md)) and deliberately left out of it, so it lands as
+  its own PR. Two things already settled: the modal has no exercise picker, since the row you tapped
+  chose it; and it reads the same `exerciseProgress` row, so the chart and the row can't disagree.
+
 - **Drive a running session from the wrist.** Wear OS bridges phone notifications, action buttons
   included, so an ongoing notification carrying Done / Back / +30s is a watch remote with no watch app,
   no second APK and no sync layer — and the runner's public API is already exactly that vocabulary

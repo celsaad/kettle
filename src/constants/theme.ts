@@ -16,6 +16,13 @@ import '@/global.css';
  *   used, the 20px semibold "Start session" label, which clears the 18.66px-bold threshold, but it
  *   has no headroom: don't reuse this pairing for body-sized text without darkening `accent` first.
  * - The runner's soft pill labels had the same problem and get their own tokens below.
+ * - The training calendar's shades (`calendarLevel1`–`3`) are held to **3:1 against both the card and
+ *   the empty-day cell** — WCAG 1.4.11's bar for a graphic you need to read the chart, which here is
+ *   whether a day was trained at all. Card / empty, dark: 3.73 / 3.20, 5.61 / 4.81, 7.61 / 6.53;
+ *   light: 3.64 / 3.23, 5.68 / 5.04, 9.69 / 8.59. The steps *between* levels are 1.4–1.7 and don't
+ *   have to clear it: every week's row label carries its count and time, and the legend names the
+ *   buckets. The design's first draft had a lowest step at 1.6:1 against the empty cell, which is why
+ *   these are measured rather than eyeballed.
  */
 export const Colors = {
   light: {
@@ -33,6 +40,11 @@ export const Colors = {
     accentCalmSoft: 'rgba(63,130,192,0.14)',
     /** Text/icon color to place on top of an accent-colored surface (buttons, active pills). */
     onAccent: '#ffffff',
+    /** Training calendar: a rest day, then trained days by duration. More is darker on a light card. */
+    calendarEmpty: 'rgba(30,25,15,0.06)',
+    calendarLevel1: '#cf6a37',
+    calendarLevel2: '#a1502a',
+    calendarLevel3: '#6e3418',
   },
   dark: {
     text: '#f0ece2',
@@ -48,6 +60,11 @@ export const Colors = {
     accentCalmText: '#7fb0dd',
     accentCalmSoft: 'rgba(63,130,192,0.2)',
     onAccent: '#1a1712',
+    /** More is brighter on a dark card, so the ramp runs the other way from light's. */
+    calendarEmpty: 'rgba(240,236,226,0.06)',
+    calendarLevel1: '#b8612f',
+    calendarLevel2: '#e07d47',
+    calendarLevel3: '#e8a172',
   },
 } as const;
 

@@ -1,22 +1,23 @@
 import { router } from 'expo-router';
-import { useMemo } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { ListRow, ListRowSeparator } from '@/components/list-row';
+import { ListRow, ListRowMinHeight, ListRowSeparator, ListRowVerticalPadding } from '@/components/list-row';
 import { ModalHeader } from '@/components/modal-header';
 import { Sparkline } from '@/components/sparkline';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { WeekBars } from '@/components/week-bars';
+import { TrainingCalendar } from '@/components/training-calendar';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { formatProgressDelta, formatProgressReading, type ProgressReading } from '@/domain/format';
+import type { Exercise } from '@/domain/types';
 import { toDisplayWeight } from '@/domain/units';
-import { exerciseProgress, type ExerciseProgress } from '@/state/selectors/exercise-progress';
+import { exerciseProgress, type ExerciseProgress, type ProgressView } from '@/state/selectors/exercise-progress';
 import { exerciseName } from '@/state/selectors/exercise-lookup';
-import { currentStreak, historyStats, sessionsPerWeek, thisWeekStats } from '@/state/selectors/history-stats';
+import { currentStreak, thisWeekStats, trainingCalendar } from '@/state/selectors/history-stats';
 import { useLibraryStore } from '@/state/library-store';
 import { useUnitSystem } from '@/state/preferences-store';
 import { useSessionHistoryStore } from '@/state/session-history-store';
@@ -24,23 +25,35 @@ import { useSessionHistoryStore } from '@/state/session-history-store';
 export { RouteErrorBoundary as ErrorBoundary } from '@/components/error-fallback';
 
 /**
- * How many weeks the breakdown covers.
+ * How many weeks the training calendar shows.
  *
- * Eight is two months, which is long enough to show a habit forming or lapsing and short enough that
- * eight columns still have room to be columns at phone width. Twelve was the other candidate and loses
- * on both counts: the bars thin to a few pixels, and a quarter is longer than the horizon anyone
- * adjusts their training on.
+ * Four, where the weekly bars it replaced showed eight: a calendar is seven cells a week rather than
+ * one bar, and eight rows of them is too much at a large text size, which is where this screen has to
+ * hold up. Four still shows a lapse, and the week you're in is always the bottom row.
  */
-const WEEKS_SHOWN = 8;
+const CALENDAR_WEEKS = 4;
+
+/**
+ * How far back Getting stronger looks.
+ *
+ * Longer than the calendar on purpose. Four weeks is two or three sessions of most exercises, which is
+ * not a trend; eight is two months — long enough for a number to move, short enough to still be about
+ * what you're doing now. The two sections answer different questions, and each heading names its own
+ * window.
+ */
+const TREND_WEEKS = 8;
 
 /**
  * The numbers behind History, on their own screen.
  *
  * They used to be six stat cards stacked at the top of the History tab, which filled a phone's entire
  * first screen and pushed the session log — the thing that tab is *for* — below the fold. Moving them
- * here is what let History go back to being a log with a one-line summary, and it gives the numbers
- * room to be more than three tiles: the per-week breakdown below could not have been added to a header
- * that was already too tall.
+ * here is what let History go back to being a log with a one-line summary.
+ *
+ * **No all-time totals.** They were three tiles here, and are gone rather than demoted to a footer:
+ * History's header says the same thing in the same words, one screen back, and a total is the number
+ * nobody opens a screen twice to read. What this screen is for is the two questions totals can't
+ * answer — am I turning up, and is anything moving.
  *
  * **Nothing here narrows with History's search.** The tiles did, back when they sat above a filtered
  * list and had to describe it. This screen is not looking at a list, so it always reports the whole
@@ -56,16 +69,14 @@ export default function AnalyticsScreen() {
   const sessions = useSessionHistoryStore((state) => state.sessions);
   const library = useLibraryStore((state) => state.library);
 
-  // Computed per render, deliberately. All three read the clock: `thisWeekStats` and `sessionsPerWeek`
-  // resolve the current week's boundary and `currentStreak` walks back from today, so a cache keyed on
-  // the log alone would freeze them at whatever the date was when a session was last written. A modal
-  // is short-lived, the log is walked once, and this is not a screen taking keystrokes.
+  // Computed per render, deliberately. All three read the clock: `thisWeekStats` resolves the current
+  // week's boundary, `currentStreak` walks back from today, and the calendar marks today and the days
+  // still to come — so a cache keyed on the log alone would freeze them at whatever the date was when
+  // a session was last written. A modal is short-lived, and this is not a screen taking keystrokes.
   const weekStats = thisWeekStats(sessions);
-  const allTime = historyStats(sessions);
   const streak = currentStreak(sessions);
-  const weeks = useMemo(() => sessionsPerWeek(sessions, WEEKS_SHOWN), [sessions]);
-  const progressView = useMemo(() => exerciseProgress(sessions, library?.exercises ?? [], WEEKS_SHOWN), [sessions, library]);
-  const progress = [...progressView.movers, ...progressView.steady];
+  const calendar = trainingCalendar(sessions, CALENDAR_WEEKS);
+  const progress = useMemo(() => exerciseProgress(sessions, library?.exercises ?? [], TREND_WEEKS), [sessions, library]);
 
   const hasHistory = sessions.length > 0;
 
@@ -86,68 +97,122 @@ export default function AnalyticsScreen() {
         </ThemedText>
         <View style={styles.statsRow}>
           <Tile value={String(weekStats.sessions)} label={t('history.sessions')} />
-          <Tile value={`${weekStats.hours}h ${weekStats.minutes}m`} label={t('history.time')} />
+          <Tile
+            value={t('analytics.hoursMinutes', { hours: weekStats.hours, minutes: weekStats.minutes })}
+            label={t('history.time')}
+          />
           {/* "day streak" rather than "streak": it is the one number in this group `currentStreak`
               doesn't scope to the week, so under a THIS WEEK heading a bare "streak" would read as a
               weekly count and a 30-day run would announce itself as "30 · this week". */}
           <Tile value={String(streak)} label={t('history.streak')} />
         </View>
 
-        <ThemedText type="label" themeColor="textSecondary" style={styles.sectionLabel}>
-          {t('history.allTime')}
-        </ThemedText>
-        <View style={styles.statsRow}>
-          <Tile value={String(allTime.sessions)} label={t('history.sessions')} />
-          <Tile value={`${allTime.hours}h ${allTime.minutes}m`} label={t('history.time')} />
-          <Tile value={String(allTime.sets)} label={t('history.sets')} />
-        </View>
-
         {/*
-          Hidden on an empty log rather than drawn as eight flat zeros. A chart of nothing is not a
-          reading — it is a shape that says "no data" in the most expensive way available, and the
-          tiles above already say it in three numbers. It appears with the first session.
+          Hidden on an empty log rather than drawn as four weeks of rest. A calendar of nothing is not a
+          reading — it is a grid that says "no data" in the most expensive way available, and the tiles
+          above already say it in three numbers. It appears with the first session.
         */}
         {hasHistory && (
           <>
             <ThemedText type="label" themeColor="textSecondary" style={styles.sectionLabel}>
-              {t('analytics.perWeek', { count: WEEKS_SHOWN })}
+              {t('analytics.calendarTitle', { count: CALENDAR_WEEKS })}
             </ThemedText>
             <ThemedView type="backgroundElement" style={[styles.chartCard, { borderColor: theme.border }]}>
-              <WeekBars weeks={weeks} />
+              <TrainingCalendar weeks={calendar} />
             </ThemedView>
           </>
         )}
-        {/*
-          The half of this screen that answers a question the tiles above cannot. Totals say how much
-          you have ever done — which nobody asks twice — where these say whether the number is moving,
-          per exercise, which is the reason to open Stats a second time.
 
-          Below the chart rather than above it: turning up is the precondition for getting stronger,
+        {/*
+          The half of this screen that answers a question the tiles above cannot: whether the number is
+          moving, per exercise, which is the reason to open Stats a second time.
+
+          Below the calendar rather than above it: turning up is the precondition for getting stronger,
           and a lapse explains a flat row better than a flat row explains itself.
         */}
         <ThemedText type="label" themeColor="textSecondary" style={styles.sectionLabel}>
           {t('analytics.progressTitle')}
         </ThemedText>
-
-        {progress.length === 0 ? (
-          <ThemedText type="small" themeColor="textSecondary">
-            {t('analytics.progressEmpty')}
-          </ThemedText>
-        ) : (
-          <>
-            <ThemedText type="small" themeColor="textSecondary" style={styles.progressBody}>
-              {t('analytics.progressBody', { count: WEEKS_SHOWN })}
-            </ThemedText>
-            {progress.map((row, index) => (
-              <View key={row.exerciseId}>
-                {index > 0 && <ListRowSeparator />}
-                <ProgressRow row={row} name={exerciseName(library?.exercises ?? [], row.exerciseId)} />
-              </View>
-            ))}
-          </>
-        )}
+        <ProgressSection progress={progress} exercises={library?.exercises ?? []} />
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+/**
+ * What moved, and — one tap away — what didn't.
+ *
+ * **The rows that held steady fold into one.** They used to be listed with the rest, most recently
+ * trained first, which on a real log put a dozen "no change" rows above the one exercise that moved.
+ * A flat row is a real answer, so it stays reachable; it just doesn't get to bury the others.
+ *
+ * The toggle is text, not a chevron, following import's "Show all": its accessible name is exactly the
+ * words on screen, which is what Voice Control matches, and `expanded` is what tells a screen reader it
+ * reveals rather than navigates.
+ */
+function ProgressSection({ progress, exercises }: { progress: ProgressView; exercises: Exercise[] }) {
+  const { t } = useTranslation();
+  const [showSteady, setShowSteady] = useState(false);
+  const { movers, steady, fixedHoldsLeftOut } = progress;
+
+  if (movers.length === 0 && steady.length === 0) {
+    // Two different empties. With fixed holds left out, "train something twice" would be telling
+    // someone who trained a dozen things twice to go and do it — so they are told why instead.
+    return (
+      <ThemedText type="small" themeColor="textSecondary">
+        {fixedHoldsLeftOut > 0 ? t('analytics.progressOnlyFixedHolds') : t('analytics.progressEmpty')}
+      </ThemedText>
+    );
+  }
+
+  const renderRow = (row: ExerciseProgress) => <ProgressRow row={row} name={exerciseName(exercises, row.exerciseId)} />;
+
+  return (
+    <>
+      <ThemedText type="small" themeColor="textSecondary" style={styles.progressBody}>
+        {fixedHoldsLeftOut > 0
+          ? t('analytics.progressBodyFixedHolds', { count: TREND_WEEKS })
+          : t('analytics.progressBody', { count: TREND_WEEKS })}
+      </ThemedText>
+
+      {movers.length === 0 && (
+        <ThemedText type="small" style={styles.progressBody}>
+          {t('analytics.nothingMoved', { count: TREND_WEEKS })}
+        </ThemedText>
+      )}
+
+      {movers.map((row, index) => (
+        <View key={row.exerciseId}>
+          {index > 0 && <ListRowSeparator />}
+          {renderRow(row)}
+        </View>
+      ))}
+
+      {steady.length > 0 && (
+        <>
+          {movers.length > 0 && <ListRowSeparator />}
+          <Pressable
+            onPress={() => setShowSteady((shown) => !shown)}
+            accessibilityRole="button"
+            accessibilityState={{ expanded: showSteady }}
+            style={({ pressed }) => [styles.steadyToggle, pressed && styles.pressed]}>
+            <ThemedText type="smallMedium" style={styles.progressText}>
+              {t('analytics.heldSteady', { count: steady.length })}
+            </ThemedText>
+            <ThemedText type="small" themeColor="textSecondary">
+              {showSteady ? t('analytics.hideSteady') : t('analytics.showSteady')}
+            </ThemedText>
+          </Pressable>
+          {showSteady &&
+            steady.map((row) => (
+              <View key={row.exerciseId}>
+                <ListRowSeparator />
+                {renderRow(row)}
+              </View>
+            ))}
+        </>
+      )}
+    </>
   );
 }
 
@@ -180,6 +245,14 @@ function ProgressRow({ row, name }: { row: ExerciseProgress; name: string }) {
         <ThemedText type="smallMedium">{name}</ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
           {formatProgressReading(reading(row.latest))}
+          {/* Inline rather than a records section of its own: nearly every record in the window is also
+              a mover, so a separate list would say most things twice. */}
+          {row.bestEver && (
+            <ThemedText type="small" themeColor="accentText">
+              {' '}
+              {t('analytics.bestEver')}
+            </ThemedText>
+          )}
         </ThemedText>
       </View>
 
@@ -249,6 +322,18 @@ const styles = StyleSheet.create({
   progressDelta: {
     minWidth: 72,
     textAlign: 'right',
+  },
+  // A list row's own metrics, shared rather than copied — see `ListRowMinHeight` — so the toggle is
+  // exactly as tall and as tappable as the rows around it.
+  steadyToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    minHeight: ListRowMinHeight,
+    paddingVertical: ListRowVerticalPadding,
+  },
+  pressed: {
+    opacity: 0.7,
   },
   chartCard: {
     borderRadius: 14,

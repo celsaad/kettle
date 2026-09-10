@@ -46,51 +46,6 @@ export function thisWeekStats(sessions: Session[]): HistoryStats {
   return historyStats(sessions.filter((session) => new Date(session.startedAt) >= weekStart));
 }
 
-/** One bar of the analytics screen's breakdown: a week, and how many sessions landed in it. */
-export type WeekTally = { weekStart: Date; sessions: number };
-
-/**
- * Sessions per calendar week for the last `weeks` weeks, **oldest first** — the reading order of the
- * chart it feeds.
- *
- * Every week in the window is present even when it has no sessions, which is the whole point: a gap
- * is the most informative bar on a consistency chart, and silently omitting empty weeks would compress
- * a month off training into a chart that looks unbroken. `startOfWeek` decides where a week begins, so
- * this agrees with `thisWeekStats` about which sessions are "this week" rather than inventing a second
- * definition.
- *
- * `now` is a parameter for the same reason `nextUpView` takes one: the rule is then testable without
- * mocking the clock, and the caller owns the clock. Counting only — no duration or set totals — since
- * the question this answers is "am I turning up", and a bar chart can carry exactly one measure.
- */
-export function sessionsPerWeek(sessions: Session[], weeks: number, now: Date = new Date()): WeekTally[] {
-  const currentWeekStart = startOfWeek(now);
-
-  // Counts down so the array comes out oldest-first without a reverse: the arithmetic still walks
-  // backwards from the one week whose boundary is known, but the loop visits the oldest offset first.
-  // (`toReversed` is the lint rule's suggested fix and is off the table for the same reason `toSorted`
-  // is — see the decision log.)
-  const tallies: WeekTally[] = [];
-  for (let index = weeks - 1; index >= 0; index -= 1) {
-    // setDate() rather than subtracting 7 × 86_400_000: a week spanning a DST change is 167 or 169
-    // hours, and fixed-millisecond arithmetic drifts an hour each time until it crosses a midnight
-    // and lands in the wrong week. Same hazard `currentStreak` and `calendarDaysBetween` handle.
-    const weekStart = new Date(currentWeekStart);
-    weekStart.setDate(weekStart.getDate() - index * 7);
-    const weekEnd = new Date(weekStart);
-    weekEnd.setDate(weekEnd.getDate() + 7);
-
-    const count = sessions.filter((session) => {
-      const startedAt = new Date(session.startedAt);
-      return startedAt >= weekStart && startedAt < weekEnd;
-    }).length;
-
-    tallies.push({ weekStart, sessions: count });
-  }
-
-  return tallies;
-}
-
 /**
  * The minutes at which a trained day's shade steps up. Exported so the legend interpolates the same
  * numbers the shading uses, rather than restating them in three locale bundles where they could drift.
@@ -136,8 +91,13 @@ export function calendarLevel(sessions: number, minutes: number): CalendarLevel 
  * Built on `startOfWeek`, so it agrees with `thisWeekStats` about where a week begins, and it counts
  * sessions the way that does too — unfinished ones included — so the THIS WEEK tile and the calendar's
  * last row can never disagree about the week they both show. Every day is present whether or not you
- * trained: a gap is the most informative cell on a consistency chart, the same argument that kept
- * empty weeks in `sessionsPerWeek`.
+ * trained: a gap is the most informative cell on a consistency chart, and leaving one out would draw a
+ * lapse as an unbroken run.
+ *
+ * Counts down so the array comes out oldest-first without a reverse: the arithmetic walks backwards
+ * from the one week whose boundary is known, but the loop visits the oldest offset first. (`toReversed`
+ * is the lint rule's suggested fix and is off the table for the same reason `toSorted` is — see the
+ * decision log.)
  *
  * `now` is a parameter for the same reason `nextUpView` takes one: the rule is testable without
  * mocking the clock, and the caller owns the clock.
@@ -158,7 +118,7 @@ export function trainingCalendar(sessions: Session[], weeks: number, now: Date =
   for (let index = weeks - 1; index >= 0; index -= 1) {
     // setDate() for both steps rather than adding milliseconds: a week spanning a DST change is 167 or
     // 169 hours, and fixed-ms arithmetic drifts until a day boundary crosses midnight. Same hazard
-    // `sessionsPerWeek` and `currentStreak` handle.
+    // `currentStreak` and `exerciseProgress` handle.
     const weekStart = new Date(currentWeekStart);
     weekStart.setDate(weekStart.getDate() - index * 7);
 

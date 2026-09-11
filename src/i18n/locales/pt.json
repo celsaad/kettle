@@ -112,6 +112,13 @@
     "showSteady": "Mostrar",
     "hideSteady": "Ocultar"
   },
+  "exerciseProgress": {
+    "since": "desde {{date}}",
+    "newBest": "Nova melhor marca",
+    "newBestTag": "· nova melhor marca",
+    "sessionsTitle": "Sessões · últimas {{count}} semanas",
+    "notFound": "Nada para mostrar deste exercício nas últimas {{count}} semanas."
+  },
   "library": {
     "title": "Biblioteca",
     "exerciseCount_one": "{{count}} exercício",

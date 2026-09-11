@@ -7,6 +7,7 @@ import AnalyticsScreen from '@/app/analytics';
 import type { Exercise, Session, SessionEntry } from '@/domain/types';
 import { useLibraryStore } from '@/state/library-store';
 import { useSessionHistoryStore } from '@/state/session-history-store';
+import { router } from '@/test-support/expo-router';
 import { aLibrary, anExercise } from '@/test-support/library';
 import { aSession } from '@/test-support/sessions';
 import { renderScreen } from '@/test-support/render';
@@ -160,6 +161,16 @@ it("names each calendar week's sessions and time for a screen reader", async () 
   await renderScreen(<AnalyticsScreen />);
 
   expect(screen.getByLabelText(/^Week of .+: 1 session, 0h 30m$/)).toBeTruthy();
+});
+
+// The row is the way into the exercise's own progress screen, and it has to say which exercise.
+it("opens an exercise's progress screen from its row", async () => {
+  withSessions([10, 12]);
+
+  await renderScreen(<AnalyticsScreen />);
+  await fireEvent.press(screen.getByRole('button', { name: /Dumbbell RDL/ }));
+
+  expect(router.push).toHaveBeenCalledWith({ pathname: '/exercise-progress', params: { exerciseId: 'rdl' } });
 });
 
 // History's header already says the all-time totals, one screen back, in the same words.

@@ -27,7 +27,15 @@ export type ExerciseProgress = {
    * is.
    */
   bestEver: boolean;
+  /**
+   * The sessions behind `points`, oldest first: when each was, what it put up, and whether it set a new
+   * best by beating everything logged before it — the same test `bestEver` applies to the latest. What
+   * the exercise's own progress screen charts and lists, so that screen and this row are one reading.
+   */
+  sessions: ProgressSession[];
 };
+
+export type ProgressSession = { at: string; value: number; newBest: boolean };
 
 /**
  * The Stats screen's "Getting stronger" section, already split the way it renders.
@@ -69,6 +77,15 @@ function isFixedTargetHold(exercise: Exercise): boolean {
   const { holdSecMin, holdSecMax } = exercise.config;
   return holdSecMin !== undefined && holdSecMin > 0 && (holdSecMax === undefined || holdSecMax === holdSecMin);
 }
+
+/**
+ * How far back Getting stronger looks, and the exercise progress screen a row opens with it — one
+ * constant, so a row and the chart behind it can never be measuring different windows.
+ *
+ * Eight weeks. Four is two or three sessions of most exercises, which is not a trend; eight is two
+ * months — long enough for a number to move, short enough to still be about what you're doing now.
+ */
+export const TREND_WEEKS = 8;
 
 /**
  * Per-exercise progress over the last `weeks` weeks.
@@ -128,7 +145,7 @@ export function exerciseProgress(
     // oxlint-disable-next-line unicorn/no-array-sort
     .sort((a, b) => a.startedAt.localeCompare(b.startedAt));
 
-  type Point = { at: string; kind: RecordKind; value: number };
+  type Point = { at: string; kind: RecordKind; value: number; newBest: boolean };
   const windowed = new Map<string, Point[]>();
   // Per exercise and kind: the best so far, and when it was last raised by beating an earlier session.
   const records = new Map<string, { best: number; raisedAt: string | null }>();
@@ -150,11 +167,12 @@ export function exerciseProgress(
     const inWindow = new Date(session.startedAt) >= windowStart;
     for (const [key, { exercise, kind, value }] of inSession) {
       const record = records.get(key);
+      const newBest = record !== undefined && value > record.best;
       if (!record) records.set(key, { best: value, raisedAt: null });
-      else if (value > record.best) records.set(key, { best: value, raisedAt: session.startedAt });
+      else if (newBest) records.set(key, { best: value, raisedAt: session.startedAt });
 
       if (!inWindow) continue;
-      const point = { at: session.startedAt, kind, value };
+      const point = { at: session.startedAt, kind, value, newBest };
       const seen = windowed.get(exercise);
       if (seen) seen.push(point);
       else windowed.set(exercise, [point]);
@@ -185,6 +203,7 @@ export function exerciseProgress(
       delta: latest - values[0],
       lastTrainedAt: ofKind.at(-1)!.at,
       bestEver: latest === record.best && record.raisedAt !== null && new Date(record.raisedAt) >= windowStart,
+      sessions: ofKind.map(({ at, value, newBest }) => ({ at, value, newBest })),
     });
   }
 

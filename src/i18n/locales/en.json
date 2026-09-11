@@ -112,6 +112,13 @@
     "showSteady": "Show",
     "hideSteady": "Hide"
   },
+  "exerciseProgress": {
+    "since": "since {{date}}",
+    "newBest": "New best",
+    "newBestTag": "· new best",
+    "sessionsTitle": "Sessions · last {{count}} weeks",
+    "notFound": "Nothing to chart for this exercise in the last {{count}} weeks."
+  },
   "library": {
     "title": "Library",
     "exerciseCount_one": "{{count}} exercise",

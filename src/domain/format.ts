@@ -23,6 +23,17 @@ import type { Exercise } from '@/domain/types';
  * three or six plural forms is a matter of adding `_few`/`_many` keys, not of changing code here.
  */
 
+/**
+ * A duration as a running clock, `m:ss` — what every runner timer shows. Numbers only, so nothing in
+ * it to translate; it lives here so the rest screen, the interval screen and the Coming up sheet
+ * can't disagree about how a clock reads.
+ */
+export function formatClock(totalSeconds: number): string {
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+}
+
 /** What a workout is made of, as data — see `workoutShape`. */
 export type WorkoutShape = {
   blockCount: number;

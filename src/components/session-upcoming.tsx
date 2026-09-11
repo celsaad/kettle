@@ -55,14 +55,17 @@ export function SessionUpcoming({ step, items, ends, holdElapsedSec, restRemaini
   }, [onClose]);
 
   return (
-    <View style={styles.overlay}>
+    // Modal on the overlay rather than on the sheet: iOS hides only a modal view's *siblings*, and the
+    // runner beneath is a sibling of this overlay, not of the sheet. session.tsx also hides the runner
+    // with aria-hidden, which is what reaches Android and the web.
+    <View style={styles.overlay} accessibilityViewIsModal onAccessibilityEscape={onClose}>
       {/* Hidden from assistive tech: the × is the named way out, and a second "Close" spanning the
           whole screen would only be one more thing to swipe past. */}
       <Pressable style={styles.backdrop} onPress={onClose} testID="upcoming-backdrop" aria-hidden />
       <SafeAreaView edges={['top', 'left', 'right']} style={styles.column} pointerEvents="box-none">
         {/* Taps here fall through to the backdrop, so the dimmed header is a way out too. */}
         <View style={styles.headerClearance} pointerEvents="none" />
-        <SafeAreaView edges={['bottom']} style={styles.sheet} accessibilityViewIsModal onAccessibilityEscape={onClose}>
+        <SafeAreaView edges={['bottom']} style={styles.sheet}>
           {/* Outside the ScrollView, for ModalHeader's reason: a close control that scrolls away is one
               you have to go looking for. */}
           <View style={styles.strip}>

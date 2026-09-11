@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Svg, { Path } from 'react-native-svg';
 
 import { ErrorFallback } from '@/components/error-fallback';
 import { SessionComplete } from '@/components/session-complete';
@@ -15,6 +16,7 @@ import { SessionInterval } from '@/components/session-interval';
 import { SessionProgressBar } from '@/components/session-progress';
 import { SessionReps } from '@/components/session-reps';
 import { SessionRest } from '@/components/session-rest';
+import { SessionUpcoming } from '@/components/session-upcoming';
 import { ThemedText } from '@/components/themed-text';
 import { RunnerColors, MaxContentWidth, Spacing } from '@/constants/theme';
 import { formatSessionName } from '@/domain/format';
@@ -329,6 +331,20 @@ function ActiveSession({
   // substituted is a fact about the session, not about the row that happens to be on screen.
   const [swapping, setSwapping] = useState(false);
   const [adding, setAdding] = useState(false);
+  /**
+   * The Coming up sheet is open while this equals the step on screen, so it closes itself the moment
+   * the step changes. The index alone is enough here, unlike the runner's per-step reset: the two
+   * mutations that keep it still (swap, ad-hoc add) start from controls the sheet covers.
+   *
+   * Cleared in the render that sees the index move (adjusting state during render, as the runner's
+   * reset does), not merely left to stop matching: a stale index would reopen the sheet the moment
+   * Prev stepped back onto it.
+   */
+  const [upcomingOpenAt, setUpcomingOpenAt] = useState<number | null>(null);
+  if (upcomingOpenAt !== null && upcomingOpenAt !== runner.stepIndex) setUpcomingOpenAt(null);
+  const upcomingOpen = upcomingOpenAt === runner.stepIndex;
+  // Stable, because the sheet re-subscribes to the back button whenever this changes.
+  const closeUpcoming = useCallback(() => setUpcomingOpenAt(null), []);
   // `rest` is a built-in pseudo-exercise rather than something the user wrote — the Library tab
   // excludes it from its own count for the same reason.
   const addCandidates = useMemo(() => exercises.filter((exercise) => exercise.type !== 'rest'), [exercises]);
@@ -423,12 +439,36 @@ function ActiveSession({
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'bottom', 'left', 'right']}>
-      <View style={styles.content}>
+      {/* Hidden while the sheet is open, so a screen reader stays inside it. aria-hidden rather than
+          the native props, which react-native-web drops; RN maps it onto both of them. */}
+      <View style={styles.content} aria-hidden={upcomingOpen}>
         <View style={styles.header}>
           <View style={styles.headerRow}>
-            <ThemedText type="small" style={styles.workoutName} numberOfLines={1}>
-              {formatSessionName(runner.workoutName)}
-            </ThemedText>
+            {/*
+              Opens the Coming up sheet. A chevron and nothing louder, since this header is read
+              mid-set. Named by its own text, so it takes a hint rather than a label: Voice Control
+              matches the visible name. hitSlop takes it to 44px without making the row taller.
+            */}
+            <Pressable
+              onPress={() => setUpcomingOpenAt(runner.stepIndex)}
+              hitSlop={{ top: 13, bottom: 13 }}
+              accessibilityRole="button"
+              accessibilityHint={t('session.upcoming.hint')}
+              accessibilityState={{ expanded: upcomingOpen }}
+              style={styles.workoutNameButton}>
+              <ThemedText type="small" style={styles.workoutName} numberOfLines={1}>
+                {formatSessionName(runner.workoutName)}
+              </ThemedText>
+              <Svg width={12} height={12} viewBox="0 0 12 12" fill="none">
+                <Path
+                  d="M3 4.5L6 7.5L9 4.5"
+                  stroke={RunnerColors.textSecondary}
+                  strokeWidth={1.5}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </Svg>
+            </Pressable>
             <View style={styles.headerRight}>
               <SessionProgressBar total={runner.blockTotal} activeIndex={runner.blockIndex} />
               {/* Ad-hoc only: a pre-built workout already knows what it contains. Here it is the only
@@ -619,6 +659,19 @@ function ActiveSession({
           />
         )}
       </View>
+
+      {/* Outside `content`, so the dim covers the whole screen and the sheet reaches the bottom edge. */}
+      {upcomingOpen && (
+        <SessionUpcoming
+          step={step}
+          items={runner.upcoming}
+          ends={!runner.isAdHoc}
+          holdElapsedSec={runner.holdElapsedSec}
+          restRemainingSec={runner.restRemainingSec}
+          restTargetSec={runner.restTargetSec}
+          onClose={closeUpcoming}
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -684,12 +737,20 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: RunnerColors.background,
   },
+  // Takes the leftover width, so the name can ellipsize inside it (with numberOfLines) instead of
+  // growing to its intrinsic width and shoving the dots and "Finish" off the right edge. minWidth: 0 is
+  // what actually lets it shrink below that intrinsic width on web, where the flex default is auto.
+  workoutNameButton: {
+    flex: 1,
+    minWidth: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.one,
+  },
+  // Shrinks rather than flexes, so the chevron sits right after the name instead of at the far edge.
   workoutName: {
     color: RunnerColors.textSecondary,
-    // Takes the leftover width and ellipsizes inside it (with numberOfLines) instead of growing to
-    // its intrinsic width and shoving the dots and "Finish" off the right edge. minWidth: 0 is what
-    // actually lets it shrink below that intrinsic width on web, where the flex default is auto.
-    flex: 1,
+    flexShrink: 1,
     minWidth: 0,
   },
   headerRight: {

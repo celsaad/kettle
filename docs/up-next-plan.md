@@ -82,7 +82,9 @@ On screen the sheet is titled **Coming up**, not "Up next": Home already says NE
 
 7. **It closes itself when the step changes, and on hardware back.** The open state is the index it
    was opened at, `upcomingOpenAt: number | null`, and the sheet shows while that equals
-   `runner.stepIndex`. That's no effect, no render-time `setState`, and nothing to forget to reset.
+   `runner.stepIndex`. It's cleared in the render that sees the index move, the way the runner's
+   per-step reset adjusts state during render, rather than merely left to stop matching. A stale index
+   would reopen the sheet the moment Prev stepped back onto it.
    Keying on the index alone is enough *here*, unlike the runner's per-step reset (see the decision
    log): the two mutations that don't move the index, swap and ad-hoc add, start from controls the
    sheet covers.

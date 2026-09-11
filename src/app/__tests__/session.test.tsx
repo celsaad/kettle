@@ -508,3 +508,68 @@ describe('a workout too long to run in full', () => {
     expect(screen.queryByText('Longo demais para fazer inteiro')).toBeNull();
   });
 });
+
+/**
+ * The screen's half of the Coming up sheet: how it opens, and when it goes away by itself. What the
+ * sheet says is session-upcoming.test.tsx's, and what it lists is session-outline.test.ts's.
+ */
+describe('the Coming up sheet', () => {
+  /** One act scope per second, as `start` does, so each tick's effects flush before the next. */
+  async function tick(seconds: number) {
+    for (let second = 0; second < seconds; second++) {
+      await act(async () => {
+        jest.advanceTimersByTime(1000);
+      });
+    }
+  }
+
+  const openSheet = () => fireEvent.press(screen.getByRole('button', { name: 'Session' }));
+
+  it('opens from the workout name', async () => {
+    await start(workoutOf('pullups'));
+    expect(screen.queryByText('COMING UP')).toBeNull();
+
+    await openSheet();
+
+    expect(screen.getByText('COMING UP')).toBeTruthy();
+    expect(screen.getByText('2 more sets · target 6')).toBeTruthy();
+  });
+
+  it('hides the runner beneath it from assistive tech', async () => {
+    await start(workoutOf('pullups'));
+    await openSheet();
+
+    // Still rendered, so a sighted user sees it dimmed, but out of a screen reader's reach.
+    expect(screen.queryByText('Log set → Rest')).toBeNull();
+    expect(screen.getByText('Log set → Rest', { includeHiddenElements: true })).toBeTruthy();
+  });
+
+  it('closes itself when the step it was opened on ends', async () => {
+    await start(workoutOf('lsit'));
+    await openSheet();
+    expect(screen.getByText('COMING UP')).toBeTruthy();
+
+    // The 15s hold ends by itself and the rest begins.
+    await tick(16);
+
+    expect(screen.queryByText('COMING UP')).toBeNull();
+    expect(screen.getByText('Skip rest →')).toBeTruthy();
+  });
+
+  /**
+   * The sheet is open while its saved index matches the step on screen. Left stale rather than
+   * cleared, that index would match again the moment Prev stepped back onto it, and the sheet would
+   * reopen by itself over the step being redone.
+   */
+  it('stays closed when Prev steps back onto the step it was opened on', async () => {
+    await start(workoutOf('lsit'));
+    await openSheet();
+    await tick(16);
+    expect(screen.queryByText('COMING UP')).toBeNull();
+
+    await fireEvent.press(screen.getByText('Prev'));
+
+    expect(screen.getByText('Done set →')).toBeTruthy();
+    expect(screen.queryByText('COMING UP')).toBeNull();
+  });
+});

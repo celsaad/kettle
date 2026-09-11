@@ -63,7 +63,10 @@ Three traps before picking one:
   refuses a category the language has no rule for. It does *not* demand every category CLDR lists:
   `pt` has a `many` that applies from a million upward, which no set, rep or session count reaches, so
   those keys are permitted rather than required. A language with a `few` in the app's real range is a
-  different case — write it.
+  different case — write it. And check what the rule does with **zero**: `pt` files 0 under `one`,
+  which rendered "0 sessão", so `pt.json` carries a `_zero` beside every `_one` (i18next reads `_zero`
+  first whenever `count` is 0) and the bundle test's `ZERO_READS_PLURAL` list requires them. French
+  files 0 under `one` too and means it, so this is decided per language, not derived from CLDR.
 - **An RTL language is a project, not a bundle.** The `I18nManager` plumbing was deliberately deferred
   until a real RTL locale existed (see `testing-a11y-i18n-plan.md`), and the work it defers is the
   CSS-triangle glyphs, which are drawn and don't flip, plus the arrow characters baked into copy

@@ -742,10 +742,11 @@ describe('after a successful merge', () => {
     await fireEvent.press(screen.getByText('Mesclar e importar'));
 
     expect(screen.getByText('Importado')).toBeTruthy();
-    // "0 atualizado", singular: pt's CLDR rule is `i = 0,1`, so zero takes the singular form where
-    // English takes the plural. Precisely what i18next's `count` handles and a `=== 1` ternary
-    // would get wrong in one of the two shipped languages.
-    expect(screen.getByText('1 item novo · 0 atualizado')).toBeTruthy();
+    // "0 atualizados", plural. pt's CLDR rule is `i = 0,1`, which would make zero singular — "0
+    // atualizado" — where Brazilian Portuguese says the plural, so `pt.json` carries a `_zero` form
+    // that i18next reads first for a count of 0 (see `locale-bundles.test.ts`). Still exactly what
+    // `count` handles and a `=== 1` ternary can't.
+    expect(screen.getByText('1 item novo · 0 atualizados')).toBeTruthy();
   });
 });
 

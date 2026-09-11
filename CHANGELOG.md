@@ -74,6 +74,10 @@ and the summary of what would change before anything touches your library.
 **"Starter packs" reads as a heading again.** It was the same size and weight as the pack names under
 it, so the section title looked like a fourth pack.
 
+**In Portuguese, nothing is "0 sessão" any more.** A count of zero read in the singular — "0 sessão",
+"0 série" — because of how the language's plural rule is defined, where Brazilian Portuguese says
+"0 sessões". Every count in the app now reads that way.
+
 ---
 
 ## 0.8.0 — versionCode 11, 25 August 2026

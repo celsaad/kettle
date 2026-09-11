@@ -48,13 +48,27 @@ function expandPlurals(categories: string[]): Set<string> {
   );
 }
 
+/**
+ * Languages whose CLDR rule files 0 under `one` where that reads wrong, and which therefore carry a
+ * `_zero` beside every `_one`.
+ *
+ * Portuguese puts 0 and 1 in `one`, so `format.session` rendered "0 sessão" where Brazilian
+ * Portuguese says "0 sessões". i18next looks up a `_zero` key before it asks `Intl.PluralRules`
+ * whenever `count` is 0, in any language, so the fix lives in the bundle and is required here for
+ * every plural — a new `_one` without its `_zero` would bring the singular zero back one string at a
+ * time. A list rather than a rule derived from CLDR, because French files 0 under `one` too and there
+ * "0 séance" is correct.
+ */
+const ZERO_READS_PLURAL = new Set<string>(['pt']);
+
 const languages = Object.keys(resources) as (keyof typeof resources)[];
 
 describe.each(languages)('the %s bundle', (language) => {
   const categories = pluralCategories(language);
+  const zero = ZERO_READS_PLURAL.has(language) ? ['zero'] : [];
   const actual = new Set(keyPaths(resources[language].translation));
-  const required = expandPlurals(pluralCategories('en').filter((category) => categories.includes(category)));
-  const permitted = expandPlurals(categories);
+  const required = expandPlurals([...pluralCategories('en').filter((category) => categories.includes(category)), ...zero]);
+  const permitted = expandPlurals([...categories, ...zero]);
 
   it('carries every key English does', () => {
     expect([...required].filter((key) => !actual.has(key))).toEqual([]);
@@ -80,5 +94,21 @@ describe('Japanese pluralisation', () => {
     await changeLanguage('ja');
     expect(t('format.set', { count: 1 })).toBe('1セット');
     expect(t('format.set', { count: 3 })).toBe('3セット');
+  });
+});
+
+/**
+ * The Portuguese wrinkle, pinned the same way: the rule it works around, and the reading it gets.
+ * The first assertion is what makes the `_zero` keys necessary — if CLDR ever moved 0 to `other` for
+ * `pt`, they would become redundant rather than wrong.
+ */
+describe('Portuguese zero', () => {
+  it('reads a count of zero as plural, not as one', async () => {
+    expect(new Intl.PluralRules('pt').select(0)).toBe('one');
+
+    await changeLanguage('pt');
+    expect(t('format.session', { count: 0 })).toBe('0 sessões');
+    expect(t('format.session', { count: 1 })).toBe('1 sessão');
+    expect(t('format.session', { count: 2 })).toBe('2 sessões');
   });
 });

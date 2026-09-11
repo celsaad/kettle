@@ -122,6 +122,7 @@ function Navigation() {
           <Stack.Screen name="exercise-editor" options={{ presentation: 'modal', headerShown: false }} />
           <Stack.Screen name="workout-editor" options={{ presentation: 'modal', headerShown: false }} />
           <Stack.Screen name="analytics" options={{ presentation: 'modal', headerShown: false }} />
+          <Stack.Screen name="exercise-progress" options={{ presentation: 'modal', headerShown: false }} />
           <Stack.Screen name="program-detail" options={{ presentation: 'modal', headerShown: false }} />
           <Stack.Screen name="program-editor" options={{ presentation: 'modal', headerShown: false }} />
           <Stack.Screen name="program-guide" options={{ presentation: 'modal', headerShown: false }} />

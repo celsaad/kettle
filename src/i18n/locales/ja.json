@@ -106,6 +106,13 @@
     "showSteady": "表示",
     "hideSteady": "隠す"
   },
+  "exerciseProgress": {
+    "since": "{{date}}から",
+    "newBest": "自己ベスト更新",
+    "newBestTag": "· 自己ベスト更新",
+    "sessionsTitle": "セッション · 直近{{count}}週",
+    "notFound": "直近{{count}}週に、この種目でグラフにできる記録はありません。"
+  },
   "library": {
     "title": "ライブラリ",
     "exerciseCount_other": "{{count}}件のエクササイズ",

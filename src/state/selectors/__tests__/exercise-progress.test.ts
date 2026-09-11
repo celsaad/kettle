@@ -56,6 +56,11 @@ it('reports the change from the first session in the window to the last', async 
         delta: 2,
         lastTrainedAt: '2026-08-17T10:00:00.000Z',
         bestEver: true,
+        sessions: [
+          { at: '2026-08-04T10:00:00.000Z', value: 10, newBest: false },
+          { at: '2026-08-11T10:00:00.000Z', value: 11, newBest: true },
+          { at: '2026-08-17T10:00:00.000Z', value: 12, newBest: true },
+        ],
       },
     ],
     steady: [],
@@ -422,5 +427,54 @@ describe('best ever', () => {
     );
 
     expect(view.movers[0]).toMatchObject({ kind: 'heaviestSet', bestEver: true });
+  });
+});
+
+/**
+ * The per-session detail the exercise progress screen charts. A session sets a new best by the same
+ * rule a row's `bestEver` uses — strictly beating everything logged before it, the first-ever entry
+ * beating nothing — so the dots on the chart and the mark on the row can't disagree.
+ */
+describe('sessions', () => {
+  const chinUps = (...sessions: [string, number][]) =>
+    sessions.map(([startedAt, reps]) => aSession({ startedAt, entries: [bodyweight('chin-up', reps)] }));
+
+  it('marks each session that beat everything before it, and no other', async () => {
+    const view = exerciseProgress(
+      chinUps(
+        ['2026-07-28T10:00:00.000Z', 5],
+        ['2026-08-01T10:00:00.000Z', 5],
+        ['2026-08-05T10:00:00.000Z', 6],
+        ['2026-08-10T10:00:00.000Z', 6],
+        ['2026-08-15T10:00:00.000Z', 7],
+      ),
+      [],
+      4,
+      NOW,
+    );
+
+    expect(view.movers[0].sessions.map((session) => [session.value, session.newBest])).toEqual([
+      [5, false],
+      [5, false],
+      [6, true],
+      [6, false],
+      [7, true],
+    ]);
+  });
+
+  // The window trims what is listed, not what counts as beaten: a best from before the window still
+  // stands in the way of the sessions inside it.
+  it('judges a session against the whole log, not just the window', async () => {
+    const view = exerciseProgress(
+      chinUps(['2026-05-01T10:00:00.000Z', 12], ['2026-08-11T10:00:00.000Z', 10], ['2026-08-17T10:00:00.000Z', 13]),
+      [],
+      4,
+      NOW,
+    );
+
+    expect(view.movers[0].sessions).toEqual([
+      { at: '2026-08-11T10:00:00.000Z', value: 10, newBest: false },
+      { at: '2026-08-17T10:00:00.000Z', value: 13, newBest: true },
+    ]);
   });
 });

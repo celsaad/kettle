@@ -11,15 +11,19 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { TrainingCalendar } from '@/components/training-calendar';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { useProgressReading } from '@/hooks/use-progress-reading';
 import { useTheme } from '@/hooks/use-theme';
-import { formatProgressDelta, formatProgressReading, type ProgressReading } from '@/domain/format';
+import { formatProgressDelta, formatProgressReading } from '@/domain/format';
 import type { Exercise } from '@/domain/types';
-import { toDisplayWeight } from '@/domain/units';
-import { exerciseProgress, type ExerciseProgress, type ProgressView } from '@/state/selectors/exercise-progress';
+import {
+  exerciseProgress,
+  TREND_WEEKS,
+  type ExerciseProgress,
+  type ProgressView,
+} from '@/state/selectors/exercise-progress';
 import { exerciseName } from '@/state/selectors/exercise-lookup';
 import { currentStreak, thisWeekStats, trainingCalendar } from '@/state/selectors/history-stats';
 import { useLibraryStore } from '@/state/library-store';
-import { useUnitSystem } from '@/state/preferences-store';
 import { useSessionHistoryStore } from '@/state/session-history-store';
 
 export { RouteErrorBoundary as ErrorBoundary } from '@/components/error-fallback';
@@ -32,16 +36,6 @@ export { RouteErrorBoundary as ErrorBoundary } from '@/components/error-fallback
  * hold up. Four still shows a lapse, and the week you're in is always the bottom row.
  */
 const CALENDAR_WEEKS = 4;
-
-/**
- * How far back Getting stronger looks.
- *
- * Longer than the calendar on purpose. Four weeks is two or three sessions of most exercises, which is
- * not a trend; eight is two months — long enough for a number to move, short enough to still be about
- * what you're doing now. The two sections answer different questions, and each heading names its own
- * window.
- */
-const TREND_WEEKS = 8;
 
 /**
  * The numbers behind History, on their own screen.
@@ -217,57 +211,54 @@ function ProgressSection({ progress, exercises }: { progress: ProgressView; exer
 }
 
 /**
- * One exercise's trend: what it is at now, the shape of how it got there, and the change.
+ * One exercise's trend: what it is at now, the shape of how it got there, and the change — and the
+ * way into that exercise's own progress screen, which charts the same sessions in full.
  *
- * The name is user data and renders verbatim. The weight branch is the only one that has to reach the
- * unit preference, which is why this reads `useUnitSystem` rather than taking finished strings —
- * `exerciseProgress` deals in kilograms, seconds and reps, and the conversion belongs here.
+ * The name is user data and renders verbatim. Units go through `useProgressReading`, the same hook
+ * the progress screen uses, so the row and the screen it opens print the same number the same way.
+ *
+ * No `accessibilityLabel` on the press target: the name, the reading and the change inside it are
+ * what it is called, and a label written beside them would drift from what's on screen.
  */
 function ProgressRow({ row, name }: { row: ExerciseProgress; name: string }) {
   const { t } = useTranslation();
-  const unitSystem = useUnitSystem();
-  // Same lookup the runner's load row uses; there is no shared helper for it.
-  const unit = t(unitSystem === 'imperial' ? 'units.lb' : 'units.kg');
-
-  const reading = (value: number): ProgressReading => {
-    if (row.kind === 'longestHold') return { kind: 'hold', holdSec: Math.round(value) };
-    if (row.kind === 'heaviestSet') {
-      return { kind: 'weight', weight: `${toDisplayWeight(value, unitSystem)} ${unit}` };
-    }
-    return { kind: 'reps', reps: Math.round(value) };
-  };
-
+  const reading = useProgressReading(row.kind);
   const sign = Math.sign(row.delta);
 
   return (
-    <ListRow>
-      <View style={styles.progressText}>
-        <ThemedText type="smallMedium">{name}</ThemedText>
-        <ThemedText type="small" themeColor="textSecondary">
-          {formatProgressReading(reading(row.latest))}
-          {/* Inline rather than a records section of its own: nearly every record in the window is also
+    <Pressable
+      onPress={() => router.push({ pathname: '/exercise-progress', params: { exerciseId: row.exerciseId } })}
+      accessibilityRole="button"
+      style={({ pressed }) => (pressed ? styles.pressed : undefined)}>
+      <ListRow>
+        <View style={styles.progressText}>
+          <ThemedText type="smallMedium">{name}</ThemedText>
+          <ThemedText type="small" themeColor="textSecondary">
+            {formatProgressReading(reading(row.latest))}
+            {/* Inline rather than a records section of its own: nearly every record in the window is also
               a mover, so a separate list would say most things twice. */}
-          {row.bestEver && (
-            <ThemedText type="small" themeColor="accentText">
-              {' '}
-              {t('analytics.bestEver')}
-            </ThemedText>
-          )}
-        </ThemedText>
-      </View>
+            {row.bestEver && (
+              <ThemedText type="small" themeColor="accentText">
+                {' '}
+                {t('analytics.bestEver')}
+              </ThemedText>
+            )}
+          </ThemedText>
+        </View>
 
-      <Sparkline points={row.points} />
+        <Sparkline points={row.points} />
 
-      {/*
+        {/*
         The one number on this screen that can be negative, so it is the one that would most tempt a
         red/green pair — and it does not get one. A dip is information, not a failure, and colouring it
         as one turns a deload week into a scolding. It takes the accent when something moved and a
         secondary tone when nothing did, so the eye finds the rows that changed.
       */}
-      <ThemedText type="smallMedium" themeColor={sign === 0 ? 'textSecondary' : 'accentText'} style={styles.progressDelta}>
-        {formatProgressDelta(reading(Math.abs(row.delta)), sign)}
-      </ThemedText>
-    </ListRow>
+        <ThemedText type="smallMedium" themeColor={sign === 0 ? 'textSecondary' : 'accentText'} style={styles.progressDelta}>
+          {formatProgressDelta(reading(Math.abs(row.delta)), sign)}
+        </ThemedText>
+      </ListRow>
+    </Pressable>
   );
 }
 

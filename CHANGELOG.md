@@ -28,6 +28,10 @@ that held steady fold into a single row you can open. Holds that stop at a set t
 since they can't go up — for anyone who stretches, that was most of the list. The all-time totals are
 gone from this screen; History's header still has them.
 
+**Tap an exercise in Your numbers to see how it got there.** Every row in Getting stronger now opens
+that exercise on its own: where it is today and how far it has come, a chart of every session in the
+last eight weeks with your new bests marked, and the sessions themselves, newest first.
+
 **The starter packs are easier to find.** They have been in Import since 0.8.0, which is a fine place
 for them once you know it exists and no place at all before that. So until you have logged your first
 session, the home screen offers them directly — one tap to the three ready-made libraries, without

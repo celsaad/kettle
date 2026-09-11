@@ -69,7 +69,8 @@ decision assembled across several commits. Open work belongs in the sections at 
   Stats screen covers strength work and holds and says so, rather than appearing to cover everything.
 
   **The Stats trend drops one more thing, and deliberately not through `entryBest`:** a `timed_hold`
-  with `hold_sec_min` and no `hold_sec_max`. The runner ends it at that target and clamps the logged
+  with a single target — `hold_sec_min` and no `hold_sec_max`, or a `hold_sec_max` equal to it, which
+  the schema and `validateConfig` both accept. The runner ends it at that target and clamps the logged
   time to it, so its number is its config rather than a measurement — the `hiit`/`emom` argument
   exactly, and on a mobility-heavy log it was most of the screen. The rule sits in `exerciseProgress`,
   which has the library, because records and the runner's live marker can't fire on a fixed hold

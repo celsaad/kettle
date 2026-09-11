@@ -232,6 +232,20 @@ describe('fixed-target holds', () => {
     expect(view).toEqual({ movers: [], steady: [], fixedHoldsLeftOut: 1 });
   });
 
+  // A range whose top equals its bottom is a fixed hold spelled differently: the schema and
+  // `validateConfig` both accept `hold_sec_max == hold_sec_min`, and the runner ends it in the same
+  // place, so it can only ever read "no change" too.
+  it('are left out when the range has no width', async () => {
+    const view = exerciseProgress(
+      twoHolds('hurdler', 45, 45),
+      [holdExercise('hurdler', { holdSecMin: 45, holdSecMax: 45 })],
+      4,
+      NOW,
+    );
+
+    expect(view).toEqual({ movers: [], steady: [], fixedHoldsLeftOut: 1 });
+  });
+
   // Ending a stretch early is the one thing a fixed hold's number can record, and it is not "getting
   // weaker" — so the dip goes with the rest rather than becoming the only row these ever produce.
   it('are left out when cut short, too', async () => {

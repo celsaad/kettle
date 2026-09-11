@@ -52,8 +52,10 @@ of the first fifteen "Getting stronger" rows read `45s · no change`, and will r
    fixed hold anyway: the hold stops at the target, a tie is not a record, so nothing can beat a full
    hold. Putting the rule in `entryBest` would thread the library into the runner for no change in
    behaviour. Concretely:
-   - "Fixed" means the exercise's **current** library config has `holdSecMin` and no `holdSecMax`.
-     Range holds (which can climb toward the top) and max-effort holds (no target) stay.
+   - "Fixed" means the exercise's **current** library config has `holdSecMin` and either no
+     `holdSecMax` or one equal to it — a zero-width range ends in the same place. (The first version
+     missed the equal case; review caught it.) Range holds with room to climb, and max-effort holds
+     (no target), stay.
    - An exercise no longer in the library is kept — there is no config to judge it by.
    - The log doesn't record the config a session ran under, so an exercise changed from fixed to
      max-effort brings its capped history with it. Accepted: it corrects itself as new sessions land.

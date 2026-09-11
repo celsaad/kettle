@@ -52,7 +52,9 @@ export type ProgressView = {
  * mobility-heavy log it was most of the screen: a dozen rows reading "no change" forever.
  *
  * A **range** stays in, since climbing toward the top of it is real progress, and so does a
- * max-effort hold, which has no end at all.
+ * max-effort hold, which has no end at all. A range whose top equals its bottom does not: the schema
+ * and `validateConfig` both accept `hold_sec_max == hold_sec_min`, and the runner ends it at the same
+ * second either way, so it is a fixed hold written differently.
  *
  * Judged on the exercise's **current** config, because the log doesn't record the config a session
  * ran under. So an exercise switched from fixed to max-effort brings its capped history with it — a
@@ -63,12 +65,9 @@ export type ProgressView = {
  * so moving the rule there would thread the library into the runner for no change in behaviour.
  */
 function isFixedTargetHold(exercise: Exercise): boolean {
-  return (
-    exercise.type === 'timed_hold' &&
-    exercise.config.holdSecMax === undefined &&
-    exercise.config.holdSecMin !== undefined &&
-    exercise.config.holdSecMin > 0
-  );
+  if (exercise.type !== 'timed_hold') return false;
+  const { holdSecMin, holdSecMax } = exercise.config;
+  return holdSecMin !== undefined && holdSecMin > 0 && (holdSecMax === undefined || holdSecMax === holdSecMin);
 }
 
 /**

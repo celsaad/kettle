@@ -106,6 +106,22 @@ export type RunnerStep =
       seconds: number;
     };
 
+// --- Target formatting ---
+//
+// Shared by the runner's Next card and the Coming up sheet, so a target reads the same in both. Here
+// rather than in the runner because importing the runner initialises expo-audio, which the sheet's
+// tests can't do. Numbers and a unit only, so there is nothing in them to translate.
+
+/** Null on a max-effort hold, which has no target to preview — the caller picks a different string. */
+export function formatHoldTarget(step: Extract<RunnerStep, { kind: 'hold' }>): string | null {
+  if (step.holdTargetSec === undefined) return null;
+  return step.holdTargetMaxSec ? `${step.holdTargetSec}–${step.holdTargetMaxSec}s` : `${step.holdTargetSec}s`;
+}
+
+export function formatRepsTarget(step: Extract<RunnerStep, { kind: 'reps' }>): string {
+  return step.targetRepsMax ? `${step.targetReps}–${step.targetRepsMax}` : `${step.targetReps}`;
+}
+
 /**
  * Where a circuit member's single visit sits in the circuit's rounds. Set only when expanding a
  * circuit member: the circuit's own `rounds` is what repeats the member, not the member's own

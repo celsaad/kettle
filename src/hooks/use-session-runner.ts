@@ -27,6 +27,8 @@ import {
   buildSteps,
   dropLastSetForMember,
   buildStepsForExercise,
+  formatHoldTarget,
+  formatRepsTarget,
   setStepsForMember,
   swapExerciseForMember,
 } from '@/hooks/session-steps';
@@ -113,16 +115,6 @@ type LastCommit = { resultingIndex: number; memberKey: string; exerciseId: strin
  * note on `EXERCISE_ART`.
  */
 export type RestPreview = { label: string; detail: string; exerciseId: string } | null;
-
-/** Null on a max-effort hold, which has no target to preview — the caller picks a different string. */
-function formatHoldTarget(step: Extract<RunnerStep, { kind: 'hold' }>): string | null {
-  if (step.holdTargetSec === undefined) return null;
-  return step.holdTargetMaxSec ? `${step.holdTargetSec}–${step.holdTargetMaxSec}s` : `${step.holdTargetSec}s`;
-}
-
-function formatRepsTarget(step: Extract<RunnerStep, { kind: 'reps' }>): string {
-  return step.targetRepsMax ? `${step.targetReps}–${step.targetRepsMax}` : `${step.targetReps}`;
-}
 
 function previewFor(step: RunnerStep | undefined): RestPreview {
   if (!step) return null;

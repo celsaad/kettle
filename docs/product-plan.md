@@ -371,12 +371,13 @@ What's genuinely missing today, checked directly against the code:
 
 - ~~**No analytics screen.**~~ ✅ Shipped as `app/analytics.tsx`, a modal route off History rather than
   a fifth tab. It collects the cross-cutting numbers that were scattered across History's header
-  (`historyStats`, `currentStreak`, `thisWeekStats`), charts sessions per week, and answers the
-  question none of them could — whether each exercise is *moving*, via `exerciseProgress`.
+  (`currentStreak`, `thisWeekStats`), shows the last four weeks as a training calendar, and answers
+  the question none of them could — whether each exercise is *moving*, via `exerciseProgress`.
 
   Two limits worth keeping in view rather than reading as oversights. It covers **strength work and
-  holds only**: `entryBest` excludes `hiit` and `emom` because their numbers are bounded by the
-  exercise's own config, and `cardio` because comparing routes needs rules the app doesn't have. And
+  the holds that can grow**: `entryBest` excludes `hiit` and `emom` because their numbers are bounded
+  by the exercise's own config, and `cardio` because comparing routes needs rules the app doesn't have;
+  `exerciseProgress` drops fixed-target holds for the same reason as the first two. And
   the push/pull/legs/core balance breakdown the design review asked for is **still not possible** —
   it needs a muscle-group field the YAML format doesn't have, which is a format change with three
   hand-maintained mirrors rather than a screen change.

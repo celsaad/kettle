@@ -9,7 +9,8 @@ import { currentLocale } from '@/i18n';
  * `Intl.DurationFormat` is *not* available, which is why `formatDuration` is hand-rolled.
  */
 
-export function formatWeekday(date: Date, style: 'short' | 'long' = 'short'): string {
+/** `'narrow'` is the one-letter form (M T W …) the Stats calendar heads its columns with. */
+export function formatWeekday(date: Date, style: 'narrow' | 'short' | 'long' = 'short'): string {
   return date.toLocaleDateString(currentLocale(), { weekday: style });
 }
 

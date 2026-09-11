@@ -166,13 +166,13 @@ On screen the sheet is titled **Coming up**, not "Up next": Home already says NE
    throughout, since `ListRow` and `ModalHeader` read the shell theme. The item list is a memoised
    child keyed on the outline, so the 1Hz NOW clock doesn't re-render thirty rows.
 
-5. **`session.tsx`:** the header `Pressable`, `upcomingOpenAt`, the sheet render, and the sheet's
-   `BackHandler`.
+5. **`session.tsx`:** the header `Pressable`, `upcomingOpenAt` and the sheet render. The `BackHandler`
+   listener lives in the sheet component instead, which is mounted exactly while the sheet is open.
 
 6. **i18n**, in all three bundles, under `session.upcoming.*`:
-   - `title`, `hint`, `now`, `nowRest`, `end`, `rest`
-   - counted forms: `moreSets`, `sets`, `moreRounds`, `rounds`, `circuitRounds`, `circuitLeft`
-   - composed accessibility labels per item kind
+   - `title`, `hint`, `now`, `nowRest`, `end`, `rest`, `detail`, and the three target forms
+   - counted forms: `sets`/`moreSets`, `rounds`/`moreRounds`, `minutes`/`moreMinutes`, and the
+     kickers `circuitRounds`, `circuitLeft`, `roundsAfter`
 
    Details reuse `preview.*` and `session.circuit.crumb` rather than a parallel copy. `ja` takes only
    the `_other` forms. Exercise names are interpolated, never translated.
@@ -184,10 +184,12 @@ On screen the sheet is titled **Coming up**, not "Up next": Home already says NE
   `importantForAccessibility="no-hide-descendants"` on the runner beneath it while open (Android).
   **The swap picker has neither**, so it gets the same two props in this PR. Same pattern, same file,
   one line each.
-- **The rail and nodes are decorative**, hidden with `aria-hidden`. react-native-web drops the native
-  props, which is what the header's finish-spacer comment records.
-- **Each item is one accessible node** with a composed label, the way the circuit crumb is. Split, it
-  would announce a bare kicker and then an unnamed list.
+- **The rail and nodes carry no text**, so there is nothing to hide. The backdrop is what's hidden
+  (`aria-hidden`, which react-native-web honours where it drops the native props): the × is the named
+  way out, and a second "Close" spanning the screen would only be one more thing to swipe past.
+- **Each entry is one accessible element that reads its own children**: a name and its detail, or the
+  NOW row's kicker, name, clock and caption. There's no composed label that could drift from what's on
+  screen. Circuit kickers are headers, and the names under them read one by one.
 - **No new colours.** The calm node against `backgroundElement` estimates at about 4.2:1 and the warm
   one at about 4.7:1, both over the 3:1 a meaningful graphic needs. Measure them and record them in
   `theme.ts`, as the others are recorded.

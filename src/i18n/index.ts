@@ -24,7 +24,13 @@ import pt from '@/i18n/locales/pt.json';
  * **A bundle carries only the plural categories its own language has.** `ja` has one — CLDR gives it
  * `other` and nothing else — so `ja.json` holds `x_other` and no `x_one`. Written by analogy with
  * `en`/`pt` it would carry `_one` keys that never resolve and never get reviewed, which is the shape
- * this note exists to prevent. JSON takes no comments, so it has to live here.
+ * this note exists to prevent.
+ *
+ * **`pt` carries a `_zero` beside every `_one`.** CLDR files Portuguese 0 under `one`, so a count of
+ * zero rendered "0 sessão"; Brazilian Portuguese says "0 sessões". i18next consults a `_zero` key before
+ * the plural rule whenever `count` is 0, so the fix is in the bundle rather than a patch to i18next's
+ * resolver, and `locale-bundles.test.ts` requires one for every `_one`. JSON takes no comments, so all
+ * of this has to live here.
  */
 export const resources = {
   en: { translation: en },

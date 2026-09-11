@@ -166,11 +166,12 @@ are house rules here rather than a backlog — cheap as you go, tedious to retro
   through `i18n/format.ts` (never `toLocaleDateString('en-US', …)`).
 - **Never translate user data** — exercise, workout and program names, notes, and `ProgramWeek.day`
   come from the user's YAML and render verbatim. Key the English around them and interpolate the name.
-- Adding a key means adding it to **all three** bundles — `en.json`, `pt.json` and `ja.json`. `en` and
-  `pt` are kept at exact parity; **`ja` carries only the `_other` form of a plural**, since Japanese
-  has no separate singular category, so it sits a few dozen keys below the other two and that is
-  correct rather than a gap. All of it by hand, since nothing tests it. A key missing from a bundle
-  doesn't fail anywhere; i18next's `fallbackLng` quietly renders it in English. (No count is quoted
+- Adding a key means adding it to **all three** bundles — `en.json`, `pt.json` and `ja.json`. `pt`
+  matches `en` key for key, plus a **`_zero` beside every `_one`** — CLDR files Portuguese 0 under
+  `one`, which rendered "0 sessão" — and **`ja` carries only the `_other` form of a plural**, since
+  Japanese has no separate singular category. `locale-bundles.test.ts` holds all three shapes, so a
+  missing or stray key fails there instead of rendering quietly in English through `fallbackLng`; the
+  words themselves are still checked by hand. (No count is quoted
   here on purpose: the one that used to be went stale, and the bundles are the only honest answer.)
 
 Shipping a whole new language is a seven-place procedure of its own:

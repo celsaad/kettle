@@ -54,18 +54,21 @@
     "startEmpty": "Começar uma sessão vazia",
     "starterPacks": "Adicionar um programa inicial",
     "moreBlocks_one": "+{{count}} a mais",
-    "moreBlocks_other": "+{{count}} a mais"
+    "moreBlocks_other": "+{{count}} a mais",
+    "moreBlocks_zero": "+{{count}} a mais"
   },
   "build": {
     "title": "Treinos",
     "workoutCount_one": "{{count}} treino",
     "workoutCount_other": "{{count}} treinos",
+    "workoutCount_zero": "{{count}} treinos",
     "emptyTitle": "Nenhum treino ainda",
     "emptyBody": "Monte um treino a partir dos exercícios da sua biblioteca.",
     "startAccessibility": "Iniciar {{name}}",
     "newWorkout": "Novo treino",
     "searchPlaceholder_one": "Buscar {{count}} treino",
-    "searchPlaceholder_other": "Buscar {{count}} treinos"
+    "searchPlaceholder_other": "Buscar {{count}} treinos",
+    "searchPlaceholder_zero": "Buscar {{count}} treinos"
   },
   "history": {
     "title": "Histórico",
@@ -85,7 +88,8 @@
     "deleteConfirmTitle": "Excluir sessão?",
     "deleteConfirmBody": "\"{{name}}\" em {{day}} {{month}} será removida permanentemente.",
     "problemsTitle_one": "{{count}} arquivo de sessão não pôde ser lido ou gravado",
-    "problemsTitle_other": "{{count}} arquivos de sessão não puderam ser lidos ou gravados"
+    "problemsTitle_other": "{{count}} arquivos de sessão não puderam ser lidos ou gravados",
+    "problemsTitle_zero": "{{count}} arquivos de sessão não puderam ser lidos ou gravados"
   },
   "analytics": {
     "title": "Seus números",
@@ -93,6 +97,7 @@
     "calendarTitle": "Dias de treino · últimas {{count}} semanas",
     "calendarWeekLabel_one": "Semana de {{week}}: {{count}} sessão, {{time}}",
     "calendarWeekLabel_other": "Semana de {{week}}: {{count}} sessões, {{time}}",
+    "calendarWeekLabel_zero": "Semana de {{week}}: {{count}} sessões, {{time}}",
     "calendarRest": "Descanso",
     "calendarShort": "Menos de {{minutes}} min",
     "calendarMid": "{{from}}–{{to}} min",
@@ -109,6 +114,7 @@
     "bestEver": "· melhor marca",
     "heldSteady_one": "{{count}} sem mudança",
     "heldSteady_other": "{{count}} sem mudança",
+    "heldSteady_zero": "{{count}} sem mudança",
     "showSteady": "Mostrar",
     "hideSteady": "Ocultar"
   },
@@ -116,6 +122,7 @@
     "title": "Biblioteca",
     "exerciseCount_one": "{{count}} exercício",
     "exerciseCount_other": "{{count}} exercícios",
+    "exerciseCount_zero": "{{count}} exercícios",
     "filterAll": "Todos",
     "filterHiit": "HIIT",
     "filterReps": "Reps",
@@ -123,6 +130,7 @@
     "newExercise": "Novo exercício",
     "searchPlaceholder_one": "Buscar {{count}} exercício",
     "searchPlaceholder_other": "Buscar {{count}} exercícios",
+    "searchPlaceholder_zero": "Buscar {{count}} exercícios",
     "filterEmom": "EMOM",
     "filterAmrap": "AMRAP",
     "filterCardio": "Cardio"
@@ -173,14 +181,17 @@
     "weeksRange": "Semanas {{first}}–{{last}}",
     "weeksWithNotes_one": "{{count}} semana com notas ou substituições",
     "weeksWithNotes_other": "{{count}} semanas com notas ou substituições",
+    "weeksWithNotes_zero": "{{count}} semanas com notas ou substituições",
     "count_one": "{{count}} programa",
     "count_other": "{{count}} programas",
+    "count_zero": "{{count}} programas",
     "emptyTitle": "Nenhum programa ainda",
     "emptyBody": "Programas são planos de várias semanas que percorrem seus treinos. Crie um com o botão +, ou escreva um em YAML para mais controle (substituições por semana ainda não são editáveis no app).",
     "emptyYamlLink": "Escrever um em YAML →",
     "newProgram": "Novo programa",
     "searchPlaceholder_one": "Buscar {{count}} programa",
-    "searchPlaceholder_other": "Buscar {{count}} programas"
+    "searchPlaceholder_other": "Buscar {{count}} programas",
+    "searchPlaceholder_zero": "Buscar {{count}} programas"
   },
   "session": {
     "next": "PRÓXIMO",
@@ -258,7 +269,8 @@
       "holdBody": "{{workout}} · pode descer",
       "reminderTitle": "Quando você quiser",
       "reminderBody_one": "Sua última sessão foi há um dia. Sem cobrança — o Kettle está aqui quando der vontade.",
-      "reminderBody_other": "Sua última sessão foi há {{count}} dias. Sem cobrança — o Kettle está aqui quando der vontade."
+      "reminderBody_other": "Sua última sessão foi há {{count}} dias. Sem cobrança — o Kettle está aqui quando der vontade.",
+      "reminderBody_zero": "Sua última sessão foi há {{count}} dias. Sem cobrança — o Kettle está aqui quando der vontade."
     },
     "rest": {
       "label": "DESCANSO",
@@ -341,6 +353,7 @@
     "reminderOn": "Ligado",
     "reminderNote_one": "Uma notificação neste aparelho se passar um dia sem sessão. Nada é enviado para lugar nenhum, e quem treina com regularidade nunca vai vê-la.",
     "reminderNote_other": "Uma notificação neste aparelho se passarem {{count}} dias sem sessão. Nada é enviado para lugar nenhum, e quem treina com regularidade nunca vai vê-la.",
+    "reminderNote_zero": "Uma notificação neste aparelho se passarem {{count}} dias sem sessão. Nada é enviado para lugar nenhum, e quem treina com regularidade nunca vai vê-la.",
     "data": "Dados",
     "exportLibrary": "Exportar biblioteca",
     "exportLibraryDetail": "Compartilhe exercises.yaml — todos os exercícios, treinos e programas.",
@@ -348,6 +361,7 @@
     "exportHistory": "Exportar histórico",
     "exportHistoryDetail_one": "Compartilhe sua única sessão registrada em um só arquivo.",
     "exportHistoryDetail_other": "Compartilhe todas as {{count}} sessões registradas em um só arquivo.",
+    "exportHistoryDetail_zero": "Compartilhe todas as {{count}} sessões registradas em um só arquivo.",
     "exportHistoryEmpty": "Nada registrado ainda — conclua uma sessão primeiro.",
     "importLibrary": "Importar biblioteca",
     "importLibraryDetail": "Mescla um arquivo .yaml com o que você já tem.",
@@ -410,6 +424,7 @@
     "thankYouTitle": "Obrigado!",
     "thankYouBody_one": "Você deixou uma gorjeta. Isso ajuda de verdade.",
     "thankYouBody_other": "Você deixou {{count}} gorjetas. Isso ajuda de verdade.",
+    "thankYouBody_zero": "Você deixou {{count}} gorjetas. Isso ajuda de verdade.",
     "notSaved": "Sua gorjeta foi concluída, mas não foi possível salvá-la neste aparelho."
   },
   "import": {
@@ -427,10 +442,13 @@
       "sourceDetail": "Pacote inicial que vem com o app",
       "exerciseCount_one": "{{count}} exercício",
       "exerciseCount_other": "{{count}} exercícios",
+      "exerciseCount_zero": "{{count}} exercícios",
       "workoutCount_one": "{{count}} treino",
       "workoutCount_other": "{{count}} treinos",
+      "workoutCount_zero": "{{count}} treinos",
       "programCount_one": "{{count}} programa",
       "programCount_other": "{{count}} programas",
+      "programCount_zero": "{{count}} programas",
       "steady-strength": {
         "name": "Firme e Forte",
         "detail": "Cadeira e parede como apoio, nada no chão. Três sessões por semana durante quatro semanas."
@@ -448,6 +466,7 @@
     "pastedTitle": "YAML colado",
     "pastedLines_one": "{{count}} linha colada",
     "pastedLines_other": "{{count}} linhas coladas",
+    "pastedLines_zero": "{{count}} linhas coladas",
     "libraryNotLoaded": "A biblioteca ainda não foi carregada.",
     "repairPrompt": "O Kettle recusou este exercises.yaml na importação. Corrija o YAML e devolva o arquivo corrigido.",
     "copyBrief": "Copiar o formato para um assistente",
@@ -474,6 +493,7 @@
     "updated": "atualizado",
     "workoutNoun_one": "treino",
     "workoutNoun_other": "treinos",
+    "workoutNoun_zero": "treinos",
     "newExercise": "novo exercício",
     "updatedExercise": "exercício atualizado",
     "newWorkout": "novo treino",
@@ -493,13 +513,16 @@
     "noChanges": "Nenhuma alteração — o arquivo importado é igual à sua biblioteca atual.",
     "showAll_one": "Mostrar a {{count}} alteração",
     "showAll_other": "Mostrar todas as {{count}} alterações",
+    "showAll_zero": "Mostrar todas as {{count}} alterações",
     "showFewer": "Mostrar menos",
     "applied": {
       "title": "Importado",
       "newCount_one": "{{count}} item novo",
       "newCount_other": "{{count}} itens novos",
+      "newCount_zero": "{{count}} itens novos",
       "updatedCount_one": "{{count}} atualizado",
       "updatedCount_other": "{{count}} atualizados",
+      "updatedCount_zero": "{{count}} atualizados",
       "announcement": "Importado. {{new}} novos, {{updated}} atualizados."
     },
     "updateNote": "Itens atualizados substituem ajustes locais. As sessões nunca são alteradas.",
@@ -643,8 +666,10 @@
     "namePlaceholder": "ex.: Dia de empurrar",
     "blockCount_one": "{{count}} bloco",
     "blockCount_other": "{{count}} blocos",
+    "blockCount_zero": "{{count}} blocos",
     "overrideSeconds_one": "{{count}} segundo",
     "overrideSeconds_other": "{{count}} segundos",
+    "overrideSeconds_zero": "{{count}} segundos",
     "overrideBadge": "SUBSTITUÍDO",
     "removeAccessibility": "Remover {{name}}",
     "circuit": "Circuito",
@@ -678,6 +703,7 @@
     "namePlaceholder": "ex.: Progressão de barra em 6 semanas",
     "weekCount_one": "{{count}} semana",
     "weekCount_other": "{{count}} semanas",
+    "weekCount_zero": "{{count}} semanas",
     "addAtLeastOneWeek": "Adicione pelo menos uma semana.",
     "everyWeekNeedsWorkout": "Toda semana precisa de um treino, a menos que seja um dia de descanso.",
     "needsOneWorkoutWeek": "Pelo menos uma semana precisa ter um treino.",
@@ -736,16 +762,22 @@
     "workoutShape": "{{blocks}} · {{types}} · ~{{minutes}} min",
     "block_one": "{{count}} bloco",
     "block_other": "{{count}} blocos",
+    "block_zero": "{{count}} blocos",
     "round_one": "{{count}} rodada",
     "round_other": "{{count}} rodadas",
+    "round_zero": "{{count}} rodadas",
     "rep_one": "{{count}} repetição",
     "rep_other": "{{count}} repetições",
+    "rep_zero": "{{count}} repetições",
     "interval_one": "{{count}} intervalo",
     "interval_other": "{{count}} intervalos",
+    "interval_zero": "{{count}} intervalos",
     "session_one": "{{count}} sessão",
     "session_other": "{{count}} sessões",
+    "session_zero": "{{count}} sessões",
     "set_one": "{{count}} série",
     "set_other": "{{count}} séries",
+    "set_zero": "{{count}} séries",
     "seconds": "{{n}}s",
     "minutes": "{{n}} min",
     "metres": "{{n}} m",

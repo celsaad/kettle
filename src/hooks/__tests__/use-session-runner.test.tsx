@@ -677,6 +677,48 @@ describe('restFollows', () => {
   });
 });
 
+/**
+ * The Coming up sheet's list. What it contains is session-outline.test.ts's to pin; these prove only
+ * the wiring — that it follows the runner's position and its mid-session edits, and that the 1Hz tick
+ * doesn't rebuild it.
+ */
+describe('upcoming', () => {
+  const summary = (items: ReturnType<typeof useSessionRunner>['upcoming']) =>
+    items.map((item) =>
+      item.kind === 'exercise' ? `${item.step.exerciseName} ×${item.left}${item.started ? ' (started)' : ''}` : item.kind,
+    );
+
+  it('lists what comes after the step on screen, and moves with it', async () => {
+    const { result } = await mount(workoutOf(single('pullups'), single('lsit')));
+    expect(summary(result.current.upcoming)).toEqual(['Pull-ups ×2 (started)', 'L-Sit ×3']);
+
+    // Onto the rest after set 1: the same two sets are still to come.
+    await press(() => result.current.logSet());
+    expect(result.current.step?.kind).toBe('rest');
+    expect(summary(result.current.upcoming)).toEqual(['Pull-ups ×2 (started)', 'L-Sit ×3']);
+
+    // Onto set 2: one fewer.
+    await press(() => result.current.skipRest());
+    expect(summary(result.current.upcoming)).toEqual(['Pull-ups ×1 (started)', 'L-Sit ×3']);
+  });
+
+  it('follows a set added mid-session', async () => {
+    const { result } = await mount(workoutOf(single('pullups')));
+    await press(() => result.current.addSet());
+    expect(summary(result.current.upcoming)).toEqual(['Pull-ups ×3 (started)']);
+  });
+
+  it('is not rebuilt by the tick', async () => {
+    const { result } = await mount(workoutOf(single('lsit'), single('pullups')));
+    const before = result.current.upcoming;
+    await tick(1);
+    // The tick did re-render the runner…
+    expect(result.current.holdElapsedSec).toBe(1);
+    // …and the list is the same object, so a memoised list in the sheet skips its render.
+    expect(result.current.upcoming).toBe(before);
+  });
+});
+
 describe('goPrev undo', () => {
   it('retracts the entry a first set had just created', async () => {
     const { result } = await mount(workoutOf(single('pullups')));

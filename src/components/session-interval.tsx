@@ -16,12 +16,7 @@ import { SessionNextCard } from '@/components/session-next-card';
 import { SessionNumberPad } from '@/components/session-number-pad';
 import type { IntervalVariant, RestPreview } from '@/hooks/use-session-runner';
 import { RunnerColors, Spacing } from '@/constants/theme';
-
-function formatClock(totalSeconds: number): string {
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-}
+import { formatClock } from '@/domain/format';
 
 // These acronyms (HIIT/EMOM/AMRAP) and "CARDIO" don't change between en and pt — Brazilian fitness
 // usage keeps the English training-style names — but they're still routed through t() so the seam

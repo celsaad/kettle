@@ -230,6 +230,13 @@ wanting states and assignees, it wants GitHub issues instead.
   Nothing built for the bundled set gets thrown away if it comes back: a user's own image overrides the
   drawing and the drawing becomes the fallback.
 
+- **Name circuit blocks.** A circuit has no name in the YAML, only an optional `id`. So a workout of
+  four circuits (a warm-up, two series and a finisher) shows four "CIRCUIT · N ROUNDS" in the runner's
+  Coming up sheet, and only the member names tell them apart. An optional `name`, shown verbatim, is
+  the fix the sheet was designed around. It is a format change, so `schema.ts` and all three mirrors
+  land in one PR (see `AGENTS.md`, "Changing the YAML format"). Numbering the circuits was drawn and
+  rejected; the reasons are in [`up-next-plan.md`](up-next-plan.md).
+
 - **More languages.** Japanese shipped; the procedure and the two wrinkles it turned up are in
   [`adding-a-language.md`](adding-a-language.md).
 
@@ -324,6 +331,15 @@ interpolated rather than translated. Notes on the structural ones:
   for the next 0-config bug: nothing validates a program week's override config — the schema types it
   as a free record of numbers and the in-app override editor doesn't call `validateConfig` — so the
   runner screens can't assume the constraints `validateConfig`/`schema.ts` enforce elsewhere.
+
+- **Leaving the runner by back or swipe strands the session unfinished.** `session` is a
+  `presentation: 'modal'` route, nothing in `src` intercepts Android hardware back, and nothing sets
+  `gestureEnabled: false`, so iOS's swipe-down dismiss is live. The runner has no unmount cleanup:
+  only its completion paths call `completeSession`, and only the error boundary calls
+  `abandonActiveSession`. A session left that way keeps no `endedAt`, so it counts as zero minutes
+  and `exerciseHistory` skips it, although its sets are on disk. Code-verified; the gestures want a
+  device. The fix is a product call, confirm-to-leave or finish-on-leave, which is why it wasn't folded
+  into [`up-next-plan.md`](up-next-plan.md) where it was found.
 
 - **`Alert.alert` is a no-op on web.** react-native-web ships `class Alert { static alert() {} }`, so
   every confirm dialog silently does nothing in the browser — all the deletes and finish-session.

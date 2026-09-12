@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Svg, { Path } from 'react-native-svg';
 
 import { ErrorFallback } from '@/components/error-fallback';
 import { SessionComplete } from '@/components/session-complete';
@@ -15,6 +16,7 @@ import { SessionInterval } from '@/components/session-interval';
 import { SessionProgressBar } from '@/components/session-progress';
 import { SessionReps } from '@/components/session-reps';
 import { SessionRest } from '@/components/session-rest';
+import { SessionUpcoming } from '@/components/session-upcoming';
 import { ThemedText } from '@/components/themed-text';
 import { RunnerColors, MaxContentWidth, Spacing } from '@/constants/theme';
 import { formatSessionName } from '@/domain/format';
@@ -327,8 +329,29 @@ function ActiveSession({
   const { t } = useTranslation();
   // Here rather than inside the two set screens: both offer the control, and which exercise is being
   // substituted is a fact about the session, not about the row that happens to be on screen.
-  const [swapping, setSwapping] = useState(false);
+  //
+  // Held as the index the picker was opened on, and cleared when the step moves, the same way as the
+  // Coming up sheet below. A plain boolean outlived its step: a hold keeps timing under the picker, and
+  // when it ended by itself the picker vanished over the rest (which offers no swap) and then reopened
+  // by itself on the next set, over a hold that was already counting.
+  const [swappingAt, setSwappingAt] = useState<number | null>(null);
+  if (swappingAt !== null && swappingAt !== runner.stepIndex) setSwappingAt(null);
+  const swapping = swappingAt === runner.stepIndex;
   const [adding, setAdding] = useState(false);
+  /**
+   * The Coming up sheet is open while this equals the step on screen, so it closes itself the moment
+   * the step changes. The index alone is enough here, unlike the runner's per-step reset: the two
+   * mutations that keep it still (swap, ad-hoc add) start from controls the sheet covers.
+   *
+   * Cleared in the render that sees the index move (adjusting state during render, as the runner's
+   * reset does), not merely left to stop matching: a stale index would reopen the sheet the moment
+   * Prev stepped back onto it.
+   */
+  const [upcomingOpenAt, setUpcomingOpenAt] = useState<number | null>(null);
+  if (upcomingOpenAt !== null && upcomingOpenAt !== runner.stepIndex) setUpcomingOpenAt(null);
+  const upcomingOpen = upcomingOpenAt === runner.stepIndex;
+  // Stable, because the sheet re-subscribes to the back button whenever this changes.
+  const closeUpcoming = useCallback(() => setUpcomingOpenAt(null), []);
   // `rest` is a built-in pseudo-exercise rather than something the user wrote — the Library tab
   // excludes it from its own count for the same reason.
   const addCandidates = useMemo(() => exercises.filter((exercise) => exercise.type !== 'rest'), [exercises]);
@@ -387,7 +410,9 @@ function ActiveSession({
     if (!runner.isAdHoc) return null;
     return (
       <SafeAreaView style={styles.safeArea} edges={['top', 'bottom', 'left', 'right']}>
-        <View style={styles.content}>
+        {/* Hidden while the picker is open, so a screen reader stays inside it. The picker renders
+            beside this view rather than in it, so hiding this leaves the picker reachable. */}
+        <View style={styles.content} aria-hidden={adding}>
           <View style={styles.emptyState}>
             <ThemedText type="subtitle" style={styles.emptyStateTitle}>
               {t('session.adhoc.title')}
@@ -421,41 +446,76 @@ function ActiveSession({
     );
   }
 
+  /**
+   * Whether the swap picker is actually on screen. It's the render condition and the aria-hidden
+   * condition both, deliberately, so the two can't disagree: hiding the runner behind a picker that
+   * isn't there would leave a screen reader with nothing to reach.
+   */
+  const swapPickerOpen = swapping && runner.canSwapExercise && (step.kind === 'reps' || step.kind === 'hold');
+
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'bottom', 'left', 'right']}>
-      <View style={styles.content}>
-        <View style={styles.header}>
-          <View style={styles.headerRow}>
-            <ThemedText type="small" style={styles.workoutName} numberOfLines={1}>
-              {formatSessionName(runner.workoutName)}
-            </ThemedText>
-            <View style={styles.headerRight}>
-              <SessionProgressBar total={runner.blockTotal} activeIndex={runner.blockIndex} />
-              {/* Ad-hoc only: a pre-built workout already knows what it contains. Here it is the only
+      {/* Hidden while the sheet is open, so a screen reader stays inside it. aria-hidden rather than
+          the native props, which react-native-web drops; RN maps it onto both of them. */}
+      <View style={styles.content} aria-hidden={upcomingOpen}>
+        {/* The runner itself, hidden while a picker is open for the same reason. The pickers render
+            inside `content`, so this is the sheet's aria-hidden one level down, with the pickers as
+            its siblings rather than its children. */}
+        <View style={styles.runnerBody} aria-hidden={adding || swapPickerOpen}>
+          <View style={styles.header}>
+            <View style={styles.headerRow}>
+              {/*
+              Opens the Coming up sheet. A chevron and nothing louder, since this header is read
+              mid-set. Named by its own text, so it takes a hint rather than a label: Voice Control
+              matches the visible name. hitSlop takes it to 44px without making the row taller.
+            */}
+              <Pressable
+                onPress={() => setUpcomingOpenAt(runner.stepIndex)}
+                hitSlop={{ top: 13, bottom: 13 }}
+                accessibilityRole="button"
+                accessibilityHint={t('session.upcoming.hint')}
+                accessibilityState={{ expanded: upcomingOpen }}
+                style={styles.workoutNameButton}>
+                <ThemedText type="small" style={styles.workoutName} numberOfLines={1}>
+                  {formatSessionName(runner.workoutName)}
+                </ThemedText>
+                <Svg width={12} height={12} viewBox="0 0 12 12" fill="none">
+                  <Path
+                    d="M3 4.5L6 7.5L9 4.5"
+                    stroke={RunnerColors.textSecondary}
+                    strokeWidth={1.5}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </Svg>
+              </Pressable>
+              <View style={styles.headerRight}>
+                <SessionProgressBar total={runner.blockTotal} activeIndex={runner.blockIndex} />
+                {/* Ad-hoc only: a pre-built workout already knows what it contains. Here it is the only
                   way to queue anything, so it has to be reachable mid-step and not just at the end. */}
-              {runner.isAdHoc && (
+                {runner.isAdHoc && (
+                  <Pressable
+                    onPress={() => setAdding(true)}
+                    hitSlop={8}
+                    accessibilityRole="button"
+                    accessibilityLabel={t('session.adhoc.addExercise')}>
+                    <ThemedText type="code" style={styles.finishLabel}>
+                      {t('session.adhoc.addShort')}
+                    </ThemedText>
+                  </Pressable>
+                )}
                 <Pressable
-                  onPress={() => setAdding(true)}
+                  onPress={confirmFinish}
                   hitSlop={8}
                   accessibilityRole="button"
-                  accessibilityLabel={t('session.adhoc.addExercise')}>
+                  accessibilityLabel={t('session.finish.confirmTitle')}>
                   <ThemedText type="code" style={styles.finishLabel}>
-                    {t('session.adhoc.addShort')}
+                    {t('session.finish.label')}
                   </ThemedText>
                 </Pressable>
-              )}
-              <Pressable
-                onPress={confirmFinish}
-                hitSlop={8}
-                accessibilityRole="button"
-                accessibilityLabel={t('session.finish.confirmTitle')}>
-                <ThemedText type="code" style={styles.finishLabel}>
-                  {t('session.finish.label')}
-                </ThemedText>
-              </Pressable>
+              </View>
             </View>
-          </View>
-          {/*
+            {/*
             The circuit crumb: a second breadcrumb line, present only inside a circuit. It repeats the
             row above's shape — label left, dot track right — because a circuit's steps are
             interleaved, so the block dots say which block and the exercise name says what you're
@@ -464,23 +524,27 @@ function ActiveSession({
             One accessibility node, since split it would announce a bare "circuit, round 2 of 3"
             followed by an unnamed progress bar duplicating the header's.
           */}
-          {runner.circuit && (
-            <View
-              style={styles.headerRow}
-              accessible
-              accessibilityRole="text"
-              accessibilityLabel={t('session.circuit.accessibility', {
-                index: runner.circuit.round,
-                total: runner.circuit.rounds,
-                member: runner.circuit.member,
-                memberTotal: runner.circuit.memberTotal,
-              })}>
-              <ThemedText type="code" style={styles.circuitLabel} numberOfLines={1}>
-                {t('session.circuit.crumb', { index: runner.circuit.round, total: runner.circuit.rounds })}
-              </ThemedText>
-              <View style={styles.headerRight}>
-                <SessionProgressBar total={runner.circuit.memberTotal} activeIndex={runner.circuit.member - 1} tone="calm" />
-                {/*
+            {runner.circuit && (
+              <View
+                style={styles.headerRow}
+                accessible
+                accessibilityRole="text"
+                accessibilityLabel={t('session.circuit.accessibility', {
+                  index: runner.circuit.round,
+                  total: runner.circuit.rounds,
+                  member: runner.circuit.member,
+                  memberTotal: runner.circuit.memberTotal,
+                })}>
+                <ThemedText type="code" style={styles.circuitLabel} numberOfLines={1}>
+                  {t('session.circuit.crumb', { index: runner.circuit.round, total: runner.circuit.rounds })}
+                </ThemedText>
+                <View style={styles.headerRight}>
+                  <SessionProgressBar
+                    total={runner.circuit.memberTotal}
+                    activeIndex={runner.circuit.member - 1}
+                    tone="calm"
+                  />
+                  {/*
                   An invisible copy of the "Finish" label, purely to reserve its width so the two dot
                   tracks line up in a column instead of the lower one sliding under the control. Same
                   component and style as the real one, which is the point: a hardcoded width is wrong
@@ -495,95 +559,107 @@ function ActiveSession({
                   found the spacer still reachable, so the web build announced "Encerrar" twice. RN
                   maps `aria-hidden` onto both native equivalents.
                 */}
-                <ThemedText type="code" style={[styles.finishLabel, styles.finishSpacer]} aria-hidden>
-                  {t('session.finish.label')}
-                </ThemedText>
+                  <ThemedText type="code" style={[styles.finishLabel, styles.finishSpacer]} aria-hidden>
+                    {t('session.finish.label')}
+                  </ThemedText>
+                </View>
               </View>
-            </View>
+            )}
+          </View>
+
+          {step.kind === 'hold' && (
+            <SessionHold
+              exerciseName={step.exerciseName}
+              setIndex={step.setIndex}
+              setTotal={step.setTotal}
+              targetSec={step.holdTargetSec}
+              targetMaxSec={step.holdTargetMaxSec}
+              elapsedSec={runner.holdElapsedSec}
+              paused={runner.paused}
+              notes={step.notes}
+              next={runner.nextPreview}
+              previousSet={runner.previousSet}
+              beatsPersonalBest={runner.beatsPersonalBest}
+              canAddSet={runner.canAddSet}
+              canDropSet={runner.canDropSet}
+              canSwapExercise={runner.canSwapExercise}
+              onAddSet={runner.addSet}
+              onDropSet={runner.dropSet}
+              onSwapExercise={() => setSwappingAt(runner.stepIndex)}
+              onTogglePause={runner.setPaused}
+              onPrev={runner.goPrev}
+              onDone={runner.doneSet}
+            />
+          )}
+
+          {step.kind === 'reps' && (
+            <SessionReps
+              exerciseName={step.exerciseName}
+              setIndex={step.setIndex}
+              setTotal={step.setTotal}
+              targetReps={step.targetReps}
+              targetRepsMax={step.targetRepsMax}
+              reps={runner.reps}
+              onChangeReps={runner.setReps}
+              rpe={runner.rpe}
+              onChangeRpe={runner.setRpe}
+              weightKg={runner.weightKg}
+              onChangeWeightKg={runner.setWeightKg}
+              notes={step.notes}
+              next={runner.nextPreview}
+              restFollows={runner.restFollows}
+              previousSet={runner.previousSet}
+              beatsPersonalBest={runner.beatsPersonalBest}
+              onAdoptPrevious={runner.adoptPreviousLoad}
+              canAddSet={runner.canAddSet}
+              canDropSet={runner.canDropSet}
+              canSwapExercise={runner.canSwapExercise}
+              onAddSet={runner.addSet}
+              onDropSet={runner.dropSet}
+              onSwapExercise={() => setSwappingAt(runner.stepIndex)}
+              onPrev={runner.goPrev}
+              onLogSet={runner.logSet}
+            />
+          )}
+
+          {step.kind === 'interval' && (
+            <SessionInterval
+              exerciseName={step.exerciseName}
+              variant={step.variant}
+              setIndex={step.setIndex}
+              setTotal={step.setTotal}
+              targetSec={step.targetSec}
+              countUp={step.countUp}
+              elapsedSec={runner.holdElapsedSec}
+              remainingSec={runner.restRemainingSec}
+              targetReps={step.targetReps}
+              cardioDistanceMeters={step.cardioDistanceMeters}
+              notes={step.notes}
+              paused={runner.paused}
+              onTogglePause={runner.setPaused}
+              reps={runner.reps}
+              onChangeReps={runner.setReps}
+              roundsCompleted={runner.roundsCompleted}
+              onChangeRoundsCompleted={runner.setRoundsCompleted}
+              extraReps={runner.extraReps}
+              onChangeExtraReps={runner.setExtraReps}
+              next={runner.nextPreview}
+              onPrev={runner.goPrev}
+              onDone={runner.logInterval}
+            />
+          )}
+
+          {step.kind === 'rest' && (
+            <SessionRest
+              secondsRemaining={runner.restRemainingSec}
+              totalSeconds={runner.restTargetSec}
+              next={runner.nextPreview}
+              onAddSeconds={runner.addRestSeconds}
+              onSkip={runner.skipRest}
+              onPrev={runner.goPrev}
+            />
           )}
         </View>
-
-        {step.kind === 'hold' && (
-          <SessionHold
-            exerciseName={step.exerciseName}
-            setIndex={step.setIndex}
-            setTotal={step.setTotal}
-            targetSec={step.holdTargetSec}
-            targetMaxSec={step.holdTargetMaxSec}
-            elapsedSec={runner.holdElapsedSec}
-            paused={runner.paused}
-            notes={step.notes}
-            next={runner.nextPreview}
-            previousSet={runner.previousSet}
-            beatsPersonalBest={runner.beatsPersonalBest}
-            canAddSet={runner.canAddSet}
-            canDropSet={runner.canDropSet}
-            canSwapExercise={runner.canSwapExercise}
-            onAddSet={runner.addSet}
-            onDropSet={runner.dropSet}
-            onSwapExercise={() => setSwapping(true)}
-            onTogglePause={runner.setPaused}
-            onPrev={runner.goPrev}
-            onDone={runner.doneSet}
-          />
-        )}
-
-        {step.kind === 'reps' && (
-          <SessionReps
-            exerciseName={step.exerciseName}
-            setIndex={step.setIndex}
-            setTotal={step.setTotal}
-            targetReps={step.targetReps}
-            targetRepsMax={step.targetRepsMax}
-            reps={runner.reps}
-            onChangeReps={runner.setReps}
-            rpe={runner.rpe}
-            onChangeRpe={runner.setRpe}
-            weightKg={runner.weightKg}
-            onChangeWeightKg={runner.setWeightKg}
-            notes={step.notes}
-            next={runner.nextPreview}
-            restFollows={runner.restFollows}
-            previousSet={runner.previousSet}
-            beatsPersonalBest={runner.beatsPersonalBest}
-            onAdoptPrevious={runner.adoptPreviousLoad}
-            canAddSet={runner.canAddSet}
-            canDropSet={runner.canDropSet}
-            canSwapExercise={runner.canSwapExercise}
-            onAddSet={runner.addSet}
-            onDropSet={runner.dropSet}
-            onSwapExercise={() => setSwapping(true)}
-            onPrev={runner.goPrev}
-            onLogSet={runner.logSet}
-          />
-        )}
-
-        {step.kind === 'interval' && (
-          <SessionInterval
-            exerciseName={step.exerciseName}
-            variant={step.variant}
-            setIndex={step.setIndex}
-            setTotal={step.setTotal}
-            targetSec={step.targetSec}
-            countUp={step.countUp}
-            elapsedSec={runner.holdElapsedSec}
-            remainingSec={runner.restRemainingSec}
-            targetReps={step.targetReps}
-            cardioDistanceMeters={step.cardioDistanceMeters}
-            notes={step.notes}
-            paused={runner.paused}
-            onTogglePause={runner.setPaused}
-            reps={runner.reps}
-            onChangeReps={runner.setReps}
-            roundsCompleted={runner.roundsCompleted}
-            onChangeRoundsCompleted={runner.setRoundsCompleted}
-            extraReps={runner.extraReps}
-            onChangeExtraReps={runner.setExtraReps}
-            next={runner.nextPreview}
-            onPrev={runner.goPrev}
-            onDone={runner.logInterval}
-          />
-        )}
 
         {adding && (
           <SessionExercisePicker
@@ -596,29 +672,31 @@ function ActiveSession({
           />
         )}
 
-        {swapping && runner.canSwapExercise && (step.kind === 'reps' || step.kind === 'hold') && (
+        {swapPickerOpen && (
           <SessionExercisePicker
             replacing={step.exerciseName}
             candidates={runner.swapCandidates}
-            onCancel={() => setSwapping(false)}
+            onCancel={() => setSwappingAt(null)}
             onSelect={(exerciseId) => {
               runner.swapExercise(exerciseId);
-              setSwapping(false);
+              setSwappingAt(null);
             }}
           />
         )}
-
-        {step.kind === 'rest' && (
-          <SessionRest
-            secondsRemaining={runner.restRemainingSec}
-            totalSeconds={runner.restTargetSec}
-            next={runner.nextPreview}
-            onAddSeconds={runner.addRestSeconds}
-            onSkip={runner.skipRest}
-            onPrev={runner.goPrev}
-          />
-        )}
       </View>
+
+      {/* Outside `content`, so the dim covers the whole screen and the sheet reaches the bottom edge. */}
+      {upcomingOpen && (
+        <SessionUpcoming
+          step={step}
+          items={runner.upcoming}
+          ends={!runner.isAdHoc}
+          holdElapsedSec={runner.holdElapsedSec}
+          restRemainingSec={runner.restRemainingSec}
+          restTargetSec={runner.restTargetSec}
+          onClose={closeUpcoming}
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -636,6 +714,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.three,
     paddingTop: Spacing.two,
     paddingBottom: Spacing.three,
+  },
+  // Takes content's place in its column, so wrapping the runner in it changes no layout.
+  runnerBody: {
+    flex: 1,
   },
   // A stack rather than the single row it used to be, so the circuit crumb can sit under the name
   // and share its bottom margin instead of adding one of its own.
@@ -684,12 +766,20 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: RunnerColors.background,
   },
+  // Takes the leftover width, so the name can ellipsize inside it (with numberOfLines) instead of
+  // growing to its intrinsic width and shoving the dots and "Finish" off the right edge. minWidth: 0 is
+  // what actually lets it shrink below that intrinsic width on web, where the flex default is auto.
+  workoutNameButton: {
+    flex: 1,
+    minWidth: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.one,
+  },
+  // Shrinks rather than flexes, so the chevron sits right after the name instead of at the far edge.
   workoutName: {
     color: RunnerColors.textSecondary,
-    // Takes the leftover width and ellipsizes inside it (with numberOfLines) instead of growing to
-    // its intrinsic width and shoving the dots and "Finish" off the right edge. minWidth: 0 is what
-    // actually lets it shrink below that intrinsic width on web, where the flex default is auto.
-    flex: 1,
+    flexShrink: 1,
     minWidth: 0,
   },
   headerRight: {

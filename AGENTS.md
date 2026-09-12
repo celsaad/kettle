@@ -318,6 +318,12 @@ are the index, the banner is the contract.
   moved (fixed-length holds out, flat rows folded into one), records marked inline, and the all-time
   totals dropped. Names what is left for later, including the per-exercise chart modal, and the two
   checks still open: the site screenshot and a large-text pass on a device.
+- `docs/up-next-plan.md` — executed; kept for its rationale, and for the device checks it leaves open.
+  The runner's "Coming up" sheet: tapping the workout name
+  opens a read-only timeline of what's left, with the circuit round you're in spelled out and the rest
+  collapsed. Names what it deliberately doesn't do (circuit names are the follow-up, and a format
+  change), plus a bug it found outside its scope: leaving the runner by back or swipe strands the
+  session unfinished.
 
 Three rules about keeping the plan files honest, in the order they get broken:
 

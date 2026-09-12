@@ -9,6 +9,7 @@ import {
   requestNotificationPermissions,
   scheduleStepCompleteNotification,
 } from '@/hooks/safe-notifications';
+import { upcomingOutline } from '@/hooks/session-outline';
 import { useSessionSounds } from '@/hooks/use-session-sounds';
 import { useLibraryStore } from '@/state/library-store';
 import { formatSessionName } from '@/domain/format';
@@ -27,6 +28,8 @@ import {
   buildSteps,
   dropLastSetForMember,
   buildStepsForExercise,
+  formatHoldTarget,
+  formatRepsTarget,
   setStepsForMember,
   swapExerciseForMember,
 } from '@/hooks/session-steps';
@@ -113,16 +116,6 @@ type LastCommit = { resultingIndex: number; memberKey: string; exerciseId: strin
  * note on `EXERCISE_ART`.
  */
 export type RestPreview = { label: string; detail: string; exerciseId: string } | null;
-
-/** Null on a max-effort hold, which has no target to preview — the caller picks a different string. */
-function formatHoldTarget(step: Extract<RunnerStep, { kind: 'hold' }>): string | null {
-  if (step.holdTargetSec === undefined) return null;
-  return step.holdTargetMaxSec ? `${step.holdTargetSec}–${step.holdTargetMaxSec}s` : `${step.holdTargetSec}s`;
-}
-
-function formatRepsTarget(step: Extract<RunnerStep, { kind: 'reps' }>): string {
-  return step.targetRepsMax ? `${step.targetReps}–${step.targetRepsMax}` : `${step.targetReps}`;
-}
 
 function previewFor(step: RunnerStep | undefined): RestPreview {
   if (!step) return null;
@@ -1029,6 +1022,13 @@ export function useSessionRunner(
     [computeElapsedSec],
   );
 
+  /**
+   * What the Coming up sheet lists. Memoised on the list and the index rather than rebuilt each render:
+   * the runner re-renders every second on a timed step, and the sheet's list should re-render only when
+   * what's left changes. `steps` changes identity only on a mutation — add or drop a set, swap, add.
+   */
+  const upcoming = useMemo(() => upcomingOutline(steps, stepIndex), [steps, stepIndex]);
+
   return {
     step,
     stepIndex,
@@ -1063,6 +1063,7 @@ export function useSessionRunner(
     extraReps,
     setExtraReps,
     nextPreview: upcomingPreview(steps, stepIndex),
+    upcoming,
     // Whether a rest step actually follows, which the reps button names ("Log set → Rest"). It used
     // to be safe to assume one always did; back-to-back sets (rest_sec: 0) emit no rest step at all,
     // so the label has to ask rather than promise.

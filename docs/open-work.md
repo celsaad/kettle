@@ -332,14 +332,11 @@ interpolated rather than translated. Notes on the structural ones:
   as a free record of numbers and the in-app override editor doesn't call `validateConfig` — so the
   runner screens can't assume the constraints `validateConfig`/`schema.ts` enforce elsewhere.
 
-- **Leaving the runner by back or swipe strands the session unfinished.** `session` is a
-  `presentation: 'modal'` route, nothing in `src` intercepts Android hardware back, and nothing sets
-  `gestureEnabled: false`, so iOS's swipe-down dismiss is live. The runner has no unmount cleanup:
-  only its completion paths call `completeSession`, and only the error boundary calls
-  `abandonActiveSession`. A session left that way keeps no `endedAt`, so it counts as zero minutes
-  and `exerciseHistory` skips it, although its sets are on disk. Code-verified; the gestures want a
-  device. The fix is a product call, confirm-to-leave or finish-on-leave, which is why it wasn't folded
-  into [`up-next-plan.md`](up-next-plan.md) where it was found.
+- **The runner's leave guard is unchecked on a device.** Back and swipe-down now open the Finish
+  dialog (`usePreventRemove` in `session.tsx`), and the runner stamps the session ended if it
+  unmounts anyway. Tests cover what the guard does once called, not that the gestures reach it: that
+  iOS's swipe-down on a `modal` presentation is held by `preventNativeDismiss`, and that Android back
+  opens the dialog with the Coming up sheet closed and closes the sheet when it's open.
 
 - **`Alert.alert` is a no-op on web.** react-native-web ships `class Alert { static alert() {} }`, so
   every confirm dialog silently does nothing in the browser — all the deletes and finish-session.

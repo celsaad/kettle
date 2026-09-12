@@ -27,6 +27,11 @@ is spelled out exercise by exercise and the rounds after it are summed up, so a 
 bury the finisher. The sheet closes itself when the next step starts, and on Android the back button
 closes it without leaving your session.
 
+**Swiping away a workout asks first.** Swiping the session screen down on iPhone, or pressing back on
+Android, used to close it with the workout left unfinished: your sets were saved, but it showed in
+History as zero minutes and was left out of your progress. Now it asks, the same way Finish does —
+finish and save, or keep going.
+
 **The swap list no longer comes back by itself.** If a hold ended while you had the list of
 substitutes open, the list disappeared over the rest and then reopened on your next set, over a hold
 that was already counting. It now closes for good when its set ends. While it's open, a screen reader

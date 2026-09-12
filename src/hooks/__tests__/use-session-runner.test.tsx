@@ -806,6 +806,47 @@ describe('finishSession', () => {
   });
 });
 
+/**
+ * The net under the screen's leave guard. Whatever takes the runner down without finishing — a route
+ * removed without asking, or back on the web build, where the guard is off — must still leave the
+ * session stamped as ended. Otherwise it counts as zero minutes and `exerciseHistory` skips it.
+ */
+describe('unmounting mid-session', () => {
+  it('stamps the session ended, keeping what was logged', async () => {
+    const { result, unmount } = await mount(workoutOf(single('pullups')));
+    await press(() => result.current.logSet());
+    await unmount();
+
+    expect(mockCompleted).toBe(true);
+    expect(mockSession.endedAt).not.toBeNull();
+    const reps = mockSession.entries.find((entry) => entry.type === 'reps');
+    expect(reps?.type === 'reps' && reps.sets).toHaveLength(1);
+  });
+
+  // Unlike finishSession, which commits the set on screen because the user said they were done with
+  // it. Nobody said anything here, and an untouched set would log its target as performed.
+  it('does not commit the set on screen', async () => {
+    const { result, unmount } = await mount(workoutOf(single('pullups')));
+    await press(() => result.current.setReps(4));
+    await unmount();
+
+    expect(mockCompleted).toBe(true);
+    expect(mockSession.entries).toHaveLength(0);
+  });
+
+  // Every completion unmounts the runner, so without the finished check this would stamp each
+  // finished session a second time, moving its end to whenever the user left the completion screen.
+  it('leaves a session that already finished alone', async () => {
+    const { result, unmount } = await mount(workoutOf(single('pullups')));
+    await press(() => result.current.finishSession());
+    const endedAt = mockSession.endedAt;
+    await tick(60);
+    await unmount();
+
+    expect(mockSession.endedAt).toBe(endedAt);
+  });
+});
+
 describe('milestone chime', () => {
   // Both triggers are thresholds that stay true for the rest of the step, so the once-per-step guard
   // is the whole feature — without it the 1Hz tick would chime every second to the end of the interval.

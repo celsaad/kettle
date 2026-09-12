@@ -278,4 +278,4 @@ skips it.
 
 Code-verified; the gestures themselves still want a device. It isn't fixed here, because the fix is a
 product call: confirm before leaving, or finish-and-save on leave. This sheet takes back while it's
-open, so it adds no new way in. Logged in [`open-work.md`](open-work.md).
+open, so it adds no new way in. Since fixed separately, as confirm-to-leave.

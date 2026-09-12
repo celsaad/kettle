@@ -5,7 +5,7 @@ import { changeLanguage } from 'i18next';
 import SessionScreen, { ErrorBoundary } from '@/app/session';
 import type { Exercise, Session, SessionEntry, Workout } from '@/domain/types';
 import { useLibraryStore } from '@/state/library-store';
-import { router, setSearchParams } from '@/test-support/expo-router';
+import { attemptLeave, router, setSearchParams } from '@/test-support/expo-router';
 import { aLibrary, aWorkout } from '@/test-support/library';
 import { pressAlertButton, renderScreen } from '@/test-support/render';
 
@@ -19,6 +19,7 @@ import { pressAlertButton, renderScreen } from '@/test-support/render';
  * thing that reads fine in review and only shows up mid-set.
  */
 jest.mock('expo-router', () => require('@/test-support/expo-router'));
+jest.mock('expo-router/react-navigation', () => require('@/test-support/expo-router'));
 
 jest.mock('expo-keep-awake', () => ({ useKeepAwake: jest.fn() }));
 
@@ -351,6 +352,76 @@ describe('finishing a session', () => {
 
     expect(screen.getByText('Workout complete')).toBeTruthy();
     expect(screen.queryByText('PR')).toBeNull();
+  });
+});
+
+/**
+ * Back and swipe-down, which used to dismiss the route with the session still open. The gestures
+ * themselves need a device; what's pinned here is what the guard does once one arrives.
+ */
+describe('leaving mid-workout', () => {
+  it('asks with the Finish dialog instead of leaving', async () => {
+    await start(workoutOf('pullups'));
+    const alert = jest.spyOn(Alert, 'alert');
+
+    expect(await attemptLeave()).toBe(true);
+
+    expect(alert).toHaveBeenCalledWith('Finish session?', expect.any(String), expect.any(Array));
+  });
+
+  // What separates confirm-to-leave from finish-on-leave: the guard fires and the workout carries on.
+  it('stays on the runner until the dialog is answered', async () => {
+    await start(workoutOf('pullups'));
+    jest.spyOn(Alert, 'alert');
+
+    expect(await attemptLeave()).toBe(true);
+
+    expect(screen.getByLabelText('Finish session?')).toBeTruthy();
+    expect(screen.queryByText('Workout complete')).toBeNull();
+  });
+
+  it('finishes and lands on the completion screen when confirmed', async () => {
+    await start(workoutOf('pullups'));
+    const alert = jest.spyOn(Alert, 'alert');
+
+    await attemptLeave();
+    await pressAlertButton(alert, 'destructive');
+
+    expect(screen.getByText('Workout complete')).toBeTruthy();
+    // The guard goes with the runner, or Done on the completion screen couldn't leave either.
+    expect(await attemptLeave()).toBe(false);
+  });
+
+  // iOS's swipe reaches the guard with the sheet open; Android's back never does, since the sheet
+  // takes it first. Either way back means "close what's on top".
+  it('closes the Coming up sheet first', async () => {
+    await start(workoutOf('pullups'));
+    await fireEvent.press(screen.getByRole('button', { name: 'Session' }));
+    const alert = jest.spyOn(Alert, 'alert');
+
+    await attemptLeave();
+
+    expect(screen.queryByText('COMING UP')).toBeNull();
+    expect(alert).not.toHaveBeenCalled();
+  });
+
+  it('closes the swap picker first', async () => {
+    await start(workoutOf('pullups'));
+    await fireEvent.press(screen.getByText('SWAP'));
+    const alert = jest.spyOn(Alert, 'alert');
+
+    await attemptLeave();
+
+    expect(screen.queryByText('SWAP EXERCISE')).toBeNull();
+    expect(alert).not.toHaveBeenCalled();
+  });
+
+  // Nothing is written until the runner mounts, so there is nothing to strand yet.
+  it('lets the count-in go without asking', async () => {
+    setLibrary(workoutOf('pullups'));
+    await renderScreen(<SessionScreen />);
+
+    expect(await attemptLeave()).toBe(false);
   });
 });
 

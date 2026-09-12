@@ -1,8 +1,9 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import type { ErrorBoundaryProps } from 'expo-router';
+import { usePreventRemove } from 'expo-router/react-navigation';
 import { useKeepAwake } from 'expo-keep-awake';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, Pressable, StyleSheet, View } from 'react-native';
+import { Alert, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
@@ -401,6 +402,27 @@ function ActiveSession({
       { text: t('session.finish.confirmAction'), style: 'destructive', onPress: runner.finishSession },
     ]);
   }, [runner.finishSession, t]);
+
+  /**
+   * Back and swipe-down ask before leaving. Unguarded, both dismissed the route with the session still
+   * open, so the session never got an `endedAt`. They get the Finish control's own dialog, which asks the
+   * same question and has the same outcome. Anything open on top closes first, since that is what back
+   * means there.
+   *
+   * One hook covers both gestures: native-stack turns a prevented route into `preventNativeDismiss` on
+   * iOS, and Android's back already runs through JS. On Android the Coming up sheet's `BackHandler`
+   * still takes back first, having subscribed after the navigator did; the check below is for iOS's
+   * swipe, which never reaches that handler.
+   *
+   * Off on web, where `Alert` is a no-op: a guard there would swallow the browser's back with no dialog
+   * to answer. The runner's unmount stamps the session ended instead.
+   */
+  usePreventRemove(Platform.OS !== 'web', () => {
+    if (upcomingOpen) closeUpcoming();
+    else if (adding) setAdding(false);
+    else if (swapping) setSwappingAt(null);
+    else confirmFinish();
+  });
 
   /**
    * An ad-hoc session parks here whenever it runs out of steps — at the start, and again after each

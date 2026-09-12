@@ -344,6 +344,31 @@ export function useSessionRunner(
   }, []);
 
   /**
+   * The net under `session.tsx`'s leave guard: unmounting with the session still open stamps it ended.
+   * Without an `endedAt` it counts as zero minutes and `exerciseHistory` skips it, although its sets
+   * are on disk. The guard catches back and swipe-down where it can ask; this covers the ways out it
+   * doesn't — the web build, where it is off, and anything that removes the route without asking.
+   *
+   * Stamps what is already logged and nothing more. `finishSession` commits the step on screen because
+   * the user just said they were done with it; here nobody said anything, and committing an untouched
+   * reps set would log its target as performed.
+   *
+   * The action is read through `getState()` so the effect has no dependencies. Its cleanup is what ends
+   * the session, so a changed dependency would end a workout in progress.
+   *
+   * On a render throw React runs this cleanup before the boundary's own effect, so the stamp lands here
+   * and the boundary's `abandonActiveSession` finds nothing in flight — it is idempotent for that reason.
+   */
+  useEffect(
+    () => () => {
+      if (finishedRef.current || !sessionRef.current) return;
+      finishedRef.current = true;
+      sessionRef.current = useSessionHistoryStore.getState().completeSession(sessionRef.current);
+    },
+    [],
+  );
+
+  /**
    * Reset per-step transient state whenever the active step changes (adjusting state during render on
    * a key change, rather than in an effect — see https://react.dev/learn/you-might-not-need-an-effect).
    *

@@ -969,8 +969,10 @@ constraint that outlived the work rather than a description of it.
     `.npmrc` entry is read as an npm setting and ignored. `--node-linker=hoisted` on the command line
     is ignored too. Nothing errors — you just get the wrong layout and find out later.
   - **`nodeLinker: hoisted` is required, not a preference.** Metro and Gradle autolinking both walk a
-    flat tree. Under the default isolated layout `src/hooks/safe-iap.ts` fails typecheck on
-    `expo-modules-core`, which it imports directly but which is only a dependency of `expo`.
+    flat tree. Our own code doesn't lean on it: `src/hooks/safe-iap.ts` once imported
+    `expo-modules-core`, only a dependency of `expo`, and was the first thing isolated mode broke. It
+    now takes the same function from `expo`'s re-export, and `pnpm knip` fails on any import that
+    `package.json` doesn't list.
   - **`virtualStoreDirMaxLength: 60`.** The virtual store encodes a full package name plus a hash into
     one directory name; at the default of 120 the longest `@babel` entries breach Windows' 260-char
     path cap and the install dies with `ENOENT` on `mkdir`. `LongPathsEnabled` is off on this machine

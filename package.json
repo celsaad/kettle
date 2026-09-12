@@ -49,6 +49,7 @@
     "@types/react": "~19.2.2",
     "jest": "~29.7.0",
     "jest-expo": "~57.0.2",
+    "knip": "^6.35.1",
     "oxfmt": "^0.61.0",
     "oxlint": "^1.75.0",
     "typescript": "~6.0.3"
@@ -63,7 +64,8 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "format": "oxfmt",
-    "format:check": "oxfmt --check"
+    "format:check": "oxfmt --check",
+    "knip": "knip"
   },
   "jest": {
     "preset": "jest-expo",

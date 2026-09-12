@@ -8,8 +8,74 @@
   "rules": {
     "react/react-in-jsx-scope": "off",
     "import/no-unassigned-import": "off",
-    "unicorn/consistent-function-scoping": "off"
+    "unicorn/consistent-function-scoping": "off",
+    "no-restricted-imports": [
+      "error",
+      {
+        "paths": [
+          {
+            "name": "expo-file-system",
+            "message": "File I/O lives in src/storage/, behind isFileStorageSupported (web has no file system)."
+          }
+        ]
+      }
+    ]
   },
+  "overrides": [
+    {
+      // The document picker hands the screen a File to read; the one exception to the storage rule.
+      "files": ["src/storage/**", "src/app/import.tsx"],
+      "rules": {
+        "no-restricted-imports": "off"
+      }
+    },
+    {
+      "files": ["src/domain/**"],
+      "excludeFiles": ["src/domain/__tests__/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "react",
+                  "react-native",
+                  "react-native-*",
+                  "expo",
+                  "expo-*",
+                  "@expo/*",
+                  "zustand",
+                  "@/storage/*",
+                  "@/state/*",
+                  "@/hooks/*",
+                  "@/components/*",
+                  "@/app/*"
+                ],
+                "message": "src/domain/ is pure logic: no I/O, no React, no stores. Move the caller up a layer."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      // Scoped to tests because its heuristics misfire on prose: no-commented-out-tests reads the
+      // word "it (" in an ordinary source comment as a disabled test. Enabling a plugin inside an
+      // override doesn't pull in its category rules, so each one is named. The first two are the
+      // ones that matter: a test that asserts nothing, or only on one branch, passes vacuously.
+      "files": ["**/__tests__/**", "**/*.test.ts", "**/*.test.tsx"],
+      "plugins": ["typescript", "unicorn", "oxc", "react", "import", "jest"],
+      "rules": {
+        "jest/expect-expect": "error",
+        "jest/no-conditional-expect": "error",
+        "jest/valid-expect": "error",
+        "jest/no-focused-tests": "error",
+        "jest/no-identical-title": "error",
+        "jest/no-standalone-expect": "error"
+      }
+    }
+  ],
   "ignorePatterns": [".expo", "node_modules", "dist"],
   "env": {
     "builtin": true

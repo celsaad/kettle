@@ -10,13 +10,19 @@ plus a local session log, one file per session. No server, no account.
 ## Commands
 
 **The package manager is pnpm, not npm** — `pnpm install`, never `npm install`. Installing with npm
-strips `nodeLinker: hoisted` out of the layout and typecheck starts failing on transitive imports;
-the reasoning and the benchmark are in the decision log. Trailing args need no `--` separator, so
+strips `nodeLinker: hoisted` out of the layout that Metro and Gradle autolinking both need; the
+reasoning and the benchmark are in the decision log. Trailing args need no `--` separator, so
 it's `pnpm test --ci`, not `npm test -- --ci`.
 
 - `pnpm run typecheck` — `tsc --noEmit`
 - `pnpm run lint` — oxlint. **Keep it at zero warnings and zero errors.** A warning you genuinely
-  can't fix wants a one-line disable naming the reason, not a new accepted baseline.
+  can't fix wants a one-line disable naming the reason, not a new accepted baseline. It also holds
+  two of the layer rules below: `src/domain/` imports no React, Expo or store, and only
+  `src/storage/` imports `expo-file-system`. Tests get the jest rules, chiefly the two that catch a
+  test passing vacuously — no assertion, or an assertion on only one branch.
+- `pnpm run knip` — unused files, dependencies and exports, and any import `package.json` doesn't
+  list. Same rule as a lint warning: delete the dead code, or name a genuine exception in
+  `knip.jsonc` with its reason.
 - `pnpm test` — jest via `jest-expo`. Covers the domain layer, the session runner, the highest-branch
   screens and the stores. Under a minute, so run it. A single file is `pnpm jest <path>`.
 - `pnpm run format` — oxfmt (same Oxc toolchain as oxlint, so they agree). Run it instead of matching
@@ -56,6 +62,7 @@ retrofit, so answer them out loud even when the answer is no.
 - [ ] `pnpm run typecheck`
 - [ ] `pnpm run format`
 - [ ] `pnpm run lint` — it comes back completely silent, so anything it prints is yours.
+- [ ] `pnpm run knip` — silent too.
 - [ ] **Push the branch and open a PR** (`gh pr create`). The commit message is the durable record —
       root cause, alternatives, deliberate scope cuts go there, not into the docs (see "Docs").
 

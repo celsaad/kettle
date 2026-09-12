@@ -62,9 +62,9 @@ export function SessionUpcoming({ step, items, ends, holdElapsedSec, restRemaini
       {/* Hidden from assistive tech: the × is the named way out, and a second "Close" spanning the
           whole screen would only be one more thing to swipe past. */}
       <Pressable style={styles.backdrop} onPress={onClose} testID="upcoming-backdrop" aria-hidden />
-      <SafeAreaView edges={['top', 'left', 'right']} style={styles.column} pointerEvents="box-none">
+      <SafeAreaView edges={['top', 'left', 'right']} style={styles.column}>
         {/* Taps here fall through to the backdrop, so the dimmed header is a way out too. */}
-        <View style={styles.headerClearance} pointerEvents="none" />
+        <View style={styles.headerClearance} />
         <SafeAreaView edges={['bottom']} style={styles.sheet}>
           {/* Outside the ScrollView, for ModalHeader's reason: a close control that scrolls away is one
               you have to go looking for. */}
@@ -378,11 +378,15 @@ const styles = StyleSheet.create({
     bottom: 0,
     backgroundColor: 'rgba(0,0,0,0.55)',
   },
+  // pointerEvents as style rather than as a prop: react-native-web warns that the prop is deprecated,
+  // and the web build is otherwise warning-free apart from expo-notifications.
   column: {
     flex: 1,
+    pointerEvents: 'box-none',
   },
   headerClearance: {
     height: HEADER_CLEARANCE,
+    pointerEvents: 'none',
   },
   sheet: {
     flex: 1,
@@ -425,7 +429,10 @@ const styles = StyleSheet.create({
   pressed: {
     opacity: 0.6,
   },
+  // The top padding is the NOW halo's: it's 20px in a 16px line, and without room above it the scroll
+  // view clipped its top flat (seen in the browser pass).
   scrollContent: {
+    paddingTop: 2,
     paddingBottom: Spacing.three,
   },
   item: {

@@ -230,11 +230,12 @@ wanting states and assignees, it wants GitHub issues instead.
   Nothing built for the bundled set gets thrown away if it comes back: a user's own image overrides the
   drawing and the drawing becomes the fallback.
 
-- **See what's left in a running workout.** Agreed, not started: tapping the workout name in the
-  runner opens a read-only "Coming up" timeline, with circuits spelled out for the round you're in and
-  collapsed after it. Plan, scope cuts and test list in [`up-next-plan.md`](up-next-plan.md). Its
-  named follow-up is an optional `name` on circuit blocks, which is a format change with its own gate,
-  since four unnamed circuits in one workout read alike.
+- **Name circuit blocks.** A circuit has no name in the YAML, only an optional `id`. So a workout of
+  four circuits (a warm-up, two series and a finisher) shows four "CIRCUIT · N ROUNDS" in the runner's
+  Coming up sheet, and only the member names tell them apart. An optional `name`, shown verbatim, is
+  the fix the sheet was designed around. It is a format change, so `schema.ts` and all three mirrors
+  land in one PR (see `AGENTS.md`, "Changing the YAML format"). Numbering the circuits was drawn and
+  rejected; the reasons are in [`up-next-plan.md`](up-next-plan.md).
 
 - **More languages.** Japanese shipped; the procedure and the two wrinkles it turned up are in
   [`adding-a-language.md`](adding-a-language.md).

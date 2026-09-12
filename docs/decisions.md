@@ -37,6 +37,14 @@ decision assembled across several commits. Open work belongs in the sections at 
   each other read as a bug rather than as a distinction, which is the same failure the runner's two
   progress indicators had at the same time.
 
+  **The runner's Coming up sheet is the one real exception, and it is deliberate.** Its list is a
+  timeline, with nodes on a rail and no hairlines, because it isn't a list of peers. It's a sequence
+  with a now, a next and an end, and showing position is the reason it exists. It lives inside the
+  always-dark runner with its own vocabulary, so it can't read as a subtly different copy of
+  `ListRow`. The reasoning, and the two row-based layouts drawn and rejected, are in
+  [`up-next-plan.md`](up-next-plan.md). Don't restyle it into rows, and don't take it as licence for
+  a second rail anywhere else.
+
 - ✅ **List sorting was built, collapsed, and then deleted. Don't rebuild it.** Workouts, Library and
   Programs had a three-option order control (`custom` / A–Z / `recent`) in a permanent row of pills.
   A design review called it chrome — "sorting a list you search is chrome" — and was right twice over:

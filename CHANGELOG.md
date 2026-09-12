@@ -20,6 +20,19 @@ here, next to what it describes.
 
 ### What changed
 
+**See what's left of your workout without leaving it.** Tap the workout's name at the top of the
+session screen and a sheet shows everything still to come, in order: what you're on now, with its
+timer, then the sets, rests and circuits after it, down to the end. In a circuit, the round you're in
+is spelled out exercise by exercise and the rounds after it are summed up, so a long circuit doesn't
+bury the finisher. The sheet closes itself when the next step starts, and on Android the back button
+closes it without leaving your session.
+
+**The swap list no longer comes back by itself.** If a hold ended while you had the list of
+substitutes open, the list disappeared over the rest and then reopened on your next set, over a hold
+that was already counting. It now closes for good when its set ends. While it's open, a screen reader
+stays inside it rather than wandering into the set behind, and the same goes for the list you add
+exercises from.
+
 **Your numbers shows what's moving, and when you trained.** The weekly bar chart is now a calendar of
 the last four weeks: a square per day, shaded by how long you trained, with each week's session count
 beside it, so rest days and gaps read as easily as busy weeks. Getting stronger lists only the

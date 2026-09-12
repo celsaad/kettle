@@ -1,11 +1,25 @@
 # Up next sheet — plan
 
-> **Not executed.** This is a forward-looking plan; nothing below has shipped. Written against the
-> tree at `2c70582`. Agreed from a design canvas
+> **Executed; kept for its rationale, and for the device checks it leaves open.** Written against the
+> tree at `2c70582`, before any code, and agreed from a design canvas
 > (https://claude.ai/code/artifact/ff56f717-1875-48c1-8927-06de6fd60983 — the owner's private link)
 > that ran three layouts against the seed library and against a real circuit-heavy library. The target
 > is header option **H1**, sheet layout **B**, circuit display **option C**. The other layouts are
 > under "Not doing" so they aren't re-proposed.
+>
+> Wherever the build differed from the text below, the text was corrected in the same commit, so what
+> follows is what shipped. Three things it didn't foresee:
+>
+> - The swap and add pickers needed a small restructure rather than two props each, because they
+>   render inside `content`.
+> - The swap picker reopened by itself after its hold ended under it. That is the same stale-state
+>   shape as the sheet's index, and it's now fixed the same way.
+> - The runner's two private clock formatters became one shared `formatClock`.
+>
+> Checked in the browser in en and pt: layout, closing, and the runner leaving the accessibility tree.
+> **Not done:** the device checks. Those are hardware back closing only the sheet, TalkBack and
+> VoiceOver focus staying inside it, and the layout at large text sizes, and a browser pass can't
+> reach any of them.
 
 The runner answers "what now" and, through the Next card, "what's one step after this". Nothing
 answers "what's left": how many rounds of this circuit, what the finisher is, whether the long stretch

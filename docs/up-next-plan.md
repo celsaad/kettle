@@ -182,10 +182,12 @@ On screen the sheet is titled **Coming up**, not "Up next": Home already says NE
 ## Accessibility
 
 - **The header control:** item 1.
-- **Focus stays in the sheet.** `accessibilityViewIsModal` on the sheet root (iOS), and
-  `importantForAccessibility="no-hide-descendants"` on the runner beneath it while open (Android).
-  **The swap picker has neither**, so it gets the same two props in this PR. Same pattern, same file,
-  one line each.
+- **Focus stays in the sheet.** The runner beneath is `aria-hidden` while it's open, which RN maps onto
+  both native props and react-native-web honours. The overlay root also carries
+  `accessibilityViewIsModal` and the VoiceOver escape gesture: the root rather than the sheet, because
+  iOS hides only a modal view's siblings. **The swap and add pickers had neither.** They got the same
+  treatment in this PR, which took a small restructure rather than one line each: they render inside
+  `content`, so the runner inside it is wrapped in a view that goes hidden instead.
 - **The rail and nodes carry no text**, so there is nothing to hide. The backdrop is what's hidden
   (`aria-hidden`, which react-native-web honours where it drops the native props): the × is the named
   way out, and a second "Close" spanning the screen would only be one more thing to swipe past.

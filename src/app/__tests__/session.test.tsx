@@ -422,6 +422,16 @@ describe('an ad-hoc session', () => {
     expect(screen.getByText('Add exercise')).toBeTruthy();
   });
 
+  it('hides the parked screen from assistive tech while the picker is open', async () => {
+    await startAdHoc();
+    await fireEvent.press(screen.getByText('Add exercise'));
+
+    expect(screen.queryByText('Nothing queued')).toBeNull();
+    expect(screen.getByText('Nothing queued', { includeHiddenElements: true })).toBeTruthy();
+    // The picker itself stays in reach.
+    expect(screen.getByText('ADD EXERCISE')).toBeTruthy();
+  });
+
   it('runs an exercise picked from the library', async () => {
     await startAdHoc();
 
@@ -571,5 +581,71 @@ describe('the Coming up sheet', () => {
 
     expect(screen.getByText('Done set →')).toBeTruthy();
     expect(screen.queryByText('COMING UP')).toBeNull();
+  });
+});
+
+/**
+ * The swap and add pickers render inside the runner's content, beside the runner rather than over it
+ * in the tree, so a screen reader has to be kept out of the runner by hand while one is open.
+ */
+describe('the exercise pickers', () => {
+  async function tick(seconds: number) {
+    for (let second = 0; second < seconds; second++) {
+      await act(async () => {
+        jest.advanceTimersByTime(1000);
+      });
+    }
+  }
+
+  const plank: Exercise = {
+    id: 'plank',
+    name: 'Plank',
+    type: 'timed_hold',
+    config: { sets: 3, holdSecMin: 15, restSec: 60 },
+  };
+
+  /** `start`, with a second hold in the library, so a hold has something to be swapped for. */
+  async function startWithPlank(exerciseId: string) {
+    useLibraryStore.setState({
+      library: aLibrary({ exercises: [...exercises, plank], workouts: [workoutOf(exerciseId)] }),
+      status: 'ready',
+    });
+    await renderScreen(<SessionScreen />);
+    await tick(3);
+  }
+
+  it('hides the runner from assistive tech while the swap picker is open', async () => {
+    await start(workoutOf('pullups'));
+    await fireEvent.press(screen.getByText('SWAP'));
+
+    expect(screen.getByText('SWAP EXERCISE')).toBeTruthy();
+    expect(screen.queryByText('Log set → Rest')).toBeNull();
+    expect(screen.getByText('Log set → Rest', { includeHiddenElements: true })).toBeTruthy();
+  });
+
+  /**
+   * A hold keeps timing under the picker. When it ends by itself, the rest that follows offers no swap,
+   * so the picker goes, and the runner has to come back into reach with it rather than stay hidden
+   * behind a picker that is no longer there.
+   */
+  it('gives the runner back when a hold ends under the swap picker', async () => {
+    await startWithPlank('lsit');
+    await fireEvent.press(screen.getByText('SWAP'));
+    expect(screen.getByText('SWAP EXERCISE')).toBeTruthy();
+
+    await tick(16);
+
+    expect(screen.queryByText('SWAP EXERCISE')).toBeNull();
+    expect(screen.getByText('Skip rest →')).toBeTruthy();
+  });
+
+  it('does not reopen the swap picker on the next set after its hold ended under it', async () => {
+    await startWithPlank('lsit');
+    await fireEvent.press(screen.getByText('SWAP'));
+    await tick(16);
+    await fireEvent.press(screen.getByText('Skip rest →'));
+
+    expect(screen.getByText('Done set →')).toBeTruthy();
+    expect(screen.queryByText('SWAP EXERCISE')).toBeNull();
   });
 });

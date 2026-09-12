@@ -61,7 +61,9 @@ export function SessionExercisePicker({ replacing, candidates, onCancel, onSelec
   }, [candidates, query]);
 
   return (
-    <View style={styles.overlay}>
+    // The runner beneath is hidden with aria-hidden by session.tsx, which is what reaches Android and
+    // the web; this is iOS's half, plus its two-finger escape gesture as a way out.
+    <View style={styles.overlay} accessibilityViewIsModal onAccessibilityEscape={onCancel}>
       <Pressable
         style={styles.backdrop}
         onPress={onCancel}

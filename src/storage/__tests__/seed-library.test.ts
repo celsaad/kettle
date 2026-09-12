@@ -35,7 +35,7 @@ describe.each(seedLanguages)('the %s seed', (language) => {
     // mergeLibraries validates references against the merged whole, which for an empty base is
     // exactly "is the seed internally consistent".
     const result = mergeLibraries(emptyLibrary, seed);
-    if (!result.ok) throw new Error(`seed has a dangling reference: ${JSON.stringify(result.error)}`);
+    expect(result.ok ? null : result.error).toBeNull();
   });
 
   it('leaves nothing in the library unreachable from a workout', () => {

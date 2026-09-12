@@ -611,7 +611,7 @@ describe('logging', () => {
     await press(() => result.current.setWeightKg(0));
     await press(() => result.current.logSet());
     const reps = mockSession.entries.find((entry) => entry.type === 'reps');
-    if (reps?.type === 'reps') expect(reps.sets[0].weightKg).toBeUndefined();
+    expect(reps?.type === 'reps' && reps.sets[0].weightKg).toBeUndefined();
   });
 
   it('completes the session once the last step is done', async () => {

@@ -19,8 +19,11 @@ export type WorkStep = Exclude<RunnerStep, { kind: 'rest' }>;
 
 type CircuitWorkStep = WorkStep & { circuit: CircuitPosition };
 
-/** What "2 more …" counts: sets for reps and holds, rounds for HIIT, minutes for EMOM; null for one-shot work. */
-export type WorkUnit = 'set' | 'round' | 'minute' | null;
+/**
+ * What "2 more …" counts: sets for reps and holds, rounds for HIIT, and for an EMOM minutes or
+ * intervals (see `unitOf`); null for one-shot work.
+ */
+export type WorkUnit = 'set' | 'round' | 'minute' | 'interval' | null;
 
 /** One circuit member's visit, carried by its first step so the sheet can show the target. */
 export type UpcomingMember = { memberKey: string; step: WorkStep };
@@ -43,7 +46,10 @@ export type UpcomingItem =
 function unitOf(step: WorkStep): WorkUnit {
   if (step.kind === 'reps' || step.kind === 'hold') return 'set';
   if (step.variant === 'hiit') return 'round';
-  if (step.variant === 'emom') return 'minute';
+  // An EMOM expands to one step per *interval*, so its count is in minutes only when the interval is
+  // one. Otherwise a 30s interval over ten minutes read "20 minutes". The interval screen draws the
+  // same line ("Minute 3 of 10" against "Interval 3 of 20"), and so does this.
+  if (step.variant === 'emom') return step.targetSec === 60 ? 'minute' : 'interval';
   return null;
 }
 

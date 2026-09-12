@@ -21,6 +21,8 @@ const exercises: Exercise[] = [
   { id: 'lsit', name: 'L-Sit', type: 'timed_hold', config: { sets: 3, holdSecMin: 15, restSec: 60 } },
   { id: 'burpees', name: 'Burpees', type: 'hiit', config: { workSec: 40, restSec: 20, rounds: 4 } },
   { id: 'everyminute', name: 'Every Minute', type: 'emom', config: { intervalSec: 60, totalMinutes: 5 } },
+  // Twenty 30s intervals in a 10-minute block: the case where an EMOM's intervals and minutes differ.
+  { id: 'halfminute', name: 'Half Minute', type: 'emom', config: { intervalSec: 30, totalMinutes: 10 } },
   { id: 'grinder', name: 'Grinder', type: 'amrap', config: { timeCapSec: 600 } },
   { id: 'rest', name: 'Rest', type: 'rest', config: { durationSec: 120 } },
   // The shape of a circuit-heavy calisthenics library: every member one 40s interval or hold, with
@@ -163,6 +165,18 @@ describe('single exercises', () => {
       { kind: 'exercise', name: 'Pull-ups', left: 2, unit: 'set', started: true },
       { kind: 'exercise', name: 'Every Minute', left: 5, unit: 'minute', started: false },
       { kind: 'exercise', name: 'Grinder', left: 1, unit: null, started: false },
+    ]);
+  });
+
+  /**
+   * An EMOM expands to one step per *interval*, so its count is in minutes only when the interval is
+   * one. The interval screen draws the same line ("Minute 3 of 10" against "Interval 3 of 20").
+   */
+  it('counts an EMOM in intervals when its interval is not a minute', () => {
+    const steps = buildSteps(workoutOf(single('pullups'), single('halfminute')), exercises);
+    expect(outline(steps, 0)).toEqual([
+      { kind: 'exercise', name: 'Pull-ups', left: 2, unit: 'set', started: true },
+      { kind: 'exercise', name: 'Half Minute', left: 20, unit: 'interval', started: false },
     ]);
   });
 });

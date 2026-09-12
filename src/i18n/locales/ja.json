@@ -245,6 +245,8 @@
       "moreRounds_other": "残り{{count}}ラウンド",
       "minutes_other": "{{count}}分",
       "moreMinutes_other": "残り{{count}}分",
+      "intervals_other": "{{count}}本",
+      "moreIntervals_other": "残り{{count}}本",
       "circuitRounds_other": "サーキット · {{count}}ラウンド",
       "circuitLeft_other": "サーキット · 残り{{count}}種目",
       "roundsAfter_other": "あと{{count}}ラウンド"

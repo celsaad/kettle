@@ -22,6 +22,8 @@ const exercises: Exercise[] = [
   { id: 'lsit', name: 'L-Sit', type: 'timed_hold', config: { sets: 3, holdSecMin: 15, restSec: 60 } },
   { id: 'burpees', name: 'Burpees', type: 'hiit', config: { workSec: 40, restSec: 20, rounds: 3 } },
   { id: 'rest', name: 'Rest', type: 'rest', config: { durationSec: 120 } },
+  { id: 'everyminute', name: 'Every Minute', type: 'emom', config: { intervalSec: 60, totalMinutes: 5 } },
+  { id: 'halfminute', name: 'Half Minute', type: 'emom', config: { intervalSec: 30, totalMinutes: 10 } },
 ];
 
 const workoutOf = (...blocks: Workout['blocks']): Workout => ({ id: 'w', name: 'W', blocks });
@@ -77,6 +79,20 @@ it('says "more" for an exercise already under way, and not for one to come', asy
 
   expect(screen.getByText('2 more sets · target 6–10')).toBeTruthy();
   expect(screen.getByText('3 sets · hold · target 15s')).toBeTruthy();
+});
+
+/**
+ * An EMOM is one step per interval, so "minutes" is right only for a 60s interval: a 30s EMOM over
+ * ten minutes is twenty intervals, not twenty minutes. Same line the interval screen draws. In pt,
+ * because the fix adds keys, and an English run can't tell a missing one from its fallback.
+ */
+it('counts an EMOM in minutes only when its interval is a minute', async () => {
+  await changeLanguage('pt');
+  const steps = buildSteps(workoutOf(single('pullups'), single('everyminute'), single('halfminute')), exercises);
+  await show(steps, 0);
+
+  expect(screen.getByText('5 minutos · emom · 60s')).toBeTruthy();
+  expect(screen.getByText('20 intervalos · emom · 30s')).toBeTruthy();
 });
 
 it('counts what is left of a single-round circuit rather than saying round 1 of 1', async () => {

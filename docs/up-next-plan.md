@@ -140,7 +140,7 @@ On screen the sheet is titled **Coming up**, not "Up next": Home already says NE
    ```ts
    type WorkStep = Exclude<RunnerStep, { kind: 'rest' }>; // the sheet formats targets from it
    type UpcomingItem =
-     | { kind: 'exercise'; memberKey: string; step: WorkStep; left: number; unit: 'set' | 'round' | 'minute' | null; started: boolean }
+     | { kind: 'exercise'; memberKey: string; step: WorkStep; left: number; unit: 'set' | 'round' | 'minute' | 'interval' | null; started: boolean }
      | { kind: 'rest'; seconds: number } // standalone Rest blocks only
      | { kind: 'round'; blockIndex: number; round: number; rounds: number; members: UpcomingMember[] } // spelled out
      | { kind: 'moreRounds'; blockIndex: number; count: number; names: string[] }
@@ -187,8 +187,10 @@ On screen the sheet is titled **Coming up**, not "Up next": Home already says NE
 
 6. **i18n**, in all three bundles, under `session.upcoming.*`:
    - `title`, `hint`, `now`, `nowRest`, `end`, `rest`, `detail`, and the three target forms
-   - counted forms: `sets`/`moreSets`, `rounds`/`moreRounds`, `minutes`/`moreMinutes`, and the
-     kickers `circuitRounds`, `circuitLeft`, `roundsAfter`
+   - counted forms: `sets`/`moreSets`, `rounds`/`moreRounds`, `minutes`/`moreMinutes`,
+     `intervals`/`moreIntervals`, and the kickers `circuitRounds`, `circuitLeft`, `roundsAfter`
+   - an EMOM counts in minutes only when its interval is 60s, and in intervals otherwise, the same
+     line the interval screen draws, because the step list has one step per interval
 
    Details reuse `preview.*` and `session.circuit.crumb` rather than a parallel copy. `ja` takes only
    the `_other` forms. Exercise names are interpolated, never translated.

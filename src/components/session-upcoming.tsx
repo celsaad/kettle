@@ -320,6 +320,7 @@ const COUNT_KEYS: Record<Exclude<WorkUnit, null>, { fresh: string; more: string 
   set: { fresh: 'session.upcoming.sets', more: 'session.upcoming.moreSets' },
   round: { fresh: 'session.upcoming.rounds', more: 'session.upcoming.moreRounds' },
   minute: { fresh: 'session.upcoming.minutes', more: 'session.upcoming.moreMinutes' },
+  interval: { fresh: 'session.upcoming.intervals', more: 'session.upcoming.moreIntervals' },
 };
 
 function exerciseDetail(item: Extract<UpcomingItem, { kind: 'exercise' }>, t: TFunction): string {

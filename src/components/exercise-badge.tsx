@@ -31,17 +31,6 @@ export function ExerciseBadge({ type, overrideLabel }: { type: ExerciseType; ove
   );
 }
 
-export function CircuitBadge() {
-  const theme = useTheme();
-  return (
-    <View style={[styles.badge, { backgroundColor: theme.backgroundSelected }]}>
-      <ThemedText type="code" style={{ color: theme.textSecondary }}>
-        CIRCUIT
-      </ThemedText>
-    </View>
-  );
-}
-
 function rangeLabel(min: number, max: number | undefined): string {
   return max ? `${min}–${max}` : `${min}`;
 }

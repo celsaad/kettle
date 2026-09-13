@@ -64,7 +64,7 @@ describe.each(contentPacks.map((pack) => [pack.id, pack] as const))('the %s pack
 
     it('resolves every exercise and workout reference it makes', () => {
       const result = mergeLibraries(emptyLibrary, library);
-      if (!result.ok) throw new Error(`pack has a dangling reference: ${JSON.stringify(result.error)}`);
+      expect(result.ok ? null : result.error).toBeNull();
     });
 
     it('merges into the seed library, adding and replacing nothing', () => {

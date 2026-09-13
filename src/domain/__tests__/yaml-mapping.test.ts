@@ -127,8 +127,8 @@ const session: Session = {
 describe('library round-trip', () => {
   it('survives serialize → parse unchanged', () => {
     const result = parseLibraryYaml(serializeLibraryYaml(library));
-    expect(result.ok).toBe(true);
-    if (result.ok) expect(result.data).toEqual(library);
+    if (!result.ok) throw new Error('expected parse to succeed');
+    expect(result.data).toEqual(library);
   });
 
   it('leaves omitted optional fields undefined', () => {
@@ -155,8 +155,8 @@ describe('library round-trip', () => {
 describe('session round-trip', () => {
   it('survives serialize → parse unchanged, across every entry type', () => {
     const result = parseSessionYaml(serializeSessionYaml(session));
-    expect(result.ok).toBe(true);
-    if (result.ok) expect(result.data).toEqual(session);
+    if (!result.ok) throw new Error('expected parse to succeed');
+    expect(result.data).toEqual(session);
   });
 
   it('defaults program tracking to null for a session written before those fields existed', () => {
@@ -169,12 +169,10 @@ describe('session round-trip', () => {
       'entries: []',
     ].join('\n');
     const result = parseSessionYaml(legacy);
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      expect(result.data.program).toBeNull();
-      expect(result.data.programWeek).toBeNull();
-      expect(result.data.programDay).toBeNull();
-    }
+    if (!result.ok) throw new Error('expected parse to succeed');
+    expect(result.data.program).toBeNull();
+    expect(result.data.programWeek).toBeNull();
+    expect(result.data.programDay).toBeNull();
   });
 });
 
@@ -292,8 +290,8 @@ describe('parse failures', () => {
     const aliases = Array(1001).fill('*a').join(',');
     const result = parseLibraryYaml(`version: 1\na: &a 1\nexercises: [${aliases}]\nworkouts: []\nprograms: []\n`);
 
-    expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.error.kind).toBe('invalidYaml');
+    if (result.ok) throw new Error('expected parse to fail');
+    expect(result.error.kind).toBe('invalidYaml');
   });
 
   it('accepts a library that uses aliases sparingly, as a hand-written one might', () => {

@@ -1,0 +1,22 @@
+{
+  "$schema": "./node_modules/knip/schema-jsonc.json",
+  "entry": [
+    // Run by hand once per release (see its header); nothing imports it.
+    "store/build-assets.js",
+    // Loaded by path from `jest.mock('expo-router', ...)`. Its exports stand in for expo-router's API,
+    // which tests import from 'expo-router' itself, so knip can't see them used.
+    "src/test-support/expo-router.ts",
+  ],
+  // An export its own file also uses is a named part of a public shape — the per-type configs that
+  // make up the domain union, the chart layout's point types — and un-exporting them buys nothing.
+  // What this still catches is an export nothing uses at all, which is the dead code worth deleting.
+  "ignoreExportsUsedInFile": true,
+  "ignoreDependencies": [
+    // knip's expo plugin assumes EAS Update unless app.json sets `updates.enabled: false`. It is
+    // absent on purpose: nothing may phone home.
+    "expo-updates",
+    // store/build-assets.js loads these from NODE_PATH, deliberately outside the project (see its header).
+    "sharp",
+    "playwright",
+  ],
+}

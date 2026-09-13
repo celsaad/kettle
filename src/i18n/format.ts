@@ -1,11 +1,11 @@
 import { currentLocale } from '@/i18n';
 
 /**
- * Locale-aware date/number formatting. Every one of these replaced a hardcoded `'en-US'`, which meant
- * a user in São Paulo or Berlin saw US month/day conventions in an app that was otherwise theirs.
+ * Locale-aware date formatting. Every one of these replaced a hardcoded `'en-US'`, which meant a user
+ * in São Paulo or Berlin saw US month/day conventions in an app that was otherwise theirs.
  *
- * Hermes implements `Intl.DateTimeFormat` and `Intl.NumberFormat` natively (via ICU on Android and
- * NSLocale on iOS), so these need no polyfill — unlike `Intl.PluralRules`, see `i18n/index.ts`.
+ * Hermes implements `Intl.DateTimeFormat` natively (via ICU on Android and NSLocale on iOS), so these
+ * need no polyfill — unlike `Intl.PluralRules`, see `i18n/index.ts`.
  * `Intl.DurationFormat` is *not* available, which is why `formatDuration` is hand-rolled.
  */
 
@@ -29,8 +29,4 @@ export function formatFullDate(date: Date): string {
  */
 export function formatMonthBadge(date: Date): string {
   return date.toLocaleDateString(currentLocale(), { month: 'short' }).toLocaleUpperCase(currentLocale());
-}
-
-export function formatNumber(value: number): string {
-  return new Intl.NumberFormat(currentLocale()).format(value);
 }

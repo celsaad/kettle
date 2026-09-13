@@ -4,8 +4,8 @@
 
 # React Native's Metro bundler and Gradle autolinking both walk node_modules expecting a flat tree.
 # pnpm's default isolated layout puts real packages under .pnpm/ and links them in, which leaves
-# transitive deps unresolvable: `expo-modules-core` is imported directly by src/hooks/safe-iap.ts
-# but is only a dependency of `expo`, so isolated mode fails typecheck on it.
+# transitive deps unresolvable. Our own code imports only what package.json lists (`pnpm knip`
+# fails on anything else), so the flat layout is a requirement of the tooling, not a crutch for us.
 nodeLinker: hoisted
 
 # Windows caps paths at 260 chars unless LongPathsEnabled is set, and it isn't here (turning it on

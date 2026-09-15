@@ -18,6 +18,12 @@ here, next to what it describes.
 
 ## Unreleased
 
+Nothing since 0.9.0.
+
+---
+
+## 0.9.0 — versionCode 12, 15 September 2026
+
 ### What changed
 
 **See what's left of your workout without leaving it.** Tap the workout's name at the top of the
@@ -99,6 +105,36 @@ it, so the section title looked like a fourth pack.
 **In Portuguese, nothing is "0 sessão" any more.** A count of zero read in the singular — "0 sessão",
 "0 série" — because of how the language's plural rule is defined, where Brazilian Portuguese says
 "0 sessões". Every count in the app now reads that way.
+
+### Play release notes
+
+Counted at 309 (en-US) and 305 (pt-BR), against a limit of 500. Re-count programmatically if you
+edit them rather than trusting these numbers — over-limit copy is a rejected upload, not a truncated
+one.
+
+Two blocks rather than three, for the same reason as 0.8.0: the Play listing does not carry ja-JP, so
+a `<ja-JP>` block would be a rejected upload rather than an ignored tag.
+
+```
+<en-US>
+What's new
+
+A redesigned stats screen with a four-week training calendar, a way to see what's left of your workout without leaving it, and a few quality-of-life improvements across the app.
+
+Plus a round of fixes for things that weren't behaving the way they should.
+
+Report anything that hangs or loses data.
+</en-US>
+<pt-BR>
+Novidades
+
+Uma tela de números redesenhada, com um calendário das últimas quatro semanas, um jeito de ver o que falta do treino sem sair dele e algumas melhorias de uso pelo app.
+
+Além de uma rodada de correções para coisas que não estavam funcionando como deveriam.
+
+Relate travamentos ou perda de dados.
+</pt-BR>
+```
 
 ---
 

@@ -13,7 +13,9 @@
  *
  * - `createFile` goes through the platform's `createDocument`, which uniquifies a name that already
  *   exists — so creating unconditionally leaves `kettle-history (1).yaml` beside the original, one
- *   file per session, in the folder whose whole job is to hold one good copy.
+ *   file per session, in the folder whose whole job is to hold one good copy. Finding the existing
+ *   file by name isn't enough on its own either: on a provider with opaque document ids (Google
+ *   Drive) the name never matches, which is what the remembered URI is for.
  * - `File.write` opens the document `"w"`, which overwrites from offset zero **without truncating**,
  *   so a shorter backup keeps the tail of the longer one it replaced.
  *
@@ -32,7 +34,11 @@ class MockFile {
   /** What is actually stored, so an assertion can read it back. */
   contents = '';
 
-  constructor(public name: string) {}
+  constructor(
+    public name: string,
+    /** Distinct per file, as a document URI is. The tests that match by name never look at it. */
+    public uri = `content://mock/document/${name}`,
+  ) {}
 
   /** Overwrites in place without truncating — the trap. */
   write = jest.fn((content: string) => {
@@ -65,6 +71,20 @@ const mockFolder = {
 let mockBackupSupported = true;
 const mockLibraryFile = { exists: true, textSync: jest.fn(() => 'exercises: []\n') };
 
+/** `backup-targets.json`, in memory, so a test can plant a record or read back what was remembered. */
+const mockTargetsFile = {
+  exists: false,
+  contents: '',
+  textSync: jest.fn((): string => mockTargetsFile.contents),
+  write: jest.fn((content: string) => {
+    mockTargetsFile.contents = content;
+    mockTargetsFile.exists = true;
+  }),
+  create: jest.fn(() => {
+    mockTargetsFile.exists = true;
+  }),
+};
+
 jest.mock('expo-file-system', () => ({
   // Every SAF `Directory` in a run is the same folder; the URI is only carried so the assertions can
   // see what was handed over.
@@ -82,7 +102,7 @@ jest.mock('react-native', () => ({
 jest.mock('@/storage/paths', () => ({
   isFileStorageSupported: true,
   get storagePaths() {
-    return { libraryFile: mockLibraryFile };
+    return { libraryFile: mockLibraryFile, backupTargetsFile: mockTargetsFile };
   },
 }));
 
@@ -127,10 +147,34 @@ beforeEach(() => {
   mockBackupSupported = true;
   mockFolder.exists = true;
   mockFolder.list.mockReturnValue([]);
-  mockFolder.createFile.mockClear();
+  // Implementation restored too, not just cleared: the refused-write test below makes it throw.
+  mockFolder.createFile.mockClear().mockImplementation((name: string) => new MockFile(name));
   mockLibraryFile.exists = true;
   mockLibraryFile.textSync.mockReturnValue('exercises: []\n');
+  mockTargetsFile.exists = false;
+  mockTargetsFile.contents = '';
 });
+
+/**
+ * Hands out documents the way Google Drive's provider does: the id in the URI is opaque, so
+ * `File.name` — the URI's last segment — is never the name the file was created with.
+ */
+function useOpaqueIds(): void {
+  let next = 0;
+  mockFolder.createFile.mockImplementation(() => {
+    next += 1;
+    const id = `acc=1;doc=encoded=${next}`;
+    return new MockFile(id, `content://com.google.android.apps.docs.storage/tree/root/document/${encodeURIComponent(id)}`);
+  });
+}
+
+function createdFiles(): MockFile[] {
+  return mockFolder.createFile.mock.results.map((result) => result.value as MockFile);
+}
+
+function archivedIds(file: MockFile): string[] {
+  return (load(file.contents) as { sessions: { id: string }[] }).sessions.map((session) => session.id);
+}
 
 describe('backUpNow', () => {
   it('writes both artefacts into the chosen folder', async () => {
@@ -214,6 +258,88 @@ describe('backUpNow', () => {
 
     expect(mockFolder.createFile).toHaveBeenCalledTimes(1);
     expect(mockFolder.createFile).toHaveBeenCalledWith(HISTORY_BACKUP_NAME, expect.anything());
+  });
+});
+
+describe('on a provider whose document ids are not names', () => {
+  /**
+   * The Drive regression, as a device showed it: three backups, three pairs of files. Reintroducing
+   * the name-only lookup — dropping the remembered-URI fallback — fails this test, which is how it was
+   * verified rather than assumed.
+   */
+  it('writes into the pair the last backup made instead of creating another', () => {
+    useOpaqueIds();
+    const { backUpNow } = backup();
+    backUpNow(FOLDER, [june]);
+    const [library, history] = createdFiles();
+    mockFolder.list.mockReturnValue([library, history]);
+    mockFolder.createFile.mockClear();
+
+    expect(backUpNow(FOLDER, [june, july])).toBeNull();
+
+    expect(mockFolder.createFile).not.toHaveBeenCalled();
+    expect(archivedIds(history)).toEqual(['june', 'july']);
+  });
+
+  // A remembered URI only counts while the folder still lists it. A backup the user deleted, or moved
+  // somewhere else, is made again here rather than written to wherever it went.
+  it('recreates a remembered file that is no longer in the folder', () => {
+    useOpaqueIds();
+    const { backUpNow, HISTORY_BACKUP_NAME } = backup();
+    backUpNow(FOLDER, [june]);
+    const [library, history] = createdFiles();
+    mockFolder.list.mockReturnValue([library]);
+    mockFolder.createFile.mockClear();
+
+    backUpNow(FOLDER, [june, july]);
+
+    expect(mockFolder.createFile).toHaveBeenCalledTimes(1);
+    expect(mockFolder.createFile).toHaveBeenCalledWith(HISTORY_BACKUP_NAME, expect.anything());
+    expect(archivedIds(history)).toEqual(['june']);
+  });
+
+  /**
+   * A write that throws has still left a document behind, so the retry has to find it. Recording the
+   * URI only after a successful write — or not saving the record when a write throws — fails this.
+   */
+  it('remembers a file it created even when writing into it failed', () => {
+    useOpaqueIds();
+    const refused = new MockFile('acc=1;doc=encoded=refused', 'content://com.google.android.apps.docs.storage/refused');
+    refused.open.mockImplementationOnce(() => {
+      throw new Error('provider refused');
+    });
+    mockFolder.createFile.mockImplementationOnce(() => refused);
+    const { backUpNow, HISTORY_BACKUP_NAME } = backup();
+
+    expect(backUpNow(FOLDER, [june])).toEqual({ kind: 'writeFailed', detail: 'provider refused' });
+
+    mockFolder.list.mockReturnValue([refused]);
+    mockFolder.createFile.mockClear();
+
+    expect(backUpNow(FOLDER, [june])).toBeNull();
+    expect(mockFolder.createFile).toHaveBeenCalledTimes(1);
+    expect(mockFolder.createFile).toHaveBeenCalledWith(HISTORY_BACKUP_NAME, expect.anything());
+    expect(refused.contents).toBe('exercises: []\n');
+  });
+
+  // The record is a convenience: losing it costs one more pair of files at worst, never the backup.
+  it('backs up anyway when the record of last time is unreadable', () => {
+    mockTargetsFile.exists = true;
+    mockTargetsFile.contents = '{ not json';
+    const { backUpNow } = backup();
+
+    expect(backUpNow(FOLDER, [june])).toBeNull();
+    expect(mockFolder.createFile).toHaveBeenCalledTimes(2);
+  });
+
+  it('backs up anyway when the record cannot be saved', () => {
+    mockTargetsFile.write.mockImplementationOnce(() => {
+      throw new Error('disk full');
+    });
+    const { backUpNow } = backup();
+
+    expect(backUpNow(FOLDER, [june])).toBeNull();
+    expect(createdFiles()[0].contents).toBe('exercises: []\n');
   });
 });
 

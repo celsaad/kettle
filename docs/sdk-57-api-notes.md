@@ -64,7 +64,8 @@
   3. **`createFile` on an existing name makes a duplicate, not an overwrite** — it goes through
      `DocumentsContract.createDocument`, which uniquifies (`kettle-library (1).yaml`). Every write has
      to be find-then-write against `list()`. `backup.test.ts` pins this one, because unguarded it
-     turns a backup folder into one file per session.
+     turns a backup folder into one file per session. Finding by name alone is not enough on every
+     provider — see `File.name` below.
   4. **`File.write()` does not truncate**, so overwriting with something shorter leaves the tail of
      the old content behind. `FileSystemFile.write` calls `outputStream(append = false)`, which for
      SAF is `contentResolver.openOutputStream(uri, "w")` — and `"w"` overwrites from offset zero
@@ -99,10 +100,15 @@
      (under `patches/`, registered in `patchedDependencies`). **Delete the patch when moving to SDK
      58**, and when bumping `expo-file-system` within 57, re-check that the release still needs it.
 
-  `File.name` does resolve correctly for these: `Paths.basename` decodes the pathname first, so a
-  document URI ending `…%2Fkettle-library.yaml` answers `kettle-library.yaml`. That holds for
-  providers whose document ids are paths (on-device storage, which is what this targets) and would not
-  for one using opaque ids.
+  `File.name` is only the last segment of the document URI, decoded (`Paths.basename`), so it is the
+  display name only where document ids are paths. On-device storage passes: a URI ending
+  `…%2Fkettle-library.yaml` answers `kettle-library.yaml`. **Google Drive's provider does not.** Its
+  ids are opaque (`acc=1;doc=encoded=…`), so a find-by-name never matches there, and a device showed a
+  new `(1)`, `(2)`, `(3)` pair after every backup. The real display name exists natively
+  (`DocumentFile.name`, a `DISPLAY_NAME` query) but reaches JS only through `Directory.info().files`: a
+  bare list of names with no URIs beside them, which can say a `kettle-library.yaml` exists but not
+  which child it is. So `backup.ts` remembers the URI of each file it wrote, in `backup-targets.json`,
+  and falls back to that when the name finds nothing.
 
 - ⚠️ **Web is not a persistence target.** `expo-file-system` has no web implementation. The storage
   layer detects this (`isFileStorageSupported` in `paths.ts`) and degrades gracefully: on web,

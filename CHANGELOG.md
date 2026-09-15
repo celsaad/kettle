@@ -25,6 +25,11 @@ backup folder could turn up empty: the file was there, with nothing inside. Both
 whole library and the whole log after every backup. A folder you already chose keeps working — tap
 Back up now in Settings once to refresh it.
 
+**One pair of backup files on Google Drive, not a new pair every time.** Backing up into a Google
+Drive folder added `kettle-library (1).yaml`, `(2)`, `(3)` and so on, instead of updating the files
+already there. From the first backup after this update, Kettle keeps writing into that same pair. The
+numbered copies from before are left alone for you to delete.
+
 ---
 
 ## 0.9.0 — versionCode 12, 15 September 2026

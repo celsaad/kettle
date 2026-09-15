@@ -86,6 +86,9 @@ Flagged in the PR rather than assumed. None of these change the design; each cha
   This was a real bug (`File.write` opens SAF documents `"w"`, which does not truncate; see trap 4 in
   the API notes), caught in review and fixed with `FileMode.Truncate`. The unit test models the
   platform's behaviour rather than observing it, so this is the one that confirms the model was right.
+- **That the files have anything in them at all.** The truncating handle leaked its descriptor on
+  57.x, and a device showed the result: both files created, both empty. It is patched (trap 5 in the
+  API notes); the same back-up-and-read-it-back pass confirms the patch reached the build.
 
 ## Design
 

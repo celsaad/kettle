@@ -6,9 +6,10 @@
  * here needs a Data Safety declaration; see the decision log for why that beat a cloud SDK.
  *
  * The `content://` URIs this deals in behave nothing like the `file://` ones the rest of
- * `src/storage/` uses, and every difference fails quietly rather than loudly. All four are recorded
+ * `src/storage/` uses, and every difference fails quietly rather than loudly. All five are recorded
  * in `docs/sdk-57-api-notes.md`; the two this file works around on every single write are that
- * `createFile` *uniquifies* rather than overwrites, and that `write` does not truncate.
+ * `createFile` *uniquifies* rather than overwrites, and that `write` does not truncate. A third —
+ * that the truncating handle never closed its descriptor — is patched in the package instead.
  */
 import { Directory, File, FileMode } from 'expo-file-system';
 import { Platform } from 'react-native';
@@ -92,6 +93,11 @@ function writeChild(folder: Directory, children: (Directory | File)[], name: str
   // Truncate-and-write rather than delete-and-recreate: deleting first opens a window where the
   // backup doesn't exist at all, which is the wrong trade for the file whose job is to be the copy
   // that survives.
+  //
+  // `close()` is what tells the provider the write is finished, and on every 57.x release it didn't:
+  // the handle kept only the channel and leaked the `ParcelFileDescriptor` underneath it, which is
+  // how a backup could land as a file with nothing in it. That is fixed by the `expo-file-system`
+  // patch under `patches/`, not here — JS has no way to reach the descriptor.
   const handle = file.open(FileMode.Truncate);
   try {
     handle.writeBytes(new TextEncoder().encode(content));

@@ -51,7 +51,7 @@
     type doc says as much outright. This is why `isBackupFolderSupported` in `storage/backup.ts` is
     Android-only: a folder chosen on iOS would look set and quietly stop being written to.
 
-- ⚠️ **A SAF `content://` URI is not a `file://` URI, and four of the differences fail silently.**
+- ⚠️ **A SAF `content://` URI is not a `file://` URI, and five of the differences fail silently.**
   Everything in `src/storage/` except `backup.ts` deals in `file://` and never meets these:
 
   1. **`new File(directory, 'name.yaml')` does not address a child.** `Paths.join` treats the tree URI
@@ -83,6 +83,21 @@
      Found in review, not on a device, and it is the most expensive of the four: it corrupts the one
      artefact the backup feature promises can be re-imported, silently, and only when the new content
      is *shorter* than the old — so a growing library never shows it.
+  5. **A `FileHandle` on a `content://` URI never closes its descriptor** — in every 57.x release,
+     57.0.7 included. `FileSystemFileHandle.forContentURI` opens a `ParcelFileDescriptor`, wraps
+     `pfd.fileDescriptor` in a `FileOutputStream`, and keeps only the channel; `close()` closes that
+     channel and nothing else. On Android a `FileOutputStream` built from a bare `FileDescriptor`
+     does not own it, so the descriptor stays open until the collector finalizes the leaked
+     `ParcelFileDescriptor`, and until then the provider never hears that the write finished. On a
+     device this showed as backup files that existed and were empty: `createFile` is its own call, so
+     the document appears, and the bytes never land. `File.write()` never had the problem —
+     `openOutputStream(...).use {}` hands back a stream that owns and closes the descriptor — which is
+     why it only arrived with the fix for trap 4.
+
+     Fixed upstream in expo/expo#47176, which shipped in SDK 58 and was not backported: it keeps the
+     `ParcelFileDescriptor` and closes it in `close()`. That diff is applied here as a `pnpm patch`
+     (under `patches/`, registered in `patchedDependencies`). **Delete the patch when moving to SDK
+     58**, and when bumping `expo-file-system` within 57, re-check that the release still needs it.
 
   `File.name` does resolve correctly for these: `Paths.basename` decodes the pathname first, so a
   document URI ending `…%2Fkettle-library.yaml` answers `kettle-library.yaml`. That holds for

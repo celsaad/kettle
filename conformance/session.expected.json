@@ -1,0 +1,167 @@
+{
+  "every-entry-type": {
+    "ok": true,
+    "value": {
+      "version": 1,
+      "id": "2024-05-01T10-00-00-abc",
+      "workout": "full",
+      "program": "block",
+      "programWeek": 2,
+      "programDay": "Monday",
+      "startedAt": "2024-05-01T10:00:00.000Z",
+      "endedAt": "2024-05-01T10:45:00.000Z",
+      "entries": [
+        {
+          "exercise": "hold",
+          "type": "timed_hold",
+          "sets": [
+            {
+              "holdSec": 20,
+              "restTakenSec": 60
+            },
+            {
+              "holdSec": 18.5,
+              "restTakenSec": 0
+            }
+          ]
+        },
+        {
+          "exercise": "bench",
+          "type": "reps",
+          "sets": [
+            {
+              "reps": 5,
+              "weightKg": 80,
+              "rpe": 8,
+              "restTakenSec": 180
+            },
+            {
+              "reps": 0,
+              "restTakenSec": 0
+            }
+          ]
+        },
+        {
+          "exercise": "rest",
+          "type": "rest",
+          "restTakenSec": 90
+        },
+        {
+          "exercise": "burpees",
+          "type": "hiit",
+          "roundsCompleted": 4
+        },
+        {
+          "exercise": "clean",
+          "type": "emom",
+          "minutes": [
+            {
+              "reps": 3
+            },
+            {},
+            {
+              "reps": 0
+            }
+          ]
+        },
+        {
+          "exercise": "grinder",
+          "type": "amrap",
+          "roundsCompleted": 7,
+          "extraReps": 3
+        },
+        {
+          "exercise": "grinder",
+          "type": "amrap",
+          "roundsCompleted": 0
+        },
+        {
+          "exercise": "row",
+          "type": "cardio",
+          "durationSec": 480,
+          "distanceMeters": 2000
+        },
+        {
+          "exercise": "walk",
+          "type": "cardio"
+        }
+      ]
+    }
+  },
+  "in-progress": {
+    "ok": true,
+    "value": {
+      "version": 1,
+      "id": "s",
+      "workout": null,
+      "program": null,
+      "programWeek": null,
+      "programDay": null,
+      "startedAt": "2024-05-01T10:00:00.000Z",
+      "endedAt": null,
+      "entries": []
+    }
+  },
+  "written-before-program-tracking": {
+    "ok": true,
+    "value": {
+      "version": 1,
+      "id": "s",
+      "workout": "w",
+      "program": null,
+      "programWeek": null,
+      "programDay": null,
+      "startedAt": "2024-05-01T10:00:00.000Z",
+      "endedAt": "2024-05-01T10:30:00.000Z",
+      "entries": []
+    }
+  },
+  "unquoted-timestamp-stays-a-string": {
+    "ok": true,
+    "value": {
+      "version": 1,
+      "id": "s",
+      "workout": "w",
+      "program": null,
+      "programWeek": null,
+      "programDay": null,
+      "startedAt": "2024-05-01T10:00:00Z",
+      "endedAt": null,
+      "entries": []
+    }
+  },
+  "missing-ended-at": {
+    "ok": false,
+    "kind": "schemaMismatch",
+    "paths": ["ended_at"]
+  },
+  "rpe-past-ten": {
+    "ok": false,
+    "kind": "schemaMismatch",
+    "paths": ["entries.0.sets.0.rpe"]
+  },
+  "rpe-zero": {
+    "ok": false,
+    "kind": "schemaMismatch",
+    "paths": ["entries.0.sets.0.rpe"]
+  },
+  "fractional-reps": {
+    "ok": false,
+    "kind": "schemaMismatch",
+    "paths": ["entries.0.sets.0.reps"]
+  },
+  "program-week-zero": {
+    "ok": false,
+    "kind": "schemaMismatch",
+    "paths": ["program_week"]
+  },
+  "unknown-entry-type": {
+    "ok": false,
+    "kind": "schemaMismatch",
+    "paths": ["entries.0.type"]
+  },
+  "not-yaml": {
+    "ok": false,
+    "kind": "invalidYaml"
+  }
+}

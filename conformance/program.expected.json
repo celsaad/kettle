@@ -1,0 +1,500 @@
+{
+  "block-program": {
+    "weekNumbers": {
+      "p": [1, 2, 3, 4, 5, 6, 7]
+    },
+    "queries": [
+      {
+        "query": {
+          "program": "p",
+          "week": 1
+        },
+        "found": true,
+        "resolved": {
+          "workout": {
+            "id": "main",
+            "name": "Main",
+            "blocks": [
+              {
+                "kind": "exercise",
+                "exerciseId": "bench"
+              },
+              {
+                "kind": "circuit",
+                "id": "core",
+                "rounds": 3,
+                "restBetweenRoundsSec": 60,
+                "members": [
+                  {
+                    "exerciseId": "plank"
+                  },
+                  {
+                    "exerciseId": "rest"
+                  }
+                ]
+              },
+              {
+                "kind": "circuit",
+                "rounds": 2,
+                "members": [
+                  {
+                    "exerciseId": "plank"
+                  },
+                  {
+                    "exerciseId": "rest"
+                  }
+                ]
+              }
+            ]
+          },
+          "exercises": [
+            {
+              "id": "bench",
+              "name": "Bench",
+              "type": "reps",
+              "config": {
+                "sets": 3,
+                "targetRepsMin": 5,
+                "targetWeightKg": 80,
+                "restSec": 120
+              }
+            },
+            {
+              "id": "plank",
+              "name": "Plank",
+              "type": "timed_hold",
+              "config": {
+                "sets": 2,
+                "holdSecMin": 30,
+                "restSec": 30
+              }
+            },
+            {
+              "id": "rest",
+              "name": "Rest",
+              "type": "rest",
+              "config": {
+                "durationSec": 60
+              }
+            }
+          ]
+        }
+      },
+      {
+        "query": {
+          "program": "p",
+          "week": 2
+        },
+        "found": true,
+        "resolved": {
+          "workout": {
+            "id": "main",
+            "name": "Main",
+            "blocks": [
+              {
+                "kind": "exercise",
+                "exerciseId": "bench"
+              },
+              {
+                "kind": "circuit",
+                "id": "core",
+                "rounds": 2,
+                "restBetweenRoundsSec": 30,
+                "members": [
+                  {
+                    "exerciseId": "plank"
+                  },
+                  {
+                    "exerciseId": "rest"
+                  }
+                ]
+              },
+              {
+                "kind": "circuit",
+                "rounds": 2,
+                "members": [
+                  {
+                    "exerciseId": "plank"
+                  },
+                  {
+                    "exerciseId": "rest"
+                  }
+                ]
+              }
+            ]
+          },
+          "exercises": [
+            {
+              "id": "bench",
+              "name": "Bench",
+              "type": "reps",
+              "config": {
+                "sets": 5,
+                "targetRepsMin": 5,
+                "targetWeightKg": 85,
+                "restSec": 120
+              }
+            },
+            {
+              "id": "plank",
+              "name": "Plank",
+              "type": "timed_hold",
+              "config": {
+                "sets": 2,
+                "holdSecMin": 30,
+                "restSec": 30
+              }
+            },
+            {
+              "id": "rest",
+              "name": "Rest",
+              "type": "rest",
+              "config": {
+                "durationSec": 60
+              }
+            }
+          ]
+        }
+      },
+      {
+        "query": {
+          "program": "p",
+          "week": 4,
+          "day": "Mon"
+        },
+        "found": true,
+        "resolved": {
+          "workout": {
+            "id": "main",
+            "name": "Main",
+            "blocks": [
+              {
+                "kind": "exercise",
+                "exerciseId": "bench"
+              },
+              {
+                "kind": "circuit",
+                "id": "core",
+                "rounds": 3,
+                "restBetweenRoundsSec": 60,
+                "members": [
+                  {
+                    "exerciseId": "plank"
+                  },
+                  {
+                    "exerciseId": "rest"
+                  }
+                ]
+              },
+              {
+                "kind": "circuit",
+                "rounds": 2,
+                "members": [
+                  {
+                    "exerciseId": "plank"
+                  },
+                  {
+                    "exerciseId": "rest"
+                  }
+                ]
+              }
+            ]
+          },
+          "exercises": [
+            {
+              "id": "bench",
+              "name": "Bench",
+              "type": "reps",
+              "config": {
+                "sets": 4,
+                "targetRepsMin": 5,
+                "targetWeightKg": 80,
+                "restSec": 120
+              }
+            },
+            {
+              "id": "plank",
+              "name": "Plank",
+              "type": "timed_hold",
+              "config": {
+                "sets": 2,
+                "holdSecMin": 30,
+                "restSec": 30
+              }
+            },
+            {
+              "id": "rest",
+              "name": "Rest",
+              "type": "rest",
+              "config": {
+                "durationSec": 60
+              }
+            }
+          ]
+        }
+      },
+      {
+        "query": {
+          "program": "p",
+          "week": 4,
+          "day": "Thu"
+        },
+        "found": true,
+        "resolved": {
+          "workout": {
+            "id": "main",
+            "name": "Main",
+            "blocks": [
+              {
+                "kind": "exercise",
+                "exerciseId": "bench"
+              },
+              {
+                "kind": "circuit",
+                "id": "core",
+                "rounds": 3,
+                "restBetweenRoundsSec": 60,
+                "members": [
+                  {
+                    "exerciseId": "plank"
+                  },
+                  {
+                    "exerciseId": "rest"
+                  }
+                ]
+              },
+              {
+                "kind": "circuit",
+                "rounds": 2,
+                "members": [
+                  {
+                    "exerciseId": "plank"
+                  },
+                  {
+                    "exerciseId": "rest"
+                  }
+                ]
+              }
+            ]
+          },
+          "exercises": [
+            {
+              "id": "bench",
+              "name": "Bench",
+              "type": "reps",
+              "config": {
+                "sets": 3,
+                "targetRepsMin": 5,
+                "targetWeightKg": 80,
+                "restSec": 120
+              }
+            },
+            {
+              "id": "plank",
+              "name": "Plank",
+              "type": "timed_hold",
+              "config": {
+                "sets": 2,
+                "holdSecMin": 30,
+                "restSec": 30
+              }
+            },
+            {
+              "id": "rest",
+              "name": "Rest",
+              "type": "rest",
+              "config": {
+                "durationSec": 60
+              }
+            }
+          ]
+        }
+      },
+      {
+        "query": {
+          "program": "p",
+          "week": 4
+        },
+        "found": true,
+        "resolved": {
+          "workout": {
+            "id": "main",
+            "name": "Main",
+            "blocks": [
+              {
+                "kind": "exercise",
+                "exerciseId": "bench"
+              },
+              {
+                "kind": "circuit",
+                "id": "core",
+                "rounds": 3,
+                "restBetweenRoundsSec": 60,
+                "members": [
+                  {
+                    "exerciseId": "plank"
+                  },
+                  {
+                    "exerciseId": "rest"
+                  }
+                ]
+              },
+              {
+                "kind": "circuit",
+                "rounds": 2,
+                "members": [
+                  {
+                    "exerciseId": "plank"
+                  },
+                  {
+                    "exerciseId": "rest"
+                  }
+                ]
+              }
+            ]
+          },
+          "exercises": [
+            {
+              "id": "bench",
+              "name": "Bench",
+              "type": "reps",
+              "config": {
+                "sets": 4,
+                "targetRepsMin": 5,
+                "targetWeightKg": 80,
+                "restSec": 120
+              }
+            },
+            {
+              "id": "plank",
+              "name": "Plank",
+              "type": "timed_hold",
+              "config": {
+                "sets": 2,
+                "holdSecMin": 30,
+                "restSec": 30
+              }
+            },
+            {
+              "id": "rest",
+              "name": "Rest",
+              "type": "rest",
+              "config": {
+                "durationSec": 60
+              }
+            }
+          ]
+        }
+      },
+      {
+        "query": {
+          "program": "p",
+          "week": 4,
+          "day": "Sun"
+        },
+        "found": false,
+        "resolved": null
+      },
+      {
+        "query": {
+          "program": "p",
+          "week": 5
+        },
+        "found": true,
+        "resolved": null
+      },
+      {
+        "query": {
+          "program": "p",
+          "week": 6
+        },
+        "found": true,
+        "resolved": {
+          "workout": {
+            "id": "main",
+            "name": "Main",
+            "blocks": [
+              {
+                "kind": "exercise",
+                "exerciseId": "bench"
+              },
+              {
+                "kind": "circuit",
+                "id": "core",
+                "rounds": 3,
+                "restBetweenRoundsSec": 60,
+                "members": [
+                  {
+                    "exerciseId": "plank"
+                  },
+                  {
+                    "exerciseId": "rest"
+                  }
+                ]
+              },
+              {
+                "kind": "circuit",
+                "rounds": 2,
+                "members": [
+                  {
+                    "exerciseId": "plank"
+                  },
+                  {
+                    "exerciseId": "rest"
+                  }
+                ]
+              }
+            ]
+          },
+          "exercises": [
+            {
+              "id": "bench",
+              "name": "Bench",
+              "type": "reps",
+              "config": {
+                "sets": 3,
+                "targetRepsMin": 5,
+                "targetWeightKg": 80,
+                "restSec": 120
+              }
+            },
+            {
+              "id": "plank",
+              "name": "Plank",
+              "type": "timed_hold",
+              "config": {
+                "sets": 2,
+                "holdSecMin": 30,
+                "restSec": 30
+              }
+            },
+            {
+              "id": "rest",
+              "name": "Rest",
+              "type": "rest",
+              "config": {
+                "durationSec": 60
+              }
+            }
+          ]
+        }
+      },
+      {
+        "query": {
+          "program": "p",
+          "week": 7
+        },
+        "found": true,
+        "resolved": null
+      },
+      {
+        "query": {
+          "program": "p",
+          "week": 9
+        },
+        "found": false,
+        "resolved": null
+      }
+    ]
+  }
+}

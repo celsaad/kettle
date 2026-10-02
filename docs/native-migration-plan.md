@@ -87,10 +87,12 @@ Nothing user-visible ships in M1. It builds the pieces every later milestone dep
 - **The `:shared` KMP module**: types, schema validation, snake_case ↔ camelCase mapping, merge,
   program resolution and units, ported from `src/domain/`. The selectors in `src/state/selectors/`
   that the native screens will need are ported when those screens are, not here.
-- **A conformance corpus** in `conformance/`: the YAML inputs and expected outputs (parsed
-  library, resolved program week, merge result, validation errors), extracted from the existing
-  domain tests, `site/examples/*.yaml` and the docs samples. **Both** jest and the Kotlin tests run
-  it. A fixture one side passes and the other fails is a fork of the format, and it fails CI.
+- **A conformance corpus** in `conformance/` *(TS side landed; see its README for the contract)*:
+  YAML inputs plus generated golden outputs (parsed library and session, refusal paths, repair,
+  merge, program resolution, overrides, units). The inputs are drawn from the existing domain tests
+  and `site/examples/*.yaml`. The docs samples stay with `docs-samples.test.ts`, since extracting
+  them from markdown is a TS-only job. **Both** jest and the Kotlin tests run it. A fixture one side
+  passes and the other fails is a fork of the format, and it fails CI.
 - **Generated resources**, so translations and colors stay single-sourced while both UIs exist:
   - `en.json`, `pt.json` and `ja.json` → `values{,-pt,-ja}/strings.xml`, plurals included.
     Android's plural rules never select `zero` for Portuguese, so the generator emits an explicit

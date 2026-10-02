@@ -1,0 +1,2610 @@
+{
+  "every-shape": {
+    "ok": true,
+    "value": {
+      "version": 1,
+      "exercises": [
+        {
+          "id": "hiit",
+          "name": "Burpees",
+          "type": "hiit",
+          "config": {
+            "workSec": 40,
+            "restSec": 20,
+            "rounds": 4
+          },
+          "notes": "Fast"
+        },
+        {
+          "id": "emom-full",
+          "name": "Clean",
+          "type": "emom",
+          "config": {
+            "intervalSec": 60,
+            "totalMinutes": 10,
+            "targetReps": 3
+          }
+        },
+        {
+          "id": "emom-bare",
+          "name": "Snatch",
+          "type": "emom",
+          "config": {
+            "intervalSec": 90,
+            "totalMinutes": 9
+          }
+        },
+        {
+          "id": "amrap",
+          "name": "Grinder",
+          "type": "amrap",
+          "config": {
+            "timeCapSec": 600
+          }
+        },
+        {
+          "id": "reps-full",
+          "name": "Bench",
+          "type": "reps",
+          "config": {
+            "sets": 5,
+            "targetRepsMin": 3,
+            "targetRepsMax": 5,
+            "targetWeightKg": 82.5,
+            "restSec": 180
+          },
+          "notes": "Brace"
+        },
+        {
+          "id": "reps-bare",
+          "name": "Push-ups",
+          "type": "reps",
+          "config": {
+            "sets": 3,
+            "targetRepsMin": 12,
+            "restSec": 45
+          }
+        },
+        {
+          "id": "hold-range",
+          "name": "L-Sit",
+          "type": "timed_hold",
+          "config": {
+            "sets": 4,
+            "holdSecMin": 15,
+            "holdSecMax": 25,
+            "restSec": 60
+          }
+        },
+        {
+          "id": "hold-min",
+          "name": "Plank",
+          "type": "timed_hold",
+          "config": {
+            "sets": 2,
+            "holdSecMin": 45,
+            "restSec": 30
+          }
+        },
+        {
+          "id": "hold-open",
+          "name": "Dead hang",
+          "type": "timed_hold",
+          "config": {
+            "sets": 1,
+            "restSec": 0
+          }
+        },
+        {
+          "id": "cardio-both",
+          "name": "Row",
+          "type": "cardio",
+          "config": {
+            "durationSec": 480,
+            "distanceMeters": 2000
+          }
+        },
+        {
+          "id": "cardio-bare",
+          "name": "Walk",
+          "type": "cardio",
+          "config": {}
+        },
+        {
+          "id": "rest",
+          "name": "Rest",
+          "type": "rest",
+          "config": {
+            "durationSec": 90
+          }
+        }
+      ],
+      "workouts": [
+        {
+          "id": "full",
+          "name": "Full",
+          "blocks": [
+            {
+              "kind": "exercise",
+              "exerciseId": "reps-full"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "rest",
+              "configOverride": {
+                "durationSec": 120
+              }
+            },
+            {
+              "kind": "circuit",
+              "id": "finisher",
+              "rounds": 3,
+              "restBetweenExercisesSec": 0,
+              "restBetweenRoundsSec": 90,
+              "members": [
+                {
+                  "exerciseId": "hiit"
+                },
+                {
+                  "exerciseId": "rest",
+                  "configOverride": {
+                    "durationSec": 30
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "bare-circuit",
+          "name": "Bare circuit",
+          "blocks": [
+            {
+              "kind": "circuit",
+              "rounds": 2,
+              "members": [
+                {
+                  "exerciseId": "reps-bare"
+                },
+                {
+                  "exerciseId": "hold-min"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "empty",
+          "name": "Empty",
+          "blocks": []
+        }
+      ],
+      "programs": [
+        {
+          "id": "block",
+          "name": "Block",
+          "weeks": [
+            {
+              "week": 1,
+              "workoutId": "full"
+            },
+            {
+              "week": 2,
+              "day": "Monday",
+              "workoutId": "full",
+              "notes": "Heavier",
+              "overrides": [
+                {
+                  "kind": "exercise",
+                  "exerciseId": "reps-full",
+                  "config": {
+                    "sets": 6
+                  }
+                },
+                {
+                  "kind": "block",
+                  "blockId": "finisher",
+                  "config": {
+                    "rounds": 2
+                  }
+                }
+              ]
+            },
+            {
+              "week": 2,
+              "day": "Thursday",
+              "restDay": true,
+              "notes": "Recover"
+            },
+            {
+              "week": 3,
+              "workoutId": "empty"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "site-example-beginner-full-body": {
+    "ok": true,
+    "value": {
+      "version": 1,
+      "exercises": [
+        {
+          "id": "bfb-rest",
+          "name": "Rest",
+          "type": "rest",
+          "config": {
+            "durationSec": 90
+          }
+        },
+        {
+          "id": "bfb-goblet-squat",
+          "name": "Goblet Squat",
+          "type": "reps",
+          "config": {
+            "sets": 3,
+            "targetRepsMin": 8,
+            "targetRepsMax": 12,
+            "restSec": 90
+          },
+          "notes": "Add weight once you hit 12 on every set, then start again at 8."
+        },
+        {
+          "id": "bfb-floor-press",
+          "name": "Dumbbell Floor Press",
+          "type": "reps",
+          "config": {
+            "sets": 3,
+            "targetRepsMin": 8,
+            "targetRepsMax": 12,
+            "restSec": 90
+          },
+          "notes": "Same rule — top of the range on all sets, then add weight."
+        },
+        {
+          "id": "bfb-row",
+          "name": "Dumbbell Row",
+          "type": "reps",
+          "config": {
+            "sets": 3,
+            "targetRepsMin": 8,
+            "targetRepsMax": 12,
+            "restSec": 90
+          },
+          "notes": "Reps are per side; log the harder side."
+        },
+        {
+          "id": "bfb-romanian-deadlift",
+          "name": "Dumbbell Romanian Deadlift",
+          "type": "reps",
+          "config": {
+            "sets": 3,
+            "targetRepsMin": 8,
+            "targetRepsMax": 12,
+            "restSec": 90
+          }
+        },
+        {
+          "id": "bfb-overhead-press",
+          "name": "Dumbbell Overhead Press",
+          "type": "reps",
+          "config": {
+            "sets": 3,
+            "targetRepsMin": 6,
+            "targetRepsMax": 10,
+            "restSec": 90
+          }
+        },
+        {
+          "id": "bfb-glute-bridge",
+          "name": "Glute Bridge",
+          "type": "reps",
+          "config": {
+            "sets": 3,
+            "targetRepsMin": 10,
+            "targetRepsMax": 15,
+            "restSec": 60
+          }
+        },
+        {
+          "id": "bfb-plank",
+          "name": "Plank",
+          "type": "timed_hold",
+          "config": {
+            "sets": 3,
+            "holdSecMin": 20,
+            "holdSecMax": 45,
+            "restSec": 45
+          },
+          "notes": "Hold to the top of the range for two sessions before extending it."
+        }
+      ],
+      "workouts": [
+        {
+          "id": "bfb-full-body-a",
+          "name": "Full Body A",
+          "blocks": [
+            {
+              "kind": "exercise",
+              "exerciseId": "bfb-goblet-squat"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "bfb-rest"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "bfb-floor-press"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "bfb-rest"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "bfb-row"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "bfb-rest",
+              "configOverride": {
+                "durationSec": 60
+              }
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "bfb-plank"
+            }
+          ]
+        },
+        {
+          "id": "bfb-full-body-b",
+          "name": "Full Body B",
+          "blocks": [
+            {
+              "kind": "exercise",
+              "exerciseId": "bfb-romanian-deadlift"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "bfb-rest"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "bfb-overhead-press"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "bfb-rest"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "bfb-glute-bridge"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "bfb-rest",
+              "configOverride": {
+                "durationSec": 60
+              }
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "bfb-plank"
+            }
+          ]
+        }
+      ],
+      "programs": [
+        {
+          "id": "bfb-beginner-4-weeks",
+          "name": "Beginner Full Body · 4 Weeks",
+          "weeks": [
+            {
+              "week": 1,
+              "day": "Day 1",
+              "workoutId": "bfb-full-body-a",
+              "notes": "Baseline. Pick a weight you could stop two reps short with."
+            },
+            {
+              "week": 1,
+              "day": "Day 2",
+              "restDay": true,
+              "notes": "A full day between sessions is the plan working, not a day lost."
+            },
+            {
+              "week": 1,
+              "day": "Day 3",
+              "workoutId": "bfb-full-body-b"
+            },
+            {
+              "week": 1,
+              "day": "Day 4",
+              "restDay": true
+            },
+            {
+              "week": 1,
+              "day": "Day 5",
+              "workoutId": "bfb-full-body-a"
+            },
+            {
+              "week": 1,
+              "day": "Day 6",
+              "restDay": true
+            },
+            {
+              "week": 1,
+              "day": "Day 7",
+              "restDay": true
+            },
+            {
+              "week": 2,
+              "day": "Day 1",
+              "workoutId": "bfb-full-body-b",
+              "notes": "Same weights as week 1 if week 1 felt hard. Otherwise nudge them up."
+            },
+            {
+              "week": 2,
+              "day": "Day 2",
+              "restDay": true
+            },
+            {
+              "week": 2,
+              "day": "Day 3",
+              "workoutId": "bfb-full-body-a"
+            },
+            {
+              "week": 2,
+              "day": "Day 4",
+              "restDay": true
+            },
+            {
+              "week": 2,
+              "day": "Day 5",
+              "workoutId": "bfb-full-body-b"
+            },
+            {
+              "week": 2,
+              "day": "Day 6",
+              "restDay": true
+            },
+            {
+              "week": 2,
+              "day": "Day 7",
+              "restDay": true
+            },
+            {
+              "week": 3,
+              "day": "Day 1",
+              "workoutId": "bfb-full-body-a",
+              "notes": "Fourth set on the squat and the press from here on.",
+              "overrides": [
+                {
+                  "kind": "exercise",
+                  "exerciseId": "bfb-goblet-squat",
+                  "config": {
+                    "sets": 4
+                  }
+                },
+                {
+                  "kind": "exercise",
+                  "exerciseId": "bfb-floor-press",
+                  "config": {
+                    "sets": 4
+                  }
+                }
+              ]
+            },
+            {
+              "week": 3,
+              "day": "Day 2",
+              "restDay": true
+            },
+            {
+              "week": 3,
+              "day": "Day 3",
+              "workoutId": "bfb-full-body-b"
+            },
+            {
+              "week": 3,
+              "day": "Day 4",
+              "restDay": true
+            },
+            {
+              "week": 3,
+              "day": "Day 5",
+              "workoutId": "bfb-full-body-a",
+              "overrides": [
+                {
+                  "kind": "exercise",
+                  "exerciseId": "bfb-goblet-squat",
+                  "config": {
+                    "sets": 4
+                  }
+                },
+                {
+                  "kind": "exercise",
+                  "exerciseId": "bfb-floor-press",
+                  "config": {
+                    "sets": 4
+                  }
+                }
+              ]
+            },
+            {
+              "week": 3,
+              "day": "Day 6",
+              "restDay": true
+            },
+            {
+              "week": 3,
+              "day": "Day 7",
+              "restDay": true
+            },
+            {
+              "week": 4,
+              "day": "Day 1",
+              "workoutId": "bfb-full-body-b",
+              "notes": "Last week. Log honestly, then rewrite the file with what you learned."
+            },
+            {
+              "week": 4,
+              "day": "Day 2",
+              "restDay": true
+            },
+            {
+              "week": 4,
+              "day": "Day 3",
+              "workoutId": "bfb-full-body-a",
+              "overrides": [
+                {
+                  "kind": "exercise",
+                  "exerciseId": "bfb-goblet-squat",
+                  "config": {
+                    "sets": 4
+                  }
+                },
+                {
+                  "kind": "exercise",
+                  "exerciseId": "bfb-floor-press",
+                  "config": {
+                    "sets": 4
+                  }
+                }
+              ]
+            },
+            {
+              "week": 4,
+              "day": "Day 4",
+              "restDay": true
+            },
+            {
+              "week": 4,
+              "day": "Day 5",
+              "workoutId": "bfb-full-body-b"
+            },
+            {
+              "week": 4,
+              "day": "Day 6",
+              "restDay": true
+            },
+            {
+              "week": 4,
+              "day": "Day 7",
+              "restDay": true
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "site-example-bodyweight-no-equipment": {
+    "ok": true,
+    "value": {
+      "version": 1,
+      "exercises": [
+        {
+          "id": "bw-rest",
+          "name": "Rest",
+          "type": "rest",
+          "config": {
+            "durationSec": 60
+          }
+        },
+        {
+          "id": "bw-pushups",
+          "name": "Push-ups",
+          "type": "reps",
+          "config": {
+            "sets": 3,
+            "targetRepsMin": 8,
+            "targetRepsMax": 15,
+            "restSec": 60
+          },
+          "notes": "Hands raised on a step if you can't reach 8; feet raised once 15 is easy."
+        },
+        {
+          "id": "bw-squats",
+          "name": "Bodyweight Squat",
+          "type": "reps",
+          "config": {
+            "sets": 3,
+            "targetRepsMin": 15,
+            "targetRepsMax": 25,
+            "restSec": 60
+          }
+        },
+        {
+          "id": "bw-split-squat",
+          "name": "Split Squat",
+          "type": "reps",
+          "config": {
+            "sets": 3,
+            "targetRepsMin": 8,
+            "targetRepsMax": 12,
+            "restSec": 60
+          },
+          "notes": "Reps are per leg."
+        },
+        {
+          "id": "bw-pike-pushups",
+          "name": "Pike Push-ups",
+          "type": "reps",
+          "config": {
+            "sets": 3,
+            "targetRepsMin": 6,
+            "targetRepsMax": 10,
+            "restSec": 60
+          }
+        },
+        {
+          "id": "bw-glute-bridge",
+          "name": "Glute Bridge",
+          "type": "reps",
+          "config": {
+            "sets": 3,
+            "targetRepsMin": 12,
+            "targetRepsMax": 20,
+            "restSec": 45
+          }
+        },
+        {
+          "id": "bw-superman",
+          "name": "Superman",
+          "type": "reps",
+          "config": {
+            "sets": 3,
+            "targetRepsMin": 10,
+            "targetRepsMax": 15,
+            "restSec": 45
+          }
+        },
+        {
+          "id": "bw-plank",
+          "name": "Plank",
+          "type": "timed_hold",
+          "config": {
+            "sets": 3,
+            "holdSecMin": 20,
+            "holdSecMax": 45,
+            "restSec": 45
+          }
+        },
+        {
+          "id": "bw-hollow-hold",
+          "name": "Hollow Hold",
+          "type": "timed_hold",
+          "config": {
+            "sets": 3,
+            "holdSecMin": 15,
+            "holdSecMax": 30,
+            "restSec": 45
+          }
+        },
+        {
+          "id": "bw-wall-sit",
+          "name": "Wall Sit",
+          "type": "timed_hold",
+          "config": {
+            "sets": 3,
+            "holdSecMin": 30,
+            "holdSecMax": 60,
+            "restSec": 60
+          }
+        },
+        {
+          "id": "bw-mountain-climbers",
+          "name": "Mountain Climbers",
+          "type": "hiit",
+          "config": {
+            "workSec": 30,
+            "restSec": 30,
+            "rounds": 4
+          }
+        },
+        {
+          "id": "bw-plank-test",
+          "name": "Plank Test",
+          "type": "timed_hold",
+          "config": {
+            "sets": 1,
+            "restSec": 0
+          },
+          "notes": "Hold to failure. One set, once a month — this is the measurement, not the training."
+        }
+      ],
+      "workouts": [
+        {
+          "id": "bw-full-body",
+          "name": "Bodyweight Full Body",
+          "blocks": [
+            {
+              "kind": "circuit",
+              "id": "bw-main-circuit",
+              "rounds": 3,
+              "restBetweenExercisesSec": 15,
+              "restBetweenRoundsSec": 90,
+              "members": [
+                {
+                  "exerciseId": "bw-pushups"
+                },
+                {
+                  "exerciseId": "bw-squats"
+                },
+                {
+                  "exerciseId": "bw-superman"
+                }
+              ]
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "bw-rest",
+              "configOverride": {
+                "durationSec": 120
+              }
+            },
+            {
+              "kind": "circuit",
+              "id": "bw-core-superset",
+              "rounds": 3,
+              "restBetweenExercisesSec": 0,
+              "restBetweenRoundsSec": 45,
+              "members": [
+                {
+                  "exerciseId": "bw-plank"
+                },
+                {
+                  "exerciseId": "bw-hollow-hold"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "bw-lower",
+          "name": "Bodyweight Lower",
+          "blocks": [
+            {
+              "kind": "exercise",
+              "exerciseId": "bw-split-squat"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "bw-rest",
+              "configOverride": {
+                "durationSec": 90
+              }
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "bw-glute-bridge"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "bw-rest"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "bw-wall-sit"
+            }
+          ]
+        },
+        {
+          "id": "bw-quick",
+          "name": "Quick 15",
+          "blocks": [
+            {
+              "kind": "circuit",
+              "id": "bw-quick-circuit",
+              "rounds": 4,
+              "restBetweenExercisesSec": 10,
+              "restBetweenRoundsSec": 60,
+              "members": [
+                {
+                  "exerciseId": "bw-pushups"
+                },
+                {
+                  "exerciseId": "bw-squats"
+                },
+                {
+                  "exerciseId": "bw-plank"
+                }
+              ]
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "bw-rest"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "bw-mountain-climbers"
+            }
+          ]
+        },
+        {
+          "id": "bw-benchmark",
+          "name": "Plank Benchmark",
+          "blocks": [
+            {
+              "kind": "exercise",
+              "exerciseId": "bw-plank-test"
+            }
+          ]
+        }
+      ],
+      "programs": [
+        {
+          "id": "bw-4-weeks",
+          "name": "Bodyweight · 4 Weeks · No Equipment",
+          "weeks": [
+            {
+              "week": 1,
+              "day": "Day 1",
+              "workoutId": "bw-full-body",
+              "notes": "Baseline. Stop each set two reps short and see where that lands."
+            },
+            {
+              "week": 1,
+              "day": "Day 2",
+              "restDay": true,
+              "notes": "Nothing scheduled. Walk, stretch, or do neither."
+            },
+            {
+              "week": 1,
+              "day": "Day 3",
+              "workoutId": "bw-lower"
+            },
+            {
+              "week": 1,
+              "day": "Day 4",
+              "restDay": true
+            },
+            {
+              "week": 1,
+              "day": "Day 5",
+              "workoutId": "bw-quick"
+            },
+            {
+              "week": 1,
+              "day": "Day 6",
+              "restDay": true
+            },
+            {
+              "week": 1,
+              "day": "Day 7",
+              "restDay": true
+            },
+            {
+              "week": 2,
+              "day": "Day 1",
+              "workoutId": "bw-full-body",
+              "notes": "Same rounds, more reps inside each range."
+            },
+            {
+              "week": 2,
+              "day": "Day 2",
+              "restDay": true
+            },
+            {
+              "week": 2,
+              "day": "Day 3",
+              "workoutId": "bw-lower"
+            },
+            {
+              "week": 2,
+              "day": "Day 4",
+              "restDay": true
+            },
+            {
+              "week": 2,
+              "day": "Day 5",
+              "workoutId": "bw-quick"
+            },
+            {
+              "week": 2,
+              "day": "Day 6",
+              "restDay": true
+            },
+            {
+              "week": 2,
+              "day": "Day 7",
+              "restDay": true
+            },
+            {
+              "week": 3,
+              "day": "Day 1",
+              "workoutId": "bw-full-body",
+              "notes": "Fourth round on the main circuit.",
+              "overrides": [
+                {
+                  "kind": "block",
+                  "blockId": "bw-main-circuit",
+                  "config": {
+                    "rounds": 4
+                  }
+                }
+              ]
+            },
+            {
+              "week": 3,
+              "day": "Day 2",
+              "restDay": true
+            },
+            {
+              "week": 3,
+              "day": "Day 3",
+              "workoutId": "bw-lower"
+            },
+            {
+              "week": 3,
+              "day": "Day 4",
+              "restDay": true
+            },
+            {
+              "week": 3,
+              "day": "Day 5",
+              "workoutId": "bw-quick",
+              "overrides": [
+                {
+                  "kind": "block",
+                  "blockId": "bw-quick-circuit",
+                  "config": {
+                    "rounds": 5
+                  }
+                }
+              ]
+            },
+            {
+              "week": 3,
+              "day": "Day 6",
+              "restDay": true
+            },
+            {
+              "week": 3,
+              "day": "Day 7",
+              "restDay": true
+            },
+            {
+              "week": 4,
+              "day": "Day 1",
+              "workoutId": "bw-full-body",
+              "notes": "Last week. Everything at its longest.",
+              "overrides": [
+                {
+                  "kind": "block",
+                  "blockId": "bw-main-circuit",
+                  "config": {
+                    "rounds": 4
+                  }
+                },
+                {
+                  "kind": "block",
+                  "blockId": "bw-core-superset",
+                  "config": {
+                    "rounds": 4
+                  }
+                }
+              ]
+            },
+            {
+              "week": 4,
+              "day": "Day 2",
+              "restDay": true
+            },
+            {
+              "week": 4,
+              "day": "Day 3",
+              "workoutId": "bw-lower"
+            },
+            {
+              "week": 4,
+              "day": "Day 4",
+              "restDay": true
+            },
+            {
+              "week": 4,
+              "day": "Day 5",
+              "workoutId": "bw-quick",
+              "overrides": [
+                {
+                  "kind": "block",
+                  "blockId": "bw-quick-circuit",
+                  "config": {
+                    "rounds": 5
+                  }
+                }
+              ]
+            },
+            {
+              "week": 4,
+              "day": "Day 6",
+              "restDay": true
+            },
+            {
+              "week": 4,
+              "day": "Day 7",
+              "restDay": true
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "site-example-conditioning-hiit": {
+    "ok": true,
+    "value": {
+      "version": 1,
+      "exercises": [
+        {
+          "id": "cnd-rest",
+          "name": "Rest",
+          "type": "rest",
+          "config": {
+            "durationSec": 120
+          }
+        },
+        {
+          "id": "cnd-burpees",
+          "name": "Burpees",
+          "type": "hiit",
+          "config": {
+            "workSec": 30,
+            "restSec": 30,
+            "rounds": 8
+          },
+          "notes": "Steady pace you can hold for all 8 — the last round should look like the first."
+        },
+        {
+          "id": "cnd-high-knees",
+          "name": "High Knees",
+          "type": "hiit",
+          "config": {
+            "workSec": 20,
+            "restSec": 40,
+            "rounds": 10
+          },
+          "notes": "Flat out for the 20 seconds. The 40 is there to make that possible."
+        },
+        {
+          "id": "cnd-swings",
+          "name": "Kettlebell Swings",
+          "type": "emom",
+          "config": {
+            "intervalSec": 60,
+            "totalMinutes": 12,
+            "targetReps": 15
+          },
+          "notes": "15 swings at the top of each minute; the rest of the minute is the rest."
+        },
+        {
+          "id": "cnd-amrap-12",
+          "name": "AMRAP 12",
+          "type": "amrap",
+          "config": {
+            "timeCapSec": 720
+          },
+          "notes": "One round is 10 swings, 10 push-ups, 15 air squats. Count the rounds."
+        },
+        {
+          "id": "cnd-row-2k",
+          "name": "Row 2k",
+          "type": "cardio",
+          "config": {
+            "distanceMeters": 2000
+          },
+          "notes": "A repeatable test. Same machine, same damper, log the time."
+        },
+        {
+          "id": "cnd-easy-run",
+          "name": "Easy Run",
+          "type": "cardio",
+          "config": {
+            "durationSec": 1800
+          },
+          "notes": "Conversational pace. Run, bike or row — whatever you have."
+        },
+        {
+          "id": "cnd-cooldown",
+          "name": "Cool-down Walk",
+          "type": "cardio",
+          "config": {}
+        }
+      ],
+      "workouts": [
+        {
+          "id": "cnd-intervals",
+          "name": "Intervals",
+          "blocks": [
+            {
+              "kind": "exercise",
+              "exerciseId": "cnd-burpees"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "cnd-rest"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "cnd-high-knees"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "cnd-rest"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "cnd-cooldown"
+            }
+          ]
+        },
+        {
+          "id": "cnd-emom",
+          "name": "EMOM 12",
+          "blocks": [
+            {
+              "kind": "exercise",
+              "exerciseId": "cnd-swings"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "cnd-rest"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "cnd-cooldown"
+            }
+          ]
+        },
+        {
+          "id": "cnd-amrap",
+          "name": "AMRAP 12",
+          "blocks": [
+            {
+              "kind": "exercise",
+              "exerciseId": "cnd-amrap-12"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "cnd-rest",
+              "configOverride": {
+                "durationSec": 180
+              }
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "cnd-cooldown"
+            }
+          ]
+        },
+        {
+          "id": "cnd-steady",
+          "name": "Steady State",
+          "blocks": [
+            {
+              "kind": "exercise",
+              "exerciseId": "cnd-easy-run"
+            }
+          ]
+        },
+        {
+          "id": "cnd-test",
+          "name": "2k Test",
+          "blocks": [
+            {
+              "kind": "exercise",
+              "exerciseId": "cnd-row-2k"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "cnd-rest",
+              "configOverride": {
+                "durationSec": 300
+              }
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "cnd-cooldown"
+            }
+          ]
+        }
+      ],
+      "programs": [
+        {
+          "id": "cnd-4-weeks",
+          "name": "Conditioning · 4 Weeks",
+          "weeks": [
+            {
+              "week": 1,
+              "day": "Day 1",
+              "workoutId": "cnd-test",
+              "notes": "Set the baseline. Everything after this is measured against it."
+            },
+            {
+              "week": 1,
+              "day": "Day 2",
+              "restDay": true,
+              "notes": "Hard days need the day after them. That is what this entry is for."
+            },
+            {
+              "week": 1,
+              "day": "Day 3",
+              "restDay": true
+            },
+            {
+              "week": 1,
+              "day": "Day 4",
+              "workoutId": "cnd-steady"
+            },
+            {
+              "week": 1,
+              "day": "Day 5",
+              "restDay": true
+            },
+            {
+              "week": 1,
+              "day": "Day 6",
+              "restDay": true
+            },
+            {
+              "week": 1,
+              "day": "Day 7",
+              "restDay": true
+            },
+            {
+              "week": 2,
+              "day": "Day 1",
+              "workoutId": "cnd-intervals"
+            },
+            {
+              "week": 2,
+              "day": "Day 2",
+              "restDay": true
+            },
+            {
+              "week": 2,
+              "day": "Day 3",
+              "restDay": true
+            },
+            {
+              "week": 2,
+              "day": "Day 4",
+              "workoutId": "cnd-steady"
+            },
+            {
+              "week": 2,
+              "day": "Day 5",
+              "restDay": true
+            },
+            {
+              "week": 2,
+              "day": "Day 6",
+              "restDay": true
+            },
+            {
+              "week": 2,
+              "day": "Day 7",
+              "restDay": true
+            },
+            {
+              "week": 3,
+              "day": "Day 1",
+              "workoutId": "cnd-emom",
+              "notes": "EMOM stretched to 15 minutes.",
+              "overrides": [
+                {
+                  "kind": "exercise",
+                  "exerciseId": "cnd-swings",
+                  "config": {
+                    "total_minutes": 15
+                  }
+                }
+              ]
+            },
+            {
+              "week": 3,
+              "day": "Day 2",
+              "restDay": true
+            },
+            {
+              "week": 3,
+              "day": "Day 3",
+              "restDay": true
+            },
+            {
+              "week": 3,
+              "day": "Day 4",
+              "workoutId": "cnd-steady",
+              "overrides": [
+                {
+                  "kind": "exercise",
+                  "exerciseId": "cnd-easy-run",
+                  "config": {
+                    "duration_sec": 2400
+                  }
+                }
+              ]
+            },
+            {
+              "week": 3,
+              "day": "Day 5",
+              "restDay": true
+            },
+            {
+              "week": 3,
+              "day": "Day 6",
+              "restDay": true
+            },
+            {
+              "week": 3,
+              "day": "Day 7",
+              "restDay": true
+            },
+            {
+              "week": 4,
+              "day": "Day 1",
+              "workoutId": "cnd-test",
+              "notes": "Same test as week 1, rested. Compare the two entries in History."
+            },
+            {
+              "week": 4,
+              "day": "Day 2",
+              "restDay": true
+            },
+            {
+              "week": 4,
+              "day": "Day 3",
+              "restDay": true
+            },
+            {
+              "week": 4,
+              "day": "Day 4",
+              "workoutId": "cnd-amrap",
+              "overrides": [
+                {
+                  "kind": "exercise",
+                  "exerciseId": "cnd-amrap-12",
+                  "config": {
+                    "time_cap_sec": 900
+                  }
+                }
+              ]
+            },
+            {
+              "week": 4,
+              "day": "Day 5",
+              "restDay": true
+            },
+            {
+              "week": 4,
+              "day": "Day 6",
+              "restDay": true
+            },
+            {
+              "week": 4,
+              "day": "Day 7",
+              "restDay": true
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "site-example-push-pull-legs-6-weeks": {
+    "ok": true,
+    "value": {
+      "version": 1,
+      "exercises": [
+        {
+          "id": "ppl-rest",
+          "name": "Rest",
+          "type": "rest",
+          "config": {
+            "durationSec": 120
+          }
+        },
+        {
+          "id": "ppl-bench-press",
+          "name": "Bench Press",
+          "type": "reps",
+          "config": {
+            "sets": 4,
+            "targetRepsMin": 5,
+            "targetRepsMax": 8,
+            "targetWeightKg": 50,
+            "restSec": 180
+          },
+          "notes": "Add 2.5 kg once all sets reach 8."
+        },
+        {
+          "id": "ppl-overhead-press",
+          "name": "Overhead Press",
+          "type": "reps",
+          "config": {
+            "sets": 3,
+            "targetRepsMin": 6,
+            "targetRepsMax": 10,
+            "targetWeightKg": 30,
+            "restSec": 120
+          }
+        },
+        {
+          "id": "ppl-dips",
+          "name": "Dips",
+          "type": "reps",
+          "config": {
+            "sets": 3,
+            "targetRepsMin": 6,
+            "targetRepsMax": 12,
+            "restSec": 90
+          },
+          "notes": "Bodyweight until 3 × 12, then hang weight from a belt."
+        },
+        {
+          "id": "ppl-lateral-raise",
+          "name": "Dumbbell Lateral Raise",
+          "type": "reps",
+          "config": {
+            "sets": 3,
+            "targetRepsMin": 12,
+            "targetRepsMax": 15,
+            "targetWeightKg": 8,
+            "restSec": 60
+          }
+        },
+        {
+          "id": "ppl-deadlift",
+          "name": "Deadlift",
+          "type": "reps",
+          "config": {
+            "sets": 3,
+            "targetRepsMin": 5,
+            "targetWeightKg": 80,
+            "restSec": 180
+          },
+          "notes": "A fixed target of 5 — no range, so no `target_reps_max` here."
+        },
+        {
+          "id": "ppl-pullups",
+          "name": "Pull-ups",
+          "type": "reps",
+          "config": {
+            "sets": 4,
+            "targetRepsMin": 5,
+            "targetRepsMax": 8,
+            "restSec": 120
+          },
+          "notes": "Bands or a machine count. Log what you actually did."
+        },
+        {
+          "id": "ppl-barbell-row",
+          "name": "Barbell Row",
+          "type": "reps",
+          "config": {
+            "sets": 4,
+            "targetRepsMin": 6,
+            "targetRepsMax": 10,
+            "targetWeightKg": 40,
+            "restSec": 120
+          }
+        },
+        {
+          "id": "ppl-curl",
+          "name": "Dumbbell Curl",
+          "type": "reps",
+          "config": {
+            "sets": 3,
+            "targetRepsMin": 10,
+            "targetRepsMax": 12,
+            "targetWeightKg": 12,
+            "restSec": 60
+          }
+        },
+        {
+          "id": "ppl-back-squat",
+          "name": "Back Squat",
+          "type": "reps",
+          "config": {
+            "sets": 5,
+            "targetRepsMin": 5,
+            "targetWeightKg": 60,
+            "restSec": 180
+          }
+        },
+        {
+          "id": "ppl-romanian-deadlift",
+          "name": "Romanian Deadlift",
+          "type": "reps",
+          "config": {
+            "sets": 3,
+            "targetRepsMin": 8,
+            "targetRepsMax": 10,
+            "targetWeightKg": 50,
+            "restSec": 120
+          }
+        },
+        {
+          "id": "ppl-walking-lunge",
+          "name": "Walking Lunge",
+          "type": "reps",
+          "config": {
+            "sets": 3,
+            "targetRepsMin": 10,
+            "targetRepsMax": 12,
+            "restSec": 60
+          }
+        },
+        {
+          "id": "ppl-calf-raise",
+          "name": "Standing Calf Raise",
+          "type": "reps",
+          "config": {
+            "sets": 3,
+            "targetRepsMin": 12,
+            "targetRepsMax": 20,
+            "restSec": 45
+          }
+        },
+        {
+          "id": "ppl-hollow-hold",
+          "name": "Hollow Hold",
+          "type": "timed_hold",
+          "config": {
+            "sets": 3,
+            "holdSecMin": 20,
+            "holdSecMax": 40,
+            "restSec": 45
+          }
+        }
+      ],
+      "workouts": [
+        {
+          "id": "ppl-push",
+          "name": "Push Day",
+          "blocks": [
+            {
+              "kind": "exercise",
+              "exerciseId": "ppl-bench-press"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "ppl-rest"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "ppl-overhead-press"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "ppl-rest",
+              "configOverride": {
+                "durationSec": 90
+              }
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "ppl-dips"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "ppl-rest",
+              "configOverride": {
+                "durationSec": 90
+              }
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "ppl-lateral-raise"
+            }
+          ]
+        },
+        {
+          "id": "ppl-pull",
+          "name": "Pull Day",
+          "blocks": [
+            {
+              "kind": "exercise",
+              "exerciseId": "ppl-deadlift"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "ppl-rest"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "ppl-pullups"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "ppl-rest"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "ppl-barbell-row"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "ppl-rest",
+              "configOverride": {
+                "durationSec": 90
+              }
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "ppl-curl"
+            }
+          ]
+        },
+        {
+          "id": "ppl-legs",
+          "name": "Leg Day",
+          "blocks": [
+            {
+              "kind": "exercise",
+              "exerciseId": "ppl-back-squat"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "ppl-rest"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "ppl-romanian-deadlift"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "ppl-rest"
+            },
+            {
+              "kind": "circuit",
+              "id": "ppl-leg-finisher",
+              "rounds": 3,
+              "restBetweenExercisesSec": 20,
+              "restBetweenRoundsSec": 90,
+              "members": [
+                {
+                  "exerciseId": "ppl-walking-lunge"
+                },
+                {
+                  "exerciseId": "ppl-calf-raise"
+                },
+                {
+                  "exerciseId": "ppl-hollow-hold"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "programs": [
+        {
+          "id": "ppl-6-weeks",
+          "name": "Push/Pull/Legs · 6 Weeks",
+          "weeks": [
+            {
+              "week": 1,
+              "day": "Day 1 · Push",
+              "workoutId": "ppl-push",
+              "notes": "Baseline week. Leave the weights conservative and log the ranges."
+            },
+            {
+              "week": 1,
+              "day": "Day 2 · Pull",
+              "workoutId": "ppl-pull"
+            },
+            {
+              "week": 1,
+              "day": "Day 3 · Legs",
+              "workoutId": "ppl-legs"
+            },
+            {
+              "week": 1,
+              "day": "Day 4 · Rest",
+              "restDay": true,
+              "notes": "Four days off before the next block of three. Written out so Kettle counts them."
+            },
+            {
+              "week": 1,
+              "day": "Day 5 · Rest",
+              "restDay": true
+            },
+            {
+              "week": 1,
+              "day": "Day 6 · Rest",
+              "restDay": true
+            },
+            {
+              "week": 1,
+              "day": "Day 7 · Rest",
+              "restDay": true
+            },
+            {
+              "week": 2,
+              "day": "Day 1 · Push",
+              "workoutId": "ppl-push",
+              "notes": "Same weights, one more rep per set where the range allows it."
+            },
+            {
+              "week": 2,
+              "day": "Day 2 · Pull",
+              "workoutId": "ppl-pull"
+            },
+            {
+              "week": 2,
+              "day": "Day 3 · Legs",
+              "workoutId": "ppl-legs"
+            },
+            {
+              "week": 2,
+              "day": "Day 4 · Rest",
+              "restDay": true
+            },
+            {
+              "week": 2,
+              "day": "Day 5 · Rest",
+              "restDay": true
+            },
+            {
+              "week": 2,
+              "day": "Day 6 · Rest",
+              "restDay": true
+            },
+            {
+              "week": 2,
+              "day": "Day 7 · Rest",
+              "restDay": true
+            },
+            {
+              "week": 3,
+              "day": "Day 1 · Push",
+              "workoutId": "ppl-push",
+              "notes": "Fifth set on the bench from this week on.",
+              "overrides": [
+                {
+                  "kind": "exercise",
+                  "exerciseId": "ppl-bench-press",
+                  "config": {
+                    "sets": 5
+                  }
+                }
+              ]
+            },
+            {
+              "week": 3,
+              "day": "Day 2 · Pull",
+              "workoutId": "ppl-pull",
+              "overrides": [
+                {
+                  "kind": "exercise",
+                  "exerciseId": "ppl-barbell-row",
+                  "config": {
+                    "sets": 5
+                  }
+                }
+              ]
+            },
+            {
+              "week": 3,
+              "day": "Day 3 · Legs",
+              "workoutId": "ppl-legs"
+            },
+            {
+              "week": 3,
+              "day": "Day 4 · Rest",
+              "restDay": true
+            },
+            {
+              "week": 3,
+              "day": "Day 5 · Rest",
+              "restDay": true
+            },
+            {
+              "week": 3,
+              "day": "Day 6 · Rest",
+              "restDay": true
+            },
+            {
+              "week": 3,
+              "day": "Day 7 · Rest",
+              "restDay": true
+            },
+            {
+              "week": 4,
+              "day": "Day 1 · Push",
+              "workoutId": "ppl-push",
+              "overrides": [
+                {
+                  "kind": "exercise",
+                  "exerciseId": "ppl-bench-press",
+                  "config": {
+                    "sets": 5
+                  }
+                }
+              ]
+            },
+            {
+              "week": 4,
+              "day": "Day 2 · Pull",
+              "workoutId": "ppl-pull",
+              "overrides": [
+                {
+                  "kind": "exercise",
+                  "exerciseId": "ppl-barbell-row",
+                  "config": {
+                    "sets": 5
+                  }
+                }
+              ]
+            },
+            {
+              "week": 4,
+              "day": "Day 3 · Legs",
+              "workoutId": "ppl-legs"
+            },
+            {
+              "week": 4,
+              "day": "Day 4 · Rest",
+              "restDay": true
+            },
+            {
+              "week": 4,
+              "day": "Day 5 · Rest",
+              "restDay": true
+            },
+            {
+              "week": 4,
+              "day": "Day 6 · Rest",
+              "restDay": true
+            },
+            {
+              "week": 4,
+              "day": "Day 7 · Rest",
+              "restDay": true
+            },
+            {
+              "week": 5,
+              "day": "Day 1 · Push",
+              "workoutId": "ppl-push",
+              "notes": "Peak week. Everything is at its heaviest and longest.",
+              "overrides": [
+                {
+                  "kind": "exercise",
+                  "exerciseId": "ppl-bench-press",
+                  "config": {
+                    "sets": 5
+                  }
+                }
+              ]
+            },
+            {
+              "week": 5,
+              "day": "Day 2 · Pull",
+              "workoutId": "ppl-pull",
+              "overrides": [
+                {
+                  "kind": "exercise",
+                  "exerciseId": "ppl-barbell-row",
+                  "config": {
+                    "sets": 5
+                  }
+                }
+              ]
+            },
+            {
+              "week": 5,
+              "day": "Day 3 · Legs",
+              "workoutId": "ppl-legs",
+              "overrides": [
+                {
+                  "kind": "block",
+                  "blockId": "ppl-leg-finisher",
+                  "config": {
+                    "rounds": 4
+                  }
+                }
+              ]
+            },
+            {
+              "week": 5,
+              "day": "Day 4 · Rest",
+              "restDay": true
+            },
+            {
+              "week": 5,
+              "day": "Day 5 · Rest",
+              "restDay": true
+            },
+            {
+              "week": 5,
+              "day": "Day 6 · Rest",
+              "restDay": true
+            },
+            {
+              "week": 5,
+              "day": "Day 7 · Rest",
+              "restDay": true
+            },
+            {
+              "week": 6,
+              "day": "Day 1 · Push",
+              "workoutId": "ppl-push",
+              "notes": "Deload. Keep the bar moving fast, stop well short of failure.",
+              "overrides": [
+                {
+                  "kind": "exercise",
+                  "exerciseId": "ppl-bench-press",
+                  "config": {
+                    "sets": 3
+                  }
+                }
+              ]
+            },
+            {
+              "week": 6,
+              "day": "Day 2 · Pull",
+              "workoutId": "ppl-pull",
+              "overrides": [
+                {
+                  "kind": "exercise",
+                  "exerciseId": "ppl-barbell-row",
+                  "config": {
+                    "sets": 3
+                  }
+                }
+              ]
+            },
+            {
+              "week": 6,
+              "day": "Day 3 · Legs",
+              "workoutId": "ppl-legs",
+              "overrides": [
+                {
+                  "kind": "exercise",
+                  "exerciseId": "ppl-back-squat",
+                  "config": {
+                    "sets": 3
+                  }
+                },
+                {
+                  "kind": "block",
+                  "blockId": "ppl-leg-finisher",
+                  "config": {
+                    "rounds": 2
+                  }
+                }
+              ]
+            },
+            {
+              "week": 6,
+              "day": "Day 4 · Rest",
+              "restDay": true
+            },
+            {
+              "week": 6,
+              "day": "Day 5 · Rest",
+              "restDay": true
+            },
+            {
+              "week": 6,
+              "day": "Day 6 · Rest",
+              "restDay": true
+            },
+            {
+              "week": 6,
+              "day": "Day 7 · Rest",
+              "restDay": true
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "empty-library": {
+    "ok": true,
+    "value": {
+      "version": 1,
+      "exercises": [],
+      "workouts": [],
+      "programs": []
+    }
+  },
+  "unknown-keys-are-dropped": {
+    "ok": true,
+    "value": {
+      "version": 1,
+      "exercises": [
+        {
+          "id": "a",
+          "name": "A",
+          "type": "rest",
+          "config": {
+            "durationSec": 90
+          }
+        }
+      ],
+      "workouts": [
+        {
+          "id": "w",
+          "name": "W",
+          "blocks": [
+            {
+              "kind": "exercise",
+              "exerciseId": "a"
+            }
+          ]
+        }
+      ],
+      "programs": []
+    }
+  },
+  "integer-written-as-float": {
+    "ok": true,
+    "value": {
+      "version": 1,
+      "exercises": [
+        {
+          "id": "a",
+          "name": "A",
+          "type": "reps",
+          "config": {
+            "sets": 3,
+            "targetRepsMin": 5,
+            "restSec": 60
+          }
+        }
+      ],
+      "workouts": [],
+      "programs": []
+    }
+  },
+  "yes-and-no-stay-strings": {
+    "ok": true,
+    "value": {
+      "version": 1,
+      "exercises": [
+        {
+          "id": "no",
+          "name": "yes",
+          "type": "rest",
+          "config": {
+            "durationSec": 1
+          },
+          "notes": "on"
+        }
+      ],
+      "workouts": [],
+      "programs": []
+    }
+  },
+  "quoted-numeric-name-is-a-string": {
+    "ok": true,
+    "value": {
+      "version": 1,
+      "exercises": [
+        {
+          "id": "100",
+          "name": "300",
+          "type": "rest",
+          "config": {
+            "durationSec": 1
+          }
+        }
+      ],
+      "workouts": [],
+      "programs": []
+    }
+  },
+  "block-scalar-notes": {
+    "ok": true,
+    "value": {
+      "version": 1,
+      "exercises": [
+        {
+          "id": "a",
+          "name": "A",
+          "type": "rest",
+          "config": {
+            "durationSec": 1
+          },
+          "notes": "Line one.\nLine two.\n"
+        }
+      ],
+      "workouts": [],
+      "programs": []
+    }
+  },
+  "anchors-used-sparingly": {
+    "ok": true,
+    "value": {
+      "version": 1,
+      "exercises": [
+        {
+          "id": "a",
+          "name": "A",
+          "type": "rest",
+          "config": {
+            "durationSec": 90
+          }
+        },
+        {
+          "id": "b",
+          "name": "B",
+          "type": "rest",
+          "config": {
+            "durationSec": 90
+          }
+        }
+      ],
+      "workouts": [],
+      "programs": []
+    }
+  },
+  "unquoted-number-as-name-refused": {
+    "ok": false,
+    "kind": "schemaMismatch",
+    "paths": ["exercises.0.name"]
+  },
+  "unquoted-date-stays-a-string": {
+    "ok": true,
+    "value": {
+      "version": 1,
+      "exercises": [
+        {
+          "id": "2024-01-01",
+          "name": "A",
+          "type": "rest",
+          "config": {
+            "durationSec": 1
+          }
+        }
+      ],
+      "workouts": [],
+      "programs": []
+    }
+  },
+  "empty-notes-is-null-and-refused": {
+    "ok": false,
+    "kind": "schemaMismatch",
+    "paths": ["exercises.0.notes"]
+  },
+  "numeric-string-refused": {
+    "ok": false,
+    "kind": "schemaMismatch",
+    "paths": ["exercises.0.config.sets"]
+  },
+  "unclosed-flow-sequence": {
+    "ok": false,
+    "kind": "invalidYaml"
+  },
+  "duplicate-key": {
+    "ok": false,
+    "kind": "invalidYaml"
+  },
+  "tab-indentation": {
+    "ok": false,
+    "kind": "invalidYaml"
+  },
+  "empty-document": {
+    "ok": false,
+    "kind": "invalidYaml"
+  },
+  "top-level-list": {
+    "ok": false,
+    "kind": "schemaMismatch",
+    "paths": ["(root)"]
+  },
+  "missing-programs": {
+    "ok": false,
+    "kind": "schemaMismatch",
+    "paths": ["programs"]
+  },
+  "version-zero": {
+    "ok": false,
+    "kind": "schemaMismatch",
+    "paths": ["version"]
+  },
+  "unknown-exercise-type": {
+    "ok": false,
+    "kind": "schemaMismatch",
+    "paths": ["exercises.0.type"]
+  },
+  "empty-id": {
+    "ok": false,
+    "kind": "schemaMismatch",
+    "paths": ["exercises.0.id"]
+  },
+  "empty-name": {
+    "ok": false,
+    "kind": "schemaMismatch",
+    "paths": ["exercises.0.name"]
+  },
+  "missing-required-config-field": {
+    "ok": false,
+    "kind": "schemaMismatch",
+    "paths": ["exercises.0.config.time_cap_sec"]
+  },
+  "sets-zero": {
+    "ok": false,
+    "kind": "schemaMismatch",
+    "paths": ["exercises.0.config.sets"]
+  },
+  "sets-fractional": {
+    "ok": false,
+    "kind": "schemaMismatch",
+    "paths": ["exercises.0.config.sets"]
+  },
+  "sets-at-ceiling": {
+    "ok": true,
+    "value": {
+      "version": 1,
+      "exercises": [
+        {
+          "id": "a",
+          "name": "A",
+          "type": "reps",
+          "config": {
+            "sets": 500,
+            "targetRepsMin": 5,
+            "restSec": 60
+          }
+        },
+        {
+          "id": "b",
+          "name": "B",
+          "type": "timed_hold",
+          "config": {
+            "sets": 500,
+            "holdSecMin": 30,
+            "restSec": 60
+          }
+        },
+        {
+          "id": "c",
+          "name": "C",
+          "type": "hiit",
+          "config": {
+            "workSec": 40,
+            "restSec": 20,
+            "rounds": 500
+          }
+        }
+      ],
+      "workouts": [],
+      "programs": []
+    }
+  },
+  "reps-sets-past-ceiling": {
+    "ok": false,
+    "kind": "schemaMismatch",
+    "paths": ["exercises.0.config.sets"]
+  },
+  "hold-sets-past-ceiling": {
+    "ok": false,
+    "kind": "schemaMismatch",
+    "paths": ["exercises.0.config.sets"]
+  },
+  "hiit-rounds-past-ceiling": {
+    "ok": false,
+    "kind": "schemaMismatch",
+    "paths": ["exercises.0.config.rounds"]
+  },
+  "hiit-zero-work": {
+    "ok": false,
+    "kind": "schemaMismatch",
+    "paths": ["exercises.0.config.work_sec"]
+  },
+  "negative-rest": {
+    "ok": false,
+    "kind": "schemaMismatch",
+    "paths": ["exercises.0.config.duration_sec"]
+  },
+  "zero-rest-allowed": {
+    "ok": true,
+    "value": {
+      "version": 1,
+      "exercises": [
+        {
+          "id": "a",
+          "name": "A",
+          "type": "rest",
+          "config": {
+            "durationSec": 0
+          }
+        }
+      ],
+      "workouts": [],
+      "programs": []
+    }
+  },
+  "zero-weight-allowed": {
+    "ok": true,
+    "value": {
+      "version": 1,
+      "exercises": [
+        {
+          "id": "a",
+          "name": "A",
+          "type": "reps",
+          "config": {
+            "sets": 3,
+            "targetRepsMin": 5,
+            "targetWeightKg": 0,
+            "restSec": 60
+          }
+        }
+      ],
+      "workouts": [],
+      "programs": []
+    }
+  },
+  "reps-max-below-min": {
+    "ok": false,
+    "kind": "schemaMismatch",
+    "paths": ["exercises.0.config.target_reps_max"]
+  },
+  "reps-max-equal-min": {
+    "ok": true,
+    "value": {
+      "version": 1,
+      "exercises": [
+        {
+          "id": "a",
+          "name": "A",
+          "type": "reps",
+          "config": {
+            "sets": 3,
+            "targetRepsMin": 5,
+            "targetRepsMax": 5,
+            "restSec": 60
+          }
+        }
+      ],
+      "workouts": [],
+      "programs": []
+    }
+  },
+  "hold-max-without-min": {
+    "ok": false,
+    "kind": "schemaMismatch",
+    "paths": ["exercises.0.config.hold_sec_max"]
+  },
+  "hold-max-below-min": {
+    "ok": false,
+    "kind": "schemaMismatch",
+    "paths": ["exercises.0.config.hold_sec_max"]
+  },
+  "cardio-zero-duration": {
+    "ok": false,
+    "kind": "schemaMismatch",
+    "paths": ["exercises.0.config.duration_sec"]
+  },
+  "emom-derived-count-past-ceiling": {
+    "ok": false,
+    "kind": "schemaMismatch",
+    "paths": ["exercises.0.config.interval_sec"]
+  },
+  "emom-tiny-interval": {
+    "ok": false,
+    "kind": "schemaMismatch",
+    "paths": ["exercises.0.config.interval_sec"]
+  },
+  "emom-total-minutes-past-ceiling": {
+    "ok": false,
+    "kind": "schemaMismatch",
+    "paths": ["exercises.0.config.total_minutes"]
+  },
+  "emom-exactly-500-intervals-float": {
+    "ok": true,
+    "value": {
+      "version": 1,
+      "exercises": [
+        {
+          "id": "e",
+          "name": "E",
+          "type": "emom",
+          "config": {
+            "intervalSec": 1,
+            "totalMinutes": 8.333333333333334
+          }
+        }
+      ],
+      "workouts": [],
+      "programs": []
+    }
+  },
+  "emom-partial-trailing-interval": {
+    "ok": true,
+    "value": {
+      "version": 1,
+      "exercises": [
+        {
+          "id": "e",
+          "name": "E",
+          "type": "emom",
+          "config": {
+            "intervalSec": 45,
+            "totalMinutes": 10
+          }
+        }
+      ],
+      "workouts": [],
+      "programs": []
+    }
+  },
+  "circuit-rounds-past-ceiling": {
+    "ok": false,
+    "kind": "schemaMismatch",
+    "paths": ["workouts.0.blocks.0.rounds"]
+  },
+  "circuit-single-member": {
+    "ok": false,
+    "kind": "schemaMismatch",
+    "paths": ["workouts.0.blocks.0.exercises"]
+  },
+  "unknown-block-type": {
+    "ok": false,
+    "kind": "schemaMismatch",
+    "paths": ["workouts.0.blocks.0.type"]
+  },
+  "dangling-exercise-reference-parses": {
+    "ok": true,
+    "value": {
+      "version": 1,
+      "exercises": [],
+      "workouts": [
+        {
+          "id": "w",
+          "name": "W",
+          "blocks": [
+            {
+              "kind": "exercise",
+              "exerciseId": "nowhere"
+            }
+          ]
+        }
+      ],
+      "programs": []
+    }
+  },
+  "week-without-workout": {
+    "ok": false,
+    "kind": "schemaMismatch",
+    "paths": ["programs.0.weeks.1.workout"]
+  },
+  "rest-week-with-workout": {
+    "ok": false,
+    "kind": "schemaMismatch",
+    "paths": ["programs.0.weeks.1.workout"]
+  },
+  "rest-week-with-overrides": {
+    "ok": false,
+    "kind": "schemaMismatch",
+    "paths": ["programs.0.weeks.1.overrides"]
+  },
+  "program-of-only-rest-weeks": {
+    "ok": false,
+    "kind": "schemaMismatch",
+    "paths": ["programs.0.weeks"]
+  },
+  "program-without-weeks": {
+    "ok": false,
+    "kind": "schemaMismatch",
+    "paths": ["programs.0.weeks"]
+  },
+  "repeated-week-and-day": {
+    "ok": false,
+    "kind": "schemaMismatch",
+    "paths": ["programs.0.weeks"]
+  },
+  "repeated-week-different-days": {
+    "ok": true,
+    "value": {
+      "version": 1,
+      "exercises": [],
+      "workouts": [
+        {
+          "id": "w",
+          "name": "W",
+          "blocks": []
+        }
+      ],
+      "programs": [
+        {
+          "id": "p",
+          "name": "P",
+          "weeks": [
+            {
+              "week": 1,
+              "day": "Mon",
+              "workoutId": "w"
+            },
+            {
+              "week": 1,
+              "day": "Thu",
+              "workoutId": "w"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "override-naming-both-targets": {
+    "ok": false,
+    "kind": "schemaMismatch",
+    "paths": ["programs.0.weeks.0.overrides.0"]
+  },
+  "override-naming-no-target": {
+    "ok": false,
+    "kind": "schemaMismatch",
+    "paths": ["programs.0.weeks.0.overrides.0"]
+  },
+  "override-config-is-free-form": {
+    "ok": true,
+    "value": {
+      "version": 1,
+      "exercises": [],
+      "workouts": [
+        {
+          "id": "w",
+          "name": "W",
+          "blocks": []
+        }
+      ],
+      "programs": [
+        {
+          "id": "p",
+          "name": "P",
+          "weeks": [
+            {
+              "week": 1,
+              "workoutId": "w",
+              "overrides": [
+                {
+                  "kind": "exercise",
+                  "exerciseId": "a",
+                  "config": {
+                    "sets": 200000,
+                    "anything": "text"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "aliases-at-limit": {
+    "ok": true,
+    "value": {
+      "version": 1,
+      "exercises": [],
+      "workouts": [],
+      "programs": []
+    }
+  },
+  "aliases-past-limit": {
+    "ok": false,
+    "kind": "invalidYaml"
+  }
+}

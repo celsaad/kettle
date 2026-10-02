@@ -1,0 +1,233 @@
+{
+  "adds-replaces-and-keeps-order": {
+    "ok": true,
+    "library": {
+      "version": 1,
+      "exercises": [
+        {
+          "id": "a",
+          "name": "A2",
+          "type": "reps",
+          "config": {
+            "sets": 4,
+            "targetRepsMin": 6,
+            "restSec": 90
+          }
+        },
+        {
+          "id": "b",
+          "name": "B",
+          "type": "rest",
+          "config": {
+            "durationSec": 60
+          }
+        },
+        {
+          "id": "c",
+          "name": "C",
+          "type": "rest",
+          "config": {
+            "durationSec": 30
+          }
+        }
+      ],
+      "workouts": [
+        {
+          "id": "w",
+          "name": "W",
+          "blocks": [
+            {
+              "kind": "exercise",
+              "exerciseId": "a"
+            }
+          ]
+        },
+        {
+          "id": "v",
+          "name": "V",
+          "blocks": [
+            {
+              "kind": "exercise",
+              "exerciseId": "c"
+            }
+          ]
+        }
+      ],
+      "programs": [
+        {
+          "id": "p",
+          "name": "P",
+          "weeks": [
+            {
+              "week": 1,
+              "workoutId": "w"
+            }
+          ]
+        }
+      ]
+    },
+    "summary": {
+      "newExercises": ["c"],
+      "updatedExercises": ["a"],
+      "newWorkouts": ["v"],
+      "updatedWorkouts": [],
+      "newPrograms": ["p"],
+      "updatedPrograms": []
+    }
+  },
+  "reference-satisfied-by-existing": {
+    "ok": true,
+    "library": {
+      "version": 1,
+      "exercises": [
+        {
+          "id": "a",
+          "name": "A",
+          "type": "rest",
+          "config": {
+            "durationSec": 60
+          }
+        }
+      ],
+      "workouts": [
+        {
+          "id": "w",
+          "name": "W",
+          "blocks": [
+            {
+              "kind": "exercise",
+              "exerciseId": "a"
+            }
+          ]
+        }
+      ],
+      "programs": []
+    },
+    "summary": {
+      "newExercises": [],
+      "updatedExercises": [],
+      "newWorkouts": ["w"],
+      "updatedWorkouts": [],
+      "newPrograms": [],
+      "updatedPrograms": []
+    }
+  },
+  "rest-week-needs-no-workout": {
+    "ok": true,
+    "library": {
+      "version": 1,
+      "exercises": [],
+      "workouts": [
+        {
+          "id": "w",
+          "name": "W",
+          "blocks": []
+        }
+      ],
+      "programs": [
+        {
+          "id": "p",
+          "name": "P",
+          "weeks": [
+            {
+              "week": 1,
+              "workoutId": "w"
+            },
+            {
+              "week": 2,
+              "restDay": true
+            }
+          ]
+        }
+      ]
+    },
+    "summary": {
+      "newExercises": [],
+      "updatedExercises": [],
+      "newWorkouts": [],
+      "updatedWorkouts": [],
+      "newPrograms": ["p"],
+      "updatedPrograms": []
+    }
+  },
+  "unknown-exercise-in-block": {
+    "ok": false,
+    "error": {
+      "kind": "unknownExercise",
+      "workoutId": "w",
+      "exerciseId": "missing"
+    }
+  },
+  "unknown-exercise-in-circuit": {
+    "ok": false,
+    "error": {
+      "kind": "unknownExercise",
+      "workoutId": "w",
+      "exerciseId": "missing"
+    }
+  },
+  "unknown-workout-in-week-with-day": {
+    "ok": false,
+    "error": {
+      "kind": "unknownWorkout",
+      "programId": "p",
+      "week": 2,
+      "day": "Thu",
+      "workoutId": "missing"
+    }
+  },
+  "unknown-workout-in-week-without-day": {
+    "ok": false,
+    "error": {
+      "kind": "unknownWorkout",
+      "programId": "p",
+      "week": 3,
+      "workoutId": "missing"
+    }
+  },
+  "replacing-an-exercise-can-break-nothing-it-keeps": {
+    "ok": true,
+    "library": {
+      "version": 1,
+      "exercises": [
+        {
+          "id": "a",
+          "name": "A",
+          "type": "rest",
+          "config": {
+            "durationSec": 60
+          }
+        },
+        {
+          "id": "b",
+          "name": "B",
+          "type": "rest",
+          "config": {
+            "durationSec": 30
+          }
+        }
+      ],
+      "workouts": [
+        {
+          "id": "w",
+          "name": "W",
+          "blocks": [
+            {
+              "kind": "exercise",
+              "exerciseId": "b"
+            }
+          ]
+        }
+      ],
+      "programs": []
+    },
+    "summary": {
+      "newExercises": ["b"],
+      "updatedExercises": [],
+      "newWorkouts": [],
+      "updatedWorkouts": ["w"],
+      "newPrograms": [],
+      "updatedPrograms": []
+    }
+  }
+}

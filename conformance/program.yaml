@@ -1,0 +1,50 @@
+# Program week lookup and resolution. For each query, expected has `found` (findProgramWeek) and
+# `resolved` (resolveWorkoutForWeek: the week's workout and the whole exercise list, each with this
+# week's overrides applied — or null). Each case also lists programWeekNumbers per program.
+cases:
+  - name: block-program
+    library: |
+      version: 1
+      exercises:
+        - { id: bench, name: Bench, type: reps, config: { sets: 3, target_reps_min: 5, target_weight: 80, rest_sec: 120 } }
+        - { id: plank, name: Plank, type: timed_hold, config: { sets: 2, hold_sec_min: 30, rest_sec: 30 } }
+        - { id: rest, name: Rest, type: rest, config: { duration_sec: 60 } }
+      workouts:
+        - id: main
+          name: Main
+          blocks:
+            - { type: exercise, exercise: bench }
+            - { type: circuit, id: core, rounds: 3, rest_between_rounds_sec: 60, exercises: [{ exercise: plank }, { exercise: rest }] }
+            - { type: circuit, rounds: 2, exercises: [{ exercise: plank }, { exercise: rest }] }
+      programs:
+        - id: p
+          name: P
+          weeks:
+            - { week: 3, workout: main }
+            - { week: 1, workout: main }
+            - week: 2
+              workout: main
+              overrides:
+                - { exercise: bench, config: { sets: 5, target_weight: 85 } }
+                - { block: core, config: { rounds: 2, rest_between_rounds_sec: 30 } }
+            - { week: 4, day: Mon, workout: main, overrides: [{ exercise: bench, config: { sets: 4 } }] }
+            - { week: 4, day: Thu, workout: main }
+            - { week: 5, rest_day: true }
+            - week: 6
+              workout: main
+              overrides:
+                - { exercise: bench, config: { sets: 501 } }
+                - { block: core, config: { rounds: 0 } }
+                - { exercise: plank, config: { hold_sec_max: 20 } }
+            - { week: 7, workout: gone }
+    queries:
+      - { program: p, week: 1 }
+      - { program: p, week: 2 }
+      - { program: p, week: 4, day: Mon }
+      - { program: p, week: 4, day: Thu }
+      - { program: p, week: 4 }
+      - { program: p, week: 4, day: Sun }
+      - { program: p, week: 5 }
+      - { program: p, week: 6 }
+      - { program: p, week: 7 }
+      - { program: p, week: 9 }

@@ -1,0 +1,15 @@
+{
+  "kg-shown-as-kg": 82.5,
+  "kg-shown-as-lb": 220.5,
+  "lb-authored-value-redisplays": 135,
+  "metric-display-rounds-to-two": 61.23,
+  "metric-exact-half-rounds-up": 2.13,
+  "zero-kg": 0,
+  "lb-stored-as-kg": 61.23,
+  "kg-input-passes-through": 61.237,
+  "step-metric": 2.5,
+  "step-imperial": 5,
+  "emom-even": 10,
+  "emom-partial-trailing": 13,
+  "emom-float-quotient": 500
+}

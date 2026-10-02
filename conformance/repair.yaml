@@ -1,0 +1,72 @@
+# repairLibraryBounds: clamps counts past their ceiling back into range so a library written before
+# the ceilings existed loads instead of being reseeded. Expected is whether it repaired anything and,
+# if so, what the repaired text parses to. Only ceilings are repaired; every other defect is left.
+cases:
+  - name: already-valid
+    input: |
+      version: 1
+      exercises: [{ id: a, name: A, type: reps, config: { sets: 3, target_reps_min: 5, rest_sec: 60 } }]
+      workouts: []
+      programs: []
+
+  - name: sets-past-ceiling
+    input: |
+      version: 1
+      exercises:
+        - { id: a, name: A, type: reps, config: { sets: 200000, target_reps_min: 5, rest_sec: 60 } }
+        - { id: b, name: B, type: timed_hold, config: { sets: 501, hold_sec_min: 30, rest_sec: 60 } }
+      workouts: []
+      programs: []
+
+  - name: rounds-past-ceiling
+    input: |
+      version: 1
+      exercises:
+        - { id: a, name: A, type: hiit, config: { work_sec: 40, rest_sec: 20, rounds: 9999 } }
+        - { id: b, name: B, type: rest, config: { duration_sec: 1 } }
+      workouts:
+        - { id: w, name: W, blocks: [{ type: circuit, rounds: 1000, exercises: [{ exercise: a }, { exercise: b }] }] }
+      programs: []
+
+  - name: emom-derived-count
+    why: shortens the block rather than stretching the interval
+    input: |
+      version: 1
+      exercises: [{ id: e, name: E, type: emom, config: { interval_sec: 1, total_minutes: 60 } }]
+      workouts: []
+      programs: []
+
+  - name: emom-uneven-interval
+    input: |
+      version: 1
+      exercises: [{ id: e, name: E, type: emom, config: { interval_sec: 7, total_minutes: 600 } }]
+      workouts: []
+      programs: []
+
+  - name: emom-total-minutes-past-ceiling
+    input: |
+      version: 1
+      exercises: [{ id: e, name: E, type: emom, config: { interval_sec: 300, total_minutes: 5000 } }]
+      workouts: []
+      programs: []
+
+  - name: zero-is-not-repaired
+    why: sets 0 was invalid before the ceilings too, so it is left for quarantine
+    input: |
+      version: 1
+      exercises: [{ id: a, name: A, type: reps, config: { sets: 0, target_reps_min: 5, rest_sec: 60 } }]
+      workouts: []
+      programs: []
+
+  - name: repaired-but-still-invalid
+    why: the ceiling is fixed, the unrelated defect is not, so the result still fails to parse
+    input: |
+      version: 1
+      exercises:
+        - { id: a, name: A, type: reps, config: { sets: 600, target_reps_min: 5, rest_sec: 60 } }
+        - { id: b, name: "", type: rest, config: { duration_sec: 1 } }
+      workouts: []
+      programs: []
+
+  - name: not-yaml
+    input: 'exercises: [unclosed'

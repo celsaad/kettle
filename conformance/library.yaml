@@ -1,0 +1,511 @@
+# parseLibraryYaml. Each case is `input` (inline YAML) or `source` (a repo-relative file).
+# Refusals carry one defect each, so the expected `paths` don't depend on the order a validator
+# happens to check things in.
+cases:
+  - name: every-shape
+    why: every exercise type with and without its optionals, both block kinds, both override kinds, a rest week
+    input: |
+      version: 1
+      exercises:
+        - { id: hiit, name: Burpees, type: hiit, notes: Fast, config: { work_sec: 40, rest_sec: 20, rounds: 4 } }
+        - { id: emom-full, name: Clean, type: emom, config: { interval_sec: 60, total_minutes: 10, target_reps: 3 } }
+        - { id: emom-bare, name: Snatch, type: emom, config: { interval_sec: 90, total_minutes: 9 } }
+        - { id: amrap, name: Grinder, type: amrap, config: { time_cap_sec: 600 } }
+        - id: reps-full
+          name: Bench
+          type: reps
+          notes: Brace
+          config: { sets: 5, target_reps_min: 3, target_reps_max: 5, target_weight: 82.5, rest_sec: 180 }
+        - { id: reps-bare, name: Push-ups, type: reps, config: { sets: 3, target_reps_min: 12, rest_sec: 45 } }
+        - { id: hold-range, name: L-Sit, type: timed_hold, config: { sets: 4, hold_sec_min: 15, hold_sec_max: 25, rest_sec: 60 } }
+        - { id: hold-min, name: Plank, type: timed_hold, config: { sets: 2, hold_sec_min: 45, rest_sec: 30 } }
+        - { id: hold-open, name: Dead hang, type: timed_hold, config: { sets: 1, rest_sec: 0 } }
+        - { id: cardio-both, name: Row, type: cardio, config: { duration_sec: 480, distance_meters: 2000 } }
+        - { id: cardio-bare, name: Walk, type: cardio, config: {} }
+        - { id: rest, name: Rest, type: rest, config: { duration_sec: 90 } }
+      workouts:
+        - id: full
+          name: Full
+          blocks:
+            - { type: exercise, exercise: reps-full }
+            - { type: exercise, exercise: rest, config: { duration_sec: 120 } }
+            - type: circuit
+              id: finisher
+              rounds: 3
+              rest_between_exercises_sec: 0
+              rest_between_rounds_sec: 90
+              exercises:
+                - exercise: hiit
+                - { exercise: rest, config: { duration_sec: 30 } }
+        - id: bare-circuit
+          name: Bare circuit
+          blocks:
+            - type: circuit
+              rounds: 2
+              exercises: [{ exercise: reps-bare }, { exercise: hold-min }]
+        - { id: empty, name: Empty, blocks: [] }
+      programs:
+        - id: block
+          name: Block
+          weeks:
+            - { week: 1, workout: full }
+            - week: 2
+              day: Monday
+              workout: full
+              notes: Heavier
+              overrides:
+                - { exercise: reps-full, config: { sets: 6 } }
+                - { block: finisher, config: { rounds: 2 } }
+            - { week: 2, day: Thursday, rest_day: true, notes: Recover }
+            - { week: 3, workout: empty, rest_day: false }
+
+  - name: site-example-beginner-full-body
+    source: site/examples/beginner-full-body.yaml
+  - name: site-example-bodyweight-no-equipment
+    source: site/examples/bodyweight-no-equipment.yaml
+  - name: site-example-conditioning-hiit
+    source: site/examples/conditioning-hiit.yaml
+  - name: site-example-push-pull-legs-6-weeks
+    source: site/examples/push-pull-legs-6-weeks.yaml
+
+  - name: empty-library
+    input: |
+      version: 1
+      exercises: []
+      workouts: []
+      programs: []
+
+  # --- How YAML values become typed values. These are where a second parser drifts. ---
+
+  - name: unknown-keys-are-dropped
+    why: the schema strips keys it doesn't know at every level rather than refusing them
+    input: |
+      version: 1
+      author: someone
+      exercises:
+        - { id: a, name: A, type: rest, color: red, config: { duration_sec: 90, extra: 1 } }
+      workouts: [{ id: w, name: W, tags: [x], blocks: [{ type: exercise, exercise: a, why: warmup }] }]
+      programs: []
+
+  - name: integer-written-as-float
+    why: 3.0 is the number 3, so it passes an integer field
+    input: |
+      version: 1
+      exercises: [{ id: a, name: A, type: reps, config: { sets: 3.0, target_reps_min: 5, rest_sec: 60 } }]
+      workouts: []
+      programs: []
+
+  - name: yes-and-no-stay-strings
+    why: YAML 1.2 core schema — yes/no/on/off are not booleans
+    input: |
+      version: 1
+      exercises: [{ id: no, name: yes, type: rest, notes: on, config: { duration_sec: 1 } }]
+      workouts: []
+      programs: []
+
+  - name: quoted-numeric-name-is-a-string
+    input: |
+      version: 1
+      exercises: [{ id: "100", name: "300", type: rest, config: { duration_sec: 1 } }]
+      workouts: []
+      programs: []
+
+  - name: block-scalar-notes
+    input: |
+      version: 1
+      exercises:
+        - id: a
+          name: A
+          type: rest
+          notes: |
+            Line one.
+            Line two.
+          config: { duration_sec: 1 }
+      workouts: []
+      programs: []
+
+  - name: anchors-used-sparingly
+    input: |
+      version: 1
+      exercises:
+        - { id: a, name: A, type: rest, config: &standard-rest { duration_sec: 90 } }
+        - { id: b, name: B, type: rest, config: *standard-rest }
+      workouts: []
+      programs: []
+
+  - name: unquoted-number-as-name-refused
+    input: |
+      version: 1
+      exercises: [{ id: a, name: 300, type: rest, config: { duration_sec: 1 } }]
+      workouts: []
+      programs: []
+
+  - name: unquoted-date-stays-a-string
+    why: the loader uses the YAML 1.2 core schema, which has no timestamp type, so a date-shaped id is a string
+    input: |
+      version: 1
+      exercises: [{ id: 2024-01-01, name: A, type: rest, config: { duration_sec: 1 } }]
+      workouts: []
+      programs: []
+
+  - name: empty-notes-is-null-and-refused
+    why: '`notes:` with nothing after it is null, and notes is an optional string, not a nullable one'
+    input: |
+      version: 1
+      exercises:
+        - id: a
+          name: A
+          type: rest
+          notes:
+          config: { duration_sec: 1 }
+      workouts: []
+      programs: []
+
+  - name: numeric-string-refused
+    input: |
+      version: 1
+      exercises: [{ id: a, name: A, type: reps, config: { sets: "3", target_reps_min: 5, rest_sec: 60 } }]
+      workouts: []
+      programs: []
+
+  # --- Not YAML at all ---
+
+  - name: unclosed-flow-sequence
+    input: 'exercises: [unclosed'
+
+  - name: duplicate-key
+    input: |
+      version: 1
+      version: 2
+      exercises: []
+      workouts: []
+      programs: []
+
+  - name: tab-indentation
+    input: "version: 1\nexercises:\n\t- id: a\nworkouts: []\nprograms: []\n"
+
+  # --- Document shape ---
+
+  - name: empty-document
+    input: ''
+
+  - name: top-level-list
+    input: "- 1\n- 2\n"
+
+  - name: missing-programs
+    input: |
+      version: 1
+      exercises: []
+      workouts: []
+
+  - name: version-zero
+    input: |
+      version: 0
+      exercises: []
+      workouts: []
+      programs: []
+
+  - name: unknown-exercise-type
+    input: |
+      version: 1
+      exercises: [{ id: a, name: A, type: yoga, config: {} }]
+      workouts: []
+      programs: []
+
+  - name: empty-id
+    input: |
+      version: 1
+      exercises: [{ id: "", name: A, type: rest, config: { duration_sec: 1 } }]
+      workouts: []
+      programs: []
+
+  - name: empty-name
+    input: |
+      version: 1
+      exercises: [{ id: a, name: "", type: rest, config: { duration_sec: 1 } }]
+      workouts: []
+      programs: []
+
+  - name: missing-required-config-field
+    input: |
+      version: 1
+      exercises: [{ id: a, name: A, type: amrap, config: {} }]
+      workouts: []
+      programs: []
+
+  # --- Ranges and ceilings ---
+
+  - name: sets-zero
+    input: |
+      version: 1
+      exercises: [{ id: a, name: A, type: reps, config: { sets: 0, target_reps_min: 5, rest_sec: 60 } }]
+      workouts: []
+      programs: []
+
+  - name: sets-fractional
+    input: |
+      version: 1
+      exercises: [{ id: a, name: A, type: reps, config: { sets: 2.5, target_reps_min: 5, rest_sec: 60 } }]
+      workouts: []
+      programs: []
+
+  - name: sets-at-ceiling
+    input: |
+      version: 1
+      exercises:
+        - { id: a, name: A, type: reps, config: { sets: 500, target_reps_min: 5, rest_sec: 60 } }
+        - { id: b, name: B, type: timed_hold, config: { sets: 500, hold_sec_min: 30, rest_sec: 60 } }
+        - { id: c, name: C, type: hiit, config: { work_sec: 40, rest_sec: 20, rounds: 500 } }
+      workouts: []
+      programs: []
+
+  - name: reps-sets-past-ceiling
+    input: |
+      version: 1
+      exercises: [{ id: a, name: A, type: reps, config: { sets: 501, target_reps_min: 5, rest_sec: 60 } }]
+      workouts: []
+      programs: []
+
+  - name: hold-sets-past-ceiling
+    input: |
+      version: 1
+      exercises: [{ id: a, name: A, type: timed_hold, config: { sets: 501, hold_sec_min: 30, rest_sec: 60 } }]
+      workouts: []
+      programs: []
+
+  - name: hiit-rounds-past-ceiling
+    input: |
+      version: 1
+      exercises: [{ id: a, name: A, type: hiit, config: { work_sec: 40, rest_sec: 20, rounds: 501 } }]
+      workouts: []
+      programs: []
+
+  - name: hiit-zero-work
+    input: |
+      version: 1
+      exercises: [{ id: a, name: A, type: hiit, config: { work_sec: 0, rest_sec: 20, rounds: 3 } }]
+      workouts: []
+      programs: []
+
+  - name: negative-rest
+    input: |
+      version: 1
+      exercises: [{ id: a, name: A, type: rest, config: { duration_sec: -1 } }]
+      workouts: []
+      programs: []
+
+  - name: zero-rest-allowed
+    input: |
+      version: 1
+      exercises: [{ id: a, name: A, type: rest, config: { duration_sec: 0 } }]
+      workouts: []
+      programs: []
+
+  - name: zero-weight-allowed
+    input: |
+      version: 1
+      exercises: [{ id: a, name: A, type: reps, config: { sets: 3, target_reps_min: 5, target_weight: 0, rest_sec: 60 } }]
+      workouts: []
+      programs: []
+
+  - name: reps-max-below-min
+    input: |
+      version: 1
+      exercises: [{ id: a, name: A, type: reps, config: { sets: 3, target_reps_min: 8, target_reps_max: 5, rest_sec: 60 } }]
+      workouts: []
+      programs: []
+
+  - name: reps-max-equal-min
+    input: |
+      version: 1
+      exercises: [{ id: a, name: A, type: reps, config: { sets: 3, target_reps_min: 5, target_reps_max: 5, rest_sec: 60 } }]
+      workouts: []
+      programs: []
+
+  - name: hold-max-without-min
+    input: |
+      version: 1
+      exercises: [{ id: a, name: A, type: timed_hold, config: { sets: 3, hold_sec_max: 30, rest_sec: 60 } }]
+      workouts: []
+      programs: []
+
+  - name: hold-max-below-min
+    input: |
+      version: 1
+      exercises: [{ id: a, name: A, type: timed_hold, config: { sets: 3, hold_sec_min: 30, hold_sec_max: 20, rest_sec: 60 } }]
+      workouts: []
+      programs: []
+
+  - name: cardio-zero-duration
+    input: |
+      version: 1
+      exercises: [{ id: a, name: A, type: cardio, config: { duration_sec: 0 } }]
+      workouts: []
+      programs: []
+
+  # --- EMOM's derived interval count ---
+
+  - name: emom-derived-count-past-ceiling
+    why: 60 minutes of 1-second intervals is 3600 intervals from two fields that are each in range
+    input: |
+      version: 1
+      exercises: [{ id: e, name: E, type: emom, config: { interval_sec: 1, total_minutes: 60 } }]
+      workouts: []
+      programs: []
+
+  - name: emom-tiny-interval
+    input: |
+      version: 1
+      exercises: [{ id: e, name: E, type: emom, config: { interval_sec: 0.001, total_minutes: 1 } }]
+      workouts: []
+      programs: []
+
+  - name: emom-total-minutes-past-ceiling
+    input: |
+      version: 1
+      exercises: [{ id: e, name: E, type: emom, config: { interval_sec: 300, total_minutes: 1441 } }]
+      workouts: []
+      programs: []
+
+  - name: emom-exactly-500-intervals-float
+    why: 500 one-second intervals is 8.333333333333334 minutes, whose raw quotient is 500.00000000000006
+    input: |
+      version: 1
+      exercises: [{ id: e, name: E, type: emom, config: { interval_sec: 1, total_minutes: 8.333333333333334 } }]
+      workouts: []
+      programs: []
+
+  - name: emom-partial-trailing-interval
+    input: |
+      version: 1
+      exercises: [{ id: e, name: E, type: emom, config: { interval_sec: 45, total_minutes: 10 } }]
+      workouts: []
+      programs: []
+
+  # --- Workouts ---
+
+  - name: circuit-rounds-past-ceiling
+    input: |
+      version: 1
+      exercises:
+        - { id: a, name: A, type: rest, config: { duration_sec: 1 } }
+        - { id: b, name: B, type: rest, config: { duration_sec: 1 } }
+      workouts:
+        - { id: w, name: W, blocks: [{ type: circuit, rounds: 501, exercises: [{ exercise: a }, { exercise: b }] }] }
+      programs: []
+
+  - name: circuit-single-member
+    input: |
+      version: 1
+      exercises: [{ id: a, name: A, type: rest, config: { duration_sec: 1 } }]
+      workouts:
+        - { id: w, name: W, blocks: [{ type: circuit, rounds: 2, exercises: [{ exercise: a }] }] }
+      programs: []
+
+  - name: unknown-block-type
+    input: |
+      version: 1
+      exercises: [{ id: a, name: A, type: rest, config: { duration_sec: 1 } }]
+      workouts: [{ id: w, name: W, blocks: [{ type: superset, exercise: a }] }]
+      programs: []
+
+  - name: dangling-exercise-reference-parses
+    why: references are checked by merge, not by the parser
+    input: |
+      version: 1
+      exercises: []
+      workouts: [{ id: w, name: W, blocks: [{ type: exercise, exercise: nowhere }] }]
+      programs: []
+
+  # --- Programs ---
+
+  - name: week-without-workout
+    input: |
+      version: 1
+      exercises: []
+      workouts: [{ id: w, name: W, blocks: [] }]
+      programs: [{ id: p, name: P, weeks: [{ week: 1, workout: w }, { week: 2 }] }]
+
+  - name: rest-week-with-workout
+    input: |
+      version: 1
+      exercises: []
+      workouts: [{ id: w, name: W, blocks: [] }]
+      programs: [{ id: p, name: P, weeks: [{ week: 1, workout: w }, { week: 2, rest_day: true, workout: w }] }]
+
+  - name: rest-week-with-overrides
+    input: |
+      version: 1
+      exercises: []
+      workouts: [{ id: w, name: W, blocks: [] }]
+      programs:
+        - id: p
+          name: P
+          weeks:
+            - { week: 1, workout: w }
+            - { week: 2, rest_day: true, overrides: [{ exercise: a, config: { sets: 2 } }] }
+
+  - name: program-of-only-rest-weeks
+    input: |
+      version: 1
+      exercises: []
+      workouts: []
+      programs: [{ id: p, name: P, weeks: [{ week: 1, rest_day: true }] }]
+
+  - name: program-without-weeks
+    input: |
+      version: 1
+      exercises: []
+      workouts: []
+      programs: [{ id: p, name: P, weeks: [] }]
+
+  - name: repeated-week-and-day
+    input: |
+      version: 1
+      exercises: []
+      workouts: [{ id: w, name: W, blocks: [] }]
+      programs: [{ id: p, name: P, weeks: [{ week: 1, day: Mon, workout: w }, { week: 1, day: Mon, workout: w }] }]
+
+  - name: repeated-week-different-days
+    input: |
+      version: 1
+      exercises: []
+      workouts: [{ id: w, name: W, blocks: [] }]
+      programs: [{ id: p, name: P, weeks: [{ week: 1, day: Mon, workout: w }, { week: 1, day: Thu, workout: w }] }]
+
+  - name: override-naming-both-targets
+    input: |
+      version: 1
+      exercises: []
+      workouts: [{ id: w, name: W, blocks: [] }]
+      programs:
+        - id: p
+          name: P
+          weeks: [{ week: 1, workout: w, overrides: [{ exercise: a, block: b, config: { sets: 2 } }] }]
+
+  - name: override-naming-no-target
+    input: |
+      version: 1
+      exercises: []
+      workouts: [{ id: w, name: W, blocks: [] }]
+      programs: [{ id: p, name: P, weeks: [{ week: 1, workout: w, overrides: [{ config: { sets: 2 } }] }] }]
+
+  - name: override-config-is-free-form
+    why: an override's config is any record of numbers and strings; it is checked when applied, not here
+    input: |
+      version: 1
+      exercises: []
+      workouts: [{ id: w, name: W, blocks: [] }]
+      programs:
+        - id: p
+          name: P
+          weeks: [{ week: 1, workout: w, overrides: [{ exercise: a, config: { sets: 200000, anything: text } }] }]
+
+  # --- The alias limit (1000), which guards against alias bombs ---
+
+  - name: aliases-at-limit
+    why: the aliases sit under a key the schema strips, so the document is valid and only the loader could refuse it
+    input: "version: 1\nexercises: []\nworkouts: []\nprograms: []\nunused: [&a 1,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a]\n"
+
+  - name: aliases-past-limit
+    input: "version: 1\nexercises: []\nworkouts: []\nprograms: []\nunused: [&a 1,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a,*a]\n"

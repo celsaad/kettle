@@ -1,0 +1,119 @@
+# parseSessionYaml. Same shape as library.yaml: inline `input`, one defect per refusal.
+cases:
+  - name: every-entry-type
+    input: |
+      version: 1
+      id: 2024-05-01T10-00-00-abc
+      workout: full
+      program: block
+      program_week: 2
+      program_day: Monday
+      started_at: "2024-05-01T10:00:00.000Z"
+      ended_at: "2024-05-01T10:45:00.000Z"
+      entries:
+        - exercise: hold
+          type: timed_hold
+          sets: [{ hold_sec: 20, rest_taken_sec: 60 }, { hold_sec: 18.5, rest_taken_sec: 0 }]
+        - exercise: bench
+          type: reps
+          sets:
+            - { reps: 5, weight: 80, rpe: 8, rest_taken_sec: 180 }
+            - { reps: 0, rest_taken_sec: 0 }
+        - { exercise: rest, type: rest, rest_taken_sec: 90 }
+        - { exercise: burpees, type: hiit, rounds_completed: 4 }
+        - exercise: clean
+          type: emom
+          minutes: [{ reps: 3 }, {}, { reps: 0 }]
+        - { exercise: grinder, type: amrap, rounds_completed: 7, extra_reps: 3 }
+        - { exercise: grinder, type: amrap, rounds_completed: 0 }
+        - { exercise: row, type: cardio, duration_sec: 480, distance_meters: 2000 }
+        - { exercise: walk, type: cardio }
+
+  - name: in-progress
+    why: no end time yet, and a free session with no workout
+    input: |
+      version: 1
+      id: s
+      workout: null
+      started_at: "2024-05-01T10:00:00.000Z"
+      ended_at: null
+      entries: []
+
+  - name: written-before-program-tracking
+    why: the three program fields default to null when absent
+    input: |
+      version: 1
+      id: s
+      workout: w
+      started_at: "2024-05-01T10:00:00.000Z"
+      ended_at: "2024-05-01T10:30:00.000Z"
+      entries: []
+
+  - name: unquoted-timestamp-stays-a-string
+    why: no timestamp type in the core schema, so a hand-edited unquoted time still reads as text
+    input: |
+      version: 1
+      id: s
+      workout: w
+      started_at: 2024-05-01T10:00:00Z
+      ended_at: null
+      entries: []
+
+  - name: missing-ended-at
+    why: ended_at is nullable but not optional
+    input: |
+      version: 1
+      id: s
+      workout: w
+      started_at: "2024-05-01T10:00:00.000Z"
+      entries: []
+
+  - name: rpe-past-ten
+    input: |
+      version: 1
+      id: s
+      workout: w
+      started_at: "2024-05-01T10:00:00.000Z"
+      ended_at: null
+      entries: [{ exercise: a, type: reps, sets: [{ reps: 5, rpe: 11, rest_taken_sec: 0 }] }]
+
+  - name: rpe-zero
+    input: |
+      version: 1
+      id: s
+      workout: w
+      started_at: "2024-05-01T10:00:00.000Z"
+      ended_at: null
+      entries: [{ exercise: a, type: reps, sets: [{ reps: 5, rpe: 0, rest_taken_sec: 0 }] }]
+
+  - name: fractional-reps
+    input: |
+      version: 1
+      id: s
+      workout: w
+      started_at: "2024-05-01T10:00:00.000Z"
+      ended_at: null
+      entries: [{ exercise: a, type: reps, sets: [{ reps: 2.5, rest_taken_sec: 0 }] }]
+
+  - name: program-week-zero
+    input: |
+      version: 1
+      id: s
+      workout: w
+      program: p
+      program_week: 0
+      started_at: "2024-05-01T10:00:00.000Z"
+      ended_at: null
+      entries: []
+
+  - name: unknown-entry-type
+    input: |
+      version: 1
+      id: s
+      workout: w
+      started_at: "2024-05-01T10:00:00.000Z"
+      ended_at: null
+      entries: [{ exercise: a, type: yoga }]
+
+  - name: not-yaml
+    input: 'entries: {'

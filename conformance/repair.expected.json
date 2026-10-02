@@ -1,0 +1,168 @@
+{
+  "already-valid": {
+    "repaired": false
+  },
+  "sets-past-ceiling": {
+    "repaired": true,
+    "result": {
+      "ok": true,
+      "value": {
+        "version": 1,
+        "exercises": [
+          {
+            "id": "a",
+            "name": "A",
+            "type": "reps",
+            "config": {
+              "sets": 500,
+              "targetRepsMin": 5,
+              "restSec": 60
+            }
+          },
+          {
+            "id": "b",
+            "name": "B",
+            "type": "timed_hold",
+            "config": {
+              "sets": 500,
+              "holdSecMin": 30,
+              "restSec": 60
+            }
+          }
+        ],
+        "workouts": [],
+        "programs": []
+      }
+    }
+  },
+  "rounds-past-ceiling": {
+    "repaired": true,
+    "result": {
+      "ok": true,
+      "value": {
+        "version": 1,
+        "exercises": [
+          {
+            "id": "a",
+            "name": "A",
+            "type": "hiit",
+            "config": {
+              "workSec": 40,
+              "restSec": 20,
+              "rounds": 500
+            }
+          },
+          {
+            "id": "b",
+            "name": "B",
+            "type": "rest",
+            "config": {
+              "durationSec": 1
+            }
+          }
+        ],
+        "workouts": [
+          {
+            "id": "w",
+            "name": "W",
+            "blocks": [
+              {
+                "kind": "circuit",
+                "rounds": 500,
+                "members": [
+                  {
+                    "exerciseId": "a"
+                  },
+                  {
+                    "exerciseId": "b"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "programs": []
+      }
+    }
+  },
+  "emom-derived-count": {
+    "repaired": true,
+    "result": {
+      "ok": true,
+      "value": {
+        "version": 1,
+        "exercises": [
+          {
+            "id": "e",
+            "name": "E",
+            "type": "emom",
+            "config": {
+              "intervalSec": 1,
+              "totalMinutes": 8.333333333333334
+            }
+          }
+        ],
+        "workouts": [],
+        "programs": []
+      }
+    }
+  },
+  "emom-uneven-interval": {
+    "repaired": true,
+    "result": {
+      "ok": true,
+      "value": {
+        "version": 1,
+        "exercises": [
+          {
+            "id": "e",
+            "name": "E",
+            "type": "emom",
+            "config": {
+              "intervalSec": 7,
+              "totalMinutes": 58.333333333333336
+            }
+          }
+        ],
+        "workouts": [],
+        "programs": []
+      }
+    }
+  },
+  "emom-total-minutes-past-ceiling": {
+    "repaired": true,
+    "result": {
+      "ok": true,
+      "value": {
+        "version": 1,
+        "exercises": [
+          {
+            "id": "e",
+            "name": "E",
+            "type": "emom",
+            "config": {
+              "intervalSec": 300,
+              "totalMinutes": 1440
+            }
+          }
+        ],
+        "workouts": [],
+        "programs": []
+      }
+    }
+  },
+  "zero-is-not-repaired": {
+    "repaired": false
+  },
+  "repaired-but-still-invalid": {
+    "repaired": true,
+    "result": {
+      "ok": false,
+      "kind": "schemaMismatch",
+      "paths": ["exercises.1.name"]
+    }
+  },
+  "not-yaml": {
+    "repaired": false
+  }
+}

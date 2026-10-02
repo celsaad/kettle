@@ -40,8 +40,14 @@ type RawSession = z.infer<typeof rawSessionSchema>;
  * storage callers only log it. `detail` is the one part that stays English in every locale: it's
  * js-yaml's syntax message or zod's issue list, library output rather than prose of ours, so the
  * translated frame goes around it instead of replacing it.
+ *
+ * `paths` names the refused fields (`exercises.0.config.sets`) without the wording. It's the part of a
+ * refusal a second implementation of this parser can be held to — `conformance/` pins it, where it
+ * could never pin zod's sentences.
  */
-export type ParseError = { kind: 'invalidYaml'; detail: string } | { kind: 'schemaMismatch'; detail: string };
+export type ParseError =
+  | { kind: 'invalidYaml'; detail: string }
+  | { kind: 'schemaMismatch'; detail: string; paths: string[] };
 
 export type ParseResult<T> = { ok: true; data: T } | { ok: false; error: ParseError };
 
@@ -59,8 +65,13 @@ export type ParseResult<T> = { ok: true; data: T } | { ok: false; error: ParseEr
  */
 const LOAD_OPTIONS = { maxAliases: 1000 } as const;
 
-function zodIssueDetail(error: z.ZodError): string {
-  return error.issues.map((issue) => `${issue.path.join('.') || '(root)'}: ${issue.message}`).join('; ');
+function schemaMismatch(error: z.ZodError): ParseError {
+  const paths = error.issues.map((issue) => issue.path.join('.') || '(root)');
+  return {
+    kind: 'schemaMismatch',
+    detail: error.issues.map((issue, index) => `${paths[index]}: ${issue.message}`).join('; '),
+    paths,
+  };
 }
 
 // --- Exercise / Workout / Program / Library ---
@@ -351,7 +362,7 @@ export function parseLibraryYaml(text: string): ParseResult<Library> {
     return { ok: false, error: { kind: 'invalidYaml', detail: (error as Error).message } };
   }
   const result = rawLibrarySchema.safeParse(parsed);
-  if (!result.success) return { ok: false, error: { kind: 'schemaMismatch', detail: zodIssueDetail(result.error) } };
+  if (!result.success) return { ok: false, error: schemaMismatch(result.error) };
   return { ok: true, data: libraryToDomain(result.data) };
 }
 
@@ -741,7 +752,7 @@ export function parseSessionYaml(text: string): ParseResult<Session> {
     return { ok: false, error: { kind: 'invalidYaml', detail: (error as Error).message } };
   }
   const result = rawSessionSchema.safeParse(parsed);
-  if (!result.success) return { ok: false, error: { kind: 'schemaMismatch', detail: zodIssueDetail(result.error) } };
+  if (!result.success) return { ok: false, error: schemaMismatch(result.error) };
   return { ok: true, data: sessionToDomain(result.data) };
 }
 

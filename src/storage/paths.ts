@@ -10,6 +10,7 @@ type ResolvedPaths = {
   libraryFile: File;
   supporterFile: File;
   preferencesFile: File;
+  backupTargetsFile: File;
 };
 
 let resolved: ResolvedPaths | null = null;
@@ -25,7 +26,10 @@ function resolvePaths(): ResolvedPaths {
     const supporterFile = new File(root, 'supporter.json');
     // Same reasoning: app settings aren't part of the library the user exports and shares.
     const preferencesFile = new File(root, 'preferences.json');
-    resolved = { root, sessionsDir, libraryFile, supporterFile, preferencesFile };
+    // Not a preference, though it sits beside them: nobody chooses it and nothing renders it. It is
+    // `backup.ts`'s memory of which documents it wrote, and only that file reads it.
+    const backupTargetsFile = new File(root, 'backup-targets.json');
+    resolved = { root, sessionsDir, libraryFile, supporterFile, preferencesFile, backupTargetsFile };
   }
   return resolved;
 }
@@ -45,6 +49,9 @@ export const storagePaths = {
   },
   get preferencesFile() {
     return resolvePaths().preferencesFile;
+  },
+  get backupTargetsFile() {
+    return resolvePaths().backupTargetsFile;
   },
 };
 

@@ -89,6 +89,12 @@ Flagged in the PR rather than assumed. None of these change the design; each cha
 - **That the files have anything in them at all.** The truncating handle leaked its descriptor on
   57.x, and a device showed the result: both files created, both empty. It is patched (trap 5 in the
   API notes); the same back-up-and-read-it-back pass confirms the patch reached the build.
+- **That a Google Drive folder keeps one pair.** Drive's document ids are opaque, so finding the old
+  files by name never works there; `backup.ts` finds them by the URI it wrote last time instead. Back
+  up into a Drive folder three times: the first makes a pair and the next two must write into it, with
+  no `(1)` or `(2)` appearing. It rests on two things the sources can't show — that Drive lists a
+  document under the same URI `createFile` returned, and that the URI doesn't change once the file
+  syncs — and if either fails, the duplicates simply continue.
 
 ## Design
 

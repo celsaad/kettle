@@ -1,0 +1,105 @@
+# mergeLibraries(existing, incoming): incoming replaces by id (whole object, never a deep merge),
+# new ids are appended in incoming order, existing order is kept, and the merged whole must resolve
+# every reference. `existing` and `incoming` are libraries that parse.
+cases:
+  - name: adds-replaces-and-keeps-order
+    existing: |
+      version: 1
+      exercises:
+        - { id: a, name: A, type: reps, notes: old, config: { sets: 3, target_reps_min: 5, target_weight: 40, rest_sec: 60 } }
+        - { id: b, name: B, type: rest, config: { duration_sec: 60 } }
+      workouts: [{ id: w, name: W, blocks: [{ type: exercise, exercise: a }] }]
+      programs: []
+    incoming: |
+      version: 7
+      exercises:
+        - { id: c, name: C, type: rest, config: { duration_sec: 30 } }
+        - { id: a, name: A2, type: reps, config: { sets: 4, target_reps_min: 6, rest_sec: 90 } }
+      workouts: [{ id: v, name: V, blocks: [{ type: exercise, exercise: c }] }]
+      programs: [{ id: p, name: P, weeks: [{ week: 1, workout: w }] }]
+
+  - name: reference-satisfied-by-existing
+    existing: |
+      version: 1
+      exercises: [{ id: a, name: A, type: rest, config: { duration_sec: 60 } }]
+      workouts: []
+      programs: []
+    incoming: |
+      version: 1
+      exercises: []
+      workouts: [{ id: w, name: W, blocks: [{ type: exercise, exercise: a }] }]
+      programs: []
+
+  - name: rest-week-needs-no-workout
+    existing: |
+      version: 1
+      exercises: []
+      workouts: [{ id: w, name: W, blocks: [] }]
+      programs: []
+    incoming: |
+      version: 1
+      exercises: []
+      workouts: []
+      programs: [{ id: p, name: P, weeks: [{ week: 1, workout: w }, { week: 2, rest_day: true }] }]
+
+  - name: unknown-exercise-in-block
+    existing: |
+      version: 1
+      exercises: []
+      workouts: []
+      programs: []
+    incoming: |
+      version: 1
+      exercises: []
+      workouts: [{ id: w, name: W, blocks: [{ type: exercise, exercise: missing }] }]
+      programs: []
+
+  - name: unknown-exercise-in-circuit
+    existing: |
+      version: 1
+      exercises: [{ id: a, name: A, type: rest, config: { duration_sec: 60 } }]
+      workouts: []
+      programs: []
+    incoming: |
+      version: 1
+      exercises: []
+      workouts:
+        - { id: w, name: W, blocks: [{ type: circuit, rounds: 2, exercises: [{ exercise: a }, { exercise: missing }] }] }
+      programs: []
+
+  - name: unknown-workout-in-week-with-day
+    existing: |
+      version: 1
+      exercises: []
+      workouts: [{ id: w, name: W, blocks: [] }]
+      programs: []
+    incoming: |
+      version: 1
+      exercises: []
+      workouts: []
+      programs: [{ id: p, name: P, weeks: [{ week: 1, workout: w }, { week: 2, day: Thu, workout: missing }] }]
+
+  - name: unknown-workout-in-week-without-day
+    existing: |
+      version: 1
+      exercises: []
+      workouts: []
+      programs: []
+    incoming: |
+      version: 1
+      exercises: []
+      workouts: []
+      programs: [{ id: p, name: P, weeks: [{ week: 3, workout: missing }] }]
+
+  - name: replacing-an-exercise-can-break-nothing-it-keeps
+    why: replacing a workout drops its old references, so an exercise only it used is no longer needed
+    existing: |
+      version: 1
+      exercises: [{ id: a, name: A, type: rest, config: { duration_sec: 60 } }]
+      workouts: [{ id: w, name: W, blocks: [{ type: exercise, exercise: a }] }]
+      programs: []
+    incoming: |
+      version: 1
+      exercises: [{ id: b, name: B, type: rest, config: { duration_sec: 30 } }]
+      workouts: [{ id: w, name: W, blocks: [{ type: exercise, exercise: b }] }]
+      programs: []

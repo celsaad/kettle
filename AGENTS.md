@@ -108,6 +108,11 @@ mistake here that cannot be fixed for anyone who has already installed it.
   examples page makes — every example prefixes its ids so importing one can't overwrite anything the
   reader already has.
 
+- `conformance/` — the format's behaviour as data: hand-written YAML inputs and generated golden
+  outputs, checked by `conformance.test.ts`. It exists so the Kotlin port can be held to exactly what
+  the TS parser does; its README is the contract. A behaviour change in `src/domain/` needs `pnpm run
+  conformance:update`, and the golden diff is part of the review.
+
 **YAML is snake_case, domain code is camelCase**, bridged only in `yaml-mapping.ts`. Program
 `overrides` are partial *raw* (snake_case) patches — that asymmetry is deliberate and load-bearing.
 
@@ -260,6 +265,9 @@ published page shipped with five of seven type tables wrong (`emom` taking `roun
 `overrides` as a mapping), all of it plausible enough to read as correct and every bit of it refused
 on import. The first two of those are now regression-tested — reintroducing either one fails
 `format-mirrors.test.ts`, which is how it was verified.
+
+A format change also moves `conformance/`: add a case for the new behaviour, regenerate the goldens,
+and read the diff. Once the Kotlin parser exists, the same PR has to make it pass too.
 
 If you add a complete library sample to any page, mark it `data-validate="library"` so it joins the
 checked set. Deliberate fragments — a bare `workouts:` list, a shape sketch with `{ ... }` — stay

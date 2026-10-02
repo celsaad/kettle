@@ -1,0 +1,17 @@
+# Number conversions. Rounding is JavaScript's Math.round: halves round toward +∞, not to even.
+# The exact-half case is there to catch a port that uses banker's rounding (2.125 * 100 is exactly
+# 212.5 in binary, which is why it's the one picked).
+cases:
+  - { name: kg-shown-as-kg, op: toDisplayWeight, kg: 82.5, system: metric }
+  - { name: kg-shown-as-lb, op: toDisplayWeight, kg: 100, system: imperial }
+  - { name: lb-authored-value-redisplays, op: toDisplayWeight, kg: 61.23, system: imperial }
+  - { name: metric-display-rounds-to-two, op: toDisplayWeight, kg: 61.23456, system: metric }
+  - { name: metric-exact-half-rounds-up, op: toDisplayWeight, kg: 2.125, system: metric }
+  - { name: zero-kg, op: toDisplayWeight, kg: 0, system: imperial }
+  - { name: lb-stored-as-kg, op: fromDisplayWeight, value: 135, system: imperial }
+  - { name: kg-input-passes-through, op: fromDisplayWeight, value: 61.237, system: metric }
+  - { name: step-metric, op: weightStep, system: metric }
+  - { name: step-imperial, op: weightStep, system: imperial }
+  - { name: emom-even, op: emomIntervalCount, interval_sec: 60, total_minutes: 10 }
+  - { name: emom-partial-trailing, op: emomIntervalCount, interval_sec: 45, total_minutes: 10 }
+  - { name: emom-float-quotient, op: emomIntervalCount, interval_sec: 1, total_minutes: 8.333333333333334 }

@@ -1,0 +1,46 @@
+# Applying and diffing a program week's overrides, against the exercises and workouts in `library`.
+#   mergeExercise { exercise, config }        → { effective, asAuthored, report }
+#   mergeBlock    { workout, block, config }  → same; `block` is an index into the workout's blocks
+#   diffExercise  { base, edited }            → the snake_case keys that changed (exercise ids)
+#   diffBlock     { workout, base, edited }   → same, for two blocks of one workout (indexes)
+# A patch the schema refuses after merging leaves `effective` as the unpatched target.
+cases:
+  - name: overrides
+    library: |
+      version: 1
+      exercises:
+        - { id: bench, name: Bench, type: reps, config: { sets: 3, target_reps_min: 3, target_reps_max: 5, target_weight: 80, rest_sec: 120 } }
+        - { id: bench-edited, name: Bench, type: reps, config: { sets: 5, target_reps_min: 3, target_reps_max: 5, target_weight: 85, rest_sec: 120 } }
+        - { id: plank, name: Plank, type: timed_hold, config: { sets: 2, rest_sec: 30 } }
+        - { id: walk, name: Walk, type: cardio, config: {} }
+        - { id: clean, name: Clean, type: emom, config: { interval_sec: 60, total_minutes: 10 } }
+      workouts:
+        - id: w
+          name: W
+          blocks:
+            - { type: circuit, id: core, rounds: 3, rest_between_rounds_sec: 60, exercises: [{ exercise: plank }, { exercise: walk }] }
+            - { type: exercise, exercise: bench }
+            - { type: circuit, id: core, rounds: 2, rest_between_exercises_sec: 10, rest_between_rounds_sec: 60, exercises: [{ exercise: plank }, { exercise: walk }] }
+      programs: []
+    ops:
+      - { op: mergeExercise, exercise: bench, config: { sets: 6 } }
+      - { op: mergeExercise, exercise: bench, config: { sets: 501 } }
+      - { op: mergeExercise, exercise: bench, config: { sets: abc } }
+      - { op: mergeExercise, exercise: bench, config: { rest_sec: -5 } }
+      - { op: mergeExercise, exercise: bench, config: { target_reps_max: 2 } }
+      - { op: mergeExercise, exercise: bench, config: { tempo: 3 } }
+      - { op: mergeExercise, exercise: bench, config: { sets: 4, tempo: 3 } }
+      - { op: mergeExercise, exercise: plank, config: { hold_sec_max: 30 } }
+      - { op: mergeExercise, exercise: plank, config: { hold_sec_min: 20, hold_sec_max: 30 } }
+      - { op: mergeExercise, exercise: walk, config: { duration_sec: 600 } }
+      - { op: mergeExercise, exercise: clean, config: { interval_sec: 1, total_minutes: 60 } }
+      - { op: mergeBlock, workout: w, block: 0, config: { rounds: 2 } }
+      - { op: mergeBlock, workout: w, block: 0, config: { rounds: 501 } }
+      - { op: mergeBlock, workout: w, block: 0, config: { exercises: 2 } }
+      - { op: mergeBlock, workout: w, block: 0, config: { rest_between_exercises_sec: 15, id: other } }
+      - { op: mergeBlock, workout: w, block: 1, config: { rounds: 2 } }
+      - { op: diffExercise, base: bench, edited: bench-edited }
+      - { op: diffExercise, base: bench, edited: bench }
+      - { op: diffBlock, workout: w, base: 0, edited: 2 }
+      - { op: diffBlock, workout: w, base: 2, edited: 0 }
+      - { op: diffBlock, workout: w, base: 0, edited: 1 }

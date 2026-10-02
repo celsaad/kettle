@@ -8,6 +8,13 @@
 # fails on anything else), so the flat layout is a requirement of the tooling, not a crutch for us.
 nodeLinker: hoisted
 
+# Backports expo/expo#47176, which only shipped in SDK 58: on Android a FileHandle on a content://
+# URI never closed its ParcelFileDescriptor, so the provider never saw a write finish and backups
+# landed empty. Trap 5 in docs/sdk-57-api-notes.md. Delete this on the move to SDK 58 — keyed without
+# a version on purpose, so the patch fails to apply there instead of lingering unnoticed.
+patchedDependencies:
+  expo-file-system: patches/expo-file-system.patch
+
 # Windows caps paths at 260 chars unless LongPathsEnabled is set, and it isn't here (turning it on
 # needs admin plus a reboot). pnpm's virtual store encodes the full package name and a hash into one
 # directory name; at the default of 120 the longest @babel entries overflow and the install dies

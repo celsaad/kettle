@@ -18,7 +18,12 @@ here, next to what it describes.
 
 ## Unreleased
 
-Nothing since 0.9.0.
+### What changed
+
+**Backups to a folder now have your data in them.** On Android, the files Kettle wrote into your
+backup folder could turn up empty: the file was there, with nothing inside. Both files now hold the
+whole library and the whole log after every backup. A folder you already chose keeps working — tap
+Back up now in Settings once to refresh it.
 
 ---
 

@@ -1,0 +1,53 @@
+name: Spike — brownfield AAR
+
+# M0 spike only (docs/native-migration-plan.md, question 1): does the expo-brownfield AAR build on
+# GitHub Actions without EAS, and does the native host build against it? Lives on the spike branch
+# and never merges. No ccache, unlike android.yml: this asks whether it builds, not how fast.
+on:
+  push:
+    branches: ['spike/brownfield']
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      # The CLI forwards no Gradle args, so the ABI goes in as a project property through the env.
+      ORG_GRADLE_PROJECT_reactNativeArchitectures: arm64-v8a
+
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Prebuild android/
+        run: pnpm exec expo prebuild --platform android --no-install
+
+      # Expo's own CLI, which can't run on Windows (it spawns ./gradlew, which cmd doesn't resolve).
+      - name: Build and publish the release AAR to mavenLocal
+        run: pnpm exec expo-brownfield build:android --release --verbose
+
+      - name: Build the native host against it
+        working-directory: native/android
+        run: ./gradlew :app:assembleRelease
+
+      - name: Sizes
+        run: |
+          ls -l native/android/app/build/outputs/apk/release/
+          find ~/.m2/repository/com/casco -name '*.aar' -exec ls -l {} \;
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kettle-spike-host-release
+          path: native/android/app/build/outputs/apk/release/*.apk

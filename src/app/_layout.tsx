@@ -25,6 +25,7 @@ import { useRestDayReminder } from '@/hooks/use-rest-day-reminder';
 import { useLibraryStore } from '@/state/library-store';
 import { usePreferencesStore } from '@/state/preferences-store';
 import { useSessionHistoryStore } from '@/state/session-history-store';
+import { useBrownfieldProbe } from '@/spike/brownfield-probe';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -136,6 +137,7 @@ function Navigation() {
 }
 
 export default function RootLayout() {
+  useBrownfieldProbe();
   const [fontsLoaded] = useFonts({
     SpaceGrotesk_500Medium,
     SpaceGrotesk_600SemiBold,

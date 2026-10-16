@@ -7,6 +7,9 @@ plugins {
 android {
   namespace = "com.casco.kettle.shell"
   compileSdk = 36
+  // React Native's NDK (react-native/gradle/libs.versions.toml). Without one AGP can't strip the
+  // AAR's native libraries and packages them with symbols, which would skew the Q8 size comparison.
+  ndkVersion = "27.1.12297006"
 
   defaultConfig {
     // A separate id so the spike installs beside the real app instead of over it.

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The brownfield AAR's manifest carries expo-notifications' meta-data, but the resources it
+     points at are written by the config plugin into the prebuilt *app* module, so they never reach
+     the AAR. The host supplies them; the PNGs are copies of what prebuild generates. -->
+<resources>
+  <color name="notification_icon_color">#c05c2b</color>
+</resources>

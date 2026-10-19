@@ -297,6 +297,8 @@ are the index, the banner is the contract.
 - `docs/sdk-57-api-notes.md` — the `expo-file-system` / `expo-notifications` / `expo-iap` shapes
   confirmed from `node_modules`, because the published docs are wrong for two of the three.
 - `docs/adding-a-language.md` — the seven-place procedure for shipping a new UI language.
+- `docs/agents/` — per-repo setup the engineering skills read: issue tracker, triage labels, and
+  where the glossary and decision log live. Indexed by the "Agent skills" section at the end.
 - `docs/building-android.md` — building the Play bundle on GitHub Actions rather than on EAS, and
   the keystore setup it needs first.
 - `docs/verifying-in-the-browser.md` — driving the running app under Playwright.

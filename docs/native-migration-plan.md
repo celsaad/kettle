@@ -181,8 +181,8 @@ Nothing user-visible ships in M1. It builds the pieces every later milestone dep
   `conformance/search.yaml`), ported from `src/domain/`. The selectors in `src/state/selectors/`
   that the native screens will need are ported when those screens are, not here. *(Units landed with
   the skeleton and name search with #142; the rest is #143–#145.)* The module has a JVM target
-  only, which `:app` consumes as it is: `androidTarget()` waits for the first code that needs an Android API, and the iOS targets
-  for M8.
+  only, which `:app` consumes as it is: `androidTarget()` waits for the first code that needs an
+  Android API, and the iOS targets for M8.
 - **A conformance corpus** in `conformance/` *(TS side and the Kotlin runner landed; see its README
   for the contract)*:
   YAML inputs plus generated golden outputs (parsed library and session, refusal paths, repair,

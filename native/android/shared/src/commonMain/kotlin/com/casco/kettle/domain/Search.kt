@@ -111,7 +111,7 @@ private fun tierOf(
         else -> {
             codePoints(token)
                 .takeIf(::forgivesTypos)
-                ?.let { chars -> TIER_TYPO.takeIf { words.any { withinOneTypo(chars, codePoints(it)) } } }
+                ?.let { tokenPoints -> TIER_TYPO.takeIf { words.any { withinOneTypo(tokenPoints, codePoints(it)) } } }
         }
     }
 

@@ -100,8 +100,8 @@ class Case(
 
     fun string(key: String): String? = fields[key] as String?
 
-    @Suppress("UNCHECKED_CAST")
-    fun strings(key: String): List<String> = fields[key] as List<String>
+    // Cast per element, so an unquoted name that loads as a number fails here, naming the value.
+    fun strings(key: String): List<String> = (fields[key] as List<*>).map { it as String }
 
     fun number(key: String): Double = (fields[key] as Number).toDouble()
 }

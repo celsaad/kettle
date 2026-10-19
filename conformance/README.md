@@ -64,8 +64,15 @@ Every one of these has a case, because each is a default that differs between YA
   - **There is no timestamp type**, so an unquoted `2024-01-01` is a string.
   - An unquoted `300` is a number, so it's refused where a string is required. A type-directed
     decoder that reads every scalar as the field's type would wrongly accept it.
+  - **`<<` is not a merge key.** That's YAML 1.1, and some 1.2 loaders still apply it by default.
+    Here it is an unknown key like any other, and dropped.
+  - A plain `${NAME}` is a string. Some loaders give it an environment-variable tag.
+  - A float literal too big for a double (`1e400`) is a **string**. Only `.inf`, `+.inf` and
+    `-.inf` spell infinity, and the schema refuses all three where it wants a number.
+  - `!!set` is an unknown tag, and so a YAML error. Some loaders still build it.
 - **Unknown keys are dropped, at every level.** A strict decoder would refuse them.
-- `3.0` passes an integer field. `2.5` doesn't, and neither does the string `"3"`.
+- `3.0` passes an integer field. `2.5` doesn't, and neither does the string `"3"`. An integer field
+  takes JavaScript's safe-integer range (up to 2^53 − 1), so a 32-bit int is too narrow for one.
 - A key with nothing after it is `null`, and `null` doesn't satisfy an optional string.
 - **Duplicate keys and tab indentation are YAML errors**, as is an empty document.
 - **At most 1000 aliases** per document. The 1001st is a YAML error, raised before the schema runs.

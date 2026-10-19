@@ -180,7 +180,8 @@ Nothing user-visible ships in M1. It builds the pieces every later milestone dep
   program resolution, units and name search (`search.ts`, held to
   `conformance/search.yaml`), ported from `src/domain/`. The selectors in `src/state/selectors/`
   that the native screens will need are ported when those screens are, not here. *(Units landed with
-  the skeleton and name search with #142; the rest is #143–#145.)* The module has a JVM target
+  the skeleton, name search with #142, and the YAML loader and session files with #143; the rest is
+  #144–#145.)* The module has a JVM target
   only, which `:app` consumes as it is: `androidTarget()` waits for the first code that needs an
   Android API, and the iOS targets for M8.
 - **A conformance corpus** in `conformance/` *(TS side and the Kotlin runner landed; see its README
@@ -317,6 +318,15 @@ session.
   with Support in M4.)
 - Re-check the **Data Safety** claim: list every Gradle dependency that touches the network and
   confirm none transmits anything.
+- **Unpin the Kotlin toolchain.** `native/android/gradle/libs.versions.toml` holds Kotlin and AGP
+  at React Native's own versions (`node_modules/react-native/gradle/libs.versions.toml`), so the shell
+  and the AAR it hosts build with one toolchain. With the AAR gone, that reason goes too. Move Kotlin
+  forward together with three things that move with it:
+  - detekt, whose 1.x line runs only on the Kotlin it was built against;
+  - the Compose compiler plugin;
+  - snakeyaml-engine-kmp, whose newer majors are built with a newer Kotlin than ours can read.
+
+  If an Expo SDK upgrade moves React Native's Kotlin before M7, follow it then instead.
 
 **Landmark: the Android APK contains no JS engine.** The root Expo project survives only if M8
 still needs it (see below).

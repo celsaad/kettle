@@ -575,6 +575,7 @@
     "removeEntryConfirmTitle": "このエクササイズを削除しますか？",
     "removeEntryConfirmBody": "「{{name}}」は残り1セットなので、削除するとこのセッションからエクササイズごとなくなります。",
     "readOnlyNote": "1分ごとの記録はここでは編集できません。",
+    "zeroRemoved": "0のセットは保存時に削除されます。",
     "field": {
       "reps": "レップ",
       "load": "負荷",

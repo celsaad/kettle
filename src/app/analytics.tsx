@@ -24,7 +24,7 @@ import {
 import { exerciseName } from '@/state/selectors/exercise-lookup';
 import { currentStreak, thisWeekStats, trainingCalendar } from '@/state/selectors/history-stats';
 import { useLibraryStore } from '@/state/library-store';
-import { useSessionHistoryStore } from '@/state/session-history-store';
+import { useLoggedSessions } from '@/state/session-history-store';
 
 export { RouteErrorBoundary as ErrorBoundary } from '@/components/error-fallback';
 
@@ -60,7 +60,7 @@ const CALENDAR_WEEKS = 4;
 export default function AnalyticsScreen() {
   const theme = useTheme();
   const { t } = useTranslation();
-  const sessions = useSessionHistoryStore((state) => state.sessions);
+  const sessions = useLoggedSessions();
   const library = useLibraryStore((state) => state.library);
 
   // Computed per render, deliberately. All three read the clock: `thisWeekStats` resolves the current

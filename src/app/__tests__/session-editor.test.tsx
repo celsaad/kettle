@@ -158,6 +158,54 @@ describe('correcting a logged set', () => {
   });
 });
 
+/**
+ * A zero means "not done": accepted rather than refused, dropped on save with no confirm, and said so
+ * under the row while it reads 0 — the only warning before a set vanishes.
+ */
+describe('a value typed down to zero', () => {
+  it('says the set will go, then drops it on save', async () => {
+    await renderScreen(<SessionEditorScreen />);
+    expect(screen.queryByText('Sets at 0 are removed when you save.')).toBeNull();
+
+    await fireEvent.changeText(fieldFor(1, 'Reps'), '0');
+    expect(screen.getByText('Sets at 0 are removed when you save.')).toBeTruthy();
+
+    await fireEvent.press(screen.getByText('Save'));
+    expect(editEntry).toHaveBeenCalledWith('session-1', 0, {
+      exercise: 'back-squat',
+      type: 'reps',
+      sets: [{ reps: 6, weightKg: 60, rpe: 9, restTakenSec: 120 }],
+    });
+  });
+
+  it('removes the exercise when its only set goes to zero', async () => {
+    await renderScreen(<SessionEditorScreen />);
+
+    await fireEvent.changeText(screen.getByLabelText('Set 1 · Hold (sec)'), '0');
+    await fireEvent.press(screen.getByText('Save'));
+
+    expect(removeEntry).toHaveBeenCalledWith('session-1', 2);
+    expect(editEntry).not.toHaveBeenCalledWith('session-1', 2, expect.anything());
+  });
+
+  // The store indexes the same cleaned list (see its own suite); this is the screen's half of that.
+  it('shows an old session without its zero sets, and indexes what it shows', async () => {
+    const skipped: SessionEntry = { exercise: 'back-squat', type: 'reps', sets: [{ reps: 0, restTakenSec: 90 }] };
+    useSessionHistoryStore.setState({ sessions: [aSession({ entries: [skipped, restEntry, plankEntry] })] });
+    await renderScreen(<SessionEditorScreen />);
+
+    expect(screen.queryByText('Back Squat')).toBeNull();
+    await fireEvent.changeText(screen.getByLabelText('Set 1 · Hold (sec)'), '50');
+    await fireEvent.press(screen.getByText('Save'));
+
+    expect(editEntry).toHaveBeenCalledWith('session-1', 1, {
+      exercise: 'plank',
+      type: 'timed_hold',
+      sets: [{ holdSec: 50, restTakenSec: 60 }],
+    });
+  });
+});
+
 describe('removing', () => {
   it('drops one set without confirming, since the entry survives it', async () => {
     await renderScreen(<SessionEditorScreen />);
@@ -287,5 +335,14 @@ describe('in Portuguese', () => {
     await fireEvent.press(screen.getByText('Salvar'));
 
     expect(screen.getByText('RPE pode ser no máximo 10.')).toBeTruthy();
+  });
+
+  it('translates the zero hint', async () => {
+    await changeLanguage('pt');
+    await renderScreen(<SessionEditorScreen />);
+
+    await fireEvent.changeText(screen.getByLabelText('Série 1 · Reps'), '0');
+
+    expect(screen.getByText('Séries com 0 são removidas ao salvar.')).toBeTruthy();
   });
 });

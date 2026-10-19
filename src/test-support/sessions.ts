@@ -1,4 +1,10 @@
-import type { Session } from '@/domain/types';
+import type { Session, SessionEntry } from '@/domain/types';
+
+/**
+ * One set of real work, for a fixture that only needs "a session was logged". A finished session with
+ * no work in it is hidden from every training view (`loggedSessions`), so an empty one no longer counts.
+ */
+export const oneSetEntry: SessionEntry = { exercise: 'pushups', type: 'reps', sets: [{ reps: 10, restTakenSec: 0 }] };
 
 /**
  * Fixture builder for the session log, alongside `library.ts`'s builders for the library side.

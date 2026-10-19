@@ -155,7 +155,13 @@ it("names each calendar week's sessions and time for a screen reader", async () 
   const start = new Date(now.getTime() - 60 * 60_000);
   setUp(
     [rdl],
-    [aSession({ startedAt: start.toISOString(), endedAt: new Date(start.getTime() + 30 * 60_000).toISOString() })],
+    [
+      aSession({
+        startedAt: start.toISOString(),
+        endedAt: new Date(start.getTime() + 30 * 60_000).toISOString(),
+        entries: [loaded(60)],
+      }),
+    ],
   );
 
   await renderScreen(<AnalyticsScreen />);

@@ -51,6 +51,9 @@ jest.mock('@/state/session-history-store', () => ({
   useSessionHistoryStore: Object.assign((selector: (state: unknown) => unknown) => selector(mockStoreState()), {
     getState: () => mockStoreState(),
   }),
+  // The real filter over the mocked list, so what the screen reads is what the app would.
+  useLoggedSessions: (select = (sessions: Session[]) => sessions) =>
+    select(jest.requireActual('@/state/selectors/logged-sessions').loggedSessions(mockSessions)),
 }));
 
 function mockStoreState() {

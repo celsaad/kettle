@@ -41,6 +41,12 @@ of the same type, so a bench press could become a dumbbell press but not a run. 
 whole library, with the closest matches first. Swapping between sets and holds keeps the sets you
 had left; swapping into a HIIT, EMOM, AMRAP or cardio exercise runs that exercise as you wrote it.
 
+**A set logged at 0 no longer counts as a set.** Logging 0 reps or a 0-second hold is how you skip
+something mid-workout, so it no longer shows up in History, Stats or "last time", and a session
+where you skipped everything doesn't count as a workout or move your program on. Older sessions are
+shown the same way, and the files themselves are left as they were. Typing 0 into a set while
+editing a session removes that set when you save.
+
 **Searching while you swap or add an exercise works on newer Android phones.** Typing a few letters
 made the list vanish: it had slipped behind the keyboard. It now stays above the keyboard while you
 type.

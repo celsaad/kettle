@@ -1,7 +1,9 @@
 import { create } from 'zustand';
 
+import { withoutZeroWork } from '@/domain/logged-work';
 import type { Session, SessionEntry } from '@/domain/types';
 import { usePreferencesStore } from '@/state/preferences-store';
+import { loggedSessions } from '@/state/selectors/logged-sessions';
 import type { BackupFailure } from '@/storage/backup';
 import { backUpNow, isBackupFolderSupported } from '@/storage/backup';
 import {
@@ -92,7 +94,10 @@ type SessionHistoryState = {
  */
 function finishedSession(sessions: Session[], id: string): Session | undefined {
   const session = sessions.find((existing) => existing.id === id);
-  return session?.endedAt ? session : undefined;
+  // Cleaned before the caller indexes into it: the editor was showing `loggedSessions`, so its indices
+  // count entries with the zero work already gone, and the write that follows then leaves the file
+  // clean as well. Idempotent, so the editor's several calls per save all index the same list.
+  return session?.endedAt ? withoutZeroWork(session) : undefined;
 }
 
 /**
@@ -129,6 +134,21 @@ function backUpAfterSession(sessions: Session[], onResult: (failure: BackupFailu
   const { backupFolderUri } = usePreferencesStore.getState().preferences;
   if (!isBackupFolderSupported || !backupFolderUri) return;
   setTimeout(() => onResult(backUpNow(backupFolderUri, sessions)), 0);
+}
+
+/**
+ * The log every training view reads: `loggedSessions`, which hides zero work. The default way in, so
+ * a new reader gets the filter without having to know it exists; raw `state.sessions` is for the
+ * readers that hand over the user's own files (export, backup). `select` narrows what the caller
+ * subscribes to, so a reader that only needs a count re-renders only when the count changes.
+ */
+export function useLoggedSessions(): Session[];
+export function useLoggedSessions<T>(select: (sessions: Session[]) => T): T;
+export function useLoggedSessions<T>(select?: (sessions: Session[]) => T): T | Session[] {
+  return useSessionHistoryStore((state) => {
+    const sessions = loggedSessions(state.sessions);
+    return select ? select(sessions) : sessions;
+  });
 }
 
 export const useSessionHistoryStore = create<SessionHistoryState>((set, get) => ({

@@ -2,6 +2,7 @@ import {
   buildEntry,
   entryToSetForms,
   isEditableEntry,
+  isZeroForm,
   validateEntryForm,
   type EditableEntry,
   type SetForm,
@@ -258,5 +259,28 @@ describe('the load round trip, per unit system', () => {
       sets: [{ reps: 5, weightKg: 100, restTakenSec: 180 }],
     };
     expect(buildEntry(entry, entryToSetForms(entry, unitSystem), unitSystem)).toEqual(entry);
+  });
+});
+
+/**
+ * Typing 0 is accepted rather than refused, and means "not done": the row is dropped on save, the same
+ * way the runner never writes a zero set. The screen's hint keys on `isZeroForm`.
+ */
+describe('zero rows', () => {
+  const withReps = (reps: string): SetForm => ({ values: { reps }, restTakenSec: 60 });
+
+  it('drops a zero row and keeps the rest of the entry', () => {
+    const built = buildEntry(repsEntry, [withReps('8'), withReps('0')], 'metric');
+    expect(built?.type === 'reps' && built.sets.map((set) => set.reps)).toEqual([8]);
+  });
+
+  it('returns null when every row is zero, which the editor saves as a removal', () => {
+    expect(buildEntry(repsEntry, [withReps('0'), withReps('')], 'metric')).toBeNull();
+    expect(buildEntry(holdEntry, [{ values: { holdSec: '0' }, restTakenSec: 0 }], 'metric')).toBeNull();
+  });
+
+  it('flags only the rows that would be dropped', () => {
+    expect(isZeroForm(repsEntry, withReps('0'), 'metric')).toBe(true);
+    expect(isZeroForm(repsEntry, withReps('1'), 'metric')).toBe(false);
   });
 });

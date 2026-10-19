@@ -27,7 +27,7 @@ import { useSessionAnnouncements } from '@/hooks/use-session-announcements';
 import { buildStepsWithLimits, useSessionRunner } from '@/hooks/use-session-runner';
 import { useLibraryStore } from '@/state/library-store';
 import { sessionRecords } from '@/state/selectors/records';
-import { useSessionHistoryStore } from '@/state/session-history-store';
+import { useLoggedSessions, useSessionHistoryStore } from '@/state/session-history-store';
 
 /**
  * The one screen where a render throw costs data, so its boundary does more than apologise.
@@ -298,7 +298,7 @@ function CompletedSession({
   onDone: () => void;
 }) {
   const library = useLibraryStore((state) => state.library);
-  const sessions = useSessionHistoryStore((state) => state.sessions);
+  const sessions = useLoggedSessions();
   // Set by `completeSession`, so it describes the backup this very session triggered. Here rather
   // than mid-workout for the same reason a full disk isn't announced between two sets: the person was
   // holding a plank, and this is the first moment where telling them costs nothing.

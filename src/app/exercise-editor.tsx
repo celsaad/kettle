@@ -23,8 +23,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { useLibraryStore } from '@/state/library-store';
 import { useUnitSystem } from '@/state/preferences-store';
 import { exerciseHistory } from '@/state/selectors/history-views';
-import { useSessionHistoryStore } from '@/state/session-history-store';
-import { loggedSessions } from '@/state/selectors/logged-sessions';
+import { useLoggedSessions } from '@/state/session-history-store';
 
 export { ModalErrorBoundary as ErrorBoundary } from '@/components/error-fallback';
 
@@ -36,7 +35,7 @@ export default function ExerciseEditorScreen() {
   const saveExercise = useLibraryStore((state) => state.saveExercise);
   const deleteExercise = useLibraryStore((state) => state.deleteExercise);
 
-  const sessions = useSessionHistoryStore((state) => loggedSessions(state.sessions));
+  const sessions = useLoggedSessions();
 
   const unitSystem = useUnitSystem();
 

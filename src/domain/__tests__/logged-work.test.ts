@@ -1,4 +1,4 @@
-import { hasLoggedWork, withoutZeroSets, withoutZeroWork } from '@/domain/logged-work';
+import { hasLoggedWork, entryWithoutZeroWork, withoutZeroWork } from '@/domain/logged-work';
 import type { SessionEntry } from '@/domain/types';
 import { aSession } from '@/test-support/sessions';
 
@@ -6,10 +6,10 @@ import { aSession } from '@/test-support/sessions';
  * What "not done" means in the log. Logging 0 is how an exercise is skipped in the runner, so a zero
  * set shown in History or counted as a set reads as work that never happened.
  */
-describe('withoutZeroSets', () => {
+describe('entryWithoutZeroWork', () => {
   it('drops zero sets from a reps or hold entry and keeps the rest', () => {
     expect(
-      withoutZeroSets({
+      entryWithoutZeroWork({
         exercise: 'pullups',
         type: 'reps',
         sets: [
@@ -19,7 +19,7 @@ describe('withoutZeroSets', () => {
       }),
     ).toEqual({ exercise: 'pullups', type: 'reps', sets: [{ reps: 6, restTakenSec: 90 }] });
     expect(
-      withoutZeroSets({
+      entryWithoutZeroWork({
         exercise: 'plank',
         type: 'timed_hold',
         sets: [
@@ -31,18 +31,20 @@ describe('withoutZeroSets', () => {
   });
 
   it('returns null when nothing of the entry is left', () => {
-    expect(withoutZeroSets({ exercise: 'pullups', type: 'reps', sets: [{ reps: 0, restTakenSec: 0 }] })).toBeNull();
-    expect(withoutZeroSets({ exercise: 'pullups', type: 'reps', sets: [] })).toBeNull();
-    expect(withoutZeroSets({ exercise: 'plank', type: 'timed_hold', sets: [{ holdSec: 0, restTakenSec: 0 }] })).toBeNull();
-    expect(withoutZeroSets({ exercise: 'grinder', type: 'amrap', roundsCompleted: 0 })).toBeNull();
-    expect(withoutZeroSets({ exercise: 'row', type: 'cardio', durationSec: 0 })).toBeNull();
+    expect(entryWithoutZeroWork({ exercise: 'pullups', type: 'reps', sets: [{ reps: 0, restTakenSec: 0 }] })).toBeNull();
+    expect(entryWithoutZeroWork({ exercise: 'pullups', type: 'reps', sets: [] })).toBeNull();
+    expect(
+      entryWithoutZeroWork({ exercise: 'plank', type: 'timed_hold', sets: [{ holdSec: 0, restTakenSec: 0 }] }),
+    ).toBeNull();
+    expect(entryWithoutZeroWork({ exercise: 'grinder', type: 'amrap', roundsCompleted: 0 })).toBeNull();
+    expect(entryWithoutZeroWork({ exercise: 'row', type: 'cardio', durationSec: 0 })).toBeNull();
   });
 
   it('keeps an AMRAP or cardio entry with any work in it', () => {
     const extraOnly: SessionEntry = { exercise: 'grinder', type: 'amrap', roundsCompleted: 0, extraReps: 5 };
     const distanceOnly: SessionEntry = { exercise: 'row', type: 'cardio', durationSec: 0, distanceMeters: 500 };
-    expect(withoutZeroSets(extraOnly)).toBe(extraOnly);
-    expect(withoutZeroSets(distanceOnly)).toBe(distanceOnly);
+    expect(entryWithoutZeroWork(extraOnly)).toBe(extraOnly);
+    expect(entryWithoutZeroWork(distanceOnly)).toBe(distanceOnly);
   });
 
   // An EMOM minute with no reps entered was still worked, and a HIIT round only counts once finished.
@@ -52,7 +54,7 @@ describe('withoutZeroSets', () => {
       { exercise: 'burpees', type: 'hiit', roundsCompleted: 0 },
       { exercise: 'rest', type: 'rest', restTakenSec: 0 },
     ];
-    for (const entry of entries) expect(withoutZeroSets(entry)).toBe(entry);
+    for (const entry of entries) expect(entryWithoutZeroWork(entry)).toBe(entry);
   });
 });
 

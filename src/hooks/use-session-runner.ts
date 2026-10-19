@@ -3,7 +3,7 @@ import { t } from 'i18next';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 
-import { isZeroSet, withoutZeroSets } from '@/domain/logged-work';
+import { entryWithoutZeroWork, isZeroSet } from '@/domain/logged-work';
 import type { EmomMinuteLog, Exercise, RepsSetLog, Session, SessionEntry, TimedHoldSetLog, Workout } from '@/domain/types';
 import {
   cancelNotification,
@@ -508,33 +508,31 @@ export function useSessionRunner(
   const commitCurrentStep = useCallback(
     (current: RunnerStep): boolean => {
       if (!sessionRef.current) return false;
-      if (current.kind === 'hold') {
+      if (current.kind === 'hold' || current.kind === 'reps') {
+        let set: TimedHoldSetLog | RepsSetLog;
+        if (current.kind === 'hold') {
+          // Clamped to the hold's own end, which is not the same as the elapsed clock. A hold that ends
+          // while the app is backgrounded is only *noticed* on foreground return, so the raw elapsed
+          // there is however long you were away — a 25s plank logged 60s in the test that found this.
+          // The same clamp covers a throttled tick arriving a second or two late in the foreground.
+          // Ending early by hand is unaffected: elapsed is below the end, and the honest number wins.
+          const elapsed = computeElapsedSec();
+          const holdSec = current.holdEndSec === undefined ? elapsed : Math.min(elapsed, current.holdEndSec);
+          set = { holdSec, restTakenSec: 0 };
+        } else {
+          // `|| undefined` so bodyweight (0) stays absent from the log rather than recording a 0 kg load —
+          // entryVolume distinguishes the two, summing reps×weight only when a weight is actually present.
+          set = {
+            reps: repsRef.current,
+            weightKg: weightKgRef.current || undefined,
+            rpe: rpeRef.current,
+            restTakenSec: 0,
+          };
+        }
+        const dropped = isZeroSet(set);
+        droppedLastSetRef.current[current.memberKey] = dropped;
+        if (dropped) return false;
         const sets = memberSetsRef.current[current.memberKey] ?? [];
-        // Clamped to the hold's own end, which is not the same as the elapsed clock. A hold that ends
-        // while the app is backgrounded is only *noticed* on foreground return, so the raw elapsed
-        // there is however long you were away — a 25s plank logged 60s in the test that found this.
-        // The same clamp covers a throttled tick arriving a second or two late in the foreground.
-        // Ending early by hand is unaffected: elapsed is below the end, and the honest number wins.
-        const elapsed = computeElapsedSec();
-        const holdSec = current.holdEndSec === undefined ? elapsed : Math.min(elapsed, current.holdEndSec);
-        const set = { holdSec, restTakenSec: 0 };
-        droppedLastSetRef.current[current.memberKey] = isZeroSet(set);
-        if (isZeroSet(set)) return false;
-        sets.push(set);
-        memberSetsRef.current[current.memberKey] = sets;
-        persistMember(current.memberKey, current.exerciseId);
-      } else if (current.kind === 'reps') {
-        const sets = memberSetsRef.current[current.memberKey] ?? [];
-        // `|| undefined` so bodyweight (0) stays absent from the log rather than recording a 0 kg load —
-        // entryVolume distinguishes the two, summing reps×weight only when a weight is actually present.
-        const set = {
-          reps: repsRef.current,
-          weightKg: weightKgRef.current || undefined,
-          rpe: rpeRef.current,
-          restTakenSec: 0,
-        };
-        droppedLastSetRef.current[current.memberKey] = isZeroSet(set);
-        if (isZeroSet(set)) return false;
         sets.push(set);
         memberSetsRef.current[current.memberKey] = sets;
         persistMember(current.memberKey, current.exerciseId);
@@ -548,7 +546,7 @@ export function useSessionRunner(
           memberEmomMinutesRef.current[current.memberKey] = minutes;
           persistMember(current.memberKey, current.exerciseId);
         } else if (current.variant === 'amrap') {
-          const entry = withoutZeroSets({
+          const entry = entryWithoutZeroWork({
             exercise: current.exerciseId,
             type: 'amrap',
             roundsCompleted: roundsCompletedRef.current,
@@ -565,14 +563,18 @@ export function useSessionRunner(
           // `restTakenSec` deliberately isn't clamped this way: "how long you rested" really is the
           // time that passed, whereas "how long you rowed" is not.
           const elapsed = computeElapsedSec();
-          const entry = withoutZeroSets({
+          const durationSec = current.countUp ? elapsed : Math.min(elapsed, current.targetSec);
+          // Ended at 0s is a skip, whatever the distance says: that distance is the plan's, copied in
+          // rather than measured, so it is no evidence anything was done. Checked here on the duration
+          // alone, not through `entryWithoutZeroWork`, which has to keep a distance-only entry from a
+          // hand-edited log, where the distance is the user's own.
+          if (durationSec === 0) return false;
+          sessionRef.current = logEntry(sessionRef.current, {
             exercise: current.exerciseId,
             type: 'cardio',
-            durationSec: current.countUp ? elapsed : Math.min(elapsed, current.targetSec),
+            durationSec,
             distanceMeters: current.cardioDistanceMeters,
           });
-          if (!entry) return false;
-          sessionRef.current = logEntry(sessionRef.current, entry);
         }
       } else if (current.kind === 'rest') {
         const takenSec = computeElapsedSec();

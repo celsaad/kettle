@@ -12,8 +12,7 @@ import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { formatSessionCount, formatSetCount } from '@/domain/format';
 import { useTheme } from '@/hooks/use-theme';
 import { useLibraryStore } from '@/state/library-store';
-import { useSessionHistoryStore } from '@/state/session-history-store';
-import { loggedSessions } from '@/state/selectors/logged-sessions';
+import { useLoggedSessions, useSessionHistoryStore } from '@/state/session-history-store';
 import { historyStats as historyStatsFor } from '@/state/selectors/history-stats';
 import { historySessionsView, type HistorySessionView } from '@/state/selectors/history-views';
 import { exportSession, exportSessions } from '@/storage/export';
@@ -117,8 +116,8 @@ export default function HistoryScreen() {
   const { t } = useTranslation();
   const library = useLibraryStore((state) => state.library);
   // Raw for export, which hands over the user's own files; filtered for everything shown.
-  const files = useSessionHistoryStore((state) => state.sessions);
-  const sessions = useSessionHistoryStore((state) => loggedSessions(state.sessions));
+  const rawSessions = useSessionHistoryStore((state) => state.sessions);
+  const sessions = useLoggedSessions();
   const deleteSession = useSessionHistoryStore((state) => state.deleteSession);
   // Collected since hydration existed and rendered nowhere: a session file that wouldn't parse, or one
   // the disk wouldn't take mid-workout, was known about and never mentioned. History is where a
@@ -237,8 +236,11 @@ export default function HistoryScreen() {
                     {t('history.stats')}
                   </ThemedText>
                 </Pressable>
-                {files.length > 0 && (
-                  <Pressable onPress={() => exportSessions(files).catch(() => {})} accessibilityRole="button" hitSlop={8}>
+                {rawSessions.length > 0 && (
+                  <Pressable
+                    onPress={() => exportSessions(rawSessions).catch(() => {})}
+                    accessibilityRole="button"
+                    hitSlop={8}>
                     <ThemedText type="smallMedium" themeColor="accentText">
                       {t('history.exportAll')}
                     </ThemedText>

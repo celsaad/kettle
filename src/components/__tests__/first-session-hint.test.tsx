@@ -6,7 +6,7 @@ import { changeLanguage } from 'i18next';
 import { FirstSessionHint } from '@/components/first-session-hint';
 import { usePreferencesStore } from '@/state/preferences-store';
 import { useSessionHistoryStore } from '@/state/session-history-store';
-import { aSession } from '@/test-support/sessions';
+import { aSession, oneSetEntry } from '@/test-support/sessions';
 import { renderScreen } from '@/test-support/render';
 
 /**
@@ -51,7 +51,7 @@ it('stays away once the log holds a session', async () => {
     sessions: [
       aSession({
         startedAt: '2026-01-05T09:00:00.000Z',
-        entries: [{ exercise: 'pushups', type: 'reps', sets: [{ reps: 10, restTakenSec: 0 }] }],
+        entries: [oneSetEntry],
       }),
     ],
     status: 'ready',

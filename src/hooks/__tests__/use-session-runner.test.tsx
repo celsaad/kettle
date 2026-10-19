@@ -152,6 +152,8 @@ const exercises: Exercise[] = [
   // until the Done button ends it.
   { id: 'row', name: 'Row', type: 'cardio', config: { durationSec: 60 } },
   { id: 'walk', name: 'Walk', type: 'cardio', config: {} },
+  // A distance target and no duration: counts up, and carries the planned distance into the log.
+  { id: 'run', name: 'Run', type: 'cardio', config: { distanceMeters: 5000 } },
   // rest_sec: 0 — back-to-back sets, how half a hand-rolled superset is written.
   { id: 'dips', name: 'Dips', type: 'reps', config: { sets: 3, targetRepsMin: 8, restSec: 0 } },
 ];
@@ -832,6 +834,14 @@ describe('zero work', () => {
 
     expect(pullupSets()).toHaveLength(1);
     expect(result.current.stepIndex).toBe(2);
+  });
+
+  // The distance in a cardio entry is the plan's, copied in, so it can't stand as evidence of work.
+  // Check the entry through `entryWithoutZeroWork` instead of on duration and this fails.
+  it('logs no cardio ended at 0s, even with a distance target', async () => {
+    const { result } = await mount(workoutOf(single('run'), single('pullups')));
+    await press(() => result.current.logInterval());
+    expect(mockSession.entries).toHaveLength(0);
   });
 
   it('logs no AMRAP with no rounds, and Prev then leaves the entry before it alone', async () => {

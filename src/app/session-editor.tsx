@@ -26,8 +26,7 @@ import { useLibraryStore } from '@/state/library-store';
 import { useUnitSystem } from '@/state/preferences-store';
 import { exerciseName } from '@/state/selectors/exercise-lookup';
 import { sessionEntryResult } from '@/state/selectors/session-summary';
-import { useSessionHistoryStore } from '@/state/session-history-store';
-import { loggedSessions } from '@/state/selectors/logged-sessions';
+import { useLoggedSessions, useSessionHistoryStore } from '@/state/session-history-store';
 
 export { ModalErrorBoundary as ErrorBoundary } from '@/components/error-fallback';
 
@@ -63,7 +62,7 @@ export default function SessionEditorScreen() {
   const unitSystem = useUnitSystem();
 
   const library = useLibraryStore((state) => state.library);
-  const sessions = useSessionHistoryStore((state) => loggedSessions(state.sessions));
+  const sessions = useLoggedSessions();
   const editEntry = useSessionHistoryStore((state) => state.editEntry);
   const removeEntry = useSessionHistoryStore((state) => state.removeEntry);
 

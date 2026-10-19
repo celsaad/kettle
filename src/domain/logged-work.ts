@@ -16,22 +16,23 @@ export function isZeroSet(set: RepsSetLog | TimedHoldSetLog): boolean {
   return 'reps' in set ? set.reps === 0 : set.holdSec === 0;
 }
 
+/** A set-based entry with its zero sets taken out, or null when none are left. Same object if none went. */
+function withoutZeroSets<E extends { sets: (RepsSetLog | TimedHoldSetLog)[] }>(entry: E): E | null {
+  const sets = entry.sets.filter((set) => !isZeroSet(set));
+  if (sets.length === 0) return null;
+  return sets.length === entry.sets.length ? entry : { ...entry, sets };
+}
+
 /**
- * The entry with its zero sets taken out, or `null` when nothing of it is left. Returns the same
- * object when there was nothing to remove, which is what keeps `withoutZeroWork` reference-stable.
+ * The entry with its zero work taken out — zero sets from a set-based entry, or the whole of an AMRAP
+ * or cardio entry that did nothing — or `null` when nothing of it is left. Returns the same object
+ * when there was nothing to remove, which is what keeps `withoutZeroWork` reference-stable.
  */
-export function withoutZeroSets(entry: SessionEntry): SessionEntry | null {
+export function entryWithoutZeroWork(entry: SessionEntry): SessionEntry | null {
   switch (entry.type) {
-    case 'reps': {
-      const sets = entry.sets.filter((set) => !isZeroSet(set));
-      if (sets.length === 0) return null;
-      return sets.length === entry.sets.length ? entry : { ...entry, sets };
-    }
-    case 'timed_hold': {
-      const sets = entry.sets.filter((set) => !isZeroSet(set));
-      if (sets.length === 0) return null;
-      return sets.length === entry.sets.length ? entry : { ...entry, sets };
-    }
+    case 'reps':
+    case 'timed_hold':
+      return withoutZeroSets(entry);
     case 'amrap':
       return entry.roundsCompleted === 0 && !entry.extraReps ? null : entry;
     case 'cardio':
@@ -47,7 +48,7 @@ export function withoutZeroSets(entry: SessionEntry): SessionEntry | null {
 export function withoutZeroWork(session: Session): Session {
   let changed = false;
   const entries = session.entries.flatMap((entry) => {
-    const kept = withoutZeroSets(entry);
+    const kept = entryWithoutZeroWork(entry);
     if (kept !== entry) changed = true;
     return kept ? [kept] : [];
   });

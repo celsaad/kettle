@@ -17,8 +17,7 @@ import { formatFullDate, formatMonthDay } from '@/i18n/format';
 import { exerciseName } from '@/state/selectors/exercise-lookup';
 import { exerciseProgress, TREND_WEEKS, type ExerciseProgress } from '@/state/selectors/exercise-progress';
 import { useLibraryStore } from '@/state/library-store';
-import { useSessionHistoryStore } from '@/state/session-history-store';
-import { loggedSessions } from '@/state/selectors/logged-sessions';
+import { useLoggedSessions } from '@/state/session-history-store';
 
 export { ModalErrorBoundary as ErrorBoundary } from '@/components/error-fallback';
 
@@ -39,7 +38,7 @@ export default function ExerciseProgressScreen() {
   const theme = useTheme();
   const { t } = useTranslation();
   const { exerciseId } = useLocalSearchParams<{ exerciseId?: string }>();
-  const sessions = useSessionHistoryStore((state) => loggedSessions(state.sessions));
+  const sessions = useLoggedSessions();
   const library = useLibraryStore((state) => state.library);
 
   const progress = useMemo(() => exerciseProgress(sessions, library?.exercises ?? [], TREND_WEEKS), [sessions, library]);

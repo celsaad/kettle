@@ -9,7 +9,7 @@
  */
 import { t } from 'i18next';
 
-import { withoutZeroSets } from '@/domain/logged-work';
+import { entryWithoutZeroWork } from '@/domain/logged-work';
 import type { SessionEntry } from '@/domain/types';
 import { fromDisplayWeight, toDisplayWeight, type UnitSystem } from '@/domain/units';
 
@@ -173,8 +173,8 @@ export function validateEntryForm(type: EditableEntryType, forms: SetForm[]): st
  */
 export function buildEntry(original: EditableEntry, forms: SetForm[], unitSystem: UnitSystem): EditableEntry | null {
   if (forms.length === 0) return null;
-  // `withoutZeroSets` keeps the entry's type, so narrowing back to an editable entry holds.
-  return withoutZeroSets(assembleEntry(original, forms, unitSystem)) as EditableEntry | null;
+  // `entryWithoutZeroWork` keeps the entry's type, so narrowing back to an editable entry holds.
+  return entryWithoutZeroWork(assembleEntry(original, forms, unitSystem)) as EditableEntry | null;
 }
 
 /** Whether this one row, saved, would be dropped as zero work — what the screen's hint keys on. */

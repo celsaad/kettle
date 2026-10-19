@@ -4,8 +4,7 @@ import { useEffect } from 'react';
 import { REST_DAY_REMINDER_DAYS, REST_DAY_REMINDER_HOUR } from '@/domain/preferences';
 import { cancelRestDayReminder, requestNotificationPermissions, scheduleRestDayReminder } from '@/hooks/safe-notifications';
 import { usePreferencesStore } from '@/state/preferences-store';
-import { useSessionHistoryStore } from '@/state/session-history-store';
-import { loggedSessions } from '@/state/selectors/logged-sessions';
+import { useLoggedSessions } from '@/state/session-history-store';
 
 /**
  * When the nudge should land: `REST_DAY_REMINDER_DAYS` calendar days after the last session, at a
@@ -42,7 +41,7 @@ export function useRestDayReminder(): void {
   const enabled = usePreferencesStore((state) => state.preferences.restDayReminder);
   // Sessions are newest-first (session-files.ts), so the head is the most recent one — including one
   // still in progress, whose start is already the right anchor.
-  const lastSessionStartedAt = useSessionHistoryStore((state) => loggedSessions(state.sessions)[0]?.startedAt ?? null);
+  const lastSessionStartedAt = useLoggedSessions((sessions) => sessions[0]?.startedAt ?? null);
 
   useEffect(() => {
     if (!enabled || !lastSessionStartedAt) {

@@ -12,6 +12,7 @@ jest.mock('@/hooks/safe-notifications', () => ({
 }));
 
 import type { Session } from '@/domain/types';
+import { oneSetEntry } from '@/test-support/sessions';
 import { restDayReminderAt, useRestDayReminder } from '@/hooks/use-rest-day-reminder';
 import { usePreferencesStore } from '@/state/preferences-store';
 import { useSessionHistoryStore } from '@/state/session-history-store';
@@ -25,7 +26,7 @@ const aSession = (startedAt: string): Session => ({
   programDay: null,
   startedAt,
   endedAt: startedAt,
-  entries: [{ exercise: 'pushups', type: 'reps', sets: [{ reps: 10, restTakenSec: 0 }] }], // a session with no work is hidden
+  entries: [oneSetEntry],
 });
 
 function setUp({ enabled, sessions }: { enabled: boolean; sessions: Session[] }) {

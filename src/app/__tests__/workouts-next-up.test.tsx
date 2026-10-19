@@ -4,6 +4,7 @@ import { fireEvent, screen } from '@testing-library/react-native';
 import { changeLanguage } from 'i18next';
 
 import WorkoutsScreen from '@/app/(tabs)/index';
+import { oneSetEntry } from '@/test-support/sessions';
 import type { Session } from '@/domain/types';
 import { useLibraryStore } from '@/state/library-store';
 import { useSessionHistoryStore } from '@/state/session-history-store';
@@ -89,7 +90,7 @@ function aSession(overrides: Partial<Session> = {}): Session {
     programDay: null,
     startedAt: '2026-07-29T09:00:00.000Z',
     endedAt: '2026-07-29T09:40:00.000Z',
-    entries: [{ exercise: 'pushups', type: 'reps', sets: [{ reps: 10, restTakenSec: 0 }] }], // a session with no work is hidden
+    entries: [oneSetEntry],
     ...overrides,
   };
 }

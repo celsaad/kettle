@@ -117,3 +117,54 @@ cases:
 
   - name: not-yaml
     input: 'entries: {'
+
+  - name: dollar-brace-stays-a-string
+    why: some YAML 1.2 loaders resolve a plain `${NAME}` from the environment; js-yaml reads it as text
+    input: |
+      version: 1
+      id: s
+      workout: w
+      program_day: ${HOME}
+      started_at: "2024-05-01T10:00:00.000Z"
+      ended_at: null
+      entries: []
+
+  - name: merge-key-is-not-merged
+    why: '`<<` is a YAML 1.1 merge key, not part of 1.2, so it is an unknown key and dropped, leaving the entry without its type'
+    input: |
+      version: 1
+      id: s
+      workout: w
+      started_at: "2024-05-01T10:00:00.000Z"
+      ended_at: null
+      entries:
+        - &rest { exercise: a, type: rest, rest_taken_sec: 90 }
+        - { <<: *rest, exercise: b }
+
+  - name: largest-safe-integer
+    why: a schema integer is JavaScript's safe-integer range, wider than a 32-bit int
+    input: |
+      version: 1
+      id: s
+      workout: w
+      started_at: "2024-05-01T10:00:00.000Z"
+      ended_at: null
+      entries: [{ exercise: a, type: hiit, rounds_completed: 9007199254740991 }]
+
+  - name: integer-past-safe-range
+    input: |
+      version: 1
+      id: s
+      workout: w
+      started_at: "2024-05-01T10:00:00.000Z"
+      ended_at: null
+      entries: [{ exercise: a, type: hiit, rounds_completed: 9007199254740992 }]
+
+  - name: entry-not-a-mapping
+    input: |
+      version: 1
+      id: s
+      workout: w
+      started_at: "2024-05-01T10:00:00.000Z"
+      ended_at: null
+      entries: [3]

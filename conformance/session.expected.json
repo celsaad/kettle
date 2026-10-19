@@ -163,5 +163,54 @@
   "not-yaml": {
     "ok": false,
     "kind": "invalidYaml"
+  },
+  "dollar-brace-stays-a-string": {
+    "ok": true,
+    "value": {
+      "version": 1,
+      "id": "s",
+      "workout": "w",
+      "program": null,
+      "programWeek": null,
+      "programDay": "${HOME}",
+      "startedAt": "2024-05-01T10:00:00.000Z",
+      "endedAt": null,
+      "entries": []
+    }
+  },
+  "merge-key-is-not-merged": {
+    "ok": false,
+    "kind": "schemaMismatch",
+    "paths": ["entries.1.type"]
+  },
+  "largest-safe-integer": {
+    "ok": true,
+    "value": {
+      "version": 1,
+      "id": "s",
+      "workout": "w",
+      "program": null,
+      "programWeek": null,
+      "programDay": null,
+      "startedAt": "2024-05-01T10:00:00.000Z",
+      "endedAt": null,
+      "entries": [
+        {
+          "exercise": "a",
+          "type": "hiit",
+          "roundsCompleted": 9007199254740991
+        }
+      ]
+    }
+  },
+  "integer-past-safe-range": {
+    "ok": false,
+    "kind": "schemaMismatch",
+    "paths": ["entries.0.rounds_completed"]
+  },
+  "entry-not-a-mapping": {
+    "ok": false,
+    "kind": "schemaMismatch",
+    "paths": ["entries.0"]
   }
 }

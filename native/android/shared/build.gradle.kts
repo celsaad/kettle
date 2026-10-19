@@ -16,13 +16,14 @@ kotlin {
     compilerOptions { allWarningsAsErrors.set(true) }
 
     sourceSets {
+        commonMain.dependencies {
+            // The YAML loader for users' files; why this one is in `YamlLoad.kt`.
+            implementation(libs.snakeyaml.engine.kmp)
+        }
         jvmTest.dependencies {
             implementation(project.dependencies.platform(libs.junit.bom))
             implementation(libs.junit.jupiter)
             runtimeOnly(libs.junit.launcher)
-            // Reads the corpus files, and only in the test. Which YAML library `:shared` itself
-            // parses users' files with is #143's decision, not this runner's.
-            implementation(libs.snakeyaml.engine)
         }
     }
 }

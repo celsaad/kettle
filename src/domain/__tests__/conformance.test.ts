@@ -3,6 +3,7 @@ import { load } from 'js-yaml';
 import { mergeLibraries } from '@/domain/merge';
 import { findProgramWeek, programWeekNumbers, resolveWorkoutForWeek } from '@/domain/program';
 import { emomIntervalCount } from '@/domain/schema';
+import { filterByName, rankByName } from '@/domain/search';
 import type { Library, WorkoutBlock } from '@/domain/types';
 import { fromDisplayWeight, toDisplayWeight, weightStep, type UnitSystem } from '@/domain/units';
 import {
@@ -119,6 +120,13 @@ const runners: Record<string, (testCase: Case) => unknown> = {
           throw new Error(`unknown op ${op.op}`);
       }
     });
+  },
+
+  search: (testCase) => {
+    const names = testCase.names as string[];
+    const query = testCase.query as string;
+    const name = (value: string) => value;
+    return { ranked: rankByName(names, query, name), filtered: filterByName(names, query, name) };
   },
 
   units: (testCase) => {

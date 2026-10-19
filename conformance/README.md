@@ -27,6 +27,10 @@ diff it leaves is part of the review, because a change there is a change to what
 | `program` | `findProgramWeek` / `resolveWorkoutForWeek` per query, `programWeekNumbers` per program | `{ weekNumbers, queries: [{ query, found, resolved }] }` |
 | `overrides` | `mergeExerciseOverride`, `mergeBlockOverride`, `diffExerciseOverride`, `diffBlockOverride` per op | `[{ op, result }]` |
 | `units` | `toDisplayWeight`, `fromDisplayWeight`, `weightStep`, `emomIntervalCount` | a number |
+| `search` | `rankByName` and `filterByName` over `names` with `query` | `{ ranked, filtered }`, lists of names |
+
+`search` isn't part of the file format, but it is the same problem: two implementations must agree on
+which workout a search finds. Its rules are in the header of `src/domain/search.ts`.
 
 ## Reading the goldens
 
@@ -65,6 +69,10 @@ Every one of these has a case, because each is a default that differs between YA
   `kotlin.math.round` rounds it to even instead. `roundToLong()` matches. Swift's default
   `rounded()` also matches for the non-negative values here, but rounds negative halves away from
   zero.
+- **Search compares code points, not UTF-16 units.** Kotlin and Swift strings index differently from
+  JS, and an edit distance over UTF-16 counts an astral character as two edits. Hiragana fold to
+  katakana by a fixed offset (U+3041–U+3096, +0x60). Typo tolerance is decided by explicit code-point
+  ranges, never a regex script class, so no engine's Unicode tables can change the answer.
 - An EMOM's interval count is `floor(total_minutes * 60 / interval_sec)`, compared after the floor.
   Comparing the raw quotient refuses `total_minutes: 8.333333333333334` over a rounding error.
 

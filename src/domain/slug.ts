@@ -29,10 +29,19 @@
  * characters instead of the '' that callers surface as "could not derive an id".
  */
 export function slugify(name: string): string {
-  const stripped = name
+  return nameWords(foldName(name)).join('-');
+}
+
+/** The first rule above, shared with `search.ts` so a name is compared the way its id is derived. */
+export function foldName(name: string): string {
+  return name
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .normalize('NFC')
     .toLowerCase();
-  return (stripped.match(/[\p{L}\p{N}][\p{L}\p{N}\p{M}]*/gu) ?? []).join('-');
+}
+
+/** The second rule above: the letter-or-digit tokens of an already folded name. */
+export function nameWords(folded: string): string[] {
+  return folded.match(/[\p{L}\p{N}][\p{L}\p{N}\p{M}]*/gu) ?? [];
 }

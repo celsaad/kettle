@@ -18,7 +18,12 @@ here, next to what it describes.
 
 ## Unreleased
 
-Nothing since 0.10.0.
+### What changed
+
+**Search forgives typos and accents.** Every search box (Workouts, Programs, Library, History and
+the exercise list mid-workout) now finds "Agachamento" when you type "agach", "Bulgarian Split
+Squat" when you type "bulgarain", and "DB Floor Press" when you type "press db". The best matches
+come first; History stays newest first. In Japanese, hiragana finds katakana and the other way round.
 
 ---
 

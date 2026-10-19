@@ -10,6 +10,7 @@ import { NoResults } from '@/components/no-results';
 import { SearchBar } from '@/components/search-bar';
 import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { rankByName } from '@/domain/search';
 import { ExerciseType, type Exercise } from '@/domain/types';
 import type { UnitSystem } from '@/domain/units';
 import { useAppTheme } from '@/hooks/theme-context';
@@ -75,12 +76,8 @@ export default function LibraryScreen() {
   const deferredQuery = useDeferredValue(query);
 
   const visible = useMemo(() => {
-    const needle = deferredQuery.trim().toLowerCase();
-    return exercises.filter((exercise) => {
-      const matchesFilter = filter === 'all' || exercise.type === filter;
-      const matchesQuery = exercise.name.toLowerCase().includes(needle);
-      return matchesFilter && matchesQuery;
-    });
+    const ofType = filter === 'all' ? exercises : exercises.filter((exercise) => exercise.type === filter);
+    return rankByName(ofType, deferredQuery, (exercise) => exercise.name);
   }, [exercises, filter, deferredQuery]);
 
   const renderItem = useCallback(

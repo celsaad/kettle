@@ -908,6 +908,19 @@ decision assembled across several commits. Open work belongs in the sections at 
   imported file fails as a dangling reference**. It has its own regression test, verified by
   reintroducing the bug.
 
+- ✅ **Every search field goes through `domain/search.ts`, and its behaviour is a conformance suite.**
+  A new search box uses `rankByName`, or `filterByName` when its order means something, as
+  History's timeline does. It never gets its own `includes`. Search is pinned in
+  `conformance/search.yaml` so the native port finds the same workouts the TS app does.
+  **Rejected, so they aren't re-proposed:**
+  - Fuse.js and similar libraries. They're allowed (nothing leaves the device), but their scoring
+    doesn't suit pt accents or Japanese, and they don't port line for line.
+  - Subsequence or initials matching ("bss" → Bulgarian Split Squat), which matches too much in
+    short lists.
+  - Searching anything but the name, which is a separate feature with its own questions.
+  - Highlighting the matched text.
+  - A setting to turn fuzzy matching off.
+
 
 
 

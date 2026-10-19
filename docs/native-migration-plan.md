@@ -175,7 +175,8 @@ routes correctly.
 Nothing user-visible ships in M1. It builds the pieces every later milestone depends on.
 
 - **The `:shared` KMP module**: types, schema validation, snake_case ↔ camelCase mapping, merge,
-  program resolution and units, ported from `src/domain/`. The selectors in `src/state/selectors/`
+  program resolution, units and name search (`search.ts`, held to
+  `conformance/search.yaml`), ported from `src/domain/`. The selectors in `src/state/selectors/`
   that the native screens will need are ported when those screens are, not here.
 - **A conformance corpus** in `conformance/` *(TS side landed; see its README for the contract)*:
   YAML inputs plus generated golden outputs (parsed library and session, refusal paths, repair,

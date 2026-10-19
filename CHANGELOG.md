@@ -18,6 +18,12 @@ here, next to what it describes.
 
 ## Unreleased
 
+Nothing since 0.11.0.
+
+---
+
+## 0.11.0 — versionCode 14, 19 October 2026
+
 ### What changed
 
 **Search forgives typos and accents.** Every search box (Workouts, Programs, Library, History and

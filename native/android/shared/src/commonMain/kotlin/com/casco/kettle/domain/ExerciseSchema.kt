@@ -41,11 +41,11 @@ private val configReaders: Map<String, SchemaReader.(Fields) -> ExerciseConfig?>
     )
 
 /** `int().positive().max(…)`, for the counts the runner builds a step per unit of. */
-internal fun countUpTo(max: Double): Read<Long> =
-    { value, path -> integer(value, path, Bounds(min = 0.0, minInclusive = false, max = max)) }
+internal fun countUpTo(max: Int): Read<Long> =
+    { value, path -> integer(value, path, Bounds(min = 0.0, minInclusive = false, max = max.toDouble())) }
 
 private val totalMinutes: Read<Double> =
-    { value, path -> number(value, path, Bounds(min = 0.0, minInclusive = false, max = MAX_TOTAL_MINUTES)) }
+    { value, path -> number(value, path, Bounds(min = 0.0, minInclusive = false, max = MAX_TOTAL_MINUTES.toDouble())) }
 
 private fun SchemaReader.hiit(fields: Fields): ExerciseConfig? {
     val workSec = fields.required("work_sec", positive)
@@ -78,7 +78,7 @@ private fun SchemaReader.emom(fields: Fields): ExerciseConfig? =
             null
         }
     }) {
-        if (emomIntervalCount(it.number("interval_sec")!!, it.number("total_minutes")!!) > MAX_ROUNDS) {
+        if (emomIntervalCount(it.rawNumber("interval_sec")!!, it.rawNumber("total_minutes")!!) > MAX_ROUNDS) {
             refuse(it.path + "interval_sec", "must come to at most $MAX_ROUNDS intervals", fatal = false)
         }
     }
@@ -99,8 +99,8 @@ private fun SchemaReader.reps(fields: Fields): ExerciseConfig? =
             null
         }
     }) {
-        val max = it.number("target_reps_max")
-        if (max != null && max < it.number("target_reps_min")!!) {
+        val max = it.rawNumber("target_reps_max")
+        if (max != null && max < it.rawNumber("target_reps_min")!!) {
             refuse(it.path + "target_reps_max", "must be >= target_reps_min", fatal = false)
         }
     }
@@ -114,8 +114,8 @@ private fun SchemaReader.timedHold(fields: Fields): ExerciseConfig? =
         val restSec = fields.required("rest_sec", nonNegative)
         if (sets != null && restSec != null) ExerciseConfig.TimedHold(sets, holdSecMin, holdSecMax, restSec) else null
     }) {
-        val min = it.number("hold_sec_min")
-        val max = it.number("hold_sec_max")
+        val min = it.rawNumber("hold_sec_min")
+        val max = it.rawNumber("hold_sec_max")
         when {
             max != null && min == null -> {
                 refuse(it.path + "hold_sec_max", "needs hold_sec_min", fatal = false)

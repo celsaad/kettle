@@ -22,7 +22,8 @@ internal typealias Read<T> = SchemaReader.(value: Any?, path: Path) -> T?
  * document reports: a refinement is skipped once anything fatal was refused beneath it ([refined]).
  * A wrong type, a missing key, a fraction where an integer goes and an unknown `type` are fatal. A
  * value out of range (the safe-integer one included), an empty string, a list too short, and a
- * failed refinement itself are not. Read off zod, not reasoned out: `LibraryTest` holds each rule.
+ * failed refinement itself are not. Read off zod, not reasoned out, and `LibraryTest` holds every rule
+ * a document can show: an unknown `type` is fatal too, but no refinement sits above one to tell.
  */
 internal class SchemaReader {
     private class Issue(
@@ -161,7 +162,7 @@ internal class Fields(
     fun has(key: String): Boolean = map.containsKey(key)
 
     /** A field's number, unread. Only for a refinement, which runs once every field is the right type. */
-    fun number(key: String): Double? = (map[key] as Number?)?.toDouble()
+    fun rawNumber(key: String): Double? = (map[key] as Number?)?.toDouble()
 
     /** Must be present, and must pass [read]. */
     fun <T : Any> required(

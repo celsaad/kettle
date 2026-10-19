@@ -91,6 +91,14 @@ class LibraryTest {
     }
 
     @Test
+    fun `an empty id is a range refusal, so the program's refinements still run`() {
+        assertEquals(
+            listOf("programs.0.weeks", "programs.0.weeks.0.workout"),
+            paths(weeks("""{ week: 1, workout: "" }, { week: 1, workout: w }""")),
+        )
+    }
+
+    @Test
     fun `weeks are the same slot when they are the same number or an absent day meets an empty one`() {
         val repeated = listOf("programs.0.weeks")
         assertEquals(repeated, paths(weeks("{ week: 1, workout: w }, { week: 1.0, workout: w }")))

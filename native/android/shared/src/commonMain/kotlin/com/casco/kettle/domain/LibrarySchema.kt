@@ -41,10 +41,14 @@ private fun SchemaReader.block(
     }
 }
 
-private fun SchemaReader.exerciseBlock(fields: Fields): WorkoutBlock? {
+private fun SchemaReader.exerciseBlock(fields: Fields): WorkoutBlock? =
+    member(fields)?.let { WorkoutBlock.ExerciseBlock(it.exerciseId, it.configOverride) }
+
+/** An exercise and its optional `config:`, the same two keys in a plain block and a circuit member. */
+private fun SchemaReader.member(fields: Fields): CircuitMember? {
     val exerciseId = fields.required("exercise", SchemaReader::id)
     val config = fields.optional("config", blockConfig)
-    return exerciseId?.let { WorkoutBlock.ExerciseBlock(it, config) }
+    return exerciseId?.let { CircuitMember(it, config) }
 }
 
 /**
@@ -59,11 +63,7 @@ private fun SchemaReader.circuit(fields: Fields): WorkoutBlock? {
     val members =
         fields.required("exercises") { v, p ->
             list(v, p, minSize = MIN_CIRCUIT_MEMBERS) { item, at ->
-                fields(item, at)?.let { member ->
-                    val exerciseId = member.required("exercise", SchemaReader::id)
-                    val config = member.optional("config", blockConfig)
-                    exerciseId?.let { CircuitMember(it, config) }
-                }
+                fields(item, at)?.let { member(it) }
             }
         }
     return if (rounds != null && members != null) {

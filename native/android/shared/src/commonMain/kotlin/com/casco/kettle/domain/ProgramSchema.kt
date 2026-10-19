@@ -143,6 +143,10 @@ private fun SchemaReader.overrideValue(
  * without its `.0`, as JS prints it, up to 2^53; past that, and for a collection used as a key, the
  * spelling is Kotlin's. That is a scope cut: such a key can only be an unknown one, which applying the
  * override reports by name, and nobody writes `1e300:` in a patch.
+ *
+ * The same spelling makes `1:` and `"1":` one key. js-yaml stringifies before it checks for
+ * duplicates and refuses that file; the loader compares keys as written, so here the last one wins.
+ * That is the loader's scope cut from `YamlLoad.kt`'s ticket (#143), and this is where it shows.
  */
 private fun jsKey(key: Any?): String =
     if (key is Double && key == kotlin.math.floor(key) && kotlin.math.abs(key) <= MAX_SAFE_INTEGER) {

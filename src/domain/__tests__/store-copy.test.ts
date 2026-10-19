@@ -40,6 +40,7 @@ function declaredLength(heading: string): number {
 // Every language the listing carries. A language whose copy is in `store/README.md` but not named
 // here is copy nothing checks, which is the state pt-BR's counts went stale in.
 const HEADINGS = {
+  title: ['### Title — en-US', '### Title — pt-BR', '### Title — ja-JP'],
   short: ['### Short — en-US', '### Short — pt-BR', '### Short — ja-JP'],
   full: ['### Full — en-US', '### Full — pt-BR', '### Full — ja-JP'],
 };
@@ -52,6 +53,10 @@ function headingLine(prefix: string): string {
 }
 
 describe('Play listing copy', () => {
+  it.each(HEADINGS.title)('%s is within the 30-character title limit', (prefix) => {
+    expect(blockUnder(prefix).length).toBeLessThanOrEqual(30);
+  });
+
   it.each(HEADINGS.short)('%s is within the 80-character short-description limit', (prefix) => {
     expect(blockUnder(prefix).length).toBeLessThanOrEqual(80);
   });
@@ -62,7 +67,7 @@ describe('Play listing copy', () => {
 
   // The annotation is what an editor reads to decide whether a sentence fits, so a wrong one is worse
   // than none: it invites the edit that breaks the limit.
-  it.each([...HEADINGS.short, ...HEADINGS.full])('%s declares its real length', (prefix) => {
+  it.each([...HEADINGS.title, ...HEADINGS.short, ...HEADINGS.full])('%s declares its real length', (prefix) => {
     expect(declaredLength(headingLine(prefix))).toBe(blockUnder(prefix).length);
   });
 

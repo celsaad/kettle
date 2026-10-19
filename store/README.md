@@ -64,8 +64,36 @@ Each of these cost a rejected upload or a wrong guess once, so they are asserted
 
 ## Listing copy
 
-Short description is capped at **80 characters**, full at **4000**, release notes at **500 per
-language**. Only include a language tag the listing actually supports, or the release is rejected.
+The title is capped at **30 characters**, short description at **80**, full at **4000**, release
+notes at **500 per language**. Only include a language tag the listing actually supports, or the
+release is rejected.
+
+The title is the listing's only rename: the launcher label, the in-app name and the site all stay
+"Kettle". The suffix is there for search, since the title is the field Play weighs most and "Kettle"
+alone ranks for nothing useful (and draws kettlebell searches). **It says "Workout Log & Timer", not
+"Exercise Timer", on purpose** — "timer" alone ranks the app among single-purpose interval timers it
+doesn't resemble, while the listing and screenshots sell a library and a history. The keywords live
+in the title so the short description can stay the pitch; repeating them there reads as keyword
+stuffing. On the App Store the same suffix belongs in the separate 30-character subtitle, leaving the
+name as just "Kettle".
+
+### Title — en-US (27)
+
+```
+Kettle: Workout Log & Timer
+```
+
+### Title — pt-BR (22)
+
+```
+Kettle: Treino e Timer
+```
+
+### Title — ja-JP (18)
+
+```
+Kettle: 筋トレ記録・タイマー
+```
 
 ### Short — en-US (69)
 

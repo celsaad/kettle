@@ -76,7 +76,11 @@ Every one of these has a case, because each is a default that differs between YA
 - **Search compares code points, not UTF-16 units.** Kotlin and Swift strings index differently from
   JS, and an edit distance over UTF-16 counts an astral character as two edits. Hiragana fold to
   katakana by a fixed offset (U+3041–U+3096, +0x60). Typo tolerance is decided by explicit code-point
-  ranges, never a regex script class, so no engine's Unicode tables can change the answer.
+  ranges, never a regex script class, so no engine's Unicode tables can change *that*. Word
+  splitting, accent folding and lowercasing still use each platform's own tables (`\p{L}`/`\p{N}`/
+  `\p{M}`, NFD/NFC, case mapping), so a character newer than a runtime's Unicode version can split
+  differently there. CI's JDK 17 is behind the Node that writes the goldens. No case uses such a
+  character, because no fix exists short of shipping one Unicode table to every platform.
 - An EMOM's interval count is `floor(total_minutes * 60 / interval_sec)`, compared after the floor.
   Comparing the raw quotient refuses `total_minutes: 8.333333333333334` over a rounding error.
 

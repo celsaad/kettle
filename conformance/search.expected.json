@@ -106,5 +106,9 @@
   "voicing-marks-are-kept": {
     "ranked": ["ダンベルプレス"],
     "filtered": ["ダンベルプレス"]
+  },
+  "an-astral-letter-is-one-edit": {
+    "ranked": ["Sqa𝐱t", "Squat"],
+    "filtered": ["Sqa𝐱t", "Squat"]
   }
 }

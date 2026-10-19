@@ -18,6 +18,12 @@ here, next to what it describes.
 
 ## Unreleased
 
+Nothing since 0.10.0.
+
+---
+
+## 0.10.0 — versionCode 13, 19 October 2026
+
 ### What changed
 
 **Backups to a folder now have your data in them.** On Android, the files Kettle wrote into your
@@ -38,6 +44,34 @@ had left; swapping into a HIIT, EMOM, AMRAP or cardio exercise runs that exercis
 **Searching while you swap or add an exercise works on newer Android phones.** Typing a few letters
 made the list vanish: it had slipped behind the keyboard. It now stays above the keyboard while you
 type.
+
+### Play release notes
+
+Counted at 112 (en-US) and 122 (pt-BR), against a limit of 500. Re-count programmatically
+if you edit them rather than trusting these numbers — over-limit copy is a rejected upload, not a
+truncated one.
+
+Deliberately vague this time: two fixes, one new Swap behaviour and one layout fix don't add up to a
+headline, so the note says there is an update and leaves the detail to the list above.
+
+Two blocks rather than three, as in 0.8.0 and 0.9.0: the Play listing does not carry ja-JP.
+
+```
+<en-US>
+What's new
+
+Updates and fixes to improve your favourite exercise app.
+
+Report anything that hangs or loses data.
+</en-US>
+<pt-BR>
+Novidades
+
+Atualizações e correções para melhorar o seu app de exercícios favorito.
+
+Relate travamentos ou perda de dados.
+</pt-BR>
+```
 
 ---
 

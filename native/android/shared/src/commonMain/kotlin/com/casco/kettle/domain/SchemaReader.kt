@@ -17,26 +17,60 @@ internal typealias Read<T> = SchemaReader.(value: Any?, path: Path) -> T?
  * Unknown keys are never looked at, which is how they are dropped at every level. And a reader only
  * descends into a value after its type check passes, the property that keeps an alias bomb under an
  * unknown key, or behind one refused element, from ever being walked.
+ *
+ * A refusal is fatal or not, as zod 4's issues are, and the difference decides which refusals a
+ * document reports: a refinement is skipped once anything fatal was refused beneath it ([refined]).
+ * A wrong type, a missing key, a fraction where an integer goes and an unknown `type` are fatal. A
+ * value out of range (the safe-integer one included), an empty string, a list too short, and a
+ * failed refinement itself are not. Read off zod, not reasoned out: `LibraryTest` holds each rule.
  */
 internal class SchemaReader {
-    private val issues = mutableListOf<Pair<String, String>>()
+    private class Issue(
+        val path: String,
+        val message: String,
+        val fatal: Boolean,
+    )
+
+    private val issues = mutableListOf<Issue>()
 
     fun <T : Any> result(value: T?): ParseResult<T> {
         if (issues.isEmpty()) {
             return ParseResult.Ok(checkNotNull(value) { "a schema read returned null without refusing anything" })
         }
         return ParseResult.SchemaMismatch(
-            paths = issues.map { it.first }.distinct().sorted(),
-            detail = issues.joinToString("; ") { (path, message) -> "$path: $message" },
+            paths = issues.map { it.path }.distinct().sorted(),
+            detail = issues.joinToString("; ") { "${it.path}: ${it.message}" },
         )
     }
 
+    /**
+     * Records a refusal. It's [fatal] when the value isn't the type at all, so nothing above it can be
+     * refined; a range, a length or a refinement refuses a value of the right type, and isn't.
+     */
     fun refuse(
         path: Path,
         message: String,
+        fatal: Boolean = true,
     ): Nothing? {
-        issues += path.joinToString(".").ifEmpty { "(root)" } to message
+        issues += Issue(path.joinToString(".").ifEmpty { "(root)" }, message, fatal)
         return null
+    }
+
+    /**
+     * Reads with [read], then runs [refine] over what was read only if nothing fatal was refused on
+     * the way, as zod runs a schema's `.refine` checks. [refine] gets the raw mapping, not the read
+     * value: a field refused only for its range reads as null, but the refinement still sees it.
+     * Every field is the right type by the time it runs, which is what lets it cast.
+     */
+    fun <T : Any> refined(
+        fields: Fields,
+        read: () -> T?,
+        refine: SchemaReader.(Fields) -> Unit,
+    ): T? {
+        val start = issues.size
+        val value = read()
+        if (issues.drop(start).none { it.fatal }) refine(fields)
+        return value
     }
 
     fun fields(
@@ -44,15 +78,21 @@ internal class SchemaReader {
         path: Path,
     ): Fields? = if (value is Map<*, *>) Fields(value, path, this) else refuse(path, "expected a mapping")
 
+    /** [minSize] is checked whatever the elements did, as zod checks a length even past a fatal element. */
     fun <T : Any> list(
         value: Any?,
         path: Path,
+        minSize: Int = 0,
         element: Read<T>,
     ): List<T>? {
         if (value !is List<*>) return refuse(path, "expected a list")
         // Every element is read, so each refused one is reported, before any is given up on.
         val elements = value.mapIndexed { index, item -> element(item, path + index) }
-        return if (null in elements) null else elements.filterNotNull()
+        return when {
+            value.size < minSize -> refuse(path, "expected at least $minSize", fatal = false)
+            null in elements -> null
+            else -> elements.filterNotNull()
+        }
     }
 
     fun string(
@@ -60,11 +100,16 @@ internal class SchemaReader {
         path: Path,
     ): String? = value as? String ?: refuse(path, "expected a string")
 
-    /** `idSchema`: a string that isn't empty. */
+    fun boolean(
+        value: Any?,
+        path: Path,
+    ): Boolean? = value as? Boolean ?: refuse(path, "expected a boolean")
+
+    /** `idSchema`, and `z.string().min(1)` wherever else it's written: a string that isn't empty. */
     fun id(
         value: Any?,
         path: Path,
-    ): String? = string(value, path)?.let { if (it.isEmpty()) refuse(path, "must not be empty") else it }
+    ): String? = string(value, path)?.let { if (it.isEmpty()) refuse(path, "must not be empty", fatal = false) else it }
 
     /**
      * zod's `number()`: finite, so `.inf` and `.nan` are refused. An integer too big for a `Long`
@@ -99,7 +144,7 @@ internal class SchemaReader {
         val number = number(value, path, bounds) ?: return null
         return when {
             number != kotlin.math.floor(number) -> refuse(path, "expected an integer")
-            kotlin.math.abs(number) > MAX_SAFE_INTEGER -> refuse(path, "outside the safe integer range")
+            kotlin.math.abs(number) > MAX_SAFE_INTEGER -> refuse(path, "outside the safe integer range", fatal = false)
             else -> number.toLong()
         }
     }
@@ -108,10 +153,15 @@ internal class SchemaReader {
 /** The fields of one mapping. Each accessor is one of zod's presence rules. */
 internal class Fields(
     private val map: Map<*, *>,
-    private val path: Path,
+    val path: Path,
     private val reader: SchemaReader,
 ) {
     fun raw(key: String): Any? = map[key]
+
+    fun has(key: String): Boolean = map.containsKey(key)
+
+    /** A field's number, unread. Only for a refinement, which runs once every field is the right type. */
+    fun number(key: String): Double? = (map[key] as Number?)?.toDouble()
 
     /** Must be present, and must pass [read]. */
     fun <T : Any> required(
@@ -154,8 +204,8 @@ internal class Bounds(
         reader: SchemaReader,
     ): Double? =
         when {
-            if (minInclusive) number < min else number <= min -> reader.refuse(path, "too small")
-            number > max -> reader.refuse(path, "too big")
+            if (minInclusive) number < min else number <= min -> reader.refuse(path, "too small", fatal = false)
+            number > max -> reader.refuse(path, "too big", fatal = false)
             else -> number
         }
 
@@ -166,4 +216,11 @@ internal class Bounds(
     }
 }
 
-private const val MAX_SAFE_INTEGER = 9_007_199_254_740_991.0
+// The number reads every file shares, by their zod spelling.
+internal val positive: Read<Double> = { value, path -> number(value, path, Bounds.POSITIVE) }
+
+internal val nonNegative: Read<Double> = { value, path -> number(value, path, Bounds.NONNEGATIVE) }
+
+internal val positiveInteger: Read<Long> = { value, path -> integer(value, path, Bounds.POSITIVE) }
+
+internal const val MAX_SAFE_INTEGER = 9_007_199_254_740_991.0

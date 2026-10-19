@@ -11,3 +11,11 @@ fun emomIntervalCount(
 ): Int = kotlin.math.floor(totalMinutes * SECONDS_PER_MINUTE / intervalSec).toInt()
 
 private const val SECONDS_PER_MINUTE = 60
+
+/**
+ * The ceilings on every count the session runner builds one step per unit of, as `MaxSets`,
+ * `MaxRounds` and `MaxTotalMinutes` in `src/domain/schema.ts`, whose header says why they exist.
+ */
+const val MAX_SETS = 500.0
+const val MAX_ROUNDS = 500.0
+const val MAX_TOTAL_MINUTES = 1440.0

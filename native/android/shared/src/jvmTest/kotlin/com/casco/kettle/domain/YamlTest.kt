@@ -5,9 +5,10 @@ import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Test
 
 /**
- * The loader's limits and refusals, through the session parser. The corpus pins most of the loader
- * through the library suite, which isn't ported yet, so these hold the same rules here meanwhile.
- * Each expected kind was read off js-yaml 5 with the same input, not reasoned out.
+ * The loader's limits and refusals, through the session parser: the ones the corpus's library suite
+ * doesn't reach (depth, a second document, the unknown tags) beside a few it does, kept so the loader
+ * is pinned through both parsers. Each expected kind was read off js-yaml 5 with the same input, not
+ * reasoned out.
  */
 class YamlTest {
     private val session = "version: 1\nid: s\nworkout: w\nstarted_at: x\nended_at: null\nentries: []\n"

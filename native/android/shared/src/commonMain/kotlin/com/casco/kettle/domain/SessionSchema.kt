@@ -62,11 +62,7 @@ private val entryReaders: Map<String, SchemaReader.(Fields, String?) -> SessionE
 
 private val RPE = Bounds(min = 1.0, max = 10.0)
 
-private val nonNegative: Read<Double> = { value, path -> number(value, path, Bounds.NONNEGATIVE) }
-
 private val nonNegativeInteger: Read<Long> = { value, path -> integer(value, path, Bounds.NONNEGATIVE) }
-
-private val positiveInteger: Read<Long> = { value, path -> integer(value, path, Bounds.POSITIVE) }
 
 private fun SchemaReader.timedHold(
     fields: Fields,

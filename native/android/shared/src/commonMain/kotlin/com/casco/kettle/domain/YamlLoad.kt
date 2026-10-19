@@ -63,7 +63,39 @@ internal fun loadYaml(text: String): YamlLoad =
  * resolver the loader uses.
  */
 internal fun dumpYaml(value: Any?): String =
-    Dump(DumpSettings(schema = YamlCoreSchema, defaultFlowStyle = FlowStyle.BLOCK)).dumpToString(value)
+    Dump(DumpSettings(schema = YamlCoreSchema, defaultFlowStyle = FlowStyle.BLOCK)).dumpToString(wholeNumbers(value))
+
+/**
+ * Writes a whole `Double` as the integer it is, `rest_sec: 90` rather than `90.0`, as js-yaml writes a
+ * JS number. The files are hand-edited, and a save shouldn't rewrite every number in them. Both read
+ * back as the same `Double`. Negative zero is left alone, since `0` would read back as positive zero.
+ */
+private fun wholeNumbers(value: Any?): Any? =
+    when (value) {
+        is Double -> {
+            val whole = value == kotlin.math.floor(value) && kotlin.math.abs(value) <= MAX_SAFE_INTEGER
+            if (whole && !(value == 0.0 && 1 / value < 0)) value.toLong() else value
+        }
+
+        is Map<*, *> -> {
+            value.mapValues { (_, item) -> wholeNumbers(item) }
+        }
+
+        is List<*> -> {
+            value.map(::wholeNumbers)
+        }
+
+        else -> {
+            value
+        }
+    }
+
+/**
+ * A mapping for [dumpYaml], in the order given, with every null left out: each nullable a writer hands
+ * it is an optional, and `key: null` would read back as a refusal.
+ */
+internal fun optionals(vararg entries: Pair<String, Any?>): Map<String, Any?> =
+    entries.filter { it.second != null }.toMap(LinkedHashMap())
 
 /** js-yaml's `maxAliases`. The engine's own limit counts only aliases to collections. */
 private const val MAX_ALIASES = 1000

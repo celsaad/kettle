@@ -1,0 +1,138 @@
+package com.casco.kettle.domain
+
+/**
+ * `rawExerciseSchema` from `src/domain/schema.ts`, read straight into the domain model as
+ * `SessionSchema.kt` reads a session. The writer is in `LibraryYaml.kt`.
+ */
+internal fun SchemaReader.exercise(
+    value: Any?,
+    path: Path,
+): Exercise? {
+    val fields = fields(value, path) ?: return null
+    // zod's discriminated union: an unknown or missing type is refused at `type`, and nothing else is read.
+    return when (val readConfig = configReaders[fields.raw("type")]) {
+        null -> {
+            refuse(path + "type", "expected one of ${configReaders.keys.joinToString()}")
+        }
+
+        else -> {
+            val id = fields.required("id", SchemaReader::id)
+            val name = fields.required("name", SchemaReader::id)
+            val config = fields.required("config") { v, p -> fields(v, p)?.let { readConfig(it) } }
+            val notes = fields.optional("notes", SchemaReader::string)
+            if (id != null && name != null && config != null) Exercise(id, name, config, notes) else null
+        }
+    }
+}
+
+/**
+ * The types, as one table, so the dispatch and the refusal's list can't disagree. The writer names
+ * them again in `LibraryYaml.kt`, and the corpus's `every-shape` round-trips all seven.
+ */
+private val configReaders: Map<String, SchemaReader.(Fields) -> ExerciseConfig?> =
+    mapOf(
+        "hiit" to SchemaReader::hiit,
+        "emom" to SchemaReader::emom,
+        "amrap" to SchemaReader::amrap,
+        "reps" to SchemaReader::reps,
+        "timed_hold" to SchemaReader::timedHold,
+        "cardio" to SchemaReader::cardio,
+        "rest" to SchemaReader::rest,
+    )
+
+/** `int().positive().max(…)`, for the counts the runner builds a step per unit of. */
+internal fun countUpTo(max: Double): Read<Long> =
+    { value, path -> integer(value, path, Bounds(min = 0.0, minInclusive = false, max = max)) }
+
+private val totalMinutes: Read<Double> =
+    { value, path -> number(value, path, Bounds(min = 0.0, minInclusive = false, max = MAX_TOTAL_MINUTES)) }
+
+private fun SchemaReader.hiit(fields: Fields): ExerciseConfig? {
+    val workSec = fields.required("work_sec", positive)
+    val restSec = fields.required("rest_sec", nonNegative)
+    val rounds = fields.required("rounds", countUpTo(MAX_ROUNDS))
+    return if (workSec != null && restSec != null &&
+        rounds != null
+    ) {
+        ExerciseConfig.Hiit(workSec, restSec, rounds)
+    } else {
+        null
+    }
+}
+
+/**
+ * The refinement bounds the *floored* interval count, never the raw quotient: see
+ * [emomIntervalCount]. It runs even when `interval_sec` was refused for its range, where a zero
+ * interval is infinitely many intervals, and refuses at the same path.
+ */
+private fun SchemaReader.emom(fields: Fields): ExerciseConfig? =
+    refined(fields, {
+        val intervalSec = fields.required("interval_sec", positive)
+        val totalMinutes = fields.required("total_minutes", totalMinutes)
+        val targetReps = fields.optional("target_reps", positiveInteger)
+        if (intervalSec != null &&
+            totalMinutes != null
+        ) {
+            ExerciseConfig.Emom(intervalSec, totalMinutes, targetReps)
+        } else {
+            null
+        }
+    }) {
+        if (emomIntervalCount(it.number("interval_sec")!!, it.number("total_minutes")!!) > MAX_ROUNDS) {
+            refuse(it.path + "interval_sec", "must come to at most $MAX_ROUNDS intervals", fatal = false)
+        }
+    }
+
+private fun SchemaReader.amrap(fields: Fields): ExerciseConfig? =
+    fields.required("time_cap_sec", positive)?.let { ExerciseConfig.Amrap(it) }
+
+private fun SchemaReader.reps(fields: Fields): ExerciseConfig? =
+    refined(fields, {
+        val sets = fields.required("sets", countUpTo(MAX_SETS))
+        val targetRepsMin = fields.required("target_reps_min", positiveInteger)
+        val targetRepsMax = fields.optional("target_reps_max", positiveInteger)
+        val targetWeightKg = fields.optional("target_weight", nonNegative)
+        val restSec = fields.required("rest_sec", nonNegative)
+        if (sets != null && targetRepsMin != null && restSec != null) {
+            ExerciseConfig.Reps(sets, targetRepsMin, targetRepsMax, targetWeightKg, restSec)
+        } else {
+            null
+        }
+    }) {
+        val max = it.number("target_reps_max")
+        if (max != null && max < it.number("target_reps_min")!!) {
+            refuse(it.path + "target_reps_max", "must be >= target_reps_min", fatal = false)
+        }
+    }
+
+/** A bare `hold_sec_max` is refused rather than read as a fixed target: one meaning, one spelling. */
+private fun SchemaReader.timedHold(fields: Fields): ExerciseConfig? =
+    refined(fields, {
+        val sets = fields.required("sets", countUpTo(MAX_SETS))
+        val holdSecMin = fields.optional("hold_sec_min", positive)
+        val holdSecMax = fields.optional("hold_sec_max", positive)
+        val restSec = fields.required("rest_sec", nonNegative)
+        if (sets != null && restSec != null) ExerciseConfig.TimedHold(sets, holdSecMin, holdSecMax, restSec) else null
+    }) {
+        val min = it.number("hold_sec_min")
+        val max = it.number("hold_sec_max")
+        when {
+            max != null && min == null -> {
+                refuse(it.path + "hold_sec_max", "needs hold_sec_min", fatal = false)
+            }
+
+            max != null && min != null && max < min -> {
+                refuse(
+                    it.path + "hold_sec_max",
+                    "must be >= hold_sec_min",
+                    fatal = false,
+                )
+            }
+        }
+    }
+
+private fun SchemaReader.cardio(fields: Fields): ExerciseConfig =
+    ExerciseConfig.Cardio(fields.optional("duration_sec", positive), fields.optional("distance_meters", positive))
+
+private fun SchemaReader.rest(fields: Fields): ExerciseConfig? =
+    fields.required("duration_sec", nonNegative)?.let { ExerciseConfig.Rest(it) }

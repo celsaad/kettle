@@ -7,8 +7,10 @@ import com.casco.kettle.domain.UnitSystem
 import com.casco.kettle.domain.emomIntervalCount
 import com.casco.kettle.domain.filterByName
 import com.casco.kettle.domain.fromDisplayWeight
+import com.casco.kettle.domain.parseLibraryYaml
 import com.casco.kettle.domain.parseSessionYaml
 import com.casco.kettle.domain.rankByName
+import com.casco.kettle.domain.serializeLibraryYaml
 import com.casco.kettle.domain.serializeSessionYaml
 import com.casco.kettle.domain.toDisplayWeight
 import com.casco.kettle.domain.weightStep
@@ -33,6 +35,7 @@ import java.io.File
 class ConformanceTest {
     private val runners: Map<String, (Case) -> Any?> =
         mapOf(
+            "library" to ::runLibrary,
             "search" to ::runSearch,
             "session" to ::runSession,
             "units" to ::runUnits,
@@ -52,6 +55,18 @@ class ConformanceTest {
     @TestFactory
     fun roundTrips(): List<DynamicContainer> =
         listOf(
+            // Unlike the TS round-trip, the `source` cases are in too: the published examples are the
+            // largest real libraries the corpus has, and nothing about reading them from a file
+            // changes what the writer owes.
+            dynamicContainer(
+                "library",
+                readSuite("library").mapNotNull { case ->
+                    val parsed = parseLibraryYaml(libraryText(case)) as? ParseResult.Ok ?: return@mapNotNull null
+                    dynamicTest("${case.name} survives serialize → parse") {
+                        assertEquals(parsed, parseLibraryYaml(serializeLibraryYaml(parsed.value)))
+                    }
+                },
+            ),
             dynamicContainer(
                 "session",
                 readSuite("session").mapNotNull { case ->
@@ -86,6 +101,8 @@ class ConformanceTest {
                 }
             }
     }
+
+    private fun runLibrary(case: Case): Any = golden(parseLibraryYaml(libraryText(case)), ::libraryJson)
 
     private fun runSession(case: Case): Any = golden(parseSessionYaml(case.string("input")!!), ::sessionJson)
 
@@ -129,6 +146,13 @@ class Case(
 
     fun number(key: String): Double = (fields[key] as Number).toDouble()
 }
+
+/**
+ * A library case's text: inline `input`, or the repo file at `source` (the published
+ * `site/examples/` libraries), read in place like the corpus itself so there is still one copy.
+ */
+private fun libraryText(case: Case): String =
+    case.string("source")?.let { File(conformanceDir.parentFile, it).readText() } ?: case.string("input")!!
 
 // Lazy so a missing property fails the test with this message, not as the ExceptionInInitializerError
 // a top-level initialiser would throw.

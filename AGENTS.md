@@ -297,6 +297,8 @@ are the index, the banner is the contract.
 - `docs/sdk-57-api-notes.md` — the `expo-file-system` / `expo-notifications` / `expo-iap` shapes
   confirmed from `node_modules`, because the published docs are wrong for two of the three.
 - `docs/adding-a-language.md` — the seven-place procedure for shipping a new UI language.
+- `docs/agents/` — per-repo setup the engineering skills read: issue tracker, triage labels, and
+  where the glossary and decision log live. Indexed by the "Agent skills" section at the end.
 - `docs/building-android.md` — building the Play bundle on GitHub Actions rather than on EAS, and
   the keystore setup it needs first.
 - `docs/verifying-in-the-browser.md` — driving the running app under Playwright.
@@ -382,3 +384,19 @@ And two about what doesn't get written down at all:
 
 Keep open-work entries short. If the list starts wanting states and assignees, move it to GitHub
 issues (`origin` and `gh` are both available); until then the file is deliberately enough.
+
+## Agent skills
+
+### Issue tracker
+
+Issues live in GitHub Issues on `celsaad/kettle`, via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The five default roles, each label named after its role (`needs-triage`, `needs-info`,
+`ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: a root `GLOSSARY.md` (created lazily) and `docs/decisions.md` in place of `docs/adr/`.
+See `docs/agents/domain.md`.

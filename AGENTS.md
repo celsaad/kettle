@@ -63,6 +63,9 @@ retrofit, so answer them out loud even when the answer is no.
 - [ ] `pnpm run format`
 - [ ] `pnpm run lint` — it comes back completely silent, so anything it prints is yours.
 - [ ] `pnpm run knip` — silent too.
+- [ ] **Touched `native/android`, or moved a golden in `conformance/`?** `gradlew build` from
+      `native/android`: tests, ktlint, detekt and compiler warnings, all failing on any finding. A
+      golden change reaches it because the Kotlin runner reads the same corpus.
 - [ ] **Push the branch and open a PR** (`gh pr create`). The commit message is the durable record —
       root cause, alternatives, deliberate scope cuts go there, not into the docs (see "Docs").
 

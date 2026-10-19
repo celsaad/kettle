@@ -50,8 +50,9 @@ class ConformanceTest {
         val names = cases.map { it.name }
         return listOf(
             dynamicTest("has unique case names") { assertEquals(names.size, names.toSet().size) },
+            // As sets: the README orders lists, not the goldens' keys.
             dynamicTest("has a golden for every case and no golden without a case") {
-                assertEquals(names, expected.keys.toList())
+                assertEquals(names.toSet(), expected.keys)
             },
         ) +
             cases.map { case ->
@@ -90,12 +91,15 @@ class Case(
     fun number(key: String): Double = (fields[key] as Number).toDouble()
 }
 
-private val conformanceDir: File =
+// Lazy so a missing property fails the test with this message, not as the ExceptionInInitializerError
+// a top-level initialiser would throw.
+private val conformanceDir: File by lazy {
     File(
         requireNotNull(System.getProperty("kettle.conformanceDir")) {
             "kettle.conformanceDir is unset; run this through Gradle, which points it at the repo's conformance/"
         },
     )
+}
 
 private fun suiteNames(): List<String> =
     conformanceDir

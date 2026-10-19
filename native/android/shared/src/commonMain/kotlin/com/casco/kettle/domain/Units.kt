@@ -1,7 +1,7 @@
 package com.casco.kettle.domain
 
+import kotlin.math.floor
 import kotlin.math.pow
-import kotlin.math.roundToLong
 
 /** Exact by definition (the international avoirdupois pound), not an approximation to tune. */
 private const val KG_PER_LB = 0.45359237
@@ -19,22 +19,28 @@ private fun displayDecimals(system: UnitSystem): Int =
 private const val STORED_DECIMALS = 2
 
 /**
- * JavaScript's `Math.round`: an exact half rounds toward +∞. `roundToLong` does the same, where
- * `kotlin.math.round` would round it to even and turn 2.125 kg into 2.12.
+ * JavaScript's `Math.round`: an exact half rounds toward +∞, where `kotlin.math.round` would round
+ * it to even and turn 2.125 kg into 2.12. Built on `floor` rather than `roundToLong`, which also
+ * rounds halves up but throws on NaN and clamps infinities, where `Math.round` passes both through.
+ * `scaled - down` is exact for any double, so the half comparison has no rounding error of its own.
  */
-private fun round(
+private fun roundHalfUp(
     value: Double,
     decimals: Int,
 ): Double {
     val factor = 10.0.pow(decimals)
-    return (value * factor).roundToLong() / factor
+    val scaled = value * factor
+    val down = floor(scaled)
+    return (if (scaled - down >= HALF) down + 1 else down) / factor
 }
+
+private const val HALF = 0.5
 
 /** Stored kilograms → the number to show the user, in their own unit. */
 fun toDisplayWeight(
     kg: Double,
     system: UnitSystem,
-): Double = round(if (system == UnitSystem.IMPERIAL) kg / KG_PER_LB else kg, displayDecimals(system))
+): Double = roundHalfUp(if (system == UnitSystem.IMPERIAL) kg / KG_PER_LB else kg, displayDecimals(system))
 
 /** A number the user entered in their own unit → kilograms to store. */
 fun fromDisplayWeight(
@@ -43,7 +49,7 @@ fun fromDisplayWeight(
 ): Double =
     // Metric passes straight through: the number typed is the stored value, so rounding it here
     // would silently edit input the user can see.
-    if (system == UnitSystem.IMPERIAL) round(value * KG_PER_LB, STORED_DECIMALS) else value
+    if (system == UnitSystem.IMPERIAL) roundHalfUp(value * KG_PER_LB, STORED_DECIMALS) else value
 
 /**
  * The runner's −/+ load step, in display units: the smallest jump the equipment actually has in

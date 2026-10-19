@@ -12,27 +12,38 @@ kotlin {
         compilerOptions { jvmTarget.set(JvmTarget.JVM_17) }
     }
 
+    // The compiler's warnings held to the same zero as ktlint's and detekt's.
+    compilerOptions { allWarningsAsErrors.set(true) }
+
     sourceSets {
         jvmTest.dependencies {
             implementation(project.dependencies.platform(libs.junit.bom))
             implementation(libs.junit.jupiter)
             runtimeOnly(libs.junit.launcher)
             // Reads the corpus files, and only in the test. Which YAML library `:shared` itself
-            // parses users' files with is #144's decision, not this runner's.
+            // parses users' files with is #143's decision, not this runner's.
             implementation(libs.snakeyaml.engine)
         }
     }
 }
 
-// The corpus is read in place from the repo's `conformance/`, never copied, so there is only one.
-// Declaring it as an input is what makes an edited golden rerun the tests rather than leave the task
-// UP-TO-DATE and green.
-val conformanceDir = rootProject.layout.projectDirectory.dir("../../conformance")
+/**
+ * The corpus is read in place from the repo's `conformance/`, never copied, so there is only one.
+ * It is a task input, so an edited golden reruns the tests rather than leaving the task UP-TO-DATE
+ * and green. It reaches the JVM through a provider because a plain `systemProperty` would put this
+ * checkout's absolute path in the cache key, and no other machine or checkout would ever hit it.
+ */
+class ConformanceCorpus(
+    @get:InputDirectory
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    val dir: Directory,
+) : CommandLineArgumentProvider {
+    override fun asArguments() = listOf("-Dkettle.conformanceDir=${dir.asFile.absolutePath}")
+}
 
 tasks.named<Test>("jvmTest") {
     useJUnitPlatform()
-    inputs.dir(conformanceDir).withPathSensitivity(PathSensitivity.RELATIVE).withPropertyName("conformance")
-    systemProperty("kettle.conformanceDir", conformanceDir.asFile.absolutePath)
+    jvmArgumentProviders.add(ConformanceCorpus(rootProject.layout.projectDirectory.dir("../../conformance")))
     testLogging {
         events("passed", "skipped", "failed")
     }

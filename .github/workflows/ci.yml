@@ -111,4 +111,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: native-reports
-          path: native/android/*/build/reports/
+          # The root's own reports too: ktlint lints the root build scripts there.
+          path: |
+            native/android/build/reports/
+            native/android/*/build/reports/

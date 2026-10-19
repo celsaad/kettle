@@ -1356,17 +1356,66 @@ describe('swapping an exercise mid-session', () => {
     return entry;
   };
 
-  it('offers same-type candidates, minus the exercise on screen', async () => {
+  it('offers every other exercise, minus the one on screen and the built-in rest', async () => {
     const { result } = await mount(workoutOf(single('pullups')));
+    const offered = result.current.swapCandidates.map((exercise) => exercise.id);
 
     expect(result.current.canSwapExercise).toBe(true);
-    expect(result.current.swapCandidates.map((exercise) => exercise.id)).toEqual(['dips']);
+    expect(offered).not.toContain('pullups');
+    expect(result.current.swapCandidates.some((exercise) => exercise.type === 'rest')).toBe(false);
+    expect(offered.toSorted()).toEqual(
+      exercises
+        .filter((exercise) => exercise.type !== 'rest' && exercise.id !== 'pullups')
+        .map((exercise) => exercise.id)
+        .toSorted(),
+    );
   });
 
-  it('offers holds a hold, never a reps exercise', async () => {
+  it('lists the same type first, then the rest in library order', async () => {
     const { result } = await mount(workoutOf(single('lsit')));
+    const offered = result.current.swapCandidates.map((exercise) => exercise.id);
 
-    expect(result.current.swapCandidates.map((exercise) => exercise.id)).toEqual(['plank', 'deadhang']);
+    expect(offered.slice(0, 2)).toEqual(['plank', 'deadhang']);
+    expect(offered.slice(2)).toEqual(
+      exercises.filter((exercise) => exercise.type !== 'rest' && exercise.type !== 'timed_hold').map((e) => e.id),
+    );
+  });
+
+  // Reps ↔ hold both count sets, so the remaining count still carries across the type change.
+  it('gives a hold substitute the remaining set count', async () => {
+    const { result } = await mount(workoutOf(single('pullups')));
+
+    await press(result.current.logSet);
+    await press(result.current.skipRest);
+    await press(() => result.current.swapExercise('plank'));
+
+    expect(result.current.step).toMatchObject({ kind: 'hold', exerciseId: 'plank', setIndex: 1, setTotal: 2 });
+  });
+
+  /**
+   * A HIIT's rounds are not sets, so it runs its own configured shape. This is also the case that
+   * would hang: resizing a member with no set steps never converges.
+   */
+  it('runs a non-set substitute in its own shape and logs it as its own entry', async () => {
+    const { result } = await mount(workoutOf(single('pullups'), single('plank')));
+
+    await press(() => result.current.setReps(7));
+    await press(result.current.logSet);
+    await press(result.current.skipRest);
+    await press(() => result.current.swapExercise('burpees'));
+
+    // All three of its own rounds, though only two pull-up sets were left; then on to the plank.
+    expect(result.current.step).toMatchObject({ kind: 'interval', exerciseId: 'burpees' });
+    await press(result.current.logInterval);
+    await press(result.current.skipRest);
+    await press(result.current.logInterval);
+    await press(result.current.skipRest);
+    await press(result.current.logInterval);
+
+    expect(result.current.step).toMatchObject({ kind: 'hold', exerciseId: 'plank' });
+    expect(mockSession.entries.map((entry) => entry.exercise)).toEqual(['pullups', 'burpees']);
+    const hiit = mockSession.entries[1];
+    expect(hiit?.type === 'hiit' && hiit.roundsCompleted).toBe(3);
   });
 
   it('offers nothing inside a circuit', async () => {

@@ -13,16 +13,13 @@ type Props = {
    * serves both rather than a near-copy for each.
    */
   replacing?: string;
-  /** Candidates, already filtered by the caller: same-type when swapping, all non-rest when adding. */
+  /** Candidates, already filtered and ordered by the caller: rendered in the order given. */
   candidates: Exercise[];
   onCancel: () => void;
   onSelect: (exerciseId: string) => void;
 };
 
-/**
- * Above this many candidates the sheet grows a search field. Swapping filters to one exercise type
- * and lands well under it; adding, which offers the whole library, does not.
- */
+/** Above this many candidates the sheet grows a search field; a short list is quicker scanned. */
 const SEARCH_THRESHOLD = 8;
 
 /**
@@ -32,10 +29,8 @@ const SEARCH_THRESHOLD = 8;
  * runner screens are `flex: 1` with no room to push anything aside, and a route would need registering
  * in `_layout.tsx` and the router types regenerating for a control that only exists mid-session.
  *
- * Searchable, because the ad-hoc case made the plain list untenable: swapping filters to one exercise
- * type and leaves a handful, but *adding* offers the whole library, and scrolling that mid-workout is
- * worse than a keyboard. The field is hidden below a threshold, so the swap case keeps the plain list
- * it wants.
+ * Searchable, because both modes offer the whole library, and scrolling that mid-workout is worse
+ * than a keyboard. The field is hidden below a threshold, so a small library keeps the plain list.
  *
  * The input is written here against `RunnerColors` rather than reusing `SearchBar`: that component
  * reads the light/dark shell theme through `useTheme`, and the runner is always dark regardless of the

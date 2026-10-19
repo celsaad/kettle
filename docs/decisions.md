@@ -767,12 +767,17 @@ decision assembled across several commits. Open work belongs in the sections at 
   substitute's first `persistMember` appends a new entry at the end, which is the only thing
   `entryIndexRef`'s append-only assumption requires.
 
-  Two product decisions came with it. **The substitute gets the remaining set count, not its own** —
-  three sets left means three sets of the new exercise, because this is a substitution inside the
-  workout rather than a rewrite of it; its reps, load, hold and rest targets still come from its own
-  config, which is what makes it a different exercise. And **the picker offers the same type only**,
-  which is what makes "the remaining count" coherent at all (a HIIT's rounds are not sets) and keeps
-  the runner screen from changing kind under someone mid-set.
+  Two product decisions came with it. **A set-based substitute gets the remaining set count, not its
+  own** — three sets left means three sets of the new exercise, because this is a substitution inside
+  the workout rather than a rewrite of it; its reps, load, hold and rest targets still come from its
+  own config, which is what makes it a different exercise. And **the picker offers any exercise**,
+  same type first. It first offered the same type only, which made "the remaining count" coherent
+  everywhere and kept the runner screen from changing kind mid-set — and meant a taken rack couldn't
+  become a run, which is the swap people actually reach for. So the count rule is per type instead:
+  reps and timed holds both count sets and carry the remaining count across; HIIT, EMOM, AMRAP, cardio
+  and interval work have rounds or minutes rather than sets and run their own configured shape in
+  full. Swapping is still offered only *from* a reps or hold step — "the rest of this exercise"
+  mid-round is a separate question nobody has answered — and still never inside a circuit.
 
 - ✅ **An ad-hoc session runs out of steps on purpose, and parks instead of ending.** A session with no
   pre-built workout has an empty step list at the start and again after every exercise finishes. The

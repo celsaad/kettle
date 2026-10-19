@@ -382,3 +382,19 @@ And two about what doesn't get written down at all:
 
 Keep open-work entries short. If the list starts wanting states and assignees, move it to GitHub
 issues (`origin` and `gh` are both available); until then the file is deliberately enough.
+
+## Agent skills
+
+### Issue tracker
+
+Issues live in GitHub Issues on `celsaad/kettle`, via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The five default roles, each label named after its role (`needs-triage`, `needs-info`,
+`ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: a root `GLOSSARY.md` (created lazily) and `docs/decisions.md` in place of `docs/adr/`.
+See `docs/agents/domain.md`.

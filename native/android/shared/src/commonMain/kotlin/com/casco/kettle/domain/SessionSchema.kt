@@ -10,11 +10,11 @@ package com.casco.kettle.domain
 internal fun SchemaReader.session(value: Any?): Session? {
     val fields = fields(value, ROOT) ?: return null
     val version = fields.required("version", positiveInteger)
-    val id = fields.required("id", SchemaReader::id)
-    val workout = fields.nullable("workout", SchemaReader::id)
+    val id = fields.required("id", SchemaReader::nonEmpty)
+    val workout = fields.nullable("workout", SchemaReader::nonEmpty)
     // Absent reads as null so files written before program tracking existed still parse, and
     // program_week the same for files written before it was added.
-    val program = fields.nullableOrAbsent("program", SchemaReader::id)
+    val program = fields.nullableOrAbsent("program", SchemaReader::nonEmpty)
     val programWeek = fields.nullableOrAbsent("program_week", positiveInteger)
     val programDay = fields.nullableOrAbsent("program_day", SchemaReader::string)
     val startedAt = fields.required("started_at", SchemaReader::string)
@@ -40,14 +40,14 @@ private fun SchemaReader.entry(
     return if (read == null) {
         refuse(path + "type", "expected one of ${entryReaders.keys.joinToString()}")
     } else {
-        read(fields, fields.required("exercise", SchemaReader::id))
+        read(fields, fields.required("exercise", SchemaReader::nonEmpty))
     }
 }
 
 /**
  * The entry types, as one table, so the dispatch and the refusal's list can't disagree. The writer
  * in `SessionYaml.kt` names them again in an exhaustive `when`. The corpus's `every-entry-type` case
- * round-trips all seven, so a name that differs between the two fails there.
+ * round-trips every type, so a name that differs between the two fails there.
  */
 private val entryReaders: Map<String, SchemaReader.(Fields, String?) -> SessionEntry?> =
     mapOf(

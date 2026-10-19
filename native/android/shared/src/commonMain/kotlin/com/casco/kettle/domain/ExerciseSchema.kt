@@ -16,8 +16,8 @@ internal fun SchemaReader.exercise(
         }
 
         else -> {
-            val id = fields.required("id", SchemaReader::id)
-            val name = fields.required("name", SchemaReader::id)
+            val id = fields.required("id", SchemaReader::nonEmpty)
+            val name = fields.required("name", SchemaReader::nonEmpty)
             val config = fields.required("config") { v, p -> fields(v, p)?.let { readConfig(it) } }
             val notes = fields.optional("notes", SchemaReader::string)
             if (id != null && name != null && config != null) Exercise(id, name, config, notes) else null
@@ -27,7 +27,7 @@ internal fun SchemaReader.exercise(
 
 /**
  * The types, as one table, so the dispatch and the refusal's list can't disagree. The writer names
- * them again in `LibraryYaml.kt`, and the corpus's `every-shape` round-trips all seven.
+ * them again in `LibraryYaml.kt`, and the corpus's `every-shape` round-trips every type.
  */
 private val configReaders: Map<String, SchemaReader.(Fields) -> ExerciseConfig?> =
     mapOf(
@@ -51,34 +51,30 @@ private fun SchemaReader.hiit(fields: Fields): ExerciseConfig? {
     val workSec = fields.required("work_sec", positive)
     val restSec = fields.required("rest_sec", nonNegative)
     val rounds = fields.required("rounds", countUpTo(MAX_ROUNDS))
-    return if (workSec != null && restSec != null &&
-        rounds != null
-    ) {
-        ExerciseConfig.Hiit(workSec, restSec, rounds)
-    } else {
-        null
+    return when {
+        workSec == null || restSec == null || rounds == null -> null
+        else -> ExerciseConfig.Hiit(workSec, restSec, rounds)
     }
 }
 
 /**
  * The refinement bounds the *floored* interval count, never the raw quotient: see
  * [emomIntervalCount]. It runs even when `interval_sec` was refused for its range, where a zero
- * interval is infinitely many intervals, and refuses at the same path.
+ * interval is infinitely many intervals (or, over zero minutes, NaN), and refuses at the same path.
+ * Written as "not at most", as TS is, so a NaN is refused.
  */
 private fun SchemaReader.emom(fields: Fields): ExerciseConfig? =
     refined(fields, {
         val intervalSec = fields.required("interval_sec", positive)
         val totalMinutes = fields.required("total_minutes", totalMinutes)
         val targetReps = fields.optional("target_reps", positiveInteger)
-        if (intervalSec != null &&
-            totalMinutes != null
-        ) {
-            ExerciseConfig.Emom(intervalSec, totalMinutes, targetReps)
-        } else {
-            null
+        when {
+            intervalSec == null || totalMinutes == null -> null
+            else -> ExerciseConfig.Emom(intervalSec, totalMinutes, targetReps)
         }
     }) {
-        if (emomIntervalCount(it.rawNumber("interval_sec")!!, it.rawNumber("total_minutes")!!) > MAX_ROUNDS) {
+        val count = emomIntervalCount(it.rawNumber("interval_sec")!!, it.rawNumber("total_minutes")!!)
+        if (!(count <= MAX_ROUNDS)) {
             refuse(it.path + "interval_sec", "must come to at most $MAX_ROUNDS intervals", fatal = false)
         }
     }
@@ -122,11 +118,7 @@ private fun SchemaReader.timedHold(fields: Fields): ExerciseConfig? =
             }
 
             max != null && min != null && max < min -> {
-                refuse(
-                    it.path + "hold_sec_max",
-                    "must be >= hold_sec_min",
-                    fatal = false,
-                )
+                refuse(it.path + "hold_sec_max", "must be >= hold_sec_min", fatal = false)
             }
         }
     }

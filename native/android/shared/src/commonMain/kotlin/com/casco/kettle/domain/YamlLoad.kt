@@ -73,8 +73,8 @@ internal fun dumpYaml(value: Any?): String =
 private fun wholeNumbers(value: Any?): Any? =
     when (value) {
         is Double -> {
-            val whole = value == kotlin.math.floor(value) && kotlin.math.abs(value) <= MAX_SAFE_INTEGER
-            if (whole && !(value == 0.0 && 1 / value < 0)) value.toLong() else value
+            val negativeZero = value == 0.0 && 1 / value < 0
+            if (isSafeWhole(value) && !negativeZero) value.toLong() else value
         }
 
         is Map<*, *> -> {

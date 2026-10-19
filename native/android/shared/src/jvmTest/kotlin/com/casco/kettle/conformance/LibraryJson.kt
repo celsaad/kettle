@@ -11,11 +11,13 @@ import com.casco.kettle.domain.ProgramOverride
 import com.casco.kettle.domain.ProgramWeek
 import com.casco.kettle.domain.Workout
 import com.casco.kettle.domain.WorkoutBlock
+import com.casco.kettle.domain.optionals
 
 /**
  * The library's camelCase domain model as the goldens hold it, written out by hand like
  * `sessionJson`, so the corpus is checked against its own spelling of every key rather than the
- * writer's. An absent optional is left out, never written as null.
+ * writer's. An absent optional is left out, never written as null, through the writer's own
+ * [optionals]: a helper that only drops nulls has no spelling to get wrong.
  */
 internal fun libraryJson(library: Library): Map<String, Any?> =
     mapOf(
@@ -153,7 +155,3 @@ private fun valueJson(value: OverrideValue): Any =
         is OverrideValue.Numeric -> value.value
         is OverrideValue.Text -> value.value
     }
-
-/** A map with its null entries left out: every nullable here is an optional, absent rather than null. */
-private fun optionals(vararg entries: Pair<String, Any?>): Map<String, Any?> =
-    entries.filter { it.second != null }.toMap()

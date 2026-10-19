@@ -10,21 +10,17 @@ internal fun SchemaReader.program(
 ): Program? {
     val fields = fields(value, path) ?: return null
     return refined(fields, {
-        val id = fields.required("id", SchemaReader::id)
-        val name = fields.required("name", SchemaReader::id)
+        val id = fields.required("id", SchemaReader::nonEmpty)
+        val name = fields.required("name", SchemaReader::nonEmpty)
         val weeks = fields.required("weeks") { v, p -> list(v, p, minSize = 1) { item, at -> week(item, at) } }
         if (id != null && name != null && weeks != null) Program(id, name, weeks) else null
     }) {
-        val weeks = it.raw("weeks") as List<*>
+        val weeks = it.rawItems("weeks")
+        val at = it.path + "weeks"
         if (weeks.map(::weekKey).let { keys -> keys.size != keys.toSet().size }) {
-            refuse(it.path + "weeks", "must not repeat the same (week, day) pair", fatal = false)
+            refuse(at, "must not repeat the same (week, day) pair", fatal = false)
         }
-        if (weeks.all(
-                ::isRestDay,
-            )
-        ) {
-            refuse(it.path + "weeks", "needs at least one week that runs a workout", fatal = false)
-        }
+        if (weeks.all(::isRestDay)) refuse(at, "needs at least one week that runs a workout", fatal = false)
     }
 }
 
@@ -33,12 +29,10 @@ internal fun SchemaReader.program(
  * `0` and `-0.0` too, and an absent day is the empty one. Adding `0.0` folds the negative zero that a
  * boxed `Double` comparison would otherwise keep apart.
  */
-private fun weekKey(week: Any?): Pair<Double, String> {
-    val fields = week as Map<*, *>
-    return ((fields["week"] as Number).toDouble() + 0.0) to (fields["day"] as String? ?: "")
-}
+private fun weekKey(week: Fields): Pair<Double, String> =
+    (week.rawNumber("week")!! + 0.0) to week.rawString("day").orEmpty()
 
-private fun isRestDay(week: Any?): Boolean = (week as Map<*, *>)["rest_day"] == true
+private fun isRestDay(week: Fields): Boolean = week.raw("rest_day") == true
 
 private fun SchemaReader.week(
     value: Any?,
@@ -46,17 +40,10 @@ private fun SchemaReader.week(
 ): ProgramWeek? {
     val fields = fields(value, path) ?: return null
     return refined(fields, { readWeek(fields) }) {
-        val rest = it.raw("rest_day") == true
-        if (!rest &&
-            !it.has("workout")
-        ) {
-            refuse(it.path + "workout", "needs a workout unless rest_day: true", fatal = false)
-        }
-        if (rest &&
-            it.has("workout")
-        ) {
-            refuse(it.path + "workout", "a rest_day week cannot name a workout", fatal = false)
-        }
+        val rest = isRestDay(it)
+        val workout = it.path + "workout"
+        if (!rest && !it.has("workout")) refuse(workout, "needs a workout unless rest_day: true", fatal = false)
+        if (rest && it.has("workout")) refuse(workout, "a rest_day week cannot name a workout", fatal = false)
         if (rest &&
             it.has("overrides")
         ) {
@@ -72,7 +59,7 @@ private fun SchemaReader.week(
 private fun SchemaReader.readWeek(fields: Fields): ProgramWeek? {
     val week = fields.required("week", positiveInteger)
     val day = fields.optional("day", SchemaReader::string)
-    val workout = fields.optional("workout", SchemaReader::id)
+    val workout = fields.optional("workout", SchemaReader::nonEmpty)
     val restDay = fields.optional("rest_day", SchemaReader::boolean)
     val notes = fields.optional("notes", SchemaReader::string)
     val overrides = fields.optional("overrides") { v, p -> list(v, p) { item, at -> override(item, at) } }
@@ -95,8 +82,8 @@ private fun SchemaReader.override(
 ): ProgramOverride? {
     val fields = fields(value, path) ?: return null
     return refined(fields, {
-        val exercise = fields.optional("exercise", SchemaReader::id)
-        val block = fields.optional("block", SchemaReader::id)
+        val exercise = fields.optional("exercise", SchemaReader::nonEmpty)
+        val block = fields.optional("block", SchemaReader::nonEmpty)
         val config = fields.required("config", overrideConfig)
         when {
             config == null -> null
@@ -105,7 +92,7 @@ private fun SchemaReader.override(
             else -> null
         }
     }) {
-        val targets = listOf("exercise", "block").count { key -> (it.raw(key) as String?).orEmpty().isNotEmpty() }
+        val targets = listOf("exercise", "block").count { key -> it.rawString(key).orEmpty().isNotEmpty() }
         if (targets != 1) refuse(it.path, "must specify exactly one of exercise or block", fatal = false)
     }
 }
@@ -146,11 +133,6 @@ private fun SchemaReader.overrideValue(
  *
  * The same spelling makes `1:` and `"1":` one key. js-yaml stringifies before it checks for
  * duplicates and refuses that file; the loader compares keys as written, so here the last one wins.
- * That is the loader's scope cut from `YamlLoad.kt`'s ticket (#143), and this is where it shows.
+ * That is the loader's scope cut from `YamlLoad.kt`'s ticket (#143), tracked as #162.
  */
-private fun jsKey(key: Any?): String =
-    if (key is Double && key == kotlin.math.floor(key) && kotlin.math.abs(key) <= MAX_SAFE_INTEGER) {
-        key.toLong().toString()
-    } else {
-        key.toString()
-    }
+private fun jsKey(key: Any?): String = (key as? Double)?.takeIf(::isSafeWhole)?.toLong()?.toString() ?: key.toString()

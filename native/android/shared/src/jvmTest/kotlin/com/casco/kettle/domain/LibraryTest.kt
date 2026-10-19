@@ -67,6 +67,19 @@ class LibraryTest {
         assertEquals(listOf("$config.interval_sec"), paths(text))
     }
 
+    /**
+     * The paths can't tell this apart, since `interval_sec` is refused for its range either way, so it
+     * reads the detail: zod's refinement fails on `0 / 0`, because NaN is never at most 500.
+     */
+    @Test
+    fun `an EMOM of zero intervals over zero minutes fails the interval refinement too`() {
+        val text =
+            library(exercises = "[{ id: a, name: A, type: emom, config: { interval_sec: 0, total_minutes: 0 } }]")
+        val refusal = parseLibraryYaml(text) as ParseResult.SchemaMismatch
+        assertEquals(listOf("$config.interval_sec", "$config.total_minutes"), refusal.paths)
+        assertEquals(true, "intervals" in refusal.detail, refusal.detail)
+    }
+
     @Test
     fun `a program's refinements run past a refused week, but not past a fatal one`() {
         val program = "programs.0"

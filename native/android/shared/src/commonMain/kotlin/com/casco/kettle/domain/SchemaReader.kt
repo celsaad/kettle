@@ -107,7 +107,7 @@ internal class SchemaReader {
     ): Boolean? = value as? Boolean ?: refuse(path, "expected a boolean")
 
     /** `idSchema`, and `z.string().min(1)` wherever else it's written: a string that isn't empty. */
-    fun id(
+    fun nonEmpty(
         value: Any?,
         path: Path,
     ): String? = string(value, path)?.let { if (it.isEmpty()) refuse(path, "must not be empty", fatal = false) else it }
@@ -161,8 +161,16 @@ internal class Fields(
 
     fun has(key: String): Boolean = map.containsKey(key)
 
-    /** A field's number, unread. Only for a refinement, which runs once every field is the right type. */
+    // Unread values, for a refinement only: it runs once every field under it is the right type, which
+    // is what makes these casts safe.
+
     fun rawNumber(key: String): Double? = (map[key] as Number?)?.toDouble()
+
+    fun rawString(key: String): String? = map[key] as String?
+
+    /** A list of mappings, each as its own [Fields] at its own path. */
+    fun rawItems(key: String): List<Fields> =
+        (map[key] as List<*>).mapIndexed { index, item -> Fields(item as Map<*, *>, path + key + index, reader) }
 
     /** Must be present, and must pass [read]. */
     fun <T : Any> required(
@@ -225,3 +233,7 @@ internal val nonNegative: Read<Double> = { value, path -> number(value, path, Bo
 internal val positiveInteger: Read<Long> = { value, path -> integer(value, path, Bounds.POSITIVE) }
 
 internal const val MAX_SAFE_INTEGER = 9_007_199_254_740_991.0
+
+/** A whole number JS prints and stores exactly, so it can be written as a `Long` without changing it. */
+internal fun isSafeWhole(number: Double): Boolean =
+    number == kotlin.math.floor(number) && kotlin.math.abs(number) <= MAX_SAFE_INTEGER

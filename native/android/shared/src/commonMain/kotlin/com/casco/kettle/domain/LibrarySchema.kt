@@ -22,8 +22,8 @@ private fun SchemaReader.workout(
     path: Path,
 ): Workout? {
     val fields = fields(value, path) ?: return null
-    val id = fields.required("id", SchemaReader::id)
-    val name = fields.required("name", SchemaReader::id)
+    val id = fields.required("id", SchemaReader::nonEmpty)
+    val name = fields.required("name", SchemaReader::nonEmpty)
     val blocks = fields.required("blocks") { v, p -> list(v, p) { item, at -> block(item, at) } }
     return if (id != null && name != null && blocks != null) Workout(id, name, blocks) else null
 }
@@ -46,7 +46,7 @@ private fun SchemaReader.exerciseBlock(fields: Fields): WorkoutBlock? =
 
 /** An exercise and its optional `config:`, the same two keys in a plain block and a circuit member. */
 private fun SchemaReader.member(fields: Fields): CircuitMember? {
-    val exerciseId = fields.required("exercise", SchemaReader::id)
+    val exerciseId = fields.required("exercise", SchemaReader::nonEmpty)
     val config = fields.optional("config", blockConfig)
     return exerciseId?.let { CircuitMember(it, config) }
 }
@@ -56,7 +56,7 @@ private fun SchemaReader.member(fields: Fields): CircuitMember? {
  * per round whatever their own `sets`, so [MAX_ROUNDS] bounds it the way it bounds a HIIT.
  */
 private fun SchemaReader.circuit(fields: Fields): WorkoutBlock? {
-    val id = fields.optional("id", SchemaReader::id)
+    val id = fields.optional("id", SchemaReader::nonEmpty)
     val rounds = fields.required("rounds", countUpTo(MAX_ROUNDS))
     val restBetweenExercisesSec = fields.optional("rest_between_exercises_sec", nonNegative)
     val restBetweenRoundsSec = fields.optional("rest_between_rounds_sec", nonNegative)

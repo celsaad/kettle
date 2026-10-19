@@ -305,9 +305,10 @@ are the index, the banner is the contract.
 - `docs/testing-a11y-i18n-plan.md` — executed; kept for its rationale, not as a backlog.
 - `docs/watch-remote-plan.md` — **not executed.** Driving a running session from a Wear OS wrist via
   the notification shade, with no watch app and no data on the watch.
-- `docs/native-migration-plan.md` — **not executed.** Moving to Kotlin/Compose (then iOS) inside the
-  shipping app: a native shell hosts the not-yet-migrated RN screens via `expo-brownfield`, and each
-  milestone ships to Play and deletes RN code. Milestone 0 is a spike with a go/no-go.
+- `docs/native-migration-plan.md` — **M0 executed (go); M1 under way.** Moving to Kotlin/Compose
+  (then iOS) inside the shipping app: a native shell hosts the not-yet-migrated RN screens via
+  `expo-brownfield`, and each milestone ships to Play and deletes RN code. Its M0 spike report holds
+  the brownfield build facts any host inherits (AAR scopes, plugin resources, Windows CLI).
 - `docs/ios-plan.md` — **partly executed.** Shipping to the App Store: what already works unchanged,
   the six code changes that don't, and the background-cue and iCloud decisions. Five of those six
   have landed, plus the notification half of the background cue; the sixth is a form in App Store

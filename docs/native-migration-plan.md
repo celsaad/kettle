@@ -1,9 +1,10 @@
 # Migrating to native — plan
 
-> **Not executed.** A forward-looking plan; nothing below has been built. Written against the tree at
-> `54eb9f8`, SDK 57. Milestone 0 is a spike with an explicit go/no-go, and **everything after it is
-> conditional on a "go"**: if the spike fails its exit criteria, this file gets a banner saying so and
-> the decision log gets the reason, so the idea isn't re-proposed from scratch.
+> **M0 executed; the spike recommends go.** Its report is under M0 below. Every hard gate passed, and
+> the one partial answer (Q3) re-scopes M3 rather than blocking it. The conformance corpus from M1
+> has landed; the rest of M1 onward is not started. Written against the tree at `54eb9f8`, SDK 57.
+> **Everything after M0 was conditional on a "go"**: had the spike failed, this file would carry a
+> banner saying so and the decision log the reason, so the idea isn't re-proposed from scratch.
 
 Kettle moves from Expo / React Native to Kotlin + Jetpack Compose on Android and, later, Swift +
 SwiftUI on iOS. It does that **incrementally, inside the shipping app**: a native shell becomes the
@@ -80,6 +81,95 @@ Deliverables:
 **Landmark: the go/no-go decision, written down.** Questions 1, 2, 4 and 6 are hard gates. A "no" on
 3, 5, 7 or 8 makes the plan more expensive, so re-size it before deciding.
 
+#### Spike report (October 2026)
+
+**Recommendation: go.** The four hard gates pass. Q3 is a partial yes that changes how M3 works but
+doesn't block it, and nothing else came back worse than expected.
+
+The spike ran on branch `spike/brownfield`, which never merges. It used a Compose host
+(`com.casco.kettle.spike`) consuming the release and debug AARs, plus a JS probe that reported its
+runtime id, mounted surfaces, initial URL, route and document directory over `BrownfieldMessaging`.
+Every device answer below was observed on a Galaxy S25+ (Android 16, arm64), with expo-brownfield
+57.0.24 and React Native 0.86.
+
+| # | Question | Answer | Evidence |
+|---|---|---|---|
+| 1 | AAR builds on Actions without EAS | **Yes** | `spike-brownfield.yml`: prebuild, then `expo-brownfield build:android --release`, then the host's `assembleRelease`. Green in ~14 min with a warm Gradle cache. |
+| 2 | Surfaces share one JS runtime | **Yes** | Successive surfaces reported the same runtime id, and the runtime outlives its last surface: with zero mounted, the library store still answered with every exercise. |
+| 3 | expo-router opens at a deep link | **Partly** | The **first** surface opens at the link: `kettle://history` lands on History. A **later** surface in the same runtime reaches the route and then resets to `/`, in 3 of 3 runs. See "What changes" below. |
+| 4 | Same files directory | **Yes** | expo-file-system's `Paths.document` is `file:///data/user/0/<pkg>/files/`, identical to the host's `filesDir`. |
+| 5 | Messaging round trip | **Yes** | ~2 ms, native → JS → native, with a payload. |
+| 6 | Back across native → RN → native | **Yes, hardware back** | With `setNativeBackEnabled(false)`, JS takes back while it has somewhere to go (a tab returns to Workouts first, as in today's app), then the activity finishes back to native. **Predictive back is untested**: today's app disables it (`predictiveBackGestureEnabled: false`) and the spike matched that. |
+| 7 | Dev loop on Windows | **Yes, with one workaround** | Metro and fast refresh work: an edited string reached the phone in 3 s. Expo's `expo-brownfield` CLI can't run on Windows, because it spawns `./gradlew`, which `cmd` doesn't resolve. The Gradle task it wraps (`publishBrownfieldDebugPublicationToMavenLocal`) works. An AAR rebuild is needed only when native code or dependencies change: 32 min cold, 15 min for a new ABI on a warm cache. |
+| 8 | Size and cold start | **No size cost; RN launch cost not yet measured** | See below. |
+
+**Q8 in numbers.** Both builds are arm64 release builds, unminified.
+
+APK size:
+
+| | Today's app (`:app:assembleRelease`) | Shell + AAR |
+|---|---|---|
+| APK | 50.3 MB | 46.3 MB |
+| Native libraries | 20.8 MB | 20.0 MB |
+| dex | 49.8 MB | 49.7 MB |
+| JS bundle | 4.5 MB | 4.5 MB |
+
+The shell is smaller only because it doesn't yet carry the app's icons and splash, which it gains
+back in M2.
+
+Cold start, `am start -W`, median of 5:
+
+| | Median | Range |
+|---|---|---|
+| The Play 0.9.0 install, to first frame | 615 ms | 578–659 |
+| The shell's native screen | 129 ms | 116–151 |
+| Opening its RN activity | 67 ms | 58–75 |
+
+The native screen is fast because React Native initialises lazily, when the first RN surface opens.
+In today's app it initialises before anything is drawn. **What the spike can't show is time to a
+rendered home screen**, because adb has no marker for it. The RN activity's first frame comes before
+its JS has rendered, and that work is the same code either way. So the comparison that matters for
+M2 is still open (see below).
+
+**Build facts any real host inherits.** Each cost the spike a failed build.
+
+- **The AAR's POM gives every Expo module runtime scope.** A host that calls `BrownfieldMessaging`
+  has to declare `expo.modules.brownfield` itself, pinned to `package.json`'s expo-brownfield
+  version.
+- **expo-modules-core's published AAR carries an unstripped `libworklets.so`.** It's the same build
+  id as react-native-worklets' copy, so the host needs `pickFirsts += "**/libworklets.so"`.
+- **Config plugins that write into `android/app` don't reach the AAR.** The AAR's manifest carries
+  expo-notifications' meta-data, but the icon and color it names were written into the app module,
+  so the host's resource link fails until it supplies them. Anything else a plugin writes there
+  (icons, splash, strings, manifest entries) has the same problem. M2 has to inventory it.
+- **The host needs `ndkVersion` set** to React Native's version, or AGP can't strip the AAR's
+  native libraries and packages them with symbols.
+- **Messages sent before JS has loaded are dropped silently**, with no queue and no error.
+  Native-to-JS traffic waits for a "ready" message from JS.
+- **Numbers cross the bridge as `Double`.**
+- **RN reports `intent.data` as the initial URL only under `ACTION_VIEW`.** Set the action on any
+  intent that carries a link.
+
+**What changes because of Q3.** M3 as written opens every route as its own surface at a deep link,
+and a second surface can't be routed that way. Two ways through, cheapest first:
+
+1. **One long-lived RN surface, steered by messages.** Native sends `{ type: "navigate", url }` and
+   JS calls `router.navigate`. Routing inside a running router is ordinary expo-router use, but
+   it's untested here.
+2. **One registered root component per RN screen**, dropping expo-router. This is the fallback
+   question 3 already named, and it costs the milestone it said it would.
+
+**M3 opens with a half-day test of option 1**, and the plan adds a week of contingency to M3 until
+that test says which option applies. M2 is unaffected: it has one surface, and the first surface
+routes correctly.
+
+**Added to M2's checks:**
+
+- **Time to a rendered home screen**, measured with a Macrobenchmark against the Play build. This is
+  the part of Q8 that adb couldn't answer.
+- **An inventory of what config plugins write into `android/app`.**
+- **The Windows dev loop as a documented script**: publish the AAR with Gradle, then Metro.
+
 ### M1 — Foundations · ~3–4 weeks
 
 Nothing user-visible ships in M1. It builds the pieces every later milestone depends on.
@@ -122,13 +212,20 @@ else is changing.
 **Landmark: a production release whose entry point is native**, with no regression reports through
 one full release cycle. Every later milestone ships through this pipeline.
 
-### M3 — Native owns navigation · ~2–3 weeks
+### M3 — Native owns navigation · ~2–3 weeks, +1 week contingency (see Q3)
 
-- Native tab bar and back stack, built with Compose Navigation. Every route still renders RN, each
-  opened at its deep link.
+- **First, the half-day test from the spike report:** can one long-lived RN surface be steered by
+  `navigate` messages? Its answer picks between the two shapes below, and the contingency week goes
+  if it's yes.
+- Native tab bar and back stack, built with Compose Navigation. Every route still renders RN.
+  - **If the test passes,** that's one surface that native steers by message.
+  - **If it fails,** each RN screen becomes its own registered root.
+  - Per-surface deep links are out either way. The spike showed a second surface can't be routed
+    that way (Q3).
 - Modal routes (editors, import, settings) become native-presented sheets around RN content.
-- expo-router is reduced to a deep-link dispatcher for the RN surfaces, or removed if the M0
-  answer to question 3 forced separate roots.
+- **expo-router's role depends on the test:**
+  - **If it passes,** expo-router survives as the router *inside* the RN surface.
+  - **If it fails,** it's removed.
 - A `BrownfieldMessaging` event, `filesChanged(kind)`, that RN stores answer by re-reading. This is
   the **re-read-on-focus** rule that makes constraint 3 work in both directions.
 

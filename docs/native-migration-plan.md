@@ -318,6 +318,15 @@ session.
   with Support in M4.)
 - Re-check the **Data Safety** claim: list every Gradle dependency that touches the network and
   confirm none transmits anything.
+- **Unpin the Kotlin toolchain.** `native/android` stays on React Native's Kotlin and AGP (2.1.20 and
+  8.12 at RN 0.86) so the shell and the AAR it hosts build with one toolchain. With the AAR gone, that
+  reason goes too. Move Kotlin forward together with three things that move with it:
+  - detekt, whose 1.23 line runs only on its own Kotlin 2.0.21;
+  - the Compose compiler plugin;
+  - snakeyaml-engine-kmp, held at 4.0.1 because 5.x is built with a newer Kotlin than 2.1.20 can
+    read.
+
+  If an Expo SDK upgrade moves React Native's Kotlin before M7, follow it then instead.
 
 **Landmark: the Android APK contains no JS engine.** The root Expo project survives only if M8
 still needs it (see below).

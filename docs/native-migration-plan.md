@@ -3,8 +3,8 @@
 > **M0 executed; the spike recommends go.** Its report is under M0 below. Every hard gate passed, and
 > the one partial answer (Q3) re-scopes M3 rather than blocking it. From M1, the conformance corpus
 > and the native skeleton (`native/android`, with the Kotlin corpus runner green on `units`) have
-> landed; the rest of M1 onward is not started. M1–M3 are tracked as GitHub issues, starting at
-> #141; M4 onward is ticketed once the M3 routing test (#152) has picked its shape. Written against the tree at `54eb9f8`, SDK 57.
+> landed; the rest of M1 onward is not started. M1–M3 are tracked as GitHub issues
+> #141–#156, of which #141 is done; M4 onward is ticketed once the M3 routing test (#152) has picked its shape. Written against the tree at `54eb9f8`, SDK 57.
 > **Everything after M0 was conditional on a "go"**: had the spike failed, this file would carry a
 > banner saying so and the decision log the reason, so the idea isn't re-proposed from scratch.
 
@@ -179,8 +179,12 @@ Nothing user-visible ships in M1. It builds the pieces every later milestone dep
 - **The `:shared` KMP module**: types, schema validation, snake_case ↔ camelCase mapping, merge,
   program resolution, units and name search (`search.ts`, held to
   `conformance/search.yaml`), ported from `src/domain/`. The selectors in `src/state/selectors/`
-  that the native screens will need are ported when those screens are, not here.
-- **A conformance corpus** in `conformance/` *(TS side landed; see its README for the contract)*:
+  that the native screens will need are ported when those screens are, not here. *(Units landed with
+  the skeleton; the rest is #142–#145.)* The module has a JVM target only, which `:app` consumes as
+  it is: `androidTarget()` waits for the first code that needs an Android API, and the iOS targets
+  for M8.
+- **A conformance corpus** in `conformance/` *(TS side and the Kotlin runner landed; see its README
+  for the contract)*:
   YAML inputs plus generated golden outputs (parsed library and session, refusal paths, repair,
   merge, program resolution, overrides, units). The inputs are drawn from the existing domain tests
   and `site/examples/*.yaml`. The docs samples stay with `docs-samples.test.ts`, since extracting
@@ -193,7 +197,8 @@ Nothing user-visible ships in M1. It builds the pieces every later milestone dep
     against, and it gets a test.
   - `constants/theme.ts` → a Compose theme (colors, `Spacing`, the always-dark `RunnerColors`).
 - **CI**: a Gradle job for `native/android` and `:shared`, with ktlint and detekt at zero warnings
-  (the same rule `pnpm run lint` has), alongside the existing pnpm jobs.
+  (the same rule `pnpm run lint` has), alongside the existing pnpm jobs. *(Landed: the `native` job
+  in `ci.yml`.)*
 
 **Landmark: the conformance corpus is green on both implementations in CI**, and a translated string
 added to `en.json` shows up in a Compose preview in all three languages with no hand edit.

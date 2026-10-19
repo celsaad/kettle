@@ -22,7 +22,11 @@ private const val STORED_DECIMALS = 2
  * JavaScript's `Math.round`: an exact half rounds toward +∞, where `kotlin.math.round` would round
  * it to even and turn 2.125 kg into 2.12. Built on `floor` rather than `roundToLong`, which also
  * rounds halves up but throws on NaN and clamps infinities, where `Math.round` passes both through.
- * `scaled - down` is exact for any double, so the half comparison has no rounding error of its own.
+ * `scaled - down` can lose a bit between −1 and 0, but never enough to carry a value across 0.5, so
+ * the half comparison is never wrong.
+ *
+ * One difference from `Math.round` is kept on purpose: a value in (−0.5, 0) rounds to +0.0, not −0.
+ * The corpus treats the two as equal, and Kotlin would print −0 as "-0.0" where JS prints "0".
  */
 private fun roundHalfUp(
     value: Double,

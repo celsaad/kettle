@@ -11,6 +11,8 @@
   // make up the domain union, the chart layout's point types — and un-exporting them buys nothing.
   // What this still catches is an export nothing uses at all, which is the dead code worth deleting.
   "ignoreExportsUsedInFile": true,
+  // The Kotlin app has no JavaScript of its own; what knip finds there is Gradle's test-report output.
+  "ignore": ["native/**"],
   "ignoreDependencies": [
     // knip's expo plugin assumes EAS Update unless app.json sets `updates.enabled: false`. It is
     // absent on purpose: nothing may phone home.

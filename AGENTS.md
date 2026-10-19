@@ -108,10 +108,16 @@ mistake here that cannot be fixed for anyone who has already installed it.
   examples page makes — every example prefixes its ids so importing one can't overwrite anything the
   reader already has.
 
+- `native/android/` — the native app the migration plan builds: a Kotlin Multiplatform `:shared`
+  module (the domain port) and a Compose `:app`. Its own Gradle build, not part of the Expo one.
+  `gradlew build` from that directory compiles, tests and lints it, and ktlint and detekt hold the
+  same zero-warning rule oxlint does; `gradlew ktlintFormat` is its `pnpm run format`.
+
 - `conformance/` — the format's behaviour as data: hand-written YAML inputs and generated golden
-  outputs, checked by `conformance.test.ts`. It exists so the Kotlin port can be held to exactly what
-  the TS parser does; its README is the contract. A behaviour change in `src/domain/` needs `pnpm run
-  conformance:update`, and the golden diff is part of the review.
+  outputs, checked by `conformance.test.ts` and by the Kotlin runner in `:shared`. It exists so the
+  Kotlin port can be held to exactly what the TS parser does; its README is the contract. A behaviour
+  change in `src/domain/` needs `pnpm run conformance:update`, and the golden diff is part of the
+  review.
 
 **YAML is snake_case, domain code is camelCase**, bridged only in `yaml-mapping.ts`. Program
 `overrides` are partial *raw* (snake_case) patches — that asymmetry is deliberate and load-bearing.

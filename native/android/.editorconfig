@@ -1,0 +1,6 @@
+root = true
+
+[*.{kt,kts}]
+# detekt's MaxLineLength default. ktlint_official would otherwise wrap at 140, and the two tools
+# would disagree about the same line.
+max_line_length = 120

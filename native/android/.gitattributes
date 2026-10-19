@@ -1,0 +1,3 @@
+# The repo checks everything out as LF, and cmd resolves `goto` labels unreliably in an LF batch file.
+*.bat text eol=crlf
+gradle-wrapper.jar binary

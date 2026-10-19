@@ -81,3 +81,37 @@ jobs:
         env:
           TZ: America/New_York
         run: pnpm test --ci --maxWorkers=2
+
+  # The native app (docs/native-migration-plan.md). `build` is assemble plus check, and check runs
+  # the tests, ktlint and detekt, both of which fail on any finding: the same zero-warning rule
+  # `pnpm run lint` holds. The conformance tests read the repo's own conformance/, so a golden that
+  # moves on the TS side fails here too until the Kotlin port agrees.
+  native:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: native/android
+    steps:
+      - uses: actions/checkout@v7
+
+      # Pinned for the same reason as in android.yml: the runner image's default JDK has moved before.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Build, lint and test
+        run: ./gradlew build
+
+      # Which suites ran, which were skipped as unported, and what a failing case got instead.
+      - name: Upload reports
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-reports
+          # The root's own reports too: ktlint lints the root build scripts there.
+          path: |
+            native/android/build/reports/
+            native/android/*/build/reports/

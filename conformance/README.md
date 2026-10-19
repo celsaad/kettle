@@ -16,6 +16,10 @@ Each suite is two files:
 change to `src/domain/` is meant to change behaviour, run `pnpm run conformance:update`. The golden
 diff it leaves is part of the review, because a change there is a change to what users' files mean.
 
+`native/android/shared/src/jvmTest/.../ConformanceTest.kt` checks the Kotlin port against the same
+files, read in place. It finds suites by listing this directory, and one with no Kotlin runner yet is
+reported as skipped under its own name, never as passing. Porting a suite is adding its runner there.
+
 ## Suites
 
 | Suite | Operation | Output |

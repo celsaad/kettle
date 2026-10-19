@@ -2,7 +2,9 @@ package com.casco.kettle.conformance
 
 import com.casco.kettle.domain.UnitSystem
 import com.casco.kettle.domain.emomIntervalCount
+import com.casco.kettle.domain.filterByName
 import com.casco.kettle.domain.fromDisplayWeight
+import com.casco.kettle.domain.rankByName
 import com.casco.kettle.domain.toDisplayWeight
 import com.casco.kettle.domain.weightStep
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -28,6 +30,7 @@ import java.io.File
 class ConformanceTest {
     private val runners: Map<String, (Case) -> Any?> =
         mapOf(
+            "search" to ::runSearch,
             "units" to ::runUnits,
         )
 
@@ -73,6 +76,15 @@ class ConformanceTest {
         }
     }
 
+    private fun runSearch(case: Case): Any {
+        val names = case.strings("names")
+        val query = case.string("query")!!
+        return mapOf(
+            "ranked" to rankByName(names, query) { it },
+            "filtered" to filterByName(names, query) { it },
+        )
+    }
+
     private fun unitSystem(value: String): UnitSystem =
         when (value) {
             "metric" -> UnitSystem.METRIC
@@ -87,6 +99,9 @@ class Case(
     val name: String = fields["name"] as String
 
     fun string(key: String): String? = fields[key] as String?
+
+    @Suppress("UNCHECKED_CAST")
+    fun strings(key: String): List<String> = fields[key] as List<String>
 
     fun number(key: String): Double = (fields[key] as Number).toDouble()
 }

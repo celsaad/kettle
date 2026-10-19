@@ -92,3 +92,7 @@ cases:
     why: タ and ダ stay different letters
     query: ダンベル
     names: [タンベル, ダンベルプレス]
+  - name: an-astral-letter-is-one-edit
+    why: Distances count code points, so a letter outside the BMP is one edit where UTF-16 would count two
+    query: sqat
+    names: [Sqa𝐱t, Squat]

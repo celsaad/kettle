@@ -21,7 +21,9 @@ import { foldName, nameWords } from '@/domain/slug';
 const TYPO_MIN_LENGTH = 4;
 /**
  * The shortest start of a name word a typo is checked against. Without it, a 4-letter query is one
- * deletion from its own first three letters, so "bend" found "Bench" and "squz" found "Squat".
+ * deletion from its own first three letters, so "bend" found "Bench" and "squz" found "Squat". A
+ * 4-letter query still meets a word's 5-letter start, so a *dropped* letter is forgiven while typing
+ * ("ketl" → "Kettlebell"), but a wrong one isn't.
  */
 const TYPO_MIN_PREFIX = 5;
 
@@ -135,7 +137,9 @@ function matches<T>(items: readonly T[], query: string, nameOf: (item: T) => str
 export function rankByName<T>(items: readonly T[], query: string, nameOf: (item: T) => string): readonly T[] {
   const found = matches(items, query, nameOf);
   if (found === null) return items;
-  return found.toSorted((a, b) => a.tier - b.tier || a.index - b.index).map((entry) => entry.item);
+  // Sorting the array `flatMap` just made, which nothing else holds (decision log: no `toSorted`).
+  // oxlint-disable-next-line unicorn/no-array-sort
+  return found.sort((a, b) => a.tier - b.tier || a.index - b.index).map((entry) => entry.item);
 }
 
 /** The same match as `rankByName`, in the original order — for a list whose order means something. */

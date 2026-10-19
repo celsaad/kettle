@@ -59,9 +59,13 @@
     "ranked": [],
     "filtered": []
   },
-  "four-letter-typo-not-forgiven-against-a-longer-word": {
+  "four-letter-query-with-a-wrong-letter-needs-a-whole-word": {
     "ranked": [],
     "filtered": []
+  },
+  "four-letter-query-forgives-a-dropped-letter-mid-word": {
+    "ranked": ["Kettlebell Swing", "Kettle Bell"],
+    "filtered": ["Kettlebell Swing", "Kettle Bell"]
   },
   "typo-ranks-below-clean-match": {
     "ranked": ["Back Squat", "Sqaut Jump"],

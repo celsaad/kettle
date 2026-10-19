@@ -50,9 +50,14 @@ cases:
     why: A typo is only checked against a name-word start of 5 or more, so "bend" doesn't find "Bench"
     query: bend
     names: [Bench Press]
-  - name: four-letter-typo-not-forgiven-against-a-longer-word
+  - name: four-letter-query-with-a-wrong-letter-needs-a-whole-word
+    why: Against a longer word, a 4-letter query is compared with the word's 5-letter start, which a wrong letter can't reach in one edit
     query: squz
     names: [Squat]
+  - name: four-letter-query-forgives-a-dropped-letter-mid-word
+    why: The same 5-letter start is one insertion away when a letter was dropped, so typing still finds it
+    query: ketl
+    names: [Kettlebell Swing, Kettle Bell]
   - name: typo-ranks-below-clean-match
     query: squat
     names: [Sqaut Jump, Back Squat]

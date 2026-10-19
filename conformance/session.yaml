@@ -200,3 +200,15 @@ cases:
       ended_at: null
       entries: []
       unused: !!set { a }
+
+  - name: yes-no-on-off-stay-strings
+    why: YAML 1.2 core schema — yes/no/on/off are not booleans, so each fills a string field
+    input: |
+      version: 1
+      id: off
+      workout: no
+      program: on
+      program_day: yes
+      started_at: "2024-05-01T10:00:00.000Z"
+      ended_at: null
+      entries: []

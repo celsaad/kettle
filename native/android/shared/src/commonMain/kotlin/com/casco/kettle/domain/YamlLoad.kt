@@ -166,7 +166,10 @@ private fun coreFloat(text: String): Double? {
     }
 }
 
-/** Reached only through an explicit `!!float`, since the resolver never tags anything else one. */
+/**
+ * Builds every float, plain ones included. It can only throw on an explicit `!!float`, because the
+ * resolver tags a plain scalar a float only when [coreFloat] accepts it.
+ */
 private object ConstructCoreFloat : ConstructNode {
     override fun construct(node: Node?): Any {
         val text = (node as ScalarNode).value

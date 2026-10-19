@@ -235,5 +235,19 @@
   "set-tag-is-a-yaml-error": {
     "ok": false,
     "kind": "invalidYaml"
+  },
+  "yes-no-on-off-stay-strings": {
+    "ok": true,
+    "value": {
+      "version": 1,
+      "id": "off",
+      "workout": "no",
+      "program": "on",
+      "programWeek": null,
+      "programDay": "yes",
+      "startedAt": "2024-05-01T10:00:00.000Z",
+      "endedAt": null,
+      "entries": []
+    }
   }
 }

@@ -27,25 +27,38 @@ internal fun SchemaReader.session(value: Any?): Session? {
     }
 }
 
-/** zod's `discriminatedUnion('type', …)`: an unknown or missing type is refused at `type` itself. */
+/**
+ * zod's `discriminatedUnion('type', …)`. An unknown or missing type is refused at `type` itself, and
+ * nothing else in the entry is read, so it reports no other path.
+ */
 private fun SchemaReader.entry(
     value: Any?,
     path: Path,
 ): SessionEntry? {
     val fields = fields(value, path) ?: return null
-    return when (fields.raw("type")) {
-        "timed_hold" -> timedHold(fields)
-        "reps" -> reps(fields)
-        "rest" -> rest(fields)
-        "hiit" -> hiit(fields)
-        "emom" -> emom(fields)
-        "amrap" -> amrap(fields)
-        "cardio" -> cardio(fields)
-        else -> refuse(path + "type", "expected one of ${ENTRY_TYPES.joinToString()}")
+    val read = entryReaders[fields.raw("type")]
+    return if (read == null) {
+        refuse(path + "type", "expected one of ${entryReaders.keys.joinToString()}")
+    } else {
+        read(fields, fields.required("exercise", SchemaReader::id))
     }
 }
 
-private val ENTRY_TYPES = listOf("timed_hold", "reps", "rest", "hiit", "emom", "amrap", "cardio")
+/**
+ * The entry types, as one table, so the dispatch and the refusal's list can't disagree. The writer
+ * in `SessionYaml.kt` names them again in an exhaustive `when`. The corpus's `every-entry-type` case
+ * round-trips all seven, so a name that differs between the two fails there.
+ */
+private val entryReaders: Map<String, SchemaReader.(Fields, String?) -> SessionEntry?> =
+    mapOf(
+        "timed_hold" to SchemaReader::timedHold,
+        "reps" to SchemaReader::reps,
+        "rest" to SchemaReader::rest,
+        "hiit" to SchemaReader::hiit,
+        "emom" to SchemaReader::emom,
+        "amrap" to SchemaReader::amrap,
+        "cardio" to SchemaReader::cardio,
+    )
 
 private val RPE = Bounds(min = 1.0, max = 10.0)
 
@@ -55,8 +68,10 @@ private val nonNegativeInteger: Read<Long> = { value, path -> integer(value, pat
 
 private val positiveInteger: Read<Long> = { value, path -> integer(value, path, Bounds.POSITIVE) }
 
-private fun SchemaReader.timedHold(fields: Fields): SessionEntry? {
-    val exercise = fields.required("exercise", SchemaReader::id)
+private fun SchemaReader.timedHold(
+    fields: Fields,
+    exercise: String?,
+): SessionEntry? {
     val sets =
         fields.required("sets") { v, p ->
             list(v, p) { item, at ->
@@ -70,8 +85,10 @@ private fun SchemaReader.timedHold(fields: Fields): SessionEntry? {
     return if (exercise != null && sets != null) SessionEntry.TimedHold(exercise, sets) else null
 }
 
-private fun SchemaReader.reps(fields: Fields): SessionEntry? {
-    val exercise = fields.required("exercise", SchemaReader::id)
+private fun SchemaReader.reps(
+    fields: Fields,
+    exercise: String?,
+): SessionEntry? {
     val sets =
         fields.required("sets") { v, p ->
             list(v, p) { item, at ->
@@ -87,20 +104,26 @@ private fun SchemaReader.reps(fields: Fields): SessionEntry? {
     return if (exercise != null && sets != null) SessionEntry.Reps(exercise, sets) else null
 }
 
-private fun SchemaReader.rest(fields: Fields): SessionEntry? {
-    val exercise = fields.required("exercise", SchemaReader::id)
+private fun SchemaReader.rest(
+    fields: Fields,
+    exercise: String?,
+): SessionEntry? {
     val restTakenSec = fields.required("rest_taken_sec", nonNegative)
     return if (exercise != null && restTakenSec != null) SessionEntry.Rest(exercise, restTakenSec) else null
 }
 
-private fun SchemaReader.hiit(fields: Fields): SessionEntry? {
-    val exercise = fields.required("exercise", SchemaReader::id)
+private fun SchemaReader.hiit(
+    fields: Fields,
+    exercise: String?,
+): SessionEntry? {
     val roundsCompleted = fields.required("rounds_completed", nonNegativeInteger)
     return if (exercise != null && roundsCompleted != null) SessionEntry.Hiit(exercise, roundsCompleted) else null
 }
 
-private fun SchemaReader.emom(fields: Fields): SessionEntry? {
-    val exercise = fields.required("exercise", SchemaReader::id)
+private fun SchemaReader.emom(
+    fields: Fields,
+    exercise: String?,
+): SessionEntry? {
     val minutes =
         fields.required("minutes") { v, p ->
             list(v, p) { item, at ->
@@ -110,8 +133,10 @@ private fun SchemaReader.emom(fields: Fields): SessionEntry? {
     return if (exercise != null && minutes != null) SessionEntry.Emom(exercise, minutes) else null
 }
 
-private fun SchemaReader.amrap(fields: Fields): SessionEntry? {
-    val exercise = fields.required("exercise", SchemaReader::id)
+private fun SchemaReader.amrap(
+    fields: Fields,
+    exercise: String?,
+): SessionEntry? {
     val roundsCompleted = fields.required("rounds_completed", nonNegativeInteger)
     val extraReps = fields.optional("extra_reps", nonNegativeInteger)
     return if (exercise != null && roundsCompleted != null) {
@@ -121,8 +146,10 @@ private fun SchemaReader.amrap(fields: Fields): SessionEntry? {
     }
 }
 
-private fun SchemaReader.cardio(fields: Fields): SessionEntry? {
-    val exercise = fields.required("exercise", SchemaReader::id)
+private fun SchemaReader.cardio(
+    fields: Fields,
+    exercise: String?,
+): SessionEntry? {
     val durationSec = fields.optional("duration_sec", nonNegative)
     val distanceMeters = fields.optional("distance_meters", nonNegative)
     return exercise?.let { SessionEntry.Cardio(it, durationSec, distanceMeters) }

@@ -964,18 +964,24 @@ export function useSessionRunner(
   }, [step, mutateSteps]);
 
   /**
-   * What the exercise on screen could be swapped for: the same type, minus itself.
+   * What the exercise on screen could be swapped for: anything in the library but itself and the
+   * built-in `rest`, with its own type first since that is the likeliest pick.
    *
-   * Same type only, because that is what makes "the remaining set count" a coherent thing to give the
-   * substitute — a HIIT's rounds are not sets — and it keeps the runner screen from changing kind
-   * under someone mid-set. `exercises` is already the program-resolved list, so a week's overrides are
-   * applied to the candidates too.
+   * Any type, not only the same one. Same-type only was the first rule, because it made "the remaining
+   * set count" coherent everywhere; it also meant a missing kettlebell couldn't become a run. The count
+   * rule now lives in `swapExerciseForMember` instead — set-based substitutes take the remaining sets,
+   * everything else runs its own shape. `exercises` is already the program-resolved list, so a week's
+   * overrides are applied to the candidates too.
    */
   const swapCandidates = useMemo(() => {
     if (!canAddSet || !step || (step.kind !== 'reps' && step.kind !== 'hold')) return [];
     const current = exercises.find((exercise) => exercise.id === step.exerciseId);
     if (!current) return [];
-    return exercises.filter((exercise) => exercise.type === current.type && exercise.id !== current.id);
+    const others = exercises.filter((exercise) => exercise.type !== 'rest' && exercise.id !== current.id);
+    return [
+      ...others.filter((exercise) => exercise.type === current.type),
+      ...others.filter((exercise) => exercise.type !== current.type),
+    ];
   }, [canAddSet, step, exercises]);
 
   const canSwapExercise = swapCandidates.length > 0;

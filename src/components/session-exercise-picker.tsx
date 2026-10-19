@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
@@ -13,16 +13,13 @@ type Props = {
    * serves both rather than a near-copy for each.
    */
   replacing?: string;
-  /** Candidates, already filtered by the caller: same-type when swapping, all non-rest when adding. */
+  /** Candidates, already filtered and ordered by the caller: rendered in the order given. */
   candidates: Exercise[];
   onCancel: () => void;
   onSelect: (exerciseId: string) => void;
 };
 
-/**
- * Above this many candidates the sheet grows a search field. Swapping filters to one exercise type
- * and lands well under it; adding, which offers the whole library, does not.
- */
+/** Above this many candidates the sheet grows a search field; a short list is quicker scanned. */
 const SEARCH_THRESHOLD = 8;
 
 /**
@@ -32,10 +29,8 @@ const SEARCH_THRESHOLD = 8;
  * runner screens are `flex: 1` with no room to push anything aside, and a route would need registering
  * in `_layout.tsx` and the router types regenerating for a control that only exists mid-session.
  *
- * Searchable, because the ad-hoc case made the plain list untenable: swapping filters to one exercise
- * type and leaves a handful, but *adding* offers the whole library, and scrolling that mid-workout is
- * worse than a keyboard. The field is hidden below a threshold, so the swap case keeps the plain list
- * it wants.
+ * Searchable, because both modes offer the whole library, and scrolling that mid-workout is worse
+ * than a keyboard. The field is hidden below a threshold, so a small library keeps the plain list.
  *
  * The input is written here against `RunnerColors` rather than reusing `SearchBar`: that component
  * reads the light/dark shell theme through `useTheme`, and the runner is always dark regardless of the
@@ -44,6 +39,14 @@ const SEARCH_THRESHOLD = 8;
 export function SessionExercisePicker({ replacing, candidates, onCancel, onSelect }: Props) {
   const { t } = useTranslation();
   const [query, setQuery] = useState('');
+  /**
+   * Where the overlay starts on screen. KeyboardAvoidingView compares its own layout, which is relative
+   * to this overlay, against the keyboard's position on *screen*, so it falls short by however far
+   * down the overlay sits — here the runner's safe-area top, which left Cancel half under the keyboard.
+   * Its `keyboardVerticalOffset` is the prop for exactly that gap.
+   */
+  const overlayRef = useRef<View>(null);
+  const [overlayTop, setOverlayTop] = useState(0);
 
   const showsSearch = candidates.length > SEARCH_THRESHOLD;
   // Case- and accent-insensitive: exercise names come from the user's own YAML, and "Agachamento"
@@ -63,7 +66,12 @@ export function SessionExercisePicker({ replacing, candidates, onCancel, onSelec
   return (
     // The runner beneath is hidden with aria-hidden by session.tsx, which is what reaches Android and
     // the web; this is iOS's half, plus its two-finger escape gesture as a way out.
-    <View style={styles.overlay} accessibilityViewIsModal onAccessibilityEscape={onCancel}>
+    <View
+      ref={overlayRef}
+      style={styles.overlay}
+      onLayout={() => overlayRef.current?.measureInWindow((_x, y) => setOverlayTop(y))}
+      accessibilityViewIsModal
+      onAccessibilityEscape={onCancel}>
       <Pressable
         style={styles.backdrop}
         onPress={onCancel}
@@ -71,9 +79,16 @@ export function SessionExercisePicker({ replacing, candidates, onCancel, onSelec
         accessibilityLabel={t('session.swap.dismiss')}
       />
 
-      {/* The sheet is bottom-anchored, so on iOS the keyboard would sit on top of it. Android's
-          windowSoftInputMode resizes the window instead, which the absolute overlay follows for free. */}
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      {/* The sheet is bottom-anchored, so the keyboard would sit on top of it — on Android too. This
+          used to be iOS-only on the strength of `adjustResize`, which edge-to-edge (forced from Android
+          15) ignores: the window no longer shrinks, so the keyboard covered the sheet, and as typing
+          shortened the list the sheet sank until all of it was behind the keyboard. It read as the
+          tray closing after a few letters. Capped at the overlay's height, so a long list scrolls in
+          what is left above the keyboard instead of pushing the search field off the top. */}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'web' ? undefined : 'padding'}
+        keyboardVerticalOffset={overlayTop}
+        style={styles.keyboardAvoider}>
         <View style={styles.sheet}>
           <ThemedText type="code" style={styles.label}>
             {t(replacing === undefined ? 'session.adhoc.pickerTitle' : 'session.swap.title')}
@@ -149,7 +164,11 @@ const styles = StyleSheet.create({
     bottom: 0,
     backgroundColor: 'rgba(0,0,0,0.55)',
   },
+  keyboardAvoider: {
+    maxHeight: '100%',
+  },
   sheet: {
+    flexShrink: 1,
     backgroundColor: RunnerColors.backgroundElement,
     borderTopWidth: 1,
     borderColor: RunnerColors.border,
@@ -194,6 +213,7 @@ const styles = StyleSheet.create({
   // Capped so a long library scrolls inside the sheet rather than pushing Cancel off the screen.
   list: {
     maxHeight: 320,
+    flexShrink: 1,
   },
   listContent: {
     gap: Spacing.two - 2,

@@ -30,6 +30,15 @@ Drive folder added `kettle-library (1).yaml`, `(2)`, `(3)` and so on, instead of
 already there. From the first backup after this update, Kettle keeps writing into that same pair. The
 numbered copies from before are left alone for you to delete.
 
+**Swap an exercise for anything in your library.** Mid-workout, Swap used to offer only exercises
+of the same type, so a bench press could become a dumbbell press but not a run. It now lists your
+whole library, with the closest matches first. Swapping between sets and holds keeps the sets you
+had left; swapping into a HIIT, EMOM, AMRAP or cardio exercise runs that exercise as you wrote it.
+
+**Searching while you swap or add an exercise works on newer Android phones.** Typing a few letters
+made the list vanish: it had slipped behind the keyboard. It now stays above the keyboard while you
+type.
+
 ---
 
 ## 0.9.0 — versionCode 12, 15 September 2026

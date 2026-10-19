@@ -6,8 +6,8 @@ import type { Exercise } from '@/domain/types';
 import { renderScreen } from '@/test-support/render';
 
 /**
- * The substitute picker. The runner decides *which* exercises are candidates (same type, minus the
- * current one) — this owns that they are reachable, named and dismissable.
+ * The substitute picker. The runner decides *which* exercises are candidates and in what order (same
+ * type first, minus the current one) — this owns that they are reachable, named and dismissable.
  */
 const candidates: Exercise[] = [
   { id: 'dips', name: 'Dips', type: 'reps', config: { sets: 3, targetRepsMin: 8, restSec: 60 } },
@@ -15,6 +15,14 @@ const candidates: Exercise[] = [
 ];
 
 const props = { replacing: 'Bench Press', candidates, onCancel: jest.fn(), onSelect: jest.fn() };
+
+// The runner puts the same type first; the sheet must not re-sort what it is handed.
+it('keeps the order it was given', async () => {
+  await renderScreen(<SessionExercisePicker {...props} candidates={candidates.toReversed()} />);
+
+  const names = screen.getAllByText(/^(Dips|Push Press)$/).map((node) => node.props.children);
+  expect(names).toEqual(['Push Press', 'Dips']);
+});
 
 it('lists every candidate by name', async () => {
   await renderScreen(<SessionExercisePicker {...props} />);

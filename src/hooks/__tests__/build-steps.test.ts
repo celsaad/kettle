@@ -535,6 +535,32 @@ describe('swapping an exercise mid-session', () => {
     expect(after.map((step) => step.kind)).toEqual(['reps', 'reps', 'reps']);
   });
 
+  it('sizes a hold substitute by the remaining sets, like a reps one', () => {
+    const before = buildSteps(workoutOf(single('pullups')), exercises);
+    const lsit = exercises.find((exercise) => exercise.id === 'lsit')!;
+    const after = swapExerciseForMember(before, '0', 2, lsit, '0~swap1');
+
+    const swapped = after.filter((step) => step.kind === 'hold').filter((step) => step.memberKey === '0~swap1');
+    expect(swapped.map((step) => [step.setIndex, step.setTotal])).toEqual([
+      [1, 2],
+      [2, 2],
+    ]);
+  });
+
+  /**
+   * Rounds and minutes are not sets, so these keep their own shape. Before that rule this case hung:
+   * `addSetForMember` has no set step to clone, so the grow loop never converged.
+   */
+  it.each(['burpees', 'clean', 'grinder', 'row'])('runs a %s substitute in its own shape', (id) => {
+    const before = buildSteps(workoutOf(single('pullups'), single('plank')), exercises);
+    const substitute = exercises.find((exercise) => exercise.id === id)!;
+    const after = swapExerciseForMember(before, '0', 2, substitute, '0~swap1');
+
+    const own = buildSteps(workoutOf(single(id)), exercises).map((step) => ({ ...step, memberKey: '0~swap1' }));
+    expect(after.slice(2, 2 + own.length)).toEqual(own);
+    expect(after.slice(2 + own.length)).toEqual(before.filter((step) => step.memberKey === '1'));
+  });
+
   it('does nothing when the member has nothing left to replace', () => {
     const before = buildSteps(workoutOf(single('pullups')), exercises);
     expect(swapExerciseForMember(before, '0', before.length, pushupsExercise, '0~swap1')).toEqual(before);

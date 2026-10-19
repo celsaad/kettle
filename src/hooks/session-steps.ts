@@ -471,19 +471,23 @@ export function dropLastSetForMember(steps: RunnerStep[], memberKey: string): Ru
  * interleaving, same target fields, same notes.
  */
 export function buildStepsForExercise(exercise: Exercise, blockIndex: number, memberKey: string): RunnerStep[] {
-  // The clamp flag is dropped here on purpose: a mid-session substitute is sized by the sets it
-  // *replaces* (see swapExerciseForMember), so the new exercise's own count is trimmed to fit anyway
-  // and "was it clamped" is not a question about the workout the user is running.
+  // The clamp flag is dropped here on purpose: a set-based substitute is sized by the sets it
+  // *replaces* (see swapExerciseForMember), so its own count is trimmed to fit anyway, and the rest
+  // are clamped exactly as the workout would have clamped them — "was it clamped" is not a question
+  // about the workout the user is running.
   return expandExercise(exercise, blockIndex, memberKey).steps;
 }
 
 /**
  * Substitutes `exercise` for whatever is left of `memberKey`, from `fromIndex` onward.
  *
- * The substitute gets the **remaining set count**, not its own configured one: three sets left means
- * three sets of the new exercise. This is a substitution inside the workout rather than a rewrite of
- * it, so the block keeps its shape — while the reps, load, hold and rest targets all come from the new
- * exercise, which is what makes it a different exercise rather than a rename.
+ * A set-based substitute (reps or timed hold) gets the **remaining set count**, not its own configured
+ * one: three sets left means three sets of the new exercise. This is a substitution inside the workout
+ * rather than a rewrite of it, so the block keeps its shape — while the reps, load, hold and rest
+ * targets all come from the new exercise, which is what makes it a different exercise rather than a
+ * rename. Any other type runs its own configured shape in full: a HIIT's rounds and an EMOM's minutes
+ * are not sets, so there is no count to carry over — and resizing one would also loop forever here,
+ * since `addSetForMember` has no set step to clone.
  *
  * Sized by reusing the part-1 mutations rather than reimplementing the trimming, which is why the
  * `rest_sec: 0` rule and the renumbering hold here for free.
@@ -511,11 +515,13 @@ export function swapExerciseForMember(
   const blockIndex = steps[fromIndex].blockIndex;
   let replacement = buildStepsForExercise(exercise, blockIndex, newMemberKey);
   if (replacement.length === 0) return steps;
-  while (setStepsForMember(replacement, newMemberKey) > remaining) {
-    replacement = dropLastSetForMember(replacement, newMemberKey);
-  }
-  while (setStepsForMember(replacement, newMemberKey) < remaining) {
-    replacement = addSetForMember(replacement, newMemberKey);
+  if (setStepsForMember(replacement, newMemberKey) > 0) {
+    while (setStepsForMember(replacement, newMemberKey) > remaining) {
+      replacement = dropLastSetForMember(replacement, newMemberKey);
+    }
+    while (setStepsForMember(replacement, newMemberKey) < remaining) {
+      replacement = addSetForMember(replacement, newMemberKey);
+    }
   }
 
   return [...steps.slice(0, fromIndex), ...replacement, ...steps.slice(lastIndex + 1)];

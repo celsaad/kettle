@@ -212,5 +212,28 @@
     "ok": false,
     "kind": "schemaMismatch",
     "paths": ["entries.0"]
+  },
+  "overflowing-float-stays-a-string": {
+    "ok": true,
+    "value": {
+      "version": 1,
+      "id": "s",
+      "workout": "w",
+      "program": null,
+      "programWeek": null,
+      "programDay": "1e400",
+      "startedAt": "2024-05-01T10:00:00.000Z",
+      "endedAt": null,
+      "entries": []
+    }
+  },
+  "signed-infinity-is-a-number-and-refused": {
+    "ok": false,
+    "kind": "schemaMismatch",
+    "paths": ["entries.0.rest_taken_sec"]
+  },
+  "set-tag-is-a-yaml-error": {
+    "ok": false,
+    "kind": "invalidYaml"
   }
 }

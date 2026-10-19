@@ -9,14 +9,16 @@ import it.krzeminski.snakeyaml.engine.kmp.api.lowlevel.Parse
 import it.krzeminski.snakeyaml.engine.kmp.common.FlowStyle
 import it.krzeminski.snakeyaml.engine.kmp.constructor.ConstructYamlNull
 import it.krzeminski.snakeyaml.engine.kmp.constructor.core.ConstructYamlCoreBool
-import it.krzeminski.snakeyaml.engine.kmp.constructor.core.ConstructYamlCoreFloat
 import it.krzeminski.snakeyaml.engine.kmp.constructor.core.ConstructYamlCoreInt
 import it.krzeminski.snakeyaml.engine.kmp.events.AliasEvent
 import it.krzeminski.snakeyaml.engine.kmp.events.CollectionEndEvent
 import it.krzeminski.snakeyaml.engine.kmp.events.CollectionStartEvent
 import it.krzeminski.snakeyaml.engine.kmp.events.DocumentStartEvent
 import it.krzeminski.snakeyaml.engine.kmp.events.ScalarEvent
+import it.krzeminski.snakeyaml.engine.kmp.exceptions.ConstructorException
 import it.krzeminski.snakeyaml.engine.kmp.exceptions.YamlEngineException
+import it.krzeminski.snakeyaml.engine.kmp.nodes.Node
+import it.krzeminski.snakeyaml.engine.kmp.nodes.ScalarNode
 import it.krzeminski.snakeyaml.engine.kmp.nodes.Tag
 import it.krzeminski.snakeyaml.engine.kmp.resolver.BaseScalarResolver
 import it.krzeminski.snakeyaml.engine.kmp.resolver.CoreScalarResolver
@@ -24,7 +26,7 @@ import it.krzeminski.snakeyaml.engine.kmp.resolver.ScalarResolver
 import it.krzeminski.snakeyaml.engine.kmp.schema.Schema
 
 /**
- * The YAML loader both parsers share: snakeyaml-engine-kmp, the multiplatform port of
+ * The YAML loader for the app's files: snakeyaml-engine-kmp, the multiplatform port of
  * snakeyaml-engine, held to what `js-yaml` 5 does in `src/domain/yaml-mapping.ts`. Those are the
  * rules in `conformance/README.md`, and each departure from the engine's defaults below is one of
  * them.
@@ -106,11 +108,13 @@ private fun checkEvents(text: String): String? {
 }
 
 /**
- * The YAML 1.2 core schema as js-yaml has it. The engine's `CoreSchema` adds two things js-yaml
- * doesn't do. `<<` merge keys change what a file means (`conformance/session.yaml` has the case).
- * `${NAME}` plain scalars get an environment-variable tag, inert today but read from the process
- * environment the moment anyone sets `envConfig`. Leaving both out of the resolver means no setting
- * can turn them back on.
+ * The YAML 1.2 core schema as js-yaml has it, which the engine's `CoreSchema` departs from four ways:
+ * - `<<` merge keys, which change what a file means (`conformance/session.yaml` has the case).
+ * - `${NAME}` plain scalars get an environment-variable tag, inert today but read from the process
+ *   environment the moment anyone sets `envConfig`. Out of the resolver, no setting can turn it on.
+ * - `!!set`, and that env tag written out explicitly, still construct. js-yaml refuses both as
+ *   unknown tags, so they are registered here as refusals.
+ * - Floats: see [coreFloat].
  */
 private object YamlCoreSchema : Schema {
     override val scalarResolver: ScalarResolver = CoreResolver
@@ -120,18 +124,61 @@ private object YamlCoreSchema : Schema {
             Tag.NULL to ConstructYamlNull(),
             Tag.BOOL to ConstructYamlCoreBool(),
             Tag.INT to ConstructYamlCoreInt(),
-            Tag.FLOAT to ConstructYamlCoreFloat(),
+            Tag.FLOAT to ConstructCoreFloat,
+            Tag.SET to UnknownTag,
+            Tag.ENV_TAG to UnknownTag,
         )
 }
 
-private object CoreResolver : BaseScalarResolver({
-    addImplicitResolver(Tag.NULL, EMPTY, null)
-    addImplicitResolver(Tag.BOOL, CoreScalarResolver.BOOL, "tfTF")
-    // INT before FLOAT, whose pattern also matches integers.
-    addImplicitResolver(Tag.INT, CoreScalarResolver.INT, "-+0123456789")
-    addImplicitResolver(Tag.FLOAT, CoreScalarResolver.FLOAT, "-+0123456789.")
-    addImplicitResolver(Tag.NULL, CoreScalarResolver.NULL, "n\u0000")
-})
+private object CoreResolver : ScalarResolver {
+    private val patterns =
+        object : BaseScalarResolver({
+            addImplicitResolver(Tag.NULL, EMPTY, null)
+            addImplicitResolver(Tag.BOOL, CoreScalarResolver.BOOL, "tfTF")
+            // INT before FLOAT, whose pattern also matches integers.
+            addImplicitResolver(Tag.INT, CoreScalarResolver.INT, "-+0123456789")
+            addImplicitResolver(Tag.FLOAT, CoreScalarResolver.FLOAT, "-+0123456789.")
+            addImplicitResolver(Tag.NULL, CoreScalarResolver.NULL, "n\u0000")
+        }) {}
+
+    override fun resolve(
+        value: String,
+        implicit: Boolean,
+    ): Tag {
+        val tag = patterns.resolve(value, implicit)
+        return if (tag == Tag.FLOAT && coreFloat(value) == null) Tag.STR else tag
+    }
+}
+
+/**
+ * js-yaml's core float, which differs from the engine's in two places. A literal that overflows
+ * (`1e400`) isn't a float at all, so it stays the string it was written as; only `.inf` spells
+ * infinity. And `+.inf` is infinity, where the engine's constructor throws on the sign. Null when
+ * [text] isn't a core float.
+ */
+private fun coreFloat(text: String): Double? {
+    if (!CoreScalarResolver.FLOAT.matches(text)) return null
+    val sign = if (text.startsWith("-")) -1.0 else 1.0
+    return when (val unsigned = text.lowercase().removePrefix("-").removePrefix("+")) {
+        ".inf" -> sign * Double.POSITIVE_INFINITY
+        ".nan" -> Double.NaN
+        else -> (sign * unsigned.toDouble()).takeIf { it.isFinite() }
+    }
+}
+
+/** Reached only through an explicit `!!float`, since the resolver never tags anything else one. */
+private object ConstructCoreFloat : ConstructNode {
+    override fun construct(node: Node?): Any {
+        val text = (node as ScalarNode).value
+        return coreFloat(text)
+            ?: throw ConstructorException(null, null, "cannot resolve $text as a float", node.startMark)
+    }
+}
+
+private object UnknownTag : ConstructNode {
+    override fun construct(node: Node?): Any =
+        throw ConstructorException(null, null, "unknown tag ${node?.tag}", node?.startMark)
+}
 
 // Duplicate keys are already refused by default, as js-yaml refuses them. The engine's 3 MB input
 // cap is lifted because js-yaml has none, and the text is already in memory by the time it's here.

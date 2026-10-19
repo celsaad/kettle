@@ -59,6 +59,12 @@ class YamlTest {
     fun `an unknown tag is a YAML error, even under a key the schema drops`() {
         assertInvalidYaml(withUnused("!foo 3"))
         assertInvalidYaml(withUnused("!!binary aGk="))
+        assertInvalidYaml(withUnused("!ENV_VARIABLE x"))
+    }
+
+    @Test
+    fun `an explicit float that overflows is a YAML error, where the plain one is a string`() {
+        assertInvalidYaml(withUnused("!!float 1e400"))
     }
 
     @Test

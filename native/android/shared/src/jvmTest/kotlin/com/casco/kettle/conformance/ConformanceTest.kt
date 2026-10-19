@@ -164,8 +164,8 @@ private fun <T> golden(
     }
 
 /**
- * The camelCase domain model as JSON, written out by hand so that an absent optional is visibly left
- * out (`buildMap` with `?.let`) while a `| null` field is always present.
+ * The camelCase domain model as JSON, written out by hand: every `| null` field is always present
+ * here, and [entryJson] leaves an absent optional out rather than writing it as null.
  */
 private fun sessionJson(session: Session): Map<String, Any?> =
     mapOf(

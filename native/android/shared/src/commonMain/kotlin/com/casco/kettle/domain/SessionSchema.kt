@@ -2,7 +2,8 @@ package com.casco.kettle.domain
 
 /**
  * `rawSessionSchema` from `src/domain/schema.ts`, read straight into the camelCase domain model, so
- * the snake_case names live here and in the writer in `SessionYaml.kt`, and nowhere else.
+ * the snake_case names live here and in the writer in `SessionYaml.kt` (the corpus runner spells
+ * them out again on purpose, as its own oracle).
  *
  * Every field is read before any is checked, so one pass reports all of a document's refusals.
  */
@@ -50,7 +51,7 @@ private val RPE = Bounds(min = 1.0, max = 10.0)
 
 private val nonNegative: Read<Double> = { value, path -> number(value, path, Bounds.NONNEGATIVE) }
 
-private val count: Read<Long> = { value, path -> integer(value, path, Bounds.NONNEGATIVE) }
+private val nonNegativeInteger: Read<Long> = { value, path -> integer(value, path, Bounds.NONNEGATIVE) }
 
 private val positiveInteger: Read<Long> = { value, path -> integer(value, path, Bounds.POSITIVE) }
 
@@ -75,7 +76,7 @@ private fun SchemaReader.reps(fields: Fields): SessionEntry? {
         fields.required("sets") { v, p ->
             list(v, p) { item, at ->
                 fields(item, at)?.let { set ->
-                    val reps = set.required("reps", count)
+                    val reps = set.required("reps", nonNegativeInteger)
                     val weight = set.optional("weight", nonNegative)
                     val rpe = set.optional("rpe") { n, q -> number(n, q, RPE) }
                     val restTakenSec = set.required("rest_taken_sec", nonNegative)
@@ -94,7 +95,7 @@ private fun SchemaReader.rest(fields: Fields): SessionEntry? {
 
 private fun SchemaReader.hiit(fields: Fields): SessionEntry? {
     val exercise = fields.required("exercise", SchemaReader::id)
-    val roundsCompleted = fields.required("rounds_completed", count)
+    val roundsCompleted = fields.required("rounds_completed", nonNegativeInteger)
     return if (exercise != null && roundsCompleted != null) SessionEntry.Hiit(exercise, roundsCompleted) else null
 }
 
@@ -103,7 +104,7 @@ private fun SchemaReader.emom(fields: Fields): SessionEntry? {
     val minutes =
         fields.required("minutes") { v, p ->
             list(v, p) { item, at ->
-                fields(item, at)?.let { minute -> EmomMinuteLog(minute.optional("reps", count)) }
+                fields(item, at)?.let { minute -> EmomMinuteLog(minute.optional("reps", nonNegativeInteger)) }
             }
         }
     return if (exercise != null && minutes != null) SessionEntry.Emom(exercise, minutes) else null
@@ -111,8 +112,8 @@ private fun SchemaReader.emom(fields: Fields): SessionEntry? {
 
 private fun SchemaReader.amrap(fields: Fields): SessionEntry? {
     val exercise = fields.required("exercise", SchemaReader::id)
-    val roundsCompleted = fields.required("rounds_completed", count)
-    val extraReps = fields.optional("extra_reps", count)
+    val roundsCompleted = fields.required("rounds_completed", nonNegativeInteger)
+    val extraReps = fields.optional("extra_reps", nonNegativeInteger)
     return if (exercise != null && roundsCompleted != null) {
         SessionEntry.Amrap(exercise, roundsCompleted, extraReps)
     } else {

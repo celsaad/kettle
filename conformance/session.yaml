@@ -168,3 +168,35 @@ cases:
       started_at: "2024-05-01T10:00:00.000Z"
       ended_at: null
       entries: [3]
+
+  - name: overflowing-float-stays-a-string
+    why: a float literal too big for a double isn't a float in js-yaml's core schema, so it stays text; only .inf spells infinity
+    input: |
+      version: 1
+      id: s
+      workout: w
+      program_day: 1e400
+      started_at: "2024-05-01T10:00:00.000Z"
+      ended_at: null
+      entries: []
+
+  - name: signed-infinity-is-a-number-and-refused
+    why: '`+.inf` is infinity, a number, so it reaches the schema, which refuses a non-finite one'
+    input: |
+      version: 1
+      id: s
+      workout: w
+      started_at: "2024-05-01T10:00:00.000Z"
+      ended_at: null
+      entries: [{ exercise: a, type: rest, rest_taken_sec: +.inf }]
+
+  - name: set-tag-is-a-yaml-error
+    why: '`!!set` is a YAML 1.1 type; js-yaml refuses it as an unknown tag even under a key the schema drops'
+    input: |
+      version: 1
+      id: s
+      workout: w
+      started_at: "2024-05-01T10:00:00.000Z"
+      ended_at: null
+      entries: []
+      unused: !!set { a }

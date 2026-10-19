@@ -1,0 +1,106 @@
+{
+  "blank-query-shows-everything": {
+    "ranked": ["Squat", "Bench Press", "Deadlift"],
+    "filtered": ["Squat", "Bench Press", "Deadlift"]
+  },
+  "case-insensitive": {
+    "ranked": ["Back Squat"],
+    "filtered": ["Back Squat"]
+  },
+  "accent-insensitive-in-the-name": {
+    "ranked": ["Agachamento"],
+    "filtered": ["Agachamento"]
+  },
+  "accent-insensitive-in-the-query": {
+    "ranked": ["Flexao de braco"],
+    "filtered": ["Flexao de braco"]
+  },
+  "words-in-any-order": {
+    "ranked": ["DB Floor Press"],
+    "filtered": ["DB Floor Press"]
+  },
+  "every-word-must-match": {
+    "ranked": [],
+    "filtered": []
+  },
+  "punctuation-separates-words": {
+    "ranked": ["Push-up"],
+    "filtered": ["Push-up"]
+  },
+  "word-start-ranks-above-inside-word": {
+    "ranked": ["Bench Press", "Press-up", "Overpressure Drill"],
+    "filtered": ["Overpressure Drill", "Bench Press", "Press-up"]
+  },
+  "swap-is-one-typo": {
+    "ranked": ["Bulgarian Split Squat"],
+    "filtered": ["Bulgarian Split Squat"]
+  },
+  "dropped-letter-is-one-typo": {
+    "ranked": ["Bulgarian Split Squat"],
+    "filtered": ["Bulgarian Split Squat"]
+  },
+  "typo-forgiven-mid-word": {
+    "ranked": ["Bulgarian Split Squat"],
+    "filtered": ["Bulgarian Split Squat"]
+  },
+  "two-typos-is-too-many": {
+    "ranked": [],
+    "filtered": []
+  },
+  "no-typos-below-four-characters": {
+    "ranked": [],
+    "filtered": []
+  },
+  "four-letter-typo-against-a-whole-word": {
+    "ranked": ["Squat"],
+    "filtered": ["Squat"]
+  },
+  "four-letter-query-is-not-its-own-first-three-letters": {
+    "ranked": [],
+    "filtered": []
+  },
+  "four-letter-typo-not-forgiven-against-a-longer-word": {
+    "ranked": [],
+    "filtered": []
+  },
+  "typo-ranks-below-clean-match": {
+    "ranked": ["Back Squat", "Sqaut Jump"],
+    "filtered": ["Sqaut Jump", "Back Squat"]
+  },
+  "worst-word-decides-the-rank": {
+    "ranked": ["Squat Walklunge", "Quatro Lnuge"],
+    "filtered": ["Quatro Lnuge", "Squat Walklunge"]
+  },
+  "digits-are-not-typo-tolerant": {
+    "ranked": ["2024 Block"],
+    "filtered": ["2024 Block"]
+  },
+  "a-word-with-digits-is-not-typo-tolerant": {
+    "ranked": ["1000m Row"],
+    "filtered": ["1000m Row"]
+  },
+  "cyrillic-is-typo-tolerant": {
+    "ranked": ["Приседания"],
+    "filtered": ["Приседания"]
+  },
+  "japanese-matches-inside-a-name": {
+    "ranked": ["腕立て伏せ"],
+    "filtered": ["腕立て伏せ"]
+  },
+  "hiragana-finds-katakana": {
+    "ranked": ["スクワット"],
+    "filtered": ["スクワット"]
+  },
+  "katakana-finds-hiragana": {
+    "ranked": ["すとれっち"],
+    "filtered": ["すとれっち"]
+  },
+  "kana-are-not-typo-tolerant": {
+    "ranked": [],
+    "filtered": []
+  },
+  "voicing-marks-are-kept": {
+    "ranked": ["ダンベルプレス"],
+    "filtered": ["ダンベルプレス"]
+  }
+}

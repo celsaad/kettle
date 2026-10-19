@@ -1,0 +1,89 @@
+# Name search (src/domain/search.ts). Each case runs rankByName and filterByName over `names` with
+# `query`. `ranked` is best match first; `filtered` is the same matches in the original order.
+cases:
+  - name: blank-query-shows-everything
+    why: A query with no letters or digits shows everything in its original order
+    query: '  - '
+    names: [Squat, Bench Press, Deadlift]
+  - name: case-insensitive
+    query: SQUAT
+    names: [Back Squat, Bench Press]
+  - name: accent-insensitive-in-the-name
+    query: agach
+    names: [Agachamento, Flexão]
+  - name: accent-insensitive-in-the-query
+    query: flexão
+    names: [Flexao de braco, Prancha]
+  - name: words-in-any-order
+    query: press db
+    names: [DB Floor Press, Bench Press, DB Row]
+  - name: every-word-must-match
+    query: bench squat
+    names: [Bench Press, Back Squat]
+  - name: punctuation-separates-words
+    why: Both sides split on the same rule, so "push up" finds "Push-up"
+    query: push up
+    names: [Push-up, Pull-up]
+  - name: word-start-ranks-above-inside-word
+    why: Original order is kept within a tier
+    query: press
+    names: [Overpressure Drill, Bench Press, Press-up]
+  - name: swap-is-one-typo
+    query: bulgarain
+    names: [Bulgarian Split Squat, Goblet Squat]
+  - name: dropped-letter-is-one-typo
+    query: bulgaian
+    names: [Bulgarian Split Squat]
+  - name: typo-forgiven-mid-word
+    query: bulgr
+    names: [Bulgarian Split Squat, Burpee]
+  - name: two-typos-is-too-many
+    query: bulgrain
+    names: [Bulgarian Split Squat]
+  - name: no-typos-below-four-characters
+    query: rpw
+    names: [Row, Rope Climb]
+  - name: four-letter-typo-against-a-whole-word
+    query: sqat
+    names: [Squat, Bench Press]
+  - name: four-letter-query-is-not-its-own-first-three-letters
+    why: A typo is only checked against a name-word start of 5 or more, so "bend" doesn't find "Bench"
+    query: bend
+    names: [Bench Press]
+  - name: four-letter-typo-not-forgiven-against-a-longer-word
+    query: squz
+    names: [Squat]
+  - name: typo-ranks-below-clean-match
+    query: squat
+    names: [Sqaut Jump, Back Squat]
+  - name: worst-word-decides-the-rank
+    why: Two inside-word matches beat a word start plus a typo, which a sum of tiers would tie
+    query: quat lunge
+    names: [Quatro Lnuge, Squat Walklunge]
+  - name: digits-are-not-typo-tolerant
+    why: A one-digit difference is a different workout
+    query: '2024'
+    names: [2025 Block, 2024 Block]
+  - name: a-word-with-digits-is-not-typo-tolerant
+    query: 1000m
+    names: [2000m Row, 1000m Row]
+  - name: cyrillic-is-typo-tolerant
+    query: присидания
+    names: [Приседания, Планка]
+  - name: japanese-matches-inside-a-name
+    why: Japanese names have no spaces, so a whole name is one word
+    query: 伏せ
+    names: [腕立て伏せ, スクワット]
+  - name: hiragana-finds-katakana
+    query: すくわっと
+    names: [スクワット, 腕立て伏せ]
+  - name: katakana-finds-hiragana
+    query: ストレッチ
+    names: [すとれっち, スクワット]
+  - name: kana-are-not-typo-tolerant
+    query: スクワッド
+    names: [スクワット]
+  - name: voicing-marks-are-kept
+    why: タ and ダ stay different letters
+    query: ダンベル
+    names: [タンベル, ダンベルプレス]

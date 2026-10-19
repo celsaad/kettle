@@ -19,11 +19,11 @@ import { ListHeaderRule, ListRow, ListRowSeparator } from '@/components/list-row
 import { NoResults } from '@/components/no-results';
 import { RowStartButton } from '@/components/row-start-button';
 import { SearchBar } from '@/components/search-bar';
-import { rankByName } from '@/domain/search';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { formatWorkoutShape } from '@/domain/format';
+import { rankByName } from '@/domain/search';
 import type { Exercise, Workout } from '@/domain/types';
 import { useAppTheme } from '@/hooks/theme-context';
 import { useTheme } from '@/hooks/use-theme';

@@ -15,6 +15,7 @@ import {
   ENTRY_FIELDS,
   entryToSetForms,
   isEditableEntry,
+  isZeroForm,
   validateEntryForm,
   type EditableEntry,
   type SetForm,
@@ -26,6 +27,7 @@ import { useUnitSystem } from '@/state/preferences-store';
 import { exerciseName } from '@/state/selectors/exercise-lookup';
 import { sessionEntryResult } from '@/state/selectors/session-summary';
 import { useSessionHistoryStore } from '@/state/session-history-store';
+import { loggedSessions } from '@/state/selectors/logged-sessions';
 
 export { ModalErrorBoundary as ErrorBoundary } from '@/components/error-fallback';
 
@@ -61,7 +63,7 @@ export default function SessionEditorScreen() {
   const unitSystem = useUnitSystem();
 
   const library = useLibraryStore((state) => state.library);
-  const sessions = useSessionHistoryStore((state) => state.sessions);
+  const sessions = useSessionHistoryStore((state) => loggedSessions(state.sessions));
   const editEntry = useSessionHistoryStore((state) => state.editEntry);
   const removeEntry = useSessionHistoryStore((state) => state.removeEntry);
 
@@ -271,6 +273,13 @@ export default function SessionEditorScreen() {
                             {draft.forms.length > 1 ? t('sessionEditor.removeSet') : t('sessionEditor.removeEntry')}
                           </ThemedText>
                         </Pressable>
+                        {/* Typing 0 is how a set gets cleared, and it vanishes on save without the
+                            confirm that Remove asks for — so it's said here, and only while it applies. */}
+                        {isZeroForm(draft.entry, form, unitSystem) && (
+                          <ThemedText type="small" themeColor="textSecondary">
+                            {t('sessionEditor.zeroRemoved')}
+                          </ThemedText>
+                        )}
                       </View>
                     );
                   })}

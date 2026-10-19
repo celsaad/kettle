@@ -25,7 +25,7 @@ const aSession = (startedAt: string): Session => ({
   programDay: null,
   startedAt,
   endedAt: startedAt,
-  entries: [],
+  entries: [{ exercise: 'pushups', type: 'reps', sets: [{ reps: 10, restTakenSec: 0 }] }], // a session with no work is hidden
 });
 
 function setUp({ enabled, sessions }: { enabled: boolean; sessions: Session[] }) {

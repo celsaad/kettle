@@ -89,7 +89,7 @@ function aSession(overrides: Partial<Session> = {}): Session {
     programDay: null,
     startedAt: '2026-07-29T09:00:00.000Z',
     endedAt: '2026-07-29T09:40:00.000Z',
-    entries: [],
+    entries: [{ exercise: 'pushups', type: 'reps', sets: [{ reps: 10, restTakenSec: 0 }] }], // a session with no work is hidden
     ...overrides,
   };
 }
@@ -604,6 +604,21 @@ describe('a scheduled rest day', () => {
       pathname: '/session',
       params: { programId: 'base', week: '1', day: 'Day 3' },
     });
+  });
+
+  // Logging only zeros is skipping the whole workout, so Day 1 stays up next rather than giving way to
+  // the rest day after it. Read the raw sessions in the screen instead of `loggedSessions` and this fails.
+  it('is not reached by a session that logged nothing but zeros', async () => {
+    setRestDayProgram();
+    const [logged] = useSessionHistoryStore.getState().sessions;
+    useSessionHistoryStore.setState({
+      sessions: [{ ...logged, entries: [{ exercise: 'pushups', type: 'reps', sets: [{ reps: 0, restTakenSec: 0 }] }] }],
+    });
+
+    await renderScreen(<WorkoutsScreen />);
+
+    expect(screen.queryByText('Rest day')).toBeNull();
+    expect(screen.getByText('Start session')).toBeTruthy();
   });
 
   it('leaves the empty session available, so a rest day is never a dead end', async () => {

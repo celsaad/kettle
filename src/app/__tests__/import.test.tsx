@@ -857,7 +857,7 @@ describe('the order of the input sources', () => {
           programDay: null,
           startedAt: '2026-07-29T09:00:00.000Z',
           endedAt: '2026-07-29T09:40:00.000Z',
-          entries: [],
+          entries: [{ exercise: 'pushups', type: 'reps', sets: [{ reps: 10, restTakenSec: 0 }] }], // a session with no work is hidden
         },
       ],
       status: 'ready',

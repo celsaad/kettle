@@ -47,7 +47,15 @@ it('shows the hint before the first session', async () => {
  * See the component for why that matches the other first-run gates rather than filtering on `endedAt`.
  */
 it('stays away once the log holds a session', async () => {
-  useSessionHistoryStore.setState({ sessions: [aSession({ startedAt: '2026-01-05T09:00:00.000Z' })], status: 'ready' });
+  useSessionHistoryStore.setState({
+    sessions: [
+      aSession({
+        startedAt: '2026-01-05T09:00:00.000Z',
+        entries: [{ exercise: 'pushups', type: 'reps', sets: [{ reps: 10, restTakenSec: 0 }] }],
+      }),
+    ],
+    status: 'ready',
+  });
   await renderScreen(<FirstSessionHint />);
 
   expect(screen.queryByText(/Put the phone down/)).toBeNull();

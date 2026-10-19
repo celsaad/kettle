@@ -9,6 +9,7 @@
  */
 import { t } from 'i18next';
 
+import { withoutZeroSets } from '@/domain/logged-work';
 import type { SessionEntry } from '@/domain/types';
 import { fromDisplayWeight, toDisplayWeight, type UnitSystem } from '@/domain/units';
 
@@ -32,9 +33,9 @@ export function isEditableEntry(entry: SessionEntry): entry is EditableEntry {
  * has no React tree to hook `useTranslation()` into. `unit` is the suffix beside the label, and
  * `'weight'` is the one that isn't literal: it renders as kg or lb and its value converts both ways.
  *
- * `min` defaults to **0** here, unlike the exercise form's 1. That form describes a plan, where zero
- * sets is meaningless; this one describes what happened, and a set you failed at zero reps is a real
- * thing the runner can log.
+ * `min` defaults to **0** here, unlike the exercise form's 1. A zero isn't refused, it means "not
+ * done": `buildEntry` drops it on save, the same way the runner never writes one (see
+ * `domain/logged-work.ts`), and the screen says so under the row while it reads 0.
  */
 export type EntryFieldDef = {
   key: string;
@@ -166,12 +167,22 @@ export function validateEntryForm(type: EditableEntryType, forms: SetForm[]): st
 /**
  * The form rows back into a logged entry, keeping the original's exercise and type.
  *
- * Returns **null when there are no rows left**, which is the caller's signal to drop the entry from
- * the session rather than write an exercise recorded as having done nothing.
+ * Returns **null when there is nothing left** — no rows, or only rows at zero — which is the caller's
+ * signal to drop the entry from the session rather than write an exercise recorded as having done
+ * nothing. Zero sets inside a longer entry are dropped the same way.
  */
 export function buildEntry(original: EditableEntry, forms: SetForm[], unitSystem: UnitSystem): EditableEntry | null {
   if (forms.length === 0) return null;
+  // `withoutZeroSets` keeps the entry's type, so narrowing back to an editable entry holds.
+  return withoutZeroSets(assembleEntry(original, forms, unitSystem)) as EditableEntry | null;
+}
 
+/** Whether this one row, saved, would be dropped as zero work — what the screen's hint keys on. */
+export function isZeroForm(original: EditableEntry, form: SetForm, unitSystem: UnitSystem): boolean {
+  return buildEntry(original, [form], unitSystem) === null;
+}
+
+function assembleEntry(original: EditableEntry, forms: SetForm[], unitSystem: UnitSystem): EditableEntry {
   const exercise = original.exercise;
   const num = (form: SetForm, key: string) => Number(form.values[key] ?? '') || 0;
   const optionalNum = (form: SetForm, key: string) => {

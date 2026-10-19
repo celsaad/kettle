@@ -427,3 +427,33 @@ describe('removeEntry', () => {
     expect(useSessionHistoryStore.getState().sessions[0].entries).toEqual([pullUps, dips]);
   });
 });
+
+/**
+ * The editor shows `loggedSessions`, so an old session with a zero set in it is shown, and indexed,
+ * without one. The store has to index the same cleaned list or an edit lands one entry off. Have
+ * `finishedSession` return the session uncleaned and both of these fail.
+ */
+describe('editing a session that still holds zero work', () => {
+  const skipped: SessionEntry = { exercise: 'pull-ups', type: 'reps', sets: [{ reps: 0, restTakenSec: 60 }] };
+  const dips: SessionEntry = { exercise: 'dips', type: 'reps', sets: [{ reps: 10, restTakenSec: 60 }] };
+  const rows: SessionEntry = { exercise: 'rows', type: 'reps', sets: [{ reps: 12, restTakenSec: 60 }] };
+  const finished = (entries: SessionEntry[]) => aSession({ endedAt: '2026-07-29T10:00:00.000Z', entries });
+
+  it('indexes the list with the zero work gone, and writes it back without it', () => {
+    useSessionHistoryStore.setState({ sessions: [finished([skipped, dips, rows])] });
+
+    // Dips is at raw index 1, but at index 0 of what the editor showed.
+    const corrected: SessionEntry = { exercise: 'dips', type: 'reps', sets: [{ reps: 11, restTakenSec: 60 }] };
+    useSessionHistoryStore.getState().editEntry('session-1', 0, corrected);
+
+    expect(useSessionHistoryStore.getState().sessions[0].entries).toEqual([corrected, rows]);
+  });
+
+  it('removes by the same index', () => {
+    useSessionHistoryStore.setState({ sessions: [finished([skipped, dips, rows])] });
+
+    useSessionHistoryStore.getState().removeEntry('session-1', 1);
+
+    expect(useSessionHistoryStore.getState().sessions[0].entries).toEqual([dips]);
+  });
+});

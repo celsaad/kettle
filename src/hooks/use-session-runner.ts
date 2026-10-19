@@ -3,6 +3,7 @@ import { t } from 'i18next';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 
+import { isZeroSet, withoutZeroSets } from '@/domain/logged-work';
 import type { EmomMinuteLog, Exercise, RepsSetLog, Session, SessionEntry, TimedHoldSetLog, Workout } from '@/domain/types';
 import {
   cancelNotification,
@@ -16,6 +17,7 @@ import { formatSessionName } from '@/domain/format';
 
 import { personalBestFor, previousSetFor } from '@/state/selectors/records';
 import { useSessionHistoryStore } from '@/state/session-history-store';
+import { loggedSessions } from '@/state/selectors/logged-sessions';
 
 // The step model and workout→steps expansion live in session-steps.ts so they can be tested without
 // this file's native imports. Re-exported here because they're part of the runner's public surface.
@@ -210,7 +212,7 @@ export function useSessionRunner(
    * (`previousSetFor` and `personalBestFor` skip unfinished sessions anyway, so the exclusion holds
    * from both ends.)
    */
-  const [priorSessions] = useState(() => useSessionHistoryStore.getState().sessions);
+  const [priorSessions] = useState(() => loggedSessions(useSessionHistoryStore.getState().sessions));
 
   const step = steps[stepIndex];
   /**
@@ -279,6 +281,12 @@ export function useSessionRunner(
    * `goPrev`), so a recorded index stays valid for the life of the session.
    */
   const entryIndexRef = useRef<Record<string, number>>({});
+  /**
+   * Members whose most recent set was zero and so never written (see `commitCurrentStep`). The rest
+   * after a set is attached to the member's *last logged* set, which after a dropped one is the set
+   * before it — so without this, skipping a set would overwrite a real set's rest with its own.
+   */
+  const droppedLastSetRef = useRef<Record<string, boolean>>({});
   // What the last advance() committed — consumed and cleared by goPrev() to undo exactly one level.
   const lastCommitRef = useRef<LastCommit | null>(null);
   /**
@@ -493,9 +501,13 @@ export function useSessionRunner(
   // Records `current`'s own contribution (the set/round/minute just finished, or the rest just
   // taken) into its member's log and straight through to the session file, or logs a one-shot entry
   // for the step kinds that have no accumulating log behind them.
+  //
+  // Returns false when nothing was written: zero work (`domain/logged-work.ts`) never reaches the log,
+  // since logging 0 is how an exercise gets skipped, and undo then has nothing of this step's to take
+  // back.
   const commitCurrentStep = useCallback(
-    (current: RunnerStep) => {
-      if (!sessionRef.current) return;
+    (current: RunnerStep): boolean => {
+      if (!sessionRef.current) return false;
       if (current.kind === 'hold') {
         const sets = memberSetsRef.current[current.memberKey] ?? [];
         // Clamped to the hold's own end, which is not the same as the elapsed clock. A hold that ends
@@ -505,19 +517,25 @@ export function useSessionRunner(
         // Ending early by hand is unaffected: elapsed is below the end, and the honest number wins.
         const elapsed = computeElapsedSec();
         const holdSec = current.holdEndSec === undefined ? elapsed : Math.min(elapsed, current.holdEndSec);
-        sets.push({ holdSec, restTakenSec: 0 });
+        const set = { holdSec, restTakenSec: 0 };
+        droppedLastSetRef.current[current.memberKey] = isZeroSet(set);
+        if (isZeroSet(set)) return false;
+        sets.push(set);
         memberSetsRef.current[current.memberKey] = sets;
         persistMember(current.memberKey, current.exerciseId);
       } else if (current.kind === 'reps') {
         const sets = memberSetsRef.current[current.memberKey] ?? [];
         // `|| undefined` so bodyweight (0) stays absent from the log rather than recording a 0 kg load —
         // entryVolume distinguishes the two, summing reps×weight only when a weight is actually present.
-        sets.push({
+        const set = {
           reps: repsRef.current,
           weightKg: weightKgRef.current || undefined,
           rpe: rpeRef.current,
           restTakenSec: 0,
-        });
+        };
+        droppedLastSetRef.current[current.memberKey] = isZeroSet(set);
+        if (isZeroSet(set)) return false;
+        sets.push(set);
         memberSetsRef.current[current.memberKey] = sets;
         persistMember(current.memberKey, current.exerciseId);
       } else if (current.kind === 'interval') {
@@ -530,12 +548,14 @@ export function useSessionRunner(
           memberEmomMinutesRef.current[current.memberKey] = minutes;
           persistMember(current.memberKey, current.exerciseId);
         } else if (current.variant === 'amrap') {
-          sessionRef.current = logEntry(sessionRef.current, {
+          const entry = withoutZeroSets({
             exercise: current.exerciseId,
             type: 'amrap',
             roundsCompleted: roundsCompletedRef.current,
             extraReps: extraRepsRef.current || undefined,
           });
+          if (!entry) return false;
+          sessionRef.current = logEntry(sessionRef.current, entry);
         } else if (current.variant === 'cardio') {
           // Clamped to the configured duration, exactly as a hold is clamped to its end above and for
           // the same reason: a cardio step that ends while the app is backgrounded is only *noticed* on
@@ -545,12 +565,14 @@ export function useSessionRunner(
           // `restTakenSec` deliberately isn't clamped this way: "how long you rested" really is the
           // time that passed, whereas "how long you rowed" is not.
           const elapsed = computeElapsedSec();
-          sessionRef.current = logEntry(sessionRef.current, {
+          const entry = withoutZeroSets({
             exercise: current.exerciseId,
             type: 'cardio',
             durationSec: current.countUp ? elapsed : Math.min(elapsed, current.targetSec),
             distanceMeters: current.cardioDistanceMeters,
           });
+          if (!entry) return false;
+          sessionRef.current = logEntry(sessionRef.current, entry);
         }
       } else if (current.kind === 'rest') {
         const takenSec = computeElapsedSec();
@@ -560,6 +582,9 @@ export function useSessionRunner(
             type: 'rest',
             restTakenSec: takenSec,
           });
+        } else if (droppedLastSetRef.current[current.memberKey]) {
+          // The set it followed was zero and never written; its rest goes with it.
+          return false;
         } else {
           // Attributes the rest to the set it followed. The set is already on disk without it, so the
           // entry has to be rewritten — otherwise `rest_taken_sec` would be the one field that only
@@ -571,6 +596,7 @@ export function useSessionRunner(
           }
         }
       }
+      return true;
     },
     [computeElapsedSec, logEntry, persistMember],
   );
@@ -588,7 +614,7 @@ export function useSessionRunner(
       if (current && sessionRef.current) {
         const buffer = bufferForStep(current);
         const directLog = isDirectLogStep(current);
-        commitCurrentStep(current);
+        const committed = commitCurrentStep(current);
 
         // A distinct cue from the plain countdown tick, so a change of exercise is audible even
         // without looking at the screen — but not for every set/round within the same exercise. In a
@@ -600,7 +626,11 @@ export function useSessionRunner(
         // Track exactly what this advance() committed so goPrev() can undo it precisely (one level
         // only — see the LastCommit type doc).
         const commitContext = { resultingIndex: nextIndex, memberKey: current.memberKey, exerciseId: current.exerciseId };
-        if (directLog) {
+        if (!committed) {
+          // A zero set wrote nothing. Undoing as if it had would retract the set before it, or remove
+          // whichever one-shot entry happens to be last.
+          lastCommitRef.current = null;
+        } else if (directLog) {
           lastCommitRef.current = { ...commitContext, buffer: null };
         } else if (buffer) {
           lastCommitRef.current = { ...commitContext, buffer };

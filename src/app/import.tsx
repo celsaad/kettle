@@ -32,6 +32,7 @@ import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useLibraryStore } from '@/state/library-store';
 import { useSessionHistoryStore } from '@/state/session-history-store';
+import { loggedSessions } from '@/state/selectors/logged-sessions';
 import { useUnitSystem } from '@/state/preferences-store';
 import type { ContentPack } from '@/storage/content-packs';
 import { contentPackCounts, contentPackLibrary, contentPacks } from '@/storage/content-packs';
@@ -184,7 +185,7 @@ export default function ImportScreen() {
   // Nothing logged is what "new here" means everywhere else in the app (see the Workouts screen), and
   // it costs no stored flag. It reads the count rather than subscribing to the sessions themselves,
   // so a session landing while this screen is open cannot reorder it under the user.
-  const packsFirst = useSessionHistoryStore((state) => state.sessions.length) === 0;
+  const packsFirst = useSessionHistoryStore((state) => loggedSessions(state.sessions).length) === 0;
   const replaceLibrary = useLibraryStore((state) => state.replaceLibrary);
   // The diff prints a target weight, and a weight is never formatted without going through the
   // preference — a kilogram figure shown to somebody working in pounds describes a change they didn't

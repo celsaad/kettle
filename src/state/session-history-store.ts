@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 
+import { withoutZeroWork } from '@/domain/logged-work';
 import type { Session, SessionEntry } from '@/domain/types';
 import { usePreferencesStore } from '@/state/preferences-store';
 import type { BackupFailure } from '@/storage/backup';
@@ -92,7 +93,10 @@ type SessionHistoryState = {
  */
 function finishedSession(sessions: Session[], id: string): Session | undefined {
   const session = sessions.find((existing) => existing.id === id);
-  return session?.endedAt ? session : undefined;
+  // Cleaned before the caller indexes into it: the editor was showing `loggedSessions`, so its indices
+  // count entries with the zero work already gone, and the write that follows then leaves the file
+  // clean as well. Idempotent, so the editor's several calls per save all index the same list.
+  return session?.endedAt ? withoutZeroWork(session) : undefined;
 }
 
 /**

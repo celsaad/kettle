@@ -30,6 +30,7 @@ import { workoutShape } from '@/state/selectors/workout-shape';
 import { nextUpView } from '@/state/selectors/next-up';
 import { useLibraryStore } from '@/state/library-store';
 import { useSessionHistoryStore } from '@/state/session-history-store';
+import { loggedSessions } from '@/state/selectors/logged-sessions';
 
 export { RouteErrorBoundary as ErrorBoundary } from '@/components/error-fallback';
 
@@ -122,7 +123,7 @@ export default function WorkoutsScreen() {
   const { scheme } = useAppTheme();
   const { t } = useTranslation();
   const library = useLibraryStore((state) => state.library);
-  const sessions = useSessionHistoryStore((state) => state.sessions);
+  const sessions = useSessionHistoryStore((state) => loggedSessions(state.sessions));
   const [query, setQuery] = useState('');
   /*
     The input keeps the immediate value so typing is never held back; only the filtering below runs on

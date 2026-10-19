@@ -8,6 +8,7 @@ import { ExerciseBadge, exerciseSummary } from '@/components/exercise-badge';
 import { ListHeaderRule, ListRow, ListRowSeparator } from '@/components/list-row';
 import { NoResults } from '@/components/no-results';
 import { SearchBar } from '@/components/search-bar';
+import { rankByName } from '@/domain/search';
 import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { ExerciseType, type Exercise } from '@/domain/types';
@@ -75,12 +76,8 @@ export default function LibraryScreen() {
   const deferredQuery = useDeferredValue(query);
 
   const visible = useMemo(() => {
-    const needle = deferredQuery.trim().toLowerCase();
-    return exercises.filter((exercise) => {
-      const matchesFilter = filter === 'all' || exercise.type === filter;
-      const matchesQuery = exercise.name.toLowerCase().includes(needle);
-      return matchesFilter && matchesQuery;
-    });
+    const ofType = filter === 'all' ? exercises : exercises.filter((exercise) => exercise.type === filter);
+    return rankByName(ofType, deferredQuery, (exercise) => exercise.name);
   }, [exercises, filter, deferredQuery]);
 
   const renderItem = useCallback(

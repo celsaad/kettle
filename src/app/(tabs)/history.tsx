@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ListHeaderRule, ListRowMinHeight, ListRowSeparator, ListRowVerticalPadding } from '@/components/list-row';
 import { NoResults } from '@/components/no-results';
 import { SearchBar } from '@/components/search-bar';
+import { filterByName } from '@/domain/search';
 import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { formatSessionCount, formatSetCount } from '@/domain/format';
@@ -142,8 +143,8 @@ export default function HistoryScreen() {
   // knows in advance what they're looking for.
   const visibleSessions = useMemo(() => {
     if (!searching) return historySessions;
-    const needle = deferredQuery.trim().toLowerCase();
-    return historySessions.filter((session) => session.workoutName.toLowerCase().includes(needle));
+    // Filtered but never re-ranked: this is a timeline, and a best-match-first History reads as broken.
+    return filterByName(historySessions, deferredQuery, (session) => session.workoutName);
   }, [historySessions, deferredQuery, searching]);
 
   // The tiles aggregate what's actually listed below them, not the whole archive — three all-time

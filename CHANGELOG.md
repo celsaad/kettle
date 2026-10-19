@@ -39,6 +39,11 @@ had left; swapping into a HIIT, EMOM, AMRAP or cardio exercise runs that exercis
 made the list vanish: it had slipped behind the keyboard. It now stays above the keyboard while you
 type.
 
+**Search forgives typos and accents.** Every search box (Workouts, Programs, Library, History and
+the exercise list mid-workout) now finds "Agachamento" when you type "agach", "Bulgarian Split
+Squat" when you type "bulgarain", and "DB Floor Press" when you type "press db". The best matches
+come first; History stays newest first. In Japanese, hiragana finds katakana and the other way round.
+
 ---
 
 ## 0.9.0 — versionCode 12, 15 September 2026

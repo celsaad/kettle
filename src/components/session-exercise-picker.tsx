@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 
 import { ThemedText } from '@/components/themed-text';
 import { RunnerColors, Spacing } from '@/constants/theme';
+import { rankByName } from '@/domain/search';
 import type { Exercise } from '@/domain/types';
 
 type Props = {
@@ -49,19 +50,7 @@ export function SessionExercisePicker({ replacing, candidates, onCancel, onSelec
   const [overlayTop, setOverlayTop] = useState(0);
 
   const showsSearch = candidates.length > SEARCH_THRESHOLD;
-  // Case- and accent-insensitive: exercise names come from the user's own YAML, and "Agachamento"
-  // should be reachable by typing "agach". Matches anywhere in the name rather than only at the start,
-  // since "press" should find "Dumbbell Floor Press".
-  const normalise = (value: string) =>
-    value
-      .normalize('NFD')
-      .replace(/\p{Diacritic}/gu, '')
-      .toLowerCase();
-  const shown = useMemo(() => {
-    const needle = normalise(query.trim());
-    if (!needle) return candidates;
-    return candidates.filter((exercise) => normalise(exercise.name).includes(needle));
-  }, [candidates, query]);
+  const shown = useMemo(() => rankByName(candidates, query, (exercise) => exercise.name), [candidates, query]);
 
   return (
     // The runner beneath is hidden with aria-hidden by session.tsx, which is what reaches Android and

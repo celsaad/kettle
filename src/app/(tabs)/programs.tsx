@@ -8,6 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ListHeaderRule, ListRow, ListRowSeparator } from '@/components/list-row';
 import { NoResults } from '@/components/no-results';
 import { SearchBar } from '@/components/search-bar';
+import { rankByName } from '@/domain/search';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
@@ -82,9 +83,7 @@ export default function ProgramsScreen() {
 
   const all = library?.programs ?? [];
   const matching = useMemo(() => {
-    const needle = deferredQuery.trim().toLowerCase();
-    if (!needle) return all;
-    return all.filter((program) => program.name.toLowerCase().includes(needle));
+    return rankByName(all, deferredQuery, (program) => program.name);
     // The library, not `all`, is the honest dependency — see the note in (tabs)/index.tsx.
     // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [library, deferredQuery]);

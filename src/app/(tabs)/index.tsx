@@ -19,6 +19,7 @@ import { ListHeaderRule, ListRow, ListRowSeparator } from '@/components/list-row
 import { NoResults } from '@/components/no-results';
 import { RowStartButton } from '@/components/row-start-button';
 import { SearchBar } from '@/components/search-bar';
+import { rankByName } from '@/domain/search';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
@@ -135,9 +136,7 @@ export default function WorkoutsScreen() {
   // Every hook here runs before the `!library` bail-out below, since hooks can't be conditional.
   const all = library?.workouts ?? [];
   const matching = useMemo(() => {
-    const needle = deferredQuery.trim().toLowerCase();
-    if (!needle) return all;
-    return all.filter((workout) => workout.name.toLowerCase().includes(needle));
+    return rankByName(all, deferredQuery, (workout) => workout.name);
     // `all` is a fresh array literal whenever the library is null, so the library itself is the honest
     // dependency — depending on `all` would re-filter on every render of an unhydrated screen.
     // oxlint-disable-next-line react-hooks/exhaustive-deps

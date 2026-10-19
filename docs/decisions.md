@@ -908,6 +908,29 @@ decision assembled across several commits. Open work belongs in the sections at 
   imported file fails as a dangling reference**. It has its own regression test, verified by
   reintroducing the bug.
 
+- ✅ **Search is one hand-rolled matcher, and its test cases are data so the native port inherits
+  them.** All five search fields (Workouts, Programs, Library, History and the runner's exercise
+  picker) go through `domain/search.ts`. Before it, four did a case-only `includes` and the picker
+  had its own accent-stripping copy, so "agach" found "Agachamento" in one place and nowhere else.
+  The rules are in the file's header; what isn't there:
+
+  - **No dependency, on purpose.** Fuse.js and similar were the alternative. They're local and would
+    have been allowed, but their scoring doesn't suit pt accents or Japanese, and the matcher is
+    meant to be ported to Kotlin/Swift line for line (see `native-migration-plan.md`).
+    `__tests__/search-cases.json` is the contract, written as a table so a native test can load the
+    same file. A case that only one implementation passes means search behaves differently on the
+    two sides. Add the case to the table, not as an `it()`, unless it can't be expressed as data.
+  - **History filters but never re-ranks** (`filterByName`). It's a timeline, and best-match-first
+    reads as broken. Every other field ranks (`rankByName`).
+  - **Typo tolerance is Latin, Cyrillic and Greek only, from 4 characters.** In kana or kanji one
+    edit is a quarter of a word, so スクワット would match unrelated names. Hiragana folds to
+    katakana instead. Accent stripping is U+0300–U+036F only, like `slug.ts`. The picker's old
+    `\p{Diacritic}` also stripped the Japanese voicing marks and merged タ with ダ.
+  - **Rejected, so they aren't re-proposed in the same breath:** subsequence/initials matching ("bss"
+    → Bulgarian Split Squat) matches too much in short lists; searching anything but the name
+    (notes, a workout's exercises) is a separate feature with its own questions; highlighting the
+    matched text, and a setting to turn fuzziness off.
+
 
 
 

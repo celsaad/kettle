@@ -17,8 +17,3 @@ internal fun nameWords(folded: String): List<String> = NAME_WORD.findAll(folded)
 
 private val COMBINING_DIACRITICS = Regex("[\\u0300-\\u036f]")
 private val NAME_WORD = Regex("[\\p{L}\\p{N}][\\p{L}\\p{N}\\p{M}]*")
-
-/** Kotlin's common stdlib has no Unicode normalisation, so each platform supplies its own. */
-internal expect fun String.toNfd(): String
-
-internal expect fun String.toNfc(): String

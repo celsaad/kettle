@@ -15,7 +15,7 @@ internal fun codePoints(value: String): IntArray {
         val high = value[i]
         val low = value.getOrNull(i + 1)
         if (high.isHighSurrogate() && low != null && low.isLowSurrogate()) {
-            val offset = (high - Char.MIN_HIGH_SURROGATE shl SURROGATE_BITS) + (low - Char.MIN_LOW_SURROGATE)
+            val offset = ((high - Char.MIN_HIGH_SURROGATE) shl SURROGATE_BITS) + (low - Char.MIN_LOW_SURROGATE)
             points.add(SUPPLEMENTARY_FIRST + offset)
             i += 2
         } else {

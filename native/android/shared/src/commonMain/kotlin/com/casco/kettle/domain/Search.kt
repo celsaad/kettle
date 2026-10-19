@@ -5,7 +5,7 @@ import kotlin.math.max
 import kotlin.math.min
 
 /*
- * Name search, ported line for line from `src/domain/search.ts`, whose header holds the rules and
+ * Name search, ported from `src/domain/search.ts`, whose header holds the rules and
  * the reasoning; `conformance/search.yaml` is what this is held to. The one thing the port has to
  * add is code points: a Kotlin `String` indexes UTF-16 units as JS does, but the TS iterates with
  * `for…of` and `Array.from`, which walk code points, so the typo checks here do the same.
@@ -80,7 +80,10 @@ private fun editDistance(
     return d[a.size][b.size]
 }
 
-/** Starts one shorter and one longer than the query are tried too, since a dropped letter shifts the rest. */
+/**
+ * Starts one shorter and one longer than the query are tried too, since a dropped or doubled letter
+ * shifts everything after it.
+ */
 private fun withinOneTypo(
     query: IntArray,
     word: IntArray,
@@ -94,15 +97,23 @@ private fun withinOneTypo(
 private fun tierOf(
     token: String,
     words: List<String>,
-): Int? {
-    val chars = codePoints(token)
-    return when {
-        words.any { it.startsWith(token) } -> TIER_WORD_START
-        words.any { it.contains(token) } -> TIER_INSIDE_WORD
-        forgivesTypos(chars) && words.any { withinOneTypo(chars, codePoints(it)) } -> TIER_TYPO
-        else -> null
+): Int? =
+    when {
+        words.any { it.startsWith(token) } -> {
+            TIER_WORD_START
+        }
+
+        words.any { it.contains(token) } -> {
+            TIER_INSIDE_WORD
+        }
+
+        // Code points only once both substring checks have failed, as the TS builds them.
+        else -> {
+            codePoints(token)
+                .takeIf(::forgivesTypos)
+                ?.let { chars -> TIER_TYPO.takeIf { words.any { withinOneTypo(chars, codePoints(it)) } } }
+        }
     }
-}
 
 /** A name ranks by its worst word, so one typo drops it below every clean match. */
 private fun matchTier(
@@ -140,8 +151,8 @@ fun <T> rankByName(
     query: String,
     nameOf: (T) -> String,
 ): List<T> =
-    // `sortedBy` is stable, which is what keeps the original order within a tier, so the index the
-    // TS sorts on as a tie-break isn't needed here.
+    // `sortedBy` is stable, which is what keeps the original order within a tier, so this needs no
+    // index tie-break like the one the TS sorts on.
     matches(items, query, nameOf)?.sortedBy { it.tier }?.map { it.item } ?: items
 
 /** The same match as `rankByName`, in the original order — for a list whose order means something. */

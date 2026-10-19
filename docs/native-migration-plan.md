@@ -2,7 +2,8 @@
 
 > **M0 executed; the spike recommends go.** Its report is under M0 below. Every hard gate passed, and
 > the one partial answer (Q3) re-scopes M3 rather than blocking it. The conformance corpus from M1
-> has landed; the rest of M1 onward is not started. Written against the tree at `54eb9f8`, SDK 57.
+> has landed; the rest of M1 onward is not started. M1–M3 are tracked as GitHub issues, starting at
+> #141; M4 onward is ticketed once the M3 routing test (#152) has picked its shape. Written against the tree at `54eb9f8`, SDK 57.
 > **Everything after M0 was conditional on a "go"**: had the spike failed, this file would carry a
 > banner saying so and the decision log the reason, so the idea isn't re-proposed from scratch.
 
@@ -239,6 +240,12 @@ These screens read files and never write them, so ownership doesn't move and the
 first ports. Suggested order, smallest first: support → program guide → exercise progress → stats
 (`analytics`) → history.
 
+**Support is the tip jar**, so it writes nothing to files but does need billing. Its native port moves
+the tip jar to the Play Billing Library in M4, a step pulled forward from M7, and keeps
+`safe-iap.ts`'s rule: if billing is unavailable, the screen still works without it. The alternative,
+keeping Support in RN until M7, was rejected. It would leave `expo-iap` in the AAR for three
+milestones just to serve one screen.
+
 Every screen is ported to the same definition of done:
 
 - The Compose screen, the selectors it needs ported into `:shared`, and their tests.
@@ -257,12 +264,18 @@ The largest milestone, because it moves ownership of the library file and of the
 edits.
 
 - **Native**: the library, workouts list, programs, program detail, the four editors (exercise,
-  workout, program, session) and import, together with `validateConfig`-style form validation,
-  content packs, the seed library, `library-translation`, export/share and the SAF backup folder
-  (`storage/backup.ts`).
-- **Ownership move, in one release**: native becomes the only writer of the library file and of
-  edited session files. The RN runner, which is still RN, keeps writing *new* session files. Its
-  stores re-read on `filesChanged`.
+  workout, program, session), import and Settings, together with `validateConfig`-style form
+  validation, content packs, the seed library, `library-translation`, export/share and the SAF backup
+  folder (`storage/backup.ts`).
+- **Ownership move, in one release**: native becomes the only writer of the library file, of
+  edited session files, and of the preferences file. The RN runner, which is still RN, keeps writing
+  *new* session files. Its stores re-read on `filesChanged`.
+- **The native screens land unrouted** and switch on together in that one release, so no file ever
+  has two writers in production.
+
+Settings and the preferences file weren't placed in the first draft of this plan. They move here,
+not in M4, because Settings writes. Native reads the preferences file from M3 on, for the theme its
+chrome draws, but it doesn't write the file before this flip.
 - Corrupt-library handling carries over unchanged: reseed and keep the bad file, the way
   `library-file.ts` does.
 - **Weight handling carries over unchanged**: kilograms are stored, and `previousWeightKg` is passed
@@ -294,8 +307,8 @@ session.
 ### M7 — React Native removed (Android) · ~1–2 weeks
 
 - Delete the AAR, `expo-brownfield`, Hermes and the RN surfaces.
-- Move the tip jar from `expo-iap` to the Play Billing Library directly, degrading as gracefully as
-  `safe-iap.ts` does now. Move the rest-day reminder off `expo-notifications`.
+- Move the rest-day reminder off `expo-notifications`. (The tip jar already moved to Play Billing
+  with Support in M4.)
 - Re-check the **Data Safety** claim: list every Gradle dependency that touches the network and
   confirm none transmits anything.
 

@@ -643,6 +643,7 @@
     "removeEntryConfirmTitle": "Remover este exercício?",
     "removeEntryConfirmBody": "\"{{name}}\" tem apenas uma série, então removê-la tira o exercício desta sessão.",
     "readOnlyNote": "Registros minuto a minuto não são editáveis aqui.",
+    "zeroRemoved": "Séries com 0 são removidas ao salvar.",
     "field": {
       "reps": "Reps",
       "load": "Carga",

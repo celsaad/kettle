@@ -3,6 +3,7 @@ import { changeLanguage, t } from 'i18next';
 import { AccessibilityInfo, Share } from 'react-native';
 
 import ImportScreen from '@/app/import';
+import { oneSetEntry } from '@/test-support/sessions';
 import type { Exercise, Library } from '@/domain/types';
 import { serializeLibraryYaml } from '@/domain/yaml-mapping';
 import { useLibraryStore } from '@/state/library-store';
@@ -857,7 +858,7 @@ describe('the order of the input sources', () => {
           programDay: null,
           startedAt: '2026-07-29T09:00:00.000Z',
           endedAt: '2026-07-29T09:40:00.000Z',
-          entries: [],
+          entries: [oneSetEntry],
         },
       ],
       status: 'ready',

@@ -6,7 +6,7 @@ import { changeLanguage } from 'i18next';
 import { FirstSessionHint } from '@/components/first-session-hint';
 import { usePreferencesStore } from '@/state/preferences-store';
 import { useSessionHistoryStore } from '@/state/session-history-store';
-import { aSession } from '@/test-support/sessions';
+import { aSession, oneSetEntry } from '@/test-support/sessions';
 import { renderScreen } from '@/test-support/render';
 
 /**
@@ -47,7 +47,15 @@ it('shows the hint before the first session', async () => {
  * See the component for why that matches the other first-run gates rather than filtering on `endedAt`.
  */
 it('stays away once the log holds a session', async () => {
-  useSessionHistoryStore.setState({ sessions: [aSession({ startedAt: '2026-01-05T09:00:00.000Z' })], status: 'ready' });
+  useSessionHistoryStore.setState({
+    sessions: [
+      aSession({
+        startedAt: '2026-01-05T09:00:00.000Z',
+        entries: [oneSetEntry],
+      }),
+    ],
+    status: 'ready',
+  });
   await renderScreen(<FirstSessionHint />);
 
   expect(screen.queryByText(/Put the phone down/)).toBeNull();

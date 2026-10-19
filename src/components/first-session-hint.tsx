@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { ThemedText } from '@/components/themed-text';
 import { RunnerColors, Spacing } from '@/constants/theme';
 import { usePreferencesStore } from '@/state/preferences-store';
-import { useSessionHistoryStore } from '@/state/session-history-store';
+import { useLoggedSessions } from '@/state/session-history-store';
 
 /**
  * One line on the count-in, for someone with nothing in their session log yet: you can stop watching
@@ -66,7 +66,7 @@ import { useSessionHistoryStore } from '@/state/session-history-store';
  */
 export function FirstSessionHint() {
   const { t } = useTranslation();
-  const hasHistory = useSessionHistoryStore((state) => state.sessions.length > 0);
+  const hasHistory = useLoggedSessions((sessions) => sessions.length > 0);
   const soundsOn = usePreferencesStore((state) => state.preferences.sessionSounds);
 
   if (hasHistory || !soundsOn) return null;

@@ -20,6 +20,17 @@ here, next to what it describes.
 
 ### What changed
 
+**Search forgives typos and accents.** Every search box (Workouts, Programs, Library, History and
+the exercise list mid-workout) now finds "Agachamento" when you type "agach", "Bulgarian Split
+Squat" when you type "bulgarain", and "DB Floor Press" when you type "press db". The best matches
+come first; History stays newest first. In Japanese, hiragana finds katakana and the other way round.
+
+---
+
+## 0.10.0 — versionCode 13, 19 October 2026
+
+### What changed
+
 **Backups to a folder now have your data in them.** On Android, the files Kettle wrote into your
 backup folder could turn up empty: the file was there, with nothing inside. Both files now hold the
 whole library and the whole log after every backup. A folder you already chose keeps working — tap
@@ -35,14 +46,43 @@ of the same type, so a bench press could become a dumbbell press but not a run. 
 whole library, with the closest matches first. Swapping between sets and holds keeps the sets you
 had left; swapping into a HIIT, EMOM, AMRAP or cardio exercise runs that exercise as you wrote it.
 
+**A set logged at 0 no longer counts as a set.** Logging 0 reps or a 0-second hold is how you skip
+something mid-workout, so it no longer shows up in History, Stats or "last time", and a session
+where you skipped everything doesn't count as a workout or move your program on. Older sessions are
+shown the same way, and the files themselves are left as they were. Typing 0 into a set while
+editing a session removes that set when you save.
+
 **Searching while you swap or add an exercise works on newer Android phones.** Typing a few letters
 made the list vanish: it had slipped behind the keyboard. It now stays above the keyboard while you
 type.
 
-**Search forgives typos and accents.** Every search box (Workouts, Programs, Library, History and
-the exercise list mid-workout) now finds "Agachamento" when you type "agach", "Bulgarian Split
-Squat" when you type "bulgarain", and "DB Floor Press" when you type "press db". The best matches
-come first; History stays newest first. In Japanese, hiragana finds katakana and the other way round.
+### Play release notes
+
+Counted at 112 (en-US) and 122 (pt-BR), against a limit of 500. Re-count programmatically
+if you edit them rather than trusting these numbers — over-limit copy is a rejected upload, not a
+truncated one.
+
+Deliberately vague this time: two fixes, one new Swap behaviour and one layout fix don't add up to a
+headline, so the note says there is an update and leaves the detail to the list above.
+
+Two blocks rather than three, as in 0.8.0 and 0.9.0: the Play listing does not carry ja-JP.
+
+```
+<en-US>
+What's new
+
+Updates and fixes to improve your favourite exercise app.
+
+Report anything that hangs or loses data.
+</en-US>
+<pt-BR>
+Novidades
+
+Atualizações e correções para melhorar o seu app de exercícios favorito.
+
+Relate travamentos ou perda de dados.
+</pt-BR>
+```
 
 ---
 

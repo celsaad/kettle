@@ -152,6 +152,8 @@ const exercises: Exercise[] = [
   // until the Done button ends it.
   { id: 'row', name: 'Row', type: 'cardio', config: { durationSec: 60 } },
   { id: 'walk', name: 'Walk', type: 'cardio', config: {} },
+  // A distance target and no duration: counts up, and carries the planned distance into the log.
+  { id: 'run', name: 'Run', type: 'cardio', config: { distanceMeters: 5000 } },
   // rest_sec: 0 — back-to-back sets, how half a hand-rolled superset is written.
   { id: 'dips', name: 'Dips', type: 'reps', config: { sets: 3, targetRepsMin: 8, restSec: 0 } },
 ];
@@ -513,6 +515,7 @@ describe('write-through persistence', () => {
     // which is what makes "rewrite the member's entry" need to find the right one rather than the last.
     await press(() => result.current.doneSet());
     await press(() => result.current.skipRest());
+    await tick(5); // a hold ended at 0s is a skip, and is never written
     await press(() => result.current.doneSet());
 
     expect(mockSession.entries).toHaveLength(2);
@@ -638,6 +641,7 @@ describe('circuits', () => {
     // each extra call re-commits the last step.
     const total = result.current.totalSteps;
     for (let i = 0; i < total; i++) {
+      if (result.current.step?.kind === 'hold') await tick(5); // a 0s hold is never written
       await press(() => result.current.doneSet());
     }
 
@@ -777,6 +781,79 @@ describe('goPrev undo', () => {
     const { result } = await mount(workoutOf(single('pullups')));
     await press(() => result.current.goPrev());
     expect(result.current.stepIndex).toBe(0);
+  });
+});
+
+/**
+ * Logging 0 is how an exercise gets skipped — there is no skip control — so zero work never reaches
+ * the file. The two cases that matter beyond "nothing written" are the bookkeeping around it: the rest
+ * after a dropped set, and an undo of one.
+ */
+describe('zero work', () => {
+  const pullupSets = () => {
+    const entry = mockSession.entries.find((candidate) => candidate.type === 'reps');
+    return entry?.type === 'reps' ? entry.sets : [];
+  };
+
+  it('writes no entry for an exercise whose only set was zero', async () => {
+    const { result } = await mount(workoutOf(single('pullups'), single('lsit')));
+    await press(() => result.current.setReps(0));
+    await press(() => result.current.logSet());
+    expect(mockSession.entries).toHaveLength(0);
+  });
+
+  it('writes no entry for a hold ended at 0s', async () => {
+    const { result } = await mount(workoutOf(single('lsit'), single('pullups')));
+    await press(() => result.current.doneSet());
+    expect(mockSession.entries).toHaveLength(0);
+  });
+
+  it('drops the zero set and its rest without touching the set before it', async () => {
+    const { result } = await mount(workoutOf(single('pullups')));
+    await press(() => result.current.logSet());
+    await tick(30);
+    await press(() => result.current.skipRest());
+    await press(() => result.current.setReps(0));
+    await press(() => result.current.logSet());
+    // Attached to the last *logged* set, this rest would overwrite set 1's 30s.
+    await tick(50);
+    await press(() => result.current.skipRest());
+    await press(() => result.current.logSet());
+
+    expect(pullupSets().map((set) => set.reps)).toEqual([6, 6]);
+    expect(pullupSets()[0].restTakenSec).toBe(30);
+  });
+
+  it('has nothing to undo after a dropped set, so Prev keeps the set before it', async () => {
+    const { result } = await mount(workoutOf(single('pullups')));
+    await press(() => result.current.logSet());
+    await press(() => result.current.skipRest());
+    await press(() => result.current.setReps(0));
+    await press(() => result.current.logSet());
+    await press(() => result.current.goPrev());
+
+    expect(pullupSets()).toHaveLength(1);
+    expect(result.current.stepIndex).toBe(2);
+  });
+
+  // The distance in a cardio entry is the plan's, copied in, so it can't stand as evidence of work.
+  // Check the entry through `entryWithoutZeroWork` instead of on duration and this fails.
+  it('logs no cardio ended at 0s, even with a distance target', async () => {
+    const { result } = await mount(workoutOf(single('run'), single('pullups')));
+    await press(() => result.current.logInterval());
+    expect(mockSession.entries).toHaveLength(0);
+  });
+
+  it('logs no AMRAP with no rounds, and Prev then leaves the entry before it alone', async () => {
+    const { result } = await mount(workoutOf(single('row'), single('grinder'), single('pullups')));
+    await tick(60); // the row counts down and logs itself
+    expect(mockSession.entries.map((entry) => entry.type)).toEqual(['cardio']);
+
+    await press(() => result.current.logInterval()); // the AMRAP, ended at 0 rounds
+    expect(mockSession.entries.map((entry) => entry.type)).toEqual(['cardio']);
+
+    await press(() => result.current.goPrev());
+    expect(mockSession.entries.map((entry) => entry.type)).toEqual(['cardio']);
   });
 });
 
@@ -1479,6 +1556,7 @@ describe('swapping an exercise mid-session', () => {
     await press(result.current.logSet);
     await press(result.current.logSet);
     // Onto the plank block, which is its own member and must still append cleanly after the swap.
+    await tick(5); // a 0s hold is never written
     await press(result.current.doneSet);
 
     expect(mockSession.entries.map((entry) => entry.exercise)).toEqual(['pullups', 'dips', 'plank']);

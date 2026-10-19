@@ -609,6 +609,7 @@
     "removeEntryConfirmTitle": "Remove this exercise?",
     "removeEntryConfirmBody": "\"{{name}}\" has one set left, so removing it takes the exercise out of this session.",
     "readOnlyNote": "Minute-by-minute logs aren't editable here.",
+    "zeroRemoved": "Sets at 0 are removed when you save.",
     "field": {
       "reps": "Reps",
       "load": "Load",

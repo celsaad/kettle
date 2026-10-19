@@ -13,7 +13,7 @@ import { formatSessionCount, formatSetCount } from '@/domain/format';
 import { filterByName } from '@/domain/search';
 import { useTheme } from '@/hooks/use-theme';
 import { useLibraryStore } from '@/state/library-store';
-import { useSessionHistoryStore } from '@/state/session-history-store';
+import { useLoggedSessions, useSessionHistoryStore } from '@/state/session-history-store';
 import { historyStats as historyStatsFor } from '@/state/selectors/history-stats';
 import { historySessionsView, type HistorySessionView } from '@/state/selectors/history-views';
 import { exportSession, exportSessions } from '@/storage/export';
@@ -116,7 +116,9 @@ export default function HistoryScreen() {
   const theme = useTheme();
   const { t } = useTranslation();
   const library = useLibraryStore((state) => state.library);
-  const sessions = useSessionHistoryStore((state) => state.sessions);
+  // Raw for export, which hands over the user's own files; filtered for everything shown.
+  const rawSessions = useSessionHistoryStore((state) => state.sessions);
+  const sessions = useLoggedSessions();
   const deleteSession = useSessionHistoryStore((state) => state.deleteSession);
   // Collected since hydration existed and rendered nowhere: a session file that wouldn't parse, or one
   // the disk wouldn't take mid-workout, was known about and never mentioned. History is where a
@@ -235,8 +237,11 @@ export default function HistoryScreen() {
                     {t('history.stats')}
                   </ThemedText>
                 </Pressable>
-                {sessions.length > 0 && (
-                  <Pressable onPress={() => exportSessions(sessions).catch(() => {})} accessibilityRole="button" hitSlop={8}>
+                {rawSessions.length > 0 && (
+                  <Pressable
+                    onPress={() => exportSessions(rawSessions).catch(() => {})}
+                    accessibilityRole="button"
+                    hitSlop={8}>
                     <ThemedText type="smallMedium" themeColor="accentText">
                       {t('history.exportAll')}
                     </ThemedText>

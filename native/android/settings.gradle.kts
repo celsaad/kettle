@@ -1,5 +1,6 @@
 // The native app (docs/native-migration-plan.md). `:shared` is the Kotlin Multiplatform domain the
-// iOS app reuses later; `:app` is the Compose shell that will host it.
+// iOS app reuses later; `:app` is the Compose shell that will host it; `:strings` generates `:app`'s
+// string resources from the RN locale bundles.
 pluginManagement {
     repositories {
         google()
@@ -17,4 +18,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "kettle"
-include(":shared", ":app")
+include(":shared", ":app", ":strings")

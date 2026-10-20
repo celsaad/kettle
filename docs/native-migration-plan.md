@@ -196,7 +196,8 @@ Nothing user-visible ships in M1. It builds the pieces every later milestone dep
   - `en.json`, `pt.json` and `ja.json` → `values{,-pt,-ja}/strings.xml`, plurals included.
     Android's plural rules never select `zero` for Portuguese, so the generator emits an explicit
     zero branch for every `_zero` key. That is the same "0 sessão" bug the bundles already guard
-    against, and it gets a test.
+    against, and it gets a test. *(Landed: `:strings`, run by `:app`'s build into a build directory,
+    so nothing generated is committed. Call sites use `pluralText`, never `pluralStringResource`.)*
   - `constants/theme.ts` → a Compose theme (colors, `Spacing`, the always-dark `RunnerColors`).
 - **CI**: a Gradle job for `native/android` and `:shared`, with ktlint and detekt at zero warnings
   (the same rule `pnpm run lint` has), alongside the existing pnpm jobs. *(Landed: the `native` job

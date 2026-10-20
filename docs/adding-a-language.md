@@ -54,6 +54,11 @@ plugin is language-agnostic. That was true of the plugin and false of the config
 `supportedLocales` is what turned it into step 3, and the paragraph that said otherwise would have
 sent a fourth language out undeclared.
 
+Nor is the native app's copy: `:strings` generates its `values-<code>/strings.xml` from whatever
+bundles step 1 left in `src/i18n/locales`, on every build. The one native line naming languages by
+hand is the `@LocalePreviews` annotation in `:app`, and missing it costs a Studio preview, not a
+translation.
+
 Three traps before picking one:
 
 - **Write the plural keys the language actually has, not the ones English has.** i18next resolves

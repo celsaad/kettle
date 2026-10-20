@@ -15,5 +15,5 @@ fun main(args: Array<String>) {
 
     val out = File(output)
     out.deleteRecursively()
-    File(out, "com/casco/kettle/shell/theme").apply { mkdirs() }.resolve("GeneratedTheme.kt").writeText(kotlin)
+    File(out, OUTPUT_PACKAGE.replace('.', '/')).apply { mkdirs() }.resolve("GeneratedTheme.kt").writeText(kotlin)
 }

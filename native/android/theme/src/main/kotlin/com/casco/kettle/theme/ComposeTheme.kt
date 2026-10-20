@@ -2,6 +2,9 @@ package com.casco.kettle.theme
 
 import kotlin.math.roundToInt
 
+/** Where the generated file lives in `:app`, as its package and as the path under a source root. */
+const val OUTPUT_PACKAGE = "com.casco.kettle.shell.theme"
+
 /**
  * theme.json as one Kotlin file: `Colors`' two schemes as `LightColors` and `DarkColors`,
  * `RunnerColors` as a fixed object, `Spacing` and `MaxContentWidth` in dp.
@@ -10,7 +13,7 @@ fun generateTheme(json: String): String {
     val theme = parseTheme(json)
     return buildString {
         appendLine("// Generated from src/constants/theme.json by :theme. Edit theme.json, not this file.")
-        appendLine("package com.casco.kettle.shell.theme")
+        appendLine("package $OUTPUT_PACKAGE")
         appendLine()
         appendLine("import androidx.compose.runtime.Immutable")
         appendLine("import androidx.compose.ui.graphics.Color")

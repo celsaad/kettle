@@ -19,7 +19,8 @@ import theme from '@/constants/theme.json';
  *
  * - `light.textSecondary` was `#777166`, which measured 4.41 on `background` and 4.01 on
  *   `backgroundSelected` — failing on two of its three surfaces, and it's the app's most-used color
- *   (every caption, count and summary line). Darkened to `#6b6558`: 5.28 / 5.79 / 4.79.
+ *   (every caption, count and summary line). Darkened to `#6b6558`: 5.28 on `background`, 5.79 on
+ *   `backgroundElement`, 4.79 on `backgroundSelected`.
  * - `light.onAccent` (white) on `light.accent` is **3.64** — AA-large only. That's fine where it's
  *   used, the 20px semibold "Start session" label, which clears the 18.66px-bold threshold, but it
  *   has no headroom: don't reuse this pairing for body-sized text without darkening `accent` first.

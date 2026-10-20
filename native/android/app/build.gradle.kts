@@ -94,6 +94,10 @@ class LocaleBundles(
 
 tasks.withType<Test>().configureEach {
     jvmArgumentProviders.add(LocaleBundles(localesDir))
+    // Robolectric refuses to run SDK 35 or later on a JVM older than 21, and these tests run at the
+    // app's targetSdk. Only the test JVM moves; everything still compiles for 17. No toolchain
+    // resolver is configured, so a machine without a JDK 21 fails here loudly rather than downloading one.
+    javaLauncher.set(javaToolchains.launcherFor { languageVersion.set(JavaLanguageVersion.of(21)) })
 }
 
 dependencies {

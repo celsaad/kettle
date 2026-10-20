@@ -95,10 +95,14 @@ jobs:
       - uses: actions/checkout@v7
 
       # Pinned for the same reason as in android.yml: the runner image's default JDK has moved before.
+      # 21 as well, for `:app`'s unit tests only (see the toolchain note in app/build.gradle.kts).
+      # The last version listed becomes JAVA_HOME, so Gradle itself still runs on 17.
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17
+          java-version: |
+            21
+            17
 
       - uses: gradle/actions/setup-gradle@v4
 

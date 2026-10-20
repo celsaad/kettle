@@ -123,10 +123,18 @@ class LocaleBundles(
     override fun asArguments() = listOf("-Dkettle.localesDir=${dir.asFile.absolutePath}")
 }
 
+/** The same theme, for the theme test to hold every generated token against its source. */
+class ThemeSource(
+    @get:InputFile
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    val file: RegularFile,
+) : CommandLineArgumentProvider {
+    override fun asArguments() = listOf("-Dkettle.themeFile=${file.asFile.absolutePath}")
+}
+
 tasks.withType<Test>().configureEach {
     jvmArgumentProviders.add(LocaleBundles(localesDir))
-    inputs.file(themeFile).withPathSensitivity(PathSensitivity.RELATIVE)
-    systemProperty("kettle.themeFile", themeFile.asFile.absolutePath)
+    jvmArgumentProviders.add(ThemeSource(themeFile))
     // Robolectric refuses to run SDK 35 or later on a JVM older than 21, and these tests run at the
     // app's targetSdk. Only the test JVM moves; everything still compiles for 17. No toolchain
     // resolver is configured, so a machine without a JDK 21 fails here loudly rather than downloading one.

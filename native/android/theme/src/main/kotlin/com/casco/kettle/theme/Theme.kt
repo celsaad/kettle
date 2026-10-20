@@ -58,8 +58,49 @@ private fun primitives(
     accepts: (JsonPrimitive) -> Boolean,
 ): Map<String, String> =
     group.mapValues { (key, value) ->
+        require(IDENTIFIER.matches(key) && key !in RESERVED) { "$name.$key can't be the name of a Kotlin property" }
         (value as? JsonPrimitive)?.takeIf(accepts)?.content ?: refuse("$name.$key isn't a value this group holds")
     }
+
+private val IDENTIFIER = Regex("[A-Za-z_][A-Za-z0-9_]*")
+
+/**
+ * Kotlin's hard keywords, which can't name a property unescaped, and `tokens`, which the generated
+ * file already uses for its own list. Refused here so a bad name fails with its theme.json path rather
+ * than as a compile error in a generated file.
+ */
+private val RESERVED =
+    setOf(
+        "as",
+        "break",
+        "class",
+        "continue",
+        "do",
+        "else",
+        "false",
+        "for",
+        "fun",
+        "if",
+        "in",
+        "interface",
+        "is",
+        "null",
+        "object",
+        "package",
+        "return",
+        "super",
+        "this",
+        "throw",
+        "true",
+        "try",
+        "typealias",
+        "typeof",
+        "val",
+        "var",
+        "when",
+        "while",
+        "tokens",
+    )
 
 /** Every refusal is theme.json holding something the generator doesn't translate. */
 internal fun refuse(message: String): Nothing = throw IllegalArgumentException(message)

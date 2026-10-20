@@ -138,7 +138,7 @@ class GeneratedThemeTest {
         }
     }
 
-    private class Seen {
+    private class ObservedTheme {
         var shell: KettleColors? = null
         var shellBackground: Color? = null
         var runnerBackground: Color? = null
@@ -146,8 +146,8 @@ class GeneratedThemeTest {
     }
 
     /** What a screen in the shell, and the runner nested inside it, see under the current configuration. */
-    private fun seen(): Seen {
-        val seen = Seen()
+    private fun observeTheme(): ObservedTheme {
+        val seen = ObservedTheme()
         compose.setContent {
             KettleTheme {
                 seen.shell = KettleTheme.colors
@@ -165,7 +165,7 @@ class GeneratedThemeTest {
     @Test
     @Config(qualifiers = "notnight")
     fun `the shell is light in a light system scheme, and the runner is dark inside it`() {
-        val seen = seen()
+        val seen = observeTheme()
 
         assertEquals(LightColors, seen.shell)
         assertEquals(LightColors.background, seen.shellBackground)
@@ -177,7 +177,7 @@ class GeneratedThemeTest {
     @Test
     @Config(qualifiers = "night")
     fun `the shell is dark in a dark system scheme, and the runner keeps its own colors`() {
-        val seen = seen()
+        val seen = observeTheme()
 
         assertEquals(DarkColors, seen.shell)
         assertEquals(DarkColors.background, seen.shellBackground)

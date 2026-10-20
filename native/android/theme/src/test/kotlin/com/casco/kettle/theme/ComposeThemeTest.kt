@@ -1,13 +1,9 @@
 package com.casco.kettle.theme
 
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.jsonObject
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import java.io.File
 
 class ComposeThemeTest {
     /** A theme.json with every group at its smallest, each overridable as the JSON inside its braces. */
@@ -147,6 +143,15 @@ class ComposeThemeTest {
     }
 
     @Test
+    fun `a token name that can't be a Kotlin property is refused by name, not by the compiler`() {
+        for (name in listOf("my-color", "2x", "val", "object", "tokens")) {
+            val message = refusal(theme(runner = """"text": "#ffffff", "$name": "#000000""""))
+
+            assertTrue("RunnerColors.$name" in message, "$name: $message")
+        }
+    }
+
+    @Test
     fun `a color in a form the generator doesn't convert is refused`() {
         val colors =
             listOf("#fff", "#26221cff", "rgb(30, 25, 15)", "rgba(30,25,15,1.5)", "rgba(300,25,15,0.1)", "tomato")
@@ -155,36 +160,5 @@ class ComposeThemeTest {
 
             assertTrue(message.startsWith(color), "$color: $message")
         }
-    }
-
-    private fun JsonObject.obj(key: String) = getValue(key).jsonObject
-
-    /**
-     * The shipping theme.json, through the generator: every token in it comes out as a declaration,
-     * once per group it sits in. Read here with the JSON library directly, so a token the generator
-     * skipped shows up as a shortfall.
-     */
-    @Test
-    fun `the real theme json generates a declaration for every token`() {
-        val json = File(checkNotNull(System.getProperty("kettle.themeFile")) { "set by Gradle" }).readText()
-        val root = Json.parseToJsonElement(json).jsonObject
-        val groups =
-            listOf(
-                root.obj("Colors").obj("light"),
-                root.obj("Colors").obj("dark"),
-                root.obj("RunnerColors"),
-                root.obj("Spacing"),
-            )
-        val expected = groups.flatMap { it.keys }
-
-        // An argument to LightColors or DarkColors, or a val of RunnerColors or Spacing.
-        val kotlin = generateTheme(json)
-        val declared =
-            Regex(
-                """^ +(?:val )?(\w+) = """,
-                RegexOption.MULTILINE,
-            ).findAll(kotlin).map { it.groupValues[1] }
-        assertEquals(expected.sorted(), declared.toList().sorted())
-        assertTrue("val MaxContentWidth = ${root.getValue("MaxContentWidth")}.dp" in kotlin, kotlin)
     }
 }

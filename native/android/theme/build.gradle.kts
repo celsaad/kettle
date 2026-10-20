@@ -28,7 +28,4 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
-    val themeFile = rootProject.layout.projectDirectory.file("../../src/constants/theme.json")
-    inputs.file(themeFile).withPathSensitivity(PathSensitivity.RELATIVE)
-    systemProperty("kettle.themeFile", themeFile.asFile.absolutePath)
 }

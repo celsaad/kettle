@@ -930,8 +930,12 @@ decision assembled across several commits. Open work belongs in the sections at 
     them on every build into a build directory, so nothing generated is committed and nothing can
     go stale. The Swift app in M8 reads the same files, not a Kotlin copy.
   - **Behaviour isn't data.** Parser rules, ceilings like `MAX_SETS`, unit steps and search
-    thresholds are ported as code, and `conformance/` is what holds the two sides together. When this
-    was settled, every hand-copied constant in `:shared` was checked and found pinned by a suite.
+    thresholds are ported as code, and `conformance/` is what holds the two sides together. The
+    loader's limits that the corpus can't express hold the same way through `YamlTest`, which
+    asserts against values measured from js-yaml (nesting depth, for example).
+  - **Audited when this was settled: none of #141–#146 needs redoing.** `:strings` (#146) already
+    reads the bundles in place. The domain ports (#142–#145) hold behaviour, and every hand-copied
+    constant in `:shared` is pinned by one of the two above.
   - **Comments stay in the TS wrapper**, because JSON has none. `theme.ts` keeps the contrast notes,
     and `GeneratedThemeTest` recomputes the ratios they record from the generated colors, so the
     numbers can't drift away from the values even though they no longer sit beside them.
@@ -939,7 +943,7 @@ decision assembled across several commits. Open work belongs in the sections at 
     their translation tables), which M5 brings to native. They are data written as TS objects. Move
     them into data files both sides read (library YAML plus translation JSON) rather than porting the
     objects to Kotlin.
-  - Two hand-kept lists remain, on purpose: `LocalePreviews` names each language, because a
+  - Hand-kept lists remain where a data file can't reach, on purpose: `LocalePreviews` names each language, because a
     `@Preview` locale has to be a compile-time constant; and `libs.versions.toml` repeats React
     Native's Kotlin and AGP, because once M2 hosts the RN AAR, a mismatch fails the build loudly.
 

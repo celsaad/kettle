@@ -39,7 +39,9 @@ object KettleTheme {
 
 /**
  * The live session runner's theme: [RunnerColors] whatever the system scheme, as the RN runner is.
- * It reads no scheme at all, so nested inside a light [KettleTheme] it is still dark.
+ * It reads no scheme at all, so nested inside a light [KettleTheme] it is still dark. It sets
+ * Material's colors only: a runner screen reads its tokens from [RunnerColors] directly, the way the
+ * RN runner does, since [KettleTheme.colors] inside it is still the shell's.
  */
 @Composable
 fun RunnerTheme(content: @Composable () -> Unit) {

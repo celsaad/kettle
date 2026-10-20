@@ -27,7 +27,7 @@ private fun Exercise.toRaw(): Map<String, Any?> {
     return optionals("id" to id, "name" to name, "type" to type, "config" to raw, "notes" to notes)
 }
 
-private fun ExerciseConfig.toRaw(): Pair<String, Map<String, Any?>> =
+internal fun ExerciseConfig.toRaw(): Pair<String, Map<String, Any?>> =
     when (this) {
         is ExerciseConfig.Hiit -> {
             "hiit" to optionals("work_sec" to workSec, "rest_sec" to restSec, "rounds" to rounds)
@@ -79,7 +79,7 @@ private fun Workout.toRaw(): Map<String, Any?> =
         "blocks" to blocks.map { it.toRaw() },
     )
 
-private fun WorkoutBlock.toRaw(): Map<String, Any?> =
+internal fun WorkoutBlock.toRaw(): Map<String, Any?> =
     when (this) {
         is WorkoutBlock.ExerciseBlock -> {
             optionals("type" to "exercise", "exercise" to exerciseId, "config" to configOverride?.toRaw())
@@ -125,13 +125,7 @@ private fun ProgramWeek.toRaw(): Map<String, Any?> =
     }
 
 private fun ProgramOverride.toRaw(): Map<String, Any?> {
-    val raw =
-        config.mapValues { (_, value) ->
-            when (value) {
-                is OverrideValue.Numeric -> value.value
-                is OverrideValue.Text -> value.value
-            }
-        }
+    val raw = config.mapValues { (_, value) -> value.toRaw() }
     return when (this) {
         is ProgramOverride.ExerciseOverride -> optionals("exercise" to exerciseId, "config" to raw)
         is ProgramOverride.BlockOverride -> optionals("block" to blockId, "config" to raw)

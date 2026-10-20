@@ -1,15 +1,25 @@
 package com.casco.kettle.conformance
 
+import com.casco.kettle.domain.Library
 import com.casco.kettle.domain.ParseResult
 import com.casco.kettle.domain.Session
 import com.casco.kettle.domain.SessionEntry
 import com.casco.kettle.domain.UnitSystem
+import com.casco.kettle.domain.diffBlockOverride
+import com.casco.kettle.domain.diffExerciseOverride
 import com.casco.kettle.domain.emomIntervalCount
 import com.casco.kettle.domain.filterByName
+import com.casco.kettle.domain.findProgramWeek
 import com.casco.kettle.domain.fromDisplayWeight
+import com.casco.kettle.domain.mergeBlockOverride
+import com.casco.kettle.domain.mergeExerciseOverride
+import com.casco.kettle.domain.mergeLibraries
 import com.casco.kettle.domain.parseLibraryYaml
 import com.casco.kettle.domain.parseSessionYaml
+import com.casco.kettle.domain.programWeekNumbers
 import com.casco.kettle.domain.rankByName
+import com.casco.kettle.domain.repairLibraryBounds
+import com.casco.kettle.domain.resolveWorkoutForWeek
 import com.casco.kettle.domain.serializeLibraryYaml
 import com.casco.kettle.domain.serializeSessionYaml
 import com.casco.kettle.domain.toDisplayWeight
@@ -36,6 +46,10 @@ class ConformanceTest {
     private val runners: Map<String, (Case) -> Any?> =
         mapOf(
             "library" to ::runLibrary,
+            "merge" to ::runMerge,
+            "overrides" to ::runOverrides,
+            "program" to ::runProgram,
+            "repair" to ::runRepair,
             "search" to ::runSearch,
             "session" to ::runSession,
             "units" to ::runUnits,
@@ -104,6 +118,71 @@ class ConformanceTest {
 
     private fun runLibrary(case: Case): Any = golden(parseLibraryYaml(libraryText(case)), ::libraryJson)
 
+    private fun runMerge(case: Case): Any =
+        mergeJson(
+            mergeLibraries(mustParseLibrary(case.string("existing")!!), mustParseLibrary(case.string("incoming")!!)),
+        )
+
+    private fun runRepair(case: Case): Any =
+        when (val repaired = repairLibraryBounds(case.string("input")!!)) {
+            null -> mapOf("repaired" to false)
+            else -> mapOf("repaired" to true, "result" to golden(parseLibraryYaml(repaired), ::libraryJson))
+        }
+
+    private fun runProgram(case: Case): Any {
+        val library = mustParseLibrary(case.string("library")!!)
+        return mapOf(
+            "weekNumbers" to library.programs.associate { it.id to programWeekNumbers(it) },
+            "queries" to
+                case.maps("queries").map { query ->
+                    val program = library.programs.single { it.id == query["program"] }
+                    val week = (query["week"] as Number).toLong()
+                    val day = query["day"] as String?
+                    mapOf(
+                        "query" to query,
+                        "found" to (findProgramWeek(program, week, day) != null),
+                        "resolved" to resolveWorkoutForWeek(program, week, library, day)?.let(::resolvedJson),
+                    )
+                },
+        )
+    }
+
+    /** `block` is an index into the workout's blocks, as `base` and `edited` are for `diffBlock`. */
+    private fun runOverrides(case: Case): Any {
+        val library = mustParseLibrary(case.string("library")!!)
+        val exercise = { id: Any? -> library.exercises.single { it.id == id } }
+        val block = { workout: Any?, index: Any? -> library.workouts.single { it.id == workout }.blocks[index as Int] }
+        return case.maps("ops").map { op ->
+            val config by lazy { overrideConfig(op["config"] as Map<*, *>) }
+            val workout = op["workout"]
+            val result =
+                when (val name = op["op"]) {
+                    "mergeExercise" -> {
+                        val target = exercise(op["exercise"])
+                        exerciseMergeJson(target, mergeExerciseOverride(target, config))
+                    }
+
+                    "mergeBlock" -> {
+                        val target = block(workout, op["block"])
+                        blockMergeJson(target, mergeBlockOverride(target, config))
+                    }
+
+                    "diffExercise" -> {
+                        patchJson(diffExerciseOverride(exercise(op["base"]), exercise(op["edited"])))
+                    }
+
+                    "diffBlock" -> {
+                        patchJson(diffBlockOverride(block(workout, op["base"]), block(workout, op["edited"])))
+                    }
+
+                    else -> {
+                        error("unknown op $name")
+                    }
+                }
+            mapOf("op" to op, "result" to result)
+        }
+    }
+
     private fun runSession(case: Case): Any = golden(parseSessionYaml(case.string("input")!!), ::sessionJson)
 
     private fun runUnits(case: Case): Any {
@@ -144,6 +223,9 @@ class Case(
     // Cast per element, so an unquoted name that loads as a number fails here, naming the value.
     fun strings(key: String): List<String> = (fields[key] as List<*>).map { it as String }
 
+    @Suppress("UNCHECKED_CAST")
+    fun maps(key: String): List<Map<String, Any?>> = fields[key] as List<Map<String, Any?>>
+
     fun number(key: String): Double = (fields[key] as Number).toDouble()
 }
 
@@ -163,6 +245,13 @@ private val conformanceDir: File by lazy {
         },
     )
 }
+
+/** A fixture library, which a case promises parses: one that doesn't is a broken case, not a result. */
+private fun mustParseLibrary(text: String): Library =
+    when (val result = parseLibraryYaml(text)) {
+        is ParseResult.Ok -> result.value
+        else -> error("fixture library does not parse: $result")
+    }
 
 private fun suiteNames(): List<String> =
     conformanceDir

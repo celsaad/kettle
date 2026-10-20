@@ -76,6 +76,8 @@ Every one of these has a case, because each is a default that differs between YA
 - A key with nothing after it is `null`, and `null` doesn't satisfy an optional string.
 - **Duplicate keys and tab indentation are YAML errors**, as is an empty document.
 - **At most 1000 aliases** per document. The 1001st is a YAML error, raised before the schema runs.
+- **Repair clamps what the schema reports as past a ceiling, and the top of the safe-integer range
+  is one.** `target_reps_min: 1e16` has no ceiling of its own, and still repairs to 2^53 − 1.
 - Rounding is JavaScript's `Math.round`: an exact half rounds **up**, toward +∞. Kotlin's
   `kotlin.math.round` rounds it to even instead. `roundToLong()` matches. Swift's default
   `rounded()` also matches for the non-negative values here, but rounds negative halves away from

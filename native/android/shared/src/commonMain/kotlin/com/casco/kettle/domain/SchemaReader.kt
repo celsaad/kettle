@@ -191,7 +191,7 @@ internal class Fields(
     private val asked = mutableSetOf<String>()
 
     /**
-     * Every key a presence rule below was asked about, read or absent: the fields this mapping's
+     * Every key a presence rule or [has] was asked about, read or absent: the fields this mapping's
      * schema has. Merging an override uses it to tell a patch's known keys from its typos, so the
      * list is the schema's own rather than a second copy of it.
      */
@@ -199,7 +199,7 @@ internal class Fields(
 
     fun raw(key: String): Any? = map[key]
 
-    fun has(key: String): Boolean = map.containsKey(key)
+    fun has(key: String): Boolean = present(key)
 
     // Unread values, for a refinement only: it runs once every field under it is the right type, which
     // is what makes these casts safe.

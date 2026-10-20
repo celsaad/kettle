@@ -74,7 +74,7 @@ fun mergeLibraries(
     )
 }
 
-private class ById<T>(
+private class MergedById<T>(
     val merged: List<T>,
     val added: List<String>,
     val updated: List<String>,
@@ -84,7 +84,7 @@ private fun <T> mergeById(
     existing: List<T>,
     incoming: List<T>,
     id: (T) -> String,
-): ById<T> {
+): MergedById<T> {
     val added = mutableListOf<String>()
     val updated = mutableListOf<String>()
     val byId = existing.associateByTo(LinkedHashMap(), id)
@@ -92,7 +92,7 @@ private fun <T> mergeById(
         if (id(item) in byId) updated += id(item) else added += id(item)
         byId[id(item)] = item
     }
-    return ById(byId.values.toList(), added, updated)
+    return MergedById(byId.values.toList(), added, updated)
 }
 
 /** The first reference the merged library can't resolve, in file order, or null when there is none. */

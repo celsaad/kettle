@@ -220,14 +220,23 @@ internal fun exerciseMergeJson(
     target: Exercise,
     merge: OverrideMerge<Exercise>,
 ): Map<String, Any?> =
-    mergeJson(merge, exerciseJson(merge.effective), exerciseJson(target) + ("config" to camelCase(merge.asAuthored)))
+    overrideMergeJson(
+        merge,
+        exerciseJson(merge.effective),
+        exerciseJson(target) + ("config" to camelCase(merge.asAuthored)),
+    )
 
 internal fun blockMergeJson(
     target: WorkoutBlock,
     merge: OverrideMerge<WorkoutBlock>,
-): Map<String, Any?> = mergeJson(merge, blockJson(merge.effective), blockJson(target) + camelCase(merge.asAuthored))
+): Map<String, Any?> =
+    overrideMergeJson(
+        merge,
+        blockJson(merge.effective),
+        blockJson(target) + camelCase(merge.asAuthored),
+    )
 
-private fun mergeJson(
+private fun overrideMergeJson(
     merge: OverrideMerge<*>,
     effective: Map<String, Any?>,
     asAuthored: Map<String, Any?>,

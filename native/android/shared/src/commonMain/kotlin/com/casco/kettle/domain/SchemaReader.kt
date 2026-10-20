@@ -192,10 +192,14 @@ internal class Fields(
 
     /**
      * Every key a presence rule or [has] was asked about, read or absent: the fields this mapping's
-     * schema has. Merging an override uses it to tell a patch's known keys from its typos, so the
-     * list is the schema's own rather than a second copy of it.
+     * schema has, once a read over it has run. Merging an override uses it to tell a patch's known
+     * keys from its typos, so the list is the schema's own rather than a second copy of it.
+     *
+     * That holds only while a reader asks for every one of its keys before it can give up, as each
+     * config reader does today by reading all its fields first. One that returned early would report
+     * the keys it never reached as typos, and drop them from every override.
      */
-    val known: Set<String> get() = asked
+    val schemaKeys: Set<String> get() = asked
 
     fun raw(key: String): Any? = map[key]
 

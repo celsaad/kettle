@@ -34,9 +34,9 @@ data class OverrideMerge<out T>(
  * it, since this resolves during render and a week that loses its patch is a smaller loss than a
  * program that can't open.
  *
- * Which keys are known is read off the type's own schema ([Fields.known]), as TS reads it off the
- * writer, so there is no list to keep in step. Unknown keys go to the reader too, which never looks
- * at them, and that is how they are dropped.
+ * Which keys are known is read off the type's own schema ([Fields.schemaKeys]), as TS reads it off
+ * the writer, so there is no list to keep in step. Unknown keys go to the reader too, which never
+ * looks at them, and that is how they are dropped.
  */
 fun mergeExerciseOverride(
     exercise: Exercise,
@@ -47,12 +47,8 @@ fun mergeExerciseOverride(
     val reader = SchemaReader()
     val fields = Fields(merged, ROOT, reader)
     val read = reader.result(reader.exerciseConfig(type, fields))
-    val report = OverrideReport(read !is ParseResult.Ok, config.keys.filterNot(fields.known::contains))
-    return OverrideMerge(
-        effective = if (read is ParseResult.Ok) exercise.copy(config = read.value) else exercise,
-        asAuthored = overrideValues(merged.filterKeys(fields.known::contains)),
-        report = report,
-    )
+    val validated = (read as? ParseResult.Ok)?.value?.let { exercise.copy(config = it) }
+    return overrideMerge(exercise, validated, merged, fields.schemaKeys::contains, config.keys)
 }
 
 /**
@@ -67,16 +63,26 @@ fun mergeBlockOverride(
     if (block !is WorkoutBlock.Circuit) {
         return OverrideMerge(block, emptyMap(), OverrideReport(refused = false, unknownKeys = config.keys.toList()))
     }
-    val (patch, unknown) = config.entries.partition { it.key in BLOCK_OVERRIDE_KEYS }
-    val merged = block.toRaw() + patch.associate { it.key to it.value.toRaw() }
+    val known = { key: String -> key in BLOCK_OVERRIDE_KEYS }
+    val merged = block.toRaw() + config.filterKeys(known).mapValues { (_, value) -> value.toRaw() }
     val reader = SchemaReader()
     val read = reader.result(reader.block(merged, ROOT))
-    return OverrideMerge(
-        effective = (read as? ParseResult.Ok)?.value ?: block,
-        asAuthored = overrideValues(merged.filterKeys { it in BLOCK_OVERRIDE_KEYS }),
-        report = OverrideReport(read !is ParseResult.Ok, unknown.map { it.key }),
-    )
+    return overrideMerge(block, (read as? ParseResult.Ok)?.value, merged, known, config.keys)
 }
+
+/** One merge's result: [validated] is null when the schema refused the merged target. */
+private fun <T> overrideMerge(
+    target: T,
+    validated: T?,
+    merged: Map<String, Any?>,
+    known: (String) -> Boolean,
+    patchKeys: Set<String>,
+): OverrideMerge<T> =
+    OverrideMerge(
+        effective = validated ?: target,
+        asAuthored = overrideValues(merged.filterKeys(known)),
+        report = OverrideReport(refused = validated == null, unknownKeys = patchKeys.filterNot(known)),
+    )
 
 /**
  * The keys a block override may set, spelled out rather than read off the block, which also carries
@@ -111,8 +117,8 @@ fun diffExerciseOverride(
     base: Exercise,
     edited: Exercise,
 ): Map<String, OverrideValue> {
-    val before = overrideValues(base.config.toRaw().second)
-    return overrideValues(edited.config.toRaw().second).filter { (key, value) -> value != before[key] }
+    val before = base.configValues()
+    return edited.configValues().filter { (key, value) -> value != before[key] }
 }
 
 /**
@@ -131,23 +137,10 @@ fun diffBlockOverride(
     }
 }
 
+/** The exercise's config as patch values, keyed as the file writes it. */
+private fun Exercise.configValues(): Map<String, OverrideValue> = overrideValues(config.toRaw().second)
+
 private fun changed(
     edited: Double?,
     base: Double?,
 ): OverrideValue? = edited?.takeIf { it != base }?.let(OverrideValue::Numeric)
-
-/** A patch value as the raw tree holds it, which is what a schema reader reads. */
-internal fun OverrideValue.toRaw(): Any =
-    when (this) {
-        is OverrideValue.Numeric -> value
-        is OverrideValue.Text -> value
-    }
-
-/** Raw values back to a patch's: the writer's numbers, or whatever a patch laid over them. */
-private fun overrideValues(raw: Map<String, Any?>): Map<String, OverrideValue> =
-    raw.mapValues { (_, value) ->
-        when (value) {
-            is Number -> OverrideValue.Numeric(value.toDouble())
-            else -> OverrideValue.Text(value as String)
-        }
-    }

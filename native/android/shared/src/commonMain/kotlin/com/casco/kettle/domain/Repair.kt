@@ -72,7 +72,7 @@ private fun clampedMinutes(exercise: Any?): Double? {
             null
         }
 
-        // Not "greater than", as TS writes it: a NaN count is clamped there too.
+        // Written as "at most", as TS writes it: a NaN count is never at most anything, so it is clamped.
         emomIntervalCount(intervalSec, totalMinutes) <= MAX_ROUNDS -> {
             null
         }

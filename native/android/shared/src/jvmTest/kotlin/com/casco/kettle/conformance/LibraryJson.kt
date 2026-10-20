@@ -16,6 +16,8 @@ import com.casco.kettle.domain.ResolvedWeek
 import com.casco.kettle.domain.Workout
 import com.casco.kettle.domain.WorkoutBlock
 import com.casco.kettle.domain.optionals
+import com.casco.kettle.domain.overrideValues
+import com.casco.kettle.domain.toRaw
 
 /**
  * The library's camelCase domain model as the goldens hold it, written out by hand like
@@ -31,7 +33,7 @@ internal fun libraryJson(library: Library): Map<String, Any?> =
         "programs" to library.programs.map(::programJson),
     )
 
-internal fun exerciseJson(exercise: Exercise): Map<String, Any?> =
+private fun exerciseJson(exercise: Exercise): Map<String, Any?> =
     buildMap {
         put("id", exercise.id)
         put("name", exercise.name)
@@ -90,10 +92,10 @@ private fun configJson(config: ExerciseConfig): Pair<String, Map<String, Any?>> 
         }
     }
 
-internal fun workoutJson(workout: Workout): Map<String, Any?> =
+private fun workoutJson(workout: Workout): Map<String, Any?> =
     mapOf("id" to workout.id, "name" to workout.name, "blocks" to workout.blocks.map(::blockJson))
 
-internal fun blockJson(block: WorkoutBlock): Map<String, Any?> =
+private fun blockJson(block: WorkoutBlock): Map<String, Any?> =
     when (block) {
         is WorkoutBlock.ExerciseBlock -> {
             optionals(
@@ -142,7 +144,7 @@ private fun weekJson(week: ProgramWeek): Map<String, Any?> =
     }
 
 private fun programOverrideJson(override: ProgramOverride): Map<String, Any?> {
-    val config = override.config.mapValues { (_, value) -> valueJson(value) }
+    val config = override.config.mapValues { (_, value) -> value.toRaw() }
     return when (override) {
         is ProgramOverride.ExerciseOverride -> {
             mapOf("kind" to "exercise", "exerciseId" to override.exerciseId, "config" to config)
@@ -153,12 +155,6 @@ private fun programOverrideJson(override: ProgramOverride): Map<String, Any?> {
         }
     }
 }
-
-private fun valueJson(value: OverrideValue): Any =
-    when (value) {
-        is OverrideValue.Numeric -> value.value
-        is OverrideValue.Text -> value.value
-    }
 
 /** A merge result in the goldens' shape. A refusal's `day` is left out when the week has none. */
 internal fun mergeJson(result: MergeResult): Map<String, Any?> =
@@ -203,13 +199,10 @@ private fun mergeErrorJson(error: MergeError): Map<String, Any?> =
 
 /** A corpus op's `config:` as the patch it stands for: every value a number or a string. */
 internal fun overrideConfig(config: Map<*, *>): Map<String, OverrideValue> =
-    config.entries.associate { (key, value) ->
-        key as String to
-            if (value is Number) OverrideValue.Numeric(value.toDouble()) else OverrideValue.Text(value as String)
-    }
+    overrideValues(config.entries.associate { (key, value) -> key as String to value })
 
 internal fun patchJson(patch: Map<String, OverrideValue>): Map<String, Any> =
-    patch.mapValues { (_, value) -> valueJson(value) }
+    patch.mapValues { (_, value) -> value.toRaw() }
 
 /**
  * TS's `asAuthored` is the target itself with the patch spread over it. Here it is only the patched
@@ -259,7 +252,7 @@ private fun camelCase(patch: Map<String, OverrideValue>): Map<String, Any?> =
             } else {
                 key.replace(Regex("_([a-z])")) { it.groupValues[1].uppercase() }
             }
-        name to valueJson(value)
+        name to value.toRaw()
     }
 
 internal fun resolvedJson(resolved: ResolvedWeek): Map<String, Any?> =

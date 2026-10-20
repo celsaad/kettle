@@ -13,18 +13,38 @@ import kotlinx.serialization.json.jsonObject
 sealed interface Entry {
     val key: String
     val name: String get() = key.replace('.', '_').replace('-', '_')
+
+    /** The text this entry renders: its one value, or every plural form. */
+    val values: Collection<String>
+
+    /** The arguments a call site passes, numbered from 1 in this order. */
+    val arguments: List<String>
 }
 
-data class Text(
+data class StringEntry(
     override val key: String,
     val value: String,
-) : Entry
+) : Entry {
+    override val values get() = listOf(value)
+    override val arguments get() = placeholders(key, value).sorted()
+}
 
 /** An i18next plural, its forms keyed by CLDR category (`one`, `other`, and `zero` where a bundle has one). */
-data class Plural(
+data class PluralEntry(
     override val key: String,
     val forms: Map<String, String>,
-) : Entry
+) : Entry {
+    override val values get() = forms.values
+    override val arguments get() =
+        listOf(COUNT) +
+            forms.values
+                .flatMap { placeholders(key, it) }
+                .toSet()
+                .minus(COUNT)
+                .sorted()
+}
+
+private const val COUNT = "count"
 
 private val PLURAL_SUFFIX = Regex("_(zero|one|two|few|many|other)$")
 
@@ -36,13 +56,19 @@ fun parseBundle(json: String): List<Entry> {
     val entries = LinkedHashMap<String, Entry>()
     for ((path, value) in flat) {
         val match = PLURAL_SUFFIX.find(path)
-        if (match == null) {
-            entries[path] = Text(path, value)
-        } else {
-            val base = path.removeRange(match.range)
-            val plural = entries[base] as? Plural ?: Plural(base, emptyMap())
-            entries[base] = plural.copy(forms = plural.forms + (match.groupValues[1] to value))
-        }
+        val key = if (match == null) path else path.removeRange(match.range)
+        val existing = entries[key]
+        // i18next would read a plain `x` when no `x_<form>` matches; two resources can't share the name.
+        require(
+            existing == null || (match != null && existing is PluralEntry),
+        ) { "$key is both a plain string and a plural" }
+        entries[key] =
+            if (match == null) {
+                StringEntry(path, value)
+            } else {
+                val plural = existing as? PluralEntry ?: PluralEntry(key, emptyMap())
+                plural.copy(forms = plural.forms + (match.groupValues[1] to value))
+            }
     }
     return entries.values.toList()
 }
@@ -75,14 +101,37 @@ fun generateResources(
     defaultLanguage: String,
 ): Map<String, String> {
     val parsed = bundles.mapValues { (_, json) -> parseBundle(json).also(::checkNames) }
-    val arguments = parsed.getValue(defaultLanguage).associate { it.key to argumentsOf(it) }
+    val english = parsed.getValue(defaultLanguage).associateBy { it.key }
+    for ((language, entries) in parsed) checkShapes(language, entries, english)
+    val arguments = english.mapValues { (_, entry) -> entry.arguments }
     return parsed.entries.associate { (language, entries) ->
         val dir = if (language == defaultLanguage) "values" else "values-$language"
         dir to render(language, entries, arguments)
     }
 }
 
+/**
+ * A key is a plural in every language or in none. The call site reads one resource type, so a
+ * translation of the other type would never be found, and the screen would fall back to English with
+ * no error anywhere. i18next tolerates it; this can't.
+ */
+private fun checkShapes(
+    language: String,
+    entries: List<Entry>,
+    english: Map<String, Entry>,
+) {
+    fun shape(entry: Entry) = if (entry is PluralEntry) "a plural" else "a plain string"
+    for (entry in entries) {
+        val source = english[entry.key] ?: continue
+        require(shape(source) == shape(entry)) {
+            "$language ${entry.key}: ${shape(source)} in English but ${shape(entry)} here"
+        }
+    }
+}
+
 private val PLACEHOLDER = Regex("""\{\{(.*?)}}""")
+
+// Both a placeholder name and an Android resource name.
 private val IDENTIFIER = Regex("[A-Za-z_][A-Za-z0-9_]*")
 
 private fun placeholders(
@@ -95,22 +144,6 @@ private fun placeholders(
         .onEach {
             require(IDENTIFIER.matches(it)) { "$key: {{$it}} is i18next syntax the generator can't translate" }
         }.toSet()
-
-private fun argumentsOf(entry: Entry): List<String> =
-    when (entry) {
-        is Text -> {
-            placeholders(entry.key, entry.value).sorted()
-        }
-
-        is Plural -> {
-            listOf("count") +
-                entry.forms.values
-                    .flatMap { placeholders(entry.key, it) }
-                    .toSet()
-                    .minus("count")
-                    .sorted()
-        }
-    }
 
 private fun render(
     language: String,
@@ -129,12 +162,12 @@ private fun render(
                 appendLine("    <!-- ${args.withIndex().joinToString { (i, name) -> "%${i + 1}\$s = $name" }} -->")
             }
             when (entry) {
-                is Text -> {
+                is StringEntry -> {
                     val unformatted = if (args.isEmpty() && '%' in entry.value) """ formatted="false"""" else ""
                     appendLine("""    <string name="${entry.name}"$unformatted>${format(entry.value)}</string>""")
                 }
 
-                is Plural -> {
+                is PluralEntry -> {
                     appendLine("""    <plurals name="${entry.name}">""")
                     for (category in CATEGORIES.filter { it in entry.forms }) {
                         appendLine(
@@ -163,17 +196,15 @@ private const val ZERO = "zero"
 // CLDR's order, `zero` left out for the reason above.
 private val CATEGORIES = listOf("one", "two", "few", "many", "other")
 
-private val Plural.zeroName get() = "${name}_$ZERO"
-
-private val RESOURCE_NAME = Regex("[A-Za-z_][A-Za-z0-9_]*")
+private val PluralEntry.zeroName get() = "${name}_$ZERO"
 
 /** Flattening joins with `_`, which keys use too, so two keys can land on one name; aapt2 would keep either. */
 private fun checkNames(entries: List<Entry>) {
     val seen = HashMap<String, String>()
     for (entry in entries) {
-        val names = if (entry is Plural) listOf(entry.name, entry.zeroName) else listOf(entry.name)
+        val names = if (entry is PluralEntry) listOf(entry.name, entry.zeroName) else listOf(entry.name)
         for (name in names) {
-            require(RESOURCE_NAME.matches(name)) { "${entry.key}: $name isn't a valid resource name" }
+            require(IDENTIFIER.matches(name)) { "${entry.key}: $name isn't a valid resource name" }
             val other = seen.put(name, entry.key)
             require(other == null) { "$other and ${entry.key} would both be the resource $name" }
         }
@@ -201,7 +232,7 @@ private fun formatValue(
     return PLACEHOLDER.replace(text) { "%${args.indexOf(it.groupValues[1]) + 1}\$s" }
 }
 
-private val SYNTAX =
+private val ESCAPES =
     mapOf(
         '\\' to "\\\\",
         '\'' to "\\'",
@@ -219,10 +250,10 @@ private val SYNTAX =
  * `getString` drops it, where escaping it would print the tag. Any other `<` is text.
  */
 private fun escape(value: String): String {
-    var text = value.map { SYNTAX[it] ?: it.toString() }.joinToString("")
+    var text = value.map { ESCAPES[it] ?: it.toString() }.joinToString("")
     text = text.replace("&lt;c&gt;", "<c>").replace("&lt;/c&gt;", "</c>")
     if (text.startsWith('@') || text.startsWith('?')) text = "\\$text"
     // Unquoted, aapt2 trims the ends and collapses runs of spaces; quoted, it keeps them.
-    val fragile = value.startsWith(' ') || value.endsWith(' ') || "  " in value
-    return if (fragile) "\"$text\"" else text
+    val needsQuoting = value.startsWith(' ') || value.endsWith(' ') || "  " in value
+    return if (needsQuoting) "\"$text\"" else text
 }

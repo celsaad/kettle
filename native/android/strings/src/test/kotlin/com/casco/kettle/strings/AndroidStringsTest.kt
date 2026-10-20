@@ -77,12 +77,28 @@ class AndroidStringsTest {
             <!-- %1${'$'}s = name, %2${'$'}s = week -->
             <string name="k">%2${'$'}s of %1${'$'}s, %2${'$'}s again</string>
             """.trimIndent(),
-            xml
-                .lines()
-                .filter { it.startsWith("    ") }
-                .joinToString("\n")
-                .trimIndent(),
+            body(xml),
         )
+    }
+
+    @Test
+    fun `a plain key beside plural forms of the same name fails the build, in either order`() {
+        // i18next would read `x` when no form matches; here one resource would silently replace the other.
+        val error = assertThrows<IllegalArgumentException> { english("""{ "x": "a", "x_one": "b", "x_other": "c" }""") }
+        assertEquals("x is both a plain string and a plural", error.message)
+        assertThrows<IllegalArgumentException> { english("""{ "x_one": "b", "x_other": "c", "x": "a" }""") }
+    }
+
+    @Test
+    fun `a key that is a plural in English and a plain string in a translation fails the build`() {
+        // The call site reads one resource type; the other language's would be a different type and
+        // never be found, so the screen would fall back to English with no error anywhere.
+        val en = """{ "k_one": "{{count}} set", "k_other": "{{count}} sets" }"""
+        val error = assertThrows<IllegalArgumentException> { languages("en" to en, "pt" to """{ "k": "séries" }""") }
+        assertEquals("pt k: a plural in English but a plain string here", error.message)
+
+        val reverse = assertThrows<IllegalArgumentException> { languages("en" to """{ "k": "sets" }""", "pt" to en) }
+        assertEquals("pt k: a plain string in English but a plural here", reverse.message)
     }
 
     @Test

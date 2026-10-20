@@ -1,2 +1,11 @@
 config:
   warningsAsErrors: true
+
+# Compose's conventions, which detekt's defaults predate: a composable is named like the UI it emits,
+# and a preview is called by Android Studio rather than by any code detekt can see.
+naming:
+  FunctionNaming:
+    ignoreAnnotated: ['Composable']
+style:
+  UnusedPrivateMember:
+    ignoreAnnotated: ['Preview', 'LocalePreviews']

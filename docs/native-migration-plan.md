@@ -1,11 +1,12 @@
 # Migrating to native — plan
 
 > **M0 executed; the spike recommends go.** Its report is under M0 below. Every hard gate passed, and
-> the one partial answer (Q3) re-scopes M3 rather than blocking it. From M1, the conformance corpus
-> and the native skeleton (`native/android`) have landed,
-> with the Kotlin runner green on `units`, `search`, `session` and `library`; the rest of M1 onward is
-> not started. M1–M3 are tracked as GitHub issues
-> #141–#156, of which #141–#144 are done; M4 onward is ticketed once the M3 routing test (#152) has picked its shape. Written against the tree at `54eb9f8`, SDK 57.
+> the one partial answer (Q3) re-scopes M3 rather than blocking it. **M1 is under way**: the
+> conformance corpus, the native skeleton (`native/android`), a Kotlin runner for every corpus suite
+> and the generated string resources have landed; the Compose theme, and everything from M2 on, have
+> not. M1–M3 are tracked as GitHub issues #141–#156, whose open/closed state is the live record; M4
+> onward is ticketed once the M3 routing test (#152) has picked its shape. Written against the tree at
+> `54eb9f8`, SDK 57.
 > **Everything after M0 was conditional on a "go"**: had the spike failed, this file would carry a
 > banner saying so and the decision log the reason, so the idea isn't re-proposed from scratch.
 
@@ -196,7 +197,8 @@ Nothing user-visible ships in M1. It builds the pieces every later milestone dep
   - `en.json`, `pt.json` and `ja.json` → `values{,-pt,-ja}/strings.xml`, plurals included.
     Android's plural rules never select `zero` for Portuguese, so the generator emits an explicit
     zero branch for every `_zero` key. That is the same "0 sessão" bug the bundles already guard
-    against, and it gets a test.
+    against, and it gets a test. *(Landed: `:strings`, run by `:app`'s build into a build directory,
+    so nothing generated is committed. Call sites use `pluralText`, never `pluralStringResource`.)*
   - `constants/theme.ts` → a Compose theme (colors, `Spacing`, the always-dark `RunnerColors`).
 - **CI**: a Gradle job for `native/android` and `:shared`, with ktlint and detekt at zero warnings
   (the same rule `pnpm run lint` has), alongside the existing pnpm jobs. *(Landed: the `native` job

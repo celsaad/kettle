@@ -272,6 +272,12 @@ wanting states and assignees, it wants GitHub issues instead.
   be the only override there is — which is a feature, not a duplicate, and cheaper than building the
   Settings row it would otherwise take.
 
+- **Forbid `pluralStringResource` in `:app`.** Native plurals must go through `pluralText`, which takes
+  the `_zero` branch Android never selects for Portuguese; a direct `pluralStringResource` call brings
+  "0 sessão" back with nothing failing. Only convention holds it today. detekt's `ForbiddenMethodCall`
+  needs type resolution (`detektMain`), which the build doesn't run; a custom lint check is the other
+  route. Worth doing before M3's first screen with a count.
+
 ## Open bugs
 
 Found while planning the tests/a11y/i18n work (see `testing-a11y-i18n-plan.md`), each verified against

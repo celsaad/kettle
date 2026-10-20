@@ -29,7 +29,7 @@ private fun SchemaReader.workout(
 }
 
 /** A discriminated union on `type`, refused at `type` like an exercise's. */
-private fun SchemaReader.block(
+internal fun SchemaReader.block(
     value: Any?,
     path: Path,
 ): WorkoutBlock? {

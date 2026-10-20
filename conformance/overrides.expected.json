@@ -635,6 +635,14 @@
     },
     {
       "op": {
+        "op": "diffExercise",
+        "base": "pause",
+        "edited": "pause-negative-zero"
+      },
+      "result": {}
+    },
+    {
+      "op": {
         "op": "diffBlock",
         "workout": "w",
         "base": 0,
@@ -662,6 +670,15 @@
         "workout": "w",
         "base": 0,
         "edited": 1
+      },
+      "result": {}
+    },
+    {
+      "op": {
+        "op": "diffBlock",
+        "workout": "w",
+        "base": 3,
+        "edited": 4
       },
       "result": {}
     }

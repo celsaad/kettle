@@ -151,6 +151,29 @@
       }
     }
   },
+  "unsafe-integer-past-ceiling": {
+    "repaired": true,
+    "result": {
+      "ok": true,
+      "value": {
+        "version": 1,
+        "exercises": [
+          {
+            "id": "a",
+            "name": "A",
+            "type": "reps",
+            "config": {
+              "sets": 3,
+              "targetRepsMin": 9007199254740991,
+              "restSec": 60
+            }
+          }
+        ],
+        "workouts": [],
+        "programs": []
+      }
+    }
+  },
   "zero-is-not-repaired": {
     "repaired": false
   },

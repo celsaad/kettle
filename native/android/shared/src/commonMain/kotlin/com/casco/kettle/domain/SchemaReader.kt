@@ -27,12 +27,23 @@ internal typealias Read<T> = SchemaReader.(value: Any?, path: Path) -> T?
  */
 internal class SchemaReader {
     private class Issue(
-        val path: String,
+        val at: Path,
         val message: String,
         val fatal: Boolean,
-    )
+        val ceiling: Double?,
+    ) {
+        val path: String = at.joinToString(".").ifEmpty { "(root)" }
+    }
 
     private val issues = mutableListOf<Issue>()
+
+    /**
+     * Every value refused only for being past a ceiling, with that ceiling, in the order they were
+     * refused: zod's `too_big` issues, which carry the same two things. It is all `repairLibraryBounds`
+     * needs, so the ceilings are read off the schema rather than listed a second time.
+     */
+    val ceilings: List<Pair<Path, Double>>
+        get() = issues.mapNotNull { issue -> issue.ceiling?.let { issue.at to it } }
 
     fun <T : Any> result(value: T?): ParseResult<T> {
         if (issues.isEmpty()) {
@@ -46,14 +57,16 @@ internal class SchemaReader {
 
     /**
      * Records a refusal. It's [fatal] when the value isn't the type at all, so nothing above it can be
-     * refined; a range, a length or a refinement refuses a value of the right type, and isn't.
+     * refined; a range, a length or a refinement refuses a value of the right type, and isn't. A
+     * [ceiling] is the maximum a value was refused for exceeding.
      */
     fun refuse(
         path: Path,
         message: String,
         fatal: Boolean = true,
+        ceiling: Double? = null,
     ): Nothing? {
-        issues += Issue(path.joinToString(".").ifEmpty { "(root)" }, message, fatal)
+        issues += Issue(path, message, fatal, ceiling)
         return null
     }
 
@@ -144,9 +157,27 @@ internal class SchemaReader {
     ): Long? {
         val number = number(value, path, bounds) ?: return null
         return when {
-            number != kotlin.math.floor(number) -> refuse(path, "expected an integer")
-            kotlin.math.abs(number) > MAX_SAFE_INTEGER -> refuse(path, "outside the safe integer range", fatal = false)
-            else -> number.toLong()
+            number != kotlin.math.floor(number) -> {
+                refuse(path, "expected an integer")
+            }
+
+            // zod reports the top of the range as a ceiling like any other, so a repair clamps to it.
+            number > MAX_SAFE_INTEGER -> {
+                refuse(
+                    path,
+                    "above the safe integer range",
+                    fatal = false,
+                    ceiling = MAX_SAFE_INTEGER,
+                )
+            }
+
+            number < -MAX_SAFE_INTEGER -> {
+                refuse(path, "below the safe integer range", fatal = false)
+            }
+
+            else -> {
+                number.toLong()
+            }
         }
     }
 }
@@ -157,9 +188,22 @@ internal class Fields(
     val path: Path,
     private val reader: SchemaReader,
 ) {
+    private val asked = mutableSetOf<String>()
+
+    /**
+     * Every key a presence rule or [has] was asked about, read or absent: the fields this mapping's
+     * schema has, once a read over it has run. Merging an override uses it to tell a patch's known
+     * keys from its typos, so the list is the schema's own rather than a second copy of it.
+     *
+     * That holds only while a reader asks for every one of its keys before it can give up, as each
+     * config reader does today by reading all its fields first. One that returned early would report
+     * the keys it never reached as typos, and drop them from every override.
+     */
+    val schemaKeys: Set<String> get() = asked
+
     fun raw(key: String): Any? = map[key]
 
-    fun has(key: String): Boolean = map.containsKey(key)
+    fun has(key: String): Boolean = present(key)
 
     // Unread values, for a refinement only: it runs once every field under it is the right type, which
     // is what makes these casts safe.
@@ -176,13 +220,17 @@ internal class Fields(
     fun <T : Any> required(
         key: String,
         read: Read<T>,
-    ): T? = if (map.containsKey(key)) reader.read(map[key], path + key) else reader.refuse(path + key, "required")
+    ): T? =
+        when {
+            !present(key) -> reader.refuse(path + key, "required")
+            else -> reader.read(map[key], path + key)
+        }
 
     /** `.optional()`: may be absent. A key with nothing after it is null, and null is refused. */
     fun <T : Any> optional(
         key: String,
         read: Read<T>,
-    ): T? = if (map.containsKey(key)) reader.read(map[key], path + key) else null
+    ): T? = if (present(key)) reader.read(map[key], path + key) else null
 
     /** `.nullable()`: must be present, and may be null. */
     fun <T : Any> nullable(
@@ -190,7 +238,7 @@ internal class Fields(
         read: Read<T>,
     ): T? =
         when {
-            !map.containsKey(key) -> reader.refuse(path + key, "required")
+            !present(key) -> reader.refuse(path + key, "required")
             else -> map[key]?.let { reader.read(it, path + key) }
         }
 
@@ -198,7 +246,13 @@ internal class Fields(
     fun <T : Any> nullableOrAbsent(
         key: String,
         read: Read<T>,
-    ): T? = map[key]?.let { reader.read(it, path + key) }
+    ): T? = if (present(key)) map[key]?.let { reader.read(it, path + key) } else null
+
+    /** Whether [key] is in the mapping, recording that the schema has it. */
+    private fun present(key: String): Boolean {
+        asked += key
+        return map.containsKey(key)
+    }
 }
 
 /** A number's range, as zod's `positive()`, `nonnegative()` and `min()`/`max()` checks. */
@@ -214,7 +268,7 @@ internal class Bounds(
     ): Double? =
         when {
             if (minInclusive) number < min else number <= min -> reader.refuse(path, "too small", fatal = false)
-            number > max -> reader.refuse(path, "too big", fatal = false)
+            number > max -> reader.refuse(path, "too big", fatal = false, ceiling = max)
             else -> number
         }
 

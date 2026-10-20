@@ -5,13 +5,19 @@ import com.casco.kettle.domain.CircuitMember
 import com.casco.kettle.domain.Exercise
 import com.casco.kettle.domain.ExerciseConfig
 import com.casco.kettle.domain.Library
+import com.casco.kettle.domain.MergeError
+import com.casco.kettle.domain.MergeResult
+import com.casco.kettle.domain.OverrideMerge
 import com.casco.kettle.domain.OverrideValue
 import com.casco.kettle.domain.Program
 import com.casco.kettle.domain.ProgramOverride
 import com.casco.kettle.domain.ProgramWeek
+import com.casco.kettle.domain.ResolvedWeek
 import com.casco.kettle.domain.Workout
 import com.casco.kettle.domain.WorkoutBlock
 import com.casco.kettle.domain.optionals
+import com.casco.kettle.domain.overrideValues
+import com.casco.kettle.domain.toRaw
 
 /**
  * The library's camelCase domain model as the goldens hold it, written out by hand like
@@ -138,7 +144,7 @@ private fun weekJson(week: ProgramWeek): Map<String, Any?> =
     }
 
 private fun programOverrideJson(override: ProgramOverride): Map<String, Any?> {
-    val config = override.config.mapValues { (_, value) -> valueJson(value) }
+    val config = override.config.mapValues { (_, value) -> value.toRaw() }
     return when (override) {
         is ProgramOverride.ExerciseOverride -> {
             mapOf("kind" to "exercise", "exerciseId" to override.exerciseId, "config" to config)
@@ -150,8 +156,104 @@ private fun programOverrideJson(override: ProgramOverride): Map<String, Any?> {
     }
 }
 
-private fun valueJson(value: OverrideValue): Any =
-    when (value) {
-        is OverrideValue.Numeric -> value.value
-        is OverrideValue.Text -> value.value
+/** A merge result in the goldens' shape. A refusal's `day` is left out when the week has none. */
+internal fun mergeJson(result: MergeResult): Map<String, Any?> =
+    when (result) {
+        is MergeResult.Ok -> {
+            mapOf(
+                "ok" to true,
+                "library" to libraryJson(result.library),
+                "summary" to
+                    mapOf(
+                        "newExercises" to result.summary.newExercises,
+                        "updatedExercises" to result.summary.updatedExercises,
+                        "newWorkouts" to result.summary.newWorkouts,
+                        "updatedWorkouts" to result.summary.updatedWorkouts,
+                        "newPrograms" to result.summary.newPrograms,
+                        "updatedPrograms" to result.summary.updatedPrograms,
+                    ),
+            )
+        }
+
+        is MergeResult.Refused -> {
+            mapOf("ok" to false, "error" to mergeErrorJson(result.error))
+        }
     }
+
+private fun mergeErrorJson(error: MergeError): Map<String, Any?> =
+    when (error) {
+        is MergeError.UnknownExercise -> {
+            mapOf("kind" to "unknownExercise", "workoutId" to error.workoutId, "exerciseId" to error.exerciseId)
+        }
+
+        is MergeError.UnknownWorkout -> {
+            optionals(
+                "kind" to "unknownWorkout",
+                "programId" to error.programId,
+                "week" to error.week,
+                "day" to error.day,
+                "workoutId" to error.workoutId,
+            )
+        }
+    }
+
+/** A corpus op's `config:` as the patch it stands for: every value a number or a string. */
+internal fun overrideConfig(config: Map<*, *>): Map<String, OverrideValue> =
+    overrideValues(config.entries.associate { (key, value) -> key as String to value })
+
+internal fun patchJson(patch: Map<String, OverrideValue>): Map<String, Any> =
+    patch.mapValues { (_, value) -> value.toRaw() }
+
+/**
+ * TS's `asAuthored` is the target itself with the patch spread over it. Here it is only the patched
+ * fields, raw, since a value like `sets: "abc"` has no typed home, so the goldens' whole object is put
+ * back together from the target's own JSON with those fields laid over it.
+ */
+internal fun exerciseMergeJson(
+    target: Exercise,
+    merge: OverrideMerge<Exercise>,
+): Map<String, Any?> =
+    overrideMergeJson(
+        merge,
+        exerciseJson(merge.effective),
+        exerciseJson(target) + ("config" to camelCase(merge.asAuthored)),
+    )
+
+internal fun blockMergeJson(
+    target: WorkoutBlock,
+    merge: OverrideMerge<WorkoutBlock>,
+): Map<String, Any?> =
+    overrideMergeJson(
+        merge,
+        blockJson(merge.effective),
+        blockJson(target) + camelCase(merge.asAuthored),
+    )
+
+private fun overrideMergeJson(
+    merge: OverrideMerge<*>,
+    effective: Map<String, Any?>,
+    asAuthored: Map<String, Any?>,
+): Map<String, Any?> =
+    mapOf(
+        "effective" to effective,
+        "asAuthored" to asAuthored,
+        "report" to mapOf("refused" to merge.report.refused, "unknownKeys" to merge.report.unknownKeys),
+    )
+
+/**
+ * A raw patch keyed as the domain model is. Every key but one is its snake_case name in camelCase;
+ * `target_weight` is the exception, because the domain names the unit every stored weight is in.
+ */
+private fun camelCase(patch: Map<String, OverrideValue>): Map<String, Any?> =
+    patch.entries.associate { (key, value) ->
+        val name =
+            if (key == "target_weight") {
+                "targetWeightKg"
+            } else {
+                key.replace(Regex("_([a-z])")) { it.groupValues[1].uppercase() }
+            }
+        name to value.toRaw()
+    }
+
+internal fun resolvedJson(resolved: ResolvedWeek): Map<String, Any?> =
+    mapOf("workout" to workoutJson(resolved.workout), "exercises" to resolved.exercises.map(::exerciseJson))

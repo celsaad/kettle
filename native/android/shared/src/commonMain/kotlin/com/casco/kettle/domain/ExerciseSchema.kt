@@ -40,6 +40,15 @@ private val configReaders: Map<String, SchemaReader.(Fields) -> ExerciseConfig?>
         "rest" to SchemaReader::rest,
     )
 
+/**
+ * One type's config on its own, as merging an override validates it. [type] is the writer's name for
+ * a config that already exists, so it is always in the table.
+ */
+internal fun SchemaReader.exerciseConfig(
+    type: String,
+    fields: Fields,
+): ExerciseConfig? = configReaders.getValue(type)(fields)
+
 /** `int().positive().max(…)`, for the counts the runner builds a step per unit of. */
 internal fun countUpTo(max: Int): Read<Long> =
     { value, path -> integer(value, path, Bounds(min = 0.0, minInclusive = false, max = max.toDouble())) }

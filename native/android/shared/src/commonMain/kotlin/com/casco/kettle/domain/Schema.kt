@@ -13,7 +13,7 @@ fun emomIntervalCount(
     totalMinutes: Double,
 ): Double = kotlin.math.floor(totalMinutes * SECONDS_PER_MINUTE / intervalSec)
 
-private const val SECONDS_PER_MINUTE = 60
+internal const val SECONDS_PER_MINUTE = 60
 
 /**
  * The ceilings on what the session runner builds one step per unit of, as `MaxSets`, `MaxRounds` and

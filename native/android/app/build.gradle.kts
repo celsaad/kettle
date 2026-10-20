@@ -72,6 +72,34 @@ val generateStrings by tasks.registering(GenerateStrings::class) {
     argumentProviders.add { listOf(locales.get().asFile.path, output.get().asFile.path) }
 }
 
+/**
+ * The `:theme` generator, the same way: `theme.json` becomes a Kotlin source file in a build directory,
+ * so a color changed there reaches Compose on the next build with no hand edit.
+ */
+abstract class GenerateTheme : JavaExec() {
+    @get:InputFile
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val theme: RegularFileProperty
+
+    @get:OutputDirectory
+    abstract val output: DirectoryProperty
+}
+
+val themeGenerator: Configuration by configurations.creating {
+    isCanBeConsumed = false
+    attributes { attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.JAVA_RUNTIME)) }
+}
+
+/** The theme RN reads too, read in place, so a color has one home for both UIs. */
+val themeFile: RegularFile = rootProject.layout.projectDirectory.file("../../src/constants/theme.json")
+
+val generateTheme by tasks.registering(GenerateTheme::class) {
+    classpath = themeGenerator
+    mainClass.set("com.casco.kettle.theme.MainKt")
+    theme.set(themeFile)
+    argumentProviders.add { listOf(theme.get().asFile.path, output.get().asFile.path) }
+}
+
 androidComponents {
     // The unit tests run on debug alone: release would run the same tests on the same resources, and
     // without ui-test-manifest's activity, which only a debug dependency can merge into the app.
@@ -80,6 +108,9 @@ androidComponents {
     }
     onVariants { variant ->
         variant.sources.res?.addGeneratedSourceDirectory(generateStrings, GenerateStrings::output)
+        // `java`, not `kotlin`: Kotlin 2.1's Android plugin compiles .kt files in the Java sources but
+        // doesn't read AGP's `kotlin` set, which left the generated file out of the build.
+        variant.sources.java?.addGeneratedSourceDirectory(generateTheme, GenerateTheme::output)
     }
 }
 
@@ -94,6 +125,8 @@ class LocaleBundles(
 
 tasks.withType<Test>().configureEach {
     jvmArgumentProviders.add(LocaleBundles(localesDir))
+    inputs.file(themeFile).withPathSensitivity(PathSensitivity.RELATIVE)
+    systemProperty("kettle.themeFile", themeFile.asFile.absolutePath)
     // Robolectric refuses to run SDK 35 or later on a JVM older than 21, and these tests run at the
     // app's targetSdk. Only the test JVM moves; everything still compiles for 17. No toolchain
     // resolver is configured, so a machine without a JDK 21 fails here loudly rather than downloading one.
@@ -103,6 +136,7 @@ tasks.withType<Test>().configureEach {
 dependencies {
     implementation(project(":shared"))
     stringsGenerator(project(":strings"))
+    themeGenerator(project(":theme"))
 
     implementation(platform(libs.compose.bom))
     implementation(libs.compose.material3)
@@ -111,6 +145,7 @@ dependencies {
     debugImplementation(libs.compose.ui.tooling)
 
     testImplementation(project(":strings"))
+    testImplementation(project(":theme"))
     testImplementation(libs.junit4)
     testImplementation(libs.robolectric)
     testImplementation(platform(libs.compose.bom))

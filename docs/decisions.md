@@ -921,6 +921,36 @@ decision assembled across several commits. Open work belongs in the sections at 
   - Highlighting the matched text.
   - A setting to turn fuzzy matching off.
 
+- ✅ **While two UIs exist, a value both need lives in one data file that both read; behaviour is
+  ported and held by the conformance corpus.** (Native migration, settled on #147.) The split, and
+  what falls on each side:
+  - **Values go in data files.** Translations are the locale bundles (`src/i18n/locales/*.json`, read
+    by `:strings`). Colors and spacing are `src/constants/theme.json` (read by `:theme`), and
+    `theme.ts` is a thin re-export under the names RN already imports. Native generates its code from
+    them on every build into a build directory, so nothing generated is committed and nothing can
+    go stale. The Swift app in M8 reads the same files, not a Kotlin copy.
+  - **Behaviour isn't data.** Parser rules, ceilings like `MAX_SETS`, unit steps and search
+    thresholds are ported as code, and `conformance/` is what holds the two sides together. When this
+    was settled, every hand-copied constant in `:shared` was checked and found pinned by a suite.
+  - **Comments stay in the TS wrapper**, because JSON has none. `theme.ts` keeps the contrast notes,
+    and `GeneratedThemeTest` recomputes the ratios they record from the generated colors, so the
+    numbers can't drift away from the values even though they no longer sit beside them.
+  - **Next instance: the seed library and content packs** (`seed-library.ts`, `content-packs.ts` and
+    their translation tables), which M5 brings to native. They are data written as TS objects. Move
+    them into data files both sides read (library YAML plus translation JSON) rather than porting the
+    objects to Kotlin.
+  - Two hand-kept lists remain, on purpose: `LocalePreviews` names each language, because a
+    `@Preview` locale has to be a compile-time constant; and `libs.versions.toml` repeats React
+    Native's Kotlin and AGP, because once M2 hosts the RN AAR, a mismatch fails the build loudly.
+
+  **Rejected, so they aren't re-proposed:**
+  - Parsing `theme.ts` from Kotlin, which was #147's first draft. It meant a parser for the subset of
+    TypeScript the file happened to use. An ordinary TS edit (`satisfies`, a computed value, a
+    spread) would have broken the Android build with a parse error, and Swift would have needed a
+    second parser.
+  - `"$comment"` keys in the JSON to keep the notes beside the values. Every reader would have to
+    know to skip them, and the test already holds what the notes claim.
+
 
 
 

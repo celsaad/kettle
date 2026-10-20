@@ -1,10 +1,10 @@
 # Migrating to native — plan
 
 > **M0 executed; the spike recommends go.** Its report is under M0 below. Every hard gate passed, and
-> the one partial answer (Q3) re-scopes M3 rather than blocking it. **M1 is under way**: the
-> conformance corpus, the native skeleton (`native/android`), a Kotlin runner for every corpus suite
-> and the generated string resources have landed; the Compose theme, and everything from M2 on, have
-> not. M1–M3 are tracked as GitHub issues #141–#156, whose open/closed state is the live record; M4
+> the one partial answer (Q3) re-scopes M3 rather than blocking it. **M1 has landed**: the
+> conformance corpus, the native skeleton (`native/android`), a Kotlin runner for every corpus suite,
+> the generated string resources and the generated Compose theme. Nothing from M2 on has. M1–M3 are
+> tracked as GitHub issues #141–#156, whose open/closed state is the live record; M4
 > onward is ticketed once the M3 routing test (#152) has picked its shape. Written against the tree at
 > `54eb9f8`, SDK 57.
 > **Everything after M0 was conditional on a "go"**: had the spike failed, this file would carry a
@@ -200,6 +200,9 @@ Nothing user-visible ships in M1. It builds the pieces every later milestone dep
     against, and it gets a test. *(Landed: `:strings`, run by `:app`'s build into a build directory,
     so nothing generated is committed. Call sites use `pluralText`, never `pluralStringResource`.)*
   - `constants/theme.ts` → a Compose theme (colors, `Spacing`, the always-dark `RunnerColors`).
+    *(Landed: the values moved to `constants/theme.json`, which `:theme` reads the way `:strings`
+    reads the bundles; `theme.ts` re-exports it. Why a data file rather than parsing the TS is in the
+    decision log, along with the M5 content it applies to next.)*
 - **CI**: a Gradle job for `native/android` and `:shared`, with ktlint and detekt at zero warnings
   (the same rule `pnpm run lint` has), alongside the existing pnpm jobs. *(Landed: the `native` job
   in `ci.yml`.)*
@@ -276,7 +279,8 @@ edits.
 - **Native**: the library, workouts list, programs, program detail, the four editors (exercise,
   workout, program, session), import and Settings, together with `validateConfig`-style form
   validation, content packs, the seed library, `library-translation`, export/share and the SAF backup
-  folder (`storage/backup.ts`).
+  folder (`storage/backup.ts`). The packs and the seed are data, so they move into files both sides
+  read rather than being ported (see the decision log's single-source entry).
 - **Ownership move, in one release**: native becomes the only writer of the library file, of
   edited session files, and of the preferences file. The RN runner, which is still RN, keeps writing
   *new* session files. Its stores re-read on `filesChanged`.

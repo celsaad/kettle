@@ -20,6 +20,10 @@ data class OverrideReport(
  * snake_case like the patch itself. That is the one departure from TS, where it is a whole `T`: an
  * unchecked value like `sets: "abc"` has no home in a typed model, so it stays a map. A plain exercise
  * block has no fields of its own to override, so its map is empty.
+ *
+ * An editor seeds its fields from this map and builds the edited target from those fields, through
+ * its own form validation, before diffing. TS does the same from its typed copy. Nothing here turns
+ * the map back into an unchecked `T`, because nothing needs one.
  */
 data class OverrideMerge<out T>(
     val effective: T,
@@ -63,7 +67,7 @@ fun mergeBlockOverride(
     if (block !is WorkoutBlock.Circuit) {
         return OverrideMerge(block, emptyMap(), OverrideReport(refused = false, unknownKeys = config.keys.toList()))
     }
-    val known = { key: String -> key in BLOCK_OVERRIDE_KEYS }
+    val known = BLOCK_OVERRIDE_KEYS::contains
     val merged = block.toRaw() + config.filterKeys(known).mapValues { (_, value) -> value.toRaw() }
     val reader = SchemaReader()
     val read = reader.result(reader.block(merged, ROOT))
@@ -118,7 +122,7 @@ fun diffExerciseOverride(
     edited: Exercise,
 ): Map<String, OverrideValue> {
     val before = base.configValues()
-    return edited.configValues().filter { (key, value) -> value != before[key] }
+    return edited.configValues().filter { (key, value) -> !sameValue(value, before[key]) }
 }
 
 /**
@@ -136,6 +140,22 @@ fun diffBlockOverride(
         changed(edited.restBetweenRoundsSec, base.restBetweenRoundsSec)?.let { put(REST_BETWEEN_ROUNDS, it) }
     }
 }
+
+/**
+ * Whether two patch values are the same, as JS `===` compares them: -0.0 and 0 are one number. A
+ * data class's `equals` keeps them apart, so numbers are compared as numbers.
+ */
+private fun sameValue(
+    value: OverrideValue,
+    other: OverrideValue?,
+): Boolean =
+    if (value is OverrideValue.Numeric &&
+        other is OverrideValue.Numeric
+    ) {
+        value.value == other.value
+    } else {
+        value == other
+    }
 
 /** The exercise's config as patch values, keyed as the file writes it. */
 private fun Exercise.configValues(): Map<String, OverrideValue> = overrideValues(config.toRaw().second)

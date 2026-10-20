@@ -1,7 +1,7 @@
 package com.casco.kettle.domain
 
-// The two directions between a patch's values and the raw tree a schema reader reads and the writer
-// emits, shared by both of those, by merging an override, and by the conformance runner.
+// The two directions between a patch's values and the raw tree, shared by the writer, override merging
+// and the conformance runner.
 
 /** A patch value as the raw tree holds it, which is what a schema reader reads. */
 internal fun OverrideValue.toRaw(): Any =

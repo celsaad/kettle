@@ -2,7 +2,7 @@ package com.casco.kettle.strings
 
 import java.io.File
 
-private val USAGE = listOf("<locales dir>", "<output res dir>", "<default language>")
+private val USAGE = listOf("<locales dir>", "<output res dir>")
 
 /**
  * Every `<language>.json` in the locales directory, written as `values/strings.xml`,
@@ -11,7 +11,7 @@ private val USAGE = listOf("<locales dir>", "<output res dir>", "<default langua
  */
 fun main(args: Array<String>) {
     require(args.size == USAGE.size) { "usage: ${USAGE.joinToString(" ")}" }
-    val (locales, output, defaultLanguage) = args
+    val (locales, output) = args
     val bundles =
         File(locales)
             .listFiles { file -> file.extension == "json" }
@@ -21,7 +21,7 @@ fun main(args: Array<String>) {
 
     val out = File(output)
     out.deleteRecursively()
-    for ((dir, xml) in generateResources(bundles, defaultLanguage)) {
+    for ((dir, xml) in generateResources(bundles)) {
         File(out, dir).apply { mkdirs() }.resolve("strings.xml").writeText(xml)
     }
 }

@@ -6,8 +6,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 
 class AndroidStringsTest {
-    private fun english(json: String) =
-        generateResources(mapOf("en" to json), defaultLanguage = "en").getValue("values")
+    private fun english(json: String) = generateResources(mapOf("en" to json)).getValue("values")
 
     /** The one resource line a single-key bundle renders to, without the file around it. */
     private fun line(value: String) =
@@ -65,8 +64,7 @@ class AndroidStringsTest {
         assertEquals("""<string name="k" formatted="false">100%</string>""", line("100%"))
     }
 
-    private fun languages(vararg bundles: Pair<String, String>) =
-        generateResources(mapOf(*bundles), defaultLanguage = "en")
+    private fun languages(vararg bundles: Pair<String, String>) = generateResources(mapOf(*bundles))
 
     @Test
     fun `placeholders are numbered alphabetically, so rewording the English can't reorder a call site`() {
@@ -199,5 +197,19 @@ class AndroidStringsTest {
         val xml = english("""{ "packs": { "steady-strength": { "name": "Steady" } } }""")
 
         assertEquals("""<string name="packs_steady_strength_name">Steady</string>""", body(xml))
+    }
+
+    @Test
+    fun `an empty _zero fails the build, since empty is how a zero branch says there is none`() {
+        // i18next would render "", and pluralText would fall through to the plural rule instead.
+        val error =
+            assertThrows<IllegalArgumentException> { english("""{ "s_one": "a", "s_other": "b", "s_zero": "" }""") }
+        assertEquals("s_zero is empty, which pluralText reads as no zero branch", error.message)
+    }
+
+    @Test
+    fun `a nested translation reference fails the build rather than rendering literally`() {
+        val error = assertThrows<IllegalArgumentException> { line("See \$t(common.save)") }
+        assertEquals("k: \$t(...) nesting is i18next syntax the generator can't translate", error.message)
     }
 }

@@ -112,7 +112,9 @@ mistake here that cannot be fixed for anyone who has already installed it.
   reader already has.
 
 - `native/android/` — the native app the migration plan builds: a Kotlin Multiplatform `:shared`
-  module (the domain port) and a Compose `:app`. Its own Gradle build, not part of the Expo one.
+  module (the domain port), a Compose `:app`, and `:strings`, which generates `:app`'s string
+  resources from the RN locale bundles on every build (never committed; plurals go through
+  `pluralText`, not `pluralStringResource`). Its own Gradle build, not part of the Expo one.
   `gradlew build` from that directory compiles, tests and lints it, and ktlint and detekt hold the
   same zero-warning rule oxlint does; `gradlew ktlintFormat` is its `pnpm run format`.
 

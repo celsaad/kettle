@@ -14,9 +14,6 @@ sealed interface Entry {
     val key: String
     val name: String get() = key.replace('.', '_').replace('-', '_')
 
-    /** The text this entry renders: its one value, or every plural form. */
-    val values: Collection<String>
-
     /** The arguments a call site passes, numbered from 1 in this order. */
     val arguments: List<String>
 }
@@ -25,7 +22,6 @@ data class StringEntry(
     override val key: String,
     val value: String,
 ) : Entry {
-    override val values get() = listOf(value)
     override val arguments get() = placeholders(key, value).sorted()
 }
 
@@ -34,7 +30,6 @@ data class PluralEntry(
     override val key: String,
     val forms: Map<String, String>,
 ) : Entry {
-    override val values get() = forms.values
     override val arguments get() =
         listOf(COUNT) +
             forms.values
@@ -62,6 +57,9 @@ fun parseBundle(json: String): List<Entry> {
         require(
             existing == null || (match != null && existing is PluralEntry),
         ) { "$key is both a plain string and a plural" }
+        require(match?.groupValues?.get(1) != ZERO || value.isNotEmpty()) {
+            "$path is empty, which pluralText reads as no zero branch"
+        }
         entries[key] =
             if (match == null) {
                 StringEntry(path, value)
@@ -88,24 +86,27 @@ private fun flatten(
 }
 
 /**
- * Every bundle as an Android `strings.xml`, keyed by its resource directory: the default language goes
- * in `values`, and each other in `values-<language>`.
+ * The language in `values`, and the one every other is checked against. Not a parameter: it is
+ * i18next's `fallbackLng`, so it is what a key missing from a translation renders as on both sides.
+ */
+private const val ENGLISH = "en"
+
+/**
+ * Every bundle as an Android `strings.xml`, keyed by its resource directory: English goes in `values`,
+ * and each other language in `values-<language>`.
  *
- * Argument numbers come from the default language, so a call site passes the same arguments in the same
- * order whatever the locale: alphabetical by placeholder name, with a plural's `count` always first.
+ * Argument numbers come from English, so a call site passes the same arguments in the same order
+ * whatever the locale: alphabetical by placeholder name, with a plural's `count` always first.
  * Alphabetical rather than order of appearance because English gets reworded, and a reworded sentence
  * that renumbered its arguments would swap them at every call site without failing anything.
  */
-fun generateResources(
-    bundles: Map<String, String>,
-    defaultLanguage: String,
-): Map<String, String> {
+fun generateResources(bundles: Map<String, String>): Map<String, String> {
     val parsed = bundles.mapValues { (_, json) -> parseBundle(json).also(::checkNames) }
-    val english = parsed.getValue(defaultLanguage).associateBy { it.key }
+    val english = parsed.getValue(ENGLISH).associateBy { it.key }
     for ((language, entries) in parsed) checkShapes(language, entries, english)
     val arguments = english.mapValues { (_, entry) -> entry.arguments }
     return parsed.entries.associate { (language, entries) ->
-        val dir = if (language == defaultLanguage) "values" else "values-$language"
+        val dir = if (language == ENGLISH) "values" else "values-$language"
         dir to render(language, entries, arguments)
     }
 }
@@ -137,13 +138,15 @@ private val IDENTIFIER = Regex("[A-Za-z_][A-Za-z0-9_]*")
 private fun placeholders(
     key: String,
     value: String,
-): Set<String> =
-    PLACEHOLDER
+): Set<String> {
+    require("\$t(" !in value) { "$key: \$t(...) nesting is i18next syntax the generator can't translate" }
+    return PLACEHOLDER
         .findAll(value)
         .map { it.groupValues[1] }
         .onEach {
             require(IDENTIFIER.matches(it)) { "$key: {{$it}} is i18next syntax the generator can't translate" }
         }.toSet()
+}
 
 private fun render(
     language: String,

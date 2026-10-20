@@ -69,7 +69,7 @@ val generateStrings by tasks.registering(GenerateStrings::class) {
     classpath = stringsGenerator
     mainClass.set("com.casco.kettle.strings.MainKt")
     locales.set(localesDir)
-    argumentProviders.add { listOf(locales.get().asFile.path, output.get().asFile.path, "en") }
+    argumentProviders.add { listOf(locales.get().asFile.path, output.get().asFile.path) }
 }
 
 androidComponents {

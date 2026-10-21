@@ -169,7 +169,6 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
-      # After pnpm install, which the action reads the version from (see the action for why it exists).
       - uses: ./.github/actions/install-ndk
 
       # Restore and save are separate steps so the AAR is saved as soon as it's built. A combined

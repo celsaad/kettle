@@ -11,8 +11,10 @@
 ## The pipeline
 
 One job. It sets up JDK 17, which both builds run on, and JDK 21, which the shell's build names as
-its test toolchain. Then `pnpm install`, then React Native's NDK (`.github/actions/install-ndk`,
-shared with `ci.yml`), then ccache. After that come two Gradle builds, one after the other:
+its test toolchain. Then ccache, restored and configured; then `pnpm install`; then React Native's
+NDK (`.github/actions/install-ndk`, shared with `ci.yml`), which reads its version from
+`node_modules` and so comes after the install. After that come two Gradle builds, one after the
+other:
 
 1. **The RN app, as an AAR.** `expo prebuild` regenerates the gitignored `android/` tree, and
    `publishBrownfieldReleasePublicationToMavenLocal` builds it as a library — native code, the Expo

@@ -18,8 +18,11 @@ runs:
           exit 1
         fi
         sdkmanager="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+        # `yes || true`: a composite action's bash runs with pipefail, which a workflow's own `run`
+        # doesn't, and `yes` always dies of SIGPIPE once sdkmanager stops reading. Without it every
+        # install, successful ones included, read as a failure.
         for attempt in 1 2 3; do
-          yes | "$sdkmanager" --install "ndk;$ndk" > /dev/null && exit 0
+          (yes || true) | "$sdkmanager" --install "ndk;$ndk" > /dev/null && exit 0
           echo "::warning::NDK $ndk install failed (attempt $attempt)"
           rm -rf "$ANDROID_HOME/ndk/$ndk"
           sleep 10

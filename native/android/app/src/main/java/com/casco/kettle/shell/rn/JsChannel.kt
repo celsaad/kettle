@@ -28,7 +28,7 @@ class JsChannel(
         held.clear()
     }
 
-    /** The JS runtime was replaced: its successor listens only once it has said "ready" again. */
+    /** The JS runtime is going away: its successor listens only once it has said "ready" again. */
     @Synchronized
     fun onReload() {
         ready = false

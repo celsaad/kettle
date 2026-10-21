@@ -45,7 +45,8 @@ function Invoke-Step([string]$name, [scriptblock]$step) {
   if ($LASTEXITCODE -ne 0) { throw "$name failed (exit $LASTEXITCODE)" }
 }
 
-if ($Device) { $env:ANDROID_SERIAL = $Device }
+# Per call, not $env:ANDROID_SERIAL, which would outlive the script in the caller's terminal.
+$target = if ($Device) { @('-s', $Device) } else { @() }
 
 # A clean checkout has no node_modules, and both builds read versions out of it.
 if (-not (Test-Path "$root/node_modules")) {
@@ -54,9 +55,10 @@ if (-not (Test-Path "$root/node_modules")) {
 
 if ($Prebuild -or -not (Test-Path "$root/android")) {
   Invoke-Step 'Prebuild android/' {
+    # Cleared even on a failure, which would otherwise leave CI=1 in the caller's terminal.
     $env:CI = '1'
-    & "$root/node_modules/.bin/expo.cmd" prebuild --platform android --no-install
-    Remove-Item Env:CI
+    try { & "$root/node_modules/.bin/expo.cmd" prebuild --platform android --no-install }
+    finally { Remove-Item Env:CI }
   }
 }
 
@@ -77,10 +79,10 @@ Invoke-Step 'Build the shell' {
 # same file matched byte for byte. That USB link also kept dropping, so the streaming may not be the
 # whole cause; --no-streaming, which copies first and then installs, worked every time.
 Invoke-Step 'Install the shell (com.casco.kettle.dev)' {
-  adb install -r --no-streaming "$root/native/android/app/build/outputs/apk/debug/app-debug.apk"
+  adb @target install -r --no-streaming "$root/native/android/app/build/outputs/apk/debug/app-debug.apk"
 }
 
-Invoke-Step 'Point the phone at Metro' { adb reverse tcp:8081 tcp:8081 }
+Invoke-Step 'Point the phone at Metro' { adb @target reverse tcp:8081 tcp:8081 }
 
 # Metro first: an app launched before it answers finds nothing at 8081 and stays on its splash. Not
 # with CI=1, which turns reloads off. Its output stays in this window; stopping the script can leave
@@ -95,5 +97,5 @@ do {
   $status = try { (Invoke-WebRequest -Uri 'http://localhost:8081/status' -UseBasicParsing -TimeoutSec 2).RawContent } catch { '' }
 } until ($status -match 'packager-status:running')
 
-Invoke-Step 'Launch' { adb shell am start -n com.casco.kettle.dev/com.casco.kettle.MainActivity }
+Invoke-Step 'Launch' { adb @target shell am start -n com.casco.kettle.dev/com.casco.kettle.MainActivity }
 $metro.WaitForExit()

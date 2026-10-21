@@ -2,8 +2,6 @@ package com.casco.kettle.shell.rn
 
 import android.util.Log
 import com.casco.kettle.brownfield.ReactNativeHostManager
-import com.facebook.react.ReactInstanceEventListener
-import com.facebook.react.bridge.ReactContext
 import expo.modules.brownfield.BrownfieldMessaging
 
 /**
@@ -22,9 +20,11 @@ object JsBridge {
      *
      * The listener needs no host, so it is always in place and "ready" can't go unheard. Watching
      * reloads does: it's called once the first surface has opened, which creates the host, and logs
-     * rather than throws if that ever stops being true, since nothing sends yet. A new runtime is
-     * announced on the UI thread as it starts, long before it can say "ready" itself, which waits on
-     * the fonts and the stores' hydration.
+     * rather than throws if that ever stops being true, since nothing sends yet.
+     *
+     * The channel holds again as the old runtime is torn down, not when the new one starts: a reload
+     * runs before-destroy listeners before it creates the new instance, so nothing is sent into a dead
+     * runtime in between, and the reset can't land after the new runtime's "ready".
      */
     fun attach() {
         if (!listening) {
@@ -37,11 +37,7 @@ object JsBridge {
             Log.w(TAG, "No React host yet; a reload won't re-hold messages until the next activity")
             return
         }
-        host.addReactInstanceEventListener(
-            object : ReactInstanceEventListener {
-                override fun onReactContextInitialized(context: ReactContext) = channel.onReload()
-            },
-        )
+        host.addBeforeDestroyListener(channel::onReload)
         watchingReloads = true
     }
 

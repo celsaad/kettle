@@ -146,9 +146,10 @@ jobs:
             ccache-android-
 
       # arm64 alone: the job compiles and tests the shell, which doesn't care which ABIs the AAR
-      # carries. The Play bundle is android.yml's. All, because the debug and release publications
-      # share a coordinate and the shell builds both variants.
-      # ccache's settings are android.yml's, which explains each one.
+      # carries, and the Play bundle is android.yml's.
+      #
+      # The All publication, as in scripts/native-dev.ps1, which says why. ccache's settings are
+      # android.yml's, which explains each one.
       - name: Build the RN AAR
         if: steps.aar.outputs.cache-hit != 'true'
         working-directory: .

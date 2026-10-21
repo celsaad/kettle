@@ -11,26 +11,25 @@ plugins {
 /** The RN project root: the shell reads its versions from there rather than repeating them. */
 val rnRoot: Directory = rootProject.layout.projectDirectory.dir("../..")
 
+/** A JSON object as JsonSlurper reads one. Unchecked: a file of the wrong shape fails the build here. */
 @Suppress("UNCHECKED_CAST")
-fun readJson(path: String): Map<String, Any?> = JsonSlurper().parse(rnRoot.file(path).asFile) as Map<String, Any?>
+fun Any?.asJsonObject(): Map<String, Any?> = this as Map<String, Any?>
+
+fun readJson(path: String): Map<String, Any?> = JsonSlurper().parse(rnRoot.file(path).asFile).asJsonObject()
 
 /** An Expo module's installed version, which is the version its published Android artifact carries. */
 fun npmVersion(pkg: String): String = readJson("node_modules/$pkg/package.json")["version"] as String
 
-@Suppress("UNCHECKED_CAST")
-val expo = readJson("app.json")["expo"] as Map<String, Any?>
-
-@Suppress("UNCHECKED_CAST")
-val expoAndroid = expo["android"] as Map<String, Any?>
+val expo = readJson("app.json")["expo"].asJsonObject()
+val expoAndroid = expo["android"].asJsonObject()
 
 /** A config plugin's options in app.json, which prebuild writes into android/app and the AAR never carries. */
-@Suppress("UNCHECKED_CAST")
 fun pluginOption(
     plugin: String,
     option: String,
 ): String {
-    val entry = (expo["plugins"] as List<Any?>).filterIsInstance<List<Any?>>().single { it.first() == plugin }
-    return (entry[1] as Map<String, Any?>)[option] as String
+    val entry = (expo["plugins"] as List<*>).filterIsInstance<List<*>>().single { it.first() == plugin }
+    return entry[1].asJsonObject()[option] as String
 }
 
 android {

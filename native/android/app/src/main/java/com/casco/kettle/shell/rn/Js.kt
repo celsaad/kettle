@@ -7,7 +7,8 @@ import expo.modules.brownfield.BrownfieldMessaging
 
 /**
  * The one channel to JS, for the life of the process: the JS runtime outlives any activity (the M0
- * spike's Q2), so the channel does too.
+ * spike's Q2), so the channel does too. Nothing sends on it yet: M3's navigation is the first sender,
+ * and the hold-until-ready contract is in place and tested before it arrives.
  */
 object Js {
     val channel = JsChannel(BrownfieldMessaging::sendMessage)

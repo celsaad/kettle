@@ -7,8 +7,9 @@
   The expo-brownfield CLI can't run on Windows (it spawns ./gradlew, which cmd doesn't resolve), so
   this calls the Gradle task it wraps directly.
 
-  The AAR only needs rebuilding when native code or a native dependency changes: ~30 min cold, a few
-  on a warm cache. A JS change needs nothing from here but Metro, so pass -SkipAar.
+  The AAR only needs rebuilding when native code or a native dependency changes, and a cold build is
+  the prebuilt project's whole native build. A JS change needs nothing from here but Metro, so pass
+  -SkipAar.
 
   Installs com.casco.kettle.dev only, which sits beside the Play install. Nothing here can touch
   com.casco.kettle.
@@ -34,7 +35,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
-# arm64 alone: every phone this loop targets is one, and each extra ABI adds ~15 min to the AAR.
+# arm64 alone: every phone this loop targets is one, and each extra ABI is another full C++ build.
 $abi = '-PreactNativeArchitectures=arm64-v8a'
 
 function Invoke-Step([string]$name, [scriptblock]$step) {
@@ -44,6 +45,11 @@ function Invoke-Step([string]$name, [scriptblock]$step) {
 }
 
 if ($Device) { $env:ANDROID_SERIAL = $Device }
+
+# A clean checkout has no node_modules, and both builds read versions out of it.
+if (-not (Test-Path "$root/node_modules")) {
+  Invoke-Step 'Install dependencies' { pnpm -C $root install --frozen-lockfile }
+}
 
 if ($Prebuild -or -not (Test-Path "$root/android")) {
   Invoke-Step 'Prebuild android/' {

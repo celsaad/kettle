@@ -47,10 +47,16 @@ jobs:
       # release runs, over the same four ABIs, which is what makes it a meaningful smoke test and a
       # useful cache warmer. An .apk build would only warm a quarter of it.
       VARIANT: ${{ inputs.variant || 'aab' }}
-      # The upload certificate every build here must carry: the one the last bundles built from the
-      # prebuilt app were signed with, and so the one Play expects. Public, like any certificate — it
-      # is the key behind it that's secret. Changing it is changing which key signs the app, which the
-      # signing entry in docs/decisions.md says not to do casually; Play would refuse the upload anyway.
+      # An .aab has to carry every ABI, since Play splits it per device. An .apk here is for
+      # sideloading onto a real phone, so it's built arm64-only — that is three quarters less C++ to
+      # compile, and no phone shipped in the last several years wants the other three. One flag for
+      # both builds: the shell filters its ABIs by it, and has to agree with what the AAR carries.
+      ABI_FLAG: ${{ inputs.variant == 'apk' && '-PreactNativeArchitectures=arm64-v8a' || '' }}
+      # The upload certificate every build here must carry: the one the 0.11.0 release bundle, the
+      # last one built from the prebuilt app, was signed with, and so the one Play expects. Public,
+      # like any certificate — it is the key behind it that's secret. Changing it is changing which key
+      # signs the app, which the signing entry in docs/decisions.md says not to do casually; Play would
+      # refuse the upload anyway.
       UPLOAD_CERT_SHA256: 48:0A:30:FE:53:E5:84:D0:AF:17:1F:1E:89:39:57:C2:86:12:E5:3E:90:29:44:38:36:5F:6E:E5:AA:0A:AA:54
 
     steps:
@@ -137,10 +143,6 @@ jobs:
       # is about a mavenLocal that already holds the other variant, and this runner's starts empty. The
       # shell builds release only, so the debug half would be a second full C++ build for nothing. The
       # AAR carries the JS bundle, built here from this commit.
-      #
-      # An .aab has to carry every ABI, since Play splits it per device. An .apk here is for
-      # sideloading onto a real phone, so it's built arm64-only — that is three quarters less C++ to
-      # compile, and no phone shipped in the last several years wants the other three.
       - name: Build the RN AAR
         working-directory: android
         env:
@@ -151,12 +153,8 @@ jobs:
           CMAKE_CXX_COMPILER_LAUNCHER: ccache
         # No --no-daemon: gradle/actions manages the daemon's lifecycle itself, and killing it early
         # costs the caching it sets up.
-        run: |
-          if [ "$VARIANT" = "apk" ]; then
-            ./gradlew publishBrownfieldReleasePublicationToMavenLocal --build-cache -PreactNativeArchitectures=arm64-v8a
-          else
-            ./gradlew publishBrownfieldReleasePublicationToMavenLocal --build-cache
-          fi
+        # $ABI_FLAG unquoted, so the .aab's empty one passes no argument at all.
+        run: ./gradlew publishBrownfieldReleasePublicationToMavenLocal --build-cache $ABI_FLAG
 
       # The keystore only exists on disk for the length of the job. It is the *upload* key, not the
       # app signing key — Play holds that one, so a leak here is recoverable by resetting the upload
@@ -183,7 +181,7 @@ jobs:
           KETTLE_UPLOAD_KEY_PASSWORD: ${{ secrets.ANDROID_UPLOAD_KEY_PASSWORD }}
         run: |
           if [ "$VARIANT" = "apk" ]; then
-            ./gradlew :app:assembleRelease --build-cache -PreactNativeArchitectures=arm64-v8a
+            ./gradlew :app:assembleRelease --build-cache $ABI_FLAG
           else
             ./gradlew :app:bundleRelease --build-cache
           fi

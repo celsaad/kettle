@@ -1,8 +1,9 @@
 # Building the Android release on GitHub Actions
 
 > **Live.** `.github/workflows/android.yml` builds the Play bundle on a GitHub runner, on every merge
-> to `master` and on demand. Since M2 of the native migration the bundle is the **native shell**
-> (`native/android`) hosting the RN app as an AAR, not the prebuilt RN app itself. EAS is not used by
+> to `master` and on demand. The bundle is the **native shell** (`native/android`) hosting the RN app
+> as an AAR, not the prebuilt RN app itself (M2 of the native migration). Releases up to 0.11.0 were
+> the prebuilt app; the first shell release is M2's ship ticket. EAS is not used by
 > it at all, and `eas.json` is kept only for the one-off credentials access described below. The
 > keystore setup here is a prerequisite — without it the workflow fails on the first run,
 > deliberately and early, which for a merge trigger means every merge until it's done.
@@ -104,8 +105,8 @@ each time:
 | **Upload certificate** | `48:0A:30:FE:53:E5:84:D0:AF:17:1F:1E:89:39:57:C2:86:12:E5:3E:90:29:44:38:36:5F:6E:E5:AA:0A:AA:54` | What this workflow signs with. Every `.aab` and `.apk` built here carries it. Play strips it. |
 | **App signing certificate** | `_(fill in from the Console)_` | What Play re-signs with, and therefore what every installed copy actually carries. |
 
-The upload row is the certificate on the last bundles the prebuilt app was built into, read from a
-`master` run's log, and is pinned in `android.yml` as `UPLOAD_CERT_SHA256`. Check it against the
+The upload row is the certificate on the 0.11.0 release bundle, read from the log of the `master`
+run that built it, and is pinned in `android.yml` as `UPLOAD_CERT_SHA256`. Check it against the
 Console once; if the two ever disagree, the Console wins and both copies here are wrong.
 
 Neither is a secret — they are public certificates, which is why they can live in the repo. It is the

@@ -35,6 +35,7 @@ class JsChannel(
     }
 
     private companion object {
+        // What src/hooks/safe-brownfield.ts sends. The two sides share no code, so change both.
         const val READY = "ready"
     }
 }

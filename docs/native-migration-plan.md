@@ -3,7 +3,9 @@
 > **M0 executed; the spike recommends go.** Its report is under M0 below. Every hard gate passed, and
 > the one partial answer (Q3) re-scopes M3 rather than blocking it. **M1 has landed**: the
 > conformance corpus, the native skeleton (`native/android`), a Kotlin runner for every corpus suite,
-> the generated string resources and the generated Compose theme. Nothing from M2 on has. M1–M3 are
+> the generated string resources and the generated Compose theme. **M2 is under way**: the shell hosts
+> today's app from the RN AAR (#148); the Play pipeline, the benchmark and the release have not
+> landed. M1–M3 are
 > tracked as GitHub issues #141–#156, whose open/closed state is the live record; M4
 > onward is ticketed once the M3 routing test (#152) has picked its shape. Written against the tree at
 > `54eb9f8`, SDK 57.

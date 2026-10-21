@@ -38,5 +38,6 @@ export function announceHostReady(): void {
     brownfield.addMessageListener(() => {});
     subscribed = true;
   }
+  // JsChannel's READY on the native side. The two share no code, so change both.
   brownfield.sendMessage({ type: 'ready' });
 }

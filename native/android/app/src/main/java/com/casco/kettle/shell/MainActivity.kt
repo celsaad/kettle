@@ -7,7 +7,7 @@ import com.casco.kettle.brownfield.BrownfieldActivity
 import com.casco.kettle.brownfield.ReactNativeHostManager
 import com.casco.kettle.brownfield.showReactNativeFragment
 import com.casco.kettle.shell.rn.ExpoActivityListeners
-import com.casco.kettle.shell.rn.Js
+import com.casco.kettle.shell.rn.JsBridge
 import com.casco.kettle.shell.rn.withViewAction
 import com.facebook.react.modules.core.PermissionAwareActivity
 import com.facebook.react.modules.core.PermissionListener
@@ -39,11 +39,12 @@ class MainActivity :
         // null, as the prebuilt app's MainActivity passes: the RN fragment is rebuilt from the running
         // runtime, and a restored copy would sit under it.
         super.onCreate(null)
+        // Before the surface opens: RN reads the intent's link then, and only under ACTION_VIEW.
         intent.withViewAction()
 
         expoListeners = ExpoActivityListeners(this).also(lifecycle::addObserver)
         showReactNativeFragment()
-        Js.attach()
+        JsBridge.attach()
         expoListeners.onContentShown()
     }
 

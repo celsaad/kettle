@@ -2,6 +2,7 @@ package com.casco.kettle.shell.rn
 
 import android.app.Activity
 import android.content.Intent
+import android.util.Log
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import expo.modules.ExpoModulesPackage
@@ -15,8 +16,17 @@ import expo.modules.ExpoModulesPackage
 class ExpoActivityListeners(
     private val activity: Activity,
 ) : DefaultLifecycleObserver {
+    /**
+     * A package that insists on a `ReactActivity` throws here, and is skipped rather than allowed to
+     * take the launch down with it. expo-sharing's is the one today: it receives share intents, which
+     * Kettle declares none of, so nothing reaches it either way. Sharing *from* the app doesn't use it.
+     */
     private val listeners =
-        ExpoModulesPackage.packageList.flatMap { it.createReactActivityLifecycleListeners(activity) }
+        ExpoModulesPackage.packageList.flatMap { pkg ->
+            runCatching { pkg.createReactActivityLifecycleListeners(activity) }
+                .onFailure { Log.w(TAG, "Skipping ${pkg.javaClass.name}'s activity listeners", it) }
+                .getOrDefault(emptyList())
+        }
 
     /** Once the RN surface is the activity's content. */
     fun onContentShown() =
@@ -34,4 +44,8 @@ class ExpoActivityListeners(
     override fun onPause(owner: LifecycleOwner) = listeners.forEach { it.onPause(activity) }
 
     override fun onDestroy(owner: LifecycleOwner) = listeners.forEach { it.onDestroy(activity) }
+
+    private companion object {
+        const val TAG = "ExpoActivityListeners"
+    }
 }

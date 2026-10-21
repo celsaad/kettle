@@ -67,14 +67,31 @@ if (-not $SkipAar) {
   }
 }
 
+Invoke-Step 'Build the shell' {
+  & "$root/native/android/gradlew.bat" -p "$root/native/android" :app:assembleDebug
+}
+
+# Not Gradle's installDebug: it streams the APK into the installer, and on a Galaxy S21 (Android 15)
+# the debug APK, which is large, arrived failing its v2 signature digest while a plain copy of the
+# same file matched byte for byte. --no-streaming copies first, then installs.
 Invoke-Step 'Install the shell (com.casco.kettle.dev)' {
-  & "$root/native/android/gradlew.bat" -p "$root/native/android" :app:installDebug
+  adb install -r --no-streaming "$root/native/android/app/build/outputs/apk/debug/app-debug.apk"
 }
 
 Invoke-Step 'Point the phone at Metro' { adb reverse tcp:8081 tcp:8081 }
-Invoke-Step 'Launch' { adb shell am start -n com.casco.kettle.dev/com.casco.kettle.MainActivity }
 
-# Not with CI=1, which turns reloads off. Stopping this leaves node holding 8081 on Windows; free the
-# port before the next run.
-Set-Location $root
-& "$root/node_modules/.bin/expo.cmd" start --port 8081
+# Metro first: an app launched before it answers finds nothing at 8081 and stays on its splash. Not
+# with CI=1, which turns reloads off. Its output stays in this window; stopping the script can leave
+# node holding 8081 on Windows, so free the port before the next run.
+$metro = Start-Process "$root/node_modules/.bin/expo.cmd" -ArgumentList 'start', '--port', '8081' `
+  -WorkingDirectory $root -NoNewWindow -PassThru
+Write-Host "`n== Waiting for Metro" -ForegroundColor Cyan
+do {
+  Start-Sleep -Seconds 1
+  if ($metro.HasExited) { throw 'Metro exited before it was ready' }
+  # RawContent, not Content: Metro sends no text content type, so Content arrives as bytes.
+  $status = try { (Invoke-WebRequest -Uri 'http://localhost:8081/status' -UseBasicParsing -TimeoutSec 2).RawContent } catch { '' }
+} until ($status -match 'packager-status:running')
+
+Invoke-Step 'Launch' { adb shell am start -n com.casco.kettle.dev/com.casco.kettle.MainActivity }
+$metro.WaitForExit()

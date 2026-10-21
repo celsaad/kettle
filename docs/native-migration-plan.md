@@ -338,6 +338,11 @@ session.
   - snakeyaml-engine-kmp, whose newer majors are built with a newer Kotlin than ours can read.
 
   If an Expo SDK upgrade moves React Native's Kotlin before M7, follow it then instead.
+- **Let the shell own its `targetSdk`.** While it hosts the AAR it targets what Expo SDK 57 does, so
+  `native/android/app/lint.xml` ignores lint's `OldTargetApi` (#148). Raise the target on the
+  shell's own schedule, then delete that exception so lint flags the next one. The same PR can drop
+  what the shell reads from the RN project only because it hosts it: `app.json` (version, label,
+  colors) and `node_modules` (Expo module versions) in `app/build.gradle.kts`.
 
 **Landmark: the Android APK contains no JS engine.** The root Expo project survives only if M8
 still needs it (see below).

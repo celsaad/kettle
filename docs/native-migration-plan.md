@@ -223,7 +223,8 @@ else is changing.
 
 - `android.yml` builds the AAR, then the shell's `.aab`. Same package, same upload key, the next
   `versionCode`. Read the signing entry in the decision log first. Nothing about which key signs
-  what may change in this milestone.
+  what may change in this milestone. *(Landed: `building-android.md` describes the pipeline, and the
+  workflow fails a build that doesn't carry the pinned upload certificate.)*
 - An update-in-place test on a device: install the current Play build, create a library and a
   session, update to the shell, and confirm everything is still there.
 - Internal track → closed testing → production. Don't skip steps.

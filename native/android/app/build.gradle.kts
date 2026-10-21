@@ -39,6 +39,9 @@ fun pluginOption(
     return entry[1].asJsonObject()[option] as String
 }
 
+/** One of the upload key's settings, as android.yml passes them in. Read, never written to a file. */
+fun uploadKey(setting: String): String? = providers.environmentVariable("KETTLE_UPLOAD_$setting").orNull
+
 android {
     namespace = "com.casco.kettle.shell"
     compileSdk = 36
@@ -59,6 +62,10 @@ android {
         manifestPlaceholders["appName"] = expo["name"] as String
         resValue("color", "splashscreen_background", pluginOption("expo-splash-screen", "backgroundColor"))
         resValue("color", "notification_icon_color", pluginOption("expo-notifications", "color"))
+        // The ABIs the AAR was built for, under the property the RN build takes them as. React Native's
+        // and Hermes's own artifacts carry every ABI whatever the AAR has, so without the filter an arm64
+        // build packages a partial x86 app that installs on an emulator and crashes there.
+        providers.gradleProperty("reactNativeArchitectures").orNull?.let { ndk { abiFilters += it.split(",") } }
     }
 
     signingConfigs {
@@ -71,6 +78,18 @@ android {
             keyAlias = "androiddebugkey"
             keyPassword = "android"
         }
+        // The Play *upload* key, which android.yml restores from its secrets for the length of the job
+        // (docs/building-android.md, and the signing entry in docs/decisions.md). Nowhere else has it, so
+        // a release built anywhere else is unsigned rather than signed with something Play would refuse;
+        // android.yml checks the certificate on what it built against the pinned upload fingerprint.
+        uploadKey("KEYSTORE")?.let { keystore ->
+            create("upload") {
+                storeFile = file(keystore)
+                storePassword = uploadKey("KEYSTORE_PASSWORD")
+                keyAlias = uploadKey("KEY_ALIAS")
+                keyPassword = uploadKey("KEY_PASSWORD")
+            }
+        }
     }
 
     buildTypes {
@@ -78,6 +97,9 @@ android {
         debug {
             applicationIdSuffix = ".dev"
             manifestPlaceholders["appName"] = "Kettle Dev"
+        }
+        release {
+            signingConfig = signingConfigs.findByName("upload")
         }
     }
 

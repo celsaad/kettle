@@ -14,6 +14,7 @@ import { scheduleOnRN } from 'react-native-worklets';
 
 import { KettleMark } from '@/components/kettle-mark';
 import { Fonts } from '@/constants/theme';
+import { announceHostReady } from '@/hooks/safe-brownfield';
 
 const DURATION = 600;
 
@@ -88,6 +89,8 @@ export function AnimatedSplashOverlay() {
   ) : (
     <View
       onLayout={() => {
+        // The router is mounted by now, which is what the shell's messages will need from M3 on.
+        announceHostReady();
         SplashScreen.hideAsync().finally(() => {
           setAnimate(true);
         });

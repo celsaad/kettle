@@ -6,7 +6,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import com.casco.kettle.shell.R
@@ -46,7 +46,7 @@ internal fun generatedResources(): List<Pair<String, Int>> =
 
 @Composable
 internal fun GeneratedStringsCatalogue() {
-    val resources = LocalContext.current.resources
+    val resources = LocalResources.current
     LazyColumn {
         items(generatedResources()) { (name, id) ->
             val text =

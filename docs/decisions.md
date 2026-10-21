@@ -944,6 +944,14 @@ decision assembled across several commits. Open work belongs in the sections at 
     language, because a `@Preview` locale has to be a compile-time constant; and `libs.versions.toml`
     repeats React Native's Kotlin and AGP, because once M2 hosts the RN AAR, a mismatch fails the
     build loudly.
+  - **The shell's share of `app.json`** (#148). The build reads the package, `versionCode`,
+    `version`, `name` and the splash and notification colors from `app.json`, and each Expo module's
+    version from `node_modules`. Two things config plugins write into `android/app` stay copies, and
+    nothing fails when they drift: the launcher, splash and notification images (prebuild's resized
+    output, under `native/android/app/src/main/res`), and the manifest's permissions, intent filters
+    and meta-data. **A change to `app.json`'s icons, permissions or plugins is copied into the shell
+    in the same PR.** The check is to diff the two release merged manifests, which matched except
+    for the entry point when this landed.
 
   **Rejected, so they aren't re-proposed:**
   - Parsing `theme.ts` from Kotlin, which was #147's first draft. It meant a parser for the subset of

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Expo's template default, which AppTheme hands RN's own text inputs. The splash and notification
+  colors are read from app.json's plugin options by the build, as prebuild reads them.
+-->
+<resources>
+    <color name="colorPrimary">#023c69</color>
+</resources>

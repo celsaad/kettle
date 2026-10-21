@@ -1,4 +1,5 @@
 import com.android.build.api.variant.HostTestBuilder
+import groovy.json.JsonSlurper
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -7,21 +8,78 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 }
 
+/** The RN project root: the shell reads its versions from there rather than repeating them. */
+val rnRoot: Directory = rootProject.layout.projectDirectory.dir("../..")
+
+@Suppress("UNCHECKED_CAST")
+fun readJson(path: String): Map<String, Any?> = JsonSlurper().parse(rnRoot.file(path).asFile) as Map<String, Any?>
+
+/** An Expo module's installed version, which is the version its published Android artifact carries. */
+fun npmVersion(pkg: String): String = readJson("node_modules/$pkg/package.json")["version"] as String
+
+@Suppress("UNCHECKED_CAST")
+val expo = readJson("app.json")["expo"] as Map<String, Any?>
+
+@Suppress("UNCHECKED_CAST")
+val expoAndroid = expo["android"] as Map<String, Any?>
+
+/** A config plugin's options in app.json, which prebuild writes into android/app and the AAR never carries. */
+@Suppress("UNCHECKED_CAST")
+fun pluginOption(
+    plugin: String,
+    option: String,
+): String {
+    val entry = (expo["plugins"] as List<Any?>).filterIsInstance<List<Any?>>().single { it.first() == plugin }
+    return (entry[1] as Map<String, Any?>)[option] as String
+}
+
 android {
     namespace = "com.casco.kettle.shell"
     compileSdk = 36
     // React Native's NDK (react-native/gradle/libs.versions.toml). Without it AGP can't strip the RN
-    // AAR's native libraries once M2 hosts it, and packages them with their symbols.
+    // AAR's native libraries, and packages them with their symbols.
     ndkVersion = "27.1.12297006"
 
     defaultConfig {
-        // Not com.casco.kettle until M2 ships the shell (#148), so nothing built here can install
-        // over the Play app.
-        applicationId = "com.casco.kettle.shell"
+        applicationId = expoAndroid["package"] as String
         minSdk = 24
         targetSdk = 36
-        versionCode = 1
-        versionName = "0.0.0"
+        // app.json's, which /bump moves: the shell replaces the Play app in place, so it continues
+        // that app's versionCode line rather than starting one of its own.
+        versionCode = expoAndroid["versionCode"] as Int
+        versionName = expo["version"] as String
+        // app.json's `name`, lowercase as the launcher has always shown it. A placeholder rather than a
+        // string resource, so `R.string` stays exactly the strings generated from the bundles.
+        manifestPlaceholders["appName"] = expo["name"] as String
+        resValue("color", "splashscreen_background", pluginOption("expo-splash-screen", "backgroundColor"))
+        resValue("color", "notification_icon_color", pluginOption("expo-notifications", "color"))
+    }
+
+    signingConfigs {
+        // Expo's template debug key, the one every prebuilt debug build is signed with. Sharing it lets
+        // the shell install over a dev build of today's app, which is an update-in-place check for free.
+        // It's public, like every RN project's debug key: it signs nothing that reaches Play.
+        getByName("debug") {
+            storeFile = file("debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+    }
+
+    buildTypes {
+        // Side by side with the Play install on a phone, never over it.
+        debug {
+            applicationIdSuffix = ".dev"
+            manifestPlaceholders["appName"] = "Kettle Dev"
+        }
+    }
+
+    packaging {
+        // RN, Hermes and several Expo modules each ship their own copy of libc++_shared. libworklets:
+        // expo-modules-core's published AAR carries an unstripped copy of react-native-worklets'
+        // library, the same build id (an M0 build fact).
+        jniLibs { pickFirsts += listOf("**/libc++_shared.so", "**/libworklets.so") }
     }
 
     buildFeatures { compose = true }
@@ -33,6 +91,9 @@ android {
 
     // Robolectric reads the merged resources, generated strings included.
     testOptions { unitTests.isIncludeAndroidResources = true }
+
+    // The zero-warning rule ktlint and detekt hold. Lint's own default fails on errors only.
+    lint { warningsAsErrors = true }
 }
 
 kotlin {
@@ -142,6 +203,18 @@ tasks.withType<Test>().configureEach {
 }
 
 dependencies {
+    // The RN app, published by scripts/native-dev.ps1 (or CI) from the prebuilt project.
+    implementation("com.casco.kettle:brownfield:1.0.0")
+    // The AAR's POM gives every Expo module runtime scope only, so the ones the shell calls directly
+    // are declared again here, at the versions node_modules installed.
+    implementation("expo.modules.brownfield:expo.modules.brownfield:${npmVersion("expo-brownfield")}")
+    implementation("host.exp.exponent:expo.core:${npmVersion("expo")}")
+    implementation("host.exp.exponent:expo.modules:${npmVersion("expo-modules-core")}")
+    implementation("host.exp.exponent:expo.modules.splashscreen:${npmVersion("expo-splash-screen")}")
+    // BrownfieldActivity is an AppCompatActivity, and the AAR only compiles against fragment-ktx.
+    implementation(libs.appcompat)
+    implementation(libs.fragment.ktx)
+
     implementation(project(":shared"))
     stringsGenerator(project(":strings"))
     themeGenerator(project(":theme"))

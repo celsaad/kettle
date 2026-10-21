@@ -171,8 +171,10 @@ routes correctly.
 
 - **Time to a rendered home screen**, measured with a Macrobenchmark against the Play build. This is
   the part of Q8 that adb couldn't answer.
-- **An inventory of what config plugins write into `android/app`.**
+- **An inventory of what config plugins write into `android/app`.** *(Landed with #148; what stays a
+  copy is in the decision log's single-source entry.)*
 - **The Windows dev loop as a documented script**: publish the AAR with Gradle, then Metro.
+  *(Landed: `scripts/native-dev.ps1`.)*
 
 ### M1 — Foundations · ~3–4 weeks
 

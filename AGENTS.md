@@ -64,8 +64,9 @@ retrofit, so answer them out loud even when the answer is no.
 - [ ] `pnpm run lint` — it comes back completely silent, so anything it prints is yours.
 - [ ] `pnpm run knip` — silent too.
 - [ ] **Touched `native/android`, or moved a golden in `conformance/`?** `gradlew build` from
-      `native/android`: tests, ktlint, detekt and compiler warnings, all failing on any finding. A
-      golden change reaches it because the Kotlin runner reads the same corpus.
+      `native/android`: tests, ktlint, detekt, Android lint and compiler warnings, all failing on any
+      finding. A golden change reaches it because the Kotlin runner reads the same corpus. It needs
+      the RN AAR in mavenLocal first (`scripts/native-dev.ps1`, once per native dependency change).
 - [ ] **Push the branch and open a PR** (`gh pr create`). The commit message is the durable record —
       root cause, alternatives, deliberate scope cuts go there, not into the docs (see "Docs").
 
@@ -116,8 +117,12 @@ mistake here that cannot be fixed for anyone who has already installed it.
   resources from the RN locale bundles on every build (never committed; plurals go through
   `pluralText`, not `pluralStringResource`), and `:theme`, which generates its Compose theme from
   `src/constants/theme.json` the same way. Its own Gradle build, not part of the Expo one.
-  `gradlew build` from that directory compiles, tests and lints it, and ktlint and detekt hold the
-  same zero-warning rule oxlint does; `gradlew ktlintFormat` is its `pnpm run format`.
+  `gradlew build` from that directory compiles, tests and lints it, and ktlint, detekt and Android
+  lint hold the same zero-warning rule oxlint does; `gradlew ktlintFormat` is its `pnpm run format`.
+  **`:app` hosts today's RN app from an AAR in mavenLocal**, so it doesn't build until
+  `scripts/native-dev.ps1` has published one: that script is the Windows dev loop, AAR to phone to
+  Metro. Changing `app.json`'s icons, permissions or plugins means copying the change into the shell
+  (see the single-source entry in the decision log).
 
 - `conformance/` — the format's behaviour as data: hand-written YAML inputs and generated golden
   outputs, checked by `conformance.test.ts` and by the Kotlin runner in `:shared`. It exists so the

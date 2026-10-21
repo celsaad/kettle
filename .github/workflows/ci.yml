@@ -169,21 +169,8 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
-      # Installed here, with retries, rather than left to AGP's on-demand download, which once
-      # arrived as a corrupt archive and failed the run in its first minutes. Both builds need it: the
-      # AAR to compile, the shell to strip it. The version is React Native's, which the shell reads too.
-      - name: Install React Native's NDK
-        working-directory: .
-        run: |
-          ndk=$(sed -nE 's/^ndkVersion = "([^"]+)"/\1/p' node_modules/react-native/gradle/libs.versions.toml)
-          sdkmanager="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
-          for attempt in 1 2 3; do
-            yes | "$sdkmanager" --install "ndk;$ndk" > /dev/null && exit 0
-            echo "::warning::NDK $ndk install failed (attempt $attempt)"
-            rm -rf "$ANDROID_HOME/ndk/$ndk"
-            sleep 10
-          done
-          exit 1
+      # After pnpm install, which the action reads the version from (see the action for why it exists).
+      - uses: ./.github/actions/install-ndk
 
       # Restore and save are separate steps so the AAR is saved as soon as it's built. A combined
       # actions/cache saves only when the whole job succeeds, so a failure in `:app` threw a ten-minute

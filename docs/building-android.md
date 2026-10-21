@@ -10,7 +10,9 @@
 
 ## The pipeline
 
-Two Gradle builds, one after the other, in one job:
+One job. It sets up JDK 17, which both builds run on, and JDK 21, which the shell's build names as
+its test toolchain. Then `pnpm install`, then React Native's NDK (`.github/actions/install-ndk`,
+shared with `ci.yml`), then ccache. After that come two Gradle builds, one after the other:
 
 1. **The RN app, as an AAR.** `expo prebuild` regenerates the gitignored `android/` tree, and
    `publishBrownfieldReleasePublicationToMavenLocal` builds it as a library — native code, the Expo
@@ -25,8 +27,7 @@ Only the release half of the AAR is published. `scripts/native-dev.ps1` publishe
 reason that only applies to a mavenLocal that already holds the other one; the runner's starts empty,
 and the debug half would be a second full C++ build for nothing.
 
-The prebuilt app's own `:app` is never built, so nothing in `android/` is signed any more and the
-script that used to patch its signing config is gone.
+The prebuilt app's own `:app` is never built, so nothing in `android/` is signed.
 
 ## Why not EAS
 
@@ -219,16 +220,18 @@ Gradle time. Nothing is written into a file, so a failed build's tree is safe to
 Everywhere else — a local `:app:build`, `ci.yml`'s `native-app` job — release builds come out
 unsigned, which is harmless: an unsigned file installs nowhere and Play refuses it.
 
-The debug build type keeps Expo's public template debug key, as before. It signs nothing that leaves
-a developer's machine.
+The debug build type signs with Expo's public template debug key. It signs nothing that leaves a
+developer's machine.
 
 **The trap is a build that looks signed and isn't, or is signed with the wrong key.** Both produce a
 valid-looking `.aab` that Play rejects on upload, half an hour after the mistake; the prebuilt app's
 template had one built in, signing release with the debug keystore on purpose. So the workflow doesn't
 trust the build: its "Check the signing certificate" step reads the certificate off the output
 (`keytool` for an `.aab`, `apksigner` for an `.apk`) and **fails the run** unless it is
-`UPLOAD_CERT_SHA256`. A missing secret, a renamed environment variable or a wrong alias all end there,
-before anything is uploaded.
+`UPLOAD_CERT_SHA256`. That step is the backstop, not the first line: a missing keystore secret fails
+earlier, at "Restore the upload keystore", and a wrong password or alias fails in Gradle's own
+signing. What reaches the check is the quiet case, a build that came out unsigned because
+`KETTLE_UPLOAD_KEYSTORE` didn't reach Gradle, or signed with the wrong key. Every case fails the run.
 
 That pinned value changes only if the upload key itself is reset in the Console. Changing which key
 signs what is the one mistake in this repo that can't be fixed for people who already installed — read

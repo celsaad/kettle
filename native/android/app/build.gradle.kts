@@ -40,7 +40,7 @@ fun pluginOption(
 }
 
 /** One of the upload key's settings, as android.yml passes them in. Read, never written to a file. */
-fun uploadKey(setting: String): String? = providers.environmentVariable("KETTLE_UPLOAD_$setting").orNull
+fun uploadKeySetting(setting: String): String? = providers.environmentVariable("KETTLE_UPLOAD_$setting").orNull
 
 android {
     namespace = "com.casco.kettle.shell"
@@ -82,12 +82,12 @@ android {
         // (docs/building-android.md, and the signing entry in docs/decisions.md). Nowhere else has it, so
         // a release built anywhere else is unsigned rather than signed with something Play would refuse;
         // android.yml checks the certificate on what it built against the pinned upload fingerprint.
-        uploadKey("KEYSTORE")?.let { keystore ->
+        uploadKeySetting("KEYSTORE")?.let { keystore ->
             create("upload") {
                 storeFile = file(keystore)
-                storePassword = uploadKey("KEYSTORE_PASSWORD")
-                keyAlias = uploadKey("KEY_ALIAS")
-                keyPassword = uploadKey("KEY_PASSWORD")
+                storePassword = uploadKeySetting("KEYSTORE_PASSWORD")
+                keyAlias = uploadKeySetting("KEY_ALIAS")
+                keyPassword = uploadKeySetting("KEY_PASSWORD")
             }
         }
     }

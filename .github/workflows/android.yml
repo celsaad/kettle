@@ -119,22 +119,10 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      # Installed here, with retries, rather than left to AGP's on-demand download, which once arrived
-      # as a corrupt archive (see the same step in ci.yml). Both builds need it: the AAR to compile, the
-      # shell to strip it. The version is React Native's, which the shell reads too.
-      - name: Install React Native's NDK
-        run: |
-          ndk=$(sed -nE 's/^ndkVersion = "([^"]+)"/\1/p' node_modules/react-native/gradle/libs.versions.toml)
-          sdkmanager="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
-          for attempt in 1 2 3; do
-            yes | "$sdkmanager" --install "ndk;$ndk" > /dev/null && exit 0
-            echo "::warning::NDK $ndk install failed (attempt $attempt)"
-            rm -rf "$ANDROID_HOME/ndk/$ndk"
-            sleep 10
-          done
-          exit 1
+      # After pnpm install, which the action reads the version from (see the action for why it exists).
+      - uses: ./.github/actions/install-ndk
 
-      # --no-install because the step above already installed, and prebuild would otherwise run the
+      # --no-install because `pnpm install` above already installed, and prebuild would otherwise run the
       # package manager a second time.
       - name: Prebuild android/
         run: pnpm exec expo prebuild --platform android --no-install
@@ -216,6 +204,11 @@ jobs:
           fi
           echo "$certs"
           expected=$(echo "$UPLOAD_CERT_SHA256" | tr -d ':' | tr 'A-F' 'a-f')
+          # An empty pin would match any output at all, which is the check passing vacuously.
+          if [ ${#expected} -ne 64 ]; then
+            echo "::error::UPLOAD_CERT_SHA256 is not a SHA-256 fingerprint."
+            exit 1
+          fi
           if ! echo "$certs" | tr -d ':' | tr 'A-F' 'a-f' | grep -q "$expected"; then
             echo "::error::Not signed with the upload certificate ($UPLOAD_CERT_SHA256). See docs/building-android.md."
             exit 1

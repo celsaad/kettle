@@ -16,6 +16,14 @@
     -->
     <issue id="OldTargetApi" severity="ignore" />
 
+    <!--
+      The ABI filter only applies when reactNativeArchitectures is passed, which only the arm64
+      sideload build does. The Play bundle passes nothing and carries every ABI, ChromeOS's included.
+    -->
+    <issue id="ChromeOsAbiSupport">
+        <ignore path="build.gradle.kts" />
+    </issue>
+
     <!-- These versions are read from node_modules at build time, which a version catalog can't do. -->
     <issue id="UseTomlInstead">
         <ignore path="build.gradle.kts" />

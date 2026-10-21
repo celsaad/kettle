@@ -4,8 +4,8 @@
 > the one partial answer (Q3) re-scopes M3 rather than blocking it. **M1 has landed**: the
 > conformance corpus, the native skeleton (`native/android`), a Kotlin runner for every corpus suite,
 > the generated string resources and the generated Compose theme. **M2 is under way**: the shell hosts
-> today's app from the RN AAR (#148); the Play pipeline, the benchmark and the release have not
-> landed. M1–M3 are
+> today's app from the RN AAR (#148), and `android.yml` builds the Play bundle from it (#149); the
+> benchmark and the release have not landed. M1–M3 are
 > tracked as GitHub issues #141–#156, whose open/closed state is the live record; M4
 > onward is ticketed once the M3 routing test (#152) has picked its shape. Written against the tree at
 > `54eb9f8`, SDK 57.
@@ -223,7 +223,8 @@ else is changing.
 
 - `android.yml` builds the AAR, then the shell's `.aab`. Same package, same upload key, the next
   `versionCode`. Read the signing entry in the decision log first. Nothing about which key signs
-  what may change in this milestone.
+  what may change in this milestone. *(Landed: `building-android.md` describes the pipeline, and the
+  workflow fails a build that doesn't carry the pinned upload certificate.)*
 - An update-in-place test on a device: install the current Play build, create a library and a
   session, update to the shell, and confirm everything is still there.
 - Internal track → closed testing → production. Don't skip steps.

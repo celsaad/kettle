@@ -1,0 +1,30 @@
+name: Install React Native's NDK
+description: The NDK version react-native's own version catalog names, installed with retries.
+
+# Installed up front, with retries, rather than left to AGP's on-demand download, which once arrived
+# as a corrupt archive and failed the run in its first minutes. Both Gradle builds need it: the RN
+# AAR to compile, the shell to strip it. The version is React Native's, which the shell reads too, so
+# this runs after `pnpm install`. A composite action because ci.yml and android.yml both need it.
+runs:
+  using: composite
+  steps:
+    - name: Install React Native's NDK
+      shell: bash
+      working-directory: ${{ github.workspace }}
+      run: |
+        ndk=$(sed -nE 's/^ndkVersion = "([^"]+)"/\1/p' node_modules/react-native/gradle/libs.versions.toml)
+        if [ -z "$ndk" ]; then
+          echo "::error::No ndkVersion in react-native's libs.versions.toml. Has pnpm install run?"
+          exit 1
+        fi
+        sdkmanager="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+        # `yes || true`: a composite action's bash runs with pipefail, which a workflow's own `run`
+        # doesn't, and `yes` always dies of SIGPIPE once sdkmanager stops reading. Without it every
+        # install, successful ones included, read as a failure.
+        for attempt in 1 2 3; do
+          (yes || true) | "$sdkmanager" --install "ndk;$ndk" > /dev/null && exit 0
+          echo "::warning::NDK $ndk install failed (attempt $attempt)"
+          rm -rf "$ANDROID_HOME/ndk/$ndk"
+          sleep 10
+        done
+        exit 1

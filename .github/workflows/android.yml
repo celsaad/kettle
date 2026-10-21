@@ -1,16 +1,18 @@
 name: Android build
 
-# Builds the Play bundle on the runner instead of on EAS: `expo prebuild` regenerates the gitignored
-# `android/` tree, Gradle builds it, and the artifact comes back attached to the run. Nothing here
-# talks to EAS, so there is no queue to wait behind — see docs/building-android.md for the one-time
-# keystore setup and for what to do when a build gets slow.
+# Builds the Play bundle on the runner, in two Gradle builds: `expo prebuild` regenerates the
+# gitignored `android/` tree, which publishes the RN app as an AAR into mavenLocal; then the native
+# shell in `native/android` builds the `.aab` around it (docs/native-migration-plan.md, M2). The
+# artifact comes back attached to the run. Nothing here talks to EAS — see docs/building-android.md
+# for the one-time keystore setup and for what to do when a build gets slow.
 
 on:
-  # Merging a PR is a push to master, and that build is doing two jobs: it proves the native build
-  # still works (nothing else in CI compiles a line of it), and it leaves a warm ccache behind.
-  # Actions caches don't flow from a branch to master, only the other way, so master's cache can only
-  # be warmed by a run *on master* — which is the whole reason this is a merge trigger and not a PR
-  # one. Skipping the prose-only merges keeps that from costing half an hour for nothing.
+  # Merging a PR is a push to master, and that build is doing two jobs: it proves the release build
+  # still works (ci.yml's native-app job builds the shell, but against a cached arm64 AAR), and it
+  # leaves a warm ccache behind. Actions caches don't flow from a branch to master, only the other
+  # way, so master's cache can only be warmed by a run *on master* — which is the whole reason this is
+  # a merge trigger and not a PR one. Skipping the prose-only merges keeps that from costing half an
+  # hour for nothing.
   push:
     branches: [master]
     paths-ignore:
@@ -45,6 +47,17 @@ jobs:
       # release runs, over the same four ABIs, which is what makes it a meaningful smoke test and a
       # useful cache warmer. An .apk build would only warm a quarter of it.
       VARIANT: ${{ inputs.variant || 'aab' }}
+      # An .aab has to carry every ABI, since Play splits it per device. An .apk here is for
+      # sideloading onto a real phone, so it's built arm64-only — that is three quarters less C++ to
+      # compile, and no phone shipped in the last several years wants the other three. One flag for
+      # both builds: the shell filters its ABIs by it, and has to agree with what the AAR carries.
+      ABI_FLAG: ${{ inputs.variant == 'apk' && '-PreactNativeArchitectures=arm64-v8a' || '' }}
+      # The upload certificate every build here must carry: the one the 0.11.0 release bundle, the
+      # last one built from the prebuilt app, was signed with, and so the one Play expects. Public,
+      # like any certificate — it is the key behind it that's secret. Changing it is changing which key
+      # signs the app, which the signing entry in docs/decisions.md says not to do casually; Play would
+      # refuse the upload anyway.
+      UPLOAD_CERT_SHA256: 48:0A:30:FE:53:E5:84:D0:AF:17:1F:1E:89:39:57:C2:86:12:E5:3E:90:29:44:38:36:5F:6E:E5:AA:0A:AA:54
 
     steps:
       - uses: actions/checkout@v7
@@ -59,13 +72,18 @@ jobs:
 
       # Pinned rather than left to the runner image's default, which has changed under us before and
       # would surface as an unrelated-looking Kotlin or AGP error. Expo SDK 57 is a JDK 17 toolchain.
+      # 21 as well, which the shell's build names as its test toolchain (see app/build.gradle.kts);
+      # the last version listed becomes JAVA_HOME, so both builds still run on 17.
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17
+          java-version: |
+            21
+            17
 
-      # Caches ~/.gradle across runs, keyed on the wrapper and the build scripts. It covers the
-      # dependency and wrapper downloads and, with --build-cache below, the Kotlin and Java work.
+      # Caches ~/.gradle across runs, keyed on the wrapper and the build scripts of both builds. It
+      # covers the dependency and wrapper downloads and, with --build-cache below, the Kotlin and Java
+      # work.
       - uses: gradle/actions/setup-gradle@v4
 
       # The NDK output can't ride in the Gradle cache: it lands in android/.cxx, which prebuild
@@ -101,10 +119,29 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      # --no-install because the step above already installed, and prebuild would otherwise run the
+      - uses: ./.github/actions/install-ndk
+
+      # --no-install because `pnpm install` above already installed, and prebuild would otherwise run the
       # package manager a second time.
       - name: Prebuild android/
         run: pnpm exec expo prebuild --platform android --no-install
+
+      # The release publication alone, where scripts/native-dev.ps1 publishes All: that script's warning
+      # is about a mavenLocal that already holds the other variant, and this runner's starts empty. The
+      # shell builds release only, so the debug half would be a second full C++ build for nothing. The
+      # AAR carries the JS bundle, built here from this commit.
+      - name: Build the RN AAR
+        working-directory: android
+        env:
+          # CMake reads these as the default for CMAKE_<LANG>_COMPILER_LAUNCHER, which is the only
+          # way in without editing every module's externalNativeBuild block. If the stats step below
+          # reports zero hits on a warm run, this is what didn't take.
+          CMAKE_C_COMPILER_LAUNCHER: ccache
+          CMAKE_CXX_COMPILER_LAUNCHER: ccache
+        # No --no-daemon: gradle/actions manages the daemon's lifecycle itself, and killing it early
+        # costs the caching it sets up.
+        # $ABI_FLAG unquoted, so the .aab's empty one passes no argument at all.
+        run: ./gradlew publishBrownfieldReleasePublicationToMavenLocal --build-cache $ABI_FLAG
 
       # The keystore only exists on disk for the length of the job. It is the *upload* key, not the
       # app signing key — Play holds that one, so a leak here is recoverable by resetting the upload
@@ -119,29 +156,19 @@ jobs:
           fi
           echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/upload.jks"
 
-      - name: Sign the release build with it
-        run: node .github/scripts/inject-release-signing.mjs
-
-      # An .aab has to carry every ABI, since Play splits it per device. An .apk here is for
-      # sideloading onto a real phone, so it's built arm64-only — that is three quarters less C++ to
-      # compile, and no phone shipped in the last several years wants the other three.
-      - name: Build
-        working-directory: android
+      # The shell's release build type signs with these when they're set, and leaves the build unsigned
+      # when they aren't (app/build.gradle.kts). Same package and versionCode as the prebuilt app,
+      # both read from app.json, so this replaces the Play install in place.
+      - name: Build the shell
+        working-directory: native/android
         env:
           KETTLE_UPLOAD_KEYSTORE: ${{ runner.temp }}/upload.jks
           KETTLE_UPLOAD_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_PASSWORD }}
           KETTLE_UPLOAD_KEY_ALIAS: ${{ secrets.ANDROID_UPLOAD_KEY_ALIAS }}
           KETTLE_UPLOAD_KEY_PASSWORD: ${{ secrets.ANDROID_UPLOAD_KEY_PASSWORD }}
-          # CMake reads these as the default for CMAKE_<LANG>_COMPILER_LAUNCHER, which is the only
-          # way in without editing every module's externalNativeBuild block. If the stats step below
-          # reports zero hits on a warm run, this is what didn't take.
-          CMAKE_C_COMPILER_LAUNCHER: ccache
-          CMAKE_CXX_COMPILER_LAUNCHER: ccache
-        # No --no-daemon: gradle/actions manages the daemon's lifecycle itself, and killing it early
-        # costs the caching it sets up.
         run: |
           if [ "$VARIANT" = "apk" ]; then
-            ./gradlew :app:assembleRelease --build-cache -PreactNativeArchitectures=arm64-v8a
+            ./gradlew :app:assembleRelease --build-cache $ABI_FLAG
           else
             ./gradlew :app:bundleRelease --build-cache
           fi
@@ -161,16 +188,29 @@ jobs:
         if: always()
         run: rm -f "$RUNNER_TEMP/upload.jks"
 
-      # The failure this catches is a build that silently fell back to the debug keystore: it produces
-      # a perfectly valid file that Play rejects on upload, half an hour later. Compare the printed
-      # SHA-256 against the upload certificate on Play Console › Setup › App integrity.
-      - name: Print the signing certificate
+      # The failure this catches is a build that came out unsigned or signed with some other key: it
+      # produces a perfectly valid-looking file that Play rejects on upload, or worse, that a sideload
+      # treats as a different app. So the certificate is compared, not just printed. apksigner prints
+      # the digest as bare lowercase hex and keytool as colon-separated uppercase, hence the folding.
+      - name: Check the signing certificate
         run: |
+          outputs=native/android/app/build/outputs
           if [ "$VARIANT" = "apk" ]; then
-            "$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)/apksigner" verify --print-certs \
-              android/app/build/outputs/apk/release/app-release.apk
+            certs=$("$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)/apksigner" verify --print-certs \
+              "$outputs/apk/release/app-release.apk")
           else
-            keytool -printcert -jarfile android/app/build/outputs/bundle/release/app-release.aab
+            certs=$(keytool -printcert -jarfile "$outputs/bundle/release/app-release.aab")
+          fi
+          echo "$certs"
+          expected=$(echo "$UPLOAD_CERT_SHA256" | tr -d ':' | tr 'A-F' 'a-f')
+          # An empty pin would match any output at all, which is the check passing vacuously.
+          if ! [[ $expected =~ ^[0-9a-f]{64}$ ]]; then
+            echo "::error::UPLOAD_CERT_SHA256 is not a SHA-256 fingerprint."
+            exit 1
+          fi
+          if ! echo "$certs" | tr -d ':' | tr 'A-F' 'a-f' | grep -q "$expected"; then
+            echo "::error::Not signed with the upload certificate ($UPLOAD_CERT_SHA256). See docs/building-android.md."
+            exit 1
           fi
 
       # Named with the run number because most of these share a versionCode: only a release commit
@@ -180,8 +220,8 @@ jobs:
         with:
           name: kettle-${{ env.VARIANT }}-run${{ github.run_number }}
           path: |
-            android/app/build/outputs/bundle/release/*.aab
-            android/app/build/outputs/apk/release/*.apk
+            native/android/app/build/outputs/bundle/release/*.aab
+            native/android/app/build/outputs/apk/release/*.apk
           if-no-files-found: error
           # An upload key is not a distribution key, so these are only useful to whoever can already
           # push to Play. Short retention keeps stale builds from being mistaken for the current one.

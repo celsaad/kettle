@@ -22,7 +22,8 @@
   dependency, and on a fresh checkout (it happens anyway when android/ is missing).
 
 .PARAMETER Device
-  The adb serial to use when more than one device is attached.
+  The adb serial to use when more than one device is attached. Wireless debugging works too, and
+  outlasts a flaky cable: pair once (`adb pair`), `adb connect`, then pass its ip:port here.
 
 .EXAMPLE
   ./scripts/native-dev.ps1 -SkipAar
@@ -73,7 +74,8 @@ Invoke-Step 'Build the shell' {
 
 # Not Gradle's installDebug: it streams the APK into the installer, and on a Galaxy S21 (Android 15)
 # the debug APK, which is large, arrived failing its v2 signature digest while a plain copy of the
-# same file matched byte for byte. --no-streaming copies first, then installs.
+# same file matched byte for byte. That USB link also kept dropping, so the streaming may not be the
+# whole cause; --no-streaming, which copies first and then installs, worked every time.
 Invoke-Step 'Install the shell (com.casco.kettle.dev)' {
   adb install -r --no-streaming "$root/native/android/app/build/outputs/apk/debug/app-debug.apk"
 }

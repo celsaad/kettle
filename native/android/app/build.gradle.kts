@@ -20,6 +20,13 @@ fun readJson(path: String): Map<String, Any?> = JsonSlurper().parse(rnRoot.file(
 /** An Expo module's installed version, which is the version its published Android artifact carries. */
 fun npmVersion(pkg: String): String = readJson("node_modules/$pkg/package.json")["version"] as String
 
+val rnNdkVersion: String =
+    Regex("""^ndkVersion\s*=\s*"([^"]+)"""", RegexOption.MULTILINE)
+        .find(rnRoot.file("node_modules/react-native/gradle/libs.versions.toml").asFile.readText())
+        ?.groupValues
+        ?.get(1)
+        ?: error("ndkVersion not found in react-native's libs.versions.toml")
+
 val expo = readJson("app.json")["expo"].asJsonObject()
 val expoAndroid = expo["android"].asJsonObject()
 
@@ -35,9 +42,9 @@ fun pluginOption(
 android {
     namespace = "com.casco.kettle.shell"
     compileSdk = 36
-    // React Native's NDK (react-native/gradle/libs.versions.toml). Without it AGP can't strip the RN
-    // AAR's native libraries, and packages them with their symbols.
-    ndkVersion = "27.1.12297006"
+    // React Native's NDK, read from its own version catalog, which CI's NDK install reads too. Without
+    // it AGP can't strip the RN AAR's native libraries, and packages them with their symbols.
+    ndkVersion = rnNdkVersion
 
     defaultConfig {
         applicationId = expoAndroid["package"] as String

@@ -82,28 +82,24 @@ jobs:
           TZ: America/New_York
         run: pnpm test --ci --maxWorkers=2
 
-  # The native app (docs/native-migration-plan.md). `build` is assemble plus check, and check runs
-  # the tests, ktlint and detekt, both of which fail on any finding: the same zero-warning rule
-  # `pnpm run lint` holds. The conformance tests read the repo's own conformance/, so a golden that
-  # moves on the TS side fails here too until the Kotlin port agrees.
+  # The native app (docs/native-migration-plan.md), in two jobs, because `:app` hosts the RN app from
+  # an AAR (M2) and nothing else does. Both fail on any finding: ktlint, detekt and Android lint hold
+  # the same zero-warning rule `pnpm run lint` does. The conformance tests read the repo's own
+  # conformance/, so a golden that moves on the TS side fails here too until the Kotlin port agrees.
   #
-  # `:app` hosts the RN app from an AAR (M2), so the AAR has to be in mavenLocal first. Building it is
-  # the prebuilt project's whole native build, so it's cached and rebuilt only when something native
-  # changes. JS is deliberately not in the key: the cached release AAR carries a stale bundle, which
-  # this job never runs. What reaches users is android.yml's, built fresh.
+  # `native` is everything that doesn't need the AAR: `:shared` and its conformance suites, the two
+  # generators, and ktlint and detekt across every project. It answers in minutes, whatever state the
+  # AAR cache is in. It still installs node_modules, because configuring the build reads `:app`'s
+  # versions from there.
   native:
     runs-on: ubuntu-latest
-    # A miss compiles the RN side's C++, as android.yml does (whose 90 minutes this matches), then the
-    # shell.
-    timeout-minutes: 90
     defaults:
       run:
         working-directory: native/android
     steps:
       - uses: actions/checkout@v7
 
-      # Same ordering constraint as the jobs above. The shell reads its Expo module versions from
-      # node_modules and its versionCode from app.json, so this runs even when the AAR is cached.
+      # Same ordering constraint as the jobs above.
       - uses: pnpm/action-setup@v4
 
       - uses: actions/setup-node@v7
@@ -115,6 +111,53 @@ jobs:
         working-directory: .
 
       # Pinned for the same reason as in android.yml: the runner image's default JDK has moved before.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Build, lint and test all but :app
+        run: ./gradlew :shared:build :strings:build :theme:build ktlintCheck detekt
+
+      # Which suites ran, which were skipped as unported, and what a failing case got instead.
+      - name: Upload reports
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-reports
+          # The root's own reports too: ktlint lints the root build scripts there.
+          path: |
+            native/android/build/reports/
+            native/android/*/build/reports/
+
+  # `native-app` is the shell: the RN AAR in mavenLocal, then `:app:build` (its tests, Android lint,
+  # and both variants' resource link against the AAR). Building the AAR is the prebuilt project's whole
+  # native build, so it's cached, keyed on what changes native output. JS is deliberately not in the
+  # key: the cached release AAR carries a stale bundle, which this job never runs. What reaches users
+  # is android.yml's, built fresh.
+  native-app:
+    runs-on: ubuntu-latest
+    # A miss compiles the RN side's C++ on android.yml's ccache (about ten minutes warm); 90 is a
+    # hang, as in android.yml.
+    timeout-minutes: 90
+    defaults:
+      run:
+        working-directory: native/android
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+        working-directory: .
+
       # 21 as well, for `:app`'s unit tests only (see the toolchain note in app/build.gradle.kts).
       # The last version listed becomes JAVA_HOME, so Gradle itself still runs on 17.
       - uses: actions/setup-java@v4
@@ -126,9 +169,28 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
+      # Installed here, with retries, rather than left to AGP's on-demand download, which once
+      # arrived as a corrupt archive and failed the run in its first minutes. Both builds need it: the
+      # AAR to compile, the shell to strip it. The version is React Native's, which the shell reads too.
+      - name: Install React Native's NDK
+        working-directory: .
+        run: |
+          ndk=$(sed -nE 's/^ndkVersion = "([^"]+)"/\1/p' node_modules/react-native/gradle/libs.versions.toml)
+          sdkmanager="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          for attempt in 1 2 3; do
+            yes | "$sdkmanager" --install "ndk;$ndk" > /dev/null && exit 0
+            echo "::warning::NDK $ndk install failed (attempt $attempt)"
+            rm -rf "$ANDROID_HOME/ndk/$ndk"
+            sleep 10
+          done
+          exit 1
+
+      # Restore and save are separate steps so the AAR is saved as soon as it's built. A combined
+      # actions/cache saves only when the whole job succeeds, so a failure in `:app` threw a ten-minute
+      # build away and the next run built it again.
       - name: Restore the RN AAR
         id: aar
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: ~/.m2/repository
           key: rn-aar-${{ hashFiles('pnpm-lock.yaml', 'package.json', 'app.json') }}
@@ -167,16 +229,19 @@ jobs:
           pnpm exec expo prebuild --platform android --no-install
           cd android && ./gradlew publishBrownfieldAllPublicationToMavenLocal --build-cache -PreactNativeArchitectures=arm64-v8a
 
-      - name: Build, lint and test
-        run: ./gradlew build
+      - name: Save the RN AAR
+        if: steps.aar.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ steps.aar.outputs.cache-primary-key }}
 
-      # Which suites ran, which were skipped as unported, and what a failing case got instead.
+      - name: Build, lint and test :app
+        run: ./gradlew :app:build
+
       - name: Upload reports
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: native-reports
-          # The root's own reports too: ktlint lints the root build scripts there.
-          path: |
-            native/android/build/reports/
-            native/android/*/build/reports/
+          name: native-app-reports
+          path: native/android/app/build/reports/

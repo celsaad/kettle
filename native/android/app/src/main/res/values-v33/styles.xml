@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The splash's icon behaviour exists from Android 13; earlier versions ignore it anyway. -->
+<resources>
+    <style name="Theme.App.SplashScreen" parent="Base.Theme.App.SplashScreen">
+        <item name="android:windowSplashScreenBehavior">icon_preferred</item>
+    </style>
+</resources>

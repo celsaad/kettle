@@ -3,7 +3,7 @@ package com.casco.kettle.shell.theme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import com.casco.kettle.theme.parseTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue

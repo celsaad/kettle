@@ -64,8 +64,9 @@ retrofit, so answer them out loud even when the answer is no.
 - [ ] `pnpm run lint` — it comes back completely silent, so anything it prints is yours.
 - [ ] `pnpm run knip` — silent too.
 - [ ] **Touched `native/android`, or moved a golden in `conformance/`?** `gradlew build` from
-      `native/android`: tests, ktlint, detekt and compiler warnings, all failing on any finding. A
-      golden change reaches it because the Kotlin runner reads the same corpus.
+      `native/android`: tests, ktlint, detekt, Android lint and compiler warnings, all failing on any
+      finding. A golden change reaches it because the Kotlin runner reads the same corpus. It needs
+      the RN AAR in mavenLocal first (`scripts/native-dev.ps1`, once per native dependency change).
 - [ ] **Push the branch and open a PR** (`gh pr create`). The commit message is the durable record —
       root cause, alternatives, deliberate scope cuts go there, not into the docs (see "Docs").
 
@@ -116,8 +117,12 @@ mistake here that cannot be fixed for anyone who has already installed it.
   resources from the RN locale bundles on every build (never committed; plurals go through
   `pluralText`, not `pluralStringResource`), and `:theme`, which generates its Compose theme from
   `src/constants/theme.json` the same way. Its own Gradle build, not part of the Expo one.
-  `gradlew build` from that directory compiles, tests and lints it, and ktlint and detekt hold the
-  same zero-warning rule oxlint does; `gradlew ktlintFormat` is its `pnpm run format`.
+  `gradlew build` from that directory compiles, tests and lints it, and ktlint, detekt and Android
+  lint hold the same zero-warning rule oxlint does; `gradlew ktlintFormat` is its `pnpm run format`.
+  **`:app` hosts today's RN app from an AAR in mavenLocal**, so it doesn't build until
+  `scripts/native-dev.ps1` has published one: that script is the Windows dev loop, AAR to phone to
+  Metro. Changing `app.json`'s icons, permissions or plugins means copying the change into the shell
+  (see the single-source entry in the decision log).
 
 - `conformance/` — the format's behaviour as data: hand-written YAML inputs and generated golden
   outputs, checked by `conformance.test.ts` and by the Kotlin runner in `:shared`. It exists so the
@@ -319,10 +324,11 @@ are the index, the banner is the contract.
 - `docs/testing-a11y-i18n-plan.md` — executed; kept for its rationale, not as a backlog.
 - `docs/watch-remote-plan.md` — **not executed.** Driving a running session from a Wear OS wrist via
   the notification shade, with no watch app and no data on the watch.
-- `docs/native-migration-plan.md` — **M0 executed (go); M1 under way.** Moving to Kotlin/Compose
-  (then iOS) inside the shipping app: a native shell hosts the not-yet-migrated RN screens via
-  `expo-brownfield`, and each milestone ships to Play and deletes RN code. Its M0 spike report holds
-  the brownfield build facts any host inherits (AAR scopes, plugin resources, Windows CLI).
+- `docs/native-migration-plan.md` — **M0 executed (go); M1 landed; M2 under way.** Moving to
+  Kotlin/Compose (then iOS) inside the shipping app: a native shell hosts the not-yet-migrated RN
+  screens via `expo-brownfield`, and each milestone ships to Play and deletes RN code. Its M0 spike
+  report holds the brownfield build facts any host inherits (AAR scopes, plugin resources, Windows
+  CLI).
 - `docs/ios-plan.md` — **partly executed.** Shipping to the App Store: what already works unchanged,
   the six code changes that don't, and the background-cue and iCloud decisions. Five of those six
   have landed, plus the notification half of the background cue; the sixth is a form in App Store

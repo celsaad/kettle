@@ -3,7 +3,9 @@
 > **M0 executed; the spike recommends go.** Its report is under M0 below. Every hard gate passed, and
 > the one partial answer (Q3) re-scopes M3 rather than blocking it. **M1 has landed**: the
 > conformance corpus, the native skeleton (`native/android`), a Kotlin runner for every corpus suite,
-> the generated string resources and the generated Compose theme. Nothing from M2 on has. M1–M3 are
+> the generated string resources and the generated Compose theme. **M2 is under way**: the shell hosts
+> today's app from the RN AAR (#148); the Play pipeline, the benchmark and the release have not
+> landed. M1–M3 are
 > tracked as GitHub issues #141–#156, whose open/closed state is the live record; M4
 > onward is ticketed once the M3 routing test (#152) has picked its shape. Written against the tree at
 > `54eb9f8`, SDK 57.
@@ -171,8 +173,10 @@ routes correctly.
 
 - **Time to a rendered home screen**, measured with a Macrobenchmark against the Play build. This is
   the part of Q8 that adb couldn't answer.
-- **An inventory of what config plugins write into `android/app`.**
+- **An inventory of what config plugins write into `android/app`.** *(Landed with #148; what stays a
+  copy is in the decision log's single-source entry.)*
 - **The Windows dev loop as a documented script**: publish the AAR with Gradle, then Metro.
+  *(Landed: `scripts/native-dev.ps1`.)*
 
 ### M1 — Foundations · ~3–4 weeks
 
@@ -334,6 +338,17 @@ session.
   - snakeyaml-engine-kmp, whose newer majors are built with a newer Kotlin than ours can read.
 
   If an Expo SDK upgrade moves React Native's Kotlin before M7, follow it then instead.
+- **Let the shell own its `targetSdk`.** While it hosts the AAR it targets what Expo SDK 57 does, so
+  `native/android/app/lint.xml` ignores lint's `OldTargetApi` (#148). Raise the target on the
+  shell's own schedule, then delete that exception so lint flags the next one. The same PR can drop
+  what the shell reads from the RN project only because it hosts it: `app.json` (version, label,
+  colors) and `node_modules` (Expo module versions) in `app/build.gradle.kts`.
+- **Review the CI scripts.** `ci.yml` splits the native build in two only because `:app` needs the
+  RN AAR: `native-app` installs Node, prebuilds, builds and caches the AAR, installs React Native's
+  NDK and borrows `android.yml`'s ccache, and even `native` installs node_modules for `:app`'s
+  versions. With the AAR gone, most of that goes; the two jobs may fold back into one, and
+  `android.yml` (rewritten for the shell in #149) and `scripts/native-dev.ps1` lose their RN steps
+  too.
 
 **Landmark: the Android APK contains no JS engine.** The root Expo project survives only if M8
 still needs it (see below).

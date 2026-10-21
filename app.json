@@ -72,7 +72,8 @@
           }
         }
       ],
-      "expo-iap"
+      "expo-iap",
+      "expo-brownfield"
     ],
     "experiments": {
       "typedRoutes": true,

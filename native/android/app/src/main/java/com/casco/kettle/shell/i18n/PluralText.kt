@@ -6,7 +6,7 @@ import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 
 /**
  * A plural from the generated resources, with i18next's zero step: for a count of 0 it reads the
@@ -36,5 +36,5 @@ fun pluralText(
     vararg args: Any,
 ): String {
     LocalConfiguration.current
-    return LocalContext.current.resources.pluralText(id, zeroId, count, *args)
+    return LocalResources.current.pluralText(id, zeroId, count, *args)
 }

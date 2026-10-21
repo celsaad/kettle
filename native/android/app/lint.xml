@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<lint>
+    <!--
+      The launcher and notification icons are the files prebuild generates from app.json's `icon`,
+      copied as they are: the shell ships what the prebuilt app shipped. Changing the artwork is its own
+      change, made in app.json.
+    -->
+    <issue id="IconLauncherShape" severity="ignore" />
+    <issue id="IconDuplicates" severity="ignore" />
+
+    <!--
+      targetSdk follows the RN app's (Expo SDK 57's), which the shell must not run ahead of while it
+      hosts it: they move together with an SDK bump. The check also depends on the newest platform the
+      machine has installed, so it passed locally and failed on CI's newer image. Remove this once
+      React Native is gone (docs/native-migration-plan.md, M7).
+    -->
+    <issue id="OldTargetApi" severity="ignore" />
+
+    <!-- These versions are read from node_modules at build time, which a version catalog can't do. -->
+    <issue id="UseTomlInstead">
+        <ignore path="build.gradle.kts" />
+    </issue>
+</lint>

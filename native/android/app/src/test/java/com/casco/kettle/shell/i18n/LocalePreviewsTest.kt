@@ -1,6 +1,6 @@
 package com.casco.kettle.shell.i18n
 
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import com.casco.kettle.strings.PluralEntry
 import com.casco.kettle.strings.parseBundle

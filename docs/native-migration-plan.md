@@ -243,11 +243,9 @@ added to `en.json` shows up in a Compose preview in all three languages with no 
 
 ### M2 — The shell ships · ~2 weeks · shipped as 0.11.2
 
-> **Shipped 22 October 2026** as 0.11.2 (versionCode 16) through internal, closed and production in
-> order, with the update-in-place test passed and `/release` published (#148–#151). 0.11.1 stayed on
-> internal: it lacked the system-appearance string the prebuilt app had (#170). Lesson for every later
-> milestone: anything prebuild writes into `android/app` has to be carried by the shell's own build.
-> **The landmark is still running**: a full release cycle with no regression reports.
+> **Shipped** (#148–#151); the CHANGELOG has the release. **The landmark is still running**: a full
+> release cycle with no regression reports. One lesson for every later milestone: anything prebuild
+> writes into `android/app` has to be carried by the shell's own build (#170).
 
 The native shell becomes the app on Play while still showing **100% RN content**: one RN surface
 running the existing expo-router app, unchanged. Users see nothing different, and that is the point.
@@ -268,11 +266,9 @@ one full release cycle. Every later milestone ships through this pipeline.
 ### M3 — Native owns navigation · ~2–3 weeks (contingency released, see the routing test)
 
 - **The routing test passed (#152): one long-lived RN surface, steered by messages.** Native sends
-  `{ type: "navigate", url }` (`JsBridge.navigate`), and `safe-brownfield.ts` routes it. The shell
-  (`.dev`, debug) was driven from adb by a debug-only receiver (`NavigateReceiver`), on the Galaxy S25+
-  with Metro, on 2026-10-22. That covered every tab and all 14 modal routes, each with and without an
-  id, in mixed order and repeated, from tabs, from modals, from the runner, and while backgrounded. Back
-  was checked after every kind of move, down to the launcher. So expo-router survives as the router
+  `{ type: "navigate", url }` (`JsBridge.navigate`), and `safe-brownfield.ts` routes it. Every tab and
+  modal route was reached by message, with back checked after each; the evidence is the matrix in
+  `scripts/route-check.ps1`, rerunnable against a `.dev` build. So expo-router survives as the router
   *inside* the surface, registered roots are not needed, and the contingency week goes.
   - **`router.navigate` alone is wrong** from anything above the tabs. Sent from a modal or the runner,
     it pushes a *second* copy of the tabs over them, so back walks through the stale screens. It
@@ -282,10 +278,8 @@ one full release cycle. Every later milestone ships through this pipeline.
     dismissal happened. A modal opened by message therefore backs out to its tab, and a second modal
     replaces the first rather than stacking. Over the runner, "Finish session?" holds the dismissal,
     and the message is dropped: Cancel stays in the session with nothing stacked, and Finish leaves by
-    the runner's own path.
-  - **The dismissal commits after `dismissAll()` returns**, so `canDismiss()` read straight after is
-    stale. It had settled by the next microtask. The handler waits a timeout, and a refused dismissal
-    stays `true` at every tick measured.
+    the runner's own path. The handler has to wait a tick before it can tell, which its comment
+    explains.
 - Native tab bar and back stack, built with Compose Navigation. Every route still renders RN, in the
   one surface native steers. Per-surface deep links stay out (Q3).
   - **The tab bar can't assume its message landed.** One over the runner can be dropped, and RN

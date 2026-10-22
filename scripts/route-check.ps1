@@ -85,6 +85,8 @@ function Test-Foreground {
     Select-Object -First 1) -match [regex]::Escape($package)
 }
 
+# Polls rather than sleeping a fixed time. A dump takes about a second on the S25+, which sets the
+# pace, and 8 s covers a modal's animation plus the runner's first render with room to spare.
 function Wait-For([string]$text) {
   $deadline = (Get-Date).AddSeconds(8)
   do {

@@ -1,10 +1,20 @@
 /**
- * What the RN app tells the native shell that hosts it (docs/native-migration-plan.md, M2). The
- * shell holds every message it has for JS until "ready" arrives — messages sent before JS listens
- * are dropped silently, so the order of the calls here is the contract.
+ * The RN app's half of its conversation with the native shell that hosts it
+ * (docs/native-migration-plan.md, M2 and M3). The shell holds every message it has for JS until
+ * "ready" arrives — messages sent before JS listens are dropped silently, so the order of the calls
+ * here is the contract. What comes back is navigation.
  */
 const mockCalls: string[] = [];
 let mockListener: ((message: Record<string, unknown>) => void) | undefined;
+
+/**
+ * A message from the shell. Throws rather than skipping when nothing subscribed, or every "goes
+ * nowhere" test below would pass for an app that never listened.
+ */
+function fromShell(message: Record<string, unknown>) {
+  if (!mockListener) throw new Error('Nothing is listening to the shell');
+  mockListener(message);
+}
 
 function mockBrownfield() {
   return {
@@ -100,7 +110,7 @@ it('leaves back to JS', () => {
 it('goes where a navigate message says', () => {
   announceHostReady();
 
-  mockListener?.({ type: 'navigate', url: '/history' });
+  fromShell({ type: 'navigate', url: '/history' });
 
   expect(mockNavigate).toHaveBeenCalledWith('/history');
 });
@@ -110,9 +120,9 @@ it('goes where a navigate message says', () => {
 it('ignores a navigate message without a url, and messages it does not know', () => {
   announceHostReady();
 
-  mockListener?.({ type: 'navigate' });
-  mockListener?.({ type: 'navigate', url: 42 });
-  mockListener?.({ type: 'filesChanged', url: '/history' });
+  fromShell({ type: 'navigate' });
+  fromShell({ type: 'navigate', url: 42 });
+  fromShell({ type: 'filesChanged', url: '/history' });
 
   expect(mockNavigate).not.toHaveBeenCalled();
 });
@@ -125,7 +135,7 @@ it('clears the screens above the tabs before it navigates', async () => {
   mockStack.above = 2;
   announceHostReady();
 
-  mockListener?.({ type: 'navigate', url: '/history' });
+  fromShell({ type: 'navigate', url: '/history' });
   await settle();
 
   expect(mockStack.above).toBe(0);
@@ -139,7 +149,7 @@ it('goes nowhere while a screen refuses to leave', async () => {
   mockStack.guarded = true;
   announceHostReady();
 
-  mockListener?.({ type: 'navigate', url: '/library' });
+  fromShell({ type: 'navigate', url: '/library' });
   await settle();
 
   expect(mockNavigate).not.toHaveBeenCalled();

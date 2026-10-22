@@ -17,7 +17,8 @@ android {
     }
 
     buildTypes {
-        // Only to match `:app`'s, which is the shell this installs alongside its own APK.
+        // Named to match `:app`'s, which is the shell this installs alongside its own APK. Debuggable is
+        // the test APK, as AGP's Macrobenchmark template has it; the target it times is not.
         create("benchmark") {
             isDebuggable = true
             signingConfig = signingConfigs.getByName("debug")

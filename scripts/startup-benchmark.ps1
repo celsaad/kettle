@@ -33,7 +33,6 @@ $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
 $native = "$root/native/android"
 $abi = '-PreactNativeArchitectures=arm64-v8a'
-$targets = @('com.casco.kettle.bench', 'com.casco.kettle.bench2')
 $runner = 'com.casco.kettle.benchmark/androidx.test.runner.AndroidJUnitRunner'
 
 function Invoke-Step([string]$name, [scriptblock]$step) {
@@ -45,7 +44,8 @@ function Invoke-Step([string]$name, [scriptblock]$step) {
 # Per call, not $env:ANDROID_SERIAL, which would outlive the script in the caller's terminal.
 $target = if ($Device) { @('-s', $Device) } else { @() }
 
-$apks = @{
+# The packages each APK must carry. An ordered map, so installs and first launches run in this order.
+$apks = [ordered]@{
   'com.casco.kettle.bench' = "$root/android/app/build/outputs/apk/release/app-release.apk"
   'com.casco.kettle.bench2' = "$native/app/build/outputs/apk/benchmark/app-benchmark.apk"
 }
@@ -65,14 +65,23 @@ if (-not $SkipBuild) {
   }
 }
 
+# Checked, not assumed: with -SkipBuild, today's app's APK is whatever its last release build left, and
+# one built without the init script is com.casco.kettle itself. Only the key mismatch would then stand
+# between this script and the real install.
+$buildTools = Get-ChildItem "$env:ANDROID_HOME/build-tools" | Sort-Object { [version]$_.Name } | Select-Object -Last 1
+foreach ($package in $apks.Keys) {
+  $actual = & "$($buildTools.FullName)/aapt2" dump packagename $apks[$package]
+  if ($actual -ne $package) { throw "$($apks[$package]) is $actual, not $package; rebuild without -SkipBuild" }
+}
+
 # --user 0: a Secure Folder user makes plain pm calls fail. --no-streaming: streamed installs of a
 # large APK have arrived corrupt (native-dev.ps1).
-foreach ($package in $targets) {
+foreach ($package in $apks.Keys) {
   Invoke-Step "Install $package" { adb @target install --user 0 -r --no-streaming $apks[$package] }
 }
 Invoke-Step 'Install the benchmark' { adb @target install --user 0 -r --no-streaming $benchmarkApk }
 
-foreach ($package in $targets) {
+foreach ($package in $apks.Keys) {
   Invoke-Step "First launch of $package" {
     adb @target shell am start -W -n "$package/com.casco.kettle.MainActivity"
   }
@@ -84,6 +93,22 @@ Invoke-Step 'Run the benchmark' { adb @target shell am instrument -w --user 0 $r
 
 $results = '/sdcard/Android/media/com.casco.kettle.benchmark/'
 $out = "$native/benchmark/build/results"
+# Emptied first, so the check below can't read a previous run's results as this one's.
+Remove-Item -Recurse -Force $out -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force $out | Out-Null
 Invoke-Step 'Pull the results' { adb @target pull $results $out }
+
+# A run whose marker never fired still passes: Macrobenchmark just leaves timeToFullDisplayMs out, or
+# short of an iteration whose marker landed after the measured block. Either way it isn't a result.
+$runs = Get-ChildItem $out -Recurse -Filter '*benchmarkData.json' | ForEach-Object {
+  (Get-Content $_.FullName -Raw | ConvertFrom-Json).benchmarks
+}
+foreach ($run in $runs) {
+  $full = $run.metrics.timeToFullDisplayMs
+  $label = "$($run.className).$($run.name)"
+  if (-not $full -or $full.runs.Count -ne $run.repeatIterations) {
+    throw "$label has $($full.runs.Count) full-display times of $($run.repeatIterations): the marker didn't fire every time"
+  }
+  Write-Host ('{0}: median {1:N0} ms, range {2:N0}-{3:N0}' -f $run.name, $full.median, $full.minimum, $full.maximum)
+}
 Write-Host "`nResults in $out" -ForegroundColor Green

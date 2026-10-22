@@ -39,10 +39,14 @@ class StartupBenchmark(
         ) {
             startActivityAndWait()
             // The metric needs the marker inside the measured block, and startActivityAndWait returns at
-            // the first frame. Home's testID is its resource id; a timeout means no marker, so fail.
+            // the first frame. Home's testID is its resource id, and a timeout means no Home at all.
             check(device.wait(Until.hasObject(By.res(HOME_SCREEN)), HOME_TIMEOUT_MS)) {
                 "$target never showed its home screen"
             }
+            // The marker reaches native a hop after the layout that put Home on screen, so the view can
+            // be found first. Idle covers the hop; an iteration that still misses it has no full-display
+            // time, which startup-benchmark.ps1 refuses rather than averaging over.
+            device.waitForIdle()
         }
 
     companion object {

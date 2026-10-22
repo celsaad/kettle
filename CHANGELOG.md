@@ -18,7 +18,45 @@ here, next to what it describes.
 
 ## Unreleased
 
-Nothing since 0.11.0.
+Nothing since 0.11.1.
+
+---
+
+## 0.11.1 — versionCode 15, 22 October 2026
+
+### What changed
+
+**Nothing you should notice.** Kettle now starts from a native Android app that hosts the screens
+you already know, the first step of moving the app to native code. Your library, your history and
+every screen are unchanged; if anything looks or behaves differently, that's a bug worth reporting.
+
+### Play release notes
+
+Counted at 112 (en-US) and 122 (pt-BR), against a limit of 500. Re-count programmatically
+if you edit them rather than trusting these numbers — over-limit copy is a rejected upload, not a
+truncated one.
+
+Reused verbatim from 0.10.0: nothing changed that a user should see, and the note's closing line
+asks for exactly the reports this release is watching for.
+
+Two blocks rather than three, as in 0.8.0 onwards: the Play listing does not carry ja-JP.
+
+```
+<en-US>
+What's new
+
+Updates and fixes to improve your favourite exercise app.
+
+Report anything that hangs or loses data.
+</en-US>
+<pt-BR>
+Novidades
+
+Atualizações e correções para melhorar o seu app de exercícios favorito.
+
+Relate travamentos ou perda de dados.
+</pt-BR>
+```
 
 ---
 

@@ -82,27 +82,37 @@ foreach ($package in $apks.Keys) {
 Invoke-Step 'Install the benchmark' { adb @target install --user 0 -r --no-streaming $benchmarkApk }
 
 foreach ($package in $apks.Keys) {
-  Invoke-Step "First launch of $package" {
-    adb @target shell am start -W -n "$package/com.casco.kettle.MainActivity"
-  }
+  # `am start -W` exits 0 on a failed launch too; only its Status line says.
+  $launch = adb @target shell am start -W -n "$package/com.casco.kettle.MainActivity"
+  if ($LASTEXITCODE -ne 0 -or -not ($launch -match 'Status: ok')) { throw "First launch of $package failed:`n$launch" }
   Start-Sleep -Seconds 5
   Invoke-Step "Stop $package" { adb @target shell am force-stop $package }
 }
 
-Invoke-Step 'Run the benchmark' { adb @target shell am instrument -w --user 0 $runner }
-
 $results = '/sdcard/Android/media/com.casco.kettle.benchmark/'
 $out = "$native/benchmark/build/results"
-# Emptied first, so the check below can't read a previous run's results as this one's.
+# Both ends emptied first, so a run that dies before writing can't be read as the last one's results.
+Invoke-Step 'Clear the last results on the phone' { adb @target shell rm -rf $results }
 Remove-Item -Recurse -Force $out -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force $out | Out-Null
+
+# `am instrument -w` exits 0 when a test fails; only JUnit's summary line says, and it carries the
+# count the results have to match.
+Write-Host "`n== Run the benchmark" -ForegroundColor Cyan
+$instrument = adb @target shell am instrument -w --user 0 $runner
+$instrument | Write-Host
+$passed = ($instrument | Select-String 'OK \((\d+) tests?\)').Matches
+if ($LASTEXITCODE -ne 0 -or -not $passed) { throw 'The benchmark failed (no "OK (n tests)" from am instrument)' }
+$expected = [int]$passed[0].Groups[1].Value
+
 Invoke-Step 'Pull the results' { adb @target pull $results $out }
 
 # A run whose marker never fired still passes: Macrobenchmark just leaves timeToFullDisplayMs out, or
 # short of an iteration whose marker landed after the measured block. Either way it isn't a result.
-$runs = Get-ChildItem $out -Recurse -Filter '*benchmarkData.json' | ForEach-Object {
-  (Get-Content $_.FullName -Raw | ConvertFrom-Json).benchmarks
-}
+$runs = @(Get-ChildItem $out -Recurse -Filter '*benchmarkData.json' | ForEach-Object {
+    (Get-Content $_.FullName -Raw | ConvertFrom-Json).benchmarks
+  })
+if ($runs.Count -ne $expected) { throw "$expected tests passed but $($runs.Count) results came back" }
 foreach ($run in $runs) {
   $full = $run.metrics.timeToFullDisplayMs
   $label = "$($run.className).$($run.name)"

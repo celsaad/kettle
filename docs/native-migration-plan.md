@@ -174,8 +174,9 @@ routes correctly.
 - **Time to a rendered home screen**, measured with a Macrobenchmark against the Play build. This is
   the part of Q8 that adb couldn't answer. *(Tooling landed with #150: `scripts/startup-benchmark.ps1`.
   "The Play build" is today's app built release from the same commit as `com.casco.kettle.bench`,
-  beside the shell's `.bench2`, since benchmarking the real install would force-stop it and reset
-  its compiled code, and would time its owner's library against a seed. The end point is Home's
+  beside the shell's `.bench2`. The Play release can't stand in for itself: it has no marker, so it
+  could never report a time to Home. Benchmarking the real install would also force-stop it, reset
+  its compiled code, and time its owner's library against a seed. The end point is Home's
   `reportFullyDrawn`, which both builds call from the same JS.)*
 
   Measured on the S25+ on 2026-10-22, at `3ddcb88`: cold start, 15 iterations each, arm64 release,
@@ -199,7 +200,8 @@ routes correctly.
   a second. It isn't startup timing either: both builds load React Native inside the measured window,
   today's app in `Application.onCreate` and the shell in its activity's `onCreate`, so loading it
   earlier saves nothing on a cold start. The cause wasn't traced. M7 reruns the benchmark against the
-  all-native app. of what config plugins write into `android/app`.** *(Landed with #148; what stays a
+  all-native app.
+- **An inventory of what config plugins write into `android/app`.** *(Landed with #148; what stays a
   copy is in the decision log's single-source entry.)*
 - **The Windows dev loop as a documented script**: publish the AAR with Gradle, then Metro.
   *(Landed: `scripts/native-dev.ps1`.)*

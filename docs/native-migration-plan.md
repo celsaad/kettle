@@ -172,7 +172,35 @@ routes correctly.
 **Added to M2's checks:**
 
 - **Time to a rendered home screen**, measured with a Macrobenchmark against the Play build. This is
-  the part of Q8 that adb couldn't answer.
+  the part of Q8 that adb couldn't answer. *(Tooling landed with #150: `scripts/startup-benchmark.ps1`.
+  "The Play build" is today's app built release from the same commit as `com.casco.kettle.bench`,
+  beside the shell's `.bench2`. The Play release can't stand in for itself: it has no marker, so it
+  could never report a time to Home. Benchmarking the real install would also force-stop it, reset
+  its compiled code, and time its owner's library against a seed. The end point is Home's
+  `reportFullyDrawn`, which both builds call from the same JS.)*
+
+  Measured on the S25+ on 2026-10-22, at `3ddcb88`: cold start, 15 iterations each, arm64 release,
+  unminified, seed library.
+
+  | To Home drawn | Compilation | Median | Range |
+  |---|---|---|---|
+  | Today's app | None | 565 ms | 512–612 |
+  | Today's app | Full | 532 ms | 513–716 |
+  | Shell | None | 696 ms | 531–739 |
+  | Shell | Full | 670 ms | 661–736 |
+
+  **The shell is ~130–140 ms slower to Home (+23–26%).** In both builds, time to full display equals
+  time to initial display, give or take a few ms. expo-splash-screen holds the activity's first frame
+  until JS hides the splash, so the first frame is Home in either build. That also means the spike's
+  615 ms "to first frame" for the Play install was already time to Home.
+
+  **Accepted for M2, not ticketed.** The cost is the RN-hosting path itself, and the migration deletes
+  that path: Home renders natively once its milestone ships, and RN leaves the app entirely after that.
+  Tuning a path that's being removed isn't worth the time, and 670–700 ms to Home is still well under
+  a second. It isn't startup timing either: both builds load React Native inside the measured window,
+  today's app in `Application.onCreate` and the shell in its activity's `onCreate`, so loading it
+  earlier saves nothing on a cold start. The cause wasn't traced. M7 reruns the benchmark against the
+  all-native app.
 - **An inventory of what config plugins write into `android/app`.** *(Landed with #148; what stays a
   copy is in the decision log's single-source entry.)*
 - **The Windows dev loop as a documented script**: publish the AAR with Gradle, then Metro.
@@ -350,6 +378,18 @@ session.
   versions. With the AAR gone, most of that goes; the two jobs may fold back into one, and
   `android.yml` (rewritten for the shell in #149) and `scripts/native-dev.ps1` lose their RN steps
   too.
+- **Rerun the startup benchmark, all-native against today's app** (M2's numbers, #150). Two things
+  have to survive the deletion:
+  - **The marker.** `modules/startup-marker` goes with RN, so native Home calls the same
+    `reportFullyDrawn` itself once its content is drawn (Compose's `ReportDrawnWhen`). Then
+    `timeToFullDisplayMs` still means "Home drawn", and the numbers stay comparable.
+  - **The baseline.** Today's app can't be built from a tree without RN. Build `.bench` from the
+    commit that merged #168 (`git worktree`, then the script's first step as it is today) rather than
+    reusing M2's table: the same phone a year on, on a newer Android, isn't the same baseline. M2's
+    numbers are the check that the rebuilt baseline still lands where it did.
+
+  `scripts/startup-benchmark.ps1` loses its AAR step and gains the worktree build. Same S25+, same
+  iterations and compilation modes. Record the result beside M2's table.
 
 **Landmark: the Android APK contains no JS engine.** The root Expo project survives only if M8
 still needs it (see below).

@@ -945,8 +945,9 @@ decision assembled across several commits. Open work belongs in the sections at 
     repeats React Native's Kotlin and AGP, because once M2 hosts the RN AAR, a mismatch fails the
     build loudly.
   - **The shell's share of `app.json`** (#148). The build reads the package, `versionCode`,
-    `version`, `name` and the splash and notification colors from `app.json`, and each Expo module's
-    version from `node_modules`. Two things config plugins write into `android/app` stay copies, and
+    `version`, `name`, the splash and notification colors and `userInterfaceStyle` (as the string
+    expo-system-ui reads, whose library default pins the app light) from `app.json`, and each Expo
+    module's version from `node_modules`. Two things config plugins write into `android/app` stay copies, and
     nothing fails when they drift: the launcher, splash and notification images (prebuild's resized
     output, under `native/android/app/src/main/res`), and the manifest's permissions, intent filters
     and meta-data. **A change to `app.json`'s icons, permissions or plugins is copied into the shell

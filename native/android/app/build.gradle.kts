@@ -58,10 +58,20 @@ android {
         versionCode = expoAndroid["versionCode"] as Int
         versionName = expo["version"] as String
         // app.json's `name`, lowercase as the launcher has always shown it. A placeholder rather than a
-        // string resource, so `R.string` stays exactly the strings generated from the bundles.
+        // string resource, so `R.string` stays the strings generated from the bundles plus the `expo_`
+        // ones Expo modules read (below; `generatedResources()` in LocalePreviews.kt skips them).
         manifestPlaceholders["appName"] = expo["name"] as String
         resValue("color", "splashscreen_background", pluginOption("expo-splash-screen", "backgroundColor"))
         resValue("color", "notification_icon_color", pluginOption("expo-notifications", "color"))
+        // expo-system-ui sets the night mode from this on every launch, and its library default is
+        // `light`: without it, Settings → Appearance → System stays light on a dark phone. Prebuild
+        // wrote it from app.json, preferring the android-specific key, and left the default when unset.
+        // It goes with the AAR: once expo-system-ui is gone, nothing reads it. The plugin's other half,
+        // the window background from `backgroundColor`, isn't copied: app.json sets neither key.
+        (expoAndroid["userInterfaceStyle"] ?: expo["userInterfaceStyle"])?.let {
+            require(it in listOf("automatic", "light", "dark")) { "app.json: invalid userInterfaceStyle \"$it\"" }
+            resValue("string", "expo_system_ui_user_interface_style", it as String)
+        }
         // The ABIs the AAR was built for, under the property the RN build takes them as. React Native's
         // and Hermes's own artifacts carry every ABI whatever the AAR has, so without the filter an arm64
         // build packages a partial x86 app that installs on an emulator and crashes there.

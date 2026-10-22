@@ -18,7 +18,45 @@ here, next to what it describes.
 
 ## Unreleased
 
-Nothing since 0.11.1.
+Nothing since 0.11.2.
+
+---
+
+## 0.11.2 — versionCode 16, 22 October 2026
+
+### What changed
+
+**Nothing you should notice.** This is 0.11.1 with one fix found in internal testing, before it
+reached anyone else: Settings → Appearance → System stayed light on a phone set to dark mode. It
+follows the phone again, as it always has.
+
+### Play release notes
+
+Counted at 112 (en-US) and 122 (pt-BR), against a limit of 500. Re-count programmatically
+if you edit them rather than trusting these numbers — over-limit copy is a rejected upload, not a
+truncated one.
+
+The same copy as 0.11.1, which never reached production: anyone updating goes straight from 0.11.0
+to this, so these are the notes they read.
+
+Two blocks rather than three, as in 0.8.0 onwards: the Play listing does not carry ja-JP.
+
+```
+<en-US>
+What's new
+
+Updates and fixes to improve your favourite exercise app.
+
+Report anything that hangs or loses data.
+</en-US>
+<pt-BR>
+Novidades
+
+Atualizações e correções para melhorar o seu app de exercícios favorito.
+
+Relate travamentos ou perda de dados.
+</pt-BR>
+```
 
 ---
 

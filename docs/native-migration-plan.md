@@ -191,7 +191,15 @@ routes correctly.
   **The shell is ~130–140 ms slower to Home (+23–26%).** In both builds, time to full display equals
   time to initial display, give or take a few ms. expo-splash-screen holds the activity's first frame
   until JS hides the splash, so the first frame is Home in either build. That also means the spike's
-  615 ms "to first frame" for the Play install was already time to Home. of what config plugins write into `android/app`.** *(Landed with #148; what stays a
+  615 ms "to first frame" for the Play install was already time to Home.
+
+  **Accepted for M2, not ticketed.** The cost is the RN-hosting path itself, and the migration deletes
+  that path: Home renders natively once its milestone ships, and RN leaves the app entirely after that.
+  Tuning a path that's being removed isn't worth the time, and 670–700 ms to Home is still well under
+  a second. It isn't startup timing either: both builds load React Native inside the measured window,
+  today's app in `Application.onCreate` and the shell in its activity's `onCreate`, so loading it
+  earlier saves nothing on a cold start. The cause wasn't traced. Rerun `scripts/startup-benchmark.ps1`
+  when Home goes native; the same marker, called from Compose, gives that milestone its comparison. of what config plugins write into `android/app`.** *(Landed with #148; what stays a
   copy is in the decision log's single-source entry.)*
 - **The Windows dev loop as a documented script**: publish the AAR with Gradle, then Metro.
   *(Landed: `scripts/native-dev.ps1`.)*

@@ -172,7 +172,11 @@ routes correctly.
 **Added to M2's checks:**
 
 - **Time to a rendered home screen**, measured with a Macrobenchmark against the Play build. This is
-  the part of Q8 that adb couldn't answer.
+  the part of Q8 that adb couldn't answer. *(Tooling landed with #150: `scripts/startup-benchmark.ps1`.
+  "The Play build" is today's app built release from the same commit as `com.casco.kettle.bench`,
+  beside the shell's `.bench2`, since benchmarking the real install would force-stop it and reset
+  its compiled code, and would time its owner's library against a seed. The end point is Home's
+  `reportFullyDrawn`, which both builds call from the same JS.)*
 - **An inventory of what config plugins write into `android/app`.** *(Landed with #148; what stays a
   copy is in the decision log's single-source entry.)*
 - **The Windows dev loop as a documented script**: publish the AAR with Gradle, then Metro.

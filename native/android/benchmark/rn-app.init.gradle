@@ -1,0 +1,23 @@
+// Turns the prebuilt project's release build into today's app's benchmark target, without editing
+// android/, which prebuild owns and would overwrite: `.bench`, beside the Play install, labelled
+// apart from it, and profileable so Macrobenchmark can trace it. scripts/startup-benchmark.ps1
+// passes it with --init-script.
+allprojects {
+    plugins.withId('com.android.application') {
+        def overlay = project.layout.buildDirectory.file('kettle-bench/AndroidManifest.xml').get().asFile
+        overlay.parentFile.mkdirs()
+        overlay.text = '''<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <application android:label="Kettle Bench" tools:replace="android:label">
+        <profileable android:shell="true" tools:targetApi="29" />
+    </application>
+</manifest>
+'''
+        android {
+            buildTypes.release.applicationIdSuffix '.bench'
+            // The prebuilt project has no src/release, so this overlay replaces nothing.
+            sourceSets.release.manifest.srcFile overlay
+        }
+    }
+}

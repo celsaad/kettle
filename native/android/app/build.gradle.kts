@@ -101,6 +101,17 @@ android {
         release {
             signingConfig = signingConfigs.findByName("upload")
         }
+        // What `:benchmark` launches: a release build, side by side like debug, signed with the debug
+        // key so it builds anywhere, and profileable (src/benchmark). `.bench2` because `.bench` is
+        // today's app built the same way, which it is timed against (scripts/startup-benchmark.ps1).
+        create("benchmark") {
+            initWith(getByName("release"))
+            applicationIdSuffix = ".bench2"
+            manifestPlaceholders["appName"] = "Kettle Bench Shell"
+            signingConfig = signingConfigs.getByName("debug")
+            // The RN AAR and the libraries publish debug and release only.
+            matchingFallbacks += "release"
+        }
     }
 
     packaging {
@@ -190,10 +201,12 @@ val generateTheme by tasks.registering(GenerateTheme::class) {
 }
 
 androidComponents {
-    // The unit tests run on debug alone: release would run the same tests on the same resources, and
-    // without ui-test-manifest's activity, which only a debug dependency can merge into the app.
-    beforeVariants(selector().withBuildType("release")) { variant ->
-        variant.hostTests[HostTestBuilder.UNIT_TEST_TYPE]?.enable = false
+    // The unit tests run on debug alone: release and benchmark would run the same tests on the same
+    // resources, and without ui-test-manifest's activity, which only a debug dependency can merge in.
+    listOf("release", "benchmark").forEach { buildType ->
+        beforeVariants(selector().withBuildType(buildType)) { variant ->
+            variant.hostTests[HostTestBuilder.UNIT_TEST_TYPE]?.enable = false
+        }
     }
     onVariants { variant ->
         variant.sources.res?.addGeneratedSourceDirectory(generateStrings, GenerateStrings::output)

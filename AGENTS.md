@@ -122,7 +122,10 @@ mistake here that cannot be fixed for anyone who has already installed it.
   **`:app` hosts today's RN app from an AAR in mavenLocal**, so it doesn't build until
   `scripts/native-dev.ps1` has published one: that script is the Windows dev loop, AAR to phone to
   Metro. Changing `app.json`'s icons, permissions or plugins means copying the change into the shell
-  (see the single-source entry in the decision log).
+  (see the single-source entry in the decision log). `:benchmark` is a Macrobenchmark of cold start
+  to a drawn Home, the shell against today's app, run on a phone by `scripts/startup-benchmark.ps1`;
+  its end point is `reportFullyDrawn`, called from Home through the local Expo module in
+  `modules/startup-marker`.
 
 - `conformance/` — the format's behaviour as data: hand-written YAML inputs and generated golden
   outputs, checked by `conformance.test.ts` and by the Kotlin runner in `:shared`. It exists so the

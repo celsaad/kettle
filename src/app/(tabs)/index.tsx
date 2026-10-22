@@ -25,6 +25,7 @@ import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { formatWorkoutShape } from '@/domain/format';
 import { rankByName } from '@/domain/search';
 import type { Exercise, Workout } from '@/domain/types';
+import { reportHomeDrawn } from '@/hooks/startup-marker';
 import { useAppTheme } from '@/hooks/theme-context';
 import { useTheme } from '@/hooks/use-theme';
 import { workoutShape } from '@/state/selectors/workout-shape';
@@ -185,7 +186,13 @@ export default function WorkoutsScreen() {
   const fabColor = scheme === 'dark' ? theme.accent : theme.text;
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['top', 'left', 'right']}>
+    // Past the `!library` bail-out on purpose: the startup benchmark times both builds to this layout,
+    // and the render before the library loads draws nothing.
+    <SafeAreaView
+      style={[styles.safeArea, { backgroundColor: theme.background }]}
+      edges={['top', 'left', 'right']}
+      onLayout={reportHomeDrawn}
+      testID="home-screen">
       {/*
         The chrome is passed as an *element*, never as an inline `() => <Header/>`. An inline arrow is
         a new component type on every render, so React unmounts and remounts the whole header — which

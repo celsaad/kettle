@@ -125,7 +125,9 @@ mistake here that cannot be fixed for anyone who has already installed it.
   (see the single-source entry in the decision log). `:benchmark` is a Macrobenchmark of cold start
   to a drawn Home, the shell against today's app, run on a phone by `scripts/startup-benchmark.ps1`;
   its end point is `reportFullyDrawn`, called from Home through the local Expo module in
-  `modules/startup-marker`.
+  `modules/startup-marker`. `scripts/route-check.ps1` steers the running `.dev` shell through every
+  route by navigate message and fails on the first screen that isn't the expected one. Run it after
+  touching navigation, and update its matrix whenever a screen goes native.
 
 - `conformance/` — the format's behaviour as data: hand-written YAML inputs and generated golden
   outputs, checked by `conformance.test.ts` and by the Kotlin runner in `:shared`. It exists so the
@@ -327,11 +329,11 @@ are the index, the banner is the contract.
 - `docs/testing-a11y-i18n-plan.md` — executed; kept for its rationale, not as a backlog.
 - `docs/watch-remote-plan.md` — **not executed.** Driving a running session from a Wear OS wrist via
   the notification shade, with no watch app and no data on the watch.
-- `docs/native-migration-plan.md` — **M0 executed (go); M1 landed; M2 under way.** Moving to
-  Kotlin/Compose (then iOS) inside the shipping app: a native shell hosts the not-yet-migrated RN
-  screens via `expo-brownfield`, and each milestone ships to Play and deletes RN code. Its M0 spike
-  report holds the brownfield build facts any host inherits (AAR scopes, plugin resources, Windows
-  CLI).
+- `docs/native-migration-plan.md` — **M0 executed (go); M1 landed; M2 shipped; M3 under way.**
+  Moving to Kotlin/Compose (then iOS) inside the shipping app: a native shell hosts the
+  not-yet-migrated RN screens via `expo-brownfield`, and each milestone ships to Play and deletes RN
+  code. Its M0 spike report holds the brownfield build facts any host inherits (AAR scopes, plugin
+  resources, Windows CLI).
 - `docs/ios-plan.md` — **partly executed.** Shipping to the App Store: what already works unchanged,
   the six code changes that don't, and the background-cue and iCloud decisions. Five of those six
   have landed, plus the notification half of the background cue; the sixth is a form in App Store

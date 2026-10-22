@@ -3,12 +3,11 @@
 > **M0 executed; the spike recommends go.** Its report is under M0 below. Every hard gate passed, and
 > the one partial answer (Q3) re-scopes M3 rather than blocking it. **M1 has landed**: the
 > conformance corpus, the native skeleton (`native/android`), a Kotlin runner for every corpus suite,
-> the generated string resources and the generated Compose theme. **M2 is under way**: the shell hosts
-> today's app from the RN AAR (#148), and `android.yml` builds the Play bundle from it (#149); the
-> benchmark and the release have not landed. M1–M3 are
-> tracked as GitHub issues #141–#156, whose open/closed state is the live record; M4
-> onward is ticketed once the M3 routing test (#152) has picked its shape. Written against the tree at
-> `54eb9f8`, SDK 57.
+> the generated string resources and the generated Compose theme. **M2 has shipped**: 0.11.2 is the
+> shell on production, hosting today's app from the RN AAR; only its landmark, a release cycle with
+> no regressions, is still running. **M3 has started**: its routing test (#152) picked one surface
+> steered by messages. M1–M3 are tracked as GitHub issues #141–#156, whose open/closed state is the
+> live record; M4 onward is ticketed next. Written against the tree at `54eb9f8`, SDK 57.
 > **Everything after M0 was conditional on a "go"**: had the spike failed, this file would carry a
 > banner saying so and the decision log the reason, so the idea isn't re-proposed from scratch.
 
@@ -167,7 +166,7 @@ and a second surface can't be routed that way. Two ways through, cheapest first:
 
 **M3 opens with a half-day test of option 1**, and the plan adds a week of contingency to M3 until
 that test says which option applies. M2 is unaffected: it has one surface, and the first surface
-routes correctly.
+routes correctly. *(Answered by #152: option 1 holds, with a dismiss-first rule. See M3.)*
 
 **Added to M2's checks:**
 
@@ -242,7 +241,11 @@ Nothing user-visible ships in M1. It builds the pieces every later milestone dep
 **Landmark: the conformance corpus is green on both implementations in CI**, and a translated string
 added to `en.json` shows up in a Compose preview in all three languages with no hand edit.
 
-### M2 — The shell ships · ~2 weeks
+### M2 — The shell ships · ~2 weeks · shipped as 0.11.2
+
+> **Shipped** (#148–#151); the CHANGELOG has the release. **The landmark is still running**: a full
+> release cycle with no regression reports. What it taught every later milestone (#170) is in the
+> decision log's entry on the shell's share of `app.json`.
 
 The native shell becomes the app on Play while still showing **100% RN content**: one RN surface
 running the existing expo-router app, unchanged. Users see nothing different, and that is the point.
@@ -260,20 +263,33 @@ else is changing.
 **Landmark: a production release whose entry point is native**, with no regression reports through
 one full release cycle. Every later milestone ships through this pipeline.
 
-### M3 — Native owns navigation · ~2–3 weeks, +1 week contingency (see Q3)
+### M3 — Native owns navigation · ~2–3 weeks (contingency released, see the routing test)
 
-- **First, the half-day test from the spike report:** can one long-lived RN surface be steered by
-  `navigate` messages? Its answer picks between the two shapes below, and the contingency week goes
-  if it's yes.
-- Native tab bar and back stack, built with Compose Navigation. Every route still renders RN.
-  - **If the test passes,** that's one surface that native steers by message.
-  - **If it fails,** each RN screen becomes its own registered root.
-  - Per-surface deep links are out either way. The spike showed a second surface can't be routed
-    that way (Q3).
+- **The routing test passed (#152): one long-lived RN surface, steered by messages.** Native sends
+  `{ type: "navigate", url }` (`JsBridge.navigate`), and `safe-brownfield.ts` routes it. Every tab and
+  modal route was reached by message, with back checked after each; the evidence is the matrix in
+  `scripts/route-check.ps1`, rerunnable against a `.dev` build. So expo-router survives as the router
+  *inside* the surface, registered roots are not needed, and the contingency week goes.
+  - **`router.navigate` alone is wrong** from anything above the tabs. Sent from a modal or the runner,
+    it pushes a *second* copy of the tabs over them, so back walks through the stale screens. It
+    also left a running session alive underneath with the leave guard never asked. `dismissTo` gets
+    modal → tab right but does nothing between tabs.
+  - **The rule that held: dismiss everything above the tabs, then navigate**, and only if the
+    dismissal happened. A modal opened by message therefore backs out to its tab, and a second modal
+    replaces the first rather than stacking. Over the runner, its leave guard holds the dismissal and
+    the message is dropped. The guard first closes whatever sheet is open in the runner (Coming up,
+    the exercise picker, a swap), and only then asks "Finish session?". The user's answer decides
+    either way.
+- Native tab bar and back stack, built with Compose Navigation. Every route still renders RN, in the
+  one surface native steers. Per-surface deep links stay out (Q3).
+  - **The tab bar can't assume its message landed.** One over the runner can be dropped, and RN
+    still moves itself (a delete's `dismissTo`, the runner's exit). The tab bar ticket needs a
+    route-changed message from JS to keep the selected tab true.
 - Modal routes (editors, import, settings) become native-presented sheets around RN content.
-- **expo-router's role depends on the test:**
-  - **If it passes,** expo-router survives as the router *inside* the RN surface.
-  - **If it fails,** it's removed.
+  **Open, now that there is one surface:** a sheet would need RN content in a second surface, which
+  can't be routed (Q3). Unless moving the one surface into a sheet works, which is untested, modals
+  stay RN-presented inside the surface until their screen goes native. Settle this in the tab bar
+  ticket.
 - A `BrownfieldMessaging` event, `filesChanged(kind)`, that RN stores answer by re-reading. This is
   the **re-read-on-focus** rule that makes constraint 3 work in both directions.
 

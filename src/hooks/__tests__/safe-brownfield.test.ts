@@ -1,14 +1,26 @@
 /**
- * What the RN app tells the native shell that hosts it (docs/native-migration-plan.md, M2). The
- * shell holds every message it has for JS until "ready" arrives — messages sent before JS listens
- * are dropped silently, so the order of the calls here is the contract.
+ * The RN app's half of its conversation with the native shell that hosts it
+ * (docs/native-migration-plan.md, M2 and M3). The shell holds every message it has for JS until
+ * "ready" arrives — messages sent before JS listens are dropped silently, so the order of the calls
+ * here is the contract. What comes back is navigation.
  */
 const mockCalls: string[] = [];
+let mockListener: ((message: Record<string, unknown>) => void) | undefined;
+
+/**
+ * A message from the shell. Throws rather than skipping when nothing subscribed, or every "goes
+ * nowhere" test below would pass for an app that never listened.
+ */
+function fromShell(message: Record<string, unknown>) {
+  if (!mockListener) throw new Error('Nothing is listening to the shell');
+  mockListener(message);
+}
 
 function mockBrownfield() {
   return {
-    addMessageListener: () => {
+    addMessageListener: (listener: (message: Record<string, unknown>) => void) => {
       mockCalls.push('subscribe');
+      mockListener = listener;
       return { remove: jest.fn() };
     },
     sendMessage: (message: { type: string }) => mockCalls.push(`send ${message.type}`),
@@ -17,12 +29,37 @@ function mockBrownfield() {
 }
 
 jest.mock('expo-brownfield', () => mockBrownfield());
+/**
+ * Just enough of a root stack to see where a message leaves the user: how many screens sit above the
+ * tabs, and whether one of them refuses to leave (the session runner's guard). Inline rather than the
+ * shared stand-in, which imports the testing library: resetModules below would re-register its hooks
+ * from inside a test.
+ */
+const mockStack = { screensAboveTabs: 0, guarded: false };
+const mockNavigate = jest.fn();
+jest.mock('expo-router', () => ({
+  router: {
+    canDismiss: () => mockStack.screensAboveTabs > 0,
+    // Committed after the call returns, as on a device: read straight after, canDismiss is stale.
+    dismissAll: () =>
+      queueMicrotask(() => {
+        if (!mockStack.guarded) mockStack.screensAboveTabs = 0;
+      }),
+    navigate: (href: string) => mockNavigate(href),
+  },
+}));
+
+/** Lets the dismissal commit and anything waiting on it run. */
+const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 // A fresh copy per test: the module remembers that it has subscribed, as it should once per runtime.
 let announceHostReady: () => void;
 
 beforeEach(() => {
   mockCalls.length = 0;
+  mockListener = undefined;
+  mockStack.screensAboveTabs = 0;
+  mockStack.guarded = false;
   jest.resetModules();
   ({ announceHostReady } = require('@/hooks/safe-brownfield'));
 });
@@ -67,4 +104,53 @@ it('leaves back to JS', () => {
   announceHostReady();
 
   expect(mockCalls).toContain('native back false');
+});
+
+// M3's shell steers the one RN surface it hosts by message (docs/native-migration-plan.md, Q3).
+it('goes where a navigate message says', () => {
+  announceHostReady();
+
+  fromShell({ type: 'navigate', url: '/history' });
+
+  expect(mockNavigate).toHaveBeenCalledWith('/history');
+});
+
+// A malformed message from a shell built against a different contract mustn't send the app to the
+// router's not-found screen, or throw out of the native module's listener.
+it('ignores a navigate message without a url, and messages it does not know', () => {
+  announceHostReady();
+
+  fromShell({ type: 'navigate' });
+  fromShell({ type: 'navigate', url: 42 });
+  fromShell({ type: 'filesChanged', url: '/history' });
+
+  expect(mockNavigate).not.toHaveBeenCalled();
+});
+
+/**
+ * Navigating to a tab from a modal or the runner pushes a second copy of the tabs over them rather
+ * than returning to the first, and back then walks through the stale screens (seen on a device, #152).
+ */
+it('clears the screens above the tabs before it navigates', async () => {
+  mockStack.screensAboveTabs = 2;
+  announceHostReady();
+
+  fromShell({ type: 'navigate', url: '/history' });
+  await settle();
+
+  expect(mockStack.screensAboveTabs).toBe(0);
+  expect(mockNavigate).toHaveBeenCalledWith('/history');
+});
+
+// The runner's "Finish session?" guard holds the dismissal; navigating anyway would push the tabs
+// over a workout still running underneath. The user's answer decides instead.
+it('goes nowhere while a screen refuses to leave', async () => {
+  mockStack.screensAboveTabs = 1;
+  mockStack.guarded = true;
+  announceHostReady();
+
+  fromShell({ type: 'navigate', url: '/library' });
+  await settle();
+
+  expect(mockNavigate).not.toHaveBeenCalled();
 });

@@ -125,7 +125,9 @@ mistake here that cannot be fixed for anyone who has already installed it.
   (see the single-source entry in the decision log). `:benchmark` is a Macrobenchmark of cold start
   to a drawn Home, the shell against today's app, run on a phone by `scripts/startup-benchmark.ps1`;
   its end point is `reportFullyDrawn`, called from Home through the local Expo module in
-  `modules/startup-marker`.
+  `modules/startup-marker`. `scripts/route-check.ps1` steers the running `.dev` shell through every
+  route by navigate message and fails on the first screen that isn't the expected one. Run it after
+  touching navigation, and update its matrix whenever a screen goes native.
 
 - `conformance/` — the format's behaviour as data: hand-written YAML inputs and generated golden
   outputs, checked by `conformance.test.ts` and by the Kotlin runner in `:shared`. It exists so the

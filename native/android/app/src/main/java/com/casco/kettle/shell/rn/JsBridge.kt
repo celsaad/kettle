@@ -6,11 +6,20 @@ import expo.modules.brownfield.BrownfieldMessaging
 
 /**
  * The one channel to JS, for the life of the process: the JS runtime outlives any activity (the M0
- * spike's Q2), so the channel does too. Nothing sends on it yet: M3's navigation is the first sender,
- * and the hold-until-ready contract is in place and tested before it arrives.
+ * spike's Q2), so the channel does too.
  */
 object JsBridge {
     val channel = JsChannel(BrownfieldMessaging::sendMessage)
+
+    /**
+     * Moves the one RN surface to [url], a route path such as `/history`: a second surface can't be
+     * routed by deep link (Q3), so native steers this one instead. Only the debug build sends it so far,
+     * from `NavigateReceiver`; M3's tab bar is the first real sender.
+     */
+    fun navigate(url: String) {
+        // What src/hooks/safe-brownfield.ts listens for. The two share no code, so change both.
+        channel.send(mapOf("type" to "navigate", "url" to url))
+    }
 
     private var listening = false
     private var watchingReloads = false

@@ -244,8 +244,8 @@ added to `en.json` shows up in a Compose preview in all three languages with no 
 ### M2 — The shell ships · ~2 weeks · shipped as 0.11.2
 
 > **Shipped** (#148–#151); the CHANGELOG has the release. **The landmark is still running**: a full
-> release cycle with no regression reports. One lesson for every later milestone: anything prebuild
-> writes into `android/app` has to be carried by the shell's own build (#170).
+> release cycle with no regression reports. What it taught every later milestone (#170) is in the
+> decision log's entry on the shell's share of `app.json`.
 
 The native shell becomes the app on Play while still showing **100% RN content**: one RN surface
 running the existing expo-router app, unchanged. Users see nothing different, and that is the point.
@@ -276,10 +276,10 @@ one full release cycle. Every later milestone ships through this pipeline.
     modal → tab right but does nothing between tabs.
   - **The rule that held: dismiss everything above the tabs, then navigate**, and only if the
     dismissal happened. A modal opened by message therefore backs out to its tab, and a second modal
-    replaces the first rather than stacking. Over the runner, "Finish session?" holds the dismissal,
-    and the message is dropped: Cancel stays in the session with nothing stacked, and Finish leaves by
-    the runner's own path. The handler has to wait a tick before it can tell, which its comment
-    explains.
+    replaces the first rather than stacking. Over the runner, its leave guard holds the dismissal and
+    the message is dropped. The guard first closes whatever sheet is open in the runner (Coming up,
+    the exercise picker, a swap), and only then asks "Finish session?". The user's answer decides
+    either way.
 - Native tab bar and back stack, built with Compose Navigation. Every route still renders RN, in the
   one surface native steers. Per-surface deep links stay out (Q3).
   - **The tab bar can't assume its message landed.** One over the runner can be dropped, and RN

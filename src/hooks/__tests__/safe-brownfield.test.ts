@@ -35,15 +35,15 @@ jest.mock('expo-brownfield', () => mockBrownfield());
  * shared stand-in, which imports the testing library: resetModules below would re-register its hooks
  * from inside a test.
  */
-const mockStack = { above: 0, guarded: false };
+const mockStack = { screensAboveTabs: 0, guarded: false };
 const mockNavigate = jest.fn();
 jest.mock('expo-router', () => ({
   router: {
-    canDismiss: () => mockStack.above > 0,
+    canDismiss: () => mockStack.screensAboveTabs > 0,
     // Committed after the call returns, as on a device: read straight after, canDismiss is stale.
     dismissAll: () =>
       queueMicrotask(() => {
-        if (!mockStack.guarded) mockStack.above = 0;
+        if (!mockStack.guarded) mockStack.screensAboveTabs = 0;
       }),
     navigate: (href: string) => mockNavigate(href),
   },
@@ -58,7 +58,7 @@ let announceHostReady: () => void;
 beforeEach(() => {
   mockCalls.length = 0;
   mockListener = undefined;
-  mockStack.above = 0;
+  mockStack.screensAboveTabs = 0;
   mockStack.guarded = false;
   jest.resetModules();
   ({ announceHostReady } = require('@/hooks/safe-brownfield'));
@@ -132,20 +132,20 @@ it('ignores a navigate message without a url, and messages it does not know', ()
  * than returning to the first, and back then walks through the stale screens (seen on a device, #152).
  */
 it('clears the screens above the tabs before it navigates', async () => {
-  mockStack.above = 2;
+  mockStack.screensAboveTabs = 2;
   announceHostReady();
 
   fromShell({ type: 'navigate', url: '/history' });
   await settle();
 
-  expect(mockStack.above).toBe(0);
+  expect(mockStack.screensAboveTabs).toBe(0);
   expect(mockNavigate).toHaveBeenCalledWith('/history');
 });
 
 // The runner's "Finish session?" guard holds the dismissal; navigating anyway would push the tabs
 // over a workout still running underneath. The user's answer decides instead.
 it('goes nowhere while a screen refuses to leave', async () => {
-  mockStack.above = 1;
+  mockStack.screensAboveTabs = 1;
   mockStack.guarded = true;
   announceHostReady();
 

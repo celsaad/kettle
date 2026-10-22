@@ -80,6 +80,21 @@ function Get-Screen {
   (& adb @target exec-out cat /sdcard/route-check.xml) -join ''
 }
 
+# Matches a dump attribute whose text is exactly $text.
+function Get-TextPattern([string]$text) {
+  "text=`"$([regex]::Escape([System.Security.SecurityElement]::Escape($text)))`""
+}
+
+# Brings the app to the front, launching it if it isn't running.
+function Start-App {
+  & adb @target shell monkey -p $package -c android.intent.category.LAUNCHER 1 *> $null
+}
+
+function Send-Route([string]$url) {
+  # Quoted for the device's shell, which would otherwise read the ? and & in a query string.
+  & adb @target shell am broadcast -n $receiver --es url "'$url'" | Out-Null
+}
+
 function Test-Foreground {
   (& adb @target shell dumpsys activity activities | Select-String -Pattern 'topResumedActivity' |
     Select-Object -First 1) -match [regex]::Escape($package)
@@ -92,7 +107,7 @@ function Wait-For([string]$text) {
   do {
     Start-Sleep -Milliseconds 500
     if ($null -eq $text) { if (-not (Test-Foreground)) { return $true } }
-    elseif ((Get-Screen).Contains("text=`"$([System.Security.SecurityElement]::Escape($text))`"")) { return $true }
+    elseif ((Get-Screen) -match (Get-TextPattern $text)) { return $true }
   } while ((Get-Date) -lt $deadline)
   $false
 }
@@ -103,9 +118,9 @@ $previousEncoding = [Console]::OutputEncoding
 try {
   # The runner asks for it on its first start, and the prompt would sit over every later step.
   & adb @target shell pm grant $package android.permission.POST_NOTIFICATIONS
-  & adb @target shell monkey -p $package -c android.intent.category.LAUNCHER 1 *> $null
+  Start-App
   # From wherever the last run or the user left it.
-  & adb @target shell am broadcast -n $receiver --es url "'/'" | Out-Null
+  Send-Route '/'
   if (-not (Wait-For 'Workouts')) { throw "$package isn't showing Home. Start it against Metro first." }
 
   $n = 0
@@ -115,17 +130,16 @@ try {
     if ($action -eq 'back') {
       & adb @target shell input keyevent KEYCODE_BACK
     } elseif ($action -eq 'front') {
-      & adb @target shell monkey -p $package -c android.intent.category.LAUNCHER 1 *> $null
+      Start-App
     } elseif ($action.StartsWith('tap:')) {
-      $label = [System.Security.SecurityElement]::Escape($action.Substring(4))
-      $match = [regex]::Match((Get-Screen), "text=`"$([regex]::Escape($label))`"[^>]*bounds=`"\[(\d+),(\d+)\]\[(\d+),(\d+)\]`"")
-      if (-not $match.Success) { throw "Step ${n}: nothing on screen reads '$($action.Substring(4))'" }
+      $label = $action.Substring(4)
+      $match = [regex]::Match((Get-Screen), "$(Get-TextPattern $label)[^>]*bounds=`"\[(\d+),(\d+)\]\[(\d+),(\d+)\]`"")
+      if (-not $match.Success) { throw "Step ${n}: nothing on screen reads '$label'" }
       $x = ([int]$match.Groups[1].Value + [int]$match.Groups[3].Value) / 2
       $y = ([int]$match.Groups[2].Value + [int]$match.Groups[4].Value) / 2
       & adb @target shell input tap $x $y
     } else {
-      # Quoted for the device's shell, which would otherwise read the ? and & in a query string.
-      & adb @target shell am broadcast -n $receiver --es url "'$action'" | Out-Null
+      Send-Route $action
     }
     $shown = if ($null -eq $expect) { '(left the app)' } else { $expect }
     if (-not (Wait-For $expect)) { throw "Step ${n}: '$action' should show '$shown', and didn't" }

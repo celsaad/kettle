@@ -371,7 +371,7 @@ session.
   `native/android/app/lint.xml` ignores lint's `OldTargetApi` (#148). Raise the target on the
   shell's own schedule, then delete that exception so lint flags the next one. The same PR can drop
   what the shell reads from the RN project only because it hosts it: `app.json` (version, label,
-  colors) and `node_modules` (Expo module versions) in `app/build.gradle.kts`.
+  colors, interface style) and `node_modules` (Expo module versions) in `app/build.gradle.kts`.
 - **Review the CI scripts.** `ci.yml` splits the native build in two only because `:app` needs the
   RN AAR: `native-app` installs Node, prebuilds, builds and caches the AAR, installs React Native's
   NDK and borrows `android.yml`'s ccache, and even `native` installs node_modules for `:app`'s

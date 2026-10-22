@@ -37,8 +37,8 @@ internal fun GeneratedStringsSample(exerciseName: String = "Turkish get-up") {
  * Every generated string and plural by resource name, read off `R` itself, so a key added to the
  * bundles shows up here with no edit. That is M1's landmark for resources. `R` holds only this module's
  * own resources (AGP's non-transitive R classes), which here are the generated ones plus the `expo_`
- * strings the build writes for Expo modules to read, as prebuild did. Arguments show as their `%N$s`,
- * and a plural as its `other` form.
+ * strings `app/build.gradle.kts` writes for Expo modules to read, as prebuild did. Arguments show as
+ * their `%N$s`, and a plural as its `other` form.
  */
 internal fun generatedResources(): List<Pair<String, Int>> =
     (R.string::class.java.fields + R.plurals::class.java.fields)

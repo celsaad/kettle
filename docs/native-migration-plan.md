@@ -198,8 +198,8 @@ routes correctly.
   Tuning a path that's being removed isn't worth the time, and 670–700 ms to Home is still well under
   a second. It isn't startup timing either: both builds load React Native inside the measured window,
   today's app in `Application.onCreate` and the shell in its activity's `onCreate`, so loading it
-  earlier saves nothing on a cold start. The cause wasn't traced. Rerun `scripts/startup-benchmark.ps1`
-  when Home goes native; the same marker, called from Compose, gives that milestone its comparison. of what config plugins write into `android/app`.** *(Landed with #148; what stays a
+  earlier saves nothing on a cold start. The cause wasn't traced. M7 reruns the benchmark against the
+  all-native app. of what config plugins write into `android/app`.** *(Landed with #148; what stays a
   copy is in the decision log's single-source entry.)*
 - **The Windows dev loop as a documented script**: publish the AAR with Gradle, then Metro.
   *(Landed: `scripts/native-dev.ps1`.)*
@@ -376,6 +376,18 @@ session.
   versions. With the AAR gone, most of that goes; the two jobs may fold back into one, and
   `android.yml` (rewritten for the shell in #149) and `scripts/native-dev.ps1` lose their RN steps
   too.
+- **Rerun the startup benchmark, all-native against today's app** (M2's numbers, #150). Two things
+  have to survive the deletion:
+  - **The marker.** `modules/startup-marker` goes with RN, so native Home calls the same
+    `reportFullyDrawn` itself once its content is drawn (Compose's `ReportDrawnWhen`). Then
+    `timeToFullDisplayMs` still means "Home drawn", and the numbers stay comparable.
+  - **The baseline.** Today's app can't be built from a tree without RN. Build `.bench` from the
+    commit that merged #168 (`git worktree`, then the script's first step as it is today) rather than
+    reusing M2's table: the same phone a year on, on a newer Android, isn't the same baseline. M2's
+    numbers are the check that the rebuilt baseline still lands where it did.
+
+  `scripts/startup-benchmark.ps1` loses its AAR step and gains the worktree build. Same S25+, same
+  iterations and compilation modes. Record the result beside M2's table.
 
 **Landmark: the Android APK contains no JS engine.** The root Expo project survives only if M8
 still needs it (see below).

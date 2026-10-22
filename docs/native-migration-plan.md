@@ -177,7 +177,21 @@ routes correctly.
   beside the shell's `.bench2`, since benchmarking the real install would force-stop it and reset
   its compiled code, and would time its owner's library against a seed. The end point is Home's
   `reportFullyDrawn`, which both builds call from the same JS.)*
-- **An inventory of what config plugins write into `android/app`.** *(Landed with #148; what stays a
+
+  Measured on the S25+ on 2026-10-22, at `3ddcb88`: cold start, 15 iterations each, arm64 release,
+  unminified, seed library.
+
+  | To Home drawn | Compilation | Median | Range |
+  |---|---|---|---|
+  | Today's app | None | 565 ms | 512–612 |
+  | Today's app | Full | 532 ms | 513–716 |
+  | Shell | None | 696 ms | 531–739 |
+  | Shell | Full | 670 ms | 661–736 |
+
+  **The shell is ~130–140 ms slower to Home (+23–26%).** In both builds, time to full display equals
+  time to initial display, give or take a few ms. expo-splash-screen holds the activity's first frame
+  until JS hides the splash, so the first frame is Home in either build. That also means the spike's
+  615 ms "to first frame" for the Play install was already time to Home. of what config plugins write into `android/app`.** *(Landed with #148; what stays a
   copy is in the decision log's single-source entry.)*
 - **The Windows dev loop as a documented script**: publish the AAR with Gradle, then Metro.
   *(Landed: `scripts/native-dev.ps1`.)*

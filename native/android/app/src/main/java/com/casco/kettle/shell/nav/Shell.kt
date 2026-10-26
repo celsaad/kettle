@@ -1,7 +1,5 @@
 package com.casco.kettle.shell.nav
 
-import androidx.annotation.DrawableRes
-import androidx.annotation.StringRes
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,13 +17,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.casco.kettle.shell.R
 import com.casco.kettle.shell.theme.KettleTheme
 
 /**
  * The back stack of the destinations [routes] registers. Native ones draw their screen; an RN one draws
- * nothing, since the RN surface is a view of its own under this one ([ShellLayout]). [onRnShown] says
- * which of the two the current tab needs.
+ * nothing, since the RN surface is a view of its own under this one ([ShellLayout]). [onRnShown] is told
+ * which of the two to show.
  */
 @Composable
 internal fun Destinations(
@@ -53,7 +50,7 @@ internal fun Destinations(
             restoreState = true
         }
     }
-    val rnShown = routes[navigator.current] == Screen.Rn
+    val rnShown = navigator.rnShown
     SideEffect { onRnShown(rnShown) }
 
     NavHost(
@@ -109,21 +106,3 @@ private fun TabBar(
         }
     }
 }
-
-private val Tab.label: Int
-    @StringRes get() =
-        when (this) {
-            Tab.Workouts -> R.string.tabs_workouts
-            Tab.Library -> R.string.tabs_library
-            Tab.History -> R.string.tabs_history
-            Tab.Programs -> R.string.tabs_programs
-        }
-
-private val Tab.icon: Int
-    @DrawableRes get() =
-        when (this) {
-            Tab.Workouts -> R.drawable.tab_workouts
-            Tab.Library -> R.drawable.tab_library
-            Tab.History -> R.drawable.tab_history
-            Tab.Programs -> R.drawable.tab_programs
-        }

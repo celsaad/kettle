@@ -34,9 +34,10 @@ enum class ThemePreference(
                     null
                 }
             // An absent field is defaulted in the schema: it arrived after the file was already written.
-            val stored = json?.takeIf { it.passesSchema() }?.opt(THEME)
-            return entries.firstOrNull { it.stored == stored } ?: System
+            return fromStored(json?.takeIf { it.passesSchema() }?.opt(THEME)) ?: System
         }
+
+        private fun fromStored(value: Any?): ThemePreference? = entries.firstOrNull { it.stored == value }
 
         private const val THEME = "themePreference"
         private val unitSystems = setOf("metric", "imperial")
@@ -46,7 +47,7 @@ enum class ThemePreference(
         private fun JSONObject.passesSchema(): Boolean =
             listOf(
                 opt("unitSystem") in unitSystems,
-                !has(THEME) || entries.any { it.stored == get(THEME) },
+                !has(THEME) || fromStored(get(THEME)) != null,
                 optional<Boolean>("restDayReminder"),
                 optional<Boolean>("sessionSounds"),
                 isNull("backupFolderUri") || get("backupFolderUri") is String,

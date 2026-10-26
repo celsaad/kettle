@@ -166,7 +166,8 @@ class MainActivity :
     private companion object {
         const val NATIVE_TAB_BAR = "nativeTabBar"
 
-        // expo-file-system's Paths.document is filesDir; src/storage/paths.ts names the rest.
+        // expo-file-system's Paths.document is filesDir; src/storage/paths.ts names the rest. The two
+        // share no code, so change both.
         const val PREFERENCES = "exercise-tracker/preferences.json"
     }
 }

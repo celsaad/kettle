@@ -23,7 +23,17 @@ class TabNavigator(
     var barShown by mutableStateOf(true)
         private set
 
-    /** The RN tab the latest tap asked for, until RN reports arriving there. */
+    /**
+     * Whether the RN surface is what should show: on an RN tab, and over any tab while RN has something
+     * above the tabs, since RN presents its modals and the runner inside the surface.
+     */
+    val rnShown: Boolean get() = !barShown || routes[current] == Screen.Rn
+
+    /**
+     * The RN tab the latest tap asked for, until RN reports arriving there. A tap's message isn't lost
+     * on the way, which would leave this set: `JsChannel` holds it until JS is ready, and the one place
+     * RN drops a navigate, over the runner, has the bar hidden. A report from above the tabs clears it.
+     */
     private var pending: Tab? = null
 
     /**

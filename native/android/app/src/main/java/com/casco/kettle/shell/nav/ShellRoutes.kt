@@ -1,6 +1,9 @@
 package com.casco.kettle.shell.nav
 
+import androidx.annotation.DrawableRes
+import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
+import com.casco.kettle.shell.R
 
 /**
  * The tab bar's destinations, in bar order. [path] is the route RN knows the tab by, kept even once a
@@ -9,11 +12,13 @@ import androidx.compose.runtime.Composable
  */
 enum class Tab(
     val path: String,
+    @StringRes val label: Int,
+    @DrawableRes val icon: Int,
 ) {
-    Workouts("/"),
-    Library("/library"),
-    History("/history"),
-    Programs("/programs"),
+    Workouts("/", R.string.tabs_workouts, R.drawable.tab_workouts),
+    Library("/library", R.string.tabs_library, R.drawable.tab_library),
+    History("/history", R.string.tabs_history, R.drawable.tab_history),
+    Programs("/programs", R.string.tabs_programs, R.drawable.tab_programs),
     ;
 
     companion object {

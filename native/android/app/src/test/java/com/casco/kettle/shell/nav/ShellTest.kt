@@ -168,6 +168,22 @@ class ShellTest {
         assertSurfaceShown(true)
     }
 
+    /** RN presents its modals inside the surface, so one opened from a native tab needs it showing. */
+    @Test
+    fun `the surface shows over a native tab while RN has something above the tabs`() {
+        val navigator = show(shellRoutes + (Tab.History to Screen.Native { Text("Native history") }))
+        tab("History").performClick()
+
+        compose.runOnIdle { navigator.onRoute("/settings") }
+
+        assertSurfaceShown(true)
+
+        compose.runOnIdle { navigator.onRoute("/history") }
+
+        assertSurfaceShown(false)
+        compose.onNodeWithText("Native history").assertExists()
+    }
+
     @Test
     @Config(qualifiers = "pt")
     fun `the tabs are labelled in Portuguese`() {

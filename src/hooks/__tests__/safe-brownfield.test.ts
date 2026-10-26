@@ -6,6 +6,10 @@
  */
 const mockCalls: string[] = [];
 let mockListener: ((message: Record<string, unknown>) => void) | undefined;
+/** Every message JS sent the shell, whole. */
+const mockSent: Record<string, unknown>[] = [];
+/** The shell's side of expo-brownfield's shared state. */
+const mockShared = new Map<string, unknown>();
 
 /**
  * A message from the shell. Throws rather than skipping when nothing subscribed, or every "goes
@@ -23,7 +27,11 @@ function mockBrownfield() {
       mockListener = listener;
       return { remove: jest.fn() };
     },
-    sendMessage: (message: { type: string }) => mockCalls.push(`send ${message.type}`),
+    sendMessage: (message: { type: string }) => {
+      mockCalls.push(`send ${message.type}`);
+      mockSent.push(message);
+    },
+    getSharedStateValue: (key: string) => mockShared.get(key),
     setNativeBackEnabled: (enabled: boolean) => mockCalls.push(`native back ${enabled}`),
   };
 }
@@ -57,6 +65,8 @@ let announceHostReady: () => void;
 
 beforeEach(() => {
   mockCalls.length = 0;
+  mockSent.length = 0;
+  mockShared.clear();
   mockListener = undefined;
   mockStack.screensAboveTabs = 0;
   mockStack.guarded = false;
@@ -153,4 +163,49 @@ it('goes nowhere while a screen refuses to leave', async () => {
   await settle();
 
   expect(mockNavigate).not.toHaveBeenCalled();
+});
+
+// M3's tab bar is native, and has to follow RN wherever RN goes by itself: a delete's dismissTo, the
+// runner's exit, a modal covering the tabs.
+it('reports each route to the shell', () => {
+  const { reportRoute } = require('@/hooks/safe-brownfield');
+
+  reportRoute('/settings');
+
+  expect(mockSent).toEqual([{ type: 'route', pathname: '/settings' }]);
+});
+
+it('reports nothing, without throwing, where the native module is missing', () => {
+  jest.doMock('expo-brownfield', () => {
+    throw new Error("Cannot find native module 'ExpoBrownfieldModule'");
+  });
+  const { reportRoute } = require('@/hooks/safe-brownfield');
+
+  expect(() => reportRoute('/')).not.toThrow();
+  expect(mockSent).toEqual([]);
+});
+
+/**
+ * Hosted by the shell, RN's own bar would be a second one, and RN's tab back would move between tabs
+ * inside RN, where the shell's bar can't own the transition. The shell says so before JS starts, so
+ * the first frame is already right.
+ */
+it('hides its tab bar and leaves tab back to the shell when the shell draws the bar', () => {
+  mockShared.set('nativeTabBar', true);
+  const { hostedTabOptions } = require('@/hooks/safe-brownfield');
+
+  expect(hostedTabOptions()).toEqual({ hidden: true, backBehavior: 'none' });
+});
+
+// Every build without the shell: iOS, web, Expo Go, and a prebuilt Android dev build, which links the
+// same native module but whose host never sets the key.
+it('keeps its own tab bar anywhere else', () => {
+  const { hostedTabOptions } = require('@/hooks/safe-brownfield');
+  expect(hostedTabOptions()).toEqual({});
+
+  jest.doMock('expo-brownfield', () => {
+    throw new Error("Cannot find native module 'ExpoBrownfieldModule'");
+  });
+  jest.resetModules();
+  expect(require('@/hooks/safe-brownfield').hostedTabOptions()).toEqual({});
 });

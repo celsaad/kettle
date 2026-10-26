@@ -56,6 +56,29 @@ function onShellMessage(message: Record<string, unknown>): void {
 }
 
 /**
+ * Tells the shell where the router is now: its tab bar follows RN, which also moves by itself (a
+ * delete's `dismissTo`, the runner's exit) and covers the tabs with its modals. The shell's
+ * `TabNavigator.onRoute` reads it. The two share no code, so change both.
+ */
+export function reportRoute(pathname: string): void {
+  getBrownfield()?.sendMessage({ type: 'route', pathname });
+}
+
+/**
+ * NativeTabs' options for whoever draws the tab bar. Inside the shell (M3) the bar is native, so
+ * RN's own is hidden, and its tab back is turned off so that back reaches the shell, which returns to
+ * Workouts itself. Modals above the tabs still close on back first: the root stack handles those.
+ *
+ * The shell sets the key before it opens the surface, so this is right on the first frame. Anywhere
+ * else the key is unset, including a prebuilt Android build, which links the same native module.
+ */
+export function hostedTabOptions(): { hidden?: boolean; backBehavior?: 'none' } {
+  // The shell's MainActivity sets it. The two share no code, so change both.
+  if (getBrownfield()?.getSharedStateValue('nativeTabBar') !== true) return {};
+  return { hidden: true, backBehavior: 'none' };
+}
+
+/**
  * Called once the app has rendered past its splash. Back goes to JS while it has somewhere to go, and
  * reaches the shell only once it hasn't.
  */

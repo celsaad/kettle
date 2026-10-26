@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Material Symbols "home", 400 regular: the glyph RN's tab bar drew (md="home"), copied out of
+     @expo-google-fonts/material-symbols. Apache 2.0, like the font. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="960"
+    android:viewportHeight="960">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M240,400L240,760L360,760L360,520L600,520L600,760L720,760L720,400L480,220L240,400ZM440,840L160,840L160,360L480,120L800,360L800,840L520,840L520,600L440,600L440,840ZM480,490L480,490L480,490L480,490L480,490L480,490L480,490L480,490L480,490L480,490Z" />
+</vector>

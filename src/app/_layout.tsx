@@ -4,7 +4,7 @@ import {
   HankenGrotesk_600SemiBold,
 } from '@expo-google-fonts/hanken-grotesk';
 import { SpaceGrotesk_500Medium, SpaceGrotesk_600SemiBold, SpaceGrotesk_700Bold } from '@expo-google-fonts/space-grotesk';
-import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
+import { DarkTheme, DefaultTheme, Stack, ThemeProvider, usePathname } from 'expo-router';
 import type { ErrorBoundaryProps } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
@@ -22,6 +22,7 @@ import { Colors, RunnerColors, MaxContentWidth, Spacing } from '@/constants/them
 import { ThemeOverrideProvider, useAppTheme } from '@/hooks/theme-context';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useRestDayReminder } from '@/hooks/use-rest-day-reminder';
+import { reportRoute } from '@/hooks/safe-brownfield';
 import { useLibraryStore } from '@/state/library-store';
 import { usePreferencesStore } from '@/state/preferences-store';
 import { useSessionHistoryStore } from '@/state/session-history-store';
@@ -74,6 +75,9 @@ function Navigation() {
   // too, and this is the one component that is mounted for both of its inputs and only after they've
   // hydrated. It also means the schedule self-heals on every launch.
   useRestDayReminder();
+  // The native shell's tab bar follows the router from this (M3). Nothing listens anywhere else.
+  const pathname = usePathname();
+  useEffect(() => reportRoute(pathname), [pathname]);
 
   // Base off the matching React Navigation theme rather than always DefaultTheme (its light one), so
   // the handful of colors not overridden below — and anything keying off the `dark` flag — don't pull

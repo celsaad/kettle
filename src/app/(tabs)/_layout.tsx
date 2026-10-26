@@ -1,6 +1,7 @@
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
 import { useTranslation } from 'react-i18next';
 
+import { hostedTabOptions } from '@/hooks/safe-brownfield';
 import { useTheme } from '@/hooks/use-theme';
 
 export default function TabLayout() {
@@ -12,7 +13,9 @@ export default function TabLayout() {
     // platform defaults, which are picked for a system-colored bar, not this app's `backgroundElement`
     // — against the near-white light-mode bar that left labels invisible and icons washed out. Same
     // focused/unfocused pairing the web tab bar uses (`_layout.web.tsx`): accentText / textSecondary.
+    // Inside the native shell, its bar replaces this one, and this stays as the router (hostedTabOptions).
     <NativeTabs
+      {...hostedTabOptions()}
       backgroundColor={theme.backgroundElement}
       indicatorColor={theme.backgroundSelected}
       labelStyle={{ default: { color: theme.textSecondary }, selected: { color: theme.accentText } }}

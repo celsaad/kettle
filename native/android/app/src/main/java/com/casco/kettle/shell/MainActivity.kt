@@ -3,20 +3,31 @@ package com.casco.kettle.shell
 import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
 import com.casco.kettle.brownfield.BrownfieldActivity
 import com.casco.kettle.brownfield.ReactNativeHostManager
-import com.casco.kettle.brownfield.showReactNativeFragment
+import com.casco.kettle.brownfield.ReactNativeViewFactory
+import com.casco.kettle.brownfield.setUpNativeBackHandling
+import com.casco.kettle.shell.nav.ShellLayout
+import com.casco.kettle.shell.nav.TabNavigator
+import com.casco.kettle.shell.nav.shellRoutes
 import com.casco.kettle.shell.rn.ExpoActivityListeners
 import com.casco.kettle.shell.rn.JsBridge
 import com.casco.kettle.shell.rn.withViewAction
+import com.casco.kettle.shell.theme.KettleTheme
+import com.casco.kettle.shell.theme.rememberPreferredDarkTheme
 import com.facebook.react.modules.core.PermissionAwareActivity
 import com.facebook.react.modules.core.PermissionListener
+import expo.modules.brownfield.BrownfieldState
 import expo.modules.splashscreen.SplashScreenManager
+import java.io.File
 
 /**
- * The app's entry point, running today's whole RN app as one surface (docs/native-migration-plan.md,
- * M2). `BrownfieldActivity` is only an `AppCompatActivity`, so this does what the prebuilt app's
- * `ReactActivity` and Expo's delegate wrapper did for it: the splash, Expo modules' activity lifecycle
+ * The app's entry point: today's RN app as one surface (docs/native-migration-plan.md, M2), inside the
+ * shell's own tab bar and back stack (M3, `Shell`). `BrownfieldActivity` is only an
+ * `AppCompatActivity`, so this does what the prebuilt app's `ReactActivity` and Expo's delegate
+ * wrapper did for it: the splash, Expo modules' activity lifecycle
  * (edge to edge, expo-linking's URLs, expo-notifications' taps), and the host's share of intents,
  * activity results, permission prompts, configuration and focus. Without the results the backup-folder
  * picker and the share sheet never resolve; without the permission interface every prompt answers
@@ -32,6 +43,8 @@ class MainActivity :
 
     private val reactHost get() = ReactNativeHostManager.shared.getReactHost()
 
+    private val navigator = TabNavigator(shellRoutes, JsBridge::navigate)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         // Before super, as in the prebuilt app: it installs the splash theme's exit. JS hides it with
         // expo-splash-screen's own hideAsync, exactly as before.
@@ -43,7 +56,29 @@ class MainActivity :
         intent.withViewAction()
 
         expoListeners = ExpoActivityListeners(this).also(lifecycle::addObserver)
-        showReactNativeFragment()
+        // Read by hostedTabOptions in src/hooks/safe-brownfield.ts, so RN's first frame already has no
+        // bar of its own. The two share no code, so change both.
+        BrownfieldState.set(NATIVE_TAB_BAR, true)
+        // What showReactNativeFragment does, minus the fragment: the surface is
+        // one view for the whole app, which ShellLayout places.
+        ReactNativeHostManager.shared.initialize(application)
+        val surface = ReactNativeViewFactory.createFrameLayout(this, this, "main")
+        setUpNativeBackHandling()
+        JsBridge.onRoute = navigator::onRoute
+        lifecycle.addObserver(
+            object : DefaultLifecycleObserver {
+                // The runtime and JsBridge outlive this activity, and a newer one may have taken over.
+                override fun onDestroy(owner: LifecycleOwner) {
+                    if (JsBridge.onRoute == navigator::onRoute) JsBridge.onRoute = null
+                }
+            },
+        )
+        val preferences = File(filesDir, PREFERENCES)
+        setContentView(
+            ShellLayout(this, surface, navigator, shellRoutes) { content ->
+                KettleTheme(rememberPreferredDarkTheme(preferences, reread = navigator.barShown), content)
+            },
+        )
         JsBridge.attach()
         expoListeners.onContentShown()
     }
@@ -113,14 +148,25 @@ class MainActivity :
     }
 
     /**
-     * JS has nowhere left to go back to. On Android 12 and later the prebuilt app left this to the
-     * platform, which moves a root task to the back rather than finishing it; it did the same itself
-     * on 11 and earlier. Calling the platform's back here would re-enter RN's own back callback (see
+     * JS has nowhere left to go back to: it has dismissed everything above the tabs, and RN's tab back
+     * is off inside the shell. So the tabs' back is the shell's, Workouts first as it always was.
+     *
+     * Then the app leaves. On Android 12 and later the prebuilt app left this to the platform, which
+     * moves a root task to the back rather than finishing it; it did the same itself on 11 and
+     * earlier. Calling the platform's back here would re-enter RN's own back callback (see
      * `BrownfieldActivity`), so this moves the task directly, and `BrownfieldActivity`'s `finish()`,
      * which would bring the router back at its root on the next launch, is never reached. What the
      * platform adds on 12+ is the system's back animation.
      */
     override fun invokeDefaultOnBackPressed() {
+        if (navigator.back()) return
         if (!moveTaskToBack(false)) finish()
+    }
+
+    private companion object {
+        const val NATIVE_TAB_BAR = "nativeTabBar"
+
+        // expo-file-system's Paths.document is filesDir; src/storage/paths.ts names the rest.
+        const val PREFERENCES = "exercise-tracker/preferences.json"
     }
 }

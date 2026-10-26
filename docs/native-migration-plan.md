@@ -281,15 +281,19 @@ one full release cycle. Every later milestone ships through this pipeline.
     the exercise picker, a swap), and only then asks "Finish session?". The user's answer decides
     either way.
 - Native tab bar and back stack, built with Compose Navigation. Every route still renders RN, in the
-  one surface native steers. Per-surface deep links stay out (Q3).
-  - **The tab bar can't assume its message landed.** One over the runner can be dropped, and RN
-    still moves itself (a delete's `dismissTo`, the runner's exit). The tab bar ticket needs a
-    route-changed message from JS to keep the selected tab true.
+  one surface native steers. Per-surface deep links stay out (Q3). *(Landed with #153: `ShellLayout` and
+  the registrations in `ShellRoutes.kt`. The surface is a plain view beside the Compose views, not a
+  destination: inside Compose's `AndroidView`, RN's whole tree dropped out of the accessibility tree
+  on a device. A native destination covers it and hides it. RN keeps its tabs as the router, with
+  their bar hidden and their back off, and reports every route with `{ type: "route", pathname }`,
+  which the bar follows and hides under anything above the tabs.)*
 - Modal routes (editors, import, settings) become native-presented sheets around RN content.
   **Open, now that there is one surface:** a sheet would need RN content in a second surface, which
   can't be routed (Q3). Unless moving the one surface into a sheet works, which is untested, modals
-  stay RN-presented inside the surface until their screen goes native. Settle this in the tab bar
-  ticket.
+  stay RN-presented inside the surface until their screen goes native. *(#153 left them RN-presented,
+  with the native bar hidden under them. The sheet question is #155's, and #153 narrows it: a Compose
+  sheet would hold the surface in an `AndroidView`, which hides RN from TalkBack, so a sheet that
+  takes the surface has to be a View one.)*
 - A `BrownfieldMessaging` event, `filesChanged(kind)`, that RN stores answer by re-reading. This is
   the **re-read-on-focus** rule that makes constraint 3 work in both directions.
 

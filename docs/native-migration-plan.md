@@ -283,7 +283,9 @@ one full release cycle. Every later milestone ships through this pipeline.
 - Native tab bar and back stack, built with Compose Navigation. Every route still renders RN, in the
   one surface native steers. Per-surface deep links stay out (Q3). *(Landed with #153. The constraint
   it found: **the surface can't go inside Compose.** In an `AndroidView`, RN's whole tree dropped out
-  of the accessibility tree on a device, so it stays a plain view beside the Compose ones.)*
+  of the accessibility tree on a device, so it stays a plain view beside the Compose ones. Dropped on
+  purpose: RN's bar scrolled a tab's list to the top when its tab was tapped again, and the native
+  bar doesn't. Each tab's native port brings it back for its own screen.)*
 - Modal routes (editors, import, settings) become native-presented sheets around RN content.
   **Open, now that there is one surface:** a sheet would need RN content in a second surface, which
   can't be routed (Q3). Unless moving the one surface into a sheet works, which is untested, modals

@@ -6,8 +6,8 @@
 > the generated string resources and the generated Compose theme. **M2 has shipped**: 0.11.2 is the
 > shell on production, hosting today's app from the RN AAR; only its landmark, a release cycle with
 > no regressions, is still running. **M3 is under way**: its routing test (#152) picked one surface
-> steered by messages, and the native tab bar (#153) has landed around it. M1–M3 are tracked as GitHub issues #141–#156, whose open/closed state is the
-> live record; M4 onward is ticketed next. Written against the tree at `54eb9f8`, SDK 57.
+> steered by messages, and the native tab bar (#153) has landed around it. M1–M3 are tracked as
+> GitHub issues #141–#156, whose open/closed state is the live record; M4 onward is ticketed next. Written against the tree at `54eb9f8`, SDK 57.
 > **Everything after M0 was conditional on a "go"**: had the spike failed, this file would carry a
 > banner saying so and the decision log the reason, so the idea isn't re-proposed from scratch.
 

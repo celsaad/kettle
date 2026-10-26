@@ -106,6 +106,28 @@ class TabNavigatorTest {
         assertEquals(emptyList<String>(), sent)
     }
 
+    /**
+     * A tap back to where RN last was, before RN has answered the tap away: RN is on its way somewhere
+     * else, so it has to be sent back. Sending nothing left the bar on Workouts over History, and back
+     * then left the app.
+     */
+    @Test
+    fun `a quick tap back steers RN back too`() {
+        navigator.onRoute("/")
+
+        navigator.select(Tab.History)
+        navigator.select(Tab.Workouts)
+        navigator.onRoute("/history")
+
+        assertEquals(listOf("/history", "/"), sent)
+        assertEquals(Tab.Workouts, navigator.current)
+
+        navigator.onRoute("/")
+        navigator.onRoute("/library")
+
+        assertEquals(Tab.Library, navigator.current)
+    }
+
     @Test
     fun `a tap on the tab already showing sends nothing`() {
         navigator.select(Tab.Workouts)

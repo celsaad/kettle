@@ -77,8 +77,9 @@ class TabNavigator(
     fun select(tab: Tab) {
         if (tab == current) return
         current = tab
-        // A native tab leaves the surface where it is, and RN already on the tab has nowhere to go.
-        if (!tab.isRn() || rnAt == tab.path) return
+        // A native tab leaves the surface where it is, and RN already headed for the tab has nowhere to
+        // go. Headed, not last seen: until RN answers a tap, it is on its way to that tap's tab.
+        if (!tab.isRn() || (pending?.path ?: rnAt) == tab.path) return
         pending = tab
         navigate(tab.path)
     }

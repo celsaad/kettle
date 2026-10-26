@@ -281,10 +281,7 @@ private fun <T> golden(
         is ParseResult.SchemaMismatch -> mapOf("ok" to false, "kind" to "schemaMismatch", "paths" to result.paths)
     }
 
-/**
- * The camelCase domain model as JSON, written out by hand: every `| null` field is always present
- * here, and [entryJson] leaves an absent optional out rather than writing it as null.
- */
+/** The preferences with their defaults filled in, as zod's parse returns them. */
 private fun preferencesJson(preferences: Preferences): Map<String, Any?> =
     mapOf(
         "unitSystem" to preferences.unitSystem.name.lowercase(),
@@ -294,6 +291,10 @@ private fun preferencesJson(preferences: Preferences): Map<String, Any?> =
         "backupFolderUri" to preferences.backupFolderUri,
     )
 
+/**
+ * The camelCase domain model as JSON, written out by hand: every `| null` field is always present
+ * here, and [entryJson] leaves an absent optional out rather than writing it as null.
+ */
 private fun sessionJson(session: Session): Map<String, Any?> =
     mapOf(
         "version" to session.version,

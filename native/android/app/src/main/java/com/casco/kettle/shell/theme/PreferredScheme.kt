@@ -7,9 +7,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.casco.kettle.domain.ThemePreference
+import com.casco.kettle.domain.parsePreferences
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.io.IOException
 
 /**
  * Whether the chrome draws dark, from Settings → Appearance in [preferences]. RN writes that file and
@@ -22,13 +25,27 @@ fun rememberPreferredDarkTheme(
     reread: Boolean,
 ): Boolean {
     // Read once on the main thread, so the first frame is already the right scheme.
-    var preference by remember { mutableStateOf(ThemePreference.read(preferences)) }
+    var preference by remember { mutableStateOf(readThemePreference(preferences)) }
     LaunchedEffect(reread) {
-        if (reread) preference = withContext(Dispatchers.IO) { ThemePreference.read(preferences) }
+        if (reread) preference = withContext(Dispatchers.IO) { readThemePreference(preferences) }
     }
     return when (preference) {
-        ThemePreference.Light -> false
-        ThemePreference.Dark -> true
-        ThemePreference.System -> isSystemInDarkTheme()
+        ThemePreference.LIGHT -> false
+        ThemePreference.DARK -> true
+        ThemePreference.SYSTEM -> isSystemInDarkTheme()
     }
+}
+
+/**
+ * The scheme [file] pins. No file, and one RN would refuse, both follow the device, as they do in RN:
+ * the bar must never pin a scheme the app around it ignores.
+ */
+internal fun readThemePreference(file: File): ThemePreference {
+    val text =
+        try {
+            file.readText()
+        } catch (_: IOException) {
+            null
+        }
+    return text?.let(::parsePreferences)?.themePreference ?: ThemePreference.SYSTEM
 }

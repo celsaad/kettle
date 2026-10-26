@@ -2,6 +2,7 @@ package com.casco.kettle.conformance
 
 import com.casco.kettle.domain.Library
 import com.casco.kettle.domain.ParseResult
+import com.casco.kettle.domain.Preferences
 import com.casco.kettle.domain.Session
 import com.casco.kettle.domain.SessionEntry
 import com.casco.kettle.domain.UnitSystem
@@ -15,6 +16,7 @@ import com.casco.kettle.domain.mergeBlockOverride
 import com.casco.kettle.domain.mergeExerciseOverride
 import com.casco.kettle.domain.mergeLibraries
 import com.casco.kettle.domain.parseLibraryYaml
+import com.casco.kettle.domain.parsePreferences
 import com.casco.kettle.domain.parseSessionYaml
 import com.casco.kettle.domain.programWeekNumbers
 import com.casco.kettle.domain.rankByName
@@ -48,6 +50,7 @@ class ConformanceTest {
             "library" to ::runLibrary,
             "merge" to ::runMerge,
             "overrides" to ::runOverrides,
+            "preferences" to ::runPreferences,
             "program" to ::runProgram,
             "repair" to ::runRepair,
             "search" to ::runSearch,
@@ -183,6 +186,8 @@ class ConformanceTest {
         }
     }
 
+    private fun runPreferences(case: Case): Any? = parsePreferences(case.string("input")!!)?.let(::preferencesJson)
+
     private fun runSession(case: Case): Any = golden(parseSessionYaml(case.string("input")!!), ::sessionJson)
 
     private fun runUnits(case: Case): Any {
@@ -280,6 +285,15 @@ private fun <T> golden(
  * The camelCase domain model as JSON, written out by hand: every `| null` field is always present
  * here, and [entryJson] leaves an absent optional out rather than writing it as null.
  */
+private fun preferencesJson(preferences: Preferences): Map<String, Any?> =
+    mapOf(
+        "unitSystem" to preferences.unitSystem.name.lowercase(),
+        "themePreference" to preferences.themePreference.name.lowercase(),
+        "restDayReminder" to preferences.restDayReminder,
+        "sessionSounds" to preferences.sessionSounds,
+        "backupFolderUri" to preferences.backupFolderUri,
+    )
+
 private fun sessionJson(session: Session): Map<String, Any?> =
     mapOf(
         "version" to session.version,

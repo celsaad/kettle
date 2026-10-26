@@ -85,3 +85,17 @@ export const preferencesSchema = z.object({
   // every existing install at once — resetting appearance, units and list order along with it.
   backupFolderUri: z.string().nullable().default(null),
 });
+
+/**
+ * What a `preferences.json` says, or `null` where it says nothing usable: unparsable JSON and a value
+ * the schema refuses land in the same place, which `loadPreferences` explains. Pure, so the native
+ * shell's port in `:shared` can be held to it by `conformance/preferences.yaml`.
+ */
+export function parsePreferences(text: string): Preferences | null {
+  try {
+    const parsed = preferencesSchema.safeParse(JSON.parse(text));
+    return parsed.success ? parsed.data : null;
+  } catch {
+    return null;
+  }
+}

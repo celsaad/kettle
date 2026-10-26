@@ -32,9 +32,13 @@ reported as skipped under its own name, never as passing. Porting a suite is add
 | `overrides` | `mergeExerciseOverride`, `mergeBlockOverride`, `diffExerciseOverride`, `diffBlockOverride` per op | `[{ op, result }]` |
 | `units` | `toDisplayWeight`, `fromDisplayWeight`, `weightStep`, `emomIntervalCount` | a number |
 | `search` | `rankByName` and `filterByName` over `names` with `query` | `{ ranked, filtered }`, lists of names |
+| `preferences` | `parsePreferences(input)`, the text of a `preferences.json` | the preferences with defaults filled in, or `null` where the file is refused |
 
 `search` isn't part of the file format, but it is the same problem: two implementations must agree on
 which workout a search finds. Its rules are in the header of `src/domain/search.ts`.
+
+`preferences` is the same again, for `preferences.json`: RN writes it until M5, and the native shell
+reads its scheme from it, so the two must refuse the same files.
 
 ## Reading the goldens
 

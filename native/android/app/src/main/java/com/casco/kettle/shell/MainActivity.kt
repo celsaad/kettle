@@ -25,7 +25,7 @@ import java.io.File
 
 /**
  * The app's entry point: today's RN app as one surface (docs/native-migration-plan.md, M2), inside the
- * shell's own tab bar and back stack (M3, `Shell`). `BrownfieldActivity` is only an
+ * shell's own tab bar and back stack (M3, `ShellLayout`). `BrownfieldActivity` is only an
  * `AppCompatActivity`, so this does what the prebuilt app's `ReactActivity` and Expo's delegate
  * wrapper did for it: the splash, Expo modules' activity lifecycle
  * (edge to edge, expo-linking's URLs, expo-notifications' taps), and the host's share of intents,

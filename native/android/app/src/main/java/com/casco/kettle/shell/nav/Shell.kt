@@ -67,14 +67,8 @@ internal fun Destinations(
     }
 }
 
-/** The tab bar, while RN shows nothing above the tabs. */
 @Composable
-internal fun Bar(navigator: TabNavigator) {
-    if (navigator.barShown) TabBar(navigator.current, navigator::select)
-}
-
-@Composable
-private fun TabBar(
+internal fun TabBar(
     current: Tab,
     onSelect: (Tab) -> Unit,
 ) {

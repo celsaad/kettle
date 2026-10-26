@@ -5,8 +5,8 @@
 > conformance corpus, the native skeleton (`native/android`), a Kotlin runner for every corpus suite,
 > the generated string resources and the generated Compose theme. **M2 has shipped**: 0.11.2 is the
 > shell on production, hosting today's app from the RN AAR; only its landmark, a release cycle with
-> no regressions, is still running. **M3 has started**: its routing test (#152) picked one surface
-> steered by messages. M1–M3 are tracked as GitHub issues #141–#156, whose open/closed state is the
+> no regressions, is still running. **M3 is under way**: its routing test (#152) picked one surface
+> steered by messages, and the native tab bar (#153) has landed around it. M1–M3 are tracked as GitHub issues #141–#156, whose open/closed state is the
 > live record; M4 onward is ticketed next. Written against the tree at `54eb9f8`, SDK 57.
 > **Everything after M0 was conditional on a "go"**: had the spike failed, this file would carry a
 > banner saying so and the decision log the reason, so the idea isn't re-proposed from scratch.
@@ -281,12 +281,9 @@ one full release cycle. Every later milestone ships through this pipeline.
     the exercise picker, a swap), and only then asks "Finish session?". The user's answer decides
     either way.
 - Native tab bar and back stack, built with Compose Navigation. Every route still renders RN, in the
-  one surface native steers. Per-surface deep links stay out (Q3). *(Landed with #153: `ShellLayout` and
-  the registrations in `ShellRoutes.kt`. The surface is a plain view beside the Compose views, not a
-  destination: inside Compose's `AndroidView`, RN's whole tree dropped out of the accessibility tree
-  on a device. A native destination covers it and hides it. RN keeps its tabs as the router, with
-  their bar hidden and their back off, and reports every route with `{ type: "route", pathname }`,
-  which the bar follows and hides under anything above the tabs.)*
+  one surface native steers. Per-surface deep links stay out (Q3). *(Landed with #153. The constraint
+  it found: **the surface can't go inside Compose.** In an `AndroidView`, RN's whole tree dropped out
+  of the accessibility tree on a device, so it stays a plain view beside the Compose ones.)*
 - Modal routes (editors, import, settings) become native-presented sheets around RN content.
   **Open, now that there is one surface:** a sheet would need RN content in a second surface, which
   can't be routed (Q3). Unless moving the one surface into a sheet works, which is untested, modals

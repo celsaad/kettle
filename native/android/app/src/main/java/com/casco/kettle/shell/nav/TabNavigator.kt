@@ -27,7 +27,7 @@ class TabNavigator(
      * Whether the RN surface is what should show: on an RN tab, and over any tab while RN has something
      * above the tabs, since RN presents its modals and the runner inside the surface.
      */
-    val rnShown: Boolean get() = !barShown || routes[current] == Screen.Rn
+    val rnShown: Boolean get() = !barShown || current.isRn()
 
     /**
      * The RN tab the latest tap asked for, until RN reports arriving there. A tap's message isn't lost
@@ -37,18 +37,30 @@ class TabNavigator(
     private var pending: Tab? = null
 
     /**
+     * Where RN last reported being. RN reports only when its route changes, so a tap to the tab it is
+     * already on gets no answer and mustn't wait for one.
+     */
+    private var rnAt: String? = null
+
+    /**
      * RN's report of where it is now, a pathname. RN can move without being asked, so this is what
      * keeps the bar true rather than the taps alone.
      */
     fun onRoute(pathname: String) {
+        rnAt = pathname
         val tab = Tab.at(pathname)
         barShown = tab != null
-        // Reports of the moves before the latest tap are stale. Anything else, including a report from
-        // above the tabs (which no tap could have asked for), means RN has moved on by itself, and is
-        // followed.
-        if (tab != null && pending != null && tab != pending) return
-        pending = null
-        if (tab != null) current = tab
+        when {
+            // Above the tabs, where no tap sends RN: whatever a tap was waiting on is moot.
+            tab == null -> pending = null
+
+            // Reports of the moves before the latest tap are stale, and the answer to it moves nothing,
+            // since the tap already did. The user may have gone on to a native tab since.
+            pending != null -> if (tab == pending) pending = null
+
+            // RN moved by itself.
+            else -> current = tab
+        }
     }
 
     /**
@@ -65,8 +77,11 @@ class TabNavigator(
     fun select(tab: Tab) {
         if (tab == current) return
         current = tab
-        if (routes[tab] != Screen.Rn) return
+        // A native tab leaves the surface where it is, and RN already on the tab has nowhere to go.
+        if (!tab.isRn() || rnAt == tab.path) return
         pending = tab
         navigate(tab.path)
     }
+
+    private fun Tab.isRn() = routes[this] == Screen.Rn
 }

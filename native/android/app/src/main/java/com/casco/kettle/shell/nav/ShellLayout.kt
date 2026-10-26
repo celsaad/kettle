@@ -45,8 +45,9 @@ class ShellLayout(
         content.addView(surface, FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
         content.addView(destinations, FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
         addView(content, LayoutParams(MATCH_PARENT, 0, 1f))
-        // Wrapping its content, so the bar takes no room at all while it's hidden.
-        addView(composeView { theme { Bar(navigator) } }, LayoutParams(MATCH_PARENT, WRAP_CONTENT))
+        // Wrapping its content, so the bar takes no room at all while RN has something above the tabs.
+        val bar = composeView { theme { if (navigator.barShown) TabBar(navigator.current, navigator::select) } }
+        addView(bar, LayoutParams(MATCH_PARENT, WRAP_CONTENT))
     }
 
     private fun show(rn: Boolean) {

@@ -77,6 +77,35 @@ class TabNavigatorTest {
         assertEquals(listOf("/programs", "/"), sent)
     }
 
+    /** RN's answer to the first tap arrives after the second, which went to a tab RN isn't drawing. */
+    @Test
+    fun `RN's answer to an earlier tap doesn't pull the bar off a native tab`() {
+        val native = TabNavigator(rnRoutes + (Tab.Programs to Screen.Native {}), sent::add)
+
+        native.select(Tab.History)
+        native.select(Tab.Programs)
+        native.onRoute("/history")
+
+        assertEquals(Tab.Programs, native.current)
+    }
+
+    /**
+     * Back from a native tab to the RN tab RN is still on: RN doesn't move, so it reports nothing, and
+     * waiting for that report would leave every later move of RN's own ignored.
+     */
+    @Test
+    fun `a tap back to the tab RN is already on waits for nothing`() {
+        val native = TabNavigator(rnRoutes + (Tab.Programs to Screen.Native {}), sent::add)
+        native.onRoute("/history")
+
+        native.select(Tab.Programs)
+        native.select(Tab.History)
+        native.onRoute("/library")
+
+        assertEquals(Tab.Library, native.current)
+        assertEquals(emptyList<String>(), sent)
+    }
+
     @Test
     fun `a tap on the tab already showing sends nothing`() {
         navigator.select(Tab.Workouts)

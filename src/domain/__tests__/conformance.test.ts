@@ -1,6 +1,7 @@
 import { load } from 'js-yaml';
 
 import { mergeLibraries } from '@/domain/merge';
+import { parsePreferences } from '@/domain/preferences';
 import { findProgramWeek, programWeekNumbers, resolveWorkoutForWeek } from '@/domain/program';
 import { emomIntervalCount } from '@/domain/schema';
 import { filterByName, rankByName } from '@/domain/search';
@@ -121,6 +122,8 @@ const runners: Record<string, (testCase: Case) => unknown> = {
       }
     });
   },
+
+  preferences: (testCase) => parsePreferences(testCase.input as string),
 
   search: (testCase) => {
     const names = testCase.names as string[];

@@ -1,4 +1,4 @@
-import { preferencesSchema, type Preferences } from '@/domain/preferences';
+import { parsePreferences, type Preferences } from '@/domain/preferences';
 import { ensureStorageReady, isFileStorageSupported, storagePaths } from '@/storage/paths';
 
 /**
@@ -18,8 +18,7 @@ export async function loadPreferences(): Promise<Preferences | null> {
     ensureStorageReady();
     if (!storagePaths.preferencesFile.exists) return null;
 
-    const parsed = preferencesSchema.safeParse(JSON.parse(await storagePaths.preferencesFile.text()));
-    return parsed.success ? parsed.data : null;
+    return parsePreferences(await storagePaths.preferencesFile.text());
   } catch {
     return null;
   }

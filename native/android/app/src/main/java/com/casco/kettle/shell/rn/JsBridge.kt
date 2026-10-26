@@ -1,5 +1,7 @@
 package com.casco.kettle.shell.rn
 
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import com.casco.kettle.brownfield.ReactNativeHostManager
 import expo.modules.brownfield.BrownfieldMessaging
@@ -13,12 +15,29 @@ object JsBridge {
 
     /**
      * Moves the one RN surface to [url], a route path such as `/history`: a second surface can't be
-     * routed by deep link (Q3), so native steers this one instead. Only the debug build sends it so far,
-     * from `NavigateReceiver`; M3's tab bar is the first real sender.
+     * routed by deep link (Q3), so native steers this one instead. The tab bar sends it, and so does the
+     * debug build's `NavigateReceiver`.
      */
     fun navigate(url: String) {
         // What src/hooks/safe-brownfield.ts listens for. The two share no code, so change both.
         channel.send(mapOf("type" to "navigate", "url" to url))
+    }
+
+    /**
+     * Where RN reports its router to be, a pathname, on the main thread. The current activity's: it
+     * clears it as it goes, since the runtime and this object outlive it.
+     */
+    var onRoute: ((String) -> Unit)? = null
+
+    private val main = Handler(Looper.getMainLooper())
+
+    /** JS's messages arrive on its own thread. */
+    private fun receive(message: Map<String, Any?>) {
+        channel.receive(message)
+        // What reportRoute in src/hooks/safe-brownfield.ts sends. The two share no code, so change both.
+        if (message["type"] != "route") return
+        val pathname = message["pathname"] as? String ?: return
+        main.post { onRoute?.invoke(pathname) }
     }
 
     private var listening = false
@@ -37,7 +56,7 @@ object JsBridge {
      */
     fun attach() {
         if (!listening) {
-            BrownfieldMessaging.addListener(channel::receive)
+            BrownfieldMessaging.addListener(::receive)
             listening = true
         }
         if (watchingReloads) return

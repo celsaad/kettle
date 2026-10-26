@@ -1,0 +1,41 @@
+# preferences.json, the app-owned settings file: parsePreferences(input). RN writes it and, until M5,
+# is the only writer; the native shell reads it for the scheme its chrome draws. Both have to refuse
+# the same files, or the native bar pins a scheme the RN app around it ignores. A refused file is
+# `null`, which the app answers by following the device.
+#
+# Every field but unitSystem is defaulted, because each arrived after the file was already being
+# written. Defaulted means absent is fine; present, it still has to be the right type.
+cases:
+  - name: everything-set
+    input: '{"unitSystem":"imperial","themePreference":"dark","restDayReminder":true,"sessionSounds":false,"backupFolderUri":"content://com.android.externalstorage.documents/tree/primary%3AKettle"}'
+  - name: from-before-every-defaulted-field
+    why: The oldest files hold the unit system alone.
+    input: '{"unitSystem":"metric"}'
+  - name: backup-folder-null
+    input: '{"unitSystem":"metric","themePreference":"light","backupFolderUri":null}'
+  - name: unknown-key-ignored
+    why: zod's object strips keys it doesn't know rather than refusing them.
+    input: '{"unitSystem":"metric","themePreference":"system","laterSetting":1}'
+  - name: unit-system-missing
+    input: '{"themePreference":"dark"}'
+  - name: unit-system-unknown
+    input: '{"unitSystem":"stones","themePreference":"dark"}'
+  - name: theme-unknown
+    input: '{"unitSystem":"metric","themePreference":"dusk"}'
+  - name: theme-null
+    why: A default fills in an absent field, not a null one.
+    input: '{"unitSystem":"metric","themePreference":null}'
+  - name: sounds-not-a-boolean
+    why: One bad field refuses the whole file, its scheme included.
+    input: '{"unitSystem":"metric","themePreference":"dark","sessionSounds":"yes"}'
+  - name: reminder-a-number
+    input: '{"unitSystem":"metric","themePreference":"dark","restDayReminder":1}'
+  - name: backup-folder-a-number
+    input: '{"unitSystem":"metric","themePreference":"dark","backupFolderUri":7}'
+  - name: truncated
+    why: A write cut short.
+    input: '{"unitSystem":"metric","themePreference":"dark"'
+  - name: empty
+    input: ''
+  - name: not-an-object
+    input: '[]'

@@ -5,9 +5,9 @@
 > conformance corpus, the native skeleton (`native/android`), a Kotlin runner for every corpus suite,
 > the generated string resources and the generated Compose theme. **M2 has shipped**: 0.11.2 is the
 > shell on production, hosting today's app from the RN AAR; only its landmark, a release cycle with
-> no regressions, is still running. **M3 has started**: its routing test (#152) picked one surface
-> steered by messages. M1–M3 are tracked as GitHub issues #141–#156, whose open/closed state is the
-> live record; M4 onward is ticketed next. Written against the tree at `54eb9f8`, SDK 57.
+> no regressions, is still running. **M3 is under way**: its routing test (#152) picked one surface
+> steered by messages, and the native tab bar (#153) has landed around it. M1–M3 are tracked as
+> GitHub issues #141–#156, whose open/closed state is the live record; M4 onward is ticketed next. Written against the tree at `54eb9f8`, SDK 57.
 > **Everything after M0 was conditional on a "go"**: had the spike failed, this file would carry a
 > banner saying so and the decision log the reason, so the idea isn't re-proposed from scratch.
 
@@ -281,15 +281,18 @@ one full release cycle. Every later milestone ships through this pipeline.
     the exercise picker, a swap), and only then asks "Finish session?". The user's answer decides
     either way.
 - Native tab bar and back stack, built with Compose Navigation. Every route still renders RN, in the
-  one surface native steers. Per-surface deep links stay out (Q3).
-  - **The tab bar can't assume its message landed.** One over the runner can be dropped, and RN
-    still moves itself (a delete's `dismissTo`, the runner's exit). The tab bar ticket needs a
-    route-changed message from JS to keep the selected tab true.
+  one surface native steers. Per-surface deep links stay out (Q3). *(Landed with #153. The constraint
+  it found: **the surface can't go inside Compose.** In an `AndroidView`, RN's whole tree dropped out
+  of the accessibility tree on a device, so it stays a plain view beside the Compose ones. Dropped on
+  purpose: RN's bar scrolled a tab's list to the top when its tab was tapped again, and the native
+  bar doesn't. Each tab's native port brings it back for its own screen.)*
 - Modal routes (editors, import, settings) become native-presented sheets around RN content.
   **Open, now that there is one surface:** a sheet would need RN content in a second surface, which
   can't be routed (Q3). Unless moving the one surface into a sheet works, which is untested, modals
-  stay RN-presented inside the surface until their screen goes native. Settle this in the tab bar
-  ticket.
+  stay RN-presented inside the surface until their screen goes native. *(#153 left them RN-presented,
+  with the native bar hidden under them. The sheet question is #155's, and #153 narrows it: a Compose
+  sheet would hold the surface in an `AndroidView`, which hides RN from TalkBack, so a sheet that
+  takes the surface has to be a View one.)*
 - A `BrownfieldMessaging` event, `filesChanged(kind)`, that RN stores answer by re-reading. This is
   the **re-read-on-focus** rule that makes constraint 3 work in both directions.
 

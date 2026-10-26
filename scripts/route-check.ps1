@@ -19,9 +19,9 @@
   and a message over a running session, which must wait on "Finish session?".
 
   The matrix describes today's routes, so it moves with the migration. When a screen goes native, its
-  steps stop going through a navigate message and its expected text may change. When native owns
-  navigation, back is native's job, not JS's. Update the matrix in the same PR, rather than deleting a
-  step that starts failing.
+  steps stop going through a navigate message and its expected text may change. Since the shell's tab
+  bar (M3), tab steps check which tab it has selected, and back between tabs is the shell's. Update
+  the matrix in the same PR, rather than deleting a step that starts failing.
 
 .PARAMETER Device
   The adb serial to use when more than one device is attached.
@@ -41,38 +41,45 @@ $receiver = "$package/com.casco.kettle.shell.rn.NavigateReceiver"
 $target = if ($Device) { @('-s', $Device) } else { @() }
 
 # A route: send it. 'back': press back. 'tap:X': tap the element whose text is X. 'front': bring the
-# app to the front. Expect is an exact on-screen text; $null means the app is not in front.
+# app to the front. Expect is an exact on-screen text, or 'tab:X' for the shell's tab X being the
+# selected one (its label is on screen whichever tab is showing, so the text alone proves nothing);
+# $null means the app is not in front.
 $steps = @(
-  # Tabs, out of order and repeated.
-  @('/history', 'History'), @('/library', 'Library'), @('/programs', 'Programs'), @('/', 'Workouts'),
-  @('/programs', 'Programs'), @('/history', 'History'), @('/history', 'History'),
+  # Tabs, out of order and repeated. A message moves RN, and the shell's bar follows its report.
+  @('/history', 'tab:History'), @('/library', 'tab:Library'), @('/programs', 'tab:Programs'),
+  @('/', 'tab:Workouts'), @('/programs', 'tab:Programs'), @('/history', 'tab:History'),
+  @('/history', 'tab:History'),
+  # The shell's own bar and back stack: Workouts first, then out of the app.
+  @('tap:Library', 'tab:Library'), @('tap:Programs', 'tab:Programs'), @('back', 'tab:Workouts'),
+  @('back', $null), @('front', 'tab:Workouts'), @('tap:History', 'tab:History'),
   # Every modal from a tab, back to that tab after each.
-  @('/settings', 'Settings'), @('back', 'History'),
-  @('/analytics', 'Your numbers'), @('back', 'History'),
-  @('/support', 'Support Kettle'), @('back', 'History'),
-  @('/import', 'Import library'), @('back', 'History'),
-  @('/exercise-editor', 'New exercise'), @('back', 'History'),
-  @('/exercise-editor?id=pushups', 'Edit exercise'), @('back', 'History'),
-  @('/workout-editor', 'New workout'), @('back', 'History'),
-  @('/workout-editor?id=foundations-push', 'Edit workout'), @('back', 'History'),
-  @('/exercise-progress?exerciseId=pushups', 'Push-ups'), @('back', 'History'),
-  @('/program-detail?programId=foundations', 'Week 1 · Day 1'), @('back', 'History'),
-  @('/program-editor', 'New program'), @('back', 'History'),
-  @('/program-editor?id=foundations', 'Edit program'), @('back', 'History'),
-  @('/program-guide', 'Writing a program by hand'), @('back', 'History'),
-  @('/session-editor', 'Edit session'), @('back', 'History'),
+  @('/settings', 'Settings'), @('back', 'tab:History'),
+  @('/analytics', 'Your numbers'), @('back', 'tab:History'),
+  @('/support', 'Support Kettle'), @('back', 'tab:History'),
+  @('/import', 'Import library'), @('back', 'tab:History'),
+  @('/exercise-editor', 'New exercise'), @('back', 'tab:History'),
+  @('/exercise-editor?id=pushups', 'Edit exercise'), @('back', 'tab:History'),
+  @('/workout-editor', 'New workout'), @('back', 'tab:History'),
+  @('/workout-editor?id=foundations-push', 'Edit workout'), @('back', 'tab:History'),
+  @('/exercise-progress?exerciseId=pushups', 'Push-ups'), @('back', 'tab:History'),
+  @('/program-detail?programId=foundations', 'Week 1 · Day 1'), @('back', 'tab:History'),
+  @('/program-editor', 'New program'), @('back', 'tab:History'),
+  @('/program-editor?id=foundations', 'Edit program'), @('back', 'tab:History'),
+  @('/program-guide', 'Writing a program by hand'), @('back', 'tab:History'),
+  @('/session-editor', 'Edit session'), @('back', 'tab:History'),
   # From a modal: to a tab, and to another modal. Either way back reaches Workouts and then leaves.
-  @('/library', 'Library'), @('/settings', 'Settings'), @('/history', 'History'), @('back', 'Workouts'),
-  @('/library', 'Library'), @('/settings', 'Settings'), @('/support', 'Support Kettle'),
-  @('back', 'Library'), @('back', 'Workouts'), @('back', $null),
+  @('/library', 'tab:Library'), @('/settings', 'Settings'), @('/history', 'tab:History'),
+  @('back', 'tab:Workouts'),
+  @('/library', 'tab:Library'), @('/settings', 'Settings'), @('/support', 'Support Kettle'),
+  @('back', 'tab:Library'), @('back', 'tab:Workouts'), @('back', $null),
   # Sent while in the background, it lands, and shows once the app is in front again.
-  @('/history', $null), @('front', 'History'),
+  @('/history', $null), @('front', 'tab:History'),
   # Over a running session. Cancel must leave the runner on top, with nothing stacked over it.
   @('/session?workoutId=foundations-push', 'Finish'),
   @('/library', 'Finish session?'), @('tap:CANCEL', 'Finish'),
   @('back', 'Finish session?'), @('tap:CANCEL', 'Finish'),
   @('/programs', 'Finish session?'), @('tap:FINISH', 'Workout complete'),
-  @('tap:Done', 'History'), @('back', 'Workouts'), @('back', $null)
+  @('tap:Done', 'tab:History'), @('back', 'tab:Workouts'), @('back', $null)
 )
 
 function Get-Screen {
@@ -83,6 +90,16 @@ function Get-Screen {
 # Matches a dump attribute whose text is exactly $text.
 function Get-TextPattern([string]$text) {
   "text=`"$([regex]::Escape([System.Security.SecurityElement]::Escape($text)))`""
+}
+
+# Whether a dump shows what a step expects. 'tab:X' is a selected node with the label X inside it:
+# the dump lists Compose's nodes unmerged, so a tab's selected state is on the item and its label is
+# a TextView under it.
+function Test-Screen([string]$screen, [string]$expect) {
+  if (-not $expect.StartsWith('tab:')) { return $screen -match (Get-TextPattern $expect) }
+  $label = $expect.Substring(4)
+  $dump = [xml]$screen
+  $null -ne $dump.SelectSingleNode("//node[@selected='true'][.//node[@text='$label']]")
 }
 
 # Brings the app to the front, launching it if it isn't running.
@@ -107,7 +124,7 @@ function Wait-For([string]$text) {
   do {
     Start-Sleep -Milliseconds 500
     if ($null -eq $text) { if (-not (Test-Foreground)) { return $true } }
-    elseif ((Get-Screen) -match (Get-TextPattern $text)) { return $true }
+    elseif (Test-Screen (Get-Screen) $text) { return $true }
   } while ((Get-Date) -lt $deadline)
   $false
 }
@@ -121,7 +138,7 @@ try {
   Start-App
   # From wherever the last run or the user left it.
   Send-Route '/'
-  if (-not (Wait-For 'Workouts')) { throw "$package isn't showing Home. Start it against Metro first." }
+  if (-not (Wait-For 'tab:Workouts')) { throw "$package isn't showing Home. Start it against Metro first." }
 
   $n = 0
   foreach ($step in $steps) {
@@ -133,7 +150,9 @@ try {
       Start-App
     } elseif ($action.StartsWith('tap:')) {
       $label = $action.Substring(4)
-      $match = [regex]::Match((Get-Screen), "$(Get-TextPattern $label)[^>]*bounds=`"\[(\d+),(\d+)\]\[(\d+),(\d+)\]`"")
+      # By its text, or by its description: an unselected tab shows no label, and its icon names it.
+      $name = (Get-TextPattern $label) -replace '^text=', '(?:text|content-desc)='
+      $match = [regex]::Match((Get-Screen), "$name[^>]*bounds=`"\[(\d+),(\d+)\]\[(\d+),(\d+)\]`"")
       if (-not $match.Success) { throw "Step ${n}: nothing on screen reads '$label'" }
       $x = ([int]$match.Groups[1].Value + [int]$match.Groups[3].Value) / 2
       $y = ([int]$match.Groups[2].Value + [int]$match.Groups[4].Value) / 2

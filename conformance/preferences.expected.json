@@ -1,0 +1,40 @@
+{
+  "everything-set": {
+    "unitSystem": "imperial",
+    "themePreference": "dark",
+    "restDayReminder": true,
+    "sessionSounds": false,
+    "backupFolderUri": "content://com.android.externalstorage.documents/tree/primary%3AKettle"
+  },
+  "from-before-every-defaulted-field": {
+    "unitSystem": "metric",
+    "themePreference": "system",
+    "restDayReminder": false,
+    "sessionSounds": true,
+    "backupFolderUri": null
+  },
+  "backup-folder-null": {
+    "unitSystem": "metric",
+    "themePreference": "light",
+    "restDayReminder": false,
+    "sessionSounds": true,
+    "backupFolderUri": null
+  },
+  "unknown-key-ignored": {
+    "unitSystem": "metric",
+    "themePreference": "system",
+    "restDayReminder": false,
+    "sessionSounds": true,
+    "backupFolderUri": null
+  },
+  "unit-system-missing": null,
+  "unit-system-unknown": null,
+  "theme-unknown": null,
+  "theme-null": null,
+  "sounds-not-a-boolean": null,
+  "reminder-a-number": null,
+  "backup-folder-a-number": null,
+  "truncated": null,
+  "empty": null,
+  "not-an-object": null
+}

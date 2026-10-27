@@ -15,3 +15,11 @@ each tile is a frame where something changed, numbered in order.
   Play build (#177's `ime-play-baseline.png`), which is #180.
 - `settings-uiautomator.xml`: the open sheet's tree. RN's content, "Drag handle" and "Close", and
   nothing from the tab behind.
+
+Added after the review (tiles now carry each frame's timestamp in seconds):
+
+- `replace-guide-to-import.png`: Program guide → Import (`router.replace`), fade through in place.
+- `steered-open-fade-in.png`, `steered-open-frames-8-12.png`: the shell's navigate to `/settings`
+  from Workouts. The sheet fades in over the tab's picture, bar included.
+- `grow-into-runner-270ms.png`: the grow with `RUNNER_MS` at 270. It reaches full height at 1.328s,
+  and RN's runner is fully in at 1.345s.

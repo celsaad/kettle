@@ -298,6 +298,35 @@ describe('reload', () => {
 
     expect(useSessionHistoryStore.getState().sessions).toEqual([logged, finished]);
   });
+
+  // A full disk mid-workout is only ever said once, when the write fails; the listing can't know it.
+  it('keeps a failed flush on record alongside what the listing found', async () => {
+    useSessionHistoryStore.setState({ errors: ['session-1: no space left on device'] });
+    mockListSessions.mockResolvedValue({ sessions: [], errors: ['bad.yaml (parse): unexpected end'] });
+
+    await useSessionHistoryStore.getState().reload();
+
+    expect(useSessionHistoryStore.getState().errors).toEqual([
+      'session-1: no space left on device',
+      'bad.yaml (parse): unexpected end',
+    ]);
+  });
+
+  // A delete while the listing is out has already removed the file; the listing may have read it first.
+  it('reads again when RN wrote to the log while the listing was out', async () => {
+    const doomed = aSession({ id: 'doomed', endedAt: '2026-07-28T10:00:00.000Z' });
+    useSessionHistoryStore.setState({ sessions: [doomed] });
+    mockListSessions
+      .mockImplementationOnce(async () => {
+        useSessionHistoryStore.getState().deleteSession('doomed');
+        return { sessions: [doomed], errors: [] };
+      })
+      .mockResolvedValue({ sessions: [], errors: [] });
+
+    await useSessionHistoryStore.getState().reload();
+
+    expect(useSessionHistoryStore.getState().sessions).toEqual([]);
+  });
 });
 
 describe('abandonActiveSession', () => {

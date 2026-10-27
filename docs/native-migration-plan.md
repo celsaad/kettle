@@ -294,11 +294,10 @@ one full release cycle. Every later milestone ships through this pipeline.
   sheet would hold the surface in an `AndroidView`, which hides RN from TalkBack, so a sheet that
   takes the surface has to be a View one.)*
 - A `BrownfieldMessaging` event, `filesChanged(kind)`, that RN stores answer by re-reading. This is
-  the **re-read-on-focus** rule that makes constraint 3 work in both directions. *(#154: the kinds
-  are `library`, `sessions` and `preferences`, sent with `JsBridge.filesChanged`. A re-read never
-  passes through a store's `loading`, which unmounts the app, and keeps the running session's copy,
-  since the runner stays its only writer. Nothing native sends it yet; the debug build's
-  `FilesChangedReceiver` does, from adb.)*
+  the **re-read-on-focus** rule that makes constraint 3 work in both directions. *(#154 built the
+  RN half. A re-read never passes through a store's `loading`, which unmounts the app, and keeps the
+  running session's copy, since the runner stays its only writer. RN's open editors and the runner
+  copy what they show once, so M5 has to replace them before native writes those files, not after.)*
 
 **Landmark: no navigation happens inside RN.** Every screen transition the user sees is a native
 one, and an RN screen can be swapped for a native one by changing one route registration.

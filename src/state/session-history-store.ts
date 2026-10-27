@@ -47,8 +47,9 @@ type SessionHistoryState = {
    * passes through `loading`, which the root layout answers by unmounting the app, runner and all.
    *
    * The in-flight session keeps its in-memory copy: the runner is its only writer and writes through
-   * its own copy, so the one on disk is never newer, and is older when the listing raced a set or a
-   * write failed.
+   * its own copy, so the one on disk is never newer, and is older when a write failed. Errors are kept
+   * too, since a failed write is reported once and the listing can't know it; the cost is that a
+   * listing error outlives a fix until the next launch.
    */
   reload: () => Promise<void>;
   /** Creates and flushes a new session file immediately (§7.2: never hold a live session only in memory). */
@@ -178,8 +179,13 @@ export const useSessionHistoryStore = create<SessionHistoryState>((set, get) => 
     await get().reload();
   },
   reload: async () => {
+    const before = get().sessions;
     const { sessions, errors } = await listSessions();
-    set({ status: 'ready', sessions: keepingActive(sessions, get()), errors });
+    // RN wrote while the listing was out, so the listing may hold a file from before that write: a
+    // deleted session back in History, or a finished one unfinished. Writes are synchronous, so the
+    // next listing has them.
+    if (get().sessions !== before) return get().reload();
+    set({ status: 'ready', sessions: keepingActive(sessions, get()), errors: [...new Set([...get().errors, ...errors])] });
   },
   startSession: (workoutId, programId, programWeek, programDay) => {
     const id = new Date().toISOString().replace(/[:.]/g, '-');

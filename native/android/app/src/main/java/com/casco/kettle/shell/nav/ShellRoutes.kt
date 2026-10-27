@@ -41,8 +41,8 @@ sealed interface Screen {
  * The route registrations, by the path RN knows the route by. Anything not listed renders RN. Moving a
  * tab to native is this one line, `"/history" to Screen.Native { HistoryScreen() }`, plus an empty stub
  * route RN keeps at the same path (#190): RN stays the router, so its stack, back and route reports are
- * unchanged, and native draws the screen whenever RN reports that path. A sheet path registered here
- * draws nothing yet: `Destinations` draws only the tabs until the sheet has native content (#197).
+ * unchanged, and native draws the screen whenever RN reports that path: a tab's in `Destinations`, and
+ * a modal route's in the sheet (`NativeSheet`, #197), with the same stub behind it.
  */
 val shellRoutes: Map<String, Screen> = emptyMap()
 

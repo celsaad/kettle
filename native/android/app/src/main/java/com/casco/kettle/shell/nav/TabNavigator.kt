@@ -6,6 +6,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 
 /**
+ * The shell's three layers, stacked in one frame ([ShellLayout]): the RN surface, a native tab's screen,
+ * and a native sheet's (#197). Only one shows: a view left showing under another still takes touches and
+ * TalkBack's focus.
+ */
+enum class Layer { Surface, NativeTab, NativeSheet }
+
+/**
  * Which tab the shell is on, and what that means for the RN surface.
  *
  * [navigate] steers the surface to a route path (`JsBridge.navigate`). [reread] is told whenever what
@@ -29,10 +36,20 @@ class TabNavigator(
         private set
 
     /**
-     * Whether the RN surface is what should show: on an RN tab, and over any tab while RN has something
-     * above the tabs, since RN presents its modals and the runner inside the surface.
+     * Which layer should show: the surface on an RN tab, and over any tab while RN has something above
+     * the tabs, since RN presents its modals and the runner inside the surface. The exception is a route
+     * registered native above the tabs, whose stub RN shows while native draws it in the sheet.
      */
-    val rnShown: Boolean get() = !barShown || current.isRn()
+    val layer: Layer
+        get() =
+            when {
+                barShown -> if (current.isRn()) Layer.Surface else Layer.NativeTab
+                rnAt?.let(routes::screenAt) is Screen.Native -> Layer.NativeSheet
+                else -> Layer.Surface
+            }
+
+    /** The path the native sheet draws, while one shows. */
+    val nativeSheetPath: String? get() = rnAt.takeIf { layer == Layer.NativeSheet }
 
     /**
      * The tab the latest tap steered RN to, its stub for a native one, until RN reports arriving there.
@@ -44,9 +61,10 @@ class TabNavigator(
 
     /**
      * Where RN last reported being. RN reports only when its route changes, so a tap to the tab it is
-     * already on gets no answer and mustn't wait for one.
+     * already on gets no answer and mustn't wait for one. State, since it decides the [layer] and what
+     * the native sheet draws.
      */
-    private var rnAt: String? = null
+    private var rnAt by mutableStateOf<String?>(null)
 
     /** Each path's params as RN last reported them, which a native screen at that path reads. */
     private val paramsByPath = mutableStateMapOf<String, Map<String, String>>()

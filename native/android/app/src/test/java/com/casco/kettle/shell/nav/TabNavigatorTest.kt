@@ -27,7 +27,7 @@ class TabNavigatorTest {
 
         assertEquals(Tab.History, native.current)
         assertEquals(listOf("/history"), sent)
-        assertEquals(false, native.rnShown)
+        assertEquals(Layer.NativeTab, native.layer)
     }
 
     /**
@@ -60,6 +60,40 @@ class TabNavigatorTest {
         navigator.onRoute("/exercise-progress", mapOf("exerciseId" to "goblet-squat"))
 
         assertEquals(mapOf("exerciseId" to "goblet-squat"), navigator.params("/exercise-progress"))
+    }
+
+    /** RN draws its own modals inside the surface, so one over a native tab needs the surface. */
+    @Test
+    fun `an RN sheet over a native tab shows the surface`() {
+        val native = TabNavigator(rnRoutes + ("/history" to Screen.Native {}), sent::add)
+        native.select(Tab.History)
+        native.onRoute("/history")
+
+        native.onRoute("/session-editor")
+
+        assertEquals(Layer.Surface, native.layer)
+        assertEquals(null, native.nativeSheetPath)
+    }
+
+    /** RN shows only the stub at a native route above the tabs, so native draws it in the sheet (#197). */
+    @Test
+    fun `a native route above the tabs is the native sheet's, and hands back to RN's`() {
+        val native = TabNavigator(rnRoutes + ("/support" to Screen.Native {}), sent::add)
+
+        native.onRoute("/settings")
+        native.onRoute("/support")
+
+        assertEquals(Layer.NativeSheet, native.layer)
+        assertEquals("/support", native.nativeSheetPath)
+
+        native.onRoute("/settings")
+
+        assertEquals(Layer.Surface, native.layer)
+        assertEquals(null, native.nativeSheetPath)
+
+        native.onRoute("/")
+
+        assertEquals(Layer.Surface, native.layer)
     }
 
     /** RN moves itself too: a delete's `dismissTo`, the runner's exit to History. */

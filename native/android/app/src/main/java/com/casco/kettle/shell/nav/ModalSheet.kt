@@ -23,16 +23,21 @@ import com.casco.kettle.shell.theme.KettleColors
  *
  * The route reports reach [navigator] from here, at the same drawn frame, so the tab bar comes and goes
  * with the sheet rather than ahead of it.
+ *
+ * A route registered native is drawn by the [shell]'s native sheet instead (#197), over RN's stub at the
+ * same path: the stub's frame is awaited as any route's, then the native screen's first, and only then
+ * does the transition start. The two hand over through pictures like any two sheets.
  */
 class ModalSheet(
     content: FrameLayout,
-    private val shell: View,
+    private val shell: ShellLayout,
     private val surface: View,
     private val navigator: TabNavigator,
     private val colors: () -> KettleColors,
     private val requestBack: () -> Unit,
 ) {
-    private val stage: SheetStage = SheetStage(content, surface, requestBack, { motion.follow(it) }, ::letGo)
+    private val stage: SheetStage =
+        SheetStage(content, surface, shell.nativeSheet, requestBack, { motion.follow(it) }, ::letGo)
     private val motion: SheetMotion = SheetMotion(stage)
 
     /** Read on the JS thread by [wantsPicture]; written on the main one. */
@@ -94,7 +99,7 @@ class ModalSheet(
     fun capture() {
         when (place) {
             Place.Tab -> tabPicture = pictureOf(shell)
-            Place.Sheet -> sheetPicture = pictureOf(surface)
+            Place.Sheet -> sheetPicture = pictureOf(stage.live)
             Place.Runner -> Unit
         }
     }
@@ -108,19 +113,40 @@ class ModalSheet(
         RnFrames.awaitDrawn(surface, ::arrive)
     }
 
-    /** The first frame of the route reported last. */
+    /** The first frame of the route reported last: RN's, and the native screen's too when it has one. */
     private fun arrive() {
         val latest = reports.lastOrNull() ?: return
         for (report in reports) navigator.onRoute(report.pathname, report.params)
         reports.clear()
         RnFrames.disarm()
+        // An arrival still composing goes first, so this one starts from where that one ends.
+        shell.nativeFrames.flush()
         val transition = transitionBetween(place, latest.place, action)
         action = null
-        place = latest.place
-        backCallback.isEnabled = place == Place.Sheet
+        val from = place
+        val to = latest.place
+        place = to
+        backCallback.isEnabled = to == Place.Sheet
+        val layer = navigator.layer
+        shell.showLayer(layer)
+        val native = layer == Layer.NativeSheet
+        val live = if (native) shell.nativeSheet else surface
+        if (live !== stage.live) {
+            stage.live = live
+            // Every other transition shapes the live view itself; inside the sheet it already has the shape.
+            if (from == Place.Sheet && to == Place.Sheet) stage.layOutAsSheet()
+        }
         // Each picture is used once; the tab's stays until the sheet has gone.
-        play(transition, sheetPicture.also { sheetPicture = null })
-        if (place == Place.Tab) tabPicture = null
+        val sheet = sheetPicture.also { sheetPicture = null }
+        val start = {
+            play(transition, sheet)
+            if (to == Place.Tab) tabPicture = null
+        }
+        if (native) {
+            shell.nativeFrames.awaitComposed(SheetContent(latest.pathname, latest.params), start)
+        } else {
+            start()
+        }
     }
 
     private fun play(

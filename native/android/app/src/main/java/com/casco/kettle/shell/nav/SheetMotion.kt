@@ -18,8 +18,8 @@ enum class Across(
 }
 
 /**
- * The sheet's transitions (#155's table), each started at the first frame RN draws the route it goes
- * to. One runs at a time: starting the next ends the last.
+ * The sheet's transitions (#155's table), each started at the first frame that draws the route it goes
+ * to, RN's or a native sheet's (#197). One runs at a time: starting the next ends the last.
  */
 class SheetMotion(
     private val stage: SheetStage,
@@ -60,11 +60,11 @@ class SheetMotion(
         }
         // Hidden, over the tab's picture, which looks exactly like the tab, for one more frame: on a
         // device the drawn signal was still a frame early for a route RN adds, and an open is the one
-        // transition whose first frame shows the live surface uncovered (frame tiles, #155).
+        // transition whose first frame shows the live view uncovered (frame tiles, #155).
         frame(0f)
         val token = Any()
         waiting = token
-        surface.doOnPreDraw {
+        live.doOnPreDraw {
             if (waiting ===
                 token
             ) {
@@ -82,8 +82,9 @@ class SheetMotion(
         fade: Boolean,
     ) = with(stage) {
         cancel()
-        val from = surface.translationY
-        val scale = surface.scaleX
+        // The background's, which moved with the sheet: the live view may already be the tab's.
+        val from = sheetBack.translationY
+        val scale = sheetBack.scaleX
         layOutFull()
         backdrop.setImageDrawable(null)
         hide(backdrop, sheetBack, chrome)
@@ -102,7 +103,7 @@ class SheetMotion(
         }
     }
 
-    /** From one sheet to the next inside the one sheet. The old picture leaves, the live surface enters. */
+    /** From one sheet to the next inside the one sheet. The old picture leaves, the live view enters. */
     fun across(
         sheet: Bitmap?,
         how: Across,
@@ -110,15 +111,16 @@ class SheetMotion(
         cancel()
         if (sheet == null) return@with
         showLeaving(sheet)
-        val shift = SHARED_AXIS_DP * surface.resources.displayMetrics.density * how.direction
+        val shift = SHARED_AXIS_DP * live.resources.displayMetrics.density * how.direction
+        val entering = live
         animate(if (how == Across.FadeThrough) FADE_MS else SHARED_AXIS_MS, STANDARD, onEnd = ::clearLeaving) { p ->
             leaving.alpha = fadeOut(p)
             leaving.translationX = -shift * p
-            surface.alpha = fadeIn(p)
-            surface.translationX = shift * (1 - p)
+            entering.alpha = fadeIn(p)
+            entering.translationX = shift * (1 - p)
             if (how == Across.FadeThrough) {
-                surface.scaleX = lerp(FADE_SCALE, 1f, p)
-                surface.scaleY = surface.scaleX
+                entering.scaleX = lerp(FADE_SCALE, 1f, p)
+                entering.scaleY = entering.scaleX
             }
         }
     }
@@ -182,8 +184,8 @@ class SheetMotion(
 
     /** Back where it belongs, from wherever a drag or a predictive back left it. */
     fun settle() {
-        val from = stage.surface.translationY
-        val scale = stage.surface.scaleX
+        val from = stage.sheetBack.translationY
+        val scale = stage.sheetBack.scaleX
         animate(SETTLE_MS, DECELERATE) { p ->
             stage.translate(lerp(from, 0f, p))
             stage.scale(lerp(scale, 1f, p))

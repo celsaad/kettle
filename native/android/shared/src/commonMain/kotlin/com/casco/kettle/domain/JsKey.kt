@@ -24,10 +24,15 @@ private fun jsNumber(number: Double): String =
 
 private fun jsPositive(number: Double): String {
     val exact = exactDecimal(number)
-    // Rounding the exact digits gives the closest candidate of each length, and all of them read back.
+    // The nearest candidate of each length first, then the one on the other side of the exact value: a
+    // power of two has its next double below twice as near as the one above, so at some lengths only
+    // the farther candidate reads back (2^-1017 is `7.120236347223045e-307`, one digit short of the
+    // nearest that does). The full expansion always reads back, so the search ends.
     val shortest =
         (1..exact.digits.length).firstNotNullOf { length ->
-            exact.rounded(length).takeIf { "0.${it.digits}e${it.point}".toDouble() == number }
+            listOf(exact.rounded(length), exact.down(length), exact.up(length)).firstOrNull {
+                "0.${it.digits}e${it.point}".toDouble() == number
+            }
         }
     return shortest.jsLayout()
 }
@@ -100,21 +105,30 @@ private fun multiplyLimbs(
 
 /**
  * Rounded to [length] digits: the nearest, and the even one of two equally near, as V8 picks between
- * two equally short candidates. A carry out of the first digit moves the point up one.
+ * two equally short candidates.
  */
-private fun Decimal.rounded(length: Int): Decimal {
-    val kept = digits.take(length)
-    val stem = kept.trimEnd('9')
-    return when {
-        length == digits.length -> this
+private fun Decimal.rounded(length: Int): Decimal =
+    when {
+        length >= digits.length -> this
 
-        digits[length] < '5' -> Decimal(kept.trimEnd('0'), point)
+        digits[length] < '5' -> down(length)
 
         // The digits carry no trailing zeros, so a final 5 is exactly halfway.
-        digits.length == length + 1 && digits[length] == '5' && (kept.last() - '0') % 2 == 0 -> Decimal(kept, point)
+        digits.length == length + 1 && digits[length] == '5' && (digits[length - 1] - '0') % 2 == 0 -> down(length)
 
+        else -> up(length)
+    }
+
+/** Cut to [length] digits. */
+private fun Decimal.down(length: Int): Decimal =
+    if (length >= digits.length) this else Decimal(digits.take(length).trimEnd('0'), point)
+
+/** Cut to [length] digits and raised one in the last, a carry out of the first moving the point up one. */
+private fun Decimal.up(length: Int): Decimal {
+    val stem = digits.take(length).trimEnd('9')
+    return when {
+        length >= digits.length -> this
         stem.isEmpty() -> Decimal("1", point + 1)
-
         else -> Decimal(stem.dropLast(1) + (stem.last() + 1), point)
     }
 }

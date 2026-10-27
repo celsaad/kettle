@@ -288,6 +288,17 @@ cases:
       entries: []
       unused: { 1490789822986489.25: a, "1490789822986489.2": b }
 
+  - name: power-of-two-key-duplicated-once-stringified
+    why: 2^-1017 has a closer double above than below, so its shortest spelling isn't the nearest one of that length
+    input: |
+      version: 1
+      id: s
+      workout: w
+      started_at: "2024-05-01T10:00:00.000Z"
+      ended_at: null
+      entries: []
+      unused: { 7.120236347223045e-307: a, "7.120236347223045e-307": b }
+
   - name: unsafe-integer-key-duplicated-once-stringified
     why: an integer past 2^53 is a JS number first, so it rounds to the nearest double before it is spelled
     input: |

@@ -30,11 +30,17 @@ fun rememberPreferredDarkTheme(
     LaunchedEffect(reread) {
         if (reread) preference = withContext(Dispatchers.IO) { readThemePreference(preferences) }
     }
-    return when (preference) {
-        ThemePreference.LIGHT -> false
-        ThemePreference.DARK -> true
-        ThemePreference.SYSTEM -> isSystemInDarkTheme()
-    }
+    return isDark(preference, systemDark = isSystemInDarkTheme())
+}
+
+/** Whether [preference] means dark, on a device that is dark when [systemDark]. */
+private fun isDark(
+    preference: ThemePreference,
+    systemDark: Boolean,
+) = when (preference) {
+    ThemePreference.LIGHT -> false
+    ThemePreference.DARK -> true
+    ThemePreference.SYSTEM -> systemDark
 }
 
 /**
@@ -59,19 +65,6 @@ fun preferredColors(
     preferences: File,
     configuration: Configuration,
 ): KettleColors {
-    val dark =
-        when (readThemePreference(preferences)) {
-            ThemePreference.LIGHT -> {
-                false
-            }
-
-            ThemePreference.DARK -> {
-                true
-            }
-
-            ThemePreference.SYSTEM -> {
-                configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
-            }
-        }
-    return if (dark) DarkColors else LightColors
+    val systemDark = configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
+    return if (isDark(readThemePreference(preferences), systemDark)) DarkColors else LightColors
 }

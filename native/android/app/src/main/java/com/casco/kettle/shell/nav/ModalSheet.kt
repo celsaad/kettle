@@ -15,7 +15,6 @@ import com.casco.kettle.shell.theme.KettleColors
 /**
  * RN's modal routes as a native sheet (#155): the one RN surface, never reparented, given a top margin,
  * rounded top corners and a slide over a scrim and a picture of the tab it covered ([SheetStage]).
- * Proven on a device in #177; the drawn signal and the pictures are #178's.
  *
  * RN stays the router. Every dismissal (the ×, hardware and predictive back, a grabber drag) sends RN a
  * back, and the sheet moves only once RN reports where it went and has drawn it ([RnFrames]). Two
@@ -37,7 +36,7 @@ class ModalSheet(
     private val motion: SheetMotion = SheetMotion(stage)
 
     /** Read on the JS thread by [wantsPicture]; written on the main one. */
-    @Volatile private var at = Place.Tab
+    @Volatile private var place = Place.Tab
 
     /** Set by [steeredByBar] on the main thread, taken by the next NAVIGATE on the JS one. */
     @Volatile private var barSteering = false
@@ -68,7 +67,7 @@ class ModalSheet(
     init {
         content.addOnLayoutChangeListener { _, left, _, right, _, oldLeft, _, oldRight, _ ->
             // A rotation or a window resize, with the sheet up and still: it keeps its shape.
-            if (right - left != oldRight - oldLeft && at == Place.Sheet && !motion.running) stage.layOutAsSheet()
+            if (right - left != oldRight - oldLeft && place == Place.Sheet && !motion.running) stage.layOutAsSheet()
         }
     }
 
@@ -88,12 +87,12 @@ class ModalSheet(
             barSteering = false
             return false
         }
-        return at != Place.Runner
+        return place != Place.Runner
     }
 
     /** UI thread, before the armed action's batch mounts: the frame the user still sees. */
     fun capture() {
-        when (at) {
+        when (place) {
             Place.Tab -> tabPicture = pictureOf(shell)
             Place.Sheet -> sheetPicture = pictureOf(surface)
             Place.Runner -> Unit
@@ -115,13 +114,13 @@ class ModalSheet(
         for (report in reports) navigator.onRoute(report.pathname)
         reports.clear()
         RnFrames.disarm()
-        val transition = transitionBetween(at, latest.place, action)
+        val transition = transitionBetween(place, latest.place, action)
         action = null
-        at = latest.place
-        backCallback.isEnabled = at == Place.Sheet
+        place = latest.place
+        backCallback.isEnabled = place == Place.Sheet
         // Each picture is used once; the tab's stays until the sheet has gone.
         play(transition, sheetPicture.also { sheetPicture = null })
-        if (at == Place.Tab) tabPicture = null
+        if (place == Place.Tab) tabPicture = null
     }
 
     private fun play(
@@ -162,7 +161,7 @@ class ModalSheet(
      */
     private fun settleUnlessClosed() {
         surface.postDelayed({
-            if (at == Place.Sheet && reports.isEmpty() &&
+            if (place == Place.Sheet && reports.isEmpty() &&
                 !motion.running
             ) {
                 motion.settle()

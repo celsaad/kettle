@@ -46,6 +46,9 @@ class SheetStage(
     /** Everything that moves as the sheet: its background, the surface and the chrome. */
     val sheetViews = listOf(sheetBack, surface, chrome)
 
+    /** What takes the sheet's shape: the surface and the background under it. The chrome sits on top. */
+    val shapedViews = listOf(surface, sheetBack)
+
     /** The top corners' radius now: flattened as the sheet grows into the runner. */
     private var corner = 0f
 
@@ -93,7 +96,7 @@ class SheetStage(
     /** The sheet's shape: [top] down, capped at [MAX_WIDTH_DP] and centred, the top corners rounded. */
     fun layOutAsSheet() {
         val width = minOf(content.width, (MAX_WIDTH_DP * density).toInt())
-        for (view in listOf(surface, sheetBack)) view.layoutParams = sheetParams(width, MATCH_PARENT)
+        for (view in shapedViews) view.layoutParams = sheetParams(width, MATCH_PARENT)
         chrome.layoutParams = sheetParams(width, chrome.stripHeight)
         chrome.place(width)
         round(radius)
@@ -103,7 +106,7 @@ class SheetStage(
 
     /** Full frame, as on a tab or the runner. */
     fun layOutFull() {
-        for (view in listOf(surface, sheetBack)) {
+        for (view in shapedViews) {
             view.layoutParams =
                 FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT)
         }

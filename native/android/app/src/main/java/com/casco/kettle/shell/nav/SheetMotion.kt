@@ -139,7 +139,7 @@ class SheetMotion(
                 hide(backdrop, scrim, sheetBack)
                 clip(false)
             }) { p ->
-                listOf(surface, sheetBack).forEach { it.translationY = top * (1 - p) }
+                shapedViews.forEach { it.translationY = top * (1 - p) }
                 round(radius * (1 - p))
             }
         }
@@ -160,7 +160,7 @@ class SheetMotion(
             layOutAsSheet()
             show(chrome)
         }) { p ->
-            listOf(surface, sheetBack).forEach { it.translationY = top * p }
+            shapedViews.forEach { it.translationY = top * p }
             round(radius * p)
         }
     }

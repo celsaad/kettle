@@ -3,12 +3,17 @@ package com.casco.kettle.shell
 import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.lifecycleScope
 import com.casco.kettle.brownfield.BrownfieldActivity
 import com.casco.kettle.brownfield.ReactNativeHostManager
 import com.casco.kettle.brownfield.ReactNativeViewFactory
 import com.casco.kettle.brownfield.setUpNativeBackHandling
+import com.casco.kettle.shell.files.DiskFiles
+import com.casco.kettle.shell.files.LatestFiles
+import com.casco.kettle.shell.files.LocalLatestFiles
 import com.casco.kettle.shell.nav.ModalSheet
 import com.casco.kettle.shell.nav.ShellLayout
 import com.casco.kettle.shell.nav.TabNavigator
@@ -48,11 +53,18 @@ class MainActivity :
 
     private var sheet: ModalSheet? = null
 
+    /** Lazy, since `filesDir` needs the context the activity is given after construction. */
+    private val latestFiles by lazy { LatestFiles(DiskFiles(File(filesDir, STORAGE)), lifecycleScope) }
+
     private val navigator =
-        TabNavigator(shellRoutes) { url ->
-            sheet?.steeredByBar()
-            JsBridge.navigate(url)
-        }
+        TabNavigator(
+            shellRoutes,
+            navigate = { url ->
+                sheet?.steeredByBar()
+                JsBridge.navigate(url)
+            },
+            reread = { latestFiles.reread() },
+        )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // Before super, as in the prebuilt app: it installs the splash theme's exit. JS hides it with
@@ -74,6 +86,9 @@ class MainActivity :
         val surface = ReactNativeViewFactory.createFrameLayout(this, this, "main")
         setUpNativeBackHandling()
         val preferences = File(filesDir, PREFERENCES)
+        // The cold start's read. A new activity over the same runtime reads too, since it may have
+        // missed a hand-back while there was none to hear it.
+        latestFiles.reread()
         val layout =
             ShellLayout(
                 this,
@@ -81,7 +96,9 @@ class MainActivity :
                 navigator,
                 shellRoutes,
                 theme = { content ->
-                    KettleTheme(rememberPreferredDarkTheme(preferences, reread = navigator.barShown), content)
+                    CompositionLocalProvider(LocalLatestFiles provides latestFiles) {
+                        KettleTheme(rememberPreferredDarkTheme(preferences, reread = navigator.barShown), content)
+                    }
                 },
             ) { content, shell ->
                 ModalSheet(
@@ -204,6 +221,7 @@ class MainActivity :
 
         // expo-file-system's Paths.document is filesDir; src/storage/paths.ts names the rest. The two
         // share no code, so change both.
-        const val PREFERENCES = "exercise-tracker/preferences.json"
+        const val STORAGE = "exercise-tracker"
+        const val PREFERENCES = "$STORAGE/preferences.json"
     }
 }

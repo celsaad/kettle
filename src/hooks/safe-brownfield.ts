@@ -79,6 +79,15 @@ export function hostedTabOptions(): { hidden?: boolean; backBehavior?: 'none' } 
 }
 
 /**
+ * PROTOTYPE (#177): inside the shell, the native sheet animates a modal in and out, so RN's own slide
+ * would be a second one.
+ */
+export function hostedModalOptions(): { animation?: 'none' } {
+  if (getBrownfield()?.getSharedStateValue('nativeTabBar') !== true) return {};
+  return { animation: 'none' };
+}
+
+/**
  * Called once the app has rendered past its splash. Back goes to JS while it has somewhere to go, and
  * reaches the shell only once it hasn't.
  */

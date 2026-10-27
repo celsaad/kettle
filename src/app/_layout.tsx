@@ -22,7 +22,7 @@ import { Colors, RunnerColors, MaxContentWidth, Spacing } from '@/constants/them
 import { ThemeOverrideProvider, useAppTheme } from '@/hooks/theme-context';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useRestDayReminder } from '@/hooks/use-rest-day-reminder';
-import { reportRoute } from '@/hooks/safe-brownfield';
+import { hostedModalOptions, reportRoute } from '@/hooks/safe-brownfield';
 import { useLibraryStore } from '@/state/library-store';
 import { usePreferencesStore } from '@/state/preferences-store';
 import { useSessionHistoryStore } from '@/state/session-history-store';
@@ -122,17 +122,17 @@ function Navigation() {
               contentStyle: { backgroundColor: RunnerColors.background },
             }}
           />
-          <Stack.Screen name="import" options={{ presentation: 'modal', headerShown: false }} />
-          <Stack.Screen name="exercise-editor" options={{ presentation: 'modal', headerShown: false }} />
-          <Stack.Screen name="workout-editor" options={{ presentation: 'modal', headerShown: false }} />
-          <Stack.Screen name="analytics" options={{ presentation: 'modal', headerShown: false }} />
-          <Stack.Screen name="exercise-progress" options={{ presentation: 'modal', headerShown: false }} />
-          <Stack.Screen name="program-detail" options={{ presentation: 'modal', headerShown: false }} />
-          <Stack.Screen name="program-editor" options={{ presentation: 'modal', headerShown: false }} />
-          <Stack.Screen name="program-guide" options={{ presentation: 'modal', headerShown: false }} />
-          <Stack.Screen name="session-editor" options={{ presentation: 'modal', headerShown: false }} />
-          <Stack.Screen name="settings" options={{ presentation: 'modal', headerShown: false }} />
-          <Stack.Screen name="support" options={{ presentation: 'modal', headerShown: false }} />
+          <Stack.Screen name="import" options={{ presentation: 'modal', headerShown: false, ...hostedModalOptions() }} />
+          <Stack.Screen name="exercise-editor" options={{ presentation: 'modal', headerShown: false, ...hostedModalOptions() }} />
+          <Stack.Screen name="workout-editor" options={{ presentation: 'modal', headerShown: false, ...hostedModalOptions() }} />
+          <Stack.Screen name="analytics" options={{ presentation: 'modal', headerShown: false, ...hostedModalOptions() }} />
+          <Stack.Screen name="exercise-progress" options={{ presentation: 'modal', headerShown: false, ...hostedModalOptions() }} />
+          <Stack.Screen name="program-detail" options={{ presentation: 'modal', headerShown: false, ...hostedModalOptions() }} />
+          <Stack.Screen name="program-editor" options={{ presentation: 'modal', headerShown: false, ...hostedModalOptions() }} />
+          <Stack.Screen name="program-guide" options={{ presentation: 'modal', headerShown: false, ...hostedModalOptions() }} />
+          <Stack.Screen name="session-editor" options={{ presentation: 'modal', headerShown: false, ...hostedModalOptions() }} />
+          <Stack.Screen name="settings" options={{ presentation: 'modal', headerShown: false, ...hostedModalOptions() }} />
+          <Stack.Screen name="support" options={{ presentation: 'modal', headerShown: false, ...hostedModalOptions() }} />
         </Stack>
       </ThemeProvider>
     </GestureHandlerRootView>

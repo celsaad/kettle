@@ -33,7 +33,10 @@ class ShellLayout(
     navigator: TabNavigator,
     routes: Map<Tab, Screen>,
     theme: @Composable (content: @Composable () -> Unit) -> Unit,
+    requestBack: () -> Unit,
 ) : LinearLayout(context) {
+    // PROTOTYPE (#177): set in init, once the content frame exists.
+    lateinit var sheet: SheetPrototype
     private val destinations = composeView { theme { Destinations(navigator, routes, onRnShown = ::show) } }
 
     init {
@@ -45,9 +48,15 @@ class ShellLayout(
         content.addView(surface, FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
         content.addView(destinations, FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
         addView(content, LayoutParams(MATCH_PARENT, 0, 1f))
+        sheet = SheetPrototype(content, surface, requestBack)
         // Wrapping its content, so the bar takes no room at all while RN has something above the tabs.
         val bar = composeView { theme { if (navigator.barShown) TabBar(navigator.current, navigator::select) } }
         addView(bar, LayoutParams(MATCH_PARENT, WRAP_CONTENT))
+    }
+
+    override fun dispatchTouchEvent(ev: android.view.MotionEvent): Boolean {
+        if (ev.actionMasked == android.view.MotionEvent.ACTION_UP) sheet.capture()
+        return super.dispatchTouchEvent(ev)
     }
 
     private fun show(rn: Boolean) {

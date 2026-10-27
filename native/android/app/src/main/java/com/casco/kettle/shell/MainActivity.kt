@@ -45,6 +45,15 @@ class MainActivity :
 
     private val navigator = TabNavigator(shellRoutes, JsBridge::navigate)
 
+    // PROTOTYPE (#177).
+    private lateinit var layout: ShellLayout
+
+    override fun dispatchKeyEvent(event: android.view.KeyEvent): Boolean {
+        val back = event.keyCode == android.view.KeyEvent.KEYCODE_BACK
+        if (back && event.action == android.view.KeyEvent.ACTION_DOWN) layout.sheet.capture()
+        return super.dispatchKeyEvent(event)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         // Before super, as in the prebuilt app: it installs the splash theme's exit. JS hides it with
         // expo-splash-screen's own hideAsync, exactly as before.
@@ -64,21 +73,32 @@ class MainActivity :
         ReactNativeHostManager.shared.initialize(application)
         val surface = ReactNativeViewFactory.createFrameLayout(this, this, "main")
         setUpNativeBackHandling()
-        JsBridge.onRoute = navigator::onRoute
+        val onRoute: (String) -> Unit = {
+            navigator.onRoute(it)
+            layout.sheet.onRoute(it)
+        }
+        JsBridge.onRoute = onRoute
         lifecycle.addObserver(
             object : DefaultLifecycleObserver {
                 // The runtime and JsBridge outlive this activity, and a newer one may have taken over.
                 override fun onDestroy(owner: LifecycleOwner) {
-                    if (JsBridge.onRoute == navigator::onRoute) JsBridge.onRoute = null
+                    if (JsBridge.onRoute === onRoute) JsBridge.onRoute = null
                 }
             },
         )
         val preferences = File(filesDir, PREFERENCES)
-        setContentView(
-            ShellLayout(this, surface, navigator, shellRoutes) { content ->
-                KettleTheme(rememberPreferredDarkTheme(preferences, reread = navigator.barShown), content)
-            },
-        )
+        layout =
+            ShellLayout(
+                this,
+                surface,
+                navigator,
+                shellRoutes,
+                theme = { content ->
+                    KettleTheme(rememberPreferredDarkTheme(preferences, reread = navigator.barShown), content)
+                },
+                requestBack = { onBackPressedDispatcher.onBackPressed() },
+            )
+        setContentView(layout)
         JsBridge.attach()
         expoListeners.onContentShown()
     }

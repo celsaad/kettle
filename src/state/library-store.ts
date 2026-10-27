@@ -8,6 +8,11 @@ type LibraryStoreState = {
   library: Library | null;
   error: string | null;
   hydrate: () => Promise<void>;
+  /**
+   * Reads the file again after another writer changed it (the native shell's `filesChanged`). Never
+   * passes through `loading`, which the root layout answers by unmounting the app.
+   */
+  reload: () => Promise<void>;
   /** Persists a whole new library (e.g. the result of an import merge) and updates state. */
   replaceLibrary: (library: Library) => Promise<void>;
   /** Adds or updates (by id) a single exercise and persists the library. */
@@ -43,8 +48,11 @@ export const useLibraryStore = create<LibraryStoreState>((set, get) => ({
   error: null,
   hydrate: async () => {
     set({ status: 'loading', error: null });
+    await get().reload();
+  },
+  reload: async () => {
     const result = await loadLibrary();
-    if (result.ok) set({ status: 'ready', library: result.library });
+    if (result.ok) set({ status: 'ready', library: result.library, error: null });
     else set({ status: 'error', error: result.error });
   },
   replaceLibrary: async (library) => {

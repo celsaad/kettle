@@ -2,6 +2,7 @@ const mockCreateSession = jest.fn();
 const mockFinalizeSession = jest.fn();
 const mockTakeWriteFailure = jest.fn<string | null, []>(() => null);
 const mockDeleteSessionFile = jest.fn();
+const mockListSessions = jest.fn();
 const mockBackUpNow = jest.fn();
 let mockBackupSupported = true;
 jest.mock('@/storage/backup', () => ({
@@ -16,7 +17,7 @@ jest.mock('@/storage/session-files', () => ({
   deleteSession: (...args: unknown[]) => mockDeleteSessionFile(...args),
   takeWriteFailure: () => mockTakeWriteFailure(),
   finalizeSession: (...args: unknown[]) => mockFinalizeSession(...args),
-  listSessions: jest.fn(),
+  listSessions: () => mockListSessions(),
   removeLastSessionEntry: (session: unknown) => session,
   replaceSessionEntry: (session: Session, index: number, entry: SessionEntry) => ({
     ...session,
@@ -78,6 +79,7 @@ beforeEach(() => {
   mockFinalizeSession.mockReset().mockImplementation((session: Session, endedAt: string) => ({ ...session, endedAt }));
   mockTakeWriteFailure.mockReset().mockReturnValue(null);
   mockDeleteSessionFile.mockReset();
+  mockListSessions.mockReset();
   mockBackUpNow.mockReset().mockReturnValue(null);
   mockBackupSupported = true;
   setBackupFolder(null);
@@ -260,6 +262,101 @@ describe('replaceEntry', () => {
 
     expect(updated.entries).toEqual([grown, other]);
     expect(useSessionHistoryStore.getState().sessions[0].entries).toEqual([grown, other]);
+  });
+});
+
+/**
+ * The native shell's `filesChanged`: another writer changed the log, and History has to show it. A
+ * workout may be running while it arrives.
+ */
+describe('reload', () => {
+  const pullups: SessionEntry = { exercise: 'pullups', type: 'reps', sets: [{ reps: 6, restTakenSec: 0 }] };
+
+  // The root layout renders nothing while a store is loading, which would unmount the runner mid-set.
+  it('never passes through loading', async () => {
+    mockListSessions.mockResolvedValue({ sessions: [], errors: [] });
+    const statuses: string[] = [];
+    const unsubscribe = useSessionHistoryStore.subscribe((state) => statuses.push(state.status));
+
+    await useSessionHistoryStore.getState().reload();
+    unsubscribe();
+
+    expect(statuses).not.toContain('loading');
+    expect(useSessionHistoryStore.getState().status).toBe('ready');
+  });
+
+  // The listing is async, so the runner can log a set while it is out; and a failed flush leaves the
+  // file behind memory. Either way the disk's copy of the running session is the stale one.
+  it("keeps the running session's sets when the copy on disk is behind", async () => {
+    const running = useSessionHistoryStore.getState().startSession('w', null, null, null);
+    const logged = { ...running, entries: [pullups] };
+    useSessionHistoryStore.setState({ sessions: [logged] });
+    const finished = aSession({ id: 'earlier', endedAt: '2026-07-28T10:00:00.000Z' });
+    mockListSessions.mockResolvedValue({ sessions: [{ ...logged, entries: [] }, finished], errors: [] });
+
+    await useSessionHistoryStore.getState().reload();
+
+    expect(useSessionHistoryStore.getState().sessions).toEqual([logged, finished]);
+  });
+
+  // A full disk mid-workout is only ever said once, when the write fails; the listing can't know it.
+  it('keeps a failed flush on record alongside what the listing found', async () => {
+    useSessionHistoryStore.setState({ errors: ['session-1: no space left on device'] });
+    mockListSessions.mockResolvedValue({ sessions: [], errors: ['bad.yaml (parse): unexpected end'] });
+
+    await useSessionHistoryStore.getState().reload();
+
+    expect(useSessionHistoryStore.getState().errors).toEqual([
+      'session-1: no space left on device',
+      'bad.yaml (parse): unexpected end',
+    ]);
+  });
+
+  // A delete while the listing is out has already removed the file; the listing may have read it first.
+  it('reads again when RN wrote to the log while the listing was out', async () => {
+    const doomed = aSession({ id: 'doomed', endedAt: '2026-07-28T10:00:00.000Z' });
+    useSessionHistoryStore.setState({ sessions: [doomed] });
+    mockListSessions
+      .mockImplementationOnce(async () => {
+        useSessionHistoryStore.getState().deleteSession('doomed');
+        return { sessions: [doomed], errors: [] };
+      })
+      .mockResolvedValue({ sessions: [], errors: [] });
+
+    await useSessionHistoryStore.getState().reload();
+
+    expect(useSessionHistoryStore.getState().sessions).toEqual([]);
+  });
+
+  // Once finished it is no longer the running session, so memory stops winning for it.
+  it('reads again when the running session finished while the listing was out', async () => {
+    const running = useSessionHistoryStore.getState().startSession('w', null, null, null);
+    mockListSessions
+      .mockImplementationOnce(async () => {
+        useSessionHistoryStore.getState().completeSession(running);
+        return { sessions: [running], errors: [] };
+      })
+      .mockImplementation(async () => ({ sessions: [{ ...running, endedAt: 'finished' }], errors: [] }));
+
+    await useSessionHistoryStore.getState().reload();
+
+    expect(mockListSessions).toHaveBeenCalledTimes(2);
+    expect(useSessionHistoryStore.getState().sessions[0].endedAt).toBe('finished');
+  });
+
+  // The runner writes on every set, so reading again for its writes could chase it for a whole slow
+  // listing. Its session is kept from memory anyway, so its writes need no second read.
+  it("doesn't read again for the running session's own sets", async () => {
+    const running = useSessionHistoryStore.getState().startSession('w', null, null, null);
+    mockListSessions.mockImplementation(async () => {
+      useSessionHistoryStore.setState({ sessions: [{ ...running, entries: [pullups] }] });
+      return { sessions: [running], errors: [] };
+    });
+
+    await useSessionHistoryStore.getState().reload();
+
+    expect(mockListSessions).toHaveBeenCalledTimes(1);
+    expect(useSessionHistoryStore.getState().sessions[0].entries).toEqual([pullups]);
   });
 });
 

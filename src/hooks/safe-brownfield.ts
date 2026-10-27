@@ -1,15 +1,18 @@
 /**
  * The RN app's half of its conversation with the native shell that hosts it
  * (docs/native-migration-plan.md): the "ready" handshake from M2, and from M3 the navigate messages
- * native steers the surface with. The shell loses anything it sends before JS listens — the native
- * module only starts forwarding once a listener exists — so it holds its messages until "ready", and
- * "ready" is only true once the listener is in place.
+ * native steers the surface with and the filesChanged ones that make a store re-read its file. The
+ * shell loses anything it sends before JS listens — the native module only starts forwarding once a
+ * listener exists — so it holds its messages until "ready", and "ready" is only true once the
+ * listener is in place.
  *
  * expo-brownfield throws on import wherever its native module isn't built in (Expo Go, a dev client
  * from before M2), so it's required lazily and a failure degrades to doing nothing: the app then runs
  * exactly as it did before there was a shell.
  */
 import { router, type Href } from 'expo-router';
+
+import { onFilesChanged } from '@/state/files-changed';
 
 type BrownfieldModule = typeof import('expo-brownfield');
 
@@ -39,6 +42,11 @@ function getBrownfield(): BrownfieldModule | null {
  * is dropped and the user's answer decides. All three were seen on a device (#152).
  */
 function onShellMessage(message: Record<string, unknown>): void {
+  // The shell's JsBridge.filesChanged. The two share no code, so change both.
+  if (message.type === 'filesChanged') {
+    void onFilesChanged(message.kind);
+    return;
+  }
   // The shell's JsBridge.navigate. The two share no code, so change both.
   if (message.type !== 'navigate' || typeof message.url !== 'string') return;
   const href = message.url as Href;

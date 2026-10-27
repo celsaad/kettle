@@ -42,6 +42,16 @@ type SessionHistoryState = {
    */
   backupFailure: BackupFailure | null;
   hydrate: () => Promise<void>;
+  /**
+   * Reads the log again after another writer changed it (the native shell's `filesChanged`). Never
+   * passes through `loading`, which the root layout answers by unmounting the app, runner and all.
+   *
+   * The in-flight session keeps its in-memory copy: the runner is its only writer and writes through
+   * its own copy, so the one on disk is never newer, and is older when a write failed. Errors are kept
+   * too, since a failed write is reported once and the listing can't know it; the cost is that a
+   * listing error outlives a fix until the next launch.
+   */
+  reload: () => Promise<void>;
   /** Creates and flushes a new session file immediately (§7.2: never hold a live session only in memory). */
   startSession: (
     workoutId: string | null,
@@ -98,6 +108,24 @@ function finishedSession(sessions: Session[], id: string): Session | undefined {
   // count entries with the zero work already gone, and the write that follows then leaves the file
   // clean as well. Idempotent, so the editor's several calls per save all index the same list.
   return session?.endedAt ? withoutZeroWork(session) : undefined;
+}
+
+/** `listed`, with the in-flight session as it is in memory rather than as it was on disk. */
+function keepingActive(listed: Session[], { sessions, activeSessionId }: SessionHistoryState): Session[] {
+  const active = sessions.find((session) => session.id === activeSessionId);
+  if (!active) return listed;
+  return [active, ...listed.filter((session) => session.id !== active.id)];
+}
+
+/**
+ * Whether any session but the running one changed since `before`. Read with the id as it is now, so a
+ * session finished in the meantime counts: its `ended_at` isn't something memory keeps for it.
+ */
+function changedBesidesActive(before: Session[], { sessions, activeSessionId }: SessionHistoryState): boolean {
+  const others = (list: Session[]) => list.filter((session) => session.id !== activeSessionId);
+  const then = others(before);
+  const now = others(sessions);
+  return then.length !== now.length || then.some((session, index) => session !== now[index]);
 }
 
 /**
@@ -159,8 +187,17 @@ export const useSessionHistoryStore = create<SessionHistoryState>((set, get) => 
   backupFailure: null,
   hydrate: async () => {
     set({ status: 'loading' });
+    await get().reload();
+  },
+  reload: async () => {
+    const before = get().sessions;
     const { sessions, errors } = await listSessions();
-    set({ status: 'ready', sessions, errors });
+    // RN wrote while the listing was out, so the listing may hold a file from before that write: a
+    // deleted session back in History, or a finished one unfinished. Writes are synchronous, so the
+    // next listing has them. The running session's sets don't count: memory wins for it anyway, and
+    // they land often enough to keep a slow listing restarting for a whole workout.
+    if (changedBesidesActive(before, get())) return get().reload();
+    set({ status: 'ready', sessions: keepingActive(sessions, get()), errors: [...new Set([...get().errors, ...errors])] });
   },
   startSession: (workoutId, programId, programWeek, programDay) => {
     const id = new Date().toISOString().replace(/[:.]/g, '-');

@@ -10,6 +10,11 @@ type PreferencesStoreState = {
   preferences: Preferences;
   /** Safe to call repeatedly — re-entrant calls while loading are ignored. */
   hydrate: () => Promise<void>;
+  /**
+   * Reads the file again after another writer changed it (the native shell's `filesChanged`). Never
+   * passes through `loading`, which the root layout answers by unmounting the app.
+   */
+  reload: () => Promise<void>;
   /** Resolves false when the write failed; the change still applies for this run. */
   setUnitSystem: (unitSystem: UnitSystem) => Promise<boolean>;
   /** Resolves false when the write failed; the change still applies for this run. */
@@ -57,6 +62,9 @@ export const usePreferencesStore = create<PreferencesStoreState>((set, get) => {
     hydrate: async () => {
       if (get().status === 'loading') return;
       set({ status: 'loading' });
+      await get().reload();
+    },
+    reload: async () => {
       // `null` means the user has never chosen, so follow the device — this is the only layer that can
       // make that call, which is why the file and domain layers deliberately carry no default.
       const stored = await loadPreferences();

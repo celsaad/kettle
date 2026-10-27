@@ -24,6 +24,16 @@ object JsBridge {
     }
 
     /**
+     * Tells RN that native has just written [kind], so the store reading it reads it again: the half of
+     * "one writer per file" that keeps RN's screens current once a native one writes. Sent before JS is
+     * up, it waits in [channel] like any other message.
+     */
+    fun filesChanged(kind: FileKind) {
+        // What src/state/files-changed.ts listens for. The two share no code, so change both.
+        channel.send(mapOf("type" to "filesChanged", "kind" to kind.wire))
+    }
+
+    /**
      * Where RN reports its router to be, a pathname, on the main thread. The current activity's: it
      * clears it as it goes, since the runtime and this object outlive it.
      */

@@ -57,6 +57,11 @@ jest.mock('expo-router', () => ({
   },
 }));
 
+// The stores behind it have their own suite (state/__tests__/files-changed.test.ts); this one only
+// checks the message gets there.
+const mockOnFilesChanged = jest.fn();
+jest.mock('@/state/files-changed', () => ({ onFilesChanged: (kind: unknown) => mockOnFilesChanged(kind) }));
+
 /** Lets the dismissal commit and anything waiting on it run. */
 const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -134,6 +139,17 @@ it('ignores a navigate message without a url, and messages it does not know', ()
   fromShell({ type: 'navigate', url: 42 });
   fromShell({ type: 'filesChanged', url: '/history' });
 
+  expect(mockNavigate).not.toHaveBeenCalled();
+});
+
+// Once a native screen writes a file, the RN store that reads it has to read it again (M3's
+// re-read rule). What a kind means, and an unknown one, is the handler's business.
+it('hands a filesChanged message to the store that reads that file', () => {
+  announceHostReady();
+
+  fromShell({ type: 'filesChanged', kind: 'library' });
+
+  expect(mockOnFilesChanged).toHaveBeenCalledWith('library');
   expect(mockNavigate).not.toHaveBeenCalled();
 });
 

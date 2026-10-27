@@ -2,6 +2,7 @@ const mockCreateSession = jest.fn();
 const mockFinalizeSession = jest.fn();
 const mockTakeWriteFailure = jest.fn<string | null, []>(() => null);
 const mockDeleteSessionFile = jest.fn();
+const mockListSessions = jest.fn();
 const mockBackUpNow = jest.fn();
 let mockBackupSupported = true;
 jest.mock('@/storage/backup', () => ({
@@ -16,7 +17,7 @@ jest.mock('@/storage/session-files', () => ({
   deleteSession: (...args: unknown[]) => mockDeleteSessionFile(...args),
   takeWriteFailure: () => mockTakeWriteFailure(),
   finalizeSession: (...args: unknown[]) => mockFinalizeSession(...args),
-  listSessions: jest.fn(),
+  listSessions: () => mockListSessions(),
   removeLastSessionEntry: (session: unknown) => session,
   replaceSessionEntry: (session: Session, index: number, entry: SessionEntry) => ({
     ...session,
@@ -78,6 +79,7 @@ beforeEach(() => {
   mockFinalizeSession.mockReset().mockImplementation((session: Session, endedAt: string) => ({ ...session, endedAt }));
   mockTakeWriteFailure.mockReset().mockReturnValue(null);
   mockDeleteSessionFile.mockReset();
+  mockListSessions.mockReset();
   mockBackUpNow.mockReset().mockReturnValue(null);
   mockBackupSupported = true;
   setBackupFolder(null);
@@ -260,6 +262,41 @@ describe('replaceEntry', () => {
 
     expect(updated.entries).toEqual([grown, other]);
     expect(useSessionHistoryStore.getState().sessions[0].entries).toEqual([grown, other]);
+  });
+});
+
+/**
+ * The native shell's `filesChanged`: another writer changed the log, and History has to show it. A
+ * workout may be running while it arrives.
+ */
+describe('reload', () => {
+  const pullups: SessionEntry = { exercise: 'pullups', type: 'reps', sets: [{ reps: 6, restTakenSec: 0 }] };
+
+  // The root layout renders nothing while a store is loading, which would unmount the runner mid-set.
+  it('never passes through loading', async () => {
+    mockListSessions.mockResolvedValue({ sessions: [], errors: [] });
+    const statuses: string[] = [];
+    const unsubscribe = useSessionHistoryStore.subscribe((state) => statuses.push(state.status));
+
+    await useSessionHistoryStore.getState().reload();
+    unsubscribe();
+
+    expect(statuses).not.toContain('loading');
+    expect(useSessionHistoryStore.getState().status).toBe('ready');
+  });
+
+  // The listing is async, so the runner can log a set while it is out; and a failed flush leaves the
+  // file behind memory. Either way the disk's copy of the running session is the stale one.
+  it("keeps the running session's sets when the copy on disk is behind", async () => {
+    const running = useSessionHistoryStore.getState().startSession('w', null, null, null);
+    const logged = { ...running, entries: [pullups] };
+    useSessionHistoryStore.setState({ sessions: [logged] });
+    const finished = aSession({ id: 'earlier', endedAt: '2026-07-28T10:00:00.000Z' });
+    mockListSessions.mockResolvedValue({ sessions: [{ ...logged, entries: [] }, finished], errors: [] });
+
+    await useSessionHistoryStore.getState().reload();
+
+    expect(useSessionHistoryStore.getState().sessions).toEqual([logged, finished]);
   });
 });
 

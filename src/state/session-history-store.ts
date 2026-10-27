@@ -42,6 +42,15 @@ type SessionHistoryState = {
    */
   backupFailure: BackupFailure | null;
   hydrate: () => Promise<void>;
+  /**
+   * Reads the log again after another writer changed it (the native shell's `filesChanged`). Never
+   * passes through `loading`, which the root layout answers by unmounting the app, runner and all.
+   *
+   * The in-flight session keeps its in-memory copy: the runner is its only writer and writes through
+   * its own copy, so the one on disk is never newer, and is older when the listing raced a set or a
+   * write failed.
+   */
+  reload: () => Promise<void>;
   /** Creates and flushes a new session file immediately (§7.2: never hold a live session only in memory). */
   startSession: (
     workoutId: string | null,
@@ -98,6 +107,13 @@ function finishedSession(sessions: Session[], id: string): Session | undefined {
   // count entries with the zero work already gone, and the write that follows then leaves the file
   // clean as well. Idempotent, so the editor's several calls per save all index the same list.
   return session?.endedAt ? withoutZeroWork(session) : undefined;
+}
+
+/** `listed`, with the in-flight session as it is in memory rather than as it was on disk. */
+function keepingActive(listed: Session[], { sessions, activeSessionId }: SessionHistoryState): Session[] {
+  const active = sessions.find((session) => session.id === activeSessionId);
+  if (!active) return listed;
+  return [active, ...listed.filter((session) => session.id !== active.id)];
 }
 
 /**
@@ -159,8 +175,11 @@ export const useSessionHistoryStore = create<SessionHistoryState>((set, get) => 
   backupFailure: null,
   hydrate: async () => {
     set({ status: 'loading' });
+    await get().reload();
+  },
+  reload: async () => {
     const { sessions, errors } = await listSessions();
-    set({ status: 'ready', sessions, errors });
+    set({ status: 'ready', sessions: keepingActive(sessions, get()), errors });
   },
   startSession: (workoutId, programId, programWeek, programDay) => {
     const id = new Date().toISOString().replace(/[:.]/g, '-');

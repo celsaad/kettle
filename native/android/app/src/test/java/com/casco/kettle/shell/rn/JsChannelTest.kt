@@ -25,8 +25,9 @@ class JsChannelTest {
     }
 
     /**
-     * A native screen's push waits for JS like any other message, and keeps its place behind a tab's
-     * navigate to the stub it is pushed from: delivered first, it would open over the wrong tab.
+     * A native screen's push goes through the channel like any other message (#196). Coverage of its
+     * wire format on the way, not a regression pin: the channel queues every map in order, so this
+     * would pass against any push that sends one.
      */
     @Test
     fun `a push sent before JS is ready arrives after the navigate before it, with its params`() {

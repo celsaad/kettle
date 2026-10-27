@@ -23,77 +23,99 @@ private fun jsNumber(number: Double): String =
     }
 
 private fun jsPositive(number: Double): String {
-    val (digits, point) = exactDecimal(number)
+    val exact = exactDecimal(number)
     // Rounding the exact digits gives the closest candidate of each length, and all of them read back.
-    val (shortest, shortestPoint) =
-        (1..digits.length).firstNotNullOf { length ->
-            rounded(digits, point, length).takeIf { (d, p) -> "0.${d}e$p".toDouble() == number }
+    val shortest =
+        (1..exact.digits.length).firstNotNullOf { length ->
+            exact.rounded(length).takeIf { "0.${it.digits}e${it.point}".toDouble() == number }
         }
-    return jsLayout(shortest, shortestPoint)
+    return shortest.jsLayout()
 }
+
+/** The number 0.<digits> × 10^point, with no leading or trailing zero in [digits]. */
+private data class Decimal(
+    val digits: String,
+    val point: Int,
+)
 
 private const val MANTISSA_BITS = 52
 private const val EXPONENT_MASK = 0x7FF
 private const val EXPONENT_BIAS = 1075
-private const val RADIX = 10
+
+// The expansion is held in base-10^9 limbs and multiplied by 2^30 or 5^13 a step, the largest powers
+// whose product with a limb still fits a Long. One digit and one factor of 2 or 5 a step cost ~0.7 ms
+// for a subnormal, which a hostile file of 20,000 such keys turned into 15 s.
+private const val LIMB = 1_000_000_000L
+private const val LIMB_DIGITS = 9
+private const val TWOS_PER_STEP = 30
+private const val FIVES_PER_STEP = 13
 
 /**
- * A positive finite double's value, exactly, as 0.<digits> × 10^point. It is mantissa × 2^exponent, and
- * a negative power of two is a power of five over the same power of ten, so it always terminates.
+ * A positive finite double's value, exactly. It is mantissa × 2^exponent, and a negative power of two
+ * is a power of five over the same power of ten, so the expansion always terminates.
  */
-private fun exactDecimal(number: Double): Pair<String, Int> {
+private fun exactDecimal(number: Double): Decimal {
     val bits = number.toRawBits()
     val field = ((bits ushr MANTISSA_BITS) and EXPONENT_MASK.toLong()).toInt()
     val fraction = bits and ((1L shl MANTISSA_BITS) - 1)
     val mantissa = if (field == 0) fraction else fraction or (1L shl MANTISSA_BITS)
     val exponent = maxOf(field, 1) - EXPONENT_BIAS
-    // Little-endian decimal digits, multiplied up in place.
-    val value =
-        mantissa
-            .toString()
-            .reversed()
-            .map { it - '0' }
-            .toMutableList()
-    repeat(kotlin.math.abs(exponent)) { times(value, if (exponent > 0) 2 else RADIX / 2) }
-    val digits = value.reversed().joinToString("")
-    return digits.trimEnd('0') to digits.length - maxOf(-exponent, 0)
+    // Little-endian limbs, multiplied up in place.
+    val limbs = mutableListOf(mantissa % LIMB, mantissa / LIMB)
+    var remaining = kotlin.math.abs(exponent)
+    while (remaining > 0) {
+        val step = minOf(remaining, if (exponent > 0) TWOS_PER_STEP else FIVES_PER_STEP)
+        multiplyLimbs(limbs, if (exponent > 0) 1L shl step else power(BASE_FIVE, step))
+        remaining -= step
+    }
+    val text =
+        limbs.asReversed().dropWhile { it == 0L }.let { high ->
+            high.first().toString() + high.drop(1).joinToString("") { it.toString().padStart(LIMB_DIGITS, '0') }
+        }
+    return Decimal(text.trimEnd('0'), text.length - maxOf(-exponent, 0))
 }
 
-private fun times(
-    value: MutableList<Int>,
-    factor: Int,
+private const val BASE_FIVE = 5L
+
+private fun power(
+    base: Long,
+    exponent: Int,
+): Long = (1..exponent).fold(1L) { product, _ -> product * base }
+
+private fun multiplyLimbs(
+    limbs: MutableList<Long>,
+    factor: Long,
 ) {
-    var carry = 0
-    for (index in value.indices) {
-        val product = value[index] * factor + carry
-        value[index] = product % RADIX
-        carry = product / RADIX
+    var carry = 0L
+    for (index in limbs.indices) {
+        val product = limbs[index] * factor + carry
+        limbs[index] = product % LIMB
+        carry = product / LIMB
     }
-    if (carry > 0) value.add(carry)
+    while (carry > 0) {
+        limbs.add(carry % LIMB)
+        carry /= LIMB
+    }
 }
 
 /**
- * [digits] rounded to [length] of them, the nearest, and the even one of two equally near, as V8 picks
- * between two equally short candidates. A carry out of the first digit moves [point] up one.
+ * Rounded to [length] digits: the nearest, and the even one of two equally near, as V8 picks between
+ * two equally short candidates. A carry out of the first digit moves the point up one.
  */
-private fun rounded(
-    digits: String,
-    point: Int,
-    length: Int,
-): Pair<String, Int> {
+private fun Decimal.rounded(length: Int): Decimal {
     val kept = digits.take(length)
     val stem = kept.trimEnd('9')
     return when {
-        length == digits.length -> digits to point
+        length == digits.length -> this
 
-        digits[length] < '5' -> kept.trimEnd('0') to point
+        digits[length] < '5' -> Decimal(kept.trimEnd('0'), point)
 
-        // The exact digits carry no trailing zeros, so a final 5 is exactly halfway.
-        digits.length == length + 1 && digits[length] == '5' && (kept.last() - '0') % 2 == 0 -> kept to point
+        // The digits carry no trailing zeros, so a final 5 is exactly halfway.
+        digits.length == length + 1 && digits[length] == '5' && (kept.last() - '0') % 2 == 0 -> Decimal(kept, point)
 
-        stem.isEmpty() -> "1" to point + 1
+        stem.isEmpty() -> Decimal("1", point + 1)
 
-        else -> (stem.dropLast(1) + (stem.last() + 1)) to point
+        else -> Decimal(stem.dropLast(1) + (stem.last() + 1), point)
     }
 }
 
@@ -101,10 +123,7 @@ private fun rounded(
 private const val JS_PLAIN_POINT_MIN = -5
 private const val JS_PLAIN_POINT_MAX = 21
 
-private fun jsLayout(
-    digits: String,
-    point: Int,
-): String =
+private fun Decimal.jsLayout(): String =
     when {
         point in digits.length..JS_PLAIN_POINT_MAX -> {
             digits + "0".repeat(point - digits.length)

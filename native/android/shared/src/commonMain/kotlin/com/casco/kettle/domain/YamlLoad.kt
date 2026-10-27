@@ -158,30 +158,30 @@ private fun checkEvents(text: String): String? {
  * events stay linear.
  */
 private class MappingKeys {
-    private class Open(
+    private class OpenCollection(
         val mapping: Boolean,
     ) {
         val keys = HashSet<String>()
         var atKey = true
     }
 
-    private val open = ArrayDeque<Open>()
+    private val open = ArrayDeque<OpenCollection>()
 
-    // Each scalar anchor's key spelling. A collection's anchor has none, which is what makes an alias
-    // to it a collection key.
-    private val anchors = HashMap<String, String>()
+    // Each anchor's key spelling, null for a collection's, which is what makes an alias to it a
+    // collection key. An alias to an anchor never defined has no entry, and is the engine's to refuse.
+    private val anchors = HashMap<String, String?>()
 
     /** The error [event] makes, if any. */
     fun visit(event: Event): String? {
         val error = (event as? NodeEvent)?.let(::checkKey)
         when (event) {
             is ScalarEvent -> {
-                event.anchor?.let { anchors[it.value] = jsKey(scalar(event)) }
+                event.anchor?.let { anchors[it.value] = jsKey(constructScalar(event)) }
             }
 
             is CollectionStartEvent -> {
-                event.anchor?.let { anchors.remove(it.value) }
-                open.addLast(Open(event is MappingStartEvent))
+                event.anchor?.let { anchors[it.value] = null }
+                open.addLast(OpenCollection(event is MappingStartEvent))
             }
 
             is CollectionEndEvent -> {
@@ -203,6 +203,7 @@ private class MappingKeys {
         val key = parent?.let { keyOf(event) }
         return when {
             parent == null -> null
+            event is AliasEvent && event.alias.value !in anchors -> null
             key == null -> "complex keys are not supported"
             !parent.keys.add(key) -> "duplicated mapping key $key"
             else -> null
@@ -212,14 +213,14 @@ private class MappingKeys {
     /** Null for a sequence or a mapping, written out or through an alias. */
     private fun keyOf(event: NodeEvent): String? =
         when (event) {
-            is ScalarEvent -> jsKey(scalar(event))
+            is ScalarEvent -> jsKey(constructScalar(event))
             is AliasEvent -> anchors[event.alias.value]
             else -> null
         }
 }
 
 /** A scalar as the composer types it: an absent or `!` tag is resolved, any other is taken as written. */
-private fun scalar(event: ScalarEvent): Any? {
+private fun constructScalar(event: ScalarEvent): Any? {
     val tag =
         event.tag?.takeIf { it != "!" }?.let(::Tag)
             ?: CoreResolver.resolve(event.value, event.implicit.canOmitTagInPlainScalar())

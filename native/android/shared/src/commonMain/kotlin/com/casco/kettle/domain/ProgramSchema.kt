@@ -100,7 +100,8 @@ private fun SchemaReader.override(
 /**
  * `z.record(z.string(), z.union([z.number(), z.string()]))`: a free-form patch, checked only when it
  * is applied. Keys arrive as whatever the loader typed them; js-yaml makes every key a string first,
- * so [jsKey] does the same.
+ * so [jsKey] does the same. The loader has already refused two keys that spell the same, so no value
+ * is lost doing it.
  */
 private val overrideConfig: Read<Map<String, OverrideValue>> = { value, path ->
     if (value !is Map<*, *>) {
@@ -124,15 +125,3 @@ private fun SchemaReader.overrideValue(
         value is Number && value.toDouble().isFinite() -> OverrideValue.Numeric(value.toDouble())
         else -> refuse(path, "expected a number or a string")
     }
-
-/**
- * A key as JavaScript's `String(key)` spells it, for the scalars a key can be. A whole number prints
- * without its `.0`, as JS prints it, up to 2^53; past that, and for a collection used as a key, the
- * spelling is Kotlin's. That is a scope cut: such a key can only be an unknown one, which applying the
- * override reports by name, and nobody writes `1e300:` in a patch.
- *
- * The same spelling makes `1:` and `"1":` one key. js-yaml stringifies before it checks for
- * duplicates and refuses that file; the loader compares keys as written, so here the last one wins.
- * That is the loader's scope cut from `YamlLoad.kt`'s ticket (#143), tracked as #162.
- */
-private fun jsKey(key: Any?): String = (key as? Double)?.takeIf(::isSafeWhole)?.toLong()?.toString() ?: key.toString()

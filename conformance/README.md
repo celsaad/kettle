@@ -78,7 +78,13 @@ Every one of these has a case, because each is a default that differs between YA
 - `3.0` passes an integer field. `2.5` doesn't, and neither does the string `"3"`. An integer field
   takes JavaScript's safe-integer range (up to 2^53 − 1), so a 32-bit int is too narrow for one.
 - A key with nothing after it is `null`, and `null` doesn't satisfy an optional string.
-- **Duplicate keys and tab indentation are YAML errors**, as is an empty document.
+- **Duplicate keys and tab indentation are YAML errors**, as is an empty document. A key is compared
+  **as JavaScript's `String(key)` spells it**, so `1:` beside `"1":`, `1.0:` beside `1:` and `True:`
+  beside `"true":` are duplicates, an alias as a key counts as its scalar's value, and a sequence or
+  mapping as a key is a YAML error of its own. A number key is spelled by JS's `Number::toString`:
+  an integer past 2^53 rounds to a double first, the digits are the fewest that read back (the even
+  one of two equally near), and the exponent form starts below 1e-6 and from 1e21. A platform's own
+  number printing differs from that in layout, and some runtimes' in the digits too.
 - **At most 1000 aliases** per document. The 1001st is a YAML error, raised before the schema runs.
 - **Repair clamps what the schema reports as past a ceiling, and the top of the safe-integer range
   is one.** `target_reps_min: 1e16` has no ceiling of its own, and still repairs to 2^53 − 1.

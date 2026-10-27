@@ -2200,6 +2200,14 @@
     "ok": false,
     "kind": "invalidYaml"
   },
+  "key-duplicated-once-stringified": {
+    "ok": false,
+    "kind": "invalidYaml"
+  },
+  "override-config-key-duplicated-once-stringified": {
+    "ok": false,
+    "kind": "invalidYaml"
+  },
   "tab-indentation": {
     "ok": false,
     "kind": "invalidYaml"

@@ -201,6 +201,187 @@ cases:
       entries: []
       unused: !!set { a }
 
+  - name: key-duplicated-once-stringified
+    why: js-yaml makes every key a string before it checks for duplicates, so `1` and `"1"` are one key
+    input: |
+      version: 1
+      id: s
+      workout: w
+      started_at: "2024-05-01T10:00:00.000Z"
+      ended_at: null
+      entries: []
+      1: a
+      "1": b
+
+  - name: boolean-key-duplicated-once-stringified
+    input: |
+      version: 1
+      id: s
+      workout: w
+      started_at: "2024-05-01T10:00:00.000Z"
+      ended_at: null
+      entries: []
+      unused: { True: a, "true": b }
+
+  - name: float-key-duplicated-once-stringified
+    why: '`1.0` is the number 1, which JS spells `1`'
+    input: |
+      version: 1
+      id: s
+      workout: w
+      started_at: "2024-05-01T10:00:00.000Z"
+      ended_at: null
+      entries: []
+      unused: { 1.0: a, 1: b }
+
+  - name: small-float-key-duplicated-once-stringified
+    why: JS writes a number in exponent form only below 1e-6, so `0.0001` is spelled as written
+    input: |
+      version: 1
+      id: s
+      workout: w
+      started_at: "2024-05-01T10:00:00.000Z"
+      ended_at: null
+      entries: []
+      unused: { 0.0001: a, "0.0001": b }
+
+  - name: large-float-key-duplicated-once-stringified
+    input: |
+      version: 1
+      id: s
+      workout: w
+      started_at: "2024-05-01T10:00:00.000Z"
+      ended_at: null
+      entries: []
+      unused: { 12345678.9: a, "12345678.9": b }
+
+  - name: exponent-key-duplicated-once-stringified
+    why: from 1e21 up JS writes the exponent form, with an explicit `+`
+    input: |
+      version: 1
+      id: s
+      workout: w
+      started_at: "2024-05-01T10:00:00.000Z"
+      ended_at: null
+      entries: []
+      unused: { 1e21: a, "1e+21": b }
+
+  - name: shortest-digits-key-duplicated-once-stringified
+    why: JS spells a number in the fewest digits that read back, which some platforms' own printing doesn't
+    input: |
+      version: 1
+      id: s
+      workout: w
+      started_at: "2024-05-01T10:00:00.000Z"
+      ended_at: null
+      entries: []
+      unused: { 1.2345e21: a, "1.2345e+21": b }
+
+  - name: halfway-key-duplicated-once-stringified
+    why: this double is exactly …489.25, so two shortest spellings are equally near, and JS takes the even one
+    input: |
+      version: 1
+      id: s
+      workout: w
+      started_at: "2024-05-01T10:00:00.000Z"
+      ended_at: null
+      entries: []
+      unused: { 1490789822986489.25: a, "1490789822986489.2": b }
+
+  - name: power-of-two-key-duplicated-once-stringified
+    why: 2^-1017 has a closer double above than below, so its shortest spelling isn't the nearest one of that length
+    input: |
+      version: 1
+      id: s
+      workout: w
+      started_at: "2024-05-01T10:00:00.000Z"
+      ended_at: null
+      entries: []
+      unused: { 7.120236347223045e-307: a, "7.120236347223045e-307": b }
+
+  - name: unsafe-integer-key-duplicated-once-stringified
+    why: an integer past 2^53 is a JS number first, so it rounds to the nearest double before it is spelled
+    input: |
+      version: 1
+      id: s
+      workout: w
+      started_at: "2024-05-01T10:00:00.000Z"
+      ended_at: null
+      entries: []
+      unused: { 9007199254740993: a, "9007199254740992": b }
+
+  - name: hex-key-duplicated-once-stringified
+    why: a hex integer is the number it spells, written in decimal
+    input: |
+      version: 1
+      id: s
+      workout: w
+      started_at: "2024-05-01T10:00:00.000Z"
+      ended_at: null
+      entries: []
+      unused: { 0x10: a, "16": b }
+
+  - name: tagged-key-duplicated-once-stringified
+    why: an explicit `!!str` makes the string `1`, the same key as the number once stringified
+    input: |
+      version: 1
+      id: s
+      workout: w
+      started_at: "2024-05-01T10:00:00.000Z"
+      ended_at: null
+      entries: []
+      unused: { !!str 1: a, 1: b }
+
+  - name: alias-key-duplicated-once-stringified
+    why: an alias as a key stands for its scalar's value
+    input: |
+      version: 1
+      id: s
+      workout: w
+      started_at: "2024-05-01T10:00:00.000Z"
+      ended_at: null
+      entries: []
+      anchor: &k 1
+      unused: { *k : a, "1": b }
+
+  - name: keys-distinct-once-stringified-load
+    why: '`01` stays a string and a literal block keeps its newline, so neither is the key `1`'
+    input: |
+      version: 1
+      id: s
+      workout: w
+      started_at: "2024-05-01T10:00:00.000Z"
+      ended_at: null
+      entries: []
+      unused:
+        1: a
+        "01": b
+        ? |
+          1
+        : c
+
+  - name: collection-key-is-a-yaml-error
+    why: js-yaml refuses a sequence or mapping as a key outright
+    input: |
+      version: 1
+      id: s
+      workout: w
+      started_at: "2024-05-01T10:00:00.000Z"
+      ended_at: null
+      entries: []
+      unused: { [1]: a }
+
+  - name: alias-to-collection-key-is-a-yaml-error
+    input: |
+      version: 1
+      id: s
+      workout: w
+      started_at: "2024-05-01T10:00:00.000Z"
+      ended_at: null
+      entries: []
+      anchor: &m { a: 1 }
+      unused: { *m : a }
+
   - name: yes-no-on-off-stay-strings
     why: YAML 1.2 core schema — yes/no/on/off are not booleans, so each fills a string field
     input: |

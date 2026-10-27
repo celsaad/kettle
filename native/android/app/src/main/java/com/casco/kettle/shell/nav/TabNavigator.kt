@@ -7,11 +7,15 @@ import androidx.compose.runtime.setValue
 /**
  * Which tab the shell is on, and what that means for the RN surface.
  *
- * [navigate] steers the surface to a route path (`JsBridge.navigate`).
+ * [navigate] steers the surface to a route path (`JsBridge.navigate`). [reread] is told whenever what
+ * native read of RN's files may be stale: when RN hands the tabs back, since what it showed above them
+ * may have written them, and when a tap brings up a native tab, since RN also writes while a tab shows
+ * (a first launch's seeded library, RN History's delete) and nothing reports that.
  */
 class TabNavigator(
     private val routes: Map<Tab, Screen>,
     private val navigate: (String) -> Unit,
+    private val reread: () -> Unit = {},
 ) {
     var current by mutableStateOf(Tab.Workouts)
         private set
@@ -49,7 +53,9 @@ class TabNavigator(
     fun onRoute(pathname: String) {
         rnAt = pathname
         val tab = Tab.at(pathname)
+        val handingBack = tab != null && !barShown
         barShown = tab != null
+        if (handingBack) reread()
         when {
             // Above the tabs, where no tap sends RN: whatever a tap was waiting on is moot.
             tab == null -> pending = null
@@ -77,6 +83,7 @@ class TabNavigator(
     fun select(tab: Tab) {
         if (tab == current) return
         current = tab
+        if (!tab.isRn()) reread()
         // A native tab leaves the surface where it is, and RN already headed for the tab has nowhere to
         // go. Headed, not last seen: until RN answers a tap, it is on its way to that tap's tab.
         if (!tab.isRn() || (pending?.path ?: rnAt) == tab.path) return

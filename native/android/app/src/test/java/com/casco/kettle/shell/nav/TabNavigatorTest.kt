@@ -49,6 +49,37 @@ class TabNavigatorTest {
         assertEquals(true, navigator.barShown)
     }
 
+    /** What RN showed above the tabs may have written a file a native screen reads; a tab can't. */
+    @Test
+    fun `only the report that brings the bar back is a hand-back`() {
+        var handBacks = 0
+        val navigator = TabNavigator(rnRoutes, sent::add, reread = { handBacks++ })
+
+        navigator.onRoute("/history")
+        navigator.onRoute("/session")
+        navigator.onRoute("/session-summary")
+        navigator.onRoute("/history")
+        navigator.onRoute("/library")
+
+        assertEquals(1, handBacks)
+    }
+
+    /**
+     * What RN writes while a tab shows (a first launch's seeded library, RN History's delete) has no
+     * hand-back to follow, so a native screen reads again as it comes into view.
+     */
+    @Test
+    fun `a tap onto a native tab rereads, and a tap onto an RN one doesn't`() {
+        var rereads = 0
+        val navigator =
+            TabNavigator(rnRoutes + (Tab.History to Screen.Native {}), sent::add, reread = { rereads++ })
+
+        navigator.select(Tab.Library)
+        navigator.select(Tab.History)
+
+        assertEquals(1, rereads)
+    }
+
     /** The report of the first tap arrives after the second: following it would flick back a tab. */
     @Test
     fun `a report from before the latest tap is not followed`() {

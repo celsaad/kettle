@@ -3,12 +3,18 @@ package com.casco.kettle.shell
 import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.lifecycleScope
 import com.casco.kettle.brownfield.BrownfieldActivity
 import com.casco.kettle.brownfield.ReactNativeHostManager
 import com.casco.kettle.brownfield.ReactNativeViewFactory
 import com.casco.kettle.brownfield.setUpNativeBackHandling
+import com.casco.kettle.shell.files.DiskFiles
+import com.casco.kettle.shell.files.LatestFiles
+import com.casco.kettle.shell.files.LocalLatestFiles
+import com.casco.kettle.shell.files.StoragePaths
 import com.casco.kettle.shell.nav.ModalSheet
 import com.casco.kettle.shell.nav.ShellLayout
 import com.casco.kettle.shell.nav.TabNavigator
@@ -24,7 +30,6 @@ import com.facebook.react.modules.core.PermissionAwareActivity
 import com.facebook.react.modules.core.PermissionListener
 import expo.modules.brownfield.BrownfieldState
 import expo.modules.splashscreen.SplashScreenManager
-import java.io.File
 
 /**
  * The app's entry point: today's RN app as one surface (docs/native-migration-plan.md, M2), inside the
@@ -48,11 +53,20 @@ class MainActivity :
 
     private var sheet: ModalSheet? = null
 
+    /** Lazy, since `filesDir` needs the context the activity is given after construction. */
+    private val paths by lazy { StoragePaths(filesDir) }
+
+    private val latestFiles by lazy { LatestFiles(DiskFiles(paths), lifecycleScope) }
+
     private val navigator =
-        TabNavigator(shellRoutes) { url ->
-            sheet?.steeredByBar()
-            JsBridge.navigate(url)
-        }
+        TabNavigator(
+            shellRoutes,
+            navigate = { url ->
+                sheet?.steeredByBar()
+                JsBridge.navigate(url)
+            },
+            reread = { latestFiles.reread() },
+        )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // Before super, as in the prebuilt app: it installs the splash theme's exit. JS hides it with
@@ -73,7 +87,10 @@ class MainActivity :
         ReactNativeHostManager.shared.initialize(application)
         val surface = ReactNativeViewFactory.createFrameLayout(this, this, "main")
         setUpNativeBackHandling()
-        val preferences = File(filesDir, PREFERENCES)
+        val preferences = paths.preferences
+        // The cold start's read. A new activity over the same runtime reads too, since it may have
+        // missed a hand-back while there was none to hear it.
+        latestFiles.reread()
         val layout =
             ShellLayout(
                 this,
@@ -81,7 +98,9 @@ class MainActivity :
                 navigator,
                 shellRoutes,
                 theme = { content ->
-                    KettleTheme(rememberPreferredDarkTheme(preferences, reread = navigator.barShown), content)
+                    CompositionLocalProvider(LocalLatestFiles provides latestFiles) {
+                        KettleTheme(rememberPreferredDarkTheme(preferences, reread = navigator.barShown), content)
+                    }
                 },
             ) { content, shell ->
                 ModalSheet(
@@ -201,9 +220,5 @@ class MainActivity :
 
     private companion object {
         const val NATIVE_TAB_BAR = "nativeTabBar"
-
-        // expo-file-system's Paths.document is filesDir; src/storage/paths.ts names the rest. The two
-        // share no code, so change both.
-        const val PREFERENCES = "exercise-tracker/preferences.json"
     }
 }

@@ -2,13 +2,7 @@ package com.casco.kettle.shell.nav
 
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.unit.dp
 import com.casco.kettle.shell.R
 
 /**
@@ -50,34 +44,7 @@ sealed interface Screen {
  * unchanged, and native draws the screen whenever RN reports that path: a tab's in `Destinations`, and
  * a modal route's in the sheet (`NativeSheet`, #197), with the same stub behind it.
  */
-val shellRoutes: Map<String, Screen> = mapOf("/support" to Screen.Native { Placeholder() })
-
-/** Throwaway (#197): a native sheet to open, close and hand over, reverted in the next commit. */
-@Composable
-private fun Placeholder() {
-    val colors = com.casco.kettle.shell.theme.KettleTheme.colors
-    androidx.compose.foundation.layout.Column(
-        androidx.compose.ui.Modifier
-            .fillMaxSize()
-            .background(colors.background)
-            .padding(16.dp),
-        verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(16.dp),
-    ) {
-        androidx.compose.material3.Text("Native placeholder", color = colors.text)
-        androidx.compose.foundation.layout.Box(
-            androidx.compose.ui.Modifier
-                .fillMaxWidth()
-                .height(240.dp)
-                .background(androidx.compose.ui.graphics.Color(0xFFE0457B)),
-        )
-        androidx.compose.material3.Button(onClick = {
-            com.casco.kettle.shell.rn.JsBridge.open(com.casco.kettle.shell.rn.Stacking.Push, "/import")
-        }) { androidx.compose.material3.Text("Push Import") }
-        androidx.compose.material3.Button(onClick = {
-            com.casco.kettle.shell.rn.JsBridge.open(com.casco.kettle.shell.rn.Stacking.Replace, "/import")
-        }) { androidx.compose.material3.Text("Replace with Import") }
-    }
-}
+val shellRoutes: Map<String, Screen> = emptyMap()
 
 /** How [path] renders. */
 fun Map<String, Screen>.screenAt(path: String): Screen = this[path] ?: Screen.Rn

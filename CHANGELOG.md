@@ -18,11 +18,49 @@ here, next to what it describes.
 
 ## Unreleased
 
+Nothing since 0.12.0.
+
+---
+
+## 0.12.0 — versionCode 17, 27 October 2026
+
 ### What changed
 
 - **Editors, Settings, Import and the other pop-up screens open as a sheet** over the screen you
   were on, which stays visible behind it. Close one with ×, with back, or by dragging its handle
   down. A tap outside the sheet doesn't close it, so an edit can't be lost to a stray touch.
+- **The tab bar and every move between screens are now native Android.** The screens themselves
+  are unchanged. One thing is gone for now: tapping the tab you're already on no longer scrolls its
+  list back to the top. It returns screen by screen as each one moves to native.
+
+### Play release notes
+
+Counted at 215 (en-US) and 222 (pt-BR), against a limit of 500. Re-count programmatically
+if you edit them rather than trusting these numbers — over-limit copy is a rejected upload, not a
+truncated one.
+
+Specific this time, unlike 0.10.0–0.11.2: the sheets are the first change from the native work that
+a user can see, so the note names them. The tab bar's lost scroll-to-top stays out of the note and
+in the list above.
+
+Two blocks rather than three, as in 0.8.0 onwards: the Play listing does not carry ja-JP.
+
+```
+<en-US>
+What's new
+
+Editors, Settings, Import and other pop-up screens now open as a sheet over the screen you were on. Close one with ×, with back, or by dragging its handle down.
+
+Report anything that hangs or loses data.
+</en-US>
+<pt-BR>
+Novidades
+
+Editores, Configurações, Importar e outras telas pop-up agora abrem como uma folha sobre a tela em que você estava. Feche com ×, com voltar ou arrastando a alça para baixo.
+
+Relate travamentos ou perda de dados.
+</pt-BR>
+```
 
 ---
 

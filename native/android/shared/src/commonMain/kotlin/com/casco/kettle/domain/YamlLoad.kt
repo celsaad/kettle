@@ -14,6 +14,9 @@ import it.krzeminski.snakeyaml.engine.kmp.events.AliasEvent
 import it.krzeminski.snakeyaml.engine.kmp.events.CollectionEndEvent
 import it.krzeminski.snakeyaml.engine.kmp.events.CollectionStartEvent
 import it.krzeminski.snakeyaml.engine.kmp.events.DocumentStartEvent
+import it.krzeminski.snakeyaml.engine.kmp.events.Event
+import it.krzeminski.snakeyaml.engine.kmp.events.MappingStartEvent
+import it.krzeminski.snakeyaml.engine.kmp.events.NodeEvent
 import it.krzeminski.snakeyaml.engine.kmp.events.ScalarEvent
 import it.krzeminski.snakeyaml.engine.kmp.exceptions.ConstructorException
 import it.krzeminski.snakeyaml.engine.kmp.exceptions.YamlEngineException
@@ -114,9 +117,12 @@ private fun checkEvents(text: String): String? {
     var depth = 0
     var deepest = 0
     var sawDocument = false
+    val keys = MappingKeys()
+    var keyError: String? = null
     // The parser is a state machine, not a recursion, so walking every event of a hostile file is
     // linear in its length and needs no early exit.
     for (event in Parse(loadSettings).parse(text)) {
+        keyError = keyError ?: keys.visit(event)
         when (event) {
             is DocumentStartEvent -> sawDocument = true
             is AliasEvent -> aliases++
@@ -131,12 +137,94 @@ private fun checkEvents(text: String): String? {
 
         deepest > MAX_DEPTH -> "nesting exceeded $MAX_DEPTH"
 
+        keyError != null -> keyError
+
         // js-yaml refuses a stream with no document at all, but loads an explicit empty one (`---`)
         // as null, which the schema then refuses at (root). The engine returns null for both.
         !sawDocument -> "expected a document, but the input is empty"
 
         else -> null
     }
+}
+
+/**
+ * js-yaml makes every key a string, as `String(key)` spells it, before it checks for duplicates, so
+ * `1:` beside `"1":` (or `true:` beside `"true":`, `1.0:` beside `1:`) is a YAML error there. The
+ * engine compares keys as it typed them, and loads that file. js-yaml also refuses a sequence or a
+ * mapping as a key, written out or through an alias, where the engine builds one.
+ *
+ * Checked on the events rather than on the loaded tree, because an alias in the tree is a shared
+ * reference: walking an alias bomb's tree is the expansion [checkEvents] exists to refuse, where its
+ * events stay linear.
+ */
+private class MappingKeys {
+    private class Open(
+        val mapping: Boolean,
+    ) {
+        val keys = HashSet<String>()
+        var atKey = true
+    }
+
+    private val open = ArrayDeque<Open>()
+
+    // Each scalar anchor's key spelling. A collection's anchor has none, which is what makes an alias
+    // to it a collection key.
+    private val anchors = HashMap<String, String>()
+
+    /** The error [event] makes, if any. */
+    fun visit(event: Event): String? {
+        val error = (event as? NodeEvent)?.let(::checkKey)
+        when (event) {
+            is ScalarEvent -> {
+                event.anchor?.let { anchors[it.value] = jsKey(scalar(event)) }
+            }
+
+            is CollectionStartEvent -> {
+                event.anchor?.let { anchors.remove(it.value) }
+                open.addLast(Open(event is MappingStartEvent))
+            }
+
+            is CollectionEndEvent -> {
+                open.removeLast()
+            }
+
+            else -> {
+                Unit
+            }
+        }
+        return error
+    }
+
+    private fun checkKey(event: NodeEvent): String? {
+        // Flipped for a sequence too, where nothing reads it, so the flag needs no branch on the kind.
+        val innermost = open.lastOrNull()
+        val parent = innermost?.takeIf { it.mapping && it.atKey }
+        innermost?.let { it.atKey = !it.atKey }
+        val key = parent?.let { keyOf(event) }
+        return when {
+            parent == null -> null
+            key == null -> "complex keys are not supported"
+            !parent.keys.add(key) -> "duplicated mapping key $key"
+            else -> null
+        }
+    }
+
+    /** Null for a sequence or a mapping, written out or through an alias. */
+    private fun keyOf(event: NodeEvent): String? =
+        when (event) {
+            is ScalarEvent -> jsKey(scalar(event))
+            is AliasEvent -> anchors[event.alias.value]
+            else -> null
+        }
+}
+
+/** A scalar as the composer types it: an absent or `!` tag is resolved, any other is taken as written. */
+private fun scalar(event: ScalarEvent): Any? {
+    val tag =
+        event.tag?.takeIf { it != "!" }?.let(::Tag)
+            ?: CoreResolver.resolve(event.value, event.implicit.canOmitTagInPlainScalar())
+    return YamlCoreSchema.schemaTagConstructors[tag]?.construct(ScalarNode(tag, event.value, event.scalarStyle))
+        ?: event.value
 }
 
 /**
@@ -215,8 +303,9 @@ private object UnknownTag : ConstructNode {
         throw ConstructorException(null, null, "unknown tag ${node?.tag}", node?.startMark)
 }
 
-// Duplicate keys are already refused by default, as js-yaml refuses them. The engine's 3 MB input
-// cap is lifted because js-yaml has none, and the text is already in memory by the time it's here.
+// Keys duplicated as typed are refused by default, and [MappingKeys] refuses the ones only JS's
+// spelling makes duplicate. The engine's 3 MB input cap is lifted because js-yaml has none, and the
+// text is already in memory by the time it's here.
 private val loadSettings =
     LoadSettings(
         schema = YamlCoreSchema,

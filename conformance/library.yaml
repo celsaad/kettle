@@ -181,6 +181,27 @@ cases:
       workouts: []
       programs: []
 
+  - name: key-duplicated-once-stringified
+    why: js-yaml makes every key a string before it checks for duplicates, so `1` and `"1"` are one key
+    input: |
+      version: 1
+      exercises: []
+      workouts: []
+      programs: []
+      1: a
+      "1": b
+
+  - name: override-config-key-duplicated-once-stringified
+    why: the one place both keys reach the schema, which would otherwise take the last value
+    input: |
+      version: 1
+      exercises: [{ id: a, name: A, type: reps, config: { sets: 3, target_reps_min: 5, rest_sec: 60 } }]
+      workouts: [{ id: w, name: W, blocks: [{ exercise: a }] }]
+      programs:
+        - id: p
+          name: P
+          weeks: [{ week: 1, workout: w, overrides: [{ exercise: a, config: { 1: 2, "1": 3 } }] }]
+
   - name: tab-indentation
     input: "version: 1\nexercises:\n\t- id: a\nworkouts: []\nprograms: []\n"
 

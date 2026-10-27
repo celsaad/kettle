@@ -236,6 +236,76 @@
     "ok": false,
     "kind": "invalidYaml"
   },
+  "key-duplicated-once-stringified": {
+    "ok": false,
+    "kind": "invalidYaml"
+  },
+  "boolean-key-duplicated-once-stringified": {
+    "ok": false,
+    "kind": "invalidYaml"
+  },
+  "float-key-duplicated-once-stringified": {
+    "ok": false,
+    "kind": "invalidYaml"
+  },
+  "small-float-key-duplicated-once-stringified": {
+    "ok": false,
+    "kind": "invalidYaml"
+  },
+  "large-float-key-duplicated-once-stringified": {
+    "ok": false,
+    "kind": "invalidYaml"
+  },
+  "exponent-key-duplicated-once-stringified": {
+    "ok": false,
+    "kind": "invalidYaml"
+  },
+  "shortest-digits-key-duplicated-once-stringified": {
+    "ok": false,
+    "kind": "invalidYaml"
+  },
+  "halfway-key-duplicated-once-stringified": {
+    "ok": false,
+    "kind": "invalidYaml"
+  },
+  "unsafe-integer-key-duplicated-once-stringified": {
+    "ok": false,
+    "kind": "invalidYaml"
+  },
+  "hex-key-duplicated-once-stringified": {
+    "ok": false,
+    "kind": "invalidYaml"
+  },
+  "tagged-key-duplicated-once-stringified": {
+    "ok": false,
+    "kind": "invalidYaml"
+  },
+  "alias-key-duplicated-once-stringified": {
+    "ok": false,
+    "kind": "invalidYaml"
+  },
+  "keys-distinct-once-stringified-load": {
+    "ok": true,
+    "value": {
+      "version": 1,
+      "id": "s",
+      "workout": "w",
+      "program": null,
+      "programWeek": null,
+      "programDay": null,
+      "startedAt": "2024-05-01T10:00:00.000Z",
+      "endedAt": null,
+      "entries": []
+    }
+  },
+  "collection-key-is-a-yaml-error": {
+    "ok": false,
+    "kind": "invalidYaml"
+  },
+  "alias-to-collection-key-is-a-yaml-error": {
+    "ok": false,
+    "kind": "invalidYaml"
+  },
   "yes-no-on-off-stay-strings": {
     "ok": true,
     "value": {

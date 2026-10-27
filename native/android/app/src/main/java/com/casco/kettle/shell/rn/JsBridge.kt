@@ -4,6 +4,8 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import com.casco.kettle.brownfield.ReactNativeHostManager
+import com.casco.kettle.shell.nav.RouteReport
+import com.facebook.react.modules.core.DeviceEventManagerModule
 import expo.modules.brownfield.BrownfieldMessaging
 
 /**
@@ -34,20 +36,56 @@ object JsBridge {
     }
 
     /**
-     * Where RN reports its router to be, a pathname, on the main thread. The current activity's: it
-     * clears it as it goes, since the runtime and this object outlive it.
+     * Back, as hardware back reaches RN: the sheet's ×, grabber and predictive back send it, so RN stays
+     * the router. What `setUpNativeBackHandling`'s callback does with native back off, which it is.
      */
-    var onRoute: ((String) -> Unit)? = null
+    fun back() {
+        ReactNativeHostManager.shared
+            .getReactHost()
+            ?.currentReactContext
+            ?.getNativeModule(DeviceEventManagerModule::class.java)
+            ?.emitHardwareBackPressed()
+    }
+
+    /**
+     * Where RN reports its router to be, on the main thread. The current activity's: it clears it as
+     * it goes, since the runtime and this object outlive it.
+     */
+    var onRoute: ((RouteReport) -> Unit)? = null
+
+    /**
+     * The type of the navigation action RN is about to commit, on the main thread, ahead of the report
+     * of where it lands. The current activity's, like [onRoute].
+     */
+    var onRouteWillChange: ((String) -> Unit)? = null
+
+    /**
+     * Whether an action of this type wants a picture of the frame it replaces, asked on the JS thread.
+     * The current activity's, like [onRoute]; with none, nothing is pictured.
+     */
+    @Volatile var wantsPicture: ((String) -> Boolean)? = null
 
     private val main = Handler(Looper.getMainLooper())
 
     /** JS's messages arrive on its own thread. */
     private fun receive(message: Map<String, Any?>) {
         channel.receive(message)
-        // What reportRoute in src/hooks/safe-brownfield.ts sends. The two share no code, so change both.
-        if (message["type"] != "route") return
-        val pathname = message["pathname"] as? String ?: return
-        main.post { onRoute?.invoke(pathname) }
+        when (message["type"]) {
+            // What reportRouteWillChange in src/hooks/safe-brownfield.ts sends. The two share no code, so
+            // change both. Armed here, on the JS thread, because JS sends it before the action's commit:
+            // a post to main could land after the commit's batch had mounted (#178).
+            "routeWillChange" -> {
+                val action = message["action"] as? String ?: return
+                if (wantsPicture?.invoke(action) == true) RnFrames.arm()
+                main.post { onRouteWillChange?.invoke(action) }
+            }
+
+            // What reportRoute sends. The two share no code, so change both.
+            "route" -> {
+                val report = RouteReport.from(message) ?: return
+                main.post { onRoute?.invoke(report) }
+            }
+        }
     }
 
     private var listening = false
@@ -76,6 +114,7 @@ object JsBridge {
             return
         }
         host.addBeforeDestroyListener(channel::onReload)
+        RnFrames.attach(host)
         watchingReloads = true
     }
 

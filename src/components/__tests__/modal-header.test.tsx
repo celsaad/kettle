@@ -6,6 +6,13 @@ import { changeLanguage } from 'i18next';
 import { ModalHeader } from '@/components/modal-header';
 import { renderScreen } from '@/test-support/render';
 
+let mockHosted = false;
+jest.mock('@/hooks/safe-brownfield', () => ({ isHosted: () => mockHosted }));
+
+beforeEach(() => {
+  mockHosted = false;
+});
+
 /**
  * The close button is the only way out of a modal that isn't the OS back gesture, and it's icon-only
  * — a bare `×` with nothing for a screen reader to fall back on — so its label is the whole control
@@ -31,4 +38,16 @@ it('translates the close label', async () => {
   await renderScreen(<ModalHeader onClose={jest.fn()} />);
 
   expect(screen.getByLabelText('Fechar')).toBeTruthy();
+});
+
+/**
+ * Inside the native shell the sheet draws its own grabber and ×, over this strip. Drawing RN's too
+ * would head every modal twice; the strip keeps its height so the content sits where it always has.
+ */
+it('leaves the grabber and close button to the shell that hosts it', async () => {
+  mockHosted = true;
+  await renderScreen(<ModalHeader onClose={jest.fn()} />);
+
+  expect(screen.queryByLabelText('Close')).toBeNull();
+  expect(screen.queryByRole('button')).toBeNull();
 });

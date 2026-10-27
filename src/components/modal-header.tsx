@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 
 import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { isHosted } from '@/hooks/safe-brownfield';
 import { useTheme } from '@/hooks/use-theme';
 
 /**
@@ -19,6 +20,18 @@ import { useTheme } from '@/hooks/use-theme';
 export function ModalHeader({ onClose }: { onClose: () => void }) {
   const theme = useTheme();
   const { t } = useTranslation();
+
+  // Inside the native shell (M3) the sheet draws the grabber and × itself, over this strip, and its ×
+  // goes back the way hardware back does. The strip stays, empty, so the content below sits where it
+  // always has and nothing draws under the native controls. The shell's SheetChrome places them
+  // against these metrics. The two share no code, so change both.
+  if (isHosted()) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.row} />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>

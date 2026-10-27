@@ -8,6 +8,7 @@
     "export": "Export",
     "import": "Import",
     "close": "Close",
+    "dragHandle": "Drag handle",
     "name": "Name",
     "nameRequired": "Name is required.",
     "couldNotDeriveId": "Could not derive an id from that name.",

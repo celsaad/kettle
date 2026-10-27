@@ -37,10 +37,10 @@
         </intent>
     </queries>
 
-    <!-- enableOnBackInvokedCallback: app.json's predictiveBackGestureEnabled: false. -->
+    <!-- enableOnBackInvokedCallback: app.json's predictiveBackGestureEnabled: true. -->
     <application
         android:allowBackup="true"
-        android:enableOnBackInvokedCallback="false"
+        android:enableOnBackInvokedCallback="true"
         android:icon="@mipmap/ic_launcher"
         android:label="${appName}"
         android:roundIcon="@mipmap/ic_launcher_round"

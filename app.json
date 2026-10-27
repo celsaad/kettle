@@ -31,7 +31,7 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false,
+      "predictiveBackGestureEnabled": true,
       "permissions": ["android.permission.MODIFY_AUDIO_SETTINGS"],
       "blockedPermissions": ["android.permission.SYSTEM_ALERT_WINDOW", "android.permission.READ_APP_BADGE"]
     },

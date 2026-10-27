@@ -8,7 +8,7 @@
 > no regressions, is still running. **M3 has landed** and is releasing as 0.12.0: one RN surface
 > steered by messages (#152), a native tab bar and back stack around it (#153), native-presented
 > sheets (#155) and the `filesChanged` re-read (#154). Its ship step, #156, is still open. M1–M3 are tracked as
-> GitHub issues #141–#156, whose open/closed state is the live record; M4 onward is ticketed next. Written against the tree at `54eb9f8`, SDK 57.
+> GitHub issues #141–#156, whose open/closed state is the live record; M4 is ticketed (see M4); M5 onward is ticketed next. Written against the tree at `54eb9f8`, SDK 57.
 > **Everything after M0 was conditional on a "go"**: had the spike failed, this file would carry a
 > banner saying so and the decision log the reason, so the idea isn't re-proposed from scratch.
 
@@ -310,25 +310,44 @@ one, and an RN screen can be swapped for a native one by changing one route regi
 
 ### M4 — Read-only screens · ~3–4 weeks
 
-These screens read files and never write them, so ownership doesn't move and they make the easiest
-first ports. Suggested order, smallest first: support → program guide → exercise progress → stats
-(`analytics`) → history.
+> **Ticketed** (#194, #196–#202), charted on the wayfinder map #186, whose closed tickets hold the
+> reasoning. The issues' open/closed state is the live record.
 
-**Support is the tip jar**, so it writes nothing to files but does need billing. Its native port moves
-the tip jar to the Play Billing Library in M4, a step pulled forward from M7, and keeps
-`safe-iap.ts`'s rule: if billing is unavailable, the screen still works without it. The alternative,
-keeping Support in RN until M7, was rejected. It would leave `expo-iap` in the AAR for three
-milestones just to serve one screen.
+These screens mostly read files, so they make the easiest first ports. Suggested order, smallest
+first: support → program guide → exercise progress → stats (`analytics`) → history. Each port ships on
+its own, in the next release after it lands.
+
+**"Read-only" has two exceptions, both settled before any code.**
+
+- **History deletes finished session files** (#187). That is M4's one ownership move: native deletes,
+  then sends `filesChanged('sessions')`. It needs no guard, since neither the runner nor the session
+  editor can be on screen with History.
+- **Support writes the supporter file**, which RN Settings reads until M5 (#188). Native becomes its
+  only writer, its format is frozen until M5, and `filesChanged` gains a `supporter` kind, deleted with
+  RN Settings.
+
+**Support is the tip jar**, so it also needs billing. Its native port moves the tip jar to the Play
+Billing Library in M4, a step pulled forward from M7, and keeps `safe-iap.ts`'s rule: if billing is
+unavailable, the screen still works without it. The alternative, keeping Support in RN until M7, was
+rejected. It would leave `expo-iap` in the AAR for three milestones just to serve one screen. The
+facts the port rests on (one PBL in the APK, SKUs unchanged, no Data Safety change) are in #189.
+
+**RN stays the router through M4** (#190). A ported screen keeps an empty RN stub route at its path,
+native draws the Compose screen whenever RN reports that path, and native sheets go into #155's sheet
+(#191). The stubs go at the M5 flip.
 
 Every screen is ported to the same definition of done:
 
-- The Compose screen, the selectors it needs ported into `:shared`, and their tests.
+- The Compose screen, and the selector functions it calls ported into `:shared` one by one, with their
+  tests (#192). Logic RN keeps past M4 (`entryBest`, `recordKey`, the session summaries) joins
+  `conformance/records.yaml` instead.
 - Compose UI tests covering whatever the screen's jest tests covered: the same cases, and the same
-  "drive it in `pt`" rule for translation.
+  "drive it in `pt`" rule for translation (the recipe is in #193).
 - Accessibility with the same bar as AGENTS.md: a TalkBack label only where the children don't name
-  the element, roles and states set, 48dp targets, and no fixed heights on controls.
-- **The RN screen, its route and its jest test are deleted in the same PR.** A screen that exists in
-  both forms is a fork waiting to happen.
+  the element, roles and states set, 48dp targets, and no fixed heights on controls. These are asserted
+  in tests; a device TalkBack pass waits for one full pass at the end of the migration.
+- **The RN screen and its jest test are deleted in the same PR**, and its route shrinks to the stub.
+  A screen that exists in both forms is a fork waiting to happen.
 
 **Landmark: History and Stats are native in production.**
 
@@ -347,6 +366,7 @@ edits.
   *new* session files. Its stores re-read on `filesChanged`.
 - **The native screens land unrouted** and switch on together in that one release, so no file ever
   has two writers in production.
+- **Routing moves to native in the same release**, and M4's RN stub routes are deleted with it (#190).
 
 Settings and the preferences file weren't placed in the first draft of this plan. They move here,
 not in M4, because Settings writes. Native reads the preferences file from M3 on, for the theme its

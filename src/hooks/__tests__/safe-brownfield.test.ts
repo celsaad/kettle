@@ -45,6 +45,8 @@ jest.mock('expo-brownfield', () => mockBrownfield());
  */
 const mockStack = { screensAboveTabs: 0, guarded: false };
 const mockNavigate = jest.fn();
+const mockPush = jest.fn();
+const mockReplace = jest.fn();
 jest.mock('expo-router', () => ({
   router: {
     canDismiss: () => mockStack.screensAboveTabs > 0,
@@ -54,6 +56,8 @@ jest.mock('expo-router', () => ({
         if (!mockStack.guarded) mockStack.screensAboveTabs = 0;
       }),
     navigate: (href: string) => mockNavigate(href),
+    push: (href: unknown) => mockPush(href),
+    replace: (href: unknown) => mockReplace(href),
   },
 }));
 
@@ -75,6 +79,9 @@ beforeEach(() => {
   mockListener = undefined;
   mockStack.screensAboveTabs = 0;
   mockStack.guarded = false;
+  mockNavigate.mockClear();
+  mockPush.mockClear();
+  mockReplace.mockClear();
   jest.resetModules();
   ({ announceHostReady } = require('@/hooks/safe-brownfield'));
 });
@@ -181,6 +188,45 @@ it('goes nowhere while a screen refuses to leave', async () => {
   expect(mockNavigate).not.toHaveBeenCalled();
 });
 
+/**
+ * M4's native screens open the next screen with a push (History → session editor, Stats → exercise
+ * progress), which stacks on whatever is showing rather than dismissing it first as navigate does.
+ */
+it('pushes where a push message says, with its params, dismissing nothing', async () => {
+  mockStack.screensAboveTabs = 1;
+  announceHostReady();
+
+  fromShell({ type: 'push', pathname: '/session-editor', params: { id: 'abc' } });
+  await settle();
+
+  expect(mockPush).toHaveBeenCalledWith({ pathname: '/session-editor', params: { id: 'abc' } });
+  expect(mockStack.screensAboveTabs).toBe(1);
+  expect(mockNavigate).not.toHaveBeenCalled();
+});
+
+// The program guide hands off to Import in its place, as the RN screen's router.replace did.
+it('replaces the current screen where a replace message says', () => {
+  announceHostReady();
+
+  fromShell({ type: 'replace', pathname: '/import', params: {} });
+
+  expect(mockReplace).toHaveBeenCalledWith({ pathname: '/import', params: {} });
+  expect(mockPush).not.toHaveBeenCalled();
+});
+
+// A param that isn't a string would reach a screen typed to read one.
+it('keeps only the string params of a push, and drops one without a pathname', () => {
+  announceHostReady();
+
+  fromShell({ type: 'push', pathname: '/exercise-progress', params: { exerciseId: 'kb-swing', n: 3 } });
+  fromShell({ type: 'push', params: { id: 'abc' } });
+  fromShell({ type: 'replace', pathname: 42 });
+
+  expect(mockPush).toHaveBeenCalledTimes(1);
+  expect(mockPush).toHaveBeenCalledWith({ pathname: '/exercise-progress', params: { exerciseId: 'kb-swing' } });
+  expect(mockReplace).not.toHaveBeenCalled();
+});
+
 // M3's tab bar is native, and has to follow RN wherever RN goes by itself: a delete's dismissTo, the
 // runner's exit, a modal covering the tabs.
 it('reports each route to the shell, saying whether it is a modal', async () => {
@@ -192,8 +238,24 @@ it('reports each route to the shell, saying whether it is a modal', async () => 
   await settle();
 
   expect(mockSent).toEqual([
-    { type: 'route', pathname: '/settings', modal: true },
-    { type: 'route', pathname: '/history', modal: false },
+    { type: 'route', pathname: '/settings', modal: true, params: {} },
+    { type: 'route', pathname: '/history', modal: false, params: {} },
+  ]);
+});
+
+// M4's native screens sit behind RN stub routes, and read `id` or `exerciseId` from the report whoever
+// opened them. An array param (a repeated query key) is something no screen here reads.
+it("reports the route's string params with it", async () => {
+  mockShared.set('nativeTabBar', true);
+  const { reportRoute } = require('@/hooks/safe-brownfield');
+
+  reportRoute('/exercise-progress', true, { exerciseId: 'kb-swing', tags: ['a', 'b'] });
+  reportRoute('/history', false);
+  await settle();
+
+  expect(mockSent).toEqual([
+    { type: 'route', pathname: '/exercise-progress', modal: true, params: { exerciseId: 'kb-swing' } },
+    { type: 'route', pathname: '/history', modal: false, params: {} },
   ]);
 });
 

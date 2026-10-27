@@ -24,6 +24,27 @@ class JsChannelTest {
         assertEquals(listOf(mapOf("type" to "navigate", "url" to "kettle://history")), delivered)
     }
 
+    /**
+     * A native screen's push goes through the channel like any other message (#196). Coverage of its
+     * wire format on the way, not a regression pin: the channel queues every map in order, so this
+     * would pass against any push that sends one.
+     */
+    @Test
+    fun `a push sent before JS is ready arrives after the navigate before it, with its params`() {
+        channel.send(mapOf("type" to "navigate", "url" to "/history"))
+        channel.send(Stacking.Push.message("/session-editor", mapOf("id" to "2026-10-27-a")))
+
+        channel.receive(ready)
+
+        assertEquals(
+            listOf(
+                mapOf("type" to "navigate", "url" to "/history"),
+                mapOf("type" to "push", "pathname" to "/session-editor", "params" to mapOf("id" to "2026-10-27-a")),
+            ),
+            delivered,
+        )
+    }
+
     /** A reload replaces the JS runtime, and the new one listens only once it has said so again. */
     @Test
     fun `after a reload it holds again, and delivers in the order sent`() {

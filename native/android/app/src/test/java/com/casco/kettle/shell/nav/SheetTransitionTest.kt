@@ -30,6 +30,27 @@ class SheetTransitionTest {
         )
     }
 
+    /**
+     * A native screen behind an RN stub route reads its `id` or `exerciseId` from here (M4). The bridge
+     * hands a JS object over as a map, and anything but a string is no param a screen reads.
+     */
+    @Test
+    fun `a route message carries its string params`() {
+        assertEquals(
+            RouteReport("/exercise-progress", modal = true, params = mapOf("exerciseId" to "kb-swing")),
+            RouteReport.from(
+                mapOf(
+                    "type" to "route",
+                    "pathname" to "/exercise-progress",
+                    "modal" to true,
+                    "params" to hashMapOf("exerciseId" to "kb-swing", "n" to 3.0),
+                ),
+            ),
+        )
+        // A bundle from before params sends none.
+        assertEquals(emptyMap<String, String>(), RouteReport.from(mapOf("type" to "route", "pathname" to "/"))?.params)
+    }
+
     @Test
     fun `a message that is not a route report reads as nothing`() {
         assertNull(RouteReport.from(mapOf("type" to "ready")))

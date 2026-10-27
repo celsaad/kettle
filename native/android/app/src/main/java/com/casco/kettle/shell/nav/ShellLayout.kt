@@ -31,7 +31,7 @@ class ShellLayout(
     context: Context,
     private val surface: View,
     navigator: TabNavigator,
-    routes: Map<Tab, Screen>,
+    routes: Map<String, Screen>,
     theme: @Composable (content: @Composable () -> Unit) -> Unit,
     sheet: (content: FrameLayout, shell: View) -> ModalSheet,
 ) : LinearLayout(context) {

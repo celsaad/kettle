@@ -9,6 +9,7 @@ import {
   DefaultTheme,
   Stack,
   ThemeProvider,
+  useGlobalSearchParams,
   useNavigationContainerRef,
   usePathname,
   useSegments,
@@ -88,7 +89,10 @@ function Navigation() {
   // else.
   const pathname = usePathname();
   const modal = isSheetRoute(useSegments()[0]);
-  useEffect(() => reportRoute(pathname, modal), [pathname, modal]);
+  // Keyed by its contents: the hook's object isn't stable across renders, and a report per render would
+  // replay the sheet's transition.
+  const params = JSON.stringify(useGlobalSearchParams());
+  useEffect(() => reportRoute(pathname, modal, JSON.parse(params)), [pathname, modal, params]);
   const navigation = useNavigationContainerRef();
   useEffect(() => {
     if (!isHosted()) return;

@@ -3,11 +3,13 @@ package com.casco.kettle.shell.nav
 /**
  * Where RN reports its router to be, as reportRoute in src/hooks/safe-brownfield.ts sends it. The two
  * share no code, so change both. [modal] is RN's word on whether the route is one of its modal
- * sheets, so the shell needs no copy of that list.
+ * sheets, so the shell needs no copy of that list. [params] are the route's, so a native screen behind
+ * an RN stub route reads `id` or `exerciseId` whoever opened it (M4).
  */
 data class RouteReport(
     val pathname: String,
     val modal: Boolean,
+    val params: Map<String, String> = emptyMap(),
 ) {
     val place: Place
         get() =
@@ -22,8 +24,21 @@ data class RouteReport(
         fun from(message: Map<String, Any?>): RouteReport? {
             val pathname = (message["pathname"] as? String).takeIf { message["type"] == "route" }
             // A bundle from before the sheet sends no flag, and presents nothing as one.
-            return pathname?.let { RouteReport(it, modal = message["modal"] == true) }
+            return pathname?.let {
+                RouteReport(
+                    it,
+                    modal = message["modal"] == true,
+                    params = stringParams(message["params"]),
+                )
+            }
         }
+
+        /** The bridge hands a JS object over as a map; a bundle from before params sends none. */
+        private fun stringParams(params: Any?): Map<String, String> =
+            (params as? Map<*, *>)
+                .orEmpty()
+                .mapNotNull { (key, value) -> if (key is String && value is String) key to value else null }
+                .toMap()
     }
 }
 

@@ -26,6 +26,16 @@ object JsBridge {
     }
 
     /**
+     * Opens [pathname] with [params] on top of what shows, or in its place, as [how] says: an RN route
+     * or a native one behind its stub (#190). Where [navigate] would dismiss everything first.
+     */
+    fun open(
+        how: Stacking,
+        pathname: String,
+        params: Map<String, String> = emptyMap(),
+    ) = channel.send(how.message(pathname, params))
+
+    /**
      * Tells RN that native has just written [kind], so the store reading it reads it again: the half of
      * "one writer per file" that keeps RN's screens current once a native one writes. Sent before JS is
      * up, it waits in [channel] like any other message.

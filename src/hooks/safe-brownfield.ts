@@ -47,6 +47,11 @@ function onShellMessage(message: Record<string, unknown>): void {
     void onFilesChanged(message.kind);
     return;
   }
+  // The shell's JsBridge.open, with its Stacking as the type. The two share no code, so change both.
+  if (message.type === 'push' || message.type === 'replace') {
+    openFromShell(message.type, message);
+    return;
+  }
   // The shell's JsBridge.navigate. The two share no code, so change both.
   if (message.type !== 'navigate' || typeof message.url !== 'string') return;
   const href = message.url as Href;
@@ -64,18 +69,39 @@ function onShellMessage(message: Record<string, unknown>): void {
 }
 
 /**
+ * A native screen opening the next one (M4): History's session editor, Stats' exercise progress, the
+ * program guide's hand-off to Import. Unlike navigate it dismisses nothing, since the screen it opens
+ * from is the one back should return to. Only string params pass: the screens read them typed as one.
+ */
+function openFromShell(action: 'push' | 'replace', message: Record<string, unknown>): void {
+  if (typeof message.pathname !== 'string') return;
+  const href = { pathname: message.pathname, params: stringParams(message.params) } as Href;
+  if (action === 'push') router.push(href);
+  else router.replace(href);
+}
+
+function stringParams(params: unknown): Record<string, string> {
+  if (typeof params !== 'object' || params === null) return {};
+  return Object.fromEntries(Object.entries(params).filter(([, value]) => typeof value === 'string'));
+}
+
+/**
  * Tells the shell where the router is now: its tab bar follows RN, which also moves by itself (a
  * delete's `dismissTo`, the runner's exit) and covers the tabs with its modals, and its sheet presents
  * the routes `modal` says are modals. The shell's `RouteReport` reads it. The two share no code, so
  * change both.
  *
+ * The route's params travel with it (M4), so a native screen behind an RN stub route reads `id` or
+ * `exerciseId` whoever opened it. Only string params: an array, a repeated query key, no screen reads.
+ *
  * Sent one task later, because the shell animates from it. The effect that calls this runs before
  * the commit that moved the route has been handed to native, so a report sent straight away arrived
  * 1–3 frames ahead of RN's draw (#177); a task later, that commit's mount is already queued (#178).
  */
-export function reportRoute(pathname: string, modal: boolean): void {
+export function reportRoute(pathname: string, modal: boolean, params: Record<string, unknown> = {}): void {
   if (!isHosted()) return;
-  setTimeout(() => getBrownfield()?.sendMessage({ type: 'route', pathname, modal }), 0);
+  const reported = stringParams(params);
+  setTimeout(() => getBrownfield()?.sendMessage({ type: 'route', pathname, modal, params: reported }), 0);
 }
 
 /**

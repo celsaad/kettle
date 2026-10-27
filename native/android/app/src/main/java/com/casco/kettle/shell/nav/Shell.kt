@@ -2,6 +2,7 @@ package com.casco.kettle.shell.nav
 
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -89,9 +90,15 @@ internal fun NativeSheet(
     SideEffect { onComposed(content) }
     if (screen == null || content == null) return
     // A fresh screen per route and params, as RN mounts one: progress for one exercise pushed over
-    // another's keeps none of its state.
+    // another's keeps none of its state. Opaque to the top, strip included, as an RN screen paints its
+    // own: the sheet's picture is this view's, and a see-through strip showed RN's stub as it closed.
     key(content) {
-        Box(Modifier.fillMaxSize().padding(top = SheetStripHeight)) { screen.content(content.params) }
+        Box(
+            Modifier
+                .fillMaxSize()
+                .background(KettleTheme.colors.background)
+                .padding(top = SheetStripHeight),
+        ) { screen.content(content.params) }
     }
 }
 

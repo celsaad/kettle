@@ -276,7 +276,7 @@ wanting states and assignees, it wants GitHub issues instead.
   the `_zero` branch Android never selects for Portuguese; a direct `pluralStringResource` call brings
   "0 sessão" back with nothing failing. Only convention holds it today. detekt's `ForbiddenMethodCall`
   needs type resolution (`detektMain`), which the build doesn't run; a custom lint check is the other
-  route. Worth doing before M3's first screen with a count.
+  route. Worth doing before M4's first screen with a count.
 
 ## Open bugs
 

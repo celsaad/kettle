@@ -5,6 +5,7 @@ import android.animation.ValueAnimator
 import android.graphics.Bitmap
 import android.view.animation.PathInterpolator
 import androidx.core.animation.doOnEnd
+import androidx.core.view.doOnPreDraw
 import com.casco.kettle.shell.theme.KettleColors
 
 /** How one sheet gives way to the next inside the sheet: Material's shared axis X either way, or fade through. */
@@ -27,7 +28,11 @@ class SheetMotion(
 
     val running: Boolean get() = animator?.isRunning == true
 
+    /** An open waiting a frame to start; cleared by [cancel], so a cancelled one never starts. */
+    private var waiting: Any? = null
+
     fun cancel() {
+        waiting = null
         animator?.cancel()
     }
 
@@ -43,7 +48,7 @@ class SheetMotion(
         layOutAsSheet()
         show(backdrop, scrim, sheetBack, chrome)
         val offscreen = frameHeight
-        animate(if (fade) FADE_MS else OPEN_MS, if (fade) STANDARD else DECELERATE) { p ->
+        val frame = { p: Float ->
             // Reset on every present: a closing sheet leaves the scrim faded out.
             scrim.alpha = p
             if (fade) {
@@ -51,6 +56,19 @@ class SheetMotion(
                 scale(lerp(FADE_SCALE, 1f, p))
             } else {
                 translate((1 - p) * offscreen)
+            }
+        }
+        // Hidden, over the tab's picture, which looks exactly like the tab, for one more frame: on a
+        // device the drawn signal was still a frame early for a route RN adds, and an open is the one
+        // transition whose first frame shows the live surface uncovered (frame tiles, #155).
+        frame(0f)
+        val token = Any()
+        waiting = token
+        surface.doOnPreDraw {
+            if (waiting ===
+                token
+            ) {
+                animate(if (fade) FADE_MS else OPEN_MS, if (fade) STANDARD else DECELERATE, frame = frame)
             }
         }
     }

@@ -6,9 +6,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 
 /**
- * The shell's three layers, stacked in one frame ([ShellLayout]): the RN surface, a native tab's screen,
- * and a native sheet's (#197). Only one shows: a view left showing under another still takes touches and
- * TalkBack's focus.
+ * The shell's layers, stacked in one frame: the RN surface, a native tab's screen, and a native sheet's
+ * (#197). [ShellLayout] shows one at a time, and says why.
  */
 enum class Layer { Surface, NativeTab, NativeSheet }
 

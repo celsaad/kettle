@@ -278,6 +278,15 @@ wanting states and assignees, it wants GitHub issues instead.
   needs type resolution (`detektMain`), which the build doesn't run; a custom lint check is the other
   route. Worth doing before M4's first screen with a count.
 
+- **A native sheet can't grow into the runner yet.** `ModalSheet`'s grow and shrink act on the live
+  view, but RN slides the runner in inside the surface, which is invisible under a native sheet (#197).
+  No M4 sheet opens the runner; the first native screen that does has to handle it.
+
+- **The sheet's drawn signal is early on a pop.** On the emulator, going back from an RN sheet (Import
+  → Settings, or onto a tab) draws the destination uncovered for one or two frames before the
+  transition starts, RN → RN included, so it is `RnFrames`' (#155), not the native sheet's. Opens are
+  clean, as is going back onto a native sheet, whose surface stays hidden until arrival.
+
 ## Open bugs
 
 Found while planning the tests/a11y/i18n work (see `testing-a11y-i18n-plan.md`), each verified against

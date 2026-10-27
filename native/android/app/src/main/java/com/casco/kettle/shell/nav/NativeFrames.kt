@@ -5,6 +5,12 @@ import android.util.Log
 import android.view.View
 import android.view.ViewTreeObserver
 
+/** One route's screen in the native sheet: the path RN reported, and the params it reported it with. */
+internal data class SheetContent(
+    val path: String,
+    val params: Map<String, String>,
+)
+
 /**
  * When the native sheet's screen is there to show (#197), as `RnFrames` knows it for RN's: a transition
  * started before [view] has composed and laid out the route it arrives at slides in an empty sheet.

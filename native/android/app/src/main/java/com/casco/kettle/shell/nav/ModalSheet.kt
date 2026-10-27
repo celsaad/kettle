@@ -129,8 +129,8 @@ class ModalSheet(
         backCallback.isEnabled = to == Place.Sheet
         val layer = navigator.layer
         shell.showLayer(layer)
-        val native = layer == Layer.NativeSheet
-        val live = if (native) shell.nativeSheet else surface
+        val toNative = layer == Layer.NativeSheet
+        val live = if (toNative) shell.nativeSheet else surface
         if (live !== stage.live) {
             stage.live = live
             // Every other transition shapes the live view itself; inside the sheet it already has the shape.
@@ -142,7 +142,7 @@ class ModalSheet(
             play(transition, sheet)
             if (to == Place.Tab) tabPicture = null
         }
-        if (native) {
+        if (toNative) {
             shell.nativeFrames.awaitComposed(SheetContent(latest.pathname, latest.params), start)
         } else {
             start()

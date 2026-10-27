@@ -102,12 +102,6 @@ internal fun NativeSheet(
     }
 }
 
-/** One route's screen in the native sheet: the path RN reported, and the params it reported it with. */
-internal data class SheetContent(
-    val path: String,
-    val params: Map<String, String>,
-)
-
 @Composable
 internal fun TabBar(
     current: Tab,

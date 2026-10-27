@@ -278,12 +278,12 @@ class ShellTest {
 
         tapTheSheet()
 
-        compose.runOnIdle { assertEquals(2, touches) }
+        compose.runOnIdle { assertEquals(A_TAP, touches) }
 
         report("/support")
         tapTheSheet()
 
-        compose.runOnIdle { assertEquals(2, touches) }
+        compose.runOnIdle { assertEquals(A_TAP, touches) }
     }
 
     /** Settings → Support and back, the hand-over M4's first port makes in both directions. */
@@ -368,6 +368,9 @@ class ShellTest {
         /** Past RnFrames' fallback, which is what lands a report without Fabric, and the transition. */
         const val ARRIVED = 1_000L
         const val FRAMES = 4
+
+        /** Its down and its up. */
+        const val A_TAP = 2
         const val FRAME_MS = 16L
     }
 }

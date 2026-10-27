@@ -28,7 +28,7 @@ import com.casco.kettle.shell.theme.KettleColors
 class SheetStage(
     private val content: FrameLayout,
     private val surface: View,
-    val native: View,
+    private val native: View,
     requestBack: () -> Unit,
     onDrag: (dy: Float) -> Unit,
     onRelease: (dy: Float, velocity: Float) -> Unit,

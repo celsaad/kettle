@@ -8,6 +8,7 @@ import android.widget.FrameLayout
 import com.casco.kettle.shell.theme.LightColors
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -150,7 +151,7 @@ class SheetTransitionTest {
         stage.layOutAsSheet()
 
         assertEquals(stage.top, (native.layoutParams as FrameLayout.LayoutParams).topMargin)
-        assertEquals(true, native.clipToOutline)
+        assertTrue(native.clipToOutline)
         // The stub under a native sheet keeps whatever shape it had: it shows nothing.
         assertEquals(0, (surface.layoutParams as FrameLayout.LayoutParams).topMargin)
 

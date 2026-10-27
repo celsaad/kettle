@@ -2,7 +2,7 @@
   "expo": {
     "name": "kettle",
     "slug": "kettle",
-    "version": "0.11.2",
+    "version": "0.12.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "kettle",
@@ -10,7 +10,7 @@
     "ios": {
       "icon": "./assets/expo.icon",
       "bundleIdentifier": "com.casco.kettle",
-      "buildNumber": "16",
+      "buildNumber": "17",
       "config": {
         "usesNonExemptEncryption": false
       },
@@ -24,7 +24,7 @@
     },
     "android": {
       "package": "com.casco.kettle",
-      "versionCode": 16,
+      "versionCode": 17,
       "adaptiveIcon": {
         "backgroundColor": "#c05c2b",
         "foregroundImage": "./assets/images/android-icon-foreground.png",

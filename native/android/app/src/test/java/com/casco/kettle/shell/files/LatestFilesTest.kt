@@ -2,8 +2,6 @@ package com.casco.kettle.shell.files
 
 import com.casco.kettle.domain.Library
 import com.casco.kettle.domain.SessionLog
-import com.casco.kettle.shell.nav.Screen
-import com.casco.kettle.shell.nav.Tab
 import com.casco.kettle.shell.nav.TabNavigator
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -31,7 +29,7 @@ class LatestFilesTest {
     }
 
     private val navigator by lazy {
-        TabNavigator(Tab.entries.associateWith { Screen.Rn }, navigate = {}, reread = files::reread)
+        TabNavigator(emptyMap(), navigate = {}, reread = files::reread)
     }
 
     private fun writeSession(id: String) =

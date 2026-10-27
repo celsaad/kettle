@@ -41,7 +41,7 @@ class ShellTest {
 
     private lateinit var surface: View
 
-    private fun show(routes: Map<Tab, Screen> = shellRoutes): TabNavigator {
+    private fun show(routes: Map<String, Screen> = shellRoutes): TabNavigator {
         val navigator = TabNavigator(routes, sent::add)
         compose.runOnUiThread {
             val activity = compose.activity
@@ -162,13 +162,14 @@ class ShellTest {
     /** The M3 landmark: a route goes native by changing its registration, and nothing else. */
     @Test
     fun `a tab registered native shows its screen in place of the surface`() {
-        show(shellRoutes + (Tab.History to Screen.Native { Text("Native history") }))
+        show(shellRoutes + ("/history" to Screen.Native { Text("Native history") }))
 
         tab("History").performClick()
 
         compose.onNodeWithText("Native history").assertExists()
         assertSurfaceShown(false)
-        assertEquals(emptyList<String>(), sent)
+        // RN goes to the stub route left at the same path, as it would to the RN screen (#190).
+        assertEquals(listOf("/history"), sent)
 
         tab("Library").performClick()
 
@@ -176,10 +177,21 @@ class ShellTest {
         assertSurfaceShown(true)
     }
 
+    /** A native screen behind a stub reads its params from RN's report, whoever opened the route. */
+    @Test
+    fun `a native screen is given the params RN reported its route with`() {
+        val navigator =
+            show(shellRoutes + ("/history" to Screen.Native { params -> Text("Session ${params["id"]}") }))
+
+        compose.runOnIdle { navigator.onRoute("/history", mapOf("id" to "2026-10-27-a")) }
+
+        compose.onNodeWithText("Session 2026-10-27-a").assertExists()
+    }
+
     /** RN presents its modals inside the surface, so one opened from a native tab needs it showing. */
     @Test
     fun `the surface shows over a native tab while RN has something above the tabs`() {
-        val navigator = show(shellRoutes + (Tab.History to Screen.Native { Text("Native history") }))
+        val navigator = show(shellRoutes + ("/history" to Screen.Native { Text("Native history") }))
         tab("History").performClick()
 
         compose.runOnIdle { navigator.onRoute("/settings") }

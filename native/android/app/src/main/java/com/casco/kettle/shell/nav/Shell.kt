@@ -27,7 +27,7 @@ import com.casco.kettle.shell.theme.KettleTheme
 @Composable
 internal fun Destinations(
     navigator: TabNavigator,
-    routes: Map<Tab, Screen>,
+    routes: Map<String, Screen>,
     onRnShown: (Boolean) -> Unit,
 ) {
     val navController = rememberNavController()
@@ -61,8 +61,9 @@ internal fun Destinations(
         enterTransition = { EnterTransition.None },
         exitTransition = { ExitTransition.None },
     ) {
-        for ((tab, screen) in routes) {
-            composable(tab.name) { if (screen is Screen.Native) screen.content() }
+        for (tab in Tab.entries) {
+            val screen = routes.screenAt(tab.path)
+            composable(tab.name) { if (screen is Screen.Native) screen.content(navigator.params(tab.path)) }
         }
     }
 }

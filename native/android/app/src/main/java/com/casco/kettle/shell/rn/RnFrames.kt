@@ -140,7 +140,10 @@ object RnFrames {
                 }
             },
         )
+        // The parent as well: over a native tab the surface is invisible, which makes its own invalidate a
+        // no-op, and a sheet pushed from that tab then waited for some unrelated frame to arrive.
         surface.invalidate()
+        (surface.parent as? View)?.invalidate()
     }
 
     /**

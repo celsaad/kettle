@@ -3,7 +3,8 @@ package com.casco.kettle.shell.nav
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
-private val rnRoutes = Tab.entries.associateWith<Tab, Screen> { Screen.Rn }
+/** Every route RN's: a path nothing registers renders RN. */
+private val rnRoutes = emptyMap<String, Screen>()
 
 class TabNavigatorTest {
     private val sent = mutableListOf<String>()
@@ -17,14 +18,48 @@ class TabNavigatorTest {
         assertEquals(listOf("/history"), sent)
     }
 
+    /** A native tab still has its stub route in RN, and RN has to be on it (#190). */
     @Test
-    fun `a tap on a native tab selects it and leaves the surface where it is`() {
-        val native = TabNavigator(rnRoutes + (Tab.History to Screen.Native {}), sent::add)
+    fun `a tap on a native tab selects it and steers the surface to its stub`() {
+        val native = TabNavigator(rnRoutes + ("/history" to Screen.Native {}), sent::add)
 
         native.select(Tab.History)
 
         assertEquals(Tab.History, native.current)
-        assertEquals(emptyList<String>(), sent)
+        assertEquals(listOf("/history"), sent)
+        assertEquals(false, native.rnShown)
+    }
+
+    /**
+     * What steering to the stub is for: a sheet a native tab opens is pushed over the stub, so closing it
+     * reports that tab. Left on the tab it was on, RN reported Library on the close, and the bar moved.
+     */
+    @Test
+    fun `a sheet opened from a native tab closes back onto that tab`() {
+        val native = TabNavigator(rnRoutes + ("/history" to Screen.Native {}), sent::add)
+        native.onRoute("/library")
+        native.select(Tab.History)
+        native.onRoute("/history")
+
+        native.onRoute("/session-editor")
+        native.onRoute("/history")
+
+        assertEquals(Tab.History, native.current)
+    }
+
+    /** A native screen behind an RN stub reads `id` or `exerciseId` from its own route's report. */
+    @Test
+    fun `each path keeps the params it was last reported with`() {
+        navigator.onRoute("/history", mapOf("from" to "runner"))
+        navigator.onRoute("/exercise-progress", mapOf("exerciseId" to "kb-swing"))
+
+        assertEquals(mapOf("from" to "runner"), navigator.params("/history"))
+        assertEquals(mapOf("exerciseId" to "kb-swing"), navigator.params("/exercise-progress"))
+        assertEquals(emptyMap<String, String>(), navigator.params("/settings"))
+
+        navigator.onRoute("/exercise-progress", mapOf("exerciseId" to "goblet-squat"))
+
+        assertEquals(mapOf("exerciseId" to "goblet-squat"), navigator.params("/exercise-progress"))
     }
 
     /** RN moves itself too: a delete's `dismissTo`, the runner's exit to History. */
@@ -72,7 +107,7 @@ class TabNavigatorTest {
     fun `a tap onto a native tab rereads, and a tap onto an RN one doesn't`() {
         var rereads = 0
         val navigator =
-            TabNavigator(rnRoutes + (Tab.History to Screen.Native {}), sent::add, reread = { rereads++ })
+            TabNavigator(rnRoutes + ("/history" to Screen.Native {}), sent::add, reread = { rereads++ })
 
         navigator.select(Tab.Library)
         navigator.select(Tab.History)
@@ -111,7 +146,7 @@ class TabNavigatorTest {
     /** RN's answer to the first tap arrives after the second, which went to a tab RN isn't drawing. */
     @Test
     fun `RN's answer to an earlier tap doesn't pull the bar off a native tab`() {
-        val native = TabNavigator(rnRoutes + (Tab.Programs to Screen.Native {}), sent::add)
+        val native = TabNavigator(rnRoutes + ("/programs" to Screen.Native {}), sent::add)
 
         native.select(Tab.History)
         native.select(Tab.Programs)
@@ -121,20 +156,22 @@ class TabNavigatorTest {
     }
 
     /**
-     * Back from a native tab to the RN tab RN is still on: RN doesn't move, so it reports nothing, and
-     * waiting for that report would leave every later move of RN's own ignored.
+     * Back from a native tab to the RN tab RN was on: RN has gone to the stub since, so it has to be
+     * sent back, and once it has answered, its own moves are followed again.
      */
     @Test
-    fun `a tap back to the tab RN is already on waits for nothing`() {
-        val native = TabNavigator(rnRoutes + (Tab.Programs to Screen.Native {}), sent::add)
+    fun `a tap back from a native tab steers RN off the stub`() {
+        val native = TabNavigator(rnRoutes + ("/programs" to Screen.Native {}), sent::add)
         native.onRoute("/history")
 
         native.select(Tab.Programs)
+        native.onRoute("/programs")
         native.select(Tab.History)
+        native.onRoute("/history")
         native.onRoute("/library")
 
         assertEquals(Tab.Library, native.current)
-        assertEquals(emptyList<String>(), sent)
+        assertEquals(listOf("/programs", "/history"), sent)
     }
 
     /**

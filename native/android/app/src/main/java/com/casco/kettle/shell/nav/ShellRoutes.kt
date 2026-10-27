@@ -31,13 +31,19 @@ enum class Tab(
 sealed interface Screen {
     data object Rn : Screen
 
+    /** [content] is given the params RN reported the route with, `id` or `exerciseId`. */
     class Native(
-        val content: @Composable () -> Unit,
+        val content: @Composable (params: Map<String, String>) -> Unit,
     ) : Screen
 }
 
 /**
- * The route registrations. Moving a tab to native is this one line, `Tab.History to Screen.Native {
- * HistoryScreen() }`: the bar, the back stack and RN's route reports already go through [Tab].
+ * The route registrations, by the path RN knows the route by. Anything not listed renders RN. Moving a
+ * screen to native is one line, `"/support" to Screen.Native { SupportScreen() }`, and RN keeps an empty
+ * stub route at the same path (#190): RN stays the router, so its stack, back and route reports are
+ * unchanged, and native draws the screen whenever RN reports that path.
  */
-val shellRoutes: Map<Tab, Screen> = Tab.entries.associateWith { Screen.Rn }
+val shellRoutes: Map<String, Screen> = emptyMap()
+
+/** How [path] renders. */
+fun Map<String, Screen>.screenAt(path: String): Screen = this[path] ?: Screen.Rn

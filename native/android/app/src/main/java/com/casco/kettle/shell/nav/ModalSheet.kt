@@ -111,7 +111,7 @@ class ModalSheet(
     /** The first frame of the route reported last. */
     private fun arrive() {
         val latest = reports.lastOrNull() ?: return
-        for (report in reports) navigator.onRoute(report.pathname)
+        for (report in reports) navigator.onRoute(report.pathname, report.params)
         reports.clear()
         RnFrames.disarm()
         val transition = transitionBetween(place, latest.place, action)

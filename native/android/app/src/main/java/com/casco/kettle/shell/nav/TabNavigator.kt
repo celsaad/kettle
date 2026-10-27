@@ -1,6 +1,7 @@
 package com.casco.kettle.shell.nav
 
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 
@@ -13,7 +14,7 @@ import androidx.compose.runtime.setValue
  * (a first launch's seeded library, RN History's delete) and nothing reports that.
  */
 class TabNavigator(
-    private val routes: Map<Tab, Screen>,
+    private val routes: Map<String, Screen>,
     private val navigate: (String) -> Unit,
     private val reread: () -> Unit = {},
 ) {
@@ -46,12 +47,22 @@ class TabNavigator(
      */
     private var rnAt: String? = null
 
+    /** Each path's params as RN last reported them, which a native screen at that path reads. */
+    private val reported = mutableStateMapOf<String, Map<String, String>>()
+
+    /** The params RN last reported [path] with: what a native screen there was opened with. */
+    fun params(path: String): Map<String, String> = reported[path].orEmpty()
+
     /**
-     * RN's report of where it is now, a pathname. RN can move without being asked, so this is what
-     * keeps the bar true rather than the taps alone.
+     * RN's report of where it is now, a pathname and its [params]. RN can move without being asked, so
+     * this is what keeps the bar true rather than the taps alone.
      */
-    fun onRoute(pathname: String) {
+    fun onRoute(
+        pathname: String,
+        params: Map<String, String> = emptyMap(),
+    ) {
         rnAt = pathname
+        reported[pathname] = params
         val tab = Tab.at(pathname)
         val handingBack = tab != null && !barShown
         barShown = tab != null
@@ -84,12 +95,14 @@ class TabNavigator(
         if (tab == current) return
         current = tab
         if (!tab.isRn()) reread()
-        // A native tab leaves the surface where it is, and RN already headed for the tab has nowhere to
-        // go. Headed, not last seen: until RN answers a tap, it is on its way to that tap's tab.
-        if (!tab.isRn() || (pending?.path ?: rnAt) == tab.path) return
+        // A native tab steers RN too, to its stub route (#190): a sheet it opens is then pushed over that
+        // tab, and closing it reports that tab rather than whichever one RN was left on. RN already
+        // headed for the tab has nowhere to go. Headed, not last seen: until RN answers a tap, it is on
+        // its way to that tap's tab.
+        if ((pending?.path ?: rnAt) == tab.path) return
         pending = tab
         navigate(tab.path)
     }
 
-    private fun Tab.isRn() = routes[this] == Screen.Rn
+    private fun Tab.isRn() = routes.screenAt(path) == Screen.Rn
 }

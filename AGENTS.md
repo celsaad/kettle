@@ -66,7 +66,8 @@ retrofit, so answer them out loud even when the answer is no.
 - [ ] **Touched `native/android`, or moved a golden in `conformance/`?** `gradlew build` from
       `native/android`: tests, ktlint, detekt, Android lint and compiler warnings, all failing on any
       finding. A golden change reaches it because the Kotlin runner reads the same corpus. It needs
-      the RN AAR in mavenLocal first (`scripts/native-dev.ps1`, once per native dependency change).
+      the RN AAR in mavenLocal first (`scripts/native-dev.sh`, or `.ps1` on Windows, once per native
+      dependency change).
 - [ ] **Push the branch and open a PR** (`gh pr create`). The commit message is the durable record —
       root cause, alternatives, deliberate scope cuts go there, not into the docs (see "Docs").
 
@@ -120,14 +121,16 @@ mistake here that cannot be fixed for anyone who has already installed it.
   `gradlew build` from that directory compiles, tests and lints it, and ktlint, detekt and Android
   lint hold the same zero-warning rule oxlint does; `gradlew ktlintFormat` is its `pnpm run format`.
   **`:app` hosts today's RN app from an AAR in mavenLocal**, so it doesn't build until
-  `scripts/native-dev.ps1` has published one: that script is the Windows dev loop, AAR to phone to
-  Metro. Changing `app.json`'s icons, permissions or plugins means copying the change into the shell
-  (see the single-source entry in the decision log). `:benchmark` is a Macrobenchmark of cold start
-  to a drawn Home, the shell against today's app, run on a phone by `scripts/startup-benchmark.ps1`;
-  its end point is `reportFullyDrawn`, called from Home through the local Expo module in
-  `modules/startup-marker`. `scripts/route-check.ps1` steers the running `.dev` shell through every
-  route by navigate message and fails on the first screen that isn't the expected one. Run it after
-  touching navigation, and update its matrix whenever a screen goes native.
+  `scripts/native-dev.sh` has published one: that script is the dev loop, AAR to phone to Metro.
+  Each device script is a `.sh` with a step-for-step `.ps1` twin for Windows; a change to one goes
+  into both. Changing `app.json`'s icons, permissions or plugins means copying the change into the
+  shell (see the single-source entry in the decision log). `:benchmark` is a Macrobenchmark of cold
+  start to a drawn Home, the shell against today's app, run on a phone by
+  `scripts/startup-benchmark.sh`; its end point is `reportFullyDrawn`, called from Home through the
+  local Expo module in `modules/startup-marker`. `scripts/route-check.sh` steers the running `.dev`
+  shell through every route by navigate message and fails on the first screen that isn't the
+  expected one. Run it after touching navigation, and update its matrix whenever a screen goes
+  native.
 
 - `conformance/` — the format's behaviour as data: hand-written YAML inputs and generated golden
   outputs, checked by `conformance.test.ts` and by the Kotlin runner in `:shared`. It exists so the

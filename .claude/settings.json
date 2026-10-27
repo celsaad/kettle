@@ -4,18 +4,6 @@
   },
   "permissions": {
     "allow": [
-      "Bash(npx jest)",
-      "Bash(npx jest *)",
-      "Bash(npm run typecheck)",
-      "Bash(npm run typecheck *)",
-      "Bash(npm run lint)",
-      "Bash(npm run lint *)",
-      "Bash(npm test)",
-      "Bash(npm test *)",
-      "Bash(npx tsc --noEmit)",
-      "Bash(npx tsc --noEmit *)",
-      "Bash(npm run format:check)",
-      "Bash(npm run format:check *)",
       "Bash(npx oxfmt --check)",
       "Bash(npx oxfmt --check *)",
       "Bash(npx expo config *)",
@@ -31,7 +19,6 @@
       "Bash(pnpm run format:check *)",
       "Bash(npx oxlint)",
       "Bash(npx oxlint *)",
-      "Bash(npm ls *)",
       "Bash(git check-ignore *)"
     ]
   }

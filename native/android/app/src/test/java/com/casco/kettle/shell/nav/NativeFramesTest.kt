@@ -61,7 +61,7 @@ class NativeFramesTest {
         frames.awaitComposed(support) { started += "support" }
         frame()
 
-        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(BACKSTOP_MS))
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(NativeFrames.HOLD_MS))
         frame()
 
         assertEquals(listOf("support"), started)
@@ -82,6 +82,21 @@ class NativeFramesTest {
         assertEquals(listOf("support", "progress"), started)
     }
 
+    /** What ModalSheet asks before picturing the sheet: held, the screen shows what it showed before. */
+    @Test
+    fun `it says whether an arrival is held`() {
+        assertEquals(false, frames.holding)
+
+        frames.awaitComposed(support) { started += "support" }
+
+        assertEquals(true, frames.holding)
+
+        frames.onComposed(support)
+        frame()
+
+        assertEquals(false, frames.holding)
+    }
+
     @Test
     fun `a held arrival runs once, however it is let go`() {
         frames.awaitComposed(support) { started += "support" }
@@ -92,9 +107,5 @@ class NativeFramesTest {
         frames.flush()
 
         assertEquals(listOf("support"), started)
-    }
-
-    private companion object {
-        const val BACKSTOP_MS = 500L
     }
 }

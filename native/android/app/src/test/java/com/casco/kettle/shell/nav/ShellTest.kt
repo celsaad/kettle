@@ -83,11 +83,14 @@ class ShellTest {
             }
         }
 
+    private val withNativeSupport = shellRoutes + ("/support" to Screen.Native { Text("Native support") })
+
     /** RN's report of [pathname], through the sheet, as JsBridge hands it over; then its frames. */
     private fun report(
         pathname: String,
         modal: Boolean = true,
         params: Map<String, String> = emptyMap(),
+        settle: Boolean = true,
     ) {
         compose.runOnUiThread { shell.sheet.onRoute(RouteReport(pathname, modal, params)) }
         // Frames by hand: Robolectric dispatches no pre-draw of its own here, and the sheet waits on them.
@@ -96,10 +99,19 @@ class ShellTest {
             compose.runOnUiThread { shell.viewTreeObserver.dispatchOnPreDraw() }
             compose.waitForIdle()
         }
+        if (!settle) return
         // The transition's animator, on the main looper rather than Compose's clock.
         shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(ARRIVED))
         compose.waitForIdle()
     }
+
+    private fun closeButton(): View {
+        val found = ArrayList<View>()
+        shell.findViewsWithText(found, "Close", View.FIND_VIEWS_WITH_CONTENT_DESCRIPTION)
+        return found.single()
+    }
+
+    private fun View.parentView() = parent as View
 
     /** A tap in the middle of the sheet, sent to the shell as the window would. */
     private fun tapTheSheet() =
@@ -261,7 +273,7 @@ class ShellTest {
      */
     @Test
     fun `a native sheet shows its screen, and the stub under it is invisible`() {
-        show(shellRoutes + ("/support" to Screen.Native { Text("Native support") }))
+        show(withNativeSupport)
 
         report("/support")
 
@@ -273,7 +285,7 @@ class ShellTest {
     /** The control first: without one, a test of touches never arriving passes on a broken dispatch. */
     @Test
     fun `a touch on a native sheet never reaches the stub, where one on an RN sheet does`() {
-        show(shellRoutes + ("/support" to Screen.Native { Text("Native support") }))
+        show(withNativeSupport)
         report("/settings")
 
         tapTheSheet()
@@ -289,7 +301,7 @@ class ShellTest {
     /** Settings → Support and back, the hand-over M4's first port makes in both directions. */
     @Test
     fun `the sheet hands over from RN to native and back`() {
-        show(shellRoutes + ("/support" to Screen.Native { Text("Native support") }))
+        show(withNativeSupport)
         report("/settings")
         assertSurfaceShown(true)
 
@@ -305,6 +317,20 @@ class ShellTest {
         compose.runOnIdle { assertEquals(View.INVISIBLE, shell.nativeSheet.visibility) }
     }
 
+    /**
+     * What composed has to be what was reported, or the arrival waits out the backstop, the whole window
+     * held. Within a few frames, well short of it, the transition has started and shown the chrome,
+     * which is gone until one does.
+     */
+    @Test
+    fun `a native sheet arrives within frames, not at the backstop`() {
+        show(shellRoutes + ("/exercise-progress" to Screen.Native { params -> Text("Progress ${params["id"]}") }))
+
+        report("/exercise-progress", params = mapOf("id" to "kb-swing"), settle = false)
+
+        compose.runOnIdle { assertEquals(View.VISIBLE, closeButton().parentView().visibility) }
+    }
+
     @Test
     fun `a native sheet is given the params RN reported its route with`() {
         show(shellRoutes + ("/exercise-progress" to Screen.Native { params -> Text("Progress ${params["id"]}") }))
@@ -317,7 +343,7 @@ class ShellTest {
     /** Where an RN sheet's content starts, under RN's `ModalHeader` strip, which the chrome draws over. */
     @Test
     fun `a native sheet's content starts below the chrome's strip`() {
-        show(shellRoutes + ("/support" to Screen.Native { Text("Native support") }))
+        show(withNativeSupport)
 
         report("/support")
 
@@ -330,8 +356,7 @@ class ShellTest {
     @Test
     fun `closing a native sheet over a native tab shows the tab again`() {
         val routes =
-            shellRoutes + ("/history" to Screen.Native { Text("Native history") }) +
-                ("/support" to Screen.Native { Text("Native support") })
+            withNativeSupport + ("/history" to Screen.Native { Text("Native history") })
         show(routes)
         tab("History").performClick()
         report("/history", modal = false)

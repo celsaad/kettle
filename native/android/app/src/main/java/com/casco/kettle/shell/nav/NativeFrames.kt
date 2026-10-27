@@ -25,7 +25,7 @@ class NativeFrames(
     private var composed: SheetContent? = null
 
     /** An arrival waiting for its screen. */
-    private var holding: Hold? = null
+    private var held: Hold? = null
 
     internal fun onComposed(content: SheetContent?) {
         composed = content
@@ -42,12 +42,12 @@ class NativeFrames(
         then: () -> Unit,
     ) {
         flush()
-        holding = Hold(wanted, then).also { it.begin() }
+        held = Hold(wanted, then).also { it.begin() }
     }
 
     /** Runs a held arrival now: the next one is about to start. */
     fun flush() {
-        holding?.release()
+        held?.release()
     }
 
     private inner class Hold(
@@ -72,15 +72,18 @@ class NativeFrames(
         }
 
         fun release() {
-            if (holding !== this) return
-            holding = null
+            if (held !== this) return
+            held = null
             view.viewTreeObserver.removeOnPreDrawListener(this)
             then()
         }
     }
 
-    private companion object {
-        const val TAG = "NativeFrames"
+    /** Whether an arrival is waiting: the screen still shows what it showed before it. */
+    val holding: Boolean get() = held != null
+
+    internal companion object {
+        private const val TAG = "NativeFrames"
         const val HOLD_MS = 500L
     }
 }

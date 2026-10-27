@@ -52,6 +52,9 @@ class ModalSheet(
     private var tabPicture: Bitmap? = null
     private var sheetPicture: Bitmap? = null
 
+    /** While a native arrival is held: the picture its transition slides out, which is still on screen. */
+    private var heldPicture: Bitmap? = null
+
     /** Back while the sheet is up: to RN, with Material's predictive shrink first where it's on. */
     val backCallback =
         object : OnBackPressedCallback(false) {
@@ -99,7 +102,10 @@ class ModalSheet(
     fun capture() {
         when (place) {
             Place.Tab -> tabPicture = pictureOf(shell)
-            Place.Sheet -> sheetPicture = pictureOf(stage.live)
+
+            // Held, the screen still shows the sheet before: the native one live now hasn't composed.
+            Place.Sheet -> sheetPicture = if (shell.nativeFrames.holding) heldPicture else pictureOf(stage.live)
+
             Place.Runner -> Unit
         }
     }
@@ -116,11 +122,12 @@ class ModalSheet(
     /** The first frame of the route reported last: RN's, and the native screen's too when it has one. */
     private fun arrive() {
         val latest = reports.lastOrNull() ?: return
+        // An arrival still composing goes first, before the navigator moves on, so this one starts
+        // from where that one ends.
+        shell.nativeFrames.flush()
         for (report in reports) navigator.onRoute(report.pathname, report.params)
         reports.clear()
         RnFrames.disarm()
-        // An arrival still composing goes first, so this one starts from where that one ends.
-        shell.nativeFrames.flush()
         val transition = transitionBetween(place, latest.place, action)
         action = null
         val from = place
@@ -139,10 +146,12 @@ class ModalSheet(
         // Each picture is used once; the tab's stays until the sheet has gone.
         val sheet = sheetPicture.also { sheetPicture = null }
         val start = {
+            heldPicture = null
             play(transition, sheet)
             if (to == Place.Tab) tabPicture = null
         }
         if (toNative) {
+            heldPicture = sheet
             shell.nativeFrames.awaitComposed(SheetContent(latest.pathname, latest.params), start)
         } else {
             start()

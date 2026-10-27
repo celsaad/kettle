@@ -282,11 +282,6 @@ wanting states and assignees, it wants GitHub issues instead.
   view, but RN slides the runner in inside the surface, which is invisible under a native sheet (#197).
   No M4 sheet opens the runner; the first native screen that does has to handle it.
 
-- **The sheet's drawn signal is early on a pop.** On the emulator, going back from an RN sheet (Import
-  → Settings, or onto a tab) draws the destination uncovered for one or two frames before the
-  transition starts, RN → RN included, so it is `RnFrames`' (#155), not the native sheet's. Opens are
-  clean, as is going back onto a native sheet, whose surface stays hidden until arrival.
-
 ## Open bugs
 
 Found while planning the tests/a11y/i18n work (see `testing-a11y-i18n-plan.md`), each verified against
@@ -353,6 +348,8 @@ interpolated rather than translated. Notes on the structural ones:
   iOS's swipe-down on a `modal` presentation is held by `preventNativeDismiss`, and that Android back
   opens the dialog with the Coming up sheet closed and closes the sheet when it's open.
 
+- **The sheet's drawn signal is early on a pop** (`RnFrames`, #155): going back from an RN sheet drew
+  the destination uncovered for a frame or two before the transition, on the emulator (#207).
 - **`Alert.alert` is a no-op on web.** react-native-web ships `class Alert { static alert() {} }`, so
   every confirm dialog silently does nothing in the browser — all the deletes and finish-session.
   Native is unaffected and web is a dev/preview target, so this is logged rather than fixed. It does

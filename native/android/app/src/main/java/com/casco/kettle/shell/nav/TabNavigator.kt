@@ -12,7 +12,7 @@ import androidx.compose.runtime.setValue
 enum class Layer { Surface, NativeTab, NativeSheet }
 
 /**
- * Which tab the shell is on, and what that means for the RN surface.
+ * Which tab the shell is on, and which [layer] shows: the RN surface, a native tab, or a native sheet.
  *
  * [navigate] steers the surface to a route path (`JsBridge.navigate`). [reread] is told whenever what
  * native read of RN's files may be stale: when RN hands the tabs back, since what it showed above them

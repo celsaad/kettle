@@ -39,9 +39,10 @@ sealed interface Screen {
 
 /**
  * The route registrations, by the path RN knows the route by. Anything not listed renders RN. Moving a
- * screen to native is one line, `"/support" to Screen.Native { SupportScreen() }`, and RN keeps an empty
- * stub route at the same path (#190): RN stays the router, so its stack, back and route reports are
- * unchanged, and native draws the screen whenever RN reports that path.
+ * tab to native is this one line, `"/history" to Screen.Native { HistoryScreen() }`, plus an empty stub
+ * route RN keeps at the same path (#190): RN stays the router, so its stack, back and route reports are
+ * unchanged, and native draws the screen whenever RN reports that path. A sheet path registered here
+ * draws nothing yet: `Destinations` draws only the tabs until the sheet has native content (#197).
  */
 val shellRoutes: Map<String, Screen> = emptyMap()
 

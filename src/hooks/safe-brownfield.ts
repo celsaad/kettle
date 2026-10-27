@@ -47,9 +47,9 @@ function onShellMessage(message: Record<string, unknown>): void {
     void onFilesChanged(message.kind);
     return;
   }
-  // The shell's JsBridge.push and JsBridge.replace. The two share no code, so change both.
+  // The shell's JsBridge.open, with its Stacking as the type. The two share no code, so change both.
   if (message.type === 'push' || message.type === 'replace') {
-    stack(message.type, message);
+    openFromShell(message.type, message);
     return;
   }
   // The shell's JsBridge.navigate. The two share no code, so change both.
@@ -73,7 +73,7 @@ function onShellMessage(message: Record<string, unknown>): void {
  * program guide's hand-off to Import. Unlike navigate it dismisses nothing, since the screen it opens
  * from is the one back should return to. Only string params pass: the screens read them typed as one.
  */
-function stack(action: 'push' | 'replace', message: Record<string, unknown>): void {
+function openFromShell(action: 'push' | 'replace', message: Record<string, unknown>): void {
   if (typeof message.pathname !== 'string') return;
   const href = { pathname: message.pathname, params: stringParams(message.params) } as Href;
   if (action === 'push') router.push(href);
@@ -100,8 +100,8 @@ function stringParams(params: unknown): Record<string, string> {
  */
 export function reportRoute(pathname: string, modal: boolean, params: Record<string, unknown> = {}): void {
   if (!isHosted()) return;
-  const strings = stringParams(params);
-  setTimeout(() => getBrownfield()?.sendMessage({ type: 'route', pathname, modal, params: strings }), 0);
+  const reported = stringParams(params);
+  setTimeout(() => getBrownfield()?.sendMessage({ type: 'route', pathname, modal, params: reported }), 0);
 }
 
 /**

@@ -159,7 +159,7 @@ class ShellTest {
         assertSurfaceShown(true)
     }
 
-    /** The M3 landmark: a route goes native by changing its registration, and nothing else. */
+    /** The M3 landmark: a route goes native by its registration, and RN's stub route at the same path. */
     @Test
     fun `a tab registered native shows its screen in place of the surface`() {
         show(shellRoutes + ("/history" to Screen.Native { Text("Native history") }))

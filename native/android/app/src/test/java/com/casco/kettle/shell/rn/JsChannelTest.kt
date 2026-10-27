@@ -24,6 +24,26 @@ class JsChannelTest {
         assertEquals(listOf(mapOf("type" to "navigate", "url" to "kettle://history")), delivered)
     }
 
+    /**
+     * A native screen's push waits for JS like any other message, and keeps its place behind a tab's
+     * navigate to the stub it is pushed from: delivered first, it would open over the wrong tab.
+     */
+    @Test
+    fun `a push sent before JS is ready arrives after the navigate before it, with its params`() {
+        channel.send(mapOf("type" to "navigate", "url" to "/history"))
+        channel.send(Stacking.Push.message("/session-editor", mapOf("id" to "2026-10-27-a")))
+
+        channel.receive(ready)
+
+        assertEquals(
+            listOf(
+                mapOf("type" to "navigate", "url" to "/history"),
+                mapOf("type" to "push", "pathname" to "/session-editor", "params" to mapOf("id" to "2026-10-27-a")),
+            ),
+            delivered,
+        )
+    }
+
     /** A reload replaces the JS runtime, and the new one listens only once it has said so again. */
     @Test
     fun `after a reload it holds again, and delivers in the order sent`() {

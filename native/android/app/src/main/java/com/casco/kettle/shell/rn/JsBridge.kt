@@ -26,19 +26,14 @@ object JsBridge {
     }
 
     /**
-     * Opens [pathname] with [params] on top of what shows, an RN route or a native one behind its stub
-     * (#190), where [navigate] would dismiss everything first.
+     * Opens [pathname] with [params] on top of what shows, or in its place, as [how] says: an RN route
+     * or a native one behind its stub (#190). Where [navigate] would dismiss everything first.
      */
-    fun push(
+    fun open(
+        how: Stacking,
         pathname: String,
         params: Map<String, String> = emptyMap(),
-    ) = channel.send(Stacking.Push.message(pathname, params))
-
-    /** [push], but in place of the route showing. */
-    fun replace(
-        pathname: String,
-        params: Map<String, String> = emptyMap(),
-    ) = channel.send(Stacking.Replace.message(pathname, params))
+    ) = channel.send(how.message(pathname, params))
 
     /**
      * Tells RN that native has just written [kind], so the store reading it reads it again: the half of

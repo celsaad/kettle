@@ -49,10 +49,10 @@ class TabNavigator(
     private var rnAt: String? = null
 
     /** Each path's params as RN last reported them, which a native screen at that path reads. */
-    private val reported = mutableStateMapOf<String, Map<String, String>>()
+    private val paramsByPath = mutableStateMapOf<String, Map<String, String>>()
 
     /** The params RN last reported [path] with: what a native screen there was opened with. */
-    fun params(path: String): Map<String, String> = reported[path].orEmpty()
+    fun params(path: String): Map<String, String> = paramsByPath[path].orEmpty()
 
     /**
      * RN's report of where it is now, a pathname and its [params]. RN can move without being asked, so
@@ -63,7 +63,7 @@ class TabNavigator(
         params: Map<String, String> = emptyMap(),
     ) {
         rnAt = pathname
-        reported[pathname] = params
+        paramsByPath[pathname] = params
         val tab = Tab.at(pathname)
         val handingBack = tab != null && !barShown
         barShown = tab != null

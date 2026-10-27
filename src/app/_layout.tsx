@@ -26,6 +26,7 @@ import { AnimatedSplashOverlay } from '@/components/animated-icon';
 // Imported for its side effect: initialises i18next (and the Intl.PluralRules polyfill Hermes lacks)
 // before any screen renders a translated string.
 import '@/i18n';
+import { isSheetRoute, SHEET_ROUTES } from '@/constants/sheet-routes';
 import { Colors, RunnerColors, MaxContentWidth, Spacing } from '@/constants/theme';
 import { ThemeOverrideProvider, useAppTheme } from '@/hooks/theme-context';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -36,25 +37,6 @@ import { usePreferencesStore } from '@/state/preferences-store';
 import { useSessionHistoryStore } from '@/state/session-history-store';
 
 SplashScreen.preventAutoHideAsync();
-
-/**
- * The routes presented as modal sheets: in the native shell as its sheet (M3), everywhere else as
- * RN's own modal. The runner is presented modally too, but full screen rather than as a sheet, and it
- * stays RN's until M6, so it isn't one of these.
- */
-const SHEET_ROUTES = [
-  'import',
-  'exercise-editor',
-  'workout-editor',
-  'analytics',
-  'exercise-progress',
-  'program-detail',
-  'program-editor',
-  'program-guide',
-  'session-editor',
-  'settings',
-  'support',
-] as const;
 
 /**
  * The last resort: a throw in this layout, or in any route without a boundary of its own, lands here
@@ -105,7 +87,7 @@ function Navigation() {
   // The native shell's tab bar and sheet follow the router from these (M3). Nothing listens anywhere
   // else.
   const pathname = usePathname();
-  const modal = (SHEET_ROUTES as readonly string[]).includes(useSegments()[0] ?? '');
+  const modal = isSheetRoute(useSegments()[0]);
   useEffect(() => reportRoute(pathname, modal), [pathname, modal]);
   const navigation = useNavigationContainerRef();
   useEffect(() => {

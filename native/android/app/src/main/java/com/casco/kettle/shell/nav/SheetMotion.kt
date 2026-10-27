@@ -223,8 +223,12 @@ class SheetMotion(
         const val FADE_MS = 300L
         const val SETTLE_MS = 250L
 
-        /** react-native-screens' own modal slide, which the runner keeps. Time it against RN's on the device. */
-        const val RUNNER_MS = 350L
+        /**
+         * Ends with the runner's own entrance, which is the platform's open animation, not a slide: on
+         * the S25+ (Android 16) the runner stays clear for ~230ms after the drawn frame, then fades in
+         * fully by 267ms (frame tiles, #155). Another Android version may time it differently.
+         */
+        const val RUNNER_MS = 270L
 
         /** Material's shared axis and fade through: 30dp of travel, the incoming starting at 92%. */
         const val SHARED_AXIS_DP = 30f

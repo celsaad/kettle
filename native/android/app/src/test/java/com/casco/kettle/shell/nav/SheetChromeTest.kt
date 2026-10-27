@@ -52,9 +52,20 @@ class SheetChromeTest {
         val grabber = chrome().labelled("Drag handle")
 
         assertTrue(grabber.width >= TARGET_PX && grabber.height >= TARGET_PX)
+        assertEquals(Button::class.java.name, grabber.node().className)
         val actions = grabber.node().actionList.map { it.id }
         assertTrue(AccessibilityNodeInfo.AccessibilityAction.ACTION_DISMISS.id in actions)
         grabber.performAccessibilityAction(AccessibilityNodeInfo.AccessibilityAction.ACTION_DISMISS.id, null)
+        assertEquals(1, backs)
+    }
+
+    /** As on Material's handle. A finger's tap does nothing, so a stray one can't drop an edit. */
+    @Test
+    fun `a TalkBack double-tap on the grabber closes the sheet`() {
+        val grabber = chrome().labelled("Drag handle")
+
+        grabber.performAccessibilityAction(AccessibilityNodeInfo.AccessibilityAction.ACTION_CLICK.id, null)
+
         assertEquals(1, backs)
     }
 

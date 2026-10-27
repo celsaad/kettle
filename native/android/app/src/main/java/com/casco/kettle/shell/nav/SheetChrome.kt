@@ -74,6 +74,8 @@ class SheetChrome(
         // × first, then the grabber, then the content: the order #155 asks TalkBack to read them in.
         close.accessibilityTraversalBefore = grabber.id
         ViewCompat.setAccessibilityDelegate(close, ButtonRole)
+        // Before the actions, which it then carries: setting it after would replace their delegate.
+        ViewCompat.setAccessibilityDelegate(grabber, ButtonRole)
         grabTalkBackActions()
         listenForDrags()
     }
@@ -125,10 +127,18 @@ class SheetChrome(
 
     /**
      * TalkBack's sheet actions on the grabber, as Material's drag handle offers them. The sheet has one
-     * height, always fully open, so there is nothing to expand to, and collapsing it is closing it.
+     * height, always fully open, so there is nothing to expand to, and collapsing it is closing it. A
+     * double-tap closes it too, as on Material's handle, which is why it announces as a button; that
+     * click only ever comes from TalkBack, since the touch listener takes every finger's tap.
      */
     private fun grabTalkBackActions() {
-        for (action in listOf(AccessibilityActionCompat.ACTION_DISMISS, AccessibilityActionCompat.ACTION_COLLAPSE)) {
+        val actions =
+            listOf(
+                AccessibilityActionCompat.ACTION_CLICK,
+                AccessibilityActionCompat.ACTION_DISMISS,
+                AccessibilityActionCompat.ACTION_COLLAPSE,
+            )
+        for (action in actions) {
             ViewCompat.replaceAccessibilityAction(grabber, action, null) { _, _ ->
                 requestBack()
                 true
@@ -136,7 +146,7 @@ class SheetChrome(
         }
     }
 
-    // No click to perform: a tap on the grabber does nothing on purpose, and TalkBack's way is the actions.
+    // A finger's tap on the grabber does nothing on purpose; TalkBack's click is one of the actions above.
     @SuppressLint("ClickableViewAccessibility")
     private fun listenForDrags() = grabber.setOnTouchListener(::drag)
 
@@ -177,7 +187,7 @@ class SheetChrome(
         return true
     }
 
-    /** A TextView with a click listener announces as one; this makes it a button, as RN's was. */
+    /** Announces a view as a button: the ×, as RN's was, and the grabber, as Material's handle is. */
     private object ButtonRole : AccessibilityDelegateCompat() {
         override fun onInitializeAccessibilityNodeInfo(
             host: View,

@@ -15,6 +15,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isDialog
@@ -113,8 +118,8 @@ private fun ProbeScreen(files: SessionFiles) {
  *   hardcoded English string. Hardcoding the dialog's title fails the confirm test here.
  * - The screen takes its file boundary as a parameter and the test hands it a fake that records, the
  *   way jest mocks the `@/storage` modules: assertions read as what got deleted, not what got written.
- * - The dialog is a window of its own, and the rule finds its nodes with no setup. Its buttons are
- *   pressed through [pressDialogButton]. A handler that throws fails the test from `performClick`.
+ * - So a port's screen needs its boundary as a parameter. One that reaches the files directly has no
+ *   seam for a fake, and Kotlin has no module mock to fall back on.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(qualifiers = "pt")
@@ -138,6 +143,19 @@ class ScreenHarnessTest {
         show(FakeSessionFiles(swings))
 
         compose.onNodeWithText("Morning swings").assertExists()
+    }
+
+    /** The a11y props are asserted here too: TalkBack is checked once, at the end of the migration. */
+    @Test
+    fun `a row is a 48dp button that TalkBack reads as deleting`() {
+        show(FakeSessionFiles(swings))
+
+        compose
+            .onNodeWithText("Morning swings")
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
+            .assert(
+                SemanticsMatcher("click label is Excluir") { it.config[SemanticsActions.OnClick].label == "Excluir" },
+            ).assertHeightIsAtLeast(48.dp)
     }
 
     @Test
@@ -178,5 +196,6 @@ class ScreenHarnessTest {
 
         compose.onNodeWithText("Não foi possível excluir: disco cheio").assertExists()
         compose.onNodeWithText("Morning swings").assertExists()
+        compose.onNodeWithText("Excluir sessão?").assertDoesNotExist()
     }
 }

@@ -166,7 +166,8 @@ are house rules here rather than a backlog — cheap as you go, tedious to retro
   the column everything else lines up on. A row that can't use the component (History's expands;
   Settings' are section siblings rather than list children) shares its exported metrics rather than
   retyping them. Sibling lists that look subtly unlike each other read as a bug, not a distinction.
-- Modal screens: register in `src/app/_layout.tsx` with `presentation: 'modal', headerShown: false`,
+- Modal screens: register by adding the name to `SHEET_ROUTES` in `src/app/_layout.tsx`, which gives
+  it `presentation: 'modal', headerShown: false` and tells the Android shell to present it as its sheet,
   and open with the shared `ModalHeader` (grabber + pinned close button; it owns the top spacing, so
   the screen's own `scrollContent` has no `paddingTop`).
 - Theming is strict: `useTheme`, `ThemedText`, `ThemedView`, `Spacing.*`, `MaxContentWidth`. The

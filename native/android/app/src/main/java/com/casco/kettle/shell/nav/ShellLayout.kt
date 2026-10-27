@@ -33,8 +33,15 @@ class ShellLayout(
     navigator: TabNavigator,
     routes: Map<Tab, Screen>,
     theme: @Composable (content: @Composable () -> Unit) -> Unit,
+    sheet: (content: FrameLayout, shell: View) -> ModalSheet,
 ) : LinearLayout(context) {
     private val destinations = composeView { theme { Destinations(navigator, routes, onRnShown = ::show) } }
+
+    /**
+     * RN's modal routes, presented over the tabs as a native sheet around the same surface (#155),
+     * built by [sheet] inside the frame the surface is in.
+     */
+    val sheet: ModalSheet
 
     init {
         orientation = VERTICAL
@@ -45,6 +52,7 @@ class ShellLayout(
         content.addView(surface, FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
         content.addView(destinations, FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
         addView(content, LayoutParams(MATCH_PARENT, 0, 1f))
+        this.sheet = sheet(content, this)
         // Wrapping its content, so the bar takes no room at all while RN has something above the tabs.
         val bar = composeView { theme { if (navigator.barShown) TabBar(navigator.current, navigator::select) } }
         addView(bar, LayoutParams(MATCH_PARENT, WRAP_CONTENT))

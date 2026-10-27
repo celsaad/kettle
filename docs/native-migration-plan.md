@@ -287,12 +287,12 @@ one full release cycle. Every later milestone ships through this pipeline.
   purpose: RN's bar scrolled a tab's list to the top when its tab was tapped again, and the native
   bar doesn't. Each tab's native port brings it back for its own screen.)*
 - Modal routes (editors, import, settings) become native-presented sheets around RN content.
-  **Open, now that there is one surface:** a sheet would need RN content in a second surface, which
-  can't be routed (Q3). Unless moving the one surface into a sheet works, which is untested, modals
-  stay RN-presented inside the surface until their screen goes native. *(#153 left them RN-presented,
-  with the native bar hidden under them. The sheet question is #155's, and #153 narrows it: a Compose
-  sheet would hold the surface in an `AndroidView`, which hides RN from TalkBack, so a sheet that
-  takes the surface has to be a View one.)*
+  **Answered: the one surface doesn't move.** A sheet can't hold RN content in a second surface
+  (Q3), and a Compose sheet would put the surface in an `AndroidView`, which hides RN from TalkBack
+  (#153). So the sheet is View-based and in-window. Native gives the surface a top margin, rounded
+  top corners and a slide over a scrim and a picture of the tab, and never reparents it. #177 proved
+  that on a device: TalkBack, the keyboard, insets, return and back all held, and #155 built it. RN
+  stays the router, and the runner stays RN-presented until M6.
 - A `BrownfieldMessaging` event, `filesChanged(kind)`, that RN stores answer by re-reading. This is
   the **re-read-on-focus** rule that makes constraint 3 work in both directions. *(For M5: a
   re-read refreshes every screen that reads a store, but RN's open editors and the runner copy what

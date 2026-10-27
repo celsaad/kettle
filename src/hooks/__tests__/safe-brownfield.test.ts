@@ -183,21 +183,86 @@ it('goes nowhere while a screen refuses to leave', async () => {
 
 // M3's tab bar is native, and has to follow RN wherever RN goes by itself: a delete's dismissTo, the
 // runner's exit, a modal covering the tabs.
-it('reports each route to the shell', () => {
+it('reports each route to the shell, saying whether it is a modal', async () => {
+  mockShared.set('nativeTabBar', true);
   const { reportRoute } = require('@/hooks/safe-brownfield');
 
-  reportRoute('/settings');
+  reportRoute('/settings', true);
+  reportRoute('/history', false);
+  await settle();
 
-  expect(mockSent).toEqual([{ type: 'route', pathname: '/settings' }]);
+  expect(mockSent).toEqual([
+    { type: 'route', pathname: '/settings', modal: true },
+    { type: 'route', pathname: '/history', modal: false },
+  ]);
 });
 
-it('reports nothing, without throwing, where the native module is missing', () => {
+/**
+ * The shell animates its sheet from this report, and the commit that moved the route hasn't been
+ * handed to native yet when the effect runs. One task later, it has (#178), so the report can't run
+ * ahead of the frame it describes.
+ */
+it('sends the report one task after the route changes, not straight away', async () => {
+  mockShared.set('nativeTabBar', true);
+  const { reportRoute } = require('@/hooks/safe-brownfield');
+
+  reportRoute('/settings', true);
+
+  expect(mockSent).toEqual([]);
+  await settle();
+  expect(mockSent).toHaveLength(1);
+});
+
+// A prebuilt Android build links the same module, with nothing listening.
+it('reports no routes outside the shell', async () => {
+  const { reportRoute } = require('@/hooks/safe-brownfield');
+
+  reportRoute('/settings', true);
+  await settle();
+
+  expect(mockSent).toEqual([]);
+});
+
+it('reports nothing, without throwing, where the native module is missing', async () => {
   jest.doMock('expo-brownfield', () => {
     throw new Error("Cannot find native module 'ExpoBrownfieldModule'");
   });
   const { reportRoute } = require('@/hooks/safe-brownfield');
 
-  expect(() => reportRoute('/')).not.toThrow();
+  expect(() => reportRoute('/', false)).not.toThrow();
+  await settle();
+  expect(mockSent).toEqual([]);
+});
+
+/**
+ * The shell snapshots the screen RN is about to replace, so it has to hear before the action commits:
+ * synchronously, from the action event. The action's type is how it tells a push from a back.
+ */
+it('tells the shell a route is about to change, straight away, with the action type', () => {
+  mockShared.set('nativeTabBar', true);
+  const { reportRouteWillChange } = require('@/hooks/safe-brownfield');
+
+  reportRouteWillChange({ action: { type: 'PUSH' }, noop: false });
+
+  expect(mockSent).toEqual([{ type: 'routeWillChange', action: 'PUSH' }]);
+});
+
+// An action no navigator handles changes nothing, so nothing should be snapshotted for it.
+it('says nothing about an action that changes nothing', () => {
+  mockShared.set('nativeTabBar', true);
+  const { reportRouteWillChange } = require('@/hooks/safe-brownfield');
+
+  reportRouteWillChange({ action: { type: 'GO_BACK' }, noop: true });
+
+  expect(mockSent).toEqual([]);
+});
+
+// Only the shell's sheet uses it; a prebuilt Android build links the same module but has no sheet.
+it('says nothing about route changes outside the shell', () => {
+  const { reportRouteWillChange } = require('@/hooks/safe-brownfield');
+
+  reportRouteWillChange({ action: { type: 'PUSH' }, noop: false });
+
   expect(mockSent).toEqual([]);
 });
 
@@ -211,6 +276,20 @@ it('hides its tab bar and leaves tab back to the shell when the shell draws the 
   const { hostedTabOptions } = require('@/hooks/safe-brownfield');
 
   expect(hostedTabOptions()).toEqual({ hidden: true, backBehavior: 'none' });
+});
+
+// Inside the shell a modal opens in the native sheet, whose slide would run on top of RN's own.
+it('leaves the modal animation to the shell when the shell presents the sheet', () => {
+  mockShared.set('nativeTabBar', true);
+  const { hostedModalOptions } = require('@/hooks/safe-brownfield');
+
+  expect(hostedModalOptions()).toEqual({ animation: 'none' });
+});
+
+it('keeps its own modal animation anywhere else', () => {
+  const { hostedModalOptions } = require('@/hooks/safe-brownfield');
+
+  expect(hostedModalOptions()).toEqual({});
 });
 
 // Every build without the shell: iOS, web, Expo Go, and a prebuilt Android dev build, which links the

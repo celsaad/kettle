@@ -65,11 +65,17 @@ function onShellMessage(message: Record<string, unknown>): void {
 
 /**
  * Tells the shell where the router is now: its tab bar follows RN, which also moves by itself (a
- * delete's `dismissTo`, the runner's exit) and covers the tabs with its modals. The shell's
- * `TabNavigator.onRoute` reads it. The two share no code, so change both.
+ * delete's `dismissTo`, the runner's exit) and covers the tabs with its modals, and its sheet presents
+ * the routes `modal` says are modals. The shell's `RouteReport` reads it. The two share no code, so
+ * change both.
+ *
+ * Sent one task later, because the shell animates from it. The effect that calls this runs before
+ * the commit that moved the route has been handed to native, so a report sent straight away arrived
+ * 1–3 frames ahead of RN's draw (#177); a task later, that commit's mount is already queued (#178).
  */
-export function reportRoute(pathname: string): void {
-  getBrownfield()?.sendMessage({ type: 'route', pathname });
+export function reportRoute(pathname: string, modal: boolean): void {
+  if (!isHosted()) return;
+  setTimeout(() => getBrownfield()?.sendMessage({ type: 'route', pathname, modal }), 0);
 }
 
 /**
@@ -81,9 +87,36 @@ export function reportRoute(pathname: string): void {
  * else the key is unset, including a prebuilt Android build, which links the same native module.
  */
 export function hostedTabOptions(): { hidden?: boolean; backBehavior?: 'none' } {
-  // The shell's MainActivity sets it. The two share no code, so change both.
-  if (getBrownfield()?.getSharedStateValue('nativeTabBar') !== true) return {};
+  if (!isHosted()) return {};
   return { hidden: true, backBehavior: 'none' };
+}
+
+/**
+ * A modal route's options for whoever presents it. Inside the shell (M3) the native sheet slides it in
+ * and out, so RN's own animation would be a second one; the runner isn't a sheet, and keeps its slide.
+ */
+export function hostedModalOptions(): { animation?: 'none' } {
+  if (!isHosted()) return {};
+  return { animation: 'none' };
+}
+
+/** Whether the native shell hosts this surface. False in every other build, as `hostedTabOptions` says. */
+export function isHosted(): boolean {
+  // The shell's MainActivity sets it. The two share no code, so change both.
+  return getBrownfield()?.getSharedStateValue('nativeTabBar') === true;
+}
+
+/**
+ * Tells the shell a navigation action is about to commit, so it can picture the frame RN is about to
+ * replace: the tab behind an opening sheet, or the sheet's last frame as it closes. It has to arrive
+ * before the commit is mounted, which is why it's sent synchronously from React Navigation's
+ * `__unsafe_action__` event (fired before `setState`, for every action, TalkBack's included), and why
+ * the type travels with it: it's how the shell tells a push from a back from a replace. The shell's
+ * `JsBridge` reads it. The two share no code, so change both.
+ */
+export function reportRouteWillChange(event: { action: { type: string }; noop: boolean }): void {
+  if (event.noop || !isHosted()) return;
+  getBrownfield()?.sendMessage({ type: 'routeWillChange', action: event.action.type });
 }
 
 /**

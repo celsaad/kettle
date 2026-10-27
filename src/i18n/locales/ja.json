@@ -8,6 +8,7 @@
     "export": "書き出し",
     "import": "読み込み",
     "close": "閉じる",
+    "dragHandle": "ドラッグハンドル",
     "name": "名前",
     "nameRequired": "名前は必須です。",
     "couldNotDeriveId": "その名前から ID を作れませんでした。",

@@ -20,6 +20,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.shell.theme.KettleTheme
+import com.casco.kettle.shell.theme.LightColors
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -45,7 +46,14 @@ class ShellTest {
         compose.runOnUiThread {
             val activity = compose.activity
             surface = View(activity)
-            val shell = ShellLayout(activity, surface, navigator, routes) { KettleTheme(darkTheme = false, it) }
+            val shell =
+                ShellLayout(
+                    activity,
+                    surface,
+                    navigator,
+                    routes,
+                    theme = { KettleTheme(darkTheme = false, it) },
+                ) { content, shell -> ModalSheet(content, shell, surface, navigator, { LightColors }, {}) }
             activity.setContentView(shell)
         }
         compose.waitForIdle()

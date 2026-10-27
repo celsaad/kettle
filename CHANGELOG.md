@@ -18,7 +18,11 @@ here, next to what it describes.
 
 ## Unreleased
 
-Nothing since 0.11.2.
+### What changed
+
+- **Editors, Settings, Import and the other pop-up screens open as a sheet** over the screen you
+  were on, which stays visible behind it. Close one with ×, with back, or by dragging its handle
+  down. A tap outside the sheet doesn't close it, so an edit can't be lost to a stray touch.
 
 ---
 

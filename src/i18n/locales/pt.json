@@ -8,6 +8,7 @@
     "export": "Exportar",
     "import": "Importar",
     "close": "Fechar",
+    "dragHandle": "Alça de arrastar",
     "name": "Nome",
     "nameRequired": "O nome é obrigatório.",
     "couldNotDeriveId": "Não foi possível gerar um id a partir desse nome.",

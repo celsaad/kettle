@@ -4,7 +4,15 @@ import {
   HankenGrotesk_600SemiBold,
 } from '@expo-google-fonts/hanken-grotesk';
 import { SpaceGrotesk_500Medium, SpaceGrotesk_600SemiBold, SpaceGrotesk_700Bold } from '@expo-google-fonts/space-grotesk';
-import { DarkTheme, DefaultTheme, Stack, ThemeProvider, usePathname } from 'expo-router';
+import {
+  DarkTheme,
+  DefaultTheme,
+  Stack,
+  ThemeProvider,
+  useNavigationContainerRef,
+  usePathname,
+  useSegments,
+} from 'expo-router';
 import type { ErrorBoundaryProps } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
@@ -22,12 +30,31 @@ import { Colors, RunnerColors, MaxContentWidth, Spacing } from '@/constants/them
 import { ThemeOverrideProvider, useAppTheme } from '@/hooks/theme-context';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useRestDayReminder } from '@/hooks/use-rest-day-reminder';
-import { reportRoute } from '@/hooks/safe-brownfield';
+import { hostedModalOptions, isHosted, reportRoute, reportRouteWillChange } from '@/hooks/safe-brownfield';
 import { useLibraryStore } from '@/state/library-store';
 import { usePreferencesStore } from '@/state/preferences-store';
 import { useSessionHistoryStore } from '@/state/session-history-store';
 
 SplashScreen.preventAutoHideAsync();
+
+/**
+ * The routes presented as modal sheets: in the native shell as its sheet (M3), everywhere else as
+ * RN's own modal. The runner is presented modally too, but full screen rather than as a sheet, and it
+ * stays RN's until M6, so it isn't one of these.
+ */
+const SHEET_ROUTES = [
+  'import',
+  'exercise-editor',
+  'workout-editor',
+  'analytics',
+  'exercise-progress',
+  'program-detail',
+  'program-editor',
+  'program-guide',
+  'session-editor',
+  'settings',
+  'support',
+] as const;
 
 /**
  * The last resort: a throw in this layout, or in any route without a boundary of its own, lands here
@@ -75,9 +102,18 @@ function Navigation() {
   // too, and this is the one component that is mounted for both of its inputs and only after they've
   // hydrated. It also means the schedule self-heals on every launch.
   useRestDayReminder();
-  // The native shell's tab bar follows the router from this (M3). Nothing listens anywhere else.
+  // The native shell's tab bar and sheet follow the router from these (M3). Nothing listens anywhere
+  // else.
   const pathname = usePathname();
-  useEffect(() => reportRoute(pathname), [pathname]);
+  const modal = (SHEET_ROUTES as readonly string[]).includes(useSegments()[0] ?? '');
+  useEffect(() => reportRoute(pathname, modal), [pathname, modal]);
+  const navigation = useNavigationContainerRef();
+  useEffect(() => {
+    if (!isHosted()) return;
+    // Unstable API: verified on expo-router 57.0.21, which bundles React Navigation's core, RN 0.86.3
+    // and react-native-screens 4.26.2. It fires before the action's setState, which is what the shell's snapshot needs (#178).
+    return navigation.addListener('__unsafe_action__', (event) => reportRouteWillChange(event.data));
+  }, [navigation]);
 
   // Base off the matching React Navigation theme rather than always DefaultTheme (its light one), so
   // the handful of colors not overridden below — and anything keying off the `dark` flag — don't pull
@@ -122,17 +158,13 @@ function Navigation() {
               contentStyle: { backgroundColor: RunnerColors.background },
             }}
           />
-          <Stack.Screen name="import" options={{ presentation: 'modal', headerShown: false }} />
-          <Stack.Screen name="exercise-editor" options={{ presentation: 'modal', headerShown: false }} />
-          <Stack.Screen name="workout-editor" options={{ presentation: 'modal', headerShown: false }} />
-          <Stack.Screen name="analytics" options={{ presentation: 'modal', headerShown: false }} />
-          <Stack.Screen name="exercise-progress" options={{ presentation: 'modal', headerShown: false }} />
-          <Stack.Screen name="program-detail" options={{ presentation: 'modal', headerShown: false }} />
-          <Stack.Screen name="program-editor" options={{ presentation: 'modal', headerShown: false }} />
-          <Stack.Screen name="program-guide" options={{ presentation: 'modal', headerShown: false }} />
-          <Stack.Screen name="session-editor" options={{ presentation: 'modal', headerShown: false }} />
-          <Stack.Screen name="settings" options={{ presentation: 'modal', headerShown: false }} />
-          <Stack.Screen name="support" options={{ presentation: 'modal', headerShown: false }} />
+          {SHEET_ROUTES.map((name) => (
+            <Stack.Screen
+              key={name}
+              name={name}
+              options={{ presentation: 'modal', headerShown: false, ...hostedModalOptions() }}
+            />
+          ))}
         </Stack>
       </ThemeProvider>
     </GestureHandlerRootView>

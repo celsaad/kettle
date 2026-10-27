@@ -9,13 +9,16 @@ import com.casco.kettle.brownfield.BrownfieldActivity
 import com.casco.kettle.brownfield.ReactNativeHostManager
 import com.casco.kettle.brownfield.ReactNativeViewFactory
 import com.casco.kettle.brownfield.setUpNativeBackHandling
+import com.casco.kettle.shell.nav.ModalSheet
 import com.casco.kettle.shell.nav.ShellLayout
 import com.casco.kettle.shell.nav.TabNavigator
 import com.casco.kettle.shell.nav.shellRoutes
 import com.casco.kettle.shell.rn.ExpoActivityListeners
 import com.casco.kettle.shell.rn.JsBridge
+import com.casco.kettle.shell.rn.RnFrames
 import com.casco.kettle.shell.rn.withViewAction
 import com.casco.kettle.shell.theme.KettleTheme
+import com.casco.kettle.shell.theme.preferredColors
 import com.casco.kettle.shell.theme.rememberPreferredDarkTheme
 import com.facebook.react.modules.core.PermissionAwareActivity
 import com.facebook.react.modules.core.PermissionListener
@@ -43,7 +46,13 @@ class MainActivity :
 
     private val reactHost get() = ReactNativeHostManager.shared.getReactHost()
 
-    private val navigator = TabNavigator(shellRoutes, JsBridge::navigate)
+    private var sheet: ModalSheet? = null
+
+    private val navigator =
+        TabNavigator(shellRoutes) { url ->
+            sheet?.steeredByBar()
+            JsBridge.navigate(url)
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // Before super, as in the prebuilt app: it installs the splash theme's exit. JS hides it with
@@ -64,21 +73,48 @@ class MainActivity :
         ReactNativeHostManager.shared.initialize(application)
         val surface = ReactNativeViewFactory.createFrameLayout(this, this, "main")
         setUpNativeBackHandling()
-        JsBridge.onRoute = navigator::onRoute
+        val preferences = File(filesDir, PREFERENCES)
+        val layout =
+            ShellLayout(
+                this,
+                surface,
+                navigator,
+                shellRoutes,
+                theme = { content ->
+                    KettleTheme(rememberPreferredDarkTheme(preferences, reread = navigator.barShown), content)
+                },
+            ) { content, shell ->
+                ModalSheet(
+                    content,
+                    shell,
+                    surface,
+                    navigator,
+                    colors = { preferredColors(preferences, resources.configuration) },
+                    // The ×'s and the grabber's back is hardware back's, which the sheet's callback hands RN.
+                    requestBack = onBackPressedDispatcher::onBackPressed,
+                )
+            }
+        val sheet = layout.sheet.also { this.sheet = it }
+        // After RN's own, so it comes first while the sheet is up: the predictive shrink is the sheet's.
+        onBackPressedDispatcher.addCallback(this, sheet.backCallback)
+        // The tab bar's reports go through the sheet, which passes them on at the frame RN draws them.
+        JsBridge.onRoute = sheet::onRoute
+        JsBridge.onRouteWillChange = sheet::onRouteWillChange
+        JsBridge.wantsPicture = sheet::wantsPicture
+        RnFrames.onCapture = sheet::capture
         lifecycle.addObserver(
             object : DefaultLifecycleObserver {
                 // The runtime and JsBridge outlive this activity, and a newer one may have taken over.
                 override fun onDestroy(owner: LifecycleOwner) {
-                    if (JsBridge.onRoute == navigator::onRoute) JsBridge.onRoute = null
+                    if (JsBridge.onRoute != sheet::onRoute) return
+                    JsBridge.onRoute = null
+                    JsBridge.onRouteWillChange = null
+                    JsBridge.wantsPicture = null
+                    RnFrames.onCapture = null
                 }
             },
         )
-        val preferences = File(filesDir, PREFERENCES)
-        setContentView(
-            ShellLayout(this, surface, navigator, shellRoutes) { content ->
-                KettleTheme(rememberPreferredDarkTheme(preferences, reread = navigator.barShown), content)
-            },
-        )
+        setContentView(layout)
         JsBridge.attach()
         expoListeners.onContentShown()
     }

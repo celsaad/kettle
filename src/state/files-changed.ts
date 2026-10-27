@@ -26,7 +26,7 @@ function isFileKind(kind: unknown): kind is FileKind {
 /**
  * Re-reads the file `kind` names. Never rejects: it runs from the native module's listener, where a
  * throw has nowhere useful to go. A kind this JS doesn't know (a newer shell) is ignored, and a read
- * that fails leaves the store showing what it had, which is no worse than before the message.
+ * that throws leaves the store showing what it had, which is no worse than before the message.
  */
 export async function onFilesChanged(kind: unknown): Promise<void> {
   if (!isFileKind(kind)) return;

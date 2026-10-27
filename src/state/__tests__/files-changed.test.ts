@@ -59,10 +59,13 @@ const aSession = (id: string): Session => ({
 });
 
 beforeEach(() => {
+  mockLibraryText = '';
   mockLibraryWrite.mockReset();
   mockQuarantineWrite.mockReset();
   mockListSessions.mockReset();
   mockLoadPreferences.mockReset();
+  // In beforeEach rather than after the assertions, so a failed one can't leave a spy behind.
+  jest.restoreAllMocks();
   useLibraryStore.setState({ status: 'ready', library: before, error: null });
   useSessionHistoryStore.setState({ status: 'ready', sessions: [], errors: [], activeSessionId: null });
   usePreferencesStore.setState({
@@ -149,14 +152,13 @@ it.each(['library', 'sessions', 'preferences'])('keeps the app mounted while it 
 
 // A read that throws leaves the store as it was rather than taking the listener down with it.
 it('keeps what it had when the re-read throws', async () => {
-  const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+  jest.spyOn(console, 'warn').mockImplementation(() => {});
   mockListSessions.mockRejectedValue(new Error('EIO'));
   useSessionHistoryStore.setState({ sessions: [aSession('kept')] });
 
   await expect(onFilesChanged('sessions')).resolves.toBeUndefined();
 
   expect(useSessionHistoryStore.getState().sessions.map((session) => session.id)).toEqual(['kept']);
-  warn.mockRestore();
 });
 
 // A shell newer than this JS may name a file it doesn't know. The message arrives in the native

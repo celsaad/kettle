@@ -327,6 +327,37 @@ describe('reload', () => {
 
     expect(useSessionHistoryStore.getState().sessions).toEqual([]);
   });
+
+  // Once finished it is no longer the running session, so memory stops winning for it.
+  it('reads again when the running session finished while the listing was out', async () => {
+    const running = useSessionHistoryStore.getState().startSession('w', null, null, null);
+    mockListSessions
+      .mockImplementationOnce(async () => {
+        useSessionHistoryStore.getState().completeSession(running);
+        return { sessions: [running], errors: [] };
+      })
+      .mockImplementation(async () => ({ sessions: [{ ...running, endedAt: 'finished' }], errors: [] }));
+
+    await useSessionHistoryStore.getState().reload();
+
+    expect(mockListSessions).toHaveBeenCalledTimes(2);
+    expect(useSessionHistoryStore.getState().sessions[0].endedAt).toBe('finished');
+  });
+
+  // The runner writes on every set, so reading again for its writes could chase it for a whole slow
+  // listing. Its session is kept from memory anyway, so its writes need no second read.
+  it("doesn't read again for the running session's own sets", async () => {
+    const running = useSessionHistoryStore.getState().startSession('w', null, null, null);
+    mockListSessions.mockImplementation(async () => {
+      useSessionHistoryStore.setState({ sessions: [{ ...running, entries: [pullups] }] });
+      return { sessions: [running], errors: [] };
+    });
+
+    await useSessionHistoryStore.getState().reload();
+
+    expect(mockListSessions).toHaveBeenCalledTimes(1);
+    expect(useSessionHistoryStore.getState().sessions[0].entries).toEqual([pullups]);
+  });
 });
 
 describe('abandonActiveSession', () => {

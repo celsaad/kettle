@@ -118,6 +118,17 @@ function keepingActive(listed: Session[], { sessions, activeSessionId }: Session
 }
 
 /**
+ * Whether any session but the running one changed since `before`. Read with the id as it is now, so a
+ * session finished in the meantime counts: its `ended_at` isn't something memory keeps for it.
+ */
+function changedBesidesActive(before: Session[], { sessions, activeSessionId }: SessionHistoryState): boolean {
+  const others = (list: Session[]) => list.filter((session) => session.id !== activeSessionId);
+  const then = others(before);
+  const now = others(sessions);
+  return then.length !== now.length || then.some((session, index) => session !== now[index]);
+}
+
+/**
  * Merges any flush failure from the write that just happened into the store's own `errors`, which
  * History renders. The writes themselves can't throw (see `writeSession`) — this is what keeps a disk
  * that stopped accepting the session from being invisible rather than fatal.
@@ -183,8 +194,9 @@ export const useSessionHistoryStore = create<SessionHistoryState>((set, get) => 
     const { sessions, errors } = await listSessions();
     // RN wrote while the listing was out, so the listing may hold a file from before that write: a
     // deleted session back in History, or a finished one unfinished. Writes are synchronous, so the
-    // next listing has them.
-    if (get().sessions !== before) return get().reload();
+    // next listing has them. The running session's sets don't count: memory wins for it anyway, and
+    // they land often enough to keep a slow listing restarting for a whole workout.
+    if (changedBesidesActive(before, get())) return get().reload();
     set({ status: 'ready', sessions: keepingActive(sessions, get()), errors: [...new Set([...get().errors, ...errors])] });
   },
   startSession: (workoutId, programId, programWeek, programDay) => {

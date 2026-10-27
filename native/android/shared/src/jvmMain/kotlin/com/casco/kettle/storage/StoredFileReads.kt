@@ -1,5 +1,11 @@
-package com.casco.kettle.domain
+package com.casco.kettle.storage
 
+import com.casco.kettle.domain.Library
+import com.casco.kettle.domain.ParseResult
+import com.casco.kettle.domain.Session
+import com.casco.kettle.domain.SessionLog
+import com.casco.kettle.domain.parseLibraryYaml
+import com.casco.kettle.domain.parseSessionYaml
 import java.io.File
 import java.io.IOException
 

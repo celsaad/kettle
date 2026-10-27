@@ -1,5 +1,6 @@
-package com.casco.kettle.domain
+package com.casco.kettle.storage
 
+import com.casco.kettle.domain.SessionLog
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir

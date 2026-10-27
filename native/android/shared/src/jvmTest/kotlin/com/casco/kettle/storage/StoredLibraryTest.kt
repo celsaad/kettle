@@ -1,4 +1,4 @@
-package com.casco.kettle.domain
+package com.casco.kettle.storage
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull

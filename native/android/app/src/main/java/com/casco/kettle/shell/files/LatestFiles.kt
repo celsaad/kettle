@@ -6,8 +6,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import com.casco.kettle.domain.Library
 import com.casco.kettle.domain.SessionLog
-import com.casco.kettle.domain.readLibrary
-import com.casco.kettle.domain.readSessionLog
+import com.casco.kettle.storage.readLibrary
+import com.casco.kettle.storage.readSessionLog
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -23,19 +23,26 @@ interface StoredFiles {
     fun library(): Library?
 }
 
-/** [StoredFiles] in [root], expo-file-system's `exercise-tracker` folder (`src/storage/paths.ts`). */
+/**
+ * Where RN keeps its files, under expo-file-system's `Paths.document`, which is [filesDir].
+ * `src/storage/paths.ts` names them. The two share no code, so change both.
+ */
+class StoragePaths(
+    filesDir: File,
+) {
+    private val root = filesDir.resolve("exercise-tracker")
+    val sessions = root.resolve("sessions")
+    val library = root.resolve("exercises.yaml")
+    val preferences = root.resolve("preferences.json")
+}
+
+/** [StoredFiles] where RN keeps them. */
 class DiskFiles(
-    private val root: File,
+    private val paths: StoragePaths,
 ) : StoredFiles {
-    override fun sessionLog() = readSessionLog(root.resolve(SESSIONS))
+    override fun sessionLog() = readSessionLog(paths.sessions)
 
-    override fun library() = readLibrary(root.resolve(LIBRARY))
-
-    private companion object {
-        // src/storage/paths.ts names these. The two share no code, so change both.
-        const val SESSIONS = "sessions"
-        const val LIBRARY = "exercises.yaml"
-    }
+    override fun library() = readLibrary(paths.library)
 }
 
 /**
@@ -51,7 +58,8 @@ class LatestFiles(
     private val scope: CoroutineScope,
     private val io: CoroutineDispatcher = Dispatchers.IO,
 ) {
-    var sessionLog by mutableStateOf(SessionLog.Empty)
+    /** Null until the first read lands, so a screen can tell "not read yet" from "no sessions". */
+    var sessionLog by mutableStateOf<SessionLog?>(null)
         private set
 
     /**

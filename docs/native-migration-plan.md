@@ -5,9 +5,9 @@
 > conformance corpus, the native skeleton (`native/android`), a Kotlin runner for every corpus suite,
 > the generated string resources and the generated Compose theme. **M2 has shipped**: 0.11.2 is the
 > shell on production, hosting today's app from the RN AAR; only its landmark, a release cycle with
-> no regressions, is still running. **M3 has landed** and is releasing as 0.12.0: one RN surface
+> no regressions, is still running. **M3 has shipped**: 0.12.0 is on production, with one RN surface
 > steered by messages (#152), a native tab bar and back stack around it (#153), native-presented
-> sheets (#155) and the `filesChanged` re-read (#154). Its ship step, #156, is still open. M1–M3 are tracked as
+> sheets (#155) and the `filesChanged` re-read (#154). M1–M3 are tracked as
 > GitHub issues #141–#156, whose open/closed state is the live record; M4 is ticketed (see M4); M5 onward is ticketed next. Written against the tree at `54eb9f8`, SDK 57.
 > **Everything after M0 was conditional on a "go"**: had the spike failed, this file would carry a
 > banner saying so and the decision log the reason, so the idea isn't re-proposed from scratch.
@@ -264,11 +264,9 @@ else is changing.
 **Landmark: a production release whose entry point is native**, with no regression reports through
 one full release cycle. Every later milestone ships through this pipeline.
 
-### M3 — Native owns navigation · ~2–3 weeks (contingency released, see the routing test)
+### M3 — Native owns navigation · ~2–3 weeks (contingency released, see the routing test) · shipped as 0.12.0
 
-> **Landed** (#152–#155) and releasing as 0.12.0, whose CHANGELOG entry is the record. It ships when
-> #156 closes: a device pass, then internal → closed → production, then a release cycle with no
-> regression reports.
+> **Shipped** (#152–#156); the CHANGELOG has the release.
 
 - **The routing test passed (#152): one long-lived RN surface, steered by messages.** Native sends
   `{ type: "navigate", url }` (`JsBridge.navigate`), and `safe-brownfield.ts` routes it. Every tab and

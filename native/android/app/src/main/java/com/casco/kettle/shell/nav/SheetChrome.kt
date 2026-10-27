@@ -85,13 +85,15 @@ class SheetChrome(
         // The row's centre, where RN's grabber and button centred.
         val rowCentre = dp(Spacing.three.value) + dp(ROW_DP) / 2
         val top = rowCentre - dp(TARGET_DP) / 2
-        (grabber.layoutParams as LayoutParams).topMargin = top
-        (close.layoutParams as LayoutParams).apply {
-            topMargin = top
-            // The 32dp circle's edge where RN's was, its 48dp target reaching past it.
-            marginEnd = inset - targetOverhang
-        }
-        requestLayout()
+        grabber.layoutParams = (grabber.layoutParams as LayoutParams).apply { topMargin = top }
+        // Set back rather than edited in place: an end margin changed on attached params never resolves
+        // to a right one, and on a device the × sat flush with the screen's edge.
+        close.layoutParams =
+            (close.layoutParams as LayoutParams).apply {
+                topMargin = top
+                // The 32dp circle's edge where RN's was, its 48dp target reaching past it.
+                marginEnd = inset - targetOverhang
+            }
     }
 
     /** The visible part of the strip: RN's header height, the drag gesture's whole target. */

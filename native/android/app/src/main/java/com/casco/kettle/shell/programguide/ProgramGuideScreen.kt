@@ -7,6 +7,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -48,16 +49,15 @@ import com.casco.kettle.shell.theme.Spacing
  * Programs, which is where the imported program has appeared.
  */
 @Composable
-fun ProgramGuideRoute() =
-    ProgramGuideScreen(
-        onImport = { JsBridge.open(Stacking.Replace, "/import") },
-        onDone = JsBridge::back,
-    )
+fun ProgramGuideRoute() = ProgramGuideScreen(open = { how, path -> JsBridge.open(how, path) }, onDone = JsBridge::back)
 
-/** The program guide (#199): `src/app/program-guide.tsx`, prose from the locale bundles only. */
+/**
+ * The program guide (#199): `src/app/program-guide.tsx`, prose from the locale bundles only. [open] is
+ * `JsBridge.open`, a parameter so a test hears how Import was opened, not only that it was.
+ */
 @Composable
 fun ProgramGuideScreen(
-    onImport: () -> Unit,
+    open: (Stacking, String) -> Unit,
     onDone: () -> Unit,
 ) {
     val colors = KettleTheme.colors
@@ -81,7 +81,7 @@ fun ProgramGuideScreen(
                 style = KettleType.subtitle,
                 color = colors.text,
             )
-            Body(R.string.programGuide_intro, Modifier.padding(top = Spacing.one + 2.dp), bottom = false)
+            Body(R.string.programGuide_intro, PaddingValues(top = TitleGap))
 
             Section(R.string.programGuide_ids_title) { Body(R.string.programGuide_ids_body) }
             Section(R.string.programGuide_write_title) {
@@ -105,7 +105,7 @@ fun ProgramGuideScreen(
             }
             Section(R.string.programGuide_importIt_title) {
                 Body(R.string.programGuide_importIt_body)
-                OpenImport(onImport)
+                OpenImport { open(Stacking.Replace, "/import") }
             }
             Done(onDone)
         }
@@ -155,11 +155,11 @@ private fun Done(onClick: () -> Unit) =
 private fun Section(
     @StringRes title: Int,
     content: @Composable ColumnScope.() -> Unit,
-) = Column(Modifier.padding(top = Spacing.four - 4.dp)) {
+) = Column(Modifier.padding(top = SectionGap)) {
     Text(
         stringResource(title),
         Modifier
-            .padding(bottom = Spacing.one + 2.dp)
+            .padding(bottom = TitleGap)
             .semantics { heading() },
         style = KettleType.heading,
         color = KettleTheme.colors.text,
@@ -167,29 +167,28 @@ private fun Section(
     content()
 }
 
-/** A paragraph of the guide, with each `<c>` in its string set as code, in place in the sentence. */
+/**
+ * A paragraph of the guide, with each `<c>` in its string set as code, in place in the sentence. The
+ * intro passes its own [padding]; every other paragraph keeps RN's gap below it.
+ */
 @Composable
 private fun Body(
     @StringRes id: Int,
-    modifier: Modifier = Modifier,
-    bottom: Boolean = true,
+    padding: PaddingValues = PaddingValues(bottom = ParagraphGap),
 ) = Text(
-    codeSpans(stringResource(id), InlineCode),
-    modifier.padding(bottom = if (bottom) Spacing.two - 2.dp else 0.dp),
+    codeSpans(stringResource(id)),
+    Modifier.padding(padding),
     style = BodyStyle,
     color = KettleTheme.colors.textSecondary,
 )
 
 /**
- * [text] with each `<c>…</c>` in it set in [code], what `Trans` does with `components={{ c }}`. The
+ * [text] with each `<c>…</c>` in it set as code, what `Trans` does with `components={{ c }}`. The
  * tags travel in the string rather than as cut fragments because they are YAML keys sitting
  * mid-sentence, and a language that orders the clause differently has to be able to move them. They
  * don't nest, and a tag left open runs to the end, as `Trans` renders one.
  */
-internal fun codeSpans(
-    text: String,
-    code: SpanStyle,
-): AnnotatedString =
+private fun codeSpans(text: String): AnnotatedString =
     buildAnnotatedString {
         var rest = text
         while (rest.isNotEmpty()) {
@@ -201,7 +200,7 @@ internal fun codeSpans(
             append(rest.substring(0, open))
             rest = rest.substring(open + OPEN.length)
             val close = rest.indexOf(CLOSE).takeIf { it >= 0 } ?: rest.length
-            pushStyle(code)
+            pushStyle(InlineCode)
             append(rest.substring(0, close))
             pop()
             rest = rest.substring((close + CLOSE.length).coerceAtMost(rest.length))
@@ -217,16 +216,23 @@ private fun CodeBlock(sample: String) {
     Text(
         sample,
         Modifier
-            .padding(bottom = Spacing.two - 2.dp)
+            .padding(bottom = ParagraphGap)
             .fillMaxWidth()
             .clip(CodeShape)
             .background(colors.backgroundElement)
             .border(1.dp, colors.border, CodeShape)
-            .padding(Spacing.two + 4.dp),
+            .padding(CodePadding),
         style = CodeStyle,
         color = colors.text,
     )
 }
+
+// RN's offsets from the spacing scale, named after what they space: `sectionTitle`, `intro`, `section`,
+// `body` and `codeBlock` in program-guide.tsx's styles.
+private val TitleGap = Spacing.one + 2.dp
+private val SectionGap = Spacing.four - 4.dp
+private val ParagraphGap = Spacing.two - 2.dp
+private val CodePadding = Spacing.two + 4.dp
 
 private val ButtonShape = RoundedCornerShape(15.dp)
 private val CodeShape = RoundedCornerShape(12.dp)

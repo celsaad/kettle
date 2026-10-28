@@ -16,6 +16,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
+import com.casco.kettle.shell.rn.Stacking
 import com.casco.kettle.shell.theme.KettleTheme
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -39,13 +40,13 @@ class ProgramGuideScreenTest {
     @get:Rule
     val compose = createComposeRule()
 
-    private var imports = 0
+    private val opened = mutableListOf<Pair<Stacking, String>>()
     private var dones = 0
 
     private fun show() =
         compose.setContent {
             KettleTheme(darkTheme = false) {
-                ProgramGuideScreen(onImport = { imports++ }, onDone = { dones++ })
+                ProgramGuideScreen(open = { how, path -> opened += how to path }, onDone = { dones++ })
             }
         }
 
@@ -62,8 +63,9 @@ class ProgramGuideScreenTest {
             .assertHeightIsAtLeast(48.dp)
             .performClick()
 
-        // The route says how: a replace, so back from Import lands on Programs, not mid-scroll here.
-        assertEquals(1, imports)
+        // A replace, not a push: both are sheets, so a push would leave the reader two deep and drop them
+        // back mid-scroll here on dismiss. Replacing lands them on Programs, where the import appears.
+        assertEquals(listOf(Stacking.Replace to "/import"), opened)
         assertEquals(0, dones)
     }
 
@@ -79,7 +81,7 @@ class ProgramGuideScreenTest {
             .performClick()
 
         assertEquals(1, dones)
-        assertEquals(0, imports)
+        assertEquals(emptyList<Pair<Stacking, String>>(), opened)
     }
 
     @Test

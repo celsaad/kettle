@@ -229,7 +229,7 @@ decision assembled across several commits. Open work belongs in the sections at 
   unmodified base), rather than resetting to defaults. The "add override" target picker is scoped to
   what the week's selected workout actually contains: exercises referenced by its blocks/circuit
   members, and circuit blocks that have their own `id` set (an id-less circuit can't be a block-override
-  target, matching the documented rule in `program-guide.tsx`). Deliberately unhandled: an override
+  target, matching the documented rule in the program guide, `programGuide.overrides.body`). Deliberately unhandled: an override
   isn't re-validated or cleared if the week's workout is later changed to something that no longer
   contains its target — matches the existing looseness elsewhere (`merge.ts` doesn't validate override
   targets either); a stale/unresolvable override still renders (read-only, no edit tap) with its

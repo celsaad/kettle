@@ -136,6 +136,11 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        // kotlinx-datetime is java.time underneath on Android, which the platform only has from API 26,
+        // and minSdk is 24 because the RN app this replaces in place is (Expo SDK 57's floor). Without
+        // this, exercise progress and Stats would crash on Android 7. Goes at M7 with React Native,
+        // when minSdk can rise to 26 (docs/native-migration-plan.md).
+        isCoreLibraryDesugaringEnabled = true
     }
 
     // Robolectric reads the merged resources, generated strings included.
@@ -254,6 +259,7 @@ tasks.withType<Test>().configureEach {
 }
 
 dependencies {
+    coreLibraryDesugaring(libs.desugar.jdk.libs)
     // The RN app, published by scripts/native-dev.ps1 (or CI) from the prebuilt project.
     implementation("com.casco.kettle:brownfield:1.0.0")
     // The AAR's POM gives every Expo module runtime scope only, so the ones the shell calls directly

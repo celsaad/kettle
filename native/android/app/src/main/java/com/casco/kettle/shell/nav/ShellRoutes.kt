@@ -5,7 +5,9 @@ import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.programguide.ProgramGuideRoute
+import com.casco.kettle.shell.progress.EXERCISE_PROGRESS_PATH
 import com.casco.kettle.shell.progress.ExerciseProgressRoute
+import com.casco.kettle.shell.stats.StatsRoute
 import com.casco.kettle.shell.support.SupportRoute
 
 /**
@@ -51,7 +53,8 @@ val shellRoutes: Map<String, Screen> =
     mapOf(
         "/support" to Screen.Native { SupportRoute() },
         "/program-guide" to Screen.Native { ProgramGuideRoute() },
-        "/exercise-progress" to Screen.Native { params -> ExerciseProgressRoute(params) },
+        EXERCISE_PROGRESS_PATH to Screen.Native { params -> ExerciseProgressRoute(params) },
+        "/analytics" to Screen.Native { StatsRoute() },
     )
 
 /** How [path] renders. */

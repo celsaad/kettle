@@ -30,6 +30,7 @@ import com.casco.kettle.domain.repairLibraryBounds
 import com.casco.kettle.domain.resolveWorkoutForWeek
 import com.casco.kettle.domain.serializeLibraryYaml
 import com.casco.kettle.domain.serializeSessionYaml
+import com.casco.kettle.domain.sessionDurationMinutes
 import com.casco.kettle.domain.toDisplayWeight
 import com.casco.kettle.domain.weightStep
 import it.krzeminski.snakeyaml.engine.kmp.api.Load
@@ -209,6 +210,11 @@ class ConformanceTest {
 
             "recordKey" -> {
                 recordKey(case.string("exercise")!!, RecordKind.entries.single { it.json == case.string("kind") })
+            }
+
+            "sessionDurationMinutes" -> {
+                val session = parseSessionYaml(case.string("session")!!) as? ParseResult.Ok
+                sessionDurationMinutes(checkNotNull(session) { "fixture session does not parse" }.value)
             }
 
             else -> {

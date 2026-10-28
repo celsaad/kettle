@@ -108,6 +108,7 @@
     "progressOnlyFixedHolds": "Everything you trained more than once was a hold that stops at a set time, so there's no trend to show. Reps, weights and max-effort holds show up here.",
     "nothingMoved": "Nothing moved in the last {{count}} weeks.",
     "bestEver": "· best ever",
+    "openProgress": "see progress",
     "heldSteady_one": "{{count}} held steady",
     "heldSteady_other": "{{count}} held steady",
     "showSteady": "Show",

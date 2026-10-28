@@ -113,6 +113,7 @@
     "progressOnlyFixedHolds": "Tudo o que você treinou mais de uma vez foi uma isometria com tempo fixo, então não há evolução para mostrar. Repetições, cargas e isometrias até a falha aparecem aqui.",
     "nothingMoved": "Nada mudou nas últimas {{count}} semanas.",
     "bestEver": "· melhor marca",
+    "openProgress": "ver evolução",
     "heldSteady_one": "{{count}} sem mudança",
     "heldSteady_other": "{{count}} sem mudança",
     "heldSteady_zero": "{{count}} sem mudança",

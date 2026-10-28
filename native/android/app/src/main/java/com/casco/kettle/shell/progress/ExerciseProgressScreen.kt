@@ -1,8 +1,6 @@
 package com.casco.kettle.shell.progress
 
-import android.content.res.Resources
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,14 +16,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
@@ -36,14 +32,9 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.ExerciseProgress
-import com.casco.kettle.domain.RecordKind
 import com.casco.kettle.domain.TREND_WEEKS
-import com.casco.kettle.domain.UnitSystem
 import com.casco.kettle.domain.exerciseName
 import com.casco.kettle.domain.exerciseProgress
-import com.casco.kettle.domain.jsNumber
-import com.casco.kettle.domain.roundHalfUp
-import com.casco.kettle.domain.toDisplayWeight
 import com.casco.kettle.domain.trendWindowStart
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.files.LatestFiles
@@ -51,7 +42,6 @@ import com.casco.kettle.shell.files.LocalLatestFiles
 import com.casco.kettle.shell.i18n.deviceUnitSystem
 import com.casco.kettle.shell.i18n.formatFullDate
 import com.casco.kettle.shell.i18n.formatMonthDay
-import com.casco.kettle.shell.i18n.pluralText
 import com.casco.kettle.shell.list.ListHeaderRule
 import com.casco.kettle.shell.list.ListRow
 import com.casco.kettle.shell.list.ListRowSeparator
@@ -59,20 +49,26 @@ import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.MaxContentWidth
 import com.casco.kettle.shell.theme.Spacing
+import com.casco.kettle.shell.theme.card
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import java.util.Locale
-import kotlin.math.abs
-import kotlin.math.sign
 
-/** What `shellRoutes` registers at `/exercise-progress`, opened by RN Stats with `exerciseId`. */
+/**
+ * Where exercise progress is registered, and the param that names its exercise: the path and key RN's
+ * stub route is pushed with. Shared so Stats' rows and this screen can't drift apart on a rename.
+ */
+const val EXERCISE_PROGRESS_PATH = "/exercise-progress"
+const val EXERCISE_ID_PARAM = "exerciseId"
+
+/** What `shellRoutes` registers at [EXERCISE_PROGRESS_PATH], opened from a Stats row. */
 @Composable
 fun ExerciseProgressRoute(params: Map<String, String>) {
     // Once per opening, as RN's screen read its clock once per mount: the window doesn't creep under
     // a reader who leaves the sheet up.
     val now = remember { Clock.System.now() }
-    ExerciseProgressScreen(params["exerciseId"], LocalLatestFiles.current, now, TimeZone.currentSystemDefault())
+    ExerciseProgressScreen(params[EXERCISE_ID_PARAM], LocalLatestFiles.current, now, TimeZone.currentSystemDefault())
 }
 
 /**
@@ -213,9 +209,7 @@ private fun ChartCard(
     Column(
         Modifier
             .fillMaxWidth()
-            .clip(CardShape)
-            .background(colors.backgroundElement)
-            .border(1.dp, colors.border, CardShape)
+            .card()
             .padding(Spacing.three),
     ) {
         ProgressChart(
@@ -300,53 +294,4 @@ private class Dates(
     fun fullDate(at: Instant) = formatFullDate(at, locale, zone)
 }
 
-/**
- * A progress value as text: kilograms through the reader's units, seconds and reps rounded. RN's
- * `useProgressReading` and `formatProgressReading`, which RN's Stats row shares with this screen so
- * the two print one number. Stats' port (#201) should move this out and share it the same way.
- */
-private class Readings(
-    private val resources: Resources,
-    private val kind: RecordKind,
-    private val units: UnitSystem,
-) {
-    fun reading(value: Double): String =
-        when (kind) {
-            RecordKind.HeaviestSet -> {
-                val unit =
-                    resources.getString(
-                        if (units ==
-                            UnitSystem.IMPERIAL
-                        ) {
-                            R.string.units_lb
-                        } else {
-                            R.string.units_kg
-                        },
-                    )
-                "${jsNumber(toDisplayWeight(value, units))} $unit"
-            }
-
-            RecordKind.LongestHold -> {
-                resources.getString(R.string.format_seconds, jsNumber(roundHalfUp(value)))
-            }
-
-            RecordKind.MostReps, RecordKind.MostRounds -> {
-                val reps = roundHalfUp(value).toInt()
-                resources.pluralText(R.plurals.format_rep, R.string.format_rep_zero, reps)
-            }
-        }
-
-    /**
-     * The change, signed. The magnitude is read and the sign added, so "−1 rep" pluralises on 1; and a
-     * flat window has its own words rather than a "+0" that reads as a rounding artefact.
-     */
-    fun delta(delta: Double): String =
-        when (delta.sign) {
-            0.0 -> resources.getString(R.string.analytics_progressFlat)
-            1.0 -> resources.getString(R.string.analytics_progressUp, reading(abs(delta)))
-            else -> resources.getString(R.string.analytics_progressDown, reading(abs(delta)))
-        }
-}
-
-private val CardShape = RoundedCornerShape(14.dp)
 private val KeyDot = 8.dp

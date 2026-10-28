@@ -1,8 +1,6 @@
 package com.casco.kettle.shell.support
 
 import androidx.activity.compose.LocalActivity
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -16,7 +14,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
@@ -30,7 +27,6 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
@@ -47,6 +43,7 @@ import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.MaxContentWidth
 import com.casco.kettle.shell.theme.Spacing
+import com.casco.kettle.shell.theme.card
 
 /**
  * What `shellRoutes` registers at `/support`: the screen on the real file and Play, telling RN once a
@@ -141,18 +138,11 @@ private fun Paragraph(text: String) =
         color = KettleTheme.colors.textSecondary,
     )
 
-private val CardShape = RoundedCornerShape(16.dp)
-
 /** RN's card padding, `Spacing.two + 6`. */
 private val CardPadding = Spacing.two + 6.dp
 
-@Composable
-private fun Modifier.card(): Modifier {
-    val colors = KettleTheme.colors
-    return clip(CardShape)
-        .background(colors.backgroundElement)
-        .border(1.dp, colors.border, CardShape)
-}
+/** RN's Support cards round at 16, where Stats' and progress's take the shared 14. */
+private val SupportCardRadius = 16.dp
 
 @Composable
 private fun ThankYou(count: Long) {
@@ -161,7 +151,7 @@ private fun ThankYou(count: Long) {
         Modifier
             .padding(top = Spacing.four)
             .fillMaxWidth()
-            .card()
+            .card(SupportCardRadius)
             .padding(CardPadding),
         verticalArrangement = Arrangement.spacedBy(Spacing.one),
     ) {
@@ -235,7 +225,7 @@ private fun Tiers(
                     // heightIn, never height: a fixed height clips at large text sizes.
                     .heightIn(min = 48.dp)
                     .alpha(if (purchasing != null && !busy) DIMMED else 1f)
-                    .card()
+                    .card(SupportCardRadius)
                     .clickable(enabled = purchasing == null, role = Role.Button) { onTip(offer.tier) }
                     .padding(CardPadding),
                 verticalAlignment = Alignment.CenterVertically,

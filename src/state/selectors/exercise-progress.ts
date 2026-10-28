@@ -79,15 +79,6 @@ function isFixedTargetHold(exercise: Exercise): boolean {
 }
 
 /**
- * How far back Getting stronger looks, and the exercise progress screen a row opens with it — one
- * constant, so a row and the chart behind it can never be measuring different windows.
- *
- * Eight weeks. Four is two or three sessions of most exercises, which is not a trend; eight is two
- * months — long enough for a number to move, short enough to still be about what you're doing now.
- */
-export const TREND_WEEKS = 8;
-
-/**
  * Per-exercise progress over the last `weeks` weeks.
  *
  * **The measure is not this module's decision.** `entryBest` already owns "what counts as doing more"

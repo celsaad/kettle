@@ -174,9 +174,9 @@ are house rules here rather than a backlog — cheap as you go, tedious to retro
   and open with the shared `ModalHeader` (grabber + pinned close button; it owns the top spacing, so
   the screen's own `scrollContent` has no `paddingTop`).
 - Theming is strict: `useTheme`, `ThemedText`, `ThemedView`, `Spacing.*`, `MaxContentWidth`. The
-  session runner is always dark (`RunnerColors`) regardless of scheme. Color and spacing values are
-  edited in `constants/theme.json`, which both UIs read; `theme.ts` re-exports them and holds their
-  notes.
+  session runner is always dark (`RunnerColors`) regardless of scheme. Colors, spacing and the type
+  scale (`ThemedText`'s sizes) are edited in `constants/theme.json`, which both UIs read; `theme.ts`
+  re-exports them and holds their notes.
 - In-app forms write straight to the store and never pass through the zod schema, so they need their
   own validation (see `validateConfig` in `domain/exercise-form.ts`).
 - **Weights are stored in kilograms, always.** The library is a file users export and share, so it

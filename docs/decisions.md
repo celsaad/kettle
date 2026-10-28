@@ -182,6 +182,11 @@ decision assembled across several commits. Open work belongs in the sections at 
   possible — consuming each purchase is load-bearing (`consumeAsync` in the native shell since M4,
   `finishTransaction({ isConsumable: true })` under expo-iap before it), since without it Play treats
   the SKU as owned and refuses every later purchase of that tier, and refunds it after three days.
+  **Consume, then record** (native, #198), the reverse of RN's order: a tip can then be counted only
+  once, since a sweep finds only what was never consumed, where recording first let a failed consume
+  be counted again. The cost is a tip consumed but not yet recorded when the app dies between the
+  two, which is lost to the count; that's the side to err on for a thank-you counter. For the same
+  reason a consume is never given up on: Play finishes it whether or not anyone is waiting.
   Consumables aren't restorable from Play, so "has tipped" can only live locally: `supporter.json`,
   app-owned JSON deliberately outside the hand-editable YAML library. There is no receipt verification
   because there is no backend to verify against; the downside is a contrived free tip, which costs
@@ -927,10 +932,10 @@ decision assembled across several commits. Open work belongs in the sections at 
   ported and held by the conformance corpus.** (Native migration, settled on #147.) The split, and
   what falls on each side:
   - **Values go in data files.** Translations are the locale bundles (`src/i18n/locales/*.json`, read
-    by `:strings`). Colors and spacing are `src/constants/theme.json` (read by `:theme`), and
-    `theme.ts` is a thin re-export under the names RN already imports. Native generates its code from
-    them on every build into a build directory, so nothing generated is committed and nothing can
-    go stale. The Swift app in M8 reads the same files, not a Kotlin copy.
+    by `:strings`). Colors, spacing and the type scale are `src/constants/theme.json` (read by
+    `:theme`), and `theme.ts` is a thin re-export under the names RN already imports. Native generates
+    its code from them on every build into a build directory, so nothing generated is committed and
+    nothing can go stale. The Swift app in M8 reads the same files, not a Kotlin copy.
   - **Behaviour isn't data.** Parser rules, ceilings like `MAX_SETS`, unit steps and search
     thresholds are ported as code, and `conformance/` is what holds the two sides together. The
     loader's limits that the corpus can't express hold the same way through `YamlTest`, which

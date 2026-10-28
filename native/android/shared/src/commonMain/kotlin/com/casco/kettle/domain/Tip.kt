@@ -27,7 +27,6 @@ data class TipProduct(
 /** A tier ready to render: the store's own localized price string, never formatted by hand. */
 data class TipTierOffer(
     val tier: TipTier,
-    val sku: String,
     val displayPrice: String,
 )
 
@@ -37,7 +36,7 @@ data class TipTierOffer(
  */
 fun toTipTierOffers(products: List<TipProduct>): List<TipTierOffer> =
     TipTier.entries.mapNotNull { tier ->
-        products.firstOrNull { it.id == tier.sku }?.let { TipTierOffer(tier, tier.sku, it.displayPrice) }
+        products.firstOrNull { it.id == tier.sku }?.let { TipTierOffer(tier, it.displayPrice) }
     }
 
 /**
@@ -66,9 +65,10 @@ fun withTipRecorded(
 ): SupporterState = SupporterState(current.tipCount + 1, isoInstant(at), tier)
 
 /**
- * What a `supporter.json` says, held to `loadSupporterState` by `conformance/supporter.yaml`. Anything
- * the schema refuses reads as the empty state, never an error: the file is the app's, so there's no
- * user to report to, and being wrong forgets a past tip rather than any workout data.
+ * What a `supporter.json` says, held to `src/domain/tip.ts`'s `parseSupporterState` by
+ * `conformance/supporter.yaml`. Anything the schema refuses reads as the empty state, never an error:
+ * the file is the app's, so there's no user to report to, and being wrong forgets a past tip rather
+ * than any workout data.
  *
  * Read with the YAML loader, as `parsePreferences` is: RN wrote it with `JSON.stringify`, and that
  * output is YAML 1.2. All three keys are required, null or not, as zod's `nullable` requires them.

@@ -4,6 +4,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.text.font.FontWeight
+import com.casco.kettle.theme.FONT_WEIGHTS
 import com.casco.kettle.theme.parseTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -67,6 +69,35 @@ class GeneratedThemeTest {
             Spacing.tokens.toMap().mapValues { it.value.value },
         )
         assertEquals(theme.maxContentWidth.toFloat(), MaxContentWidth.value)
+    }
+
+    @Test
+    fun `each type style is theme json's sizes in sp, at its font role's weight`() {
+        val expected =
+            theme.type.mapValues { (_, style) ->
+                listOf(
+                    FONT_WEIGHTS.getValue(style.font),
+                    style.fontSize?.toFloat(),
+                    style.lineHeight?.toFloat(),
+                    style.letterSpacing?.toFloat(),
+                )
+            }
+        val generated =
+            KettleType.tokens.toMap().mapValues { (_, style) ->
+                listOf(
+                    when (style.fontWeight) {
+                        FontWeight.Normal -> "Normal"
+                        FontWeight.Medium -> "Medium"
+                        FontWeight.SemiBold -> "SemiBold"
+                        FontWeight.Bold -> "Bold"
+                        else -> "unexpected ${style.fontWeight}"
+                    },
+                    style.fontSize.takeIf { it.isSp }?.value,
+                    style.lineHeight.takeIf { it.isSp }?.value,
+                    style.letterSpacing.takeIf { it.isSp }?.value,
+                )
+            }
+        assertEquals(expected, generated)
     }
 
     /**

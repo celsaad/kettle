@@ -220,13 +220,13 @@ private fun Unavailable(onRetry: () -> Unit) =
 @Composable
 private fun Tiers(
     offers: List<TipTierOffer>,
-    purchasing: String?,
-    onTip: (String) -> Unit,
+    purchasing: TipTier?,
+    onTip: (TipTier) -> Unit,
 ) {
     val colors = KettleTheme.colors
     Column(Modifier.padding(top = Spacing.four), verticalArrangement = Arrangement.spacedBy(Spacing.two - 3.dp)) {
         for (offer in offers) {
-            val busy = purchasing == offer.sku
+            val busy = purchasing == offer.tier
             // One button, named by its own two texts, so it needs no label of its own: TalkBack reads
             // the tier and the price, as RN's `tipA11y` spelt out.
             Row(
@@ -236,7 +236,7 @@ private fun Tiers(
                     .heightIn(min = 48.dp)
                     .alpha(if (purchasing != null && !busy) DIMMED else 1f)
                     .card()
-                    .clickable(enabled = purchasing == null, role = Role.Button) { onTip(offer.sku) }
+                    .clickable(enabled = purchasing == null, role = Role.Button) { onTip(offer.tier) }
                     .padding(CardPadding),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(Spacing.two),

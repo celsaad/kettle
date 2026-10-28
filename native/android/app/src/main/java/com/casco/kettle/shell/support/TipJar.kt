@@ -61,8 +61,8 @@ class TipJar(
     var store by mutableStateOf<StoreState>(StoreState.Connecting)
         private set
 
-    /** The SKU whose store sheet is open, which holds every other tier off. */
-    var purchasing by mutableStateOf<String?>(null)
+    /** The tier whose store sheet is open, which holds every other tier off. */
+    var purchasing by mutableStateOf<TipTier?>(null)
         private set
     var outcome by mutableStateOf<Outcome?>(null)
         private set
@@ -91,10 +91,10 @@ class TipJar(
         scope.launch { connect() }
     }
 
-    fun tip(sku: String) {
+    fun tip(tier: TipTier) {
         outcome = null
-        purchasing = sku
-        billing.launch(sku)
+        purchasing = tier
+        billing.launch(tier.sku)
     }
 
     /**
@@ -108,7 +108,7 @@ class TipJar(
 
     private suspend fun connect() {
         store = StoreState.Connecting
-        if (ask(runtime) { billing.connect(::onUpdate) } != true) {
+        if (runtime.ask { billing.connect(::onUpdate) } != true) {
             store = StoreState.Unavailable
             return
         }
@@ -117,7 +117,7 @@ class TipJar(
             store = StoreState.Unavailable
             return
         }
-        val offers = ask(runtime) { billing.products() }?.let(::toTipTierOffers)
+        val offers = runtime.ask { billing.products() }?.let(::toTipTierOffers)
         store = if (offers.isNullOrEmpty()) StoreState.Unavailable else StoreState.Ready(offers)
     }
 
@@ -152,8 +152,10 @@ class TipJar(
      * one included, which Play refunds after three days unless it's consumed.
      */
     private suspend fun settleHeld(): Boolean {
-        val held = ask(runtime) { billing.purchases() } ?: return false
-        held.forEach { settle(it) }
+        val held = runtime.ask { billing.purchases() } ?: return false
+        // Launched, not awaited: a consume has no deadline (see settlePaid), and the tiers shouldn't
+        // wait on one.
+        held.forEach { scope.launch { settle(it) } }
         return true
     }
 
@@ -185,8 +187,10 @@ class TipJar(
         settling++
         try {
             return when {
-                // Paid and still Play's: thanked for as pending, and counted on the next sweep.
-                ask(runtime) { billing.consume(purchase) } != true -> {
+                // No deadline, unlike every other store call: Play carries on consuming after we stop
+                // waiting, and a consume that lands unrecorded is a paid tip no later sweep can find.
+                // close() waits for it instead. Refused: still Play's, so pending, for the next sweep.
+                !billing.consume(purchase) -> {
                     settled.remove(purchase.token)
                     Outcome.PENDING
                 }
@@ -224,10 +228,7 @@ class TipJar(
  * emulator whose Play Store has no billing retries its reconnection inside a query, then cancels the
  * query without a result, and the screen spun on "Loading…" for good.
  */
-private suspend fun <T> ask(
-    runtime: TipJarRuntime,
-    call: suspend () -> T,
-): T? = withTimeoutOrNull(runtime.patienceMs) { call() }
+private suspend fun <T> TipJarRuntime.ask(call: suspend () -> T): T? = withTimeoutOrNull(patienceMs) { call() }
 
 /** Play's own calls answer in well under a second; a reconnection's retries take a few. */
 internal const val STORE_PATIENCE_MS = 10_000L

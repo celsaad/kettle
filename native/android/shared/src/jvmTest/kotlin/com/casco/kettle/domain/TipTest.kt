@@ -39,7 +39,7 @@ class TipTest {
         fun `carries the store's own localized price string through untouched`() {
             val offers = toTipTierOffers(listOf(product(TipTier.SMALL.sku, "R$ 4,90")))
 
-            assertEquals(listOf(TipTierOffer(TipTier.SMALL, "tip_small", "R$ 4,90")), offers)
+            assertEquals(listOf(TipTierOffer(TipTier.SMALL, "R$ 4,90")), offers)
         }
 
         // A half-configured Play Console should cost the user a button, not the whole screen.

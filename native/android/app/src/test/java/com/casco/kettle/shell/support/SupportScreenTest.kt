@@ -81,15 +81,31 @@ private class FakeBilling(
         return held.toList()
     }
 
-    /** Set to hold the next consume until it completes, as Play's callback can. */
-    var consuming: CompletableDeferred<Boolean>? = null
+    /** Set to hold consumes until [answerConsumes], as Play's callback can take its time. */
+    var holdConsumes = false
+    private val answered = CompletableDeferred<Boolean>()
+    private val waiting = mutableListOf<StorePurchase>()
     var closed = false
 
     override suspend fun consume(purchase: StorePurchase): Boolean {
-        consuming?.let { if (!it.await()) return false }
+        if (!holdConsumes) {
+            take(purchase)
+            return true
+        }
+        waiting += purchase
+        return answered.await()
+    }
+
+    /** Play answering the held consumes: done on its side whether or not anyone is still waiting. */
+    fun answerConsumes() {
+        waiting.forEach(::take)
+        waiting.clear()
+        answered.complete(true)
+    }
+
+    private fun take(purchase: StorePurchase) {
         consumed += purchase.token
         held.remove(purchase)
-        return true
     }
 
     override fun launch(sku: String) {
@@ -345,8 +361,7 @@ class SupportScreenTest {
     @Test
     fun `closing mid-settle ends the connection only once the tip is recorded`() {
         val file = FakeSupporterFile()
-        val consume = CompletableDeferred<Boolean>()
-        val billing = FakeBilling().apply { consuming = consume }
+        val billing = FakeBilling().apply { holdConsumes = true }
         var showing by mutableStateOf(true)
         compose.setContent {
             KettleTheme(darkTheme = false) {
@@ -362,7 +377,7 @@ class SupportScreenTest {
         compose.waitForIdle()
         assertEquals(false, billing.closed)
 
-        compose.runOnUiThread { consume.complete(true) }
+        compose.runOnUiThread { billing.answerConsumes() }
         compose.waitForIdle()
 
         assertEquals(listOf("t1"), billing.consumed)
@@ -392,5 +407,33 @@ class SupportScreenTest {
 
         compose.onNodeWithText(unavailable).assertExists()
         compose.onNodeWithText("Carregando…").assertDoesNotExist()
+    }
+
+    /** Play finishes a consume nobody is waiting on, so giving up on one would lose the tip for good. */
+    @Test
+    fun `a consume slower than the store's deadline is still recorded`() {
+        val file = FakeSupporterFile()
+        val billing = FakeBilling().apply { holdConsumes = true }
+        compose.mainClock.autoAdvance = false
+        compose.setContent {
+            KettleTheme(darkTheme = false) {
+                SupportScreen(
+                    file,
+                    billing,
+                    onSaved = {},
+                    TipJarRuntime(io = Dispatchers.Unconfined, patienceMs = 1_000),
+                )
+            }
+        }
+        compose.mainClock.advanceTimeByFrame()
+
+        compose.onNodeWithText("Gorjeta pequena").performClick()
+        finish(billing, PurchaseUpdate.Bought(listOf(paid("tip_small", "slow"))))
+        compose.mainClock.advanceTimeBy(1_500)
+        compose.runOnUiThread { billing.answerConsumes() }
+        compose.mainClock.advanceTimeByFrame()
+
+        assertEquals(listOf("slow"), billing.consumed)
+        assertEquals(1, file.written.size)
     }
 }

@@ -12,18 +12,19 @@ class ComposeThemeTest {
         dark: String = """"text": "#f0ece2"""",
         runner: String = """"text": "#f3efe4"""",
         spacing: String = """"half": 2""",
-        extra: String = "",
+        type: String = """"small": { "font": "body", "fontSize": 13, "lineHeight": 18 }""",
     ) = """
         {
           "Colors": { "light": { $light }, "dark": { $dark } },
           "RunnerColors": { $runner },
           "Spacing": { $spacing },
-          "MaxContentWidth": 480$extra
+          "MaxContentWidth": 480,
+          "Type": { $type }
         }
         """.trimIndent()
 
     @Test
-    fun `every group becomes its Compose counterpart`() {
+    fun `the file opens with its banner, its package and every import the groups need`() {
         assertEquals(
             """
             // Generated from src/constants/theme.json by :theme. Edit theme.json, not this file.
@@ -31,8 +32,21 @@ class ComposeThemeTest {
 
             import androidx.compose.runtime.Immutable
             import androidx.compose.ui.graphics.Color
+            import androidx.compose.ui.text.TextStyle
+            import androidx.compose.ui.text.font.FontWeight
             import androidx.compose.ui.unit.dp
+            import androidx.compose.ui.unit.sp
 
+
+            """.trimIndent(),
+            generateTheme(theme()).substringBefore("/**"),
+        )
+    }
+
+    @Test
+    fun `every group becomes its Compose counterpart`() {
+        assertEquals(
+            """
             /** `Colors.light` and `Colors.dark`: one token set, remapped per scheme. */
             @Immutable
             data class KettleColors(
@@ -77,9 +91,32 @@ class ComposeThemeTest {
             }
 
             val MaxContentWidth = 480.dp
+            """.trimIndent(),
+            ("/**" + generateTheme(theme()).substringAfter("/**").substringBefore("/**\n * `Type`")).trimEnd(),
+        )
+    }
+
+    @Test
+    fun `the type scale becomes KettleType, last in the file`() {
+        assertEquals(
+            """
+            /**
+             * `Type`: ThemedText's types. In the system font, at the weight of the RN font each names, until
+             * the shell bundles RN's fonts.
+             */
+            object KettleType {
+                val small = TextStyle(fontWeight = FontWeight.Normal, fontSize = 13.sp, lineHeight = 18.sp)
+
+                /** Every token by its theme.json name, in file order. */
+                internal val tokens =
+                    listOf(
+                        "small" to small,
+                    )
+            }
+
 
             """.trimIndent(),
-            generateTheme(theme()),
+            "/**\n * `Type`" + generateTheme(theme()).substringAfter("/**\n * `Type`"),
         )
     }
 
@@ -114,7 +151,10 @@ class ComposeThemeTest {
 
     @Test
     fun `a group the theme doesn't know fails the build rather than going missing`() {
-        val message = refusal(theme(extra = """, "Radius": { "card": 12 }"""))
+        val message =
+            refusal(
+                theme().replace("\"MaxContentWidth\": 480,", "\"MaxContentWidth\": 480, \"Radius\": { \"card\": 12 },"),
+            )
 
         assertTrue("Radius" in message, message)
     }
@@ -159,6 +199,44 @@ class ComposeThemeTest {
             val message = refusal(theme(runner = """"text": "$color""""))
 
             assertTrue(message.startsWith(color), "$color: $message")
+        }
+    }
+
+    @Test
+    fun `a type style takes its role's weight, and only the sizes it sets`() {
+        val kotlin =
+            generateTheme(
+                theme(
+                    type =
+                        """"title": { "font": "display", "fontSize": 40, "letterSpacing": -0.8 }, """ +
+                            """"numeral": { "font": "display" }""",
+                ),
+            )
+
+        assertEquals(
+            listOf(
+                "val title = TextStyle(fontWeight = FontWeight.SemiBold, fontSize = 40.sp, letterSpacing = (-0.8).sp)",
+            ),
+            lines(kotlin, "title"),
+        )
+        assertEquals(listOf("val numeral = TextStyle(fontWeight = FontWeight.SemiBold)"), lines(kotlin, "numeral"))
+    }
+
+    @Test
+    fun `a type style RN couldn't draw the same way is refused by name`() {
+        val cases =
+            listOf(
+                """"small": { "font": "serif", "fontSize": 13 }""" to "Type.small.font",
+                """"small": { "fontSize": 13 }""" to "Type.small.font",
+                """"small": { "font": "body", "fontSize": "13" }""" to "Type.small.fontSize",
+                """"small": { "font": "body", "fontWeight": 600 }""" to "Type.small",
+                """"small": 13""" to "Type.small",
+                """"val": { "font": "body" }""" to "Type.val",
+            )
+        for ((type, path) in cases) {
+            val message = refusal(theme(type = type))
+
+            assertTrue(path in message, "$type: $message")
         }
     }
 }

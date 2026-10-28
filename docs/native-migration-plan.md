@@ -407,7 +407,7 @@ session.
 - **Unpin the Kotlin toolchain.** `native/android/gradle/libs.versions.toml` holds Kotlin and AGP
   at React Native's own versions (`node_modules/react-native/gradle/libs.versions.toml`), so the shell
   and the AAR it hosts build with one toolchain. With the AAR gone, that reason goes too. Move Kotlin
-  forward together with three things that move with it:
+  forward together with the four things that move with it:
   - detekt, whose 1.x line runs only on the Kotlin it was built against;
   - the Compose compiler plugin;
   - snakeyaml-engine-kmp, whose newer majors are built with a newer Kotlin than ours can read;

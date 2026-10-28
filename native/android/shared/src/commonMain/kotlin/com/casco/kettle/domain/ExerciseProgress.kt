@@ -16,15 +16,18 @@ data class ExerciseProgress(
     val points: List<Double>,
     val latest: Double,
     val delta: Double,
-    /** `startedAt` of the most recent session in the window, as the file has it. */
-    val lastTrainedAt: String,
+    /** When the most recent session in the window started. */
+    val lastTrainedAt: Instant,
     val bestEver: Boolean,
     val sessions: List<ProgressSession>,
 )
 
-/** [at] is the session's `startedAt`, as the file has it. */
+/**
+ * [at] is when the session started. An [Instant] rather than the file's string, where RN keeps the
+ * string: the selector has already parsed it, and every reader of it needs it as a time.
+ */
 data class ProgressSession(
-    val at: String,
+    val at: Instant,
     val value: Double,
     val newBest: Boolean,
 )
@@ -62,7 +65,7 @@ fun exerciseProgress(
         sessions
             .mapNotNull { session -> session.startedInstant()?.let { session to it } }
             .filter { (session, startedAt) -> session.endedAt != null && startedAt <= now }
-            .sortedBy { (session) -> session.startedAt }
+            .sortedBy { (_, startedAt) -> startedAt }
     val walk = walkLog(finished, windowStart)
 
     // Two sessions minimum, of the kind the latest competed on. Fixed holds are counted only past that
@@ -110,7 +113,7 @@ private fun walkLog(
             val best = entryBest(entry) ?: continue
             val key = recordKey(entry.exercise, best.kind)
             if ((inSession[key]?.value ?: Double.NEGATIVE_INFINITY) < best.value) {
-                inSession[key] = Point(entry.exercise, session.startedAt, best.kind, best.value, newBest = false)
+                inSession[key] = Point(entry.exercise, startedAt, best.kind, best.value, newBest = false)
             }
         }
         for ((key, point) in inSession) {
@@ -167,7 +170,7 @@ fun exerciseName(
 
 private data class Point(
     val exercise: String,
-    val at: String,
+    val at: Instant,
     val kind: RecordKind,
     val value: Double,
     val newBest: Boolean,

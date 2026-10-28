@@ -99,7 +99,7 @@ private fun session(
     day: Int,
     value: Double,
     newBest: Boolean = false,
-) = ProgressSession((FROM + day.days).toString(), value, newBest)
+) = ProgressSession(FROM + day.days, value, newBest)
 
 private fun layout(
     vararg sessions: ProgressSession,

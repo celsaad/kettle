@@ -44,13 +44,13 @@ class ExerciseProgressTest {
                             points = listOf(10.0, 11.0, 12.0),
                             latest = 12.0,
                             delta = 2.0,
-                            lastTrainedAt = "2026-08-17T10:00:00.000Z",
+                            lastTrainedAt = Instant.parse("2026-08-17T10:00:00.000Z"),
                             bestEver = true,
                             sessions =
                                 listOf(
-                                    ProgressSession("2026-08-04T10:00:00.000Z", 10.0, newBest = false),
-                                    ProgressSession("2026-08-11T10:00:00.000Z", 11.0, newBest = true),
-                                    ProgressSession("2026-08-17T10:00:00.000Z", 12.0, newBest = true),
+                                    ProgressSession(Instant.parse("2026-08-04T10:00:00.000Z"), 10.0, newBest = false),
+                                    ProgressSession(Instant.parse("2026-08-11T10:00:00.000Z"), 11.0, newBest = true),
+                                    ProgressSession(Instant.parse("2026-08-17T10:00:00.000Z"), 12.0, newBest = true),
                                 ),
                         ),
                     ),
@@ -440,8 +440,8 @@ class ExerciseProgressTest {
 
             assertEquals(
                 listOf(
-                    ProgressSession("2026-08-11T10:00:00.000Z", 10.0, newBest = false),
-                    ProgressSession("2026-08-17T10:00:00.000Z", 13.0, newBest = true),
+                    ProgressSession(Instant.parse("2026-08-11T10:00:00.000Z"), 10.0, newBest = false),
+                    ProgressSession(Instant.parse("2026-08-17T10:00:00.000Z"), 13.0, newBest = true),
                 ),
                 view.movers[0].sessions,
             )

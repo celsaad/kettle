@@ -22,7 +22,10 @@ fun formatMonthDay(
     zone: TimeZone,
 ): String = format(at, locale, zone, "MMMd")
 
-/** `formatFullDate`: `{ weekday: 'long', month: 'short', day: 'numeric' }`, "Tuesday, Aug 4". */
+/**
+ * RN's `{ weekday: 'long', month: 'short', day: 'numeric' }`, "Tuesday, Aug 4": what its
+ * `formatFullDate` did before its last caller went native (#200).
+ */
 fun formatFullDate(
     at: Instant,
     locale: Locale,

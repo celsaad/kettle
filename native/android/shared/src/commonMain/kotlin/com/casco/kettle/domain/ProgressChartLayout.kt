@@ -36,7 +36,7 @@ enum class ChartMark { NewBest, Latest }
 data class ChartPoint(
     val x: Float,
     val y: Float,
-    val at: String,
+    val at: Instant,
     val mark: ChartMark?,
 )
 
@@ -80,7 +80,7 @@ fun progressChartLayout(
     val span = maxOf(1L, (window.endInclusive - from).inWholeMilliseconds).toFloat()
     val max = maxOf(sessions.maxOf { it.value }, 0.0)
 
-    fun xOf(at: String) = PAD_X + (Instant.parse(at) - from).inWholeMilliseconds / span * (width - PAD_X * 2)
+    fun xOf(at: Instant) = PAD_X + (at - from).inWholeMilliseconds / span * (width - PAD_X * 2)
 
     // From zero, as the sparkline is: from the minimum, 10 kg to 10.5 kg would draw as a cliff.
     fun yOf(value: Double) = if (max <= 0) baseline else baseline - (value / max).toFloat() * (baseline - PAD_TOP)

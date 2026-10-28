@@ -41,6 +41,8 @@ import com.casco.kettle.domain.TREND_WEEKS
 import com.casco.kettle.domain.UnitSystem
 import com.casco.kettle.domain.exerciseName
 import com.casco.kettle.domain.exerciseProgress
+import com.casco.kettle.domain.jsNumber
+import com.casco.kettle.domain.roundHalfUp
 import com.casco.kettle.domain.toDisplayWeight
 import com.casco.kettle.domain.trendWindowStart
 import com.casco.kettle.shell.R
@@ -51,9 +53,8 @@ import com.casco.kettle.shell.i18n.formatFullDate
 import com.casco.kettle.shell.i18n.formatMonthDay
 import com.casco.kettle.shell.i18n.pluralText
 import com.casco.kettle.shell.list.ListHeaderRule
-import com.casco.kettle.shell.list.ListRowMinHeight
+import com.casco.kettle.shell.list.ListRow
 import com.casco.kettle.shell.list.ListRowSeparator
-import com.casco.kettle.shell.list.ListRowVerticalPadding
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.MaxContentWidth
@@ -63,7 +64,6 @@ import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import java.util.Locale
 import kotlin.math.abs
-import kotlin.math.floor
 import kotlin.math.sign
 
 /** What `shellRoutes` registers at `/exercise-progress`, opened by RN Stats with `exerciseId`. */
@@ -97,12 +97,19 @@ fun ExerciseProgressScreen(
     val exercises = files.library?.exercises.orEmpty()
     val locale = LocalConfiguration.current.locales[0]
     val units = files.preferences?.unitSystem ?: deviceUnitSystem(locale)
-    // Null until the first read lands, so the sheet doesn't say "nothing to chart" before it has looked.
-    val row =
+    val lookup =
         remember(log, exercises, exerciseId, now, zone) {
-            log?.let {
-                val view = exerciseProgress(it.sessions, exercises, TREND_WEEKS, now, zone)
-                RowLookup((view.movers + view.steady).firstOrNull { row -> row.exerciseId == exerciseId })
+            when (log) {
+                null -> {
+                    RowLookup.NotRead
+                }
+
+                else -> {
+                    val view = exerciseProgress(log.sessions, exercises, TREND_WEEKS, now, zone)
+                    (view.movers + view.steady)
+                        .firstOrNull { it.exerciseId == exerciseId }
+                        ?.let(RowLookup::Found) ?: RowLookup.NoRow
+                }
             }
         }
 
@@ -130,9 +137,9 @@ fun ExerciseProgressScreen(
                     color = KettleTheme.colors.text,
                 )
             }
-            val progress = row?.progress
-            if (row != null && progress == null) NotFound()
-            if (progress != null) {
+            if (lookup == RowLookup.NoRow) NotFound()
+            if (lookup is RowLookup.Found) {
+                val progress = lookup.progress
                 val readings = Readings(LocalResources.current, progress.kind, units)
                 val dates = Dates(locale, zone)
                 Headline(progress, readings, dates)
@@ -144,10 +151,19 @@ fun ExerciseProgressScreen(
     }
 }
 
-/** The lookup's answer once the log is read: [progress] null where the exercise has no row. */
-private class RowLookup(
-    val progress: ExerciseProgress?,
-)
+/**
+ * The row the sheet was opened for. [NotRead] shows nothing, so the sheet never says "nothing to
+ * chart" before it has looked.
+ */
+private sealed interface RowLookup {
+    data object NotRead : RowLookup
+
+    data object NoRow : RowLookup
+
+    data class Found(
+        val progress: ExerciseProgress,
+    ) : RowLookup
+}
 
 /** A stale route: the row it was opened from has gone, say a session deleted from History since. */
 @Composable
@@ -179,7 +195,7 @@ private fun Headline(
         color = if (row.delta == 0.0) colors.textSecondary else colors.accentText,
     )
     Text(
-        stringResource(R.string.exerciseProgress_since, dates.monthDay(Instant.parse(row.sessions.first().at))),
+        stringResource(R.string.exerciseProgress_since, dates.monthDay(row.sessions.first().at)),
         Modifier.alignByBaseline(),
         style = KettleType.small,
         color = colors.textSecondary,
@@ -250,16 +266,9 @@ private fun SessionList(
     val newBestTag = stringResource(R.string.exerciseProgress_newBestTag)
     row.sessions.asReversed().forEachIndexed { index, session ->
         if (index > 0) ListRowSeparator()
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .heightIn(min = ListRowMinHeight)
-                .padding(vertical = ListRowVerticalPadding),
-            horizontalArrangement = Arrangement.spacedBy(Spacing.two),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
+        ListRow {
             Text(
-                dates.fullDate(Instant.parse(session.at)),
+                dates.fullDate(session.at),
                 Modifier.weight(1f),
                 style = KettleType.small,
                 color = colors.textSecondary,
@@ -318,11 +327,11 @@ private class Readings(
             }
 
             RecordKind.LongestHold -> {
-                resources.getString(R.string.format_seconds, jsRound(value).toString())
+                resources.getString(R.string.format_seconds, jsNumber(roundHalfUp(value)))
             }
 
             RecordKind.MostReps, RecordKind.MostRounds -> {
-                val reps = jsRound(value).toInt()
+                val reps = roundHalfUp(value).toInt()
                 resources.pluralText(R.plurals.format_rep, R.string.format_rep_zero, reps)
             }
         }
@@ -338,16 +347,6 @@ private class Readings(
             else -> resources.getString(R.string.analytics_progressDown, reading(abs(delta)))
         }
 }
-
-/** JavaScript's `Math.round`, halves toward +∞, where Kotlin's `round` would round 52.5 s to even. */
-private fun jsRound(value: Double): Long = floor(value + HALF).toLong()
-
-/** A number as RN's template literal prints it: `12`, not Kotlin's `12.0`. */
-private fun jsNumber(value: Double): String =
-    if (value == floor(value) && abs(value) < WHOLE_LIMIT) value.toLong().toString() else value.toString()
-
-private const val HALF = 0.5
-private const val WHOLE_LIMIT = 1e15
 
 private val CardShape = RoundedCornerShape(14.dp)
 private val KeyDot = 8.dp

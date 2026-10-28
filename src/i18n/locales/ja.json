@@ -103,6 +103,7 @@
     "progressOnlyFixedHolds": "2回以上トレーニングしたのは、時間が決まっているホールドだけでした。伸びようがないため、推移は出ません。回数、重量、限界までのホールドはここに表示されます。",
     "nothingMoved": "直近{{count}}週で変化したものはありません。",
     "bestEver": "· 自己ベスト",
+    "openProgress": "推移を見る",
     "heldSteady_other": "{{count}}件は変化なし",
     "showSteady": "表示",
     "hideSteady": "隠す"

@@ -234,6 +234,14 @@ class HistoryStatsTest {
             assertEquals(listOf(2, 45), listOf(weeks[0].sessions, weeks[0].minutes))
         }
 
+        /** The row's spoken time is the same whole-hours reading the THIS WEEK tile prints. */
+        @Test
+        fun `reads a week's time as whole hours and the minutes left over`() {
+            val week = calendar(listOf(lasting(onDay(0, 7), 50, "a"), lasting(onDay(1), 45, "b")), 1)[0]
+
+            assertEquals(HoursMinutes(hours = 1, minutes = 35), week.time)
+        }
+
         @Test
         fun `shades by fixed minute buckets`() {
             assertEquals(

@@ -99,8 +99,8 @@ fun TrainingCalendar(
             val time =
                 stringResource(
                     R.string.analytics_hoursMinutes,
-                    week.minutes / MINUTES_PER_HOUR,
-                    week.minutes % MINUTES_PER_HOUR,
+                    week.time.hours,
+                    week.time.minutes,
                 )
             val description =
                 pluralText(
@@ -251,7 +251,6 @@ private fun KettleColors.level(level: CalendarLevel) =
 /** Tabular, so a 1 and a 12 line up down a column too narrow for the eye to forgive it. */
 private val CountStyle: TextStyle = KettleType.smallMedium.copy(fontFeatureSettings = "tnum")
 
-private const val MINUTES_PER_HOUR = 60
 private const val SLOT_RADIUS = 6f
 private const val CELL_RADIUS = 4f
 private const val OUTLINE_WIDTH = 1f

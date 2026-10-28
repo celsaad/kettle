@@ -1,7 +1,6 @@
 package com.casco.kettle.shell.progress
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,14 +16,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
@@ -52,18 +49,26 @@ import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.MaxContentWidth
 import com.casco.kettle.shell.theme.Spacing
+import com.casco.kettle.shell.theme.card
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import java.util.Locale
 
-/** What `shellRoutes` registers at `/exercise-progress`, opened from a Stats row with `exerciseId`. */
+/**
+ * Where exercise progress is registered, and the param that names its exercise: the path and key RN's
+ * stub route is pushed with. Shared so Stats' rows and this screen can't drift apart on a rename.
+ */
+const val EXERCISE_PROGRESS_PATH = "/exercise-progress"
+const val EXERCISE_ID_PARAM = "exerciseId"
+
+/** What `shellRoutes` registers at [EXERCISE_PROGRESS_PATH], opened from a Stats row. */
 @Composable
 fun ExerciseProgressRoute(params: Map<String, String>) {
     // Once per opening, as RN's screen read its clock once per mount: the window doesn't creep under
     // a reader who leaves the sheet up.
     val now = remember { Clock.System.now() }
-    ExerciseProgressScreen(params["exerciseId"], LocalLatestFiles.current, now, TimeZone.currentSystemDefault())
+    ExerciseProgressScreen(params[EXERCISE_ID_PARAM], LocalLatestFiles.current, now, TimeZone.currentSystemDefault())
 }
 
 /**
@@ -204,9 +209,7 @@ private fun ChartCard(
     Column(
         Modifier
             .fillMaxWidth()
-            .clip(CardShape)
-            .background(colors.backgroundElement)
-            .border(1.dp, colors.border, CardShape)
+            .card()
             .padding(Spacing.three),
     ) {
         ProgressChart(
@@ -291,5 +294,4 @@ private class Dates(
     fun fullDate(at: Instant) = formatFullDate(at, locale, zone)
 }
 
-private val CardShape = RoundedCornerShape(14.dp)
 private val KeyDot = 8.dp

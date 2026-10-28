@@ -6,7 +6,9 @@ package com.casco.kettle.domain
 
 /** The sparkline's height. Decorative geometry with no text in it, so a fixed height is right. */
 const val SPARKLINE_HEIGHT = 20f
-private const val BAR_WIDTH = 4f
+
+/** Every bar's width: the bars differ only in height. */
+const val SPARKLINE_BAR_WIDTH = 4f
 private const val BAR_GAP = 2f
 private const val BAR_FLOOR = 2f
 
@@ -16,10 +18,12 @@ private const val BAR_FLOOR = 2f
  */
 private const val MAX_BARS = 7
 
-/** One bar, bottom-aligned: [x] is its left edge and [height] runs up from the drawing's bottom. */
+/**
+ * One bar, bottom-aligned and [SPARKLINE_BAR_WIDTH] wide: [x] is its left edge and [height] runs up
+ * from the drawing's bottom.
+ */
 data class SparkBar(
     val x: Float,
-    val width: Float,
     val height: Float,
     /** The most recent session's, the one the row is about; the rest are context. */
     val latest: Boolean,
@@ -45,14 +49,14 @@ fun sparklineBars(points: List<Double>): List<SparkBar> {
             } else {
                 maxOf(BAR_FLOOR, roundHalfUp(value / max * SPARKLINE_HEIGHT).toFloat())
             }
-        SparkBar(index * (BAR_WIDTH + BAR_GAP), BAR_WIDTH, height, latest = index == shown.lastIndex)
+        SparkBar(index * (SPARKLINE_BAR_WIDTH + BAR_GAP), height, latest = index == shown.lastIndex)
     }
 }
 
 /** How wide a sparkline of [count] points draws, so the row can give it exactly that. */
 fun sparklineWidth(count: Int): Float {
     val bars = minOf(count, MAX_BARS)
-    return if (bars == 0) 0f else bars * BAR_WIDTH + (bars - 1) * BAR_GAP
+    return if (bars == 0) 0f else bars * SPARKLINE_BAR_WIDTH + (bars - 1) * BAR_GAP
 }
 
 /** A day cell's height. Fixed, as the sparkline's: a cell has no text in it, so nothing clips. */

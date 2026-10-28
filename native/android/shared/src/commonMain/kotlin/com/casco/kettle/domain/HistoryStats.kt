@@ -25,9 +25,22 @@ data class HistoryStats(
 )
 
 fun historyStats(sessions: List<Session>): HistoryStats {
-    val totalMinutes = sessions.sumOf(::sessionDurationMinutes)
-    return HistoryStats(sessions.size, totalMinutes / MINUTES_PER_HOUR, totalMinutes % MINUTES_PER_HOUR)
+    val (hours, minutes) = hoursMinutes(sessions.sumOf(::sessionDurationMinutes))
+    return HistoryStats(sessions.size, hours, minutes)
 }
+
+/** A length of time as one "1h 30m" reading: whole hours, and the minutes left over. */
+data class HoursMinutes(
+    val hours: Int,
+    val minutes: Int,
+)
+
+/**
+ * The one place minutes become a reading. RN once printed a fractional hour beside the remainder, so
+ * 90 minutes read "1.5h 30m"; both halves come from here so that can't come back in one copy.
+ */
+fun hoursMinutes(totalMinutes: Int): HoursMinutes =
+    HoursMinutes(totalMinutes / MINUTES_PER_HOUR, totalMinutes % MINUTES_PER_HOUR)
 
 /**
  * [historyStats] over the week [now] is in, the week starting on [firstWeekday] as the reader's own
@@ -67,7 +80,10 @@ fun currentStreak(
 const val CALENDAR_MID_MINUTES = 30
 const val CALENDAR_LONG_MINUTES = 45
 
-/** A day's shade: [Rest] is no session, the rest under 30 minutes, 30–44, and 45 or more. */
+/**
+ * A day's shade: [Rest] is no session; the others step up at [CALENDAR_MID_MINUTES] and
+ * [CALENDAR_LONG_MINUTES].
+ */
 enum class CalendarLevel { Rest, Short, Mid, Long }
 
 /**
@@ -101,7 +117,10 @@ data class CalendarWeek(
     val sessions: Int,
     val minutes: Int,
     val days: List<CalendarDay>,
-)
+) {
+    /** [minutes] as the row's spoken reading. */
+    val time: HoursMinutes get() = hoursMinutes(minutes)
+}
 
 /**
  * The last [weeks] weeks up to [now], **oldest first**, each as seven days, every one present whether

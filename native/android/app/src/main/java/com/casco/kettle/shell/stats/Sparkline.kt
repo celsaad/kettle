@@ -8,6 +8,7 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.unit.dp
+import com.casco.kettle.domain.SPARKLINE_BAR_WIDTH
 import com.casco.kettle.domain.SPARKLINE_HEIGHT
 import com.casco.kettle.domain.sparklineBars
 import com.casco.kettle.domain.sparklineWidth
@@ -30,7 +31,7 @@ fun Sparkline(points: List<Double>) {
             drawRoundRect(
                 if (bar.latest) colors.accent else colors.textSecondary,
                 topLeft = Offset(bar.x.dp.toPx(), (SPARKLINE_HEIGHT - bar.height).dp.toPx()),
-                size = Size(bar.width.dp.toPx(), bar.height.dp.toPx()),
+                size = Size(SPARKLINE_BAR_WIDTH.dp.toPx(), bar.height.dp.toPx()),
                 cornerRadius = CornerRadius(1.dp.toPx()),
             )
         }

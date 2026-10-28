@@ -191,6 +191,7 @@ class StatsScreenTest {
         compose
             .onNode(hasText("Dumbbell RDL") and isButton)
             .assertHeightIsAtLeast(48.dp)
+            .assert(clickLabel("ver evolução"))
             .performScrollTo()
             .performClick()
 
@@ -240,6 +241,11 @@ class StatsScreenTest {
     }
 
     private val isButton = SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button)
+
+    private fun clickLabel(label: String) =
+        SemanticsMatcher("click label $label") { node ->
+            node.config.getOrNull(SemanticsActions.OnClick)?.label == label
+        }
 
     private fun describedAs(pattern: Regex) =
         SemanticsMatcher("described as $pattern") { node ->

@@ -1,7 +1,5 @@
 package com.casco.kettle.shell.stats
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,7 +16,6 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -29,7 +26,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalResources
@@ -65,6 +61,8 @@ import com.casco.kettle.shell.list.ListRow
 import com.casco.kettle.shell.list.ListRowMinHeight
 import com.casco.kettle.shell.list.ListRowSeparator
 import com.casco.kettle.shell.list.ListRowVerticalPadding
+import com.casco.kettle.shell.progress.EXERCISE_ID_PARAM
+import com.casco.kettle.shell.progress.EXERCISE_PROGRESS_PATH
 import com.casco.kettle.shell.progress.Readings
 import com.casco.kettle.shell.rn.JsBridge
 import com.casco.kettle.shell.rn.Stacking
@@ -72,6 +70,7 @@ import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.MaxContentWidth
 import com.casco.kettle.shell.theme.Spacing
+import com.casco.kettle.shell.theme.card
 import kotlinx.datetime.Clock
 import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.Instant
@@ -164,7 +163,7 @@ fun StatsScreen(
                 // explains a flat row better than a flat row explains itself.
                 SectionLabel(stringResource(R.string.analytics_progressTitle), locale)
                 ProgressSection(progress, exercises, units) { exerciseId ->
-                    open(Stacking.Push, "/exercise-progress", mapOf("exerciseId" to exerciseId))
+                    open(Stacking.Push, EXERCISE_PROGRESS_PATH, mapOf(EXERCISE_ID_PARAM to exerciseId))
                 }
             }
         }
@@ -213,9 +212,7 @@ private fun RowScope.Tile(
         Modifier
             .weight(1f)
             .fillMaxHeight()
-            .clip(CardShape)
-            .background(colors.backgroundElement)
-            .border(1.dp, colors.border, CardShape)
+            .card()
             .padding(Spacing.two + 4.dp)
             .semantics(mergeDescendants = true) {},
     ) {
@@ -324,7 +321,8 @@ private fun SteadyToggle(
  * One exercise's trend: what it is at now, the shape of how it got there, and the change, and the way
  * into that exercise's own progress screen. The name is user data and renders verbatim; values print
  * through [Readings], as the screen it opens does, so the two show one number. No content description:
- * the name, the reading and the change inside it are what it is called.
+ * the name, the reading and the change inside it are what it is called; the click label says what a
+ * tap does, which nothing on screen does.
  */
 @Composable
 private fun ProgressRow(
@@ -336,8 +334,10 @@ private fun ProgressRow(
     val colors = KettleTheme.colors
     val readings = Readings(LocalResources.current, row.kind, units)
     val bestEver = stringResource(R.string.analytics_bestEver)
+    // What a double-tap does, where the row's contents only say what it is.
+    val openLabel = stringResource(R.string.analytics_openProgress)
     Box(
-        Modifier.clickable(role = Role.Button) {
+        Modifier.clickable(role = Role.Button, onClickLabel = openLabel) {
             openProgress(row.exerciseId)
         },
     ) {
@@ -399,11 +399,7 @@ private fun Card(content: @Composable () -> Unit) {
     Box(
         Modifier
             .fillMaxWidth()
-            .clip(CardShape)
-            .background(colors.backgroundElement)
-            .border(1.dp, colors.border, CardShape)
+            .card()
             .padding(Spacing.three),
     ) { content() }
 }
-
-private val CardShape = RoundedCornerShape(14.dp)

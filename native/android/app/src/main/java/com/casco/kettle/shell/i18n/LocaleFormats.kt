@@ -63,9 +63,11 @@ fun formatNarrowWeekday(
  * `firstWeekdayIndex` in `src/i18n/index.ts`: the day the reader's calendar starts its week on, which
  * expo-localization reads from `Calendar` in the device's locale, as this does.
  */
-fun firstWeekday(locale: Locale): DayOfWeek =
-    // Calendar counts from Sunday = 1, ISO from Monday = 1.
-    DayOfWeek((Calendar.getInstance(locale).firstDayOfWeek + DAYS_PER_WEEK - 2) % DAYS_PER_WEEK + 1)
+fun firstWeekday(locale: Locale): DayOfWeek {
+    // Calendar counts from Sunday = 1, ISO from Monday = 1, so only Sunday doesn't shift down by one.
+    val first = Calendar.getInstance(locale).firstDayOfWeek
+    return if (first == Calendar.SUNDAY) DayOfWeek.SUNDAY else DayOfWeek(first - 1)
+}
 
 private fun format(
     at: Instant,
@@ -94,5 +96,3 @@ fun deviceUnitSystem(locale: Locale): UnitSystem {
 
 /** expo-localization's `USES_IMPERIAL`. */
 private val US_UNIT_REGIONS = setOf("US", "LR", "MM")
-
-private const val DAYS_PER_WEEK = 7

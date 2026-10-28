@@ -47,8 +47,6 @@ import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.MaxContentWidth
 import com.casco.kettle.shell.theme.Spacing
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.Dispatchers
 
 /**
  * What `shellRoutes` registers at `/support`: the screen on the real file and Play, telling RN once a
@@ -64,19 +62,19 @@ fun SupportRoute() {
 
 /**
  * Support, the tip jar (#198): `src/app/support.tsx` on the Play Billing Library. [onSaved] hears each
- * tip written to [file]. [now] and [io] are parameters so the test can fix the clock and write inline.
+ * tip written to [file]. A test passes a [runtime] to fix the clock, write inline, and give up on a
+ * store that never answers without waiting the real time.
  */
 @Composable
 fun SupportScreen(
     file: SupporterFile,
     billing: TipBilling,
     onSaved: () -> Unit,
-    now: () -> Long = System::currentTimeMillis,
-    io: CoroutineDispatcher = Dispatchers.IO,
+    runtime: TipJarRuntime = TipJarRuntime(),
 ) {
     val scope = rememberCoroutineScope()
     val saved by rememberUpdatedState(onSaved)
-    val jar = remember(file, billing) { TipJar(file, billing, scope, now, io, onSaved = { saved() }) }
+    val jar = remember(file, billing) { TipJar(file, billing, scope, onSaved = { saved() }, runtime) }
     DisposableEffect(jar) {
         jar.open()
         onDispose { jar.close() }
@@ -219,13 +217,6 @@ private fun Unavailable(onRetry: () -> Unit) =
         }
     }
 
-private val TierLabels =
-    mapOf(
-        TipTier.SMALL to R.string.support_tierSmall,
-        TipTier.MEDIUM to R.string.support_tierMedium,
-        TipTier.LARGE to R.string.support_tierLarge,
-    )
-
 @Composable
 private fun Tiers(
     offers: List<TipTierOffer>,
@@ -251,7 +242,13 @@ private fun Tiers(
                 horizontalArrangement = Arrangement.spacedBy(Spacing.two),
             ) {
                 Text(
-                    stringResource(TierLabels.getValue(offer.tier)),
+                    stringResource(
+                        when (offer.tier) {
+                            TipTier.SMALL -> R.string.support_tierSmall
+                            TipTier.MEDIUM -> R.string.support_tierMedium
+                            TipTier.LARGE -> R.string.support_tierLarge
+                        },
+                    ),
                     Modifier.weight(1f),
                     style = KettleType.heading,
                     color = colors.text,

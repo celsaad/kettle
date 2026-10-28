@@ -11,11 +11,13 @@ import com.casco.kettle.domain.toTipTierOffers
 import com.casco.kettle.domain.withTipRecorded
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 
 /** What the store part of the screen shows. */
 sealed interface StoreState {
@@ -35,17 +37,24 @@ sealed interface StoreState {
 /** The outcome of the last purchase, shown under the tiers. Backing out is no outcome at all. */
 enum class Outcome { PENDING, FAILED, NOT_SAVED }
 
+/** What a test changes about [TipJar]: its clock, where the file is written, and its patience. */
+data class TipJarRuntime(
+    val now: () -> Long = System::currentTimeMillis,
+    val io: CoroutineDispatcher = Dispatchers.IO,
+    /** How long any one store call may take before it counts as no answer. */
+    val patienceMs: Long = STORE_PATIENCE_MS,
+)
+
 /**
  * Support's state and everything it does with the store and the file, which the screen only draws.
- * Everything runs on [scope]'s thread but the file, which is [io]'s.
+ * Everything runs on [scope]'s thread but the file, which is the runtime's `io`.
  */
 class TipJar(
     private val file: SupporterFile,
     private val billing: TipBilling,
     private val scope: CoroutineScope,
-    private val now: () -> Long,
-    private val io: CoroutineDispatcher,
     private val onSaved: () -> Unit,
+    private val runtime: TipJarRuntime = TipJarRuntime(),
 ) {
     var supporter by mutableStateOf(SupporterState.EMPTY)
         private set
@@ -61,9 +70,19 @@ class TipJar(
     /** One tip at a time: each counts from the last, so two at once would write the same count. */
     private val recording = Mutex()
 
+    /**
+     * Tokens settled or settling. A flow's purchase and a sweep can both reach the same one, and the
+     * second consume would fail, showing "still processing" for a tip already thanked.
+     */
+    private val settled = mutableSetOf<String>()
+
+    /** Settles under way, and whether the screen has closed meanwhile: see [close]. */
+    private var settling = 0
+    private var closed = false
+
     fun open() {
         scope.launch {
-            supporter = withContext(io) { file.read() }
+            supporter = withContext(runtime.io) { file.read() }
             connect()
         }
     }
@@ -78,16 +97,27 @@ class TipJar(
         billing.launch(sku)
     }
 
-    fun close() = billing.close()
+    /**
+     * Ends the connection, after any settle under way: ending it under a consume would drop the
+     * callback, leaving that coroutine waiting for good and the tip unrecorded until the next open.
+     */
+    fun close() {
+        closed = true
+        if (settling == 0) billing.close()
+    }
 
     private suspend fun connect() {
         store = StoreState.Connecting
-        if (!billing.connect(::onUpdate)) {
+        if (ask(runtime) { billing.connect(::onUpdate) } != true) {
             store = StoreState.Unavailable
             return
         }
-        settleHeld()
-        val offers = billing.products()?.let(::toTipTierOffers)
+        // A store that can't list what it holds won't sell either, so this doesn't wait twice.
+        if (!settleHeld()) {
+            store = StoreState.Unavailable
+            return
+        }
+        val offers = ask(runtime) { billing.products() }?.let(::toTipTierOffers)
         store = if (offers.isNullOrEmpty()) StoreState.Unavailable else StoreState.Ready(offers)
     }
 
@@ -96,6 +126,7 @@ class TipJar(
         when (update) {
             is PurchaseUpdate.Bought -> {
                 scope.launch {
+                    // `map` first, not `firstNotNullOfOrNull`: every purchase is settled, whichever shows.
                     outcome = update.purchases.map { settle(it) }.firstOrNull { it != null }
                 }
             }
@@ -120,8 +151,10 @@ class TipJar(
      * Every paid tip the store holds unconsumed: one that completed while Support was closed, an RN-era
      * one included, which Play refunds after three days unless it's consumed.
      */
-    private suspend fun settleHeld() {
-        billing.purchases()?.forEach { settle(it) }
+    private suspend fun settleHeld(): Boolean {
+        val held = ask(runtime) { billing.purchases() } ?: return false
+        held.forEach { settle(it) }
+        return true
     }
 
     /**
@@ -139,14 +172,38 @@ class TipJar(
                 // Not a tip. Nothing else is sold, but what isn't ours isn't consumed.
                 tier == null -> null
 
-                // Paid and still Play's: thanked for as pending, and counted on the next sweep.
-                !billing.consume(purchase) -> Outcome.PENDING
+                !settled.add(purchase.token) -> null
 
-                record(tier) -> null
-
-                else -> Outcome.NOT_SAVED
+                else -> settlePaid(purchase, tier)
             }
         }
+
+    private suspend fun settlePaid(
+        purchase: StorePurchase,
+        tier: TipTier,
+    ): Outcome? {
+        settling++
+        try {
+            return when {
+                // Paid and still Play's: thanked for as pending, and counted on the next sweep.
+                ask(runtime) { billing.consume(purchase) } != true -> {
+                    settled.remove(purchase.token)
+                    Outcome.PENDING
+                }
+
+                record(tier) -> {
+                    null
+                }
+
+                else -> {
+                    Outcome.NOT_SAVED
+                }
+            }
+        } finally {
+            settling--
+            if (closed && settling == 0) billing.close()
+        }
+    }
 
     /**
      * Shown whether or not the write lands: the user really did pay, and "no tip" because a JSON write
@@ -154,10 +211,23 @@ class TipJar(
      */
     private suspend fun record(tier: TipTier): Boolean =
         recording.withLock {
-            val next = withTipRecorded(supporter, tier, now())
+            val next = withTipRecorded(supporter, tier, runtime.now())
             supporter = next
-            val saved = withContext(io) { file.write(next) }
+            val saved = withContext(runtime.io) { file.write(next) }
             if (saved) onSaved()
             saved
         }
 }
+
+/**
+ * A store call, or null when it doesn't answer in time. Play can leave a callback unanswered: an
+ * emulator whose Play Store has no billing retries its reconnection inside a query, then cancels the
+ * query without a result, and the screen spun on "Loading…" for good.
+ */
+private suspend fun <T> ask(
+    runtime: TipJarRuntime,
+    call: suspend () -> T,
+): T? = withTimeoutOrNull(runtime.patienceMs) { call() }
+
+/** Play's own calls answer in well under a second; a reconnection's retries take a few. */
+internal const val STORE_PATIENCE_MS = 10_000L

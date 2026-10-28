@@ -1,5 +1,8 @@
 package com.casco.kettle.shell.support
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
@@ -18,7 +21,9 @@ import com.casco.kettle.domain.SupporterState
 import com.casco.kettle.domain.TipProduct
 import com.casco.kettle.domain.TipTier
 import com.casco.kettle.shell.theme.KettleTheme
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.awaitCancellation
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -61,6 +66,9 @@ private class FakeBilling(
         onUpdate(update)
     }
 
+    /** Play leaving a query unanswered, as it does when its reconnection gives up mid-query. */
+    var silent = false
+
     override suspend fun connect(onUpdate: (PurchaseUpdate) -> Unit): Boolean {
         this.onUpdate = onUpdate
         return available
@@ -68,9 +76,17 @@ private class FakeBilling(
 
     override suspend fun products() = products
 
-    override suspend fun purchases() = held.toList()
+    override suspend fun purchases(): List<StorePurchase> {
+        if (silent) awaitCancellation()
+        return held.toList()
+    }
+
+    /** Set to hold the next consume until it completes, as Play's callback can. */
+    var consuming: CompletableDeferred<Boolean>? = null
+    var closed = false
 
     override suspend fun consume(purchase: StorePurchase): Boolean {
+        consuming?.let { if (!it.await()) return false }
         consumed += purchase.token
         held.remove(purchase)
         return true
@@ -80,7 +96,9 @@ private class FakeBilling(
         launched += sku
     }
 
-    override fun close() = Unit
+    override fun close() {
+        closed = true
+    }
 }
 
 private fun paid(
@@ -120,8 +138,7 @@ class SupportScreenTest {
                 file,
                 billing,
                 onSaved = { saved++ },
-                now = { 1_793_102_400_000 },
-                io = Dispatchers.Unconfined,
+                TipJarRuntime(now = { 1_793_102_400_000 }, io = Dispatchers.Unconfined),
             )
         }
     }
@@ -306,5 +323,74 @@ class SupportScreenTest {
         assertEquals(listOf("stuck"), billing.consumed)
         assertEquals(1, file.written.size)
         compose.onNode(hasClickAction() and hasText("Gorjeta pequena")).assertIsEnabled()
+    }
+
+    /** A flow's purchase and a sweep can both reach one token. A second consume would fail and say "processing". */
+    @Test
+    fun `a purchase reported twice is counted once and thanked for plainly`() {
+        val file = FakeSupporterFile()
+        val billing = FakeBilling()
+        show(file, billing)
+
+        compose.onNodeWithText("Gorjeta pequena").performClick()
+        finish(billing, PurchaseUpdate.Bought(listOf(paid("tip_small", "t1"))))
+        finish(billing, PurchaseUpdate.Bought(listOf(paid("tip_small", "t1"))))
+
+        assertEquals(listOf("t1"), billing.consumed)
+        assertEquals(1, file.written.size)
+        compose.onNodeWithText("Seu pagamento ainda está sendo processado. Obrigado!").assertDoesNotExist()
+    }
+
+    /** Ending the connection under a consume would drop its callback, and the tip with it until next time. */
+    @Test
+    fun `closing mid-settle ends the connection only once the tip is recorded`() {
+        val file = FakeSupporterFile()
+        val consume = CompletableDeferred<Boolean>()
+        val billing = FakeBilling().apply { consuming = consume }
+        var showing by mutableStateOf(true)
+        compose.setContent {
+            KettleTheme(darkTheme = false) {
+                if (showing) {
+                    SupportScreen(file, billing, onSaved = {}, TipJarRuntime({ 0 }, Dispatchers.Unconfined))
+                }
+            }
+        }
+
+        compose.onNodeWithText("Gorjeta pequena").performClick()
+        finish(billing, PurchaseUpdate.Bought(listOf(paid("tip_small", "t1"))))
+        showing = false
+        compose.waitForIdle()
+        assertEquals(false, billing.closed)
+
+        compose.runOnUiThread { consume.complete(true) }
+        compose.waitForIdle()
+
+        assertEquals(listOf("t1"), billing.consumed)
+        assertEquals(1, file.written.size)
+        assertEquals(true, billing.closed)
+    }
+
+    /** Found on an emulator whose Play has no billing: RN spun forever, and so did the first port. */
+    @Test
+    fun `a store that never answers ends in unavailable rather than loading forever`() {
+        val billing = FakeBilling().apply { silent = true }
+        compose.mainClock.autoAdvance = false
+        compose.setContent {
+            KettleTheme(darkTheme = false) {
+                SupportScreen(
+                    FakeSupporterFile(),
+                    billing,
+                    onSaved = {},
+                    TipJarRuntime(io = Dispatchers.Unconfined, patienceMs = 1_000),
+                )
+            }
+        }
+        compose.mainClock.advanceTimeByFrame()
+        compose.onNodeWithText("Carregando…").assertExists()
+
+        compose.mainClock.advanceTimeBy(1_100)
+
+        compose.onNodeWithText(unavailable).assertExists()
+        compose.onNodeWithText("Carregando…").assertDoesNotExist()
     }
 }

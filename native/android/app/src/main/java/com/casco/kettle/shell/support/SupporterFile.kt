@@ -27,6 +27,8 @@ class DiskSupporterFile(
             if (file.exists()) parseSupporterState(file.readText()) else SupporterState.EMPTY
         } catch (_: IOException) {
             SupporterState.EMPTY
+        } catch (_: SecurityException) {
+            SupporterState.EMPTY
         }
 
     /**
@@ -38,7 +40,7 @@ class DiskSupporterFile(
             file.parentFile?.mkdirs()
             val partial = File(file.parentFile, "${file.name}.partial")
             partial.writeText(serializeSupporterState(state))
-            partial.renameTo(file)
+            partial.renameTo(file).also { if (!it) partial.delete() }
         } catch (_: IOException) {
             false
         } catch (_: SecurityException) {

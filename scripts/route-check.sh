@@ -64,9 +64,11 @@ steps=(
   'tap:Done|tab:History' 'back|tab:Workouts' 'back|'
 )
 
+# A dump that fails (it gives up on a screen that isn't idle for a second) writes nothing, so without
+# the rm the last step's file would be read as this one's, and pass on a text both screens share.
+# A failed dump prints nothing instead, which shows nothing.
 screen() {
-  a shell uiautomator dump /sdcard/route-check.xml >/dev/null
-  a exec-out cat /sdcard/route-check.xml
+  a exec-out 'f=/sdcard/route-check.xml; rm -f $f; uiautomator dump $f >/dev/null 2>&1; cat $f 2>/dev/null; true'
 }
 
 # XPath through xmllint rather than a regex over the dump, so entities and attribute order don't

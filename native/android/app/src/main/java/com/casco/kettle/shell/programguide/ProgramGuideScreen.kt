@@ -41,13 +41,7 @@ import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.MaxContentWidth
 import com.casco.kettle.shell.theme.Spacing
 
-/**
- * What `shellRoutes` registers at `/program-guide`.
- *
- * Import by `replace`, not `push`: both are sheets, so pushing would leave the reader two deep and drop
- * them back mid-scroll into a guide they're done with. Replacing means dismissing Import lands on
- * Programs, which is where the imported program has appeared.
- */
+/** What `shellRoutes` registers at `/program-guide`. */
 @Composable
 fun ProgramGuideRoute() = ProgramGuideScreen(open = { how, path -> JsBridge.open(how, path) }, onDone = JsBridge::back)
 
@@ -105,6 +99,9 @@ fun ProgramGuideScreen(
             }
             Section(R.string.programGuide_importIt_title) {
                 Body(R.string.programGuide_importIt_body)
+                // Replace, not push: both are sheets, so a push would leave the reader two deep and drop
+                // them back mid-scroll into a guide they're done with. Replacing means dismissing Import
+                // lands on Programs, which is where the imported program has appeared.
                 OpenImport { open(Stacking.Replace, "/import") }
             }
             Done(onDone)
@@ -192,18 +189,18 @@ private fun codeSpans(text: String): AnnotatedString =
     buildAnnotatedString {
         var rest = text
         while (rest.isNotEmpty()) {
-            val open = rest.indexOf(OPEN)
-            if (open < 0) {
+            val openAt = rest.indexOf(OPEN)
+            if (openAt < 0) {
                 append(rest)
                 break
             }
-            append(rest.substring(0, open))
-            rest = rest.substring(open + OPEN.length)
-            val close = rest.indexOf(CLOSE).takeIf { it >= 0 } ?: rest.length
+            append(rest.substring(0, openAt))
+            rest = rest.substring(openAt + OPEN.length)
+            val closeAt = rest.indexOf(CLOSE).takeIf { it >= 0 } ?: rest.length
             pushStyle(InlineCode)
-            append(rest.substring(0, close))
+            append(rest.substring(0, closeAt))
             pop()
-            rest = rest.substring((close + CLOSE.length).coerceAtMost(rest.length))
+            rest = rest.substring((closeAt + CLOSE.length).coerceAtMost(rest.length))
         }
     }
 
@@ -237,7 +234,8 @@ private val CodePadding = Spacing.two + 4.dp
 private val ButtonShape = RoundedCornerShape(15.dp)
 private val CodeShape = RoundedCornerShape(12.dp)
 
-// RN's own sizes for this screen, which sit outside the type scale: `body`, `inline` and `codeText`.
+// Not a second type scale: these are program-guide.tsx's own StyleSheet overrides on ThemedText,
+// `body`, `inline` and `codeText`, ported with the screen as RN keeps them with it.
 private val BodyStyle = KettleType.default.copy(lineHeight = 20.sp)
 private val InlineCode = SpanStyle(fontFamily = FontFamily.Monospace, fontSize = 13.sp)
 private val CodeStyle = TextStyle(fontFamily = FontFamily.Monospace, fontSize = 12.5.sp, lineHeight = 18.sp)

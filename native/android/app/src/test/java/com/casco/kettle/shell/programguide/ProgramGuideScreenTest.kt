@@ -50,6 +50,9 @@ class ProgramGuideScreenTest {
             }
         }
 
+    /** A `<c>` left as text: the bundle's markup reaching the reader instead of being parsed. */
+    private fun assertNoTagShows() = compose.onAllNodesWithText("<c>", substring = true).assertCountEquals(0)
+
     private val button = SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button)
 
     @Test
@@ -63,8 +66,7 @@ class ProgramGuideScreenTest {
             .assertHeightIsAtLeast(48.dp)
             .performClick()
 
-        // A replace, not a push: both are sheets, so a push would leave the reader two deep and drop them
-        // back mid-scroll here on dismiss. Replacing lands them on Programs, where the import appears.
+        // Replace, not push: why is at the call site.
         assertEquals(listOf(Stacking.Replace to "/import"), opened)
         assertEquals(0, dones)
     }
@@ -110,7 +112,7 @@ class ProgramGuideScreenTest {
             listOf("rest_day: true", "workout", "notes", "overrides"),
             code.map { text.substring(it.start, it.end) },
         )
-        compose.onAllNodesWithText("<c>", substring = true).assertCountEquals(0)
+        assertNoTagShows()
     }
 
     @Test
@@ -119,7 +121,7 @@ class ProgramGuideScreenTest {
 
         compose.onNodeWithText("3. Campos").assertExists()
         compose.onNodeWithText("Um programa aponta para treinos pelo id", substring = true).assertExists()
-        compose.onAllNodesWithText("<c>", substring = true).assertCountEquals(0)
+        assertNoTagShows()
 
         // The sample is the file the reader is about to write, so it stays as the importer needs it:
         // English notes and all. The key shows twice, once in the Portuguese sentence and once in the

@@ -28,6 +28,7 @@ androidxTestJunit = "1.2.1"
 # The Play Billing Library (#189): the version expo-iap ran on, so Play saw no change of library when
 # Support moved to native. The plain artifact, not billing-ktx: ktx 9.1.0 is built with Kotlin 2.3,
 # whose metadata this compiler refuses, so its three coroutine wrappers are our own (PlayTipBilling).
+# Switch to ktx when Kotlin is unpinned (docs/native-migration-plan.md, M7).
 billing = "9.1.0"
 
 [libraries]

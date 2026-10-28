@@ -410,7 +410,10 @@ session.
   forward together with three things that move with it:
   - detekt, whose 1.x line runs only on the Kotlin it was built against;
   - the Compose compiler plugin;
-  - snakeyaml-engine-kmp, whose newer majors are built with a newer Kotlin than ours can read.
+  - snakeyaml-engine-kmp, whose newer majors are built with a newer Kotlin than ours can read;
+  - Play Billing's `billing-ktx`, which Support (#198) couldn't use: 9.1.0 is built with Kotlin 2.3.
+    Swap the plain `billing` artifact for it, and replace `PlayTipBilling`'s hand-written coroutine
+    wrappers with ktx's `queryProductDetails`, `queryPurchasesAsync` and `consumePurchase`.
 
   If an Expo SDK upgrade moves React Native's Kotlin before M7, follow it then instead.
 - **Let the shell own its `targetSdk`.** While it hosts the AAR it targets what Expo SDK 57 does, so

@@ -25,6 +25,11 @@ kotlinxSerialization = "1.8.1"
 benchmarkMacro = "1.4.1"
 uiautomator = "2.3.0"
 androidxTestJunit = "1.2.1"
+# The Play Billing Library expo-iap 4.7.2 resolves (#189). Inside 9.x while the RN AAR still carries
+# expo-iap: the AAR's openiap-google runs on whichever PBL Gradle picks, and a major it wasn't built
+# against can throw NoSuchMethodError inside it. The plain artifact, not billing-ktx: ktx 9.1.0 is built
+# with Kotlin 2.3, whose metadata this compiler refuses, so its three coroutine wrappers are our own.
+billing = "9.1.0"
 
 [libraries]
 compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
@@ -47,6 +52,7 @@ kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serializa
 benchmark-macro-junit4 = { module = "androidx.benchmark:benchmark-macro-junit4", version.ref = "benchmarkMacro" }
 uiautomator = { module = "androidx.test.uiautomator:uiautomator", version.ref = "uiautomator" }
 androidx-test-junit = { module = "androidx.test.ext:junit", version.ref = "androidxTestJunit" }
+billing = { module = "com.android.billingclient:billing", version.ref = "billing" }
 snakeyaml-engine-kmp = { module = "it.krzeminski:snakeyaml-engine-kmp", version.ref = "snakeyamlEngineKmp" }
 
 [plugins]

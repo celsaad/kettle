@@ -5,6 +5,7 @@ import com.casco.kettle.domain.ParseResult
 import com.casco.kettle.domain.Preferences
 import com.casco.kettle.domain.Session
 import com.casco.kettle.domain.SessionEntry
+import com.casco.kettle.domain.SupporterState
 import com.casco.kettle.domain.UnitSystem
 import com.casco.kettle.domain.diffBlockOverride
 import com.casco.kettle.domain.diffExerciseOverride
@@ -18,6 +19,7 @@ import com.casco.kettle.domain.mergeLibraries
 import com.casco.kettle.domain.parseLibraryYaml
 import com.casco.kettle.domain.parsePreferences
 import com.casco.kettle.domain.parseSessionYaml
+import com.casco.kettle.domain.parseSupporterState
 import com.casco.kettle.domain.programWeekNumbers
 import com.casco.kettle.domain.rankByName
 import com.casco.kettle.domain.repairLibraryBounds
@@ -55,6 +57,7 @@ class ConformanceTest {
             "repair" to ::runRepair,
             "search" to ::runSearch,
             "session" to ::runSession,
+            "supporter" to ::runSupporter,
             "units" to ::runUnits,
         )
 
@@ -188,6 +191,8 @@ class ConformanceTest {
 
     private fun runPreferences(case: Case): Any? = parsePreferences(case.string("input")!!)?.let(::preferencesJson)
 
+    private fun runSupporter(case: Case): Any = supporterJson(parseSupporterState(case.string("input")!!))
+
     private fun runSession(case: Case): Any = golden(parseSessionYaml(case.string("input")!!), ::sessionJson)
 
     private fun runUnits(case: Case): Any {
@@ -289,6 +294,13 @@ private fun preferencesJson(preferences: Preferences): Map<String, Any?> =
         "restDayReminder" to preferences.restDayReminder,
         "sessionSounds" to preferences.sessionSounds,
         "backupFolderUri" to preferences.backupFolderUri,
+    )
+
+private fun supporterJson(state: SupporterState): Map<String, Any?> =
+    mapOf(
+        "tipCount" to state.tipCount,
+        "lastTipAt" to state.lastTipAt,
+        "lastTier" to state.lastTier?.name?.lowercase(),
     )
 
 /**

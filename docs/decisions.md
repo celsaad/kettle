@@ -179,8 +179,9 @@ decision assembled across several commits. Open work belongs in the sections at 
     non-nonprofit developers. This is the policy risk, not the Data Safety form.
 
   Shape: three **consumable** tiers (`tip_small`/`tip_medium`/`tip_large`), so a repeat tip is
-  possible — `finishTransaction({ isConsumable: true })` is load-bearing, since without it Play treats
-  the SKU as owned and refuses every later purchase of that tier. Consumables aren't restorable from
+  possible — consuming each purchase is load-bearing (`consumeAsync` in the native shell since M4,
+  `finishTransaction({ isConsumable: true })` under expo-iap before it), since without it Play treats
+  the SKU as owned and refuses every later purchase of that tier, and refunds it after three days. Consumables aren't restorable from
   Play, so "has tipped" can only live locally: `supporter.json`, app-owned JSON deliberately outside
   the hand-editable YAML library. There is no receipt verification because there is no backend to
   verify against; the downside is a contrived free tip, which costs nothing that was ever owed.

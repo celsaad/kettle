@@ -10,8 +10,6 @@
 const mockFile = {
   exists: true,
   text: jest.fn<Promise<string>, []>(),
-  write: jest.fn(),
-  create: jest.fn(),
 };
 let mockStorageSupported = true;
 
@@ -28,7 +26,7 @@ jest.mock('@/storage/paths', () => ({
 }));
 
 import { EMPTY_SUPPORTER_STATE } from '@/domain/tip';
-import { loadSupporterState, saveSupporterState } from '@/storage/tip-file';
+import { loadSupporterState } from '@/storage/tip-file';
 
 const recorded = { tipCount: 2, lastTipAt: '2026-07-28T09:00:00.000Z', lastTier: 'medium' as const };
 
@@ -36,8 +34,6 @@ beforeEach(() => {
   mockStorageSupported = true;
   mockFile.exists = true;
   mockFile.text.mockReset();
-  mockFile.write.mockReset();
-  mockFile.create.mockReset();
 });
 
 describe('loadSupporterState', () => {
@@ -70,33 +66,5 @@ describe('loadSupporterState', () => {
   it('returns the empty state on web, where there is no file storage', async () => {
     mockStorageSupported = false;
     expect(await loadSupporterState()).toEqual(EMPTY_SUPPORTER_STATE);
-  });
-});
-
-describe('saveSupporterState', () => {
-  it('reports success once the write lands', async () => {
-    expect(await saveSupporterState(recorded)).toBe(true);
-    expect(mockFile.write).toHaveBeenCalledWith(JSON.stringify(recorded));
-  });
-
-  it('creates the file the first time a tip is recorded', async () => {
-    mockFile.exists = false;
-    expect(await saveSupporterState(recorded)).toBe(true);
-    expect(mockFile.create).toHaveBeenCalled();
-  });
-
-  // The boolean is the whole point: the caller shows "couldn't save this" rather than silently
-  // claiming a tip was recorded that won't survive a restart.
-  it('reports failure rather than throwing when the write fails', async () => {
-    mockFile.write.mockImplementation(() => {
-      throw new Error('disk full');
-    });
-    expect(await saveSupporterState(recorded)).toBe(false);
-  });
-
-  it('reports failure on web instead of pretending to persist', async () => {
-    mockStorageSupported = false;
-    expect(await saveSupporterState(recorded)).toBe(false);
-    expect(mockFile.write).not.toHaveBeenCalled();
   });
 });

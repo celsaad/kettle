@@ -1,4 +1,4 @@
-import { EMPTY_SUPPORTER_STATE, supporterStateSchema, type SupporterState } from '@/domain/tip';
+import { EMPTY_SUPPORTER_STATE, parseSupporterState, type SupporterState } from '@/domain/tip';
 import { ensureStorageReady, isFileStorageSupported, storagePaths } from '@/storage/paths';
 
 /**
@@ -9,6 +9,9 @@ import { ensureStorageReady, isFileStorageSupported, storagePaths } from '@/stor
  * to report to and nothing to fix by hand. It self-heals to the empty state, matching how
  * `loadLibrary` reseeds a corrupt exercises.yaml. The cost of being wrong is forgetting a past tip,
  * not losing workout data.
+ *
+ * There is no save beside it: the native shell's Support screen is the file's only writer from M4
+ * (docs/native-migration-plan.md), and tells RN to read it again with a `filesChanged` message.
  */
 export async function loadSupporterState(): Promise<SupporterState> {
   if (!isFileStorageSupported) return EMPTY_SUPPORTER_STATE;
@@ -17,25 +20,8 @@ export async function loadSupporterState(): Promise<SupporterState> {
     ensureStorageReady();
     if (!storagePaths.supporterFile.exists) return EMPTY_SUPPORTER_STATE;
 
-    const parsed = supporterStateSchema.safeParse(JSON.parse(await storagePaths.supporterFile.text()));
-    return parsed.success ? parsed.data : EMPTY_SUPPORTER_STATE;
+    return parseSupporterState(await storagePaths.supporterFile.text());
   } catch {
     return EMPTY_SUPPORTER_STATE;
-  }
-}
-
-/** Persists supporter state. Returns whether the write landed, so a failed tip isn't shown as saved. */
-export async function saveSupporterState(state: SupporterState): Promise<boolean> {
-  if (!isFileStorageSupported) return false;
-
-  try {
-    ensureStorageReady();
-    if (!storagePaths.supporterFile.exists) {
-      storagePaths.supporterFile.create({ intermediates: true, overwrite: true });
-    }
-    storagePaths.supporterFile.write(JSON.stringify(state));
-    return true;
-  } catch {
-    return false;
   }
 }

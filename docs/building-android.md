@@ -144,7 +144,7 @@ pipeline itself gets its first run before it merges.
 - **`aab`** — the Play upload. Every ABI, since Play splits the bundle per device.
 - **`apk`** — sideloadable, `arm64-v8a` only. Three quarters less C++ to compile, and it will not
   install on an x86 emulator. It's signed with the same upload key, which is fine for a phone and
-  is *not* enough for in-app purchases: `expo-iap` only resolves products in a build installed from
+  is *not* enough for in-app purchases: Play Billing only resolves products in a build installed from
   Play (see `store/README.md` on licence testing).
 
   **It is also not the APK that gets published**, and both reasons are silent. The upload-key

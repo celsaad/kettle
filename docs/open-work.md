@@ -20,9 +20,9 @@ wanting states and assignees, it wants GitHub issues instead.
   domain objects stay **camelCase** (`workSec`, `holdSec`). `src/domain/yaml-mapping.ts` bridges the
   two at the file boundary, and nowhere else does.
 - The SDK-57 API shapes this was all verified against — `expo-file-system`'s class-based
-  `File`/`Directory`, `expo-notifications`, `expo-iap` — are recorded in
-  [`sdk-57-api-notes.md`](sdk-57-api-notes.md), because the published docs for two of the three are
-  wrong for the installed versions.
+  `File`/`Directory` and `expo-notifications` — are recorded in
+  [`sdk-57-api-notes.md`](sdk-57-api-notes.md), because the published docs for both are wrong for the
+  installed versions.
 
 ---
 

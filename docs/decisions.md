@@ -962,6 +962,36 @@ decision assembled across several commits. Open work belongs in the sections at 
   - `"$comment"` keys in the JSON to keep the notes beside the values. Every reader would have to
     know to skip them, and the test already holds what the notes claim.
 
+- **Device checks of the user journeys stay in-house scripts, not a test framework (#172).** The CUJ
+  checks grow out of `scripts/route-check.sh` and its `.ps1` twin: adb, the debug receivers and a
+  `uiautomator` dump, with no dependency. With one developer and no test devices, a script anyone can
+  read top to bottom beats a framework's install, version pinning and telemetry. iOS gets a script of
+  its own once it exists. That script is a different tool, not a port: iOS has no `uiautomator dump`
+  equivalent outside the app, so reading the UI from outside goes through XCTest, in practice an
+  XCUITest target run by `xcodebuild test` from the script.
+
+  **Rejected, so they aren't re-proposed:**
+  - **Maestro**, the strongest candidate. One YAML flow runs on Android and an iOS simulator, and it
+    reads Compose, RN and system UI as one tree. Against it: Java 17+ and a ~330 MiB CLI per machine;
+    the CLI sends analytics, an update check and crash reports from the dev machine by default (the
+    first two have environment-variable opt-outs, the crash reporter doesn't); fast releases that need
+    pinning; and **no physical iPhone**, so iOS background audio would stay a manual check anyway.
+  - **Detox.** Gray-box: it needs the app's `Application` to be a React Native `ReactApplication`, which
+    the shell isn't, and its synchronisation is RN-only, so it loses its point as screens go native.
+  - **Espresso / Compose UI tests.** They can't reach the system picker (DocumentsUI), which import
+    and the backup folder both go through. UI Automator can, but paired with XCUITest it's two suites
+    in two languages, more than the script plus a later iOS script costs.
+
+  **What the scripts have to work around**, from AOSP's `DumpCommand.java`: a dump reads only the
+  active window unless passed the undocumented `--windows` (needed for the pickers and the share
+  sheet), and it writes nothing unless the UI has been idle for a second within ten, so a screen that
+  keeps animating can't be dumped at all. That second one let a failed dump read the previous step's
+  file as a pass, until the dump file was deleted before each read. No dump shows an audio cue, so
+  cues need a debug-only log line checked with `adb logcat`. An RN `testID` already reaches the dump
+  as a resource-id (`:benchmark` waits on `home-screen`); a Compose `testTag` only does with
+  `testTagsAsResourceId`, which the shell doesn't set yet. Stable ids are what would lift the English
+  texts the checks match on today, and the same strings land in XCUITest's `identifier` on iOS.
+
 
 
 

@@ -82,9 +82,12 @@ $steps = @(
   @('tap:Done', 'tab:History'), @('back', 'tab:Workouts'), @('back', $null)
 )
 
+# A dump that fails (it gives up on a screen that isn't idle for a second) writes nothing, so without
+# the rm the last step's file would be read as this one's, and pass on a text both screens share.
+# A failed dump returns an empty string instead, which shows nothing.
 function Get-Screen {
-  & adb @target shell uiautomator dump /sdcard/route-check.xml | Out-Null
-  (& adb @target exec-out cat /sdcard/route-check.xml) -join ''
+  $read = 'f=/sdcard/route-check.xml; rm -f $f; uiautomator dump $f >/dev/null 2>&1; cat $f 2>/dev/null; true'
+  (& adb @target exec-out $read) -join ''
 }
 
 # Matches a dump attribute whose text is exactly $text.
@@ -96,6 +99,7 @@ function Get-TextPattern([string]$text) {
 # the dump lists Compose's nodes unmerged, so a tab's selected state is on the item and its label is
 # a TextView under it.
 function Test-Screen([string]$screen, [string]$expect) {
+  if (-not $screen) { return $false }
   if (-not $expect.StartsWith('tab:')) { return $screen -match (Get-TextPattern $expect) }
   $label = $expect.Substring(4)
   $dump = [xml]$screen

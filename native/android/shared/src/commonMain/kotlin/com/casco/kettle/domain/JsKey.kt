@@ -13,7 +13,7 @@ internal fun jsKey(key: Any?): String = if (key is Number) jsNumber(key.toDouble
  * digits are not always JS's: JDK 17 prints `1.2345e21` as `1.2344999999999999E21`, and where two
  * 17-digit strings read back the same it doesn't always pick the closer.
  */
-private fun jsNumber(number: Double): String =
+fun jsNumber(number: Double): String =
     when {
         number.isNaN() -> "NaN"
         number == 0.0 -> "0"

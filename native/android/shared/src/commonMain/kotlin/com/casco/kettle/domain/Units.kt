@@ -28,9 +28,9 @@ private const val STORED_DECIMALS = 2
  * One difference from `Math.round` is kept on purpose: a value in (−0.5, 0) rounds to +0.0, not −0.
  * The corpus treats the two as equal, and Kotlin would print −0 as "-0.0" where JS prints "0".
  */
-private fun roundHalfUp(
+fun roundHalfUp(
     value: Double,
-    decimals: Int,
+    decimals: Int = 0,
 ): Double {
     val factor = 10.0.pow(decimals)
     val scaled = value * factor

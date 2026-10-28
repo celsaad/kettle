@@ -18,10 +18,6 @@ export function formatMonthDay(date: Date): string {
   return date.toLocaleDateString(currentLocale(), { month: 'short', day: 'numeric' });
 }
 
-export function formatFullDate(date: Date): string {
-  return date.toLocaleDateString(currentLocale(), { weekday: 'long', month: 'short', day: 'numeric' });
-}
-
 /**
  * The short month label on a history card's date badge. Uppercasing is done with the locale rather
  * than `toUpperCase()`, which is wrong for Turkish (i → İ, not I) and pointless for scripts without

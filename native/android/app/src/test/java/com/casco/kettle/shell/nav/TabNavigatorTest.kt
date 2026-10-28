@@ -149,6 +149,25 @@ class TabNavigatorTest {
         assertEquals(1, rereads)
     }
 
+    /**
+     * The same, for a native sheet over an RN tab: RN History's delete, then RN Stats' row opening
+     * exercise progress, never hands the tabs back in between. Once per sheet, not per report: the
+     * report a sheet's params changed in is the same screen.
+     */
+    @Test
+    fun `a native sheet coming up rereads, and an RN modal doesn't`() {
+        var rereads = 0
+        val navigator =
+            TabNavigator(rnRoutes + ("/exercise-progress" to Screen.Native {}), sent::add, reread = { rereads++ })
+        navigator.onRoute("/history")
+
+        navigator.onRoute("/analytics")
+        navigator.onRoute("/exercise-progress", mapOf("exerciseId" to "rdl"))
+        navigator.onRoute("/exercise-progress", mapOf("exerciseId" to "rdl"))
+
+        assertEquals(1, rereads)
+    }
+
     /** The report of the first tap arrives after the second: following it would flick back a tab. */
     @Test
     fun `a report from before the latest tap is not followed`() {

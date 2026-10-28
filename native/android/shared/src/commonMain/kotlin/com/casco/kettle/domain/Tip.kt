@@ -99,25 +99,6 @@ fun serializeSupporterState(state: SupporterState): String {
     return """{"$COUNT":${state.tipCount},"$AT":$at,"$TIER":$tier}"""
 }
 
-private fun jsonString(value: String): String =
-    buildString {
-        append('"')
-        for (char in value) {
-            when {
-                char == '"' -> append("\\\"")
-                char == '\\' -> append("\\\\")
-                char == '\n' -> append("\\n")
-                char == '\r' -> append("\\r")
-                char == '\t' -> append("\\t")
-                char == '\b' -> append("\\b")
-                char == '\u000C' -> append("\\f")
-                char < ' ' -> append("\\u").append(char.code.toString(HEX).padStart(UNICODE_DIGITS, '0'))
-                else -> append(char)
-            }
-        }
-        append('"')
-    }
-
 /**
  * `Date.toISOString` for [epochMillis]: UTC, always with milliseconds. By days from the civil
  * calendar, since `:shared`'s common code has no date library and this is its one timestamp. Its
@@ -151,8 +132,6 @@ internal fun isoInstant(epochMillis: Long): String {
 private const val COUNT = "tipCount"
 private const val AT = "lastTipAt"
 private const val TIER = "lastTier"
-private const val HEX = 16
-private const val UNICODE_DIGITS = 4
 private const val MILLIS_PER_DAY = 86_400_000L
 private const val DAYS_TO_ERA_START = 719_468L
 private const val DAYS_PER_ERA = 146_097L

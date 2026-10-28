@@ -16,8 +16,9 @@ enum class Layer { Surface, NativeTab, NativeSheet }
  *
  * [navigate] steers the surface to a route path (`JsBridge.navigate`). [reread] is told whenever what
  * native read of RN's files may be stale: when RN hands the tabs back, since what it showed above them
- * may have written them, and when a tap brings up a native tab, since RN also writes while a tab shows
- * (a first launch's seeded library, RN History's delete) and nothing reports that.
+ * may have written them, and when a tap brings up a native tab or RN opens a native sheet, since RN
+ * also writes while a tab shows (a first launch's seeded library, RN History's delete) and nothing
+ * reports that.
  */
 class TabNavigator(
     private val routes: Map<String, Screen>,
@@ -79,12 +80,16 @@ class TabNavigator(
         pathname: String,
         params: Map<String, String> = emptyMap(),
     ) {
+        val sheetBefore = nativeSheetPath
         rnAt = pathname
         paramsByPath[pathname] = params
         val tab = Tab.at(pathname)
         val handingBack = tab != null && !barShown
         barShown = tab != null
-        if (handingBack) reread()
+        // A native sheet coming up reads too, for a native tab's reason: it can open over an RN tab
+        // that wrote a file without a hand-back, as RN History's delete does before RN Stats opens one.
+        val sheetComingUp = nativeSheetPath != null && nativeSheetPath != sheetBefore
+        if (handingBack || sheetComingUp) reread()
         when {
             // Above the tabs, where no tap sends RN: whatever a tap was waiting on is moot.
             tab == null -> pending = null

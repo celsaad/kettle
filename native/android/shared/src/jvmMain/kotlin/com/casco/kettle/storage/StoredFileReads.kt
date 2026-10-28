@@ -2,9 +2,11 @@ package com.casco.kettle.storage
 
 import com.casco.kettle.domain.Library
 import com.casco.kettle.domain.ParseResult
+import com.casco.kettle.domain.Preferences
 import com.casco.kettle.domain.Session
 import com.casco.kettle.domain.SessionLog
 import com.casco.kettle.domain.parseLibraryYaml
+import com.casco.kettle.domain.parsePreferences
 import com.casco.kettle.domain.parseSessionYaml
 import java.io.File
 import java.io.IOException
@@ -40,6 +42,13 @@ fun readLibrary(file: File): Library? {
     val text = file.readTextOrNull() ?: return null
     return (parseLibraryYaml(text) as? ParseResult.Ok)?.value
 }
+
+/**
+ * `preferences.json`, or null where there is none or RN would refuse it. RN writes it only once a
+ * setting is changed, so null is the usual answer on a fresh install, and the reader falls back to the
+ * device's defaults, as RN does.
+ */
+fun readPreferences(file: File): Preferences? = file.readTextOrNull()?.let(::parsePreferences)
 
 private fun File.readTextOrNull(): String? =
     try {

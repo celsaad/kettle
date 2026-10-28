@@ -1,7 +1,9 @@
 package com.casco.kettle.shell.files
 
 import com.casco.kettle.domain.Library
+import com.casco.kettle.domain.Preferences
 import com.casco.kettle.domain.SessionLog
+import com.casco.kettle.domain.UnitSystem
 import com.casco.kettle.shell.nav.TabNavigator
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -74,6 +76,24 @@ class LatestFilesTest {
         assertEquals(listOf("Push day"), names())
     }
 
+    private fun writeUnits(units: String) =
+        folder.root.resolve("exercise-tracker/preferences.json").apply { parentFile?.mkdirs() }.writeText(
+            """{"unitSystem":"$units"}""",
+        )
+
+    /** Settings is RN's until M5, so a weight on a native screen follows what it last wrote. */
+    @Test
+    fun `the unit system RN's Settings writes is read again with the log`() {
+        writeUnits("metric")
+        files.reread()
+        navigator.onRoute("/settings")
+
+        writeUnits("imperial")
+        navigator.onRoute("/")
+
+        assertEquals(UnitSystem.IMPERIAL, files.preferences?.unitSystem)
+    }
+
     /** RN heals an unreadable library on its next load, and every name on screen meanwhile is worth keeping. */
     @Test
     fun `a library that can't be read keeps the last one that could`() {
@@ -126,6 +146,8 @@ class LatestFilesTest {
         override fun sessionLog() = log
 
         override fun library(): Library? = null
+
+        override fun preferences(): Preferences? = null
     }
 
     /** A dispatcher that runs nothing until told to, so a test chooses the order reads finish in. */

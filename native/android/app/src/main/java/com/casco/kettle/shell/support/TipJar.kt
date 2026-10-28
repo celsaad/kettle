@@ -13,6 +13,8 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -100,6 +102,8 @@ class TipJar(
     /**
      * Ends the connection, after any settle under way: ending it under a consume would drop the
      * callback, leaving that coroutine waiting for good and the tip unrecorded until the next open.
+     * So a consume Play never answers keeps the connection open for the life of the process. That's
+     * accepted: the other way round is a paid tip consumed and never counted.
      */
     fun close() {
         closed = true
@@ -127,7 +131,16 @@ class TipJar(
             is PurchaseUpdate.Bought -> {
                 scope.launch {
                     // `map` first, not `firstNotNullOfOrNull`: every purchase is settled, whichever shows.
-                    outcome = update.purchases.map { settle(it) }.firstOrNull { it != null }
+                    val settled = async { update.purchases.map { settle(it) }.firstOrNull { it != null } }
+                    // The count waits on a consume however long it takes, and the screen doesn't: past
+                    // the store's deadline it says "still processing" until the consume lands.
+                    val patience =
+                        launch {
+                            delay(runtime.patienceMs)
+                            outcome = Outcome.PENDING
+                        }
+                    outcome = settled.await()
+                    patience.cancel()
                 }
             }
 

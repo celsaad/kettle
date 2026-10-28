@@ -142,6 +142,7 @@ class SupportScreenTest {
     val compose = createComposeRule()
 
     private val unavailable = "Não foi possível conectar à Play Store. Verifique sua conexão e tente de novo."
+    private val processing = "Seu pagamento ainda está sendo processado. Obrigado!"
     private var saved = 0
 
     private fun show(
@@ -411,7 +412,7 @@ class SupportScreenTest {
 
     /** Play finishes a consume nobody is waiting on, so giving up on one would lose the tip for good. */
     @Test
-    fun `a consume slower than the store's deadline is still recorded`() {
+    fun `a consume slower than the store's deadline says so, then is still recorded`() {
         val file = FakeSupporterFile()
         val billing = FakeBilling().apply { holdConsumes = true }
         compose.mainClock.autoAdvance = false
@@ -430,10 +431,15 @@ class SupportScreenTest {
         compose.onNodeWithText("Gorjeta pequena").performClick()
         finish(billing, PurchaseUpdate.Bought(listOf(paid("tip_small", "slow"))))
         compose.mainClock.advanceTimeBy(1_500)
+        // Past the deadline the screen says so, rather than showing nothing after a payment.
+        compose.onNodeWithText(processing).performScrollTo().assertExists()
+
         compose.runOnUiThread { billing.answerConsumes() }
         compose.mainClock.advanceTimeByFrame()
 
         assertEquals(listOf("slow"), billing.consumed)
         assertEquals(1, file.written.size)
+        compose.onNodeWithText(processing).assertDoesNotExist()
+        compose.onNodeWithText("Você deixou uma gorjeta. Isso ajuda de verdade.").performScrollTo().assertExists()
     }
 }

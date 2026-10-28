@@ -39,7 +39,12 @@ data class ProgressView(
     val fixedHoldsLeftOut: Int,
 )
 
-/** How far back Getting stronger looks, and the progress screen a row opens with it. */
+/**
+ * How far back Getting stronger looks, and the progress screen a row opens with it: one constant, so a
+ * row and the chart behind it never measure different windows. Eight weeks: four is two or three
+ * sessions of most exercises, which is not a trend; eight is long enough for a number to move and short
+ * enough to still be about what you're doing now.
+ */
 const val TREND_WEEKS = 8
 
 /**
@@ -182,13 +187,6 @@ private data class Record(
     val raisedAt: Instant?,
 )
 
-private fun Session.startedInstant(): Instant? =
-    try {
-        Instant.parse(startedAt)
-    } catch (_: IllegalArgumentException) {
-        null
-    }
-
 /** A timed hold the runner ends at one fixed target, so its logged time is a copy of its config. */
 private fun isFixedTargetHold(exercise: Exercise): Boolean {
     val config = exercise.config as? ExerciseConfig.TimedHold ?: return false
@@ -196,4 +194,4 @@ private fun isFixedTargetHold(exercise: Exercise): Boolean {
     return min != null && min > 0 && (config.holdSecMax == null || config.holdSecMax == min)
 }
 
-private const val DAYS_PER_WEEK = 7
+internal const val DAYS_PER_WEEK = 7

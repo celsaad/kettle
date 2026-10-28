@@ -131,3 +131,54 @@ cases:
   - { name: key-escapes-a-backslash, op: recordKey, exercise: 'back\slash', kind: longestHold }
   - { name: key-keeps-non-ascii, op: recordKey, exercise: 'flexão-脚', kind: mostRounds }
   - { name: key-escapes-a-control-character, op: recordKey, exercise: "tab\there", kind: heaviestSet }
+  # `sessionDurationMinutes`: a session's length in whole minutes, which the training calendar shades by
+  # and Stats' THIS WEEK time adds up. Native Stats reads the log RN's runner writes, so a session on the
+  # rounding line has to land in the same calendar bucket on both sides.
+  - name: duration-rounds-half-a-minute-up
+    why: Math.round, so 29m30s is 30 and shades as a mid-length day.
+    op: sessionDurationMinutes
+    session: |
+      version: 1
+      id: s
+      workout: null
+      started_at: "2026-08-01T10:00:00.000Z"
+      ended_at: "2026-08-01T10:29:30.000Z"
+      entries: []
+  - name: duration-rounds-just-under-half-down
+    op: sessionDurationMinutes
+    session: |
+      version: 1
+      id: s
+      workout: null
+      started_at: "2026-08-01T10:00:00.000Z"
+      ended_at: "2026-08-01T10:29:29.999Z"
+      entries: []
+  - name: duration-across-offsets
+    why: Two offsets for one instant pair; the length is between instants, not wall clocks.
+    op: sessionDurationMinutes
+    session: |
+      version: 1
+      id: s
+      workout: null
+      started_at: "2026-08-01T10:00:00.000-03:00"
+      ended_at: "2026-08-01T14:15:00.000Z"
+      entries: []
+  - name: duration-of-an-unfinished-session-is-zero
+    op: sessionDurationMinutes
+    session: |
+      version: 1
+      id: s
+      workout: null
+      started_at: "2026-08-01T10:00:00.000Z"
+      ended_at: null
+      entries: []
+  - name: duration-never-goes-negative
+    why: A clock set back mid-session can end it before it started.
+    op: sessionDurationMinutes
+    session: |
+      version: 1
+      id: s
+      workout: null
+      started_at: "2026-08-01T10:00:00.000Z"
+      ended_at: "2026-08-01T09:50:00.000Z"
+      entries: []

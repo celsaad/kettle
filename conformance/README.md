@@ -34,7 +34,7 @@ reported as skipped under its own name, never as passing. Porting a suite is add
 | `search` | `rankByName` and `filterByName` over `names` with `query` | `{ ranked, filtered }`, lists of names |
 | `preferences` | `parsePreferences(input)`, the text of a `preferences.json` | the preferences with defaults filled in, or `null` where the file is refused |
 | `supporter` | `parseSupporterState(input)`, the text of a `supporter.json` | the supporter state, the empty one where the file is refused |
-| `records` | `entryBest` over each entry of the session file in `session`, or `recordKey(exercise, kind)` | a list of `{ kind, value, reps, oneRepMaxKg }` or `null` per entry; the key string |
+| `records` | `entryBest` over each entry of the session file in `session`, `recordKey(exercise, kind)`, or `sessionDurationMinutes` of the session in `session` | a list of `{ kind, value, reps, oneRepMaxKg }` or `null` per entry; the key string; whole minutes |
 
 `search` isn't part of the file format, but it is the same problem: two implementations must agree on
 which workout a search finds. Its rules are in the header of `src/domain/search.ts`.
@@ -47,7 +47,7 @@ Settings reads it until M5.
 
 `records` is not a file at all but what one means: which entries are a record, and on what. RN's
 runner keeps its live best-marker past M4 while native Stats and exercise progress read the same
-rules, so the two sides must agree on what counts as doing more.
+rules, so the two sides must agree on what counts as doing more, and on how long a session ran.
 
 ## Reading the goldens
 

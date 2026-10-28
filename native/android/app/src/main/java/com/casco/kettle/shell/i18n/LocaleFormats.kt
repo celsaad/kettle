@@ -5,9 +5,13 @@ import android.icu.util.ULocale
 import android.os.Build
 import android.text.format.DateFormat
 import com.casco.kettle.domain.UnitSystem
+import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atStartOfDayIn
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
@@ -31,6 +35,37 @@ fun formatFullDate(
     locale: Locale,
     zone: TimeZone,
 ): String = format(at, locale, zone, "EEEEMMMd")
+
+/**
+ * [formatMonthDay] for a calendar date, which has no zone of its own: Stats' calendar labels its weeks
+ * by the day they start on, already in the reader's zone.
+ */
+fun formatMonthDay(
+    date: LocalDate,
+    locale: Locale,
+): String = formatMonthDay(date.atStartOfDayIn(TimeZone.UTC), locale, TimeZone.UTC)
+
+/**
+ * `formatWeekday(date, 'narrow')` in `src/i18n/format.ts`: "M", "T", or "S" for both Saturday and
+ * Sunday. ICU's formatter, not `SimpleDateFormat`: the locale's pattern for it is the standalone
+ * `ccccc`, which `java.text` refuses, and on a JVM `java.text` reads `EEEEE` as the full name.
+ */
+fun formatNarrowWeekday(
+    date: LocalDate,
+    locale: Locale,
+): String =
+    android.icu.text
+        .SimpleDateFormat("ccccc", locale)
+        .apply { timeZone = android.icu.util.TimeZone.GMT_ZONE }
+        .format(Date(date.atStartOfDayIn(TimeZone.UTC).toEpochMilliseconds()))
+
+/**
+ * `firstWeekdayIndex` in `src/i18n/index.ts`: the day the reader's calendar starts its week on, which
+ * expo-localization reads from `Calendar` in the device's locale, as this does.
+ */
+fun firstWeekday(locale: Locale): DayOfWeek =
+    // Calendar counts from Sunday = 1, ISO from Monday = 1.
+    DayOfWeek((Calendar.getInstance(locale).firstDayOfWeek + DAYS_PER_WEEK - 2) % DAYS_PER_WEEK + 1)
 
 private fun format(
     at: Instant,
@@ -59,3 +94,5 @@ fun deviceUnitSystem(locale: Locale): UnitSystem {
 
 /** expo-localization's `USES_IMPERIAL`. */
 private val US_UNIT_REGIONS = setOf("US", "LR", "MM")
+
+private const val DAYS_PER_WEEK = 7

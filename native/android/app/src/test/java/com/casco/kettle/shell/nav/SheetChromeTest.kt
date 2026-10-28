@@ -4,6 +4,7 @@ import android.view.View
 import android.view.View.MeasureSpec
 import android.view.accessibility.AccessibilityNodeInfo
 import android.widget.Button
+import android.widget.FrameLayout
 import com.casco.kettle.shell.theme.LightColors
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -84,6 +85,30 @@ class SheetChromeTest {
         val chrome = chrome()
 
         assertEquals(chrome.labelled("Drag handle").id, chrome.labelled("Close").accessibilityTraversalBefore)
+    }
+
+    /**
+     * The chrome reads before the sheet's content, and the content is in whichever view is live: RN's
+     * surface, or the Compose view a native sheet draws in (#197).
+     */
+    @Test
+    fun `TalkBack reads the chrome before whichever view is live`() {
+        val context = RuntimeEnvironment.getApplication()
+        val content = FrameLayout(context)
+        val surface = View(context).also(content::addView)
+        val native = View(context).also(content::addView)
+        val stage = SheetStage(content, surface, native, {}, {}, { _, _ -> })
+        val grabber = stage.chrome.labelled("Drag handle")
+
+        assertEquals(surface.id, grabber.accessibilityTraversalBefore)
+
+        stage.live = native
+
+        assertEquals(native.id, grabber.accessibilityTraversalBefore)
+
+        stage.live = surface
+
+        assertEquals(surface.id, grabber.accessibilityTraversalBefore)
     }
 
     private companion object {

@@ -2,7 +2,10 @@ package com.casco.kettle.shell.nav
 
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -11,6 +14,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.key
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -21,14 +25,14 @@ import com.casco.kettle.shell.theme.KettleTheme
 
 /**
  * The back stack of the destinations [routes] registers. Native ones draw their screen; an RN one draws
- * nothing, since the RN surface is a view of its own under this one ([ShellLayout]). [onRnShown] is told
- * which of the two to show.
+ * nothing, since the RN surface is a view of its own under this one ([ShellLayout]). [onLayer] is told
+ * which layer to show.
  */
 @Composable
 internal fun Destinations(
     navigator: TabNavigator,
     routes: Map<String, Screen>,
-    onRnShown: (Boolean) -> Unit,
+    onLayer: (Layer) -> Unit,
 ) {
     val navController = rememberNavController()
     LaunchedEffect(navigator.current) {
@@ -50,8 +54,8 @@ internal fun Destinations(
             restoreState = true
         }
     }
-    val rnShown = navigator.rnShown
-    SideEffect { onRnShown(rnShown) }
+    val layer = navigator.layer
+    SideEffect { onLayer(layer) }
 
     NavHost(
         navController = navController,
@@ -65,6 +69,36 @@ internal fun Destinations(
             val screen = routes.screenAt(tab.path)
             composable(tab.name) { if (screen is Screen.Native) screen.content(navigator.params(tab.path)) }
         }
+    }
+}
+
+/**
+ * What a native sheet shows (#197): the screen registered at the path RN's stub reports, given that
+ * report's params, below the strip [SheetChrome] draws over, which it leaves clear as RN's `ModalHeader`
+ * does. [onComposed] hears the path and params composed, or null for nothing, after each composition,
+ * so the sheet can hold its arrival until the screen it slides in is there.
+ */
+@Composable
+internal fun NativeSheet(
+    navigator: TabNavigator,
+    routes: Map<String, Screen>,
+    onComposed: (SheetContent?) -> Unit,
+) {
+    val path = navigator.nativeSheetPath
+    val screen = path?.let(routes::screenAt) as? Screen.Native
+    val content = path?.let { SheetContent(it, navigator.params(it)) }
+    SideEffect { onComposed(content) }
+    if (screen == null || content == null) return
+    // A fresh screen per route and params, as RN mounts one: progress for one exercise pushed over
+    // another's keeps none of its state. Opaque to the top, strip included, as an RN screen paints its
+    // own: the sheet's picture is this view's, and a see-through strip showed RN's stub as it closed.
+    key(content) {
+        Box(
+            Modifier
+                .fillMaxSize()
+                .background(KettleTheme.colors.background)
+                .padding(top = SheetStripHeight),
+        ) { screen.content(content.params) }
     }
 }
 

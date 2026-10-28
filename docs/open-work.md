@@ -278,6 +278,14 @@ wanting states and assignees, it wants GitHub issues instead.
   needs type resolution (`detektMain`), which the build doesn't run; a custom lint check is the other
   route. Worth doing before M4's first screen with a count.
 
+- **A native sheet can't grow into the runner yet.** `ModalSheet`'s grow and shrink act on the live
+  view, but RN slides the runner in inside the surface, which is invisible under a native sheet (#197).
+  No M4 sheet opens the runner; the first native screen that does has to handle it.
+
+- **Two native-sheet paths only checked by eye** (#207): a back or × while a native sheet is still
+  composing (it reuses the picture on screen), and a predictive back started and cancelled in that
+  window (it settles before the open has started). Check both on the emulator with the first port.
+
 ## Open bugs
 
 Found while planning the tests/a11y/i18n work (see `testing-a11y-i18n-plan.md`), each verified against
@@ -343,6 +351,9 @@ interpolated rather than translated. Notes on the structural ones:
   unmounts anyway. Tests cover what the guard does once called, not that the gestures reach it: that
   iOS's swipe-down on a `modal` presentation is held by `preventNativeDismiss`, and that Android back
   opens the dialog with the Coming up sheet closed and closes the sheet when it's open.
+
+- **The sheet's drawn signal is early on a pop** (`RnFrames`, #155): going back from an RN sheet drew
+  the destination uncovered for a frame or two before the transition, on the emulator (#207).
 
 - **`Alert.alert` is a no-op on web.** react-native-web ships `class Alert { static alert() {} }`, so
   every confirm dialog silently does nothing in the browser — all the deletes and finish-session.

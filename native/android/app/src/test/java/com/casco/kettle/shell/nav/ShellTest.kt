@@ -1,5 +1,8 @@
 package com.casco.kettle.shell.nav
 
+import android.annotation.SuppressLint
+import android.os.Looper
+import android.view.MotionEvent
 import android.view.View
 import androidx.activity.ComponentActivity
 import androidx.compose.material3.Text
@@ -9,8 +12,11 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertHeightIsAtLeast
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.assertTopPositionInRootIsEqualTo
 import androidx.compose.ui.test.assertWidthIsAtLeast
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
@@ -26,7 +32,9 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
+import java.time.Duration
 
 /**
  * The shell around the RN surface, laid out as the app lays it out. The surface is a stand-in: what it
@@ -40,13 +48,17 @@ class ShellTest {
     private val sent = mutableListOf<String>()
 
     private lateinit var surface: View
+    private lateinit var shell: ShellLayout
+
+    /** Every touch that reached the surface. */
+    private var touches = 0
 
     private fun show(routes: Map<String, Screen> = shellRoutes): TabNavigator {
         val navigator = TabNavigator(routes, sent::add)
         compose.runOnUiThread {
             val activity = compose.activity
-            surface = View(activity)
-            val shell =
+            surface = touchCountingView(activity)
+            shell =
                 ShellLayout(
                     activity,
                     surface,
@@ -61,6 +73,57 @@ class ShellTest {
     }
 
     private fun assertSurfaceShown(shown: Boolean) = compose.runOnIdle { assertEquals(shown, surface.isShown) }
+
+    @SuppressLint("ClickableViewAccessibility") // A stand-in for RN's surface, which takes raw touches.
+    private fun touchCountingView(activity: ComponentActivity) =
+        View(activity).apply {
+            setOnTouchListener { _, _ ->
+                touches++
+                true
+            }
+        }
+
+    private val withNativeSupport = shellRoutes + ("/support" to Screen.Native { Text("Native support") })
+
+    /** RN's report of [pathname], through the sheet, as JsBridge hands it over; then its frames. */
+    private fun report(
+        pathname: String,
+        modal: Boolean = true,
+        params: Map<String, String> = emptyMap(),
+        settle: Boolean = true,
+    ) {
+        compose.runOnUiThread { shell.sheet.onRoute(RouteReport(pathname, modal, params)) }
+        // Frames by hand: Robolectric dispatches no pre-draw of its own here, and the sheet waits on them.
+        repeat(FRAMES) {
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(FRAME_MS))
+            compose.runOnUiThread { shell.viewTreeObserver.dispatchOnPreDraw() }
+            compose.waitForIdle()
+        }
+        if (!settle) return
+        // The transition's animator, on the main looper rather than Compose's clock.
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(ARRIVED))
+        compose.waitForIdle()
+    }
+
+    private fun closeButton(): View {
+        val found = ArrayList<View>()
+        shell.findViewsWithText(found, "Close", View.FIND_VIEWS_WITH_CONTENT_DESCRIPTION)
+        return found.single()
+    }
+
+    private fun View.parentView() = parent as View
+
+    /** A tap in the middle of the sheet, sent to the shell as the window would. */
+    private fun tapTheSheet() =
+        compose.runOnIdle {
+            val x = shell.width / 2f
+            val y = shell.height / 2f
+            for (action in listOf(MotionEvent.ACTION_DOWN, MotionEvent.ACTION_UP)) {
+                val event = MotionEvent.obtain(0, 0, action, x, y, 0)
+                shell.dispatchTouchEvent(event)
+                event.recycle()
+            }
+        }
 
     /** A tab by its name, which is its label while selected and its icon's description otherwise. */
     private fun tab(label: String) = compose.onNode(hasText(label) or hasContentDescription(label))
@@ -204,6 +267,112 @@ class ShellTest {
         compose.onNodeWithText("Native history").assertExists()
     }
 
+    /**
+     * RN shows only its stub at a native sheet's path (#197), so the stub goes invisible, as the surface
+     * does under a native tab: covered but showing, it would still take touches and TalkBack's focus.
+     */
+    @Test
+    fun `a native sheet shows its screen, and the stub under it is invisible`() {
+        show(withNativeSupport)
+
+        report("/support")
+
+        compose.onNodeWithText("Native support").assertIsDisplayed()
+        assertSurfaceShown(false)
+        compose.runOnIdle { assertEquals(View.VISIBLE, shell.nativeSheet.visibility) }
+    }
+
+    /** The control first: without one, a test of touches never arriving passes on a broken dispatch. */
+    @Test
+    fun `a touch on a native sheet never reaches the stub, where one on an RN sheet does`() {
+        show(withNativeSupport)
+        report("/settings")
+
+        tapTheSheet()
+
+        compose.runOnIdle { assertEquals(A_TAP, touches) }
+
+        report("/support")
+        tapTheSheet()
+
+        compose.runOnIdle { assertEquals(A_TAP, touches) }
+    }
+
+    /** Settings → Support and back, the hand-over M4's first port makes in both directions. */
+    @Test
+    fun `the sheet hands over from RN to native and back`() {
+        show(withNativeSupport)
+        report("/settings")
+        assertSurfaceShown(true)
+
+        report("/support")
+
+        compose.onNodeWithText("Native support").assertIsDisplayed()
+        assertSurfaceShown(false)
+
+        report("/settings")
+
+        compose.onNodeWithText("Native support").assertDoesNotExist()
+        assertSurfaceShown(true)
+        compose.runOnIdle { assertEquals(View.INVISIBLE, shell.nativeSheet.visibility) }
+    }
+
+    /**
+     * What composed has to be what was reported, or the arrival waits out the backstop, the whole window
+     * held. Within a few frames, well short of it, the transition has started and shown the chrome,
+     * which is gone until one does.
+     */
+    @Test
+    fun `a native sheet arrives within frames, not at the backstop`() {
+        show(shellRoutes + ("/exercise-progress" to Screen.Native { params -> Text("Progress ${params["id"]}") }))
+
+        report("/exercise-progress", params = mapOf("id" to "kb-swing"), settle = false)
+
+        compose.runOnIdle { assertEquals(View.VISIBLE, closeButton().parentView().visibility) }
+    }
+
+    @Test
+    fun `a native sheet is given the params RN reported its route with`() {
+        show(shellRoutes + ("/exercise-progress" to Screen.Native { params -> Text("Progress ${params["id"]}") }))
+
+        report("/exercise-progress", params = mapOf("id" to "kb-swing"))
+
+        compose.onNodeWithText("Progress kb-swing").assertIsDisplayed()
+    }
+
+    /** Where an RN sheet's content starts, under RN's `ModalHeader` strip, which the chrome draws over. */
+    @Test
+    fun `a native sheet's content starts below the chrome's strip`() {
+        show(withNativeSupport)
+
+        report("/support")
+
+        compose
+            .onNodeWithText("Native support")
+            .assertTopPositionInRootIsEqualTo(SheetStripHeight)
+    }
+
+    /** Closing it lands on the tab it opened over, with that tab's layer back. */
+    @Test
+    fun `closing a native sheet over a native tab shows the tab again`() {
+        val routes =
+            withNativeSupport + ("/history" to Screen.Native { Text("Native history") })
+        show(routes)
+        tab("History").performClick()
+        report("/history", modal = false)
+
+        report("/support")
+
+        compose.onNodeWithText("Native support").assertIsDisplayed()
+        compose.onNodeWithText("Native history").assertIsNotDisplayed()
+
+        report("/history", modal = false)
+
+        compose.onNodeWithText("Native history").assertIsDisplayed()
+        compose.onNodeWithText("Native support").assertDoesNotExist()
+        assertSurfaceShown(false)
+    }
+
     @Test
     @Config(qualifiers = "pt")
     fun `the tabs are labelled in Portuguese`() {
@@ -220,5 +389,13 @@ class ShellTest {
 
     private companion object {
         const val ANIMATIONS_SETTLED = 1_000L
+
+        /** Past RnFrames' fallback, which is what lands a report without Fabric, and the transition. */
+        const val ARRIVED = 1_000L
+        const val FRAMES = 4
+
+        /** Its down and its up. */
+        const val A_TAP = 2
+        const val FRAME_MS = 16L
     }
 }

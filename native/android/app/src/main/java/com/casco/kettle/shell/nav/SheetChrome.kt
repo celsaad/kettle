@@ -13,6 +13,8 @@ import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.TextView
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import androidx.core.view.AccessibilityDelegateCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat
@@ -21,6 +23,15 @@ import com.casco.kettle.shell.R
 import com.casco.kettle.shell.theme.KettleColors
 import com.casco.kettle.shell.theme.MaxContentWidth
 import com.casco.kettle.shell.theme.Spacing
+
+/** modal-header.tsx's row, which RN's button set the height of. */
+private const val ROW_DP = 32f
+
+/**
+ * RN's `ModalHeader` strip: its top padding, row and bottom padding. The chrome is this tall, and a native
+ * sheet's content starts below it, where an RN sheet's does (#197).
+ */
+internal val SheetStripHeight: Dp = Spacing.three + ROW_DP.dp + (Spacing.three - 2.dp)
 
 /**
  * The sheet's grabber and ×, drawn over the top of the RN surface where RN's `ModalHeader` leaves its
@@ -99,7 +110,7 @@ class SheetChrome(
     }
 
     /** The visible part of the strip: RN's header height, the drag gesture's whole target. */
-    val stripHeight: Int get() = dp(Spacing.three.value) + dp(ROW_DP) + dp(Spacing.three.value - 2)
+    val stripHeight: Int get() = dp(SheetStripHeight.value)
 
     /** The surface the content is read from next, after the × and the grabber. */
     fun readBefore(content: View) {
@@ -203,8 +214,6 @@ class SheetChrome(
         const val TARGET_DP = 48f
         const val CIRCLE_DP = 32f
 
-        /** modal-header.tsx's row, which RN's button set the height of. */
-        const val ROW_DP = 32f
         const val BAR_WIDTH_DP = 40f
         const val BAR_HEIGHT_DP = 5f
 

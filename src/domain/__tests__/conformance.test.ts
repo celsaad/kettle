@@ -8,6 +8,7 @@ import { filterByName, rankByName } from '@/domain/search';
 import { parseSupporterState } from '@/domain/tip';
 import type { Library, WorkoutBlock } from '@/domain/types';
 import { fromDisplayWeight, toDisplayWeight, weightStep, type UnitSystem } from '@/domain/units';
+import { entryBest, recordKey, type RecordKind } from '@/state/selectors/records';
 import {
   diffBlockOverride,
   diffExerciseOverride,
@@ -127,6 +128,20 @@ const runners: Record<string, (testCase: Case) => unknown> = {
   preferences: (testCase) => parsePreferences(testCase.input as string),
 
   supporter: (testCase) => parseSupporterState(testCase.input as string),
+
+  records: (testCase) => {
+    switch (testCase.op) {
+      case 'entryBest': {
+        const result = parseSessionYaml(testCase.session as string);
+        if (!result.ok) throw new Error(`fixture session does not parse: ${JSON.stringify(result.error)}`);
+        return result.data.entries.map((entry) => entryBest(entry));
+      }
+      case 'recordKey':
+        return recordKey(testCase.exercise as string, testCase.kind as RecordKind);
+      default:
+        throw new Error(`unknown op ${String(testCase.op)}`);
+    }
+  },
 
   search: (testCase) => {
     const names = testCase.names as string[];

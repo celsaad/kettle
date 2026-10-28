@@ -19,6 +19,9 @@ kotlin {
         commonMain.dependencies {
             // The YAML loader for users' files; why this one is in `YamlLoad.kt`.
             implementation(libs.snakeyaml.engine.kmp)
+            // Calendar days in the reader's zone, which the Stats selectors' windows are counted in.
+            // `api`, since those selectors take an Instant and a TimeZone.
+            api(libs.kotlinx.datetime)
         }
         jvmTest.dependencies {
             implementation(project.dependencies.platform(libs.junit.bom))

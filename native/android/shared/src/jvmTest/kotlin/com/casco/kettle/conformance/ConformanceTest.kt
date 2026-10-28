@@ -1,8 +1,10 @@
 package com.casco.kettle.conformance
 
+import com.casco.kettle.domain.EntryBest
 import com.casco.kettle.domain.Library
 import com.casco.kettle.domain.ParseResult
 import com.casco.kettle.domain.Preferences
+import com.casco.kettle.domain.RecordKind
 import com.casco.kettle.domain.Session
 import com.casco.kettle.domain.SessionEntry
 import com.casco.kettle.domain.SupporterState
@@ -10,6 +12,7 @@ import com.casco.kettle.domain.UnitSystem
 import com.casco.kettle.domain.diffBlockOverride
 import com.casco.kettle.domain.diffExerciseOverride
 import com.casco.kettle.domain.emomIntervalCount
+import com.casco.kettle.domain.entryBest
 import com.casco.kettle.domain.filterByName
 import com.casco.kettle.domain.findProgramWeek
 import com.casco.kettle.domain.fromDisplayWeight
@@ -22,6 +25,7 @@ import com.casco.kettle.domain.parseSessionYaml
 import com.casco.kettle.domain.parseSupporterState
 import com.casco.kettle.domain.programWeekNumbers
 import com.casco.kettle.domain.rankByName
+import com.casco.kettle.domain.recordKey
 import com.casco.kettle.domain.repairLibraryBounds
 import com.casco.kettle.domain.resolveWorkoutForWeek
 import com.casco.kettle.domain.serializeLibraryYaml
@@ -54,6 +58,7 @@ class ConformanceTest {
             "overrides" to ::runOverrides,
             "preferences" to ::runPreferences,
             "program" to ::runProgram,
+            "records" to ::runRecords,
             "repair" to ::runRepair,
             "search" to ::runSearch,
             "session" to ::runSession,
@@ -193,6 +198,24 @@ class ConformanceTest {
 
     private fun runSupporter(case: Case): Any = supporterJson(parseSupporterState(case.string("input")!!))
 
+    private fun runRecords(case: Case): Any =
+        when (val op = case.string("op")) {
+            "entryBest" -> {
+                val session = parseSessionYaml(case.string("session")!!) as? ParseResult.Ok
+                checkNotNull(
+                    session,
+                ) { "fixture session does not parse" }.value.entries.map { entryBestJson(entryBest(it)) }
+            }
+
+            "recordKey" -> {
+                recordKey(case.string("exercise")!!, RecordKind.entries.single { it.json == case.string("kind") })
+            }
+
+            else -> {
+                error("unknown op $op")
+            }
+        }
+
     private fun runSession(case: Case): Any = golden(parseSessionYaml(case.string("input")!!), ::sessionJson)
 
     private fun runUnits(case: Case): Any {
@@ -295,6 +318,11 @@ private fun preferencesJson(preferences: Preferences): Map<String, Any?> =
         "sessionSounds" to preferences.sessionSounds,
         "backupFolderUri" to preferences.backupFolderUri,
     )
+
+private fun entryBestJson(best: EntryBest?): Map<String, Any?>? =
+    best?.let {
+        mapOf("kind" to it.kind.json, "value" to it.value, "reps" to it.reps, "oneRepMaxKg" to it.oneRepMaxKg)
+    }
 
 private fun supporterJson(state: SupporterState): Map<String, Any?> =
     mapOf(

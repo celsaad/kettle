@@ -1,0 +1,65 @@
+{
+  "loaded-sets-compete-on-the-heaviest": [
+    {
+      "kind": "heaviestSet",
+      "value": 100,
+      "reps": 1,
+      "oneRepMaxKg": 114
+    }
+  ],
+  "an-unloaded-set-among-loaded-ones-is-left-out": [
+    {
+      "kind": "heaviestSet",
+      "value": 12.5,
+      "reps": 8,
+      "oneRepMaxKg": 15.833333333333332
+    }
+  ],
+  "bodyweight-competes-on-reps": [
+    {
+      "kind": "mostReps",
+      "value": 7,
+      "reps": 0,
+      "oneRepMaxKg": null
+    }
+  ],
+  "a-zero-weight-is-bodyweight": [
+    {
+      "kind": "mostReps",
+      "value": 15,
+      "reps": 0,
+      "oneRepMaxKg": null
+    }
+  ],
+  "high-rep-loaded-set-has-no-estimate": [
+    {
+      "kind": "heaviestSet",
+      "value": 10,
+      "reps": 15,
+      "oneRepMaxKg": null
+    }
+  ],
+  "no-sets-competes-for-nothing": [null, null],
+  "holds-compete-on-the-longest": [
+    {
+      "kind": "longestHold",
+      "value": 52.5,
+      "reps": 0,
+      "oneRepMaxKg": null
+    }
+  ],
+  "amrap-competes-on-rounds": [
+    {
+      "kind": "mostRounds",
+      "value": 7,
+      "reps": 0,
+      "oneRepMaxKg": null
+    }
+  ],
+  "interval-cardio-and-rest-compete-for-nothing": [null, null, null, null],
+  "key-plain": "[\"rdl\",\"heaviestSet\"]",
+  "key-escapes-a-quote": "[\"say \\\"ah\\\", then rest\",\"mostReps\"]",
+  "key-escapes-a-backslash": "[\"back\\\\slash\",\"longestHold\"]",
+  "key-keeps-non-ascii": "[\"flexão-脚\",\"mostRounds\"]",
+  "key-escapes-a-control-character": "[\"tab\\there\",\"heaviestSet\"]"
+}

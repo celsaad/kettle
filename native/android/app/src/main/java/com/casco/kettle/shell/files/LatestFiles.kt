@@ -5,8 +5,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import com.casco.kettle.domain.Library
+import com.casco.kettle.domain.Preferences
 import com.casco.kettle.domain.SessionLog
 import com.casco.kettle.storage.readLibrary
+import com.casco.kettle.storage.readPreferences
 import com.casco.kettle.storage.readSessionLog
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -21,6 +23,8 @@ interface StoredFiles {
     fun sessionLog(): SessionLog
 
     fun library(): Library?
+
+    fun preferences(): Preferences?
 }
 
 /**
@@ -44,15 +48,18 @@ class DiskFiles(
     override fun sessionLog() = readSessionLog(paths.sessions)
 
     override fun library() = readLibrary(paths.library)
+
+    override fun preferences() = readPreferences(paths.preferences)
 }
 
 /**
- * The session log and the library as native screens show them, read again by [reread].
+ * The session log, the library and the preferences as native screens show them, read again by [reread].
  *
- * RN writes both until M5: the runner writes new sessions, the session editor edits finished ones,
- * and the library editors write the library. Each of those is above the tabs, so the shell rereads
- * when RN hands the tabs back, on a tap onto a native tab (`TabNavigator`'s `reread`) and on a cold
- * start, and nothing else would. RN's half of the rule is `filesChanged`.
+ * RN writes all three until M5: the runner writes new sessions, the session editor edits finished
+ * ones, the library editors write the library, and Settings the preferences. Each of those is above
+ * the tabs, so the shell rereads when RN hands the tabs back, on a tap onto a native tab or a native
+ * sheet coming up (`TabNavigator`'s `reread`) and on a cold start, and nothing else would. RN's half
+ * of the rule is `filesChanged`.
  */
 class LatestFiles(
     private val files: StoredFiles,
@@ -71,15 +78,24 @@ class LatestFiles(
     var library by mutableStateOf<Library?>(null)
         private set
 
+    /**
+     * Null while there is none RN would read: no setting changed yet, or a file it refuses. Either way
+     * RN shows the device's defaults, and a native screen falls back to them too.
+     */
+    var preferences by mutableStateOf<Preferences?>(null)
+        private set
+
     private var reading: Job? = null
 
-    /** Reads both files again. A read still under way is dropped, so an older one can't land last. */
+    /** Reads all three files again. A read still under way is dropped, so an older one can't land last. */
     fun reread() {
         reading?.cancel()
         reading =
             scope.launch {
-                val (log, library) = withContext(io) { files.sessionLog() to files.library() }
+                val (log, library, preferences) =
+                    withContext(io) { Triple(files.sessionLog(), files.library(), files.preferences()) }
                 sessionLog = log
+                this@LatestFiles.preferences = preferences
                 if (library != null) this@LatestFiles.library = library
             }
     }

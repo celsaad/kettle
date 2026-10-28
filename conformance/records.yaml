@@ -1,0 +1,133 @@
+# What a logged entry puts up for a record: `entryBest` over each entry of a parsed session file, and
+# `recordKey`, which keys every best by exercise and kind. RN's runner keeps reading both past M4 for its
+# live "this beats your best" cue, and the native Stats and exercise progress screens read them too, so
+# the two have to agree on what counts as doing more, or a session is a record on one screen and not on
+# the other. `entryBest` is null for an entry that competes for nothing.
+cases:
+  - name: loaded-sets-compete-on-the-heaviest
+    why: The estimate is the best across every set, which is not always the heaviest one's.
+    op: entryBest
+    session: |
+      version: 1
+      id: s
+      workout: null
+      started_at: "2026-08-01T10:00:00.000Z"
+      ended_at: "2026-08-01T10:30:00.000Z"
+      entries:
+        - exercise: bench
+          type: reps
+          sets:
+            - { reps: 8, weight: 90, rest_taken_sec: 120 }
+            - { reps: 1, weight: 100, rest_taken_sec: 120 }
+  - name: an-unloaded-set-among-loaded-ones-is-left-out
+    op: entryBest
+    session: |
+      version: 1
+      id: s
+      workout: null
+      started_at: "2026-08-01T10:00:00.000Z"
+      ended_at: "2026-08-01T10:30:00.000Z"
+      entries:
+        - exercise: rdl
+          type: reps
+          sets:
+            - { reps: 20, rest_taken_sec: 60 }
+            - { reps: 8, weight: 12.5, rest_taken_sec: 60 }
+  - name: bodyweight-competes-on-reps
+    why: No load anywhere, so the kind is mostReps and there is no estimate to make.
+    op: entryBest
+    session: |
+      version: 1
+      id: s
+      workout: null
+      started_at: "2026-08-01T10:00:00.000Z"
+      ended_at: "2026-08-01T10:30:00.000Z"
+      entries:
+        - exercise: chin-up
+          type: reps
+          sets:
+            - { reps: 5, rest_taken_sec: 60 }
+            - { reps: 7, rest_taken_sec: 60 }
+  - name: a-zero-weight-is-bodyweight
+    op: entryBest
+    session: |
+      version: 1
+      id: s
+      workout: null
+      started_at: "2026-08-01T10:00:00.000Z"
+      ended_at: "2026-08-01T10:30:00.000Z"
+      entries:
+        - exercise: squat
+          type: reps
+          sets: [{ reps: 15, weight: 0, rest_taken_sec: 60 }]
+  - name: high-rep-loaded-set-has-no-estimate
+    why: Past 12 reps Epley is worse than no estimate.
+    op: entryBest
+    session: |
+      version: 1
+      id: s
+      workout: null
+      started_at: "2026-08-01T10:00:00.000Z"
+      ended_at: "2026-08-01T10:30:00.000Z"
+      entries:
+        - exercise: curl
+          type: reps
+          sets: [{ reps: 15, weight: 10, rest_taken_sec: 60 }]
+  - name: no-sets-competes-for-nothing
+    op: entryBest
+    session: |
+      version: 1
+      id: s
+      workout: null
+      started_at: "2026-08-01T10:00:00.000Z"
+      ended_at: "2026-08-01T10:30:00.000Z"
+      entries:
+        - { exercise: bench, type: reps, sets: [] }
+        - { exercise: plank, type: timed_hold, sets: [] }
+  - name: holds-compete-on-the-longest
+    op: entryBest
+    session: |
+      version: 1
+      id: s
+      workout: null
+      started_at: "2026-08-01T10:00:00.000Z"
+      ended_at: "2026-08-01T10:30:00.000Z"
+      entries:
+        - exercise: plank
+          type: timed_hold
+          sets: [{ hold_sec: 40, rest_taken_sec: 30 }, { hold_sec: 52.5, rest_taken_sec: 0 }]
+  - name: amrap-competes-on-rounds
+    op: entryBest
+    session: |
+      version: 1
+      id: s
+      workout: null
+      started_at: "2026-08-01T10:00:00.000Z"
+      ended_at: "2026-08-01T10:30:00.000Z"
+      entries:
+        - { exercise: grinder, type: amrap, rounds_completed: 7, extra_reps: 3 }
+  - name: interval-cardio-and-rest-compete-for-nothing
+    why: hiit and emom are bounded by the exercise's config, and cardio needs rules the app doesn't have.
+    op: entryBest
+    session: |
+      version: 1
+      id: s
+      workout: null
+      started_at: "2026-08-01T10:00:00.000Z"
+      ended_at: "2026-08-01T10:30:00.000Z"
+      entries:
+        - { exercise: burpees, type: hiit, rounds_completed: 5 }
+        - exercise: clean
+          type: emom
+          minutes: [{ reps: 3 }, { reps: 3 }]
+        - { exercise: row, type: cardio, duration_sec: 600, distance_meters: 2000 }
+        - { exercise: rest, type: rest, rest_taken_sec: 90 }
+  - { name: key-plain, op: recordKey, exercise: rdl, kind: heaviestSet }
+  - name: key-escapes-a-quote
+    why: Ids are hand-written, so the key is serialized rather than joined, and no separator can collide.
+    op: recordKey
+    exercise: 'say "ah", then rest'
+    kind: mostReps
+  - { name: key-escapes-a-backslash, op: recordKey, exercise: 'back\slash', kind: longestHold }
+  - { name: key-keeps-non-ascii, op: recordKey, exercise: 'flexão-脚', kind: mostRounds }
+  - { name: key-escapes-a-control-character, op: recordKey, exercise: "tab\there", kind: heaviestSet }

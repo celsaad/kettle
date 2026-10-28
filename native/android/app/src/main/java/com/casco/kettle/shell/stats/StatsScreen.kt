@@ -395,7 +395,6 @@ private fun Note(
 
 @Composable
 private fun Card(content: @Composable () -> Unit) {
-    val colors = KettleTheme.colors
     Box(
         Modifier
             .fillMaxWidth()

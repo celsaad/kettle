@@ -404,6 +404,10 @@ session.
   with Support in M4.)
 - Re-check the **Data Safety** claim: list every Gradle dependency that touches the network and
   confirm none transmits anything.
+- **Drop core library desugaring.** `:app` turns it on (#201) because kotlinx-datetime is `java.time`
+  underneath, which Android has only from API 26, and `minSdk` is 24 only because the RN app the shell
+  replaces is (Expo SDK 57's floor). With RN gone, raise `minSdk` to 26 and delete
+  `isCoreLibraryDesugaringEnabled` and the `desugar_jdk_libs` dependency together.
 - **Unpin the Kotlin toolchain.** `native/android/gradle/libs.versions.toml` holds Kotlin and AGP
   at React Native's own versions (`node_modules/react-native/gradle/libs.versions.toml`), so the shell
   and the AAR it hosts build with one toolchain. With the AAR gone, that reason goes too. Move Kotlin

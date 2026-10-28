@@ -32,11 +32,15 @@ jest.mock('@/storage/preferences-file', () => ({
   savePreferences: jest.fn(),
 }));
 
+const mockLoadSupporter = jest.fn();
+jest.mock('@/storage/tip-file', () => ({ loadSupporterState: () => mockLoadSupporter() }));
+
 import type { Library, Session } from '@/domain/types';
 import { onFilesChanged } from '@/state/files-changed';
 import { useLibraryStore } from '@/state/library-store';
 import { usePreferencesStore } from '@/state/preferences-store';
 import { useSessionHistoryStore } from '@/state/session-history-store';
+import { useTipStore } from '@/state/tip-store';
 import { seedLibraryFor } from '@/storage/seed-library';
 
 /**
@@ -64,10 +68,12 @@ beforeEach(() => {
   mockQuarantineWrite.mockReset();
   mockListSessions.mockReset();
   mockLoadPreferences.mockReset();
+  mockLoadSupporter.mockReset();
   // In beforeEach rather than after the assertions, so a failed one can't leave a spy behind.
   jest.restoreAllMocks();
   useLibraryStore.setState({ status: 'ready', library: before, error: null });
   useSessionHistoryStore.setState({ status: 'ready', sessions: [], errors: [], activeSessionId: null });
+  useTipStore.setState({ status: 'ready', supporter: { tipCount: 0, lastTipAt: null, lastTier: null } });
   usePreferencesStore.setState({
     status: 'ready',
     preferences: {
@@ -129,6 +135,16 @@ it('re-reads the preferences', async () => {
   expect(usePreferencesStore.getState().preferences).toMatchObject({ unitSystem: 'imperial', themePreference: 'dark' });
 });
 
+// Native Support writes the file with Settings still mounted under its sheet, so the row there
+// thanks the user as soon as the tip lands.
+it('re-reads the tip count', async () => {
+  mockLoadSupporter.mockResolvedValue({ tipCount: 1, lastTipAt: '2026-10-27T12:00:00.000Z', lastTier: 'small' });
+
+  await onFilesChanged('supporter');
+
+  expect(useTipStore.getState().supporter.tipCount).toBe(1);
+});
+
 // The root layout renders nothing while any of the three is loading, so a re-read that passed through
 // it would unmount the app, a running workout included.
 it.each(['library', 'sessions', 'preferences'])('keeps the app mounted while it re-reads %s', async (kind) => {
@@ -169,6 +185,7 @@ it('ignores a kind it does not know, reading nothing', async () => {
 
   expect(mockListSessions).not.toHaveBeenCalled();
   expect(mockLoadPreferences).not.toHaveBeenCalled();
+  expect(mockLoadSupporter).not.toHaveBeenCalled();
   expect(mockLibraryWrite).not.toHaveBeenCalled();
   expect(useLibraryStore.getState().library).toBe(before);
 });

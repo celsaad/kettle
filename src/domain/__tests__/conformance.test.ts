@@ -5,6 +5,7 @@ import { parsePreferences } from '@/domain/preferences';
 import { findProgramWeek, programWeekNumbers, resolveWorkoutForWeek } from '@/domain/program';
 import { emomIntervalCount } from '@/domain/schema';
 import { filterByName, rankByName } from '@/domain/search';
+import { parseSupporterState } from '@/domain/tip';
 import type { Library, WorkoutBlock } from '@/domain/types';
 import { fromDisplayWeight, toDisplayWeight, weightStep, type UnitSystem } from '@/domain/units';
 import {
@@ -124,6 +125,8 @@ const runners: Record<string, (testCase: Case) => unknown> = {
   },
 
   preferences: (testCase) => parsePreferences(testCase.input as string),
+
+  supporter: (testCase) => parseSupporterState(testCase.input as string),
 
   search: (testCase) => {
     const names = testCase.names as string[];

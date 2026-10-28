@@ -54,8 +54,8 @@ retrofit, so answer them out loud even when the answer is no.
 - [ ] **Does it need error checks, an error boundary, or a graceful degrade?** Ask per layer: does a
       storage call need an `isFileStorageSupported` guard; does an in-app form need `validateConfig`-style
       validation (the zod schema does *not* run on that path); can a render throw here cost a workout in
-      progress? Degrading beats crashing — `safe-iap.ts`, `safe-notifications.ts` and `library-file.ts`'s
-      reseed of a corrupt library are the patterns to copy.
+      progress? Degrading beats crashing — `safe-notifications.ts`, `library-file.ts`'s reseed of a
+      corrupt library, and native Support's store states (`TipJar.kt`) are the patterns to copy.
 - [ ] **Add tests if it makes sense.** Pure logic, error and empty branches, validation wiring: yes.
       Layout, animation, real audio and file writes: drive the running app instead. See "Writing tests".
 - [ ] `pnpm test`
@@ -174,9 +174,9 @@ are house rules here rather than a backlog — cheap as you go, tedious to retro
   and open with the shared `ModalHeader` (grabber + pinned close button; it owns the top spacing, so
   the screen's own `scrollContent` has no `paddingTop`).
 - Theming is strict: `useTheme`, `ThemedText`, `ThemedView`, `Spacing.*`, `MaxContentWidth`. The
-  session runner is always dark (`RunnerColors`) regardless of scheme. Color and spacing values are
-  edited in `constants/theme.json`, which both UIs read; `theme.ts` re-exports them and holds their
-  notes.
+  session runner is always dark (`RunnerColors`) regardless of scheme. Colors, spacing and the type
+  scale (`ThemedText`'s sizes) are edited in `constants/theme.json`, which both UIs read; `theme.ts`
+  re-exports them and holds their notes.
 - In-app forms write straight to the store and never pass through the zod schema, so they need their
   own validation (see `validateConfig` in `domain/exercise-form.ts`).
 - **Weights are stored in kilograms, always.** The library is a file users export and share, so it
@@ -322,8 +322,9 @@ are the index, the banner is the contract.
   limit, so an over-length note fails the suite rather than the upload.
 - `docs/product-plan.md` — the data model, file formats and roadmap.
 - `docs/authoring-exercises-yaml.md` — the YAML reference, kept exact against `schema.ts`.
-- `docs/sdk-57-api-notes.md` — the `expo-file-system` / `expo-notifications` / `expo-iap` shapes
-  confirmed from `node_modules`, because the published docs are wrong for two of the three.
+- `docs/sdk-57-api-notes.md` — the `expo-file-system` / `expo-notifications` shapes confirmed from
+  `node_modules`, because the published docs are wrong for them. (Its `expo-iap` notes are history:
+  the tip jar moved to Play Billing in M4.)
 - `docs/adding-a-language.md` — the seven-place procedure for shipping a new UI language.
 - `docs/agents/` — per-repo setup the engineering skills read: issue tracker, triage labels, and
   where the glossary and decision log live. Indexed by the "Agent skills" section at the end.

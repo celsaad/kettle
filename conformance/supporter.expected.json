@@ -1,0 +1,62 @@
+{
+  "recorded-tip": {
+    "tipCount": 3,
+    "lastTipAt": "2026-07-28T10:00:00.000Z",
+    "lastTier": "large"
+  },
+  "empty-state": {
+    "tipCount": 0,
+    "lastTipAt": null,
+    "lastTier": null
+  },
+  "unknown-key-ignored": {
+    "tipCount": 1,
+    "lastTipAt": "2026-07-28T10:00:00.000Z",
+    "lastTier": "small"
+  },
+  "tip-count-negative": {
+    "tipCount": 0,
+    "lastTipAt": null,
+    "lastTier": null
+  },
+  "tip-count-fractional": {
+    "tipCount": 0,
+    "lastTipAt": null,
+    "lastTier": null
+  },
+  "tip-count-a-string": {
+    "tipCount": 0,
+    "lastTipAt": null,
+    "lastTier": null
+  },
+  "tier-unknown": {
+    "tipCount": 0,
+    "lastTipAt": null,
+    "lastTier": null
+  },
+  "tier-missing": {
+    "tipCount": 0,
+    "lastTipAt": null,
+    "lastTier": null
+  },
+  "tipped-at-empty": {
+    "tipCount": 0,
+    "lastTipAt": null,
+    "lastTier": null
+  },
+  "malformed": {
+    "tipCount": 0,
+    "lastTipAt": null,
+    "lastTier": null
+  },
+  "empty": {
+    "tipCount": 0,
+    "lastTipAt": null,
+    "lastTier": null
+  },
+  "not-an-object": {
+    "tipCount": 0,
+    "lastTipAt": null,
+    "lastTier": null
+  }
+}

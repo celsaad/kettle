@@ -34,6 +34,7 @@ class StoragePaths(
     val sessions = root.resolve("sessions")
     val library = root.resolve("exercises.yaml")
     val preferences = root.resolve("preferences.json")
+    val supporter = root.resolve("supporter.json")
 }
 
 /** [StoredFiles] where RN keeps them. */

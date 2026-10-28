@@ -61,5 +61,48 @@
     "five": 32,
     "six": 64
   },
-  "MaxContentWidth": 480
+  "MaxContentWidth": 480,
+  "Type": {
+    "default": {
+      "font": "body",
+      "fontSize": 16,
+      "lineHeight": 22
+    },
+    "label": {
+      "font": "display",
+      "fontSize": 11,
+      "letterSpacing": 1.4
+    },
+    "title": {
+      "font": "display",
+      "fontSize": 40,
+      "letterSpacing": -0.8
+    },
+    "subtitle": {
+      "font": "display",
+      "fontSize": 26,
+      "letterSpacing": -0.4
+    },
+    "heading": {
+      "font": "display",
+      "fontSize": 20
+    },
+    "small": {
+      "font": "body",
+      "fontSize": 13,
+      "lineHeight": 18
+    },
+    "smallMedium": {
+      "font": "bodyMedium",
+      "fontSize": 13,
+      "lineHeight": 18
+    },
+    "numeral": {
+      "font": "display"
+    },
+    "code": {
+      "font": "displayMedium",
+      "fontSize": 12
+    }
+  }
 }

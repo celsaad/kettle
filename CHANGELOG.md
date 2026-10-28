@@ -18,7 +18,12 @@ here, next to what it describes.
 
 ## Unreleased
 
-Nothing since 0.12.0.
+### What changed
+
+- **Support Kettle is native**, on Google Play's own billing library. A tip paid by a slow method (a
+  boleto, some cards) that completes after you've left the screen is now counted the next time you
+  open it, where before Play could refund it after three days. If the Play Store can't be reached,
+  or offers no tips, the screen says so and offers to try again instead of loading forever.
 
 ---
 

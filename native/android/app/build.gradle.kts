@@ -275,6 +275,8 @@ dependencies {
     implementation(libs.compose.ui.tooling.preview)
     implementation(libs.activity.compose)
     implementation(libs.navigation.compose)
+    // Support's tip jar (#198). expo-iap went with RN's Support, so this is the APK's only Play Billing.
+    implementation(libs.billing)
     debugImplementation(libs.compose.ui.tooling)
 
     testImplementation(project(":strings"))

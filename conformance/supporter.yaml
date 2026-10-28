@@ -1,0 +1,32 @@
+# supporter.json, the tip jar's app-owned file: parseSupporterState(input). From M4 native's Support is
+# its only writer and RN Settings reads it, until M5. Both have to read the same file the same way, or
+# Settings thanks someone Support doesn't (or the reverse). Anything refused reads as the empty state:
+# the file is the app's, so there is no user to report to, and the cost is forgetting a past tip.
+cases:
+  - name: recorded-tip
+    input: '{"tipCount":3,"lastTipAt":"2026-07-28T10:00:00.000Z","lastTier":"large"}'
+  - name: empty-state
+    input: '{"tipCount":0,"lastTipAt":null,"lastTier":null}'
+  - name: unknown-key-ignored
+    why: zod's object strips keys it doesn't know rather than refusing them.
+    input: '{"tipCount":1,"lastTipAt":"2026-07-28T10:00:00.000Z","lastTier":"small","later":true}'
+  - name: tip-count-negative
+    input: '{"tipCount":-1,"lastTipAt":"2026-07-28T10:00:00.000Z","lastTier":"small"}'
+  - name: tip-count-fractional
+    input: '{"tipCount":1.5,"lastTipAt":"2026-07-28T10:00:00.000Z","lastTier":"small"}'
+  - name: tip-count-a-string
+    input: '{"tipCount":"lots","lastTipAt":null,"lastTier":null}'
+  - name: tier-unknown
+    input: '{"tipCount":1,"lastTipAt":"2026-07-28T10:00:00.000Z","lastTier":"huge"}'
+  - name: tier-missing
+    why: Nullable is not optional. A null has to be written out.
+    input: '{"tipCount":1,"lastTipAt":"2026-07-28T10:00:00.000Z"}'
+  - name: tipped-at-empty
+    input: '{"tipCount":1,"lastTipAt":"","lastTier":"small"}'
+  - name: malformed
+    why: A write cut short.
+    input: '{"tipCount":1,"lastTipAt":"2026-07-28T10:00:00.000Z"'
+  - name: empty
+    input: ''
+  - name: not-an-object
+    input: '"not an object"'

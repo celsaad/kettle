@@ -7,6 +7,9 @@ enum class FileKind(
     LIBRARY("library"),
     SESSIONS("sessions"),
     PREFERENCES("preferences"),
+
+    /** Support's tip count, which RN Settings shows under the sheet. Goes with RN Settings in M5. */
+    SUPPORTER("supporter"),
     ;
 
     companion object {

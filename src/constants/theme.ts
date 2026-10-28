@@ -54,7 +54,12 @@ export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
  */
 export const RunnerColors = theme.RunnerColors;
 
-/** Not in `theme.json`: Compose needs the font files bundled as resources before it can use these. */
+/**
+ * The families, by the role `theme.json`'s `Type` names them by. The families themselves aren't in
+ * `theme.json`: Compose needs the font files bundled as resources before it can use them, so until
+ * then native sets each role in the system font at its weight (`FONT_WEIGHTS` in `:theme`, which
+ * refuses a role this doesn't list).
+ */
 export const Fonts = {
   display: 'SpaceGrotesk_600SemiBold',
   displayMedium: 'SpaceGrotesk_500Medium',
@@ -67,3 +72,12 @@ export const Fonts = {
 export const Spacing = theme.Spacing;
 
 export const MaxContentWidth = theme.MaxContentWidth;
+
+/** One of `Type`'s styles: what `:theme` accepts, and refuses anything else in. */
+type TypeStyle = { font: keyof typeof Fonts; fontSize?: number; lineHeight?: number; letterSpacing?: number };
+
+/**
+ * `ThemedText`'s type scale, which native generates its `KettleType` from. JSON reads `font` as any
+ * string; a role `Fonts` doesn't list fails the native build rather than rendering in RN's default.
+ */
+export const Type: Record<keyof typeof theme.Type, TypeStyle> = theme.Type as Record<keyof typeof theme.Type, TypeStyle>;

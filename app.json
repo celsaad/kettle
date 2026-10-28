@@ -72,7 +72,6 @@
           }
         }
       ],
-      "expo-iap",
       "expo-brownfield"
     ],
     "experiments": {

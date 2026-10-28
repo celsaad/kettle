@@ -9,14 +9,18 @@
 import { useLibraryStore } from '@/state/library-store';
 import { usePreferencesStore } from '@/state/preferences-store';
 import { useSessionHistoryStore } from '@/state/session-history-store';
+import { useTipStore } from '@/state/tip-store';
 
 // The shell's FileKind. The two share no code, so change both.
-type FileKind = 'library' | 'sessions' | 'preferences';
+// `supporter` is native Support's tip count, which RN Settings shows under the sheet; it goes with RN
+// Settings in M5.
+type FileKind = 'library' | 'sessions' | 'preferences' | 'supporter';
 
 const reloaders: Record<FileKind, () => Promise<void>> = {
   library: () => useLibraryStore.getState().reload(),
   sessions: () => useSessionHistoryStore.getState().reload(),
   preferences: () => usePreferencesStore.getState().reload(),
+  supporter: () => useTipStore.getState().hydrate(),
 };
 
 function isFileKind(kind: unknown): kind is FileKind {

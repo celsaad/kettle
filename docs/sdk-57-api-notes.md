@@ -1,7 +1,7 @@
 # SDK 57 API notes
 
 > **Reference, verified against `node_modules`, not against published docs.** Read this before using
-> `expo-file-system`, `expo-notifications` or `expo-iap` — for two of the three, the docs site and
+> `expo-file-system` or `expo-notifications` — for both, the docs site and
 > most training data describe an older API that will typecheck-fail or crash at import. The general
 > rule is in `AGENTS.md`: read the versioned docs at https://docs.expo.dev/versions/v57.0.0/ rather
 > than recalling older Expo. This file is what that rule turned up the first time it was applied.
@@ -25,7 +25,9 @@
   `scheduleNotificationAsync({ content, trigger: { type: SchedulableTriggerInputTypes.TIME_INTERVAL,
   seconds, repeats } })`, `cancelScheduledNotificationAsync(id)`, `setNotificationHandler(...)`,
   `requestPermissionsAsync()`.
-- ✅ **expo-iap API confirmed** from `node_modules/expo-iap/build/*.d.ts` (installed at 4.7.2 — the
+- 🗄 **History: `expo-iap` was removed in M4 (#198)**, when the tip jar moved to the native shell on
+  the Play Billing Library. What was confirmed while it was installed: ✅ **expo-iap API confirmed**
+  from `node_modules/expo-iap/build/*.d.ts` (installed at 4.7.2 — the
   published docs site still shows 3.4 examples, and the `hyochan/expo-iap` repo is archived in favour
   of the OpenIAP monorepo, so the types are the only trustworthy source). Shapes used in
   `src/app/support.tsx`: `useIAP({ onPurchaseSuccess, onPurchaseError, onError })` returning

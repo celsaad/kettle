@@ -12,13 +12,39 @@ data class Theme(
     val runner: Map<String, String>,
     val spacing: Map<String, String>,
     val maxContentWidth: String,
+    val type: Map<String, TypeStyle>,
 )
+
+/** One of `Type`'s styles: the RN font role it's set in, and its sizes as written, absent where unset. */
+data class TypeStyle(
+    val font: String,
+    val fontSize: String?,
+    val lineHeight: String?,
+    val letterSpacing: String?,
+)
+
+/**
+ * The weight each of RN's font roles (`Fonts` in theme.ts) is drawn at, Space Grotesk's for the
+ * display roles and Hanken Grotesk's for the body ones. Native sets these in the system font until the
+ * shell bundles both families, so the weight is what carries the hierarchy across meanwhile.
+ */
+val FONT_WEIGHTS =
+    mapOf(
+        "display" to "SemiBold",
+        "displayMedium" to "Medium",
+        "displayBold" to "Bold",
+        "body" to "Normal",
+        "bodyMedium" to "Medium",
+        "bodySemiBold" to "SemiBold",
+    )
 
 private const val COLORS = "Colors"
 private const val RUNNER_COLORS = "RunnerColors"
 private const val SPACING = "Spacing"
 private const val MAX_CONTENT_WIDTH = "MaxContentWidth"
-private val GROUPS = listOf(COLORS, RUNNER_COLORS, SPACING, MAX_CONTENT_WIDTH)
+private const val TYPE = "Type"
+private val GROUPS = listOf(COLORS, RUNNER_COLORS, SPACING, MAX_CONTENT_WIDTH, TYPE)
+private val SIZES = listOf("fontSize", "lineHeight", "letterSpacing")
 
 /**
  * theme.json, read strictly: a group or token this doesn't know is refused rather than skipped, so
@@ -42,7 +68,28 @@ fun parseTheme(json: String): Theme {
         maxContentWidth =
             (root.getValue(MAX_CONTENT_WIDTH) as? JsonPrimitive)?.takeIf(::isNumber)?.content
                 ?: refuse("$MAX_CONTENT_WIDTH isn't a number"),
+        type = objectAt(root, TYPE).mapValues { (key, value) -> typeStyle(key, value) },
     )
+}
+
+private fun typeStyle(
+    key: String,
+    value: kotlinx.serialization.json.JsonElement,
+): TypeStyle {
+    val name = "$TYPE.$key"
+    require(IDENTIFIER.matches(key) && key !in RESERVED) { "$name can't be the name of a Kotlin property" }
+    val style = value as? JsonObject ?: refuse("$name isn't an object")
+    require(style.keys.all { it == "font" || it in SIZES }) { "$name holds something other than font and $SIZES" }
+    val font = (style["font"] as? JsonPrimitive)?.takeIf { it.isString }?.content
+    require(font in FONT_WEIGHTS) { "$name.font has to be one of ${FONT_WEIGHTS.keys}" }
+    val sizes =
+        SIZES.associateWith { size ->
+            style[size]?.let {
+                (it as? JsonPrimitive)?.takeIf(::isNumber)?.content
+                    ?: refuse("$name.$size isn't a number")
+            }
+        }
+    return TypeStyle(font!!, sizes["fontSize"], sizes["lineHeight"], sizes["letterSpacing"])
 }
 
 private fun isNumber(value: JsonPrimitive) = !value.isString && value.doubleOrNull != null

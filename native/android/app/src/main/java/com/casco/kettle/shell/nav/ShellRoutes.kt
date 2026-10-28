@@ -4,6 +4,7 @@ import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import com.casco.kettle.shell.R
+import com.casco.kettle.shell.support.SupportRoute
 
 /**
  * The tab bar's destinations, in bar order. [path] is the route RN knows the tab by, kept even once a
@@ -44,7 +45,7 @@ sealed interface Screen {
  * unchanged, and native draws the screen whenever RN reports that path: a tab's in `Destinations`, and
  * a modal route's in the sheet (`NativeSheet`, #197), with the same stub behind it.
  */
-val shellRoutes: Map<String, Screen> = emptyMap()
+val shellRoutes: Map<String, Screen> = mapOf("/support" to Screen.Native { SupportRoute() })
 
 /** How [path] renders. */
 fun Map<String, Screen>.screenAt(path: String): Screen = this[path] ?: Screen.Rn

@@ -11,7 +11,7 @@ import org.junit.Test
 class FileKindTest {
     @Test
     fun `each kind goes over the wire by the name JS knows it by`() {
-        assertEquals(listOf("library", "sessions", "preferences"), FileKind.entries.map { it.wire })
+        assertEquals(listOf("library", "sessions", "preferences", "supporter"), FileKind.entries.map { it.wire })
     }
 
     @Test

@@ -90,7 +90,12 @@ silent switch, and notification delivery are all Phase 4, on a real device.
 
 Small, contained, and testable inline. This is the whole of the iOS-specific application code.
 
-### 2.1 The purchase call is Android-shaped — *shipped*
+### 2.1 The purchase call is Android-shaped — *shipped, then undone by M4*
+
+> **Superseded (2026-10-27, #198).** The native migration's M4 moved the tip jar into the Android
+> shell on the Play Billing Library and removed `expo-iap`, `support.tsx` and `safe-iap.ts`. RN's
+> Support is an empty stub route now, and Settings offers Support on Android only. An iOS tip jar
+> needs a StoreKit screen of its own; what follows is how the RN one was made to work, kept for that.
 
 [`support.tsx:86`](../src/app/support.tsx#L86) sent:
 

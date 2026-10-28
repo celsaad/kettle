@@ -7,7 +7,8 @@ const val OUTPUT_PACKAGE = "com.casco.kettle.shell.theme"
 
 /**
  * theme.json as one Kotlin file: `Colors`' two schemes as `LightColors` and `DarkColors`,
- * `RunnerColors` as a fixed object, `Spacing` and `MaxContentWidth` in dp.
+ * `RunnerColors` as a fixed object, `Spacing` and `MaxContentWidth` in dp, and `Type` as `KettleType`'s
+ * text styles in sp.
  */
 fun generateTheme(json: String): String {
     val theme = parseTheme(json)
@@ -17,14 +18,36 @@ fun generateTheme(json: String): String {
         appendLine()
         appendLine("import androidx.compose.runtime.Immutable")
         appendLine("import androidx.compose.ui.graphics.Color")
+        appendLine("import androidx.compose.ui.text.TextStyle")
+        appendLine("import androidx.compose.ui.text.font.FontWeight")
         appendLine("import androidx.compose.ui.unit.dp")
+        appendLine("import androidx.compose.ui.unit.sp")
         appendLine()
         appendSchemes(theme.light, theme.dark)
         appendLine("/** `RunnerColors`: the live session runner's, dark whatever the system scheme. */")
         appendObject("RunnerColors", theme.runner) { "Color(${argb(it)})" }
         appendObject("Spacing", theme.spacing) { "$it.dp" }
         appendLine("val MaxContentWidth = ${theme.maxContentWidth}.dp")
+        appendLine()
+        appendLine("/**")
+        appendLine(" * `Type`: ThemedText's types. In the system font, at the weight of the RN font each names, until")
+        appendLine(" * the shell bundles RN's fonts.")
+        appendLine(" */")
+        appendObject("KettleType", theme.type, ::textStyle)
     }
+}
+
+/** A `TextStyle` call on one line, negative spacing parenthesised as Kotlin needs before `.sp`. */
+private fun textStyle(style: TypeStyle): String {
+    val sp = { value: String -> if (value.startsWith("-")) "($value).sp" else "$value.sp" }
+    val arguments =
+        listOfNotNull(
+            "fontWeight = FontWeight.${FONT_WEIGHTS.getValue(style.font)}",
+            style.fontSize?.let { "fontSize = ${sp(it)}" },
+            style.lineHeight?.let { "lineHeight = ${sp(it)}" },
+            style.letterSpacing?.let { "letterSpacing = ${sp(it)}" },
+        )
+    return "TextStyle(${arguments.joinToString()})"
 }
 
 private fun StringBuilder.appendSchemes(
@@ -48,10 +71,10 @@ private fun StringBuilder.appendSchemes(
     }
 }
 
-private fun StringBuilder.appendObject(
+private fun <T> StringBuilder.appendObject(
     name: String,
-    tokens: Map<String, String>,
-    render: (String) -> String,
+    tokens: Map<String, T>,
+    render: (T) -> String,
 ) {
     appendLine("object $name {")
     for ((key, value) in tokens) appendLine("    val $key = ${render(value)}")

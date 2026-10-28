@@ -1,6 +1,6 @@
 import { StyleSheet, Text, type TextProps } from 'react-native';
 
-import { Fonts, ThemeColor } from '@/constants/theme';
+import { Fonts, ThemeColor, Type } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 export type ThemedTextProps = TextProps & {
@@ -31,48 +31,21 @@ export function ThemedText({ style, type = 'default', themeColor, ...rest }: The
   );
 }
 
+/** A `Type` style from theme.json, which native generates its `KettleType` from too. */
+function fromTheme({ font, ...sizes }: (typeof Type)[keyof typeof Type]) {
+  return { fontFamily: Fonts[font], ...sizes };
+}
+
+// The sizes are theme.json's, shared with native. What only RN draws (uppercase, tabular figures)
+// stays here.
 const styles = StyleSheet.create({
-  default: {
-    fontFamily: Fonts.body,
-    fontSize: 16,
-    lineHeight: 22,
-  },
-  label: {
-    fontFamily: Fonts.display,
-    fontSize: 11,
-    letterSpacing: 1.4,
-    textTransform: 'uppercase',
-  },
-  title: {
-    fontFamily: Fonts.display,
-    fontSize: 40,
-    letterSpacing: -0.8,
-  },
-  subtitle: {
-    fontFamily: Fonts.display,
-    fontSize: 26,
-    letterSpacing: -0.4,
-  },
-  heading: {
-    fontFamily: Fonts.display,
-    fontSize: 20,
-  },
-  small: {
-    fontFamily: Fonts.body,
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  smallMedium: {
-    fontFamily: Fonts.bodyMedium,
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  numeral: {
-    fontFamily: Fonts.display,
-    fontVariant: ['tabular-nums'],
-  },
-  code: {
-    fontFamily: Fonts.displayMedium,
-    fontSize: 12,
-  },
+  default: fromTheme(Type.default),
+  label: { ...fromTheme(Type.label), textTransform: 'uppercase' },
+  title: fromTheme(Type.title),
+  subtitle: fromTheme(Type.subtitle),
+  heading: fromTheme(Type.heading),
+  small: fromTheme(Type.small),
+  smallMedium: fromTheme(Type.smallMedium),
+  numeral: { ...fromTheme(Type.numeral), fontVariant: ['tabular-nums'] },
+  code: fromTheme(Type.code),
 });

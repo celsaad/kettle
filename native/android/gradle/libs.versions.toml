@@ -19,6 +19,7 @@ junit4 = "4.13.2"
 robolectric = "4.16.1"
 snakeyamlEngineKmp = "4.0.1"
 # 0.6.x, not 0.7: 0.7 moves Instant into kotlin.time, which needs a newer Kotlin than the pinned 2.1.
+# Upgrade when Kotlin is unpinned (docs/native-migration-plan.md, M7).
 kotlinxDatetime = "0.6.2"
 # 1.8.1 is the last release built with Kotlin 2.1, the compiler this build runs; a newer one carries
 # metadata this compiler refuses.

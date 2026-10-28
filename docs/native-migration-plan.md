@@ -414,6 +414,9 @@ session.
   - Play Billing's `billing-ktx`, which Support (#198) couldn't use: 9.1.0 is built with Kotlin 2.3.
     Swap the plain `billing` artifact for it, and replace `PlayTipBilling`'s hand-written coroutine
     wrappers with ktx's `queryProductDetails`, `queryPurchasesAsync` and `consumePurchase`.
+  - `kotlinx-datetime`, held at 0.6.x since exercise progress (#200) brought it into `:shared`:
+    0.7 needs a newer Kotlin. It also moves `Instant` and `Clock` into the standard library's
+    `kotlin.time`, so the upgrade changes those imports wherever the selectors and screens use them.
 
   If an Expo SDK upgrade moves React Native's Kotlin before M7, follow it then instead.
 - **Let the shell own its `targetSdk`.** While it hosts the AAR it targets what Expo SDK 57 does, so

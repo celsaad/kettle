@@ -54,7 +54,7 @@ class GeneratedStringsTest {
      * Every string and plural form in every bundle, read back in its own locale and formatted with each
      * placeholder's own `{{name}}` as its argument, so a correct round trip reproduces the JSON exactly.
      * It finds the bundles and each language's plural counts itself, so a new language is covered the
-     * day its JSON lands. `<c>` is markup to Android, so `getString` drops it.
+     * day its JSON lands.
      */
     @Test
     fun `every string in every bundle reads back as its bundle wrote it`() {
@@ -105,7 +105,7 @@ class GeneratedStringsTest {
                         } else {
                             resources.getString(id, *placeholders(args))
                         }
-                    listOf(Mismatch("$language ${entry.key}", entry.value.withoutTags(), actual))
+                    listOf(Mismatch("$language ${entry.key}", entry.value, actual))
                 }
 
                 is PluralEntry -> {
@@ -120,7 +120,7 @@ class GeneratedStringsTest {
                             )
                         Mismatch(
                             "$language ${entry.key}_$category",
-                            form.replace("{{count}}", "$count").withoutTags(),
+                            form.replace("{{count}}", "$count"),
                             actual,
                         )
                     }
@@ -141,6 +141,4 @@ class GeneratedStringsTest {
     }
 
     private fun placeholders(names: List<String>) = names.map { "{{$it}}" }.toTypedArray()
-
-    private fun String.withoutTags() = replace("<c>", "").replace("</c>", "")
 }

@@ -248,13 +248,13 @@ private val ESCAPES =
     )
 
 /**
- * A value as aapt2 will read it back verbatim. `<c>` is the one tag the bundles use (react-i18next's
- * `Trans` renders it as code on the help screens), so it stays markup: `getText` keeps it as a span and
- * `getString` drops it, where escaping it would print the tag. Any other `<` is text.
+ * A value as aapt2 will read it back verbatim. Every `<` is text, `<c>` included: it is the one tag the
+ * bundles use (react-i18next's `Trans` renders it as code in the program guide), and as resource
+ * markup it would be lost, since aapt2 keeps an unknown tag but `getText` builds spans for known ones
+ * only. As text it reaches the screen whole, which parses it the way `Trans` does (`codeSpans`).
  */
 private fun escape(value: String): String {
     var text = value.map { ESCAPES[it] ?: it.toString() }.joinToString("")
-    text = text.replace("&lt;c&gt;", "<c>").replace("&lt;/c&gt;", "</c>")
     if (text.startsWith('@') || text.startsWith('?')) text = "\\$text"
     // Unquoted, aapt2 trims the ends and collapses runs of spaces; quoted, it keeps them.
     val needsQuoting = value.startsWith(' ') || value.endsWith(' ') || "  " in value

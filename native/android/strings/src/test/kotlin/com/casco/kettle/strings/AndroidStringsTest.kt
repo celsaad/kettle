@@ -55,8 +55,8 @@ class AndroidStringsTest {
     }
 
     @Test
-    fun `the c tag the help screens style as code stays markup`() {
-        assertEquals("""<string name="k">the <c>id</c> field</string>""", line("the <c>id</c> field"))
+    fun `the c tag the program guide styles as code stays text, for the screen to parse`() {
+        assertEquals("""<string name="k">the &lt;c&gt;id&lt;/c&gt; field</string>""", line("the <c>id</c> field"))
     }
 
     @Test

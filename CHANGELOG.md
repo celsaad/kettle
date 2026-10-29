@@ -24,6 +24,39 @@ here, next to what it describes.
   boleto, some cards) that completes after you've left the screen is now counted the next time you
   open it, where before Play could refund it after three days. If the Play Store can't be reached,
   or offers no tips, the screen says so and offers to try again instead of loading forever.
+- **History, Stats, exercise progress and the program guide are native too**, and look and work as
+  they did. Two small differences: tapping the History tab while you're on it scrolls back to the
+  top again, the first tab to get that back since 0.12.0; and Stats shows nothing below its title
+  until your log has been read, rather than flashing zeroes first.
+
+### Play release notes
+
+Draft, for review before `/bump`. Lengths are held by `store-copy.test.ts`.
+
+The tip jar leads because it is the change a user could act on; the native screens stay out, as
+they look the same. Two blocks rather than three, as in 0.8.0 onwards: the Play listing does not
+carry ja-JP.
+
+```
+<en-US>
+What's new
+
+Support Kettle now uses Google Play's own billing. A tip paid by a slower method is counted when it completes, and if the Play Store can't be reached the screen says so and offers to try again.
+
+Tapping the History tab while you're on it scrolls back to the top again.
+
+Report anything that hangs or loses data.
+</en-US>
+<pt-BR>
+Novidades
+
+Apoie o Kettle agora usa o faturamento do próprio Google Play. Uma gorjeta paga por um método mais lento, como boleto, é contada quando é concluída, e se a Play Store não puder ser acessada, a tela avisa e oferece tentar de novo.
+
+Tocar na aba Histórico quando você já está nela volta ao topo outra vez.
+
+Relate travamentos ou perda de dados.
+</pt-BR>
+```
 
 ---
 

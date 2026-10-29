@@ -7,8 +7,11 @@
 > shell on production, hosting today's app from the RN AAR, and its landmark held: a release cycle
 > with no regressions. **M3 has shipped**: 0.12.0 is on production, with one RN surface
 > steered by messages (#152), a native tab bar and back stack around it (#153), native-presented
-> sheets (#155) and the `filesChanged` re-read (#154). M1–M3 are tracked as
-> GitHub issues #141–#156, whose open/closed state is the live record; M4 is ticketed (see M4); M5 onward is ticketed next. Written against the tree at `54eb9f8`, SDK 57.
+> sheets (#155) and the `filesChanged` re-read (#154). **M4 has landed, not yet shipped**: Support,
+> the program guide, exercise progress, Stats and History are native on `master`, and its landmark
+> waits on the release that carries them. M1–M4 are tracked as GitHub issues #141–#156, #194 and
+> #196–#202, whose open/closed state is the live record; M5 onward is ticketed next. Written against
+> the tree at `54eb9f8`, SDK 57.
 > **Everything after M0 was conditional on a "go"**: had the spike failed, this file would carry a
 > banner saying so and the decision log the reason, so the idea isn't re-proposed from scratch.
 
@@ -308,8 +311,8 @@ one, and an RN screen can be swapped for a native one by changing one route regi
 
 ### M4 — Read-only screens · ~3–4 weeks
 
-> **Ticketed** (#194, #196–#202), charted on the wayfinder map #186, whose closed tickets hold the
-> reasoning. The issues' open/closed state is the live record.
+> **Landed** (#194, #196–#202, all closed), charted on the wayfinder map #186, whose closed tickets
+> hold the reasoning. Not yet shipped: the landmark below holds once a release carries it.
 
 These screens mostly read files, so they make the easiest first ports. Suggested order, smallest
 first: support → program guide → exercise progress → stats (`analytics`) → history. Each port ships on

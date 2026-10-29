@@ -186,7 +186,7 @@ cases:
   # the set count on the row and in the summary line. RN's session editor and Today keep reading both
   # until M5, so a session shows one count and one result on either side.
   - name: entry-results-fold-seven-types-onto-six-shapes
-    why: hiit and amrap both reduce to rounds; an emom with no reps entered has no total rather than 0.
+    why: hiit and amrap both reduce to rounds; an emom whose minutes add up to no reps has no total, not 0.
     op: sessionEntryResult
     session: |
       version: 1

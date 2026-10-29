@@ -49,6 +49,16 @@ class HistoryViewsTest {
         assertNull(view(session(workout = null)).workoutName)
     }
 
+    // An ad-hoc session has no workout to name it, and counts like any other: the null path is pinned
+    // so a later "simplification" of it fails here rather than crashing History.
+    @Test
+    fun `counts an ad-hoc session towards the totals like any other`() {
+        val adHoc = session(hold(20.0), workout = null, endedAt = "2026-07-24T09:45:00.000Z")
+
+        assertNull(view(adHoc).workoutName)
+        assertEquals(HistoryStats(sessions = 1, hours = 0, minutes = 45, sets = 1), historyStats(listOf(adHoc)))
+    }
+
     // A workout deleted from the library since is still the user's own words for it.
     @Test
     fun `falls back to the workout's id once it is gone from the library`() {

@@ -86,6 +86,8 @@
     "searchPlaceholder": "Buscar treinos",
     "mixed": "misto",
     "edit": "Editar",
+    "showExercises": "Mostrar exercícios",
+    "hideExercises": "Ocultar exercícios",
     "deleteConfirmTitle": "Excluir sessão?",
     "deleteConfirmBody": "\"{{name}}\" em {{day}} {{month}} será removida permanentemente.",
     "problemsTitle_one": "{{count}} arquivo de sessão não pôde ser lido ou gravado",

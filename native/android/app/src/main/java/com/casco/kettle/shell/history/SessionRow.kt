@@ -13,7 +13,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
@@ -31,6 +30,7 @@ import com.casco.kettle.shell.i18n.formatMonthBadge
 import com.casco.kettle.shell.i18n.pluralText
 import com.casco.kettle.shell.list.ListRowMinHeight
 import com.casco.kettle.shell.list.ListRowVerticalPadding
+import com.casco.kettle.shell.list.TextAction
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.Spacing
@@ -57,8 +57,16 @@ internal fun SessionRow(
             Modifier
                 .fillMaxWidth()
                 .heightIn(min = ListRowMinHeight)
-                .clickable(role = Role.Button, onClick = actions.toggle)
-                .semantics {
+                // What a double-tap does, which the row's own words (what it is) don't say; expand and
+                // collapse carry the state.
+                .clickable(
+                    role = Role.Button,
+                    onClickLabel =
+                        stringResource(
+                            if (expanded) R.string.history_hideExercises else R.string.history_showExercises,
+                        ),
+                    onClick = actions.toggle,
+                ).semantics {
                     if (expanded) {
                         collapse {
                             true.also { actions.toggle() }
@@ -146,26 +154,13 @@ private fun Detail(
         // Delete never reads as the intended action.
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
             Spacer(Modifier.weight(1f))
-            RowAction(stringResource(R.string.common_delete), colors.textSecondary, actions.delete)
+            TextAction(stringResource(R.string.common_delete), KettleType.small, colors.textSecondary, actions.delete)
             // Hidden rather than disabled while a session runs: the runner owns that file and writes
             // through its own copy, so an edit made here would be lost at the next set logged.
-            if (row.editable) RowAction(stringResource(R.string.history_edit), colors.textSecondary, actions.edit)
-            RowAction(stringResource(R.string.common_export), colors.accentText, actions.export)
+            if (row.editable) {
+                TextAction(stringResource(R.string.history_edit), KettleType.small, colors.textSecondary, actions.edit)
+            }
+            TextAction(stringResource(R.string.common_export), KettleType.small, colors.accentText, actions.export)
         }
     }
 }
-
-@Composable
-private fun RowAction(
-    text: String,
-    color: Color,
-    onClick: () -> Unit,
-) = Text(
-    text,
-    Modifier
-        .heightIn(min = 48.dp)
-        .clickable(role = Role.Button, onClick = onClick)
-        .padding(horizontal = Spacing.two, vertical = Spacing.three - 1.dp),
-    style = KettleType.small,
-    color = color,
-)

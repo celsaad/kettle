@@ -67,7 +67,7 @@ sealed interface EntryResult {
         val extraReps: Long?,
     ) : EntryResult
 
-    /** [totalReps] is null where no minute had reps entered, rather than a total of 0. */
+    /** [totalReps] is null where the minutes add up to no reps, entered or not, rather than a total of 0. */
     data class Intervals(
         val intervals: Int,
         val totalReps: Long?,

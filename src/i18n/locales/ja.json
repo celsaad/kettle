@@ -80,6 +80,8 @@
     "searchPlaceholder": "ワークアウトを検索",
     "mixed": "混合",
     "edit": "編集",
+    "showExercises": "エクササイズを表示",
+    "hideExercises": "エクササイズを隠す",
     "deleteConfirmTitle": "セッションを削除しますか？",
     "deleteConfirmBody": "「{{name}}」（{{month}}{{day}}日）を完全に削除します。",
     "problemsTitle_other": "{{count}}件のセッションファイルを読み書きできませんでした"

@@ -7,13 +7,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
@@ -34,17 +32,11 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.clearAndSetSemantics
-import androidx.compose.ui.semantics.collapse
 import androidx.compose.ui.semantics.expand
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.HistorySessionView
 import com.casco.kettle.domain.HistoryStats
@@ -58,10 +50,9 @@ import com.casco.kettle.shell.files.LatestFiles
 import com.casco.kettle.shell.files.LocalLatestFiles
 import com.casco.kettle.shell.i18n.pluralText
 import com.casco.kettle.shell.list.ListHeaderRule
-import com.casco.kettle.shell.list.ListRowMinHeight
 import com.casco.kettle.shell.list.ListRowSeparator
-import com.casco.kettle.shell.list.ListRowVerticalPadding
 import com.casco.kettle.shell.list.SearchBar
+import com.casco.kettle.shell.list.TextAction
 import com.casco.kettle.shell.nav.LocalTabReselects
 import com.casco.kettle.shell.nav.Tab
 import com.casco.kettle.shell.rn.FileKind
@@ -166,15 +157,10 @@ fun HistoryScreen(
                 if (index > 0) ListRowSeparator()
                 SessionRow(
                     row,
-                    name = row.workoutName ?: adHoc,
+                    name = listing.nameOf(row),
                     expanded = expandedId == row.id,
                     failure = deleting.failure?.takeIf { it.id == row.id }?.reason,
-                    RowActions(
-                        toggle = { expandedId = if (expandedId == row.id) null else row.id },
-                        delete = { deleting.confirming = row },
-                        edit = { actions.open(Stacking.Push, "/session-editor", mapOf("id" to row.id)) },
-                        export = { actions.export(row.id) },
-                    ),
+                    rowActions(row, actions, deleting) { expandedId = if (expandedId == row.id) null else row.id },
                 )
             }
             // No first-run half: an empty log is what a new install is, and the line above already
@@ -184,7 +170,7 @@ fun HistoryScreen(
     }
 
     deleting.confirming?.let { row ->
-        DeleteDialog(row, name = row.workoutName ?: adHoc, onDismiss = { deleting.confirming = null }) {
+        DeleteDialog(row, name = listing.nameOf(row), onDismiss = { deleting.confirming = null }) {
             deleting.confirm(row)
         }
     }
@@ -214,11 +200,20 @@ private class Listing(
     adHoc: String,
 ) {
     private val searching = query.isNotBlank()
-    val visible = if (searching) filterByName(rows, query) { it.workoutName ?: adHoc } else rows
+
+    /** What a row is called: its workout, or the ad-hoc stand-in, which is what the search matches too. */
+    val nameOf: (HistorySessionView) -> String = { it.workoutName ?: adHoc }
+    val visible = if (searching) filterByName(rows, query, nameOf) else rows
     private val ids = visible.mapTo(HashSet()) { it.id }
     val stats = historyStats(if (searching) logged.filter { it.id in ids } else logged)
-    val matched = if (searching) visible.size to logged.size else null
+    val matched = if (searching) MatchCount(visible.size, logged.size) else null
 }
+
+/** While searching: [shown] sessions matched, of [total] in the log. */
+private data class MatchCount(
+    val shown: Int,
+    val total: Int,
+)
 
 /** What a row's controls do, bound to its session by the screen. */
 internal class RowActions(
@@ -226,6 +221,22 @@ internal class RowActions(
     val delete: () -> Unit,
     val edit: () -> Unit,
     val export: () -> Unit,
+)
+
+/** [row]'s controls. A toggle also dismisses a refused delete's message, once its row has been read. */
+private fun rowActions(
+    row: HistorySessionView,
+    actions: HistoryActions,
+    deleting: Deleting,
+    toggle: () -> Unit,
+) = RowActions(
+    toggle = {
+        toggle()
+        deleting.dismissFailure(row.id)
+    },
+    delete = { deleting.confirming = row },
+    edit = { actions.open(Stacking.Push, "/session-editor", mapOf("id" to row.id)) },
+    export = { actions.export(row.id) },
 )
 
 /**
@@ -241,6 +252,11 @@ private class Deleting(
     var failure by mutableStateOf<DeleteFailure?>(null)
         private set
 
+    /** Closing or reopening the row the refusal shows in is reading it; it doesn't come back. */
+    fun dismissFailure(id: String) {
+        if (failure?.id == id) failure = null
+    }
+
     fun confirm(row: HistorySessionView) {
         confirming = null
         failure = null
@@ -248,14 +264,17 @@ private class Deleting(
             // Not cancelled with the screen: once the file is gone, RN's stores must hear it, or they
             // keep listing a session that no longer exists.
             withContext(NonCancellable) {
-                try {
-                    files.deleteSession(row.id)
-                    sessionsChanged()
-                } catch (e: IOException) {
-                    failure = DeleteFailure(row.id, e.message.orEmpty())
-                } catch (e: SecurityException) {
-                    failure = DeleteFailure(row.id, e.message.orEmpty())
-                }
+                val refused =
+                    try {
+                        files.deleteSession(row.id)
+                        sessionsChanged()
+                        null
+                    } catch (e: IOException) {
+                        e
+                    } catch (e: SecurityException) {
+                        e
+                    }
+                failure = refused?.let { DeleteFailure(row.id, it.message.orEmpty()) }
             }
         }
     }
@@ -285,28 +304,20 @@ private fun Header(
         )
         // Always offered, even on an empty log: arriving at zeros explains what Stats is, where a link
         // that appears only once there is history is one nobody learns about.
-        HeaderLink(stringResource(R.string.history_stats), onStats)
+        TextAction(stringResource(R.string.history_stats), KettleType.smallMedium, colors.accentText, onStats)
         // Hidden at zero, since there's nothing to export. "Export all" rather than "Export": each open
         // row has its own Export for one session, and two identical labels meaning different amounts of
         // data is found out only after sharing the wrong one.
-        if (showExportAll) HeaderLink(stringResource(R.string.history_exportAll), onExportAll)
+        if (showExportAll) {
+            TextAction(
+                stringResource(R.string.history_exportAll),
+                KettleType.smallMedium,
+                colors.accentText,
+                onExportAll,
+            )
+        }
     }
 }
-
-/** A text action: its name is the words on screen, and its 48dp target grows with the text. */
-@Composable
-private fun HeaderLink(
-    text: String,
-    onClick: () -> Unit,
-) = Text(
-    text,
-    Modifier
-        .heightIn(min = 48.dp)
-        .clickable(role = Role.Button, onClick = onClick)
-        .padding(horizontal = Spacing.two, vertical = Spacing.three - 2.dp),
-    style = KettleType.smallMedium,
-    color = KettleTheme.colors.accentText,
-)
 
 /**
  * The whole header's numbers as one sentence, where six stat cards used to fill the first screen.
@@ -317,7 +328,7 @@ private fun HeaderLink(
 @Composable
 private fun SummaryLine(
     stats: HistoryStats,
-    matched: Pair<Int, Int>?,
+    matched: MatchCount?,
 ) {
     val totals =
         stringResource(
@@ -328,7 +339,7 @@ private fun SummaryLine(
             stringResource(R.string.analytics_hoursMinutes, stats.hours, stats.minutes),
         )
     val line =
-        matched?.let { (shown, total) -> "${stringResource(R.string.history_matchCount, shown, total)} · $totals" }
+        matched?.let { "${stringResource(R.string.history_matchCount, it.shown, it.total)} · $totals" }
             ?: totals
     Text(line, Modifier.padding(top = 2.dp), style = KettleType.default, color = KettleTheme.colors.textSecondary)
 }

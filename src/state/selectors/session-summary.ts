@@ -1,8 +1,8 @@
 /**
- * Reducing one logged session to the numbers and names every downstream reader shares: how many sets
- * it was worth, how long it ran, what to call it, and what each entry actually put up. The stat
- * selectors and the list views both build on these, which is why they live apart from both — the same
- * count feeding History's tiles and Today's must have exactly one definition.
+ * Reducing one logged session to the numbers every downstream reader shares: how many sets it was
+ * worth, how long it ran, and what each entry actually put up. RN's readers and native History's
+ * Kotlin ports of these are held together by `conformance/records.yaml`, since the same count on two
+ * screens must have exactly one definition.
  */
 import type { EntryResult } from '@/domain/format';
 import type { Session, SessionEntry } from '@/domain/types';

@@ -3,6 +3,7 @@ package com.casco.kettle.shell.history
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertHeightIsAtLeast
@@ -136,7 +137,10 @@ class HistoryScreenTest {
         compose.onNodeWithText("Dips").assertExists()
     }
 
-    /** A screen reader can't read the chevron, so the row says whether it's open by its actions. */
+    /**
+     * A screen reader can't read the chevron, so the row says whether it's open by its actions, and its
+     * click label says what a double-tap does, which its own words (what it is) don't.
+     */
     @Test
     fun `a row is a 48dp button that expands, then collapses`() {
         show()
@@ -144,9 +148,33 @@ class HistoryScreenTest {
         row("Push day")
             .assertHeightIsAtLeast(48.dp)
             .assert(SemanticsMatcher.keyIsDefined(SemanticsActions.Expand))
+            .assert(clickLabel("Mostrar exercícios"))
             .performClick()
 
-        row("Push day").assert(SemanticsMatcher.keyIsDefined(SemanticsActions.Collapse))
+        row("Push day")
+            .assert(SemanticsMatcher.keyIsDefined(SemanticsActions.Collapse))
+            .assert(clickLabel("Ocultar exercícios"))
+    }
+
+    // The label History's jest suite pinned through the selector: "1 sets" shipped once.
+    @Test
+    fun `says a row's time and sets, its count in the plural it takes`() {
+        val twoSets =
+            legs.copy(
+                entries =
+                    listOf(
+                        SessionEntry.Reps(
+                            "dips",
+                            listOf(RepsSetLog(reps = 8, restTakenSec = 60.0), RepsSetLog(reps = 6, restTakenSec = 0.0)),
+                        ),
+                        SessionEntry.Hiit("burpees", roundsCompleted = 3),
+                    ),
+            )
+        show(Files(push, twoSets))
+
+        compose.onNodeWithText("60 min · 1 série").assertExists()
+        // A HIIT round is a set too, and two kinds of work make the session mixed.
+        compose.onNodeWithText("2940 min · 5 séries · misto").assertExists()
     }
 
     @Test
@@ -155,7 +183,7 @@ class HistoryScreenTest {
         show(files)
 
         row("Leg day").performClick()
-        action("Excluir").performClick()
+        action("Excluir").assertHeightIsAtLeast(48.dp).performClick()
         compose.onNodeWithText("Excluir sessão?").assertExists()
         compose.onNodeWithText("\"Leg day\" em 27 ", substring = true).assertExists()
         compose.pressDialogButton("Excluir")
@@ -361,6 +389,11 @@ class HistoryScreenTest {
     private fun action(label: String) = compose.onNode(hasText(label) and isButton)
 
     private val isButton = SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button)
+
+    private fun clickLabel(label: String) =
+        SemanticsMatcher("click label $label") { node ->
+            node.config.getOrNull(SemanticsActions.OnClick)?.label == label
+        }
 
     private class Files(
         vararg sessions: Session,

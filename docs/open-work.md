@@ -271,19 +271,9 @@ wanting states and assignees, it wants GitHub issues instead.
   be the only override there is — which is a feature, not a duplicate, and cheaper than building the
   Settings row it would otherwise take.
 
-- **Forbid `pluralStringResource` in `:app`.** Native plurals must go through `pluralText`, which takes
-  the `_zero` branch Android never selects for Portuguese; a direct `pluralStringResource` call brings
-  "0 sessão" back with nothing failing. Only convention holds it today. detekt's `ForbiddenMethodCall`
-  needs type resolution (`detektMain`), which the build doesn't run; a custom lint check is the other
-  route. Worth doing before M4's first screen with a count.
-
 - **A native sheet can't grow into the runner yet.** `ModalSheet`'s grow and shrink act on the live
   view, but RN slides the runner in inside the surface, which is invisible under a native sheet (#197).
   No M4 sheet opens the runner; the first native screen that does has to handle it.
-
-- **Two native-sheet paths only checked by eye** (#207): a back or × while a native sheet is still
-  composing (it reuses the picture on screen), and a predictive back started and cancelled in that
-  window (it settles before the open has started). Check both on the emulator with the first port.
 
 ## Open bugs
 

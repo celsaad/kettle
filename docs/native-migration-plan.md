@@ -10,8 +10,8 @@
 > sheets (#155) and the `filesChanged` re-read (#154). **M4 has shipped**: 0.13.0 carries Support,
 > the program guide, exercise progress, Stats and History as Compose screens, which meets its
 > landmark. M1–M4 are tracked as GitHub issues #141–#156, #194 and
-> #196–#202, whose open/closed state is the live record; M5 onward is ticketed next. Written against
-> the tree at `54eb9f8`, SDK 57.
+> #196–#202, whose open/closed state is the live record. **M5 is ticketed** (#230–#245, map
+> #219); M6 onward is ticketed next. Written against the tree at `54eb9f8`, SDK 57.
 > **Everything after M0 was conditional on a "go"**: had the spike failed, this file would carry a
 > banner saying so and the decision log the reason, so the idea isn't re-proposed from scratch.
 
@@ -303,8 +303,8 @@ one full release cycle. Every later milestone ships through this pipeline.
   the **re-read-on-focus** rule that makes constraint 3 work in both directions. *(For M5: a
   re-read refreshes every screen that reads a store, but RN's open editors and the runner copy what
   they show once, so they have to be replaced before native writes those files, not after. And a
-  re-read of a corrupt library reseeds it from RN, a second writer, which is harmless only while
-  native never writes an unreadable file.)*
+  re-read of a corrupt library reseeds it from RN, a second writer. M5 answers that by making RN's
+  load parse-only and native's writes atomic, #220.)*
 
 **Landmark: no navigation happens inside RN.** Every screen transition the user sees is a native
 one, and an RN screen can be swapped for a native one by changing one route registration.
@@ -340,7 +340,7 @@ facts the port rests on (one PBL in the APK, SKUs unchanged, no Data Safety chan
 
 **RN stays the router through M4** (#190). A ported screen keeps an empty RN stub route at its path,
 native draws the Compose screen whenever RN reports that path, and native sheets go into #155's sheet
-(#191). The stubs go at the M5 flip.
+(#191). The stubs go when routing moves native, after M6 (#223).
 
 Every screen is ported to the same definition of done:
 
@@ -359,30 +359,66 @@ Every screen is ported to the same definition of done:
 
 ### M5 — Library ownership flips · ~5–7 weeks
 
-The largest milestone, because it moves ownership of the library file and of the session log for
-edits.
+> **Ticketed** (#230–#245, with #228), charted on the wayfinder map #219, whose closed tickets hold
+> the reasoning. The issues' open/closed state is the live record.
 
-- **Native**: the library, workouts list, programs, program detail, the four editors (exercise,
-  workout, program, session), import and Settings, together with `validateConfig`-style form
-  validation, content packs, the seed library, `library-translation`, export/share and the SAF backup
-  folder (`storage/backup.ts`). The packs and the seed are data, so they move into files both sides
-  read rather than being ported (see the decision log's single-source entry).
-- **Ownership move, in one release**: native becomes the only writer of the library file, of
-  edited session files, and of the preferences file. The RN runner, which is still RN, keeps writing
-  *new* session files. Its stores re-read on `filesChanged`.
-- **The native screens land unrouted** and switch on together in that one release, so no file ever
-  has two writers in production.
-- **Routing moves to native in the same release**, and M4's RN stub routes are deleted with it (#190).
+The largest milestone, because it moves ownership of the library file, of edited session files and
+of the preferences file. **Routing does not move in M5** (#223): RN stays the router behind M4's stub
+routes until the runner is native (see M6).
 
-Settings and the preferences file weren't placed in the first draft of this plan. They move here,
-not in M4, because Settings writes. Native reads the preferences file from M3 on, for the theme its
-chrome draws, but it doesn't write the file before this flip.
-- Corrupt-library handling carries over unchanged: reseed and keep the bad file, the way
-  `library-file.ts` does.
+- **Native**: the library, workouts list (Home), programs, program detail, the four editors
+  (exercise, workout, program, session), import and Settings, together with `validateConfig`-style
+  form validation, content packs, the seed library, `library-translation`, export/share, the SAF
+  backup folder (`storage/backup.ts`) and the rest-day reminder (#221, pulled forward from M7).
+- **Shared artifacts, not ports.** The packs and the seed move into `src/content/` as library YAML
+  plus translation JSON that both sides read (#224, #230; the decision log's single-source entry).
+  The exercise drawings become `.svg` files there too, drawn by RN and generated into
+  VectorDrawables by a `:art` module (#225, #228), so iOS reuses them in M8.
+
+**Read-only screens first.** Home, Library, Programs and Program detail write nothing, so they port
+M4-style, one Play release each, before any flip: Programs → Program detail → Library → Home. Home
+goes last, carrying the splash exit and the startup marker (`reportFullyDrawn`) to native.
+
+**Then three flips, one per file** (#222). Constraint 3 is read per file: each file moves in one
+named release, not all three in one. One release each, in this order:
+
+1. **Preferences**: native Settings and the theme, the rest-day reminder switched on, and the
+   backup folder. The folder counts as a file under constraint 3 and moves here, since its URI
+   lives in the preferences file. Export and share move native here too.
+2. **Sessions**: the native session editor. It only reads the library, so it doesn't wait for the
+   library flip.
+3. **Library**: the exercise, workout and program editors, import, the seed and the packs.
+
+**The RN runner still writes, so "native is the only writer" needs a protocol** (#220). After the
+flips the runner writes only *new* session files. Its other writes become requests that native
+performs: `setTargetWeight` (the load `adoptPreviousLoad` adopts) at the library flip, and
+`sessionFinished` → `backupResult` (the finish backup, whose failure the completion screen still
+warns about) at the preferences flip. Both go with the RN runner in M6.
+
+- **RN's library load becomes parse-only.** It runs on every `filesChanged('library')`, so it must
+  not seed, save a repair, or quarantine and reseed. Native seeds and repairs at launch, and RN's
+  start waits for that job, so the ordering is a dependency in code (#221).
+- **Native writes every file it owns atomically** (write-then-rename). This replaces M3's "harmless
+  only while native never writes an unreadable file" with a guarantee.
+- **Corrupt-library handling carries over unchanged**: quarantine the bad file and reseed, now in
+  native.
 - **Weight handling carries over unchanged**: kilograms are stored, and `previousWeightKg` is passed
   through every edit path.
+- **No RN fallback for unhosted builds.** Web browses an in-memory seed read from `src/content/`,
+  with no writes. The iOS RN build loses the reminder until iOS goes native.
 
-**Landmark: the only RN left is the session runner**, plus whatever it renders.
+**Writer screens land unrouted**, behind a `Flips.kt` pair (#231): `true` in the debug source set,
+`false` in release. `.dev` draws the native writer while Play keeps the RN screen, so no file has
+two writers in production. `.dev` accepts two writers in the meantime. Each flip release deletes its
+constant along with the RN writers, and **the RN screen and its jest test are deleted in the flip
+release's PR**, not the port's.
+
+Every port follows M4's definition of done otherwise: selectors and form logic into `:shared` with
+Kotlin tests (#192), Compose UI tests mirroring the jest cases and driven in `pt` (#193), a11y
+asserted in tests, feature freeze, no redesign.
+
+**Landmark: the only RN left is the session runner**, plus whatever it renders, behind RN's router
+and stubs.
 
 ### M6 — The session runner · ~4–6 weeks
 
@@ -395,6 +431,11 @@ boundary.
   notifications, moved from `expo-audio`, `expo-haptics`, `expo-keep-awake` and
   `expo-notifications` to the platform APIs.
 - The leave-guard, the Coming up sheet, the swap and add pickers, and the number pad.
+- The runner's M5 requests to native (`setTargetWeight`, `sessionFinished` → `backupResult`, #220)
+  become direct native calls.
+- **It ports behind a `/session` stub**, as M4 and M5's screens did, and splits inside the milestone
+  (#223): the step model (`session-steps.ts`) into `:shared` with tests, then the foreground service
+  owning the clock, sounds and cues, then the Compose UI, then real device sessions and closed testing.
 - Verified the way the runner always has to be: **real sessions on a real device**, including
   backgrounding, screen lock, a phone call mid-rest, and process death mid-set. Then a closed-testing
   track for at least one week of real use before production.
@@ -405,13 +446,25 @@ plan a few days of work rather than a project.
 **Landmark: the runner is native in production** and survives a week of closed testing with no lost
 session.
 
+**Then routing moves to native, as a release of its own** (#223), before M7 deletes RN. It was
+planned for M5, and moved here because every hard question it raised (a cut-down expo-router for one
+route, a hand-back message pair, forwarding back to RN, the View sheet kept only so RN could sit above
+it) came from the runner still being RN. Once RN draws nothing it is mostly deletion: `TabNavigator`
+becomes a `Navigator` that owns the back stack, `shellRoutes` becomes a typed native route table, and
+the RN tabs, sheets and stubs (#190), expo-router, and every steering and route-report message go.
+`kettle://` links are parsed natively. `NavigateReceiver` and the route-check scripts stay,
+retargeted. The View sheet stays as it is; whether a Compose sheet should follow is #229. **Gate: a
+`:benchmark` cold-start run against the last release.** Its hand-off is written when M6 is charted.
+
 ### M7 — React Native removed (Android) · ~1–2 weeks
 
 - Delete the AAR, `expo-brownfield`, Hermes and the RN surfaces.
-- Move the rest-day reminder off `expo-notifications`. (The tip jar already moved to Play Billing
-  with Support in M4.)
+- `expo-notifications` leaves with the runner's step cues. The rest-day reminder already moved to a
+  native alarm in M5 (#236), so delete its launch-time cancel of Expo's leftover request with the
+  module. (The tip jar already moved to Play Billing with Support in M4.)
 - Re-check the **Data Safety** claim: list every Gradle dependency that touches the network and
-  confirm none transmits anything.
+  confirm none transmits anything. That includes `sh.calvin.reorderable`, which the workout editor
+  brought in M5 (#226).
 - **Drop core library desugaring.** `:app` turns it on (#201) because kotlinx-datetime is `java.time`
   underneath, which Android has only from API 26, and `minSdk` is 24 only because the RN app the shell
   replaces is (Expo SDK 57's floor). With RN gone, raise `minSdk` to 26 and delete
@@ -419,13 +472,15 @@ session.
 - **Unpin the Kotlin toolchain.** `native/android/gradle/libs.versions.toml` holds Kotlin and AGP
   at React Native's own versions (`node_modules/react-native/gradle/libs.versions.toml`), so the shell
   and the AAR it hosts build with one toolchain. With the AAR gone, that reason goes too. Move Kotlin
-  forward together with the four things that move with it:
+  forward together with the things that move with it:
   - detekt, whose 1.x line runs only on the Kotlin it was built against;
   - the Compose compiler plugin;
   - snakeyaml-engine-kmp, whose newer majors are built with a newer Kotlin than ours can read;
   - Play Billing's `billing-ktx`, which Support (#198) couldn't use: 9.1.0 is built with Kotlin 2.3.
     Swap the plain `billing` artifact for it, and replace `PlayTipBilling`'s hand-written coroutine
     wrappers with ktx's `queryProductDetails`, `queryPurchasesAsync` and `consumePurchase`.
+  - `sh.calvin.reorderable`, pinned at 3.1.0 by the workout editor (#226): any later release built
+    with Kotlin 2.3 or newer has to wait for this.
   - `kotlinx-datetime`, held at 0.6.x since exercise progress (#200) brought it into `:shared`:
     0.7 needs a newer Kotlin. It also moves `Instant` and `Clock` into the standard library's
     `kotlin.time`, so the upgrade changes those imports wherever the selectors and screens use them.

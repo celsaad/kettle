@@ -238,6 +238,17 @@ class HistoryScreenTest {
         compose.onNodeWithText("1 de 2 · ", substring = true).assertExists()
     }
 
+    // An ad-hoc session is listed under the stand-in, so searching for the stand-in has to find it.
+    @Test
+    fun `finds an ad-hoc session by the name it is listed under`() {
+        show(Files(push, legs.copy(workout = null)))
+
+        search("avulsa")
+
+        row("Sessão avulsa").assertExists()
+        row("Push day").assertDoesNotExist()
+    }
+
     @Test
     fun `says nothing matched instead of going blank`() {
         show()

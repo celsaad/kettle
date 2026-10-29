@@ -1,13 +1,20 @@
 package com.casco.kettle.shell.nav
 
 import android.annotation.SuppressLint
+import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.os.Looper
 import android.view.MotionEvent
 import android.view.View
 import androidx.activity.ComponentActivity
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Text
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.AbstractComposeView
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
@@ -23,6 +30,7 @@ import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
@@ -43,6 +51,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
 import java.time.Duration
 
 /**
@@ -274,6 +283,30 @@ class ShellTest {
 
         compose.onNodeWithText("Native history").assertDoesNotExist()
         assertSurfaceShown(true)
+    }
+
+    /**
+     * A native tab is opaque in the theme's background however little its screen paints, top edge
+     * included (#227). Without it the window's own Material gray showed through, under History's
+     * header and in the strip behind the status bar.
+     */
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun `a native tab paints the theme's background behind its screen`() {
+        show(shellRoutes + ("/history" to Screen.Native { Box(Modifier.fillMaxSize().testTag("see-through")) }))
+
+        tab("History").performClick()
+
+        // Drawn by hand, as captureToImage waits on a draw pass Robolectric never dispatches here. The
+        // screen's bounds are in the shell's own coordinates: Destinations is the shell's top child.
+        val bounds = compose.onNodeWithTag("see-through").fetchSemanticsNode().boundsInRoot
+        val pixels =
+            compose.runOnIdle {
+                Bitmap.createBitmap(shell.width, shell.height, Bitmap.Config.ARGB_8888).also { shell.draw(Canvas(it)) }
+            }
+        for (y in listOf(bounds.top, bounds.center.y, bounds.bottom - 1)) {
+            assertEquals(LightColors.background.toArgb(), pixels.getPixel(bounds.center.x.toInt(), y.toInt()))
+        }
     }
 
     /** A native screen behind a stub reads its params from RN's report, whoever opened the route. */

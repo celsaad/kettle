@@ -67,7 +67,14 @@ internal fun Destinations(
     ) {
         for (tab in Tab.entries) {
             val screen = routes.screenAt(tab.path)
-            composable(tab.name) { if (screen is Screen.Native) screen.content(navigator.params(tab.path)) }
+            composable(tab.name) {
+                if (screen !is Screen.Native) return@composable
+                // Opaque to the top, strip included, as NativeSheet is: the window behind is Material's
+                // gray, not the theme's (#227). Here and not in each screen, so every port gets it.
+                Box(Modifier.fillMaxSize().background(KettleTheme.colors.background)) {
+                    screen.content(navigator.params(tab.path))
+                }
+            }
         }
     }
 }

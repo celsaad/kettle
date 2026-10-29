@@ -50,6 +50,9 @@ class TabNavigator(
                 else -> Layer.Surface
             }
 
+    /** Whether RN shows the runner, which is dark in either scheme (`RunnerColors`). */
+    val runnerShown: Boolean get() = rnAt == RUNNER_PATH
+
     /** The path the native sheet draws, while one shows. */
     val nativeSheetPath: String? get() = rnAt.takeIf { layer == Layer.NativeSheet }
 
@@ -130,4 +133,9 @@ class TabNavigator(
     }
 
     private fun Tab.isRn() = routes.screenAt(path) == Screen.Rn
+
+    private companion object {
+        /** `src/app/session.tsx`. */
+        const val RUNNER_PATH = "/session"
+    }
 }

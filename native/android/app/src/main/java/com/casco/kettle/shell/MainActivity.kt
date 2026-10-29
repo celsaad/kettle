@@ -25,9 +25,8 @@ import com.casco.kettle.shell.rn.ExpoActivityListeners
 import com.casco.kettle.shell.rn.JsBridge
 import com.casco.kettle.shell.rn.RnFrames
 import com.casco.kettle.shell.rn.withViewAction
-import com.casco.kettle.shell.theme.KettleTheme
+import com.casco.kettle.shell.theme.PreferredKettleTheme
 import com.casco.kettle.shell.theme.preferredColors
-import com.casco.kettle.shell.theme.rememberPreferredDarkTheme
 import com.facebook.react.modules.core.PermissionAwareActivity
 import com.facebook.react.modules.core.PermissionListener
 import expo.modules.brownfield.BrownfieldState
@@ -111,7 +110,12 @@ class MainActivity :
                         LocalLatestFiles provides latestFiles,
                         LocalTabReselects provides tabReselects,
                     ) {
-                        KettleTheme(rememberPreferredDarkTheme(preferences, reread = navigator.barShown), content)
+                        PreferredKettleTheme(
+                            preferences,
+                            reread = navigator.barShown,
+                            runnerShown = navigator.runnerShown,
+                            content,
+                        )
                     }
                 },
             ) { content, shell ->

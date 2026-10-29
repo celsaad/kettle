@@ -9,3 +9,10 @@ naming:
 style:
   UnusedPrivateMember:
     ignoreAnnotated: ['Preview', 'LocalePreviews']
+  # The import rather than the call, because ForbiddenMethodCall needs type resolution and `check` runs
+  # without. A wildcard import of `androidx.compose.ui.res` is ktlint's to refuse (no-wildcard-imports).
+  ForbiddenImport:
+    active: true
+    imports:
+      - value: 'androidx.compose.ui.res.pluralStringResource'
+        reason: 'Use pluralText, which takes the _zero branch Android skips for Portuguese.'

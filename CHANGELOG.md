@@ -18,6 +18,12 @@ here, next to what it describes.
 
 ## Unreleased
 
+Nothing since 0.13.0.
+
+---
+
+## 0.13.0 — versionCode 18, 28 October 2026
+
 ### What changed
 
 - **Support Kettle is native**, on Google Play's own billing library. A tip paid by a slow method (a
@@ -31,7 +37,9 @@ here, next to what it describes.
 
 ### Play release notes
 
-Draft, for review before `/bump`. Lengths are held by `store-copy.test.ts`.
+Counted at 323 (en-US) and 353 (pt-BR), against a limit of 500. Re-count programmatically
+if you edit them rather than trusting these numbers — over-limit copy is a rejected upload, not a
+truncated one.
 
 The tip jar leads because it is the change a user could act on; the native screens stay out, as
 they look the same. Two blocks rather than three, as in 0.8.0 onwards: the Play listing does not

@@ -46,6 +46,15 @@ fun formatMonthDay(
 ): String = formatMonthDay(date.atStartOfDayIn(TimeZone.UTC), locale, TimeZone.UTC)
 
 /**
+ * `formatMonthBadge` in `src/i18n/format.ts`: the short month on a History row's date badge, "JUL" or
+ * "JUL.", uppercased with the locale's rules rather than the default's, which are wrong for Turkish.
+ */
+fun formatMonthBadge(
+    date: LocalDate,
+    locale: Locale,
+): String = format(date.atStartOfDayIn(TimeZone.UTC), locale, TimeZone.UTC, "MMM").uppercase(locale)
+
+/**
  * `formatWeekday(date, 'narrow')` in `src/i18n/format.ts`: "M", "T", or "S" for both Saturday and
  * Sunday. ICU's formatter, not `SimpleDateFormat`: the locale's pattern for it is the standalone
  * `ccccc`, which `java.text` refuses, and on a JVM `java.text` reads `EEEEE` as the full name.
@@ -60,8 +69,9 @@ fun formatNarrowWeekday(
         .format(Date(date.atStartOfDayIn(TimeZone.UTC).toEpochMilliseconds()))
 
 /**
- * `firstWeekdayIndex` in `src/i18n/index.ts`: the day the reader's calendar starts its week on, which
- * expo-localization reads from `Calendar` in the device's locale, as this does.
+ * What `firstWeekdayIndex` in `src/i18n/index.ts` read before its last caller went native (#202): the
+ * day the reader's calendar starts its week on, which expo-localization reads from `Calendar` in the
+ * device's locale, as this does.
  */
 fun firstWeekday(locale: Locale): DayOfWeek {
     // Calendar counts from Sunday = 1, ISO from Monday = 1, so only Sunday doesn't shift down by one.

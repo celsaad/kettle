@@ -34,9 +34,10 @@ export { ModalErrorBoundary as ErrorBoundary } from '@/components/error-fallback
  * One entry's working state.
  *
  * `index` is its position in `session.entries` — **the raw array, not History's view of it**.
- * `historySessionsView` filters `rest` entries out, so a card's position on the History screen is not
- * this number, and writing back with the wrong one would rewrite whichever entry happened to sit at
- * that offset. This screen builds from the raw session for that reason and never from the view.
+ * Native History's `historySessionsView` filters `rest` entries out, so a row's position on the History
+ * screen is not this number, and writing back with the wrong one would rewrite whichever entry
+ * happened to sit at that offset. This screen builds from the raw session for that reason and never
+ * from the view.
  *
  * An empty `forms` means the user removed the entry's last set, so the whole entry comes out on save.
  */
@@ -174,8 +175,8 @@ export default function SessionEditorScreen() {
   const blocked = body();
   const startedAt = session ? new Date(session.startedAt) : null;
   // Falls back to the raw id for a workout since deleted from the library, and to the ad-hoc label for
-  // a session that never had one — the same resolution `historySessionsView` does, so the editor's
-  // header and the card it was opened from agree.
+  // a session that never had one — the same resolution native History's `historySessionsView` does, so
+  // the editor's header and the row it was opened from agree.
   const workoutName = formatSessionName(
     session?.workout ? (library?.workouts.find((workout) => workout.id === session.workout)?.name ?? session.workout) : null,
   );

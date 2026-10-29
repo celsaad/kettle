@@ -15,8 +15,10 @@ import com.casco.kettle.shell.files.DiskFiles
 import com.casco.kettle.shell.files.LatestFiles
 import com.casco.kettle.shell.files.LocalLatestFiles
 import com.casco.kettle.shell.files.StoragePaths
+import com.casco.kettle.shell.nav.LocalTabReselects
 import com.casco.kettle.shell.nav.ModalSheet
 import com.casco.kettle.shell.nav.ShellLayout
+import com.casco.kettle.shell.nav.Tab
 import com.casco.kettle.shell.nav.TabNavigator
 import com.casco.kettle.shell.nav.shellRoutes
 import com.casco.kettle.shell.rn.ExpoActivityListeners
@@ -30,6 +32,8 @@ import com.facebook.react.modules.core.PermissionAwareActivity
 import com.facebook.react.modules.core.PermissionListener
 import expo.modules.brownfield.BrownfieldState
 import expo.modules.splashscreen.SplashScreenManager
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.flow.MutableSharedFlow
 
 /**
  * The app's entry point: today's RN app as one surface (docs/native-migration-plan.md, M2), inside the
@@ -66,7 +70,12 @@ class MainActivity :
                 JsBridge.navigate(url)
             },
             reread = { latestFiles.reread() },
+            onReselect = { tabReselects.tryEmit(it) },
         )
+
+    /** What [LocalTabReselects] carries. One slot, since a tap's scroll replaces the one before it. */
+    private val tabReselects =
+        MutableSharedFlow<Tab>(extraBufferCapacity = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // Before super, as in the prebuilt app: it installs the splash theme's exit. JS hides it with
@@ -98,7 +107,10 @@ class MainActivity :
                 navigator,
                 shellRoutes,
                 theme = { content ->
-                    CompositionLocalProvider(LocalLatestFiles provides latestFiles) {
+                    CompositionLocalProvider(
+                        LocalLatestFiles provides latestFiles,
+                        LocalTabReselects provides tabReselects,
+                    ) {
                         KettleTheme(rememberPreferredDarkTheme(preferences, reread = navigator.barShown), content)
                     }
                 },

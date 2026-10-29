@@ -183,6 +183,16 @@ class StatsScreenTest {
         compose.onNode(hasText("1") and hasText("dias seguidos")).assertExists()
     }
 
+    // Logging 0 is how the runner skips an exercise, so a session of nothing but skips was no session.
+    @Test
+    fun `counts no session this week for one that skipped everything`() {
+        val start = now - 60.minutes
+        val skipped = SessionEntry.Reps("rdl", listOf(RepsSetLog(reps = 0, restTakenSec = 60.0)))
+        show(listOf(rdl), listOf(session(start, start + 30.minutes, skipped)))
+
+        compose.onNode(hasText("0") and hasText("sessões")).assertExists()
+    }
+
     // The row is the way into the exercise's own progress screen, and it has to say which exercise.
     @Test
     fun `opens an exercise's progress screen from its row`() {
@@ -288,6 +298,8 @@ class StatsScreenTest {
         override fun library() = Library(1, exercises, emptyList(), emptyList())
 
         override fun preferences() = Preferences(UnitSystem.METRIC, ThemePreference.SYSTEM, false, true, null)
+
+        override fun deleteSession(id: String) = error("this screen deletes nothing")
     }
 }
 

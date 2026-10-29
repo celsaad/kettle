@@ -111,24 +111,6 @@ export function formatSessionName(workoutName: string | null): string {
   return workoutName ?? t('format.adHocSession');
 }
 
-/** A logged session's duration. Abbreviated, so it doesn't pluralise in either locale. */
-export function formatSessionDuration(minutes: number): string {
-  return t('format.minutes', { n: minutes });
-}
-
-/** Through `count`, not a template literal: History and Today both rendered "1 sets" before this. */
-export function formatSetCount(sets: number): string {
-  return t('format.set', { count: sets });
-}
-
-/**
- * Same rule, same reason — History's header summary reintroduced "1 sessions" the first time it was
- * written as one interpolated sentence, which is precisely how the bug above got in.
- */
-export function formatSessionCount(sessions: number): string {
-  return t('format.session', { count: sessions });
-}
-
 /**
  * A personal record, as data — see `sessionRecords`.
  *

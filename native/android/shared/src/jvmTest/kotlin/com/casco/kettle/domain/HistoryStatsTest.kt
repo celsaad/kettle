@@ -13,8 +13,8 @@ import org.junit.jupiter.api.Test
 import kotlin.time.Duration.Companion.minutes
 
 /**
- * `src/state/selectors/__tests__/history-stats.test.ts`, case for case, less `historyStats sets`: Stats
- * never reads a set count, so `sessionSetCount` and its cases come over with History (#202).
+ * `src/state/selectors/__tests__/history-stats.test.ts`, case for case, which went with RN History (#202):
+ * this suite is the spec now.
  *
  * Where jest fakes the clock and mocks the device's first weekday, these pass both, with the zone:
  * local days in New York, the DST-observing zone jest's TZ pin names, so the DST cases bite here on
@@ -51,19 +51,84 @@ class HistoryStatsTest {
         fun `splits a 90-minute total into whole hours and a remainder, not a fractional hour`() {
             val stats = historyStats(listOf(session("2026-07-24T09:00:00.000Z", "2026-07-24T10:30:00.000Z")))
 
-            assertEquals(HistoryStats(sessions = 1, hours = 1, minutes = 30), stats)
+            assertEquals(HistoryStats(sessions = 1, hours = 1, minutes = 30, sets = 0), stats)
         }
 
         @Test
         fun `reports zeroes for no sessions`() {
-            assertEquals(HistoryStats(sessions = 0, hours = 0, minutes = 0), historyStats(emptyList()))
+            assertEquals(HistoryStats(sessions = 0, hours = 0, minutes = 0, sets = 0), historyStats(emptyList()))
         }
 
         @Test
         fun `reports 0 hours for a sub-hour total`() {
             val stats = historyStats(listOf(session("2026-07-24T09:00:00.000Z", "2026-07-24T09:25:00.000Z")))
 
-            assertEquals(HistoryStats(sessions = 1, hours = 0, minutes = 25), stats)
+            assertEquals(HistoryStats(sessions = 1, hours = 0, minutes = 25, sets = 0), stats)
+        }
+    }
+
+    /**
+     * `sets` is the count behind History's summary line and each row's "N sets", asserted through
+     * [historyStats] as jest does. Regression: interval entries used to count as a flat 1 apiece, so a
+     * 16-round HIIT was worth the same as one hold.
+     */
+    @Nested
+    inner class HistoryStatsSets {
+        private fun setsIn(vararg entries: SessionEntry) =
+            historyStats(
+                listOf(
+                    Session(1, "s", null, null, null, null, "2026-07-24T09:00:00.000Z", null, entries.toList()),
+                ),
+            ).sets
+
+        private val pullups =
+            SessionEntry.Reps(
+                "pullups",
+                listOf(RepsSetLog(reps = 8, restTakenSec = 90.0), RepsSetLog(reps = 6, restTakenSec = 0.0)),
+            )
+
+        @Test
+        fun `counts one set per logged set for reps and holds`() {
+            assertEquals(3, setsIn(pullups, SessionEntry.TimedHold("lsit", listOf(TimedHoldSetLog(20.0, 0.0)))))
+        }
+
+        @Test
+        fun `counts each completed round of a HIIT or AMRAP entry`() {
+            assertEquals(8, setsIn(SessionEntry.Hiit("burpees", roundsCompleted = 8)))
+            assertEquals(5, setsIn(SessionEntry.Amrap("chipper", roundsCompleted = 5, extraReps = 3)))
+        }
+
+        @Test
+        fun `counts each interval of an EMOM entry`() {
+            assertEquals(
+                3,
+                setsIn(SessionEntry.Emom("swings", listOf(EmomMinuteLog(10), EmomMinuteLog(10), EmomMinuteLog()))),
+            )
+        }
+
+        @Test
+        fun `counts cardio as one effort and rest as none`() {
+            assertEquals(1, setsIn(SessionEntry.Cardio("row", durationSec = 600.0, distanceMeters = 2000.0)))
+            assertEquals(0, setsIn(SessionEntry.Rest("rest", restTakenSec = 90.0)))
+        }
+
+        @Test
+        fun `sums a mixed session across all of them`() {
+            assertEquals(
+                12,
+                setsIn(
+                    pullups,
+                    SessionEntry.Rest("rest", restTakenSec = 60.0),
+                    SessionEntry.Hiit("burpees", roundsCompleted = 8),
+                    SessionEntry.Emom("swings", listOf(EmomMinuteLog(10), EmomMinuteLog(10))),
+                ),
+            )
+        }
+
+        // Nothing performed is nothing counted: an abandoned interval block mustn't inflate the line.
+        @Test
+        fun `counts a round-less interval entry as no sets`() {
+            assertEquals(0, setsIn(SessionEntry.Hiit("burpees", roundsCompleted = 0)))
         }
     }
 

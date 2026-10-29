@@ -145,7 +145,7 @@ fun StatsScreen(
             // Nothing below the title until the log is read, so the sheet never says "train something
             // twice" before it has looked.
             if (log != null) {
-                val sessions = log.sessions
+                val sessions = log.logged
                 val stats =
                     remember(sessions, now, zone, firstWeekday) { Attendance(sessions, now, zone, firstWeekday) }
                 val progress =

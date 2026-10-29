@@ -6,6 +6,7 @@ import android.view.MotionEvent
 import android.view.View
 import androidx.activity.ComponentActivity
 import androidx.compose.material3.Text
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.AbstractComposeView
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -25,8 +26,16 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
+import com.casco.kettle.domain.Library
+import com.casco.kettle.domain.Preferences
+import com.casco.kettle.domain.SessionLog
+import com.casco.kettle.shell.files.LatestFiles
+import com.casco.kettle.shell.files.LocalLatestFiles
+import com.casco.kettle.shell.files.StoredFiles
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.LightColors
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -64,7 +73,12 @@ class ShellTest {
                     surface,
                     navigator,
                     routes,
-                    theme = { KettleTheme(darkTheme = false, it) },
+                    // As MainActivity's: a native tab reads the files, and History is one.
+                    theme = {
+                        CompositionLocalProvider(
+                            LocalLatestFiles provides noFiles,
+                        ) { KettleTheme(darkTheme = false, it) }
+                    },
                 ) { content, shell -> ModalSheet(content, shell, surface, navigator, { LightColors }, {}) }
             activity.setContentView(shell)
         }
@@ -82,6 +96,21 @@ class ShellTest {
                 true
             }
         }
+
+    private val noFiles =
+        LatestFiles(
+            object : StoredFiles {
+                override fun sessionLog() = SessionLog.Empty
+
+                override fun library(): Library? = null
+
+                override fun preferences(): Preferences? = null
+
+                override fun deleteSession(id: String) = Unit
+            },
+            CoroutineScope(Dispatchers.Unconfined),
+            io = Dispatchers.Unconfined,
+        )
 
     private val withNativeSupport = shellRoutes + ("/support" to Screen.Native { Text("Native support") })
 
@@ -125,8 +154,15 @@ class ShellTest {
             }
         }
 
-    /** A tab by its name, which is its label while selected and its icon's description otherwise. */
-    private fun tab(label: String) = compose.onNode(hasText(label) or hasContentDescription(label))
+    /**
+     * A tab by its name, which is its label while selected and its icon's description otherwise. By its
+     * role too: a native tab's screen can carry its tab's name as its heading, as History's does.
+     */
+    private fun tab(label: String) =
+        compose.onNode(
+            (hasText(label) or hasContentDescription(label)) and
+                SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Tab),
+        )
 
     @Test
     fun `the bar opens on Workouts, with every tab a selectable Tab`() {

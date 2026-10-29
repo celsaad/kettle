@@ -182,3 +182,65 @@ cases:
       started_at: "2026-08-01T10:00:00.000Z"
       ended_at: "2026-08-01T09:50:00.000Z"
       entries: []
+  # `sessionEntryResult` and `sessionSetCount`: what a row of native History says each entry put up, and
+  # the set count on the row and in the summary line. RN's session editor and Today keep reading both
+  # until M5, so a session shows one count and one result on either side.
+  - name: entry-results-fold-seven-types-onto-six-shapes
+    why: hiit and amrap both reduce to rounds; an emom with no reps entered has no total rather than 0.
+    op: sessionEntryResult
+    session: |
+      version: 1
+      id: s
+      workout: null
+      started_at: "2026-08-01T10:00:00.000Z"
+      ended_at: "2026-08-01T10:30:00.000Z"
+      entries:
+        - exercise: plank
+          type: timed_hold
+          sets: [{ hold_sec: 40, rest_taken_sec: 30 }, { hold_sec: 52.5, rest_taken_sec: 0 }]
+        - exercise: bench
+          type: reps
+          sets: [{ reps: 8, weight: 60, rest_taken_sec: 90 }, { reps: 6, rest_taken_sec: 0 }]
+        - { exercise: burpees, type: hiit, rounds_completed: 5 }
+        - { exercise: grinder, type: amrap, rounds_completed: 7, extra_reps: 3 }
+        - { exercise: grinder, type: amrap, rounds_completed: 4 }
+        - exercise: clean
+          type: emom
+          minutes: [{ reps: 3 }, {}, { reps: 2 }]
+        - exercise: swings
+          type: emom
+          minutes: [{}, {}]
+        - { exercise: row, type: cardio, duration_sec: 600, distance_meters: 2000 }
+        - { exercise: bike, type: cardio, duration_sec: 300 }
+        - { exercise: rest, type: rest, rest_taken_sec: 90 }
+  - name: set-count-is-one-per-interval-performed
+    why: A set per logged set, round or emom minute, cardio as one effort and rest as none.
+    op: sessionSetCount
+    session: |
+      version: 1
+      id: s
+      workout: null
+      started_at: "2026-08-01T10:00:00.000Z"
+      ended_at: "2026-08-01T10:30:00.000Z"
+      entries:
+        - exercise: pullups
+          type: reps
+          sets: [{ reps: 8, rest_taken_sec: 90 }, { reps: 6, rest_taken_sec: 0 }]
+        - { exercise: lsit, type: timed_hold, sets: [{ hold_sec: 20, rest_taken_sec: 0 }] }
+        - { exercise: burpees, type: hiit, rounds_completed: 8 }
+        - { exercise: grinder, type: amrap, rounds_completed: 5, extra_reps: 3 }
+        - exercise: swings
+          type: emom
+          minutes: [{ reps: 10 }, {}]
+        - { exercise: row, type: cardio, duration_sec: 600 }
+        - { exercise: rest, type: rest, rest_taken_sec: 60 }
+  - name: set-count-of-a-round-less-interval-is-zero
+    op: sessionSetCount
+    session: |
+      version: 1
+      id: s
+      workout: null
+      started_at: "2026-08-01T10:00:00.000Z"
+      ended_at: "2026-08-01T10:30:00.000Z"
+      entries:
+        - { exercise: burpees, type: hiit, rounds_completed: 0 }

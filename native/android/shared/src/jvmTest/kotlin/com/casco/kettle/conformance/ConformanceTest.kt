@@ -1,6 +1,7 @@
 package com.casco.kettle.conformance
 
 import com.casco.kettle.domain.EntryBest
+import com.casco.kettle.domain.EntryResult
 import com.casco.kettle.domain.Library
 import com.casco.kettle.domain.ParseResult
 import com.casco.kettle.domain.Preferences
@@ -31,6 +32,8 @@ import com.casco.kettle.domain.resolveWorkoutForWeek
 import com.casco.kettle.domain.serializeLibraryYaml
 import com.casco.kettle.domain.serializeSessionYaml
 import com.casco.kettle.domain.sessionDurationMinutes
+import com.casco.kettle.domain.sessionEntryResult
+import com.casco.kettle.domain.sessionSetCount
 import com.casco.kettle.domain.toDisplayWeight
 import com.casco.kettle.domain.weightStep
 import it.krzeminski.snakeyaml.engine.kmp.api.Load
@@ -217,6 +220,18 @@ class ConformanceTest {
                 sessionDurationMinutes(checkNotNull(session) { "fixture session does not parse" }.value)
             }
 
+            "sessionEntryResult" -> {
+                val session = parseSessionYaml(case.string("session")!!) as? ParseResult.Ok
+                checkNotNull(session) { "fixture session does not parse" }.value.entries.map {
+                    entryResultJson(sessionEntryResult(it))
+                }
+            }
+
+            "sessionSetCount" -> {
+                val session = parseSessionYaml(case.string("session")!!) as? ParseResult.Ok
+                sessionSetCount(checkNotNull(session) { "fixture session does not parse" }.value)
+            }
+
             else -> {
                 error("unknown op $op")
             }
@@ -329,6 +344,46 @@ private fun entryBestJson(best: EntryBest?): Map<String, Any?>? =
     best?.let {
         mapOf("kind" to it.kind.json, "value" to it.value, "reps" to it.reps, "oneRepMaxKg" to it.oneRepMaxKg)
     }
+
+/** As RN's `EntryResult`, with an absent optional left out rather than null. */
+private fun entryResultJson(result: EntryResult): Map<String, Any> {
+    val fields: Map<String, Any?> =
+        when (result) {
+            is EntryResult.Holds -> {
+                mapOf("kind" to "holds", "holdSecs" to result.holdSecs)
+            }
+
+            is EntryResult.Reps -> {
+                mapOf("kind" to "reps", "reps" to result.reps)
+            }
+
+            is EntryResult.Rounds -> {
+                mapOf(
+                    "kind" to "rounds",
+                    "rounds" to result.rounds,
+                    "extraReps" to result.extraReps,
+                )
+            }
+
+            is EntryResult.Intervals -> {
+                mapOf("kind" to "intervals", "intervals" to result.intervals, "totalReps" to result.totalReps)
+            }
+
+            is EntryResult.Cardio -> {
+                mapOf(
+                    "kind" to "cardio",
+                    "durationSec" to result.durationSec,
+                    "distanceMeters" to result.distanceMeters,
+                )
+            }
+
+            is EntryResult.Rest -> {
+                mapOf("kind" to "rest", "restTakenSec" to result.restTakenSec)
+            }
+        }
+    @Suppress("UNCHECKED_CAST")
+    return fields.filterValues { it != null } as Map<String, Any>
+}
 
 private fun supporterJson(state: SupporterState): Map<String, Any?> =
     mapOf(

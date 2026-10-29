@@ -17,13 +17,15 @@ enum class Layer { Surface, NativeTab, NativeSheet }
  * [navigate] steers the surface to a route path (`JsBridge.navigate`). [reread] is told whenever what
  * native read of RN's files may be stale: when RN hands the tabs back, since what it showed above them
  * may have written them, and when a tap brings up a native tab or RN opens a native sheet, since RN
- * also writes while a tab shows (a first launch's seeded library, RN History's delete) and nothing
- * reports that.
+ * also writes while a tab shows (a first launch's seeded library) and nothing reports that.
+ * [onReselect] hears a tap on the tab already showing, which a native tab's screen answers by
+ * scrolling to its top, as RN's bar did before #153.
  */
 class TabNavigator(
     private val routes: Map<String, Screen>,
     private val navigate: (String) -> Unit,
     private val reread: () -> Unit = {},
+    private val onReselect: (Tab) -> Unit = {},
 ) {
     var current by mutableStateOf(Tab.Workouts)
         private set
@@ -87,7 +89,7 @@ class TabNavigator(
         val handingBack = tab != null && !barShown
         barShown = tab != null
         // A native sheet coming up reads too, for a native tab's reason: it can open over an RN tab
-        // that wrote a file without a hand-back, as RN History's delete does before RN Stats opens one.
+        // that wrote a file without a hand-back.
         val sheetComingUp = nativeSheetPath != null && nativeSheetPath != sheetBefore
         if (handingBack || sheetComingUp) reread()
         when {
@@ -115,7 +117,7 @@ class TabNavigator(
 
     /** A tap on the bar. */
     fun select(tab: Tab) {
-        if (tab == current) return
+        if (tab == current) return onReselect(tab)
         current = tab
         if (!tab.isRn()) reread()
         // A native tab steers RN too, to its stub route (#190): a sheet it opens is then pushed over that

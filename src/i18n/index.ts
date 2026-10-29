@@ -6,7 +6,7 @@
 // the worst possible failure shape. The polyfill no-ops where the API already exists.
 import 'intl-pluralrules';
 
-import { getCalendars, getLocales } from 'expo-localization';
+import { getLocales } from 'expo-localization';
 import i18next, { use } from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
@@ -62,20 +62,6 @@ use(initReactI18next).init({
   interpolation: { escapeValue: false },
   returnNull: false,
 });
-
-/**
- * Which weekday the user's calendar starts on, 1 = Sunday through 7 = Saturday per `expo-localization`.
- *
- * This exists because `startOfWeek` hardcoded Monday, which is right for most of Europe and wrong for
- * the US, Canada, Japan and much of Latin America — the "this week" stat silently measured a different
- * window than the user's own calendar. Falls back to Monday when the platform doesn't report one.
- */
-export function firstWeekdayIndex(): number {
-  const reported = getCalendars()[0]?.firstWeekday;
-  // expo-localization uses 1 = Sunday; JS Date.getDay() uses 0 = Sunday. Convert here so callers work
-  // in getDay()'s terms and never have to remember which convention they're holding.
-  return typeof reported === 'number' ? (reported - 1 + 7) % 7 : 1;
-}
 
 /**
  * The unit system to start from when the user has never chosen one, per `expo-localization`'s

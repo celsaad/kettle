@@ -18,7 +18,45 @@ here, next to what it describes.
 
 ## Unreleased
 
-Nothing since 0.13.0.
+Nothing since 0.13.1.
+
+---
+
+## 0.13.1 — versionCode 19, 29 October 2026
+
+### What changed
+
+- **The status bar is readable in light mode.** Its clock and icons were white on the light
+  background; they now follow Kettle's scheme, Settings → Appearance included when it is set against
+  the phone's, and stay light over a running session (#249).
+- **History's background matches the rest of the app.** It showed the window's neutral gray instead
+  of Kettle's background, most visibly in dark mode and behind the status bar (#247).
+
+### Play release notes
+
+Counted at 105 (en-US) and 100 (pt-BR), against a limit of 500. Re-count programmatically
+if you edit them rather than trusting these numbers — over-limit copy is a rejected upload, not a
+truncated one.
+
+Deliberately general: both changes are visual fixes, and naming them would read as more than they
+are. Two blocks, as in 0.8.0 onwards: the Play listing does not carry ja-JP.
+
+```
+<en-US>
+What's new
+
+Squashed a few bugs and polished some rough edges.
+
+Report anything that hangs or loses data.
+</en-US>
+<pt-BR>
+Novidades
+
+Corrigimos alguns bugs e aparamos algumas arestas.
+
+Relate travamentos ou perda de dados.
+</pt-BR>
+```
 
 ---
 

@@ -46,6 +46,16 @@ object JsBridge {
     }
 
     /**
+     * Asks RN to share session [id]'s file, or the whole log as one archive when [id] is null: native
+     * History's Export and Export all. RN keeps export until M5, when export and share move native with
+     * Settings, which shares the same files; until then one implementation serves both screens.
+     */
+    fun export(id: String?) {
+        // What src/state/export-requested.ts listens for. The two share no code, so change both.
+        channel.send(if (id == null) mapOf("type" to "exportHistory") else mapOf("type" to "exportSession", "id" to id))
+    }
+
+    /**
      * Back, as hardware back reaches RN: the sheet's ×, grabber and predictive back send it, so RN stays
      * the router. What `setUpNativeBackHandling`'s callback does with native back off, which it is.
      */

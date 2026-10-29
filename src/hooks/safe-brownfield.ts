@@ -1,10 +1,10 @@
 /**
  * The RN app's half of its conversation with the native shell that hosts it
- * (docs/native-migration-plan.md): the "ready" handshake from M2, and from M3 the navigate messages
- * native steers the surface with and the filesChanged ones that make a store re-read its file. The
- * shell loses anything it sends before JS listens — the native module only starts forwarding once a
- * listener exists — so it holds its messages until "ready", and "ready" is only true once the
- * listener is in place.
+ * (docs/native-migration-plan.md): the "ready" handshake from M2, from M3 the navigate messages
+ * native steers the surface with and the filesChanged ones that make a store re-read its file, and
+ * from M4 native History's requests to export. The shell loses anything it sends before JS listens —
+ * the native module only starts forwarding once a listener exists — so it holds its messages until
+ * "ready", and "ready" is only true once the listener is in place.
  *
  * expo-brownfield throws on import wherever its native module isn't built in (Expo Go, a dev client
  * from before M2), so it's required lazily and a failure degrades to doing nothing: the app then runs
@@ -12,6 +12,7 @@
  */
 import { router, type Href } from 'expo-router';
 
+import { onExportRequested } from '@/state/export-requested';
 import { onFilesChanged } from '@/state/files-changed';
 
 type BrownfieldModule = typeof import('expo-brownfield');
@@ -45,6 +46,11 @@ function onShellMessage(message: Record<string, unknown>): void {
   // The shell's JsBridge.filesChanged. The two share no code, so change both.
   if (message.type === 'filesChanged') {
     void onFilesChanged(message.kind);
+    return;
+  }
+  // The shell's JsBridge.export: native History's Export and Export all, which RN shares until M5.
+  if (message.type === 'exportSession' || message.type === 'exportHistory') {
+    void onExportRequested(message);
     return;
   }
   // The shell's JsBridge.open, with its Stacking as the type. The two share no code, so change both.

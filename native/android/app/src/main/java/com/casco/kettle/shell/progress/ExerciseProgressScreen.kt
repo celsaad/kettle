@@ -101,7 +101,7 @@ fun ExerciseProgressScreen(
                 }
 
                 else -> {
-                    val view = exerciseProgress(log.sessions, exercises, TREND_WEEKS, now, zone)
+                    val view = exerciseProgress(log.logged, exercises, TREND_WEEKS, now, zone)
                     (view.movers + view.steady)
                         .firstOrNull { it.exerciseId == exerciseId }
                         ?.let(RowLookup::Found) ?: RowLookup.NoRow

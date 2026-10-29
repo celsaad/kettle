@@ -9,24 +9,26 @@ import kotlinx.datetime.minus
 import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
 
-// `src/state/selectors/history-stats.ts`, which holds the reasoning for each rule. Days are calendar
+// Ported from `src/state/selectors/history-stats.ts`, deleted with RN History (#202), its last reader:
+// each rule's reasoning is kept beside it here in short, and in full in that file's git history. Days are calendar
 // days in the reader's zone, as RN's `toDateString` and `setDate` count them: a [LocalDate] has no
 // hours, so a week across a DST change can't come out an hour short the way millisecond steps would.
 // `now`, the zone and the first weekday are parameters, where RN reads the clock and the device.
 
 /**
- * A count of sessions and their time, as one "1h 30m" reading: [hours] and [minutes] are both whole.
- * RN's carries `sets` too, which Stats never reads; it arrives with History's port (#202).
+ * A count of sessions, their time as one "1h 30m" reading ([hours] and [minutes] are both whole), and
+ * the [sets] they add up to, by [sessionSetCount].
  */
 data class HistoryStats(
     val sessions: Int,
     val hours: Int,
     val minutes: Int,
+    val sets: Int,
 )
 
 fun historyStats(sessions: List<Session>): HistoryStats {
     val (hours, minutes) = hoursMinutes(sessions.sumOf(::sessionDurationMinutes))
-    return HistoryStats(sessions.size, hours, minutes)
+    return HistoryStats(sessions.size, hours, minutes, sessions.sumOf(::sessionSetCount))
 }
 
 /** A length of time as one "1h 30m" reading: whole hours, and the minutes left over. */

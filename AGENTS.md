@@ -97,7 +97,7 @@ mistake here that cannot be fixed for anyone who has already installed it.
   are one English structure plus a per-language string table (`library-translation.ts`). See the
   decision log for the four rules a pack has to respect; the prefixed-id one is the load-bearing one.
 - `src/state/` — zustand stores (`library-store`, `session-history-store`, `preferences-store`,
-  `tip-store`) and `selectors/`, derived/display logic split per view (`records`, `history-stats`,
+  `tip-store`) and `selectors/`, derived/display logic split per view (`records`, `logged-sessions`,
   `next-up`, `workout-shape`, `session-summary`, …).
 - `src/hooks/use-session-runner.ts` — the wall-clock session engine. The product plan calls timer
   reliability "the make-or-break issue"; treat this file as high-risk and verify changes by running a

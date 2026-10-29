@@ -1,11 +1,11 @@
 /**
- * Reducing one logged session to the numbers and names every downstream reader shares: how many sets
- * it was worth, how long it ran, what to call it, and what each entry actually put up. The stat
- * selectors and the list views both build on these, which is why they live apart from both — the same
- * count feeding History's tiles and Today's must have exactly one definition.
+ * Reducing one logged session to the numbers every downstream reader shares: how many sets it was
+ * worth, how long it ran, and what each entry actually put up. RN's readers and native History's
+ * Kotlin ports of these are held together by `conformance/records.yaml`, since the same count on two
+ * screens must have exactly one definition.
  */
 import type { EntryResult } from '@/domain/format';
-import type { Library, Session, SessionEntry } from '@/domain/types';
+import type { Session, SessionEntry } from '@/domain/types';
 
 /**
  * How many sets one logged entry is worth. Interval work has no `sets` array, and counting each such
@@ -42,16 +42,6 @@ export function sessionDurationMinutes(session: Session): number {
   if (!session.endedAt) return 0;
   const ms = new Date(session.endedAt).getTime() - new Date(session.startedAt).getTime();
   return Math.max(0, Math.round(ms / 60000));
-}
-
-/**
- * The workout behind a session, or `null` when it was started ad-hoc — the stand-in label for that
- * case is `formatSessionName`'s to translate, not this layer's to assemble. Falls back to the raw id
- * for a workout that has since been deleted from the library, which is user data either way.
- */
-export function workoutNameFor(session: Session, library: Library): string | null {
-  if (!session.workout) return null;
-  return library.workouts.find((workout) => workout.id === session.workout)?.name ?? session.workout;
 }
 
 /**

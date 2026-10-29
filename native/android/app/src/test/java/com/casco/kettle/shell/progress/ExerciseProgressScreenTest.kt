@@ -151,6 +151,8 @@ class ExerciseProgressScreenTest {
         override fun library() = Library(1, listOf(rdl), emptyList(), emptyList())
 
         override fun preferences() = Preferences(units, ThemePreference.SYSTEM, false, true, null)
+
+        override fun deleteSession(id: String) = error("this screen deletes nothing")
     }
 }
 

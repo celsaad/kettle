@@ -9,7 +9,7 @@ import { parseSupporterState } from '@/domain/tip';
 import type { Library, WorkoutBlock } from '@/domain/types';
 import { fromDisplayWeight, toDisplayWeight, weightStep, type UnitSystem } from '@/domain/units';
 import { entryBest, recordKey, type RecordKind } from '@/state/selectors/records';
-import { sessionDurationMinutes } from '@/state/selectors/session-summary';
+import { sessionDurationMinutes, sessionEntryResult, sessionSetCount } from '@/state/selectors/session-summary';
 import {
   diffBlockOverride,
   diffExerciseOverride,
@@ -143,6 +143,16 @@ const runners: Record<string, (testCase: Case) => unknown> = {
         const result = parseSessionYaml(testCase.session as string);
         if (!result.ok) throw new Error(`fixture session does not parse: ${JSON.stringify(result.error)}`);
         return sessionDurationMinutes(result.data);
+      }
+      case 'sessionEntryResult': {
+        const result = parseSessionYaml(testCase.session as string);
+        if (!result.ok) throw new Error(`fixture session does not parse: ${JSON.stringify(result.error)}`);
+        return plain(result.data.entries.map((entry) => sessionEntryResult(entry)));
+      }
+      case 'sessionSetCount': {
+        const result = parseSessionYaml(testCase.session as string);
+        if (!result.ok) throw new Error(`fixture session does not parse: ${JSON.stringify(result.error)}`);
+        return sessionSetCount(result.data);
       }
       default:
         throw new Error(`unknown op ${String(testCase.op)}`);

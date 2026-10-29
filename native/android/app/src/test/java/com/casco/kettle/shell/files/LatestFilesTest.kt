@@ -8,11 +8,16 @@ import com.casco.kettle.shell.nav.TabNavigator
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertThrows
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import java.io.IOException
 import java.util.concurrent.Executor
 
 /** RN writes the log and the library until M5, so native reads them again whenever RN hands back the tabs. */
@@ -116,6 +121,46 @@ class LatestFilesTest {
         assertEquals(SessionLog.Empty, files.sessionLog)
     }
 
+    /** History's Delete (#202): native's one write to the log in M4, and the list that shows it. */
+    @Test
+    fun `deleting a session removes its file and drops it from the log`() {
+        writeSession("kept")
+        writeSession("deleted")
+        files.reread()
+
+        runBlocking { files.deleteSession("deleted") }
+
+        assertEquals(listOf("kept"), ids())
+        assertFalse(folder.root.resolve("exercise-tracker/sessions/deleted.yaml").exists())
+    }
+
+    // As RN's: a file already gone is what the caller wanted, so it's no failure.
+    @Test
+    fun `deleting a session that is already gone is no failure`() {
+        files.reread()
+
+        runBlocking { files.deleteSession("never-written") }
+
+        assertEquals(emptyList<String>(), ids())
+    }
+
+    @Test
+    fun `a delete the disk refuses throws, and keeps the session`() {
+        writeSession("stuck")
+        // A directory where the file is: File.delete() refuses a non-empty one, as it would a locked file.
+        val sessions = folder.root.resolve("exercise-tracker/sessions")
+        sessions.resolve("stuck.yaml").delete()
+        sessions
+            .resolve("stuck.yaml")
+            .apply { mkdirs() }
+            .resolve("inside")
+            .writeText("")
+        files.reread()
+
+        assertThrows(IOException::class.java) { runBlocking { files.deleteSession("stuck") } }
+        assertTrue(sessions.resolve("stuck.yaml").exists())
+    }
+
     @Test
     fun `a read that finishes after a newer one is dropped`() {
         val main = Tasks()
@@ -148,6 +193,8 @@ class LatestFilesTest {
         override fun library(): Library? = null
 
         override fun preferences(): Preferences? = null
+
+        override fun deleteSession(id: String) = Unit
     }
 
     /** A dispatcher that runs nothing until told to, so a test chooses the order reads finish in. */

@@ -66,6 +66,12 @@ jest.mock('expo-router', () => ({
 const mockOnFilesChanged = jest.fn();
 jest.mock('@/state/files-changed', () => ({ onFilesChanged: (kind: unknown) => mockOnFilesChanged(kind) }));
 
+// What an export shares has its own suite (state/__tests__/export-requested.test.ts).
+const mockOnExportRequested = jest.fn();
+jest.mock('@/state/export-requested', () => ({
+  onExportRequested: (message: unknown) => mockOnExportRequested(message),
+}));
+
 /** Lets the dismissal commit and anything waiting on it run. */
 const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -157,6 +163,17 @@ it('hands a filesChanged message to the store that reads that file', () => {
   fromShell({ type: 'filesChanged', kind: 'library' });
 
   expect(mockOnFilesChanged).toHaveBeenCalledWith('library');
+  expect(mockNavigate).not.toHaveBeenCalled();
+});
+
+// Native History's Export and Export all: RN keeps export until M5, and shares for the shell.
+it('hands an export message to the handler that shares it, and moves nothing', () => {
+  announceHostReady();
+
+  fromShell({ type: 'exportSession', id: 'legs-1' });
+  fromShell({ type: 'exportHistory' });
+
+  expect(mockOnExportRequested.mock.calls).toEqual([[{ type: 'exportSession', id: 'legs-1' }], [{ type: 'exportHistory' }]]);
   expect(mockNavigate).not.toHaveBeenCalled();
 });
 

@@ -83,6 +83,8 @@
     "searchPlaceholder": "Search workouts",
     "mixed": "mixed",
     "edit": "Edit",
+    "showExercises": "Show exercises",
+    "hideExercises": "Hide exercises",
     "deleteConfirmTitle": "Delete session?",
     "deleteConfirmBody": "\"{{name}}\" on {{day}} {{month}} will be permanently removed.",
     "problemsTitle_one": "{{count}} session file couldn't be read or written",

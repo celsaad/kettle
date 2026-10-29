@@ -255,4 +255,18 @@ class TabNavigatorTest {
 
         assertEquals(emptyList<String>(), sent)
     }
+
+    /** #153 dropped re-tap-to-top; each tab's port restores it for its own screen, from this. */
+    @Test
+    fun `a tap on the tab already showing is told to that tab, and only a tap on it`() {
+        val heard = mutableListOf<Tab>()
+        val navigator = TabNavigator(rnRoutes, sent::add, onReselect = heard::add)
+
+        navigator.select(Tab.History)
+        navigator.select(Tab.History)
+        navigator.onRoute("/history")
+        navigator.select(Tab.Library)
+
+        assertEquals(listOf(Tab.History), heard)
+    }
 }

@@ -17,6 +17,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.io.IOException
 
 /** The files native screens read and RN writes, as a boundary a screen's test can fake. */
 interface StoredFiles {
@@ -25,6 +26,12 @@ interface StoredFiles {
     fun library(): Library?
 
     fun preferences(): Preferences?
+
+    /**
+     * Deletes session [id]'s file: native's one write to the log in M4 (#187), History's Delete. A file
+     * already gone is no failure, as in RN; one the disk won't remove throws [IOException].
+     */
+    fun deleteSession(id: String)
 }
 
 /**
@@ -50,6 +57,13 @@ class DiskFiles(
     override fun library() = readLibrary(paths.library)
 
     override fun preferences() = readPreferences(paths.preferences)
+
+    override fun deleteSession(id: String) {
+        // Named as `sessionFile` in src/storage/paths.ts names it. The two share no code, so change both.
+        val file = paths.sessions.resolve("$id.yaml")
+        // File.delete() says only no; the name is what the reader can act on.
+        if (file.exists() && !file.delete()) throw IOException(file.name)
+    }
 }
 
 /**
@@ -86,6 +100,15 @@ class LatestFiles(
         private set
 
     private var reading: Job? = null
+
+    /**
+     * Deletes session [id] and reads the log again, so the row goes as the file does. Throws
+     * [IOException] when the disk refuses, and the log is left as it was.
+     */
+    suspend fun deleteSession(id: String) {
+        withContext(io) { files.deleteSession(id) }
+        reread()
+    }
 
     /** Reads all three files again. A read still under way is dropped, so an older one can't land last. */
     fun reread() {

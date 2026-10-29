@@ -4,6 +4,7 @@ import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import com.casco.kettle.shell.R
+import com.casco.kettle.shell.history.HistoryRoute
 import com.casco.kettle.shell.programguide.ProgramGuideRoute
 import com.casco.kettle.shell.progress.EXERCISE_PROGRESS_PATH
 import com.casco.kettle.shell.progress.ExerciseProgressRoute
@@ -44,7 +45,7 @@ sealed interface Screen {
 
 /**
  * The route registrations, by the path RN knows the route by. Anything not listed renders RN. Moving a
- * tab to native is this one line, `"/history" to Screen.Native { HistoryScreen() }`, plus an empty stub
+ * tab to native is one line, as History's below, plus an empty stub
  * route RN keeps at the same path (#190): RN stays the router, so its stack, back and route reports are
  * unchanged, and native draws the screen whenever RN reports that path: a tab's in `Destinations`, and
  * a modal route's in the sheet (`NativeSheet`, #197), with the same stub behind it.
@@ -55,6 +56,7 @@ val shellRoutes: Map<String, Screen> =
         "/program-guide" to Screen.Native { ProgramGuideRoute() },
         EXERCISE_PROGRESS_PATH to Screen.Native { params -> ExerciseProgressRoute(params) },
         "/analytics" to Screen.Native { StatsRoute() },
+        Tab.History.path to Screen.Native { HistoryRoute() },
     )
 
 /** How [path] renders. */

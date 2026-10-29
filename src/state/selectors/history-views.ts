@@ -1,14 +1,7 @@
-import { formatEntryResult, formatSessionDuration, formatSessionName, formatSetCount } from '@/domain/format';
-import type { Library, Session } from '@/domain/types';
-import { formatMonthBadge, formatMonthDay } from '@/i18n/format';
-import { exerciseName } from '@/state/selectors/exercise-lookup';
-import {
-  entryVolume,
-  sessionDurationMinutes,
-  sessionEntryResult,
-  sessionSetCount,
-  workoutNameFor,
-} from '@/state/selectors/session-summary';
+import { formatEntryResult } from '@/domain/format';
+import type { Session } from '@/domain/types';
+import { formatMonthDay } from '@/i18n/format';
+import { entryVolume, sessionEntryResult } from '@/state/selectors/session-summary';
 
 export type ExerciseHistoryEntry = { sessionId: string; dateLabel: string; summary: string; volume: number };
 
@@ -34,49 +27,4 @@ export function exerciseHistory(sessions: Session[], exerciseId: string, limit =
     }
   }
   return results;
-}
-
-export type HistorySessionEntryView = { exerciseName: string; summary: string };
-
-export type HistorySessionView = {
-  id: string;
-  day: number;
-  month: string;
-  workoutName: string;
-  durationLabel: string;
-  setsLabel: string;
-  mixed: boolean;
-  /**
-   * Whether the card offers its edit affordance. False while a session is still running: the runner
-   * owns that file and writes through its own copy, so an edit from History would be overwritten by
-   * the next set. `session-history-store`'s `editEntry` refuses the same case — this only keeps the
-   * screen from offering something that would be declined.
-   */
-  editable: boolean;
-  entries: HistorySessionEntryView[];
-};
-
-export function historySessionsView(sessions: Session[], library: Library): HistorySessionView[] {
-  return sessions.map((session) => {
-    const loggedTypes = new Set(session.entries.filter((entry) => entry.type !== 'rest').map((entry) => entry.type));
-    const entries: HistorySessionEntryView[] = session.entries
-      .filter((entry) => entry.type !== 'rest')
-      .map((entry) => ({
-        exerciseName: exerciseName(library.exercises, entry.exercise),
-        summary: formatEntryResult(sessionEntryResult(entry)),
-      }));
-
-    const startedAt = new Date(session.startedAt);
-    return {
-      id: session.id,
-      day: startedAt.getDate(),
-      month: formatMonthBadge(startedAt),
-      workoutName: formatSessionName(workoutNameFor(session, library)),
-      durationLabel: formatSessionDuration(sessionDurationMinutes(session)),
-      setsLabel: formatSetCount(sessionSetCount(session)),
-      mixed: loggedTypes.size > 1,
-      editable: session.endedAt !== null,
-      entries,
-    };
-  });
 }

@@ -324,6 +324,11 @@ its own, in the next release after it lands.
   only writer, its format is frozen until M5, and `filesChanged` gains a `supporter` kind, deleted with
   RN Settings.
 
+**History's Export stays RN's until M5** (#202). Export and share move native with Settings, which
+shares the same files, so native History asks instead: `JsBridge.export` sends `exportSession` or
+`exportHistory`, and RN's `state/export-requested.ts` shares with the sheet RN History used. Both
+messages, and that file, go when export does.
+
 **Support is the tip jar**, so it also needs billing. Its native port moves the tip jar to the Play
 Billing Library in M4, a step pulled forward from M7, and keeps `safe-iap.ts`'s rule: if billing is
 unavailable, the screen still works without it. The alternative, keeping Support in RN until M7, was

@@ -10,6 +10,20 @@ class TabNavigatorTest {
     private val sent = mutableListOf<String>()
     private val navigator = TabNavigator(rnRoutes, sent::add)
 
+    /** The runner is dark in either scheme, so the system bars' icons go light over it (#248). */
+    @Test
+    fun `the runner shows while RN reports it, and not once RN is back on a tab`() {
+        assertEquals(false, navigator.runnerShown)
+
+        navigator.onRoute("/session")
+
+        assertEquals(true, navigator.runnerShown)
+
+        navigator.onRoute("/history")
+
+        assertEquals(false, navigator.runnerShown)
+    }
+
     @Test
     fun `a tap on an RN tab selects it and steers the surface there`() {
         navigator.select(Tab.History)

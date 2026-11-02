@@ -5,6 +5,8 @@ import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.history.HistoryRoute
+import com.casco.kettle.shell.programdetail.PROGRAM_DETAIL_PATH
+import com.casco.kettle.shell.programdetail.ProgramDetailRoute
 import com.casco.kettle.shell.programguide.ProgramGuideRoute
 import com.casco.kettle.shell.programs.ProgramsRoute
 import com.casco.kettle.shell.progress.EXERCISE_PROGRESS_PATH
@@ -38,7 +40,7 @@ enum class Tab(
 sealed interface Screen {
     data object Rn : Screen
 
-    /** [content] is given the params RN reported the route with, `id` or `exerciseId`. */
+    /** [content] is given the params RN reported the route with, `id`, `exerciseId` or `programId`. */
     class Native(
         val content: @Composable (params: Map<String, String>) -> Unit,
     ) : Screen
@@ -59,6 +61,7 @@ private val readerRoutes: Map<String, Screen> =
         "/analytics" to Screen.Native { StatsRoute() },
         Tab.History.path to Screen.Native { HistoryRoute() },
         Tab.Programs.path to Screen.Native { ProgramsRoute() },
+        PROGRAM_DETAIL_PATH to Screen.Native { params -> ProgramDetailRoute(params) },
     )
 
 /**

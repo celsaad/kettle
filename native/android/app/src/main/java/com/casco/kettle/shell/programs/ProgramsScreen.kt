@@ -54,6 +54,8 @@ import com.casco.kettle.shell.list.SearchBar
 import com.casco.kettle.shell.nav.LocalTabReselects
 import com.casco.kettle.shell.nav.ScrollsToTopOnReselect
 import com.casco.kettle.shell.nav.Tab
+import com.casco.kettle.shell.programdetail.PROGRAM_DETAIL_PATH
+import com.casco.kettle.shell.programdetail.PROGRAM_ID_PARAM
 import com.casco.kettle.shell.rn.JsBridge
 import com.casco.kettle.shell.rn.Stacking
 import com.casco.kettle.shell.theme.KettleTheme
@@ -122,7 +124,7 @@ fun ProgramsScreen(
             }
             itemsIndexed(matching, key = { _, program -> program.id }) { index, program ->
                 if (index > 0) ListRowSeparator()
-                ProgramRow(program) { open(Stacking.Push, "/program-detail", mapOf("programId" to program.id)) }
+                ProgramRow(program) { open(Stacking.Push, PROGRAM_DETAIL_PATH, mapOf(PROGRAM_ID_PARAM to program.id)) }
             }
             // Two empty states, told apart: the first-run card invites you to go read the YAML guide,
             // which is a strange answer to a mistyped program name. Neither before there is a library,

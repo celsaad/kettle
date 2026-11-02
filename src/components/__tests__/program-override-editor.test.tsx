@@ -1,6 +1,9 @@
 import { fireEvent, screen } from '@testing-library/react-native';
+// Named import rather than the default: `i18next.changeLanguage(...)` trips the same lint rule the
+// other screen tests note.
+import { changeLanguage } from 'i18next';
 
-import { ProgramOverrideEditor } from '@/components/program-override-editor';
+import { overrideLines, ProgramOverrideEditor } from '@/components/program-override-editor';
 import type { ProgramOverride } from '@/domain/types';
 import { aLibrary, anExercise, aWorkout } from '@/test-support/library';
 import { renderScreen } from '@/test-support/render';
@@ -505,5 +508,52 @@ describe('the list changing while the panel is open', () => {
     await fireEvent.press(screen.getByText('Save override'));
 
     expect(onChange).toHaveBeenCalledWith([two[0], { kind: 'exercise', exerciseId: 'dips', config: { sets: 6 } }]);
+  });
+});
+
+/**
+ * The rows' text, which Program detail drew too until it went native (#233); the editor is its last
+ * caller in RN. Kotlin's `OverrideNotesTest` and `ProgramDetailScreenTest` hold the same cases.
+ */
+describe('overrideLines', () => {
+  // `unknownKey` is a per-key condition: reported per override, it said a change wasn't happening
+  // while it happened.
+  it('marks only the key that does nothing', () => {
+    const lines = overrideLines(
+      { kind: 'block', blockId: 'finisher', config: { rounds: 2, exercisez: 2 } },
+      library,
+      workout,
+    );
+
+    expect(lines).toEqual([
+      'Circuit (finisher): rounds → 2',
+      'Circuit (finisher): exercisez → 2 · not applied — there is no such setting to change',
+    ]);
+  });
+
+  // Resolved against the whole library, an exercise override naming something the week doesn't run
+  // merged cleanly, changed nothing, and rendered as applied.
+  it('marks an exercise override the week does not run as not applied', () => {
+    const pullUpsOnly = aWorkout({ id: 'w', blocks: [{ kind: 'exercise', exerciseId: 'pull-ups' }] });
+
+    expect(overrideLines({ kind: 'exercise', exerciseId: 'dips', config: { sets: 5 } }, library, pullUpsOnly)).toEqual([
+      'dips: sets → 5',
+      'not applied — nothing in this week matches',
+    ]);
+  });
+
+  it('still names an exercise the week does run', () => {
+    expect(overrideLines({ kind: 'exercise', exerciseId: 'pull-ups', config: { sets: 5 } }, library, workout)).toEqual([
+      'Pull-ups: sets → 5',
+    ]);
+  });
+
+  // In pt: an English assertion cannot tell `t('overrideEditor.circuitTitle')` from a literal 'Circuit'.
+  it('translates the circuit label', async () => {
+    await changeLanguage('pt');
+
+    expect(overrideLines({ kind: 'block', blockId: 'finisher', config: { rounds: 2 } }, library, workout)).toEqual([
+      'Circuito (finisher): rounds → 2',
+    ]);
   });
 });

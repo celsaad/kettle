@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 96" fill="none">
+  <g stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M8,84 H112"/>
+    <!-- No arm along the floor: it ran parallel to the torso a few pixels below it and closed a
+         long thin triangle, which at this size is a smudge rather than an arm. -->
+    <circle cx="20" cy="74" r="7.5"/>
+    <path d="M28,78 L62,60"/>
+    <path d="M62,60 L88,58"/>
+    <path d="M88,58 L90,82"/>
+    <path d="M84,82 H96"/>
+  </g>
+</svg>

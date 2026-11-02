@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 96" fill="none">
+  <g stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M8,84 H112"/>
+    <circle cx="60" cy="34" r="7.5"/>
+    <path d="M60,42 L60,60"/>
+    <path d="M60,60 L52,82"/>
+    <path d="M60,60 L68,82"/>
+    <path d="M46,82 H56"/>
+    <path d="M64,82 H74"/>
+    <path d="M57,45 L52,24"/>
+    <path d="M63,45 L68,24"/>
+    <!-- Barbell -->
+    <g transform="translate(60 19) scale(0.9)">
+      <path d="M-30,0 H30"/>
+      <path d="M-24,-8 V8"/>
+      <path d="M-29,-4.5 V4.5"/>
+      <path d="M24,-8 V8"/>
+      <path d="M29,-4.5 V4.5"/>
+    </g>
+  </g>
+</svg>

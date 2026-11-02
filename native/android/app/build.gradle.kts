@@ -222,6 +222,43 @@ val generateTheme by tasks.registering(GenerateTheme::class) {
     argumentProviders.add { listOf(theme.get().asFile.path, output.get().asFile.path) }
 }
 
+/**
+ * The `:art` generator, the same way again: each drawing in `src/content/art/` becomes a VectorDrawable,
+ * and `art.json` an id → `R.drawable` lookup. It fails the build on any SVG outside the subset it
+ * accepts, and on a map and directory that disagree.
+ */
+abstract class GenerateArt : JavaExec() {
+    @get:InputFile
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val map: RegularFileProperty
+
+    @get:InputDirectory
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val drawings: DirectoryProperty
+
+    @get:OutputDirectory
+    abstract val res: DirectoryProperty
+
+    /** Beside `res` in one task, so the lookup can never name a drawable this build didn't write. */
+    @get:OutputDirectory
+    abstract val source: DirectoryProperty
+}
+
+val artGenerator: Configuration by configurations.creating {
+    isCanBeConsumed = false
+    attributes { attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.JAVA_RUNTIME)) }
+}
+
+val generateArt by tasks.registering(GenerateArt::class) {
+    classpath = artGenerator
+    mainClass.set("com.casco.kettle.art.MainKt")
+    map.set(contentDir.file("art.json"))
+    drawings.set(contentDir.dir("art"))
+    argumentProviders.add {
+        listOf(map, drawings, res, source).map { it.get().asFile.path }
+    }
+}
+
 androidComponents {
     // The unit tests run on debug alone: release and benchmark would run the same tests on the same
     // resources, and without ui-test-manifest's activity, which only a debug dependency can merge in.
@@ -232,6 +269,8 @@ androidComponents {
     }
     onVariants { variant ->
         variant.sources.res?.addGeneratedSourceDirectory(generateStrings, GenerateStrings::output)
+        variant.sources.res?.addGeneratedSourceDirectory(generateArt, GenerateArt::res)
+        variant.sources.java?.addGeneratedSourceDirectory(generateArt, GenerateArt::source)
         // `java`, not `kotlin`: Kotlin 2.1's Android plugin compiles .kt files in the Java sources but
         // doesn't read AGP's `kotlin` set, which left the generated file out of the build.
         variant.sources.java?.addGeneratedSourceDirectory(generateTheme, GenerateTheme::output)
@@ -284,6 +323,7 @@ dependencies {
     implementation(project(":shared"))
     stringsGenerator(project(":strings"))
     themeGenerator(project(":theme"))
+    artGenerator(project(":art"))
 
     implementation(platform(libs.compose.bom))
     implementation(libs.compose.material3)

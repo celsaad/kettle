@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 96" fill="none">
+  <g stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M8,84 H112"/>
+    <!-- Chair -->
+    <g transform="translate(34 62)">
+      <path d="M0,0 H28"/>
+      <path d="M0,0 V-28"/>
+      <path d="M2,0 V22"/>
+      <path d="M26,0 V22"/>
+    </g>
+    <!-- The torso leans a few degrees forward of the backrest on purpose: drawn parallel, the two
+         lines read as one thick one and the person disappears into the chair. -->
+    <circle cx="56" cy="26" r="7.5"/>
+    <path d="M52,34 L46,58"/>
+    <path d="M46,58 L66,60"/>
+    <path d="M66,60 L66,82"/>
+    <path d="M60,82 H74"/>
+    <!-- The lifted knee is the movement, and the only thing separating this from sitting down. The
+         shin hangs from it: drawn as one straight line up and out, the raised leg was the only limb
+         above the hip and read as an arm pointing. -->
+    <path d="M46,58 L70,48"/>
+    <path d="M70,48 L74,66"/>
+    <!-- Which is also why the arm is here — with nothing else above the hip, the leg had the job
+         of looking like both. -->
+    <path d="M53,40 L62,52"/>
+  </g>
+</svg>

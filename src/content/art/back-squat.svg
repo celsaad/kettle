@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 96" fill="none">
+  <g stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M8,84 H112"/>
+    <circle cx="64" cy="20" r="7.5"/>
+    <path d="M62,28 L52,54"/>
+    <!-- The bar sits behind the neck, just under the head — high enough to be on the shoulders and
+         not in the hands, which is the only thing separating this from a front-loaded squat. -->
+    <!-- Barbell -->
+    <g transform="translate(62 32)">
+      <path d="M-30,0 H30"/>
+      <path d="M-24,-8 V8"/>
+      <path d="M-29,-4.5 V4.5"/>
+      <path d="M24,-8 V8"/>
+      <path d="M29,-4.5 V4.5"/>
+    </g>
+    <path d="M60,34 L76,32"/>
+    <path d="M52,54 L77,58"/>
+    <path d="M77,58 L75,82"/>
+    <path d="M69,82 H83"/>
+  </g>
+</svg>

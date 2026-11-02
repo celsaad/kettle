@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 96" fill="none">
+  <g stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M8,84 H112"/>
+    <path d="M100,10 V84"/>
+    <!-- One unbroken line from heel to shoulder, exactly as the floor push-up draws it — the same
+         straight body, stood up. That parallel is deliberate: it is the same exercise at a
+         different angle, and the pair should look like it. -->
+    <path d="M36,82 L70,34"/>
+    <path d="M30,82 H44"/>
+    <circle cx="78" cy="28" r="7.5"/>
+    <path d="M70,36 L97,44"/>
+  </g>
+</svg>

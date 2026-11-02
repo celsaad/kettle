@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 96" fill="none">
+  <g stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M8,84 H112"/>
+    <circle cx="56" cy="32" r="7.5"/>
+    <path d="M56,40 L56,60"/>
+    <path d="M56,60 L48,82"/>
+    <path d="M56,60 L64,82"/>
+    <path d="M42,82 H54"/>
+    <path d="M60,82 H72"/>
+    <!-- One arm locked out overhead and one hanging: the asymmetry is what says this is a
+         single-side lift, which is what its `notes` promise the reps are counted as. -->
+    <path d="M58,43 L74,27"/>
+    <!-- Kettlebell -->
+    <g transform="translate(80 17) rotate(180) scale(0.85)">
+      <path d="M-5,-7 A6.5,7 0 0 1 5,-7"/>
+      <path d="M-5,-6 C-9,-2 -9,7 -7,9 H7 C9,7 9,-2 5,-6"/>
+    </g>
+    <path d="M54,43 L44,58"/>
+  </g>
+</svg>

@@ -115,7 +115,7 @@ type LastCommit = { resultingIndex: number; memberKey: string; exerciseId: strin
 /**
  * `exerciseId` rides along purely so the preview can show the bundled drawing. It's the step's own
  * id rather than anything derived, which is what keeps the art correct in every language — see the
- * note on `EXERCISE_ART`.
+ * id-keying note in `src/content/art/README.md`.
  */
 export type RestPreview = { label: string; detail: string; exerciseId: string } | null;
 

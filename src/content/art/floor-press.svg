@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 96" fill="none">
+  <g stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M8,84 H112"/>
+    <circle cx="24" cy="74" r="7.5"/>
+    <path d="M33,78 L66,80"/>
+    <path d="M66,80 L84,64"/>
+    <path d="M84,64 L92,82"/>
+    <path d="M86,82 H98"/>
+    <path d="M34,77 L38,52"/>
+    <!-- Dumbbell -->
+    <g transform="translate(38 48) scale(0.85)">
+      <path d="M-7,0 H7"/>
+      <path d="M-9,-6 V6"/>
+      <path d="M-12.5,-3.5 V3.5"/>
+      <path d="M9,-6 V6"/>
+      <path d="M12.5,-3.5 V3.5"/>
+    </g>
+  </g>
+</svg>

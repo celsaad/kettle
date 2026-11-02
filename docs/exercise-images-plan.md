@@ -4,8 +4,8 @@
 > drawing per seeded exercise, keyed by id, in the exercise editor and in the runner's next-up card.
 >
 > **Two things went differently from what's written below.** The set is **vector, not raster** — the
-> drawings are hand-authored `react-native-svg` components under `src/components/exercise-art/`, which
-> is the outcome the format spike was hoping for, reached by the "a model can author SVG directly"
+> drawings are hand-authored SVG files under `src/content/art/` (first written as `react-native-svg`
+> components, then moved into data files both UIs read, #228), which is the outcome the format spike was hoping for, reached by the "a model can author SVG directly"
 > route rather than by tracing. So the whole raster half — the alpha step, the `<id>@3x.png` naming,
 > the explicit-`require` constraint — is moot, and the resolution ceiling that constrained the design
 > never applied. And **the runner's next-up card shipped after all**, which this plan deferred: losing

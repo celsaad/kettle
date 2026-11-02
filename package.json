@@ -79,7 +79,7 @@
       "node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|react-native-svg)"
     ],
     "transform": {
-      "\\.ya?ml$": "<rootDir>/jest.yaml-transform.js"
+      "\\.(ya?ml|svg)$": "<rootDir>/jest.text-transform.js"
     },
     "moduleNameMapper": {
       ".css$": "<rootDir>/jest.style-mock.js"

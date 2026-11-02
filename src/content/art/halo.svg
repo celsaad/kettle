@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 96" fill="none">
+  <g stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M8,84 H112"/>
+    <!-- A broken arc over the head with an arrowhead on it, and the bell parked at the open end.
+         The arc is the movement: a bell held beside a head is a rack hold, and only the path says
+         it is travelling around one. Same vocabulary as the AMRAP ring, deliberately. -->
+    <path d="M44,30 A16,16 0 0 1 76,30"/>
+    <path d="M46,21 L44,30 L52,29"/>
+    <!-- Kettlebell -->
+    <g transform="translate(84 30) rotate(180) scale(0.62)">
+      <path d="M-5,-7 A6.5,7 0 0 1 5,-7"/>
+      <path d="M-5,-6 C-9,-2 -9,7 -7,9 H7 C9,7 9,-2 5,-6"/>
+    </g>
+    <circle cx="58" cy="32" r="7.5"/>
+    <path d="M58,40 L58,60"/>
+    <path d="M58,44 L72,38"/>
+    <path d="M58,60 L50,82"/>
+    <path d="M58,60 L66,82"/>
+    <path d="M44,82 H56"/>
+    <path d="M62,82 H74"/>
+  </g>
+</svg>

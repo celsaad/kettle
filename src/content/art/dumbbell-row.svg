@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 96" fill="none">
+  <g stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M8,84 H112"/>
+    <!-- Head pushed forward and the arm moved back off it. Drawn closer together, the head, the
+         raised elbow and the bell all landed in the same square and the figure read as a bicycle. -->
+    <circle cx="22" cy="46" r="7.5"/>
+    <path d="M31,48 L72,54"/>
+    <path d="M40,50 L48,40"/>
+    <path d="M48,40 L46,60"/>
+    <!-- Dumbbell -->
+    <g transform="translate(46 66) scale(0.85)">
+      <path d="M-7,0 H7"/>
+      <path d="M-9,-6 V6"/>
+      <path d="M-12.5,-3.5 V3.5"/>
+      <path d="M9,-6 V6"/>
+      <path d="M12.5,-3.5 V3.5"/>
+    </g>
+    <path d="M72,54 L77,68"/>
+    <path d="M77,68 L73,82"/>
+    <path d="M67,82 H81"/>
+  </g>
+</svg>

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 96" fill="none">
+  <g stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M8,84 H112"/>
+    <circle cx="64" cy="20" r="7.5"/>
+    <path d="M62,28 L52,54"/>
+    <!-- The reaching arm starts well below the collar. Drawn any higher it meets the head at the
+         same point the torso does, and the head then reads as being stuck on the arm. -->
+    <path d="M59,37 L82,41"/>
+    <path d="M52,54 L77,58"/>
+    <path d="M77,58 L75,82"/>
+    <path d="M69,82 H83"/>
+  </g>
+</svg>

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 96" fill="none">
+  <g stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M8,84 H112"/>
+    <path d="M24,20 V84"/>
+    <circle cx="78" cy="22" r="7.5"/>
+    <path d="M78,30 L78,54"/>
+    <!-- Heels up, so each foot is a long diagonal meeting the floor at the toe. Drawn as flat ticks
+         they were marks on the ground and the figure read as standing still — the raised heel is
+         the only thing this drawing has to say. -->
+    <path d="M75,54 L72,74"/>
+    <path d="M72,74 L82,84"/>
+    <path d="M81,54 L80,74"/>
+    <path d="M80,74 L90,84"/>
+    <!-- The reaching arm drops as it goes, clearing the head. Run level it passed through the
+         circle and the head read as a bead threaded on a rail. -->
+    <path d="M74,36 L27,52"/>
+  </g>
+</svg>

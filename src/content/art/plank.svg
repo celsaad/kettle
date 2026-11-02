@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 96" fill="none">
+  <g stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M8,84 H112"/>
+    <path d="M20,76 L86,54"/>
+    <path d="M20,76 L13,81"/>
+    <path d="M86,54 L91,51"/>
+    <circle cx="96" cy="49" r="7.5"/>
+    <!-- Forearm flat on the floor. This is the *only* thing separating a plank from a push-up at a
+         glance, so it's drawn horizontal rather than merely bent. -->
+    <path d="M86,55 L88,81"/>
+    <path d="M88,81 H105"/>
+  </g>
+</svg>

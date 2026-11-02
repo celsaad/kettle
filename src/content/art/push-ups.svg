@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 96" fill="none">
+  <g stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M8,84 H112"/>
+    <!-- One unbroken line from heel to shoulder — the straight body *is* the push-up. -->
+    <path d="M20,77 L86,53"/>
+    <path d="M20,77 L13,82"/>
+    <path d="M86,53 L91,50"/>
+    <circle cx="97" cy="48" r="7.5"/>
+    <path d="M86,54 L88,82"/>
+    <path d="M80,56 L82,82"/>
+  </g>
+</svg>

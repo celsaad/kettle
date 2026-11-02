@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 96" fill="none">
+  <g stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M8,84 H112"/>
+    <circle cx="62" cy="24" r="7.5"/>
+    <path d="M62,32 L62,54"/>
+    <!-- Mid-stride, like the farmer's carry it sits beside: a carry is a walk, and two vertical legs
+         would read as somebody simply standing there holding a bell. -->
+    <path d="M62,54 L51,78"/>
+    <path d="M62,54 L72,72"/>
+    <path d="M72,72 L76,82"/>
+    <path d="M45,82 H55"/>
+    <!-- Racked at the chest and slightly in front of the torso line. Drawn centred on it, the bell
+         and the body shared strokes and the pair went to mud. -->
+    <path d="M60,36 L50,49"/>
+    <!-- Kettlebell -->
+    <g transform="translate(47 43) rotate(180) scale(0.8)">
+      <path d="M-5,-7 A6.5,7 0 0 1 5,-7"/>
+      <path d="M-5,-6 C-9,-2 -9,7 -7,9 H7 C9,7 9,-2 5,-6"/>
+    </g>
+  </g>
+</svg>

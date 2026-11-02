@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 96" fill="none">
+  <g stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <!-- The bar alone, no uprights — the same call the inverted row makes, and for the same reason:
+         posts running down to a ground line close a box around the figure. -->
+    <path d="M24,16 H104"/>
+    <path d="M56,12 V20"/>
+    <path d="M70,12 V20"/>
+    <path d="M56,19 L60,46"/>
+    <path d="M70,19 L66,46"/>
+    <!-- Head forward of the arms rather than between them: drawn between, the two arms cross the
+         circle and the top of the figure becomes a knot. -->
+    <circle cx="46" cy="44" r="7.5"/>
+    <path d="M54,46 L61,47"/>
+    <path d="M62,47 L66,68"/>
+    <path d="M66,68 L52,76"/>
+    <path d="M52,76 L56,86"/>
+  </g>
+</svg>

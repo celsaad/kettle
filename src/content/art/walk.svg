@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 96" fill="none">
+  <g stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M8,84 H112"/>
+    <!-- Mid-stride and upright. No heart and no speed lines — those belong to the cardio drawing,
+         which is about effort; this one is about the movement being a walk. -->
+    <circle cx="58" cy="20" r="7.5"/>
+    <path d="M58,28 L58,54"/>
+    <path d="M57,34 L46,46"/>
+    <path d="M59,34 L70,44"/>
+    <path d="M58,54 L70,70"/>
+    <path d="M70,70 L74,82"/>
+    <path d="M68,82 H80"/>
+    <path d="M58,54 L46,72"/>
+    <path d="M46,72 L42,82"/>
+    <path d="M36,82 H48"/>
+  </g>
+</svg>

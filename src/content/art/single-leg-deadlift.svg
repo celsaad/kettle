@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 96" fill="none">
+  <g stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M8,84 H112"/>
+    <!-- Torso and rear leg on one long line through the hip. That line is the movement — bent
+         anywhere along it, the drawing is a bent-over row with a leg in the air. -->
+    <circle cx="24" cy="42" r="7.5"/>
+    <path d="M33,45 L66,52"/>
+    <path d="M66,52 L96,40"/>
+    <path d="M66,52 L70,82"/>
+    <path d="M64,82 H78"/>
+    <path d="M40,49 L40,62"/>
+    <!-- Kettlebell -->
+    <g transform="translate(40 70) scale(0.85)">
+      <path d="M-5,-7 A6.5,7 0 0 1 5,-7"/>
+      <path d="M-5,-6 C-9,-2 -9,7 -7,9 H7 C9,7 9,-2 5,-6"/>
+    </g>
+  </g>
+</svg>

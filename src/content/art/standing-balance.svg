@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 96" fill="none">
+  <g stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M8,84 H112"/>
+    <circle cx="60" cy="18" r="7.5"/>
+    <path d="M60,26 L60,52"/>
+    <!-- Arms out and one foot clear of the floor. The gap under the raised foot is the whole
+         drawing: a foot touching down at any point is just somebody standing. -->
+    <path d="M58,34 L38,26"/>
+    <path d="M62,34 L82,26"/>
+    <path d="M60,52 L58,82"/>
+    <path d="M52,82 H66"/>
+    <path d="M60,52 L44,64"/>
+    <path d="M44,64 L42,76"/>
+  </g>
+</svg>

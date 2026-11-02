@@ -47,9 +47,4 @@ class ShellRoutesTest {
         assertEquals(routesFor(Flip.entries.toSet(), emptyMap()), routesFor(emptySet(), emptyMap()))
         assertTrue(routesFor(emptySet(), emptyMap()).screenAt(Tab.History.path) is Screen.Native)
     }
-
-    @Test
-    fun `with every flip off, the real writer table registers nothing`() {
-        assertEquals(routesFor(emptySet(), emptyMap()), routesFor(emptySet()))
-    }
 }

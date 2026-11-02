@@ -60,22 +60,22 @@ private val readerRoutes: Map<String, Screen> =
     )
 
 /**
- * M5's ownership flips, one per file (#222), in the order they release. A writer screen lands on master
- * behind its file's flip, which `Flips.kt` turns on in debug and off in release, so `.dev` drives it
- * while Play keeps the RN screen (#223). That gives `.dev` two writers for the file until the flip
- * releases, which is accepted because it never reaches Play. The flip-release PR deletes the entry,
- * moves its routes into [readerRoutes] and deletes the RN writers.
+ * M5's ownership flips, one per data file the app writes (#222), in the order they release. A writer
+ * screen lands on master behind its file's flip, which `Flips.kt` turns on in debug and off in
+ * release, so `.dev` drives it while Play keeps the RN screen (#223). That gives `.dev` two writers for
+ * the file until the flip releases, which is accepted because it never reaches Play. The flip-release
+ * PR deletes the entry, moves its routes into [readerRoutes] and deletes the RN writers.
  */
 enum class Flip { Preferences, Sessions, Library }
 
 /** The writer screens, by the flip that switches them on. Registered the way [readerRoutes] are. */
 private val writerRoutes: Map<Flip, Map<String, Screen>> = emptyMap()
 
-/** The routes with [flipsOn]'s [writers] registered over the read-only ones, the others left to RN. */
+/** The routes with the [writers] of the flips [on] registered over the read-only ones, the rest left to RN. */
 fun routesFor(
-    flipsOn: Set<Flip>,
+    on: Set<Flip>,
     writers: Map<Flip, Map<String, Screen>> = writerRoutes,
-): Map<String, Screen> = writers.filterKeys { it in flipsOn }.values.fold(readerRoutes, Map<String, Screen>::plus)
+): Map<String, Screen> = writers.filterKeys { it in on }.values.fold(readerRoutes, Map<String, Screen>::plus)
 
 /** The routes this build registers. */
 val shellRoutes: Map<String, Screen> = routesFor(flipsOn)

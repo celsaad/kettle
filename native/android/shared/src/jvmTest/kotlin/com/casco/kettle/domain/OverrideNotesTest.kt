@@ -96,6 +96,16 @@ class OverrideNotesTest {
         assertEquals(listOf(OverrideKey("sets", num(-1.0), unknown = false)), note.keys)
     }
 
+    // RN returns before its per-key notes on a refusal: nothing in the patch applies, so singling out
+    // the unknown key would say the rest did.
+    @Test
+    fun `a refused patch marks no key unknown, even one that is`() {
+        val note = overrideNote(exercise("pull-ups", "sets" to num(-1.0), "setz" to num(2.0)), library, workout)
+
+        assertTrue(note.refused)
+        assertEquals(listOf(false, false), note.keys.map { it.unknown })
+    }
+
     @Test
     fun `keeps the patch's own key order`() {
         val note =

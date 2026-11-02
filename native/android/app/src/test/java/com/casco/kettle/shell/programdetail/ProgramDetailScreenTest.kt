@@ -222,6 +222,14 @@ class ProgramDetailScreenTest {
     }
 
     @Test
+    fun `marks a patch the schema refuses as not applied, once, under all its keys`() {
+        showOverride(pullUpsOnly, ProgramOverride.ExerciseOverride("pull-ups", mapOf("sets" to num(-1.0))))
+
+        compose.onNodeWithText("Pull-ups: sets → -1").assertExists()
+        compose.onNodeWithText("não aplicado — este valor não é permitido").assertExists()
+    }
+
+    @Test
     fun `translates the circuit label`() {
         showOverride(circuitWorkout, ProgramOverride.BlockOverride("finisher", mapOf("rounds" to num(2.0))))
 

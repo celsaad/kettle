@@ -39,8 +39,9 @@ data class OverrideKey(
 
 /**
  * One override, for display, as `overrideLines` in RN's `program-override-editor.tsx` renders it.
- * [refused] is a patch the schema refuses merged, so none of it applies. A [OverrideTarget.Missing]
- * target is never refused and has no unknown keys: there was nothing to merge into.
+ * [refused] is a patch the schema refuses merged, so none of it applies and no key is marked unknown.
+ * A [OverrideTarget.Missing] target is never refused and has no unknown keys either: there was nothing
+ * to merge into.
  */
 data class OverrideNote(
     val target: OverrideTarget,
@@ -84,7 +85,10 @@ fun overrideNote(
             ?: (OverrideTarget.Missing(override.targetId) to OverrideReport(refused = false, unknownKeys = emptyList()))
     return OverrideNote(
         target,
-        override.config.map { (key, value) -> OverrideKey(key, value, unknown = key in merged.unknownKeys) },
+        // A refusal drops the whole patch, so no key is singled out: that would say the rest applied.
+        override.config.map { (key, value) ->
+            OverrideKey(key, value, unknown = !merged.refused && key in merged.unknownKeys)
+        },
         merged.refused,
     )
 }

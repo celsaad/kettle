@@ -1,0 +1,272 @@
+# Steady & Strong. Standing and seated work with a chair or a wall for support, and nothing that
+# starts or ends on the floor. That constraint is the whole pack: it is what makes it runnable by
+# someone who would otherwise stop at the first push-up.
+#
+# Weeks are the three-on/four-off shape all three packs use, written days 1 through 7 in order with
+# every rest day longhand, because weeks run in the order they are written. The fourth-set bump of
+# weeks 3 and 4 is repeated in each week, because overrides don't carry forward.
+version: 1
+exercises:
+  - id: ss-rest
+    name: Rest
+    type: rest
+    config:
+      duration_sec: 60
+  - id: ss-sit-to-stand
+    name: Sit to Stand
+    type: reps
+    config:
+      sets: 3
+      target_reps_min: 6
+      target_reps_max: 12
+      rest_sec: 60
+    notes: >-
+      Up from a chair and back down. Hit 12 on every set twice before the
+      program adds a fourth.
+  - id: ss-wall-pushup
+    name: Wall Push-ups
+    type: reps
+    config:
+      sets: 3
+      target_reps_min: 8
+      target_reps_max: 15
+      rest_sec: 45
+    notes: >-
+      Step your feet further from the wall to make it harder once you own 15 on
+      every set.
+  - id: ss-heel-raises
+    name: Heel Raises
+    type: reps
+    config:
+      sets: 3
+      target_reps_min: 10
+      target_reps_max: 20
+      rest_sec: 45
+    notes: >-
+      A chair back or a counter is the support. Take a hand off it before you
+      add reps.
+  - id: ss-seated-march
+    name: Seated March
+    type: reps
+    config:
+      sets: 3
+      target_reps_min: 10
+      target_reps_max: 20
+      rest_sec: 45
+    notes: >-
+      One left and one right is two reps, so the number you log counts both
+      legs.
+  - id: ss-standing-balance
+    name: Standing Balance
+    type: timed_hold
+    config:
+      sets: 3
+      hold_sec_min: 10
+      hold_sec_max: 30
+      rest_sec: 45
+    notes: Held per side. Raise the whole range by 5s once you hit 30s on every set.
+  - id: ss-band-row
+    name: Band Row
+    type: reps
+    config:
+      sets: 3
+      target_reps_min: 8
+      target_reps_max: 12
+      rest_sec: 60
+    notes: >-
+      The band is the load, so a step further back is the smallest jump you have
+      once you hit 12 on every set.
+  - id: ss-hip-hinge
+    name: Hip Hinge
+    type: reps
+    config:
+      sets: 3
+      target_reps_min: 8
+      target_reps_max: 12
+      rest_sec: 60
+    notes: Hands on a chair back. Move them down the chair as the range grows.
+  - id: ss-walk
+    name: Walk
+    type: cardio
+    config:
+      duration_sec: 900
+    notes: >-
+      Fifteen minutes to start. Add a distance to the config if you want that
+      tracked too.
+workouts:
+  - id: ss-strength-a
+    name: Steady · Strength A
+    blocks:
+      - type: exercise
+        exercise: ss-sit-to-stand
+      - type: exercise
+        exercise: ss-rest
+      - type: exercise
+        exercise: ss-wall-pushup
+      - type: exercise
+        exercise: ss-rest
+      - type: exercise
+        exercise: ss-heel-raises
+  - id: ss-strength-b
+    name: Steady · Strength B
+    blocks:
+      - type: exercise
+        exercise: ss-hip-hinge
+      - type: exercise
+        exercise: ss-rest
+      - type: exercise
+        exercise: ss-band-row
+      - type: exercise
+        exercise: ss-rest
+      - type: exercise
+        exercise: ss-seated-march
+  - id: ss-balance-walk
+    name: Steady · Balance & Walk
+    blocks:
+      - type: exercise
+        exercise: ss-standing-balance
+      - type: exercise
+        exercise: ss-rest
+      - type: exercise
+        exercise: ss-walk
+programs:
+  - id: ss-4-weeks
+    name: Steady & Strong · 4 Weeks
+    weeks:
+      - week: 1
+        day: Day 1
+        workout: ss-strength-a
+        notes: >-
+          Baseline week. Log where you actually land in each range — the bottom
+          of it is a real answer.
+      - week: 1
+        day: Day 2
+        rest_day: true
+      - week: 1
+        day: Day 3
+        workout: ss-strength-b
+      - week: 1
+        day: Day 4
+        rest_day: true
+      - week: 1
+        day: Day 5
+        workout: ss-balance-walk
+      - week: 1
+        day: Day 6
+        rest_day: true
+      - week: 1
+        day: Day 7
+        rest_day: true
+      - week: 2
+        day: Day 1
+        workout: ss-strength-a
+        notes: Same three sessions. One more rep than week 1, on every set.
+      - week: 2
+        day: Day 2
+        rest_day: true
+      - week: 2
+        day: Day 3
+        workout: ss-strength-b
+      - week: 2
+        day: Day 4
+        rest_day: true
+      - week: 2
+        day: Day 5
+        workout: ss-balance-walk
+      - week: 2
+        day: Day 6
+        rest_day: true
+      - week: 2
+        day: Day 7
+        rest_day: true
+      - week: 3
+        day: Day 1
+        workout: ss-strength-a
+        notes: >-
+          A fourth set on the strength days. Keep the reps where they were
+          rather than pushing both at once.
+        overrides:
+          - exercise: ss-sit-to-stand
+            config:
+              sets: 4
+          - exercise: ss-wall-pushup
+            config:
+              sets: 4
+          - exercise: ss-heel-raises
+            config:
+              sets: 4
+      - week: 3
+        day: Day 2
+        rest_day: true
+      - week: 3
+        day: Day 3
+        workout: ss-strength-b
+        overrides:
+          - exercise: ss-hip-hinge
+            config:
+              sets: 4
+          - exercise: ss-band-row
+            config:
+              sets: 4
+          - exercise: ss-seated-march
+            config:
+              sets: 4
+      - week: 3
+        day: Day 4
+        rest_day: true
+      - week: 3
+        day: Day 5
+        workout: ss-balance-walk
+      - week: 3
+        day: Day 6
+        rest_day: true
+      - week: 3
+        day: Day 7
+        rest_day: true
+      - week: 4
+        day: Day 1
+        workout: ss-strength-a
+        notes: >-
+          Last week of the block. Now push the reps toward the top of each
+          range.
+        overrides:
+          - exercise: ss-sit-to-stand
+            config:
+              sets: 4
+          - exercise: ss-wall-pushup
+            config:
+              sets: 4
+          - exercise: ss-heel-raises
+            config:
+              sets: 4
+      - week: 4
+        day: Day 2
+        rest_day: true
+      - week: 4
+        day: Day 3
+        workout: ss-strength-b
+        overrides:
+          - exercise: ss-hip-hinge
+            config:
+              sets: 4
+          - exercise: ss-band-row
+            config:
+              sets: 4
+          - exercise: ss-seated-march
+            config:
+              sets: 4
+      - week: 4
+        day: Day 4
+        rest_day: true
+      - week: 4
+        day: Day 5
+        workout: ss-balance-walk
+        notes: >-
+          Completing this loops back to week 1 — run it again with the top of
+          each range as your new floor.
+      - week: 4
+        day: Day 6
+        rest_day: true
+      - week: 4
+        day: Day 7
+        rest_day: true

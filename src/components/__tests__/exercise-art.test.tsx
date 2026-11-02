@@ -23,7 +23,7 @@ import { renderScreen } from '@/test-support/render';
  * import screen offers. Both are ours, both render in the same lists, and an exercise with no drawing
  * beside neighbours that have one is the same defect whichever library it came out of.
  */
-const shippedExercises = [...seedLibrary.exercises, ...contentPacks.flatMap((pack) => pack.library.exercises)];
+const shippedExercises = [...seedLibrary().exercises, ...contentPacks.flatMap((pack) => pack.library.exercises)];
 
 describe('coverage of the shipped content', () => {
   it('draws every shipped exercise, or says out loud that it does not', () => {

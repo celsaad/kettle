@@ -105,7 +105,7 @@ decision assembled across several commits. Open work belongs in the sections at 
 
   - **The seed library's `Day 1`…`Day 7` labels were the workaround, not a convention.** They were
     chosen so the labels would sort into training order, and that constraint was written into
-    `seed-library.ts`, `seed-translations.ts` and this file — three places pinning a *symptom*. The
+    the seed's code, its translation table and this file — three places pinning a *symptom*. The
     labels are now free text; the entries' order is what matters. Don't reintroduce a rule about what
     days may be called.
   - **It was only ever wrong on one of the two screens.** `program-detail.tsx` sorts by week number
@@ -556,9 +556,9 @@ decision assembled across several commits. Open work belongs in the sections at 
   emulator, not by recalling a Hermes changelog.
 - ✅ **The seed library is curated starter content, and three domain rules constrain what it may
   contain.** It ships two programs and four workouts a new user can press start on, rather than the
-  format demo it used to be. The content itself is in `storage/seed-library.ts` and readable there;
-  what isn't visible from that file is the rules any *edit* to it has to respect, all three of which
-  the old seed broke:
+  format demo it used to be. The content itself is `src/content/seed/library.yaml`, whose header
+  comment repeats the three domain rules any *edit* to it has to respect, all three of which the old
+  seed broke:
 
   - **`programs[0]` is the default.** `activeProgram` (`selectors.ts`) falls back to the first library
     program when no session has been run yet, and there is no starter-program picker — so the
@@ -577,7 +577,7 @@ decision assembled across several commits. Open work belongs in the sections at 
   reseed target for a corrupt `exercises.yaml`, so it has to stay small enough to be a reasonable thing
   to reset to.
 
-  **The seed ships per-language, as one English structure plus a string table** (`seed-translations.ts`)
+  **The seed ships per-language, as one English structure plus a string table** (`seed/<lang>.json`)
   — reversing an earlier English-only call, whose reasoning was that a locale-picked seed doubles every
   future content edit. That cost is real and this shape is the answer to it, so the rule an edit has to
   respect is: **structure changes once, and every language owes it a string.** `seed-library.test.ts`
@@ -596,13 +596,13 @@ decision assembled across several commits. Open work belongs in the sections at 
     longer reading.
 - ✅ **New shipped content goes in a bundled pack, not in the seed — the seed cannot reach an install
   that already exists.** `loadLibrary` writes the seed on the one launch that finds no
-  `exercises.yaml`, so everything added to `seed-library.ts` is visible only to people who have not
+  `exercises.yaml`, so everything added to the seed is visible only to people who have not
   installed the app yet. That is the whole argument, and it is structural rather than a preference:
   the population most likely to want more content is precisely the one the seed cannot serve. The
   second argument is the entry above — the seed is also the web build's entire library and the reseed
   target for a corrupt file, so every exercise added to it enlarges what a recovery hands back.
 
-  So `storage/content-packs.ts` holds curated libraries the app ships **without seeding**, listed on
+  So `src/content/packs/` holds curated libraries the app ships **without seeding**, listed on
   the import screen and merged in on a tap. Three today: a low-impact one (chair and wall support,
   nothing on the floor), a barbell one, and a kettlebell one. Four rules any new pack has to respect:
 
@@ -943,10 +943,12 @@ decision assembled across several commits. Open work belongs in the sections at 
   - **Comments stay in the TS wrapper**, because JSON has none. `theme.ts` keeps the contrast notes,
     and `GeneratedThemeTest` recomputes the ratios they record from the generated colors, so the
     numbers can't drift away from the values even though they no longer sit beside them.
-  - **Next instance: the seed library and content packs** (`seed-library.ts`, `content-packs.ts` and
-    their translation tables), which M5 brings to native. They are data written as TS objects. Move
-    them into data files both sides read (library YAML plus translation JSON) rather than porting the
-    objects to Kotlin.
+  - **The seed library and content packs** are the second instance (#224, #230). They live in
+    `src/content/` as library YAML plus a translation JSON per language. RN inlines the YAML as text
+    through `metro.transformer.js` (Metro otherwise treats `.yaml` as an asset), and `:app` packages
+    the directory as APK assets in place. `localizeLibrary` is behaviour, so it was ported to
+    `:shared` and is held by `conformance/localize.yaml`. Unlike `theme.json`, the comments live in
+    the data: YAML has them, so the seed's authoring rules sit beside the content they constrain.
   - Hand-kept lists remain where a data file can't reach, on purpose: `LocalePreviews` names each
     language, because a `@Preview` locale has to be a compile-time constant; and `libs.versions.toml`
     repeats React Native's Kotlin and AGP, because once M2 hosts the RN AAR, a mismatch fails the

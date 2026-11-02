@@ -1,0 +1,59 @@
+{
+  "days": {
+    "Day 1": "Dia 1",
+    "Day 2": "Dia 2",
+    "Day 3": "Dia 3",
+    "Day 4": "Dia 4",
+    "Day 5": "Dia 5",
+    "Day 6": "Dia 6",
+    "Day 7": "Dia 7"
+  },
+  "exercises": {
+    "gym-rest": {
+      "name": "Descanso"
+    },
+    "gym-back-squat": {
+      "name": "Agachamento com Barra",
+      "notes": "Nenhuma carga vem definida — escolha a sua na primeira sessão e depois adicione o menor par de anilhas da academia quando alcançar 8 em todas as séries."
+    },
+    "gym-bench-press": {
+      "name": "Supino Reto",
+      "notes": "Aumente a carga quando alcançar 8 em todas as séries, não apenas na melhor delas."
+    },
+    "gym-deadlift": {
+      "name": "Levantamento Terra",
+      "notes": "Uma faixa mais curta do que a do resto do bloco, então o topo dela chega mais cedo. Aumente a carga com 5 em todas as séries."
+    },
+    "gym-overhead-press": {
+      "name": "Desenvolvimento Militar",
+      "notes": "O menor incremento que você tem já é grande aqui. Espere ficar no topo da faixa por um tempo."
+    },
+    "gym-barbell-row": {
+      "name": "Remada Curvada com Barra"
+    },
+    "gym-pullups": {
+      "name": "Barra Fixa",
+      "notes": "Registre as repetições assistidas como repetições. O número que você vai superar da próxima vez é seu de qualquer forma."
+    },
+    "gym-cooldown": {
+      "name": "Volta à Calma",
+      "notes": "Bicicleta, remo, caminhada — o que estiver livre. Adicione uma distância à configuração se quiser acompanhá-la também."
+    }
+  },
+  "workouts": {
+    "gym-day-a": "Academia · Dia A",
+    "gym-day-b": "Academia · Dia B"
+  },
+  "programs": {
+    "gym-4-weeks": {
+      "name": "Academia com Barra · 4 Semanas",
+      "weekNotes": {
+        "1|Day 1": "Semana de referência. Escolha cargas com as quais você consiga parar 2 repetições antes da falha e registre-as em cada exercício.",
+        "2|Day 1": "A ordem A/B se inverte nesta semana. Adicione o menor incremento que você tiver a tudo em que alcançou o topo da faixa.",
+        "3|Day 1": "Uma quarta série nos exercícios principais. Mantenha as cargas onde estão nesta semana.",
+        "4|Day 1": "Semana mais pesada do bloco: quatro séries, e aumente a carga onde a semana 3 pareceu fácil.",
+        "4|Day 5": "Última sessão do bloco. Concluí-la volta para a semana 1 — repita o bloco a partir das cargas com que você terminou."
+      }
+    }
+  }
+}

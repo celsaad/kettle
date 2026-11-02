@@ -1,0 +1,265 @@
+# Kettlebell Basics. One bell covers all of it. The swing is a `hiit` entry rather than a `reps` one
+# because that is how it is actually run (timed work against timed rest), and it gives the pack a
+# live example of a type the other two don't use.
+#
+# Weeks are the three-on/four-off shape all three packs use, written days 1 through 7 in order with
+# every rest day longhand, because weeks run in the order they are written. The fourth-set bump of
+# weeks 3 and 4 is repeated in each week, because overrides don't carry forward.
+version: 1
+exercises:
+  - id: kb-rest
+    name: Rest
+    type: rest
+    config:
+      duration_sec: 75
+  - id: kb-swing
+    name: Kettlebell Swing
+    type: hiit
+    config:
+      work_sec: 30
+      rest_sec: 30
+      rounds: 8
+    notes: >-
+      Work and rest are both 30s, so the whole block is eight minutes. Add
+      rounds before you add weight.
+  - id: kb-goblet-squat
+    name: Kettlebell Goblet Squat
+    type: reps
+    config:
+      sets: 3
+      target_reps_min: 8
+      target_reps_max: 12
+      rest_sec: 90
+    notes: A single bell held at the chest. Add weight once you hit 12 on every set.
+  - id: kb-clean-press
+    name: Clean & Press
+    type: reps
+    config:
+      sets: 3
+      target_reps_min: 5
+      target_reps_max: 8
+      rest_sec: 90
+    notes: >-
+      Reps are per side — log the weaker one, so the number you beat next time
+      is the honest one.
+  - id: kb-single-leg-deadlift
+    name: Single-leg Deadlift
+    type: reps
+    config:
+      sets: 3
+      target_reps_min: 6
+      target_reps_max: 10
+      rest_sec: 75
+    notes: Reps are per leg.
+  - id: kb-row
+    name: Kettlebell Row
+    type: reps
+    config:
+      sets: 3
+      target_reps_min: 8
+      target_reps_max: 12
+      rest_sec: 75
+    notes: Reps are per side.
+  - id: kb-halo
+    name: Halo
+    type: reps
+    config:
+      sets: 3
+      target_reps_min: 5
+      target_reps_max: 10
+      rest_sec: 60
+    notes: One circle each way is one rep.
+  - id: kb-carry
+    name: Rack Carry
+    type: timed_hold
+    config:
+      sets: 3
+      hold_sec_min: 30
+      hold_sec_max: 60
+      rest_sec: 60
+    notes: Add time before adding weight.
+workouts:
+  - id: kb-strength-a
+    name: Kettlebell · Strength A
+    blocks:
+      - type: exercise
+        exercise: kb-goblet-squat
+      - type: exercise
+        exercise: kb-rest
+      - type: exercise
+        exercise: kb-row
+      - type: exercise
+        exercise: kb-rest
+      - type: exercise
+        exercise: kb-carry
+  - id: kb-strength-b
+    name: Kettlebell · Strength B
+    blocks:
+      - type: exercise
+        exercise: kb-clean-press
+      - type: exercise
+        exercise: kb-rest
+      - type: exercise
+        exercise: kb-single-leg-deadlift
+      - type: exercise
+        exercise: kb-rest
+      - type: exercise
+        exercise: kb-halo
+  - id: kb-swing-day
+    name: Kettlebell · Swings
+    blocks:
+      - type: exercise
+        exercise: kb-swing
+      - type: exercise
+        exercise: kb-rest
+        config:
+          duration_sec: 120
+      - type: exercise
+        exercise: kb-carry
+programs:
+  - id: kb-4-weeks
+    name: Kettlebell Basics · 4 Weeks
+    weeks:
+      - week: 1
+        day: Day 1
+        workout: kb-strength-a
+        notes: >-
+          Baseline week. One bell is enough — write its weight into each
+          exercise as you go.
+      - week: 1
+        day: Day 2
+        rest_day: true
+      - week: 1
+        day: Day 3
+        workout: kb-strength-b
+      - week: 1
+        day: Day 4
+        rest_day: true
+      - week: 1
+        day: Day 5
+        workout: kb-swing-day
+      - week: 1
+        day: Day 6
+        rest_day: true
+      - week: 1
+        day: Day 7
+        rest_day: true
+      - week: 2
+        day: Day 1
+        workout: kb-strength-a
+        notes: >-
+          Same three sessions. Beat week 1 by a rep per set before you touch the
+          weight.
+      - week: 2
+        day: Day 2
+        rest_day: true
+      - week: 2
+        day: Day 3
+        workout: kb-strength-b
+      - week: 2
+        day: Day 4
+        rest_day: true
+      - week: 2
+        day: Day 5
+        workout: kb-swing-day
+      - week: 2
+        day: Day 6
+        rest_day: true
+      - week: 2
+        day: Day 7
+        rest_day: true
+      - week: 3
+        day: Day 1
+        workout: kb-strength-a
+        notes: A fourth set on the strength days, and two more rounds of swings.
+        overrides:
+          - exercise: kb-goblet-squat
+            config:
+              sets: 4
+          - exercise: kb-row
+            config:
+              sets: 4
+          - exercise: kb-carry
+            config:
+              sets: 4
+      - week: 3
+        day: Day 2
+        rest_day: true
+      - week: 3
+        day: Day 3
+        workout: kb-strength-b
+        overrides:
+          - exercise: kb-clean-press
+            config:
+              sets: 4
+          - exercise: kb-single-leg-deadlift
+            config:
+              sets: 4
+          - exercise: kb-halo
+            config:
+              sets: 4
+      - week: 3
+        day: Day 4
+        rest_day: true
+      - week: 3
+        day: Day 5
+        workout: kb-swing-day
+        overrides:
+          - exercise: kb-swing
+            config:
+              rounds: 10
+      - week: 3
+        day: Day 6
+        rest_day: true
+      - week: 3
+        day: Day 7
+        rest_day: true
+      - week: 4
+        day: Day 1
+        workout: kb-strength-a
+        notes: Heaviest week of the block. Add weight wherever week 3 felt easy.
+        overrides:
+          - exercise: kb-goblet-squat
+            config:
+              sets: 4
+          - exercise: kb-row
+            config:
+              sets: 4
+          - exercise: kb-carry
+            config:
+              sets: 4
+      - week: 4
+        day: Day 2
+        rest_day: true
+      - week: 4
+        day: Day 3
+        workout: kb-strength-b
+        overrides:
+          - exercise: kb-clean-press
+            config:
+              sets: 4
+          - exercise: kb-single-leg-deadlift
+            config:
+              sets: 4
+          - exercise: kb-halo
+            config:
+              sets: 4
+      - week: 4
+        day: Day 4
+        rest_day: true
+      - week: 4
+        day: Day 5
+        workout: kb-swing-day
+        notes: >-
+          Last session of the block. Completing it loops back to week 1 — run it
+          again from the weight you finished on.
+        overrides:
+          - exercise: kb-swing
+            config:
+              rounds: 10
+      - week: 4
+        day: Day 6
+        rest_day: true
+      - week: 4
+        day: Day 7
+        rest_day: true

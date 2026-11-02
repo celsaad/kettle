@@ -1,0 +1,5007 @@
+{
+  "applies-every-kind-of-string": {
+    "version": 1,
+    "exercises": [
+      {
+        "id": "a",
+        "name": "A-pt",
+        "type": "rest",
+        "config": {
+          "durationSec": 60
+        },
+        "notes": "Notas A"
+      },
+      {
+        "id": "b",
+        "name": "B-pt",
+        "type": "rest",
+        "config": {
+          "durationSec": 60
+        },
+        "notes": "English B"
+      },
+      {
+        "id": "c",
+        "name": "C",
+        "type": "rest",
+        "config": {
+          "durationSec": 60
+        }
+      }
+    ],
+    "workouts": [
+      {
+        "id": "w",
+        "name": "W-pt",
+        "blocks": [
+          {
+            "kind": "exercise",
+            "exerciseId": "a"
+          }
+        ]
+      },
+      {
+        "id": "v",
+        "name": "V",
+        "blocks": [
+          {
+            "kind": "exercise",
+            "exerciseId": "b"
+          }
+        ]
+      }
+    ],
+    "programs": [
+      {
+        "id": "p",
+        "name": "P-pt",
+        "weeks": [
+          {
+            "week": 1,
+            "day": "Seg",
+            "workoutId": "w",
+            "notes": "Treinar"
+          },
+          {
+            "week": 1,
+            "day": "Ter",
+            "restDay": true,
+            "notes": "Descansar"
+          },
+          {
+            "week": 1,
+            "day": "Wed",
+            "workoutId": "v"
+          },
+          {
+            "week": 2,
+            "workoutId": "w",
+            "notes": "Sem dia"
+          }
+        ]
+      },
+      {
+        "id": "q",
+        "name": "Q-pt",
+        "weeks": [
+          {
+            "week": 1,
+            "day": "Seg",
+            "workoutId": "w",
+            "notes": "Q train"
+          }
+        ]
+      },
+      {
+        "id": "r",
+        "name": "R",
+        "weeks": [
+          {
+            "week": 1,
+            "day": "Mon",
+            "workoutId": "w",
+            "notes": "R train"
+          }
+        ]
+      }
+    ]
+  },
+  "regional-tag-reads-its-language": {
+    "version": 1,
+    "exercises": [
+      {
+        "id": "a",
+        "name": "A-pt",
+        "type": "rest",
+        "config": {
+          "durationSec": 60
+        },
+        "notes": "Notas A"
+      },
+      {
+        "id": "b",
+        "name": "B-pt",
+        "type": "rest",
+        "config": {
+          "durationSec": 60
+        },
+        "notes": "English B"
+      },
+      {
+        "id": "c",
+        "name": "C",
+        "type": "rest",
+        "config": {
+          "durationSec": 60
+        }
+      }
+    ],
+    "workouts": [
+      {
+        "id": "w",
+        "name": "W-pt",
+        "blocks": [
+          {
+            "kind": "exercise",
+            "exerciseId": "a"
+          }
+        ]
+      },
+      {
+        "id": "v",
+        "name": "V",
+        "blocks": [
+          {
+            "kind": "exercise",
+            "exerciseId": "b"
+          }
+        ]
+      }
+    ],
+    "programs": [
+      {
+        "id": "p",
+        "name": "P-pt",
+        "weeks": [
+          {
+            "week": 1,
+            "day": "Seg",
+            "workoutId": "w",
+            "notes": "Treinar"
+          },
+          {
+            "week": 1,
+            "day": "Ter",
+            "restDay": true,
+            "notes": "Descansar"
+          },
+          {
+            "week": 1,
+            "day": "Wed",
+            "workoutId": "v"
+          },
+          {
+            "week": 2,
+            "workoutId": "w",
+            "notes": "Sem dia"
+          }
+        ]
+      },
+      {
+        "id": "q",
+        "name": "Q-pt",
+        "weeks": [
+          {
+            "week": 1,
+            "day": "Seg",
+            "workoutId": "w",
+            "notes": "Q train"
+          }
+        ]
+      },
+      {
+        "id": "r",
+        "name": "R",
+        "weeks": [
+          {
+            "week": 1,
+            "day": "Mon",
+            "workoutId": "w",
+            "notes": "R train"
+          }
+        ]
+      }
+    ]
+  },
+  "language-with-no-table-is-unchanged": {
+    "version": 1,
+    "exercises": [
+      {
+        "id": "a",
+        "name": "A",
+        "type": "rest",
+        "config": {
+          "durationSec": 60
+        },
+        "notes": "English A"
+      },
+      {
+        "id": "b",
+        "name": "B",
+        "type": "rest",
+        "config": {
+          "durationSec": 60
+        },
+        "notes": "English B"
+      },
+      {
+        "id": "c",
+        "name": "C",
+        "type": "rest",
+        "config": {
+          "durationSec": 60
+        }
+      }
+    ],
+    "workouts": [
+      {
+        "id": "w",
+        "name": "W",
+        "blocks": [
+          {
+            "kind": "exercise",
+            "exerciseId": "a"
+          }
+        ]
+      },
+      {
+        "id": "v",
+        "name": "V",
+        "blocks": [
+          {
+            "kind": "exercise",
+            "exerciseId": "b"
+          }
+        ]
+      }
+    ],
+    "programs": [
+      {
+        "id": "p",
+        "name": "P",
+        "weeks": [
+          {
+            "week": 1,
+            "day": "Mon",
+            "workoutId": "w",
+            "notes": "Train"
+          },
+          {
+            "week": 1,
+            "day": "Tue",
+            "restDay": true,
+            "notes": "Rest up"
+          },
+          {
+            "week": 1,
+            "day": "Wed",
+            "workoutId": "v"
+          },
+          {
+            "week": 2,
+            "workoutId": "w",
+            "notes": "No day"
+          }
+        ]
+      },
+      {
+        "id": "q",
+        "name": "Q",
+        "weeks": [
+          {
+            "week": 1,
+            "day": "Mon",
+            "workoutId": "w",
+            "notes": "Q train"
+          }
+        ]
+      },
+      {
+        "id": "r",
+        "name": "R",
+        "weeks": [
+          {
+            "week": 1,
+            "day": "Mon",
+            "workoutId": "w",
+            "notes": "R train"
+          }
+        ]
+      }
+    ]
+  },
+  "no-language-is-unchanged": {
+    "version": 1,
+    "exercises": [
+      {
+        "id": "a",
+        "name": "A",
+        "type": "rest",
+        "config": {
+          "durationSec": 60
+        },
+        "notes": "English A"
+      },
+      {
+        "id": "b",
+        "name": "B",
+        "type": "rest",
+        "config": {
+          "durationSec": 60
+        },
+        "notes": "English B"
+      },
+      {
+        "id": "c",
+        "name": "C",
+        "type": "rest",
+        "config": {
+          "durationSec": 60
+        }
+      }
+    ],
+    "workouts": [
+      {
+        "id": "w",
+        "name": "W",
+        "blocks": [
+          {
+            "kind": "exercise",
+            "exerciseId": "a"
+          }
+        ]
+      },
+      {
+        "id": "v",
+        "name": "V",
+        "blocks": [
+          {
+            "kind": "exercise",
+            "exerciseId": "b"
+          }
+        ]
+      }
+    ],
+    "programs": [
+      {
+        "id": "p",
+        "name": "P",
+        "weeks": [
+          {
+            "week": 1,
+            "day": "Mon",
+            "workoutId": "w",
+            "notes": "Train"
+          },
+          {
+            "week": 1,
+            "day": "Tue",
+            "restDay": true,
+            "notes": "Rest up"
+          },
+          {
+            "week": 1,
+            "day": "Wed",
+            "workoutId": "v"
+          },
+          {
+            "week": 2,
+            "workoutId": "w",
+            "notes": "No day"
+          }
+        ]
+      },
+      {
+        "id": "q",
+        "name": "Q",
+        "weeks": [
+          {
+            "week": 1,
+            "day": "Mon",
+            "workoutId": "w",
+            "notes": "Q train"
+          }
+        ]
+      },
+      {
+        "id": "r",
+        "name": "R",
+        "weeks": [
+          {
+            "week": 1,
+            "day": "Mon",
+            "workoutId": "w",
+            "notes": "R train"
+          }
+        ]
+      }
+    ]
+  },
+  "empty-table-is-unchanged": {
+    "version": 1,
+    "exercises": [
+      {
+        "id": "a",
+        "name": "A",
+        "type": "rest",
+        "config": {
+          "durationSec": 60
+        },
+        "notes": "English A"
+      },
+      {
+        "id": "b",
+        "name": "B",
+        "type": "rest",
+        "config": {
+          "durationSec": 60
+        },
+        "notes": "English B"
+      },
+      {
+        "id": "c",
+        "name": "C",
+        "type": "rest",
+        "config": {
+          "durationSec": 60
+        }
+      }
+    ],
+    "workouts": [
+      {
+        "id": "w",
+        "name": "W",
+        "blocks": [
+          {
+            "kind": "exercise",
+            "exerciseId": "a"
+          }
+        ]
+      },
+      {
+        "id": "v",
+        "name": "V",
+        "blocks": [
+          {
+            "kind": "exercise",
+            "exerciseId": "b"
+          }
+        ]
+      }
+    ],
+    "programs": [
+      {
+        "id": "p",
+        "name": "P",
+        "weeks": [
+          {
+            "week": 1,
+            "day": "Mon",
+            "workoutId": "w",
+            "notes": "Train"
+          },
+          {
+            "week": 1,
+            "day": "Tue",
+            "restDay": true,
+            "notes": "Rest up"
+          },
+          {
+            "week": 1,
+            "day": "Wed",
+            "workoutId": "v"
+          },
+          {
+            "week": 2,
+            "workoutId": "w",
+            "notes": "No day"
+          }
+        ]
+      },
+      {
+        "id": "q",
+        "name": "Q",
+        "weeks": [
+          {
+            "week": 1,
+            "day": "Mon",
+            "workoutId": "w",
+            "notes": "Q train"
+          }
+        ]
+      },
+      {
+        "id": "r",
+        "name": "R",
+        "weeks": [
+          {
+            "week": 1,
+            "day": "Mon",
+            "workoutId": "w",
+            "notes": "R train"
+          }
+        ]
+      }
+    ]
+  },
+  "shipped-seed-pt": {
+    "version": 1,
+    "exercises": [
+      {
+        "id": "rest",
+        "name": "Descanso",
+        "type": "rest",
+        "config": {
+          "durationSec": 90
+        }
+      },
+      {
+        "id": "pushups",
+        "name": "Flexões",
+        "type": "reps",
+        "config": {
+          "sets": 3,
+          "targetRepsMin": 8,
+          "targetRepsMax": 15,
+          "restSec": 60
+        },
+        "notes": "Pare 2 repetições antes da falha. Faça 15 em todas as séries duas vezes antes de passar para uma variação mais difícil."
+      },
+      {
+        "id": "bodyweight-squats",
+        "name": "Agachamento Livre",
+        "type": "reps",
+        "config": {
+          "sets": 3,
+          "targetRepsMin": 12,
+          "targetRepsMax": 20,
+          "restSec": 60
+        }
+      },
+      {
+        "id": "inverted-rows",
+        "name": "Remada Invertida",
+        "type": "reps",
+        "config": {
+          "sets": 3,
+          "targetRepsMin": 6,
+          "targetRepsMax": 12,
+          "restSec": 75
+        },
+        "notes": "Sob uma mesa ou uma barra baixa. Afaste mais os pés para dificultar quando dominar o topo da faixa."
+      },
+      {
+        "id": "split-squats",
+        "name": "Afundo",
+        "type": "reps",
+        "config": {
+          "sets": 3,
+          "targetRepsMin": 8,
+          "targetRepsMax": 12,
+          "restSec": 60
+        },
+        "notes": "As repetições são por perna — registre o lado mais fraco, para que o número a superar da próxima vez seja o honesto."
+      },
+      {
+        "id": "glute-bridge",
+        "name": "Ponte de Glúteos",
+        "type": "reps",
+        "config": {
+          "sets": 3,
+          "targetRepsMin": 12,
+          "targetRepsMax": 20,
+          "restSec": 45
+        }
+      },
+      {
+        "id": "plank",
+        "name": "Prancha",
+        "type": "timed_hold",
+        "config": {
+          "sets": 3,
+          "holdSecMin": 20,
+          "holdSecMax": 45,
+          "restSec": 45
+        },
+        "notes": "Aumente toda a faixa em 5s quando alcançar 45s em todas as séries."
+      },
+      {
+        "id": "mountain-climbers",
+        "name": "Escalador",
+        "type": "hiit",
+        "config": {
+          "workSec": 30,
+          "restSec": 30,
+          "rounds": 4
+        }
+      },
+      {
+        "id": "db-goblet-squat",
+        "name": "Agachamento Goblet com Halter",
+        "type": "reps",
+        "config": {
+          "sets": 3,
+          "targetRepsMin": 8,
+          "targetRepsMax": 12,
+          "restSec": 90
+        },
+        "notes": "Nenhuma carga vem definida — escolha a sua na primeira sessão e depois adicione o menor incremento que você tiver quando alcançar 12 em todas as séries."
+      },
+      {
+        "id": "db-floor-press",
+        "name": "Supino no Chão com Halteres",
+        "type": "reps",
+        "config": {
+          "sets": 3,
+          "targetRepsMin": 8,
+          "targetRepsMax": 12,
+          "restSec": 90
+        },
+        "notes": "Feito no chão, então dispensa banco. Aumente a carga quando alcançar 12 em todas as séries."
+      },
+      {
+        "id": "db-row",
+        "name": "Remada Unilateral com Halter",
+        "type": "reps",
+        "config": {
+          "sets": 3,
+          "targetRepsMin": 8,
+          "targetRepsMax": 12,
+          "restSec": 90
+        },
+        "notes": "As repetições são por lado."
+      },
+      {
+        "id": "db-romanian-deadlift",
+        "name": "Levantamento Terra Romeno com Halteres",
+        "type": "reps",
+        "config": {
+          "sets": 3,
+          "targetRepsMin": 8,
+          "targetRepsMax": 12,
+          "restSec": 90
+        }
+      },
+      {
+        "id": "db-overhead-press",
+        "name": "Desenvolvimento com Halteres",
+        "type": "reps",
+        "config": {
+          "sets": 3,
+          "targetRepsMin": 6,
+          "targetRepsMax": 10,
+          "restSec": 90
+        }
+      },
+      {
+        "id": "farmers-carry",
+        "name": "Caminhada do Fazendeiro",
+        "type": "timed_hold",
+        "config": {
+          "sets": 3,
+          "holdSecMin": 30,
+          "holdSecMax": 45,
+          "restSec": 60
+        },
+        "notes": "Aumente o tempo antes de aumentar a carga."
+      },
+      {
+        "id": "burpees",
+        "name": "Burpees",
+        "type": "hiit",
+        "config": {
+          "workSec": 40,
+          "restSec": 20,
+          "rounds": 4
+        }
+      },
+      {
+        "id": "emom-pushups",
+        "name": "EMOM de Flexões",
+        "type": "emom",
+        "config": {
+          "intervalSec": 60,
+          "totalMinutes": 10,
+          "targetReps": 8
+        },
+        "notes": "A cada minuto, no minuto: 8 flexões e descanse o que sobrar do minuto. Reduza a meta quando parar de concluí-la dentro do minuto."
+      },
+      {
+        "id": "amrap-12-bodyweight",
+        "name": "AMRAP 12",
+        "type": "amrap",
+        "config": {
+          "timeCapSec": 720
+        },
+        "notes": "Uma rodada são 10 flexões, 15 agachamentos livres e 10 remadas invertidas. O app cronometra o limite e conta as rodadas — os movimentos ficam aqui nas notas, já que um AMRAP não tem lista de movimentos própria."
+      },
+      {
+        "id": "easy-cardio",
+        "name": "Cardio Leve de Volta à Calma",
+        "type": "cardio",
+        "config": {
+          "durationSec": 600
+        },
+        "notes": "Corrida, bicicleta, remo, caminhada — o que você tiver. Adicione uma distância à configuração se quiser acompanhá-la também."
+      }
+    ],
+    "workouts": [
+      {
+        "id": "foundations-push",
+        "name": "Fundamentos · Empurrar",
+        "blocks": [
+          {
+            "kind": "exercise",
+            "exerciseId": "pushups"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "rest"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "plank"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "rest",
+            "configOverride": {
+              "durationSec": 60
+            }
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "mountain-climbers"
+          }
+        ]
+      },
+      {
+        "id": "foundations-legs",
+        "name": "Fundamentos · Pernas",
+        "blocks": [
+          {
+            "kind": "exercise",
+            "exerciseId": "bodyweight-squats"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "rest"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "split-squats"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "rest"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "glute-bridge"
+          }
+        ]
+      },
+      {
+        "id": "foundations-pull",
+        "name": "Fundamentos · Puxar",
+        "blocks": [
+          {
+            "kind": "exercise",
+            "exerciseId": "inverted-rows"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "rest",
+            "configOverride": {
+              "durationSec": 120
+            }
+          },
+          {
+            "kind": "circuit",
+            "id": "foundations-finisher",
+            "rounds": 3,
+            "restBetweenExercisesSec": 15,
+            "restBetweenRoundsSec": 60,
+            "members": [
+              {
+                "exerciseId": "pushups"
+              },
+              {
+                "exerciseId": "bodyweight-squats"
+              },
+              {
+                "exerciseId": "plank"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "db-full-body-a",
+        "name": "Corpo Inteiro com Halteres A",
+        "blocks": [
+          {
+            "kind": "exercise",
+            "exerciseId": "db-goblet-squat"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "rest"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "db-floor-press"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "rest"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "db-row"
+          }
+        ]
+      },
+      {
+        "id": "db-full-body-b",
+        "name": "Corpo Inteiro com Halteres B",
+        "blocks": [
+          {
+            "kind": "exercise",
+            "exerciseId": "db-romanian-deadlift"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "rest"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "db-overhead-press"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "rest"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "farmers-carry"
+          }
+        ]
+      },
+      {
+        "id": "mixed-conditioning",
+        "name": "Condicionamento Misto",
+        "blocks": [
+          {
+            "kind": "exercise",
+            "exerciseId": "burpees"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "rest"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "amrap-12-bodyweight"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "rest",
+            "configOverride": {
+              "durationSec": 120
+            }
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "easy-cardio"
+          }
+        ]
+      },
+      {
+        "id": "emom-10",
+        "name": "EMOM 10",
+        "blocks": [
+          {
+            "kind": "exercise",
+            "exerciseId": "emom-pushups"
+          }
+        ]
+      }
+    ],
+    "programs": [
+      {
+        "id": "foundations",
+        "name": "Fundamentos · 4 Semanas · Sem Equipamento",
+        "weeks": [
+          {
+            "week": 1,
+            "day": "Dia 1",
+            "workoutId": "foundations-push",
+            "notes": "Semana de referência. Registre onde você realmente chega em cada faixa — ainda não persiga o topo dela."
+          },
+          {
+            "week": 1,
+            "day": "Dia 2",
+            "restDay": true,
+            "notes": "O descanso é onde a última sessão vira alguma coisa. Caminhe se quiser; nada pesado."
+          },
+          {
+            "week": 1,
+            "day": "Dia 3",
+            "workoutId": "foundations-legs"
+          },
+          {
+            "week": 1,
+            "day": "Dia 4",
+            "restDay": true
+          },
+          {
+            "week": 1,
+            "day": "Dia 5",
+            "workoutId": "foundations-pull"
+          },
+          {
+            "week": 1,
+            "day": "Dia 6",
+            "restDay": true
+          },
+          {
+            "week": 1,
+            "day": "Dia 7",
+            "restDay": true
+          },
+          {
+            "week": 2,
+            "day": "Dia 1",
+            "workoutId": "foundations-push",
+            "notes": "As mesmas três sessões. Busque uma repetição a mais do que registrou na semana 1, em todas as séries."
+          },
+          {
+            "week": 2,
+            "day": "Dia 2",
+            "restDay": true
+          },
+          {
+            "week": 2,
+            "day": "Dia 3",
+            "workoutId": "foundations-legs"
+          },
+          {
+            "week": 2,
+            "day": "Dia 4",
+            "restDay": true
+          },
+          {
+            "week": 2,
+            "day": "Dia 5",
+            "workoutId": "foundations-pull"
+          },
+          {
+            "week": 2,
+            "day": "Dia 6",
+            "restDay": true
+          },
+          {
+            "week": 2,
+            "day": "Dia 7",
+            "restDay": true
+          },
+          {
+            "week": 3,
+            "day": "Dia 1",
+            "workoutId": "foundations-push",
+            "notes": "Uma quarta série em tudo. Mantenha as repetições onde estavam em vez de forçar as duas coisas ao mesmo tempo.",
+            "overrides": [
+              {
+                "kind": "exercise",
+                "exerciseId": "pushups",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "plank",
+                "config": {
+                  "sets": 4
+                }
+              }
+            ]
+          },
+          {
+            "week": 3,
+            "day": "Dia 2",
+            "restDay": true
+          },
+          {
+            "week": 3,
+            "day": "Dia 3",
+            "workoutId": "foundations-legs",
+            "overrides": [
+              {
+                "kind": "exercise",
+                "exerciseId": "bodyweight-squats",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "split-squats",
+                "config": {
+                  "sets": 4
+                }
+              }
+            ]
+          },
+          {
+            "week": 3,
+            "day": "Dia 4",
+            "restDay": true
+          },
+          {
+            "week": 3,
+            "day": "Dia 5",
+            "workoutId": "foundations-pull",
+            "overrides": [
+              {
+                "kind": "exercise",
+                "exerciseId": "inverted-rows",
+                "config": {
+                  "sets": 4
+                }
+              }
+            ]
+          },
+          {
+            "week": 3,
+            "day": "Dia 6",
+            "restDay": true
+          },
+          {
+            "week": 3,
+            "day": "Dia 7",
+            "restDay": true
+          },
+          {
+            "week": 4,
+            "day": "Dia 1",
+            "workoutId": "foundations-push",
+            "notes": "Semana mais pesada do bloco. Agora leve as repetições em direção ao topo de cada faixa.",
+            "overrides": [
+              {
+                "kind": "exercise",
+                "exerciseId": "pushups",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "plank",
+                "config": {
+                  "sets": 4
+                }
+              }
+            ]
+          },
+          {
+            "week": 4,
+            "day": "Dia 2",
+            "restDay": true
+          },
+          {
+            "week": 4,
+            "day": "Dia 3",
+            "workoutId": "foundations-legs",
+            "overrides": [
+              {
+                "kind": "exercise",
+                "exerciseId": "bodyweight-squats",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "split-squats",
+                "config": {
+                  "sets": 4
+                }
+              }
+            ]
+          },
+          {
+            "week": 4,
+            "day": "Dia 4",
+            "restDay": true
+          },
+          {
+            "week": 4,
+            "day": "Dia 5",
+            "workoutId": "foundations-pull",
+            "notes": "Última sessão do bloco, com uma quarta rodada no finalizador. Concluí-la volta para a semana 1 — repita o bloco com o topo de cada faixa como seu novo piso.",
+            "overrides": [
+              {
+                "kind": "exercise",
+                "exerciseId": "inverted-rows",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "block",
+                "blockId": "foundations-finisher",
+                "config": {
+                  "rounds": 4
+                }
+              }
+            ]
+          },
+          {
+            "week": 4,
+            "day": "Dia 6",
+            "restDay": true
+          },
+          {
+            "week": 4,
+            "day": "Dia 7",
+            "restDay": true
+          }
+        ]
+      },
+      {
+        "id": "dumbbell-strength",
+        "name": "Força com Halteres · 4 Semanas",
+        "weeks": [
+          {
+            "week": 1,
+            "day": "Dia 1",
+            "workoutId": "db-full-body-a",
+            "notes": "Semana de referência. Escolha cargas com as quais você consiga parar 2 repetições antes da falha e registre-as em cada exercício."
+          },
+          {
+            "week": 1,
+            "day": "Dia 2",
+            "restDay": true,
+            "notes": "Um dia entre as sessões faz parte do plano, não é uma falha nele."
+          },
+          {
+            "week": 1,
+            "day": "Dia 3",
+            "workoutId": "db-full-body-b"
+          },
+          {
+            "week": 1,
+            "day": "Dia 4",
+            "restDay": true
+          },
+          {
+            "week": 1,
+            "day": "Dia 5",
+            "workoutId": "db-full-body-a"
+          },
+          {
+            "week": 1,
+            "day": "Dia 6",
+            "restDay": true
+          },
+          {
+            "week": 1,
+            "day": "Dia 7",
+            "restDay": true
+          },
+          {
+            "week": 2,
+            "day": "Dia 1",
+            "workoutId": "db-full-body-b",
+            "notes": "A ordem A/B se inverte nesta semana. Adicione o menor incremento que você tiver a tudo em que alcançou o topo da faixa."
+          },
+          {
+            "week": 2,
+            "day": "Dia 2",
+            "restDay": true
+          },
+          {
+            "week": 2,
+            "day": "Dia 3",
+            "workoutId": "db-full-body-a"
+          },
+          {
+            "week": 2,
+            "day": "Dia 4",
+            "restDay": true
+          },
+          {
+            "week": 2,
+            "day": "Dia 5",
+            "workoutId": "db-full-body-b"
+          },
+          {
+            "week": 2,
+            "day": "Dia 6",
+            "restDay": true
+          },
+          {
+            "week": 2,
+            "day": "Dia 7",
+            "restDay": true
+          },
+          {
+            "week": 3,
+            "day": "Dia 1",
+            "workoutId": "db-full-body-a",
+            "notes": "Uma quarta série em tudo. Mantenha as cargas onde estão nesta semana.",
+            "overrides": [
+              {
+                "kind": "exercise",
+                "exerciseId": "db-goblet-squat",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "db-floor-press",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "db-row",
+                "config": {
+                  "sets": 4
+                }
+              }
+            ]
+          },
+          {
+            "week": 3,
+            "day": "Dia 2",
+            "restDay": true
+          },
+          {
+            "week": 3,
+            "day": "Dia 3",
+            "workoutId": "db-full-body-b",
+            "overrides": [
+              {
+                "kind": "exercise",
+                "exerciseId": "db-romanian-deadlift",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "db-overhead-press",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "farmers-carry",
+                "config": {
+                  "sets": 4
+                }
+              }
+            ]
+          },
+          {
+            "week": 3,
+            "day": "Dia 4",
+            "restDay": true
+          },
+          {
+            "week": 3,
+            "day": "Dia 5",
+            "workoutId": "db-full-body-a",
+            "overrides": [
+              {
+                "kind": "exercise",
+                "exerciseId": "db-goblet-squat",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "db-floor-press",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "db-row",
+                "config": {
+                  "sets": 4
+                }
+              }
+            ]
+          },
+          {
+            "week": 3,
+            "day": "Dia 6",
+            "restDay": true
+          },
+          {
+            "week": 3,
+            "day": "Dia 7",
+            "restDay": true
+          },
+          {
+            "week": 4,
+            "day": "Dia 1",
+            "workoutId": "db-full-body-b",
+            "notes": "Semana mais pesada do bloco: quatro séries, e aumente a carga onde a semana 3 pareceu fácil.",
+            "overrides": [
+              {
+                "kind": "exercise",
+                "exerciseId": "db-romanian-deadlift",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "db-overhead-press",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "farmers-carry",
+                "config": {
+                  "sets": 4
+                }
+              }
+            ]
+          },
+          {
+            "week": 4,
+            "day": "Dia 2",
+            "restDay": true
+          },
+          {
+            "week": 4,
+            "day": "Dia 3",
+            "workoutId": "db-full-body-a",
+            "overrides": [
+              {
+                "kind": "exercise",
+                "exerciseId": "db-goblet-squat",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "db-floor-press",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "db-row",
+                "config": {
+                  "sets": 4
+                }
+              }
+            ]
+          },
+          {
+            "week": 4,
+            "day": "Dia 4",
+            "restDay": true
+          },
+          {
+            "week": 4,
+            "day": "Dia 5",
+            "workoutId": "db-full-body-b",
+            "notes": "Última sessão do bloco. Concluí-la volta para a semana 1 — repita o bloco a partir das cargas com que você terminou.",
+            "overrides": [
+              {
+                "kind": "exercise",
+                "exerciseId": "db-romanian-deadlift",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "db-overhead-press",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "farmers-carry",
+                "config": {
+                  "sets": 4
+                }
+              }
+            ]
+          },
+          {
+            "week": 4,
+            "day": "Dia 6",
+            "restDay": true
+          },
+          {
+            "week": 4,
+            "day": "Dia 7",
+            "restDay": true
+          }
+        ]
+      }
+    ]
+  },
+  "shipped-seed-ja": {
+    "version": 1,
+    "exercises": [
+      {
+        "id": "rest",
+        "name": "休憩",
+        "type": "rest",
+        "config": {
+          "durationSec": 90
+        }
+      },
+      {
+        "id": "pushups",
+        "name": "腕立て伏せ",
+        "type": "reps",
+        "config": {
+          "sets": 3,
+          "targetRepsMin": 8,
+          "targetRepsMax": 15,
+          "restSec": 60
+        },
+        "notes": "限界の2レップ手前で止めます。全セットで15回に届く日が2回続いたら、より難しいバリエーションに進みましょう。"
+      },
+      {
+        "id": "bodyweight-squats",
+        "name": "自重スクワット",
+        "type": "reps",
+        "config": {
+          "sets": 3,
+          "targetRepsMin": 12,
+          "targetRepsMax": 20,
+          "restSec": 60
+        }
+      },
+      {
+        "id": "inverted-rows",
+        "name": "インバーテッドロウ",
+        "type": "reps",
+        "config": {
+          "sets": 3,
+          "targetRepsMin": 6,
+          "targetRepsMax": 12,
+          "restSec": 75
+        },
+        "notes": "テーブルの下か低いバーで行います。可動域の上まで安定して出せるようになったら、足を前に出して負荷を上げます。"
+      },
+      {
+        "id": "split-squats",
+        "name": "スプリットスクワット",
+        "type": "reps",
+        "config": {
+          "sets": 3,
+          "targetRepsMin": 8,
+          "targetRepsMax": 12,
+          "restSec": 60
+        },
+        "notes": "レップ数は片脚あたりです。弱いほうの脚を記録すると、次に超えるべき数字が正直なものになります。"
+      },
+      {
+        "id": "glute-bridge",
+        "name": "ヒップリフト",
+        "type": "reps",
+        "config": {
+          "sets": 3,
+          "targetRepsMin": 12,
+          "targetRepsMax": 20,
+          "restSec": 45
+        }
+      },
+      {
+        "id": "plank",
+        "name": "プランク",
+        "type": "timed_hold",
+        "config": {
+          "sets": 3,
+          "holdSecMin": 20,
+          "holdSecMax": 45,
+          "restSec": 45
+        },
+        "notes": "全セットで45秒に届いたら、範囲全体を5秒引き上げます。"
+      },
+      {
+        "id": "mountain-climbers",
+        "name": "マウンテンクライマー",
+        "type": "hiit",
+        "config": {
+          "workSec": 30,
+          "restSec": 30,
+          "rounds": 4
+        }
+      },
+      {
+        "id": "db-goblet-squat",
+        "name": "ダンベル・ゴブレットスクワット",
+        "type": "reps",
+        "config": {
+          "sets": 3,
+          "targetRepsMin": 8,
+          "targetRepsMax": 12,
+          "restSec": 90
+        },
+        "notes": "重量は最初から入っていません。初回のセッションで自分の重さを決め、全セットで12回に届いたら手持ちのいちばん小さい増分を足していきます。"
+      },
+      {
+        "id": "db-floor-press",
+        "name": "ダンベル・フロアプレス",
+        "type": "reps",
+        "config": {
+          "sets": 3,
+          "targetRepsMin": 8,
+          "targetRepsMax": 12,
+          "restSec": 90
+        },
+        "notes": "床から押すのでベンチは要りません。全セットで12回に届いたら重量を足します。"
+      },
+      {
+        "id": "db-row",
+        "name": "ダンベルロウ",
+        "type": "reps",
+        "config": {
+          "sets": 3,
+          "targetRepsMin": 8,
+          "targetRepsMax": 12,
+          "restSec": 90
+        },
+        "notes": "レップ数は片側あたりです。"
+      },
+      {
+        "id": "db-romanian-deadlift",
+        "name": "ダンベル・ルーマニアンデッドリフト",
+        "type": "reps",
+        "config": {
+          "sets": 3,
+          "targetRepsMin": 8,
+          "targetRepsMax": 12,
+          "restSec": 90
+        }
+      },
+      {
+        "id": "db-overhead-press",
+        "name": "ダンベル・オーバーヘッドプレス",
+        "type": "reps",
+        "config": {
+          "sets": 3,
+          "targetRepsMin": 6,
+          "targetRepsMax": 10,
+          "restSec": 90
+        }
+      },
+      {
+        "id": "farmers-carry",
+        "name": "ファーマーズキャリー",
+        "type": "timed_hold",
+        "config": {
+          "sets": 3,
+          "holdSecMin": 30,
+          "holdSecMax": 45,
+          "restSec": 60
+        },
+        "notes": "重量を増やす前に、まず時間を伸ばします。"
+      },
+      {
+        "id": "burpees",
+        "name": "バーピー",
+        "type": "hiit",
+        "config": {
+          "workSec": 40,
+          "restSec": 20,
+          "rounds": 4
+        }
+      },
+      {
+        "id": "emom-pushups",
+        "name": "EMOM 腕立て伏せ",
+        "type": "emom",
+        "config": {
+          "intervalSec": 60,
+          "totalMinutes": 10,
+          "targetReps": 8
+        },
+        "notes": "毎分の開始で腕立て伏せ8回、残りの時間は休憩です。その1分のうちに終えられなくなったら目標を下げます。"
+      },
+      {
+        "id": "amrap-12-bodyweight",
+        "name": "AMRAP 12",
+        "type": "amrap",
+        "config": {
+          "timeCapSec": 720
+        },
+        "notes": "1ラウンドは腕立て伏せ10回、自重スクワット15回、インバーテッドロウ10回です。制限時間の計測とラウンド数の記録はアプリが行います。AMRAP には種目リストがないので、動作はこのメモに書いてあります。"
+      },
+      {
+        "id": "easy-cardio",
+        "name": "軽い有酸素のクールダウン",
+        "type": "cardio",
+        "config": {
+          "durationSec": 600
+        },
+        "notes": "ランニング、バイク、ローイング、ウォーキング — できるものなら何でも。距離も記録したいなら、設定に距離を追加してください。"
+      }
+    ],
+    "workouts": [
+      {
+        "id": "foundations-push",
+        "name": "基礎 · プッシュ",
+        "blocks": [
+          {
+            "kind": "exercise",
+            "exerciseId": "pushups"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "rest"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "plank"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "rest",
+            "configOverride": {
+              "durationSec": 60
+            }
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "mountain-climbers"
+          }
+        ]
+      },
+      {
+        "id": "foundations-legs",
+        "name": "基礎 · レッグ",
+        "blocks": [
+          {
+            "kind": "exercise",
+            "exerciseId": "bodyweight-squats"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "rest"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "split-squats"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "rest"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "glute-bridge"
+          }
+        ]
+      },
+      {
+        "id": "foundations-pull",
+        "name": "基礎 · プル",
+        "blocks": [
+          {
+            "kind": "exercise",
+            "exerciseId": "inverted-rows"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "rest",
+            "configOverride": {
+              "durationSec": 120
+            }
+          },
+          {
+            "kind": "circuit",
+            "id": "foundations-finisher",
+            "rounds": 3,
+            "restBetweenExercisesSec": 15,
+            "restBetweenRoundsSec": 60,
+            "members": [
+              {
+                "exerciseId": "pushups"
+              },
+              {
+                "exerciseId": "bodyweight-squats"
+              },
+              {
+                "exerciseId": "plank"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "db-full-body-a",
+        "name": "ダンベル全身 A",
+        "blocks": [
+          {
+            "kind": "exercise",
+            "exerciseId": "db-goblet-squat"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "rest"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "db-floor-press"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "rest"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "db-row"
+          }
+        ]
+      },
+      {
+        "id": "db-full-body-b",
+        "name": "ダンベル全身 B",
+        "blocks": [
+          {
+            "kind": "exercise",
+            "exerciseId": "db-romanian-deadlift"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "rest"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "db-overhead-press"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "rest"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "farmers-carry"
+          }
+        ]
+      },
+      {
+        "id": "mixed-conditioning",
+        "name": "ミックスコンディショニング",
+        "blocks": [
+          {
+            "kind": "exercise",
+            "exerciseId": "burpees"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "rest"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "amrap-12-bodyweight"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "rest",
+            "configOverride": {
+              "durationSec": 120
+            }
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "easy-cardio"
+          }
+        ]
+      },
+      {
+        "id": "emom-10",
+        "name": "EMOM 10",
+        "blocks": [
+          {
+            "kind": "exercise",
+            "exerciseId": "emom-pushups"
+          }
+        ]
+      }
+    ],
+    "programs": [
+      {
+        "id": "foundations",
+        "name": "基礎 · 4週間 · 器具なし",
+        "weeks": [
+          {
+            "week": 1,
+            "day": "1日目",
+            "workoutId": "foundations-push",
+            "notes": "基準になる週です。それぞれの範囲のどこに着地するかをそのまま記録してください。まだ上限を狙わなくて大丈夫です。"
+          },
+          {
+            "week": 1,
+            "day": "2日目",
+            "restDay": true,
+            "notes": "前のセッションが力になるのは休養している間です。歩くくらいは構いませんが、重いことはしないでください。"
+          },
+          {
+            "week": 1,
+            "day": "3日目",
+            "workoutId": "foundations-legs"
+          },
+          {
+            "week": 1,
+            "day": "4日目",
+            "restDay": true
+          },
+          {
+            "week": 1,
+            "day": "5日目",
+            "workoutId": "foundations-pull"
+          },
+          {
+            "week": 1,
+            "day": "6日目",
+            "restDay": true
+          },
+          {
+            "week": 1,
+            "day": "7日目",
+            "restDay": true
+          },
+          {
+            "week": 2,
+            "day": "1日目",
+            "workoutId": "foundations-push",
+            "notes": "同じ3セッションです。全セットで、第1週に記録した数より1レップ多いところを狙います。"
+          },
+          {
+            "week": 2,
+            "day": "2日目",
+            "restDay": true
+          },
+          {
+            "week": 2,
+            "day": "3日目",
+            "workoutId": "foundations-legs"
+          },
+          {
+            "week": 2,
+            "day": "4日目",
+            "restDay": true
+          },
+          {
+            "week": 2,
+            "day": "5日目",
+            "workoutId": "foundations-pull"
+          },
+          {
+            "week": 2,
+            "day": "6日目",
+            "restDay": true
+          },
+          {
+            "week": 2,
+            "day": "7日目",
+            "restDay": true
+          },
+          {
+            "week": 3,
+            "day": "1日目",
+            "workoutId": "foundations-push",
+            "notes": "すべて4セットにします。レップ数は据え置きにして、両方を同時に押し上げないようにします。",
+            "overrides": [
+              {
+                "kind": "exercise",
+                "exerciseId": "pushups",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "plank",
+                "config": {
+                  "sets": 4
+                }
+              }
+            ]
+          },
+          {
+            "week": 3,
+            "day": "2日目",
+            "restDay": true
+          },
+          {
+            "week": 3,
+            "day": "3日目",
+            "workoutId": "foundations-legs",
+            "overrides": [
+              {
+                "kind": "exercise",
+                "exerciseId": "bodyweight-squats",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "split-squats",
+                "config": {
+                  "sets": 4
+                }
+              }
+            ]
+          },
+          {
+            "week": 3,
+            "day": "4日目",
+            "restDay": true
+          },
+          {
+            "week": 3,
+            "day": "5日目",
+            "workoutId": "foundations-pull",
+            "overrides": [
+              {
+                "kind": "exercise",
+                "exerciseId": "inverted-rows",
+                "config": {
+                  "sets": 4
+                }
+              }
+            ]
+          },
+          {
+            "week": 3,
+            "day": "6日目",
+            "restDay": true
+          },
+          {
+            "week": 3,
+            "day": "7日目",
+            "restDay": true
+          },
+          {
+            "week": 4,
+            "day": "1日目",
+            "workoutId": "foundations-push",
+            "notes": "ブロックでいちばんきつい週です。ここで各範囲の上限までレップ数を押し上げます。",
+            "overrides": [
+              {
+                "kind": "exercise",
+                "exerciseId": "pushups",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "plank",
+                "config": {
+                  "sets": 4
+                }
+              }
+            ]
+          },
+          {
+            "week": 4,
+            "day": "2日目",
+            "restDay": true
+          },
+          {
+            "week": 4,
+            "day": "3日目",
+            "workoutId": "foundations-legs",
+            "overrides": [
+              {
+                "kind": "exercise",
+                "exerciseId": "bodyweight-squats",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "split-squats",
+                "config": {
+                  "sets": 4
+                }
+              }
+            ]
+          },
+          {
+            "week": 4,
+            "day": "4日目",
+            "restDay": true
+          },
+          {
+            "week": 4,
+            "day": "5日目",
+            "workoutId": "foundations-pull",
+            "notes": "ブロック最後のセッションで、仕上げのサーキットは4ラウンドです。やり切ると第1週に戻ります。各範囲の上限を新しい下限として、もう一度ブロックを回してください。",
+            "overrides": [
+              {
+                "kind": "exercise",
+                "exerciseId": "inverted-rows",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "block",
+                "blockId": "foundations-finisher",
+                "config": {
+                  "rounds": 4
+                }
+              }
+            ]
+          },
+          {
+            "week": 4,
+            "day": "6日目",
+            "restDay": true
+          },
+          {
+            "week": 4,
+            "day": "7日目",
+            "restDay": true
+          }
+        ]
+      },
+      {
+        "id": "dumbbell-strength",
+        "name": "ダンベル筋力 · 4週間",
+        "weeks": [
+          {
+            "week": 1,
+            "day": "1日目",
+            "workoutId": "db-full-body-a",
+            "notes": "基準になる週です。限界の2レップ手前で止められる重量を選び、各エクササイズに書き込んでください。"
+          },
+          {
+            "week": 1,
+            "day": "2日目",
+            "restDay": true,
+            "notes": "セッションの間に1日空けるのは計画の一部で、計画の穴ではありません。"
+          },
+          {
+            "week": 1,
+            "day": "3日目",
+            "workoutId": "db-full-body-b"
+          },
+          {
+            "week": 1,
+            "day": "4日目",
+            "restDay": true
+          },
+          {
+            "week": 1,
+            "day": "5日目",
+            "workoutId": "db-full-body-a"
+          },
+          {
+            "week": 1,
+            "day": "6日目",
+            "restDay": true
+          },
+          {
+            "week": 1,
+            "day": "7日目",
+            "restDay": true
+          },
+          {
+            "week": 2,
+            "day": "1日目",
+            "workoutId": "db-full-body-b",
+            "notes": "この週は A と B の順番が入れ替わります。範囲の上限に届いたものには、手持ちのいちばん小さい増分を足します。"
+          },
+          {
+            "week": 2,
+            "day": "2日目",
+            "restDay": true
+          },
+          {
+            "week": 2,
+            "day": "3日目",
+            "workoutId": "db-full-body-a"
+          },
+          {
+            "week": 2,
+            "day": "4日目",
+            "restDay": true
+          },
+          {
+            "week": 2,
+            "day": "5日目",
+            "workoutId": "db-full-body-b"
+          },
+          {
+            "week": 2,
+            "day": "6日目",
+            "restDay": true
+          },
+          {
+            "week": 2,
+            "day": "7日目",
+            "restDay": true
+          },
+          {
+            "week": 3,
+            "day": "1日目",
+            "workoutId": "db-full-body-a",
+            "notes": "すべて4セットにします。この週は重量を据え置きにします。",
+            "overrides": [
+              {
+                "kind": "exercise",
+                "exerciseId": "db-goblet-squat",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "db-floor-press",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "db-row",
+                "config": {
+                  "sets": 4
+                }
+              }
+            ]
+          },
+          {
+            "week": 3,
+            "day": "2日目",
+            "restDay": true
+          },
+          {
+            "week": 3,
+            "day": "3日目",
+            "workoutId": "db-full-body-b",
+            "overrides": [
+              {
+                "kind": "exercise",
+                "exerciseId": "db-romanian-deadlift",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "db-overhead-press",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "farmers-carry",
+                "config": {
+                  "sets": 4
+                }
+              }
+            ]
+          },
+          {
+            "week": 3,
+            "day": "4日目",
+            "restDay": true
+          },
+          {
+            "week": 3,
+            "day": "5日目",
+            "workoutId": "db-full-body-a",
+            "overrides": [
+              {
+                "kind": "exercise",
+                "exerciseId": "db-goblet-squat",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "db-floor-press",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "db-row",
+                "config": {
+                  "sets": 4
+                }
+              }
+            ]
+          },
+          {
+            "week": 3,
+            "day": "6日目",
+            "restDay": true
+          },
+          {
+            "week": 3,
+            "day": "7日目",
+            "restDay": true
+          },
+          {
+            "week": 4,
+            "day": "1日目",
+            "workoutId": "db-full-body-b",
+            "notes": "ブロックでいちばんきつい週です。4セットにして、第3週が楽に感じたところは重量を足します。",
+            "overrides": [
+              {
+                "kind": "exercise",
+                "exerciseId": "db-romanian-deadlift",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "db-overhead-press",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "farmers-carry",
+                "config": {
+                  "sets": 4
+                }
+              }
+            ]
+          },
+          {
+            "week": 4,
+            "day": "2日目",
+            "restDay": true
+          },
+          {
+            "week": 4,
+            "day": "3日目",
+            "workoutId": "db-full-body-a",
+            "overrides": [
+              {
+                "kind": "exercise",
+                "exerciseId": "db-goblet-squat",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "db-floor-press",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "db-row",
+                "config": {
+                  "sets": 4
+                }
+              }
+            ]
+          },
+          {
+            "week": 4,
+            "day": "4日目",
+            "restDay": true
+          },
+          {
+            "week": 4,
+            "day": "5日目",
+            "workoutId": "db-full-body-b",
+            "notes": "ブロック最後のセッションです。やり切ると第1週に戻ります。終えたときの重量から、もう一度ブロックを回してください。",
+            "overrides": [
+              {
+                "kind": "exercise",
+                "exerciseId": "db-romanian-deadlift",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "db-overhead-press",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "farmers-carry",
+                "config": {
+                  "sets": 4
+                }
+              }
+            ]
+          },
+          {
+            "week": 4,
+            "day": "6日目",
+            "restDay": true
+          },
+          {
+            "week": 4,
+            "day": "7日目",
+            "restDay": true
+          }
+        ]
+      }
+    ]
+  },
+  "shipped-pack-steady-strength-pt": {
+    "version": 1,
+    "exercises": [
+      {
+        "id": "ss-rest",
+        "name": "Descanso",
+        "type": "rest",
+        "config": {
+          "durationSec": 60
+        }
+      },
+      {
+        "id": "ss-sit-to-stand",
+        "name": "Levantar da Cadeira",
+        "type": "reps",
+        "config": {
+          "sets": 3,
+          "targetRepsMin": 6,
+          "targetRepsMax": 12,
+          "restSec": 60
+        },
+        "notes": "De pé a partir de uma cadeira e sentar de novo. Faça 12 em todas as séries duas vezes antes de o programa acrescentar uma quarta."
+      },
+      {
+        "id": "ss-wall-pushup",
+        "name": "Flexões na Parede",
+        "type": "reps",
+        "config": {
+          "sets": 3,
+          "targetRepsMin": 8,
+          "targetRepsMax": 15,
+          "restSec": 45
+        },
+        "notes": "Afaste mais os pés da parede para dificultar quando dominar 15 em todas as séries."
+      },
+      {
+        "id": "ss-heel-raises",
+        "name": "Elevação de Calcanhares",
+        "type": "reps",
+        "config": {
+          "sets": 3,
+          "targetRepsMin": 10,
+          "targetRepsMax": 20,
+          "restSec": 45
+        },
+        "notes": "O apoio é o encosto de uma cadeira ou uma bancada. Tire uma das mãos do apoio antes de aumentar as repetições."
+      },
+      {
+        "id": "ss-seated-march",
+        "name": "Marcha Sentada",
+        "type": "reps",
+        "config": {
+          "sets": 3,
+          "targetRepsMin": 10,
+          "targetRepsMax": 20,
+          "restSec": 45
+        },
+        "notes": "Uma esquerda e uma direita são duas repetições, então o número que você registra conta as duas pernas."
+      },
+      {
+        "id": "ss-standing-balance",
+        "name": "Equilíbrio em Pé",
+        "type": "timed_hold",
+        "config": {
+          "sets": 3,
+          "holdSecMin": 10,
+          "holdSecMax": 30,
+          "restSec": 45
+        },
+        "notes": "Mantido por lado. Aumente toda a faixa em 5s quando alcançar 30s em todas as séries."
+      },
+      {
+        "id": "ss-band-row",
+        "name": "Remada com Elástico",
+        "type": "reps",
+        "config": {
+          "sets": 3,
+          "targetRepsMin": 8,
+          "targetRepsMax": 12,
+          "restSec": 60
+        },
+        "notes": "O elástico é a carga, então um passo para trás é o menor incremento que você tem quando alcançar 12 em todas as séries."
+      },
+      {
+        "id": "ss-hip-hinge",
+        "name": "Flexão de Quadril",
+        "type": "reps",
+        "config": {
+          "sets": 3,
+          "targetRepsMin": 8,
+          "targetRepsMax": 12,
+          "restSec": 60
+        },
+        "notes": "Mãos no encosto de uma cadeira. Desça as mãos pelo encosto conforme a amplitude aumenta."
+      },
+      {
+        "id": "ss-walk",
+        "name": "Caminhada",
+        "type": "cardio",
+        "config": {
+          "durationSec": 900
+        },
+        "notes": "Quinze minutos para começar. Adicione uma distância à configuração se quiser acompanhá-la também."
+      }
+    ],
+    "workouts": [
+      {
+        "id": "ss-strength-a",
+        "name": "Firme · Força A",
+        "blocks": [
+          {
+            "kind": "exercise",
+            "exerciseId": "ss-sit-to-stand"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "ss-rest"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "ss-wall-pushup"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "ss-rest"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "ss-heel-raises"
+          }
+        ]
+      },
+      {
+        "id": "ss-strength-b",
+        "name": "Firme · Força B",
+        "blocks": [
+          {
+            "kind": "exercise",
+            "exerciseId": "ss-hip-hinge"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "ss-rest"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "ss-band-row"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "ss-rest"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "ss-seated-march"
+          }
+        ]
+      },
+      {
+        "id": "ss-balance-walk",
+        "name": "Firme · Equilíbrio e Caminhada",
+        "blocks": [
+          {
+            "kind": "exercise",
+            "exerciseId": "ss-standing-balance"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "ss-rest"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "ss-walk"
+          }
+        ]
+      }
+    ],
+    "programs": [
+      {
+        "id": "ss-4-weeks",
+        "name": "Firme e Forte · 4 Semanas",
+        "weeks": [
+          {
+            "week": 1,
+            "day": "Dia 1",
+            "workoutId": "ss-strength-a",
+            "notes": "Semana de referência. Registre onde você realmente chega em cada faixa — a parte de baixo dela é uma resposta legítima."
+          },
+          {
+            "week": 1,
+            "day": "Dia 2",
+            "restDay": true
+          },
+          {
+            "week": 1,
+            "day": "Dia 3",
+            "workoutId": "ss-strength-b"
+          },
+          {
+            "week": 1,
+            "day": "Dia 4",
+            "restDay": true
+          },
+          {
+            "week": 1,
+            "day": "Dia 5",
+            "workoutId": "ss-balance-walk"
+          },
+          {
+            "week": 1,
+            "day": "Dia 6",
+            "restDay": true
+          },
+          {
+            "week": 1,
+            "day": "Dia 7",
+            "restDay": true
+          },
+          {
+            "week": 2,
+            "day": "Dia 1",
+            "workoutId": "ss-strength-a",
+            "notes": "As mesmas três sessões. Uma repetição a mais do que na semana 1, em todas as séries."
+          },
+          {
+            "week": 2,
+            "day": "Dia 2",
+            "restDay": true
+          },
+          {
+            "week": 2,
+            "day": "Dia 3",
+            "workoutId": "ss-strength-b"
+          },
+          {
+            "week": 2,
+            "day": "Dia 4",
+            "restDay": true
+          },
+          {
+            "week": 2,
+            "day": "Dia 5",
+            "workoutId": "ss-balance-walk"
+          },
+          {
+            "week": 2,
+            "day": "Dia 6",
+            "restDay": true
+          },
+          {
+            "week": 2,
+            "day": "Dia 7",
+            "restDay": true
+          },
+          {
+            "week": 3,
+            "day": "Dia 1",
+            "workoutId": "ss-strength-a",
+            "notes": "Uma quarta série nos dias de força. Mantenha as repetições onde estavam em vez de forçar as duas coisas ao mesmo tempo.",
+            "overrides": [
+              {
+                "kind": "exercise",
+                "exerciseId": "ss-sit-to-stand",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "ss-wall-pushup",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "ss-heel-raises",
+                "config": {
+                  "sets": 4
+                }
+              }
+            ]
+          },
+          {
+            "week": 3,
+            "day": "Dia 2",
+            "restDay": true
+          },
+          {
+            "week": 3,
+            "day": "Dia 3",
+            "workoutId": "ss-strength-b",
+            "overrides": [
+              {
+                "kind": "exercise",
+                "exerciseId": "ss-hip-hinge",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "ss-band-row",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "ss-seated-march",
+                "config": {
+                  "sets": 4
+                }
+              }
+            ]
+          },
+          {
+            "week": 3,
+            "day": "Dia 4",
+            "restDay": true
+          },
+          {
+            "week": 3,
+            "day": "Dia 5",
+            "workoutId": "ss-balance-walk"
+          },
+          {
+            "week": 3,
+            "day": "Dia 6",
+            "restDay": true
+          },
+          {
+            "week": 3,
+            "day": "Dia 7",
+            "restDay": true
+          },
+          {
+            "week": 4,
+            "day": "Dia 1",
+            "workoutId": "ss-strength-a",
+            "notes": "Última semana do bloco. Agora leve as repetições em direção ao topo de cada faixa.",
+            "overrides": [
+              {
+                "kind": "exercise",
+                "exerciseId": "ss-sit-to-stand",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "ss-wall-pushup",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "ss-heel-raises",
+                "config": {
+                  "sets": 4
+                }
+              }
+            ]
+          },
+          {
+            "week": 4,
+            "day": "Dia 2",
+            "restDay": true
+          },
+          {
+            "week": 4,
+            "day": "Dia 3",
+            "workoutId": "ss-strength-b",
+            "overrides": [
+              {
+                "kind": "exercise",
+                "exerciseId": "ss-hip-hinge",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "ss-band-row",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "ss-seated-march",
+                "config": {
+                  "sets": 4
+                }
+              }
+            ]
+          },
+          {
+            "week": 4,
+            "day": "Dia 4",
+            "restDay": true
+          },
+          {
+            "week": 4,
+            "day": "Dia 5",
+            "workoutId": "ss-balance-walk",
+            "notes": "Concluir isto volta para a semana 1 — repita o bloco com o topo de cada faixa como seu novo piso."
+          },
+          {
+            "week": 4,
+            "day": "Dia 6",
+            "restDay": true
+          },
+          {
+            "week": 4,
+            "day": "Dia 7",
+            "restDay": true
+          }
+        ]
+      }
+    ]
+  },
+  "shipped-pack-steady-strength-ja": {
+    "version": 1,
+    "exercises": [
+      {
+        "id": "ss-rest",
+        "name": "休憩",
+        "type": "rest",
+        "config": {
+          "durationSec": 60
+        }
+      },
+      {
+        "id": "ss-sit-to-stand",
+        "name": "椅子からの立ち座り",
+        "type": "reps",
+        "config": {
+          "sets": 3,
+          "targetRepsMin": 6,
+          "targetRepsMax": 12,
+          "restSec": 60
+        },
+        "notes": "椅子から立ち、また座ります。全セットで12回に届く日が2回続いてから、プログラムが4セット目を足します。"
+      },
+      {
+        "id": "ss-wall-pushup",
+        "name": "壁腕立て伏せ",
+        "type": "reps",
+        "config": {
+          "sets": 3,
+          "targetRepsMin": 8,
+          "targetRepsMax": 15,
+          "restSec": 45
+        },
+        "notes": "全セットで15回を安定して出せるようになったら、足を壁から遠ざけて負荷を上げます。"
+      },
+      {
+        "id": "ss-heel-raises",
+        "name": "かかと上げ",
+        "type": "reps",
+        "config": {
+          "sets": 3,
+          "targetRepsMin": 10,
+          "targetRepsMax": 20,
+          "restSec": 45
+        },
+        "notes": "椅子の背やカウンターが支えです。回数を増やす前に、支えから片手を離します。"
+      },
+      {
+        "id": "ss-seated-march",
+        "name": "座ったままの足踏み",
+        "type": "reps",
+        "config": {
+          "sets": 3,
+          "targetRepsMin": 10,
+          "targetRepsMax": 20,
+          "restSec": 45
+        },
+        "notes": "左右で1回ずつが2レップなので、記録する数は両脚の合計です。"
+      },
+      {
+        "id": "ss-standing-balance",
+        "name": "片脚立ちバランス",
+        "type": "timed_hold",
+        "config": {
+          "sets": 3,
+          "holdSecMin": 10,
+          "holdSecMax": 30,
+          "restSec": 45
+        },
+        "notes": "片側ずつ保持します。全セットで30秒に届いたら、範囲全体を5秒引き上げます。"
+      },
+      {
+        "id": "ss-band-row",
+        "name": "バンドロウ",
+        "type": "reps",
+        "config": {
+          "sets": 3,
+          "targetRepsMin": 8,
+          "targetRepsMax": 12,
+          "restSec": 60
+        },
+        "notes": "バンドが負荷なので、全セットで12回に届いたら一歩下がるのがいちばん小さい増分です。"
+      },
+      {
+        "id": "ss-hip-hinge",
+        "name": "ヒップヒンジ",
+        "type": "reps",
+        "config": {
+          "sets": 3,
+          "targetRepsMin": 8,
+          "targetRepsMax": 12,
+          "restSec": 60
+        },
+        "notes": "椅子の背に手を置きます。可動域が広がるにつれて、手を背の下のほうへ移していきます。"
+      },
+      {
+        "id": "ss-walk",
+        "name": "ウォーキング",
+        "type": "cardio",
+        "config": {
+          "durationSec": 900
+        },
+        "notes": "まずは15分から。距離も記録したいなら、設定に距離を追加してください。"
+      }
+    ],
+    "workouts": [
+      {
+        "id": "ss-strength-a",
+        "name": "ステディ · 筋力 A",
+        "blocks": [
+          {
+            "kind": "exercise",
+            "exerciseId": "ss-sit-to-stand"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "ss-rest"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "ss-wall-pushup"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "ss-rest"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "ss-heel-raises"
+          }
+        ]
+      },
+      {
+        "id": "ss-strength-b",
+        "name": "ステディ · 筋力 B",
+        "blocks": [
+          {
+            "kind": "exercise",
+            "exerciseId": "ss-hip-hinge"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "ss-rest"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "ss-band-row"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "ss-rest"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "ss-seated-march"
+          }
+        ]
+      },
+      {
+        "id": "ss-balance-walk",
+        "name": "ステディ · バランスと歩行",
+        "blocks": [
+          {
+            "kind": "exercise",
+            "exerciseId": "ss-standing-balance"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "ss-rest"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "ss-walk"
+          }
+        ]
+      }
+    ],
+    "programs": [
+      {
+        "id": "ss-4-weeks",
+        "name": "ステディ＆ストロング · 4週間",
+        "weeks": [
+          {
+            "week": 1,
+            "day": "1日目",
+            "workoutId": "ss-strength-a",
+            "notes": "基準になる週です。それぞれの範囲のどこに着地するかをそのまま記録してください。下限でも立派な答えです。"
+          },
+          {
+            "week": 1,
+            "day": "2日目",
+            "restDay": true
+          },
+          {
+            "week": 1,
+            "day": "3日目",
+            "workoutId": "ss-strength-b"
+          },
+          {
+            "week": 1,
+            "day": "4日目",
+            "restDay": true
+          },
+          {
+            "week": 1,
+            "day": "5日目",
+            "workoutId": "ss-balance-walk"
+          },
+          {
+            "week": 1,
+            "day": "6日目",
+            "restDay": true
+          },
+          {
+            "week": 1,
+            "day": "7日目",
+            "restDay": true
+          },
+          {
+            "week": 2,
+            "day": "1日目",
+            "workoutId": "ss-strength-a",
+            "notes": "同じ3セッションです。全セットで、第1週より1レップ多いところを狙います。"
+          },
+          {
+            "week": 2,
+            "day": "2日目",
+            "restDay": true
+          },
+          {
+            "week": 2,
+            "day": "3日目",
+            "workoutId": "ss-strength-b"
+          },
+          {
+            "week": 2,
+            "day": "4日目",
+            "restDay": true
+          },
+          {
+            "week": 2,
+            "day": "5日目",
+            "workoutId": "ss-balance-walk"
+          },
+          {
+            "week": 2,
+            "day": "6日目",
+            "restDay": true
+          },
+          {
+            "week": 2,
+            "day": "7日目",
+            "restDay": true
+          },
+          {
+            "week": 3,
+            "day": "1日目",
+            "workoutId": "ss-strength-a",
+            "notes": "筋力の日は4セットにします。レップ数は据え置きにして、両方を同時に押し上げないようにします。",
+            "overrides": [
+              {
+                "kind": "exercise",
+                "exerciseId": "ss-sit-to-stand",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "ss-wall-pushup",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "ss-heel-raises",
+                "config": {
+                  "sets": 4
+                }
+              }
+            ]
+          },
+          {
+            "week": 3,
+            "day": "2日目",
+            "restDay": true
+          },
+          {
+            "week": 3,
+            "day": "3日目",
+            "workoutId": "ss-strength-b",
+            "overrides": [
+              {
+                "kind": "exercise",
+                "exerciseId": "ss-hip-hinge",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "ss-band-row",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "ss-seated-march",
+                "config": {
+                  "sets": 4
+                }
+              }
+            ]
+          },
+          {
+            "week": 3,
+            "day": "4日目",
+            "restDay": true
+          },
+          {
+            "week": 3,
+            "day": "5日目",
+            "workoutId": "ss-balance-walk"
+          },
+          {
+            "week": 3,
+            "day": "6日目",
+            "restDay": true
+          },
+          {
+            "week": 3,
+            "day": "7日目",
+            "restDay": true
+          },
+          {
+            "week": 4,
+            "day": "1日目",
+            "workoutId": "ss-strength-a",
+            "notes": "ブロック最後の週です。ここで各範囲の上限までレップ数を押し上げます。",
+            "overrides": [
+              {
+                "kind": "exercise",
+                "exerciseId": "ss-sit-to-stand",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "ss-wall-pushup",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "ss-heel-raises",
+                "config": {
+                  "sets": 4
+                }
+              }
+            ]
+          },
+          {
+            "week": 4,
+            "day": "2日目",
+            "restDay": true
+          },
+          {
+            "week": 4,
+            "day": "3日目",
+            "workoutId": "ss-strength-b",
+            "overrides": [
+              {
+                "kind": "exercise",
+                "exerciseId": "ss-hip-hinge",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "ss-band-row",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "ss-seated-march",
+                "config": {
+                  "sets": 4
+                }
+              }
+            ]
+          },
+          {
+            "week": 4,
+            "day": "4日目",
+            "restDay": true
+          },
+          {
+            "week": 4,
+            "day": "5日目",
+            "workoutId": "ss-balance-walk",
+            "notes": "やり切ると第1週に戻ります。各範囲の上限を新しい下限として、もう一度ブロックを回してください。"
+          },
+          {
+            "week": 4,
+            "day": "6日目",
+            "restDay": true
+          },
+          {
+            "week": 4,
+            "day": "7日目",
+            "restDay": true
+          }
+        ]
+      }
+    ]
+  },
+  "shipped-pack-barbell-gym-pt": {
+    "version": 1,
+    "exercises": [
+      {
+        "id": "gym-rest",
+        "name": "Descanso",
+        "type": "rest",
+        "config": {
+          "durationSec": 150
+        }
+      },
+      {
+        "id": "gym-back-squat",
+        "name": "Agachamento com Barra",
+        "type": "reps",
+        "config": {
+          "sets": 3,
+          "targetRepsMin": 5,
+          "targetRepsMax": 8,
+          "restSec": 180
+        },
+        "notes": "Nenhuma carga vem definida — escolha a sua na primeira sessão e depois adicione o menor par de anilhas da academia quando alcançar 8 em todas as séries."
+      },
+      {
+        "id": "gym-bench-press",
+        "name": "Supino Reto",
+        "type": "reps",
+        "config": {
+          "sets": 3,
+          "targetRepsMin": 5,
+          "targetRepsMax": 8,
+          "restSec": 180
+        },
+        "notes": "Aumente a carga quando alcançar 8 em todas as séries, não apenas na melhor delas."
+      },
+      {
+        "id": "gym-deadlift",
+        "name": "Levantamento Terra",
+        "type": "reps",
+        "config": {
+          "sets": 3,
+          "targetRepsMin": 3,
+          "targetRepsMax": 5,
+          "restSec": 180
+        },
+        "notes": "Uma faixa mais curta do que a do resto do bloco, então o topo dela chega mais cedo. Aumente a carga com 5 em todas as séries."
+      },
+      {
+        "id": "gym-overhead-press",
+        "name": "Desenvolvimento Militar",
+        "type": "reps",
+        "config": {
+          "sets": 3,
+          "targetRepsMin": 5,
+          "targetRepsMax": 8,
+          "restSec": 150
+        },
+        "notes": "O menor incremento que você tem já é grande aqui. Espere ficar no topo da faixa por um tempo."
+      },
+      {
+        "id": "gym-barbell-row",
+        "name": "Remada Curvada com Barra",
+        "type": "reps",
+        "config": {
+          "sets": 3,
+          "targetRepsMin": 6,
+          "targetRepsMax": 10,
+          "restSec": 150
+        }
+      },
+      {
+        "id": "gym-pullups",
+        "name": "Barra Fixa",
+        "type": "reps",
+        "config": {
+          "sets": 3,
+          "targetRepsMin": 3,
+          "targetRepsMax": 8,
+          "restSec": 120
+        },
+        "notes": "Registre as repetições assistidas como repetições. O número que você vai superar da próxima vez é seu de qualquer forma."
+      },
+      {
+        "id": "gym-cooldown",
+        "name": "Volta à Calma",
+        "type": "cardio",
+        "config": {
+          "durationSec": 600
+        },
+        "notes": "Bicicleta, remo, caminhada — o que estiver livre. Adicione uma distância à configuração se quiser acompanhá-la também."
+      }
+    ],
+    "workouts": [
+      {
+        "id": "gym-day-a",
+        "name": "Academia · Dia A",
+        "blocks": [
+          {
+            "kind": "exercise",
+            "exerciseId": "gym-back-squat"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "gym-rest"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "gym-bench-press"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "gym-rest"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "gym-barbell-row"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "gym-rest",
+            "configOverride": {
+              "durationSec": 90
+            }
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "gym-cooldown"
+          }
+        ]
+      },
+      {
+        "id": "gym-day-b",
+        "name": "Academia · Dia B",
+        "blocks": [
+          {
+            "kind": "exercise",
+            "exerciseId": "gym-deadlift"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "gym-rest"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "gym-overhead-press"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "gym-rest"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "gym-pullups"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "gym-rest",
+            "configOverride": {
+              "durationSec": 90
+            }
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "gym-cooldown"
+          }
+        ]
+      }
+    ],
+    "programs": [
+      {
+        "id": "gym-4-weeks",
+        "name": "Academia com Barra · 4 Semanas",
+        "weeks": [
+          {
+            "week": 1,
+            "day": "Dia 1",
+            "workoutId": "gym-day-a",
+            "notes": "Semana de referência. Escolha cargas com as quais você consiga parar 2 repetições antes da falha e registre-as em cada exercício."
+          },
+          {
+            "week": 1,
+            "day": "Dia 2",
+            "restDay": true
+          },
+          {
+            "week": 1,
+            "day": "Dia 3",
+            "workoutId": "gym-day-b"
+          },
+          {
+            "week": 1,
+            "day": "Dia 4",
+            "restDay": true
+          },
+          {
+            "week": 1,
+            "day": "Dia 5",
+            "workoutId": "gym-day-a"
+          },
+          {
+            "week": 1,
+            "day": "Dia 6",
+            "restDay": true
+          },
+          {
+            "week": 1,
+            "day": "Dia 7",
+            "restDay": true
+          },
+          {
+            "week": 2,
+            "day": "Dia 1",
+            "workoutId": "gym-day-b",
+            "notes": "A ordem A/B se inverte nesta semana. Adicione o menor incremento que você tiver a tudo em que alcançou o topo da faixa."
+          },
+          {
+            "week": 2,
+            "day": "Dia 2",
+            "restDay": true
+          },
+          {
+            "week": 2,
+            "day": "Dia 3",
+            "workoutId": "gym-day-a"
+          },
+          {
+            "week": 2,
+            "day": "Dia 4",
+            "restDay": true
+          },
+          {
+            "week": 2,
+            "day": "Dia 5",
+            "workoutId": "gym-day-b"
+          },
+          {
+            "week": 2,
+            "day": "Dia 6",
+            "restDay": true
+          },
+          {
+            "week": 2,
+            "day": "Dia 7",
+            "restDay": true
+          },
+          {
+            "week": 3,
+            "day": "Dia 1",
+            "workoutId": "gym-day-a",
+            "notes": "Uma quarta série nos exercícios principais. Mantenha as cargas onde estão nesta semana.",
+            "overrides": [
+              {
+                "kind": "exercise",
+                "exerciseId": "gym-back-squat",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "gym-bench-press",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "gym-barbell-row",
+                "config": {
+                  "sets": 4
+                }
+              }
+            ]
+          },
+          {
+            "week": 3,
+            "day": "Dia 2",
+            "restDay": true
+          },
+          {
+            "week": 3,
+            "day": "Dia 3",
+            "workoutId": "gym-day-b",
+            "overrides": [
+              {
+                "kind": "exercise",
+                "exerciseId": "gym-deadlift",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "gym-overhead-press",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "gym-pullups",
+                "config": {
+                  "sets": 4
+                }
+              }
+            ]
+          },
+          {
+            "week": 3,
+            "day": "Dia 4",
+            "restDay": true
+          },
+          {
+            "week": 3,
+            "day": "Dia 5",
+            "workoutId": "gym-day-a",
+            "overrides": [
+              {
+                "kind": "exercise",
+                "exerciseId": "gym-back-squat",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "gym-bench-press",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "gym-barbell-row",
+                "config": {
+                  "sets": 4
+                }
+              }
+            ]
+          },
+          {
+            "week": 3,
+            "day": "Dia 6",
+            "restDay": true
+          },
+          {
+            "week": 3,
+            "day": "Dia 7",
+            "restDay": true
+          },
+          {
+            "week": 4,
+            "day": "Dia 1",
+            "workoutId": "gym-day-b",
+            "notes": "Semana mais pesada do bloco: quatro séries, e aumente a carga onde a semana 3 pareceu fácil.",
+            "overrides": [
+              {
+                "kind": "exercise",
+                "exerciseId": "gym-deadlift",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "gym-overhead-press",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "gym-pullups",
+                "config": {
+                  "sets": 4
+                }
+              }
+            ]
+          },
+          {
+            "week": 4,
+            "day": "Dia 2",
+            "restDay": true
+          },
+          {
+            "week": 4,
+            "day": "Dia 3",
+            "workoutId": "gym-day-a",
+            "overrides": [
+              {
+                "kind": "exercise",
+                "exerciseId": "gym-back-squat",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "gym-bench-press",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "gym-barbell-row",
+                "config": {
+                  "sets": 4
+                }
+              }
+            ]
+          },
+          {
+            "week": 4,
+            "day": "Dia 4",
+            "restDay": true
+          },
+          {
+            "week": 4,
+            "day": "Dia 5",
+            "workoutId": "gym-day-b",
+            "notes": "Última sessão do bloco. Concluí-la volta para a semana 1 — repita o bloco a partir das cargas com que você terminou.",
+            "overrides": [
+              {
+                "kind": "exercise",
+                "exerciseId": "gym-deadlift",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "gym-overhead-press",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "gym-pullups",
+                "config": {
+                  "sets": 4
+                }
+              }
+            ]
+          },
+          {
+            "week": 4,
+            "day": "Dia 6",
+            "restDay": true
+          },
+          {
+            "week": 4,
+            "day": "Dia 7",
+            "restDay": true
+          }
+        ]
+      }
+    ]
+  },
+  "shipped-pack-barbell-gym-ja": {
+    "version": 1,
+    "exercises": [
+      {
+        "id": "gym-rest",
+        "name": "休憩",
+        "type": "rest",
+        "config": {
+          "durationSec": 150
+        }
+      },
+      {
+        "id": "gym-back-squat",
+        "name": "バックスクワット",
+        "type": "reps",
+        "config": {
+          "sets": 3,
+          "targetRepsMin": 5,
+          "targetRepsMax": 8,
+          "restSec": 180
+        },
+        "notes": "重量は最初から入っていません。初回のセッションで自分の重さを決め、全セットで8回に届いたらジムにあるいちばん小さいプレートを1組足します。"
+      },
+      {
+        "id": "gym-bench-press",
+        "name": "ベンチプレス",
+        "type": "reps",
+        "config": {
+          "sets": 3,
+          "targetRepsMin": 5,
+          "targetRepsMax": 8,
+          "restSec": 180
+        },
+        "notes": "調子のよい1セットではなく、全セットで8回に届いてから重量を足します。"
+      },
+      {
+        "id": "gym-deadlift",
+        "name": "デッドリフト",
+        "type": "reps",
+        "config": {
+          "sets": 3,
+          "targetRepsMin": 3,
+          "targetRepsMax": 5,
+          "restSec": 180
+        },
+        "notes": "ほかの種目より範囲が狭いので、上限に届くのが早くなります。全セットで5回に届いたら重量を足します。"
+      },
+      {
+        "id": "gym-overhead-press",
+        "name": "オーバーヘッドプレス",
+        "type": "reps",
+        "config": {
+          "sets": 3,
+          "targetRepsMin": 5,
+          "targetRepsMax": 8,
+          "restSec": 150
+        },
+        "notes": "ここでは手持ちのいちばん小さい増分でも大きく感じます。しばらく上限に留まるつもりでいてください。"
+      },
+      {
+        "id": "gym-barbell-row",
+        "name": "バーベルロウ",
+        "type": "reps",
+        "config": {
+          "sets": 3,
+          "targetRepsMin": 6,
+          "targetRepsMax": 10,
+          "restSec": 150
+        }
+      },
+      {
+        "id": "gym-pullups",
+        "name": "懸垂",
+        "type": "reps",
+        "config": {
+          "sets": 3,
+          "targetRepsMin": 3,
+          "targetRepsMax": 8,
+          "restSec": 120
+        },
+        "notes": "補助ありの回数もそのまま記録します。次に超えるべき数字は、どちらにしてもあなた自身のものです。"
+      },
+      {
+        "id": "gym-cooldown",
+        "name": "クールダウン",
+        "type": "cardio",
+        "config": {
+          "durationSec": 600
+        },
+        "notes": "バイク、ローイング、ウォーキング — 空いているもので構いません。距離も記録したいなら、設定に距離を追加してください。"
+      }
+    ],
+    "workouts": [
+      {
+        "id": "gym-day-a",
+        "name": "ジム · A日",
+        "blocks": [
+          {
+            "kind": "exercise",
+            "exerciseId": "gym-back-squat"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "gym-rest"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "gym-bench-press"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "gym-rest"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "gym-barbell-row"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "gym-rest",
+            "configOverride": {
+              "durationSec": 90
+            }
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "gym-cooldown"
+          }
+        ]
+      },
+      {
+        "id": "gym-day-b",
+        "name": "ジム · B日",
+        "blocks": [
+          {
+            "kind": "exercise",
+            "exerciseId": "gym-deadlift"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "gym-rest"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "gym-overhead-press"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "gym-rest"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "gym-pullups"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "gym-rest",
+            "configOverride": {
+              "durationSec": 90
+            }
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "gym-cooldown"
+          }
+        ]
+      }
+    ],
+    "programs": [
+      {
+        "id": "gym-4-weeks",
+        "name": "バーベルジム · 4週間",
+        "weeks": [
+          {
+            "week": 1,
+            "day": "1日目",
+            "workoutId": "gym-day-a",
+            "notes": "基準になる週です。限界の2レップ手前で止められる重量を選び、各種目に書き込んでください。"
+          },
+          {
+            "week": 1,
+            "day": "2日目",
+            "restDay": true
+          },
+          {
+            "week": 1,
+            "day": "3日目",
+            "workoutId": "gym-day-b"
+          },
+          {
+            "week": 1,
+            "day": "4日目",
+            "restDay": true
+          },
+          {
+            "week": 1,
+            "day": "5日目",
+            "workoutId": "gym-day-a"
+          },
+          {
+            "week": 1,
+            "day": "6日目",
+            "restDay": true
+          },
+          {
+            "week": 1,
+            "day": "7日目",
+            "restDay": true
+          },
+          {
+            "week": 2,
+            "day": "1日目",
+            "workoutId": "gym-day-b",
+            "notes": "この週は A と B の順番が入れ替わります。範囲の上限に届いたものには、手持ちのいちばん小さい増分を足します。"
+          },
+          {
+            "week": 2,
+            "day": "2日目",
+            "restDay": true
+          },
+          {
+            "week": 2,
+            "day": "3日目",
+            "workoutId": "gym-day-a"
+          },
+          {
+            "week": 2,
+            "day": "4日目",
+            "restDay": true
+          },
+          {
+            "week": 2,
+            "day": "5日目",
+            "workoutId": "gym-day-b"
+          },
+          {
+            "week": 2,
+            "day": "6日目",
+            "restDay": true
+          },
+          {
+            "week": 2,
+            "day": "7日目",
+            "restDay": true
+          },
+          {
+            "week": 3,
+            "day": "1日目",
+            "workoutId": "gym-day-a",
+            "notes": "メイン種目を4セットにします。この週は重量を据え置きにします。",
+            "overrides": [
+              {
+                "kind": "exercise",
+                "exerciseId": "gym-back-squat",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "gym-bench-press",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "gym-barbell-row",
+                "config": {
+                  "sets": 4
+                }
+              }
+            ]
+          },
+          {
+            "week": 3,
+            "day": "2日目",
+            "restDay": true
+          },
+          {
+            "week": 3,
+            "day": "3日目",
+            "workoutId": "gym-day-b",
+            "overrides": [
+              {
+                "kind": "exercise",
+                "exerciseId": "gym-deadlift",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "gym-overhead-press",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "gym-pullups",
+                "config": {
+                  "sets": 4
+                }
+              }
+            ]
+          },
+          {
+            "week": 3,
+            "day": "4日目",
+            "restDay": true
+          },
+          {
+            "week": 3,
+            "day": "5日目",
+            "workoutId": "gym-day-a",
+            "overrides": [
+              {
+                "kind": "exercise",
+                "exerciseId": "gym-back-squat",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "gym-bench-press",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "gym-barbell-row",
+                "config": {
+                  "sets": 4
+                }
+              }
+            ]
+          },
+          {
+            "week": 3,
+            "day": "6日目",
+            "restDay": true
+          },
+          {
+            "week": 3,
+            "day": "7日目",
+            "restDay": true
+          },
+          {
+            "week": 4,
+            "day": "1日目",
+            "workoutId": "gym-day-b",
+            "notes": "ブロックでいちばんきつい週です。4セットにして、第3週が楽に感じたところは重量を足します。",
+            "overrides": [
+              {
+                "kind": "exercise",
+                "exerciseId": "gym-deadlift",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "gym-overhead-press",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "gym-pullups",
+                "config": {
+                  "sets": 4
+                }
+              }
+            ]
+          },
+          {
+            "week": 4,
+            "day": "2日目",
+            "restDay": true
+          },
+          {
+            "week": 4,
+            "day": "3日目",
+            "workoutId": "gym-day-a",
+            "overrides": [
+              {
+                "kind": "exercise",
+                "exerciseId": "gym-back-squat",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "gym-bench-press",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "gym-barbell-row",
+                "config": {
+                  "sets": 4
+                }
+              }
+            ]
+          },
+          {
+            "week": 4,
+            "day": "4日目",
+            "restDay": true
+          },
+          {
+            "week": 4,
+            "day": "5日目",
+            "workoutId": "gym-day-b",
+            "notes": "ブロック最後のセッションです。やり切ると第1週に戻ります。終えたときの重量から、もう一度ブロックを回してください。",
+            "overrides": [
+              {
+                "kind": "exercise",
+                "exerciseId": "gym-deadlift",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "gym-overhead-press",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "gym-pullups",
+                "config": {
+                  "sets": 4
+                }
+              }
+            ]
+          },
+          {
+            "week": 4,
+            "day": "6日目",
+            "restDay": true
+          },
+          {
+            "week": 4,
+            "day": "7日目",
+            "restDay": true
+          }
+        ]
+      }
+    ]
+  },
+  "shipped-pack-kettlebell-basics-pt": {
+    "version": 1,
+    "exercises": [
+      {
+        "id": "kb-rest",
+        "name": "Descanso",
+        "type": "rest",
+        "config": {
+          "durationSec": 75
+        }
+      },
+      {
+        "id": "kb-swing",
+        "name": "Swing com Kettlebell",
+        "type": "hiit",
+        "config": {
+          "workSec": 30,
+          "restSec": 30,
+          "rounds": 8
+        },
+        "notes": "Trabalho e descanso são de 30s cada, então o bloco inteiro dura oito minutos. Aumente as rodadas antes de aumentar a carga."
+      },
+      {
+        "id": "kb-goblet-squat",
+        "name": "Agachamento Goblet com Kettlebell",
+        "type": "reps",
+        "config": {
+          "sets": 3,
+          "targetRepsMin": 8,
+          "targetRepsMax": 12,
+          "restSec": 90
+        },
+        "notes": "Um único kettlebell junto ao peito. Aumente a carga quando alcançar 12 em todas as séries."
+      },
+      {
+        "id": "kb-clean-press",
+        "name": "Clean e Desenvolvimento",
+        "type": "reps",
+        "config": {
+          "sets": 3,
+          "targetRepsMin": 5,
+          "targetRepsMax": 8,
+          "restSec": 90
+        },
+        "notes": "As repetições são por lado — registre o lado mais fraco, para que o número a superar da próxima vez seja o honesto."
+      },
+      {
+        "id": "kb-single-leg-deadlift",
+        "name": "Levantamento Terra Unilateral",
+        "type": "reps",
+        "config": {
+          "sets": 3,
+          "targetRepsMin": 6,
+          "targetRepsMax": 10,
+          "restSec": 75
+        },
+        "notes": "As repetições são por perna."
+      },
+      {
+        "id": "kb-row",
+        "name": "Remada com Kettlebell",
+        "type": "reps",
+        "config": {
+          "sets": 3,
+          "targetRepsMin": 8,
+          "targetRepsMax": 12,
+          "restSec": 75
+        },
+        "notes": "As repetições são por lado."
+      },
+      {
+        "id": "kb-halo",
+        "name": "Halo",
+        "type": "reps",
+        "config": {
+          "sets": 3,
+          "targetRepsMin": 5,
+          "targetRepsMax": 10,
+          "restSec": 60
+        },
+        "notes": "Um círculo para cada lado é uma repetição."
+      },
+      {
+        "id": "kb-carry",
+        "name": "Caminhada em Rack",
+        "type": "timed_hold",
+        "config": {
+          "sets": 3,
+          "holdSecMin": 30,
+          "holdSecMax": 60,
+          "restSec": 60
+        },
+        "notes": "Aumente o tempo antes de aumentar a carga."
+      }
+    ],
+    "workouts": [
+      {
+        "id": "kb-strength-a",
+        "name": "Kettlebell · Força A",
+        "blocks": [
+          {
+            "kind": "exercise",
+            "exerciseId": "kb-goblet-squat"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "kb-rest"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "kb-row"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "kb-rest"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "kb-carry"
+          }
+        ]
+      },
+      {
+        "id": "kb-strength-b",
+        "name": "Kettlebell · Força B",
+        "blocks": [
+          {
+            "kind": "exercise",
+            "exerciseId": "kb-clean-press"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "kb-rest"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "kb-single-leg-deadlift"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "kb-rest"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "kb-halo"
+          }
+        ]
+      },
+      {
+        "id": "kb-swing-day",
+        "name": "Kettlebell · Swings",
+        "blocks": [
+          {
+            "kind": "exercise",
+            "exerciseId": "kb-swing"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "kb-rest",
+            "configOverride": {
+              "durationSec": 120
+            }
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "kb-carry"
+          }
+        ]
+      }
+    ],
+    "programs": [
+      {
+        "id": "kb-4-weeks",
+        "name": "Kettlebell Essencial · 4 Semanas",
+        "weeks": [
+          {
+            "week": 1,
+            "day": "Dia 1",
+            "workoutId": "kb-strength-a",
+            "notes": "Semana de referência. Um kettlebell basta — registre o peso dele em cada exercício conforme avança."
+          },
+          {
+            "week": 1,
+            "day": "Dia 2",
+            "restDay": true
+          },
+          {
+            "week": 1,
+            "day": "Dia 3",
+            "workoutId": "kb-strength-b"
+          },
+          {
+            "week": 1,
+            "day": "Dia 4",
+            "restDay": true
+          },
+          {
+            "week": 1,
+            "day": "Dia 5",
+            "workoutId": "kb-swing-day"
+          },
+          {
+            "week": 1,
+            "day": "Dia 6",
+            "restDay": true
+          },
+          {
+            "week": 1,
+            "day": "Dia 7",
+            "restDay": true
+          },
+          {
+            "week": 2,
+            "day": "Dia 1",
+            "workoutId": "kb-strength-a",
+            "notes": "As mesmas três sessões. Supere a semana 1 em uma repetição por série antes de mexer na carga."
+          },
+          {
+            "week": 2,
+            "day": "Dia 2",
+            "restDay": true
+          },
+          {
+            "week": 2,
+            "day": "Dia 3",
+            "workoutId": "kb-strength-b"
+          },
+          {
+            "week": 2,
+            "day": "Dia 4",
+            "restDay": true
+          },
+          {
+            "week": 2,
+            "day": "Dia 5",
+            "workoutId": "kb-swing-day"
+          },
+          {
+            "week": 2,
+            "day": "Dia 6",
+            "restDay": true
+          },
+          {
+            "week": 2,
+            "day": "Dia 7",
+            "restDay": true
+          },
+          {
+            "week": 3,
+            "day": "Dia 1",
+            "workoutId": "kb-strength-a",
+            "notes": "Uma quarta série nos dias de força, e mais duas rodadas de swings.",
+            "overrides": [
+              {
+                "kind": "exercise",
+                "exerciseId": "kb-goblet-squat",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "kb-row",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "kb-carry",
+                "config": {
+                  "sets": 4
+                }
+              }
+            ]
+          },
+          {
+            "week": 3,
+            "day": "Dia 2",
+            "restDay": true
+          },
+          {
+            "week": 3,
+            "day": "Dia 3",
+            "workoutId": "kb-strength-b",
+            "overrides": [
+              {
+                "kind": "exercise",
+                "exerciseId": "kb-clean-press",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "kb-single-leg-deadlift",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "kb-halo",
+                "config": {
+                  "sets": 4
+                }
+              }
+            ]
+          },
+          {
+            "week": 3,
+            "day": "Dia 4",
+            "restDay": true
+          },
+          {
+            "week": 3,
+            "day": "Dia 5",
+            "workoutId": "kb-swing-day",
+            "overrides": [
+              {
+                "kind": "exercise",
+                "exerciseId": "kb-swing",
+                "config": {
+                  "rounds": 10
+                }
+              }
+            ]
+          },
+          {
+            "week": 3,
+            "day": "Dia 6",
+            "restDay": true
+          },
+          {
+            "week": 3,
+            "day": "Dia 7",
+            "restDay": true
+          },
+          {
+            "week": 4,
+            "day": "Dia 1",
+            "workoutId": "kb-strength-a",
+            "notes": "Semana mais pesada do bloco. Aumente a carga onde a semana 3 pareceu fácil.",
+            "overrides": [
+              {
+                "kind": "exercise",
+                "exerciseId": "kb-goblet-squat",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "kb-row",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "kb-carry",
+                "config": {
+                  "sets": 4
+                }
+              }
+            ]
+          },
+          {
+            "week": 4,
+            "day": "Dia 2",
+            "restDay": true
+          },
+          {
+            "week": 4,
+            "day": "Dia 3",
+            "workoutId": "kb-strength-b",
+            "overrides": [
+              {
+                "kind": "exercise",
+                "exerciseId": "kb-clean-press",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "kb-single-leg-deadlift",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "kb-halo",
+                "config": {
+                  "sets": 4
+                }
+              }
+            ]
+          },
+          {
+            "week": 4,
+            "day": "Dia 4",
+            "restDay": true
+          },
+          {
+            "week": 4,
+            "day": "Dia 5",
+            "workoutId": "kb-swing-day",
+            "notes": "Última sessão do bloco. Concluí-la volta para a semana 1 — repita o bloco a partir da carga com que você terminou.",
+            "overrides": [
+              {
+                "kind": "exercise",
+                "exerciseId": "kb-swing",
+                "config": {
+                  "rounds": 10
+                }
+              }
+            ]
+          },
+          {
+            "week": 4,
+            "day": "Dia 6",
+            "restDay": true
+          },
+          {
+            "week": 4,
+            "day": "Dia 7",
+            "restDay": true
+          }
+        ]
+      }
+    ]
+  },
+  "shipped-pack-kettlebell-basics-ja": {
+    "version": 1,
+    "exercises": [
+      {
+        "id": "kb-rest",
+        "name": "休憩",
+        "type": "rest",
+        "config": {
+          "durationSec": 75
+        }
+      },
+      {
+        "id": "kb-swing",
+        "name": "ケトルベルスイング",
+        "type": "hiit",
+        "config": {
+          "workSec": 30,
+          "restSec": 30,
+          "rounds": 8
+        },
+        "notes": "運動も休憩も30秒ずつなので、ブロック全体で8分です。重量を足す前に、まずラウンド数を増やします。"
+      },
+      {
+        "id": "kb-goblet-squat",
+        "name": "ケトルベル・ゴブレットスクワット",
+        "type": "reps",
+        "config": {
+          "sets": 3,
+          "targetRepsMin": 8,
+          "targetRepsMax": 12,
+          "restSec": 90
+        },
+        "notes": "1個のベルを胸の前で保持します。全セットで12回に届いたら重量を足します。"
+      },
+      {
+        "id": "kb-clean-press",
+        "name": "クリーン＆プレス",
+        "type": "reps",
+        "config": {
+          "sets": 3,
+          "targetRepsMin": 5,
+          "targetRepsMax": 8,
+          "restSec": 90
+        },
+        "notes": "レップ数は片側あたりです。弱いほうを記録すると、次に超えるべき数字が正直なものになります。"
+      },
+      {
+        "id": "kb-single-leg-deadlift",
+        "name": "片脚デッドリフト",
+        "type": "reps",
+        "config": {
+          "sets": 3,
+          "targetRepsMin": 6,
+          "targetRepsMax": 10,
+          "restSec": 75
+        },
+        "notes": "レップ数は片脚あたりです。"
+      },
+      {
+        "id": "kb-row",
+        "name": "ケトルベルロウ",
+        "type": "reps",
+        "config": {
+          "sets": 3,
+          "targetRepsMin": 8,
+          "targetRepsMax": 12,
+          "restSec": 75
+        },
+        "notes": "レップ数は片側あたりです。"
+      },
+      {
+        "id": "kb-halo",
+        "name": "ハロー",
+        "type": "reps",
+        "config": {
+          "sets": 3,
+          "targetRepsMin": 5,
+          "targetRepsMax": 10,
+          "restSec": 60
+        },
+        "notes": "左右に1周ずつで1レップです。"
+      },
+      {
+        "id": "kb-carry",
+        "name": "ラックキャリー",
+        "type": "timed_hold",
+        "config": {
+          "sets": 3,
+          "holdSecMin": 30,
+          "holdSecMax": 60,
+          "restSec": 60
+        },
+        "notes": "重量を増やす前に、まず時間を伸ばします。"
+      }
+    ],
+    "workouts": [
+      {
+        "id": "kb-strength-a",
+        "name": "ケトルベル · 筋力 A",
+        "blocks": [
+          {
+            "kind": "exercise",
+            "exerciseId": "kb-goblet-squat"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "kb-rest"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "kb-row"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "kb-rest"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "kb-carry"
+          }
+        ]
+      },
+      {
+        "id": "kb-strength-b",
+        "name": "ケトルベル · 筋力 B",
+        "blocks": [
+          {
+            "kind": "exercise",
+            "exerciseId": "kb-clean-press"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "kb-rest"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "kb-single-leg-deadlift"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "kb-rest"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "kb-halo"
+          }
+        ]
+      },
+      {
+        "id": "kb-swing-day",
+        "name": "ケトルベル · スイング",
+        "blocks": [
+          {
+            "kind": "exercise",
+            "exerciseId": "kb-swing"
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "kb-rest",
+            "configOverride": {
+              "durationSec": 120
+            }
+          },
+          {
+            "kind": "exercise",
+            "exerciseId": "kb-carry"
+          }
+        ]
+      }
+    ],
+    "programs": [
+      {
+        "id": "kb-4-weeks",
+        "name": "ケトルベル基礎 · 4週間",
+        "weeks": [
+          {
+            "week": 1,
+            "day": "1日目",
+            "workoutId": "kb-strength-a",
+            "notes": "基準になる週です。ベルは1個で足ります。その重さを各種目に書き込みながら進めてください。"
+          },
+          {
+            "week": 1,
+            "day": "2日目",
+            "restDay": true
+          },
+          {
+            "week": 1,
+            "day": "3日目",
+            "workoutId": "kb-strength-b"
+          },
+          {
+            "week": 1,
+            "day": "4日目",
+            "restDay": true
+          },
+          {
+            "week": 1,
+            "day": "5日目",
+            "workoutId": "kb-swing-day"
+          },
+          {
+            "week": 1,
+            "day": "6日目",
+            "restDay": true
+          },
+          {
+            "week": 1,
+            "day": "7日目",
+            "restDay": true
+          },
+          {
+            "week": 2,
+            "day": "1日目",
+            "workoutId": "kb-strength-a",
+            "notes": "同じ3セッションです。重量に触れる前に、各セットで第1週より1レップ多く出します。"
+          },
+          {
+            "week": 2,
+            "day": "2日目",
+            "restDay": true
+          },
+          {
+            "week": 2,
+            "day": "3日目",
+            "workoutId": "kb-strength-b"
+          },
+          {
+            "week": 2,
+            "day": "4日目",
+            "restDay": true
+          },
+          {
+            "week": 2,
+            "day": "5日目",
+            "workoutId": "kb-swing-day"
+          },
+          {
+            "week": 2,
+            "day": "6日目",
+            "restDay": true
+          },
+          {
+            "week": 2,
+            "day": "7日目",
+            "restDay": true
+          },
+          {
+            "week": 3,
+            "day": "1日目",
+            "workoutId": "kb-strength-a",
+            "notes": "筋力の日は4セットにし、スイングは2ラウンド増やします。",
+            "overrides": [
+              {
+                "kind": "exercise",
+                "exerciseId": "kb-goblet-squat",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "kb-row",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "kb-carry",
+                "config": {
+                  "sets": 4
+                }
+              }
+            ]
+          },
+          {
+            "week": 3,
+            "day": "2日目",
+            "restDay": true
+          },
+          {
+            "week": 3,
+            "day": "3日目",
+            "workoutId": "kb-strength-b",
+            "overrides": [
+              {
+                "kind": "exercise",
+                "exerciseId": "kb-clean-press",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "kb-single-leg-deadlift",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "kb-halo",
+                "config": {
+                  "sets": 4
+                }
+              }
+            ]
+          },
+          {
+            "week": 3,
+            "day": "4日目",
+            "restDay": true
+          },
+          {
+            "week": 3,
+            "day": "5日目",
+            "workoutId": "kb-swing-day",
+            "overrides": [
+              {
+                "kind": "exercise",
+                "exerciseId": "kb-swing",
+                "config": {
+                  "rounds": 10
+                }
+              }
+            ]
+          },
+          {
+            "week": 3,
+            "day": "6日目",
+            "restDay": true
+          },
+          {
+            "week": 3,
+            "day": "7日目",
+            "restDay": true
+          },
+          {
+            "week": 4,
+            "day": "1日目",
+            "workoutId": "kb-strength-a",
+            "notes": "ブロックでいちばんきつい週です。第3週が楽に感じたところは重量を足します。",
+            "overrides": [
+              {
+                "kind": "exercise",
+                "exerciseId": "kb-goblet-squat",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "kb-row",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "kb-carry",
+                "config": {
+                  "sets": 4
+                }
+              }
+            ]
+          },
+          {
+            "week": 4,
+            "day": "2日目",
+            "restDay": true
+          },
+          {
+            "week": 4,
+            "day": "3日目",
+            "workoutId": "kb-strength-b",
+            "overrides": [
+              {
+                "kind": "exercise",
+                "exerciseId": "kb-clean-press",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "kb-single-leg-deadlift",
+                "config": {
+                  "sets": 4
+                }
+              },
+              {
+                "kind": "exercise",
+                "exerciseId": "kb-halo",
+                "config": {
+                  "sets": 4
+                }
+              }
+            ]
+          },
+          {
+            "week": 4,
+            "day": "4日目",
+            "restDay": true
+          },
+          {
+            "week": 4,
+            "day": "5日目",
+            "workoutId": "kb-swing-day",
+            "notes": "ブロック最後のセッションです。やり切ると第1週に戻ります。終えたときの重量から、もう一度ブロックを回してください。",
+            "overrides": [
+              {
+                "kind": "exercise",
+                "exerciseId": "kb-swing",
+                "config": {
+                  "rounds": 10
+                }
+              }
+            ]
+          },
+          {
+            "week": 4,
+            "day": "6日目",
+            "restDay": true
+          },
+          {
+            "week": 4,
+            "day": "7日目",
+            "restDay": true
+          }
+        ]
+      }
+    ]
+  }
+}

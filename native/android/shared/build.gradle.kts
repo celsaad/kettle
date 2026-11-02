@@ -48,6 +48,10 @@ class ConformanceCorpus(
 tasks.named<Test>("jvmTest") {
     useJUnitPlatform()
     jvmArgumentProviders.add(ConformanceCorpus(rootProject.layout.projectDirectory.dir("../../conformance")))
+    // `source:` cases read these in place too, so an edit to the shipped content reruns the tests.
+    listOf("../../src/content", "../../site/examples").forEach {
+        inputs.dir(rootProject.layout.projectDirectory.dir(it)).withPathSensitivity(PathSensitivity.RELATIVE)
+    }
     testLogging {
         events("passed", "skipped", "failed")
     }

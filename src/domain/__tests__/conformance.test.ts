@@ -9,6 +9,7 @@ import { parseSupporterState } from '@/domain/tip';
 import type { Library, WorkoutBlock } from '@/domain/types';
 import { fromDisplayWeight, toDisplayWeight, weightStep, type UnitSystem } from '@/domain/units';
 import { entryBest, recordKey, type RecordKind } from '@/state/selectors/records';
+import { localizeLibrary, translationFor, type LibraryTranslation } from '@/storage/library-translation';
 import { sessionDurationMinutes, sessionEntryResult, sessionSetCount } from '@/state/selectors/session-summary';
 import {
   diffBlockOverride,
@@ -62,6 +63,13 @@ function normalisedParse(result: ParseResult<unknown>): unknown {
   return { ok: false, kind: 'schemaMismatch', paths: [...new Set(result.error.paths)].toSorted() };
 }
 
+/** A case's library: the repo file at `source`, or the inline YAML under `key`. */
+function libraryText(testCase: Case, key: string): string {
+  return typeof testCase.source === 'string'
+    ? readFileSync(`${repoRoot}/${testCase.source}`, 'utf8')
+    : (testCase[key] as string);
+}
+
 function mustParseLibrary(yaml: string): Library {
   const result = parseLibraryYaml(yaml);
   if (!result.ok) throw new Error(`fixture library does not parse: ${JSON.stringify(result.error)}`);
@@ -69,12 +77,18 @@ function mustParseLibrary(yaml: string): Library {
 }
 
 const runners: Record<string, (testCase: Case) => unknown> = {
-  library: (testCase) => {
-    const text =
-      typeof testCase.source === 'string'
-        ? readFileSync(`${repoRoot}/${testCase.source}`, 'utf8')
-        : (testCase.input as string);
-    return normalisedParse(parseLibraryYaml(text));
+  library: (testCase) => normalisedParse(parseLibraryYaml(libraryText(testCase, 'input'))),
+
+  localize: (testCase) => {
+    // A table is inline, or the path of a shipped `<language>.json`, read in place like `source`.
+    const tables = Object.fromEntries(
+      Object.entries(testCase.tables as Record<string, LibraryTranslation | string>).map(([language, table]) => [
+        language,
+        typeof table === 'string' ? (JSON.parse(readFileSync(`${repoRoot}/${table}`, 'utf8')) as LibraryTranslation) : table,
+      ]),
+    );
+    const library = mustParseLibrary(libraryText(testCase, 'library'));
+    return plain(localizeLibrary(library, translationFor(tables, testCase.language as string | undefined)));
   },
 
   session: (testCase) => normalisedParse(parseSessionYaml(testCase.input as string)),

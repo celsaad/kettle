@@ -1,0 +1,285 @@
+# Barbell Gym. Six lifts across two alternating days, a bar and a rack. Deliberately not a machine
+# circuit: machines vary too much between gyms for a shipped library to name one and still be right.
+#
+# Weeks are the three-on/four-off shape all three packs use, written days 1 through 7 in order with
+# every rest day longhand, because weeks run in the order they are written. The fourth-set bump of
+# weeks 3 and 4 is repeated in each week, because overrides don't carry forward.
+version: 1
+exercises:
+  - id: gym-rest
+    name: Rest
+    type: rest
+    config:
+      duration_sec: 150
+  - id: gym-back-squat
+    name: Back Squat
+    type: reps
+    config:
+      sets: 3
+      target_reps_min: 5
+      target_reps_max: 8
+      rest_sec: 180
+    notes: >-
+      No weight is seeded — set yours on the first session, then add the
+      smallest plate pair the gym has once you hit 8 on every set.
+  - id: gym-bench-press
+    name: Bench Press
+    type: reps
+    config:
+      sets: 3
+      target_reps_min: 5
+      target_reps_max: 8
+      rest_sec: 180
+    notes: Add weight once you hit 8 on every set, not on your best one.
+  - id: gym-deadlift
+    name: Deadlift
+    type: reps
+    config:
+      sets: 3
+      target_reps_min: 3
+      target_reps_max: 5
+      rest_sec: 180
+    notes: >-
+      A shorter range than the rest of the block, so the top of it arrives
+      sooner. Add weight at 5 on every set.
+  - id: gym-overhead-press
+    name: Overhead Press
+    type: reps
+    config:
+      sets: 3
+      target_reps_min: 5
+      target_reps_max: 8
+      rest_sec: 150
+    notes: >-
+      The smallest jump you own is a big one here. Expect to sit at the top of
+      the range for a while.
+  - id: gym-barbell-row
+    name: Barbell Row
+    type: reps
+    config:
+      sets: 3
+      target_reps_min: 6
+      target_reps_max: 10
+      rest_sec: 150
+  - id: gym-pullups
+    name: Pull-ups
+    type: reps
+    config:
+      sets: 3
+      target_reps_min: 3
+      target_reps_max: 8
+      rest_sec: 120
+    notes: >-
+      Log assisted reps as reps. The number you beat next time is your own
+      either way.
+  - id: gym-cooldown
+    name: Cooldown
+    type: cardio
+    config:
+      duration_sec: 600
+    notes: >-
+      Bike, row, walk — whatever is free. Add a distance to the config if you
+      want that tracked too.
+workouts:
+  - id: gym-day-a
+    name: Gym · Day A
+    blocks:
+      - type: exercise
+        exercise: gym-back-squat
+      - type: exercise
+        exercise: gym-rest
+      - type: exercise
+        exercise: gym-bench-press
+      - type: exercise
+        exercise: gym-rest
+      - type: exercise
+        exercise: gym-barbell-row
+      - type: exercise
+        exercise: gym-rest
+        config:
+          duration_sec: 90
+      - type: exercise
+        exercise: gym-cooldown
+  - id: gym-day-b
+    name: Gym · Day B
+    blocks:
+      - type: exercise
+        exercise: gym-deadlift
+      - type: exercise
+        exercise: gym-rest
+      - type: exercise
+        exercise: gym-overhead-press
+      - type: exercise
+        exercise: gym-rest
+      - type: exercise
+        exercise: gym-pullups
+      - type: exercise
+        exercise: gym-rest
+        config:
+          duration_sec: 90
+      - type: exercise
+        exercise: gym-cooldown
+programs:
+  - id: gym-4-weeks
+    name: Barbell Gym · 4 Weeks
+    # A/B/A then B/A/B, so each day lands three times a fortnight rather than twice a week.
+    weeks:
+      - week: 1
+        day: Day 1
+        workout: gym-day-a
+        notes: >-
+          Baseline week. Pick weights you could stop 2 reps shy of failure with,
+          and write them into each lift.
+      - week: 1
+        day: Day 2
+        rest_day: true
+      - week: 1
+        day: Day 3
+        workout: gym-day-b
+      - week: 1
+        day: Day 4
+        rest_day: true
+      - week: 1
+        day: Day 5
+        workout: gym-day-a
+      - week: 1
+        day: Day 6
+        rest_day: true
+      - week: 1
+        day: Day 7
+        rest_day: true
+      - week: 2
+        day: Day 1
+        workout: gym-day-b
+        notes: >-
+          The A/B order flips this week. Add the smallest jump you own to
+          anything you hit the top of the range on.
+      - week: 2
+        day: Day 2
+        rest_day: true
+      - week: 2
+        day: Day 3
+        workout: gym-day-a
+      - week: 2
+        day: Day 4
+        rest_day: true
+      - week: 2
+        day: Day 5
+        workout: gym-day-b
+      - week: 2
+        day: Day 6
+        rest_day: true
+      - week: 2
+        day: Day 7
+        rest_day: true
+      - week: 3
+        day: Day 1
+        workout: gym-day-a
+        notes: >-
+          A fourth set on the main lifts. Hold the weights where they are this
+          week.
+        overrides:
+          - exercise: gym-back-squat
+            config:
+              sets: 4
+          - exercise: gym-bench-press
+            config:
+              sets: 4
+          - exercise: gym-barbell-row
+            config:
+              sets: 4
+      - week: 3
+        day: Day 2
+        rest_day: true
+      - week: 3
+        day: Day 3
+        workout: gym-day-b
+        overrides:
+          - exercise: gym-deadlift
+            config:
+              sets: 4
+          - exercise: gym-overhead-press
+            config:
+              sets: 4
+          - exercise: gym-pullups
+            config:
+              sets: 4
+      - week: 3
+        day: Day 4
+        rest_day: true
+      - week: 3
+        day: Day 5
+        workout: gym-day-a
+        overrides:
+          - exercise: gym-back-squat
+            config:
+              sets: 4
+          - exercise: gym-bench-press
+            config:
+              sets: 4
+          - exercise: gym-barbell-row
+            config:
+              sets: 4
+      - week: 3
+        day: Day 6
+        rest_day: true
+      - week: 3
+        day: Day 7
+        rest_day: true
+      - week: 4
+        day: Day 1
+        workout: gym-day-b
+        notes: >-
+          Heaviest week of the block: four sets, and add weight wherever week 3
+          felt easy.
+        overrides:
+          - exercise: gym-deadlift
+            config:
+              sets: 4
+          - exercise: gym-overhead-press
+            config:
+              sets: 4
+          - exercise: gym-pullups
+            config:
+              sets: 4
+      - week: 4
+        day: Day 2
+        rest_day: true
+      - week: 4
+        day: Day 3
+        workout: gym-day-a
+        overrides:
+          - exercise: gym-back-squat
+            config:
+              sets: 4
+          - exercise: gym-bench-press
+            config:
+              sets: 4
+          - exercise: gym-barbell-row
+            config:
+              sets: 4
+      - week: 4
+        day: Day 4
+        rest_day: true
+      - week: 4
+        day: Day 5
+        workout: gym-day-b
+        notes: >-
+          Last session of the block. Completing it loops back to week 1 — run it
+          again from the weights you finished on.
+        overrides:
+          - exercise: gym-deadlift
+            config:
+              sets: 4
+          - exercise: gym-overhead-press
+            config:
+              sets: 4
+          - exercise: gym-pullups
+            config:
+              sets: 4
+      - week: 4
+        day: Day 6
+        rest_day: true
+      - week: 4
+        day: Day 7
+        rest_day: true

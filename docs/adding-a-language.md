@@ -29,11 +29,13 @@ it — and step 3 is new, because `app.json` stopped being language-agnostic.
    `locales_config.xml`, sets `android:localeConfig` and appends `resourceConfigurations` to
    `build.gradle`, which is an Android build change and a decision of its own.
    `docs/ios-plan.md` §2.5 has the mechanism.
-4. **`src/storage/seed-translations.ts`** — a `SeedTranslation` for the starter library. **This is the
-   one that gets forgotten**, because nothing fails: a language with no table falls back to English
-   per string, so a new user gets translated chrome around an English library and the suite stays
-   green. `seed-library.test.ts` only checks languages *already in* the table (it enforces parity
-   within one, in both directions, not that every UI language has one).
+4. **`src/content/seed/<lang>.json`** — the starter library's string table, imported in
+   `seed-library.ts`, plus one per pack in `src/content/packs/<id>/`, imported in `content-packs.ts`.
+   **This is the one that gets forgotten**, because nothing fails: a language with no table falls back
+   to English per string, so a new user gets translated chrome around an English library and the suite
+   stays green. `seed-library.test.ts` and `content-packs.test.ts` only check languages *already*
+   imported (they enforce parity within one, in both directions, and that every table in a directory
+   is imported, not that every UI language has one).
 5. **`jest.setup-after-env.js`** — the harness inits i18next with its own explicit `{ en, pt, ja }`
    resources, deliberately not importing `@/i18n` (which would pull `expo-localization` into every
    test that touches formatting). A new language isn't visible to tests until it's added here too —

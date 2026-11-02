@@ -1,0 +1,61 @@
+{
+  "days": {
+    "Day 1": "Dia 1",
+    "Day 2": "Dia 2",
+    "Day 3": "Dia 3",
+    "Day 4": "Dia 4",
+    "Day 5": "Dia 5",
+    "Day 6": "Dia 6",
+    "Day 7": "Dia 7"
+  },
+  "exercises": {
+    "kb-rest": {
+      "name": "Descanso"
+    },
+    "kb-swing": {
+      "name": "Swing com Kettlebell",
+      "notes": "Trabalho e descanso são de 30s cada, então o bloco inteiro dura oito minutos. Aumente as rodadas antes de aumentar a carga."
+    },
+    "kb-goblet-squat": {
+      "name": "Agachamento Goblet com Kettlebell",
+      "notes": "Um único kettlebell junto ao peito. Aumente a carga quando alcançar 12 em todas as séries."
+    },
+    "kb-clean-press": {
+      "name": "Clean e Desenvolvimento",
+      "notes": "As repetições são por lado — registre o lado mais fraco, para que o número a superar da próxima vez seja o honesto."
+    },
+    "kb-single-leg-deadlift": {
+      "name": "Levantamento Terra Unilateral",
+      "notes": "As repetições são por perna."
+    },
+    "kb-row": {
+      "name": "Remada com Kettlebell",
+      "notes": "As repetições são por lado."
+    },
+    "kb-halo": {
+      "name": "Halo",
+      "notes": "Um círculo para cada lado é uma repetição."
+    },
+    "kb-carry": {
+      "name": "Caminhada em Rack",
+      "notes": "Aumente o tempo antes de aumentar a carga."
+    }
+  },
+  "workouts": {
+    "kb-strength-a": "Kettlebell · Força A",
+    "kb-strength-b": "Kettlebell · Força B",
+    "kb-swing-day": "Kettlebell · Swings"
+  },
+  "programs": {
+    "kb-4-weeks": {
+      "name": "Kettlebell Essencial · 4 Semanas",
+      "weekNotes": {
+        "1|Day 1": "Semana de referência. Um kettlebell basta — registre o peso dele em cada exercício conforme avança.",
+        "2|Day 1": "As mesmas três sessões. Supere a semana 1 em uma repetição por série antes de mexer na carga.",
+        "3|Day 1": "Uma quarta série nos dias de força, e mais duas rodadas de swings.",
+        "4|Day 1": "Semana mais pesada do bloco. Aumente a carga onde a semana 3 pareceu fácil.",
+        "4|Day 5": "Última sessão do bloco. Concluí-la volta para a semana 1 — repita o bloco a partir da carga com que você terminou."
+      }
+    }
+  }
+}

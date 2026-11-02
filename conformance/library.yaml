@@ -68,6 +68,17 @@ cases:
   - name: site-example-push-pull-legs-6-weeks
     source: site/examples/push-pull-legs-6-weeks.yaml
 
+  # The libraries the app ships, which both apps read from src/content/ and parse with their own
+  # parser. An edit to that content moves these goldens.
+  - name: shipped-seed
+    source: src/content/seed/library.yaml
+  - name: shipped-pack-steady-strength
+    source: src/content/packs/steady-strength/library.yaml
+  - name: shipped-pack-barbell-gym
+    source: src/content/packs/barbell-gym/library.yaml
+  - name: shipped-pack-kettlebell-basics
+    source: src/content/packs/kettlebell-basics/library.yaml
+
   - name: empty-library
     input: |
       version: 1

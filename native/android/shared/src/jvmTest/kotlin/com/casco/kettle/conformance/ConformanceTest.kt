@@ -17,9 +17,12 @@ import com.casco.kettle.domain.entryBest
 import com.casco.kettle.domain.filterByName
 import com.casco.kettle.domain.findProgramWeek
 import com.casco.kettle.domain.fromDisplayWeight
+import com.casco.kettle.domain.libraryTranslationOf
+import com.casco.kettle.domain.localizeLibrary
 import com.casco.kettle.domain.mergeBlockOverride
 import com.casco.kettle.domain.mergeExerciseOverride
 import com.casco.kettle.domain.mergeLibraries
+import com.casco.kettle.domain.parseLibraryTranslation
 import com.casco.kettle.domain.parseLibraryYaml
 import com.casco.kettle.domain.parsePreferences
 import com.casco.kettle.domain.parseSessionYaml
@@ -35,6 +38,7 @@ import com.casco.kettle.domain.sessionDurationMinutes
 import com.casco.kettle.domain.sessionEntryResult
 import com.casco.kettle.domain.sessionSetCount
 import com.casco.kettle.domain.toDisplayWeight
+import com.casco.kettle.domain.translationFor
 import com.casco.kettle.domain.weightStep
 import it.krzeminski.snakeyaml.engine.kmp.api.Load
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -58,6 +62,7 @@ class ConformanceTest {
     private val runners: Map<String, (Case) -> Any?> =
         mapOf(
             "library" to ::runLibrary,
+            "localize" to ::runLocalize,
             "merge" to ::runMerge,
             "overrides" to ::runOverrides,
             "preferences" to ::runPreferences,
@@ -132,6 +137,20 @@ class ConformanceTest {
     }
 
     private fun runLibrary(case: Case): Any = golden(parseLibraryYaml(libraryText(case)), ::libraryJson)
+
+    /** A table is inline, or the path of a shipped `<language>.json`, read in place like `source`. */
+    private fun runLocalize(case: Case): Any {
+        val tables =
+            case.map("tables").entries.associate { (language, table) ->
+                language as String to
+                    when (table) {
+                        is String -> parseLibraryTranslation(File(conformanceDir.parentFile, table).readText())
+                        else -> libraryTranslationOf(table)
+                    }
+            }
+        val library = mustParseLibrary(libraryText(case, "library"))
+        return libraryJson(localizeLibrary(library, translationFor(tables, case.string("language"))))
+    }
 
     private fun runMerge(case: Case): Any =
         mergeJson(
@@ -277,6 +296,8 @@ class Case(
     // Cast per element, so an unquoted name that loads as a number fails here, naming the value.
     fun strings(key: String): List<String> = (fields[key] as List<*>).map { it as String }
 
+    fun map(key: String): Map<*, *> = fields[key] as Map<*, *>
+
     @Suppress("UNCHECKED_CAST")
     fun maps(key: String): List<Map<String, Any?>> = fields[key] as List<Map<String, Any?>>
 
@@ -284,11 +305,14 @@ class Case(
 }
 
 /**
- * A library case's text: inline `input`, or the repo file at `source` (the published
- * `site/examples/` libraries), read in place like the corpus itself so there is still one copy.
+ * A case's library text: inline under [key], or the repo file at `source` (the published
+ * `site/examples/` libraries and the shipped `src/content/` ones), read in place like the corpus
+ * itself so there is still one copy.
  */
-private fun libraryText(case: Case): String =
-    case.string("source")?.let { File(conformanceDir.parentFile, it).readText() } ?: case.string("input")!!
+private fun libraryText(
+    case: Case,
+    key: String = "input",
+): String = case.string("source")?.let { File(conformanceDir.parentFile, it).readText() } ?: case.string(key)!!
 
 // Lazy so a missing property fails the test with this message, not as the ExceptionInInitializerError
 // a top-level initialiser would throw.

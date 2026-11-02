@@ -1,12 +1,13 @@
 import type { Exercise, Library, Program } from '@/domain/types';
+import { parseLibraryYaml } from '@/domain/yaml-mapping';
 
 /**
  * The shape of a per-language string table for a library the app ships, and the machinery that
- * applies one.
+ * applies one. The tables themselves are the `<language>.json` files beside each library in
+ * `src/content/`, which the native app reads too.
  *
- * This started life inside `seed-translations.ts` and moved here the moment a second body of shipped
- * content existed (`content-packs.ts`). The reason it moved rather than being copied is the reason
- * the string-table shape was chosen in the first place: **structure is single-sourced, strings are
+ * It is shared by the seed and the content packs rather than copied into each for the reason the
+ * string-table shape was chosen in the first place: **structure is single-sourced, strings are
  * per-language.** A second copy of `localizeLibrary` would let the seed and the packs disagree about
  * which fields are translatable — and the field this would silently get wrong is `restDay`, where
  * "translated" and "structural" is the difference between a day off and a training day.
@@ -87,4 +88,18 @@ export function translationFor(
   language: string | undefined,
 ): LibraryTranslation | undefined {
   return tables[(language ?? '').split('-')[0]];
+}
+
+/**
+ * A library the app ships, from its YAML text in `src/content/`. It goes through the same parser as a
+ * user's file, so shipped content can't use a shape an import would refuse.
+ *
+ * **Throws rather than degrading.** A shipped file that doesn't parse is a build defect, there is
+ * nothing honest to fall back to, and `seed-library.test.ts` and `content-packs.test.ts` parse every
+ * one, so it can't reach a release.
+ */
+export function parseShippedLibrary(text: string, name: string): Library {
+  const result = parseLibraryYaml(text);
+  if (!result.ok) throw new Error(`shipped library ${name} does not parse: ${result.error.detail}`);
+  return result.data;
 }

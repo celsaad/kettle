@@ -2,11 +2,17 @@ import { mergeLibraries } from '@/domain/merge';
 import { programWeekNumbers } from '@/domain/program';
 import { parseLibraryYaml, serializeLibraryYaml } from '@/domain/yaml-mapping';
 import { nextWeekAfter } from '@/state/selectors/next-up';
-import { contentPackLibrary, contentPacks } from '@/storage/content-packs';
-import { contentPackTranslations } from '@/storage/content-pack-translations';
+import { contentPackLibrary, contentPacks, contentPackSources } from '@/storage/content-packs';
 import { libraryWeekKey } from '@/storage/library-translation';
 import { seedLibrary } from '@/storage/seed-library';
 import type { Library, Program, Session } from '@/domain/types';
+
+// oxlint-disable-next-line no-underscore-dangle -- node's own global; the name isn't ours to choose.
+declare const __dirname: string;
+declare function require(id: 'node:fs'): { readdirSync(path: string): string[] };
+
+const { readdirSync } = require('node:fs');
+const packsDir = `${__dirname}/../../content/packs`;
 
 /**
  * A pack is a library the app writes into somebody's own, so it owes every invariant the seed owes —
@@ -38,9 +44,9 @@ describe.each(contentPacks.map((pack) => [pack.id, pack] as const))('the %s pack
     // The prefix test above proves the ids are *shaped* right; this proves the shape actually bought
     // what it was for. A fresh install merging this pack must add, never replace.
     const seeded = new Set([
-      ...seedLibrary.exercises.map((item) => item.id),
-      ...seedLibrary.workouts.map((item) => item.id),
-      ...seedLibrary.programs.map((item) => item.id),
+      ...seedLibrary().exercises.map((item) => item.id),
+      ...seedLibrary().workouts.map((item) => item.id),
+      ...seedLibrary().programs.map((item) => item.id),
     ]);
     const packIds = [
       ...pack.library.exercises.map((item) => item.id),
@@ -71,7 +77,7 @@ describe.each(contentPacks.map((pack) => [pack.id, pack] as const))('the %s pack
       // The actual thing the import screen does on a tap, and the only test that exercises the two
       // halves together: references are validated against the *merged* whole, which is what would
       // catch a pack that reached for the seed's `rest` instead of shipping its own.
-      const result = mergeLibraries(seedLibrary, library);
+      const result = mergeLibraries(seedLibrary(), library);
       if (!result.ok) throw new Error(`pack refused against the seed: ${JSON.stringify(result.error)}`);
       expect({
         updatedExercises: result.summary.updatedExercises,
@@ -146,9 +152,7 @@ describe.each(contentPacks.map((pack) => [pack.id, pack] as const))('the %s pack
  */
 describe.each(
   contentPacks.flatMap((pack) =>
-    Object.entries(contentPackTranslations[pack.id] ?? {}).map(
-      ([language, strings]) => [pack.id, language, pack, strings] as const,
-    ),
+    Object.entries(pack.translations).map(([language, strings]) => [pack.id, language, pack, strings] as const),
   ),
 )('the %s pack in %s', (_id, _language, pack, strings) => {
   const structure = pack.library;
@@ -215,7 +219,7 @@ describe('every language a pack ships', () => {
     // must come through a translation byte-identical, `restDay` included — turning a training day
     // into a day off is exactly the kind of change a translation must not be able to make.
     for (const pack of contentPacks) {
-      for (const language of Object.keys(contentPackTranslations[pack.id] ?? {})) {
+      for (const language of Object.keys(pack.translations)) {
         expect(structureOf(contentPackLibrary(pack, language))).toEqual(structureOf(pack.library));
       }
     }
@@ -241,10 +245,27 @@ describe('the pack list', () => {
     expect(new Set(contentPacks.map((pack) => pack.idPrefix)).size).toBe(contentPacks.length);
   });
 
+  it('names the same packs in packs.json, the import map and src/content/packs/', () => {
+    // Three places, because Metro bundles only what a static import names and native reads only what
+    // packs.json lists. A pack in one and not another ships to one app and not the other, or not at all.
+    const listed = contentPacks.map((pack) => pack.id).toSorted();
+    expect(Object.keys(contentPackSources).toSorted()).toEqual(listed);
+    expect(readdirSync(packsDir).toSorted()).toEqual(listed);
+  });
+
+  it('bundles every file in each pack directory', () => {
+    // A `<language>.json` the import map doesn't name is a translation that native would read and RN
+    // would not.
+    for (const pack of contentPacks) {
+      const languages = Object.keys(pack.translations).map((language) => `${language}.json`);
+      expect(readdirSync(`${packsDir}/${pack.id}`).toSorted()).toEqual(['library.yaml', ...languages].toSorted());
+    }
+  });
+
   it('lets any two packs be merged together', () => {
     // Nothing stops somebody taking all three, and two packs sharing an id would only show up then —
     // as one quietly replacing part of the other.
-    let library: Library = seedLibrary;
+    let library: Library = seedLibrary();
     for (const pack of contentPacks) {
       const result = mergeLibraries(library, contentPackLibrary(pack, 'en'));
       if (!result.ok) throw new Error(`${pack.id} refused: ${JSON.stringify(result.error)}`);

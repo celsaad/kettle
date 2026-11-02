@@ -2,8 +2,8 @@ import { mergeLibraries } from '@/domain/merge';
 import { programWeekNumbers } from '@/domain/program';
 import { parseLibraryYaml, serializeLibraryYaml } from '@/domain/yaml-mapping';
 import { nextWeekAfter } from '@/state/selectors/next-up';
-import { seedLibrary, seedLibraryFor } from '@/storage/seed-library';
-import { seedTranslations, seedWeekKey } from '@/storage/seed-translations';
+import { libraryWeekKey } from '@/storage/library-translation';
+import { seedLibrary, seedLibraryFor, seedTranslations } from '@/storage/seed-library';
 import type { Library, Program, Session } from '@/domain/types';
 
 /**
@@ -19,6 +19,19 @@ import type { Library, Program, Session } from '@/domain/types';
 const emptyLibrary: Library = { version: 1, exercises: [], workouts: [], programs: [] };
 
 const seedLanguages = ['en', ...Object.keys(seedTranslations)];
+
+// oxlint-disable-next-line no-underscore-dangle -- node's own global; the name isn't ours to choose.
+declare const __dirname: string;
+declare function require(id: 'node:fs'): { readdirSync(path: string): string[] };
+
+const { readdirSync } = require('node:fs');
+
+it('bundles every file in src/content/seed/', () => {
+  // Native reads the directory and RN reads what seed-library.ts imports, so a `<language>.json` added
+  // to one and not the other is a seed that lands translated on one app and in English on the other.
+  const languages = Object.keys(seedTranslations).map((language) => `${language}.json`);
+  expect(readdirSync(`${__dirname}/../../content/seed`).toSorted()).toEqual(['library.yaml', ...languages].toSorted());
+});
 
 describe.each(seedLanguages)('the %s seed', (language) => {
   const seed = seedLibraryFor(language);
@@ -125,20 +138,26 @@ describe.each(Object.entries(seedTranslations))('the %s translation', (language,
 
   it('translates every exercise, workout and program', () => {
     expect({
-      exercises: seedLibrary.exercises.filter((item) => !strings.exercises[item.id]).map((item) => item.id),
-      workouts: seedLibrary.workouts.filter((item) => !strings.workouts[item.id]).map((item) => item.id),
-      programs: seedLibrary.programs.filter((item) => !strings.programs[item.id]).map((item) => item.id),
+      exercises: seedLibrary()
+        .exercises.filter((item) => !strings.exercises[item.id])
+        .map((item) => item.id),
+      workouts: seedLibrary()
+        .workouts.filter((item) => !strings.workouts[item.id])
+        .map((item) => item.id),
+      programs: seedLibrary()
+        .programs.filter((item) => !strings.programs[item.id])
+        .map((item) => item.id),
     }).toEqual({ exercises: [], workouts: [], programs: [] });
   });
 
   it('translates every note and day label', () => {
-    const missingNotes = seedLibrary.exercises.filter((item) => item.notes && !strings.exercises[item.id]?.notes);
-    const missingWeekNotes = seedLibrary.programs.flatMap((program) =>
+    const missingNotes = seedLibrary().exercises.filter((item) => item.notes && !strings.exercises[item.id]?.notes);
+    const missingWeekNotes = seedLibrary().programs.flatMap((program) =>
       program.weeks
-        .filter((week) => week.notes && !strings.programs[program.id]?.weekNotes?.[seedWeekKey(week.week, week.day)])
-        .map((week) => `${program.id} ${seedWeekKey(week.week, week.day)}`),
+        .filter((week) => week.notes && !strings.programs[program.id]?.weekNotes?.[libraryWeekKey(week.week, week.day)])
+        .map((week) => `${program.id} ${libraryWeekKey(week.week, week.day)}`),
     );
-    const missingDays = seedLibrary.programs.flatMap((program) =>
+    const missingDays = seedLibrary().programs.flatMap((program) =>
       program.weeks.filter((week) => week.day && !strings.days[week.day]).map((week) => week.day),
     );
 
@@ -153,10 +172,10 @@ describe.each(Object.entries(seedTranslations))('the %s translation', (language,
     // The other direction, and the one a rename breaks: an id dropped or renamed in the structure
     // leaves a table entry that silently stops applying, so the language quietly reverts to English.
     const ids = {
-      exercises: new Set(seedLibrary.exercises.map((item) => item.id)),
-      workouts: new Set(seedLibrary.workouts.map((item) => item.id)),
-      programs: new Set(seedLibrary.programs.map((item) => item.id)),
-      days: new Set(seedLibrary.programs.flatMap((program) => program.weeks.map((week) => week.day))),
+      exercises: new Set(seedLibrary().exercises.map((item) => item.id)),
+      workouts: new Set(seedLibrary().workouts.map((item) => item.id)),
+      programs: new Set(seedLibrary().programs.map((item) => item.id)),
+      days: new Set(seedLibrary().programs.flatMap((program) => program.weeks.map((week) => week.day))),
     };
 
     expect({
@@ -166,9 +185,9 @@ describe.each(Object.entries(seedTranslations))('the %s translation', (language,
       days: Object.keys(strings.days).filter((day) => !ids.days.has(day)),
       weekNotes: Object.entries(strings.programs).flatMap(([programId, program]) => {
         const weeks = new Set(
-          seedLibrary.programs
-            .find((candidate) => candidate.id === programId)
-            ?.weeks.map((week) => seedWeekKey(week.week, week.day)) ?? [],
+          seedLibrary()
+            .programs.find((candidate) => candidate.id === programId)
+            ?.weeks.map((week) => libraryWeekKey(week.week, week.day)) ?? [],
         );
         return Object.keys(program.weekNotes ?? {})
           .filter((key) => !weeks.has(key))
@@ -181,7 +200,7 @@ describe.each(Object.entries(seedTranslations))('the %s translation', (language,
     // The argument for a string table over a second Library literal is that structure stays
     // single-sourced. This is what holds it to that: ids, types, configs, blocks, week numbers and
     // overrides must come through a translation byte-identical.
-    expect(structureOf(seed)).toEqual(structureOf(seedLibrary));
+    expect(structureOf(seed)).toEqual(structureOf(seedLibrary()));
   });
 });
 

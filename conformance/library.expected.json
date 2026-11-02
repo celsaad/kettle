@@ -2019,6 +2019,2253 @@
       ]
     }
   },
+  "shipped-seed": {
+    "ok": true,
+    "value": {
+      "version": 1,
+      "exercises": [
+        {
+          "id": "rest",
+          "name": "Rest",
+          "type": "rest",
+          "config": {
+            "durationSec": 90
+          }
+        },
+        {
+          "id": "pushups",
+          "name": "Push-ups",
+          "type": "reps",
+          "config": {
+            "sets": 3,
+            "targetRepsMin": 8,
+            "targetRepsMax": 15,
+            "restSec": 60
+          },
+          "notes": "Stop 2 reps shy of failure. Hit 15 on every set twice before moving to a harder variation."
+        },
+        {
+          "id": "bodyweight-squats",
+          "name": "Bodyweight Squats",
+          "type": "reps",
+          "config": {
+            "sets": 3,
+            "targetRepsMin": 12,
+            "targetRepsMax": 20,
+            "restSec": 60
+          }
+        },
+        {
+          "id": "inverted-rows",
+          "name": "Inverted Rows",
+          "type": "reps",
+          "config": {
+            "sets": 3,
+            "targetRepsMin": 6,
+            "targetRepsMax": 12,
+            "restSec": 75
+          },
+          "notes": "Under a table or a low bar. Walk your feet further out to make it harder once you own the top of the range."
+        },
+        {
+          "id": "split-squats",
+          "name": "Split Squats",
+          "type": "reps",
+          "config": {
+            "sets": 3,
+            "targetRepsMin": 8,
+            "targetRepsMax": 12,
+            "restSec": 60
+          },
+          "notes": "Reps are per leg — log the weaker side, so the number you beat next time is the honest one."
+        },
+        {
+          "id": "glute-bridge",
+          "name": "Glute Bridge",
+          "type": "reps",
+          "config": {
+            "sets": 3,
+            "targetRepsMin": 12,
+            "targetRepsMax": 20,
+            "restSec": 45
+          }
+        },
+        {
+          "id": "plank",
+          "name": "Plank",
+          "type": "timed_hold",
+          "config": {
+            "sets": 3,
+            "holdSecMin": 20,
+            "holdSecMax": 45,
+            "restSec": 45
+          },
+          "notes": "Raise the whole range by 5s once you hit 45s on every set."
+        },
+        {
+          "id": "mountain-climbers",
+          "name": "Mountain Climbers",
+          "type": "hiit",
+          "config": {
+            "workSec": 30,
+            "restSec": 30,
+            "rounds": 4
+          }
+        },
+        {
+          "id": "db-goblet-squat",
+          "name": "Dumbbell Goblet Squat",
+          "type": "reps",
+          "config": {
+            "sets": 3,
+            "targetRepsMin": 8,
+            "targetRepsMax": 12,
+            "restSec": 90
+          },
+          "notes": "No weight is seeded — set yours on the first session, then add the smallest jump you own once you hit 12 on every set."
+        },
+        {
+          "id": "db-floor-press",
+          "name": "Dumbbell Floor Press",
+          "type": "reps",
+          "config": {
+            "sets": 3,
+            "targetRepsMin": 8,
+            "targetRepsMax": 12,
+            "restSec": 90
+          },
+          "notes": "Pressed off the floor, so it needs no bench. Add weight once you hit 12 on every set."
+        },
+        {
+          "id": "db-row",
+          "name": "Dumbbell Row",
+          "type": "reps",
+          "config": {
+            "sets": 3,
+            "targetRepsMin": 8,
+            "targetRepsMax": 12,
+            "restSec": 90
+          },
+          "notes": "Reps are per side."
+        },
+        {
+          "id": "db-romanian-deadlift",
+          "name": "Dumbbell Romanian Deadlift",
+          "type": "reps",
+          "config": {
+            "sets": 3,
+            "targetRepsMin": 8,
+            "targetRepsMax": 12,
+            "restSec": 90
+          }
+        },
+        {
+          "id": "db-overhead-press",
+          "name": "Dumbbell Overhead Press",
+          "type": "reps",
+          "config": {
+            "sets": 3,
+            "targetRepsMin": 6,
+            "targetRepsMax": 10,
+            "restSec": 90
+          }
+        },
+        {
+          "id": "farmers-carry",
+          "name": "Farmer's Carry",
+          "type": "timed_hold",
+          "config": {
+            "sets": 3,
+            "holdSecMin": 30,
+            "holdSecMax": 45,
+            "restSec": 60
+          },
+          "notes": "Add time before adding weight."
+        },
+        {
+          "id": "burpees",
+          "name": "Burpees",
+          "type": "hiit",
+          "config": {
+            "workSec": 40,
+            "restSec": 20,
+            "rounds": 4
+          }
+        },
+        {
+          "id": "emom-pushups",
+          "name": "EMOM Push-ups",
+          "type": "emom",
+          "config": {
+            "intervalSec": 60,
+            "totalMinutes": 10,
+            "targetReps": 8
+          },
+          "notes": "Every minute on the minute: 8 push-ups, then rest whatever is left of the minute. Cut the target once you stop finishing inside it."
+        },
+        {
+          "id": "amrap-12-bodyweight",
+          "name": "AMRAP 12",
+          "type": "amrap",
+          "config": {
+            "timeCapSec": 720
+          },
+          "notes": "One round is 10 push-ups, 15 bodyweight squats, 10 inverted rows. The app times the cap and counts rounds — the movements live here in the notes, since an AMRAP has no movement list of its own."
+        },
+        {
+          "id": "easy-cardio",
+          "name": "Easy Cardio Cooldown",
+          "type": "cardio",
+          "config": {
+            "durationSec": 600
+          },
+          "notes": "Run, bike, row, walk — whatever you have. Add a distance to the config if you want that tracked too."
+        }
+      ],
+      "workouts": [
+        {
+          "id": "foundations-push",
+          "name": "Foundations · Push",
+          "blocks": [
+            {
+              "kind": "exercise",
+              "exerciseId": "pushups"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "rest"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "plank"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "rest",
+              "configOverride": {
+                "durationSec": 60
+              }
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "mountain-climbers"
+            }
+          ]
+        },
+        {
+          "id": "foundations-legs",
+          "name": "Foundations · Legs",
+          "blocks": [
+            {
+              "kind": "exercise",
+              "exerciseId": "bodyweight-squats"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "rest"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "split-squats"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "rest"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "glute-bridge"
+            }
+          ]
+        },
+        {
+          "id": "foundations-pull",
+          "name": "Foundations · Pull",
+          "blocks": [
+            {
+              "kind": "exercise",
+              "exerciseId": "inverted-rows"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "rest",
+              "configOverride": {
+                "durationSec": 120
+              }
+            },
+            {
+              "kind": "circuit",
+              "id": "foundations-finisher",
+              "rounds": 3,
+              "restBetweenExercisesSec": 15,
+              "restBetweenRoundsSec": 60,
+              "members": [
+                {
+                  "exerciseId": "pushups"
+                },
+                {
+                  "exerciseId": "bodyweight-squats"
+                },
+                {
+                  "exerciseId": "plank"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "db-full-body-a",
+          "name": "Dumbbell Full Body A",
+          "blocks": [
+            {
+              "kind": "exercise",
+              "exerciseId": "db-goblet-squat"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "rest"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "db-floor-press"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "rest"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "db-row"
+            }
+          ]
+        },
+        {
+          "id": "db-full-body-b",
+          "name": "Dumbbell Full Body B",
+          "blocks": [
+            {
+              "kind": "exercise",
+              "exerciseId": "db-romanian-deadlift"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "rest"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "db-overhead-press"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "rest"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "farmers-carry"
+            }
+          ]
+        },
+        {
+          "id": "mixed-conditioning",
+          "name": "Mixed Conditioning",
+          "blocks": [
+            {
+              "kind": "exercise",
+              "exerciseId": "burpees"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "rest"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "amrap-12-bodyweight"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "rest",
+              "configOverride": {
+                "durationSec": 120
+              }
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "easy-cardio"
+            }
+          ]
+        },
+        {
+          "id": "emom-10",
+          "name": "EMOM 10",
+          "blocks": [
+            {
+              "kind": "exercise",
+              "exerciseId": "emom-pushups"
+            }
+          ]
+        }
+      ],
+      "programs": [
+        {
+          "id": "foundations",
+          "name": "Foundations · 4 Weeks · No Equipment",
+          "weeks": [
+            {
+              "week": 1,
+              "day": "Day 1",
+              "workoutId": "foundations-push",
+              "notes": "Baseline week. Log where you actually land in each range — don’t chase the top of it yet."
+            },
+            {
+              "week": 1,
+              "day": "Day 2",
+              "restDay": true,
+              "notes": "Rest is where the last session turns into something. Walk if you like; nothing heavy."
+            },
+            {
+              "week": 1,
+              "day": "Day 3",
+              "workoutId": "foundations-legs"
+            },
+            {
+              "week": 1,
+              "day": "Day 4",
+              "restDay": true
+            },
+            {
+              "week": 1,
+              "day": "Day 5",
+              "workoutId": "foundations-pull"
+            },
+            {
+              "week": 1,
+              "day": "Day 6",
+              "restDay": true
+            },
+            {
+              "week": 1,
+              "day": "Day 7",
+              "restDay": true
+            },
+            {
+              "week": 2,
+              "day": "Day 1",
+              "workoutId": "foundations-push",
+              "notes": "Same three sessions. Aim for one more rep than you logged in week 1, on every set."
+            },
+            {
+              "week": 2,
+              "day": "Day 2",
+              "restDay": true
+            },
+            {
+              "week": 2,
+              "day": "Day 3",
+              "workoutId": "foundations-legs"
+            },
+            {
+              "week": 2,
+              "day": "Day 4",
+              "restDay": true
+            },
+            {
+              "week": 2,
+              "day": "Day 5",
+              "workoutId": "foundations-pull"
+            },
+            {
+              "week": 2,
+              "day": "Day 6",
+              "restDay": true
+            },
+            {
+              "week": 2,
+              "day": "Day 7",
+              "restDay": true
+            },
+            {
+              "week": 3,
+              "day": "Day 1",
+              "workoutId": "foundations-push",
+              "notes": "A fourth set everywhere. Keep the reps where they were rather than pushing both at once.",
+              "overrides": [
+                {
+                  "kind": "exercise",
+                  "exerciseId": "pushups",
+                  "config": {
+                    "sets": 4
+                  }
+                },
+                {
+                  "kind": "exercise",
+                  "exerciseId": "plank",
+                  "config": {
+                    "sets": 4
+                  }
+                }
+              ]
+            },
+            {
+              "week": 3,
+              "day": "Day 2",
+              "restDay": true
+            },
+            {
+              "week": 3,
+              "day": "Day 3",
+              "workoutId": "foundations-legs",
+              "overrides": [
+                {
+                  "kind": "exercise",
+                  "exerciseId": "bodyweight-squats",
+                  "config": {
+                    "sets": 4
+                  }
+                },
+                {
+                  "kind": "exercise",
+                  "exerciseId": "split-squats",
+                  "config": {
+                    "sets": 4
+                  }
+                }
+              ]
+            },
+            {
+              "week": 3,
+              "day": "Day 4",
+              "restDay": true
+            },
+            {
+              "week": 3,
+              "day": "Day 5",
+              "workoutId": "foundations-pull",
+              "overrides": [
+                {
+                  "kind": "exercise",
+                  "exerciseId": "inverted-rows",
+                  "config": {
+                    "sets": 4
+                  }
+                }
+              ]
+            },
+            {
+              "week": 3,
+              "day": "Day 6",
+              "restDay": true
+            },
+            {
+              "week": 3,
+              "day": "Day 7",
+              "restDay": true
+            },
+            {
+              "week": 4,
+              "day": "Day 1",
+              "workoutId": "foundations-push",
+              "notes": "Heaviest week of the block. Now push the reps toward the top of each range.",
+              "overrides": [
+                {
+                  "kind": "exercise",
+                  "exerciseId": "pushups",
+                  "config": {
+                    "sets": 4
+                  }
+                },
+                {
+                  "kind": "exercise",
+                  "exerciseId": "plank",
+                  "config": {
+                    "sets": 4
+                  }
+                }
+              ]
+            },
+            {
+              "week": 4,
+              "day": "Day 2",
+              "restDay": true
+            },
+            {
+              "week": 4,
+              "day": "Day 3",
+              "workoutId": "foundations-legs",
+              "overrides": [
+                {
+                  "kind": "exercise",
+                  "exerciseId": "bodyweight-squats",
+                  "config": {
+                    "sets": 4
+                  }
+                },
+                {
+                  "kind": "exercise",
+                  "exerciseId": "split-squats",
+                  "config": {
+                    "sets": 4
+                  }
+                }
+              ]
+            },
+            {
+              "week": 4,
+              "day": "Day 4",
+              "restDay": true
+            },
+            {
+              "week": 4,
+              "day": "Day 5",
+              "workoutId": "foundations-pull",
+              "notes": "Last session of the block, and a fourth finisher round. Completing it loops back to week 1 — run it again with the top of each range as your new floor.",
+              "overrides": [
+                {
+                  "kind": "exercise",
+                  "exerciseId": "inverted-rows",
+                  "config": {
+                    "sets": 4
+                  }
+                },
+                {
+                  "kind": "block",
+                  "blockId": "foundations-finisher",
+                  "config": {
+                    "rounds": 4
+                  }
+                }
+              ]
+            },
+            {
+              "week": 4,
+              "day": "Day 6",
+              "restDay": true
+            },
+            {
+              "week": 4,
+              "day": "Day 7",
+              "restDay": true
+            }
+          ]
+        },
+        {
+          "id": "dumbbell-strength",
+          "name": "Dumbbell Strength · 4 Weeks",
+          "weeks": [
+            {
+              "week": 1,
+              "day": "Day 1",
+              "workoutId": "db-full-body-a",
+              "notes": "Baseline week. Pick weights you could stop 2 reps shy of failure with, and write them into each exercise."
+            },
+            {
+              "week": 1,
+              "day": "Day 2",
+              "restDay": true,
+              "notes": "A day between sessions is part of the plan, not a gap in it."
+            },
+            {
+              "week": 1,
+              "day": "Day 3",
+              "workoutId": "db-full-body-b"
+            },
+            {
+              "week": 1,
+              "day": "Day 4",
+              "restDay": true
+            },
+            {
+              "week": 1,
+              "day": "Day 5",
+              "workoutId": "db-full-body-a"
+            },
+            {
+              "week": 1,
+              "day": "Day 6",
+              "restDay": true
+            },
+            {
+              "week": 1,
+              "day": "Day 7",
+              "restDay": true
+            },
+            {
+              "week": 2,
+              "day": "Day 1",
+              "workoutId": "db-full-body-b",
+              "notes": "The A/B order flips this week. Add the smallest jump you own to anything you hit the top of the range on."
+            },
+            {
+              "week": 2,
+              "day": "Day 2",
+              "restDay": true
+            },
+            {
+              "week": 2,
+              "day": "Day 3",
+              "workoutId": "db-full-body-a"
+            },
+            {
+              "week": 2,
+              "day": "Day 4",
+              "restDay": true
+            },
+            {
+              "week": 2,
+              "day": "Day 5",
+              "workoutId": "db-full-body-b"
+            },
+            {
+              "week": 2,
+              "day": "Day 6",
+              "restDay": true
+            },
+            {
+              "week": 2,
+              "day": "Day 7",
+              "restDay": true
+            },
+            {
+              "week": 3,
+              "day": "Day 1",
+              "workoutId": "db-full-body-a",
+              "notes": "A fourth set everywhere. Hold the weights where they are this week.",
+              "overrides": [
+                {
+                  "kind": "exercise",
+                  "exerciseId": "db-goblet-squat",
+                  "config": {
+                    "sets": 4
+                  }
+                },
+                {
+                  "kind": "exercise",
+                  "exerciseId": "db-floor-press",
+                  "config": {
+                    "sets": 4
+                  }
+                },
+                {
+                  "kind": "exercise",
+                  "exerciseId": "db-row",
+                  "config": {
+                    "sets": 4
+                  }
+                }
+              ]
+            },
+            {
+              "week": 3,
+              "day": "Day 2",
+              "restDay": true
+            },
+            {
+              "week": 3,
+              "day": "Day 3",
+              "workoutId": "db-full-body-b",
+              "overrides": [
+                {
+                  "kind": "exercise",
+                  "exerciseId": "db-romanian-deadlift",
+                  "config": {
+                    "sets": 4
+                  }
+                },
+                {
+                  "kind": "exercise",
+                  "exerciseId": "db-overhead-press",
+                  "config": {
+                    "sets": 4
+                  }
+                },
+                {
+                  "kind": "exercise",
+                  "exerciseId": "farmers-carry",
+                  "config": {
+                    "sets": 4
+                  }
+                }
+              ]
+            },
+            {
+              "week": 3,
+              "day": "Day 4",
+              "restDay": true
+            },
+            {
+              "week": 3,
+              "day": "Day 5",
+              "workoutId": "db-full-body-a",
+              "overrides": [
+                {
+                  "kind": "exercise",
+                  "exerciseId": "db-goblet-squat",
+                  "config": {
+                    "sets": 4
+                  }
+                },
+                {
+                  "kind": "exercise",
+                  "exerciseId": "db-floor-press",
+                  "config": {
+                    "sets": 4
+                  }
+                },
+                {
+                  "kind": "exercise",
+                  "exerciseId": "db-row",
+                  "config": {
+                    "sets": 4
+                  }
+                }
+              ]
+            },
+            {
+              "week": 3,
+              "day": "Day 6",
+              "restDay": true
+            },
+            {
+              "week": 3,
+              "day": "Day 7",
+              "restDay": true
+            },
+            {
+              "week": 4,
+              "day": "Day 1",
+              "workoutId": "db-full-body-b",
+              "notes": "Heaviest week of the block: four sets, and add weight wherever week 3 felt easy.",
+              "overrides": [
+                {
+                  "kind": "exercise",
+                  "exerciseId": "db-romanian-deadlift",
+                  "config": {
+                    "sets": 4
+                  }
+                },
+                {
+                  "kind": "exercise",
+                  "exerciseId": "db-overhead-press",
+                  "config": {
+                    "sets": 4
+                  }
+                },
+                {
+                  "kind": "exercise",
+                  "exerciseId": "farmers-carry",
+                  "config": {
+                    "sets": 4
+                  }
+                }
+              ]
+            },
+            {
+              "week": 4,
+              "day": "Day 2",
+              "restDay": true
+            },
+            {
+              "week": 4,
+              "day": "Day 3",
+              "workoutId": "db-full-body-a",
+              "overrides": [
+                {
+                  "kind": "exercise",
+                  "exerciseId": "db-goblet-squat",
+                  "config": {
+                    "sets": 4
+                  }
+                },
+                {
+                  "kind": "exercise",
+                  "exerciseId": "db-floor-press",
+                  "config": {
+                    "sets": 4
+                  }
+                },
+                {
+                  "kind": "exercise",
+                  "exerciseId": "db-row",
+                  "config": {
+                    "sets": 4
+                  }
+                }
+              ]
+            },
+            {
+              "week": 4,
+              "day": "Day 4",
+              "restDay": true
+            },
+            {
+              "week": 4,
+              "day": "Day 5",
+              "workoutId": "db-full-body-b",
+              "notes": "Last session of the block. Completing it loops back to week 1 — run it again from the weights you finished on.",
+              "overrides": [
+                {
+                  "kind": "exercise",
+                  "exerciseId": "db-romanian-deadlift",
+                  "config": {
+                    "sets": 4
+                  }
+                },
+                {
+                  "kind": "exercise",
+                  "exerciseId": "db-overhead-press",
+                  "config": {
+                    "sets": 4
+                  }
+                },
+                {
+                  "kind": "exercise",
+                  "exerciseId": "farmers-carry",
+                  "config": {
+                    "sets": 4
+                  }
+                }
+              ]
+            },
+            {
+              "week": 4,
+              "day": "Day 6",
+              "restDay": true
+            },
+            {
+              "week": 4,
+              "day": "Day 7",
+              "restDay": true
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "shipped-pack-steady-strength": {
+    "ok": true,
+    "value": {
+      "version": 1,
+      "exercises": [
+        {
+          "id": "ss-rest",
+          "name": "Rest",
+          "type": "rest",
+          "config": {
+            "durationSec": 60
+          }
+        },
+        {
+          "id": "ss-sit-to-stand",
+          "name": "Sit to Stand",
+          "type": "reps",
+          "config": {
+            "sets": 3,
+            "targetRepsMin": 6,
+            "targetRepsMax": 12,
+            "restSec": 60
+          },
+          "notes": "Up from a chair and back down. Hit 12 on every set twice before the program adds a fourth."
+        },
+        {
+          "id": "ss-wall-pushup",
+          "name": "Wall Push-ups",
+          "type": "reps",
+          "config": {
+            "sets": 3,
+            "targetRepsMin": 8,
+            "targetRepsMax": 15,
+            "restSec": 45
+          },
+          "notes": "Step your feet further from the wall to make it harder once you own 15 on every set."
+        },
+        {
+          "id": "ss-heel-raises",
+          "name": "Heel Raises",
+          "type": "reps",
+          "config": {
+            "sets": 3,
+            "targetRepsMin": 10,
+            "targetRepsMax": 20,
+            "restSec": 45
+          },
+          "notes": "A chair back or a counter is the support. Take a hand off it before you add reps."
+        },
+        {
+          "id": "ss-seated-march",
+          "name": "Seated March",
+          "type": "reps",
+          "config": {
+            "sets": 3,
+            "targetRepsMin": 10,
+            "targetRepsMax": 20,
+            "restSec": 45
+          },
+          "notes": "One left and one right is two reps, so the number you log counts both legs."
+        },
+        {
+          "id": "ss-standing-balance",
+          "name": "Standing Balance",
+          "type": "timed_hold",
+          "config": {
+            "sets": 3,
+            "holdSecMin": 10,
+            "holdSecMax": 30,
+            "restSec": 45
+          },
+          "notes": "Held per side. Raise the whole range by 5s once you hit 30s on every set."
+        },
+        {
+          "id": "ss-band-row",
+          "name": "Band Row",
+          "type": "reps",
+          "config": {
+            "sets": 3,
+            "targetRepsMin": 8,
+            "targetRepsMax": 12,
+            "restSec": 60
+          },
+          "notes": "The band is the load, so a step further back is the smallest jump you have once you hit 12 on every set."
+        },
+        {
+          "id": "ss-hip-hinge",
+          "name": "Hip Hinge",
+          "type": "reps",
+          "config": {
+            "sets": 3,
+            "targetRepsMin": 8,
+            "targetRepsMax": 12,
+            "restSec": 60
+          },
+          "notes": "Hands on a chair back. Move them down the chair as the range grows."
+        },
+        {
+          "id": "ss-walk",
+          "name": "Walk",
+          "type": "cardio",
+          "config": {
+            "durationSec": 900
+          },
+          "notes": "Fifteen minutes to start. Add a distance to the config if you want that tracked too."
+        }
+      ],
+      "workouts": [
+        {
+          "id": "ss-strength-a",
+          "name": "Steady · Strength A",
+          "blocks": [
+            {
+              "kind": "exercise",
+              "exerciseId": "ss-sit-to-stand"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "ss-rest"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "ss-wall-pushup"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "ss-rest"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "ss-heel-raises"
+            }
+          ]
+        },
+        {
+          "id": "ss-strength-b",
+          "name": "Steady · Strength B",
+          "blocks": [
+            {
+              "kind": "exercise",
+              "exerciseId": "ss-hip-hinge"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "ss-rest"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "ss-band-row"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "ss-rest"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "ss-seated-march"
+            }
+          ]
+        },
+        {
+          "id": "ss-balance-walk",
+          "name": "Steady · Balance & Walk",
+          "blocks": [
+            {
+              "kind": "exercise",
+              "exerciseId": "ss-standing-balance"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "ss-rest"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "ss-walk"
+            }
+          ]
+        }
+      ],
+      "programs": [
+        {
+          "id": "ss-4-weeks",
+          "name": "Steady & Strong · 4 Weeks",
+          "weeks": [
+            {
+              "week": 1,
+              "day": "Day 1",
+              "workoutId": "ss-strength-a",
+              "notes": "Baseline week. Log where you actually land in each range — the bottom of it is a real answer."
+            },
+            {
+              "week": 1,
+              "day": "Day 2",
+              "restDay": true
+            },
+            {
+              "week": 1,
+              "day": "Day 3",
+              "workoutId": "ss-strength-b"
+            },
+            {
+              "week": 1,
+              "day": "Day 4",
+              "restDay": true
+            },
+            {
+              "week": 1,
+              "day": "Day 5",
+              "workoutId": "ss-balance-walk"
+            },
+            {
+              "week": 1,
+              "day": "Day 6",
+              "restDay": true
+            },
+            {
+              "week": 1,
+              "day": "Day 7",
+              "restDay": true
+            },
+            {
+              "week": 2,
+              "day": "Day 1",
+              "workoutId": "ss-strength-a",
+              "notes": "Same three sessions. One more rep than week 1, on every set."
+            },
+            {
+              "week": 2,
+              "day": "Day 2",
+              "restDay": true
+            },
+            {
+              "week": 2,
+              "day": "Day 3",
+              "workoutId": "ss-strength-b"
+            },
+            {
+              "week": 2,
+              "day": "Day 4",
+              "restDay": true
+            },
+            {
+              "week": 2,
+              "day": "Day 5",
+              "workoutId": "ss-balance-walk"
+            },
+            {
+              "week": 2,
+              "day": "Day 6",
+              "restDay": true
+            },
+            {
+              "week": 2,
+              "day": "Day 7",
+              "restDay": true
+            },
+            {
+              "week": 3,
+              "day": "Day 1",
+              "workoutId": "ss-strength-a",
+              "notes": "A fourth set on the strength days. Keep the reps where they were rather than pushing both at once.",
+              "overrides": [
+                {
+                  "kind": "exercise",
+                  "exerciseId": "ss-sit-to-stand",
+                  "config": {
+                    "sets": 4
+                  }
+                },
+                {
+                  "kind": "exercise",
+                  "exerciseId": "ss-wall-pushup",
+                  "config": {
+                    "sets": 4
+                  }
+                },
+                {
+                  "kind": "exercise",
+                  "exerciseId": "ss-heel-raises",
+                  "config": {
+                    "sets": 4
+                  }
+                }
+              ]
+            },
+            {
+              "week": 3,
+              "day": "Day 2",
+              "restDay": true
+            },
+            {
+              "week": 3,
+              "day": "Day 3",
+              "workoutId": "ss-strength-b",
+              "overrides": [
+                {
+                  "kind": "exercise",
+                  "exerciseId": "ss-hip-hinge",
+                  "config": {
+                    "sets": 4
+                  }
+                },
+                {
+                  "kind": "exercise",
+                  "exerciseId": "ss-band-row",
+                  "config": {
+                    "sets": 4
+                  }
+                },
+                {
+                  "kind": "exercise",
+                  "exerciseId": "ss-seated-march",
+                  "config": {
+                    "sets": 4
+                  }
+                }
+              ]
+            },
+            {
+              "week": 3,
+              "day": "Day 4",
+              "restDay": true
+            },
+            {
+              "week": 3,
+              "day": "Day 5",
+              "workoutId": "ss-balance-walk"
+            },
+            {
+              "week": 3,
+              "day": "Day 6",
+              "restDay": true
+            },
+            {
+              "week": 3,
+              "day": "Day 7",
+              "restDay": true
+            },
+            {
+              "week": 4,
+              "day": "Day 1",
+              "workoutId": "ss-strength-a",
+              "notes": "Last week of the block. Now push the reps toward the top of each range.",
+              "overrides": [
+                {
+                  "kind": "exercise",
+                  "exerciseId": "ss-sit-to-stand",
+                  "config": {
+                    "sets": 4
+                  }
+                },
+                {
+                  "kind": "exercise",
+                  "exerciseId": "ss-wall-pushup",
+                  "config": {
+                    "sets": 4
+                  }
+                },
+                {
+                  "kind": "exercise",
+                  "exerciseId": "ss-heel-raises",
+                  "config": {
+                    "sets": 4
+                  }
+                }
+              ]
+            },
+            {
+              "week": 4,
+              "day": "Day 2",
+              "restDay": true
+            },
+            {
+              "week": 4,
+              "day": "Day 3",
+              "workoutId": "ss-strength-b",
+              "overrides": [
+                {
+                  "kind": "exercise",
+                  "exerciseId": "ss-hip-hinge",
+                  "config": {
+                    "sets": 4
+                  }
+                },
+                {
+                  "kind": "exercise",
+                  "exerciseId": "ss-band-row",
+                  "config": {
+                    "sets": 4
+                  }
+                },
+                {
+                  "kind": "exercise",
+                  "exerciseId": "ss-seated-march",
+                  "config": {
+                    "sets": 4
+                  }
+                }
+              ]
+            },
+            {
+              "week": 4,
+              "day": "Day 4",
+              "restDay": true
+            },
+            {
+              "week": 4,
+              "day": "Day 5",
+              "workoutId": "ss-balance-walk",
+              "notes": "Completing this loops back to week 1 — run it again with the top of each range as your new floor."
+            },
+            {
+              "week": 4,
+              "day": "Day 6",
+              "restDay": true
+            },
+            {
+              "week": 4,
+              "day": "Day 7",
+              "restDay": true
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "shipped-pack-barbell-gym": {
+    "ok": true,
+    "value": {
+      "version": 1,
+      "exercises": [
+        {
+          "id": "gym-rest",
+          "name": "Rest",
+          "type": "rest",
+          "config": {
+            "durationSec": 150
+          }
+        },
+        {
+          "id": "gym-back-squat",
+          "name": "Back Squat",
+          "type": "reps",
+          "config": {
+            "sets": 3,
+            "targetRepsMin": 5,
+            "targetRepsMax": 8,
+            "restSec": 180
+          },
+          "notes": "No weight is seeded — set yours on the first session, then add the smallest plate pair the gym has once you hit 8 on every set."
+        },
+        {
+          "id": "gym-bench-press",
+          "name": "Bench Press",
+          "type": "reps",
+          "config": {
+            "sets": 3,
+            "targetRepsMin": 5,
+            "targetRepsMax": 8,
+            "restSec": 180
+          },
+          "notes": "Add weight once you hit 8 on every set, not on your best one."
+        },
+        {
+          "id": "gym-deadlift",
+          "name": "Deadlift",
+          "type": "reps",
+          "config": {
+            "sets": 3,
+            "targetRepsMin": 3,
+            "targetRepsMax": 5,
+            "restSec": 180
+          },
+          "notes": "A shorter range than the rest of the block, so the top of it arrives sooner. Add weight at 5 on every set."
+        },
+        {
+          "id": "gym-overhead-press",
+          "name": "Overhead Press",
+          "type": "reps",
+          "config": {
+            "sets": 3,
+            "targetRepsMin": 5,
+            "targetRepsMax": 8,
+            "restSec": 150
+          },
+          "notes": "The smallest jump you own is a big one here. Expect to sit at the top of the range for a while."
+        },
+        {
+          "id": "gym-barbell-row",
+          "name": "Barbell Row",
+          "type": "reps",
+          "config": {
+            "sets": 3,
+            "targetRepsMin": 6,
+            "targetRepsMax": 10,
+            "restSec": 150
+          }
+        },
+        {
+          "id": "gym-pullups",
+          "name": "Pull-ups",
+          "type": "reps",
+          "config": {
+            "sets": 3,
+            "targetRepsMin": 3,
+            "targetRepsMax": 8,
+            "restSec": 120
+          },
+          "notes": "Log assisted reps as reps. The number you beat next time is your own either way."
+        },
+        {
+          "id": "gym-cooldown",
+          "name": "Cooldown",
+          "type": "cardio",
+          "config": {
+            "durationSec": 600
+          },
+          "notes": "Bike, row, walk — whatever is free. Add a distance to the config if you want that tracked too."
+        }
+      ],
+      "workouts": [
+        {
+          "id": "gym-day-a",
+          "name": "Gym · Day A",
+          "blocks": [
+            {
+              "kind": "exercise",
+              "exerciseId": "gym-back-squat"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "gym-rest"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "gym-bench-press"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "gym-rest"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "gym-barbell-row"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "gym-rest",
+              "configOverride": {
+                "durationSec": 90
+              }
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "gym-cooldown"
+            }
+          ]
+        },
+        {
+          "id": "gym-day-b",
+          "name": "Gym · Day B",
+          "blocks": [
+            {
+              "kind": "exercise",
+              "exerciseId": "gym-deadlift"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "gym-rest"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "gym-overhead-press"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "gym-rest"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "gym-pullups"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "gym-rest",
+              "configOverride": {
+                "durationSec": 90
+              }
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "gym-cooldown"
+            }
+          ]
+        }
+      ],
+      "programs": [
+        {
+          "id": "gym-4-weeks",
+          "name": "Barbell Gym · 4 Weeks",
+          "weeks": [
+            {
+              "week": 1,
+              "day": "Day 1",
+              "workoutId": "gym-day-a",
+              "notes": "Baseline week. Pick weights you could stop 2 reps shy of failure with, and write them into each lift."
+            },
+            {
+              "week": 1,
+              "day": "Day 2",
+              "restDay": true
+            },
+            {
+              "week": 1,
+              "day": "Day 3",
+              "workoutId": "gym-day-b"
+            },
+            {
+              "week": 1,
+              "day": "Day 4",
+              "restDay": true
+            },
+            {
+              "week": 1,
+              "day": "Day 5",
+              "workoutId": "gym-day-a"
+            },
+            {
+              "week": 1,
+              "day": "Day 6",
+              "restDay": true
+            },
+            {
+              "week": 1,
+              "day": "Day 7",
+              "restDay": true
+            },
+            {
+              "week": 2,
+              "day": "Day 1",
+              "workoutId": "gym-day-b",
+              "notes": "The A/B order flips this week. Add the smallest jump you own to anything you hit the top of the range on."
+            },
+            {
+              "week": 2,
+              "day": "Day 2",
+              "restDay": true
+            },
+            {
+              "week": 2,
+              "day": "Day 3",
+              "workoutId": "gym-day-a"
+            },
+            {
+              "week": 2,
+              "day": "Day 4",
+              "restDay": true
+            },
+            {
+              "week": 2,
+              "day": "Day 5",
+              "workoutId": "gym-day-b"
+            },
+            {
+              "week": 2,
+              "day": "Day 6",
+              "restDay": true
+            },
+            {
+              "week": 2,
+              "day": "Day 7",
+              "restDay": true
+            },
+            {
+              "week": 3,
+              "day": "Day 1",
+              "workoutId": "gym-day-a",
+              "notes": "A fourth set on the main lifts. Hold the weights where they are this week.",
+              "overrides": [
+                {
+                  "kind": "exercise",
+                  "exerciseId": "gym-back-squat",
+                  "config": {
+                    "sets": 4
+                  }
+                },
+                {
+                  "kind": "exercise",
+                  "exerciseId": "gym-bench-press",
+                  "config": {
+                    "sets": 4
+                  }
+                },
+                {
+                  "kind": "exercise",
+                  "exerciseId": "gym-barbell-row",
+                  "config": {
+                    "sets": 4
+                  }
+                }
+              ]
+            },
+            {
+              "week": 3,
+              "day": "Day 2",
+              "restDay": true
+            },
+            {
+              "week": 3,
+              "day": "Day 3",
+              "workoutId": "gym-day-b",
+              "overrides": [
+                {
+                  "kind": "exercise",
+                  "exerciseId": "gym-deadlift",
+                  "config": {
+                    "sets": 4
+                  }
+                },
+                {
+                  "kind": "exercise",
+                  "exerciseId": "gym-overhead-press",
+                  "config": {
+                    "sets": 4
+                  }
+                },
+                {
+                  "kind": "exercise",
+                  "exerciseId": "gym-pullups",
+                  "config": {
+                    "sets": 4
+                  }
+                }
+              ]
+            },
+            {
+              "week": 3,
+              "day": "Day 4",
+              "restDay": true
+            },
+            {
+              "week": 3,
+              "day": "Day 5",
+              "workoutId": "gym-day-a",
+              "overrides": [
+                {
+                  "kind": "exercise",
+                  "exerciseId": "gym-back-squat",
+                  "config": {
+                    "sets": 4
+                  }
+                },
+                {
+                  "kind": "exercise",
+                  "exerciseId": "gym-bench-press",
+                  "config": {
+                    "sets": 4
+                  }
+                },
+                {
+                  "kind": "exercise",
+                  "exerciseId": "gym-barbell-row",
+                  "config": {
+                    "sets": 4
+                  }
+                }
+              ]
+            },
+            {
+              "week": 3,
+              "day": "Day 6",
+              "restDay": true
+            },
+            {
+              "week": 3,
+              "day": "Day 7",
+              "restDay": true
+            },
+            {
+              "week": 4,
+              "day": "Day 1",
+              "workoutId": "gym-day-b",
+              "notes": "Heaviest week of the block: four sets, and add weight wherever week 3 felt easy.",
+              "overrides": [
+                {
+                  "kind": "exercise",
+                  "exerciseId": "gym-deadlift",
+                  "config": {
+                    "sets": 4
+                  }
+                },
+                {
+                  "kind": "exercise",
+                  "exerciseId": "gym-overhead-press",
+                  "config": {
+                    "sets": 4
+                  }
+                },
+                {
+                  "kind": "exercise",
+                  "exerciseId": "gym-pullups",
+                  "config": {
+                    "sets": 4
+                  }
+                }
+              ]
+            },
+            {
+              "week": 4,
+              "day": "Day 2",
+              "restDay": true
+            },
+            {
+              "week": 4,
+              "day": "Day 3",
+              "workoutId": "gym-day-a",
+              "overrides": [
+                {
+                  "kind": "exercise",
+                  "exerciseId": "gym-back-squat",
+                  "config": {
+                    "sets": 4
+                  }
+                },
+                {
+                  "kind": "exercise",
+                  "exerciseId": "gym-bench-press",
+                  "config": {
+                    "sets": 4
+                  }
+                },
+                {
+                  "kind": "exercise",
+                  "exerciseId": "gym-barbell-row",
+                  "config": {
+                    "sets": 4
+                  }
+                }
+              ]
+            },
+            {
+              "week": 4,
+              "day": "Day 4",
+              "restDay": true
+            },
+            {
+              "week": 4,
+              "day": "Day 5",
+              "workoutId": "gym-day-b",
+              "notes": "Last session of the block. Completing it loops back to week 1 — run it again from the weights you finished on.",
+              "overrides": [
+                {
+                  "kind": "exercise",
+                  "exerciseId": "gym-deadlift",
+                  "config": {
+                    "sets": 4
+                  }
+                },
+                {
+                  "kind": "exercise",
+                  "exerciseId": "gym-overhead-press",
+                  "config": {
+                    "sets": 4
+                  }
+                },
+                {
+                  "kind": "exercise",
+                  "exerciseId": "gym-pullups",
+                  "config": {
+                    "sets": 4
+                  }
+                }
+              ]
+            },
+            {
+              "week": 4,
+              "day": "Day 6",
+              "restDay": true
+            },
+            {
+              "week": 4,
+              "day": "Day 7",
+              "restDay": true
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "shipped-pack-kettlebell-basics": {
+    "ok": true,
+    "value": {
+      "version": 1,
+      "exercises": [
+        {
+          "id": "kb-rest",
+          "name": "Rest",
+          "type": "rest",
+          "config": {
+            "durationSec": 75
+          }
+        },
+        {
+          "id": "kb-swing",
+          "name": "Kettlebell Swing",
+          "type": "hiit",
+          "config": {
+            "workSec": 30,
+            "restSec": 30,
+            "rounds": 8
+          },
+          "notes": "Work and rest are both 30s, so the whole block is eight minutes. Add rounds before you add weight."
+        },
+        {
+          "id": "kb-goblet-squat",
+          "name": "Kettlebell Goblet Squat",
+          "type": "reps",
+          "config": {
+            "sets": 3,
+            "targetRepsMin": 8,
+            "targetRepsMax": 12,
+            "restSec": 90
+          },
+          "notes": "A single bell held at the chest. Add weight once you hit 12 on every set."
+        },
+        {
+          "id": "kb-clean-press",
+          "name": "Clean & Press",
+          "type": "reps",
+          "config": {
+            "sets": 3,
+            "targetRepsMin": 5,
+            "targetRepsMax": 8,
+            "restSec": 90
+          },
+          "notes": "Reps are per side — log the weaker one, so the number you beat next time is the honest one."
+        },
+        {
+          "id": "kb-single-leg-deadlift",
+          "name": "Single-leg Deadlift",
+          "type": "reps",
+          "config": {
+            "sets": 3,
+            "targetRepsMin": 6,
+            "targetRepsMax": 10,
+            "restSec": 75
+          },
+          "notes": "Reps are per leg."
+        },
+        {
+          "id": "kb-row",
+          "name": "Kettlebell Row",
+          "type": "reps",
+          "config": {
+            "sets": 3,
+            "targetRepsMin": 8,
+            "targetRepsMax": 12,
+            "restSec": 75
+          },
+          "notes": "Reps are per side."
+        },
+        {
+          "id": "kb-halo",
+          "name": "Halo",
+          "type": "reps",
+          "config": {
+            "sets": 3,
+            "targetRepsMin": 5,
+            "targetRepsMax": 10,
+            "restSec": 60
+          },
+          "notes": "One circle each way is one rep."
+        },
+        {
+          "id": "kb-carry",
+          "name": "Rack Carry",
+          "type": "timed_hold",
+          "config": {
+            "sets": 3,
+            "holdSecMin": 30,
+            "holdSecMax": 60,
+            "restSec": 60
+          },
+          "notes": "Add time before adding weight."
+        }
+      ],
+      "workouts": [
+        {
+          "id": "kb-strength-a",
+          "name": "Kettlebell · Strength A",
+          "blocks": [
+            {
+              "kind": "exercise",
+              "exerciseId": "kb-goblet-squat"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "kb-rest"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "kb-row"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "kb-rest"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "kb-carry"
+            }
+          ]
+        },
+        {
+          "id": "kb-strength-b",
+          "name": "Kettlebell · Strength B",
+          "blocks": [
+            {
+              "kind": "exercise",
+              "exerciseId": "kb-clean-press"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "kb-rest"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "kb-single-leg-deadlift"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "kb-rest"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "kb-halo"
+            }
+          ]
+        },
+        {
+          "id": "kb-swing-day",
+          "name": "Kettlebell · Swings",
+          "blocks": [
+            {
+              "kind": "exercise",
+              "exerciseId": "kb-swing"
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "kb-rest",
+              "configOverride": {
+                "durationSec": 120
+              }
+            },
+            {
+              "kind": "exercise",
+              "exerciseId": "kb-carry"
+            }
+          ]
+        }
+      ],
+      "programs": [
+        {
+          "id": "kb-4-weeks",
+          "name": "Kettlebell Basics · 4 Weeks",
+          "weeks": [
+            {
+              "week": 1,
+              "day": "Day 1",
+              "workoutId": "kb-strength-a",
+              "notes": "Baseline week. One bell is enough — write its weight into each exercise as you go."
+            },
+            {
+              "week": 1,
+              "day": "Day 2",
+              "restDay": true
+            },
+            {
+              "week": 1,
+              "day": "Day 3",
+              "workoutId": "kb-strength-b"
+            },
+            {
+              "week": 1,
+              "day": "Day 4",
+              "restDay": true
+            },
+            {
+              "week": 1,
+              "day": "Day 5",
+              "workoutId": "kb-swing-day"
+            },
+            {
+              "week": 1,
+              "day": "Day 6",
+              "restDay": true
+            },
+            {
+              "week": 1,
+              "day": "Day 7",
+              "restDay": true
+            },
+            {
+              "week": 2,
+              "day": "Day 1",
+              "workoutId": "kb-strength-a",
+              "notes": "Same three sessions. Beat week 1 by a rep per set before you touch the weight."
+            },
+            {
+              "week": 2,
+              "day": "Day 2",
+              "restDay": true
+            },
+            {
+              "week": 2,
+              "day": "Day 3",
+              "workoutId": "kb-strength-b"
+            },
+            {
+              "week": 2,
+              "day": "Day 4",
+              "restDay": true
+            },
+            {
+              "week": 2,
+              "day": "Day 5",
+              "workoutId": "kb-swing-day"
+            },
+            {
+              "week": 2,
+              "day": "Day 6",
+              "restDay": true
+            },
+            {
+              "week": 2,
+              "day": "Day 7",
+              "restDay": true
+            },
+            {
+              "week": 3,
+              "day": "Day 1",
+              "workoutId": "kb-strength-a",
+              "notes": "A fourth set on the strength days, and two more rounds of swings.",
+              "overrides": [
+                {
+                  "kind": "exercise",
+                  "exerciseId": "kb-goblet-squat",
+                  "config": {
+                    "sets": 4
+                  }
+                },
+                {
+                  "kind": "exercise",
+                  "exerciseId": "kb-row",
+                  "config": {
+                    "sets": 4
+                  }
+                },
+                {
+                  "kind": "exercise",
+                  "exerciseId": "kb-carry",
+                  "config": {
+                    "sets": 4
+                  }
+                }
+              ]
+            },
+            {
+              "week": 3,
+              "day": "Day 2",
+              "restDay": true
+            },
+            {
+              "week": 3,
+              "day": "Day 3",
+              "workoutId": "kb-strength-b",
+              "overrides": [
+                {
+                  "kind": "exercise",
+                  "exerciseId": "kb-clean-press",
+                  "config": {
+                    "sets": 4
+                  }
+                },
+                {
+                  "kind": "exercise",
+                  "exerciseId": "kb-single-leg-deadlift",
+                  "config": {
+                    "sets": 4
+                  }
+                },
+                {
+                  "kind": "exercise",
+                  "exerciseId": "kb-halo",
+                  "config": {
+                    "sets": 4
+                  }
+                }
+              ]
+            },
+            {
+              "week": 3,
+              "day": "Day 4",
+              "restDay": true
+            },
+            {
+              "week": 3,
+              "day": "Day 5",
+              "workoutId": "kb-swing-day",
+              "overrides": [
+                {
+                  "kind": "exercise",
+                  "exerciseId": "kb-swing",
+                  "config": {
+                    "rounds": 10
+                  }
+                }
+              ]
+            },
+            {
+              "week": 3,
+              "day": "Day 6",
+              "restDay": true
+            },
+            {
+              "week": 3,
+              "day": "Day 7",
+              "restDay": true
+            },
+            {
+              "week": 4,
+              "day": "Day 1",
+              "workoutId": "kb-strength-a",
+              "notes": "Heaviest week of the block. Add weight wherever week 3 felt easy.",
+              "overrides": [
+                {
+                  "kind": "exercise",
+                  "exerciseId": "kb-goblet-squat",
+                  "config": {
+                    "sets": 4
+                  }
+                },
+                {
+                  "kind": "exercise",
+                  "exerciseId": "kb-row",
+                  "config": {
+                    "sets": 4
+                  }
+                },
+                {
+                  "kind": "exercise",
+                  "exerciseId": "kb-carry",
+                  "config": {
+                    "sets": 4
+                  }
+                }
+              ]
+            },
+            {
+              "week": 4,
+              "day": "Day 2",
+              "restDay": true
+            },
+            {
+              "week": 4,
+              "day": "Day 3",
+              "workoutId": "kb-strength-b",
+              "overrides": [
+                {
+                  "kind": "exercise",
+                  "exerciseId": "kb-clean-press",
+                  "config": {
+                    "sets": 4
+                  }
+                },
+                {
+                  "kind": "exercise",
+                  "exerciseId": "kb-single-leg-deadlift",
+                  "config": {
+                    "sets": 4
+                  }
+                },
+                {
+                  "kind": "exercise",
+                  "exerciseId": "kb-halo",
+                  "config": {
+                    "sets": 4
+                  }
+                }
+              ]
+            },
+            {
+              "week": 4,
+              "day": "Day 4",
+              "restDay": true
+            },
+            {
+              "week": 4,
+              "day": "Day 5",
+              "workoutId": "kb-swing-day",
+              "notes": "Last session of the block. Completing it loops back to week 1 — run it again from the weight you finished on.",
+              "overrides": [
+                {
+                  "kind": "exercise",
+                  "exerciseId": "kb-swing",
+                  "config": {
+                    "rounds": 10
+                  }
+                }
+              ]
+            },
+            {
+              "week": 4,
+              "day": "Day 6",
+              "restDay": true
+            },
+            {
+              "week": 4,
+              "day": "Day 7",
+              "restDay": true
+            }
+          ]
+        }
+      ]
+    }
+  },
   "empty-library": {
     "ok": true,
     "value": {

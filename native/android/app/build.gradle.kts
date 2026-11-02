@@ -205,6 +205,9 @@ val themeGenerator: Configuration by configurations.creating {
     attributes { attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.JAVA_RUNTIME)) }
 }
 
+/** The shipped seed and content packs (`ShippedContent`), at the asset root. */
+val contentDir: Directory = rootProject.layout.projectDirectory.dir("../../src/content")
+
 /** The theme RN reads too, read in place, so a color has one home for both UIs. */
 val themeFile: RegularFile = rootProject.layout.projectDirectory.file("../../src/constants/theme.json")
 
@@ -228,6 +231,8 @@ androidComponents {
         // `java`, not `kotlin`: Kotlin 2.1's Android plugin compiles .kt files in the Java sources but
         // doesn't read AGP's `kotlin` set, which left the generated file out of the build.
         variant.sources.java?.addGeneratedSourceDirectory(generateTheme, GenerateTheme::output)
+        // The seed and packs RN bundles too, packaged as they are: nothing to generate, so read in place.
+        variant.sources.assets?.addStaticSourceDirectory(contentDir.asFile.path)
     }
 }
 

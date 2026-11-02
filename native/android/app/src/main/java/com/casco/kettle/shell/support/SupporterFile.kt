@@ -3,6 +3,7 @@ package com.casco.kettle.shell.support
 import com.casco.kettle.domain.SupporterState
 import com.casco.kettle.domain.parseSupporterState
 import com.casco.kettle.domain.serializeSupporterState
+import com.casco.kettle.storage.writeAtomically
 import java.io.File
 import java.io.IOException
 
@@ -32,15 +33,13 @@ class DiskSupporterFile(
         }
 
     /**
-     * Through a temporary file and a rename, so a write cut short leaves the last tip count rather than
-     * a truncated file, which would read as no tips at all.
+     * Whole or not at all, so a write cut short leaves the last tip count rather than a truncated file,
+     * which would read as no tips at all.
      */
     override fun write(state: SupporterState): Boolean =
         try {
-            file.parentFile?.mkdirs()
-            val partial = File(file.parentFile, "${file.name}.partial")
-            partial.writeText(serializeSupporterState(state))
-            partial.renameTo(file).also { if (!it) partial.delete() }
+            writeAtomically(file, serializeSupporterState(state))
+            true
         } catch (_: IOException) {
             false
         } catch (_: SecurityException) {

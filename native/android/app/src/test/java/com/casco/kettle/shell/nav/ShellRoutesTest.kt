@@ -1,5 +1,6 @@
 package com.casco.kettle.shell.nav
 
+import com.casco.kettle.shell.sessioneditor.SESSION_EDITOR_PATH
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
@@ -40,6 +41,13 @@ class ShellRoutesTest {
 
         assertSame(settings, routes.screenAt("/settings"))
         assertEquals(Screen.Rn, routes.screenAt("/session-editor"))
+    }
+
+    /** The session editor writes edited session files, so it is the sessions flip's to release (#239). */
+    @Test
+    fun `the session editor is behind the sessions flip`() {
+        assertTrue(routesFor(setOf(Flip.Sessions)).screenAt(SESSION_EDITOR_PATH) is Screen.Native)
+        assertEquals(Screen.Rn, routesFor(Flip.entries.toSet() - Flip.Sessions).screenAt(SESSION_EDITOR_PATH))
     }
 
     @Test

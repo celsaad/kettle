@@ -300,6 +300,8 @@ class StatsScreenTest {
         override fun preferences() = Preferences(UnitSystem.METRIC, ThemePreference.SYSTEM, false, true, null)
 
         override fun deleteSession(id: String) = error("this screen deletes nothing")
+
+        override fun writeSession(session: Session) = error("this screen writes no session")
     }
 }
 

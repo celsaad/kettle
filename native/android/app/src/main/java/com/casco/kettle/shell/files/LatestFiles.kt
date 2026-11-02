@@ -6,10 +6,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import com.casco.kettle.domain.Library
 import com.casco.kettle.domain.Preferences
+import com.casco.kettle.domain.Session
 import com.casco.kettle.domain.SessionLog
 import com.casco.kettle.storage.readLibrary
 import com.casco.kettle.storage.readPreferences
 import com.casco.kettle.storage.readSessionLog
+import com.casco.kettle.storage.writeSessionFile
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -32,6 +34,13 @@ interface StoredFiles {
      * already gone is no failure, as in RN; one the disk won't remove throws [IOException].
      */
     fun deleteSession(id: String)
+
+    /**
+     * Replaces [session]'s file with it, whole or not at all: the session editor's Save (#239), where
+     * native is the only writer of an edited session and RN's runner still writes new ones. Throws
+     * [IOException] when the disk refuses, and the last file stays as it was.
+     */
+    fun writeSession(session: Session)
 }
 
 /**
@@ -64,16 +73,19 @@ class DiskFiles(
         // File.delete() says only no; the name is what the reader can act on.
         if (file.exists() && !file.delete()) throw IOException(file.name)
     }
+
+    override fun writeSession(session: Session) = writeSessionFile(paths.sessions, session)
 }
 
 /**
  * The session log, the library and the preferences as native screens show them, read again by [reread].
  *
  * RN writes all three until M5: the runner writes new sessions, the session editor edits finished
- * ones, the library editors write the library, and Settings the preferences. Each of those is above
- * the tabs, so the shell rereads when RN hands the tabs back, on a tap onto a native tab or a native
- * sheet coming up (`TabNavigator`'s `reread`), and whenever the app starts or stops being seen
- * (`MainActivity`), and nothing else would. RN's half of the rule is `filesChanged`.
+ * ones (native's [writeSession] once the sessions flip releases), the library editors write the
+ * library, and Settings the preferences. Each of those is above the tabs, so the shell rereads when
+ * RN hands the tabs back, on a tap onto a native tab or a native sheet coming up (`TabNavigator`'s
+ * `reread`), and whenever the app starts or stops being seen (`MainActivity`), and nothing else would.
+ * RN's half of the rule is `filesChanged`.
  */
 class LatestFiles(
     private val files: StoredFiles,
@@ -109,6 +121,15 @@ class LatestFiles(
      */
     suspend fun deleteSession(id: String) {
         withContext(io) { files.deleteSession(id) }
+        reread()
+    }
+
+    /**
+     * Writes [session] over its file and reads the log again, so the edit shows as the file has it.
+     * Throws [IOException] when the disk refuses, and the log is left as it was.
+     */
+    suspend fun writeSession(session: Session) {
+        withContext(io) { files.writeSession(session) }
         reread()
     }
 

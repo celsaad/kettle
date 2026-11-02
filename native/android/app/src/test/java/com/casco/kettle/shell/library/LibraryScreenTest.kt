@@ -25,6 +25,7 @@ import com.casco.kettle.domain.Exercise
 import com.casco.kettle.domain.ExerciseConfig
 import com.casco.kettle.domain.Library
 import com.casco.kettle.domain.Preferences
+import com.casco.kettle.domain.Session
 import com.casco.kettle.domain.SessionLog
 import com.casco.kettle.domain.ThemePreference
 import com.casco.kettle.domain.UnitSystem
@@ -267,6 +268,8 @@ class LibraryScreenTest {
         override fun preferences() = preferences
 
         override fun deleteSession(id: String) = error("Library deletes nothing")
+
+        override fun writeSession(session: Session) = error("Library writes no session")
     }
 }
 

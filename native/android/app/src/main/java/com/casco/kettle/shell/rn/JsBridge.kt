@@ -55,6 +55,12 @@ object JsBridge {
         channel.send(if (id == null) mapOf("type" to "exportHistory") else mapOf("type" to "exportSession", "id" to id))
     }
 
+    /** Asks RN to share the library file: native Library's Export (#234), RN's until M5 as [export] is. */
+    fun exportLibrary() {
+        // What src/state/export-requested.ts listens for. The two share no code, so change both.
+        channel.send(mapOf("type" to "exportLibrary"))
+    }
+
     /**
      * Back, as hardware back reaches RN: the sheet's ×, grabber and predictive back send it, so RN stays
      * the router. What `setUpNativeBackHandling`'s callback does with native back off, which it is.

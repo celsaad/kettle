@@ -77,6 +77,9 @@ $steps = @(
   @('tap:Start Week 1 · Day 1', 'Finish'), @('back', 'Finish session?'), @('tap:FINISH', 'Workout complete'),
   @('tap:Done', 'Week 1 · Day 1'),
   @('back', 'tab:Programs'),
+  # Native Library's row and Import open RN's editor and sheet over it, and back returns to it (#234).
+  @('tap:Library', 'tab:Library'), @('tap:Push-ups', 'Edit exercise'), @('back', 'tab:Library'),
+  @('tap:Import', 'Import library'), @('back', 'tab:Library'),
   # From a modal: to a tab, and to another modal. Either way back reaches Workouts and then leaves.
   @('/library', 'tab:Library'), @('/settings', 'Settings'), @('/history', 'tab:History'),
   @('back', 'tab:Workouts'),

@@ -14,7 +14,8 @@ import com.casco.kettle.shell.theme.emptyStateCard
 
 /**
  * What a search that matched nothing shows, as RN's `NoResults`: a blank body under intact chrome
- * reads as a bug, not an answer.
+ * reads as a bug, not an answer. A blank [query] means a filter emptied the list rather than typing,
+ * which only Library's type chips can do, and quoting an empty string back explains nothing.
  */
 @Composable
 fun NoResults(query: String) {
@@ -24,8 +25,13 @@ fun NoResults(query: String) {
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         Text(stringResource(R.string.search_noMatchTitle), style = KettleType.heading, color = colors.text)
+        val trimmed = query.trim()
         Text(
-            stringResource(R.string.search_noMatchBody, query.trim()),
+            if (trimmed.isEmpty()) {
+                stringResource(R.string.search_noMatchFilterBody)
+            } else {
+                stringResource(R.string.search_noMatchBody, trimmed)
+            },
             style = KettleType.small,
             color = colors.textSecondary,
         )

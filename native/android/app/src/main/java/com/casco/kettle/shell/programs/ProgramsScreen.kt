@@ -1,6 +1,5 @@
 package com.casco.kettle.shell.programs
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -37,7 +36,6 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.casco.kettle.domain.Program
 import com.casco.kettle.domain.programWeekNumbers
 import com.casco.kettle.domain.programWeeksWithNotes
@@ -49,6 +47,7 @@ import com.casco.kettle.shell.i18n.pluralText
 import com.casco.kettle.shell.list.ListHeaderRule
 import com.casco.kettle.shell.list.ListRow
 import com.casco.kettle.shell.list.ListRowSeparator
+import com.casco.kettle.shell.list.NewItemButton
 import com.casco.kettle.shell.list.NoResults
 import com.casco.kettle.shell.list.SearchBar
 import com.casco.kettle.shell.nav.LocalTabReselects
@@ -135,7 +134,9 @@ fun ProgramsScreen(
                 matching.isEmpty() -> item(key = "no-results") { NoResults(query) }
             }
         }
-        NewProgram(Modifier.align(Alignment.BottomEnd)) { open(Stacking.Push, "/program-editor", emptyMap()) }
+        NewItemButton(stringResource(R.string.programs_newProgram), Modifier.align(Alignment.BottomEnd)) {
+            open(Stacking.Push, "/program-editor", emptyMap())
+        }
     }
 }
 
@@ -224,36 +225,6 @@ private fun FirstRun(onYaml: () -> Unit) {
     }
 }
 
-/** The floating +, as RN's FAB on every tab that has one: the accent in dark, the ink in light. */
-@Composable
-private fun NewProgram(
-    modifier: Modifier,
-    onClick: () -> Unit,
-) {
-    val colors = KettleTheme.colors
-    val label = stringResource(R.string.programs_newProgram)
-    Box(
-        modifier
-            .padding(end = Spacing.three, bottom = Spacing.four)
-            .sizeIn(minWidth = FabSize, minHeight = FabSize)
-            .clip(FabShape)
-            .background(if (KettleTheme.dark) colors.accent else colors.text)
-            .clickable(role = Role.Button, onClick = onClick)
-            .semantics { contentDescription = label },
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            "+",
-            Modifier.clearAndSetSemantics {},
-            style = FabPlusStyle,
-            color = colors.onAccent,
-        )
-    }
-}
-
 private val FirstRunGap = Spacing.one + 2.dp
 private val LinkShape = RoundedCornerShape(10.dp)
 private val LinkPadding = PaddingValues(horizontal = Spacing.two + 2.dp, vertical = Spacing.one + 2.dp)
-private val FabSize = 52.dp
-private val FabShape = RoundedCornerShape(16.dp)
-private val FabPlusStyle = KettleType.title.copy(fontSize = 26.sp, lineHeight = 28.sp)

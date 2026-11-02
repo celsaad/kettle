@@ -279,7 +279,8 @@ class ShellTest {
         // RN goes to the stub route left at the same path, as it would to the RN screen (#190).
         assertEquals(listOf("/history"), sent)
 
-        tab("Library").performClick()
+        // Workouts, as the one tab still RN's (#234 took Library).
+        tab("Workouts").performClick()
 
         compose.onNodeWithText("Native history").assertDoesNotExist()
         assertSurfaceShown(true)

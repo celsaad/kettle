@@ -23,15 +23,17 @@ export type LoadLibraryResult = { ok: true; library: Library } | { ok: false; er
  * is the honest behaviour for content that has to be regenerated from scratch anyway.
  */
 export async function loadLibrary(): Promise<LoadLibraryResult> {
-  const seed = seedLibraryFor(i18next.language);
+  // Only the paths that seed pay for parsing it, rather than every launch that finds a library.
+  const seed = () => seedLibraryFor(i18next.language);
 
-  if (!isFileStorageSupported) return { ok: true, library: seed };
+  if (!isFileStorageSupported) return { ok: true, library: seed() };
 
   ensureStorageReady();
 
   if (!storagePaths.libraryFile.exists) {
-    await saveLibrary(seed);
-    return { ok: true, library: seed };
+    const library = seed();
+    await saveLibrary(library);
+    return { ok: true, library };
   }
 
   const text = await storagePaths.libraryFile.text();
@@ -60,8 +62,9 @@ export async function loadLibrary(): Promise<LoadLibraryResult> {
   // costs the user their *access* to the library and not the library.
   console.warn(`exercises.yaml failed to parse (${result.error.kind}), quarantining and reseeding: ${result.error.detail}`);
   quarantine(text);
-  await saveLibrary(seed);
-  return { ok: true, library: seed };
+  const library = seed();
+  await saveLibrary(library);
+  return { ok: true, library };
 }
 
 /**

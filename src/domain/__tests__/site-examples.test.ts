@@ -49,13 +49,13 @@ describe('site example libraries', () => {
 
     it('imports into a library that already has the seed content', () => {
       if (!parsed.ok) throw new Error('did not parse');
-      const merged = mergeLibraries(seedLibrary, parsed.data);
+      const merged = mergeLibraries(seedLibrary(), parsed.data);
       expect(merged.ok ? null : JSON.stringify(merged)).toBeNull();
     });
 
     it('replaces nothing that was already there', () => {
       if (!parsed.ok) throw new Error('did not parse');
-      const merged = mergeLibraries(seedLibrary, parsed.data);
+      const merged = mergeLibraries(seedLibrary(), parsed.data);
       if (!merged.ok) throw new Error('did not merge');
       expect({
         exercises: merged.summary.updatedExercises,
@@ -66,7 +66,7 @@ describe('site example libraries', () => {
   });
 
   it('keeps the examples from colliding with each other', () => {
-    let library = seedLibrary;
+    let library = seedLibrary();
     for (const file of files) {
       const parsed = parseLibraryYaml(readFileSync(`${siteDir}/examples/${file}`, 'utf8'));
       if (!parsed.ok) throw new Error(`${file} did not parse`);

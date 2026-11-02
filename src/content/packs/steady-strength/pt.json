@@ -1,0 +1,65 @@
+{
+  "days": {
+    "Day 1": "Dia 1",
+    "Day 2": "Dia 2",
+    "Day 3": "Dia 3",
+    "Day 4": "Dia 4",
+    "Day 5": "Dia 5",
+    "Day 6": "Dia 6",
+    "Day 7": "Dia 7"
+  },
+  "exercises": {
+    "ss-rest": {
+      "name": "Descanso"
+    },
+    "ss-sit-to-stand": {
+      "name": "Levantar da Cadeira",
+      "notes": "De pé a partir de uma cadeira e sentar de novo. Faça 12 em todas as séries duas vezes antes de o programa acrescentar uma quarta."
+    },
+    "ss-wall-pushup": {
+      "name": "Flexões na Parede",
+      "notes": "Afaste mais os pés da parede para dificultar quando dominar 15 em todas as séries."
+    },
+    "ss-heel-raises": {
+      "name": "Elevação de Calcanhares",
+      "notes": "O apoio é o encosto de uma cadeira ou uma bancada. Tire uma das mãos do apoio antes de aumentar as repetições."
+    },
+    "ss-seated-march": {
+      "name": "Marcha Sentada",
+      "notes": "Uma esquerda e uma direita são duas repetições, então o número que você registra conta as duas pernas."
+    },
+    "ss-standing-balance": {
+      "name": "Equilíbrio em Pé",
+      "notes": "Mantido por lado. Aumente toda a faixa em 5s quando alcançar 30s em todas as séries."
+    },
+    "ss-band-row": {
+      "name": "Remada com Elástico",
+      "notes": "O elástico é a carga, então um passo para trás é o menor incremento que você tem quando alcançar 12 em todas as séries."
+    },
+    "ss-hip-hinge": {
+      "name": "Flexão de Quadril",
+      "notes": "Mãos no encosto de uma cadeira. Desça as mãos pelo encosto conforme a amplitude aumenta."
+    },
+    "ss-walk": {
+      "name": "Caminhada",
+      "notes": "Quinze minutos para começar. Adicione uma distância à configuração se quiser acompanhá-la também."
+    }
+  },
+  "workouts": {
+    "ss-strength-a": "Firme · Força A",
+    "ss-strength-b": "Firme · Força B",
+    "ss-balance-walk": "Firme · Equilíbrio e Caminhada"
+  },
+  "programs": {
+    "ss-4-weeks": {
+      "name": "Firme e Forte · 4 Semanas",
+      "weekNotes": {
+        "1|Day 1": "Semana de referência. Registre onde você realmente chega em cada faixa — a parte de baixo dela é uma resposta legítima.",
+        "2|Day 1": "As mesmas três sessões. Uma repetição a mais do que na semana 1, em todas as séries.",
+        "3|Day 1": "Uma quarta série nos dias de força. Mantenha as repetições onde estavam em vez de forçar as duas coisas ao mesmo tempo.",
+        "4|Day 1": "Última semana do bloco. Agora leve as repetições em direção ao topo de cada faixa.",
+        "4|Day 5": "Concluir isto volta para a semana 1 — repita o bloco com o topo de cada faixa como seu novo piso."
+      }
+    }
+  }
+}

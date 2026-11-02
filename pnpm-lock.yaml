@@ -17,6 +17,9 @@ importers:
       '@expo-google-fonts/space-grotesk':
         specifier: ^0.4.1
         version: 0.4.1
+      '@expo/metro-config':
+        specifier: ~57.0.12
+        version: 57.0.12(expo@57.0.22)(supports-color@8.1.1)(typescript@6.0.3)
       expo:
         specifier: ~57.0.22
         version: 57.0.22(bd90c9927b2593963c07566aabe9f4af)

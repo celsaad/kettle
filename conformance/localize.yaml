@@ -1,0 +1,111 @@
+# localizeLibrary(library, translationFor(tables, language)): a shipped library with one language's
+# string table applied, as the seed is on a first launch and a pack is when it is merged.
+#
+# Each case is a `library` (inline YAML) or `source` (a repo-relative library file), `tables` (by
+# language: an inline table, or a repo-relative path to a JSON one), and an optional `language` tag.
+# A table only ever replaces names, notes and day labels. Everything else passes through untouched.
+cases:
+  # One table exercising every rule at once:
+  # - exercise `a` takes both strings. `b` has no `notes` in the table, so it keeps its English notes
+  #   rather than losing them. `c` has no entry, so it keeps its English name.
+  # - workout `v` and program `r` have no entry and stay English. Program `r`'s day labels stay English
+  #   too, even though the table translates `Mon`: days are applied per program in the table.
+  # - `Wed` has no translation and keeps its label.
+  # - Week notes are keyed `week|day` on the English day, and `2|` is a week with no day. The rest
+  #   day's label and notes translate like any other week's.
+  # - Program `q` is in the table with no week notes, so its notes stay English and its days translate.
+  # - `zz` is a stale key for content that no longer exists, and is ignored.
+  - name: applies-every-kind-of-string
+    library: &edge |
+      version: 1
+      exercises:
+        - { id: a, name: A, type: rest, notes: English A, config: { duration_sec: 60 } }
+        - { id: b, name: B, type: rest, notes: English B, config: { duration_sec: 60 } }
+        - { id: c, name: C, type: rest, config: { duration_sec: 60 } }
+      workouts:
+        - { id: w, name: W, blocks: [{ type: exercise, exercise: a }] }
+        - { id: v, name: V, blocks: [{ type: exercise, exercise: b }] }
+      programs:
+        - id: p
+          name: P
+          weeks:
+            - { week: 1, day: Mon, workout: w, notes: Train }
+            - { week: 1, day: Tue, rest_day: true, notes: Rest up }
+            - { week: 1, day: Wed, workout: v }
+            - { week: 2, workout: w, notes: No day }
+        - id: q
+          name: Q
+          weeks:
+            - { week: 1, day: Mon, workout: w, notes: Q train }
+        - id: r
+          name: R
+          weeks:
+            - { week: 1, day: Mon, workout: w, notes: R train }
+    tables: &edgeTables
+      pt:
+        days: { Mon: Seg, Tue: Ter }
+        exercises:
+          a: { name: A-pt, notes: Notas A }
+          b: { name: B-pt }
+          zz: { name: Obsoleto }
+        workouts: { w: W-pt }
+        programs:
+          p: { name: P-pt, weekNotes: { '1|Mon': Treinar, '1|Tue': Descansar, '2|': Sem dia } }
+          q: { name: Q-pt }
+    language: pt
+
+  - name: regional-tag-reads-its-language
+    why: The tables are keyed by language, not region, so pt-BR and pt-PT both read `pt`.
+    library: *edge
+    tables: *edgeTables
+    language: pt-BR
+
+  - name: language-with-no-table-is-unchanged
+    library: *edge
+    tables: *edgeTables
+    language: de
+
+  - name: no-language-is-unchanged
+    why: An uninitialised i18next reports no language, and the seed falls back to English.
+    library: *edge
+    tables: *edgeTables
+
+  - name: empty-table-is-unchanged
+    library: *edge
+    tables:
+      pt: { days: {}, exercises: {}, workouts: {}, programs: {} }
+    language: pt
+
+  # The shipped content with its shipped tables, read from src/content/ as both apps read them.
+  - name: shipped-seed-pt
+    source: src/content/seed/library.yaml
+    tables: { pt: src/content/seed/pt.json }
+    language: pt
+  - name: shipped-seed-ja
+    source: src/content/seed/library.yaml
+    tables: { ja: src/content/seed/ja.json }
+    language: ja
+  - name: shipped-pack-steady-strength-pt
+    source: src/content/packs/steady-strength/library.yaml
+    tables: { pt: src/content/packs/steady-strength/pt.json }
+    language: pt
+  - name: shipped-pack-steady-strength-ja
+    source: src/content/packs/steady-strength/library.yaml
+    tables: { ja: src/content/packs/steady-strength/ja.json }
+    language: ja
+  - name: shipped-pack-barbell-gym-pt
+    source: src/content/packs/barbell-gym/library.yaml
+    tables: { pt: src/content/packs/barbell-gym/pt.json }
+    language: pt
+  - name: shipped-pack-barbell-gym-ja
+    source: src/content/packs/barbell-gym/library.yaml
+    tables: { ja: src/content/packs/barbell-gym/ja.json }
+    language: ja
+  - name: shipped-pack-kettlebell-basics-pt
+    source: src/content/packs/kettlebell-basics/library.yaml
+    tables: { pt: src/content/packs/kettlebell-basics/pt.json }
+    language: pt
+  - name: shipped-pack-kettlebell-basics-ja
+    source: src/content/packs/kettlebell-basics/library.yaml
+    tables: { ja: src/content/packs/kettlebell-basics/ja.json }
+    language: ja

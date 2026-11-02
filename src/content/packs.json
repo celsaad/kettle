@@ -1,0 +1,14 @@
+[
+  {
+    "id": "steady-strength",
+    "idPrefix": "ss-"
+  },
+  {
+    "id": "barbell-gym",
+    "idPrefix": "gym-"
+  },
+  {
+    "id": "kettlebell-basics",
+    "idPrefix": "kb-"
+  }
+]

@@ -19,10 +19,10 @@ import type { ExerciseArtComponent } from './types';
  * packs. One map rather than one per source: a drawing is chosen by id, and nothing downstream knows
  * or cares which library an id arrived from — a pack merged into somebody's library is their library.
  *
- * The id is what makes this safe across languages. `seed-library.ts` is a single English structural
- * definition with hardcoded ids, and `seed-translations.ts` replaces only `name` and `notes` against
- * those same ids — so a Portuguese user's *Flexões* is still `pushups` underneath, and this map is
- * correct in every language the app will ever ship, for free.
+ * The id is what makes this safe across languages. `src/content/seed/library.yaml` is a single English
+ * structural definition with hardcoded ids, and each `<lang>.json` beside it replaces only `name` and
+ * `notes` against those same ids — so a Portuguese user's *Flexões* is still `pushups` underneath, and
+ * this map is correct in every language the app will ever ship, for free.
  *
  * Two consequences of keying on the id rather than on the name, both accepted deliberately:
  *

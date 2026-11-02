@@ -25,6 +25,7 @@ reported as skipped under its own name, never as passing. Porting a suite is add
 | Suite | Operation | Output |
 |---|---|---|
 | `library` | `parseLibraryYaml(input)`, or the file at `source` | parse result (below) |
+| `localize` | `localizeLibrary(library, translationFor(tables, language))`, the library inline or at `source`, each table inline or a JSON path | the localized library |
 | `session` | `parseSessionYaml(input)` | parse result |
 | `repair` | `repairLibraryBounds(input)` | `{ repaired: false }`, or `{ repaired: true, result }` where `result` is the parse result of the repaired text |
 | `merge` | `mergeLibraries(parse(existing), parse(incoming))` | `{ ok: true, library, summary }` or `{ ok: false, error }` |
@@ -35,6 +36,11 @@ reported as skipped under its own name, never as passing. Porting a suite is add
 | `preferences` | `parsePreferences(input)`, the text of a `preferences.json` | the preferences with defaults filled in, or `null` where the file is refused |
 | `supporter` | `parseSupporterState(input)`, the text of a `supporter.json` | the supporter state, the empty one where the file is refused |
 | `records` | `entryBest` over each entry of the session file in `session`, `recordKey(exercise, kind)`, or `sessionDurationMinutes` of the session in `session` | a list of `{ kind, value, reps, oneRepMaxKg }` or `null` per entry; the key string; whole minutes |
+
+The `source` cases read `site/examples/` and the shipped seed and packs in `src/content/` in place,
+so an edit to that content moves their goldens, and the diff is the record of what changed. `localize`
+is how both apps translate that shipped content: a table only ever replaces names, notes and day
+labels, and its header lists the rules.
 
 `search` isn't part of the file format, but it is the same problem: two implementations must agree on
 which workout a search finds. Its rules are in the header of `src/domain/search.ts`.

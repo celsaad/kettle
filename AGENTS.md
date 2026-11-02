@@ -91,10 +91,14 @@ mistake here that cannot be fixed for anyone who has already installed it.
   actually *logged*) — so the screens stay thin and the parts worth testing need no React tree.
 - `src/storage/` — all file I/O, via `expo-file-system`'s **class-based `File`/`Directory` API**.
   One file per session (`session-files.ts`), so a mid-workout flush never rewrites history. It also
-  holds the content the app *ships*: `seed-library.ts` (written on a first launch with no library) and
-  `content-packs.ts` (bundled libraries the import screen offers, merged in on a tap). **New shipped
-  content goes in a pack, not in the seed** — the seed can only ever reach a fresh install — and both
-  are one English structure plus a per-language string table (`library-translation.ts`). See the
+  holds the readers for the content the app *ships*: `seed-library.ts` (written on a first launch
+  with no library) and `content-packs.ts` (bundled libraries the import screen offers, merged in on a
+  tap). The content itself is data in `src/content/`, which native reads too: an English
+  `library.yaml` plus a `<lang>.json` string table per language (`library-translation.ts`), and
+  `packs.json` for the pack order. **New shipped content goes in a pack, not in the seed** — the seed
+  can only ever reach a fresh install. A new pack is a directory, a `packs.json` entry, a line in
+  `content-packs.ts`'s import map, and its import-screen row (`import.packs.<id>.name`/`.detail` in
+  all three bundles); `content-packs.test.ts` fails when any of them is missing. See the
   decision log for the four rules a pack has to respect; the prefixed-id one is the load-bearing one.
 - `src/state/` — zustand stores (`library-store`, `session-history-store`, `preferences-store`,
   `tip-store`) and `selectors/`, derived/display logic split per view (`records`, `logged-sessions`,

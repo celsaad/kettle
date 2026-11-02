@@ -316,6 +316,8 @@ dependencies {
     implementation("host.exp.exponent:expo.core:${npmVersion("expo")}")
     implementation("host.exp.exponent:expo.modules:${npmVersion("expo-modules-core")}")
     implementation("host.exp.exponent:expo.modules.splashscreen:${npmVersion("expo-splash-screen")}")
+    // Only to cancel 0.13's pending Expo reminder (#236); goes with the module in M7.
+    implementation("host.exp.exponent:expo.modules.notifications:${npmVersion("expo-notifications")}")
     // BrownfieldActivity is an AppCompatActivity, and the AAR only compiles against fragment-ktx.
     implementation(libs.appcompat)
     implementation(libs.fragment.ktx)

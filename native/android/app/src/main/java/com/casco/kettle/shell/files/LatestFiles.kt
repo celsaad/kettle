@@ -79,6 +79,8 @@ class LatestFiles(
     private val files: StoredFiles,
     private val scope: CoroutineScope,
     private val io: CoroutineDispatcher = Dispatchers.IO,
+    /** Each read as it lands, on [scope]'s thread: the rest-day reminder reconciles from it (#236). */
+    private val onRead: (SessionLog, Preferences?) -> Unit = { _, _ -> },
 ) {
     /** Null until the first read lands, so a screen can tell "not read yet" from "no sessions". */
     var sessionLog by mutableStateOf<SessionLog?>(null)
@@ -120,6 +122,7 @@ class LatestFiles(
                 sessionLog = log
                 this@LatestFiles.preferences = preferences
                 if (library != null) this@LatestFiles.library = library
+                onRead(log, preferences)
             }
     }
 }

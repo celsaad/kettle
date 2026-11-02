@@ -15,12 +15,16 @@ import com.casco.kettle.shell.files.DiskFiles
 import com.casco.kettle.shell.files.LatestFiles
 import com.casco.kettle.shell.files.LocalLatestFiles
 import com.casco.kettle.shell.files.StoragePaths
+import com.casco.kettle.shell.nav.Flip
 import com.casco.kettle.shell.nav.LocalTabReselects
 import com.casco.kettle.shell.nav.ModalSheet
 import com.casco.kettle.shell.nav.ShellLayout
 import com.casco.kettle.shell.nav.Tab
 import com.casco.kettle.shell.nav.TabNavigator
+import com.casco.kettle.shell.nav.flipsOn
 import com.casco.kettle.shell.nav.shellRoutes
+import com.casco.kettle.shell.reminder.reconcileReminder
+import com.casco.kettle.shell.reminder.retireExpoReminder
 import com.casco.kettle.shell.rn.ExpoActivityListeners
 import com.casco.kettle.shell.rn.JsBridge
 import com.casco.kettle.shell.rn.RnFrames
@@ -59,7 +63,9 @@ class MainActivity :
     /** Lazy, since `filesDir` needs the context the activity is given after construction. */
     private val paths by lazy { StoragePaths(filesDir) }
 
-    private val latestFiles by lazy { LatestFiles(DiskFiles(paths), lifecycleScope) }
+    private val latestFiles by lazy {
+        LatestFiles(DiskFiles(paths), lifecycleScope) { log, preferences -> reconcileReminder(preferences, log) }
+    }
 
     private val navigator =
         TabNavigator(
@@ -90,6 +96,10 @@ class MainActivity :
         // Read by hostedTabOptions in src/hooks/safe-brownfield.ts, so RN's first frame already has no
         // bar of its own. The two share no code, so change both.
         BrownfieldState.set(NATIVE_TAB_BAR, true)
+        // Read by useRestDayReminder, which leaves the reminder to native once the preferences flip is
+        // on, so the two never both schedule one. The two share no code, so change both.
+        BrownfieldState.set(NATIVE_REMINDER, Flip.Preferences in flipsOn)
+        retireExpoReminder(this)
         // What showReactNativeFragment does, minus the fragment: the surface is
         // one view for the whole app, which ShellLayout places.
         ReactNativeHostManager.shared.initialize(application)
@@ -236,5 +246,6 @@ class MainActivity :
 
     private companion object {
         const val NATIVE_TAB_BAR = "nativeTabBar"
+        const val NATIVE_REMINDER = "nativeReminder"
     }
 }

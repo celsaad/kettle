@@ -323,6 +323,7 @@
       "restBody": "{{workout}} · de volta ao treino",
       "holdTitle": "Isometria concluída",
       "holdBody": "{{workout}} · pode descer",
+      "reminderChannel": "Lembretes",
       "reminderTitle": "Quando você quiser",
       "reminderBody_one": "Sua última sessão foi há um dia. Sem cobrança — o Kettle está aqui quando der vontade.",
       "reminderBody_other": "Sua última sessão foi há {{count}} dias. Sem cobrança — o Kettle está aqui quando der vontade.",

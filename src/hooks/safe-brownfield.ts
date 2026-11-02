@@ -139,6 +139,15 @@ export function isHosted(): boolean {
 }
 
 /**
+ * Whether the shell schedules the rest-day reminder itself (#236): on `.dev` once the preferences flip
+ * is on, and everywhere after that flip ships. False in every other build, as `isHosted` is.
+ */
+export function isReminderNative(): boolean {
+  // The shell's MainActivity sets it. The two share no code, so change both.
+  return getBrownfield()?.getSharedStateValue('nativeReminder') === true;
+}
+
+/**
  * Tells the shell a navigation action is about to commit, so it can picture the frame RN is about to
  * replace: the tab behind an opening sheet, or the sheet's last frame as it closes. It has to arrive
  * before the commit is mounted, which is why it's sent synchronously from React Navigation's

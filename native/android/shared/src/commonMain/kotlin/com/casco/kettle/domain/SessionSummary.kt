@@ -39,7 +39,7 @@ fun sessionSetCount(session: Session): Int =
 /** When [Session.startedAt] is, or null where it isn't an instant, as RN's invalid `Date` is left out. */
 internal fun Session.startedInstant(): Instant? = instantOrNull(startedAt)
 
-private fun instantOrNull(text: String): Instant? =
+internal fun instantOrNull(text: String): Instant? =
     try {
         Instant.parse(text)
     } catch (_: IllegalArgumentException) {

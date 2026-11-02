@@ -10,6 +10,8 @@ jest.mock('@/hooks/safe-notifications', () => ({
   cancelRestDayReminder: () => mockCancel(),
   requestNotificationPermissions: () => mockRequestPermissions(),
 }));
+let mockReminderNative = false;
+jest.mock('@/hooks/safe-brownfield', () => ({ isReminderNative: () => mockReminderNative }));
 
 import type { Session } from '@/domain/types';
 import { oneSetEntry } from '@/test-support/sessions';
@@ -41,6 +43,7 @@ beforeEach(() => {
 
 afterEach(() => {
   useSessionHistoryStore.setState({ sessions: [], status: 'idle' });
+  mockReminderNative = false;
 });
 
 describe('restDayReminderAt', () => {
@@ -109,6 +112,22 @@ describe('useRestDayReminder', () => {
 
     expect(mockSchedule).not.toHaveBeenCalled();
     expect(mockCancel).toHaveBeenCalled();
+  });
+
+  /**
+   * The shell schedules its own once the preferences flip is on (#236), and cancels this one's pending
+   * request at launch. Scheduling here too would put two alarms in the queue; cancelling here would be
+   * harmless but isn't this hook's to do any more.
+   */
+  it('leaves the reminder to the native shell when the shell owns it', async () => {
+    mockReminderNative = true;
+    setUp({ enabled: true, sessions: [aSession('2026-07-24T07:30:00')] });
+
+    await renderHook(() => useRestDayReminder());
+
+    expect(mockSchedule).not.toHaveBeenCalled();
+    expect(mockCancel).not.toHaveBeenCalled();
+    expect(mockRequestPermissions).not.toHaveBeenCalled();
   });
 
   it('schedules nothing on an install with no sessions at all', async () => {

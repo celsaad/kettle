@@ -301,6 +301,7 @@
       "restBody": "{{workout}} · back to work",
       "holdTitle": "Hold complete",
       "holdBody": "{{workout}} · you can come down",
+      "reminderChannel": "Reminders",
       "reminderTitle": "Ready when you are",
       "reminderBody_one": "Your last session was a day ago. No pressure — Kettle is here when you want it.",
       "reminderBody_other": "Your last session was {{count}} days ago. No pressure — Kettle is here when you want it."

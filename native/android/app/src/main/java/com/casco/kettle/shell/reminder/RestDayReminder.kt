@@ -1,0 +1,161 @@
+package com.casco.kettle.shell.reminder
+
+import android.Manifest
+import android.app.AlarmManager
+import android.app.PendingIntent
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.core.app.NotificationChannelCompat
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
+import com.casco.kettle.domain.Preferences
+import com.casco.kettle.domain.REST_DAY_REMINDER_DAYS
+import com.casco.kettle.domain.SessionLog
+import com.casco.kettle.domain.restDayReminderAt
+import com.casco.kettle.shell.R
+import com.casco.kettle.shell.files.DiskFiles
+import com.casco.kettle.shell.files.StoragePaths
+import com.casco.kettle.shell.i18n.pluralText
+import com.casco.kettle.shell.nav.Flip
+import com.casco.kettle.shell.nav.flipsOn
+import expo.modules.notifications.service.NotificationsService
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
+import kotlinx.datetime.TimeZone
+
+/**
+ * The opt-in rest-day nudge (#221, #236): one pending alarm, sitting a couple of days past the newest
+ * session, so logging a session pushes it back out and someone training regularly never sees it.
+ *
+ * Kept in step by running this on every read of the files, from the boot receiver, and (once it's
+ * native) from Settings' toggle. Never asks for the notification permission: that's the toggle's job.
+ *
+ * Dormant until the preferences flip: RN's Expo reminder is the live one until then, so a build
+ * without the flip leaves the platform's queue alone entirely, cancels included.
+ *
+ * An inexact alarm, since Play restricts `SCHEDULE_EXACT_ALARM` and a nudge minutes late costs
+ * nothing. Local only: nothing here transmits (`AGENTS.md` → "Platform constraints").
+ */
+fun Context.reconcileReminder(
+    preferences: Preferences?,
+    log: SessionLog,
+    now: Instant = Clock.System.now(),
+    zone: TimeZone = TimeZone.currentSystemDefault(),
+    flips: Set<Flip> = flipsOn,
+) {
+    if (Flip.Preferences !in flips) return
+    val alarms = getSystemService(AlarmManager::class.java)
+    // logged, as RN's useLoggedSessions: newest first, an in-flight session included, whose start is
+    // already the right anchor.
+    val at = restDayReminderAt(preferences?.restDayReminder == true, log.logged.firstOrNull()?.startedAt, now, zone)
+    if (at == null) {
+        alarms.cancel(firing(this))
+        return
+    }
+    // Made here as well as when posting, so the channel is in system settings to mute from the moment
+    // the reminder is on.
+    createChannel(this)
+    // The same PendingIntent every time, so this replaces the pending alarm rather than adding one.
+    alarms.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at.toEpochMilliseconds(), firing(this))
+}
+
+/**
+ * Cancels the Expo request a 0.13 install left pending, so it can't fire beside the native alarm. On
+ * every launch, since it's idempotent and needs no flag; gated like the alarm, since before the flip
+ * that request is the live reminder. Goes in M7 with expo-notifications.
+ */
+fun retireExpoReminder(
+    context: Context,
+    flips: Set<Flip> = flipsOn,
+) {
+    // RN's REST_DAY_REMINDER_ID in src/hooks/safe-notifications.ts.
+    if (Flip.Preferences in flips) NotificationsService.removeScheduledNotification(context, "kettle-rest-day-reminder")
+}
+
+/** The alarm going off: posts the nudge, or nothing where notifications are denied. */
+class RestDayReminderReceiver : BroadcastReceiver() {
+    override fun onReceive(
+        context: Context,
+        intent: Intent,
+    ) {
+        val allowed =
+            Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+                ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) ==
+                PackageManager.PERMISSION_GRANTED
+        if (!allowed) return
+        createChannel(context)
+        val resources = context.resources
+        val open =
+            context.packageManager.getLaunchIntentForPackage(context.packageName)?.let {
+                PendingIntent.getActivity(context, 0, it, PendingIntent.FLAG_IMMUTABLE)
+            }
+        val notification =
+            NotificationCompat
+                .Builder(context, CHANNEL)
+                .setSmallIcon(R.drawable.notification_icon)
+                .setColor(ContextCompat.getColor(context, R.color.notification_icon_color))
+                .setContentTitle(resources.getString(R.string.session_notification_reminderTitle))
+                .setContentText(
+                    resources.pluralText(
+                        R.plurals.session_notification_reminderBody,
+                        R.string.session_notification_reminderBody_zero,
+                        REST_DAY_REMINDER_DAYS,
+                    ),
+                ).setContentIntent(open)
+                .setAutoCancel(true)
+                .build()
+        NotificationManagerCompat.from(context).notify(NOTIFICATION, notification)
+    }
+}
+
+/**
+ * Alarms don't survive a reboot, so this schedules the one the files call for again. It reads them
+ * itself, since no activity has: off the main thread, and holding the broadcast open until it's done.
+ */
+class RestDayReminderBootReceiver : BroadcastReceiver() {
+    override fun onReceive(
+        context: Context,
+        intent: Intent,
+    ) {
+        if (intent.action != Intent.ACTION_BOOT_COMPLETED || Flip.Preferences !in flipsOn) return
+        val pending = goAsync()
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val files = DiskFiles(StoragePaths(context.filesDir))
+                context.reconcileReminder(files.preferences(), files.sessionLog())
+            } finally {
+                pending.finish()
+            }
+        }
+    }
+}
+
+/**
+ * Its own channel, apart from the step cues' fallback one, so muting the nudge in system settings
+ * leaves a pocketed phone's rest cues alone. Recreating it is how a new locale's name reaches it.
+ */
+private fun createChannel(context: Context) =
+    NotificationManagerCompat.from(context).createNotificationChannel(
+        NotificationChannelCompat
+            .Builder(CHANNEL, NotificationManagerCompat.IMPORTANCE_DEFAULT)
+            .setName(context.getString(R.string.session_notification_reminderChannel))
+            .build(),
+    )
+
+private fun firing(context: Context): PendingIntent =
+    PendingIntent.getBroadcast(
+        context,
+        0,
+        Intent(context, RestDayReminderReceiver::class.java),
+        PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+    )
+
+private const val CHANNEL = "rest-day-reminder"
+private const val NOTIFICATION = 1

@@ -48,8 +48,9 @@ function onShellMessage(message: Record<string, unknown>): void {
     void onFilesChanged(message.kind);
     return;
   }
-  // The shell's JsBridge.export: native History's Export and Export all, which RN shares until M5.
-  if (message.type === 'exportSession' || message.type === 'exportHistory') {
+  // The shell's JsBridge.export and JsBridge.exportLibrary: native History's Export and Export all, and
+  // native Library's Export, which RN shares until M5. The two share no code, so change both.
+  if (message.type === 'exportSession' || message.type === 'exportHistory' || message.type === 'exportLibrary') {
     void onExportRequested(message);
     return;
   }

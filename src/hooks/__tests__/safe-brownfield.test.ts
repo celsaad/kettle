@@ -166,14 +166,20 @@ it('hands a filesChanged message to the store that reads that file', () => {
   expect(mockNavigate).not.toHaveBeenCalled();
 });
 
-// Native History's Export and Export all: RN keeps export until M5, and shares for the shell.
+// Native History's Export and Export all, and native Library's Export (#234): RN keeps export until
+// M5, and shares for the shell.
 it('hands an export message to the handler that shares it, and moves nothing', () => {
   announceHostReady();
 
   fromShell({ type: 'exportSession', id: 'legs-1' });
   fromShell({ type: 'exportHistory' });
+  fromShell({ type: 'exportLibrary' });
 
-  expect(mockOnExportRequested.mock.calls).toEqual([[{ type: 'exportSession', id: 'legs-1' }], [{ type: 'exportHistory' }]]);
+  expect(mockOnExportRequested.mock.calls).toEqual([
+    [{ type: 'exportSession', id: 'legs-1' }],
+    [{ type: 'exportHistory' }],
+    [{ type: 'exportLibrary' }],
+  ]);
   expect(mockNavigate).not.toHaveBeenCalled();
 });
 

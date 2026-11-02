@@ -44,7 +44,9 @@ class ShellRoutesTest {
 
     @Test
     fun `the read-only screens are native whatever the flips`() {
-        assertEquals(routesFor(Flip.entries.toSet(), emptyMap()), routesFor(emptySet(), emptyMap()))
-        assertTrue(routesFor(emptySet(), emptyMap()).screenAt(Tab.History.path) is Screen.Native)
+        val on = routesFor(Flip.entries.toSet(), writers).screenAt(Tab.History.path)
+
+        assertTrue(on is Screen.Native)
+        assertSame(on, routesFor(emptySet(), writers).screenAt(Tab.History.path))
     }
 }

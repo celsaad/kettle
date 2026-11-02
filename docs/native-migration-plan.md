@@ -407,10 +407,11 @@ warns about) at the preferences flip. Both go with the RN runner in M6.
 - **No RN fallback for unhosted builds.** Web browses an in-memory seed read from `src/content/`,
   with no writes. The iOS RN build loses the reminder until iOS goes native.
 
-**Writer screens land unrouted**, behind a `Flips.kt` pair (#231): `true` in the debug source set,
-`false` in release. `.dev` draws the native writer while Play keeps the RN screen, so no file has
-two writers in production. `.dev` accepts two writers in the meantime. Each flip release deletes its
-constant along with the RN writers, and **the RN screen and its jest test are deleted in the flip
+**Writer screens land unrouted**, behind a `Flips.kt` pair (#231): every `Flip` on in the debug
+source set, none in release (which `:benchmark` builds too). `.dev` draws the native writer while
+Play keeps the RN screen, so no file has two writers in production. `.dev` accepts two writers in the
+meantime. Each flip release deletes its `Flip` entry and moves its routes in with the read-only ones,
+along with the RN writers, and **the RN screen and its jest test are deleted in the flip
 release's PR**, not the port's.
 
 Every port follows M4's definition of done otherwise: selectors and form logic into `:shared` with

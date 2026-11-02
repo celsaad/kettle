@@ -92,10 +92,12 @@ private class Drawing(
     fun vector(svg: String): String {
         val root = parse(svg)
         expectAttributes(root, required = setOf("viewBox", "fill"), optional = setOf("xmlns"))
-        check(root.tagName == "svg") { "the root is <${root.tagName}>, not <svg>" }
-        check(root.getAttribute("fill") == "none") { "<svg> has fill=\"${root.getAttribute("fill")}\"; only \"none\"" }
+        expect(root.tagName == "svg") { "the root is <${root.tagName}>, not <svg>" }
+        expect(root.getAttribute("fill") == "none") { "<svg> has fill=\"${root.getAttribute("fill")}\"; only \"none\"" }
         val viewBox = root.getAttribute("viewBox").trim().split(Regex("""\s+"""))
-        check(viewBox.size == VIEW_BOX_NUMBERS && viewBox.all(NUMBER::matches) && viewBox.take(2) == listOf("0", "0")) {
+        expect(
+            viewBox.size == VIEW_BOX_NUMBERS && viewBox.all(NUMBER::matches) && viewBox.take(2) == listOf("0", "0"),
+        ) {
             "viewBox \"${root.getAttribute("viewBox")}\" has to be \"0 0 <width> <height>\""
         }
         val (width, height) = viewBox.drop(2)
@@ -104,16 +106,16 @@ private class Drawing(
             root.elementChildren().singleOrNull()?.takeIf { it.tagName == "g" }
                 ?: fail("<svg> has to hold exactly one root <g>")
         expectAttributes(canvas, required = setOf("stroke", "stroke-width", "stroke-linecap", "stroke-linejoin"))
-        check(canvas.getAttribute("stroke") == STROKE_COLOR) {
+        expect(canvas.getAttribute("stroke") == STROKE_COLOR) {
             "the root <g> strokes in \"${canvas.getAttribute(
                 "stroke",
             )}\"; only \"$STROKE_COLOR\", which the tint replaces"
         }
-        check(NUMBER.matches(canvas.getAttribute("stroke-width"))) { "stroke-width has to be a number" }
-        check(canvas.getAttribute("stroke-linecap") in setOf("butt", "round", "square")) {
+        expect(NUMBER.matches(canvas.getAttribute("stroke-width"))) { "stroke-width has to be a number" }
+        expect(canvas.getAttribute("stroke-linecap") in setOf("butt", "round", "square")) {
             "stroke-linecap is not one Android has"
         }
-        check(canvas.getAttribute("stroke-linejoin") in setOf("miter", "round", "bevel")) {
+        expect(canvas.getAttribute("stroke-linejoin") in setOf("miter", "round", "bevel")) {
             "stroke-linejoin is not one Android has"
         }
         val stroke =
@@ -157,7 +159,7 @@ private class Drawing(
                     element
                         .getAttribute(
                             "d",
-                        ).also { check(PATH_DATA.matches(it)) { "<path> d=\"$it\" is not path data" } }
+                        ).also { expect(PATH_DATA.matches(it)) { "<path> d=\"$it\" is not path data" } }
                 }
 
                 "circle" -> {
@@ -225,7 +227,7 @@ private class Drawing(
         val (cx, cy, r) =
             listOf("cx", "cy", "r").map {
                 val value = element.getAttribute(it)
-                check(NUMBER.matches(value)) { "<circle> $it=\"$value\" is not a number" }
+                expect(NUMBER.matches(value)) { "<circle> $it=\"$value\" is not a number" }
                 BigDecimal(value)
             }
         val left = (cx - r).plain()
@@ -257,7 +259,8 @@ private class Drawing(
             }
         }
 
-    private fun check(
+    /** `require`, but naming the file, which is the first thing a failed build needs to say. */
+    private fun expect(
         condition: Boolean,
         message: () -> String,
     ) {

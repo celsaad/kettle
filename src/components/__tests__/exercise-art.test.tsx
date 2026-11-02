@@ -80,8 +80,8 @@ describe('the files', () => {
     // Android's tint and iOS's template mode. Any other stroke or fill is fixed, so it vanishes on
     // one of the three surfaces a drawing lands on: light, dark, or the always-dark runner.
     const markup = ARTWORK[file].replace(/<!--[\s\S]*?-->/g, '');
-    const coloured = [...markup.matchAll(/\b(stroke|fill|color|style)="([^"]*)"/g)]
-      .map(([attribute]) => attribute)
+    const coloured = [...markup.matchAll(/\b(stroke|fill|color|style)=(["'])(.*?)\2/g)]
+      .map(([, name, , value]) => `${name}="${value}"`)
       .filter((attribute) => attribute !== 'fill="none"');
 
     expect(coloured).toEqual(['stroke="currentColor"']);

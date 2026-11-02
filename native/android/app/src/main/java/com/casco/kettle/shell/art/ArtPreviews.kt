@@ -21,12 +21,13 @@ import androidx.compose.ui.unit.dp
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.Spacing
 
-/** The same width the web contact sheet draws each one at, so the two compare side by side. */
+/** Each drawing at its viewport width in dp, so strokes land at the weight they were drawn at. */
 private val SheetCell = 120.dp
 
 /**
- * Every generated drawing once, by file, tinted the way a screen will tint it: the eyeball check
- * against the web build's contact sheet, which no test can make. The names are developer-facing.
+ * Every generated drawing once, tinted the way a screen will tint it, and labelled with the first id
+ * that uses it: the eyeball check against the same drawings in RN's web build, which no test can
+ * make. The labels are developer-facing.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable

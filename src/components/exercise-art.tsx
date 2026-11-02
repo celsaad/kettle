@@ -98,7 +98,7 @@ type Props = {
   exerciseId: string;
   /** Width in dp; height follows the shared aspect. */
   size?: number;
-  /** Overrides the theme colour — the runner is dark whatever the scheme, and would pass its own. */
+  /** Overrides the theme colour — the runner is dark whatever the scheme, and passes its own. */
   color?: string;
 };
 
@@ -126,8 +126,8 @@ export function ExerciseArt({ exerciseId, size = 152, color }: Props) {
       accessibilityRole="image"
       accessibilityLabel={t(`exerciseArt.${exerciseId}`)}>
       {/* Every file strokes in `currentColor`, so this one prop recolours the drawing for the light
-          theme, the dark theme and the always-dark runner alike. `color` is required in spirit: a
-          drawing that fell back to a fixed colour would vanish on one of the three. */}
+          theme, the dark theme and the always-dark runner alike. It is never left unset: SvgXml's
+          own fallback is black, which vanishes on the two dark surfaces. */}
       <SvgXml xml={markup} width={size} height={size * ART_ASPECT} color={color ?? theme.textSecondary} />
     </View>
   );

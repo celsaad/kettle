@@ -7,6 +7,9 @@
 # phone in English whose .dev install still holds the seed library. The runner steps finish a real
 # session, which joins the .dev history. It never touches com.casco.kettle.
 #
+# The matrix is .dev's routes, so during M5 it shows every writer screen flipped on (Flips.kt), which
+# a release build still draws in RN.
+#
 # Usage: scripts/route-check.sh [--device <adb serial>]
 set -euo pipefail
 

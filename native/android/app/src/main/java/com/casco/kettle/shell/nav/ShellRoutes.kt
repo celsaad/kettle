@@ -44,13 +44,13 @@ sealed interface Screen {
 }
 
 /**
- * The route registrations, by the path RN knows the route by. Anything not listed renders RN. Moving a
- * tab to native is one line, as History's below, plus an empty stub
+ * The read-only screens' registrations, by the path RN knows the route by. Anything not listed renders
+ * RN. Moving a tab to native is one line, as History's below, plus an empty stub
  * route RN keeps at the same path (#190): RN stays the router, so its stack, back and route reports are
  * unchanged, and native draws the screen whenever RN reports that path: a tab's in `Destinations`, and
  * a modal route's in the sheet (`NativeSheet`, #197), with the same stub behind it.
  */
-val shellRoutes: Map<String, Screen> =
+private val readerRoutes: Map<String, Screen> =
     mapOf(
         "/support" to Screen.Native { SupportRoute() },
         "/program-guide" to Screen.Native { ProgramGuideRoute() },
@@ -58,6 +58,27 @@ val shellRoutes: Map<String, Screen> =
         "/analytics" to Screen.Native { StatsRoute() },
         Tab.History.path to Screen.Native { HistoryRoute() },
     )
+
+/**
+ * M5's ownership flips, one per file (#222), in the order they release. A writer screen lands on master
+ * behind its file's flip, which `Flips.kt` turns on in debug and off in release, so `.dev` drives it
+ * while Play keeps the RN screen (#223). That gives `.dev` two writers for the file until the flip
+ * releases, which is accepted because it never reaches Play. The flip-release PR deletes the entry,
+ * moves its routes into [readerRoutes] and deletes the RN writers.
+ */
+enum class Flip { Preferences, Sessions, Library }
+
+/** The writer screens, by the flip that switches them on. Registered the way [readerRoutes] are. */
+private val writerRoutes: Map<Flip, Map<String, Screen>> = emptyMap()
+
+/** The routes with [flipsOn]'s [writers] registered over the read-only ones, the others left to RN. */
+fun routesFor(
+    flipsOn: Set<Flip>,
+    writers: Map<Flip, Map<String, Screen>> = writerRoutes,
+): Map<String, Screen> = writers.filterKeys { it in flipsOn }.values.fold(readerRoutes, Map<String, Screen>::plus)
+
+/** The routes this build registers. */
+val shellRoutes: Map<String, Screen> = routesFor(flipsOn)
 
 /** How [path] renders. */
 fun Map<String, Screen>.screenAt(path: String): Screen = this[path] ?: Screen.Rn

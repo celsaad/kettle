@@ -1,3 +1,7 @@
+// Straight from i18next rather than the `useTranslation` below, matching `domain/format.ts`:
+// `overrideLines` is a module-level function with no React tree to hook into. Aliased because the
+// component further down has its own `t` from the hook, and lint runs at zero warnings.
+import { t as translate } from 'i18next';
 import { useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
@@ -11,10 +15,10 @@ import {
   validateBlockConfig,
   validateConfig,
 } from '@/domain/exercise-form';
-import { overrideLines } from '@/app/program-detail';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
+import { workoutRunsExercise } from '@/domain/program';
 import { MaxRounds } from '@/domain/schema';
 import {
   diffBlockOverride,
@@ -26,6 +30,54 @@ import {
 import type { Exercise, Library, ProgramOverride, Workout, WorkoutBlock } from '@/domain/types';
 import { useTheme } from '@/hooks/use-theme';
 import { useUnitSystem } from '@/state/preferences-store';
+
+/**
+ * One line per patched key, plus — when the patch will not actually reach the runner — a line saying
+ * so.
+ *
+ * That last line is the display half of `applyExerciseOverride`'s silent fallback, and it is not
+ * cosmetic: without it the override list states a change the week does not make. It reads worst on
+ * files that were fine before the merge was validated, since `programOverrideSchema` types `config`
+ * as a free record and still imports them — a bare `hold_sec_max` among them.
+ *
+ * The keys and values themselves stay untranslated: they are the user's own YAML, rendered verbatim
+ * like every other piece of their data.
+ */
+export function overrideLines(override: ProgramOverride, library: Library, workout: Workout | undefined): string[] {
+  // Scoped to the week's own workout, not the library: the block branch has always resolved this way,
+  // and an exercise override naming something the week doesn't run merged cleanly and changed nothing
+  // — showing as applied, which is the failure this whole function exists to report.
+  const target =
+    override.kind === 'exercise'
+      ? workoutRunsExercise(workout, override.exerciseId)
+        ? library.exercises.find((candidate) => candidate.id === override.exerciseId)
+        : undefined
+      : workout?.blocks.find((candidate) => candidate.kind === 'circuit' && candidate.id === override.blockId);
+  const name =
+    override.kind === 'exercise'
+      ? ((target as { name: string } | undefined)?.name ?? override.exerciseId)
+      : target
+        ? translate('overrideEditor.circuitTitle', { id: override.blockId })
+        : override.blockId;
+
+  const line = (key: string, value: number | string) => `${name}: ${key} → ${value}`;
+  const entries = Object.entries(override.config);
+  if (!target) return [...entries.map(([key, value]) => line(key, value)), translate('programs.overrideIgnoredMissing')];
+
+  // Whole-override problems get a trailing line; per-key ones get a note on their own key. A refused
+  // merge drops the *whole* patch, so its keys are reported together — but an unknown key is stripped
+  // on its own while the rest of the patch still runs, and saying "not applied" over all of them told
+  // the user a change wasn't happening while it happened.
+  const report = overrideReport(target, override.config, override.kind);
+  if (report.refused) {
+    return [...entries.map(([key, value]) => line(key, value)), translate('programs.overrideIgnoredInvalid')];
+  }
+  return entries.map(([key, value]) =>
+    report.unknownKeys.includes(key)
+      ? `${line(key, value)} · ${translate('programs.overrideIgnoredUnknownKey')}`
+      : line(key, value),
+  );
+}
 
 type CircuitBlock = Extract<WorkoutBlock, { kind: 'circuit' }>;
 type Target = { kind: 'exercise'; exercise: Exercise } | { kind: 'block'; block: CircuitBlock };

@@ -52,8 +52,12 @@ steps=(
   '/program-editor?id=foundations|Edit program' 'back|tab:History'
   '/program-guide|Writing a program by hand' 'back|tab:History'
   '/session-editor|Edit session' 'back|tab:History'
-  # A native tab's row opens its RN sheet over that tab (#196), and back returns to it.
+  # A native tab's row opens its native sheet over that tab (#197, #233), and back returns to it.
   'tap:Programs|tab:Programs' 'tap:Foundations · 4 Weeks · No Equipment|Week 1 · Day 1'
+  # Over that native sheet, RN's editor and RN's runner each come back to it (#155, #233).
+  'tap:Edit program|Edit program' 'back|Week 1 · Day 1'
+  'tap:Start Week 1 · Day 1|Finish' 'back|Finish session?' 'tap:FINISH|Workout complete'
+  'tap:Done|Week 1 · Day 1'
   'back|tab:Programs'
   # From a modal: to a tab, and to another modal. Either way back reaches Workouts and then leaves.
   '/library|tab:Library' '/settings|Settings' '/history|tab:History'

@@ -4,7 +4,9 @@ import android.icu.util.LocaleData
 import android.icu.util.ULocale
 import android.os.Build
 import android.text.format.DateFormat
+import androidx.annotation.StringRes
 import com.casco.kettle.domain.UnitSystem
+import com.casco.kettle.shell.R
 import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
@@ -106,3 +108,7 @@ fun deviceUnitSystem(locale: Locale): UnitSystem {
 
 /** expo-localization's `USES_IMPERIAL`. */
 private val US_UNIT_REGIONS = setOf("US", "LR", "MM")
+
+/** The short unit a weight in [units] is written with, as RN's `units.lb`/`units.kg`. */
+@StringRes
+fun weightUnit(units: UnitSystem): Int = if (units == UnitSystem.IMPERIAL) R.string.units_lb else R.string.units_kg

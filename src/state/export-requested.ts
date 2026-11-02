@@ -7,6 +7,18 @@
 import { useSessionHistoryStore } from '@/state/session-history-store';
 import { exportLibrary, exportSession, exportSessions } from '@/storage/export';
 
+// The shell's JsBridge.export and JsBridge.exportLibrary. The two share no code, so change both.
+const EXPORT_REQUESTS: readonly unknown[] = ['exportSession', 'exportHistory', 'exportLibrary'];
+
+/**
+ * Whether a shell message of this `type` is one `onExportRequested` shares, so the dispatcher in
+ * `hooks/safe-brownfield.ts` hands it here. One list beside the handler, since a type known here but
+ * not there is dropped unheard: the first cut of Library's Export was, and only a device showed it.
+ */
+export function isExportRequest(type: unknown): boolean {
+  return EXPORT_REQUESTS.includes(type);
+}
+
 /**
  * Shares what `message` asks for: one session's file (`exportSession`, by `id`), the whole log
  * (`exportHistory`), which is the raw `sessions`, since an archive is the user's own files, or the
@@ -15,7 +27,6 @@ import { exportLibrary, exportSession, exportSessions } from '@/storage/export';
  */
 export async function onExportRequested(message: Record<string, unknown>): Promise<void> {
   try {
-    // The shell's JsBridge.export and JsBridge.exportLibrary. The two share no code, so change both.
     if (message.type === 'exportSession' && typeof message.id === 'string') await exportSession(message.id);
     else if (message.type === 'exportHistory') await exportSessions(useSessionHistoryStore.getState().sessions);
     else if (message.type === 'exportLibrary') await exportLibrary();

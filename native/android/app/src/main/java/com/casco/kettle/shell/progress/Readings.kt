@@ -8,6 +8,7 @@ import com.casco.kettle.domain.roundHalfUp
 import com.casco.kettle.domain.toDisplayWeight
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.i18n.pluralText
+import com.casco.kettle.shell.i18n.weightUnit
 import kotlin.math.abs
 import kotlin.math.sign
 
@@ -24,16 +25,7 @@ class Readings(
     fun reading(value: Double): String =
         when (kind) {
             RecordKind.HeaviestSet -> {
-                val unit =
-                    resources.getString(
-                        if (units ==
-                            UnitSystem.IMPERIAL
-                        ) {
-                            R.string.units_lb
-                        } else {
-                            R.string.units_kg
-                        },
-                    )
+                val unit = resources.getString(weightUnit(units))
                 "${jsNumber(toDisplayWeight(value, units))} $unit"
             }
 

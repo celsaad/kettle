@@ -7,10 +7,15 @@ import com.casco.kettle.domain.UnitSystem
 import com.casco.kettle.domain.jsNumber
 import com.casco.kettle.domain.toDisplayWeight
 import com.casco.kettle.shell.R
+import com.casco.kettle.shell.i18n.weightUnit
 
 /**
  * An exercise's target in one line, its weight in the reader's [units]: RN's `exerciseSummary`. Zeros
  * read as absent, as RN's truthiness reads them, so a 0 kg target and a 0 m distance say nothing.
+ *
+ * A port, not a `:shared` selector with conformance cases: the words come from the same locale
+ * bundles, so only which string and which numbers can drift, and RN's copy has one reader left, the
+ * workout editor, which M5 ports (#242). The two share no code, so change both until then.
  */
 @Composable
 fun exerciseSummary(
@@ -57,8 +62,11 @@ private fun repsSummary(
         if (kg == null || kg == 0.0) {
             ""
         } else {
-            val unit = if (units == UnitSystem.IMPERIAL) R.string.units_lb else R.string.units_kg
-            stringResource(R.string.summary_repsWeight, stringResource(unit), jsNumber(toDisplayWeight(kg, units)))
+            stringResource(
+                R.string.summary_repsWeight,
+                stringResource(weightUnit(units)),
+                jsNumber(toDisplayWeight(kg, units)),
+            )
         }
     return stringResource(
         R.string.summary_reps,

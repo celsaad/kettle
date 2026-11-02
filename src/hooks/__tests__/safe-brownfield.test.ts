@@ -69,6 +69,7 @@ jest.mock('@/state/files-changed', () => ({ onFilesChanged: (kind: unknown) => m
 // What an export shares has its own suite (state/__tests__/export-requested.test.ts).
 const mockOnExportRequested = jest.fn();
 jest.mock('@/state/export-requested', () => ({
+  ...jest.requireActual('@/state/export-requested'),
   onExportRequested: (message: unknown) => mockOnExportRequested(message),
 }));
 

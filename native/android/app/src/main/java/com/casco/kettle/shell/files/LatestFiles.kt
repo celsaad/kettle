@@ -72,13 +72,15 @@ class DiskFiles(
  * RN writes all three until M5: the runner writes new sessions, the session editor edits finished
  * ones, the library editors write the library, and Settings the preferences. Each of those is above
  * the tabs, so the shell rereads when RN hands the tabs back, on a tap onto a native tab or a native
- * sheet coming up (`TabNavigator`'s `reread`) and on a cold start, and nothing else would. RN's half
- * of the rule is `filesChanged`.
+ * sheet coming up (`TabNavigator`'s `reread`), and whenever the app starts or stops being seen
+ * (`MainActivity`), and nothing else would. RN's half of the rule is `filesChanged`.
  */
 class LatestFiles(
     private val files: StoredFiles,
     private val scope: CoroutineScope,
     private val io: CoroutineDispatcher = Dispatchers.IO,
+    /** Each read as it lands, on [scope]'s thread: the rest-day reminder reconciles from it (#236). */
+    private val onRead: (SessionLog, Preferences?) -> Unit = { _, _ -> },
 ) {
     /** Null until the first read lands, so a screen can tell "not read yet" from "no sessions". */
     var sessionLog by mutableStateOf<SessionLog?>(null)
@@ -120,6 +122,7 @@ class LatestFiles(
                 sessionLog = log
                 this@LatestFiles.preferences = preferences
                 if (library != null) this@LatestFiles.library = library
+                onRead(log, preferences)
             }
     }
 }

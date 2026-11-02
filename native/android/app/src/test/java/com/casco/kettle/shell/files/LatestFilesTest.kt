@@ -99,6 +99,26 @@ class LatestFilesTest {
         assertEquals(UnitSystem.IMPERIAL, files.preferences?.unitSystem)
     }
 
+    /** The rest-day reminder reconciles from every read (#236), so a session the runner logs moves it. */
+    @Test
+    fun `every read is handed on, with the log and the preferences it read`() {
+        val read = mutableListOf<Pair<List<String>, UnitSystem?>>()
+        val files =
+            LatestFiles(
+                DiskFiles(StoragePaths(folder.root)),
+                CoroutineScope(Dispatchers.Unconfined),
+                io = Dispatchers.Unconfined,
+                onRead = { log, preferences -> read += log.sessions.map { it.id } to preferences?.unitSystem },
+            )
+        writeUnits("metric")
+        files.reread()
+
+        writeSession("logged")
+        files.reread()
+
+        assertEquals(listOf(emptyList<String>() to UnitSystem.METRIC, listOf("logged") to UnitSystem.METRIC), read)
+    }
+
     /** RN heals an unreadable library on its next load, and every name on screen meanwhile is worth keeping. */
     @Test
     fun `a library that can't be read keeps the last one that could`() {

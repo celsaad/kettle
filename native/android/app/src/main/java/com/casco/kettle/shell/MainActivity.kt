@@ -15,12 +15,16 @@ import com.casco.kettle.shell.files.DiskFiles
 import com.casco.kettle.shell.files.LatestFiles
 import com.casco.kettle.shell.files.LocalLatestFiles
 import com.casco.kettle.shell.files.StoragePaths
+import com.casco.kettle.shell.nav.Flip
 import com.casco.kettle.shell.nav.LocalTabReselects
 import com.casco.kettle.shell.nav.ModalSheet
 import com.casco.kettle.shell.nav.ShellLayout
 import com.casco.kettle.shell.nav.Tab
 import com.casco.kettle.shell.nav.TabNavigator
+import com.casco.kettle.shell.nav.flipsOn
 import com.casco.kettle.shell.nav.shellRoutes
+import com.casco.kettle.shell.reminder.reconcileReminder
+import com.casco.kettle.shell.reminder.retireExpoReminder
 import com.casco.kettle.shell.rn.ExpoActivityListeners
 import com.casco.kettle.shell.rn.JsBridge
 import com.casco.kettle.shell.rn.RnFrames
@@ -59,7 +63,9 @@ class MainActivity :
     /** Lazy, since `filesDir` needs the context the activity is given after construction. */
     private val paths by lazy { StoragePaths(filesDir) }
 
-    private val latestFiles by lazy { LatestFiles(DiskFiles(paths), lifecycleScope) }
+    private val latestFiles by lazy {
+        LatestFiles(DiskFiles(paths), lifecycleScope) { log, preferences -> reconcileReminder(log, preferences) }
+    }
 
     private val navigator =
         TabNavigator(
@@ -90,15 +96,29 @@ class MainActivity :
         // Read by hostedTabOptions in src/hooks/safe-brownfield.ts, so RN's first frame already has no
         // bar of its own. The two share no code, so change both.
         BrownfieldState.set(NATIVE_TAB_BAR, true)
+        // Read by useRestDayReminder, which leaves the reminder to native once the preferences flip is
+        // on, so the two never both schedule one. The two share no code, so change both.
+        BrownfieldState.set(NATIVE_REMINDER, Flip.Preferences in flipsOn)
+        retireExpoReminder()
         // What showReactNativeFragment does, minus the fragment: the surface is
         // one view for the whole app, which ShellLayout places.
         ReactNativeHostManager.shared.initialize(application)
         val surface = ReactNativeViewFactory.createFrameLayout(this, this, "main")
         setUpNativeBackHandling()
+        lifecycle.addObserver(
+            object : DefaultLifecycleObserver {
+                // The cold start's read, and a read on every return. A new activity over the same
+                // runtime reads too, since it may have missed a hand-back while there was none to hear it.
+                override fun onStart(owner: LifecycleOwner) = latestFiles.reread()
+
+                // And on leaving: the runner writes its session the moment it starts, and someone who
+                // logs one and goes home from the runner never hands the tabs back. Without this the
+                // rest-day alarm stays where the previous session put it, and can fire on a day they
+                // trained (#236).
+                override fun onStop(owner: LifecycleOwner) = latestFiles.reread()
+            },
+        )
         val preferences = paths.preferences
-        // The cold start's read. A new activity over the same runtime reads too, since it may have
-        // missed a hand-back while there was none to hear it.
-        latestFiles.reread()
         val layout =
             ShellLayout(
                 this,
@@ -236,5 +256,6 @@ class MainActivity :
 
     private companion object {
         const val NATIVE_TAB_BAR = "nativeTabBar"
+        const val NATIVE_REMINDER = "nativeReminder"
     }
 }

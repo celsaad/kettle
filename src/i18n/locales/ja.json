@@ -279,6 +279,7 @@
       "restBody": "{{workout}} · トレーニングに戻りましょう",
       "holdTitle": "ホールド終了",
       "holdBody": "{{workout}} · 下ろして大丈夫です",
+      "reminderChannel": "リマインダー",
       "reminderTitle": "いつでもどうぞ",
       "reminderBody_other": "前回のセッションから{{count}}日経ちました。焦らなくて大丈夫です — やりたくなったら Kettle はここにいます。"
     },

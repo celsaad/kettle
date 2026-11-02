@@ -2,6 +2,7 @@ import { t } from 'i18next';
 import { useEffect } from 'react';
 
 import { REST_DAY_REMINDER_DAYS, REST_DAY_REMINDER_HOUR } from '@/domain/preferences';
+import { isReminderNative } from '@/hooks/safe-brownfield';
 import { cancelRestDayReminder, requestNotificationPermissions, scheduleRestDayReminder } from '@/hooks/safe-notifications';
 import { usePreferencesStore } from '@/state/preferences-store';
 import { useLoggedSessions } from '@/state/session-history-store';
@@ -44,6 +45,9 @@ export function useRestDayReminder(): void {
   const lastSessionStartedAt = useLoggedSessions((sessions) => sessions[0]?.startedAt ?? null);
 
   useEffect(() => {
+    // The shell's own alarm is the reminder once the preferences flip is on (#236), and it cancels
+    // this one's pending request at launch. This hook goes in that flip.
+    if (isReminderNative()) return;
     if (!enabled || !lastSessionStartedAt) {
       cancelRestDayReminder();
       return;

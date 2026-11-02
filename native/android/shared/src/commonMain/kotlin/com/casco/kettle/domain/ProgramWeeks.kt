@@ -23,6 +23,17 @@ fun programWeekNumbers(program: Program): List<Long> =
         .distinct()
         .sorted()
 
+/**
+ * How many of the program's weeks carry notes or overrides, by week number rather than entry: several
+ * days share one, and counting entries read "8 weeks" beside a range of four (`ProgramWeeksTest`).
+ */
+fun programWeeksWithNotes(program: Program): Int =
+    program.weeks
+        .filter { !it.notes.isNullOrEmpty() || (it as? ProgramWeek.Training)?.overrides.orEmpty().isNotEmpty() }
+        .map { it.week }
+        .distinct()
+        .size
+
 /** A week's workout and the library's whole exercise list, each with that week's overrides applied. */
 data class ResolvedWeek(
     val workout: Workout,

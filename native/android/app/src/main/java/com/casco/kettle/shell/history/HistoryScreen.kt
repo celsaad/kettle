@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -23,7 +22,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -51,9 +49,11 @@ import com.casco.kettle.shell.files.LocalLatestFiles
 import com.casco.kettle.shell.i18n.pluralText
 import com.casco.kettle.shell.list.ListHeaderRule
 import com.casco.kettle.shell.list.ListRowSeparator
+import com.casco.kettle.shell.list.NoResults
 import com.casco.kettle.shell.list.SearchBar
 import com.casco.kettle.shell.list.TextAction
 import com.casco.kettle.shell.nav.LocalTabReselects
+import com.casco.kettle.shell.nav.ScrollsToTopOnReselect
 import com.casco.kettle.shell.nav.Tab
 import com.casco.kettle.shell.rn.FileKind
 import com.casco.kettle.shell.rn.JsBridge
@@ -62,11 +62,9 @@ import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.MaxContentWidth
 import com.casco.kettle.shell.theme.Spacing
-import com.casco.kettle.shell.theme.card
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.TimeZone
@@ -118,7 +116,7 @@ fun HistoryScreen(
     val log = files.sessionLog
     val library = files.library ?: EmptyLibrary
     val listState = rememberLazyListState()
-    ScrollsToTopOnReselect(reselected, listState)
+    ScrollsToTopOnReselect(Tab.History, reselected, listState)
 
     var query by rememberSaveable { mutableStateOf("") }
     var expandedId by rememberSaveable { mutableStateOf<String?>(null) }
@@ -174,15 +172,6 @@ fun HistoryScreen(
             deleting.confirm(row)
         }
     }
-}
-
-/** Re-tap-to-top, which #153 dropped with RN's bar and each tab's port brings back for its own list. */
-@Composable
-private fun ScrollsToTopOnReselect(
-    reselected: Flow<Tab>,
-    listState: LazyListState,
-) = LaunchedEffect(reselected, listState) {
-    reselected.filter { it == Tab.History }.collect { listState.animateScrollToItem(0) }
 }
 
 /**
@@ -365,30 +354,6 @@ private fun Problems(errors: List<String>) {
             color = colors.accentText,
         )
         for (error in errors) Text(error, style = KettleType.small, color = colors.textSecondary)
-    }
-}
-
-/**
- * What a search that matched nothing shows, as RN's `NoResults`: a blank body under intact chrome
- * reads as a bug, not an answer.
- */
-@Composable
-private fun NoResults(query: String) {
-    val colors = KettleTheme.colors
-    Column(
-        Modifier
-            .padding(top = Spacing.three)
-            .fillMaxWidth()
-            .card(16.dp)
-            .padding(Spacing.three),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
-        Text(stringResource(R.string.search_noMatchTitle), style = KettleType.heading, color = colors.text)
-        Text(
-            stringResource(R.string.search_noMatchBody, query.trim()),
-            style = KettleType.small,
-            color = colors.textSecondary,
-        )
     }
 }
 

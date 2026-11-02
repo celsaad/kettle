@@ -8,7 +8,7 @@ jest.mock('@/storage/export', () => ({
 }));
 
 import type { Session } from '@/domain/types';
-import { onExportRequested } from '@/state/export-requested';
+import { isExportRequest, onExportRequested } from '@/state/export-requested';
 import { useSessionHistoryStore } from '@/state/session-history-store';
 
 /**
@@ -72,6 +72,13 @@ it('ignores a session export with no id, and messages it does not know', async (
   expect(mockExportSession).not.toHaveBeenCalled();
   expect(mockExportSessions).not.toHaveBeenCalled();
   expect(mockExportLibrary).not.toHaveBeenCalled();
+});
+
+// What the dispatcher asks before it hands a message here. A key every object inherits is no export:
+// read with `in`, `toString` would pass and the dispatcher would stop routing it on to navigation.
+it('names the three export messages and nothing else', () => {
+  expect(['exportSession', 'exportHistory', 'exportLibrary'].map(isExportRequest)).toEqual([true, true, true]);
+  expect(['navigate', 'toString', undefined].map(isExportRequest)).toEqual([false, false, false]);
 });
 
 // No share sheet on this device, or the user's file gone: nothing to show from a listener, so a warning.

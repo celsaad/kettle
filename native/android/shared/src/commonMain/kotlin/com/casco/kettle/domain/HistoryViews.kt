@@ -17,6 +17,12 @@ fun workoutNameFor(
     return library.workouts.firstOrNull { it.id == id }?.name ?: id
 }
 
+/** The day [session] started in [zone], or null where `started_at` isn't an instant. */
+fun sessionStartDay(
+    session: Session,
+    zone: TimeZone,
+): LocalDate? = session.startedInstant()?.toLocalDateTime(zone)?.date
+
 data class HistoryEntryView(
     val exerciseName: String,
     val result: EntryResult,
@@ -51,7 +57,7 @@ fun historySessionsView(
         val worked = session.entries.filter { it !is SessionEntry.Rest }
         HistorySessionView(
             id = session.id,
-            day = session.startedInstant()?.toLocalDateTime(zone)?.date,
+            day = sessionStartDay(session, zone),
             workoutName = workoutNameFor(session, library),
             minutes = sessionDurationMinutes(session),
             sets = sessionSetCount(session),

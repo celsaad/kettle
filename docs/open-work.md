@@ -275,6 +275,11 @@ wanting states and assignees, it wants GitHub issues instead.
   view, but RN slides the runner in inside the surface, which is invisible under a native sheet (#197).
   No M4 sheet opens the runner; the first native screen that does has to handle it.
 
+- **The session editor's last literals.** Its field suffixes (`sec`, `m`) and placeholders (`—`, `0`)
+  are English in every locale, and its per-set labels join with a fixed `"Set 2 · Reps"` order. RN's
+  editor has the same literals; the native port (#239) kept them for the feature freeze. Keys in all
+  three bundles, read by both UIs.
+
 ## Open bugs
 
 Found while planning the tests/a11y/i18n work (see `testing-a11y-i18n-plan.md`), each verified against

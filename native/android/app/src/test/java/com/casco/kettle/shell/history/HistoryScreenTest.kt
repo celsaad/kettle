@@ -427,6 +427,8 @@ class HistoryScreenTest {
             deleted += id
             sessions.removeAll { it.id == id }
         }
+
+        override fun writeSession(session: Session) = error("History writes no session")
     }
 }
 

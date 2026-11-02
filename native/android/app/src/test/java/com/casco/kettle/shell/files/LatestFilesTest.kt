@@ -2,6 +2,7 @@ package com.casco.kettle.shell.files
 
 import com.casco.kettle.domain.Library
 import com.casco.kettle.domain.Preferences
+import com.casco.kettle.domain.Session
 import com.casco.kettle.domain.SessionLog
 import com.casco.kettle.domain.UnitSystem
 import com.casco.kettle.shell.nav.TabNavigator
@@ -181,6 +182,25 @@ class LatestFilesTest {
         assertTrue(sessions.resolve("stuck.yaml").exists())
     }
 
+    /** The session editor's Save (#239): the file rewritten where RN keeps it, and the log that shows it. */
+    @Test
+    fun `writing a session replaces its file and the log shows the edit`() {
+        writeSession("edited")
+        files.reread()
+        val session = files.sessionLog!!.sessions.single()
+
+        runBlocking { files.writeSession(session.copy(workout = "renamed")) }
+
+        assertEquals(listOf("renamed"), files.sessionLog?.sessions?.map { it.workout })
+        assertEquals(
+            listOf("edited.yaml"),
+            folder.root
+                .resolve("exercise-tracker/sessions")
+                .list()
+                ?.toList(),
+        )
+    }
+
     @Test
     fun `a read that finishes after a newer one is dropped`() {
         val main = Tasks()
@@ -215,6 +235,8 @@ class LatestFilesTest {
         override fun preferences(): Preferences? = null
 
         override fun deleteSession(id: String) = Unit
+
+        override fun writeSession(session: Session) = Unit
     }
 
     /** A dispatcher that runs nothing until told to, so a test chooses the order reads finish in. */

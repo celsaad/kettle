@@ -12,6 +12,8 @@ import com.casco.kettle.shell.programguide.ProgramGuideRoute
 import com.casco.kettle.shell.programs.ProgramsRoute
 import com.casco.kettle.shell.progress.EXERCISE_PROGRESS_PATH
 import com.casco.kettle.shell.progress.ExerciseProgressRoute
+import com.casco.kettle.shell.sessioneditor.SESSION_EDITOR_PATH
+import com.casco.kettle.shell.sessioneditor.SessionEditorRoute
 import com.casco.kettle.shell.stats.StatsRoute
 import com.casco.kettle.shell.support.SupportRoute
 
@@ -76,7 +78,10 @@ private val readerRoutes: Map<String, Screen> =
 enum class Flip { Preferences, Sessions, Library }
 
 /** The writer screens, by the flip that switches them on. Registered the way [readerRoutes] are. */
-private val writerRoutes: Map<Flip, Map<String, Screen>> = emptyMap()
+private val writerRoutes: Map<Flip, Map<String, Screen>> =
+    mapOf(
+        Flip.Sessions to mapOf(SESSION_EDITOR_PATH to Screen.Native { params -> SessionEditorRoute(params) }),
+    )
 
 /** The routes with the [writers] of the flips [on] registered over the read-only ones, the rest left to RN. */
 fun routesFor(

@@ -22,6 +22,7 @@ import com.casco.kettle.domain.Library
 import com.casco.kettle.domain.Preferences
 import com.casco.kettle.domain.Program
 import com.casco.kettle.domain.ProgramWeek
+import com.casco.kettle.domain.Session
 import com.casco.kettle.domain.SessionLog
 import com.casco.kettle.domain.Workout
 import com.casco.kettle.shell.files.LatestFiles
@@ -219,6 +220,8 @@ class ProgramsScreenTest {
         override fun preferences(): Preferences? = null
 
         override fun deleteSession(id: String) = error("Programs deletes nothing")
+
+        override fun writeSession(session: Session) = error("Programs writes no session")
     }
 }
 

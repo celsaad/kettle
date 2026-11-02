@@ -9,6 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.ExerciseConfig
+import com.casco.kettle.domain.SessionEntry
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 
@@ -18,20 +19,57 @@ import com.casco.kettle.shell.theme.KettleType
  * two timed types stand out from the counted ones.
  */
 @Composable
-fun ExerciseBadge(config: ExerciseConfig) {
-    val colors = KettleTheme.colors
-    val (label, background, text) =
+fun ExerciseBadge(config: ExerciseConfig) =
+    Badge(
         when (config) {
-            is ExerciseConfig.Hiit -> Triple("HIIT", colors.accentSoft, colors.accentText)
-            is ExerciseConfig.TimedHold -> Triple("HOLD", colors.accentCalmSoft, colors.accentCalmText)
-            is ExerciseConfig.Reps -> Triple("REPS", colors.backgroundSelected, colors.textSecondary)
-            is ExerciseConfig.Cardio -> Triple("CARDIO", colors.backgroundSelected, colors.textSecondary)
-            is ExerciseConfig.Emom -> Triple("EMOM", colors.backgroundSelected, colors.textSecondary)
-            is ExerciseConfig.Amrap -> Triple("AMRAP", colors.backgroundSelected, colors.textSecondary)
-            is ExerciseConfig.Rest -> Triple("REST", colors.backgroundSelected, colors.textSecondary)
+            is ExerciseConfig.Hiit -> BadgeKind.Hiit
+            is ExerciseConfig.TimedHold -> BadgeKind.Hold
+            is ExerciseConfig.Reps -> BadgeKind.Reps
+            is ExerciseConfig.Cardio -> BadgeKind.Cardio
+            is ExerciseConfig.Emom -> BadgeKind.Emom
+            is ExerciseConfig.Amrap -> BadgeKind.Amrap
+            is ExerciseConfig.Rest -> BadgeKind.Rest
+        },
+    )
+
+/** The same tag for a logged entry, which is of the type its exercise was when it ran. */
+@Composable
+fun ExerciseBadge(entry: SessionEntry) =
+    Badge(
+        when (entry) {
+            is SessionEntry.Hiit -> BadgeKind.Hiit
+            is SessionEntry.TimedHold -> BadgeKind.Hold
+            is SessionEntry.Reps -> BadgeKind.Reps
+            is SessionEntry.Cardio -> BadgeKind.Cardio
+            is SessionEntry.Emom -> BadgeKind.Emom
+            is SessionEntry.Amrap -> BadgeKind.Amrap
+            is SessionEntry.Rest -> BadgeKind.Rest
+        },
+    )
+
+private enum class BadgeKind(
+    val label: String,
+) {
+    Hiit("HIIT"),
+    Hold("HOLD"),
+    Reps("REPS"),
+    Cardio("CARDIO"),
+    Emom("EMOM"),
+    Amrap("AMRAP"),
+    Rest("REST"),
+}
+
+@Composable
+private fun Badge(kind: BadgeKind) {
+    val colors = KettleTheme.colors
+    val (background, text) =
+        when (kind) {
+            BadgeKind.Hiit -> colors.accentSoft to colors.accentText
+            BadgeKind.Hold -> colors.accentCalmSoft to colors.accentCalmText
+            else -> colors.backgroundSelected to colors.textSecondary
         }
     Text(
-        label,
+        kind.label,
         Modifier
             .clip(BadgeShape)
             .background(background)

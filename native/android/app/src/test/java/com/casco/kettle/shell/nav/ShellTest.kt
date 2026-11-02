@@ -36,6 +36,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.Library
 import com.casco.kettle.domain.Preferences
+import com.casco.kettle.domain.Session
 import com.casco.kettle.domain.SessionLog
 import com.casco.kettle.shell.files.LatestFiles
 import com.casco.kettle.shell.files.LocalLatestFiles
@@ -116,6 +117,8 @@ class ShellTest {
                 override fun preferences(): Preferences? = null
 
                 override fun deleteSession(id: String) = Unit
+
+                override fun writeSession(session: Session) = Unit
             },
             CoroutineScope(Dispatchers.Unconfined),
             io = Dispatchers.Unconfined,

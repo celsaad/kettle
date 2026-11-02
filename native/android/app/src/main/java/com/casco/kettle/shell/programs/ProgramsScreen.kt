@@ -48,6 +48,7 @@ import com.casco.kettle.shell.list.ListHeaderRule
 import com.casco.kettle.shell.list.ListRow
 import com.casco.kettle.shell.list.ListRowSeparator
 import com.casco.kettle.shell.list.NewItemButton
+import com.casco.kettle.shell.list.NewItemButtonClearance
 import com.casco.kettle.shell.list.NoResults
 import com.casco.kettle.shell.list.SearchBar
 import com.casco.kettle.shell.nav.LocalTabReselects
@@ -94,14 +95,12 @@ fun ProgramsScreen(
         LazyColumn(
             Modifier.widthIn(max = MaxContentWidth).fillMaxWidth(),
             state = listState,
-            // The bottom clears the FAB, which floats 24dp off the bottom and is 52 tall; RN found a
-            // 64dp inset left the last row, the one you scroll to reach, half under it.
             contentPadding =
                 PaddingValues(
                     start = Spacing.three,
                     end = Spacing.three,
                     top = Spacing.two,
-                    bottom = Spacing.six + Spacing.four,
+                    bottom = NewItemButtonClearance,
                 ),
         ) {
             item(key = "header") {

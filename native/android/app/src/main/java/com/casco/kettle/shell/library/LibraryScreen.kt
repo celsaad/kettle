@@ -52,6 +52,7 @@ import com.casco.kettle.shell.list.ListHeaderRule
 import com.casco.kettle.shell.list.ListRow
 import com.casco.kettle.shell.list.ListRowSeparator
 import com.casco.kettle.shell.list.NewItemButton
+import com.casco.kettle.shell.list.NewItemButtonClearance
 import com.casco.kettle.shell.list.NoResults
 import com.casco.kettle.shell.list.SearchBar
 import com.casco.kettle.shell.list.TextAction
@@ -105,13 +106,12 @@ fun LibraryScreen(
         LazyColumn(
             Modifier.widthIn(max = MaxContentWidth).fillMaxWidth(),
             state = listState,
-            // The bottom clears the FAB, as on Programs.
             contentPadding =
                 PaddingValues(
                     start = Spacing.three,
                     end = Spacing.three,
                     top = Spacing.two,
-                    bottom = Spacing.six + Spacing.four,
+                    bottom = NewItemButtonClearance,
                 ),
         ) {
             item(key = "header") {
@@ -132,7 +132,7 @@ fun LibraryScreen(
             }
             itemsIndexed(visible, key = { _, exercise -> exercise.id }) { index, exercise ->
                 if (index > 0) ListRowSeparator()
-                ExerciseRow(exercise, units) { open(Stacking.Push, EXERCISE_EDITOR_PATH, mapOf("id" to exercise.id)) }
+                ExerciseRow(exercise, units) { open(Stacking.Push, "/exercise-editor", mapOf("id" to exercise.id)) }
             }
             // No first-run card, unlike Programs: a library with no exercises is reachable only by deleting
             // every seeded one, and RN never had one. A search or a filter that empties the list does say
@@ -140,13 +140,10 @@ fun LibraryScreen(
             if (all.isNotEmpty() && visible.isEmpty()) item(key = "no-results") { NoResults(query) }
         }
         NewItemButton(stringResource(R.string.library_newExercise), Modifier.align(Alignment.BottomEnd)) {
-            open(Stacking.Push, EXERCISE_EDITOR_PATH, emptyMap())
+            open(Stacking.Push, "/exercise-editor", emptyMap())
         }
     }
 }
-
-/** RN's exercise editor, which stays RN until the library flip; New exercise opens it empty. */
-private const val EXERCISE_EDITOR_PATH = "/exercise-editor"
 
 /** The title, then Export, which RN shares until the preferences flip (#202), and Import. */
 @Composable

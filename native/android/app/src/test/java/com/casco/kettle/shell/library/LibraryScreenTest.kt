@@ -18,6 +18,7 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToIndex
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.Exercise
@@ -150,6 +151,28 @@ class LibraryScreenTest {
         show(Files(rows, preferences = imperial))
 
         compose.onNodeWithText("3 × 5 · 132.3 lb · 120s de descanso").assertExists()
+    }
+
+    /** Each type's line, in its own words; the reps and ranged-hold lines are covered above. */
+    @Test
+    fun `summarises every other type in one line`() {
+        val others =
+            listOf(
+                Exercise("burpees", "Burpees", ExerciseConfig.Hiit(40.0, 20.0, 8)) to
+                    "40s de trabalho · 20s de descanso · ×8",
+                Exercise("swings", "Swings", ExerciseConfig.Emom(60.0, 10.0)) to "intervalo de 60s · 10 min",
+                Exercise("cindy", "Cindy", ExerciseConfig.Amrap(600.0)) to "limite de 600s",
+                Exercise("run", "Run", ExerciseConfig.Cardio(distanceMeters = 5000.0)) to "5000 m",
+                Exercise("bike", "Bike", ExerciseConfig.Cardio(durationSec = 1200.0)) to "1200s",
+                Exercise("hang", "Dead hang", ExerciseConfig.TimedHold(3, restSec = 60.0)) to
+                    "3 × isometria máxima · 60s de descanso",
+            )
+        show(Files(*others.map { it.first }.toTypedArray()))
+
+        for ((_, line) in others) {
+            compose.onNode(hasScrollToIndexAction()).performScrollToNode(hasText(line))
+            compose.onNodeWithText(line).assertExists()
+        }
     }
 
     @Test

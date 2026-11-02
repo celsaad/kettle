@@ -12,9 +12,10 @@ import { onExportRequested } from '@/state/export-requested';
 import { useSessionHistoryStore } from '@/state/session-history-store';
 
 /**
- * Native History's Export and Export all (#202), and native Library's Export (#234), are RN's until M5, when export moves native with
- * Settings: the shell asks, and this shares what RN's History shared. Never rejects, since it runs
- * from the native module's listener, where a throw has nowhere to go.
+ * Native History's Export and Export all (#202), and native Library's Export (#234), are RN's until
+ * M5, when export moves native with Settings: the shell asks, and this shares what the RN screens
+ * shared. Never rejects, since it runs from the native module's listener, where a throw has nowhere
+ * to go.
  */
 const aSession = (id: string, startedAt: string, entries: Session['entries'] = []): Session => ({
   version: 1,

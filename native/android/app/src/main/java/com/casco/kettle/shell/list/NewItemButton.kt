@@ -24,7 +24,7 @@ import com.casco.kettle.shell.theme.Spacing
 /**
  * The floating +, as RN's FAB on every tab that has one: the accent in dark, the ink in light. Its
  * 52dp is a minimum rather than a fixed size, per AGENTS.md's controls rule, and [label] names it,
- * since a "+" says nothing. A list under it pads its bottom by `Spacing.six + Spacing.four` to clear it.
+ * since a "+" says nothing. A list under it pads its bottom by [NewItemButtonClearance].
  */
 @Composable
 fun NewItemButton(
@@ -51,6 +51,12 @@ fun NewItemButton(
         )
     }
 }
+
+/**
+ * The bottom padding that clears the button, which floats 24dp off the bottom and is 52 tall; RN found
+ * a 64dp inset left the last row, the one you scroll to reach, half under it.
+ */
+val NewItemButtonClearance = Spacing.six + Spacing.four
 
 private val FabSize = 52.dp
 private val FabShape = RoundedCornerShape(16.dp)

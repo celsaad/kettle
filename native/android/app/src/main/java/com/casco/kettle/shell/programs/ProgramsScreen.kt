@@ -60,7 +60,7 @@ import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.MaxContentWidth
 import com.casco.kettle.shell.theme.Spacing
-import com.casco.kettle.shell.theme.card
+import com.casco.kettle.shell.theme.emptyStateCard
 import kotlinx.coroutines.flow.Flow
 
 /** What `shellRoutes` registers at `/programs`, the tab. */
@@ -203,30 +203,18 @@ private fun weekRange(program: Program): String {
 @Composable
 private fun FirstRun(onYaml: () -> Unit) {
     val colors = KettleTheme.colors
-    val shape = RoundedCornerShape(10.dp)
-    Column(
-        Modifier
-            .padding(top = Spacing.three)
-            .fillMaxWidth()
-            .card(16.dp)
-            .padding(Spacing.three),
-        verticalArrangement = Arrangement.spacedBy(Spacing.one + 2.dp),
-    ) {
+    Column(Modifier.emptyStateCard(), verticalArrangement = Arrangement.spacedBy(FirstRunGap)) {
         Text(stringResource(R.string.programs_emptyTitle), style = KettleType.heading, color = colors.text)
-        Text(
-            stringResource(R.string.programs_emptyBody),
-            style = KettleType.small.copy(lineHeight = 18.sp),
-            color = colors.textSecondary,
-        )
+        Text(stringResource(R.string.programs_emptyBody), style = KettleType.small, color = colors.textSecondary)
         Text(
             stringResource(R.string.programs_emptyYamlLink),
             Modifier
                 .padding(top = 2.dp)
                 .heightIn(min = 48.dp)
-                .clip(shape)
-                .border(1.dp, colors.border, shape)
+                .clip(LinkShape)
+                .border(1.dp, colors.border, LinkShape)
                 .clickable(role = Role.Button, onClick = onYaml)
-                .padding(horizontal = Spacing.two + 2.dp, vertical = Spacing.one + 2.dp)
+                .padding(LinkPadding)
                 .wrapContentHeight(Alignment.CenterVertically),
             style = KettleType.smallMedium,
             color = colors.text,
@@ -242,12 +230,11 @@ private fun NewProgram(
 ) {
     val colors = KettleTheme.colors
     val label = stringResource(R.string.programs_newProgram)
-    val shape = RoundedCornerShape(16.dp)
     Box(
         modifier
             .padding(end = Spacing.three, bottom = Spacing.four)
-            .sizeIn(minWidth = 52.dp, minHeight = 52.dp)
-            .clip(shape)
+            .sizeIn(minWidth = FabSize, minHeight = FabSize)
+            .clip(FabShape)
             .background(if (KettleTheme.dark) colors.accent else colors.text)
             .clickable(role = Role.Button, onClick = onClick)
             .semantics { contentDescription = label },
@@ -256,8 +243,15 @@ private fun NewProgram(
         Text(
             "+",
             Modifier.clearAndSetSemantics {},
-            style = KettleType.title.copy(fontSize = 26.sp, lineHeight = 28.sp),
+            style = FabPlusStyle,
             color = colors.onAccent,
         )
     }
 }
+
+private val FirstRunGap = Spacing.one + 2.dp
+private val LinkShape = RoundedCornerShape(10.dp)
+private val LinkPadding = PaddingValues(horizontal = Spacing.two + 2.dp, vertical = Spacing.one + 2.dp)
+private val FabSize = 52.dp
+private val FabShape = RoundedCornerShape(16.dp)
+private val FabPlusStyle = KettleType.title.copy(fontSize = 26.sp, lineHeight = 28.sp)

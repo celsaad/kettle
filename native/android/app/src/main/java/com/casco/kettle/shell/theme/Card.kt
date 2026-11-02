@@ -2,6 +2,8 @@ package com.casco.kettle.shell.theme
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -25,3 +27,14 @@ fun Modifier.card(radius: Dp = CardRadius): Modifier {
 
 /** RN's `borderRadius: 14` on Stats' tiles and chart cards. */
 val CardRadius = 14.dp
+
+/**
+ * The card an empty list shows in place of rows, a search's or a first run's: RN's `borderRadius: 16`
+ * on both, with their padding, and the gap above it from the list's header rule.
+ */
+@Composable
+fun Modifier.emptyStateCard(): Modifier =
+    padding(top = Spacing.three)
+        .fillMaxWidth()
+        .card(16.dp)
+        .padding(Spacing.three)

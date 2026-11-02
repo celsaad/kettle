@@ -196,6 +196,12 @@ class SessionEntryFormTest {
                     formsFor(EntryField.Hold to "0x-1"),
                 ),
             )
+            // Past Long's range JS still reads a number, and only ASCII digits are digits to it.
+            assertNull(validateEntryForm(holdEntry, formsFor(EntryField.Hold to "0x10000000000000000")))
+            assertEquals(
+                EntryProblem.MustBeNumber(EntryField.Hold),
+                validateEntryForm(holdEntry, formsFor(EntryField.Hold to "0x\u0663")),
+            )
             // Kotlin's own parser takes a type suffix and the words; JS's refuses or overflows them.
             assertEquals(
                 EntryProblem.MustBeNumber(EntryField.Hold),

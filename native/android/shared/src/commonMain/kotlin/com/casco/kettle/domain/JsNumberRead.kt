@@ -6,16 +6,26 @@ package com.casco.kettle.domain
  */
 internal fun jsNumberOrNull(text: String): Double? {
     val radix = RADIX_PREFIXES[text.getOrNull(1)?.lowercaseChar()]?.takeIf { text.startsWith('0') }
-    // Unsigned after the prefix: `toLongOrNull` would take "0x-1", which JS refuses.
-    val digits = text.drop(2).takeIf { it.firstOrNull()?.isLetterOrDigit() == true }
     val value =
         when {
-            radix != null -> digits?.toLongOrNull(radix)?.toDouble()
+            radix != null -> radixValue(text.drop(2), radix)
             JS_DECIMAL.matches(text) -> text.toDouble()
             else -> null
         }
     return value?.takeIf { it.isFinite() }
 }
+
+/**
+ * [digits] in [radix], unsigned and ASCII only, as `Number` reads them: summed into a double, so a
+ * value past [Long]'s range is still a number. `toLongOrNull` would take a sign and any Unicode digit.
+ */
+private fun radixValue(
+    digits: String,
+    radix: Int,
+): Double? =
+    digits
+        .takeIf { it.isNotEmpty() && it.all { c -> c.code < ASCII_END && c.digitToIntOrNull(radix) != null } }
+        ?.fold(0.0) { sum, c -> sum * radix + c.digitToInt(radix) }
 
 /** A JS decimal literal with a sign: digits with an optional fraction, or a fraction alone, then an exponent. */
 private val JS_DECIMAL = Regex("""[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?""")
@@ -26,3 +36,4 @@ private val RADIX_PREFIXES = mapOf('x' to HEX, 'o' to OCTAL, 'b' to BINARY)
 private const val HEX = 16
 private const val OCTAL = 8
 private const val BINARY = 2
+private const val ASCII_END = 128

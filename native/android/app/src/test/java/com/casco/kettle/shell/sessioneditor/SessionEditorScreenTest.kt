@@ -3,6 +3,7 @@ package com.casco.kettle.shell.sessioneditor
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasContentDescription
@@ -60,8 +61,10 @@ class SessionEditorScreenTest {
     private var closed = 0
     private var sessionsChanged = 0
 
+    private lateinit var latest: LatestFiles
+
     private fun show(files: Files = Files(aSession())) {
-        val latest =
+        latest =
             LatestFiles(files, CoroutineScope(Dispatchers.Unconfined), io = Dispatchers.Unconfined).apply { reread() }
         compose.setContent {
             KettleTheme(darkTheme = false) {
@@ -205,6 +208,24 @@ class SessionEditorScreenTest {
 
         compose.onNodeWithText("Não foi possível salvar: IOException").assertExists()
         assertEquals(0, closed)
+    }
+
+    /**
+     * The shell rereads the log while the sheet is up (a native sheet coming up, the app returning to
+     * the front), and on `.dev` RN can still rewrite the file meanwhile. RN's editor copied its drafts
+     * once; a reread must not throw away what the user has typed.
+     */
+    @Test
+    fun `keeps what was typed when the log is read again underneath it`() {
+        val files = Files(aSession())
+        show(files)
+
+        type("Série 2 · Reps", "7")
+        files.rewrite(aSession(listOf(squatEntry, restEntry)))
+        latest.reread()
+        compose.waitForIdle()
+
+        field("Série 2 · Reps").assert(hasText("7"))
     }
 
     // a value typed down to zero
@@ -392,6 +413,9 @@ class SessionEditorScreenTest {
         override fun preferences() = preferences
 
         override fun deleteSession(id: String) = error("The session editor deletes nothing")
+
+        /** RN writing the file behind the editor's back, as `.dev`'s second writer can. */
+        fun rewrite(session: Session) = sessions.replaceAll { if (it.id == session.id) session else it }
 
         override fun writeSession(session: Session) {
             failure?.let { throw it }

@@ -153,7 +153,9 @@ fun SessionEditorScreen(
             )
             // Nothing more before the log is read, so a session that is there is never called gone.
             if (logged == null) return@Column
-            val editing = remember(logged, id, units) { sessionEditing(logged, id, units) }
+            // Worked out from the first read of the log and kept, as RN's editor copied its drafts once:
+            // the shell reads again while the sheet is up, and from then on what's typed is the user's.
+            val editing = remember(id, units) { sessionEditing(logged, id, units) }
             logged.firstOrNull { it.id == id }?.let { Subtitle(it, library, zone) }
             when (editing) {
                 SessionEditing.NotFound -> {

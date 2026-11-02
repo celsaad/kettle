@@ -28,9 +28,12 @@ class RestDayReminderTest {
 
     private val now = local(7, 24, 9)
 
+    private fun session(startedAt: Instant) =
+        Session(1, startedAt.toString(), null, null, null, null, startedAt.toString(), null, emptyList())
+
     @Test
     fun `lands two calendar days after the session, at the fixed hour`() {
-        val at = restDayReminderAt(enabled = true, newestStartedAt = local(7, 24, 7, 30).toString(), now, zone)
+        val at = restDayReminderAt(enabled = true, newest = session(local(7, 24, 7, 30)), now, zone)
 
         assertEquals(local(7, 26, 18), at)
     }
@@ -45,7 +48,7 @@ class RestDayReminderTest {
         val at =
             restDayReminderAt(
                 enabled = true,
-                newestStartedAt = local(3, 7, 23, 30).toString(),
+                newest = session(local(3, 7, 23, 30)),
                 local(3, 7, 23, 45),
                 zone,
             )
@@ -55,7 +58,7 @@ class RestDayReminderTest {
 
     @Test
     fun `schedules nothing while the preference is off`() {
-        assertNull(restDayReminderAt(enabled = false, newestStartedAt = local(7, 24, 7, 30).toString(), now, zone))
+        assertNull(restDayReminderAt(enabled = false, newest = session(local(7, 24, 7, 30)), now, zone))
     }
 
     /**
@@ -64,11 +67,11 @@ class RestDayReminderTest {
      */
     @Test
     fun `schedules nothing when the reminder would already be due`() {
-        assertNull(restDayReminderAt(enabled = true, newestStartedAt = local(7, 10, 7, 30).toString(), now, zone))
+        assertNull(restDayReminderAt(enabled = true, newest = session(local(7, 10, 7, 30)), now, zone))
     }
 
     @Test
     fun `schedules nothing on an install with no sessions at all`() {
-        assertNull(restDayReminderAt(enabled = true, newestStartedAt = null, now, zone))
+        assertNull(restDayReminderAt(enabled = true, newest = null, now, zone))
     }
 }

@@ -105,10 +105,20 @@ class MainActivity :
         ReactNativeHostManager.shared.initialize(application)
         val surface = ReactNativeViewFactory.createFrameLayout(this, this, "main")
         setUpNativeBackHandling()
+        lifecycle.addObserver(
+            object : DefaultLifecycleObserver {
+                // The cold start's read, and a read on every return. A new activity over the same
+                // runtime reads too, since it may have missed a hand-back while there was none to hear it.
+                override fun onStart(owner: LifecycleOwner) = latestFiles.reread()
+
+                // And on leaving: the runner writes its session the moment it starts, and someone who
+                // logs one and goes home from the runner never hands the tabs back. Without this the
+                // rest-day alarm stays where the previous session put it, and can fire on a day they
+                // trained (#236).
+                override fun onStop(owner: LifecycleOwner) = latestFiles.reread()
+            },
+        )
         val preferences = paths.preferences
-        // The cold start's read. A new activity over the same runtime reads too, since it may have
-        // missed a hand-back while there was none to hear it.
-        latestFiles.reread()
         val layout =
             ShellLayout(
                 this,

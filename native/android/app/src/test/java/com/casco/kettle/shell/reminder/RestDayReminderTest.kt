@@ -10,6 +10,7 @@ import com.casco.kettle.domain.SessionLog
 import com.casco.kettle.domain.ThemePreference
 import com.casco.kettle.domain.UnitSystem
 import com.casco.kettle.shell.nav.Flip
+import expo.modules.notifications.service.NotificationsService
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
@@ -100,6 +101,24 @@ class RestDayReminderTest {
         reconcile(reminder = true, logOf(24), flips = emptySet())
 
         assertEquals(emptyList<Any>(), alarms.scheduledAlarms)
+    }
+
+    /** 0.13's pending Expo request, cancelled so it can't fire beside the native alarm. */
+    @Test
+    fun `asks Expo to drop the old reminder once the flip is on`() {
+        context.retireExpoReminder(setOf(Flip.Preferences))
+
+        val cancel = shadowOf(context).broadcastIntents.single()
+        assertEquals(NotificationsService.NOTIFICATION_EVENT_ACTION, cancel.action)
+        assertTrue(cancel.data.toString().contains("scheduled"))
+    }
+
+    // Before the flip that request is the live reminder, and RN's to keep.
+    @Test
+    fun `leaves Expo's reminder alone while the preferences flip is off`() {
+        context.retireExpoReminder(emptySet())
+
+        assertEquals(emptyList<Intent>(), shadowOf(context).broadcastIntents)
     }
 
     @Test

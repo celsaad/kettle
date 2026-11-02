@@ -15,13 +15,16 @@ import kotlinx.datetime.toLocalDateTime
  */
 const val REST_DAY_REMINDER_DAYS = 2
 
-/** The local hour the nudge lands at, `REST_DAY_REMINDER_HOUR` in the same file. */
+/**
+ * The local hour the nudge lands at, `REST_DAY_REMINDER_HOUR` in `src/domain/preferences.ts`. The two
+ * share no code, so change both.
+ */
 private const val REST_DAY_REMINDER_HOUR = 18
 
 /**
- * When the opt-in rest-day nudge should fire: [REST_DAY_REMINDER_DAYS] calendar days after the newest
- * session started, at a fixed local hour in [zone]. Null when there is nothing to schedule, which the
- * caller turns into a cancel.
+ * When the opt-in rest-day nudge should fire: [REST_DAY_REMINDER_DAYS] calendar days after [newest]
+ * started, the head of the log's `logged`, at a fixed local hour in [zone]. Null when there is
+ * nothing to schedule, which the caller turns into a cancel.
  *
  * Steps by [LocalDate][kotlinx.datetime.LocalDate] rather than by 48 hours, the DST fix RN's `setDate()`
  * carried: a fixed offset across a 23- or 25-hour day can land on the wrong date.
@@ -31,11 +34,11 @@ private const val REST_DAY_REMINDER_HOUR = 18
  */
 fun restDayReminderAt(
     enabled: Boolean,
-    newestStartedAt: String?,
+    newest: Session?,
     now: Instant,
     zone: TimeZone,
 ): Instant? {
-    val startedAt = newestStartedAt?.takeIf { enabled }?.let(::instantOrNull) ?: return null
+    val startedAt = newest?.takeIf { enabled }?.startedInstant() ?: return null
     val day = startedAt.toLocalDateTime(zone).date.plus(DatePeriod(days = REST_DAY_REMINDER_DAYS))
     return day.atTime(LocalTime(REST_DAY_REMINDER_HOUR, 0)).toInstant(zone).takeIf { it > now }
 }

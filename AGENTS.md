@@ -96,8 +96,9 @@ mistake here that cannot be fixed for anyone who has already installed it.
   tap). The content itself is data in `src/content/`, which native reads too: an English
   `library.yaml` plus a `<lang>.json` string table per language (`library-translation.ts`), and
   `packs.json` for the pack order. **New shipped content goes in a pack, not in the seed** — the seed
-  can only ever reach a fresh install. A new pack is a directory, a `packs.json` entry and a line in
-  `content-packs.ts`'s import map; a test fails when the three disagree. See the
+  can only ever reach a fresh install. A new pack is a directory, a `packs.json` entry, a line in
+  `content-packs.ts`'s import map, and its import-screen row (`import.packs.<id>.name`/`.detail` in
+  all three bundles); `content-packs.test.ts` fails when any of them is missing. See the
   decision log for the four rules a pack has to respect; the prefixed-id one is the load-bearing one.
 - `src/state/` — zustand stores (`library-store`, `session-history-store`, `preferences-store`,
   `tip-store`) and `selectors/`, derived/display logic split per view (`records`, `logged-sessions`,

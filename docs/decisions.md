@@ -943,12 +943,10 @@ decision assembled across several commits. Open work belongs in the sections at 
   - **Comments stay in the TS wrapper**, because JSON has none. `theme.ts` keeps the contrast notes,
     and `GeneratedThemeTest` recomputes the ratios they record from the generated colors, so the
     numbers can't drift away from the values even though they no longer sit beside them.
-  - **The seed library and content packs** are the second instance (#224, #230). They live in
-    `src/content/` as library YAML plus a translation JSON per language. RN inlines the YAML as text
-    through `metro.transformer.js` (Metro otherwise treats `.yaml` as an asset), and `:app` packages
-    the directory as APK assets in place. `localizeLibrary` is behaviour, so it was ported to
-    `:shared` and is held by `conformance/localize.yaml`. Unlike `theme.json`, the comments live in
-    the data: YAML has them, so the seed's authoring rules sit beside the content they constrain.
+  - **The seed library and content packs** are the second instance (#224): library YAML plus a
+    translation JSON per language in `src/content/`, with `localizeLibrary` ported as behaviour.
+    Unlike `theme.json`, their comments live in the data: YAML has them, so the authoring rules sit
+    beside the content they constrain rather than in a TS wrapper.
   - Hand-kept lists remain where a data file can't reach, on purpose: `LocalePreviews` names each
     language, because a `@Preview` locale has to be a compile-time constant; and `libs.versions.toml`
     repeats React Native's Kotlin and AGP, because once M2 hosts the RN AAR, a mismatch fails the

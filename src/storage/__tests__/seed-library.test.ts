@@ -5,6 +5,7 @@ import { nextWeekAfter } from '@/state/selectors/next-up';
 import { libraryWeekKey } from '@/storage/library-translation';
 import { seedLibrary, seedLibraryFor, seedTranslations } from '@/storage/seed-library';
 import type { Library, Program, Session } from '@/domain/types';
+import { contentFiles } from '@/test-support/content-files';
 
 /**
  * The seed is the one library that is written without ever passing through the import path, so
@@ -19,19 +20,6 @@ import type { Library, Program, Session } from '@/domain/types';
 const emptyLibrary: Library = { version: 1, exercises: [], workouts: [], programs: [] };
 
 const seedLanguages = ['en', ...Object.keys(seedTranslations)];
-
-// oxlint-disable-next-line no-underscore-dangle -- node's own global; the name isn't ours to choose.
-declare const __dirname: string;
-declare function require(id: 'node:fs'): { readdirSync(path: string): string[] };
-
-const { readdirSync } = require('node:fs');
-
-it('bundles every file in src/content/seed/', () => {
-  // Native reads the directory and RN reads what seed-library.ts imports, so a `<language>.json` added
-  // to one and not the other is a seed that lands translated on one app and in English on the other.
-  const languages = Object.keys(seedTranslations).map((language) => `${language}.json`);
-  expect(readdirSync(`${__dirname}/../../content/seed`).toSorted()).toEqual(['library.yaml', ...languages].toSorted());
-});
 
 describe.each(seedLanguages)('the %s seed', (language) => {
   const seed = seedLibraryFor(language);
@@ -223,3 +211,12 @@ function structureOf(library: Library) {
     })),
   };
 }
+
+describe('src/content/seed/', () => {
+  it('holds only files seed-library.ts imports', () => {
+    // Native reads the directory and RN reads what seed-library.ts imports, so a `<language>.json` added
+    // to one and not the other is a seed that lands translated on one app and in English on the other.
+    const languages = Object.keys(seedTranslations).map((language) => `${language}.json`);
+    expect(contentFiles('seed')).toEqual(['library.yaml', ...languages].toSorted());
+  });
+});

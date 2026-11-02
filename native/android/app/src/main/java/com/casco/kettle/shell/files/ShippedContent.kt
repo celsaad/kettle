@@ -28,7 +28,7 @@ data class ContentPackEntry(
 class ShippedContent(
     private val assets: AssetManager,
 ) {
-    /** The seed in [language]'s strings, a tag like `pt-BR`, or English where there is no table. */
+    /** The seed in [language]'s strings, a BCP 47 tag like `pt-BR`, or English where there is no table. */
     fun seed(language: String?): Library = localized("seed", language)
 
     /** Every pack, in the order the import screen lists them. */
@@ -40,6 +40,7 @@ class ShippedContent(
         }
     }
 
+    /** Pack [id] in [language]'s strings, as [seed] reads the seed. */
     fun pack(
         id: String,
         language: String?,

@@ -2,9 +2,9 @@
 # starts or ends on the floor. That constraint is the whole pack: it is what makes it runnable by
 # someone who would otherwise stop at the first push-up.
 #
-# Weeks are the three-on/four-off shape all three packs use, written days 1 through 7 in order with
-# every rest day longhand, because weeks run in the order they are written. The fourth-set bump of
-# weeks 3 and 4 is repeated in each week, because overrides don't carry forward.
+# Weeks are three training days and four rest days, written days 1 through 7 in order with every
+# rest day longhand, because weeks run in the order they are written. The fourth-set bump of weeks 3
+# and 4 is repeated in each week, because overrides don't carry forward.
 version: 1
 exercises:
   - id: ss-rest

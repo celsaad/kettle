@@ -9,7 +9,7 @@
 # string for. seed-library.test.ts fails the ones that don't.
 #
 # Curated starter content, not a format demo: two four-week programs a new user can press start on
-# without building anything first, plus two standalone workouts so all seven exercise types have a
+# without building anything first, plus two standalone workouts so every exercise type has a
 # live example. Three authoring constraints it has to respect, none of them local to this file:
 #
 # - `foundations` must stay first. `activeProgram` (state/selectors/next-up.ts) falls back to

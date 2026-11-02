@@ -71,8 +71,9 @@ private fun Program.localized(strings: LibraryTranslation): Program {
 }
 
 /**
- * The table for a language tag like `pt-BR`, narrowed to its base subtag. Keyed by language, not
- * region, exactly as the locale bundles are.
+ * The table for a BCP 47 tag like `pt-BR`, narrowed to its base subtag. Keyed by language, not
+ * region, exactly as the locale bundles are. Pass `Locale.toLanguageTag()`, not `toString()`: its
+ * `pt_BR` has no `-`, so it would find no table and fall back to English, as the TS does.
  */
 fun translationFor(
     tables: Map<String, LibraryTranslation>,
@@ -98,16 +99,30 @@ internal fun libraryTranslationOf(tree: Any?): LibraryTranslation {
         exercises =
             fields["exercises"].asMap("exercises").entries.associate { (id, value) ->
                 val entry = value.asMap("exercises.$id")
-                id as String to ExerciseStrings(entry["name"] as String, entry["notes"] as String?)
+                id as String to
+                    ExerciseStrings(
+                        requireNotNull(entry.string("exercises.$id.name")) {
+                            "exercises.$id.name is missing"
+                        },
+                        entry.string("exercises.$id.notes"),
+                    )
             },
         workouts = fields["workouts"].asStrings("workouts"),
         programs =
             fields["programs"].asMap("programs").entries.associate { (id, value) ->
                 val entry = value.asMap("programs.$id")
-                id as String to ProgramStrings(entry["name"] as String, entry["weekNotes"]?.asStrings("programs.$id"))
+                id as String to
+                    ProgramStrings(
+                        requireNotNull(entry.string("programs.$id.name")) { "programs.$id.name is missing" },
+                        entry["weekNotes"]?.asStrings("programs.$id.weekNotes"),
+                    )
             },
     )
 }
+
+/** The field at the last segment of [path], which must be a string where present. */
+private fun Map<*, *>.string(path: String): String? =
+    this[path.substringAfterLast('.')]?.let { requireNotNull(it as? String) { "$path is not a string" } }
 
 private fun Any?.asMap(path: String): Map<*, *> = requireNotNull(this as? Map<*, *>) { "$path is not an object" }
 

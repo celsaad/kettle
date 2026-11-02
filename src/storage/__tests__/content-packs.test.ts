@@ -6,13 +6,8 @@ import { contentPackLibrary, contentPacks, contentPackSources } from '@/storage/
 import { libraryWeekKey } from '@/storage/library-translation';
 import { seedLibrary } from '@/storage/seed-library';
 import type { Library, Program, Session } from '@/domain/types';
-
-// oxlint-disable-next-line no-underscore-dangle -- node's own global; the name isn't ours to choose.
-declare const __dirname: string;
-declare function require(id: 'node:fs'): { readdirSync(path: string): string[] };
-
-const { readdirSync } = require('node:fs');
-const packsDir = `${__dirname}/../../content/packs`;
+import en from '@/i18n/locales/en.json';
+import { contentFiles } from '@/test-support/content-files';
 
 /**
  * A pack is a library the app writes into somebody's own, so it owes every invariant the seed owes —
@@ -250,7 +245,7 @@ describe('the pack list', () => {
     // packs.json lists. A pack in one and not another ships to one app and not the other, or not at all.
     const listed = contentPacks.map((pack) => pack.id).toSorted();
     expect(Object.keys(contentPackSources).toSorted()).toEqual(listed);
-    expect(readdirSync(packsDir).toSorted()).toEqual(listed);
+    expect(contentFiles('packs')).toEqual(listed);
   });
 
   it('bundles every file in each pack directory', () => {
@@ -258,7 +253,16 @@ describe('the pack list', () => {
     // would not.
     for (const pack of contentPacks) {
       const languages = Object.keys(pack.translations).map((language) => `${language}.json`);
-      expect(readdirSync(`${packsDir}/${pack.id}`).toSorted()).toEqual(['library.yaml', ...languages].toSorted());
+      expect(contentFiles(`packs/${pack.id}`)).toEqual(['library.yaml', ...languages].toSorted());
+    }
+  });
+
+  it('gives every pack a row name and blurb in the locale bundles', () => {
+    // The row's text is UI chrome, not pack data, so it lives in the bundles under `import.packs.<id>`.
+    // Checked in `en` alone: locale-bundles.test.ts holds pt and ja to en key for key.
+    const rows = en.import.packs as Record<string, unknown>;
+    for (const pack of contentPacks) {
+      expect(rows[pack.id]).toEqual({ name: expect.any(String), detail: expect.any(String) });
     }
   });
 

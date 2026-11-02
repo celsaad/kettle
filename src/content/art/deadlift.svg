@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 96" fill="none">
+  <g stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M8,84 H112"/>
+    <circle cx="24" cy="40" r="7.5"/>
+    <path d="M33,43 L72,50"/>
+    <path d="M72,50 L74,66"/>
+    <path d="M74,66 L70,82"/>
+    <path d="M64,82 H78"/>
+    <!-- Arm straight down and the bar at the shins, plates nearly on the floor. Held any higher it
+         is the Romanian deadlift the dumbbell set already draws. -->
+    <path d="M36,46 L38,68"/>
+    <!-- Barbell -->
+    <g transform="translate(38 73) scale(0.85)">
+      <path d="M-30,0 H30"/>
+      <path d="M-24,-8 V8"/>
+      <path d="M-29,-4.5 V4.5"/>
+      <path d="M24,-8 V8"/>
+      <path d="M29,-4.5 V4.5"/>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 96" fill="none">
+  <g stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M8,84 H112"/>
+    <circle cx="60" cy="18" r="7.5"/>
+    <path d="M58,26 L50,54"/>
+    <path d="M57,34 L74,47"/>
+    <!-- Upside down, held by the horns — which is how a goblet squat is actually carried and, at
+         this size, the quickest way to say "kettlebell, not dumbbell" without a second glance. -->
+    <!-- Kettlebell -->
+    <g transform="translate(76 42) rotate(180) scale(0.9)">
+      <path d="M-5,-7 A6.5,7 0 0 1 5,-7"/>
+      <path d="M-5,-6 C-9,-2 -9,7 -7,9 H7 C9,7 9,-2 5,-6"/>
+    </g>
+    <path d="M50,54 L76,58"/>
+    <path d="M76,58 L74,82"/>
+    <path d="M68,82 H82"/>
+  </g>
+</svg>

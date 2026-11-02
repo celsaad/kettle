@@ -1,6 +1,7 @@
 // The native app (docs/native-migration-plan.md). `:shared` is the Kotlin Multiplatform domain the
 // iOS app reuses later; `:app` is the shell, which hosts the RN app from its AAR; `:strings` generates
-// `:app`'s string resources from the RN locale bundles, and `:theme` its Compose theme from `theme.json`.
+// `:app`'s string resources from the RN locale bundles, `:theme` its Compose theme from `theme.json`,
+// and `:art` its exercise drawings from `src/content/art/`.
 // `:benchmark` times a cold start to a drawn home screen, the shell's against today's app.
 pluginManagement {
     repositories {
@@ -22,4 +23,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "kettle"
-include(":shared", ":app", ":strings", ":theme", ":benchmark")
+include(":shared", ":app", ":strings", ":theme", ":art", ":benchmark")

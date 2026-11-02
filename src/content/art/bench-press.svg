@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 96" fill="none">
+  <g stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M8,84 H112"/>
+    <!-- Three strokes of bench: a top and two legs. Anything more — a frame, an upright, a pad —
+         and the drawing is about the furniture. -->
+    <path d="M20,66 H92"/>
+    <path d="M30,66 V84"/>
+    <path d="M84,66 V84"/>
+    <circle cx="26" cy="57" r="7.5"/>
+    <path d="M35,61 L70,63"/>
+    <path d="M70,63 L80,74"/>
+    <path d="M80,74 L82,84"/>
+    <path d="M44,60 L42,44"/>
+    <!-- Barbell -->
+    <g transform="translate(42 40) scale(0.8)">
+      <path d="M-30,0 H30"/>
+      <path d="M-24,-8 V8"/>
+      <path d="M-29,-4.5 V4.5"/>
+      <path d="M24,-8 V8"/>
+      <path d="M29,-4.5 V4.5"/>
+    </g>
+  </g>
+</svg>

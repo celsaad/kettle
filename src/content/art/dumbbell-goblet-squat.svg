@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 96" fill="none">
+  <g stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M8,84 H112"/>
+    <circle cx="60" cy="18" r="7.5"/>
+    <path d="M58,26 L50,54"/>
+    <path d="M57,34 L70,42"/>
+    <!-- Held upright at the chest, and drawn nearly full size. Shrunk to fit between the arm and the
+         thigh it stopped reading as a dumbbell at all and became a bracket. Sitting it above the
+         thigh line is what buys the room. -->
+    <!-- Dumbbell -->
+    <g transform="translate(77 42) rotate(90) scale(0.9)">
+      <path d="M-7,0 H7"/>
+      <path d="M-9,-6 V6"/>
+      <path d="M-12.5,-3.5 V3.5"/>
+      <path d="M9,-6 V6"/>
+      <path d="M12.5,-3.5 V3.5"/>
+    </g>
+    <path d="M50,54 L76,58"/>
+    <path d="M76,58 L74,82"/>
+    <path d="M68,82 H82"/>
+  </g>
+</svg>

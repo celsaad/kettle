@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 96" fill="none">
+  <g stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M8,84 H112"/>
+    <!-- **The support here is an upright, not the whole chair.** Drawn as one, the chair's seat and
+         its two legs closed a rectangle against the ground line, and standing alone beside a
+         horizontal torso the pair read as a person at a desk. The two seated drawings above can
+         afford the full chair because somebody is sitting in it; this one cannot, and the back of a
+         chair seen edge-on is a line anyway. -->
+    <path d="M14,40 V84"/>
+    <!-- Hinged at the hip with the back long and the knees soft — the same shape as the Romanian
+         deadlift, which is the point: this is that movement with a chair instead of a load. -->
+    <circle cx="32" cy="42" r="7.5"/>
+    <path d="M41,45 L76,52"/>
+    <path d="M76,52 L78,68"/>
+    <path d="M78,68 L74,82"/>
+    <path d="M68,82 H82"/>
+    <path d="M44,48 L17,50"/>
+  </g>
+</svg>

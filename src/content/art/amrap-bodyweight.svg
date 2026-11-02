@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 96" fill="none">
+  <g stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <!-- A broken ring with two arrowheads: rounds, repeated, count unstated. That last part is the
+         point — an AMRAP's cap is user-editable, so the drawing must not name one.
+         The ring is wide enough to hold a figure that can still be read. Drawn tighter, the figure
+         inside had to shrink until it was a scribble in a circle. -->
+    <path d="M24.3,33 A38,38 0 0 1 95.7,33"/>
+    <path d="M97.3,24.1 L95.7,33 L88.8,27.2"/>
+    <path d="M95.7,59 A38,38 0 0 1 24.3,59"/>
+    <path d="M22.7,67.9 L24.3,59 L31.2,64.8"/>
+    <circle cx="62" cy="30" r="5.5"/>
+    <path d="M60,35 L54,50"/>
+    <path d="M58,39 L74,42"/>
+    <path d="M54,50 L72,53"/>
+    <path d="M72,53 L71,66"/>
+    <path d="M65,66 H77"/>
+  </g>
+</svg>

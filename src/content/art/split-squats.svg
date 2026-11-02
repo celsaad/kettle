@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 96" fill="none">
+  <g stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M8,84 H112"/>
+    <circle cx="58" cy="20" r="7.5"/>
+    <path d="M58,28 L58,52"/>
+    <path d="M58,52 L80,58"/>
+    <path d="M80,58 L79,82"/>
+    <path d="M73,82 H87"/>
+    <!-- Rear knee dropped and the heel lifted — the half that tells it apart from a squat. -->
+    <path d="M58,52 L44,70"/>
+    <path d="M44,70 L30,81"/>
+    <path d="M30,81 L24,82"/>
+  </g>
+</svg>

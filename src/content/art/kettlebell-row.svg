@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 96" fill="none">
+  <g stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M8,84 H112"/>
+    <circle cx="22" cy="44" r="7.5"/>
+    <path d="M31,47 L72,54"/>
+    <!-- Elbow up and back, forearm hanging straight down from it — the pull, rather than the hang
+         the single-leg deadlift beside it draws. -->
+    <path d="M40,49 L48,39"/>
+    <path d="M48,39 L46,56"/>
+    <!-- Kettlebell -->
+    <g transform="translate(46 68) scale(0.8)">
+      <path d="M-5,-7 A6.5,7 0 0 1 5,-7"/>
+      <path d="M-5,-6 C-9,-2 -9,7 -7,9 H7 C9,7 9,-2 5,-6"/>
+    </g>
+    <path d="M72,54 L77,68"/>
+    <path d="M77,68 L73,82"/>
+    <path d="M67,82 H81"/>
+  </g>
+</svg>

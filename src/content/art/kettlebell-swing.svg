@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 96" fill="none">
+  <g stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M8,84 H112"/>
+    <!-- Hinged, with the bell out in front at chest height and the arms long. The bell at the top of
+         an arc rather than between the legs: the bottom of a swing is a deadlift with a bell. -->
+    <circle cx="84" cy="30" r="7.5"/>
+    <path d="M78,36 L46,48"/>
+    <path d="M46,48 L44,66"/>
+    <path d="M44,66 L48,82"/>
+    <path d="M42,82 H56"/>
+    <path d="M76,40 L100,45"/>
+    <!-- Kettlebell -->
+    <g transform="translate(106 46) rotate(-90) scale(0.9)">
+      <path d="M-5,-7 A6.5,7 0 0 1 5,-7"/>
+      <path d="M-5,-6 C-9,-2 -9,7 -7,9 H7 C9,7 9,-2 5,-6"/>
+    </g>
+  </g>
+</svg>

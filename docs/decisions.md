@@ -947,6 +947,15 @@ decision assembled across several commits. Open work belongs in the sections at 
     translation JSON per language in `src/content/`, with `localizeLibrary` ported as behaviour.
     Unlike `theme.json`, their comments live in the data: YAML has them, so the authoring rules sit
     beside the content they constrain rather than in a TS wrapper.
+  - **The exercise drawings** are the third (#225, #228): one SVG per drawing in `src/content/art/`
+    and an id → drawing map in `art.json`. RN draws the markup with `SvgXml`; `:art` generates
+    VectorDrawables from it, accepting only `path`, `circle` and `g` with
+    `translate`/`rotate`/`scale` under a single `currentColor` stroke, and failing the build on
+    anything else or on a map and directory that disagree. The subset is the point: an editor's
+    export needs cleaning up before it lands, rather than a converter guessing at a gradient or a
+    `<use>`. Rejected: a runtime SVG library (AndroidSVG, coil-svg), which is a dependency and an
+    asset read where a generated drawable is neither. The notes stay in the data, as XML comments and
+    the directory's README.
   - Hand-kept lists remain where a data file can't reach, on purpose: `LocalePreviews` names each
     language, because a `@Preview` locale has to be a compile-time constant; and `libs.versions.toml`
     repeats React Native's Kotlin and AGP, because once M2 hosts the RN AAR, a mismatch fails the

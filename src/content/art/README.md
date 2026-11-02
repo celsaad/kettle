@@ -56,7 +56,7 @@ comment. Each is authored around its own origin, so the transform places it wher
   the hands.
 - **Wall.** Any vertical thing a hand can rest against: a door frame, a counter's edge, a post. One
   bare stroke, with no hatching to say which, because the drawing only has to say "something solid is
-  here". It exists because three low-impact movements are *defined* by their support.
+  here". It exists because some of the low-impact movements are *defined* by their support.
 - **Chair.** Side-on, from the top of the seat, where a person meets it. Four strokes: seat, back,
   two legs. Furniture is otherwise banned (below), but here the chair is the equipment, and "sit to
   stand" and "seated march" have no subject without one.
@@ -82,9 +82,9 @@ a straight line, which is what these drawings exist to show.
   Both are values the user can edit, so the drawing would go quietly wrong in the one place the app
   claims to show your own data. Nothing here carries a numeral: a stopwatch says "timed" and a loop
   says "repeated" without saying how long or how many.
-- **Kettlebell.** Three are the dumbbell poses with a different implement (goblet squat, row, carry),
-  which is why the bell has to be unmistakable at this size. The handle does it: swap the bell for a
-  circle and each becomes a person holding a ball. So the handle's direction is drawn honestly: back
+- **Kettlebell.** The goblet squat, the row and the carry are the dumbbell poses with a different
+  implement, which is why the bell has to be unmistakable at this size. The handle does it: swap the
+  bell for a circle and each becomes a person holding a ball. So the handle's direction is drawn honestly: back
   at the hands on the swing, downward for the two upside-down holds.
 - **Low impact** (Steady & Strong). The first drawings where the *support* is half the movement: a
   wall push-up without its wall is a figure toppling forward, and a sit-to-stand without a chair is a

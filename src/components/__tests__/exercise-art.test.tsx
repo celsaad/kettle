@@ -75,7 +75,7 @@ describe('the files', () => {
     expect([files.filter((file) => !used.has(file)), [...used].filter((name) => !files.includes(name))]).toEqual([[], []]);
   });
 
-  it.each(files)('colours %s only through the root group', (file) => {
+  it.each(files)("draws %s in the root group's one colour and stroke", (file) => {
     // The root <g>'s `currentColor` is the one colour the renderer can change, through RN's `color`,
     // Android's tint and iOS's template mode. Any other stroke or fill is fixed, so it vanishes on
     // one of the three surfaces a drawing lands on: light, dark, or the always-dark runner.
@@ -85,7 +85,10 @@ describe('the files', () => {
       .filter((attribute) => attribute !== 'fill="none"');
 
     expect(coloured).toEqual(['stroke="currentColor"']);
-    expect(markup).toMatch(/<g stroke="currentColor"/);
+    // The rest of the root group is the set's style rather than its colour: one weight and round ends
+    // are most of what makes separately drawn figures look drawn by one hand. :art accepts any cap or
+    // join Android can draw, so this is the only place that holds the set to these.
+    expect(markup).toContain('<g stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">');
   });
 });
 

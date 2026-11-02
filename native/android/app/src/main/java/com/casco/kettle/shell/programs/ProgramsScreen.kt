@@ -56,11 +56,11 @@ import com.casco.kettle.shell.nav.ScrollsToTopOnReselect
 import com.casco.kettle.shell.nav.Tab
 import com.casco.kettle.shell.rn.JsBridge
 import com.casco.kettle.shell.rn.Stacking
-import com.casco.kettle.shell.theme.DarkColors
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.MaxContentWidth
 import com.casco.kettle.shell.theme.Spacing
+import com.casco.kettle.shell.theme.card
 import kotlinx.coroutines.flow.Flow
 
 /** What `shellRoutes` registers at `/programs`, the tab. */
@@ -105,7 +105,8 @@ fun ProgramsScreen(
         ) {
             item(key = "header") {
                 Header(openGuide)
-                // Keyed off the whole library rather than what's visible, and carrying its count.
+                // Keyed off the whole library rather than what's visible: hidden on an empty result, it
+                // would take the field you need to clear the search with it.
                 if (all.isNotEmpty()) {
                     SearchBar(
                         query,
@@ -207,9 +208,7 @@ private fun FirstRun(onYaml: () -> Unit) {
         Modifier
             .padding(top = Spacing.three)
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .background(colors.backgroundElement)
-            .border(1.dp, colors.border, RoundedCornerShape(16.dp))
+            .card(16.dp)
             .padding(Spacing.three),
         verticalArrangement = Arrangement.spacedBy(Spacing.one + 2.dp),
     ) {
@@ -249,7 +248,7 @@ private fun NewProgram(
             .padding(end = Spacing.three, bottom = Spacing.four)
             .sizeIn(minWidth = 52.dp, minHeight = 52.dp)
             .clip(shape)
-            .background(if (colors == DarkColors) colors.accent else colors.text)
+            .background(if (KettleTheme.dark) colors.accent else colors.text)
             .clickable(role = Role.Button, onClick = onClick)
             .semantics { contentDescription = label },
         contentAlignment = Alignment.Center,

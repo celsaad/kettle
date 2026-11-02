@@ -11,6 +11,7 @@ import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.staticCompositionLocalOf
 
 private val LocalKettleColors = staticCompositionLocalOf { LightColors }
+private val LocalKettleDark = staticCompositionLocalOf { false }
 
 /**
  * The shell's theme, and the Compose side of RN's `useTheme`: screens read tokens through
@@ -25,7 +26,7 @@ fun KettleTheme(
     content: @Composable () -> Unit,
 ) {
     val colors = if (darkTheme) DarkColors else LightColors
-    CompositionLocalProvider(LocalKettleColors provides colors) {
+    CompositionLocalProvider(LocalKettleColors provides colors, LocalKettleDark provides darkTheme) {
         MaterialTheme(colorScheme = colors.toColorScheme(darkTheme), content = content)
     }
 }
@@ -35,6 +36,12 @@ object KettleTheme {
         @Composable
         @ReadOnlyComposable
         get() = LocalKettleColors.current
+
+    /** The scheme itself, for the few pairings RN picks per scheme rather than per token (the FAB's). */
+    val dark: Boolean
+        @Composable
+        @ReadOnlyComposable
+        get() = LocalKettleDark.current
 }
 
 /**

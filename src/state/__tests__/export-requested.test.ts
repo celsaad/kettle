@@ -1,18 +1,21 @@
 const mockExportSession = jest.fn();
 const mockExportSessions = jest.fn();
+const mockExportLibrary = jest.fn();
 jest.mock('@/storage/export', () => ({
+  exportLibrary: () => mockExportLibrary(),
   exportSession: (id: string) => mockExportSession(id),
   exportSessions: (sessions: unknown) => mockExportSessions(sessions),
 }));
 
 import type { Session } from '@/domain/types';
-import { onExportRequested } from '@/state/export-requested';
+import { isExportRequest, onExportRequested } from '@/state/export-requested';
 import { useSessionHistoryStore } from '@/state/session-history-store';
 
 /**
- * Native History's Export and Export all (#202) are RN's until M5, when export moves native with
- * Settings: the shell asks, and this shares what RN's History shared. Never rejects, since it runs
- * from the native module's listener, where a throw has nowhere to go.
+ * Native History's Export and Export all (#202), and native Library's Export (#234), are RN's until
+ * M5, when export moves native with Settings: the shell asks, and this shares what the RN screens
+ * shared. Never rejects, since it runs from the native module's listener, where a throw has nowhere
+ * to go.
  */
 const aSession = (id: string, startedAt: string, entries: Session['entries'] = []): Session => ({
   version: 1,
@@ -29,6 +32,7 @@ const aSession = (id: string, startedAt: string, entries: Session['entries'] = [
 beforeEach(() => {
   mockExportSession.mockReset().mockResolvedValue(undefined);
   mockExportSessions.mockReset().mockResolvedValue(undefined);
+  mockExportLibrary.mockReset().mockResolvedValue(undefined);
 });
 
 it('shares the one session the shell names', async () => {
@@ -51,6 +55,15 @@ it('shares the whole raw log for Export all', async () => {
   expect(mockExportSessions).toHaveBeenCalledWith(sessions);
 });
 
+// Native Library's Export (#234), which shares exercises.yaml as RN's Library did.
+it('shares the library file', async () => {
+  await onExportRequested({ type: 'exportLibrary' });
+
+  expect(mockExportLibrary).toHaveBeenCalledTimes(1);
+  expect(mockExportSession).not.toHaveBeenCalled();
+  expect(mockExportSessions).not.toHaveBeenCalled();
+});
+
 it('ignores a session export with no id, and messages it does not know', async () => {
   await onExportRequested({ type: 'exportSession' });
   await onExportRequested({ type: 'exportSession', id: 42 });
@@ -58,6 +71,14 @@ it('ignores a session export with no id, and messages it does not know', async (
 
   expect(mockExportSession).not.toHaveBeenCalled();
   expect(mockExportSessions).not.toHaveBeenCalled();
+  expect(mockExportLibrary).not.toHaveBeenCalled();
+});
+
+// What the dispatcher asks before it hands a message here. A key every object inherits is no export:
+// read with `in`, `toString` would pass and the dispatcher would stop routing it on to navigation.
+it('names the three export messages and nothing else', () => {
+  expect(['exportSession', 'exportHistory', 'exportLibrary'].map(isExportRequest)).toEqual([true, true, true]);
+  expect(['navigate', 'toString', undefined].map(isExportRequest)).toEqual([false, false, false]);
 });
 
 // No share sheet on this device, or the user's file gone: nothing to show from a listener, so a warning.

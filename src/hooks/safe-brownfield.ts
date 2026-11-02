@@ -12,7 +12,7 @@
  */
 import { router, type Href } from 'expo-router';
 
-import { onExportRequested } from '@/state/export-requested';
+import { isExportRequest, onExportRequested } from '@/state/export-requested';
 import { onFilesChanged } from '@/state/files-changed';
 
 type BrownfieldModule = typeof import('expo-brownfield');
@@ -48,8 +48,8 @@ function onShellMessage(message: Record<string, unknown>): void {
     void onFilesChanged(message.kind);
     return;
   }
-  // The shell's JsBridge.export: native History's Export and Export all, which RN shares until M5.
-  if (message.type === 'exportSession' || message.type === 'exportHistory') {
+  // Native History's and Library's Exports, which RN shares until M5.
+  if (isExportRequest(message.type)) {
     void onExportRequested(message);
     return;
   }

@@ -51,8 +51,16 @@ object JsBridge {
      * Settings, which shares the same files; until then one implementation serves both screens.
      */
     fun export(id: String?) {
-        // What src/state/export-requested.ts listens for. The two share no code, so change both.
+        // What src/hooks/safe-brownfield.ts routes to src/state/export-requested.ts. The two share no code,
+        // so change both.
         channel.send(if (id == null) mapOf("type" to "exportHistory") else mapOf("type" to "exportSession", "id" to id))
+    }
+
+    /** Asks RN to share the library file: native Library's Export (#234), RN's until M5 as [export] is. */
+    fun exportLibrary() {
+        // What src/hooks/safe-brownfield.ts routes to src/state/export-requested.ts. The two share no code,
+        // so change both.
+        channel.send(mapOf("type" to "exportLibrary"))
     }
 
     /**

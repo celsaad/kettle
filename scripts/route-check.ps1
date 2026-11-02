@@ -23,6 +23,9 @@
   bar (M3), tab steps check which tab it has selected, and back between tabs is the shell's. Update
   the matrix in the same PR, rather than deleting a step that starts failing.
 
+  It runs against .dev, so during M5 the matrix shows the debug routes: every writer screen behind a
+  flip (Flips.kt) is native here while a release build still draws it in RN.
+
 .PARAMETER Device
   The adb serial to use when more than one device is attached.
 

@@ -6,6 +6,7 @@ import androidx.compose.runtime.Composable
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.history.HistoryRoute
 import com.casco.kettle.shell.programguide.ProgramGuideRoute
+import com.casco.kettle.shell.programs.ProgramsRoute
 import com.casco.kettle.shell.progress.EXERCISE_PROGRESS_PATH
 import com.casco.kettle.shell.progress.ExerciseProgressRoute
 import com.casco.kettle.shell.stats.StatsRoute
@@ -57,6 +58,7 @@ private val readerRoutes: Map<String, Screen> =
         EXERCISE_PROGRESS_PATH to Screen.Native { params -> ExerciseProgressRoute(params) },
         "/analytics" to Screen.Native { StatsRoute() },
         Tab.History.path to Screen.Native { HistoryRoute() },
+        Tab.Programs.path to Screen.Native { ProgramsRoute() },
     )
 
 /**

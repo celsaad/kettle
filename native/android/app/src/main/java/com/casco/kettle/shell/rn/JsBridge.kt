@@ -93,6 +93,13 @@ object JsBridge {
      */
     @Volatile var wantsPicture: ((String) -> Boolean)? = null
 
+    /**
+     * JS is up, on the main thread: RN has hydrated its stores by then, which on a first launch means it
+     * has written the seed library, and nothing else would tell native Home so. The current activity's,
+     * like [onRoute].
+     */
+    var onReady: (() -> Unit)? = null
+
     private val main = Handler(Looper.getMainLooper())
 
     /** JS's messages arrive on its own thread. */
@@ -106,6 +113,12 @@ object JsBridge {
                 val action = message["action"] as? String ?: return
                 if (wantsPicture?.invoke(action) == true) RnFrames.arm()
                 main.post { onRouteWillChange?.invoke(action) }
+            }
+
+            // What announceHostReady sends, after the stores' first read. The two share no code, so change
+            // both.
+            "ready" -> {
+                main.post { onReady?.invoke() }
             }
 
             // What reportRoute sends. The two share no code, so change both.

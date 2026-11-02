@@ -13,9 +13,11 @@ import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.emptyStateCard
 
 /**
- * What a search that matched nothing shows, as RN's `NoResults`: a blank body under intact chrome
- * reads as a bug, not an answer. A blank [query] means a filter emptied the list rather than typing,
- * which only Library's type chips can do, and quoting an empty string back explains nothing.
+ * What a search that matched nothing shows: a blank body under intact chrome reads as a bug, not an
+ * answer. Only the no-match half, since a first run's empty state is its screen's own: "no workouts
+ * yet" is wrong in front of someone with forty who mistyped one. A blank [query] means a filter
+ * emptied the list rather than typing, which only Library's type chips can do, and quoting an empty
+ * string back explains nothing.
  */
 @Composable
 fun NoResults(query: String) {

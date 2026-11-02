@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Cold start to a drawn home screen, the native shell against today's app, on a phone
-# (native/android/benchmark). A port of startup-benchmark.ps1, which explains the setup; read
-# timeToFullDisplayMs. Never the Play install: the benchmark force-stops its targets and resets their
+# Cold start to a drawn home screen, the native shell on a phone (native/android/benchmark). A port of
+# startup-benchmark.ps1, which explains the setup and why today's app is no longer a target; read
+# timeToFullDisplayMs. Never the Play install: the benchmark force-stops its target and resets its
 # compiled code, and nothing here names com.casco.kettle.
 #
 # Usage: scripts/startup-benchmark.sh [--skip-build] [--device <adb serial>]
@@ -26,17 +26,11 @@ a() { adb ${target[@]+"${target[@]}"} "$@"; }
 step() { printf '\n\033[36m== %s\033[0m\n' "$1"; }
 
 # In install and first-launch order, each with the APK that must carry it.
-packages=(com.casco.kettle.bench com.casco.kettle.bench2)
-apks=(
-  "$root/android/app/build/outputs/apk/release/app-release.apk"
-  "$native/app/build/outputs/apk/benchmark/app-benchmark.apk"
-)
+packages=(com.casco.kettle.bench2)
+apks=("$native/app/build/outputs/apk/benchmark/app-benchmark.apk")
 benchmark_apk="$native/benchmark/build/outputs/apk/benchmark/benchmark-benchmark.apk"
 
 if [ "$skip_build" = 0 ]; then
-  step "Build today's app (com.casco.kettle.bench)"
-  "$root/android/gradlew" -p "$root/android" --init-script "$native/benchmark/rn-app.init.gradle" \
-    :app:assembleRelease "$abi"
   # All, not Release: the two publications share one coordinate (see native-dev.ps1).
   step 'Publish the RN AAR to mavenLocal'
   "$root/android/gradlew" -p "$root/android" publishBrownfieldAllPublicationToMavenLocal "$abi"
@@ -44,10 +38,9 @@ if [ "$skip_build" = 0 ]; then
   "$native/gradlew" -p "$native" :app:assembleBenchmark :benchmark:assembleBenchmark "$abi"
 fi
 
-# Checked, not assumed: with --skip-build, today's app's APK is whatever its last release build left,
-# and one built without the init script is com.casco.kettle itself.
+# Checked, not assumed: with --skip-build, the APK is whatever the last build left.
 build_tools="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)"
-for i in 0 1; do
+for i in "${!packages[@]}"; do
   actual="$("$build_tools/aapt2" dump packagename "${apks[$i]}")"
   if [ "$actual" != "${packages[$i]}" ]; then
     echo "${apks[$i]} is $actual, not ${packages[$i]}; rebuild without --skip-build" >&2
@@ -56,14 +49,14 @@ for i in 0 1; do
 done
 
 # --user 0: a Secure Folder user makes plain pm calls fail. --no-streaming: see native-dev.ps1.
-for i in 0 1; do
+for i in "${!packages[@]}"; do
   step "Install ${packages[$i]}"
   a install --user 0 -r --no-streaming "${apks[$i]}"
 done
 step 'Install the benchmark'
 a install --user 0 -r --no-streaming "$benchmark_apk"
 
-# Each target launched once first, so the first-launch seed write isn't in iteration one.
+# Launched once first, so the first-launch seed write isn't in iteration one.
 for package in "${packages[@]}"; do
   # `am start -W` exits 0 on a failed launch too; only its Status line says.
   launch="$(a shell am start -W -n "$package/com.casco.kettle.MainActivity")"

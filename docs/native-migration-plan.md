@@ -501,9 +501,10 @@ retargeted. The View sheet stays as it is; whether a Compose sheet should follow
   too.
 - **Rerun the startup benchmark, all-native against today's app** (M2's numbers, #150). Two things
   have to survive the deletion:
-  - **The marker.** `modules/startup-marker` goes with RN, so native Home calls the same
-    `reportFullyDrawn` itself once its content is drawn (Compose's `ReportDrawnWhen`). Then
-    `timeToFullDisplayMs` still means "Home drawn", and the numbers stay comparable.
+  - **The marker.** Already native: Home's port (#235) moved `reportFullyDrawn` to Compose's
+    `ReportDrawnWhen` and deleted `modules/startup-marker`, so `timeToFullDisplayMs` still means
+    "Home drawn". The same port dropped `.bench` as a target, since its Home is now a stub, and the
+    baseline below is what brings it back.
   - **The baseline.** Today's app can't be built from a tree without RN. Build `.bench` from the
     commit that merged #168 (`git worktree`, then the script's first step as it is today) rather than
     reusing M2's table: the same phone a year on, on a newer Android, isn't the same baseline. M2's

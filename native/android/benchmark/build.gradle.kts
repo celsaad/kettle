@@ -28,7 +28,8 @@ android {
 
     targetProjectPath = ":app"
     // Self-instrumenting: the test APK drives other packages through the shell, so it can launch
-    // today's app (`.bench`, built outside this project) as well as the shell it was built with.
+    // today's app (`.bench`, built outside this project) as well as the shell it was built with. Only
+    // the shell is a target since #235; M7's baseline brings `.bench` back.
     experimentalProperties["android.experimental.self-instrumenting"] = true
 
     compileOptions {

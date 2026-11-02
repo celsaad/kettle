@@ -62,6 +62,9 @@ steps=(
   # Native Library's row and Import open RN's editor and sheet over it, and back returns to it (#234).
   'tap:Library|tab:Library' 'tap:Push-ups|Edit exercise' 'back|tab:Library'
   'tap:Import|Import library' 'back|tab:Library'
+  # Native Home's gear and New workout open RN's Settings and editor over it, and back returns (#235).
+  'tap:Workouts|tab:Workouts' 'tap:Settings|Settings' 'back|tab:Workouts'
+  'tap:New workout|New workout' 'back|tab:Workouts'
   # From a modal: to a tab, and to another modal. Either way back reaches Workouts and then leaves.
   '/library|tab:Library' '/settings|Settings' '/history|tab:History'
   'back|tab:Workouts'

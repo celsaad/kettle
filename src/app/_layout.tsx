@@ -15,7 +15,6 @@ import {
   useSegments,
 } from 'expo-router';
 import type { ErrorBoundaryProps } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
 import { useEffect } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
@@ -36,8 +35,6 @@ import { hostedModalOptions, isHosted, reportRoute, reportRouteWillChange } from
 import { useLibraryStore } from '@/state/library-store';
 import { usePreferencesStore } from '@/state/preferences-store';
 import { useSessionHistoryStore } from '@/state/session-history-store';
-
-SplashScreen.preventAutoHideAsync();
 
 /**
  * The last resort: a throw in this layout, or in any route without a boundary of its own, lands here

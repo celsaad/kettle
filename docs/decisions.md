@@ -95,8 +95,9 @@ decision assembled across several commits. Open work belongs in the sections at 
   search is not a streak.
 
 - ✅ **A program's weeks run in the order they are written, and `day` is never interpreted.**
-  `sortedProgramWeeks` (`state/selectors/next-up.ts`) sorts on `week` alone and leans on
-  `Array.prototype.sort` being stable to leave one week number's days in file order. It used to break
+  Home's rotation (`rotation` in native `domain/NextUp.kt`, `sortedProgramWeeks` in RN's
+  `next-up.ts` until #235) sorts on `week` alone and leans on a stable sort to leave one week number's
+  days in file order. It used to break
   ties on `day.localeCompare`, and the failure is worth recording because **the workaround outlived
   the discovery of the bug**: labelling a calendar week `Monday`…`Sunday` — the obvious way to write
   one — ran it *Friday → Monday → Saturday → Sunday → Thursday → Tuesday → Wednesday*, and numbered

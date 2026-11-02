@@ -186,7 +186,8 @@ class ShellTest {
                 .assertIsNotSelected()
                 .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Tab))
         }
-        assertSurfaceShown(true)
+        // Home is native (#235), so nothing of RN's shows until something above the tabs is RN's.
+        assertSurfaceShown(false)
     }
 
     /**
@@ -225,7 +226,8 @@ class ShellTest {
         show()
         compose.mainClock.advanceTimeBy(ANIMATIONS_SETTLED)
 
-        compose.onNodeWithText("Workouts").assertExists()
+        // On the tab, since Home's title reads the same.
+        tab("Workouts").assert(hasText("Workouts"))
         compose.onNodeWithContentDescription("Workouts").assertDoesNotExist()
         for (label in listOf("Library", "History", "Programs")) {
             compose.onNodeWithContentDescription(label).assertExists()
@@ -273,7 +275,8 @@ class ShellTest {
     /** The M3 landmark: a route goes native by its registration, and RN's stub route at the same path. */
     @Test
     fun `a tab registered native shows its screen in place of the surface`() {
-        show(shellRoutes + ("/history" to Screen.Native { Text("Native history") }))
+        // Every other tab RN's, as before any port: since #235 none of the app's own is.
+        show(mapOf("/history" to Screen.Native { Text("Native history") }))
 
         tab("History").performClick()
 
@@ -282,7 +285,6 @@ class ShellTest {
         // RN goes to the stub route left at the same path, as it would to the RN screen (#190).
         assertEquals(listOf("/history"), sent)
 
-        // Workouts, as the one tab still RN's (#234 took Library).
         tab("Workouts").performClick()
 
         compose.onNodeWithText("Native history").assertDoesNotExist()

@@ -84,8 +84,9 @@ class DiskFiles(
  * ones (native's [writeSession] once the sessions flip releases), the library editors write the
  * library, and Settings the preferences. Each of those is above the tabs, so the shell rereads when
  * RN hands the tabs back, on a tap onto a native tab or a native sheet coming up (`TabNavigator`'s
- * `reread`), and whenever the app starts or stops being seen (`MainActivity`), and nothing else would.
- * RN's half of the rule is `filesChanged`.
+ * `reread`), whenever the app starts or stops being seen (`MainActivity`), and when JS says it is up,
+ * since a first launch's seed library is written by then and Home, the screen it lands on, would
+ * otherwise show none (`JsBridge.onReady`). Nothing else would. RN's half of the rule is `filesChanged`.
  */
 class LatestFiles(
     private val files: StoredFiles,

@@ -1,8 +1,10 @@
 package com.casco.kettle.shell
 
+import android.app.Activity
 import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
+import androidx.activity.ComponentActivity
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
@@ -83,9 +85,8 @@ class MainActivity :
         MutableSharedFlow<Tab>(extraBufferCapacity = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        // Before super, as in the prebuilt app: it installs the splash theme's exit. JS hides it with
-        // expo-splash-screen's own hideAsync, exactly as before.
-        SplashScreenManager.registerOnActivity(this)
+        // Before super, as in the prebuilt app: it installs the splash theme's exit.
+        holdSplash()
         // null, as the prebuilt app's MainActivity passes: the RN fragment is rebuilt from the running
         // runtime, and a restored copy would sit under it.
         super.onCreate(null)
@@ -152,23 +153,7 @@ class MainActivity :
         val sheet = layout.sheet.also { this.sheet = it }
         // After RN's own, so it comes first while the sheet is up: the predictive shrink is the sheet's.
         onBackPressedDispatcher.addCallback(this, sheet.backCallback)
-        // The tab bar's reports go through the sheet, which passes them on at the frame RN draws them.
-        JsBridge.onRoute = sheet::onRoute
-        JsBridge.onRouteWillChange = sheet::onRouteWillChange
-        JsBridge.wantsPicture = sheet::wantsPicture
-        RnFrames.onCapture = sheet::capture
-        lifecycle.addObserver(
-            object : DefaultLifecycleObserver {
-                // The runtime and JsBridge outlive this activity, and a newer one may have taken over.
-                override fun onDestroy(owner: LifecycleOwner) {
-                    if (JsBridge.onRoute != sheet::onRoute) return
-                    JsBridge.onRoute = null
-                    JsBridge.onRouteWillChange = null
-                    JsBridge.wantsPicture = null
-                    RnFrames.onCapture = null
-                }
-            },
-        )
+        hearJs(sheet, latestFiles)
         setContentView(layout)
         JsBridge.attach()
         expoListeners.onContentShown()
@@ -258,4 +243,41 @@ class MainActivity :
         const val NATIVE_TAB_BAR = "nativeTabBar"
         const val NATIVE_REMINDER = "nativeReminder"
     }
+}
+
+/**
+ * Native Home lets the splash go (#235), and RN's first content mustn't first: that is what
+ * expo-splash-screen's preventAutoHide stood for, which JS no longer calls.
+ */
+private fun Activity.holdSplash() {
+    SplashScreenManager.registerOnActivity(this)
+    SplashScreenManager.preventAutoHideCalled = true
+}
+
+/**
+ * What this activity hears from JS, until a newer one takes over: the runtime and [JsBridge] outlive
+ * it. The tab bar's reports go through [sheet], which passes them on at the frame RN draws them, and
+ * JS being up rereads [files], since RN has written a first launch's seed library by then.
+ */
+private fun ComponentActivity.hearJs(
+    sheet: ModalSheet,
+    files: LatestFiles,
+) {
+    JsBridge.onRoute = sheet::onRoute
+    JsBridge.onRouteWillChange = sheet::onRouteWillChange
+    JsBridge.wantsPicture = sheet::wantsPicture
+    JsBridge.onReady = files::reread
+    RnFrames.onCapture = sheet::capture
+    lifecycle.addObserver(
+        object : DefaultLifecycleObserver {
+            override fun onDestroy(owner: LifecycleOwner) {
+                if (JsBridge.onRoute != sheet::onRoute) return
+                JsBridge.onRoute = null
+                JsBridge.onRouteWillChange = null
+                JsBridge.wantsPicture = null
+                JsBridge.onReady = null
+                RnFrames.onCapture = null
+            }
+        },
+    )
 }

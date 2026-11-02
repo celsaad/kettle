@@ -8,8 +8,6 @@
 // locale at runtime is picked up here, exactly as `i18next.t(…)` was.
 import { t } from 'i18next';
 
-import type { Exercise } from '@/domain/types';
-
 /**
  * The one place display strings are assembled.
  *
@@ -32,29 +30,6 @@ export function formatClock(totalSeconds: number): string {
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
   return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-}
-
-/** What a workout is made of, as data — see `workoutShape`. */
-export type WorkoutShape = {
-  blockCount: number;
-  /** Distinct non-rest exercise types, in first-seen order. */
-  types: Exercise['type'][];
-  estimatedMinutes: number;
-};
-
-export function formatWorkoutShape(shape: WorkoutShape): string {
-  const labels = shape.types.map((type) => t(`format.type.${type}`));
-  const typeLabel =
-    labels.length === 0
-      ? t('format.restOnly')
-      : labels.length === 1
-        ? labels[0]
-        : t('format.mixed', { types: labels.join(' + ') });
-  return t('format.workoutShape', {
-    blocks: t('format.block', { count: shape.blockCount }),
-    types: typeLabel,
-    minutes: shape.estimatedMinutes,
-  });
 }
 
 /**

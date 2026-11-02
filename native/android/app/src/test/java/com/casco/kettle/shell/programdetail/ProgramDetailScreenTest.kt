@@ -143,6 +143,22 @@ class ProgramDetailScreenTest {
         assertEquals(listOf(Triple(Stacking.Push, "/session", mapOf("programId" to "plain", "week" to "2"))), opened)
     }
 
+    // The schema takes `day: ""`, and RN tested `week.day` for truth, so an empty one is no day at all,
+    // in the label and the name it gives the start control. The push still carries it, as RN's did.
+    @Test
+    fun `labels a week with an empty day as one with none`() {
+        val blank = Program("blank", "Blank", listOf(ProgramWeek.Training(3, "", "push-day")))
+        show(Library(1, emptyList(), listOf(pushDay), listOf(blank)), "blank")
+
+        compose.onNodeWithText("Semana 3").assertExists()
+        control("Começar Semana 3").performClick()
+
+        assertEquals(
+            listOf(Triple(Stacking.Push, "/session", mapOf("programId" to "blank", "week" to "3", "day" to ""))),
+            opened,
+        )
+    }
+
     @Test
     fun `is translated`() {
         show()

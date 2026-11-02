@@ -40,7 +40,7 @@ enum class Tab(
 sealed interface Screen {
     data object Rn : Screen
 
-    /** [content] is given the params RN reported the route with, `id`, `exerciseId` or `programId`. */
+    /** [content] is given the params RN reported the route with. */
     class Native(
         val content: @Composable (params: Map<String, String>) -> Unit,
     ) : Screen

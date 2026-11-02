@@ -169,7 +169,8 @@ private fun WeekRow(
 ) {
     val colors = KettleTheme.colors
     val number = stringResource(R.string.programs_week, week.week)
-    val label = week.day?.let { "$number · $it" } ?: number
+    // An empty `day` is none, as RN tested it for truth: the schema takes `day: ""`.
+    val label = week.day?.takeIf { it.isNotEmpty() }?.let { "$number · $it" } ?: number
     val workout =
         (week as? ProgramWeek.Training)?.let { training ->
             library.workouts.firstOrNull {

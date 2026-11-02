@@ -110,7 +110,12 @@ class RestDayReminderTest {
 
         val cancel = shadowOf(context).broadcastIntents.single()
         assertEquals(NotificationsService.NOTIFICATION_EVENT_ACTION, cancel.action)
-        assertTrue(cancel.data.toString().contains("scheduled"))
+        assertEquals("expo-notifications://notifications/scheduled", cancel.data.toString())
+        // The one string that has to match RN's REST_DAY_REMINDER_ID by hand.
+        assertEquals(
+            listOf("kettle-rest-day-reminder"),
+            cancel.getStringArrayExtra(NotificationsService.IDENTIFIERS_KEY)?.toList(),
+        )
     }
 
     // Before the flip that request is the live reminder, and RN's to keep.

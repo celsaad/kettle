@@ -28,6 +28,7 @@ fun writeAtomically(
 ) {
     file.parentFile?.mkdirs()
     val partial = File(file.parentFile, "${file.name}.partial")
+    var landed = false
     try {
         FileOutputStream(partial).use { out ->
             out.write(text.toByteArray())
@@ -35,8 +36,9 @@ fun writeAtomically(
         }
         // File.renameTo() says only no; the name is what the reader can act on.
         if (!partial.renameTo(file)) throw IOException(file.name)
-    } catch (e: IOException) {
-        partial.delete()
-        throw e
+        landed = true
+    } finally {
+        // Whatever stopped it, an IOException or a SecurityException, the half-written file goes.
+        if (!landed) partial.delete()
     }
 }

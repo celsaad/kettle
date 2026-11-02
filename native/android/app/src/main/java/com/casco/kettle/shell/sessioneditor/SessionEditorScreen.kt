@@ -228,15 +228,8 @@ private class Editor(
         field: EntryField,
         text: String,
     ) = update(draft) { forms ->
-        forms.mapIndexed { i, form ->
-            if (i ==
-                row
-            ) {
-                form.copy(values = form.values + (field to text))
-            } else {
-                form
-            }
-        }
+        val edited = forms[row].copy(values = forms[row].values + (field to text))
+        forms.mapIndexed { i, form -> if (i == row) edited else form }
     }
 
     /**

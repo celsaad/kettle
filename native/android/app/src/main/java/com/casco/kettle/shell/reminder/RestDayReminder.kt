@@ -8,6 +8,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
+import android.util.Log
 import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -29,6 +30,7 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
+import java.io.IOException
 
 /**
  * The opt-in rest-day nudge (#221, #236): one pending alarm, sitting a couple of days past the newest
@@ -44,8 +46,8 @@ import kotlinx.datetime.TimeZone
  * nothing. Local only: nothing here transmits (`AGENTS.md` → "Platform constraints").
  */
 fun Context.reconcileReminder(
-    preferences: Preferences?,
     log: SessionLog,
+    preferences: Preferences?,
     now: Instant = Clock.System.now(),
     zone: TimeZone = TimeZone.currentSystemDefault(),
     flips: Set<Flip> = flipsOn,
@@ -56,14 +58,14 @@ fun Context.reconcileReminder(
     // already the right anchor.
     val at = restDayReminderAt(preferences?.restDayReminder == true, log.logged.firstOrNull()?.startedAt, now, zone)
     if (at == null) {
-        alarms.cancel(firing(this))
+        alarms.cancel(alarmIntent(this))
         return
     }
     // Made here as well as when posting, so the channel is in system settings to mute from the moment
     // the reminder is on.
     createChannel(this)
     // The same PendingIntent every time, so this replaces the pending alarm rather than adding one.
-    alarms.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at.toEpochMilliseconds(), firing(this))
+    alarms.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at.toEpochMilliseconds(), alarmIntent(this))
 }
 
 /**
@@ -71,12 +73,9 @@ fun Context.reconcileReminder(
  * every launch, since it's idempotent and needs no flag; gated like the alarm, since before the flip
  * that request is the live reminder. Goes in M7 with expo-notifications.
  */
-fun retireExpoReminder(
-    context: Context,
-    flips: Set<Flip> = flipsOn,
-) {
-    // RN's REST_DAY_REMINDER_ID in src/hooks/safe-notifications.ts.
-    if (Flip.Preferences in flips) NotificationsService.removeScheduledNotification(context, "kettle-rest-day-reminder")
+fun Context.retireExpoReminder(flips: Set<Flip> = flipsOn) {
+    // RN's REST_DAY_REMINDER_ID in src/hooks/safe-notifications.ts. The two share no code, so change both.
+    if (Flip.Preferences in flips) NotificationsService.removeScheduledNotification(this, "kettle-rest-day-reminder")
 }
 
 /** The alarm going off: posts the nudge, or nothing where notifications are denied. */
@@ -129,7 +128,11 @@ class RestDayReminderBootReceiver : BroadcastReceiver() {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val files = DiskFiles(StoragePaths(context.filesDir))
-                context.reconcileReminder(files.preferences(), files.sessionLog())
+                context.reconcileReminder(files.sessionLog(), files.preferences())
+            } catch (e: IOException) {
+                // A file the disk won't give up costs the nudge until the next launch reconciles, not
+                // a crash at boot.
+                Log.w(TAG, "Couldn't read the files to reschedule the reminder", e)
             } finally {
                 pending.finish()
             }
@@ -149,7 +152,7 @@ private fun createChannel(context: Context) =
             .build(),
     )
 
-private fun firing(context: Context): PendingIntent =
+private fun alarmIntent(context: Context): PendingIntent =
     PendingIntent.getBroadcast(
         context,
         0,
@@ -159,3 +162,4 @@ private fun firing(context: Context): PendingIntent =
 
 private const val CHANNEL = "rest-day-reminder"
 private const val NOTIFICATION = 1
+private const val TAG = "RestDayReminder"

@@ -67,7 +67,7 @@ class RestDayReminderTest {
         reminder: Boolean,
         log: SessionLog,
         flips: Set<Flip> = setOf(Flip.Preferences),
-    ) = context.reconcileReminder(preferences(reminder), log, now, zone, flips)
+    ) = context.reconcileReminder(log, preferences(reminder), now, zone, flips)
 
     @Test
     fun `schedules one inexact alarm two days after the newest session`() {

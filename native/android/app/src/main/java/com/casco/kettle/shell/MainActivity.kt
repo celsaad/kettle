@@ -64,7 +64,7 @@ class MainActivity :
     private val paths by lazy { StoragePaths(filesDir) }
 
     private val latestFiles by lazy {
-        LatestFiles(DiskFiles(paths), lifecycleScope) { log, preferences -> reconcileReminder(preferences, log) }
+        LatestFiles(DiskFiles(paths), lifecycleScope) { log, preferences -> reconcileReminder(log, preferences) }
     }
 
     private val navigator =
@@ -99,7 +99,7 @@ class MainActivity :
         // Read by useRestDayReminder, which leaves the reminder to native once the preferences flip is
         // on, so the two never both schedule one. The two share no code, so change both.
         BrownfieldState.set(NATIVE_REMINDER, Flip.Preferences in flipsOn)
-        retireExpoReminder(this)
+        retireExpoReminder()
         // What showReactNativeFragment does, minus the fragment: the surface is
         // one view for the whole app, which ShellLayout places.
         ReactNativeHostManager.shared.initialize(application)

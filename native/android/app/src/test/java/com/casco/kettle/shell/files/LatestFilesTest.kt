@@ -4,11 +4,13 @@ import com.casco.kettle.domain.Library
 import com.casco.kettle.domain.Preferences
 import com.casco.kettle.domain.Session
 import com.casco.kettle.domain.SessionLog
+import com.casco.kettle.domain.ThemePreference
 import com.casco.kettle.domain.UnitSystem
 import com.casco.kettle.shell.nav.TabNavigator
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -201,6 +203,80 @@ class LatestFilesTest {
         )
     }
 
+    /** Native Settings' write (#237): the whole file where RN reads it, and shown before anything rereads. */
+    @Test
+    fun `writing preferences replaces the whole file and shows them at once`() {
+        val chosen = Preferences(UnitSystem.IMPERIAL, ThemePreference.DARK, true, false, "content://tree/a")
+
+        runBlocking { files.writePreferences(chosen) }
+
+        assertEquals(chosen, files.preferences)
+        assertEquals(chosen, DiskFiles(StoragePaths(folder.root)).preferences())
+        assertEquals(
+            listOf("preferences.json"),
+            folder.root
+                .resolve("exercise-tracker")
+                .list()
+                ?.toList(),
+        )
+    }
+
+    /**
+     * As RN's store did: a write the disk refused still holds for the run, so the next read of the old
+     * file mustn't put the old setting back, and the next launch is what loses it.
+     */
+    @Test
+    fun `a refused preferences write holds the choice for the run`() {
+        // A directory where the file goes: the rename onto it fails, and reading it reads as none.
+        folder.root.resolve("exercise-tracker/preferences.json").mkdirs()
+        val heard = mutableListOf<Preferences?>()
+        val files =
+            LatestFiles(
+                DiskFiles(StoragePaths(folder.root)),
+                CoroutineScope(Dispatchers.Unconfined),
+                io = Dispatchers.Unconfined,
+            ) { _, preferences -> heard += preferences }
+        files.reread()
+        val chosen = Preferences(UnitSystem.IMPERIAL, ThemePreference.DARK, true, false, null)
+
+        assertThrows(IOException::class.java) { runBlocking { files.writePreferences(chosen) } }
+        files.reread()
+
+        assertEquals(chosen, files.preferences)
+        // And the reminder reconciles from the same choice the screen shows, or a tab tap cancels the
+        // alarm the toggle just set.
+        assertEquals(chosen, heard.last())
+    }
+
+    /**
+     * A read under way carries the library and the log as well as the preferences, so a write that the
+     * disk then refuses mustn't have cancelled it on the way: nothing would read them again.
+     */
+    @Test
+    fun `a refused preferences write leaves a read under way to land`() {
+        val main = Tasks()
+        val io = Tasks()
+        val disk = FakeFiles().apply { refusing = true }
+        val scope = CoroutineScope(main.asCoroutineDispatcher())
+        val files = LatestFiles(disk, scope, io.asCoroutineDispatcher())
+        files.reread()
+        main.run()
+        disk.log = log("written behind the sheet")
+
+        scope.launch {
+            runCatching {
+                files.writePreferences(
+                    Preferences(UnitSystem.METRIC, ThemePreference.DARK, false, true, null),
+                )
+            }
+        }
+        main.run()
+        io.run()
+        main.run()
+
+        assertEquals(log("written behind the sheet"), files.sessionLog)
+    }
+
     @Test
     fun `a read that finishes after a newer one is dropped`() {
         val main = Tasks()
@@ -237,6 +313,13 @@ class LatestFilesTest {
         override fun deleteSession(id: String) = Unit
 
         override fun writeSession(session: Session) = Unit
+
+        /** A full disk or a revoked folder. */
+        var refusing = false
+
+        override fun writePreferences(preferences: Preferences) {
+            if (refusing) throw IOException("disk full")
+        }
     }
 
     /** A dispatcher that runs nothing until told to, so a test chooses the order reads finish in. */

@@ -6,6 +6,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.core.view.WindowInsetsControllerCompat
+import com.casco.kettle.domain.Preferences
+import com.casco.kettle.domain.ThemePreference
+import com.casco.kettle.domain.UnitSystem
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -30,8 +33,11 @@ class SystemBarIconsTest {
 
     private fun pin(scheme: String) = preferences.writeText("""{"unitSystem":"metric","themePreference":"$scheme"}""")
 
-    private fun show(runnerShown: () -> Boolean = { false }) {
-        compose.setContent { PreferredKettleTheme(preferences, reread = false, runnerShown()) {} }
+    private fun show(
+        latest: () -> Preferences? = { null },
+        runnerShown: () -> Boolean = { false },
+    ) {
+        compose.setContent { PreferredKettleTheme(preferences, latest(), reread = false, runnerShown()) {} }
         compose.waitForIdle()
     }
 
@@ -81,12 +87,23 @@ class SystemBarIconsTest {
     @Test
     fun `the runner gets light icons on the light scheme, until it leaves`() {
         var runner by mutableStateOf(true)
-        show { runner }
+        show(runnerShown = { runner })
 
         assertEquals(false to false, darkIcons())
 
         runner = false
 
         assertEquals(true to true, darkIcons())
+    }
+
+    /** Native Settings' write (#237): the chrome follows it with the sheet still up, no reread needed. */
+    @Test
+    fun `follows the scheme native Settings writes, at once`() {
+        var latest by mutableStateOf<Preferences?>(null)
+        show(latest = { latest })
+
+        latest = Preferences(UnitSystem.METRIC, ThemePreference.DARK, false, true, null)
+
+        assertEquals(false to false, darkIcons())
     }
 }

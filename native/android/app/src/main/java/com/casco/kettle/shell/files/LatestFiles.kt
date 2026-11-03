@@ -9,15 +9,19 @@ import com.casco.kettle.domain.Library
 import com.casco.kettle.domain.Preferences
 import com.casco.kettle.domain.Session
 import com.casco.kettle.domain.SessionLog
+import com.casco.kettle.domain.serializePreferences
 import com.casco.kettle.storage.readLibrary
 import com.casco.kettle.storage.readPreferences
 import com.casco.kettle.storage.readSessionLog
+import com.casco.kettle.storage.writeAtomically
 import com.casco.kettle.storage.writeSessionFile
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.IOException
@@ -42,6 +46,13 @@ interface StoredFiles {
      * [IOException] when the disk refuses, and the last file stays as it was.
      */
     fun writeSession(session: Session)
+
+    /**
+     * Replaces `preferences.json` with [preferences], every field, whole or not at all: native Settings'
+     * write (#237), where native is the file's only writer from the preferences flip. Throws
+     * [IOException] when the disk refuses, and the last file stays as it was.
+     */
+    fun writePreferences(preferences: Preferences)
 }
 
 /**
@@ -56,6 +67,7 @@ class StoragePaths(
     val library = root.resolve("exercises.yaml")
     val preferences = root.resolve("preferences.json")
     val supporter = root.resolve("supporter.json")
+    val backupTargets = root.resolve("backup-targets.json")
 }
 
 /** [StoredFiles] where RN keeps them. */
@@ -76,6 +88,9 @@ class DiskFiles(
     }
 
     override fun writeSession(session: Session) = writeSessionFile(paths.sessions, session)
+
+    override fun writePreferences(preferences: Preferences) =
+        writeAtomically(paths.preferences, serializePreferences(preferences))
 }
 
 /**
@@ -83,7 +98,8 @@ class DiskFiles(
  *
  * RN writes all three until M5: the runner writes new sessions, the session editor edits finished
  * ones (native's [writeSession] once the sessions flip releases), the library editors write the
- * library, and Settings the preferences. Each of those is above the tabs, so the shell rereads when
+ * library, and Settings the preferences (native's [writePreferences] once the preferences flip
+ * releases). Each of those is above the tabs, so the shell rereads when
  * RN hands the tabs back, on a tap onto a native tab or a native sheet coming up (`TabNavigator`'s
  * `reread`), whenever the app starts or stops being seen (`MainActivity`), and when JS says it is up,
  * since a first launch's seed library is written by then and Home, the screen it lands on, would
@@ -125,6 +141,11 @@ class LatestFiles(
 
     private var reading: Job? = null
 
+    private val writingPreferences = Mutex()
+
+    /** The newest choice whose write hasn't landed, held over what a read finds on the disk. */
+    private var unsaved: Preferences? = null
+
     /**
      * Deletes session [id] and reads the log again, so the row goes as the file does. Throws
      * [IOException] when the disk refuses, and the log is left as it was.
@@ -143,6 +164,24 @@ class LatestFiles(
         reread()
     }
 
+    /**
+     * Shows [preferences] at once and writes them over the file: a control that waited on the disk would
+     * feel broken, and the theme follows at once. One write at a time, in the order asked, since two
+     * taps write the same file. Until a write lands, the choice is held over every read, so a read that
+     * raced it can't put the old setting back. Throws [IOException] when the disk refuses, and the
+     * choice still holds for the run, as RN's store held it: the next launch is what loses it.
+     */
+    suspend fun writePreferences(preferences: Preferences) {
+        unsaved = preferences
+        this.preferences = preferences
+        writingPreferences.withLock { withContext(io) { files.writePreferences(preferences) } }
+        // Only this write's own: a newer tap waiting its turn holds its choice until it lands too.
+        if (unsaved === preferences) unsaved = null
+        // A read that took the file before this landed would put the old one back; this one replaces it,
+        // and reads the library and the log again too, so nothing it carried is lost.
+        reread()
+    }
+
     /** Reads all three files again. A read still under way is dropped, so an older one can't land last. */
     fun reread() {
         reading?.cancel()
@@ -150,11 +189,13 @@ class LatestFiles(
             scope.launch {
                 val (log, library, preferences) =
                     withContext(io) { Triple(files.sessionLog(), files.library(), files.preferences()) }
+                // The held choice for the reminder too, so the alarm agrees with the toggle on screen.
+                val shown = unsaved ?: preferences
                 sessionLog = log
-                this@LatestFiles.preferences = preferences
+                this@LatestFiles.preferences = shown
                 if (library != null) this@LatestFiles.library = library
                 reads++
-                onRead(log, preferences)
+                onRead(log, shown)
             }
     }
 }

@@ -422,6 +422,8 @@ class SessionEditorScreenTest {
             written += session
             sessions.replaceAll { if (it.id == session.id) session else it }
         }
+
+        override fun writePreferences(preferences: Preferences) = error("The session editor writes no preferences")
     }
 
     private companion object {

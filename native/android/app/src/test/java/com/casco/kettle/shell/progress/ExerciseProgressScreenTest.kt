@@ -155,6 +155,8 @@ class ExerciseProgressScreenTest {
         override fun deleteSession(id: String) = error("this screen deletes nothing")
 
         override fun writeSession(session: Session) = error("this screen writes no session")
+
+        override fun writePreferences(preferences: Preferences) = error("this screen writes no preferences")
     }
 }
 

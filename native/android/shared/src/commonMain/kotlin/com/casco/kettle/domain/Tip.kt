@@ -100,13 +100,13 @@ fun serializeSupporterState(state: SupporterState): String {
 }
 
 /**
- * `Date.toISOString` for [epochMillis]: UTC, always with milliseconds. By days from the civil
- * calendar, since `:shared`'s common code has no date library and this is its one timestamp. Its
- * numbers are the algorithm's own (days per 4, 100 and 400 years, March-based month lengths), which
- * read worse given names than set beside the published algorithm they come from.
+ * `Date.toISOString` for [epochMillis]: UTC, always with milliseconds. The tip's timestamp, and an
+ * archive's `exported_at` (#237). By days from the civil calendar, since `:shared`'s common code has
+ * no date library. Its numbers are the algorithm's own (days per 4, 100 and 400 years, March-based
+ * month lengths), which read worse given names than set beside the published algorithm they come from.
  */
 @Suppress("MagicNumber")
-internal fun isoInstant(epochMillis: Long): String {
+fun isoInstant(epochMillis: Long): String {
     val days = epochMillis.floorDiv(MILLIS_PER_DAY)
     val millisOfDay = epochMillis.mod(MILLIS_PER_DAY)
     // Howard Hinnant's civil_from_days, with eras of 400 years counted from 0000-03-01.

@@ -50,6 +50,13 @@ class ShellRoutesTest {
         assertEquals(Screen.Rn, routesFor(Flip.entries.toSet() - Flip.Sessions).screenAt(SESSION_EDITOR_PATH))
     }
 
+    /** Settings writes preferences.json, so it is the preferences flip's to release (#237). */
+    @Test
+    fun `Settings is behind the preferences flip`() {
+        assertTrue(routesFor(setOf(Flip.Preferences)).screenAt("/settings") is Screen.Native)
+        assertEquals(Screen.Rn, routesFor(Flip.entries.toSet() - Flip.Preferences).screenAt("/settings"))
+    }
+
     @Test
     fun `the read-only screens are native whatever the flips`() {
         val on = routesFor(Flip.entries.toSet(), writers).screenAt(Tab.History.path)

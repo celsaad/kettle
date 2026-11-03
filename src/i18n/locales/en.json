@@ -391,6 +391,7 @@
     "exportLibrary": "Export library",
     "exportLibraryDetail": "Share exercises.yaml — every exercise, workout and program.",
     "exportUnavailable": "Not available in the browser build.",
+    "exportFailed": "Couldn't share that file: {{detail}}",
     "exportHistory": "Export history",
     "exportHistoryDetail_one": "Share your one logged session as a single file.",
     "exportHistoryDetail_other": "Share all {{count}} logged sessions as a single file.",

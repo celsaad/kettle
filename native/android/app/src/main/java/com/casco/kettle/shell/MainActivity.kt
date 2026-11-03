@@ -6,6 +6,7 @@ import android.content.res.Configuration
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
@@ -32,6 +33,7 @@ import com.casco.kettle.shell.rn.ExpoActivityListeners
 import com.casco.kettle.shell.rn.JsBridge
 import com.casco.kettle.shell.rn.RnFrames
 import com.casco.kettle.shell.rn.withViewAction
+import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.PreferredKettleTheme
 import com.casco.kettle.shell.theme.preferredColors
 import com.facebook.react.modules.core.PermissionAwareActivity
@@ -135,10 +137,17 @@ class MainActivity :
                     ) {
                         PreferredKettleTheme(
                             preferences,
+                            latest = latestFiles.preferences,
                             reread = navigator.barShown,
                             runnerShown = navigator.runnerShown,
-                            content,
-                        )
+                        ) {
+                            // The chrome the shell draws itself follows the scheme Compose draws, so
+                            // Settings' Appearance repaints the × under the finger. Colors from here,
+                            // not the file, which the write may not have reached yet.
+                            val colors = KettleTheme.colors
+                            LaunchedEffect(colors) { sheet?.repaint(colors) }
+                            content()
+                        }
                     }
                 },
             ) { content, shell ->

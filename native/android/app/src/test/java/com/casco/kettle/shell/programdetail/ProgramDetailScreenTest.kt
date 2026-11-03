@@ -272,6 +272,8 @@ class ProgramDetailScreenTest {
         override fun deleteSession(id: String) = error("Program detail deletes nothing")
 
         override fun writeSession(session: Session) = error("Program detail writes no session")
+
+        override fun writePreferences(preferences: Preferences) = error("Program detail writes no preferences")
     }
 }
 

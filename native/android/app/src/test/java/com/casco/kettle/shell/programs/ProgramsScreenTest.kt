@@ -222,6 +222,8 @@ class ProgramsScreenTest {
         override fun deleteSession(id: String) = error("Programs deletes nothing")
 
         override fun writeSession(session: Session) = error("Programs writes no session")
+
+        override fun writePreferences(preferences: Preferences) = error("Programs writes no preferences")
     }
 }
 

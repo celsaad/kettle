@@ -685,6 +685,8 @@ class HomeScreenTest {
         override fun deleteSession(id: String) = error("Home deletes nothing")
 
         override fun writeSession(session: Session) = error("Home writes no session")
+
+        override fun writePreferences(preferences: Preferences) = error("Home writes no preferences")
     }
 
     private fun library(

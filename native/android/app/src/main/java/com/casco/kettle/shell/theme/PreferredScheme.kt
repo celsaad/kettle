@@ -8,6 +8,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.casco.kettle.domain.Preferences
 import com.casco.kettle.domain.ThemePreference
 import com.casco.kettle.domain.parsePreferences
 import kotlinx.coroutines.Dispatchers
@@ -16,13 +17,17 @@ import java.io.File
 import java.io.IOException
 
 /**
- * Whether the chrome draws dark, from Settings → Appearance in [preferences]. RN writes that file and
- * the shell only reads it (M5 moves it to native), so it's read again each time [reread] turns true:
- * the shell passes the bar coming back, since Settings is a modal and the bar is hidden under it.
+ * Whether the chrome draws dark, from Settings → Appearance in [preferences]. RN Settings writes that
+ * file until the preferences flip, so it's read again each time [reread] turns true: the shell passes
+ * the bar coming back, since Settings is a modal and the bar is hidden under it. Native Settings
+ * writes it through `LatestFiles` (#237), whose [latest] the chrome follows the moment it changes,
+ * with the sheet still up; null there is a read that found none, or none landed yet, and the file's
+ * own read stands.
  */
 @Composable
 fun rememberPreferredDarkTheme(
     preferences: File,
+    latest: Preferences?,
     reread: Boolean,
 ): Boolean {
     // Read once on the main thread, so the first frame is already the right scheme.
@@ -30,6 +35,7 @@ fun rememberPreferredDarkTheme(
     LaunchedEffect(reread) {
         if (reread) preference = withContext(Dispatchers.IO) { readThemePreference(preferences) }
     }
+    LaunchedEffect(latest?.themePreference) { latest?.let { preference = it.themePreference } }
     return isDark(preference, systemDark = isSystemInDarkTheme())
 }
 

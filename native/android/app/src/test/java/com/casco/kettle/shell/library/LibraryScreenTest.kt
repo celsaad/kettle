@@ -270,6 +270,8 @@ class LibraryScreenTest {
         override fun deleteSession(id: String) = error("Library deletes nothing")
 
         override fun writeSession(session: Session) = error("Library writes no session")
+
+        override fun writePreferences(preferences: Preferences) = error("Library writes no preferences")
     }
 }
 

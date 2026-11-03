@@ -17,8 +17,6 @@ import { getBrownfield, isHosted } from '@/hooks/brownfield-module';
 import { onFilesChanged } from '@/state/files-changed';
 import { useSessionHistoryStore } from '@/state/session-history-store';
 
-export { isHosted };
-
 let subscribed = false;
 
 /**

@@ -4,6 +4,9 @@ import android.Manifest
 import android.app.AlarmManager
 import android.app.NotificationManager
 import android.content.Intent
+import android.content.IntentFilter
+import android.os.Looper
+import androidx.core.content.ContextCompat
 import com.casco.kettle.domain.Preferences
 import com.casco.kettle.domain.Session
 import com.casco.kettle.domain.SessionLog
@@ -105,6 +108,30 @@ class RestDayReminderTest {
         assertEquals(
             listOf("kettle-rest-day-reminder"),
             cancel.getStringArrayExtra(NotificationsService.IDENTIFIERS_KEY)?.toList(),
+        )
+    }
+
+    /**
+     * A 0.13 upgrade rebooted before its first launch still holds the Expo request, which Expo's own
+     * boot receiver puts back beside the native alarm the boot schedules.
+     */
+    @Test
+    fun `drops 0_13's Expo reminder at boot, before any launch`() {
+        // Registered here because Robolectric dispatches to runtime receivers, not the manifest's.
+        ContextCompat.registerReceiver(
+            context,
+            RestDayReminderBootReceiver(),
+            IntentFilter(Intent.ACTION_BOOT_COMPLETED),
+            ContextCompat.RECEIVER_EXPORTED,
+        )
+        context.sendBroadcast(Intent(Intent.ACTION_BOOT_COMPLETED))
+        shadowOf(Looper.getMainLooper()).idle()
+
+        val cancels =
+            shadowOf(context).broadcastIntents.filter { it.action == NotificationsService.NOTIFICATION_EVENT_ACTION }
+        assertEquals(
+            listOf("kettle-rest-day-reminder"),
+            cancels.single().getStringArrayExtra(NotificationsService.IDENTIFIERS_KEY)?.toList(),
         )
     }
 

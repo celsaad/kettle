@@ -106,13 +106,24 @@ fun ContentResolver.keepGrant(tree: Uri): Boolean =
 
 /**
  * [sessions] into the folder at [folderUri] through SAF, now: Settings' Back up now and the finish
- * backup both. Blocking, since a folder backed by a cloud provider can take seconds.
+ * backup both. Blocking, since a folder backed by a cloud provider can take seconds, and
+ * [oneBackupAtATime], since either can start while the other is still writing.
  */
 fun Context.backUp(
     paths: StoragePaths,
     folderUri: String,
     sessions: List<Session>,
-): BackupFailure? {
-    val folder = SafBackupFolder(contentResolver, folderUri.toUri())
-    return backUpNow(folder, paths.library, paths.backupTargets, sessions, isoInstant(System.currentTimeMillis()))
-}
+): BackupFailure? =
+    oneBackupAtATime {
+        val folder = SafBackupFolder(contentResolver, folderUri.toUri())
+        backUpNow(folder, paths.library, paths.backupTargets, sessions, isoInstant(System.currentTimeMillis()))
+    }
+
+/**
+ * Runs [backUp] while no other backup runs: two at once write the same documents and
+ * `backup-targets.json`, and the second can create a duplicate the first's record never names. A
+ * lock rather than a coroutine mutex, since every caller is already blocking off the main thread.
+ */
+internal fun <T> oneBackupAtATime(backUp: () -> T): T = synchronized(backupLock, backUp)
+
+private val backupLock = Any()

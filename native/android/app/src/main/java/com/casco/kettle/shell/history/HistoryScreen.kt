@@ -87,16 +87,9 @@ fun HistoryRoute() {
             // The raw log for Export all, as Settings' Export history: an archive is the user's own files.
             export = { id ->
                 scope.launch {
-                    val share = share ?: return@launch
-                    logShareRefused(
-                        if (id ==
-                            null
-                        ) {
-                            share.history(files.sessionLog?.sessions.orEmpty())
-                        } else {
-                            share.session(id)
-                        },
-                    )
+                    val sheet = share ?: return@launch
+                    val sessions = files.sessionLog?.sessions.orEmpty()
+                    logShareRefused(if (id == null) sheet.history(sessions) else sheet.session(id))
                 }
             },
             sessionsChanged = { JsBridge.filesChanged(FileKind.SESSIONS) },

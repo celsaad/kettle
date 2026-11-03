@@ -11,8 +11,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 
 /**
  * The one channel to JS, for the life of the process: the JS runtime outlives any activity (the M0
@@ -100,12 +98,6 @@ object JsBridge {
     /** Where the finish backup runs: off both JS's thread and the main one, for the life of the process. */
     private val background = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-    /**
-     * One finish backup at a time: two sessions finished in quick succession would otherwise write the
-     * same documents and `backup-targets.json` at once.
-     */
-    private val backingUp = Mutex()
-
     /** JS's messages arrive on its own thread. */
     private fun receive(message: Map<String, Any?>) {
         channel.receive(message)
@@ -129,9 +121,13 @@ object JsBridge {
             // answer is what src/hooks/safe-brownfield.ts hands the history store. The two share no code,
             // so change both.
             "sessionFinished" -> {
-                backUpFinishedSession?.let { backUp ->
+                val backUp = backUpFinishedSession
+                if (backUp == null) {
+                    // MainActivity sets it before any surface opens, so this is a shell wired wrong.
+                    Log.w(TAG, "A session finished with no backup to run; nothing was backed up")
+                } else {
                     background.launch {
-                        val failed = backingUp.withLock { backUp() } ?: return@launch
+                        val failed = backUp() ?: return@launch
                         channel.send(mapOf("type" to "backupResult", "failed" to failed))
                     }
                 }

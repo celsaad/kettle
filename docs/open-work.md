@@ -109,8 +109,8 @@ wanting states and assignees, it wants GitHub issues instead.
     line each editor already had. Import was the only screen that ever did this, and it's the pattern
     the rest copied.
 
-  Left alone deliberately: `savePreferences` already returns a boolean instead of throwing, and the tip
-  store already checks it.
+  Left alone deliberately: `savePreferences` already returned a boolean instead of throwing, and the tip
+  store checked it. (Both went native in the preferences flip, #238.)
 
 - ✅ **Audit for refactoring opportunities — surveyed, and the answer is mostly "don't".** Held to the
   bar the `slugify` dedup set: only where the copies have actually drifted or would. Recorded because

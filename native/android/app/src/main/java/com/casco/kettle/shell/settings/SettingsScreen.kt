@@ -34,7 +34,9 @@ import com.casco.kettle.shell.theme.MaxContentWidth
 import com.casco.kettle.shell.theme.Spacing
 import com.casco.kettle.storage.BackupFailure
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.IOException
 
 /** The folder picker's answer. Backing out is [Cancelled], never a failure: it's how a mis-tap closes. */
@@ -200,14 +202,18 @@ internal class PreferencesSaver(
     suspend fun write(change: (Preferences) -> Preferences): Written {
         // Read when the write runs, not when it was asked for, so a second quick tap builds on the first.
         val next = change(preferencesOrDefault(files.preferences, units))
+        // Past the sheet closing, as the session editor's Save: a write cut off there could land with
+        // RN never told, and its choice held over every read for the rest of the run.
         val landed =
-            try {
-                files.writePreferences(next)
-                true
-            } catch (_: IOException) {
-                false
+            withContext(NonCancellable) {
+                try {
+                    files.writePreferences(next)
+                    changed()
+                    true
+                } catch (_: IOException) {
+                    false
+                }
             }
-        if (landed) changed()
         return Written(next, landed)
     }
 

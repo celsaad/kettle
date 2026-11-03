@@ -168,8 +168,8 @@ class LatestFiles(
      * Shows [preferences] at once and writes them over the file: a control that waited on the disk would
      * feel broken, and the theme follows at once. One write at a time, in the order asked, since two
      * taps write the same file. Until a write lands, the choice is held over every read, so a read that
-     * raced it can't put the old setting back. Throws [IOException] when the disk refuses, and the choice still holds
-     * for the run, as RN's store held it: the next launch is what loses it.
+     * raced it can't put the old setting back. Throws [IOException] when the disk refuses, and the
+     * choice still holds for the run, as RN's store held it: the next launch is what loses it.
      */
     suspend fun writePreferences(preferences: Preferences) {
         unsaved = preferences
@@ -189,11 +189,13 @@ class LatestFiles(
             scope.launch {
                 val (log, library, preferences) =
                     withContext(io) { Triple(files.sessionLog(), files.library(), files.preferences()) }
+                // The held choice for the reminder too, so the alarm agrees with the toggle on screen.
+                val shown = unsaved ?: preferences
                 sessionLog = log
-                this@LatestFiles.preferences = unsaved ?: preferences
+                this@LatestFiles.preferences = shown
                 if (library != null) this@LatestFiles.library = library
                 reads++
-                onRead(log, preferences)
+                onRead(log, shown)
             }
     }
 }

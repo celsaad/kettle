@@ -10,6 +10,7 @@ import com.casco.kettle.shell.nav.TabNavigator
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -228,6 +229,13 @@ class LatestFilesTest {
     fun `a refused preferences write holds the choice for the run`() {
         // A directory where the file goes: the rename onto it fails, and reading it reads as none.
         folder.root.resolve("exercise-tracker/preferences.json").mkdirs()
+        val heard = mutableListOf<Preferences?>()
+        val files =
+            LatestFiles(
+                DiskFiles(StoragePaths(folder.root)),
+                CoroutineScope(Dispatchers.Unconfined),
+                io = Dispatchers.Unconfined,
+            ) { _, preferences -> heard += preferences }
         files.reread()
         val chosen = Preferences(UnitSystem.IMPERIAL, ThemePreference.DARK, true, false, null)
 
@@ -235,6 +243,38 @@ class LatestFilesTest {
         files.reread()
 
         assertEquals(chosen, files.preferences)
+        // And the reminder reconciles from the same choice the screen shows, or a tab tap cancels the
+        // alarm the toggle just set.
+        assertEquals(chosen, heard.last())
+    }
+
+    /**
+     * A read under way carries the library and the log as well as the preferences, so a write that the
+     * disk then refuses mustn't have cancelled it on the way: nothing would read them again.
+     */
+    @Test
+    fun `a refused preferences write leaves a read under way to land`() {
+        val main = Tasks()
+        val io = Tasks()
+        val disk = FakeFiles().apply { refusing = true }
+        val scope = CoroutineScope(main.asCoroutineDispatcher())
+        val files = LatestFiles(disk, scope, io.asCoroutineDispatcher())
+        files.reread()
+        main.run()
+        disk.log = log("written behind the sheet")
+
+        scope.launch {
+            runCatching {
+                files.writePreferences(
+                    Preferences(UnitSystem.METRIC, ThemePreference.DARK, false, true, null),
+                )
+            }
+        }
+        main.run()
+        io.run()
+        main.run()
+
+        assertEquals(log("written behind the sheet"), files.sessionLog)
     }
 
     @Test
@@ -274,7 +314,12 @@ class LatestFilesTest {
 
         override fun writeSession(session: Session) = Unit
 
-        override fun writePreferences(preferences: Preferences) = Unit
+        /** A full disk or a revoked folder. */
+        var refusing = false
+
+        override fun writePreferences(preferences: Preferences) {
+            if (refusing) throw IOException("disk full")
+        }
     }
 
     /** A dispatcher that runs nothing until told to, so a test chooses the order reads finish in. */

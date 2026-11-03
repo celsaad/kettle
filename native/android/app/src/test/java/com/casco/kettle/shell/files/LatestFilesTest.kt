@@ -220,6 +220,23 @@ class LatestFilesTest {
         )
     }
 
+    /**
+     * As RN's store did: a write the disk refused still holds for the run, so the next read of the old
+     * file mustn't put the old setting back, and the next launch is what loses it.
+     */
+    @Test
+    fun `a refused preferences write holds the choice for the run`() {
+        // A directory where the file goes: the rename onto it fails, and reading it reads as none.
+        folder.root.resolve("exercise-tracker/preferences.json").mkdirs()
+        files.reread()
+        val chosen = Preferences(UnitSystem.IMPERIAL, ThemePreference.DARK, true, false, null)
+
+        assertThrows(IOException::class.java) { runBlocking { files.writePreferences(chosen) } }
+        files.reread()
+
+        assertEquals(chosen, files.preferences)
+    }
+
     @Test
     fun `a read that finishes after a newer one is dropped`() {
         val main = Tasks()

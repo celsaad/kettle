@@ -545,7 +545,7 @@ class SettingsScreenTest {
     // a11y
 
     @Test
-    fun `every control is a button, 44dp at least, and sections are headings`() {
+    fun `every control is a button, 48dp at least, and sections are headings`() {
         show(withFolder(FOLDER))
 
         for (label in listOf("Claro", "Pasta de backup", "Fazer backup agora", "Escrever para o desenvolvedor")) {
@@ -553,7 +553,7 @@ class SettingsScreenTest {
                 .onAllNodes(hasText(label) and isButton)[0]
                 .performScrollTo()
                 .assert(isButton)
-                .assertHeightIsAtLeast(44.dp)
+                .assertHeightIsAtLeast(48.dp)
         }
         compose.onNode(hasText("APARÊNCIA") and isHeading()).assertExists()
         compose.onNodeWithText("Configurações").assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.Heading))

@@ -96,14 +96,14 @@ internal fun Reminder(
 }
 
 @Composable
-internal fun Data(
+internal fun DataSection(
     sessions: List<Session>,
     scope: CoroutineScope,
     export: ExportActions,
     openImport: () -> Unit,
 ) = Section(R.string.settings_data) {
     var failure by remember { mutableStateOf<String?>(null) }
-    val run = { exporter: suspend () -> String? ->
+    val share = { exporter: suspend () -> String? ->
         failure = null
         scope.launch { failure = exporter() }
     }
@@ -114,7 +114,7 @@ internal fun Data(
         onClick = openImport,
     )
     ActionRow(stringResource(R.string.settings_exportLibrary), stringResource(R.string.settings_exportLibraryDetail)) {
-        run(export.library)
+        share(export.library)
     }
     // Disabled rather than hidden with nothing logged: the row answers "is my log exportable?" for
     // someone asking before they start.
@@ -127,7 +127,7 @@ internal fun Data(
             pluralText(R.plurals.settings_exportHistoryDetail, R.string.settings_exportHistoryDetail_zero, count)
         },
         enabled = count > 0,
-    ) { run { export.history(sessions) } }
+    ) { share { export.history(sessions) } }
     failure?.let { Outcome(stringResource(R.string.settings_exportFailed, it), accent = true) }
     Caption(stringResource(R.string.settings_sessionsStayNote))
 }

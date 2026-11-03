@@ -6,6 +6,7 @@ import android.net.Uri
 import android.provider.DocumentsContract
 import android.provider.DocumentsContract.Document
 import androidx.core.net.toUri
+import com.casco.kettle.shell.export.YAML_MIME_TYPE
 import com.casco.kettle.storage.BackupDocument
 import com.casco.kettle.storage.BackupFolder
 import java.io.FileNotFoundException
@@ -62,7 +63,7 @@ class SafBackupFolder(
 
     /** Uniquified by the provider where [name] exists, which is why the backup looks before it creates. */
     override fun create(name: String): BackupDocument {
-        val uri = DocumentsContract.createDocument(resolver, folder, MIME_TYPE, name) ?: throw IOException(name)
+        val uri = DocumentsContract.createDocument(resolver, folder, YAML_MIME_TYPE, name) ?: throw IOException(name)
         return BackupDocument(name, uri.toString())
     }
 
@@ -79,10 +80,6 @@ class SafBackupFolder(
     ) {
         val stream = resolver.openOutputStream(document.uri.toUri(), "wt") ?: throw IOException(document.name)
         stream.use { it.write(text.toByteArray()) }
-    }
-
-    private companion object {
-        const val MIME_TYPE = "application/x-yaml"
     }
 }
 

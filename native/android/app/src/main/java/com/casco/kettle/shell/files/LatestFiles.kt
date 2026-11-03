@@ -143,6 +143,9 @@ class LatestFiles(
 
     private val writingPreferences = Mutex()
 
+    /** The newest choice whose write hasn't landed, held over what a read finds on the disk. */
+    private var unsaved: Preferences? = null
+
     /**
      * Deletes session [id] and reads the log again, so the row goes as the file does. Throws
      * [IOException] when the disk refuses, and the log is left as it was.
@@ -163,17 +166,19 @@ class LatestFiles(
 
     /**
      * Shows [preferences] at once and writes them over the file: a control that waited on the disk would
-     * feel broken, and the theme follows at once. A read under way is dropped, so it can't put back
-     * what was there. One write at a time, in the order asked, since two taps write the same file.
-     * Throws [IOException] when the disk refuses, and the choice holds for this run only, as RN's store
-     * held it: nothing rereads after a refused write.
+     * feel broken, and the theme follows at once. One write at a time, in the order asked, since two
+     * taps write the same file. Until a write lands, the choice is held over every read, so a read that
+     * raced it can't put the old setting back. Throws [IOException] when the disk refuses, and the choice still holds
+     * for the run, as RN's store held it: the next launch is what loses it.
      */
     suspend fun writePreferences(preferences: Preferences) {
-        reading?.cancel()
+        unsaved = preferences
         this.preferences = preferences
         writingPreferences.withLock { withContext(io) { files.writePreferences(preferences) } }
-        // A read that started while this one waited its turn may have read the file before it: one now
-        // reads what landed.
+        // Only this write's own: a newer tap waiting its turn holds its choice until it lands too.
+        if (unsaved === preferences) unsaved = null
+        // A read that took the file before this landed would put the old one back; this one replaces it,
+        // and reads the library and the log again too, so nothing it carried is lost.
         reread()
     }
 
@@ -185,7 +190,7 @@ class LatestFiles(
                 val (log, library, preferences) =
                     withContext(io) { Triple(files.sessionLog(), files.library(), files.preferences()) }
                 sessionLog = log
-                this@LatestFiles.preferences = preferences
+                this@LatestFiles.preferences = unsaved ?: preferences
                 if (library != null) this@LatestFiles.library = library
                 reads++
                 onRead(log, preferences)

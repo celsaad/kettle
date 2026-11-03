@@ -134,7 +134,7 @@ fun SettingsScreen(
                 color = KettleTheme.colors.text,
             )
             PreferenceSections(preferences, save, actions.reminder)
-            Data(sessions, scope, actions.export) { actions.open(IMPORT_PATH) }
+            DataSection(sessions, scope, actions.export) { actions.open(IMPORT_PATH) }
             SupportSection(supporter) { actions.open(SUPPORT_PATH) }
             Section(R.string.settings_files) {
                 if (canChooseFolder) {

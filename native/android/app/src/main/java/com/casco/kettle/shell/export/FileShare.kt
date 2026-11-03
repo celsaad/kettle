@@ -5,6 +5,7 @@ import android.content.ActivityNotFoundException
 import android.content.ClipData
 import android.content.Intent
 import androidx.core.content.FileProvider
+import com.casco.kettle.domain.HISTORY_BACKUP_NAME
 import com.casco.kettle.domain.Session
 import com.casco.kettle.domain.isoInstant
 import com.casco.kettle.domain.serializeSessionArchiveYaml
@@ -41,13 +42,13 @@ class FileShare(
      * hands over one file, so a whole log can't arrive as the directory it's kept in.
      */
     suspend fun history(sessions: List<Session>): String? {
-        val file = File(activity.cacheDir, "$EXPORTS/$HISTORY_NAME")
+        val file = File(activity.cacheDir, "$EXPORTS/$HISTORY_BACKUP_NAME")
         try {
             withContext(Dispatchers.IO) {
                 writeAtomically(file, serializeSessionArchiveYaml(sessions, isoInstant(System.currentTimeMillis())))
             }
         } catch (error: IOException) {
-            return error.message ?: error.toString()
+            return error.reason()
         }
         return share(file, activity.getString(R.string.settings_shareHistoryTitle))
     }
@@ -65,7 +66,7 @@ class FileShare(
             val uri = FileProvider.getUriForFile(activity, "${activity.packageName}$AUTHORITY", file)
             val send =
                 Intent(Intent.ACTION_SEND).apply {
-                    type = MIME_TYPE
+                    type = YAML_MIME_TYPE
                     putExtra(Intent.EXTRA_STREAM, uri)
                     // The clip as well as the extra: the grant reaches the app chosen through it.
                     clipData = ClipData.newRawUri(file.name, uri)
@@ -74,22 +75,26 @@ class FileShare(
             activity.startActivity(Intent.createChooser(send, title))
             null
         } catch (error: FileNotFoundException) {
-            error.message ?: error.toString()
+            error.reason()
         } catch (error: ActivityNotFoundException) {
-            error.message ?: error.toString()
+            error.reason()
         } catch (error: IllegalArgumentException) {
             // getUriForFile's refusal of a path outside res/xml/shared_files.xml.
-            error.message ?: error.toString()
+            error.reason()
         }
 
     private companion object {
         /** The manifest's `ShellFileProvider` authority, after the package name. */
         const val AUTHORITY = ".shell.files"
         const val EXPORTS = "exports"
-        const val HISTORY_NAME = "kettle-history.yaml"
-        const val MIME_TYPE = "application/x-yaml"
     }
 }
+
+/** What both the share and the backup folder call a library or an archive: RN's, kept. */
+internal const val YAML_MIME_TYPE = "application/x-yaml"
+
+/** The reason to show for [this], which a platform exception doesn't always carry as a message. */
+private fun Throwable.reason() = message ?: toString()
 
 /**
  * The shell's own, so its paths and authority can't collide with a library's provider in the merged

@@ -1,6 +1,9 @@
 package com.casco.kettle.domain
 
-/** Prefixed because the destination is a folder of the user's own files, not an app sandbox. */
+/**
+ * Prefixed because the destination is a folder of the user's own files, not an app sandbox. The history
+ * export shares its archive under the same name, so a backup and an export arrive as the same file.
+ */
 const val LIBRARY_BACKUP_NAME = "kettle-library.yaml"
 const val HISTORY_BACKUP_NAME = "kettle-history.yaml"
 

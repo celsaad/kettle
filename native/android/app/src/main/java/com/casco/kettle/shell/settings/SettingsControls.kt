@@ -79,7 +79,7 @@ internal fun Outcome(
 
 /**
  * A choice of a few, as RN's `Segmented`: each a button carrying its selected state, so TalkBack says
- * which one holds. 44dp, never a fixed height, so it grows with the reader's text size.
+ * which one holds. 48dp, never a fixed height, so it grows with the reader's text size.
  */
 @Composable
 internal fun <T> Segmented(
@@ -103,7 +103,7 @@ internal fun <T> Segmented(
             Box(
                 Modifier
                     .weight(1f)
-                    .heightIn(min = 44.dp)
+                    .heightIn(min = 48.dp)
                     .clip(RoundedCornerShape(SEGMENT_RADIUS))
                     .background(if (active) colors.text else colors.backgroundElement)
                     .selectable(selected = active, role = Role.Button) { onSelect(value) },

@@ -1,6 +1,7 @@
 package com.casco.kettle.shell.files
 
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
@@ -114,6 +115,14 @@ class LatestFiles(
     var preferences by mutableStateOf<Preferences?>(null)
         private set
 
+    /**
+     * How many reads have landed. A read of unchanged files sets nothing, since the files compare
+     * equal, so this is what a screen keys on when its answer also depends on the clock: Home's card,
+     * which a turned day moves on (#235).
+     */
+    var reads by mutableIntStateOf(0)
+        private set
+
     private var reading: Job? = null
 
     /**
@@ -144,6 +153,7 @@ class LatestFiles(
                 sessionLog = log
                 this@LatestFiles.preferences = preferences
                 if (library != null) this@LatestFiles.library = library
+                reads++
                 onRead(log, preferences)
             }
     }

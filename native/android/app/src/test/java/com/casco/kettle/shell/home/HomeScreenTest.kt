@@ -59,6 +59,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import kotlin.time.Duration.Companion.days
 
 /**
  * Home (#235), case for case from RN's `workouts-list.test.tsx`, `workouts-next-up.test.tsx` and
@@ -106,7 +107,7 @@ class HomeScreenTest {
                         latest,
                         reselects,
                         open = { how, path, params -> opened += Triple(how, path, params) },
-                        clock = FixedClock,
+                        clock = clock,
                     )
                 }
             }
@@ -591,6 +592,24 @@ class HomeScreenTest {
         text("Iniciar treino").assertExists()
     }
 
+    /**
+     * The app returning reads the files again, and that has to move the card on even when nothing in
+     * them changed: the day turning is what clears a rest day, and a read of equal files changes no
+     * state the card is keyed on.
+     */
+    @Test
+    fun `a rest day clears on a read of unchanged files once its day has gone`() {
+        val latest = show(restDayProgramFiles())
+        text("Dia de descanso").assertExists()
+
+        clock.at = Now + 2.days
+        latest.reread()
+        compose.waitForIdle()
+
+        text("Dia de descanso").assertDoesNotExist()
+        text("PRÓXIMO · Semana 1 · Day 3").assertExists()
+    }
+
     @Test
     fun `a rest day leaves the empty session available, so it is never a dead end`() {
         show(restDayProgramFiles())
@@ -704,9 +723,13 @@ class HomeScreenTest {
     private fun programSession(day: String) =
         Session(1, "s", "push-day", "base", 1, day, Now.toString(), Now.toString(), listOf(oneSet))
 
-    private object FixedClock : Clock {
-        override fun now() = Now
-    }
+    /** [Now], until a test moves it on. */
+    private val clock =
+        object : Clock {
+            var at = Now
+
+            override fun now() = at
+        }
 }
 
 private val Now = Instant.parse("2026-07-29T18:00:00Z")

@@ -111,9 +111,10 @@ fun HomeScreen(
     val all = library?.workouts.orEmpty()
     val matching = remember(all, query) { rankByName(all, query) { it.name } }
     // Logged, not raw: a session of nothing but zeros is a skipped workout, and mustn't move the
-    // program on. Read again with each read of the files, which is also when the day may have turned.
+    // program on. Worked out again on every read, the app's return included, changed files or not,
+    // since a turned day alone moves a rest day on. RN's card stayed put until a file changed.
     val sessions = log?.logged.orEmpty()
-    val nextUp = remember(library, log) { library?.let { nextUpView(it, sessions, clock) } }
+    val nextUp = remember(library, log, files.reads) { library?.let { nextUpView(it, sessions, clock) } }
 
     Box(Modifier.fillMaxSize().statusBarsPadding().homeScreenTag(), contentAlignment = Alignment.TopCenter) {
         LazyColumn(

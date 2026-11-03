@@ -143,7 +143,7 @@ class HomeScreenTest {
     }
 
     @Test
-    fun `search narrows the list to matching names`() {
+    fun `search narrows the list to one, and keeps the field to clear it with`() {
         show(listFiles())
 
         search("bench")

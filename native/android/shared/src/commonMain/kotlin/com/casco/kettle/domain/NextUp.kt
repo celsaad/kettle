@@ -52,7 +52,7 @@ sealed interface NextUp {
  * first slot when none did or that slot is gone. Not a count of sessions, which drifts the moment a
  * week is redone or started out of turn from Program detail. [sessions] is newest first.
  */
-fun nextWeekAfter(
+internal fun nextWeekAfter(
     program: Program,
     sessions: List<Session>,
 ): ProgramWeek {

@@ -1,7 +1,6 @@
 package com.casco.kettle.domain
 
 import kotlin.math.roundToLong
-import kotlin.reflect.KClass
 
 /**
  * What a workout is made of, as `WorkoutShape` in TS was: structured rather than a sentence, so the
@@ -9,9 +8,28 @@ import kotlin.reflect.KClass
  */
 data class WorkoutShape(
     val blockCount: Int,
-    val types: List<KClass<out ExerciseConfig>>,
+    val types: List<ExerciseType>,
     val estimatedMinutes: Long,
 )
+
+/**
+ * An exercise's type, the YAML's `type:`, as its own value so a `when` over it is checked for every
+ * one: a type added to [ExerciseConfig] fails to compile here and in each label, rather than reading
+ * as some other type.
+ */
+enum class ExerciseType { Hiit, Emom, Amrap, Reps, TimedHold, Cardio, Rest }
+
+val ExerciseConfig.type: ExerciseType
+    get() =
+        when (this) {
+            is ExerciseConfig.Hiit -> ExerciseType.Hiit
+            is ExerciseConfig.Emom -> ExerciseType.Emom
+            is ExerciseConfig.Amrap -> ExerciseType.Amrap
+            is ExerciseConfig.Reps -> ExerciseType.Reps
+            is ExerciseConfig.TimedHold -> ExerciseType.TimedHold
+            is ExerciseConfig.Cardio -> ExerciseType.Cardio
+            is ExerciseConfig.Rest -> ExerciseType.Rest
+        }
 
 /** As `workoutShape` in RN's `state/selectors/workout-shape.ts`, which went with RN Home (#235). */
 fun workoutShape(
@@ -19,10 +37,10 @@ fun workoutShape(
     exercises: List<Exercise>,
 ): WorkoutShape {
     val byId = exercises.associateBy { it.id }
-    val types = linkedSetOf<KClass<out ExerciseConfig>>()
+    val types = linkedSetOf<ExerciseType>()
     var totalSec = 0.0
     for (block in workout.blocks) {
-        blockConfigs(block, byId).filter { it !is ExerciseConfig.Rest }.forEach { types += it::class }
+        blockConfigs(block, byId).filter { it !is ExerciseConfig.Rest }.forEach { types += it.type }
         totalSec += blockSeconds(block, byId)
     }
     return WorkoutShape(workout.blocks.size, types.toList(), maxOf(1, (totalSec / SECONDS_PER_MINUTE).roundToLong()))

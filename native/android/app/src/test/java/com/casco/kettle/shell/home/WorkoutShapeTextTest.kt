@@ -3,7 +3,7 @@ package com.casco.kettle.shell.home
 import androidx.compose.material3.Text
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
-import com.casco.kettle.domain.ExerciseConfig
+import com.casco.kettle.domain.ExerciseType
 import com.casco.kettle.domain.WorkoutShape
 import org.junit.Rule
 import org.junit.Test
@@ -32,18 +32,18 @@ class WorkoutShapeTextTest {
     // The bug RN's replaced: a count interpolated straight into "N blocks" read "1 blocks".
     @Test
     fun `says one block for a single-block workout`() {
-        assertReads(WorkoutShape(1, listOf(ExerciseConfig.Reps::class), 5), "1 bloco · repetições · ~5 min")
+        assertReads(WorkoutShape(1, listOf(ExerciseType.Reps), 5), "1 bloco · repetições · ~5 min")
     }
 
     @Test
     fun `lists a single type bare`() {
-        assertReads(WorkoutShape(3, listOf(ExerciseConfig.Reps::class), 9), "3 blocos · repetições · ~9 min")
+        assertReads(WorkoutShape(3, listOf(ExerciseType.Reps), 9), "3 blocos · repetições · ~9 min")
     }
 
     @Test
     fun `lists several types as mixed, in the order they came`() {
         assertReads(
-            WorkoutShape(4, listOf(ExerciseConfig.TimedHold::class, ExerciseConfig.Reps::class), 14),
+            WorkoutShape(4, listOf(ExerciseType.TimedHold, ExerciseType.Reps), 14),
             "4 blocos · misto: isometria + repetições · ~14 min",
         )
     }

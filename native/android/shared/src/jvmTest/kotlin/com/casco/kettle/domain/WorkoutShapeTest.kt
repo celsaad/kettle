@@ -39,7 +39,7 @@ class WorkoutShapeTest {
     fun `lists each type once, however many blocks use it`() {
         val shape = shapeOf(one("pullups"), one("pullups"), one("burpees"))
 
-        assertEquals(listOf(ExerciseConfig.Reps::class, ExerciseConfig.Hiit::class), shape.types)
+        assertEquals(listOf(ExerciseType.Reps, ExerciseType.Hiit), shape.types)
     }
 
     // Rest takes real time, so it counts towards the estimate, but a workout of squats and rests is a
@@ -49,7 +49,7 @@ class WorkoutShapeTest {
         // 3 × (40 + 20) = 180s, then 90s: 270s, rounded.
         val shape = shapeOf(one("burpees"), one("breather"))
 
-        assertEquals(listOf(ExerciseConfig.Hiit::class), shape.types)
+        assertEquals(listOf(ExerciseType.Hiit), shape.types)
         assertEquals(5, shape.estimatedMinutes)
     }
 
@@ -90,7 +90,7 @@ class WorkoutShapeTest {
         val shape = shapeOf(one("ghost"), one("burpees"))
 
         assertEquals(2, shape.blockCount)
-        assertEquals(listOf(ExerciseConfig.Hiit::class), shape.types)
+        assertEquals(listOf(ExerciseType.Hiit), shape.types)
         assertEquals(3, shape.estimatedMinutes)
     }
 

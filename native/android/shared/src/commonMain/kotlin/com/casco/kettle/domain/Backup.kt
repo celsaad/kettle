@@ -9,11 +9,11 @@ const val HISTORY_BACKUP_NAME = "kettle-history.yaml"
 
 /**
  * The last path segment of a SAF tree URI, decoded: `primary:Documents/Kettle` becomes
- * `Documents/Kettle`, `backupFolderLabel` in `src/storage/backup.ts`. Only for the user to recognise;
- * nothing reads it back, and it's their own path, so it renders verbatim. A tree URI's document id is
- * `<volume>:<path>`, so the cut is at the colon after `/tree/`, never the scheme's own. With no volume
- * marker there's no path to show, and the decoded URI is the honest answer; one that won't decode is
- * answered as it is.
+ * `Documents/Kettle`, as RN's `backupFolderLabel` did until the preferences flip (#238). Only for the
+ * user to recognise; nothing reads it back, and it's their own path, so it renders verbatim. A tree
+ * URI's document id is `<volume>:<path>`, so the cut is at the colon after `/tree/`, never the scheme's
+ * own. With no volume marker there's no path to show, and the decoded URI is the honest answer; one
+ * that won't decode is answered as it is.
  */
 fun backupFolderLabel(folderUri: String): String {
     val decoded = decodeUriComponent(folderUri) ?: return folderUri

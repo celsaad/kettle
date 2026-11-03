@@ -2,10 +2,8 @@ import { create } from 'zustand';
 
 import { withoutZeroWork } from '@/domain/logged-work';
 import type { Session, SessionEntry } from '@/domain/types';
-import { usePreferencesStore } from '@/state/preferences-store';
+import { reportSessionFinished } from '@/hooks/brownfield-module';
 import { loggedSessions } from '@/state/selectors/logged-sessions';
-import type { BackupFailure } from '@/storage/backup';
-import { backUpNow, isBackupFolderSupported } from '@/storage/backup';
 import {
   appendSessionEntry,
   createSession,
@@ -33,14 +31,16 @@ type SessionHistoryState = {
    */
   activeSessionId: string | null;
   /**
-   * Why the backup taken at the end of the last session didn't land, or `null` if it did (or if the
-   * user has nominated no folder, which is nothing to report).
+   * Whether the backup the shell took at the end of the last session didn't land: false until it
+   * answers, and false where no folder is set, which native doesn't answer, being nothing to report.
    *
    * Separate from `errors` on purpose: that list renders under a heading about *session files*, and a
    * folder whose grant was revoked is not one of those. The completion screen reads this, which is
    * the first moment after a workout where saying so costs nothing.
    */
-  backupFailure: BackupFailure | null;
+  backupFailed: boolean;
+  /** The shell's `backupResult`, the answer to the `sessionFinished` that `completeSession` sends. */
+  backupAnswered: (failed: boolean) => void;
   hydrate: () => Promise<void>;
   /**
    * Reads the log again after another writer changed it (the native shell's `filesChanged`). Never
@@ -140,31 +140,6 @@ function withWriteFailure(errors: string[]): string[] {
 }
 
 /**
- * Backs the log up now that a session has ended — **after the current tick**, not during it.
- *
- * Non-throwing was only half of "a backup must never interrupt a workout"; non-blocking is the other
- * half. `backUpNow` is entirely synchronous — `list()` on the tree, `textSync()` of the library,
- * serializing the whole log, and two SAF writes — and every one of those is content-provider IPC. The
- * copy actively recommends pointing this at a folder the user's sync client watches, which is exactly
- * how it lands on a cloud-backed provider where those calls take seconds. Run inline it would sit
- * between the Finish tap and the completion screen, because `completeSession` is called straight from
- * the runner's `finishSession`.
- *
- * `setTimeout(0)` yields to the event loop so React commits and paints first. Nothing waits on the
- * result: `CompletedSession` already subscribes to this store, so the warning line simply appears when
- * the answer arrives.
- *
- * Skipped entirely when the user has nominated no folder — someone who never opted in has nothing to
- * be told, and running it anyway would answer `noFolder` and light a warning on every completion
- * screen in the app.
- */
-function backUpAfterSession(sessions: Session[], onResult: (failure: BackupFailure | null) => void): void {
-  const { backupFolderUri } = usePreferencesStore.getState().preferences;
-  if (!isBackupFolderSupported || !backupFolderUri) return;
-  setTimeout(() => onResult(backUpNow(backupFolderUri, sessions)), 0);
-}
-
-/**
  * The log every training view reads: `loggedSessions`, which hides zero work. The default way in, so
  * a new reader gets the filter without having to know it exists; raw `state.sessions` is for the
  * readers that hand over the user's own files (export, backup). `select` narrows what the caller
@@ -184,7 +159,8 @@ export const useSessionHistoryStore = create<SessionHistoryState>((set, get) => 
   sessions: [],
   errors: [],
   activeSessionId: null,
-  backupFailure: null,
+  backupFailed: false,
+  backupAnswered: (failed) => set({ backupFailed: failed }),
   hydrate: async () => {
     set({ status: 'loading' });
     await get().reload();
@@ -231,13 +207,13 @@ export const useSessionHistoryStore = create<SessionHistoryState>((set, get) => 
   },
   completeSession: (session) => {
     const updated = finalizeSession(session, new Date().toISOString());
-    // Built before the `set` rather than inside it, because the backup has to carry the session that
-    // just ended — reading `get().sessions` from within would archive the log as it was one set ago.
     const sessions = get().sessions.map((existing) => (existing.id === updated.id ? updated : existing));
     // Cleared rather than left: whatever the last session's backup did is not this one's answer, and a
     // stale warning under a fresh completion screen would be worse than a moment with none.
-    set({ sessions, errors: withWriteFailure(get().errors), activeSessionId: null, backupFailure: null });
-    backUpAfterSession(sessions, (backupFailure) => set({ backupFailure }));
+    set({ sessions, errors: withWriteFailure(get().errors), activeSessionId: null, backupFailed: false });
+    // After the write, since native backs up the log from disk (#220). It runs the backup off its main
+    // thread and answers with `backupResult`, so nothing here waits on a folder a cloud provider backs.
+    reportSessionFinished();
     return updated;
   },
   abandonActiveSession: () => {

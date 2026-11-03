@@ -55,7 +55,6 @@ class TipJar(
     private val file: SupporterFile,
     private val billing: TipBilling,
     private val scope: CoroutineScope,
-    private val onSaved: () -> Unit,
     private val runtime: TipJarRuntime = TipJarRuntime(),
 ) {
     var supporter by mutableStateOf(SupporterState.EMPTY)
@@ -230,9 +229,7 @@ class TipJar(
         recording.withLock {
             val next = withTipRecorded(supporter, tier, runtime.now())
             supporter = next
-            val saved = withContext(runtime.io) { file.write(next) }
-            if (saved) onSaved()
-            saved
+            withContext(runtime.io) { file.write(next) }
         }
 }
 

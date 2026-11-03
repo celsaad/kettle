@@ -288,7 +288,7 @@ class HistoryScreenTest {
         action("Editar").assertDoesNotExist()
     }
 
-    /** RN keeps export until M5; native asks it to share, one session or the whole log. */
+    /** Export shares one session, or the whole log from the header (`FileShare`, #238). */
     @Test
     fun `exports the open session, or the whole log from the header`() {
         show()

@@ -278,8 +278,8 @@ export default function ImportScreen() {
    * assistant was the obvious alternative and is impossible regardless: the brief measures ~16 KB
    * against the seed library and grows with the user's, which no URL survives.
    *
-   * Sharing plain text rather than a file on purpose. `storage/export.ts` shares by URI because a
-   * library *is* a file; this is a prompt, and a chat target takes text into its compose box while an
+   * Sharing plain text rather than a file on purpose. Export (native's `FileShare`) shares by URI
+   * because a library *is* a file; this is a prompt, and a chat target takes text into its compose box while an
    * attached `.md` mostly doesn't.
    *
    * Dismissing the sheet resolves normally on native but *not* on web, which is why the `AbortError`

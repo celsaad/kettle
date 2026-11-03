@@ -16,9 +16,9 @@ data class BackupDocument(
 )
 
 /**
- * The folder the user chose, as the backup sees it, so the logic can be held to `backup.test.ts`
- * without a provider. The Android adapter is SAF's (`SafBackupFolder` in `:app`); `src/storage/backup.ts`
- * records what each SAF call does that a `file://` path doesn't.
+ * The folder the user chose, as the backup sees it, so the logic is tested without a provider. The
+ * Android adapter is SAF's (`SafBackupFolder` in `:app`); `docs/sdk-57-api-notes.md` records what each
+ * SAF call does that a `file://` path doesn't.
  */
 interface BackupFolder {
     /** False for a folder deleted, or one whose grant was revoked in system settings. */
@@ -49,13 +49,13 @@ sealed interface BackupFailure {
 
 /**
  * Writes `kettle-library.yaml` (the library file itself, byte for byte, so a backup and an export can't
- * disagree) and `kettle-history.yaml` (the archive, oldest-first) into [folder], `backUpNow` in
- * `src/storage/backup.ts`. Null where it backed up. [targets] is `backup-targets.json`, the record of
- * what the last backup wrote; [exportedAt] is the caller's clock.
+ * disagree) and `kettle-history.yaml` (the archive, oldest-first) into [folder]: Settings' Back up now
+ * and the runner's finish backup (#238). Null where it backed up. [targets] is `backup-targets.json`,
+ * the record of what the last backup wrote; [exportedAt] is the caller's clock.
  *
  * **Never throws**, and does its IO on the calling thread, so it's the caller's to run off the main
- * one: a folder backed by a cloud provider can take seconds. The runner's finish calls it too in the
- * flip release, and a workout has to outlive a backup that couldn't be written.
+ * one: a folder backed by a cloud provider can take seconds. A workout has to outlive a backup that
+ * couldn't be written.
  */
 fun backUpNow(
     folder: BackupFolder?,

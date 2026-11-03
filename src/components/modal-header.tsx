@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 
 import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
-import { isHosted } from '@/hooks/safe-brownfield';
+import { isHosted } from '@/hooks/brownfield-module';
 import { useTheme } from '@/hooks/use-theme';
 
 /**

@@ -21,8 +21,6 @@ import com.casco.kettle.shell.R
 import com.casco.kettle.shell.files.DiskFiles
 import com.casco.kettle.shell.files.StoragePaths
 import com.casco.kettle.shell.i18n.pluralText
-import com.casco.kettle.shell.nav.Flip
-import com.casco.kettle.shell.nav.flipsOn
 import expo.modules.notifications.service.NotificationsService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -35,11 +33,8 @@ import kotlinx.datetime.TimeZone
  * The opt-in rest-day nudge (#221, #236): one pending alarm, sitting a couple of days past the newest
  * session, so logging a session pushes it back out and someone training regularly never sees it.
  *
- * Kept in step by running this on every read of the files, from the boot receiver, and (once it's
- * native) from Settings' toggle. Never asks for the notification permission: that's the toggle's job.
- *
- * Dormant until the preferences flip: RN's Expo reminder is the live one until then, so a build
- * without the flip leaves the platform's queue alone entirely, cancels included.
+ * Kept in step by running this on every read of the files, from the boot receiver, and from Settings'
+ * toggle. Never asks for the notification permission: that's the toggle's job.
  *
  * An inexact alarm, since Play restricts `SCHEDULE_EXACT_ALARM` and a nudge minutes late costs
  * nothing. Local only: nothing here transmits (`AGENTS.md` → "Platform constraints").
@@ -49,9 +44,7 @@ fun Context.reconcileReminder(
     preferences: Preferences?,
     now: Instant = Clock.System.now(),
     zone: TimeZone = TimeZone.currentSystemDefault(),
-    flips: Set<Flip> = flipsOn,
 ) {
-    if (Flip.Preferences !in flips) return
     val alarms = getSystemService(AlarmManager::class.java)
     // logged, as RN's useLoggedSessions: newest first, an in-flight session included, whose start is
     // already the right anchor.
@@ -69,15 +62,13 @@ fun Context.reconcileReminder(
 
 /**
  * Cancels the Expo request a 0.13 install left pending, so it can't fire beside the native alarm. On
- * every launch, since it's idempotent and needs no flag; gated like the alarm, since before the flip
- * that request is the live reminder. Goes in M7 with expo-notifications.
+ * every launch, since it's idempotent and needs no flag. Goes in M7 with expo-notifications.
  */
-fun Context.retireExpoReminder(flips: Set<Flip> = flipsOn) {
-    if (Flip.Preferences !in flips) return
+fun Context.retireExpoReminder() {
     // Expo's internals, called from outside the module that owns them: a launch that can't cancel is
     // one that may notify twice, and no reason not to open.
     runCatching {
-        // RN's REST_DAY_REMINDER_ID in src/hooks/safe-notifications.ts. The two share no code, so change both.
+        // The identifier 0.13's RN reminder scheduled under, which RN no longer has (#238).
         NotificationsService.removeScheduledNotification(this, "kettle-rest-day-reminder")
     }.onFailure { Log.w(TAG, "Couldn't cancel the Expo reminder", it) }
 }
@@ -127,8 +118,10 @@ class RestDayReminderBootReceiver : BroadcastReceiver() {
         context: Context,
         intent: Intent,
     ) {
-        // The flip as well as reconcile's own check, so a release boot doesn't read the log for nothing.
-        if (intent.action != Intent.ACTION_BOOT_COMPLETED || Flip.Preferences !in flipsOn) return
+        if (intent.action != Intent.ACTION_BOOT_COMPLETED) return
+        // A 0.13 upgrade rebooted before its first launch still holds the Expo request, which Expo's own
+        // boot receiver puts back: retired here too, or the two would both fire.
+        context.retireExpoReminder()
         val pending = goAsync()
         CoroutineScope(Dispatchers.IO).launch {
             // An unreadable file already reads as none; this is for the platform refusing the alarm,

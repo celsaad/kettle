@@ -7,7 +7,7 @@ import { ModalHeader } from '@/components/modal-header';
 import { renderScreen } from '@/test-support/render';
 
 let mockHosted = false;
-jest.mock('@/hooks/safe-brownfield', () => ({ isHosted: () => mockHosted }));
+jest.mock('@/hooks/brownfield-module', () => ({ isHosted: () => mockHosted }));
 
 beforeEach(() => {
   mockHosted = false;

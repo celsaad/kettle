@@ -50,11 +50,13 @@
     one.
   - **iOS does not.** `ios/FilePickingUtils.swift` calls only `startAccessingSecurityScopedResource()`
     and never writes a security-scoped **bookmark**, so access dies with the app session. The bundled
-    type doc says as much outright. This is why `isBackupFolderSupported` in `storage/backup.ts` is
-    Android-only: a folder chosen on iOS would look set and quietly stop being written to.
+    type doc says as much outright. This is why RN's `isBackupFolderSupported` in `storage/backup.ts`
+    was Android-only: a folder chosen on iOS would look set and quietly stop being written to. (That
+    file went native in the preferences flip, #238: `SafBackupFolder.kt` and `:shared`'s `Backup.kt`.)
 
 - ⚠️ **A SAF `content://` URI is not a `file://` URI, and five of the differences fail silently.**
-  Everything in `src/storage/` except `backup.ts` deals in `file://` and never meets these:
+  Everything in `src/storage/` except `backup.ts` (native's since #238) dealt in `file://` and never
+  met these:
 
   1. **`new File(directory, 'name.yaml')` does not address a child.** `Paths.join` treats the tree URI
      as a URL and appends to its path, producing `…/tree/primary%3ADocs/name.yaml` — a document URI

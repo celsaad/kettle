@@ -44,6 +44,8 @@ import com.casco.kettle.domain.filterByName
 import com.casco.kettle.domain.historySessionsView
 import com.casco.kettle.domain.historyStats
 import com.casco.kettle.shell.R
+import com.casco.kettle.shell.export.logShareRefused
+import com.casco.kettle.shell.export.rememberFileShare
 import com.casco.kettle.shell.files.LatestFiles
 import com.casco.kettle.shell.files.LocalLatestFiles
 import com.casco.kettle.shell.i18n.pluralText
@@ -73,13 +75,23 @@ import java.io.IOException
 /** What `shellRoutes` registers at `/history`, the tab. */
 @Composable
 fun HistoryRoute() {
+    val files = LocalLatestFiles.current
+    val share = rememberFileShare()
+    val scope = rememberCoroutineScope()
     HistoryScreen(
-        LocalLatestFiles.current,
+        files,
         TimeZone.currentSystemDefault(),
         LocalTabReselects.current,
         HistoryActions(
             open = JsBridge::open,
-            export = JsBridge::export,
+            // The raw log for Export all, as Settings' Export history: an archive is the user's own files.
+            export = { id ->
+                scope.launch {
+                    val sheet = share ?: return@launch
+                    val sessions = files.sessionLog?.sessions.orEmpty()
+                    logShareRefused(if (id == null) sheet.history(sessions) else sheet.session(id))
+                }
+            },
             sessionsChanged = { JsBridge.filesChanged(FileKind.SESSIONS) },
         ),
     )

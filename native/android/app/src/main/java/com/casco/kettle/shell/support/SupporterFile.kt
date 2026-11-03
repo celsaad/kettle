@@ -17,8 +17,8 @@ interface SupporterFile {
 }
 
 /**
- * [SupporterFile] where RN keeps it, `src/storage/tip-file.ts`'s. Both read it the same way
- * (`conformance/supporter.yaml`), and RN Settings reads it until M5, so its format is frozen until then.
+ * [SupporterFile] where RN kept it. Native has been its only reader since the preferences flip (#238);
+ * `conformance/supporter.yaml` still holds the format to the one 0.13 installs wrote.
  */
 class DiskSupporterFile(
     private val file: File,

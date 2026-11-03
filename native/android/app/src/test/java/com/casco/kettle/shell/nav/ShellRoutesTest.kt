@@ -11,36 +11,36 @@ import org.junit.Test
  * build: the unit tests run on debug alone, so release's are only reachable this way.
  */
 class ShellRoutesTest {
-    private val settings = Screen.Native {}
     private val sessionEditor = Screen.Native {}
+    private val importScreen = Screen.Native {}
     private val writers =
         mapOf(
-            Flip.Preferences to mapOf("/settings" to settings),
             Flip.Sessions to mapOf("/session-editor" to sessionEditor),
+            Flip.Library to mapOf("/import" to importScreen),
         )
 
     @Test
     fun `a gated path is native with its flip on, as in debug`() {
         val routes = routesFor(Flip.entries.toSet(), writers)
 
-        assertSame(settings, routes.screenAt("/settings"))
         assertSame(sessionEditor, routes.screenAt("/session-editor"))
+        assertSame(importScreen, routes.screenAt("/import"))
     }
 
     @Test
     fun `a gated path stays RN with its flip off, as in release`() {
         val routes = routesFor(emptySet(), writers)
 
-        assertEquals(Screen.Rn, routes.screenAt("/settings"))
         assertEquals(Screen.Rn, routes.screenAt("/session-editor"))
+        assertEquals(Screen.Rn, routes.screenAt("/import"))
     }
 
     @Test
     fun `each flip gates only its own paths`() {
-        val routes = routesFor(setOf(Flip.Preferences), writers)
+        val routes = routesFor(setOf(Flip.Sessions), writers)
 
-        assertSame(settings, routes.screenAt("/settings"))
-        assertEquals(Screen.Rn, routes.screenAt("/session-editor"))
+        assertSame(sessionEditor, routes.screenAt("/session-editor"))
+        assertEquals(Screen.Rn, routes.screenAt("/import"))
     }
 
     /** The session editor writes edited session files, so it is the sessions flip's to release (#239). */
@@ -50,11 +50,10 @@ class ShellRoutesTest {
         assertEquals(Screen.Rn, routesFor(Flip.entries.toSet() - Flip.Sessions).screenAt(SESSION_EDITOR_PATH))
     }
 
-    /** Settings writes preferences.json, so it is the preferences flip's to release (#237). */
+    /** The preferences flip has released (#238), so Settings is native in release builds too. */
     @Test
-    fun `Settings is behind the preferences flip`() {
-        assertTrue(routesFor(setOf(Flip.Preferences)).screenAt("/settings") is Screen.Native)
-        assertEquals(Screen.Rn, routesFor(Flip.entries.toSet() - Flip.Preferences).screenAt("/settings"))
+    fun `Settings is native whatever the flips`() {
+        assertTrue(routesFor(emptySet()).screenAt("/settings") is Screen.Native)
     }
 
     @Test

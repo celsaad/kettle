@@ -23,7 +23,6 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -37,41 +36,34 @@ import com.casco.kettle.domain.TipTierOffer
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.files.StoragePaths
 import com.casco.kettle.shell.i18n.pluralText
-import com.casco.kettle.shell.rn.FileKind
-import com.casco.kettle.shell.rn.JsBridge
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.MaxContentWidth
 import com.casco.kettle.shell.theme.Spacing
 import com.casco.kettle.shell.theme.card
 
-/**
- * What `shellRoutes` registers at `/support`: the screen on the real file and Play, telling RN once a
- * tip is written, so Settings under the sheet thanks the user too.
- */
+/** What `shellRoutes` registers at `/support`: the screen on the real file and Play. */
 @Composable
 fun SupportRoute() {
     val activity = LocalActivity.current ?: return
     val file = remember { DiskSupporterFile(StoragePaths(activity.filesDir).supporter) }
     val billing = remember { PlayTipBilling(activity) }
-    SupportScreen(file, billing, onSaved = { JsBridge.filesChanged(FileKind.SUPPORTER) })
+    SupportScreen(file, billing)
 }
 
 /**
- * Support, the tip jar (#198): `src/app/support.tsx` on the Play Billing Library. [onSaved] hears each
- * tip written to [file]. A test passes a [runtime] to fix the clock, write inline, and give up on a
- * store that never answers without waiting the real time.
+ * Support, the tip jar (#198): `src/app/support.tsx` on the Play Billing Library. A test passes a
+ * [runtime] to fix the clock, write inline, and give up on a store that never answers without waiting
+ * the real time.
  */
 @Composable
 fun SupportScreen(
     file: SupporterFile,
     billing: TipBilling,
-    onSaved: () -> Unit,
     runtime: TipJarRuntime = TipJarRuntime(),
 ) {
     val scope = rememberCoroutineScope()
-    val saved by rememberUpdatedState(onSaved)
-    val jar = remember(file, billing) { TipJar(file, billing, scope, onSaved = { saved() }, runtime) }
+    val jar = remember(file, billing) { TipJar(file, billing, scope, runtime) }
     DisposableEffect(jar) {
         jar.open()
         onDispose { jar.close() }

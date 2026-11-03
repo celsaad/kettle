@@ -66,11 +66,10 @@ jest.mock('expo-router', () => ({
 const mockOnFilesChanged = jest.fn();
 jest.mock('@/state/files-changed', () => ({ onFilesChanged: (kind: unknown) => mockOnFilesChanged(kind) }));
 
-// What an export shares has its own suite (state/__tests__/export-requested.test.ts).
-const mockOnExportRequested = jest.fn();
-jest.mock('@/state/export-requested', () => ({
-  ...jest.requireActual('@/state/export-requested'),
-  onExportRequested: (message: unknown) => mockOnExportRequested(message),
+// What the store does with a backup's answer has its own suite (session-history-store.test.ts).
+const mockBackupAnswered = jest.fn();
+jest.mock('@/state/session-history-store', () => ({
+  useSessionHistoryStore: { getState: () => ({ backupAnswered: mockBackupAnswered }) },
 }));
 
 /** Lets the dismissal commit and anything waiting on it run. */
@@ -87,6 +86,7 @@ beforeEach(() => {
   mockStack.screensAboveTabs = 0;
   mockStack.guarded = false;
   mockNavigate.mockClear();
+  mockBackupAnswered.mockClear();
   mockPush.mockClear();
   mockReplace.mockClear();
   jest.resetModules();
@@ -167,21 +167,35 @@ it('hands a filesChanged message to the store that reads that file', () => {
   expect(mockNavigate).not.toHaveBeenCalled();
 });
 
-// Native History's Export and Export all, and native Library's Export (#234): RN keeps export until
-// M5, and shares for the shell.
-it('hands an export message to the handler that shares it, and moves nothing', () => {
+// The runner's finish backup is native's from the preferences flip (#220), and its answer is what the
+// completion screen warns from.
+it('hands a backup result to the history store, and drops one without an answer', () => {
   announceHostReady();
 
-  fromShell({ type: 'exportSession', id: 'legs-1' });
-  fromShell({ type: 'exportHistory' });
-  fromShell({ type: 'exportLibrary' });
+  fromShell({ type: 'backupResult', failed: true });
+  fromShell({ type: 'backupResult', failed: false });
+  fromShell({ type: 'backupResult' });
 
-  expect(mockOnExportRequested.mock.calls).toEqual([
-    [{ type: 'exportSession', id: 'legs-1' }],
-    [{ type: 'exportHistory' }],
-    [{ type: 'exportLibrary' }],
-  ]);
+  expect(mockBackupAnswered.mock.calls).toEqual([[true], [false]]);
   expect(mockNavigate).not.toHaveBeenCalled();
+});
+
+it('tells the shell a session finished', () => {
+  mockShared.set('nativeTabBar', true);
+  const { reportSessionFinished } = require('@/hooks/brownfield-module');
+
+  reportSessionFinished();
+
+  expect(mockSent).toEqual([{ type: 'sessionFinished' }]);
+});
+
+// No RN fallback for an unhosted build (#220): iOS, web and Expo Go don't back up after a session.
+it('says nothing about a finished session outside the shell', () => {
+  const { reportSessionFinished } = require('@/hooks/brownfield-module');
+
+  reportSessionFinished();
+
+  expect(mockSent).toEqual([]);
 });
 
 /**

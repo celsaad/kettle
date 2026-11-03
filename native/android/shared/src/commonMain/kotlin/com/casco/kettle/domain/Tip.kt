@@ -40,8 +40,8 @@ fun toTipTierOffers(products: List<TipProduct>): List<TipTierOffer> =
     }
 
 /**
- * `supporter.json`, app-owned and written only by the app: native's Support from M4 on, while RN
- * Settings reads it until M5. Its format is frozen until then.
+ * `supporter.json`, app-owned and written only by the app: native's Support from M4 on, and read only
+ * by native since the preferences flip (#238). Its format still reads every file 0.13 wrote.
  */
 data class SupporterState(
     /** Tips are consumable, so this counts repeat tips rather than being a boolean. */

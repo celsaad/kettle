@@ -17,10 +17,10 @@ import java.io.File
 import java.io.IOException
 
 /**
- * Whether the chrome draws dark, from Settings → Appearance in [preferences]. RN Settings writes that
- * file until the preferences flip, so it's read again each time [reread] turns true: the shell passes
- * the bar coming back, since Settings is a modal and the bar is hidden under it. Native Settings
- * writes it through `LatestFiles` (#237), whose [latest] the chrome follows the moment it changes,
+ * Whether the chrome draws dark, from Settings → Appearance in [preferences], read again each time
+ * [reread] turns true: the shell passes the bar coming back, since Settings is a modal and the bar is
+ * hidden under it. Native Settings, the file's only writer (#238), writes it through `LatestFiles`
+ * (#237), whose [latest] the chrome follows the moment it changes,
  * with the sheet still up; null there is a read that found none, or none landed yet, and the file's
  * own read stands.
  */

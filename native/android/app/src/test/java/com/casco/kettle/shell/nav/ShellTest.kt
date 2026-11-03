@@ -67,8 +67,9 @@ class ShellTest {
     private val sent = mutableListOf<String>()
 
     /**
-     * Release's routes, every writer still RN's, whatever build runs the tests: Settings stands for an
-     * RN sheet below, which it stays on Play until the preferences flip, where `.dev` draws it natively.
+     * Release's routes, every unreleased writer still RN's, whatever build runs the tests: Import stands
+     * for an RN sheet below, which it stays on Play until the library flip, where `.dev` draws it
+     * natively. Settings was the example until its flip released (#238).
      */
     private val shellRoutes = routesFor(on = emptySet())
 
@@ -322,7 +323,7 @@ class ShellTest {
     fun `the bar leaves while RN shows something above the tabs`() {
         val navigator = show()
 
-        compose.runOnIdle { navigator.onRoute("/settings") }
+        compose.runOnIdle { navigator.onRoute("/import") }
 
         tab("Workouts").assertDoesNotExist()
         assertSurfaceShown(true)
@@ -388,7 +389,7 @@ class ShellTest {
         val navigator = show(shellRoutes + ("/history" to Screen.Native { Text("Native history") }))
         tab("History").performClick()
 
-        compose.runOnIdle { navigator.onRoute("/settings") }
+        compose.runOnIdle { navigator.onRoute("/import") }
 
         assertSurfaceShown(true)
 
@@ -417,7 +418,7 @@ class ShellTest {
     @Test
     fun `a touch on a native sheet never reaches the stub, where one on an RN sheet does`() {
         show(withNativeSupport)
-        report("/settings")
+        report("/import")
 
         tapTheSheet()
 
@@ -429,11 +430,11 @@ class ShellTest {
         compose.runOnIdle { assertEquals(A_TAP, touches) }
     }
 
-    /** Settings → Support and back, the hand-over M4's first port makes in both directions. */
+    /** An RN sheet → Support and back, the hand-over M4's first port makes in both directions. */
     @Test
     fun `the sheet hands over from RN to native and back`() {
         show(withNativeSupport)
-        report("/settings")
+        report("/import")
         assertSurfaceShown(true)
 
         report("/support")
@@ -441,7 +442,7 @@ class ShellTest {
         compose.onNodeWithText("Native support").assertIsDisplayed()
         assertSurfaceShown(false)
 
-        report("/settings")
+        report("/import")
 
         compose.onNodeWithText("Native support").assertDoesNotExist()
         assertSurfaceShown(true)

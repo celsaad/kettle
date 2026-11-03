@@ -299,10 +299,11 @@ function CompletedSession({
 }) {
   const library = useLibraryStore((state) => state.library);
   const sessions = useLoggedSessions();
-  // Set by `completeSession`, so it describes the backup this very session triggered. Here rather
+  // Cleared by `completeSession` and set by the shell's answer, so it describes the backup this very
+  // session triggered. Here rather
   // than mid-workout for the same reason a full disk isn't announced between two sets: the person was
   // holding a plank, and this is the first moment where telling them costs nothing.
-  const backupFailed = useSessionHistoryStore((state) => state.backupFailure !== null);
+  const backupFailed = useSessionHistoryStore((state) => state.backupFailed);
   const records = useMemo(
     () => (session ? sessionRecords(session, sessions, library?.exercises ?? []) : []),
     [session, sessions, library],

@@ -24,10 +24,7 @@ jest.mock('expo-audio', () => ({
   },
 }));
 
-jest.mock('@/storage/preferences-file', () => ({
-  loadPreferences: jest.fn().mockResolvedValue(null),
-  savePreferences: jest.fn().mockResolvedValue(true),
-}));
+jest.mock('@/storage/preferences-file', () => ({ loadPreferences: jest.fn().mockResolvedValue(null) }));
 
 import { act, renderHook } from '@testing-library/react-native';
 

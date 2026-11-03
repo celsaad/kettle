@@ -1,6 +1,5 @@
 /**
- * Mocked at our own boundary (`@/storage/paths`) rather than at `expo-file-system`, matching
- * `tip-file.test.ts`.
+ * Mocked at our own boundary (`@/storage/paths`) rather than at `expo-file-system`.
  *
  * What's worth pinning here is that every failure lands on `null` rather than on a default. `null`
  * means "never chosen", which the store turns into "follow the device" — so a corrupt file falls back
@@ -27,7 +26,7 @@ jest.mock('@/storage/paths', () => ({
   },
 }));
 
-import { loadPreferences, savePreferences } from '@/storage/preferences-file';
+import { loadPreferences } from '@/storage/preferences-file';
 
 const stored = {
   unitSystem: 'imperial' as const,
@@ -150,31 +149,5 @@ describe('loadPreferences', () => {
   it('returns null on web, where there is no file storage', async () => {
     mockStorageSupported = false;
     expect(await loadPreferences()).toBeNull();
-  });
-});
-
-describe('savePreferences', () => {
-  it('reports success once the write lands', async () => {
-    expect(await savePreferences(stored)).toBe(true);
-    expect(mockFile.write).toHaveBeenCalledWith(JSON.stringify(stored));
-  });
-
-  it('creates the file the first time a preference is set', async () => {
-    mockFile.exists = false;
-    expect(await savePreferences(stored)).toBe(true);
-    expect(mockFile.create).toHaveBeenCalled();
-  });
-
-  it('reports failure rather than throwing when the write fails', async () => {
-    mockFile.write.mockImplementation(() => {
-      throw new Error('disk full');
-    });
-    expect(await savePreferences(stored)).toBe(false);
-  });
-
-  it('reports failure on web instead of pretending to persist', async () => {
-    mockStorageSupported = false;
-    expect(await savePreferences(stored)).toBe(false);
-    expect(mockFile.write).not.toHaveBeenCalled();
   });
 });

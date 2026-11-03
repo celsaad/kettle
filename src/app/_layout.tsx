@@ -30,8 +30,8 @@ import { isSheetRoute, SHEET_ROUTES } from '@/constants/sheet-routes';
 import { Colors, RunnerColors, MaxContentWidth, Spacing } from '@/constants/theme';
 import { ThemeOverrideProvider, useAppTheme } from '@/hooks/theme-context';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { useRestDayReminder } from '@/hooks/use-rest-day-reminder';
-import { hostedModalOptions, isHosted, reportRoute, reportRouteWillChange } from '@/hooks/safe-brownfield';
+import { isHosted } from '@/hooks/brownfield-module';
+import { hostedModalOptions, reportRoute, reportRouteWillChange } from '@/hooks/safe-brownfield';
 import { useLibraryStore } from '@/state/library-store';
 import { usePreferencesStore } from '@/state/preferences-store';
 import { useSessionHistoryStore } from '@/state/session-history-store';
@@ -78,10 +78,6 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
 
 function Navigation() {
   const { colors, scheme } = useAppTheme();
-  // Here rather than in the runner: the reminder has to be rescheduled when the *preference* changes
-  // too, and this is the one component that is mounted for both of its inputs and only after they've
-  // hydrated. It also means the schedule self-heals on every launch.
-  useRestDayReminder();
   // The native shell's tab bar and sheet follow the router from these (M3). Nothing listens anywhere
   // else.
   const pathname = usePathname();
@@ -168,8 +164,7 @@ export default function RootLayout() {
   const hydrateLibrary = useLibraryStore((state) => state.hydrate);
   const sessionHistoryStatus = useSessionHistoryStore((state) => state.status);
   const hydrateSessionHistory = useSessionHistoryStore((state) => state.hydrate);
-  // Gated alongside the data stores rather than hydrated on mount like the tip store: this one picks
-  // the unit every weight renders in, so arriving late would swap the numbers under the user.
+  // Gated alongside the data stores: this one picks the unit every weight renders in, so arriving late would swap the numbers under the user.
   const preferencesStatus = usePreferencesStore((state) => state.status);
   const hydratePreferences = usePreferencesStore((state) => state.hydrate);
 

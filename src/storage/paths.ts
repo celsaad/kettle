@@ -8,9 +8,7 @@ type ResolvedPaths = {
   root: Directory;
   sessionsDir: Directory;
   libraryFile: File;
-  supporterFile: File;
   preferencesFile: File;
-  backupTargetsFile: File;
 };
 
 let resolved: ResolvedPaths | null = null;
@@ -22,14 +20,11 @@ function resolvePaths(): ResolvedPaths {
     const root = new Directory(Paths.document, 'exercise-tracker');
     const sessionsDir = new Directory(root, 'sessions');
     const libraryFile = new File(root, 'exercises.yaml');
-    // JSON, not YAML: app-owned purchase state, deliberately outside the library the user hand-edits.
-    const supporterFile = new File(root, 'supporter.json');
-    // Same reasoning: app settings aren't part of the library the user exports and shares.
+    // JSON, not YAML: app settings aren't part of the library the user exports and shares. Native
+    // writes it (#238), and keeps `supporter.json` and `backup-targets.json` beside it, which RN no
+    // longer reads.
     const preferencesFile = new File(root, 'preferences.json');
-    // Not a preference, though it sits beside them: nobody chooses it and nothing renders it. It is
-    // `backup.ts`'s memory of which documents it wrote, and only that file reads it.
-    const backupTargetsFile = new File(root, 'backup-targets.json');
-    resolved = { root, sessionsDir, libraryFile, supporterFile, preferencesFile, backupTargetsFile };
+    resolved = { root, sessionsDir, libraryFile, preferencesFile };
   }
   return resolved;
 }
@@ -44,14 +39,8 @@ export const storagePaths = {
   get libraryFile() {
     return resolvePaths().libraryFile;
   },
-  get supporterFile() {
-    return resolvePaths().supporterFile;
-  },
   get preferencesFile() {
     return resolvePaths().preferencesFile;
-  },
-  get backupTargetsFile() {
-    return resolvePaths().backupTargetsFile;
   },
 };
 
@@ -70,16 +59,6 @@ export function sessionFile(id: string): File {
  */
 export function quarantineFile(stamp: string): File {
   return new File(resolvePaths().root, `exercises.invalid-${stamp}.yaml`);
-}
-
-/**
- * A scratch file for something assembled on the fly to be handed to another app — today, the whole
- * history as one document. Deliberately in the cache directory and outside `storagePaths`: it holds
- * a *copy* of data that already lives under `root`, so the OS reclaiming it costs nothing, and
- * nothing here should ever be read back as if it were the source of truth.
- */
-export function cacheFile(name: string): File {
-  return new File(Paths.cache, name);
 }
 
 /** Ensures the app document directory layout exists. Safe to call repeatedly. */

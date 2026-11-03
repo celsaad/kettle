@@ -17,10 +17,7 @@ import { renderScreen } from '@/test-support/render';
  * on a string that neither of them touches. The wiring between the two is one JSX line; what can
  * actually regress is the gate, and the gate lives in this file.
  */
-jest.mock('@/storage/preferences-file', () => ({
-  loadPreferences: jest.fn().mockResolvedValue(null),
-  savePreferences: jest.fn().mockResolvedValue(true),
-}));
+jest.mock('@/storage/preferences-file', () => ({ loadPreferences: jest.fn().mockResolvedValue(null) }));
 
 /** A first run as the count-in meets it: the log hydrated and empty, cues on. */
 beforeEach(() => {

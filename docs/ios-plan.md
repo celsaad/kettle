@@ -10,6 +10,13 @@
 > Android app rather than iOS work, and they were worth fixing either way. The decision log still says
 > iOS is deferred ([`decisions.md`](decisions.md), the tip-jar entry) and the README still says it
 > isn't planned — both remain accurate, and **Phase 5 is where they get changed**, not before.
+>
+> **Since M5's preferences flip (#238) the RN build has no Settings.** `settings.tsx` is an empty stub
+> the Android shell draws over, and RN's preferences writers, backup, export, tip-store read and
+> rest-day reminder are deleted, so the links below into `storage/backup.ts`, `storage/export.ts`,
+> `state/tip-store.ts` and `use-rest-day-reminder.ts` point at files that no longer exist. An RN-only
+> iOS build would now ship without Settings, Export or the reminder; iOS waits for the native port
+> (M8) rather than restoring them in RN (#220).
 
 The app is closer to iOS than the docs suggest. There is no `ios/` tree to write, no architecture to
 port, and no storage layer to rethink: `expo prebuild --platform ios` generates the native project the

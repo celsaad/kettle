@@ -14,7 +14,7 @@ describe('supporterStateSchema', () => {
 
   /**
    * supporter.json is app-written, so a rejection means the file was corrupted or predates a shape
-   * change. `loadSupporterState` self-heals to the empty state on any of these rather than throwing.
+   * change. Native's reader self-heals to the empty state on any of these rather than throwing.
    */
   it('rejects corrupt state', () => {
     expect(supporterStateSchema.safeParse({}).success).toBe(false);

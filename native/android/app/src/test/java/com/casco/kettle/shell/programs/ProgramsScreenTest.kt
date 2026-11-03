@@ -25,8 +25,8 @@ import com.casco.kettle.domain.ProgramWeek
 import com.casco.kettle.domain.Session
 import com.casco.kettle.domain.SessionLog
 import com.casco.kettle.domain.Workout
+import com.casco.kettle.shell.files.FakeStoredFiles
 import com.casco.kettle.shell.files.LatestFiles
-import com.casco.kettle.shell.files.StoredFiles
 import com.casco.kettle.shell.nav.Tab
 import com.casco.kettle.shell.rn.Stacking
 import com.casco.kettle.shell.theme.KettleTheme
@@ -212,20 +212,10 @@ class ProgramsScreenTest {
     private class Files(
         vararg programs: Program,
         private val library: Library? = Library(1, emptyList(), listOf(pushDay), programs.toList()),
-    ) : StoredFiles {
+    ) : FakeStoredFiles() {
         override fun sessionLog() = SessionLog(emptyList(), emptyList())
 
         override fun library() = library
-
-        override fun preferences(): Preferences? = null
-
-        override fun deleteSession(id: String) = error("Programs deletes nothing")
-
-        override fun writeSession(session: Session) = error("Programs writes no session")
-
-        override fun writeLibrary(library: Library) = error("Not a library writer")
-
-        override fun writePreferences(preferences: Preferences) = error("Programs writes no preferences")
     }
 }
 

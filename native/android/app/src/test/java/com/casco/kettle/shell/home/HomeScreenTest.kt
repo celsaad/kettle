@@ -42,8 +42,8 @@ import com.casco.kettle.domain.SessionEntry
 import com.casco.kettle.domain.SessionLog
 import com.casco.kettle.domain.Workout
 import com.casco.kettle.domain.WorkoutBlock
+import com.casco.kettle.shell.files.FakeStoredFiles
 import com.casco.kettle.shell.files.LatestFiles
-import com.casco.kettle.shell.files.StoredFiles
 import com.casco.kettle.shell.nav.Tab
 import com.casco.kettle.shell.rn.Stacking
 import com.casco.kettle.shell.theme.KettleTheme
@@ -675,20 +675,10 @@ class HomeScreenTest {
     private class Files(
         var library: Library?,
         private val sessions: List<Session> = emptyList(),
-    ) : StoredFiles {
+    ) : FakeStoredFiles() {
         override fun sessionLog() = SessionLog(sessions, emptyList())
 
         override fun library() = library
-
-        override fun preferences(): Preferences? = null
-
-        override fun deleteSession(id: String) = error("Home deletes nothing")
-
-        override fun writeSession(session: Session) = error("Home writes no session")
-
-        override fun writeLibrary(library: Library) = error("Not a library writer")
-
-        override fun writePreferences(preferences: Preferences) = error("Home writes no preferences")
     }
 
     private fun library(

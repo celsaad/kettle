@@ -301,14 +301,10 @@ class LatestFilesTest {
 
     private fun log(error: String) = SessionLog(emptyList(), listOf(error))
 
-    private class FakeFiles : StoredFiles {
+    private class FakeFiles : FakeStoredFiles() {
         var log = SessionLog.Empty
 
         override fun sessionLog() = log
-
-        override fun library(): Library? = null
-
-        override fun preferences(): Preferences? = null
 
         override fun deleteSession(id: String) = Unit
 

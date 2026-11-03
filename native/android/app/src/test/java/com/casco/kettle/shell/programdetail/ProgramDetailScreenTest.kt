@@ -27,8 +27,8 @@ import com.casco.kettle.domain.Session
 import com.casco.kettle.domain.SessionLog
 import com.casco.kettle.domain.Workout
 import com.casco.kettle.domain.WorkoutBlock
+import com.casco.kettle.shell.files.FakeStoredFiles
 import com.casco.kettle.shell.files.LatestFiles
-import com.casco.kettle.shell.files.StoredFiles
 import com.casco.kettle.shell.rn.Stacking
 import com.casco.kettle.shell.theme.KettleTheme
 import kotlinx.coroutines.CoroutineScope
@@ -262,20 +262,10 @@ class ProgramDetailScreenTest {
 
     private class Files(
         private val library: Library?,
-    ) : StoredFiles {
+    ) : FakeStoredFiles() {
         override fun sessionLog() = SessionLog(emptyList(), emptyList())
 
         override fun library() = library
-
-        override fun preferences(): Preferences? = null
-
-        override fun deleteSession(id: String) = error("Program detail deletes nothing")
-
-        override fun writeSession(session: Session) = error("Program detail writes no session")
-
-        override fun writeLibrary(library: Library) = error("Not a library writer")
-
-        override fun writePreferences(preferences: Preferences) = error("Program detail writes no preferences")
     }
 }
 

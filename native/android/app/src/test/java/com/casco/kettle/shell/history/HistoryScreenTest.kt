@@ -30,8 +30,8 @@ import com.casco.kettle.domain.Session
 import com.casco.kettle.domain.SessionEntry
 import com.casco.kettle.domain.SessionLog
 import com.casco.kettle.domain.Workout
+import com.casco.kettle.shell.files.FakeStoredFiles
 import com.casco.kettle.shell.files.LatestFiles
-import com.casco.kettle.shell.files.StoredFiles
 import com.casco.kettle.shell.nav.Tab
 import com.casco.kettle.shell.rn.Stacking
 import com.casco.kettle.shell.theme.KettleTheme
@@ -409,7 +409,7 @@ class HistoryScreenTest {
     private class Files(
         vararg sessions: Session,
         private val errors: List<String> = emptyList(),
-    ) : StoredFiles {
+    ) : FakeStoredFiles() {
         private val sessions = sessions.toMutableList()
         val deleted = mutableListOf<String>()
 
@@ -420,19 +420,11 @@ class HistoryScreenTest {
 
         override fun library() = Library(1, listOf(pullUps, dips), listOf(pushDay, legDay), emptyList())
 
-        override fun preferences(): Preferences? = null
-
         override fun deleteSession(id: String) {
             failure?.let { throw it }
             deleted += id
             sessions.removeAll { it.id == id }
         }
-
-        override fun writeSession(session: Session) = error("History writes no session")
-
-        override fun writeLibrary(library: Library) = error("Not a library writer")
-
-        override fun writePreferences(preferences: Preferences) = error("History writes no preferences")
     }
 }
 

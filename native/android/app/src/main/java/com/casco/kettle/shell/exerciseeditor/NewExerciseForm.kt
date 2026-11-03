@@ -30,6 +30,7 @@ import com.casco.kettle.domain.ExerciseSubmit
 import com.casco.kettle.domain.UnitSystem
 import com.casco.kettle.domain.submitExercise
 import com.casco.kettle.shell.R
+import com.casco.kettle.shell.form.EditorButtons
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.Spacing
@@ -70,45 +71,18 @@ fun NewExerciseForm(
                 color = colors.accentText,
             )
         }
-        Row(
-            Modifier.padding(top = Spacing.two + 2.dp),
-            horizontalArrangement = Arrangement.spacedBy(Spacing.one + 2.dp),
-        ) {
-            Box(
-                Modifier
-                    .weight(1f)
-                    .heightIn(min = 44.dp)
-                    .clip(ButtonShape)
-                    .border(1.dp, colors.border, ButtonShape)
-                    .clickable(role = Role.Button, onClick = onCancel),
-                contentAlignment = Alignment.Center,
-            ) { Text(stringResource(R.string.common_cancel), style = KettleType.small, color = colors.textSecondary) }
-            Box(
-                Modifier
-                    .weight(CREATE_WEIGHT)
-                    .heightIn(min = 44.dp)
-                    .clip(ButtonShape)
-                    .background(colors.accent)
-                    .clickable(role = Role.Button) {
-                        when (val submitted = submitExercise(draft, null, units)) {
-                            is ExerciseSubmit.Refused -> problem = submitted.problem
-                            is ExerciseSubmit.Built -> onCreate(submitted.exercise)
-                        }
-                    },
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    stringResource(R.string.workoutEditor_createAndAdd),
-                    style = KettleType.small,
-                    color = colors.onAccent,
-                )
-            }
-        }
+        EditorButtons(
+            stringResource(R.string.workoutEditor_createAndAdd),
+            onCancel = onCancel,
+            onPrimary = {
+                when (val submitted = submitExercise(draft, null, units)) {
+                    is ExerciseSubmit.Refused -> problem = submitted.problem
+                    is ExerciseSubmit.Built -> onCreate(submitted.exercise)
+                }
+            },
+            compact = true,
+        )
     }
 }
 
 private val CardShape = RoundedCornerShape(14.dp)
-private val ButtonShape = RoundedCornerShape(10.dp)
-
-/** RN's `flex: 1.4` against Cancel's 1. */
-private const val CREATE_WEIGHT = 1.4f

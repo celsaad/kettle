@@ -25,8 +25,8 @@ import com.casco.kettle.domain.SessionLog
 import com.casco.kettle.domain.ThemePreference
 import com.casco.kettle.domain.TimedHoldSetLog
 import com.casco.kettle.domain.UnitSystem
+import com.casco.kettle.shell.files.FakeStoredFiles
 import com.casco.kettle.shell.files.LatestFiles
-import com.casco.kettle.shell.files.StoredFiles
 import com.casco.kettle.shell.rn.Stacking
 import com.casco.kettle.shell.theme.KettleTheme
 import kotlinx.coroutines.CoroutineScope
@@ -292,20 +292,12 @@ class StatsScreenTest {
     private class Files(
         private val log: SessionLog,
         private val exercises: List<Exercise>,
-    ) : StoredFiles {
+    ) : FakeStoredFiles() {
         override fun sessionLog() = log
 
         override fun library() = Library(1, exercises, emptyList(), emptyList())
 
         override fun preferences() = Preferences(UnitSystem.METRIC, ThemePreference.SYSTEM, false, true, null)
-
-        override fun deleteSession(id: String) = error("this screen deletes nothing")
-
-        override fun writeSession(session: Session) = error("this screen writes no session")
-
-        override fun writeLibrary(library: Library) = error("Not a library writer")
-
-        override fun writePreferences(preferences: Preferences) = error("this screen writes no preferences")
     }
 }
 

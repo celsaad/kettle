@@ -48,6 +48,8 @@ import com.casco.kettle.shell.export.logShareRefused
 import com.casco.kettle.shell.export.rememberFileShare
 import com.casco.kettle.shell.files.LatestFiles
 import com.casco.kettle.shell.files.LocalLatestFiles
+import com.casco.kettle.shell.form.DialogAction
+import com.casco.kettle.shell.form.KettleAlertDialog
 import com.casco.kettle.shell.i18n.pluralText
 import com.casco.kettle.shell.list.ListHeaderRule
 import com.casco.kettle.shell.list.ListRowSeparator
@@ -377,27 +379,11 @@ private fun DeleteDialog(
     onConfirm: () -> Unit,
 ) {
     val (day, month) = dateBadge(row)
-    val colors = KettleTheme.colors
-    val buttons = ButtonDefaults.textButtonColors(contentColor = colors.accentText)
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.history_deleteConfirmTitle)) },
-        text = {
-            Text(
-                stringResource(
-                    R.string.history_deleteConfirmBody,
-                    day,
-                    month,
-                    name,
-                ),
-            )
-        },
-        confirmButton = { TextButton(onConfirm, colors = buttons) { Text(stringResource(R.string.common_delete)) } },
-        dismissButton = { TextButton(onDismiss, colors = buttons) { Text(stringResource(R.string.common_cancel)) } },
-        // The app's surfaces rather than Material's defaults, which aren't Kettle's palette and were
-        // never contrast-checked against it; accentText on backgroundElement is RN's checked pairing.
-        containerColor = colors.backgroundElement,
-        titleContentColor = colors.text,
-        textContentColor = colors.textSecondary,
+    KettleAlertDialog(
+        stringResource(R.string.history_deleteConfirmTitle),
+        stringResource(R.string.history_deleteConfirmBody, day, month, name),
+        onDismiss,
+        confirm = DialogAction(stringResource(R.string.common_delete), onConfirm),
+        dismiss = DialogAction(stringResource(R.string.common_cancel), onDismiss),
     )
 }

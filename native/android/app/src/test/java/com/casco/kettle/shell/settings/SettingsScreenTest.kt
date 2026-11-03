@@ -26,8 +26,8 @@ import com.casco.kettle.domain.SupporterState
 import com.casco.kettle.domain.ThemePreference
 import com.casco.kettle.domain.UnitSystem
 import com.casco.kettle.domain.Workout
+import com.casco.kettle.shell.files.FakeStoredFiles
 import com.casco.kettle.shell.files.LatestFiles
-import com.casco.kettle.shell.files.StoredFiles
 import com.casco.kettle.shell.support.SupporterFile
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.storage.BackupFailure
@@ -559,7 +559,7 @@ class SettingsScreenTest {
         compose.onNodeWithText("Configurações").assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.Heading))
     }
 
-    private class Files : StoredFiles {
+    private class Files : FakeStoredFiles() {
         var stored: Preferences? = null
         var library: Library? = null
         var log = SessionLog.Empty
@@ -571,12 +571,6 @@ class SettingsScreenTest {
         override fun library() = library
 
         override fun preferences() = stored
-
-        override fun deleteSession(id: String) = error("Settings deletes no session")
-
-        override fun writeSession(session: Session) = error("Settings writes no session")
-
-        override fun writeLibrary(library: Library) = error("Not a library writer")
 
         override fun writePreferences(preferences: Preferences) {
             if (failing) throw IOException("disk full")

@@ -53,6 +53,10 @@ import com.casco.kettle.shell.R
 import com.casco.kettle.shell.art.ExerciseArt
 import com.casco.kettle.shell.files.LatestFiles
 import com.casco.kettle.shell.files.LocalLatestFiles
+import com.casco.kettle.shell.form.DialogAction
+import com.casco.kettle.shell.form.EditorButtons
+import com.casco.kettle.shell.form.KettleAlertDialog
+import com.casco.kettle.shell.form.refusal
 import com.casco.kettle.shell.history.entryResultText
 import com.casco.kettle.shell.i18n.deviceUnitSystem
 import com.casco.kettle.shell.i18n.formatMonthDay
@@ -218,18 +222,12 @@ private class Editor(
         scope.launch {
             withContext(NonCancellable) {
                 val refused =
-                    try {
+                    refusal {
                         files.writeLibrary(change(library))
                         actions.libraryChanged()
                         actions.close()
-                        null
-                    } catch (e: IOException) {
-                        e
-                    } catch (e: SecurityException) {
-                        e
                     }
-                // A refusal with no message (a SecurityException often has none) still says something.
-                failure = refused?.let { Failure(kind, it.message ?: it.javaClass.simpleName) }
+                failure = refused?.let { Failure(kind, it) }
                 writing = false
             }
         }
@@ -294,7 +292,7 @@ private fun Editing(
             }
     refusal?.let { Text(it, Modifier.padding(top = Spacing.two), style = KettleType.small, color = colors.accentText) }
 
-    Buttons(onCancel = editor::cancel, onSave = editor::save)
+    EditorButtons(stringResource(R.string.common_save), onCancel = editor::cancel, onPrimary = editor::save)
     if (existing != null) {
         Box(Modifier.fillMaxWidth().padding(top = Spacing.three - 2.dp), contentAlignment = Alignment.Center) {
             TextAction(
@@ -350,34 +348,6 @@ private fun Recent(
     }
 }
 
-@Composable
-private fun Buttons(
-    onCancel: () -> Unit,
-    onSave: () -> Unit,
-) {
-    val colors = KettleTheme.colors
-    Row(Modifier.padding(top = Spacing.four), horizontalArrangement = Arrangement.spacedBy(Spacing.three - 4.dp)) {
-        Box(
-            Modifier
-                .weight(1f)
-                .heightIn(min = 52.dp)
-                .clip(ButtonShape)
-                .border(1.5.dp, colors.border, ButtonShape)
-                .clickable(role = Role.Button, onClick = onCancel),
-            contentAlignment = Alignment.Center,
-        ) { Text(stringResource(R.string.common_cancel), style = KettleType.heading, color = colors.textSecondary) }
-        Box(
-            Modifier
-                .weight(SAVE_WEIGHT)
-                .heightIn(min = 52.dp)
-                .clip(ButtonShape)
-                .background(colors.accent)
-                .clickable(role = Role.Button, onClick = onSave),
-            contentAlignment = Alignment.Center,
-        ) { Text(stringResource(R.string.common_save), style = KettleType.heading, color = colors.onAccent) }
-    }
-}
-
 /** Delete's two questions: refused while a workout uses it, else confirmed before anything goes. */
 @Composable
 private fun DeleteDialog(
@@ -385,55 +355,26 @@ private fun DeleteDialog(
     exercise: Exercise,
 ) {
     val deleting = editor.deleting ?: return
-    val colors = KettleTheme.colors
-    val buttons = ButtonDefaults.textButtonColors(contentColor = colors.accentText)
-    val inUse = deleting as? Editor.Deleting.InUse
-    AlertDialog(
-        onDismissRequest = editor::dismissDelete,
-        title = {
-            Text(
-                stringResource(
-                    if (inUse !=
-                        null
-                    ) {
-                        R.string.exerciseEditor_inUseTitle
-                    } else {
-                        R.string.exerciseEditor_deleteConfirmTitle
-                    },
-                ),
+    // Every name here is the user's, interpolated verbatim.
+    when (deleting) {
+        is Editor.Deleting.InUse -> {
+            KettleAlertDialog(
+                stringResource(R.string.exerciseEditor_inUseTitle),
+                stringResource(R.string.exerciseEditor_inUseBody, exercise.name, deleting.workouts.joinToString(", ")),
+                editor::dismissDelete,
+                // RN's buttonless alert, which Android titles with the platform's own OK.
+                confirm = DialogAction(stringResource(android.R.string.ok), editor::dismissDelete),
             )
-        },
-        // Every name here is the user's, interpolated verbatim.
-        text = {
-            Text(
-                if (inUse != null) {
-                    stringResource(R.string.exerciseEditor_inUseBody, exercise.name, inUse.workouts.joinToString(", "))
-                } else {
-                    stringResource(R.string.common_deleteConfirmBody, exercise.name)
-                },
+        }
+
+        Editor.Deleting.Confirm -> {
+            KettleAlertDialog(
+                stringResource(R.string.exerciseEditor_deleteConfirmTitle),
+                stringResource(R.string.common_deleteConfirmBody, exercise.name),
+                editor::dismissDelete,
+                confirm = DialogAction(stringResource(R.string.common_delete), editor::delete),
+                dismiss = DialogAction(stringResource(R.string.common_cancel), editor::dismissDelete),
             )
-        },
-        confirmButton = {
-            // RN's no-button alert, which Android titles with the platform's own OK.
-            if (inUse != null) {
-                TextButton(editor::dismissDelete, colors = buttons) { Text(stringResource(android.R.string.ok)) }
-            } else {
-                TextButton(editor::delete, colors = buttons) { Text(stringResource(R.string.common_delete)) }
-            }
-        },
-        dismissButton = {
-            if (inUse == null) {
-                TextButton(editor::dismissDelete, colors = buttons) { Text(stringResource(R.string.common_cancel)) }
-            }
-        },
-        // History's dialog's surfaces, for its reason: Kettle's checked pairings, not Material's defaults.
-        containerColor = colors.backgroundElement,
-        titleContentColor = colors.text,
-        textContentColor = colors.textSecondary,
-    )
+        }
+    }
 }
-
-private val ButtonShape = RoundedCornerShape(15.dp)
-
-/** RN's `flex: 1.4` against Cancel's 1: Save is the wider of the two, as the step the screen is for. */
-private const val SAVE_WEIGHT = 1.4f

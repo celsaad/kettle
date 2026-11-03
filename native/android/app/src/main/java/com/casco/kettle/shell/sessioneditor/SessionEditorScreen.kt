@@ -68,7 +68,11 @@ import com.casco.kettle.domain.workoutNameFor
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.files.LatestFiles
 import com.casco.kettle.shell.files.LocalLatestFiles
+import com.casco.kettle.shell.form.DialogAction
+import com.casco.kettle.shell.form.EditorButtons
 import com.casco.kettle.shell.form.FormField
+import com.casco.kettle.shell.form.KettleAlertDialog
+import com.casco.kettle.shell.form.refusal
 import com.casco.kettle.shell.history.entryResultText
 import com.casco.kettle.shell.i18n.deviceUnitSystem
 import com.casco.kettle.shell.i18n.formatMonthBadge
@@ -267,19 +271,12 @@ private class Editor(
         saving = true
         scope.launch {
             withContext(NonCancellable) {
-                val refused =
-                    try {
+                failure =
+                    refusal {
                         files.writeSession(edited)
                         actions.sessionsChanged()
                         actions.close()
-                        null
-                    } catch (e: IOException) {
-                        e
-                    } catch (e: SecurityException) {
-                        e
                     }
-                // A refusal with no message (a SecurityException often has none) still says something.
-                failure = refused?.let { it.message ?: it.javaClass.simpleName }
                 saving = false
             }
         }
@@ -329,7 +326,7 @@ private fun Editing(
         editor.problem?.let { problemText(it) }
             ?: editor.failure?.let { stringResource(R.string.common_saveFailed, it) }
     refusal?.let { Text(it, Modifier.padding(top = Spacing.two), style = KettleType.small, color = colors.accentText) }
-    Buttons(onCancel = editor::cancel, onSave = editor::save)
+    EditorButtons(stringResource(R.string.common_save), onCancel = editor::cancel, onPrimary = editor::save)
 
     editor.confirming?.let { draft ->
         RemoveDialog(
@@ -426,51 +423,17 @@ private fun DraftRows(
 }
 
 @Composable
-private fun Buttons(
-    onCancel: () -> Unit,
-    onSave: () -> Unit,
-) {
-    val colors = KettleTheme.colors
-    Row(Modifier.padding(top = Spacing.four), horizontalArrangement = Arrangement.spacedBy(Spacing.three - 4.dp)) {
-        Box(
-            Modifier
-                .weight(1f)
-                .heightIn(min = 52.dp)
-                .clip(ButtonShape)
-                .border(1.5.dp, colors.border, ButtonShape)
-                .clickable(role = Role.Button, onClick = onCancel),
-            contentAlignment = Alignment.Center,
-        ) { Text(stringResource(R.string.common_cancel), style = KettleType.heading, color = colors.textSecondary) }
-        Box(
-            Modifier
-                .weight(SAVE_WEIGHT)
-                .heightIn(min = 52.dp)
-                .clip(ButtonShape)
-                .background(colors.accent)
-                .clickable(role = Role.Button, onClick = onSave),
-            contentAlignment = Alignment.Center,
-        ) { Text(stringResource(R.string.common_save), style = KettleType.heading, color = colors.onAccent) }
-    }
-}
-
-@Composable
 private fun RemoveDialog(
     name: String,
     onDismiss: () -> Unit,
     onConfirm: () -> Unit,
 ) {
-    val colors = KettleTheme.colors
-    val buttons = ButtonDefaults.textButtonColors(contentColor = colors.accentText)
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.sessionEditor_removeEntryConfirmTitle)) },
-        text = { Text(stringResource(R.string.sessionEditor_removeEntryConfirmBody, name)) },
-        confirmButton = { TextButton(onConfirm, colors = buttons) { Text(stringResource(R.string.common_delete)) } },
-        dismissButton = { TextButton(onDismiss, colors = buttons) { Text(stringResource(R.string.common_cancel)) } },
-        // History's dialog's surfaces, for its reason: Kettle's checked pairings, not Material's defaults.
-        containerColor = colors.backgroundElement,
-        titleContentColor = colors.text,
-        textContentColor = colors.textSecondary,
+    KettleAlertDialog(
+        stringResource(R.string.sessionEditor_removeEntryConfirmTitle),
+        stringResource(R.string.sessionEditor_removeEntryConfirmBody, name),
+        onDismiss,
+        confirm = DialogAction(stringResource(R.string.common_delete), onConfirm),
+        dismiss = DialogAction(stringResource(R.string.common_cancel), onDismiss),
     )
 }
 
@@ -498,7 +461,3 @@ private fun Secondary(
 ) = Text(text, modifier, style = KettleType.small, color = KettleTheme.colors.textSecondary)
 
 private val EmptyLibrary = Library(1, emptyList(), emptyList(), emptyList())
-private val ButtonShape = RoundedCornerShape(15.dp)
-
-/** RN's `flex: 1.4` against Cancel's 1: Save is the wider of the two, as the step the screen is for. */
-private const val SAVE_WEIGHT = 1.4f

@@ -27,7 +27,11 @@ import com.casco.kettle.shell.theme.KettleColors
  * A route registered native is drawn by the [shell]'s native sheet instead (#197), over RN's stub at the
  * same path: the stub's frame is awaited as any route's, then the native screen's first, and only then
  * does the transition start. The two hand over through pictures like any two sheets.
+ *
+ * Over detekt's function count by [repaint], which stays here: this is the one owner of the views the
+ * sheet draws, and the only way in to them.
  */
+@Suppress("TooManyFunctions")
 class ModalSheet(
     content: FrameLayout,
     private val shell: ShellLayout,
@@ -78,6 +82,13 @@ class ModalSheet(
             if (right - left != oldRight - oldLeft && place == Place.Sheet && !motion.running) stage.layOutAsSheet()
         }
     }
+
+    /**
+     * Paints the chrome the shell draws itself, the × and the sheet behind it, in [colors]: what a scheme
+     * changed while the sheet is up needs, as native Settings' Appearance does (#237). Each transition
+     * paints them as it starts too.
+     */
+    fun repaint(colors: KettleColors) = stage.paint(colors)
 
     /** The tab bar is about to steer RN to another tab, which no sheet is part of. */
     fun steeredByBar() {

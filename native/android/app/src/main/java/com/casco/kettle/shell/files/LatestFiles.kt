@@ -9,15 +9,19 @@ import com.casco.kettle.domain.Library
 import com.casco.kettle.domain.Preferences
 import com.casco.kettle.domain.Session
 import com.casco.kettle.domain.SessionLog
+import com.casco.kettle.domain.serializePreferences
 import com.casco.kettle.storage.readLibrary
 import com.casco.kettle.storage.readPreferences
 import com.casco.kettle.storage.readSessionLog
+import com.casco.kettle.storage.writeAtomically
 import com.casco.kettle.storage.writeSessionFile
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.IOException
@@ -42,6 +46,13 @@ interface StoredFiles {
      * [IOException] when the disk refuses, and the last file stays as it was.
      */
     fun writeSession(session: Session)
+
+    /**
+     * Replaces `preferences.json` with [preferences], every field, whole or not at all: native Settings'
+     * write (#237), where native is the file's only writer from the preferences flip. Throws
+     * [IOException] when the disk refuses, and the last file stays as it was.
+     */
+    fun writePreferences(preferences: Preferences)
 }
 
 /**
@@ -56,6 +67,7 @@ class StoragePaths(
     val library = root.resolve("exercises.yaml")
     val preferences = root.resolve("preferences.json")
     val supporter = root.resolve("supporter.json")
+    val backupTargets = root.resolve("backup-targets.json")
 }
 
 /** [StoredFiles] where RN keeps them. */
@@ -76,6 +88,9 @@ class DiskFiles(
     }
 
     override fun writeSession(session: Session) = writeSessionFile(paths.sessions, session)
+
+    override fun writePreferences(preferences: Preferences) =
+        writeAtomically(paths.preferences, serializePreferences(preferences))
 }
 
 /**
@@ -83,7 +98,8 @@ class DiskFiles(
  *
  * RN writes all three until M5: the runner writes new sessions, the session editor edits finished
  * ones (native's [writeSession] once the sessions flip releases), the library editors write the
- * library, and Settings the preferences. Each of those is above the tabs, so the shell rereads when
+ * library, and Settings the preferences (native's [writePreferences] once the preferences flip
+ * releases). Each of those is above the tabs, so the shell rereads when
  * RN hands the tabs back, on a tap onto a native tab or a native sheet coming up (`TabNavigator`'s
  * `reread`), whenever the app starts or stops being seen (`MainActivity`), and when JS says it is up,
  * since a first launch's seed library is written by then and Home, the screen it lands on, would
@@ -142,6 +158,21 @@ class LatestFiles(
         withContext(io) { files.writeSession(session) }
         reread()
     }
+
+    /**
+     * Shows [preferences] at once and writes them over the file: a control that waited on the disk would
+     * feel broken, and the theme follows at once. A read under way is dropped, so it can't put back
+     * what was there. One write at a time, in the order asked, since two taps write the same file.
+     * Throws [IOException] when the disk refuses, and the choice holds for this run only, as RN's store
+     * held it.
+     */
+    suspend fun writePreferences(preferences: Preferences) {
+        reading?.cancel()
+        this.preferences = preferences
+        writingPreferences.withLock { withContext(io) { files.writePreferences(preferences) } }
+    }
+
+    private val writingPreferences = Mutex()
 
     /** Reads all three files again. A read still under way is dropped, so an older one can't land last. */
     fun reread() {

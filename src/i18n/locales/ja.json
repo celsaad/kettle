@@ -367,6 +367,7 @@
     "exportLibrary": "ライブラリを書き出す",
     "exportLibraryDetail": "exercises.yaml を共有します — エクササイズ、ワークアウト、プログラムのすべて。",
     "exportUnavailable": "ブラウザ版では利用できません。",
+    "exportFailed": "ファイルを共有できませんでした: {{detail}}",
     "exportHistory": "履歴を書き出す",
     "exportHistoryDetail_other": "記録済みの{{count}}セッションを1つのファイルとして共有します。",
     "exportHistoryEmpty": "まだ何も記録されていません — まずセッションを1つ終えてください。",

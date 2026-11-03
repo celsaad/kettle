@@ -25,6 +25,36 @@ fun parsePreferences(text: String): Preferences? {
     return fields?.let(::preferencesOf)
 }
 
+/**
+ * [stored], or where there's none, what RN's store defaulted to: the device's [units] (the only layer
+ * that can make that call), the system's scheme, the reminder off and the sounds on. A change starts
+ * from this and writes all of it, so the first setting changed also writes down the rest.
+ */
+fun preferencesOrDefault(
+    stored: Preferences?,
+    units: UnitSystem,
+) = stored
+    ?: Preferences(
+        units,
+        ThemePreference.SYSTEM,
+        restDayReminder = false,
+        sessionSounds = true,
+        backupFolderUri = null,
+    )
+
+/**
+ * The file as RN's `JSON.stringify` wrote it, every field, so RN's read and an older build's read what
+ * native Settings writes (#237). The whole file on every write, never just the field that changed.
+ */
+fun serializePreferences(preferences: Preferences): String =
+    listOf(
+        "unitSystem" to jsonString(preferences.unitSystem.name.lowercase()),
+        THEME to jsonString(preferences.themePreference.name.lowercase()),
+        REMINDER to preferences.restDayReminder.toString(),
+        SOUNDS to preferences.sessionSounds.toString(),
+        BACKUP to (preferences.backupFolderUri?.let(::jsonString) ?: "null"),
+    ).joinToString(",", "{", "}") { (key, value) -> "${jsonString(key)}:$value" }
+
 private fun preferencesOf(fields: Map<*, *>): Preferences? {
     val unitSystem = UNIT_SYSTEMS[fields["unitSystem"]]
     if (unitSystem == null || !fields.defaultedFieldsValid()) return null

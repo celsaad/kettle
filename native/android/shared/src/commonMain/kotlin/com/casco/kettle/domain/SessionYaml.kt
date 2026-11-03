@@ -9,6 +9,24 @@ fun parseSessionYaml(text: String): ParseResult<Session> = parseYaml(text) { ses
 /** What [parseSessionYaml] reads back unchanged. An absent optional is left out, never written as null. */
 fun serializeSessionYaml(session: Session): String = dumpYaml(session.toRaw())
 
+/**
+ * The whole log as one document, `serializeSessionArchiveYaml` in `src/domain/yaml-mapping.ts`: the
+ * history export and the backup's `kettle-history.yaml` (#237), since a share hands over one file. Each
+ * session is what its own file holds. Sorted oldest-first here, where RN's two callers each sort: an
+ * archive read top to bottom in some other app runs forward in time. [exportedAt] is the caller's clock.
+ */
+fun serializeSessionArchiveYaml(
+    sessions: List<Session>,
+    exportedAt: String,
+): String =
+    dumpYaml(
+        linkedMapOf(
+            "version" to 1L,
+            "exported_at" to exportedAt,
+            "sessions" to sessions.sortedBy { it.startedAt }.map { it.toRaw() },
+        ),
+    )
+
 private fun Session.toRaw(): Map<String, Any?> =
     linkedMapOf(
         "version" to version,

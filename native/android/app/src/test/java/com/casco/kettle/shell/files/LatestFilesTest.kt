@@ -4,6 +4,7 @@ import com.casco.kettle.domain.Library
 import com.casco.kettle.domain.Preferences
 import com.casco.kettle.domain.Session
 import com.casco.kettle.domain.SessionLog
+import com.casco.kettle.domain.ThemePreference
 import com.casco.kettle.domain.UnitSystem
 import com.casco.kettle.shell.nav.TabNavigator
 import kotlinx.coroutines.CoroutineScope
@@ -201,6 +202,24 @@ class LatestFilesTest {
         )
     }
 
+    /** Native Settings' write (#237): the whole file where RN reads it, and shown before anything rereads. */
+    @Test
+    fun `writing preferences replaces the whole file and shows them at once`() {
+        val chosen = Preferences(UnitSystem.IMPERIAL, ThemePreference.DARK, true, false, "content://tree/a")
+
+        runBlocking { files.writePreferences(chosen) }
+
+        assertEquals(chosen, files.preferences)
+        assertEquals(chosen, DiskFiles(StoragePaths(folder.root)).preferences())
+        assertEquals(
+            listOf("preferences.json"),
+            folder.root
+                .resolve("exercise-tracker")
+                .list()
+                ?.toList(),
+        )
+    }
+
     @Test
     fun `a read that finishes after a newer one is dropped`() {
         val main = Tasks()
@@ -237,6 +256,8 @@ class LatestFilesTest {
         override fun deleteSession(id: String) = Unit
 
         override fun writeSession(session: Session) = Unit
+
+        override fun writePreferences(preferences: Preferences) = Unit
     }
 
     /** A dispatcher that runs nothing until told to, so a test chooses the order reads finish in. */

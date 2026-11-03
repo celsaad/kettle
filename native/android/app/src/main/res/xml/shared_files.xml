@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  What FileShare may hand the share sheet (#237): the library and the session files where RN keeps
+  them (StoragePaths), and the history archive written under the cache. Nothing else in either folder.
+-->
+<paths>
+    <files-path
+        name="library"
+        path="exercise-tracker/" />
+    <cache-path
+        name="exports"
+        path="exports/" />
+</paths>

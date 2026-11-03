@@ -66,6 +66,12 @@ class ShellTest {
 
     private val sent = mutableListOf<String>()
 
+    /**
+     * Release's routes, every writer still RN's, whatever build runs the tests: Settings stands for an
+     * RN sheet below, which it stays on Play until the preferences flip, where `.dev` draws it natively.
+     */
+    private val shellRoutes = routesFor(on = emptySet())
+
     private lateinit var surface: View
     private lateinit var shell: ShellLayout
 
@@ -126,6 +132,8 @@ class ShellTest {
                 override fun deleteSession(id: String) = Unit
 
                 override fun writeSession(session: Session) = Unit
+
+                override fun writePreferences(preferences: Preferences) = Unit
             },
             CoroutineScope(Dispatchers.Unconfined),
             io = Dispatchers.Unconfined,
@@ -165,6 +173,8 @@ class ShellTest {
                 override fun deleteSession(id: String) = Unit
 
                 override fun writeSession(session: Session) = Unit
+
+                override fun writePreferences(preferences: Preferences) = Unit
             },
             CoroutineScope(Dispatchers.Unconfined),
             io = Dispatchers.Unconfined,

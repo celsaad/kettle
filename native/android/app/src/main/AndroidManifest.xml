@@ -41,6 +41,13 @@
             <category android:name="android.intent.category.BROWSABLE" />
             <data android:scheme="https" />
         </intent>
+        <!--
+          Settings' backup folder (#237): whether there's a picker to choose one with. A device without
+          one gets the export copy in its place, as RN gave a platform whose folder wouldn't stick.
+        -->
+        <intent>
+            <action android:name="android.intent.action.OPEN_DOCUMENT_TREE" />
+        </intent>
     </queries>
 
     <!-- enableOnBackInvokedCallback: app.json's predictiveBackGestureEnabled: true. -->
@@ -97,6 +104,17 @@
                 <data android:scheme="kettle" />
             </intent-filter>
         </activity-alias>
+
+        <!-- Export's share sheet (#237): read access to the one file shared, granted per share. -->
+        <provider
+            android:name=".export.ShellFileProvider"
+            android:authorities="${applicationId}.shell.files"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/shared_files" />
+        </provider>
 
         <!-- The rest-day reminder (#236): its alarm and its reschedule after a reboot. -->
         <receiver

@@ -47,8 +47,8 @@ object JsBridge {
 
     /**
      * Asks RN to share session [id]'s file, or the whole log as one archive when [id] is null: native
-     * History's Export and Export all. RN keeps export until M5, when export and share move native with
-     * Settings, which shares the same files; until then one implementation serves both screens.
+     * History's Export and Export all. Native Settings shares the same files through `FileShare` (#237);
+     * History keeps asking RN until its flip switches it there too.
      */
     fun export(id: String?) {
         // What src/hooks/safe-brownfield.ts routes to src/state/export-requested.ts. The two share no code,

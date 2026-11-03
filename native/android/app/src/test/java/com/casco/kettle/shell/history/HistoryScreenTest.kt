@@ -429,6 +429,8 @@ class HistoryScreenTest {
         }
 
         override fun writeSession(session: Session) = error("History writes no session")
+
+        override fun writePreferences(preferences: Preferences) = error("History writes no preferences")
     }
 }
 

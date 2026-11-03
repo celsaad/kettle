@@ -2,34 +2,23 @@
  * The RN app's half of its conversation with the native shell that hosts it
  * (docs/native-migration-plan.md): the "ready" handshake from M2, from M3 the navigate messages
  * native steers the surface with and the filesChanged ones that make a store re-read its file, and
- * from M4 native History's requests to export. The shell loses anything it sends before JS listens —
+ * from M5 the runner's finish backup, which RN asks for and native performs. The shell loses anything it sends before JS listens —
  * the native module only starts forwarding once a listener exists — so it holds its messages until
  * "ready", and "ready" is only true once the listener is in place.
  *
  * expo-brownfield throws on import wherever its native module isn't built in (Expo Go, a dev client
- * from before M2), so it's required lazily and a failure degrades to doing nothing: the app then runs
- * exactly as it did before there was a shell.
+ * from before M2), so `brownfield-module.ts` requires it lazily and a failure degrades to doing
+ * nothing: the app then runs exactly as it did before there was a shell.
  */
 import { router, type Href } from 'expo-router';
 
-import { isExportRequest, onExportRequested } from '@/state/export-requested';
+import { getBrownfield, isHosted } from '@/hooks/brownfield-module';
 import { onFilesChanged } from '@/state/files-changed';
+import { useSessionHistoryStore } from '@/state/session-history-store';
 
-type BrownfieldModule = typeof import('expo-brownfield');
+export { isHosted };
 
-let cached: BrownfieldModule | null | undefined;
 let subscribed = false;
-
-function getBrownfield(): BrownfieldModule | null {
-  if (cached !== undefined) return cached;
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    cached = require('expo-brownfield') as BrownfieldModule;
-  } catch {
-    cached = null;
-  }
-  return cached;
-}
 
 /**
  * The shell steers the one RN surface it hosts by message, since a second surface can't be routed
@@ -48,9 +37,9 @@ function onShellMessage(message: Record<string, unknown>): void {
     void onFilesChanged(message.kind);
     return;
   }
-  // Native History's and Library's Exports, which RN shares until M5.
-  if (isExportRequest(message.type)) {
-    void onExportRequested(message);
+  // The shell's answer to brownfield-module's reportSessionFinished. The two share no code, so change both.
+  if (message.type === 'backupResult') {
+    if (typeof message.failed === 'boolean') useSessionHistoryStore.getState().backupAnswered(message.failed);
     return;
   }
   // The shell's JsBridge.open, with its Stacking as the type. The two share no code, so change both.
@@ -130,21 +119,6 @@ export function hostedTabOptions(): { hidden?: boolean; backBehavior?: 'none' } 
 export function hostedModalOptions(): { animation?: 'none' } {
   if (!isHosted()) return {};
   return { animation: 'none' };
-}
-
-/** Whether the native shell hosts this surface. False in every other build, as `hostedTabOptions` says. */
-export function isHosted(): boolean {
-  // The shell's MainActivity sets it. The two share no code, so change both.
-  return getBrownfield()?.getSharedStateValue('nativeTabBar') === true;
-}
-
-/**
- * Whether the shell schedules the rest-day reminder itself (#236): on `.dev` once the preferences flip
- * is on, and everywhere after that flip ships. False in every other build, as `isHosted` is.
- */
-export function isReminderNative(): boolean {
-  // The shell's MainActivity sets it. The two share no code, so change both.
-  return getBrownfield()?.getSharedStateValue('nativeReminder') === true;
 }
 
 /**

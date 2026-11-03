@@ -325,13 +325,14 @@ its own, in the next release after it lands.
   editor can be on screen with History.
 - **Support writes the supporter file**, which RN Settings reads until M5 (#188). Native becomes its
   only writer, its format is frozen until M5, and `filesChanged` gains a `supporter` kind, deleted with
-  RN Settings.
+  RN Settings. *(Deleted in the preferences flip, #238.)*
 
 **History's and Library's Exports stay RN's until M5** (#202, #234). Export and share move native
 with Settings, which shares the same files, so the native screens ask instead: `JsBridge.export` sends
 `exportSession` or `exportHistory`, `JsBridge.exportLibrary` sends `exportLibrary`, and RN's
 `state/export-requested.ts` shares with the sheet the RN screens used. All three messages, and that
-file, go when export does.
+file, go when export does. *(Gone in the preferences flip, #238: both screens share through
+`FileShare`.)*
 
 **Support is the tip jar**, so it also needs billing. Its native port moves the tip jar to the Play
 Billing Library in M4, a step pulled forward from M7, and keeps `safe-iap.ts`'s rule: if billing is

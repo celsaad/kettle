@@ -14,9 +14,9 @@ import java.io.IOException
 
 /**
  * The folder the user chose in Settings, through the Storage Access Framework: [tree] is the
- * `OpenDocumentTree` result whose grant [keepGrant] persisted. `src/storage/backup.ts` and
- * `docs/sdk-57-api-notes.md` record how a `content://` document differs from a `file://` path; the
- * two that cost data are kept below, at the calls they're about.
+ * `OpenDocumentTree` result whose grant [keepGrant] persisted. `docs/sdk-57-api-notes.md` records how
+ * a `content://` document differs from a `file://` path; the two that cost data are kept below, at the
+ * calls they're about.
  */
 class SafBackupFolder(
     private val resolver: ContentResolver,

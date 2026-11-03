@@ -57,7 +57,7 @@ interface StoredFiles {
 
 /**
  * Where RN keeps its files, under expo-file-system's `Paths.document`, which is [filesDir].
- * `src/storage/paths.ts` names them. The two share no code, so change both.
+ * `src/storage/paths.ts` names the ones RN still reads. The two share no code, so change both.
  */
 class StoragePaths(
     filesDir: File,

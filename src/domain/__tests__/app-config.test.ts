@@ -41,10 +41,10 @@ describe('the two build numbers', () => {
 });
 
 /**
- * Settings tells iOS users their library and log are in the Files app, and these two keys are the
- * whole of why that is true (`storage/backup.ts`'s `isDocumentsFolderShared`). Delete one and the
- * paragraph stays on screen, now describing a folder nothing can see — a copy bug with no code
- * symptom, which is the kind this file exists for.
+ * iOS's answer to the backup folder: these two keys publish the library and log to the Files app
+ * (`docs/ios-plan.md`). RN Settings said so until the preferences flip (#238), and iOS's native
+ * Settings will again; delete one and that copy describes a folder nothing can see — a copy bug with
+ * no code symptom, which is the kind this file exists for.
  */
 describe('the Files app declaration', () => {
   it('publishes the documents folder both ways', () => {

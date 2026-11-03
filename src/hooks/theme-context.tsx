@@ -12,14 +12,13 @@ type ThemeContextValue = {
   scheme: Scheme;
   colors: (typeof Colors)[Scheme];
   preference: ThemePreference;
-  /** Resolves false when the write failed; the change still applies for this run. */
-  setPreference: (preference: ThemePreference) => Promise<boolean>;
 };
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 /**
- * Follows the OS color scheme until Settings → Appearance pins one.
+ * Follows the OS color scheme until Settings → Appearance pins one. Native Settings writes the choice
+ * (#238); this only reads it.
  *
  * `preference` replaced a `Scheme | null` override plus a `toggle()` that flipped light↔dark: once
  * flipped, nothing could put it back to following the OS, because "follow" and "currently light"
@@ -34,7 +33,6 @@ const ThemeContext = createContext<ThemeContextValue | null>(null);
 export function ThemeOverrideProvider({ children }: { children: ReactNode }) {
   const systemScheme = useColorScheme();
   const preference = usePreferencesStore((state) => state.preferences.themePreference);
-  const setPreference = usePreferencesStore((state) => state.setThemePreference);
   const scheme: Scheme = preference === 'system' ? (systemScheme === 'dark' ? 'dark' : 'light') : preference;
 
   // Keeps the web page's own background in sync with the active scheme — including a manual
@@ -52,12 +50,8 @@ export function ThemeOverrideProvider({ children }: { children: ReactNode }) {
       scheme,
       colors: Colors[scheme],
       preference,
-      setPreference,
     }),
-    // `setPreference` is in here where the old `useState` setter didn't need to be: it's now a zustand
-    // action, and while those are just as stable, that's a fact about the store rather than one the
-    // lint rule can see. Listing it costs nothing and keeps the accepted-warning baseline honest.
-    [preference, scheme, setPreference],
+    [preference, scheme],
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;

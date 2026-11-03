@@ -143,7 +143,6 @@ class SupportScreenTest {
 
     private val unavailable = "Não foi possível conectar à Play Store. Verifique sua conexão e tente de novo."
     private val processing = "Seu pagamento ainda está sendo processado. Obrigado!"
-    private var saved = 0
 
     private fun show(
         file: SupporterFile = FakeSupporterFile(),
@@ -154,7 +153,6 @@ class SupportScreenTest {
             SupportScreen(
                 file,
                 billing,
-                onSaved = { saved++ },
                 TipJarRuntime(now = { 1_793_102_400_000 }, io = Dispatchers.Unconfined),
             )
         }
@@ -223,7 +221,6 @@ class SupportScreenTest {
 
         assertEquals(listOf("t1"), billing.consumed)
         assertEquals(listOf(SupporterState(1, "2026-10-27T12:00:00.000Z", TipTier.SMALL)), file.written)
-        assertEquals(1, saved)
         compose.onNodeWithText("Obrigado!").performScrollTo().assertExists()
         compose.onNodeWithText("Você deixou uma gorjeta. Isso ajuda de verdade.").assertExists()
         compose.onNode(hasClickAction() and hasText("Gorjeta média")).assertIsEnabled()
@@ -238,7 +235,6 @@ class SupportScreenTest {
         compose.onNodeWithText("Gorjeta média").performClick()
         finish(billing, PurchaseUpdate.Bought(listOf(paid("tip_medium", "t1"))))
 
-        assertEquals(0, saved)
         compose.onNodeWithText("Você deixou uma gorjeta. Isso ajuda de verdade.").assertExists()
         compose
             .onNodeWithText("Sua gorjeta foi concluída, mas não foi possível salvá-la neste aparelho.")
@@ -291,7 +287,6 @@ class SupportScreenTest {
 
         assertEquals(listOf("old"), billing.consumed)
         assertEquals(listOf(SupporterState(1, "2026-10-27T12:00:00.000Z", TipTier.LARGE)), file.written)
-        assertEquals(1, saved)
         compose.onNodeWithText("Você deixou uma gorjeta. Isso ajuda de verdade.").assertExists()
     }
 
@@ -367,7 +362,7 @@ class SupportScreenTest {
         compose.setContent {
             KettleTheme(darkTheme = false) {
                 if (showing) {
-                    SupportScreen(file, billing, onSaved = {}, TipJarRuntime({ 0 }, Dispatchers.Unconfined))
+                    SupportScreen(file, billing, TipJarRuntime({ 0 }, Dispatchers.Unconfined))
                 }
             }
         }
@@ -396,7 +391,6 @@ class SupportScreenTest {
                 SupportScreen(
                     FakeSupporterFile(),
                     billing,
-                    onSaved = {},
                     TipJarRuntime(io = Dispatchers.Unconfined, patienceMs = 1_000),
                 )
             }
@@ -421,7 +415,6 @@ class SupportScreenTest {
                 SupportScreen(
                     file,
                     billing,
-                    onSaved = {},
                     TipJarRuntime(io = Dispatchers.Unconfined, patienceMs = 1_000),
                 )
             }

@@ -1,9 +1,5 @@
 const mockLoad = jest.fn();
-const mockSave = jest.fn();
-jest.mock('@/storage/preferences-file', () => ({
-  loadPreferences: () => mockLoad(),
-  savePreferences: (preferences: unknown) => mockSave(preferences),
-}));
+jest.mock('@/storage/preferences-file', () => ({ loadPreferences: () => mockLoad() }));
 
 const mockDeviceUnitSystem = jest.fn();
 jest.mock('@/i18n', () => ({
@@ -25,7 +21,6 @@ beforeEach(() => {
     },
   });
   mockLoad.mockReset().mockResolvedValue(null);
-  mockSave.mockReset().mockResolvedValue(true);
   mockDeviceUnitSystem.mockReset().mockReturnValue('metric');
 });
 
@@ -98,123 +93,13 @@ describe('hydrate', () => {
   });
 });
 
-describe('setUnitSystem', () => {
-  it('persists the choice', async () => {
-    expect(await usePreferencesStore.getState().setUnitSystem('imperial')).toBe(true);
-    expect(mockSave).toHaveBeenCalledWith({
-      unitSystem: 'imperial',
-      themePreference: 'system',
-      restDayReminder: false,
-      sessionSounds: true,
-      backupFolderUri: null,
-    });
-  });
+/**
+ * On for a fresh install, asserted through `hydrate` rather than off the initial state: the store's
+ * pre-hydration value is never rendered, so only this path proves what someone who has never opened
+ * Settings actually gets from the runner.
+ */
+it('leaves the session sounds on for an install with nothing stored', async () => {
+  await usePreferencesStore.getState().hydrate();
 
-  /**
-   * A failed write must not roll back the change. Every weight on screen has already been redrawn in
-   * the new unit; snapping them back would look like the control is broken, when all that's actually
-   * lost is the choice surviving a relaunch — which is what the return value is for.
-   */
-  it('still applies the change when persistence fails, and says so', async () => {
-    mockSave.mockResolvedValue(false);
-
-    expect(await usePreferencesStore.getState().setUnitSystem('imperial')).toBe(false);
-    expect(usePreferencesStore.getState().preferences.unitSystem).toBe('imperial');
-  });
-});
-
-describe('setThemePreference', () => {
-  it('persists the choice', async () => {
-    expect(await usePreferencesStore.getState().setThemePreference('dark')).toBe(true);
-    expect(mockSave).toHaveBeenCalledWith({
-      unitSystem: 'metric',
-      themePreference: 'dark',
-      restDayReminder: false,
-      sessionSounds: true,
-      backupFolderUri: null,
-    });
-  });
-
-  // Every preference shares one file, so each setter writes the *merged* object. Writing only its own
-  // field would drop the others on every change.
-  it('keeps the other preferences when writing', async () => {
-    await usePreferencesStore.getState().setUnitSystem('imperial');
-    await usePreferencesStore.getState().setThemePreference('light');
-
-    expect(mockSave).toHaveBeenLastCalledWith({
-      unitSystem: 'imperial',
-      themePreference: 'light',
-      restDayReminder: false,
-      sessionSounds: true,
-      backupFolderUri: null,
-    });
-  });
-
-  // Same reasoning as units: the whole app has already repainted in the new scheme, and snapping it
-  // back would look broken when all that's lost is the choice surviving a relaunch.
-  it('still applies the change when persistence fails, and says so', async () => {
-    mockSave.mockResolvedValue(false);
-
-    expect(await usePreferencesStore.getState().setThemePreference('dark')).toBe(false);
-    expect(usePreferencesStore.getState().preferences.themePreference).toBe('dark');
-  });
-});
-
-describe('setRestDayReminder', () => {
-  // Off unless asked for. A local notification is the one thing this app does that reaches outside
-  // itself, and an opt-in that shipped as on would start notifying people who never chose it.
-  it('starts off', () => {
-    expect(usePreferencesStore.getState().preferences.restDayReminder).toBe(false);
-  });
-
-  it('persists the choice alongside the other preferences', async () => {
-    expect(await usePreferencesStore.getState().setRestDayReminder(true)).toBe(true);
-    expect(mockSave).toHaveBeenCalledWith({
-      unitSystem: 'metric',
-      themePreference: 'system',
-      restDayReminder: true,
-      sessionSounds: true,
-      backupFolderUri: null,
-    });
-  });
-
-  it('still applies the change when persistence fails, and says so', async () => {
-    mockSave.mockResolvedValue(false);
-
-    expect(await usePreferencesStore.getState().setRestDayReminder(true)).toBe(false);
-    expect(usePreferencesStore.getState().preferences.restDayReminder).toBe(true);
-  });
-});
-
-describe('setSessionSounds', () => {
-  /**
-   * On for a fresh install, the opposite of the reminder above, and asserted through `hydrate` rather
-   * than off the initial state — the store's pre-hydration value is never rendered, so only this path
-   * proves what someone who has never opened Settings actually gets.
-   */
-  it('starts on for an install with nothing stored', async () => {
-    await usePreferencesStore.getState().hydrate();
-
-    expect(usePreferencesStore.getState().preferences.sessionSounds).toBe(true);
-  });
-
-  it('persists the choice alongside the other preferences', async () => {
-    expect(await usePreferencesStore.getState().setSessionSounds(false)).toBe(true);
-    expect(mockSave).toHaveBeenCalledWith({
-      unitSystem: 'metric',
-      themePreference: 'system',
-      restDayReminder: false,
-      sessionSounds: false,
-      backupFolderUri: null,
-    });
-  });
-
-  // Same as the settings above: the change stands for this run either way, and the boolean is how
-  // Settings could say it won't survive a relaunch.
-  it('still applies the change when persistence fails, and says so', async () => {
-    mockSave.mockResolvedValue(false);
-
-    expect(await usePreferencesStore.getState().setSessionSounds(false)).toBe(false);
-    expect(usePreferencesStore.getState().preferences.sessionSounds).toBe(false);
-  });
+  expect(usePreferencesStore.getState().preferences.sessionSounds).toBe(true);
 });

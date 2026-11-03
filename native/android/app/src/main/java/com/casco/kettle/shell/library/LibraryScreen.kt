@@ -44,6 +44,8 @@ import com.casco.kettle.domain.ExerciseConfig
 import com.casco.kettle.domain.UnitSystem
 import com.casco.kettle.domain.rankByName
 import com.casco.kettle.shell.R
+import com.casco.kettle.shell.export.logShareRefused
+import com.casco.kettle.shell.export.rememberFileShare
 import com.casco.kettle.shell.files.LatestFiles
 import com.casco.kettle.shell.files.LocalLatestFiles
 import com.casco.kettle.shell.i18n.deviceUnitSystem
@@ -70,13 +72,17 @@ import kotlin.reflect.KClass
 
 /** What `shellRoutes` registers at `/library`, the tab. */
 @Composable
-fun LibraryRoute() =
-    LibraryScreen(LocalLatestFiles.current, LocalTabReselects.current, JsBridge::open, JsBridge::exportLibrary)
+fun LibraryRoute() {
+    val share = rememberFileShare()
+    LibraryScreen(LocalLatestFiles.current, LocalTabReselects.current, JsBridge::open) {
+        logShareRefused(share?.library())
+    }
+}
 
 /**
  * Library (#234), the library's exercises as rows, as RN's `(tabs)/library.tsx`, now the empty stub at
  * this path: a name search, the type filter, and the header's Export and Import. [open] is
- * `JsBridge.open` and [export] `JsBridge.exportLibrary`, parameters so a test hears each one.
+ * `JsBridge.open` and [export] the library's share, parameters so a test hears each one.
  *
  * [reselected] carries taps on the tab already showing; one on Library scrolls back to the top.
  */
@@ -145,7 +151,7 @@ fun LibraryScreen(
     }
 }
 
-/** The title, then Export, which RN shares until the preferences flip (#202), and Import. */
+/** The title, then Export and Import. */
 @Composable
 private fun Header(
     onExport: () -> Unit,

@@ -1,4 +1,4 @@
-import { act, renderHook } from '@testing-library/react-native';
+import { renderHook } from '@testing-library/react-native';
 import type { ReactNode } from 'react';
 
 import { ThemeOverrideProvider, useAppTheme } from '@/hooks/theme-context';
@@ -10,14 +10,10 @@ import { usePreferencesStore } from '@/state/preferences-store';
  * The preference used to be `useState` inside the provider, which meant it reset to `system` on every
  * relaunch — the app could not remember a pinned scheme. It now reads from `preferences-store`, so the
  * cases worth holding are that a stored choice is already in effect on the first render (a value
- * arriving one render late would paint the wrong scheme and then swap it), that `system` still defers
- * to the device, and that choosing a scheme writes through to disk rather than staying in memory.
+ * arriving one render late would paint the wrong scheme and then swap it), and that `system` still defers
+ * to the device. Choosing one is native Settings' from the preferences flip (#238).
  */
-const mockSave = jest.fn();
-jest.mock('@/storage/preferences-file', () => ({
-  loadPreferences: jest.fn().mockResolvedValue(null),
-  savePreferences: (preferences: unknown) => mockSave(preferences),
-}));
+jest.mock('@/storage/preferences-file', () => ({ loadPreferences: jest.fn().mockResolvedValue(null) }));
 
 const mockColorScheme = jest.fn<'light' | 'dark', []>();
 jest.mock('@/hooks/use-color-scheme', () => ({
@@ -29,7 +25,6 @@ function wrapper({ children }: { children: ReactNode }) {
 }
 
 beforeEach(() => {
-  mockSave.mockReset().mockResolvedValue(true);
   mockColorScheme.mockReset().mockReturnValue('light');
 });
 
@@ -81,22 +76,5 @@ it('follows the device while the preference is system', async () => {
   const { result } = await renderHook(() => useAppTheme(), { wrapper });
 
   expect(result.current.preference).toBe('system');
-  expect(result.current.scheme).toBe('dark');
-});
-
-it('persists a chosen scheme instead of holding it in memory', async () => {
-  const { result } = await renderHook(() => useAppTheme(), { wrapper });
-
-  await act(async () => {
-    await result.current.setPreference('dark');
-  });
-
-  expect(mockSave).toHaveBeenCalledWith({
-    unitSystem: 'metric',
-    themePreference: 'dark',
-    restDayReminder: false,
-    sessionSounds: true,
-    backupFolderUri: null,
-  });
   expect(result.current.scheme).toBe('dark');
 });

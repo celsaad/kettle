@@ -23,16 +23,6 @@ import { UNIT_SYSTEMS, type UnitSystem } from '@/domain/units';
 export const THEME_PREFERENCES = ['light', 'dark', 'system'] as const;
 export type ThemePreference = (typeof THEME_PREFERENCES)[number];
 
-/**
- * How long after the last session the opt-in nudge lands, and the local hour it lands at.
- *
- * Two days, not one: a rest day is training, not a lapse, and a reminder that fires the morning after
- * a heavy session is nagging someone who is doing the right thing. 18:00 because the notification is
- * useful when there is still an evening left to train in.
- */
-export const REST_DAY_REMINDER_DAYS = 2;
-export const REST_DAY_REMINDER_HOUR = 18;
-
 export type Preferences = {
   /** Display only — stored weights are always kilograms, see `domain/units.ts`. */
   unitSystem: UnitSystem;

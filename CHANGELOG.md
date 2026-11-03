@@ -18,7 +18,14 @@ here, next to what it describes.
 
 ## Unreleased
 
-Nothing since 0.13.1.
+### What changed
+
+- **Settings is native**, and looks and works as it did: units, appearance, session sounds, the
+  rest-day reminder, the backup folder and Export all carry over, and your choices are kept. The
+  rest-day reminder is now a plain Android alarm, scheduled once; an install updating from 0.13 drops
+  its old reminder so it can't arrive twice (#238).
+- **Export from History and Library opens Android's own share sheet**, the one Settings uses, with
+  its title in your language (#238).
 
 ---
 

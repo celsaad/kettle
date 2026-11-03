@@ -4,6 +4,10 @@ import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.ClipData
 import android.content.Intent
+import android.util.Log
+import androidx.activity.compose.LocalActivity
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.core.content.FileProvider
 import com.casco.kettle.domain.HISTORY_BACKUP_NAME
 import com.casco.kettle.domain.Session
@@ -19,10 +23,9 @@ import java.io.FileNotFoundException
 import java.io.IOException
 
 /**
- * Export, through the platform share sheet: `src/storage/export.ts`, which moves native with Settings
- * (#237). The files go as they are, the library and a session as the files themselves and the whole
- * log as one archive, so an export and a backup can't disagree. Native History and Library ask RN
- * through `JsBridge.export` until the library flip moves them here too.
+ * Export, through the platform share sheet: Settings', History's and Library's (#237, #238). The files
+ * go as they are, the library and a session as the files themselves and the whole log as one archive,
+ * so an export and a backup can't disagree.
  *
  * Each answers null where the sheet opened, or the reason it didn't, for the screen to say: a share
  * that does nothing on the one row whose job it is reads as broken.
@@ -88,6 +91,21 @@ class FileShare(
         const val AUTHORITY = ".shell.files"
         const val EXPORTS = "exports"
     }
+}
+
+/** This activity's [FileShare], or null outside one, as in a preview. */
+@Composable
+fun rememberFileShare(): FileShare? {
+    val activity = LocalActivity.current ?: return null
+    return remember(activity) { FileShare(activity, StoragePaths(activity.filesDir)) }
+}
+
+/**
+ * Logs why a share from a screen with nowhere to say so didn't open: History's and Library's, which
+ * RN's export only warned about to the console too.
+ */
+fun logShareRefused(reason: String?) {
+    if (reason != null) Log.w("FileShare", "The share sheet didn't open: $reason")
 }
 
 /** What both the share and the backup folder call a library or an archive: RN's, kept. */

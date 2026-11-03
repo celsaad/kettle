@@ -10,15 +10,13 @@ import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
 
 /**
- * `REST_DAY_REMINDER_DAYS` in `src/domain/preferences.ts`, which the settings note quotes. The two
- * share no code, so change both.
+ * How long after the last session the opt-in nudge lands, which the settings note quotes. Two days, not
+ * one: a rest day is training, not a lapse, and a reminder the morning after a heavy session nags
+ * someone doing the right thing. Native's alone since the preferences flip (#238).
  */
 const val REST_DAY_REMINDER_DAYS = 2
 
-/**
- * The local hour the nudge lands at, `REST_DAY_REMINDER_HOUR` in `src/domain/preferences.ts`. The two
- * share no code, so change both.
- */
+/** The local hour the nudge lands at: 18:00, while there is still an evening left to train in. */
 private const val REST_DAY_REMINDER_HOUR = 18
 
 /**

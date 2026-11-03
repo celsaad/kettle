@@ -17,7 +17,6 @@ import androidx.compose.runtime.remember
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import com.casco.kettle.domain.Preferences
-import com.casco.kettle.domain.isoInstant
 import com.casco.kettle.shell.export.FileShare
 import com.casco.kettle.shell.files.LatestFiles
 import com.casco.kettle.shell.files.LocalLatestFiles
@@ -27,15 +26,11 @@ import com.casco.kettle.shell.rn.FileKind
 import com.casco.kettle.shell.rn.JsBridge
 import com.casco.kettle.shell.rn.Stacking
 import com.casco.kettle.shell.support.DiskSupporterFile
-import com.casco.kettle.storage.backUpNow
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-/**
- * What `shellRoutes` registers at `/settings`, behind the preferences flip: the screen on the real
- * files, SAF, the share sheet and the shell.
- */
+/** What `shellRoutes` registers at `/settings`: the screen on the real files, SAF, the share sheet and the shell. */
 @Composable
 fun SettingsRoute() {
     val activity = LocalActivity.current ?: return
@@ -50,13 +45,7 @@ fun SettingsRoute() {
                 BackupActions(
                     pickFolder = pickFolder,
                     // Off the main thread, since a folder backed by a cloud provider can take seconds.
-                    backUp = { uri, sessions ->
-                        withContext(Dispatchers.IO) {
-                            val folder = SafBackupFolder(activity.contentResolver, uri.toUri())
-                            val now = isoInstant(System.currentTimeMillis())
-                            backUpNow(folder, paths.library, paths.backupTargets, sessions, now)
-                        }
-                    },
+                    backUp = { uri, sessions -> withContext(Dispatchers.IO) { activity.backUp(paths, uri, sessions) } },
                 ),
                 ExportActions(library = share::library, history = share::history),
                 ContactActions(openLink = activity::openLink, copy = activity::copyToClipboard),

@@ -9,7 +9,6 @@ import com.casco.kettle.domain.Session
 import com.casco.kettle.domain.SessionLog
 import com.casco.kettle.domain.ThemePreference
 import com.casco.kettle.domain.UnitSystem
-import com.casco.kettle.shell.nav.Flip
 import expo.modules.notifications.service.NotificationsService
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDateTime
@@ -67,8 +66,7 @@ class RestDayReminderTest {
     private fun reconcile(
         reminder: Boolean,
         log: SessionLog,
-        flips: Set<Flip> = setOf(Flip.Preferences),
-    ) = context.reconcileReminder(log, preferences(reminder), now, zone, flips)
+    ) = context.reconcileReminder(log, preferences(reminder), now, zone)
 
     @Test
     fun `schedules one inexact alarm two days after the newest session`() {
@@ -95,18 +93,10 @@ class RestDayReminderTest {
         assertEquals(emptyList<Any>(), alarms.scheduledAlarms)
     }
 
-    // Release, until the preferences flip: RN's own reminder is still live there, and is RN's to keep.
-    @Test
-    fun `schedules nothing while the preferences flip is off`() {
-        reconcile(reminder = true, logOf(24), flips = emptySet())
-
-        assertEquals(emptyList<Any>(), alarms.scheduledAlarms)
-    }
-
     /** 0.13's pending Expo request, cancelled so it can't fire beside the native alarm. */
     @Test
-    fun `asks Expo to drop the old reminder once the flip is on`() {
-        context.retireExpoReminder(setOf(Flip.Preferences))
+    fun `asks Expo to drop the old reminder`() {
+        context.retireExpoReminder()
 
         val cancel = shadowOf(context).broadcastIntents.single()
         assertEquals(NotificationsService.NOTIFICATION_EVENT_ACTION, cancel.action)
@@ -116,14 +106,6 @@ class RestDayReminderTest {
             listOf("kettle-rest-day-reminder"),
             cancel.getStringArrayExtra(NotificationsService.IDENTIFIERS_KEY)?.toList(),
         )
-    }
-
-    // Before the flip that request is the live reminder, and RN's to keep.
-    @Test
-    fun `leaves Expo's reminder alone while the preferences flip is off`() {
-        context.retireExpoReminder(emptySet())
-
-        assertEquals(emptyList<Intent>(), shadowOf(context).broadcastIntents)
     }
 
     @Test

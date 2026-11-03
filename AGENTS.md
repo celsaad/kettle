@@ -100,9 +100,9 @@ mistake here that cannot be fixed for anyone who has already installed it.
   `content-packs.ts`'s import map, and its import-screen row (`import.packs.<id>.name`/`.detail` in
   all three bundles); `content-packs.test.ts` fails when any of them is missing. See the
   decision log for the four rules a pack has to respect; the prefixed-id one is the load-bearing one.
-- `src/state/` — zustand stores (`library-store`, `session-history-store`, `preferences-store`,
-  `tip-store`) and `selectors/`, derived/display logic split per view (`records`, `logged-sessions`,
-  `session-summary`, …).
+- `src/state/` — zustand stores (`library-store`, `session-history-store`, and a read-only
+  `preferences-store`, since native Settings writes that file) and `selectors/`, derived/display logic
+  split per view (`records`, `logged-sessions`, `session-summary`, …).
 - `src/hooks/use-session-runner.ts` — the wall-clock session engine. The product plan calls timer
   reliability "the make-or-break issue"; treat this file as high-risk and verify changes by running a
   real session, not by reasoning alone. Its pure parts live next door in `session-steps.ts`

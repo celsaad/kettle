@@ -7,6 +7,10 @@ import com.casco.kettle.brownfield.ReactNativeHostManager
 import com.casco.kettle.shell.nav.RouteReport
 import com.facebook.react.modules.core.DeviceEventManagerModule
 import expo.modules.brownfield.BrownfieldMessaging
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 
 /**
  * The one channel to JS, for the life of the process: the JS runtime outlives any activity (the M0
@@ -46,24 +50,6 @@ object JsBridge {
     }
 
     /**
-     * Asks RN to share session [id]'s file, or the whole log as one archive when [id] is null: native
-     * History's Export and Export all. Native Settings shares the same files through `FileShare` (#237);
-     * History keeps asking RN until its flip switches it there too.
-     */
-    fun export(id: String?) {
-        // What src/hooks/safe-brownfield.ts routes to src/state/export-requested.ts. The two share no code,
-        // so change both.
-        channel.send(if (id == null) mapOf("type" to "exportHistory") else mapOf("type" to "exportSession", "id" to id))
-    }
-
-    /** Asks RN to share the library file: native Library's Export (#234), RN's until M5 as [export] is. */
-    fun exportLibrary() {
-        // What src/hooks/safe-brownfield.ts routes to src/state/export-requested.ts. The two share no code,
-        // so change both.
-        channel.send(mapOf("type" to "exportLibrary"))
-    }
-
-    /**
      * Back, as hardware back reaches RN: the sheet's ×, grabber and predictive back send it, so RN stays
      * the router. What `setUpNativeBackHandling`'s callback does with native back off, which it is.
      */
@@ -100,7 +86,17 @@ object JsBridge {
      */
     var onReady: (() -> Unit)? = null
 
+    /**
+     * The runner's finish backup (#220), blocking: whether it failed, or null where it took none. Set
+     * once, on the application's context rather than an activity's, since a backup the user's folder
+     * takes seconds over may outlive the activity that asked.
+     */
+    @Volatile var backUpFinishedSession: (() -> Boolean?)? = null
+
     private val main = Handler(Looper.getMainLooper())
+
+    /** Where the finish backup runs: off both JS's thread and the main one, for the life of the process. */
+    private val background = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     /** JS's messages arrive on its own thread. */
     private fun receive(message: Map<String, Any?>) {
@@ -119,6 +115,18 @@ object JsBridge {
             // both.
             "ready" -> {
                 main.post { onReady?.invoke() }
+            }
+
+            // What reportSessionFinished sends, once the runner has written the finished session. The
+            // answer is what src/hooks/safe-brownfield.ts hands the history store. The two share no code,
+            // so change both.
+            "sessionFinished" -> {
+                backUpFinishedSession?.let { backUp ->
+                    background.launch {
+                        val failed = backUp() ?: return@launch
+                        channel.send(mapOf("type" to "backupResult", "failed" to failed))
+                    }
+                }
             }
 
             // What reportRoute sends. The two share no code, so change both.

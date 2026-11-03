@@ -23,7 +23,7 @@ jest.mock('expo-notifications', () => ({
   SchedulableTriggerInputTypes: { TIME_INTERVAL: 'timeInterval', DATE: 'date' },
 }));
 
-import { scheduleRestDayReminder, scheduleStepCompleteNotification, stepCueContent } from '@/hooks/safe-notifications';
+import { scheduleStepCompleteNotification, stepCueContent } from '@/hooks/safe-notifications';
 
 beforeEach(() => {
   mockSchedule.mockResolvedValue('notification-id');
@@ -86,16 +86,4 @@ describe('stepCueContent', () => {
       }
     }
   });
-});
-
-/**
- * Deliberately not the same treatment. The rest-day nudge is a reminder days out, not a timer the
- * user started thirty seconds ago — `timeSensitive` on it would break through a Focus mode that was
- * switched on precisely to avoid this kind of thing.
- */
-it('leaves the rest-day reminder ordinary', async () => {
-  await scheduleRestDayReminder('Rest day', 'Nothing today', new Date('2026-09-05T09:00:00Z'));
-
-  const content = mockSchedule.mock.calls[0][0].content;
-  expect(content.interruptionLevel).toBeUndefined();
 });

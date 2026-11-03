@@ -1,8 +1,8 @@
 package com.casco.kettle.domain
 
 // The session editor's whole-session half, over `SessionEntryForm.kt`'s one entry: what it offers for a
-// session, and the one session it writes back. RN spread this over the screen and the store's
-// `editEntry`/`removeEntry`; here it is one pure step, so the index rules are tested without a screen.
+// session, and the one session it writes back. One pure step, so the index rules are tested without a
+// screen.
 
 /**
  * One editable entry's working state. [index] is its position in the session's own entries, **not**

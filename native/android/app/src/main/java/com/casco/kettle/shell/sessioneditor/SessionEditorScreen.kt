@@ -90,7 +90,7 @@ import java.io.IOException
 /** Where the session editor is registered, as History's Edit pushes it, with the session's `id`. */
 const val SESSION_EDITOR_PATH = "/session-editor"
 
-/** What `shellRoutes` registers at [SESSION_EDITOR_PATH], behind the sessions flip. */
+/** What `shellRoutes` registers at [SESSION_EDITOR_PATH], in every build. */
 @Composable
 fun SessionEditorRoute(params: Map<String, String>) =
     SessionEditorScreen(

@@ -49,8 +49,7 @@ fun formatMonthDay(
 
 /**
  * The short month on a History row's date badge and the session editor's subtitle, "JUL" or "JUL.",
- * uppercased with the locale's rules rather than the default's, which are wrong for Turkish. Native's
- * alone since the sessions flip (#240) deleted RN's, the editor having been its last reader.
+ * uppercased with the locale's rules rather than the default's, which are wrong for Turkish.
  */
 fun formatMonthBadge(
     date: LocalDate,

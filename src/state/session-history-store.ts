@@ -1,17 +1,14 @@
 import { create } from 'zustand';
 
-import { withoutZeroWork } from '@/domain/logged-work';
 import type { Session, SessionEntry } from '@/domain/types';
 import { reportSessionFinished } from '@/hooks/brownfield-module';
 import { loggedSessions } from '@/state/selectors/logged-sessions';
 import {
   appendSessionEntry,
   createSession,
-  deleteSession as deleteSessionFile,
   finalizeSession,
   listSessions,
   removeLastSessionEntry,
-  removeSessionEntry,
   replaceSessionEntry,
   takeWriteFailure,
 } from '@/storage/session-files';
@@ -77,38 +74,7 @@ type SessionHistoryState = {
    * can mount more than once.
    */
   abandonActiveSession: () => void;
-  /** Deletes a session's file and drops it from history state. Takes an id rather than a Session since, unlike the other actions, there is no updated session to return. */
-  deleteSession: (id: string) => void;
-  /**
-   * Corrects an already-logged entry on a **finished** session — the History editor's write path.
-   *
-   * Keyed by id rather than taking a `Session` like `replaceEntry` above, and the difference is not
-   * cosmetic. The runner owns the session object it is writing to and needs the updated one back;
-   * History owns no session, so handing it one to pass in would mean handing it something it could
-   * hold past the next write. These read the current session out of state instead.
-   */
-  editEntry: (sessionId: string, index: number, entry: SessionEntry) => void;
-  /** Drops one entry from a finished session — what `editEntry` can't express when an exercise's last set is removed. */
-  removeEntry: (sessionId: string, index: number) => void;
 };
-
-/**
- * The session an id refers to, if it can be edited from outside the runner.
- *
- * **An in-flight session is refused.** While a session runs, the runner holds it in `sessionRef` and
- * writes through that copy; the same session is also in `sessions`, because `startSession` puts it
- * there. An edit from History would leave the runner holding a copy without it, and the runner's next
- * `logEntry` would spread that stale copy back over the file — the edit would vanish, one set later,
- * with nothing said. `exerciseHistory` and `previousSetFor` skip unfinished sessions for related
- * reasons; this is the same line drawn at the write side.
- */
-function finishedSession(sessions: Session[], id: string): Session | undefined {
-  const session = sessions.find((existing) => existing.id === id);
-  // Cleaned before the caller indexes into it: the editor was showing `loggedSessions`, so its indices
-  // count entries with the zero work already gone, and the write that follows then leaves the file
-  // clean as well. Idempotent, so the editor's several calls per save all index the same list.
-  return session?.endedAt ? withoutZeroWork(session) : undefined;
-}
 
 /** `listed`, with the in-flight session as it is in memory rather than as it was on disk. */
 function keepingActive(listed: Session[], { sessions, activeSessionId }: SessionHistoryState): Session[] {
@@ -169,9 +135,9 @@ export const useSessionHistoryStore = create<SessionHistoryState>((set, get) => 
     const before = get().sessions;
     const { sessions, errors } = await listSessions();
     // RN wrote while the listing was out, so the listing may hold a file from before that write: a
-    // deleted session back in History, or a finished one unfinished. Writes are synchronous, so the
-    // next listing has them. The running session's sets don't count: memory wins for it anyway, and
-    // they land often enough to keep a slow listing restarting for a whole workout.
+    // finished session unfinished. Writes are synchronous, so the next listing has them. The running
+    // session's sets don't count: memory wins for it anyway, and they land often enough to keep a slow
+    // listing restarting for a whole workout.
     if (changedBesidesActive(before, get())) return get().reload();
     set({ status: 'ready', sessions: keepingActive(sessions, get()), errors: [...new Set([...get().errors, ...errors])] });
   },
@@ -231,37 +197,6 @@ export const useSessionHistoryStore = create<SessionHistoryState>((set, get) => 
       sessions: sessions.map((existing) => (existing.id === updated.id ? updated : existing)),
       errors: withWriteFailure(get().errors),
       activeSessionId: null,
-    });
-  },
-  deleteSession: (id) => {
-    // Called straight from an Alert button, which is an event handler: a throw here is caught by no
-    // error boundary and takes the tab down. The file is what's being deleted, so a failure has to
-    // leave the session in the list — dropping it from state anyway would show it gone until the next
-    // launch brought it back.
-    try {
-      deleteSessionFile(id);
-    } catch (err) {
-      set({ errors: [...get().errors, `${id}: ${(err as Error).message}`] });
-      return;
-    }
-    set({ sessions: get().sessions.filter((session) => session.id !== id), errors: withWriteFailure(get().errors) });
-  },
-  editEntry: (sessionId, index, entry) => {
-    const session = finishedSession(get().sessions, sessionId);
-    if (!session) return;
-    const updated = replaceSessionEntry(session, index, entry);
-    set({
-      sessions: get().sessions.map((existing) => (existing.id === updated.id ? updated : existing)),
-      errors: withWriteFailure(get().errors),
-    });
-  },
-  removeEntry: (sessionId, index) => {
-    const session = finishedSession(get().sessions, sessionId);
-    if (!session) return;
-    const updated = removeSessionEntry(session, index);
-    set({
-      sessions: get().sessions.map((existing) => (existing.id === updated.id ? updated : existing)),
-      errors: withWriteFailure(get().errors),
     });
   },
 }));

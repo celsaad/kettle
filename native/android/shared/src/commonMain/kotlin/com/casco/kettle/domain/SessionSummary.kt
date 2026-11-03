@@ -85,7 +85,7 @@ sealed interface EntryResult {
 
 /**
  * `sessionEntryResult` in `src/state/selectors/session-summary.ts`, held to it by
- * `conformance/records.yaml`: RN's session editor keeps reading it until M5.
+ * `conformance/records.yaml`: RN's exercise editor keeps reading it until the library flip.
  */
 fun sessionEntryResult(entry: SessionEntry): EntryResult =
     when (entry) {

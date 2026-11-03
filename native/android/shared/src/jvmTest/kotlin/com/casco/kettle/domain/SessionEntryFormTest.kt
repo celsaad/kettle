@@ -9,9 +9,9 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
 /**
- * `src/domain/__tests__/session-entry-form.test.ts`, case for case. The interesting failure modes live
- * here: a load that drifts on a round trip through pounds, a removal that staples the wrong rest onto
- * the wrong set, an entry that survives losing its last set.
+ * RN's `session-entry-form.test.ts`, case for case, before the sessions flip deleted it (#240). The
+ * interesting failure modes live here: a load that drifts on a round trip through pounds, a removal
+ * that staples the wrong rest onto the wrong set, an entry that survives losing its last set.
  */
 class SessionEntryFormTest {
     private val repsEntry =

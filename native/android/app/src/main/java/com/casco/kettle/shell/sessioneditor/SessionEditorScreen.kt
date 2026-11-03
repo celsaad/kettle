@@ -110,9 +110,9 @@ class SessionEditorActions(
 )
 
 /**
- * Corrects what a finished session logged (#239), as RN's `session-editor.tsx`, which Play keeps until
- * the sessions flip releases: a mis-typed rep count, a load entered before the plates changed, an RPE
- * tapped in the wrong column.
+ * Corrects what a finished session logged (#239), as RN's `session-editor.tsx` did until the sessions
+ * flip (#240) made this the only writer of an edited session file: a mis-typed rep count, a load
+ * entered before the plates changed, an RPE tapped in the wrong column.
  *
  * Save-at-the-end, as the other editors: Remove edits this screen's copy, so closing puts a mistaken
  * removal back, and the one write is the session's file, whole, when Save asks for it. Reads the log

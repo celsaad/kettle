@@ -23,7 +23,7 @@ describe('a corrected entry, downstream', () => {
   });
 
   const before = aSession({ startedAt: '2026-07-29T09:00:00.000Z', entries: [logged([{ reps: 8 }, { reps: 8 }])] });
-  // The same session with set 2 corrected from 8 reps to 5, which is what `editEntry` writes.
+  // The same session with set 2 corrected from 8 reps to 5, which is what the session editor writes.
   const after = { ...before, entries: [logged([{ reps: 8 }, { reps: 5 }])] };
 
   it('changes the entry result the summary is built from', () => {

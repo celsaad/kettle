@@ -86,9 +86,9 @@ mistake here that cannot be fixed for anyone who has already installed it.
 
 - `src/domain/` — pure logic, no I/O. `types.ts` (domain model), `schema.ts` (zod validation of raw
   YAML), `yaml-mapping.ts`, `merge.ts` (import merges by `id`, whole-object replace), `program.ts`
-  (week resolution + override application). The in-app forms keep their data models here too —
-  `exercise-form.ts` (editing an exercise's *plan*) and `session-entry-form.ts` (editing what was
-  actually *logged*) — so the screens stay thin and the parts worth testing need no React tree.
+  (week resolution + override application). The exercise form keeps its data model here too
+  (`exercise-form.ts`, editing an exercise's *plan*), so the screen stays thin and the parts worth
+  testing need no React tree. Editing what was *logged* is native's since the sessions flip (#240).
 - `src/storage/` — all file I/O, via `expo-file-system`'s **class-based `File`/`Directory` API**.
   One file per session (`session-files.ts`), so a mid-workout flush never rewrites history. It also
   holds the readers for the content the app *ships*: `seed-library.ts` (written on a first launch

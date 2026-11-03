@@ -25,7 +25,7 @@
 
   It runs against .dev, so during M5 the matrix shows the debug routes: every writer screen behind a
   flip (Flips.kt) is native here while a release build still draws it in RN until its flip ships.
-  Settings' has (#238).
+  Settings' and the session editor's have (#238, #240).
 
 .PARAMETER Device
   The adb serial to use when more than one device is attached.

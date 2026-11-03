@@ -212,8 +212,8 @@ class SessionEditorScreenTest {
 
     /**
      * The shell rereads the log while the sheet is up (a native sheet coming up, the app returning to
-     * the front), and on `.dev` RN can still rewrite the file meanwhile. RN's editor copied its drafts
-     * once; a reread must not throw away what the user has typed.
+     * the front). RN's editor copied its drafts once; a reread must not throw away what the user has
+     * typed.
      */
     @Test
     fun `keeps what was typed when the log is read again underneath it`() {

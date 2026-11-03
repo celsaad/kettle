@@ -2,9 +2,10 @@ package com.casco.kettle.domain
 
 import kotlin.math.floor
 
-// `src/domain/session-entry-form.ts`, which holds the reasoning: the session editor's data model, which
-// fields each logged entry type exposes, how an entry round-trips to the strings a form holds, and the
-// validation that path must run itself, since the editor never passes through the schema.
+// The session editor's data model: which fields each logged entry type exposes, how an entry
+// round-trips to the strings a form holds, and the validation that path must run itself, since the
+// editor never passes through the schema. Ported from RN's `session-entry-form.ts`, which the sessions
+// flip deleted (#240); this is the only copy now.
 
 /** What a field's number is measured in, for the suffix beside its label. */
 enum class FieldUnit {

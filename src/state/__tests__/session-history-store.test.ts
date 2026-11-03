@@ -1,14 +1,12 @@
 const mockCreateSession = jest.fn();
 const mockFinalizeSession = jest.fn();
 const mockTakeWriteFailure = jest.fn<string | null, []>(() => null);
-const mockDeleteSessionFile = jest.fn();
 const mockListSessions = jest.fn();
 const mockReportSessionFinished = jest.fn();
 jest.mock('@/hooks/brownfield-module', () => ({ reportSessionFinished: () => mockReportSessionFinished() }));
 jest.mock('@/storage/session-files', () => ({
   appendSessionEntry: (session: unknown) => session,
   createSession: (...args: unknown[]) => mockCreateSession(...args),
-  deleteSession: (...args: unknown[]) => mockDeleteSessionFile(...args),
   takeWriteFailure: () => mockTakeWriteFailure(),
   finalizeSession: (...args: unknown[]) => mockFinalizeSession(...args),
   listSessions: () => mockListSessions(),
@@ -16,10 +14,6 @@ jest.mock('@/storage/session-files', () => ({
   replaceSessionEntry: (session: Session, index: number, entry: SessionEntry) => ({
     ...session,
     entries: session.entries.map((existing, position) => (position === index ? entry : existing)),
-  }),
-  removeSessionEntry: (session: Session, index: number) => ({
-    ...session,
-    entries: session.entries.filter((_, position) => position !== index),
   }),
 }));
 
@@ -58,7 +52,6 @@ beforeEach(() => {
   mockCreateSession.mockReset().mockImplementation((id: string) => aSession({ id }));
   mockFinalizeSession.mockReset().mockImplementation((session: Session, endedAt: string) => ({ ...session, endedAt }));
   mockTakeWriteFailure.mockReset().mockReturnValue(null);
-  mockDeleteSessionFile.mockReset();
   mockListSessions.mockReset();
   mockReportSessionFinished.mockReset();
 });
@@ -95,22 +88,6 @@ describe('a flush that failed', () => {
 
     // A disk that's full stays full. One line per set would bury every other error under the same one.
     expect(useSessionHistoryStore.getState().errors).toHaveLength(1);
-  });
-});
-
-describe('deleteSession', () => {
-  it('keeps the session listed when its file would not delete', () => {
-    useSessionHistoryStore.setState({ sessions: [aSession()], errors: [] });
-    mockDeleteSessionFile.mockImplementation(() => {
-      throw new Error('permission denied');
-    });
-
-    useSessionHistoryStore.getState().deleteSession('session-1');
-
-    // Dropping it from state anyway would show it gone until the next launch brought it back — and the
-    // throw itself, from an Alert button, is caught by no error boundary at all.
-    expect(useSessionHistoryStore.getState().sessions).toHaveLength(1);
-    expect(useSessionHistoryStore.getState().errors).toEqual(['session-1: permission denied']);
   });
 });
 
@@ -246,22 +223,6 @@ describe('reload', () => {
     ]);
   });
 
-  // A delete while the listing is out has already removed the file; the listing may have read it first.
-  it('reads again when RN wrote to the log while the listing was out', async () => {
-    const doomed = aSession({ id: 'doomed', endedAt: '2026-07-28T10:00:00.000Z' });
-    useSessionHistoryStore.setState({ sessions: [doomed] });
-    mockListSessions
-      .mockImplementationOnce(async () => {
-        useSessionHistoryStore.getState().deleteSession('doomed');
-        return { sessions: [doomed], errors: [] };
-      })
-      .mockResolvedValue({ sessions: [], errors: [] });
-
-    await useSessionHistoryStore.getState().reload();
-
-    expect(useSessionHistoryStore.getState().sessions).toEqual([]);
-  });
-
   // Once finished it is no longer the running session, so memory stops winning for it.
   it('reads again when the running session finished while the listing was out', async () => {
     const running = useSessionHistoryStore.getState().startSession('w', null, null, null);
@@ -343,148 +304,5 @@ describe('abandonActiveSession', () => {
 
     expect(mockFinalizeSession).not.toHaveBeenCalled();
     expect(useSessionHistoryStore.getState().activeSessionId).toBeNull();
-  });
-});
-
-/**
- * The History editor's write path (#56). These two are the only actions keyed by session *id* rather
- * than handed a `Session`, and the reason is the in-flight guard below: History has no session object
- * of its own, so letting it pass one in would let it pass a stale one.
- */
-describe('editEntry', () => {
-  const pullUps: SessionEntry = { exercise: 'pull-ups', type: 'reps', sets: [{ reps: 8, restTakenSec: 60 }] };
-  const dips: SessionEntry = { exercise: 'dips', type: 'reps', sets: [{ reps: 10, restTakenSec: 60 }] };
-  const finished = (entries: SessionEntry[]) => aSession({ endedAt: '2026-07-29T10:00:00.000Z', entries });
-
-  it('rewrites the entry at the given index and leaves its neighbours alone', () => {
-    useSessionHistoryStore.setState({ sessions: [finished([pullUps, dips])] });
-
-    useSessionHistoryStore
-      .getState()
-      .editEntry('session-1', 1, { exercise: 'dips', type: 'reps', sets: [{ reps: 12, restTakenSec: 60 }] });
-
-    const entries = useSessionHistoryStore.getState().sessions[0].entries;
-    expect(entries[0]).toEqual(pullUps);
-    expect(entries[1]).toEqual({ exercise: 'dips', type: 'reps', sets: [{ reps: 12, restTakenSec: 60 }] });
-  });
-
-  /**
-   * The index is into `session.entries`, and `historySessionsView` filters `rest` entries out of what
-   * History shows — so a card's position on that screen is not this number. Passing a view index would
-   * rewrite whichever entry happened to sit at that offset, which here is the *rest* entry rather than
-   * the dips. Reintroduce the bug by having the editor index the filtered list and this fails.
-   */
-  it('indexes the raw entry list, which is not History’s rest-filtered view of it', () => {
-    const rest: SessionEntry = { exercise: 'rest', type: 'rest', restTakenSec: 120 };
-    useSessionHistoryStore.setState({ sessions: [finished([pullUps, rest, dips])] });
-
-    // Dips is at raw index 2, but at index 1 of what History renders.
-    useSessionHistoryStore
-      .getState()
-      .editEntry('session-1', 2, { exercise: 'dips', type: 'reps', sets: [{ reps: 12, restTakenSec: 60 }] });
-
-    const entries = useSessionHistoryStore.getState().sessions[0].entries;
-    expect(entries[1]).toEqual(rest);
-    expect(entries[2]).toEqual({ exercise: 'dips', type: 'reps', sets: [{ reps: 12, restTakenSec: 60 }] });
-  });
-
-  /**
-   * The runner holds an in-flight session in a ref and writes through that copy, and the same session
-   * is in `sessions` because `startSession` put it there. An edit accepted here would be overwritten
-   * by the runner's next `logEntry` — the correction would vanish one set later, silently. Remove the
-   * `endedAt` check in `finishedSession` and this fails.
-   */
-  it('refuses a session that is still running', () => {
-    useSessionHistoryStore.setState({ sessions: [aSession({ endedAt: null, entries: [pullUps] })] });
-
-    useSessionHistoryStore
-      .getState()
-      .editEntry('session-1', 0, { exercise: 'pull-ups', type: 'reps', sets: [{ reps: 99, restTakenSec: 60 }] });
-
-    expect(useSessionHistoryStore.getState().sessions[0].entries[0]).toEqual(pullUps);
-  });
-
-  it('does nothing when the session is gone', () => {
-    useSessionHistoryStore.setState({ sessions: [] });
-
-    useSessionHistoryStore.getState().editEntry('vanished', 0, pullUps);
-
-    expect(useSessionHistoryStore.getState().sessions).toEqual([]);
-  });
-
-  it('surfaces a flush failure the same way the runner’s writes do', () => {
-    useSessionHistoryStore.setState({ sessions: [finished([pullUps])] });
-    mockTakeWriteFailure.mockReturnValue('session-1: no space left on device');
-
-    useSessionHistoryStore.getState().editEntry('session-1', 0, dips);
-
-    expect(useSessionHistoryStore.getState().errors).toEqual(['session-1: no space left on device']);
-  });
-});
-
-describe('removeEntry', () => {
-  const pullUps: SessionEntry = { exercise: 'pull-ups', type: 'reps', sets: [{ reps: 8, restTakenSec: 60 }] };
-  const dips: SessionEntry = { exercise: 'dips', type: 'reps', sets: [{ reps: 10, restTakenSec: 60 }] };
-  const rows: SessionEntry = { exercise: 'rows', type: 'reps', sets: [{ reps: 12, restTakenSec: 60 }] };
-  const finished = (entries: SessionEntry[]) => aSession({ endedAt: '2026-07-29T10:00:00.000Z', entries });
-
-  it('drops the entry at the given index', () => {
-    useSessionHistoryStore.setState({ sessions: [finished([pullUps, dips, rows])] });
-
-    useSessionHistoryStore.getState().removeEntry('session-1', 1);
-
-    expect(useSessionHistoryStore.getState().sessions[0].entries).toEqual([pullUps, rows]);
-  });
-
-  /**
-   * Every removal shifts the indices after it down by one. The editor removes back to front for that
-   * reason; this pins what the store does under that order, so a future caller doing it front to back
-   * has something to fail against.
-   */
-  it('removes the intended two when called back to front', () => {
-    useSessionHistoryStore.setState({ sessions: [finished([pullUps, dips, rows])] });
-
-    useSessionHistoryStore.getState().removeEntry('session-1', 2);
-    useSessionHistoryStore.getState().removeEntry('session-1', 0);
-
-    expect(useSessionHistoryStore.getState().sessions[0].entries).toEqual([dips]);
-  });
-
-  it('refuses a session that is still running', () => {
-    useSessionHistoryStore.setState({ sessions: [aSession({ endedAt: null, entries: [pullUps, dips] })] });
-
-    useSessionHistoryStore.getState().removeEntry('session-1', 0);
-
-    expect(useSessionHistoryStore.getState().sessions[0].entries).toEqual([pullUps, dips]);
-  });
-});
-
-/**
- * The editor shows `loggedSessions`, so an old session with a zero set in it is shown, and indexed,
- * without one. The store has to index the same cleaned list or an edit lands one entry off. Have
- * `finishedSession` return the session uncleaned and both of these fail.
- */
-describe('editing a session that still holds zero work', () => {
-  const skipped: SessionEntry = { exercise: 'pull-ups', type: 'reps', sets: [{ reps: 0, restTakenSec: 60 }] };
-  const dips: SessionEntry = { exercise: 'dips', type: 'reps', sets: [{ reps: 10, restTakenSec: 60 }] };
-  const rows: SessionEntry = { exercise: 'rows', type: 'reps', sets: [{ reps: 12, restTakenSec: 60 }] };
-  const finished = (entries: SessionEntry[]) => aSession({ endedAt: '2026-07-29T10:00:00.000Z', entries });
-
-  it('indexes the list with the zero work gone, and writes it back without it', () => {
-    useSessionHistoryStore.setState({ sessions: [finished([skipped, dips, rows])] });
-
-    // Dips is at raw index 1, but at index 0 of what the editor showed.
-    const corrected: SessionEntry = { exercise: 'dips', type: 'reps', sets: [{ reps: 11, restTakenSec: 60 }] };
-    useSessionHistoryStore.getState().editEntry('session-1', 0, corrected);
-
-    expect(useSessionHistoryStore.getState().sessions[0].entries).toEqual([corrected, rows]);
-  });
-
-  it('removes by the same index', () => {
-    useSessionHistoryStore.setState({ sessions: [finished([skipped, dips, rows])] });
-
-    useSessionHistoryStore.getState().removeEntry('session-1', 1);
-
-    expect(useSessionHistoryStore.getState().sessions[0].entries).toEqual([dips]);
   });
 });

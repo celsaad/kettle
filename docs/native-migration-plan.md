@@ -388,7 +388,7 @@ named release, not all three in one. One release each, in this order:
    backup folder. The folder counts as a file under constraint 3 and moves here, since its URI
    lives in the preferences file. Export and share move native here too.
 2. **Sessions**: the native session editor. It only reads the library, so it doesn't wait for the
-   library flip.
+   library flip. *(Released in #240: RN's editor and its store edit path are deleted.)*
 3. **Library**: the exercise, workout and program editors, import, the seed and the packs.
 
 **The RN runner still writes, so "native is the only writer" needs a protocol** (#220). After the

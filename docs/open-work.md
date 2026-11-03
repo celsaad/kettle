@@ -275,9 +275,10 @@ wanting states and assignees, it wants GitHub issues instead.
   view, but RN slides the runner in inside the surface, which is invisible under a native sheet (#197).
   No M4 sheet opens the runner; the first native screen that does has to handle it.
 
-- **The session editor's last literals.** Its field suffixes (`sec`, `m`) and placeholders (`—`, `0`)
-  are English in every locale, and its per-set labels join with a fixed `"Set 2 · Reps"` order. RN's
-  editor had the same literals, and the native port (#239) kept them for the feature freeze. Keys in
+- **The editors' last literals.** The session editor's and the exercise form's field suffixes (`sec`,
+  `min`, `m`) and placeholders (`—`, `0`) are English in every locale, and the session editor's
+  per-set labels join with a fixed `"Set 2 · Reps"` order. RN's editors had the same literals, and the
+  native ports (#239, #241) kept them for the feature freeze; both now read one `unitSuffix`. Keys in
   all three bundles, which native's `:strings` reads.
 
 ## Open bugs

@@ -1,6 +1,8 @@
 package com.casco.kettle.storage
 
+import com.casco.kettle.domain.Library
 import com.casco.kettle.domain.Session
+import com.casco.kettle.domain.serializeLibraryYaml
 import com.casco.kettle.domain.serializeSessionYaml
 import java.io.File
 import java.io.FileOutputStream
@@ -15,6 +17,16 @@ fun writeSessionFile(
     dir: File,
     session: Session,
 ) = writeAtomically(dir.resolve("${session.id}.yaml"), serializeSessionYaml(session))
+
+/**
+ * Writes [library] over [file], `exercises.yaml`: native's library editors, from the library flip
+ * (#222) on. Throws [IOException] when the disk refuses, with the last library left whole, since a
+ * torn one would read as corrupt and be reseeded.
+ */
+fun writeLibraryFile(
+    file: File,
+    library: Library,
+) = writeAtomically(file, serializeLibraryYaml(library))
 
 /**
  * [text] into [file] through a synced temporary file and a rename, as `AtomicFile` does, so a write cut

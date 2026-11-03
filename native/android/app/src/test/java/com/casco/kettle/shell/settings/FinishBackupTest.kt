@@ -112,6 +112,8 @@ class FinishBackupTest {
 
         override fun writeSession(session: Session) = error("A backup writes no session")
 
+        override fun writeLibrary(library: Library) = error("Not a library writer")
+
         override fun writePreferences(preferences: Preferences) = error("A backup writes no preferences")
     }
 

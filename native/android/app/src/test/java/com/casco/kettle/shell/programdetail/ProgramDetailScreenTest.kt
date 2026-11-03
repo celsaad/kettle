@@ -273,6 +273,8 @@ class ProgramDetailScreenTest {
 
         override fun writeSession(session: Session) = error("Program detail writes no session")
 
+        override fun writeLibrary(library: Library) = error("Not a library writer")
+
         override fun writePreferences(preferences: Preferences) = error("Program detail writes no preferences")
     }
 }

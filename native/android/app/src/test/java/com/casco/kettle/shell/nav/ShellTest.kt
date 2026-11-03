@@ -134,6 +134,8 @@ class ShellTest {
 
                 override fun writeSession(session: Session) = Unit
 
+                override fun writeLibrary(library: Library) = Unit
+
                 override fun writePreferences(preferences: Preferences) = Unit
             },
             CoroutineScope(Dispatchers.Unconfined),
@@ -174,6 +176,8 @@ class ShellTest {
                 override fun deleteSession(id: String) = Unit
 
                 override fun writeSession(session: Session) = Unit
+
+                override fun writeLibrary(library: Library) = Unit
 
                 override fun writePreferences(preferences: Preferences) = Unit
             },

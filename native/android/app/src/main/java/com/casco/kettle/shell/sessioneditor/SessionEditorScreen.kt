@@ -68,6 +68,7 @@ import com.casco.kettle.domain.workoutNameFor
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.files.LatestFiles
 import com.casco.kettle.shell.files.LocalLatestFiles
+import com.casco.kettle.shell.form.FormField
 import com.casco.kettle.shell.history.entryResultText
 import com.casco.kettle.shell.i18n.deviceUnitSystem
 import com.casco.kettle.shell.i18n.formatMonthBadge
@@ -395,7 +396,7 @@ private fun DraftRows(
                     val label = fieldLabel(field, units)
                     Column(Modifier.weight(1f)) {
                         Secondary(label, Modifier.padding(bottom = 4.dp))
-                        NumberField(
+                        FormField(
                             form.values[field].orEmpty(),
                             { editor.setField(index, row, field, it) },
                             // Every row has the same labels, so the set is what tells them apart.

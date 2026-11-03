@@ -12,6 +12,7 @@ enum class FieldUnit {
     /** Kilograms or pounds as the reader's setting says, and the one value that converts both ways. */
     Weight,
     Seconds,
+    Minutes,
     Metres,
 }
 

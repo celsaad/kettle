@@ -317,6 +317,8 @@ class LatestFilesTest {
         /** A full disk or a revoked folder. */
         var refusing = false
 
+        override fun writeLibrary(library: Library) = Unit
+
         override fun writePreferences(preferences: Preferences) {
             if (refusing) throw IOException("disk full")
         }

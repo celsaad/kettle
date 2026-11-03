@@ -223,6 +223,8 @@ class ProgramsScreenTest {
 
         override fun writeSession(session: Session) = error("Programs writes no session")
 
+        override fun writeLibrary(library: Library) = error("Not a library writer")
+
         override fun writePreferences(preferences: Preferences) = error("Programs writes no preferences")
     }
 }

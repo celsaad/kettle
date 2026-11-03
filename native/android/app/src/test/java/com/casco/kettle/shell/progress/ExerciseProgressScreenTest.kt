@@ -156,6 +156,8 @@ class ExerciseProgressScreenTest {
 
         override fun writeSession(session: Session) = error("this screen writes no session")
 
+        override fun writeLibrary(library: Library) = error("Not a library writer")
+
         override fun writePreferences(preferences: Preferences) = error("this screen writes no preferences")
     }
 }

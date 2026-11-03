@@ -14,6 +14,7 @@ import com.casco.kettle.storage.readLibrary
 import com.casco.kettle.storage.readPreferences
 import com.casco.kettle.storage.readSessionLog
 import com.casco.kettle.storage.writeAtomically
+import com.casco.kettle.storage.writeLibraryFile
 import com.casco.kettle.storage.writeSessionFile
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -53,6 +54,13 @@ interface StoredFiles {
      * [IOException] when the disk refuses, and the last file stays as it was.
      */
     fun writePreferences(preferences: Preferences)
+
+    /**
+     * Replaces `exercises.yaml` with [library], whole or not at all: native's library editors (#241),
+     * which own the file from the library flip (#222). Throws [IOException] when the disk refuses, and
+     * the last library stays as it was.
+     */
+    fun writeLibrary(library: Library)
 }
 
 /**
@@ -91,6 +99,8 @@ class DiskFiles(
 
     override fun writePreferences(preferences: Preferences) =
         writeAtomically(paths.preferences, serializePreferences(preferences))
+
+    override fun writeLibrary(library: Library) = writeLibraryFile(paths.library, library)
 }
 
 /**
@@ -161,6 +171,15 @@ class LatestFiles(
      */
     suspend fun writeSession(session: Session) {
         withContext(io) { files.writeSession(session) }
+        reread()
+    }
+
+    /**
+     * Writes [library] over the file and reads the files again, so every screen shows the edit as the
+     * file has it. Throws [IOException] when the disk refuses, and the library is left as it was.
+     */
+    suspend fun writeLibrary(library: Library) {
+        withContext(io) { files.writeLibrary(library) }
         reread()
     }
 

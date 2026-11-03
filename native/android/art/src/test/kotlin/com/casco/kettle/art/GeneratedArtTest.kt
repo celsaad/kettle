@@ -219,6 +219,17 @@ class GeneratedArtTest {
                     "plank" to R.drawable.art_plank,
                 )
 
+            /**
+             * Each exercise id with a drawing, and the string describing its movement: `exerciseArt.<id>`
+             * in the locale bundles, by the resource name :strings gives that key.
+             */
+            internal val artDescriptions: Map<String, Int> =
+                mapOf(
+                    "easy-cardio" to R.string.exerciseArt_easy_cardio,
+                    "gym-cooldown" to R.string.exerciseArt_gym_cooldown,
+                    "plank" to R.string.exerciseArt_plank,
+                )
+
             """.trimIndent(),
             art.lookup,
         )

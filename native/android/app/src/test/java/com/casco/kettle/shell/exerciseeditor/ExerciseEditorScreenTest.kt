@@ -64,11 +64,13 @@ class ExerciseEditorScreenTest {
     private var closed = 0
     private var libraryChanged = 0
 
+    private lateinit var latest: LatestFiles
+
     private fun show(
         id: String?,
         files: Files,
     ) {
-        val latest =
+        latest =
             LatestFiles(files, CoroutineScope(Dispatchers.Unconfined), io = Dispatchers.Unconfined).apply { reread() }
         compose.setContent {
             KettleTheme(darkTheme = false) {
@@ -282,6 +284,46 @@ class ExerciseEditorScreenTest {
         assertEquals(0, closed)
     }
 
+    /**
+     * The library is read again while the sheet is up, and on `.dev` RN can write it meanwhile. A
+     * workout that starts using the exercise while the confirm is open must stop the delete there,
+     * or the workout is left pointing at nothing.
+     */
+    @Test
+    fun `checks again at the confirm, against the library as it is by then`() {
+        val files = Files(exercises = listOf(pullUps))
+        show("pull-ups", files)
+
+        press("Excluir exercício")
+        files.rewrite { it.copy(workouts = listOf(pushDay(WorkoutBlock.ExerciseBlock("pull-ups")))) }
+        latest.reread()
+        compose.pressDialogButton("Excluir")
+
+        compose.onNodeWithText("Exercício em uso").assertExists()
+        assertEquals(emptyList<Library>(), files.written)
+        assertEquals(0, closed)
+    }
+
+    /**
+     * Deleted elsewhere while the sheet was up: Save puts it back, with the edit. What was typed is
+     * the newer intent, and nothing can point at it, since its delete needed no workout to use it.
+     */
+    @Test
+    fun `puts back an exercise deleted underneath it, with the edit`() {
+        val files = Files(exercises = listOf(pullUps))
+        show("pull-ups", files)
+
+        type("Séries", "4")
+        files.rewrite { it.copy(exercises = emptyList()) }
+        latest.reread()
+        press("Salvar")
+
+        assertEquals(
+            listOf(pullUps.copy(config = (pullUps.config as ExerciseConfig.Reps).copy(sets = 4))),
+            files.written.single().exercises,
+        )
+    }
+
     // the bundled drawing
 
     @Test
@@ -372,6 +414,11 @@ class ExerciseEditorScreenTest {
         override fun deleteSession(id: String) = error("The exercise editor deletes no session")
 
         override fun writeSession(session: Session) = error("The exercise editor writes no session")
+
+        /** RN writing the library behind the editor's back, as `.dev`'s second writer can. */
+        fun rewrite(change: (Library) -> Library) {
+            library = change(library)
+        }
 
         override fun writeLibrary(library: Library) {
             failure?.let { throw it }

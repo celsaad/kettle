@@ -168,6 +168,8 @@ private class Editor(
                 problem = submitted.problem
             }
 
+            // Deleted elsewhere while the sheet was up, it goes back in with the edit: what was typed is
+            // the newer intent, and nothing can point at it, since its delete needed no workout to use it.
             is ExerciseSubmit.Built -> {
                 problem = null
                 write(Failure.Kind.Save) { it.withExercise(submitted.exercise) }
@@ -177,19 +179,28 @@ private class Editor(
 
     /** Refuses while any workout uses it, plain or in a circuit, since a delete would orphan them. */
     fun askToDelete() {
-        val exercise = existing ?: return
-        val usedBy = files.library?.let { workoutsUsing(it, exercise.id) }.orEmpty()
-        deleting = if (usedBy.isEmpty()) Deleting.Confirm else Deleting.InUse(usedBy.map { it.name })
+        deleting = inUse() ?: Deleting.Confirm
     }
 
     fun dismissDelete() {
         deleting = null
     }
 
+    /**
+     * Asks [inUse] again: the library is read again while the confirm is up, and a workout that
+     * started using the exercise meanwhile would be left pointing at nothing.
+     */
     fun delete() {
-        deleting = null
         val exercise = existing ?: return
-        write(Failure.Kind.Delete) { it.withoutExercise(exercise.id) }
+        deleting = inUse()
+        if (deleting == null) write(Failure.Kind.Delete) { it.withoutExercise(exercise.id) }
+    }
+
+    /** The workouts using this exercise in the library as it is now, as a refusal; null for none. */
+    private fun inUse(): Deleting.InUse? {
+        val exercise = existing ?: return null
+        val usedBy = files.library?.let { workoutsUsing(it, exercise.id) }.orEmpty()
+        return Deleting.InUse(usedBy.map { it.name }).takeIf { usedBy.isNotEmpty() }
     }
 
     /**

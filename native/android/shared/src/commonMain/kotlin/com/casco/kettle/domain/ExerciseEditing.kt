@@ -8,23 +8,9 @@ import kotlinx.datetime.Instant
 
 /** The library with [exercise] in it: in place of the one with its id, or else at the end. */
 fun Library.withExercise(exercise: Exercise): Library {
-    val exists = exercises.any { it.id == exercise.id }
-    return copy(
-        exercises =
-            if (exists) {
-                exercises.map {
-                    if (it.id ==
-                        exercise.id
-                    ) {
-                        exercise
-                    } else {
-                        it
-                    }
-                }
-            } else {
-                exercises + exercise
-            },
-    )
+    val at = exercises.indexOfFirst { it.id == exercise.id }
+    val edited = if (at < 0) exercises + exercise else exercises.toMutableList().apply { set(at, exercise) }
+    return copy(exercises = edited)
 }
 
 /** The library without exercise [id]. Nothing checks it's unused: that's [workoutsUsing]'s, first. */

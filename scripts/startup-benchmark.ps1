@@ -1,19 +1,23 @@
 <#
 .SYNOPSIS
-  Cold start to a drawn home screen, the native shell against today's app, on a phone
-  (native/android/benchmark, #150 in docs/native-migration-plan.md).
+  Cold start to a drawn home screen, the native shell on a phone (native/android/benchmark, #150 in
+  docs/native-migration-plan.md).
 
 .DESCRIPTION
-  Builds both as side-by-side release builds, installs them with the Macrobenchmark APK, and runs it.
-  Today's app is the prebuilt project's release build turned into com.casco.kettle.bench by an init
-  script, so android/ is never edited; the shell is its own `benchmark` build type,
-  com.casco.kettle.bench2. Both call reportFullyDrawn from the same JS once Home has laid out, so read
-  timeToFullDisplayMs.
+  Builds the shell's own `benchmark` build type, com.casco.kettle.bench2, installs it with the
+  Macrobenchmark APK, and runs it. Native Home calls reportFullyDrawn once its library has loaded and
+  laid out, so read timeToFullDisplayMs.
 
-  Never the Play install: the benchmark force-stops its targets and resets their compiled code, and
+  Today's app, com.casco.kettle.bench, was the other target until Home went native (#235): built from
+  this tree its Home is an empty stub with no marker, so it can't reach an end point. It comes back in
+  M7 built from a pinned commit in a worktree, with benchmark/rn-app.init.gradle as before (the M7
+  section of docs/native-migration-plan.md). Until then a port's before and after are this script run
+  on the commit before it and on the one after.
+
+  Never the Play install: the benchmark force-stops its target and resets its compiled code, and
   com.casco.kettle holds the phone owner's real library and history. Nothing here names it.
 
-  Each target is launched once before the run, so the first-launch seed write isn't in iteration one.
+  The target is launched once before the run, so the first-launch seed write isn't in iteration one.
 
 .PARAMETER SkipBuild
   Reuse the APKs already built.
@@ -46,16 +50,11 @@ $target = if ($Device) { @('-s', $Device) } else { @() }
 
 # The packages each APK must carry. An ordered map, so installs and first launches run in this order.
 $apks = [ordered]@{
-  'com.casco.kettle.bench' = "$root/android/app/build/outputs/apk/release/app-release.apk"
   'com.casco.kettle.bench2' = "$native/app/build/outputs/apk/benchmark/app-benchmark.apk"
 }
 $benchmarkApk = "$native/benchmark/build/outputs/apk/benchmark/benchmark-benchmark.apk"
 
 if (-not $SkipBuild) {
-  Invoke-Step "Build today's app (com.casco.kettle.bench)" {
-    & "$root/android/gradlew.bat" -p "$root/android" --init-script "$native/benchmark/rn-app.init.gradle" `
-      :app:assembleRelease $abi
-  }
   # All, not Release: the two publications share one coordinate (see native-dev.ps1).
   Invoke-Step 'Publish the RN AAR to mavenLocal' {
     & "$root/android/gradlew.bat" -p "$root/android" publishBrownfieldAllPublicationToMavenLocal $abi
@@ -65,9 +64,7 @@ if (-not $SkipBuild) {
   }
 }
 
-# Checked, not assumed: with -SkipBuild, today's app's APK is whatever its last release build left, and
-# one built without the init script is com.casco.kettle itself. Only the key mismatch would then stand
-# between this script and the real install.
+# Checked, not assumed: with -SkipBuild, the APK is whatever the last build left.
 $buildTools = Get-ChildItem "$env:ANDROID_HOME/build-tools" | Sort-Object { [version]$_.Name } | Select-Object -Last 1
 foreach ($package in $apks.Keys) {
   $actual = & "$($buildTools.FullName)/aapt2" dump packagename $apks[$package]

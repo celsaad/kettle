@@ -23,7 +23,7 @@ import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.Spacing
 
 /**
- * The search box over a list, as RN's `components/search-bar.tsx`, which every list screen shares. The
+ * The search box every list screen shares, one component since four copies of it drifted in RN. The
  * placeholder is its name too, read with the field as Material's `TextField` reads its own: the visible
  * words are what Voice Access matches, and a separate label would break that. It owns its top margin,
  * since every screen places it the same distance below the block above it.

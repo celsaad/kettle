@@ -1,6 +1,7 @@
 package com.casco.kettle.shell.files
 
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
@@ -84,8 +85,9 @@ class DiskFiles(
  * ones (native's [writeSession] once the sessions flip releases), the library editors write the
  * library, and Settings the preferences. Each of those is above the tabs, so the shell rereads when
  * RN hands the tabs back, on a tap onto a native tab or a native sheet coming up (`TabNavigator`'s
- * `reread`), and whenever the app starts or stops being seen (`MainActivity`), and nothing else would.
- * RN's half of the rule is `filesChanged`.
+ * `reread`), whenever the app starts or stops being seen (`MainActivity`), and when JS says it is up,
+ * since a first launch's seed library is written by then and Home, the screen it lands on, would
+ * otherwise show none (`JsBridge.onReady`). Nothing else would. RN's half of the rule is `filesChanged`.
  */
 class LatestFiles(
     private val files: StoredFiles,
@@ -111,6 +113,14 @@ class LatestFiles(
      * RN shows the device's defaults, and a native screen falls back to them too.
      */
     var preferences by mutableStateOf<Preferences?>(null)
+        private set
+
+    /**
+     * How many reads have landed. A read of unchanged files sets nothing, since the files compare
+     * equal, so this is what a screen keys on when its answer also depends on the clock: Home's card,
+     * which a turned day moves on (#235).
+     */
+    var reads by mutableIntStateOf(0)
         private set
 
     private var reading: Job? = null
@@ -143,6 +153,7 @@ class LatestFiles(
                 sessionLog = log
                 this@LatestFiles.preferences = preferences
                 if (library != null) this@LatestFiles.library = library
+                reads++
                 onRead(log, preferences)
             }
     }

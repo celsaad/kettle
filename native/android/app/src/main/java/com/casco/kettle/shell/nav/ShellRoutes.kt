@@ -5,6 +5,7 @@ import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.history.HistoryRoute
+import com.casco.kettle.shell.home.HomeRoute
 import com.casco.kettle.shell.library.LibraryRoute
 import com.casco.kettle.shell.programdetail.PROGRAM_DETAIL_PATH
 import com.casco.kettle.shell.programdetail.ProgramDetailRoute
@@ -62,6 +63,7 @@ private val readerRoutes: Map<String, Screen> =
         "/program-guide" to Screen.Native { ProgramGuideRoute() },
         EXERCISE_PROGRESS_PATH to Screen.Native { params -> ExerciseProgressRoute(params) },
         "/analytics" to Screen.Native { StatsRoute() },
+        Tab.Workouts.path to Screen.Native { HomeRoute() },
         Tab.History.path to Screen.Native { HistoryRoute() },
         Tab.Library.path to Screen.Native { LibraryRoute() },
         Tab.Programs.path to Screen.Native { ProgramsRoute() },

@@ -1,11 +1,10 @@
 import { mergeLibraries } from '@/domain/merge';
 import { programWeekNumbers } from '@/domain/program';
 import { parseLibraryYaml, serializeLibraryYaml } from '@/domain/yaml-mapping';
-import { nextWeekAfter } from '@/state/selectors/next-up';
 import { contentPackLibrary, contentPacks, contentPackSources } from '@/storage/content-packs';
 import { libraryWeekKey } from '@/storage/library-translation';
 import { seedLibrary } from '@/storage/seed-library';
-import type { Library, Program, Session } from '@/domain/types';
+import type { Library, Program } from '@/domain/types';
 import en from '@/i18n/locales/en.json';
 import { contentFiles } from '@/test-support/content-files';
 
@@ -112,29 +111,16 @@ describe.each(contentPacks.map((pack) => [pack.id, pack] as const))('the %s pack
         });
 
         it('walks its weeks in training order', () => {
-          // Rotation order is the order the weeks are *written* — `sortedProgramWeeks` sorts on week
-          // number with no tiebreak and leans on a stable sort for the rest. So this proves the pack
-          // is written in the order it should run, and, running per language, that applying a
-          // translation leaves that order alone. Day labels are display text; nothing sorts on them.
-          const visited: string[] = [];
-          const sessions: Session[] = [];
-          for (let step = 0; step < program.weeks.length; step += 1) {
-            const week = nextWeekAfter(program, sessions);
-            visited.push(`${week.week} ${week.day}`);
-            // sessions is newest-first everywhere in the app.
-            sessions.unshift({
-              version: 1,
-              id: `s${step}`,
-              workout: week.restDay ? null : week.workoutId,
-              program: program.id,
-              programWeek: week.week,
-              programDay: week.day ?? null,
-              startedAt: new Date().toISOString(),
-              endedAt: null,
-              entries: [],
-            });
-          }
-          expect(visited).toEqual(program.weeks.map((week) => `${week.week} ${week.day}`));
+          // Home's rotation (native `NextUp.kt`) runs the weeks sorted by number with a stable sort, and finds
+          // where it is by week and day. So file order *is* training order exactly when the weeks are written
+          // in non-decreasing number and no two share a week and day — and, run per language, when a
+          // translation leaves both alone. Day labels are display text; nothing sorts on them.
+          const slots = program.weeks.map((week) => `${week.week} ${week.day}`);
+          const numbers = program.weeks.map((week) => week.week);
+          // Sorts a copy — the spread is the copy oxlint can't see through (decision log: no `toSorted`).
+          // oxlint-disable-next-line unicorn/no-array-sort
+          expect(numbers).toEqual([...numbers].sort((a, b) => a - b));
+          expect(new Set(slots).size).toBe(slots.length);
         });
       },
     );

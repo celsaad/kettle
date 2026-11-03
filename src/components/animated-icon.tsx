@@ -1,4 +1,3 @@
-import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Animated, {
@@ -89,11 +88,10 @@ export function AnimatedSplashOverlay() {
   ) : (
     <View
       onLayout={() => {
-        // The router is mounted by now, which is what the shell's messages will need from M3 on.
+        // The router is mounted by now, which is what the shell's messages will need from M3 on. The
+        // system splash isn't this component's to hide any more: native Home lets it go (#235).
         announceHostReady();
-        SplashScreen.hideAsync().finally(() => {
-          setAnimate(true);
-        });
+        setAnimate(true);
       }}
       style={styles.splashOverlay}>
       <SplashContent />

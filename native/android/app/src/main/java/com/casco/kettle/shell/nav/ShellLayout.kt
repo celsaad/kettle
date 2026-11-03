@@ -11,6 +11,7 @@ import android.widget.LinearLayout
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.ComposeView
+import com.casco.kettle.shell.files.LocalLatestFiles
 
 /**
  * The app's chrome around the one RN surface (Q3 in docs/native-migration-plan.md): the destinations
@@ -25,7 +26,8 @@ import androidx.compose.ui.platform.ComposeView
  * destinations for a native tab, and the [nativeSheet] for a native route in the sheet. The others are
  * invisible, since a view left showing under another still takes touches and TalkBack's focus.
  *
- * [theme] wraps every Compose view's content, each a separate composition.
+ * [theme] wraps every Compose view's content, each a separate composition. The destinations' also
+ * let the system splash go ([SplashExit]).
  */
 @SuppressLint("ViewConstructor") // Built in code, never inflated.
 class ShellLayout(
@@ -36,7 +38,13 @@ class ShellLayout(
     theme: @Composable (content: @Composable () -> Unit) -> Unit,
     sheet: (content: FrameLayout, shell: ShellLayout) -> ModalSheet,
 ) : LinearLayout(context) {
-    private val destinations = composeView { theme { Destinations(navigator, routes, onLayer = ::showLayer) } }
+    private val destinations =
+        composeView {
+            theme {
+                SplashExit(LocalLatestFiles.current, LocalSplashExit.current)
+                Destinations(navigator, routes, onLayer = ::showLayer)
+            }
+        }
 
     /**
      * A native route's screen in the sheet (#197). A view of its own rather than a destination, beside the

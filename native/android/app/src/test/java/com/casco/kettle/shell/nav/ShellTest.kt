@@ -72,7 +72,13 @@ class ShellTest {
     /** Every touch that reached the surface. */
     private var touches = 0
 
-    private fun show(routes: Map<String, Screen> = shellRoutes): TabNavigator {
+    /** Each time the shell let the system splash go. */
+    private var splashExits = 0
+
+    private fun show(
+        routes: Map<String, Screen> = shellRoutes,
+        files: LatestFiles = noFiles,
+    ): TabNavigator {
         val navigator = TabNavigator(routes, sent::add)
         compose.runOnUiThread {
             val activity = compose.activity
@@ -86,7 +92,8 @@ class ShellTest {
                     // As MainActivity's: a native tab reads the files, and History is one.
                     theme = {
                         CompositionLocalProvider(
-                            LocalLatestFiles provides noFiles,
+                            LocalLatestFiles provides files,
+                            LocalSplashExit provides { splashExits++ },
                         ) { KettleTheme(darkTheme = false, it) }
                     },
                 ) { content, shell -> ModalSheet(content, shell, surface, navigator, { LightColors }, {}) }
@@ -106,6 +113,45 @@ class ShellTest {
                 true
             }
         }
+
+    private fun unreadFiles() =
+        LatestFiles(
+            object : StoredFiles {
+                override fun sessionLog() = SessionLog.Empty
+
+                override fun library(): Library? = null
+
+                override fun preferences(): Preferences? = null
+
+                override fun deleteSession(id: String) = Unit
+
+                override fun writeSession(session: Session) = Unit
+            },
+            CoroutineScope(Dispatchers.Unconfined),
+            io = Dispatchers.Unconfined,
+        )
+
+    /**
+     * The splash goes at the first layout after the files are read (#235), library or not, and in the
+     * shell rather than in Home: a cold-start link can steer away from Home before the read lands, and
+     * Home's own effect would then have been cancelled, leaving the splash up for good.
+     */
+    @Test
+    fun `lets the splash go once the files are read, whichever tab is showing`() {
+        val files = unreadFiles()
+        val navigator = show(files = files)
+        compose.runOnUiThread { navigator.onRoute("/history") }
+        compose.waitForIdle()
+        assertEquals(0, splashExits)
+
+        compose.runOnUiThread { files.reread() }
+        compose.waitForIdle()
+        assertEquals(1, splashExits)
+
+        compose.runOnUiThread { files.reread() }
+        compose.waitForIdle()
+        assertEquals(1, splashExits)
+    }
 
     private val noFiles =
         LatestFiles(
@@ -186,7 +232,8 @@ class ShellTest {
                 .assertIsNotSelected()
                 .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Tab))
         }
-        assertSurfaceShown(true)
+        // Home is native (#235), so nothing of RN's shows until something above the tabs is RN's.
+        assertSurfaceShown(false)
     }
 
     /**
@@ -225,7 +272,8 @@ class ShellTest {
         show()
         compose.mainClock.advanceTimeBy(ANIMATIONS_SETTLED)
 
-        compose.onNodeWithText("Workouts").assertExists()
+        // On the tab, since Home's title reads the same.
+        tab("Workouts").assert(hasText("Workouts"))
         compose.onNodeWithContentDescription("Workouts").assertDoesNotExist()
         for (label in listOf("Library", "History", "Programs")) {
             compose.onNodeWithContentDescription(label).assertExists()
@@ -273,7 +321,8 @@ class ShellTest {
     /** The M3 landmark: a route goes native by its registration, and RN's stub route at the same path. */
     @Test
     fun `a tab registered native shows its screen in place of the surface`() {
-        show(shellRoutes + ("/history" to Screen.Native { Text("Native history") }))
+        // Every other tab RN's, as before any port: since #235 none of the app's own is.
+        show(mapOf("/history" to Screen.Native { Text("Native history") }))
 
         tab("History").performClick()
 
@@ -282,7 +331,6 @@ class ShellTest {
         // RN goes to the stub route left at the same path, as it would to the RN screen (#190).
         assertEquals(listOf("/history"), sent)
 
-        // Workouts, as the one tab still RN's (#234 took Library).
         tab("Workouts").performClick()
 
         compose.onNodeWithText("Native history").assertDoesNotExist()

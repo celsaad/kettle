@@ -20,9 +20,14 @@ import androidx.compose.ui.unit.dp
 import com.casco.kettle.shell.theme.KettleTheme
 
 /**
- * The "start this one" control at the end of a row, as RN's `components/row-start-button.tsx`, which
- * holds why it is accent and why the glyph is `accentText` on `accentSoft` (the contrast figures).
- * Shared, since Home's list will want it too.
+ * The "start this one" control at the end of a row: Home's list and Program detail's weeks.
+ *
+ * Accent, after a detour through grey: a grey triangle beside a grey chevron stopped announcing itself
+ * as the way to start anything. The accent budget is spent on the *fill* instead, so the next-up card's
+ * Start is the only solid accent block on Home and these are a tint behind a glyph. The glyph is
+ * `accentText`, not `accent`, which is what passes: `accent` on `accentSoft` measures 2.90:1 in light
+ * mode, under the 3:1 a meaningful graphic needs, where `accentText` measures 4.53:1 light and 6.58:1
+ * dark.
  *
  * A drawn triangle with no words, so [label] is its only name, and it has to say *which* row: a column
  * of identical triangles otherwise announces itself the same all the way down. The target is 48dp

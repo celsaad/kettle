@@ -1,6 +1,6 @@
 import { t } from 'i18next';
 
-import { formatCircuitShape, formatEntryResult, formatWorkoutShape } from '@/domain/format';
+import { formatCircuitShape, formatEntryResult } from '@/domain/format';
 
 // The hand-rolled `plural(count, singular)` helper is gone; i18next resolves CLDR categories from
 // `count` instead. These assert the resolution itself, since it's what every count-bearing string in
@@ -15,25 +15,6 @@ describe('pluralisation', () => {
   it('picks the plural form for zero and for many', () => {
     expect(t('format.block', { count: 0 })).toBe('0 blocks');
     expect(t('format.block', { count: 4 })).toBe('4 blocks');
-  });
-});
-
-describe('formatWorkoutShape', () => {
-  // The bug this replaced: the count was interpolated straight into "N blocks", so a one-block
-  // workout read "1 blocks" on both the Today card and every Build row.
-  it('says "1 block" for a single-block workout', () => {
-    expect(formatWorkoutShape({ blockCount: 1, types: ['reps'], estimatedMinutes: 5 })).toBe('1 block · reps · ~5 min');
-  });
-
-  it('lists a single type bare and several as "mixed"', () => {
-    expect(formatWorkoutShape({ blockCount: 3, types: ['reps'], estimatedMinutes: 9 })).toBe('3 blocks · reps · ~9 min');
-    expect(formatWorkoutShape({ blockCount: 4, types: ['timed_hold', 'reps'], estimatedMinutes: 14 })).toBe(
-      '4 blocks · mixed hold + reps · ~14 min',
-    );
-  });
-
-  it('says "rest only" when nothing but rest is configured', () => {
-    expect(formatWorkoutShape({ blockCount: 2, types: [], estimatedMinutes: 3 })).toBe('2 blocks · rest only · ~3 min');
   });
 });
 

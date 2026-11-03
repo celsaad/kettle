@@ -102,7 +102,7 @@ mistake here that cannot be fixed for anyone who has already installed it.
   decision log for the four rules a pack has to respect; the prefixed-id one is the load-bearing one.
 - `src/state/` — zustand stores (`library-store`, `session-history-store`, `preferences-store`,
   `tip-store`) and `selectors/`, derived/display logic split per view (`records`, `logged-sessions`,
-  `next-up`, `workout-shape`, `session-summary`, …).
+  `session-summary`, …).
 - `src/hooks/use-session-runner.ts` — the wall-clock session engine. The product plan calls timer
   reliability "the make-or-break issue"; treat this file as high-risk and verify changes by running a
   real session, not by reasoning alone. Its pure parts live next door in `session-steps.ts`
@@ -131,9 +131,9 @@ mistake here that cannot be fixed for anyone who has already installed it.
   Each device script is a `.sh` with a step-for-step `.ps1` twin for Windows; a change to one goes
   into both. Changing `app.json`'s icons, permissions or plugins means copying the change into the
   shell (see the single-source entry in the decision log). `:benchmark` is a Macrobenchmark of cold
-  start to a drawn Home, the shell against today's app, run on a phone by
-  `scripts/startup-benchmark.sh`; its end point is `reportFullyDrawn`, called from Home through the
-  local Expo module in `modules/startup-marker`. `scripts/route-check.sh` steers the running `.dev`
+  start to a drawn Home, run on a phone by `scripts/startup-benchmark.sh`; its end point is
+  native Home's `reportFullyDrawn` (`ReportDrawnWhen`), and today's app returns as a baseline
+  in M7. `scripts/route-check.sh` steers the running `.dev`
   shell through every route by navigate message and fails on the first screen that isn't the
   expected one. Run it after touching navigation, and update its matrix whenever a screen goes
   native.

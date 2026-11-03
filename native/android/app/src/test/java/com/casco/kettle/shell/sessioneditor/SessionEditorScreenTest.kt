@@ -423,6 +423,8 @@ class SessionEditorScreenTest {
             sessions.replaceAll { if (it.id == session.id) session else it }
         }
 
+        override fun writeLibrary(library: Library) = error("Not a library writer")
+
         override fun writePreferences(preferences: Preferences) = error("The session editor writes no preferences")
     }
 

@@ -1,5 +1,6 @@
 package com.casco.kettle.shell.nav
 
+import com.casco.kettle.shell.exerciseeditor.EXERCISE_EDITOR_PATH
 import com.casco.kettle.shell.sessioneditor.SESSION_EDITOR_PATH
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertSame
@@ -26,6 +27,13 @@ class ShellRoutesTest {
         val routes = routesFor(emptySet(), writers)
 
         assertEquals(Screen.Rn, routes.screenAt("/import"))
+    }
+
+    /** A library writer (#241): native on `.dev`, RN's on Play until the library flip releases. */
+    @Test
+    fun `the exercise editor is native only with the library flip on`() {
+        assertTrue(routesFor(setOf(Flip.Library)).screenAt(EXERCISE_EDITOR_PATH) is Screen.Native)
+        assertEquals(Screen.Rn, routesFor(emptySet()).screenAt(EXERCISE_EDITOR_PATH))
     }
 
     /** The sessions flip has released (#240), so the session editor is native in release builds too. */

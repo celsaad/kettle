@@ -686,6 +686,8 @@ class HomeScreenTest {
 
         override fun writeSession(session: Session) = error("Home writes no session")
 
+        override fun writeLibrary(library: Library) = error("Not a library writer")
+
         override fun writePreferences(preferences: Preferences) = error("Home writes no preferences")
     }
 

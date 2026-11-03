@@ -4,6 +4,8 @@ import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import com.casco.kettle.shell.R
+import com.casco.kettle.shell.exerciseeditor.EXERCISE_EDITOR_PATH
+import com.casco.kettle.shell.exerciseeditor.ExerciseEditorRoute
 import com.casco.kettle.shell.history.HistoryRoute
 import com.casco.kettle.shell.home.HomeRoute
 import com.casco.kettle.shell.library.LibraryRoute
@@ -86,7 +88,13 @@ private val readerRoutes: Map<String, Screen> =
 enum class Flip { Library, }
 
 /** The writer screens, by the flip that switches them on. Registered the way [readerRoutes] are. */
-private val writerRoutes: Map<Flip, Map<String, Screen>> = emptyMap()
+private val writerRoutes: Map<Flip, Map<String, Screen>> =
+    mapOf(
+        Flip.Library to
+            mapOf(
+                EXERCISE_EDITOR_PATH to Screen.Native { params -> ExerciseEditorRoute(params) },
+            ),
+    )
 
 /** The routes with the [writers] of the flips [on] registered over the read-only ones, the rest left to RN. */
 fun routesFor(

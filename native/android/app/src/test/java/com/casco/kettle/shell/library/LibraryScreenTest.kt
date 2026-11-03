@@ -271,6 +271,8 @@ class LibraryScreenTest {
 
         override fun writeSession(session: Session) = error("Library writes no session")
 
+        override fun writeLibrary(library: Library) = error("Not a library writer")
+
         override fun writePreferences(preferences: Preferences) = error("Library writes no preferences")
     }
 }

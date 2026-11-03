@@ -64,6 +64,17 @@ private fun lookup(drawings: Map<String, String>) =
         appendLine("    mapOf(")
         for ((id, drawing) in drawings) appendLine("        \"$id\" to R.drawable.${resourceName(drawing)},")
         appendLine("    )")
+        appendLine()
+        appendLine("/**")
+        appendLine(" * Each exercise id with a drawing, and the string describing its movement: `exerciseArt.<id>`")
+        appendLine(" * in the locale bundles, by the resource name :strings gives that key.")
+        appendLine(" */")
+        appendLine("internal val artDescriptions: Map<String, Int> =")
+        appendLine("    mapOf(")
+        // :strings' naming, so a drawing whose description is missing fails to compile rather than
+        // drawing unannounced. The bundles' coverage of art.json is jest's to hold.
+        for (id in drawings.keys) appendLine("        \"$id\" to R.string.exerciseArt_${id.replace('-', '_')},")
+        appendLine("    )")
     }
 
 /** Opaque, and replaced wholesale by whatever tint draws the drawable, the way an icon's colour is. */

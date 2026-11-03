@@ -24,14 +24,11 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -75,15 +72,13 @@ import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.MaxContentWidth
 import com.casco.kettle.shell.theme.Spacing
 import com.casco.kettle.shell.theme.emptyStateCard
-import expo.modules.splashscreen.SplashScreenManager
 import kotlinx.coroutines.flow.Flow
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 
 /** What `shellRoutes` registers at `/`, the tab the app opens on. */
 @Composable
-fun HomeRoute() =
-    HomeScreen(LocalLatestFiles.current, LocalTabReselects.current, JsBridge::open, onShown = SplashScreenManager::hide)
+fun HomeRoute() = HomeScreen(LocalLatestFiles.current, LocalTabReselects.current, JsBridge::open)
 
 /**
  * Home (#235), the Workouts tab, as RN's `(tabs)/index.tsx`, now the empty stub at this path: what to
@@ -92,9 +87,10 @@ fun HomeRoute() =
  * Every route it opens is RN's until the flips: the runner, the workout editor, Import and Settings.
  * [open] is `JsBridge.open`, a parameter so a test hears each one.
  *
- * It is the screen the app's start waits for, twice over. [onShown] lets the splash go, at the first
- * layout after the files are read, and the activity's `reportFullyDrawn`, the startup benchmark's end
- * point, waits for the library as well, since a frame without it isn't Home drawn.
+ * It is the screen the app's start waits for. The activity's `reportFullyDrawn`, the startup
+ * benchmark's end point, waits for the library as well as the first frame, since a frame without it
+ * isn't Home drawn, as RN Home's marker didn't report before it either. The splash goes on the read
+ * alone, in the shell (`SplashExit`).
  *
  * [reselected] carries taps on the tab already showing; one on Workouts scrolls back to the top.
  */
@@ -103,14 +99,13 @@ fun HomeScreen(
     files: LatestFiles,
     reselected: Flow<Tab>,
     open: (Stacking, String, Map<String, String>) -> Unit,
-    onShown: () -> Unit,
     clock: Clock = Clock.System,
 ) {
     val listState = rememberLazyListState()
     ScrollsToTopOnReselect(Tab.Workouts, reselected, listState)
     val library = files.library
     val log = files.sessionLog
-    StartupMarkers(read = log != null, loaded = library != null, onShown)
+    ReportDrawnWhen { library != null }
 
     var query by rememberSaveable { mutableStateOf("") }
     val all = library?.workouts.orEmpty()
@@ -199,29 +194,6 @@ private fun WhatToRun(
     HomeLink(stringResource(R.string.today_startEmpty), Modifier) {
         open(Stacking.Push, SESSION_PATH, mapOf("adhoc" to "1"))
     }
-}
-
-/**
- * The splash goes at the first layout after the files are read, and not on the library: on a fresh
- * install RN writes the seed only once it has started, and a splash waiting for that would hang the
- * app whenever RN couldn't. A frame waited for, because composing isn't laying out. The activity's
- * `reportFullyDrawn` does wait for the library, once per activity, as RN Home's marker did.
- */
-@Composable
-private fun StartupMarkers(
-    read: Boolean,
-    loaded: Boolean,
-    onShown: () -> Unit,
-) {
-    val shown by rememberUpdatedState(onShown)
-    var splashGone by remember { mutableStateOf(false) }
-    LaunchedEffect(read) {
-        if (!read || splashGone) return@LaunchedEffect
-        withFrameNanos {}
-        splashGone = true
-        shown()
-    }
-    ReportDrawnWhen { loaded }
 }
 
 /**

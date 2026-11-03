@@ -35,10 +35,18 @@ import com.casco.kettle.shell.theme.Spacing
 import com.casco.kettle.shell.theme.card
 
 /**
- * What Home queues up, as RN's `components/next-up-card.tsx`, which holds why it shows no block chips
- * and why it is the page's heading rather than a box on it. Everything that can grow is capped by
- * lines, never by a height, which would clip the card at a large text size. [start] hears the
- * session params of whichever button is pressed.
+ * What Home queues up: the next slot of the active program, or a scheduled rest day.
+ *
+ * It shows no block chips. A wrapping row of them, capped at eight and then six, was most of why the
+ * card filled a phone and pushed the list it introduces to the bottom, and the summary line already
+ * says "5 blocks · reps · ~10 min" for any length of workout. The movement names are in the runner.
+ *
+ * No fill, border or padding either: it is the page's heading, not a box on it. It reads as primary
+ * from the type scale and from Start's accent fill, and padding on top of the screen's inset started
+ * its lines 32dp in while the rows below started at 16.
+ *
+ * Everything that can grow is capped by lines, never by a height, which would clip the card at a large
+ * text size. [start] hears the session params of whichever button is pressed.
  */
 @Composable
 fun NextUpCard(
@@ -161,14 +169,17 @@ private fun WeekNotes(notes: String?) {
     )
 }
 
-/** "Week 2 · Tuesday": the number translated, the day the user's own. */
+/**
+ * "Week 2 · Tuesday": the number translated, the day the user's own. An empty `day` is none, as RN
+ * tested it for truth: the schema takes `day: ""`.
+ */
 @Composable
 private fun weekLabel(
     number: Long,
     day: String?,
 ): String {
     val week = stringResource(R.string.programs_week, number)
-    return if (day == null) week else "$week · $day"
+    return if (day.isNullOrEmpty()) week else "$week · $day"
 }
 
 /** Decorative geometry, so a fixed size: the button around it is what grows. */
@@ -188,9 +199,17 @@ private fun PlayTriangle() {
 }
 
 /**
- * Three steps for someone who has just installed, as RN's `components/first-run-card.tsx`, which holds
- * why its wording is what it is. Nothing here is tappable, deliberately: each step's affordance is one
- * tap away elsewhere on the screen, the starter-pack link directly under this card for step 3.
+ * Three steps for someone who has just installed: the seeded library gives a first run something to
+ * start, but nothing said what the rest of the app is for. Nothing here is tappable, deliberately: each
+ * step's affordance is one tap away elsewhere on the screen, the starter-pack link directly under this
+ * card for step 3.
+ *
+ * Step 2 names no tab, since Build merged into this screen and "in Build" became an instruction to go
+ * where you already are. Step 3 carries the claim the store listing is written on, a library that is a
+ * file you own, and may not imply the app generates anything: it never contacts a model, which the
+ * Play zero-data-collected declaration rests on, so the assistant stays outside ("have an AI draft
+ * one"). Nor may it carry training intent (the ownership entry in `docs/decisions.md`): format, never
+ * advice.
  */
 @Composable
 fun FirstRunCard() {

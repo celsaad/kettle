@@ -18,6 +18,7 @@ import com.casco.kettle.shell.files.LatestFiles
 import com.casco.kettle.shell.files.LocalLatestFiles
 import com.casco.kettle.shell.files.StoragePaths
 import com.casco.kettle.shell.nav.Flip
+import com.casco.kettle.shell.nav.LocalSplashExit
 import com.casco.kettle.shell.nav.LocalTabReselects
 import com.casco.kettle.shell.nav.ModalSheet
 import com.casco.kettle.shell.nav.ShellLayout
@@ -130,6 +131,7 @@ class MainActivity :
                     CompositionLocalProvider(
                         LocalLatestFiles provides latestFiles,
                         LocalTabReselects provides tabReselects,
+                        LocalSplashExit provides SplashScreenManager::hide,
                     ) {
                         PreferredKettleTheme(
                             preferences,
@@ -153,7 +155,7 @@ class MainActivity :
         val sheet = layout.sheet.also { this.sheet = it }
         // After RN's own, so it comes first while the sheet is up: the predictive shrink is the sheet's.
         onBackPressedDispatcher.addCallback(this, sheet.backCallback)
-        hearJs(sheet, latestFiles)
+        listenToJs(sheet, latestFiles)
         setContentView(layout)
         JsBridge.attach()
         expoListeners.onContentShown()
@@ -259,7 +261,7 @@ private fun Activity.holdSplash() {
  * it. The tab bar's reports go through [sheet], which passes them on at the frame RN draws them, and
  * JS being up rereads [files], since RN has written a first launch's seed library by then.
  */
-private fun ComponentActivity.hearJs(
+private fun ComponentActivity.listenToJs(
     sheet: ModalSheet,
     files: LatestFiles,
 ) {

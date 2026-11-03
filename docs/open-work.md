@@ -243,8 +243,8 @@ wanting states and assignees, it wants GitHub issues instead.
   known: the `I18nManager` plumbing was deferred deliberately, RN auto-flips the row/padding/gap
   layouts so the physical-direction properties are the small half, and the real work is the drawn glyphs
   that can't flip (the CSS triangles in `session-hold.tsx` and `session-interval.tsx`, and the Canvas
-  ones in native's `list/RowStartButton.kt` and `home/NextUpCard.kt`) plus the arrows baked into copy (`grep '→' src/i18n/locales/en.json` —
-  getting those out of the strings is worth doing whether or not Arabic ever ships). Three that note
+  ones in native's `list/RowStartButton.kt` and `home/NextUpCard.kt`) plus the arrows baked into
+  copy (`grep '→' src/i18n/locales/en.json` — getting those out of the strings is worth doing whether or not Arabic ever ships). Three that note
   doesn't carry: `I18nManager.forceRTL` only takes effect after an app restart, and Kettle reads its
   language from the device once at init and never switches it, so the first launch after a phone goes
   Arabic comes up in Arabic and still laid out left-to-right; Arabic has **six** plural categories against en/pt's

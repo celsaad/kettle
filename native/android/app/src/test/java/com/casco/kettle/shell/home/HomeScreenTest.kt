@@ -66,7 +66,7 @@ import org.robolectric.annotation.Config
  * assertion passes a hardcoded English string, with the files faked behind [StoredFiles], the clock
  * fixed (every session that a day boundary could move is logged at that instant, so the device's
  * zone can't), and every route heard through a parameter. Beyond jest's: what each control sends, the
- * targets' size, the splash's exit and re-tap-to-top.
+ * targets' size and re-tap-to-top. The splash's exit is the shell's (`ShellTest`).
  *
  * A queued workout's name is on the card and on its row, so a row is matched as the button carrying
  * the name, which the card's name never is. The screen is a tall one, so the rows under the header are
@@ -79,7 +79,6 @@ class HomeScreenTest {
     val compose = createComposeRule()
 
     private val opened = mutableListOf<Triple<Stacking, String, Map<String, String>>>()
-    private var shown = 0
     private var drawn = 0
 
     /**
@@ -107,7 +106,6 @@ class HomeScreenTest {
                         latest,
                         reselects,
                         open = { how, path, params -> opened += Triple(how, path, params) },
-                        onShown = { shown++ },
                         clock = FixedClock,
                     )
                 }
@@ -153,6 +151,8 @@ class HomeScreenTest {
         row("Bench day").assertExists()
         row("Zercher day").assertDoesNotExist()
         row("Amrap day").assertDoesNotExist()
+        // Down to one, and the field is still there to clear it with.
+        compose.onNode(hasSetTextAction() and hasText("bench")).assertExists()
     }
 
     @Test
@@ -288,6 +288,14 @@ class HomeScreenTest {
             listOf(Triple(Stacking.Push, "/session", mapOf("programId" to "base", "week" to "1", "day" to "Day 1"))),
             opened,
         )
+    }
+
+    // The schema takes `day: ""`, and RN tested the day for truth, so an empty one is none.
+    @Test
+    fun `labels a week with an empty day by its number alone`() {
+        show(Files(library(programs = listOf(program(ProgramWeek.Training(1, "", "push-day"))))))
+
+        text("PRÓXIMO · Semana 1").assertExists()
     }
 
     // First-run guidance, derived from history rather than persisted: never having logged a session is
@@ -614,29 +622,6 @@ class HomeScreenTest {
         compose.waitForIdle()
 
         assertEquals(1, drawn)
-    }
-
-    /**
-     * The splash waits for Home's first layout after the files are read, and not for the library: on a
-     * fresh install RN writes the seed only once it has started, and a splash waiting on that would
-     * hang the app whenever RN couldn't.
-     */
-    @Test
-    fun `lets the splash go once the files have been read, library or not`() {
-        val files = Files(library = null)
-        val latest = LatestFiles(files, CoroutineScope(Dispatchers.Unconfined), io = Dispatchers.Unconfined)
-        showLatest(latest)
-        compose.waitForIdle()
-        assertEquals(0, shown)
-
-        latest.reread()
-        compose.waitForIdle()
-        assertEquals(1, shown)
-
-        files.library = library()
-        latest.reread()
-        compose.waitForIdle()
-        assertEquals(1, shown)
     }
 
     /** #153 dropped re-tap-to-top with RN's bar; each tab's port brings it back for its own list. */

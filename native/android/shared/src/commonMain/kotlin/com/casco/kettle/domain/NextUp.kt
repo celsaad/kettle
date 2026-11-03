@@ -105,14 +105,15 @@ private fun restOwed(
     val training = weeks[(start + restRun) % weeks.size].takeIf { restRun < weeks.size }
     // Whole calendar days in [zone], so a DST day of 23 or 25 hours still counts as one.
     val today = now.toLocalDateTime(zone).date
-    val restsServed =
-        if (last ==
-            null
-        ) {
-            0
-        } else {
-            last.startedInstant()?.let { maxOf(0, it.toLocalDateTime(zone).date.daysUntil(today) - 1) }
+    val daysSince =
+        last?.let {
+            it
+                .startedInstant()
+                ?.toLocalDateTime(zone)
+                ?.date
+                ?.daysUntil(today)
         }
+    val restsServed = if (last == null) 0 else daysSince?.let { maxOf(0, it - 1) }
     val owed = training == null || (restsServed != null && restsServed < restRun)
     val rest = weeks[(start + minOf(restsServed ?: 0, restRun - 1)) % weeks.size]
     return NextUp

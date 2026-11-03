@@ -72,7 +72,13 @@ class ShellTest {
     /** Every touch that reached the surface. */
     private var touches = 0
 
-    private fun show(routes: Map<String, Screen> = shellRoutes): TabNavigator {
+    /** Each time the shell let the system splash go. */
+    private var splashExits = 0
+
+    private fun show(
+        routes: Map<String, Screen> = shellRoutes,
+        files: LatestFiles = noFiles,
+    ): TabNavigator {
         val navigator = TabNavigator(routes, sent::add)
         compose.runOnUiThread {
             val activity = compose.activity
@@ -86,7 +92,8 @@ class ShellTest {
                     // As MainActivity's: a native tab reads the files, and History is one.
                     theme = {
                         CompositionLocalProvider(
-                            LocalLatestFiles provides noFiles,
+                            LocalLatestFiles provides files,
+                            LocalSplashExit provides { splashExits++ },
                         ) { KettleTheme(darkTheme = false, it) }
                     },
                 ) { content, shell -> ModalSheet(content, shell, surface, navigator, { LightColors }, {}) }
@@ -106,6 +113,45 @@ class ShellTest {
                 true
             }
         }
+
+    private fun unreadFiles() =
+        LatestFiles(
+            object : StoredFiles {
+                override fun sessionLog() = SessionLog.Empty
+
+                override fun library(): Library? = null
+
+                override fun preferences(): Preferences? = null
+
+                override fun deleteSession(id: String) = Unit
+
+                override fun writeSession(session: Session) = Unit
+            },
+            CoroutineScope(Dispatchers.Unconfined),
+            io = Dispatchers.Unconfined,
+        )
+
+    /**
+     * The splash goes at the first layout after the files are read (#235), library or not, and in the
+     * shell rather than in Home: a cold-start link can steer away from Home before the read lands, and
+     * Home's own effect would then have been cancelled, leaving the splash up for good.
+     */
+    @Test
+    fun `lets the splash go once the files are read, whichever tab is showing`() {
+        val files = unreadFiles()
+        val navigator = show(files = files)
+        compose.runOnUiThread { navigator.onRoute("/history") }
+        compose.waitForIdle()
+        assertEquals(0, splashExits)
+
+        compose.runOnUiThread { files.reread() }
+        compose.waitForIdle()
+        assertEquals(1, splashExits)
+
+        compose.runOnUiThread { files.reread() }
+        compose.waitForIdle()
+        assertEquals(1, splashExits)
+    }
 
     private val noFiles =
         LatestFiles(

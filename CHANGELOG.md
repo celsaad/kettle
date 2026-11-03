@@ -26,6 +26,8 @@ here, next to what it describes.
   its old reminder so it can't arrive twice (#238).
 - **Export from History and Library opens Android's own share sheet**, the one Settings uses, with
   its title in your language (#238).
+- **Editing a past session is native**, and works as it did: correct a rep count, a load or an RPE,
+  or remove a set, and History and Stats show it at once (#240).
 
 ---
 

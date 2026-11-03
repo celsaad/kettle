@@ -134,33 +134,6 @@ export function removeLastSessionEntry(session: Session): Session {
   return updated;
 }
 
-/**
- * Removes one entry at an arbitrary index and flushes to disk — what correcting a mis-logged session
- * needs when a whole exercise comes out, as opposed to `removeLastSessionEntry`'s undo of the write
- * that just happened.
- *
- * Out-of-range indices are left alone, matching `replaceSessionEntry`: the caller is working from a
- * session it read, so an index that doesn't exist means its bookkeeping is wrong, and silently
- * deleting nothing is easier to notice than silently deleting the wrong entry.
- */
-export function removeSessionEntry(session: Session, index: number): Session {
-  const updated: Session = { ...session, entries: session.entries.filter((_, position) => position !== index) };
-  writeSession(updated);
-  return updated;
-}
-
-/**
- * Deletes a session's file. Idempotent: a missing file already satisfies the caller's intent, and
- * `File.delete()` throws on a nonexistent path, so the `exists` check is load-bearing rather than
- * defensive.
- */
-export function deleteSession(id: string): void {
-  if (!isFileStorageSupported) return;
-  ensureStorageReady();
-  const file = sessionFile(id);
-  if (file.exists) file.delete();
-}
-
 export function finalizeSession(session: Session, endedAt: string): Session {
   const updated: Session = { ...session, endedAt };
   writeSession(updated);

@@ -48,8 +48,8 @@ fun formatMonthDay(
 ): String = formatMonthDay(date.atStartOfDayIn(TimeZone.UTC), locale, TimeZone.UTC)
 
 /**
- * `formatMonthBadge` in `src/i18n/format.ts`: the short month on a History row's date badge, "JUL" or
- * "JUL.", uppercased with the locale's rules rather than the default's, which are wrong for Turkish.
+ * The short month on a History row's date badge and the session editor's subtitle, "JUL" or "JUL.",
+ * uppercased with the locale's rules rather than the default's, which are wrong for Turkish.
  */
 fun formatMonthBadge(
     date: LocalDate,

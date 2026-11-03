@@ -277,8 +277,8 @@ wanting states and assignees, it wants GitHub issues instead.
 
 - **The session editor's last literals.** Its field suffixes (`sec`, `m`) and placeholders (`—`, `0`)
   are English in every locale, and its per-set labels join with a fixed `"Set 2 · Reps"` order. RN's
-  editor has the same literals; the native port (#239) kept them for the feature freeze. Keys in all
-  three bundles, read by both UIs.
+  editor had the same literals, and the native port (#239) kept them for the feature freeze. Keys in
+  all three bundles, which native's `:strings` reads.
 
 ## Open bugs
 

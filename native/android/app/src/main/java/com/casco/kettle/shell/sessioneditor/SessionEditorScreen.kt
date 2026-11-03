@@ -90,7 +90,7 @@ import java.io.IOException
 /** Where the session editor is registered, as History's Edit pushes it, with the session's `id`. */
 const val SESSION_EDITOR_PATH = "/session-editor"
 
-/** What `shellRoutes` registers at [SESSION_EDITOR_PATH], behind the sessions flip. */
+/** What `shellRoutes` registers at [SESSION_EDITOR_PATH], in every build. */
 @Composable
 fun SessionEditorRoute(params: Map<String, String>) =
     SessionEditorScreen(
@@ -110,9 +110,9 @@ class SessionEditorActions(
 )
 
 /**
- * Corrects what a finished session logged (#239), as RN's `session-editor.tsx`, which Play keeps until
- * the sessions flip releases: a mis-typed rep count, a load entered before the plates changed, an RPE
- * tapped in the wrong column.
+ * Corrects what a finished session logged (#239), as RN's `session-editor.tsx` did until the sessions
+ * flip (#240) made this the only writer of an edited session file: a mis-typed rep count, a load
+ * entered before the plates changed, an RPE tapped in the wrong column.
  *
  * Save-at-the-end, as the other editors: Remove edits this screen's copy, so closing puts a mistaken
  * removal back, and the one write is the session's file, whole, when Save asks for it. Reads the log

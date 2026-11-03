@@ -12,12 +12,3 @@ import { currentLocale } from '@/i18n';
 export function formatMonthDay(date: Date): string {
   return date.toLocaleDateString(currentLocale(), { month: 'short', day: 'numeric' });
 }
-
-/**
- * The short month label on a history card's date badge. Uppercasing is done with the locale rather
- * than `toUpperCase()`, which is wrong for Turkish (i → İ, not I) and pointless for scripts without
- * case — and some locales render the month as a number, which uppercases to itself harmlessly.
- */
-export function formatMonthBadge(date: Date): string {
-  return date.toLocaleDateString(currentLocale(), { month: 'short' }).toLocaleUpperCase(currentLocale());
-}

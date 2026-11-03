@@ -8,7 +8,8 @@
 # session, which joins the .dev history. It never touches com.casco.kettle.
 #
 # The matrix is .dev's routes, so during M5 it shows every writer screen flipped on (Flips.kt), which
-# a release build still draws in RN until its flip ships. Settings' has (#238).
+# a release build still draws in RN until its flip ships. Settings' and the session editor's have
+# (#238, #240).
 #
 # Usage: scripts/route-check.sh [--device <adb serial>]
 set -euo pipefail

@@ -17,6 +17,9 @@
 > `state/tip-store.ts` and `use-rest-day-reminder.ts` point at files that no longer exist. An RN-only
 > iOS build would now ship without Settings, Export or the reminder; iOS waits for the native port
 > (M8) rather than restoring them in RN (#220).
+>
+> **The sessions flip (#240) did the same to the session editor**: `session-editor.tsx` is a stub too,
+> so an RN-only build can still log sessions but can no longer correct one.
 
 The app is closer to iOS than the docs suggest. There is no `ios/` tree to write, no architecture to
 port, and no storage layer to rethink: `expo prebuild --platform ios` generates the native project the

@@ -8,7 +8,7 @@ import com.casco.kettle.shell.i18n.pluralText
 
 /**
  * What one logged entry put up, in the reader's words: `formatEntryResult` in `src/domain/format.ts`,
- * which RN's session editor still reads. Numbers print as JS prints them, so a 52.5s hold reads the
+ * which RN's exercise editor reads until the library flip. Numbers print as JS prints them, so a 52.5s hold reads the
  * same on both sides and a whole one has no ".0".
  */
 fun Resources.entryResultText(result: EntryResult): String =

@@ -536,7 +536,8 @@ decision assembled across several commits. Open work belongs in the sections at 
   **Delete**: `deleteSession(id)` in `session-files.ts` (idempotent — `File.delete()` throws on a
   missing path, so the `exists` check is load-bearing) → a store action → a destructive-confirm control
   in History's expanded card, mirroring the exercise/workout delete pattern. Whole sessions only;
-  editing a past session's individual entries is still not possible.
+  editing a past session's individual entries is still not possible. *(Superseded: History and its
+  delete went native in M4 (#187, #202), and the sessions flip, #240, deleted the RN `deleteSession`.)*
   **Search**: name search over the history list, reusing Library's search-bar styling. The stat tiles
   now aggregate the *visible* subset and the header switches from "All time" to "N of M", because three
   all-time numbers sitting above a filtered list would describe sessions that aren't on screen.
@@ -874,17 +875,19 @@ decision assembled across several commits. Open work belongs in the sections at 
   the runner's next `logEntry` spreads that stale copy back over the file. The correction disappears
   one set later, with nothing said and nothing logged.
 
-  `editEntry`/`removeEntry` therefore refuse a session with no `ended_at`, and History hides the Edit
-  affordance on one. This is why those two actions take a **session id** where the runner's
-  `logEntry`/`replaceEntry` take a `Session`: the runner owns its object and needs the updated one
-  back, but a screen that was handed one could hold it past the next write, which is the same bug in
-  a different shape. `exerciseHistory` and `previousSetFor` already skip unfinished sessions on the
-  read side; this is the same line drawn on the write side.
+  The editor therefore refuses a session with no `ended_at`, and History hides the Edit affordance on
+  one. Since the sessions flip (#240) the editor is native and RN's edit path is gone; the refusal is
+  `sessionEditing`'s `Running` case in `:shared`'s `SessionEditing.kt`, and it still matters, because
+  the RN runner is still the in-flight session's writer. The editor reads the session by **id** from
+  the log rather than being handed one, for the reason RN's store actions did: a screen handed a
+  session could hold it past the next write, which is the same bug in a different shape.
+  `exerciseHistory` and `previousSetFor` already skip unfinished sessions on the read side; this is
+  the same line drawn on the write side.
 
-  Two smaller traps found while building it, both pinned by tests that fail if reintroduced. Entry
-  indices are into `session.entries` and **not** into what History renders, which filters `rest`
-  entries out — an editor built from the view sends corrections to whatever sits at that offset. And
-  removals have to be applied back to front, since each one shifts every later index down by one.
+  A smaller trap, pinned by `SessionEntryFormTest` and `SessionEditorScreenTest`: entry indices are
+  into `session.entries` and **not** into what History renders, which filters `rest` entries out. An
+  editor built from the view sends corrections to whatever sits at that offset. (RN also had to apply
+  removals back to front; native writes the edited session whole, once, so that one went with it.)
 
 - ✅ **A program's rest day clears itself by elapsed calendar days, and stores nothing.** A week with
   `rest_day: true` holds a place in the rotation but is never run, so — unlike every other slot —

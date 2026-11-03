@@ -71,6 +71,9 @@ private val readerRoutes: Map<String, Screen> =
         PROGRAM_DETAIL_PATH to Screen.Native { params -> ProgramDetailRoute(params) },
         // The preferences flip (#238): native is the only writer of preferences.json and the folder.
         "/settings" to Screen.Native { SettingsRoute() },
+        // The sessions flip (#240): native is the only writer of an edited session file. RN's runner
+        // still writes new ones, and nothing else.
+        SESSION_EDITOR_PATH to Screen.Native { params -> SessionEditorRoute(params) },
     )
 
 /**
@@ -80,13 +83,10 @@ private val readerRoutes: Map<String, Screen> =
  * the file until the flip releases, which is accepted because it never reaches Play. The flip-release
  * PR deletes the entry, moves its routes into [readerRoutes] and deletes the RN writers.
  */
-enum class Flip { Sessions, Library }
+enum class Flip { Library, }
 
 /** The writer screens, by the flip that switches them on. Registered the way [readerRoutes] are. */
-private val writerRoutes: Map<Flip, Map<String, Screen>> =
-    mapOf(
-        Flip.Sessions to mapOf(SESSION_EDITOR_PATH to Screen.Native { params -> SessionEditorRoute(params) }),
-    )
+private val writerRoutes: Map<Flip, Map<String, Screen>> = emptyMap()
 
 /** The routes with the [writers] of the flips [on] registered over the read-only ones, the rest left to RN. */
 fun routesFor(

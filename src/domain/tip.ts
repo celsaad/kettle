@@ -1,5 +1,6 @@
 /**
- * Tip jar domain: the supporter file RN Settings reads.
+ * Tip jar domain: the supporter file's format. Nothing in RN reads it since the preferences flip (#238);
+ * it stays as the TS side of `conformance/supporter.yaml`, which holds native's reader to 0.13's files.
  *
  * The tip jar itself is the native shell's from M4 (#198): the tiers, the store and the writes live in
  * `native/android/shared/.../Tip.kt` and the Support screen beside the shell. What stays here is the

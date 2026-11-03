@@ -96,10 +96,10 @@ class DiskFiles(
 /**
  * The session log, the library and the preferences as native screens show them, read again by [reread].
  *
- * RN writes all three until M5: the runner writes new sessions, the session editor edits finished
- * ones (native's [writeSession] once the sessions flip releases), the library editors write the
- * library, and Settings the preferences (native's [writePreferences] once the preferences flip
- * releases). Each of those is above the tabs, so the shell rereads when
+ * RN writes two of the three until M5: the runner writes new sessions, the session editor edits
+ * finished ones (native's [writeSession] once the sessions flip releases), and the library editors
+ * write the library. Native Settings writes the preferences ([writePreferences], #238). Each of those
+ * is above the tabs, so the shell rereads when
  * RN hands the tabs back, on a tap onto a native tab or a native sheet coming up (`TabNavigator`'s
  * `reread`), whenever the app starts or stops being seen (`MainActivity`), and when JS says it is up,
  * since a first launch's seed library is written by then and Home, the screen it lands on, would

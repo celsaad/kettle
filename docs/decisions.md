@@ -193,7 +193,8 @@ decision assembled across several commits. Open work belongs in the sections at 
   because there is no backend to verify against; the downside is a contrived free tip, which costs
   nothing that was ever owed.
   `useTipStore` is **not** in `_layout.tsx`'s startup gate — the root layout renders `null` until every
-  store it awaits is ready, and cold start shouldn't wait on a file almost nobody has.
+  store it awaits is ready, and cold start shouldn't wait on a file almost nobody has. *(RN's read of
+  the file went with RN Settings in the preferences flip, #238; native reads it alone.)*
 
   The paywall line, if a Pro tier is ever revisited: **export stays free** regardless. Gating it would
   contradict the data-ownership pitch that the whole product rests on.
@@ -301,7 +302,8 @@ decision assembled across several commits. Open work belongs in the sections at 
 
   **`preferences.json` now exists**, app-owned JSON next to `supporter.json` and deliberately outside
   the library — and the appearance preference has since migrated onto it, closing the reset-on-relaunch
-  bug. Unlike `useTipStore` it *is* in `_layout.tsx`'s startup gate: it decides how every weight
+  bug. Unlike the tip store it *is* in `_layout.tsx`'s startup gate (and since the preferences flip,
+  #238, it only reads: native Settings writes the file): it decides how every weight
   renders and what color the app is, so arriving after first paint would swap both under the user.
   `loadPreferences` returns `null` rather than a default, so "never chosen" reaches the store, which is
   the only layer that can answer it with the device's own measurement system.

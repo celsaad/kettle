@@ -119,6 +119,9 @@ class RestDayReminderBootReceiver : BroadcastReceiver() {
         intent: Intent,
     ) {
         if (intent.action != Intent.ACTION_BOOT_COMPLETED) return
+        // A 0.13 upgrade rebooted before its first launch still holds the Expo request, which Expo's own
+        // boot receiver puts back: retired here too, or the two would both fire.
+        context.retireExpoReminder()
         val pending = goAsync()
         CoroutineScope(Dispatchers.IO).launch {
             // An unreadable file already reads as none; this is for the platform refusing the alarm,

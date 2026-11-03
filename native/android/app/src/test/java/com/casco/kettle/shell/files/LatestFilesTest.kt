@@ -89,9 +89,9 @@ class LatestFilesTest {
             """{"unitSystem":"$units"}""",
         )
 
-    /** Settings is RN's until M5, so a weight on a native screen follows what it last wrote. */
+    /** A weight on a native screen follows what the file last said, whoever wrote it. */
     @Test
-    fun `the unit system RN's Settings writes is read again with the log`() {
+    fun `the unit system in the preferences file is read again with the log`() {
         writeUnits("metric")
         files.reread()
         navigator.onRoute("/settings")

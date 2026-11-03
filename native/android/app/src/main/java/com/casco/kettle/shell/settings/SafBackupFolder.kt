@@ -1,14 +1,20 @@
 package com.casco.kettle.shell.settings
 
 import android.content.ContentResolver
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.provider.DocumentsContract
 import android.provider.DocumentsContract.Document
 import androidx.core.net.toUri
+import com.casco.kettle.domain.Session
+import com.casco.kettle.domain.isoInstant
 import com.casco.kettle.shell.export.YAML_MIME_TYPE
+import com.casco.kettle.shell.files.StoragePaths
 import com.casco.kettle.storage.BackupDocument
+import com.casco.kettle.storage.BackupFailure
 import com.casco.kettle.storage.BackupFolder
+import com.casco.kettle.storage.backUpNow
 import java.io.FileNotFoundException
 import java.io.IOException
 
@@ -97,3 +103,16 @@ fun ContentResolver.keepGrant(tree: Uri): Boolean =
     } catch (_: SecurityException) {
         false
     }
+
+/**
+ * [sessions] into the folder at [folderUri] through SAF, now: Settings' Back up now and the finish
+ * backup both. Blocking, since a folder backed by a cloud provider can take seconds.
+ */
+fun Context.backUp(
+    paths: StoragePaths,
+    folderUri: String,
+    sessions: List<Session>,
+): BackupFailure? {
+    val folder = SafBackupFolder(contentResolver, folderUri.toUri())
+    return backUpNow(folder, paths.library, paths.backupTargets, sessions, isoInstant(System.currentTimeMillis()))
+}

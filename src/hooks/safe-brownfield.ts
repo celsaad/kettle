@@ -2,9 +2,10 @@
  * The RN app's half of its conversation with the native shell that hosts it
  * (docs/native-migration-plan.md): the "ready" handshake from M2, from M3 the navigate messages
  * native steers the surface with and the filesChanged ones that make a store re-read its file, and
- * from M5 the runner's finish backup, which RN asks for and native performs. The shell loses anything it sends before JS listens —
- * the native module only starts forwarding once a listener exists — so it holds its messages until
- * "ready", and "ready" is only true once the listener is in place.
+ * from M5 the answer to the runner's finish backup, which RN asks for and native performs. The shell
+ * loses anything it sends before JS listens — the native module only starts forwarding once a
+ * listener exists — so it holds its messages until "ready", and "ready" is only true once the listener
+ * is in place.
  *
  * expo-brownfield throws on import wherever its native module isn't built in (Expo Go, a dev client
  * from before M2), so `brownfield-module.ts` requires it lazily and a failure degrades to doing

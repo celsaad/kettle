@@ -31,7 +31,7 @@ import com.casco.kettle.shell.rn.ExpoActivityListeners
 import com.casco.kettle.shell.rn.JsBridge
 import com.casco.kettle.shell.rn.RnFrames
 import com.casco.kettle.shell.rn.withViewAction
-import com.casco.kettle.shell.settings.finishBackup
+import com.casco.kettle.shell.settings.backUpFinishedSession
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.PreferredKettleTheme
 import com.casco.kettle.shell.theme.preferredColors
@@ -101,7 +101,7 @@ class MainActivity :
         BrownfieldState.set(NATIVE_TAB_BAR, true)
         retireExpoReminder()
         val app = applicationContext
-        JsBridge.backUpFinishedSession = { app.finishBackup() }
+        JsBridge.backUpFinishedSession = { app.backUpFinishedSession() }
         // What showReactNativeFragment does, minus the fragment: the surface is
         // one view for the whole app, which ShellLayout places.
         ReactNativeHostManager.shared.initialize(application)

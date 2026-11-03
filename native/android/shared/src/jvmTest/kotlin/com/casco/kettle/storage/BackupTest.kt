@@ -200,6 +200,14 @@ class BackupTest {
             assertEquals(BackupFailure.WriteFailed("disk full"), backUp(listOf(june)))
         }
 
+        // The grant can lapse after the folder answered, and the write is what finds out.
+        @Test
+        fun `points at the folder again when a write finds the grant gone`() {
+            folder.revokeOnWrite = true
+
+            assertEquals(BackupFailure.Unreachable, backUp(listOf(june)))
+        }
+
         @Test
         fun `does not throw when the folder itself refuses to be listed`() {
             folder.refuseList = true
@@ -220,6 +228,7 @@ private class FakeFolder : BackupFolder {
     var reachable = true
     var refuseList = false
     var refuseNextWrite: String? = null
+    var revokeOnWrite = false
 
     fun add(
         name: String,
@@ -255,6 +264,11 @@ private class FakeFolder : BackupFolder {
         document: BackupDocument,
         text: String,
     ) {
+        if (revokeOnWrite) {
+            throw SecurityException(
+                "Permission Denial: writing a document requires that you obtain access",
+            )
+        }
         refuseNextWrite?.let {
             refuseNextWrite = null
             throw IOException(it)

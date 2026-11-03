@@ -31,7 +31,8 @@ private data class BackupMessage(
 @Composable
 internal fun BackupFolder(
     folderUri: String?,
-    sessions: List<Session>,
+    /** Null until the log's first read lands, and backing up then would archive nothing over the last. */
+    sessions: List<Session>?,
     save: PreferencesSaver,
     scope: CoroutineScope,
     backup: BackupActions,
@@ -55,15 +56,15 @@ internal fun BackupFolder(
     ActionRow(
         stringResource(R.string.settings_backupNow),
         stringResource(nowDetail),
-        enabled =
-            folderUri != null && !backingUp,
+        enabled = folderUri != null && sessions != null && !backingUp,
     ) {
         val folder = folderUri ?: return@ActionRow
+        val log = sessions ?: return@ActionRow
         message = null
         backingUp = true
         scope.launch {
             message =
-                backup.backUp(folder, sessions)?.let { BackupMessage(false, resources.describe(it)) }
+                backup.backUp(folder, log)?.let { BackupMessage(false, resources.describe(it)) }
                     ?: BackupMessage(true, resources.getString(R.string.settings_backupDone))
             backingUp = false
         }
@@ -98,8 +99,8 @@ private suspend fun choose(
             null
         }
 
-        is FolderPick.Failed -> {
-            BackupMessage(false, pick.detail)
+        FolderPick.Unavailable -> {
+            BackupMessage(false, resources.getString(R.string.settings_backupUnsupported))
         }
 
         is FolderPick.Picked -> {

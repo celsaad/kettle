@@ -32,8 +32,11 @@ import com.casco.kettle.shell.support.SupporterFile
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.storage.BackupFailure
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -43,6 +46,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import java.io.IOException
+import java.util.concurrent.Executor
 
 /**
  * Settings (#237), case for case from RN's `settings-backup`, `settings-sounds` and `settings-contact`
@@ -67,10 +71,10 @@ class SettingsScreenTest {
         preferences: Preferences? = withFolder(null),
         canChooseFolder: Boolean = true,
         supporter: SupporterState = SupporterState.EMPTY,
+        reads: CoroutineDispatcher = Dispatchers.Unconfined,
     ) {
         files.stored = preferences
-        latest =
-            LatestFiles(files, CoroutineScope(Dispatchers.Unconfined), io = Dispatchers.Unconfined).apply { reread() }
+        latest = LatestFiles(files, CoroutineScope(reads), io = Dispatchers.Unconfined).apply { reread() }
         compose.setContent {
             KettleTheme(darkTheme = false) {
                 SettingsScreen(latest, FixedSupporter(supporter), canChooseFolder, "9.9.9", actions.settings)
@@ -158,14 +162,15 @@ class SettingsScreenTest {
         text("não pôde ser salva")
     }
 
+    // In a translated sentence, never the platform's own words for it.
     @Test
-    fun `says why the picker couldn't open`() {
-        actions.pick = FolderPick.Failed("No Activity found to handle Intent")
+    fun `says so when there's no picker to open`() {
+        actions.pick = FolderPick.Unavailable
         show()
 
         press("Pasta de backup")
 
-        text("No Activity found to handle Intent")
+        text("Backup em pasta não está disponível neste aparelho.")
     }
 
     @Test
@@ -197,6 +202,19 @@ class SettingsScreenTest {
 
         assertEquals(listOf(FOLDER to listOf(aSession)), actions.backedUp)
         text("Backup feito.")
+    }
+
+    /**
+     * A folder chosen before the log's first read lands: backing up then would write an empty archive
+     * over the history already in the folder.
+     */
+    @Test
+    fun `won't back up before the log has been read`() {
+        // Reads that never run, so the folder is chosen and the log is still unread.
+        show(reads = Executor {}.asCoroutineDispatcher())
+        runBlocking { latest.writePreferences(withFolder(FOLDER)) }
+
+        compose.onNode(hasText("Fazer backup agora") and isButton).performScrollTo().assertIsNotEnabled()
     }
 
     /**

@@ -72,9 +72,13 @@ fun backUpNow(
         } else {
             BackupFailure.Unreachable
         }
+    } catch (_: SecurityException) {
+        // The grant lapsed after the folder answered: the write is what finds out, and the answer is
+        // the same as a folder that couldn't be reached, choose it again.
+        BackupFailure.Unreachable
     } catch (
-        // Whatever the provider throws: a SecurityException for a lapsed grant, an IOException, or a
-        // provider's own. A backup that couldn't be written is an answer, never a crash.
+        // Whatever else the provider throws: an IOException, or a provider's own. A backup that couldn't
+        // be written is an answer, never a crash.
         @Suppress("TooGenericExceptionCaught") error: Exception,
     ) {
         BackupFailure.WriteFailed(error.message ?: error.toString())

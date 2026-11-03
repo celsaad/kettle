@@ -47,9 +47,8 @@ sealed interface FolderPick {
         val kept: Boolean,
     ) : FolderPick
 
-    data class Failed(
-        val detail: String,
-    ) : FolderPick
+    /** No picker to open it with. */
+    data object Unavailable : FolderPick
 }
 
 /** The backup folder's two: choosing it, and writing into it, each running its own IO off the main thread. */
@@ -139,13 +138,13 @@ fun SettingsScreen(
             SupportSection(supporter) { actions.open(SUPPORT_PATH) }
             Section(R.string.settings_files) {
                 if (canChooseFolder) {
-                    BackupFolder(preferences.backupFolderUri, sessions, save, scope, actions.backup)
+                    BackupFolder(preferences.backupFolderUri, files.sessionLog?.sessions, save, scope, actions.backup)
                 } else {
                     ExportCopy()
                 }
             }
             Contact(version, actions.contact)
-            Counts(files, sessions.size)
+            Counts(files.library, sessions.size)
             version?.let { Version(it) }
         }
     }

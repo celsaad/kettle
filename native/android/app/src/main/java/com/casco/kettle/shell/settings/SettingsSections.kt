@@ -22,13 +22,13 @@ import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import com.casco.kettle.domain.Library
 import com.casco.kettle.domain.REST_DAY_REMINDER_DAYS
 import com.casco.kettle.domain.Session
 import com.casco.kettle.domain.ThemePreference
 import com.casco.kettle.domain.UnitSystem
 import com.casco.kettle.domain.settingsCounts
 import com.casco.kettle.shell.R
-import com.casco.kettle.shell.files.LatestFiles
 import com.casco.kettle.shell.i18n.pluralText
 import com.casco.kettle.shell.support.SupporterFile
 import com.casco.kettle.shell.theme.KettleTheme
@@ -181,10 +181,10 @@ internal fun Contact(
 
 @Composable
 internal fun Counts(
-    files: LatestFiles,
+    library: Library?,
     sessions: Int,
 ) = Section(R.string.settings_inYourLibrary) {
-    val counts = settingsCounts(files.library, sessions)
+    val counts = settingsCounts(library, sessions)
     Column(
         Modifier
             .fillMaxWidth()

@@ -141,6 +141,8 @@ class LatestFiles(
 
     private var reading: Job? = null
 
+    private val writingPreferences = Mutex()
+
     /**
      * Deletes session [id] and reads the log again, so the row goes as the file does. Throws
      * [IOException] when the disk refuses, and the log is left as it was.
@@ -164,15 +166,16 @@ class LatestFiles(
      * feel broken, and the theme follows at once. A read under way is dropped, so it can't put back
      * what was there. One write at a time, in the order asked, since two taps write the same file.
      * Throws [IOException] when the disk refuses, and the choice holds for this run only, as RN's store
-     * held it.
+     * held it: nothing rereads after a refused write.
      */
     suspend fun writePreferences(preferences: Preferences) {
         reading?.cancel()
         this.preferences = preferences
         writingPreferences.withLock { withContext(io) { files.writePreferences(preferences) } }
+        // A read that started while this one waited its turn may have read the file before it: one now
+        // reads what landed.
+        reread()
     }
-
-    private val writingPreferences = Mutex()
 
     /** Reads all three files again. A read still under way is dropped, so an older one can't land last. */
     fun reread() {

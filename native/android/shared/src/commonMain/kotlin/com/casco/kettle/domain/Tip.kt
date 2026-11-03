@@ -102,9 +102,8 @@ fun serializeSupporterState(state: SupporterState): String {
 /**
  * `Date.toISOString` for [epochMillis]: UTC, always with milliseconds. The tip's timestamp, and an
  * archive's `exported_at` (#237). By days from the civil calendar, since `:shared`'s common code has
- * no date library. Its
- * numbers are the algorithm's own (days per 4, 100 and 400 years, March-based month lengths), which
- * read worse given names than set beside the published algorithm they come from.
+ * no date library. Its numbers are the algorithm's own (days per 4, 100 and 400 years, March-based
+ * month lengths), which read worse given names than set beside the published algorithm they come from.
  */
 @Suppress("MagicNumber")
 fun isoInstant(epochMillis: Long): String {

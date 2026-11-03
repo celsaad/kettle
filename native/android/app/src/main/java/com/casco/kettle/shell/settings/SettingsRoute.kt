@@ -104,8 +104,8 @@ private fun rememberFolderPicker(activity: Activity): suspend () -> FolderPick {
                 launcher.launch(null)
                 answer.await()?.let { FolderPick.Picked(it.toString(), activity.contentResolver.keepGrant(it)) }
                     ?: FolderPick.Cancelled
-            } catch (error: ActivityNotFoundException) {
-                FolderPick.Failed(error.message ?: error.toString())
+            } catch (_: ActivityNotFoundException) {
+                FolderPick.Unavailable
             }
         }
     }

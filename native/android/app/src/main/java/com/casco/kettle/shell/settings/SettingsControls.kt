@@ -23,6 +23,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
@@ -150,7 +151,10 @@ internal fun ActionRow(
                 Text(title, style = KettleType.heading, color = colors.text)
                 Text(detail, style = KettleType.small, color = colors.textSecondary)
             }
-            if (enabled) Text("›", style = KettleType.default, color = colors.textSecondary)
+            // Decoration, as on the list rows: the row is named by its two texts, never by a chevron.
+            if (enabled) {
+                Text("›", Modifier.clearAndSetSemantics {}, style = KettleType.default, color = colors.textSecondary)
+            }
         }
     }
 }

@@ -11,6 +11,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /**
  * The one channel to JS, for the life of the process: the JS runtime outlives any activity (the M0
@@ -80,23 +82,32 @@ object JsBridge {
     @Volatile var wantsPicture: ((String) -> Boolean)? = null
 
     /**
-     * JS is up, on the main thread: RN has hydrated its stores by then, which on a first launch means it
-     * has written the seed library, and nothing else would tell native Home so. The current activity's,
-     * like [onRoute].
-     */
-    var onReady: (() -> Unit)? = null
-
-    /**
      * The runner's finish backup (#220), blocking: whether it failed, or null where it took none. Set
      * once, on the application's context rather than an activity's, since a backup the user's folder
      * takes seconds over may outlive the activity that asked.
      */
     @Volatile var backUpFinishedSession: (() -> Boolean?)? = null
 
+    /**
+     * The runner's adopt (#220), blocking: whether it wrote the library. Set once, on the application's
+     * context, like [backUpFinishedSession].
+     */
+    @Volatile var adoptTargetWeight: ((exerciseId: String, weightKg: Double) -> Boolean)? = null
+
+    /**
+     * Native wrote the library for RN, on the main thread, so the native screens read it again: an
+     * editor opened after the runner builds on the file, not on the library from before the adopt. The
+     * current activity's, like [onRoute].
+     */
+    var onLibraryWritten: (() -> Unit)? = null
+
     private val main = Handler(Looper.getMainLooper())
 
     /** Where the finish backup runs: off both JS's thread and the main one, for the life of the process. */
     private val background = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    /** One adopt at a time: each reads the file and writes it back, so two at once would drop one. */
+    private val adopting = Mutex()
 
     /** JS's messages arrive on its own thread. */
     private fun receive(message: Map<String, Any?>) {
@@ -109,12 +120,6 @@ object JsBridge {
                 val action = message["action"] as? String ?: return
                 if (wantsPicture?.invoke(action) == true) RnFrames.arm()
                 main.post { onRouteWillChange?.invoke(action) }
-            }
-
-            // What announceHostReady sends, after the stores' first read. The two share no code, so change
-            // both.
-            "ready" -> {
-                main.post { onReady?.invoke() }
             }
 
             // What reportSessionFinished sends, once the runner has written the finished session. The
@@ -133,10 +138,40 @@ object JsBridge {
                 }
             }
 
+            // What reportTargetWeight in src/hooks/brownfield-module.ts sends. The two share no code, so
+            // change both. No answer but filesChanged: RN doesn't update its store until the file has.
+            "setTargetWeight" -> {
+                adopt(message)
+            }
+
             // What reportRoute sends. The two share no code, so change both.
             "route" -> {
                 val report = RouteReport.from(message) ?: return
                 main.post { onRoute?.invoke(report) }
+            }
+        }
+    }
+
+    private fun adopt(message: Map<String, Any?>) {
+        val exerciseId = message["exerciseId"] as? String
+        val weightKg = (message["weightKg"] as? Number)?.toDouble()?.takeIf { it.isFinite() && it > 0 }
+        val adopt = adoptTargetWeight
+        when {
+            exerciseId == null || weightKg == null -> {
+                Log.w(TAG, "An adopted load JS sent malformed; nothing was written")
+            }
+
+            // MainActivity sets it before any surface opens, so this is a shell wired wrong.
+            adopt == null -> {
+                Log.w(TAG, "A load was adopted with no library to write it to; nothing was written")
+            }
+
+            else -> {
+                background.launch {
+                    if (!adopting.withLock { adopt(exerciseId, weightKg) }) return@launch
+                    filesChanged(FileKind.LIBRARY)
+                    main.post { onLibraryWritten?.invoke() }
+                }
             }
         }
     }

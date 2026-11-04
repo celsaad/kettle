@@ -60,13 +60,18 @@ sealed interface Screen {
 }
 
 /**
- * The read-only screens' registrations, by the path RN knows the route by. Anything not listed renders
- * RN. Moving a tab to native is one line, as History's below, plus an empty stub
- * route RN keeps at the same path (#190): RN stays the router, so its stack, back and route reports are
- * unchanged, and native draws the screen whenever RN reports that path: a tab's in `Destinations`, and
- * a modal route's in the sheet (`NativeSheet`, #197), with the same stub behind it.
+ * The native screens' registrations, by the path RN knows the route by. Anything not listed renders
+ * RN, which from the library flip (#245) is the session runner alone. Moving a screen to native is one
+ * line, plus an empty stub route RN keeps at the same path (#190): RN stays the router, so its stack,
+ * back and route reports are unchanged, and native draws the screen whenever RN reports that path: a
+ * tab's in `Destinations`, and a modal route's in the sheet (`NativeSheet`, #197), with the same stub
+ * behind it.
+ *
+ * M5's three ownership flips (#222) have each released, so native is the only writer of
+ * `preferences.json` and the backup folder (#238), of an edited session file (#240), and of the
+ * library (#245). RN's runner still writes new sessions, and nothing else.
  */
-private val readerRoutes: Map<String, Screen> =
+val shellRoutes: Map<String, Screen> =
     mapOf(
         "/support" to Screen.Native { SupportRoute() },
         "/program-guide" to Screen.Native { ProgramGuideRoute() },
@@ -77,42 +82,13 @@ private val readerRoutes: Map<String, Screen> =
         Tab.Library.path to Screen.Native { LibraryRoute() },
         Tab.Programs.path to Screen.Native { ProgramsRoute() },
         PROGRAM_DETAIL_PATH to Screen.Native { params -> ProgramDetailRoute(params) },
-        // The preferences flip (#238): native is the only writer of preferences.json and the folder.
         "/settings" to Screen.Native { SettingsRoute() },
-        // The sessions flip (#240): native is the only writer of an edited session file. RN's runner
-        // still writes new ones, and nothing else.
         SESSION_EDITOR_PATH to Screen.Native { params -> SessionEditorRoute(params) },
+        EXERCISE_EDITOR_PATH to Screen.Native { params -> ExerciseEditorRoute(params) },
+        WORKOUT_EDITOR_PATH to Screen.Native { params -> WorkoutEditorRoute(params) },
+        PROGRAM_EDITOR_PATH to Screen.Native { params -> ProgramEditorRoute(params) },
+        IMPORT_PATH to Screen.Native { ImportRoute() },
     )
-
-/**
- * M5's ownership flips, one per data file the app writes (#222), in the order they release. A writer
- * screen lands on master behind its file's flip, which `Flips.kt` turns on in debug and off in
- * release, so `.dev` drives it while Play keeps the RN screen (#223). That gives `.dev` two writers for
- * the file until the flip releases, which is accepted because it never reaches Play. The flip-release
- * PR deletes the entry, moves its routes into [readerRoutes] and deletes the RN writers.
- */
-enum class Flip { Library, }
-
-/** The writer screens, by the flip that switches them on. Registered the way [readerRoutes] are. */
-private val writerRoutes: Map<Flip, Map<String, Screen>> =
-    mapOf(
-        Flip.Library to
-            mapOf(
-                EXERCISE_EDITOR_PATH to Screen.Native { params -> ExerciseEditorRoute(params) },
-                WORKOUT_EDITOR_PATH to Screen.Native { params -> WorkoutEditorRoute(params) },
-                PROGRAM_EDITOR_PATH to Screen.Native { params -> ProgramEditorRoute(params) },
-                IMPORT_PATH to Screen.Native { ImportRoute() },
-            ),
-    )
-
-/** The routes with the [writers] of the flips [on] registered over the read-only ones, the rest left to RN. */
-fun routesFor(
-    on: Set<Flip>,
-    writers: Map<Flip, Map<String, Screen>> = writerRoutes,
-): Map<String, Screen> = writers.filterKeys { it in on }.values.fold(readerRoutes, Map<String, Screen>::plus)
-
-/** The routes this build registers. */
-val shellRoutes: Map<String, Screen> = routesFor(flipsOn)
 
 /** How [path] renders. */
 fun Map<String, Screen>.screenAt(path: String): Screen = this[path] ?: Screen.Rn

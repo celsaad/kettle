@@ -390,6 +390,8 @@ named release, not all three in one. One release each, in this order:
 2. **Sessions**: the native session editor. It only reads the library, so it doesn't wait for the
    library flip. *(Released in #240: RN's editor and its store edit path are deleted.)*
 3. **Library**: the exercise, workout and program editors, import, the seed and the packs.
+   *(Released in #245: `Flips.kt` is gone, RN's editors, Import and library writes are deleted, native
+   seeds and repairs before RN starts, and the runner's adopt is `setTargetWeight`.)*
 
 **The RN runner still writes, so "native is the only writer" needs a protocol** (#220). After the
 flips the runner writes only *new* session files. Its other writes become requests that native

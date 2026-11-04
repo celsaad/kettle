@@ -27,7 +27,7 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.IOException
 
-/** The files native screens read and RN writes, as a boundary a screen's test can fake. */
+/** The files native screens read and write, as a boundary a screen's test can fake. */
 interface StoredFiles {
     fun sessionLog(): SessionLog
 
@@ -56,9 +56,9 @@ interface StoredFiles {
     fun writePreferences(preferences: Preferences)
 
     /**
-     * Replaces `exercises.yaml` with [library], whole or not at all: native's library editors (#241),
-     * which own the file from the library flip (#222). Throws [IOException] when the disk refuses, and
-     * the last library stays as it was.
+     * Replaces `exercises.yaml` with [library], whole or not at all: native's library editors and
+     * Import, and the runner's adopt, from the library flip (#245) on, when native became the file's
+     * only writer. Throws [IOException] when the disk refuses, and the last library stays as it was.
      */
     fun writeLibrary(library: Library)
 }
@@ -106,14 +106,13 @@ class DiskFiles(
 /**
  * The session log, the library and the preferences as native screens show them, read again by [reread].
  *
- * RN writes two of the three until M5 ends: the runner writes new sessions, and the library editors
- * write the library. Native's session editor edits finished sessions ([writeSession], #240), and
- * native Settings writes the preferences ([writePreferences], #238). Each of those is above the tabs,
- * so the shell rereads when
- * RN hands the tabs back, on a tap onto a native tab or a native sheet coming up (`TabNavigator`'s
- * `reread`), whenever the app starts or stops being seen (`MainActivity`), and when JS says it is up,
- * since a first launch's seed library is written by then and Home, the screen it lands on, would
- * otherwise show none (`JsBridge.onReady`). Nothing else would. RN's half of the rule is `filesChanged`.
+ * RN's runner writes new sessions, and nothing else from the library flip (#245): native's session
+ * editor edits finished sessions ([writeSession], #240), native Settings writes the preferences
+ * ([writePreferences], #238), and native writes the library ([writeLibrary]), the runner's adopt
+ * included, which RN asks for by message. The runner is above the tabs, so the shell rereads when RN
+ * hands the tabs back, on a tap onto a native tab or a native sheet coming up (`TabNavigator`'s
+ * `reread`), whenever the app starts or stops being seen (`MainActivity`), and once an adopt lands
+ * (`JsBridge.onLibraryWritten`). RN's half of the rule is `filesChanged`.
  */
 class LatestFiles(
     private val files: StoredFiles,
@@ -127,9 +126,9 @@ class LatestFiles(
         private set
 
     /**
-     * Null until RN has written a readable one, which it does on its first launch. An unreadable one
-     * keeps the last that wasn't: RN heals it on its next load, and the names on screen meanwhile are
-     * still the user's.
+     * Null until the first read lands. Native seeds and repairs the file before anything reads it
+     * (`LibraryGate`), so an unreadable one is a write some other hand made mid-run, and keeps the last
+     * that wasn't: the next launch heals it, and the names on screen meanwhile are still the user's.
      */
     var library by mutableStateOf<Library?>(null)
         private set

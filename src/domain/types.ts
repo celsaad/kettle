@@ -4,8 +4,6 @@
  * bridges the two.
  */
 
-export type ExerciseType = 'hiit' | 'emom' | 'amrap' | 'reps' | 'timed_hold' | 'cardio' | 'rest';
-
 export type HiitConfig = { workSec: number; restSec: number; rounds: number };
 export type EmomConfig = { intervalSec: number; totalMinutes: number; targetReps?: number };
 export type AmrapConfig = { timeCapSec: number };

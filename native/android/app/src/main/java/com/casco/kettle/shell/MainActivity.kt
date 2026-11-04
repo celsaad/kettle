@@ -16,8 +16,10 @@ import com.casco.kettle.brownfield.ReactNativeViewFactory
 import com.casco.kettle.brownfield.setUpNativeBackHandling
 import com.casco.kettle.shell.files.DiskFiles
 import com.casco.kettle.shell.files.LatestFiles
+import com.casco.kettle.shell.files.LibraryGate
 import com.casco.kettle.shell.files.LocalLatestFiles
 import com.casco.kettle.shell.files.StoragePaths
+import com.casco.kettle.shell.files.adoptTargetWeight
 import com.casco.kettle.shell.nav.LocalSplashExit
 import com.casco.kettle.shell.nav.LocalTabReselects
 import com.casco.kettle.shell.nav.ModalSheet
@@ -87,6 +89,8 @@ class MainActivity :
         MutableSharedFlow<Tab>(extraBufferCapacity = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // First, so the library's read overlaps everything up to RN's start, which waits for it.
+        LibraryGate.start(this)
         // Before super, as in the prebuilt app: it installs the splash theme's exit.
         holdSplash()
         // null, as the prebuilt app's MainActivity passes: the RN fragment is rebuilt from the running
@@ -100,8 +104,9 @@ class MainActivity :
         // bar of its own. The two share no code, so change both.
         BrownfieldState.set(NATIVE_TAB_BAR, true)
         retireExpoReminder()
-        val app = applicationContext
-        JsBridge.backUpFinishedSession = { app.backUpFinishedSession() }
+        handJsItsWrites()
+        // RN's library load only parses from the library flip (#221): native seeds and repairs first.
+        LibraryGate.awaitPrepared(this)
         // What showReactNativeFragment does, minus the fragment: the surface is
         // one view for the whole app, which ShellLayout places.
         ReactNativeHostManager.shared.initialize(application)
@@ -254,6 +259,16 @@ class MainActivity :
 }
 
 /**
+ * The writes JS asks native for (#220), on the application's context: a backup the user's folder takes
+ * seconds over, or an adopt, may outlive the activity that asked.
+ */
+private fun Activity.handJsItsWrites() {
+    val app = applicationContext
+    JsBridge.backUpFinishedSession = { app.backUpFinishedSession() }
+    JsBridge.adoptTargetWeight = { id, kg -> app.adoptTargetWeight(id, kg) }
+}
+
+/**
  * Native Home lets the splash go (#235), and RN's first content mustn't first: that is what
  * expo-splash-screen's preventAutoHide stood for, which JS no longer calls.
  */
@@ -265,7 +280,7 @@ private fun Activity.holdSplash() {
 /**
  * What this activity hears from JS, until a newer one takes over: the runtime and [JsBridge] outlive
  * it. The tab bar's reports go through [sheet], which passes them on at the frame RN draws them, and
- * JS being up rereads [files], since RN has written a first launch's seed library by then.
+ * a library native wrote at the runner's asking rereads [files].
  */
 private fun ComponentActivity.listenToJs(
     sheet: ModalSheet,
@@ -274,7 +289,7 @@ private fun ComponentActivity.listenToJs(
     JsBridge.onRoute = sheet::onRoute
     JsBridge.onRouteWillChange = sheet::onRouteWillChange
     JsBridge.wantsPicture = sheet::wantsPicture
-    JsBridge.onReady = files::reread
+    JsBridge.onLibraryWritten = files::reread
     RnFrames.onCapture = sheet::capture
     lifecycle.addObserver(
         object : DefaultLifecycleObserver {
@@ -283,7 +298,7 @@ private fun ComponentActivity.listenToJs(
                 JsBridge.onRoute = null
                 JsBridge.onRouteWillChange = null
                 JsBridge.wantsPicture = null
-                JsBridge.onReady = null
+                JsBridge.onLibraryWritten = null
                 RnFrames.onCapture = null
             }
         },

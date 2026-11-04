@@ -38,3 +38,19 @@ export function reportSessionFinished(): void {
   if (!isHosted()) return;
   getBrownfield()?.sendMessage({ type: 'sessionFinished' });
 }
+
+/**
+ * Asks the shell to set `reps` exercise `exerciseId`'s target load to `weightKg` (#220): the runner's
+ * one-tap adopt, which native writes, since it owns the library from the library flip. Native answers
+ * `filesChanged('library')` once the file has it, and nothing at all when there was nothing to set or
+ * the write failed, which stays as silent as it always was.
+ *
+ * **Kilograms, straight off a logged set, with no display round trip**: the exercise form's path would
+ * reintroduce the lossy conversion `previousWeightKg` exists to prevent, turning an adopted 100 kg into
+ * 100.02 for a pound user. Nothing outside the shell writes it. The shell's `JsBridge` reads it. The
+ * two share no code, so change both.
+ */
+export function reportTargetWeight(exerciseId: string, weightKg: number): void {
+  if (!isHosted()) return;
+  getBrownfield()?.sendMessage({ type: 'setTargetWeight', exerciseId, weightKg });
+}

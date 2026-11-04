@@ -48,19 +48,6 @@ export function sessionFile(id: string): File {
   return new File(resolvePaths().sessionsDir, `${id}.yaml`);
 }
 
-/**
- * Where a library that cannot be parsed is moved before the app reseeds over it.
- *
- * `loadLibrary` used to overwrite an unreadable `exercises.yaml` with the seed and say nothing, which
- * makes the reseed a *destructive* recovery: the user's whole library is gone, and the only copy of it
- * was the file being replaced. Timestamped, so a second bad launch cannot overwrite the first rescue.
- *
- * Beside the library rather than in the cache directory — the point is that the OS must not reclaim it.
- */
-export function quarantineFile(stamp: string): File {
-  return new File(resolvePaths().root, `exercises.invalid-${stamp}.yaml`);
-}
-
 /** Ensures the app document directory layout exists. Safe to call repeatedly. */
 export function ensureStorageReady(): void {
   const { root, sessionsDir } = resolvePaths();

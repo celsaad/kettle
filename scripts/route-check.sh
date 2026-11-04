@@ -7,9 +7,8 @@
 # phone in English whose .dev install still holds the seed library. The runner steps finish a real
 # session, which joins the .dev history. It never touches com.casco.kettle.
 #
-# The matrix is .dev's routes, so during M5 it shows every writer screen flipped on (Flips.kt), which
-# a release build still draws in RN until its flip ships. Settings' and the session editor's have
-# (#238, #240).
+# Since the library flip (#245) a release build registers the same routes .dev does: every screen is
+# native but the runner, so the matrix holds for both.
 #
 # Usage: scripts/route-check.sh [--device <adb serial>]
 set -euo pipefail
@@ -55,15 +54,15 @@ steps=(
   '/session-editor|Edit session' 'back|tab:History'
   # A native tab's row opens its native sheet over that tab (#197, #233), and back returns to it.
   'tap:Programs|tab:Programs' 'tap:Foundations · 4 Weeks · No Equipment|Week 1 · Day 1'
-  # Over that native sheet, the editor (native on .dev since #243) and RN's runner each come back to it (#155, #233).
+  # Over that native sheet, the native editor and RN's runner each come back to it (#155, #233).
   'tap:Edit program|Edit program' 'back|Week 1 · Day 1'
   'tap:Start Week 1 · Day 1|Finish' 'back|Finish session?' 'tap:FINISH|Workout complete'
   'tap:Done|Week 1 · Day 1'
   'back|tab:Programs'
-  # Native Library's row and Import open RN's editor and sheet over it, and back returns to it (#234).
+  # Native Library's row and Import open their native sheets over it, and back returns to it (#234).
   'tap:Library|tab:Library' 'tap:Push-ups|Edit exercise' 'back|tab:Library'
   'tap:Import|Import library' 'back|tab:Library'
-  # Native Home's gear and New workout open native Settings and RN's editor over it, and back returns
+  # Native Home's gear and New workout open native Settings and the native editor over it, and back returns
   # (#235, #238).
   'tap:Workouts|tab:Workouts' 'tap:Settings|Settings' 'back|tab:Workouts'
   'tap:New workout|New workout' 'back|tab:Workouts'

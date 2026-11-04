@@ -5,90 +5,32 @@
 // uninitialised instance reports no language and falls back to the English seed.
 import i18next from 'i18next';
 
-import { parseLibraryYaml, repairLibraryBounds, serializeLibraryYaml } from '@/domain/yaml-mapping';
+import { parseLibraryYaml } from '@/domain/yaml-mapping';
 import type { Library } from '@/domain/types';
-import { ensureStorageReady, isFileStorageSupported, quarantineFile, storagePaths } from '@/storage/paths';
+import { isFileStorageSupported, storagePaths } from '@/storage/paths';
 import { seedLibraryFor } from '@/storage/seed-library';
 
 export type LoadLibraryResult = { ok: true; library: Library } | { ok: false; error: string };
 
 /**
- * Reads exercises.yaml, seeding it from defaults on first launch. Never throws.
- * On web (unsupported by expo-file-system) this degrades to an in-memory seed library so the UI
- * stays browsable — nothing persists there, matching the pre-refactor mock-data web experience.
+ * Reads exercises.yaml. Never throws, and never writes: native is the library's only writer from the
+ * library flip (#220), and it seeds a missing file and repairs or quarantines and reseeds a corrupt one
+ * at launch, before RN starts (`LibraryGate` in the shell). So a file this can't read is an error to
+ * report, not one to heal: healing it here would make RN a second writer, racing native's own writes.
  *
- * The seed is picked in the user's language and then **frozen**: from the moment it's written it is
- * user data, so a later language change never renames it. Note that the reseed path below shares that
- * pick — a library corrupted after the user switched device language comes back in the new one, which
- * is the honest behaviour for content that has to be regenerated from scratch anyway.
+ * On web (unsupported by expo-file-system) this is an in-memory seed in the UI's language, so the UI
+ * stays browsable with nothing persisted. iOS and Expo Go read the file like Android and get no seed:
+ * M5 keeps no RN fallback for unhosted builds (#220).
  */
 export async function loadLibrary(): Promise<LoadLibraryResult> {
-  // Only the paths that seed pay for parsing it, rather than every launch that finds a library.
-  const seed = () => seedLibraryFor(i18next.language);
+  if (!isFileStorageSupported) return { ok: true, library: seedLibraryFor(i18next.language) };
 
-  if (!isFileStorageSupported) return { ok: true, library: seed() };
-
-  ensureStorageReady();
-
-  if (!storagePaths.libraryFile.exists) {
-    const library = seed();
-    await saveLibrary(library);
-    return { ok: true, library };
-  }
-
-  const text = await storagePaths.libraryFile.text();
-  const result = parseLibraryYaml(text);
-  if (result.ok) return { ok: true, library: result.data };
-
-  // The persisted file predates a breaking schema change, or is otherwise corrupt. This is the app's
-  // own auto-loaded storage rather than a user-picked import, so it self-heals instead of leaving the
-  // app on a blank screen — but "self-heal" used to mean overwriting the only copy of the user's
-  // library with the seed, which is a destructive recovery.
-  //
-  // So: repair first. Adding the repeat-count ceilings is exactly the kind of change that turns a
-  // file which parsed yesterday into one that doesn't, and clamping it back into range keeps
-  // everything else the user wrote (see repairLibraryBounds).
-  const repaired = repairLibraryBounds(text);
-  if (repaired) {
-    const retry = parseLibraryYaml(repaired);
-    if (retry.ok) {
-      console.warn(`exercises.yaml held out-of-range values (${result.error.detail}); clamped them and kept the rest`);
-      await saveLibrary(retry.data);
-      return { ok: true, library: retry.data };
-    }
-  }
-
-  // Beyond repair. Reseed, but never over the top of it — the file moves aside first, so the recovery
-  // costs the user their *access* to the library and not the library.
-  console.warn(`exercises.yaml failed to parse (${result.error.kind}), quarantining and reseeding: ${result.error.detail}`);
-  quarantine(text);
-  const library = seed();
-  await saveLibrary(library);
-  return { ok: true, library };
-}
-
-/**
- * Copies the unreadable library aside before it is replaced. Never throws: this runs on the recovery
- * path, and a failure to *rescue* the old file must not also block the reseed that gets the app
- * running again. A failed rescue is logged and the user is no worse off than before this existed.
- */
-function quarantine(text: string): void {
   try {
-    const file = quarantineFile(new Date().toISOString().replaceAll(/[:.]/g, '-'));
-    if (!file.exists) file.create({ intermediates: true, overwrite: true });
-    file.write(text);
+    if (!storagePaths.libraryFile.exists) return { ok: false, error: 'exercises.yaml does not exist' };
+    const result = parseLibraryYaml(await storagePaths.libraryFile.text());
+    if (result.ok) return { ok: true, library: result.data };
+    return { ok: false, error: `exercises.yaml failed to parse (${result.error.kind}): ${result.error.detail}` };
   } catch (error) {
-    console.warn(`could not quarantine the unreadable exercises.yaml: ${(error as Error).message}`);
+    return { ok: false, error: `exercises.yaml could not be read: ${(error as Error).message}` };
   }
-}
-
-export async function saveLibrary(library: Library): Promise<void> {
-  if (!isFileStorageSupported) return;
-
-  ensureStorageReady();
-  const text = serializeLibraryYaml(library);
-  if (!storagePaths.libraryFile.exists) {
-    storagePaths.libraryFile.create({ intermediates: true, overwrite: true });
-  }
-  storagePaths.libraryFile.write(text);
 }

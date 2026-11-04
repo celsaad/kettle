@@ -65,11 +65,11 @@ class ShellTest {
     private val sent = mutableListOf<String>()
 
     /**
-     * Release's routes, every unreleased writer still RN's, whatever build runs the tests: Import stands
-     * for an RN sheet below, which it stays on Play until the library flip, where `.dev` draws it
-     * natively. Settings was the example until its flip released (#238).
+     * The app's routes with Import's registration taken out, so it stands for an RN sheet below. None is
+     * RN's on any build since the library flip (#245), but the shell presents RN sheets until routing
+     * moves native (#223), and Import's stub route is still there to present.
      */
-    private val shellRoutes = routesFor(on = emptySet())
+    private val shellRoutes = com.casco.kettle.shell.nav.shellRoutes - "/import"
 
     private lateinit var surface: View
     private lateinit var shell: ShellLayout

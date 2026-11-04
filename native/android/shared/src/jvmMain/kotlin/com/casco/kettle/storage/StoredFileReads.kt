@@ -35,8 +35,8 @@ fun readSessionLog(dir: File): SessionLog {
 }
 
 /**
- * The library in [file], `exercises.yaml`, or null where there is none to read: RN seeds a missing
- * file and repairs or reseeds an unreadable one on its next load, and native writes neither.
+ * The library in [file], `exercises.yaml`, or null where there is none to read. [prepareLibrary] seeds
+ * a missing file and repairs or reseeds an unreadable one at launch, so null is rare past it.
  */
 fun readLibrary(file: File): Library? {
     val text = file.readTextOrNull() ?: return null

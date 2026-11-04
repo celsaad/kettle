@@ -90,7 +90,7 @@ import sh.calvin.reorderable.rememberReorderableLazyListState
 /** Where the workout editor is registered, as Home and Library push it: with an `id` to edit, none to create. */
 const val WORKOUT_EDITOR_PATH = "/workout-editor"
 
-/** What `shellRoutes` registers at [WORKOUT_EDITOR_PATH], behind the library flip. */
+/** What `shellRoutes` registers at [WORKOUT_EDITOR_PATH]. */
 @Composable
 fun WorkoutEditorRoute(params: Map<String, String>) =
     WorkoutEditorScreen(

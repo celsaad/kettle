@@ -2,6 +2,7 @@ package com.casco.kettle.domain
 
 import kotlinx.datetime.Instant
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -38,6 +39,29 @@ class ExerciseEditingTest {
         @Test
         fun `deletes by id and leaves the rest`() {
             assertEquals(listOf(dips), library().withoutExercise("pull-ups").exercises)
+        }
+    }
+
+    /** The runner's adopt (#220), ported from the RN store's `setTargetWeightKg` cases. */
+    @Nested
+    inner class TargetWeight {
+        private val plank =
+            Exercise("plank", "Plank", ExerciseConfig.TimedHold(sets = 3, holdSecMin = 45.0, restSec = 60.0))
+
+        @Test
+        fun `sets the target load in kilograms, unconverted, and keeps the rest`() {
+            val set = library(listOf(pullUps, dips, plank)).withTargetWeight("pull-ups", 62.5)
+
+            val config = pullUps.config as ExerciseConfig.Reps
+            assertEquals(library(listOf(pullUps.copy(config = config.copy(targetWeightKg = 62.5)), dips, plank)), set)
+        }
+
+        @Test
+        fun `sets nothing on an exercise with no target weight, or one that isn't there`() {
+            val library = library(listOf(pullUps, plank))
+
+            assertNull(library.withTargetWeight("plank", 20.0))
+            assertNull(library.withTargetWeight("gone", 20.0))
         }
     }
 

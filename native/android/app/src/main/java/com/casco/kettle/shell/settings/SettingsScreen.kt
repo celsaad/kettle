@@ -222,7 +222,6 @@ internal class PreferencesSaver(
     fun launch(change: (Preferences) -> Preferences) = launch(change) {}
 }
 
-// RN's routes: Import is RN's until the library flip, Support native behind its stub. The two share no
-// code, so change both.
+// RN's routes, both native behind their stubs. The two share no code, so change both.
 internal const val IMPORT_PATH = "/import"
 internal const val SUPPORT_PATH = "/support"

@@ -28,7 +28,7 @@ import java.io.IOException
 /** Where Import is registered, as Home's first-run link, Library and Settings open it. */
 const val IMPORT_PATH = "/import"
 
-/** What `shellRoutes` registers at [IMPORT_PATH], behind the library flip: the screen on SAF and the shell. */
+/** What `shellRoutes` registers at [IMPORT_PATH]: the screen on SAF and the shell. */
 @Composable
 fun ImportRoute() {
     val activity = LocalActivity.current ?: return

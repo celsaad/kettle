@@ -71,8 +71,8 @@ fun ProgramsRoute() = ProgramsScreen(LocalLatestFiles.current, LocalTabReselects
 
 /**
  * Programs (#232), the library's programs as rows, as RN's `(tabs)/programs.tsx`, now the empty stub
- * at this path: a name search, the program guide behind `?`, and New program, which is RN's editor
- * until the library flip. [open] is `JsBridge.open`, a parameter so a test hears each route opened.
+ * at this path: a name search, the program guide behind `?`, and New program, which opens the program
+ * editor. [open] is `JsBridge.open`, a parameter so a test hears each route opened.
  *
  * [reselected] carries taps on the tab already showing; one on Programs scrolls back to the top.
  */

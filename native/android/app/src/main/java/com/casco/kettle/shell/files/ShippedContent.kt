@@ -20,7 +20,7 @@ data class ContentPackEntry(
  * RN's bundle and this read one copy. `seed-library.ts` and `content-packs.ts` hold the reasoning for
  * the seed and the packs, and the RN tests hold the content's own invariants.
  *
- * Import's starter packs read from here (#244). The seed moves here with the library flip.
+ * Import's starter packs read from here (#244), and so does the launch's seed (`LibraryGate`).
  *
  * Every read **throws** on a file that doesn't parse: shipped content is fixed at build time, so a bad
  * file is a build defect with nothing honest to degrade to.

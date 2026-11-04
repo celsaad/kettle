@@ -12,7 +12,7 @@ import {
 } from '@/hooks/safe-notifications';
 import { upcomingOutline } from '@/hooks/session-outline';
 import { useSessionSounds } from '@/hooks/use-session-sounds';
-import { useLibraryStore } from '@/state/library-store';
+import { reportTargetWeight } from '@/hooks/brownfield-module';
 import { formatSessionName } from '@/domain/format';
 
 import { personalBestFor, previousSetFor } from '@/state/selectors/records';
@@ -937,14 +937,15 @@ export function useSessionRunner(
    * block above) because varying reps is the normal thing being logged, and pinning last week's would
    * fight double progression.
    *
-   * `getState()` rather than a subscription — the runner has no reason to re-render when the library
-   * changes, least of all as a result of its own write. The value is already kilograms, straight off a
-   * logged set, so it goes to the store unconverted (see `setTargetWeightKg`).
+   * Native writes it, since it owns the library from the library flip (#220): this asks, and the
+   * library store hears `filesChanged` once the file has it. Nothing here waits, since the next reader
+   * is the next session's start. The value is already kilograms, straight off a logged set, so it goes
+   * unconverted (see `reportTargetWeight`).
    */
   const adoptPreviousLoad = useCallback(() => {
     if (step?.kind !== 'reps' || previousSet?.kind !== 'reps' || !previousSet.weightKg) return;
     setWeightKg(previousSet.weightKg);
-    useLibraryStore.getState().setTargetWeightKg(step.exerciseId, previousSet.weightKg);
+    reportTargetWeight(step.exerciseId, previousSet.weightKg);
   }, [step, previousSet]);
 
   /**

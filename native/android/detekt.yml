@@ -7,6 +7,10 @@ naming:
   FunctionNaming:
     ignoreAnnotated: ['Composable']
 style:
+  # Off in detekt's defaults, and nothing else here catches it: ktlint's rule isn't in this ruleset, and
+  # the compiler doesn't warn. A refactor's leftovers had piled up to 55 before this was turned on (#274).
+  UnusedImports:
+    active: true
   UnusedPrivateMember:
     ignoreAnnotated: ['Preview', 'LocalePreviews']
   # The import rather than the call, because ForbiddenMethodCall needs type resolution and `check` runs

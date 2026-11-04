@@ -33,7 +33,6 @@ import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.Exercise
 import com.casco.kettle.domain.ExerciseConfig
 import com.casco.kettle.domain.Library
-import com.casco.kettle.domain.Preferences
 import com.casco.kettle.domain.Program
 import com.casco.kettle.domain.ProgramWeek
 import com.casco.kettle.domain.RepsSetLog

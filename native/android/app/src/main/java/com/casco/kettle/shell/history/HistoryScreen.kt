@@ -1,7 +1,6 @@
 package com.casco.kettle.shell.history
 
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,7 +8,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.widthIn
@@ -17,10 +15,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -31,8 +26,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.expand
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -48,8 +41,6 @@ import com.casco.kettle.shell.export.logShareRefused
 import com.casco.kettle.shell.export.rememberFileShare
 import com.casco.kettle.shell.files.LatestFiles
 import com.casco.kettle.shell.files.LocalLatestFiles
-import com.casco.kettle.shell.form.DialogAction
-import com.casco.kettle.shell.form.KettleAlertDialog
 import com.casco.kettle.shell.i18n.pluralText
 import com.casco.kettle.shell.list.ListHeaderRule
 import com.casco.kettle.shell.list.ListRowSeparator
@@ -62,6 +53,8 @@ import com.casco.kettle.shell.nav.Tab
 import com.casco.kettle.shell.rn.FileKind
 import com.casco.kettle.shell.rn.JsBridge
 import com.casco.kettle.shell.rn.Stacking
+import com.casco.kettle.shell.theme.DialogAction
+import com.casco.kettle.shell.theme.KettleAlertDialog
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.MaxContentWidth
@@ -380,9 +373,9 @@ private fun DeleteDialog(
 ) {
     val (day, month) = dateBadge(row)
     KettleAlertDialog(
-        stringResource(R.string.history_deleteConfirmTitle),
-        stringResource(R.string.history_deleteConfirmBody, day, month, name),
-        onDismiss,
+        title = stringResource(R.string.history_deleteConfirmTitle),
+        body = stringResource(R.string.history_deleteConfirmBody, day, month, name),
+        onDismissRequest = onDismiss,
         confirm = DialogAction(stringResource(R.string.common_delete), onConfirm),
         dismiss = DialogAction(stringResource(R.string.common_cancel), onDismiss),
     )

@@ -25,7 +25,6 @@ import com.casco.kettle.domain.Exercise
 import com.casco.kettle.domain.ExerciseConfig
 import com.casco.kettle.domain.Library
 import com.casco.kettle.domain.Preferences
-import com.casco.kettle.domain.Session
 import com.casco.kettle.domain.SessionLog
 import com.casco.kettle.domain.ThemePreference
 import com.casco.kettle.domain.UnitSystem

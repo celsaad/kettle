@@ -26,5 +26,5 @@ open class FakeStoredFiles : StoredFiles {
 
     override fun writeLibrary(library: Library): Unit = unexpected("writeLibrary")
 
-    private fun unexpected(write: String): Nothing = error("$write isn't expected from this screen")
+    private fun unexpected(write: String): Nothing = error("$write not expected here")
 }

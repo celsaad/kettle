@@ -1,26 +1,18 @@
 package com.casco.kettle.shell.exerciseeditor
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -29,11 +21,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -53,16 +43,16 @@ import com.casco.kettle.shell.R
 import com.casco.kettle.shell.art.ExerciseArt
 import com.casco.kettle.shell.files.LatestFiles
 import com.casco.kettle.shell.files.LocalLatestFiles
-import com.casco.kettle.shell.form.DialogAction
+import com.casco.kettle.shell.files.writeOrRefusal
 import com.casco.kettle.shell.form.EditorButtons
-import com.casco.kettle.shell.form.KettleAlertDialog
-import com.casco.kettle.shell.form.refusal
 import com.casco.kettle.shell.history.entryResultText
 import com.casco.kettle.shell.i18n.deviceUnitSystem
 import com.casco.kettle.shell.i18n.formatMonthDay
 import com.casco.kettle.shell.list.TextAction
 import com.casco.kettle.shell.rn.FileKind
 import com.casco.kettle.shell.rn.JsBridge
+import com.casco.kettle.shell.theme.DialogAction
+import com.casco.kettle.shell.theme.KettleAlertDialog
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.MaxContentWidth
@@ -72,7 +62,6 @@ import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.TimeZone
-import java.io.IOException
 
 /** Where the exercise editor is registered, as Library pushes it: with an `id` to edit, none to create. */
 const val EXERCISE_EDITOR_PATH = "/exercise-editor"
@@ -222,7 +211,7 @@ private class Editor(
         scope.launch {
             withContext(NonCancellable) {
                 val refused =
-                    refusal {
+                    writeOrRefusal {
                         files.writeLibrary(change(library))
                         actions.libraryChanged()
                         actions.close()
@@ -359,9 +348,14 @@ private fun DeleteDialog(
     when (deleting) {
         is Editor.Deleting.InUse -> {
             KettleAlertDialog(
-                stringResource(R.string.exerciseEditor_inUseTitle),
-                stringResource(R.string.exerciseEditor_inUseBody, exercise.name, deleting.workouts.joinToString(", ")),
-                editor::dismissDelete,
+                title = stringResource(R.string.exerciseEditor_inUseTitle),
+                body =
+                    stringResource(
+                        R.string.exerciseEditor_inUseBody,
+                        exercise.name,
+                        deleting.workouts.joinToString(", "),
+                    ),
+                onDismissRequest = editor::dismissDelete,
                 // RN's buttonless alert, which Android titles with the platform's own OK.
                 confirm = DialogAction(stringResource(android.R.string.ok), editor::dismissDelete),
             )
@@ -369,9 +363,9 @@ private fun DeleteDialog(
 
         Editor.Deleting.Confirm -> {
             KettleAlertDialog(
-                stringResource(R.string.exerciseEditor_deleteConfirmTitle),
-                stringResource(R.string.common_deleteConfirmBody, exercise.name),
-                editor::dismissDelete,
+                title = stringResource(R.string.exerciseEditor_deleteConfirmTitle),
+                body = stringResource(R.string.common_deleteConfirmBody, exercise.name),
+                onDismissRequest = editor::dismissDelete,
                 confirm = DialogAction(stringResource(R.string.common_delete), editor::delete),
                 dismiss = DialogAction(stringResource(R.string.common_cancel), editor::dismissDelete),
             )

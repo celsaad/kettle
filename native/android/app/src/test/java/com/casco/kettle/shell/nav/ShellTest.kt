@@ -37,7 +37,6 @@ import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.Library
 import com.casco.kettle.domain.Preferences
 import com.casco.kettle.domain.Session
-import com.casco.kettle.domain.SessionLog
 import com.casco.kettle.shell.files.FakeStoredFiles
 import com.casco.kettle.shell.files.LatestFiles
 import com.casco.kettle.shell.files.LocalLatestFiles

@@ -24,7 +24,6 @@ import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.Exercise
 import com.casco.kettle.domain.ExerciseConfig
 import com.casco.kettle.domain.Library
-import com.casco.kettle.domain.Preferences
 import com.casco.kettle.domain.RepsSetLog
 import com.casco.kettle.domain.Session
 import com.casco.kettle.domain.SessionEntry

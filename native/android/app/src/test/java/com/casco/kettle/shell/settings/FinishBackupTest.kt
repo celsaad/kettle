@@ -1,6 +1,5 @@
 package com.casco.kettle.shell.settings
 
-import com.casco.kettle.domain.Library
 import com.casco.kettle.domain.Preferences
 import com.casco.kettle.domain.Session
 import com.casco.kettle.domain.SessionLog

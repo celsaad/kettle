@@ -64,7 +64,7 @@ private fun clampedMinutes(exercise: Any?): Double? {
     val intervalSec = (config?.get("interval_sec") as? Number)?.toDouble()
     val totalMinutes = (config?.get("total_minutes") as? Number)?.toDouble()
     return when {
-        fields?.get("type") != "emom" || intervalSec == null || totalMinutes == null -> {
+        fields?.get("type") != ExerciseType.Emom.yamlName || intervalSec == null || totalMinutes == null -> {
             null
         }
 

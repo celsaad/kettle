@@ -45,7 +45,7 @@ private fun SessionEntry.toRaw(): Map<String, Any?> =
         put("exercise", exercise)
         when (val entry = this@toRaw) {
             is SessionEntry.TimedHold -> {
-                put("type", "timed_hold")
+                put("type", ExerciseType.TimedHold.yamlName)
                 put(
                     "sets",
                     entry.sets.map { linkedMapOf("hold_sec" to it.holdSec, "rest_taken_sec" to it.restTakenSec) },
@@ -53,7 +53,7 @@ private fun SessionEntry.toRaw(): Map<String, Any?> =
             }
 
             is SessionEntry.Reps -> {
-                put("type", "reps")
+                put("type", ExerciseType.Reps.yamlName)
                 put(
                     "sets",
                     entry.sets.map { set ->
@@ -68,28 +68,28 @@ private fun SessionEntry.toRaw(): Map<String, Any?> =
             }
 
             is SessionEntry.Rest -> {
-                put("type", "rest")
+                put("type", ExerciseType.Rest.yamlName)
                 put("rest_taken_sec", entry.restTakenSec)
             }
 
             is SessionEntry.Hiit -> {
-                put("type", "hiit")
+                put("type", ExerciseType.Hiit.yamlName)
                 put("rounds_completed", entry.roundsCompleted)
             }
 
             is SessionEntry.Emom -> {
-                put("type", "emom")
+                put("type", ExerciseType.Emom.yamlName)
                 put("minutes", entry.minutes.map { minute -> buildMap { putIfPresent("reps", minute.reps) } })
             }
 
             is SessionEntry.Amrap -> {
-                put("type", "amrap")
+                put("type", ExerciseType.Amrap.yamlName)
                 put("rounds_completed", entry.roundsCompleted)
                 putIfPresent("extra_reps", entry.extraReps)
             }
 
             is SessionEntry.Cardio -> {
-                put("type", "cardio")
+                put("type", ExerciseType.Cardio.yamlName)
                 putIfPresent("duration_sec", entry.durationSec)
                 putIfPresent("distance_meters", entry.distanceMeters)
             }

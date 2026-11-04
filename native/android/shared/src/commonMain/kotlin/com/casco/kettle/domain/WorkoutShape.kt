@@ -19,6 +19,22 @@ data class WorkoutShape(
  */
 enum class ExerciseType { Hiit, Emom, Amrap, Reps, TimedHold, Cardio, Rest }
 
+/**
+ * The `type:` value a file spells for each type, in the library and in a session alike: the one
+ * spelling the readers, the writers and the assistant brief all use, so a rename is one line.
+ */
+val ExerciseType.yamlName: String
+    get() =
+        when (this) {
+            ExerciseType.Hiit -> "hiit"
+            ExerciseType.Emom -> "emom"
+            ExerciseType.Amrap -> "amrap"
+            ExerciseType.Reps -> "reps"
+            ExerciseType.TimedHold -> "timed_hold"
+            ExerciseType.Cardio -> "cardio"
+            ExerciseType.Rest -> "rest"
+        }
+
 val ExerciseConfig.type: ExerciseType
     get() =
         when (this) {

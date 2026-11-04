@@ -31,13 +31,13 @@ internal fun SchemaReader.exercise(
  */
 private val configReaders: Map<String, SchemaReader.(Fields) -> ExerciseConfig?> =
     mapOf(
-        "hiit" to SchemaReader::hiit,
-        "emom" to SchemaReader::emom,
-        "amrap" to SchemaReader::amrap,
-        "reps" to SchemaReader::reps,
-        "timed_hold" to SchemaReader::timedHold,
-        "cardio" to SchemaReader::cardio,
-        "rest" to SchemaReader::rest,
+        ExerciseType.Hiit.yamlName to SchemaReader::hiit,
+        ExerciseType.Emom.yamlName to SchemaReader::emom,
+        ExerciseType.Amrap.yamlName to SchemaReader::amrap,
+        ExerciseType.Reps.yamlName to SchemaReader::reps,
+        ExerciseType.TimedHold.yamlName to SchemaReader::timedHold,
+        ExerciseType.Cardio.yamlName to SchemaReader::cardio,
+        ExerciseType.Rest.yamlName to SchemaReader::rest,
     )
 
 /**

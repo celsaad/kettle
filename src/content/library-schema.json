@@ -1,0 +1,465 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "integer",
+      "exclusiveMinimum": 0,
+      "maximum": 9007199254740991
+    },
+    "exercises": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "type": {
+                "type": "string",
+                "const": "hiit"
+              },
+              "config": {
+                "type": "object",
+                "properties": {
+                  "work_sec": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  },
+                  "rest_sec": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "rounds": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0,
+                    "maximum": 500
+                  }
+                },
+                "required": ["work_sec", "rest_sec", "rounds"]
+              },
+              "notes": {
+                "type": "string"
+              }
+            },
+            "required": ["id", "name", "type", "config"]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "type": {
+                "type": "string",
+                "const": "emom"
+              },
+              "config": {
+                "type": "object",
+                "properties": {
+                  "interval_sec": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  },
+                  "total_minutes": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "maximum": 1440
+                  },
+                  "target_reps": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0,
+                    "maximum": 9007199254740991
+                  }
+                },
+                "required": ["interval_sec", "total_minutes"]
+              },
+              "notes": {
+                "type": "string"
+              }
+            },
+            "required": ["id", "name", "type", "config"]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "type": {
+                "type": "string",
+                "const": "amrap"
+              },
+              "config": {
+                "type": "object",
+                "properties": {
+                  "time_cap_sec": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  }
+                },
+                "required": ["time_cap_sec"]
+              },
+              "notes": {
+                "type": "string"
+              }
+            },
+            "required": ["id", "name", "type", "config"]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "type": {
+                "type": "string",
+                "const": "reps"
+              },
+              "config": {
+                "type": "object",
+                "properties": {
+                  "sets": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0,
+                    "maximum": 500
+                  },
+                  "target_reps_min": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "target_reps_max": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "target_weight": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "rest_sec": {
+                    "type": "number",
+                    "minimum": 0
+                  }
+                },
+                "required": ["sets", "target_reps_min", "rest_sec"]
+              },
+              "notes": {
+                "type": "string"
+              }
+            },
+            "required": ["id", "name", "type", "config"]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "type": {
+                "type": "string",
+                "const": "timed_hold"
+              },
+              "config": {
+                "type": "object",
+                "properties": {
+                  "sets": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0,
+                    "maximum": 500
+                  },
+                  "hold_sec_min": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  },
+                  "hold_sec_max": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  },
+                  "rest_sec": {
+                    "type": "number",
+                    "minimum": 0
+                  }
+                },
+                "required": ["sets", "rest_sec"]
+              },
+              "notes": {
+                "type": "string"
+              }
+            },
+            "required": ["id", "name", "type", "config"]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "type": {
+                "type": "string",
+                "const": "cardio"
+              },
+              "config": {
+                "type": "object",
+                "properties": {
+                  "duration_sec": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  },
+                  "distance_meters": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  }
+                }
+              },
+              "notes": {
+                "type": "string"
+              }
+            },
+            "required": ["id", "name", "type", "config"]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "type": {
+                "type": "string",
+                "const": "rest"
+              },
+              "config": {
+                "type": "object",
+                "properties": {
+                  "duration_sec": {
+                    "type": "number",
+                    "minimum": 0
+                  }
+                },
+                "required": ["duration_sec"]
+              },
+              "notes": {
+                "type": "string"
+              }
+            },
+            "required": ["id", "name", "type", "config"]
+          }
+        ]
+      }
+    },
+    "workouts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "blocks": {
+            "type": "array",
+            "items": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "exercise"
+                    },
+                    "exercise": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "config": {
+                      "type": "object",
+                      "properties": {
+                        "duration_sec": {
+                          "type": "number",
+                          "minimum": 0
+                        }
+                      }
+                    }
+                  },
+                  "required": ["type", "exercise"]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "circuit"
+                    },
+                    "id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "rounds": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 500
+                    },
+                    "rest_between_exercises_sec": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "rest_between_rounds_sec": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "exercises": {
+                      "minItems": 2,
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "exercise": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "config": {
+                            "type": "object",
+                            "properties": {
+                              "duration_sec": {
+                                "type": "number",
+                                "minimum": 0
+                              }
+                            }
+                          }
+                        },
+                        "required": ["exercise"]
+                      }
+                    }
+                  },
+                  "required": ["type", "rounds", "exercises"]
+                }
+              ]
+            }
+          }
+        },
+        "required": ["id", "name", "blocks"]
+      }
+    },
+    "programs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "weeks": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "week": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "day": {
+                  "type": "string"
+                },
+                "workout": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "rest_day": {
+                  "type": "boolean"
+                },
+                "notes": {
+                  "type": "string"
+                },
+                "overrides": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "exercise": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "block": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "config": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {
+                          "anyOf": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "string"
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    "required": ["config"]
+                  }
+                }
+              },
+              "required": ["week"]
+            }
+          }
+        },
+        "required": ["id", "name", "weeks"]
+      }
+    }
+  },
+  "required": ["version", "exercises", "workouts", "programs"]
+}

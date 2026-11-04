@@ -61,6 +61,7 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "conformance:update": "node scripts/update-conformance.mjs",
+    "schema:update": "node scripts/update-library-schema.mjs",
     "format": "oxfmt",
     "format:check": "oxfmt --check",
     "knip": "knip"

@@ -1,11 +1,6 @@
 package com.casco.kettle.shell.importer
 
-import android.content.res.Configuration
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
@@ -14,153 +9,38 @@ import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
-import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasText
-import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
-import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.unit.dp
-import com.casco.kettle.domain.Exercise
-import com.casco.kettle.domain.ExerciseConfig
 import com.casco.kettle.domain.Library
-import com.casco.kettle.domain.Preferences
 import com.casco.kettle.domain.Program
 import com.casco.kettle.domain.ProgramWeek
-import com.casco.kettle.domain.Session
 import com.casco.kettle.domain.SessionLog
-import com.casco.kettle.domain.ThemePreference
-import com.casco.kettle.domain.UnitSystem
-import com.casco.kettle.domain.Workout
-import com.casco.kettle.domain.WorkoutBlock
 import com.casco.kettle.domain.serializeLibraryYaml
-import com.casco.kettle.shell.files.FakeStoredFiles
-import com.casco.kettle.shell.files.LatestFiles
-import com.casco.kettle.shell.files.ShippedContent
-import com.casco.kettle.shell.theme.KettleTheme
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.asCoroutineDispatcher
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
-import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 import java.io.IOException
 import java.util.Locale
-import java.util.concurrent.Executor
 
 /**
- * Import (#244), case for case from RN's `import.test.tsx`, minus the clipboard and assistant-brief
- * cases, which land with that slice. On the harness recipe (#193): in `pt`, so a hardcoded English
- * string fails, with the files faked behind `StoredFiles` and the packs the real shipped ones. Import
- * is the only path outside data takes into the library, so every refusal is asserted to write nothing.
+ * Import (#244), case for case from RN's `import.test.tsx`: the sources, refusals, preview and merge.
+ * The hand-offs to an assistant are `ImportHandoffTest`'s. Import is the only path outside data takes
+ * into the library, so every refusal is asserted to write nothing.
  *
  * The preview's arithmetic and the diff are `:shared`'s (`ImportPreviewTest`, `LibraryDiffTest`).
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(qualifiers = "pt-w400dp-h4000dp")
-class ImportScreenTest {
-    @get:Rule
-    val compose = createComposeRule()
-
-    private var closed = 0
-    private var libraryChanged = 0
-    private var picks = 0
-
-    /** What the next tap on the file row gets back from the picker. */
-    private var picked: suspend () -> FilePick = { FilePick.Cancelled }
-
-    private lateinit var latest: LatestFiles
-
-    /**
-     * [io] holds the file work until it's run; [readFirst] false leaves the first read held in it too.
-     * [locale] stands in for the reader's language where a test changes it under the sheet.
-     */
-    private fun show(
-        files: Files = Files(),
-        io: Steps? = null,
-        readFirst: Boolean = true,
-        locale: State<Locale>? = null,
-    ): Files {
-        val dispatcher = io?.asCoroutineDispatcher() ?: Dispatchers.Unconfined
-        latest = LatestFiles(files, CoroutineScope(Dispatchers.Unconfined), io = dispatcher).apply { reread() }
-        if (readFirst) io?.run()
-        compose.setContent {
-            val configuration =
-                locale?.let { Configuration(LocalConfiguration.current).apply { setLocale(it.value) } }
-                    ?: LocalConfiguration.current
-            CompositionLocalProvider(LocalConfiguration provides configuration) {
-                KettleTheme(darkTheme = false) {
-                    ImportScreen(
-                        latest,
-                        ShippedContent(RuntimeEnvironment.getApplication().assets),
-                        ImportActions(
-                            pickFile = {
-                                picks += 1
-                                picked()
-                            },
-                            close = { closed += 1 },
-                            libraryChanged = { libraryChanged += 1 },
-                        ),
-                    )
-                }
-            }
-        }
-        return files
-    }
-
-    private fun picks(
-        library: Library,
-        name: String = "exercises.yaml",
-    ) = picksText(serializeLibraryYaml(library), name)
-
-    private fun picksText(
-        text: String,
-        name: String = "exercises.yaml",
-    ) {
-        picked = { FilePick.Picked(name, 512, text) }
-    }
-
-    private fun chooseFile(files: Files = Files()): Files {
-        val shown = show(files)
-        press("Escolher exercises.yaml")
-        return shown
-    }
-
-    private fun paste(
-        text: String,
-        files: Files = Files(),
-    ): Files {
-        val shown = show(files)
-        press("Colar YAML")
-        compose.onNode(hasContentDescription(PASTE_BOX)).performTextReplacement(text)
-        press("Revisar texto colado")
-        return shown
-    }
-
-    private val isButton = SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button)
-
-    private fun button(label: String) = compose.onNode(hasText(label) and isButton)
-
-    private fun press(label: String) = button(label).performClick()
-
-    private fun shown(text: String) = compose.onNodeWithText(text).assertExists()
-
-    private fun absent(text: String) = compose.onAllNodesWithText(text).assertCountEquals(0)
-
-    private fun top(text: String) = compose.onNodeWithText(text).getUnclippedBoundsInRoot().top
-
-    private fun Files.nothingWritten() = assertEquals(emptyList<Library>(), written)
-
+class ImportScreenTest : ImportHarness() {
     // the picker and refusals
 
     // A cancel is a normal outcome, and reporting it as a failure would train the reader to ignore the
@@ -657,15 +537,22 @@ class ImportScreenTest {
     fun `leads with the packs for someone who has logged nothing`() {
         show()
 
-        assertTrue(top(PACKS_TITLE) < top("Escolher exercises.yaml"))
+        assertEquals(
+            listOf(PACKS_TITLE, "Escolher exercises.yaml", SHARE_BRIEF),
+            inOrder(PACKS_TITLE, "Escolher exercises.yaml", SHARE_BRIEF),
+        )
     }
 
-    // A returning reader came to import a file, and demoting it would trade a real job for a nicety.
+    // A returning reader came to import a file, and demoting it would trade a real job for a nicety. The
+    // brief moves the other way: between the file and the paste, the order of the trip out and back.
     @Test
     fun `leads with the file path once a session has been logged`() {
         show(Files(log = SessionLog(listOf(unfinished), emptyList())))
 
-        assertTrue(top("Escolher exercises.yaml") < top(PACKS_TITLE))
+        assertEquals(
+            listOf("Escolher exercises.yaml", SHARE_BRIEF, "Colar YAML", PACKS_TITLE),
+            inOrder(PACKS_TITLE, "Escolher exercises.yaml", SHARE_BRIEF, "Colar YAML"),
+        )
     }
 
     // RN reads the order once so it can't move under the reader; a log that lands late settles it.
@@ -714,6 +601,8 @@ class ImportScreenTest {
         for (label in listOf("Escolher exercises.yaml", "Colar YAML", "Firme e Forte")) {
             button(label, substring = true).assertHeightIsAtLeast(44.dp)
         }
+        press("Colar YAML")
+        for (label in listOf(SHARE_BRIEF, COPY_BRIEF, PASTE_FROM_CLIPBOARD)) button(label).assertHeightIsAtLeast(44.dp)
         press("Escolher exercises.yaml")
         for (label in listOf("Cancelar", "Mesclar e importar", "Mostrar todas as 30 alterações")) {
             button(label).assertHeightIsAtLeast(44.dp)
@@ -729,78 +618,4 @@ class ImportScreenTest {
         press("Escolher exercises.yaml")
         compose.onAllNodes(hasTextMatching(KEY_PATH)).assertCountEquals(0)
     }
-
-    private fun button(
-        label: String,
-        substring: Boolean,
-    ) = compose.onNode(hasText(label, substring = substring) and isButton)
-
-    private fun press(
-        label: String,
-        substring: Boolean,
-    ) = button(label, substring).performClick()
-
-    private class Files(
-        private val library: Library? = current,
-        private val preferences: Preferences? = null,
-        var log: SessionLog = SessionLog.Empty,
-    ) : FakeStoredFiles() {
-        val written = mutableListOf<Library>()
-
-        /** Thrown by the next write, as a full disk would. */
-        var failure: IOException? = null
-
-        override fun library() = written.lastOrNull() ?: library
-
-        override fun preferences() = preferences
-
-        override fun sessionLog() = log
-
-        override fun writeLibrary(library: Library) {
-            failure?.let { throw it }
-            written += library
-        }
-    }
 }
-
-private val threeSets = ExerciseConfig.Reps(sets = 3, targetRepsMin = 8, restSec = 90.0)
-private val pullUps = Exercise("pull-ups", "Pull-ups", threeSets)
-private val dips = Exercise("dips", "Dips", threeSets)
-private val pushDay = Workout("push-day", "Push day", listOf(WorkoutBlock.ExerciseBlock("pull-ups")))
-private val legDay = Workout("leg-day", "Leg day", listOf(WorkoutBlock.ExerciseBlock("squats")))
-private val base6 = Program("base-6", "Base 6", listOf(ProgramWeek.Training(1, workoutId = "push-day")))
-private val current = Library(1, listOf(pullUps), listOf(pushDay), emptyList())
-private val many = (0 until 30).map { Exercise("ex-$it", "Exercise $it", threeSets) }
-
-/** Unfinished, so it counts as logged without needing any work in it. */
-private val unfinished = Session(1, "s1", "push-day", null, null, null, "2026-07-29T09:00:00.000Z", null, emptyList())
-
-private val imperial = Preferences(UnitSystem.IMPERIAL, ThemePreference.SYSTEM, false, true, null)
-
-private const val NO_CHANGES = "Nenhuma alteração — o arquivo importado é igual à sua biblioteca atual."
-private const val SAME_VALUES = "nenhum campo alterado — substituído por uma definição idêntica"
-private const val PASTE_BOX = "Cole aqui o exercises.yaml completo"
-
-/** RN's `label` type uppercases at draw time. */
-private const val PACKS_TITLE = "PACOTES INICIAIS"
-
-/** Holds the file work until it's run, for a test that needs a write caught mid-way. */
-private class Steps : Executor {
-    private val queued = ArrayDeque<Runnable>()
-
-    override fun execute(task: Runnable) {
-        queued += task
-    }
-
-    fun run() {
-        while (queued.isNotEmpty()) queued.removeFirst().run()
-    }
-}
-
-/** A text that reads like an i18next key path, "import.title", and not a file's name, "exercises.yaml". */
-private val KEY_PATH = Regex("^(?!.*\\.yaml$)[a-z][a-zA-Z]*\\.[a-zA-Z.]+$")
-
-private fun hasTextMatching(pattern: Regex) =
-    SemanticsMatcher("text matches $pattern") { node ->
-        node.config.getOrElse(SemanticsProperties.Text) { emptyList() }.any { pattern.matches(it.text) }
-    }

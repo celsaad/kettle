@@ -303,6 +303,10 @@ on import. The first two of those are now regression-tested — reintroducing ei
 A format change also moves `conformance/`: add a case for the new behaviour, regenerate the goldens,
 and read the diff. Once the Kotlin parser exists, the same PR has to make it pass too.
 
+It also moves `src/content/library-schema.json`, the JSON Schema native's assistant brief carries,
+generated from `schema.ts` because Kotlin can't run zod. `library-schema-file.test.ts` fails until
+`pnpm run schema:update` (then `format`) regenerates it.
+
 If you add a complete library sample to any page, mark it `data-validate="library"` so it joins the
 checked set. Deliberate fragments — a bare `workouts:` list, a shape sketch with `{ ... }` — stay
 unmarked, since they can't parse standalone.

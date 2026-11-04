@@ -3,8 +3,6 @@ package com.casco.kettle.shell.settings
 import android.Manifest
 import android.app.Activity
 import android.content.ActivityNotFoundException
-import android.content.ClipData
-import android.content.ClipboardManager
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -18,6 +16,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import com.casco.kettle.domain.Preferences
 import com.casco.kettle.shell.export.FileShare
+import com.casco.kettle.shell.export.copyToClipboard
 import com.casco.kettle.shell.files.LatestFiles
 import com.casco.kettle.shell.files.LocalLatestFiles
 import com.casco.kettle.shell.files.StoragePaths
@@ -122,15 +121,5 @@ private fun Activity.openLink(url: String): Boolean =
         startActivity(Intent(if (uri.scheme == "mailto") Intent.ACTION_SENDTO else Intent.ACTION_VIEW, uri))
         true
     } catch (_: ActivityNotFoundException) {
-        false
-    }
-
-/** False where the clipboard refused, so the row never claims a copy that didn't happen. */
-private fun Activity.copyToClipboard(text: String): Boolean =
-    try {
-        val clipboard = getSystemService(ClipboardManager::class.java) ?: return false
-        clipboard.setPrimaryClip(ClipData.newPlainText(text, text))
-        true
-    } catch (_: SecurityException) {
         false
     }

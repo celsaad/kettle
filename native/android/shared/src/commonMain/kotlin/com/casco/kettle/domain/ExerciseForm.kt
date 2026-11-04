@@ -5,9 +5,13 @@ import kotlin.math.floor
 // The exercise form's data model (#241): which fields each exercise type exposes, and the validation
 // the form must run itself, since it writes the library directly and never passes through the schema.
 // How an exercise round-trips to the strings the form holds is `ExerciseDraft.kt`'s. Ported from RN's
-// `exercise-form.ts`, less `validateBlockConfig`, which is the override editor's and moves with it.
+// `exercise-form.ts`, with `validateBlockConfig`, the override editor's (#243), at the end.
 
-/** A config value the form holds, named for the domain property it becomes. */
+/**
+ * A config value a form holds, named for the domain property it becomes. The last two are a circuit's
+ * own rests, which only the override editor's circuit branch edits, beside [Rounds]: one key space for
+ * both kinds of target, as RN's string keys were, so that form holds one map whichever it edits.
+ */
 enum class ConfigKey {
     WorkSec,
     RestSec,
@@ -24,6 +28,8 @@ enum class ConfigKey {
     HoldSecMax,
     DurationSec,
     DistanceMeters,
+    RestBetweenExercisesSec,
+    RestBetweenRoundsSec,
 }
 
 /** What a field is called on screen: the screen's to put into words, and the name a problem names. */
@@ -42,6 +48,8 @@ enum class FieldName {
     HoldMax,
     Duration,
     Distance,
+    RestPerExercise,
+    RestPerRound,
 }
 
 /**
@@ -250,3 +258,24 @@ private fun Map<ConfigKey, String>.below(
     val bottom = number(low)
     return top != null && bottom != null && top < bottom
 }
+
+/**
+ * A circuit's own params, as the override editor's circuit branch edits them: its fields for
+ * [validateBlockConfig]. Both rests are optional, as the schema has them, and since the panel seeds
+ * them from the circuit, clearing one is how a user says "no rest here"; required, that was a blocked
+ * save where it had always read as 0.
+ */
+val BLOCK_CONFIG_FIELDS: List<ConfigField> =
+    listOf(
+        ConfigField(ConfigKey.Rounds, FieldName.Rounds, max = MAX_ROUNDS.toDouble(), integer = true),
+        ConfigField(ConfigKey.RestBetweenExercisesSec, FieldName.RestPerExercise, optional = true, min = 0.0),
+        ConfigField(ConfigKey.RestBetweenRoundsSec, FieldName.RestPerRound, optional = true, min = 0.0),
+    )
+
+/**
+ * The first problem in [values] as a circuit's params, or null. RN's circuit branch validated nothing
+ * until this existed, so a negative rest was written to the program file and then dropped, silently,
+ * by the merge's re-parse.
+ */
+fun validateBlockConfig(values: Map<ConfigKey, String>): ConfigProblem? =
+    BLOCK_CONFIG_FIELDS.firstNotNullOfOrNull { fieldProblem(it, values.text(it.key)) }

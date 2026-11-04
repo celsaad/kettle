@@ -176,11 +176,8 @@ private fun ConfigInput(
     units: UnitSystem,
     compact: Boolean,
 ) {
-    val label = stringResource(field.name.label)
-    // The unit is part of the field's name, "Weight (lb)": the number means nothing without it.
-    val named = unitSuffix(field.unit, units)?.let { "$label ($it)" } ?: label
-    val optional = if (field.optional) " · " + stringResource(R.string.exerciseEditor_optional) else ""
-    Label(named + optional, compact)
+    val named = fieldName(field, units)
+    Label(named + optionalSuffix(field), compact)
     FormField(
         draft.values[field.key].orEmpty(),
         { onChange(draft.copy(values = draft.values + (field.key to it))) },
@@ -189,6 +186,21 @@ private fun ConfigInput(
         fieldLook(compact),
     )
 }
+
+/** [field]'s name with its unit, "Weight (lb)": the number means nothing without it. */
+@Composable
+internal fun fieldName(
+    field: ConfigField,
+    units: UnitSystem,
+): String {
+    val label = stringResource(field.name.label)
+    return unitSuffix(field.unit, units)?.let { "$label ($it)" } ?: label
+}
+
+/** " · optional" after an optional field's name, nothing after a required one's. */
+@Composable
+internal fun optionalSuffix(field: ConfigField): String =
+    if (field.optional) " · " + stringResource(R.string.exerciseEditor_optional) else ""
 
 @Composable
 private fun Label(
@@ -213,8 +225,9 @@ fun exerciseProblemText(problem: ExerciseProblem): String =
         is ExerciseProblem.Config -> configProblemText(problem.problem)
     }
 
+/** Why a config can't be saved, in words: the exercise form's, and the override panel's (#243). */
 @Composable
-private fun configProblemText(problem: ConfigProblem): String =
+internal fun configProblemText(problem: ConfigProblem): String =
     when (problem) {
         is ConfigProblem.Required -> {
             stringResource(R.string.exerciseForm_error_required, stringResource(problem.field.label))
@@ -279,19 +292,37 @@ private val FieldName.label: Int
     get() =
         when (this) {
             FieldName.Work -> R.string.exerciseForm_field_work
+
             FieldName.Rest -> R.string.exerciseForm_field_rest
+
             FieldName.Rounds -> R.string.exerciseForm_field_rounds
+
             FieldName.Interval -> R.string.exerciseForm_field_interval
+
             FieldName.Total -> R.string.exerciseForm_field_total
+
             FieldName.TargetReps -> R.string.exerciseForm_field_targetReps
+
             FieldName.TargetRepsMax -> R.string.exerciseForm_field_targetRepsMax
+
             FieldName.TimeCap -> R.string.exerciseForm_field_timeCap
+
             FieldName.Sets -> R.string.exerciseForm_field_sets
+
             FieldName.Weight -> R.string.exerciseForm_field_weight
+
             FieldName.Hold -> R.string.exerciseForm_field_hold
+
             FieldName.HoldMax -> R.string.exerciseForm_field_holdMax
+
             FieldName.Duration -> R.string.exerciseForm_field_duration
+
             FieldName.Distance -> R.string.exerciseForm_field_distance
+
+            // These two carry their unit in the label, so a problem names them as the panel shows them.
+            FieldName.RestPerExercise -> R.string.overrideEditor_restPerExercise
+
+            FieldName.RestPerRound -> R.string.overrideEditor_restPerRound
         }
 
 private val PillShape = RoundedCornerShape(percent = 50)

@@ -39,11 +39,7 @@ fun submitWorkout(
 }
 
 /** The library with [workout] in it: in place of the one with its id, or else at the end. */
-fun Library.withWorkout(workout: Workout): Library {
-    val at = workouts.indexOfFirst { it.id == workout.id }
-    val edited = if (at < 0) workouts + workout else workouts.toMutableList().apply { set(at, workout) }
-    return copy(workouts = edited)
-}
+fun Library.withWorkout(workout: Workout): Library = copy(workouts = workouts.upserting(workout, Workout::id))
 
 /** The library without workout [id]. Nothing checks it's unused: that's [programsUsing]'s, first. */
 fun Library.withoutWorkout(id: String): Library = copy(workouts = workouts.filterNot { it.id == id })

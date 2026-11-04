@@ -317,8 +317,9 @@ private fun RowScope.ConfigColumn(
     Row(verticalAlignment = Alignment.CenterVertically, content = content)
 }
 
+/** A − or + on a stepper: named by [label], since its glyph says nothing, in a 44dp target. */
 @Composable
-private fun StepButton(
+internal fun StepButton(
     glyph: String,
     label: String,
     onClick: () -> Unit,

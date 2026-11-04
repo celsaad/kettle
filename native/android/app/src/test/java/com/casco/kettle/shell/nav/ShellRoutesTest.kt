@@ -1,6 +1,7 @@
 package com.casco.kettle.shell.nav
 
 import com.casco.kettle.shell.exerciseeditor.EXERCISE_EDITOR_PATH
+import com.casco.kettle.shell.programeditor.PROGRAM_EDITOR_PATH
 import com.casco.kettle.shell.sessioneditor.SESSION_EDITOR_PATH
 import com.casco.kettle.shell.workouteditor.WORKOUT_EDITOR_PATH
 import org.junit.Assert.assertEquals
@@ -42,6 +43,13 @@ class ShellRoutesTest {
     fun `the workout editor is native only with the library flip on`() {
         assertTrue(routesFor(setOf(Flip.Library)).screenAt(WORKOUT_EDITOR_PATH) is Screen.Native)
         assertEquals(Screen.Rn, routesFor(emptySet()).screenAt(WORKOUT_EDITOR_PATH))
+    }
+
+    /** The third library writer (#243), on the same flip. */
+    @Test
+    fun `the program editor is native only with the library flip on`() {
+        assertTrue(routesFor(setOf(Flip.Library)).screenAt(PROGRAM_EDITOR_PATH) is Screen.Native)
+        assertEquals(Screen.Rn, routesFor(emptySet()).screenAt(PROGRAM_EDITOR_PATH))
     }
 
     /** The sessions flip has released (#240), so the session editor is native in release builds too. */

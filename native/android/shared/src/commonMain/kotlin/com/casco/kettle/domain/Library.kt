@@ -165,3 +165,15 @@ sealed interface OverrideValue {
         val value: String,
     ) : OverrideValue
 }
+
+/**
+ * [item] in place of the element [id] matches it with, or at the end: the library editors' save, so a
+ * rename keeps its place and a new one goes last, as RN's store had it.
+ */
+internal fun <T> List<T>.upserting(
+    item: T,
+    id: (T) -> String,
+): List<T> {
+    val at = indexOfFirst { id(it) == id(item) }
+    return if (at < 0) this + item else toMutableList().apply { set(at, item) }
+}

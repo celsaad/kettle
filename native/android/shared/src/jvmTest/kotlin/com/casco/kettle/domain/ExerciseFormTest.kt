@@ -487,4 +487,71 @@ class ExerciseFormTest {
             )
         }
     }
+
+    /**
+     * The override editor's circuit branch, which validated nothing in RN until `validateBlockConfig`:
+     * a negative rest reached the program file, and the merge's re-parse then dropped it silently.
+     */
+    @Nested
+    inner class ValidateBlockConfig {
+        private val valid =
+            mapOf(
+                ConfigKey.Rounds to "3",
+                ConfigKey.RestBetweenExercisesSec to "15",
+                ConfigKey.RestBetweenRoundsSec to "60",
+            )
+
+        @Test
+        fun `accepts a circuit config the schema accepts, zero rest included`() {
+            assertNull(validateBlockConfig(valid))
+            assertNull(
+                validateBlockConfig(
+                    valid + mapOf(ConfigKey.RestBetweenExercisesSec to "0", ConfigKey.RestBetweenRoundsSec to "0"),
+                ),
+            )
+        }
+
+        @Test
+        fun `rejects a negative rest in either field`() {
+            assertEquals(
+                ConfigProblem.MustBeAtLeast(FieldName.RestPerExercise, 0.0),
+                validateBlockConfig(valid + (ConfigKey.RestBetweenExercisesSec to "-5")),
+            )
+            assertEquals(
+                ConfigProblem.MustBeAtLeast(FieldName.RestPerRound, 0.0),
+                validateBlockConfig(valid + (ConfigKey.RestBetweenRoundsSec to "-5")),
+            )
+        }
+
+        @Test
+        fun `rejects a round count the schema would refuse`() {
+            assertEquals(
+                ConfigProblem.MustBeAtLeast(FieldName.Rounds, 1.0),
+                validateBlockConfig(valid + (ConfigKey.Rounds to "0")),
+            )
+            assertEquals(
+                ConfigProblem.MustBeAtMost(FieldName.Rounds, 500.0),
+                validateBlockConfig(valid + (ConfigKey.Rounds to "501")),
+            )
+            assertEquals(
+                ConfigProblem.MustBeWhole(FieldName.Rounds),
+                validateBlockConfig(valid + (ConfigKey.Rounds to "2.5")),
+            )
+        }
+
+        // Clearing a seeded rest is how a user says "no rest here", which had always read back as 0.
+        @Test
+        fun `treats a cleared circuit rest as absent, not as a missing required field`() {
+            assertNull(
+                validateBlockConfig(
+                    mapOf(
+                        ConfigKey.Rounds to "3",
+                        ConfigKey.RestBetweenExercisesSec to "",
+                        ConfigKey.RestBetweenRoundsSec to "",
+                    ),
+                ),
+            )
+            assertNull(validateBlockConfig(mapOf(ConfigKey.Rounds to "3")))
+        }
+    }
 }

@@ -55,7 +55,7 @@ steps=(
   '/session-editor|Edit session' 'back|tab:History'
   # A native tab's row opens its native sheet over that tab (#197, #233), and back returns to it.
   'tap:Programs|tab:Programs' 'tap:Foundations · 4 Weeks · No Equipment|Week 1 · Day 1'
-  # Over that native sheet, RN's editor and RN's runner each come back to it (#155, #233).
+  # Over that native sheet, the editor (native on .dev since #243) and RN's runner each come back to it (#155, #233).
   'tap:Edit program|Edit program' 'back|Week 1 · Day 1'
   'tap:Start Week 1 · Day 1|Finish' 'back|Finish session?' 'tap:FINISH|Workout complete'
   'tap:Done|Week 1 · Day 1'

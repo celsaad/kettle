@@ -6,8 +6,10 @@ import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertWidthIsAtLeast
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
@@ -18,6 +20,7 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextReplacement
+import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.CircuitMember
 import com.casco.kettle.domain.Exercise
 import com.casco.kettle.domain.ExerciseConfig
@@ -33,6 +36,7 @@ import com.casco.kettle.shell.files.LatestFiles
 import com.casco.kettle.shell.theme.KettleTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.asCoroutineDispatcher
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -40,6 +44,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import java.io.IOException
+import java.util.concurrent.Executor
 
 /**
  * The program editor (#243), case for case from RN's `program-editor.test.tsx` and
@@ -60,16 +65,15 @@ class ProgramEditorScreenTest {
     private var deleted = 0
     private var libraryChanged = 0
 
+    /** [io] holds the file work until it's run, for a test that needs a write caught mid-way. */
     private fun show(
         id: String? = null,
         files: Files = Files(),
+        io: Steps? = null,
     ): Files {
-        val latest =
-            LatestFiles(
-                files,
-                CoroutineScope(Dispatchers.Unconfined),
-                io = Dispatchers.Unconfined,
-            ).apply { reread() }
+        val dispatcher = io?.asCoroutineDispatcher() ?: Dispatchers.Unconfined
+        val latest = LatestFiles(files, CoroutineScope(Dispatchers.Unconfined), io = dispatcher).apply { reread() }
+        io?.run()
         compose.setContent {
             KettleTheme(darkTheme = false) {
                 ProgramEditorScreen(
@@ -239,6 +243,51 @@ class ProgramEditorScreenTest {
 
         assertEquals(1, files.written.size)
         assertEquals(1, closed)
+    }
+
+    // The window RN's slow dismissal leaves: a Delete confirmed while the Save's write is in flight.
+    @Test
+    fun `writes and closes once when Delete is confirmed while a Save is landing`() {
+        val io = Steps()
+        val files = show("base", Files(programs = listOf(base())), io)
+
+        press("Salvar")
+        press("Excluir programa")
+        compose.pressDialogButton("Excluir")
+        repeat(SETTLE_ROUNDS) {
+            io.run()
+            compose.waitForIdle()
+        }
+
+        assertEquals(1, files.written.size)
+        assertEquals(1, closed)
+        assertEquals(0, deleted)
+    }
+
+    // AGENTS.md's 44dp floor, which RN's 28px week stepper and 26px rounds stepper fell under.
+    @Test
+    fun `gives every control on a week card a 44dp target`() {
+        show("base", Files(programs = listOf(base(exerciseOverride("pull-ups", "sets" to 5.0)))))
+        press("+ Adicionar ajuste")
+        press("finisher")
+
+        for (label in listOf(
+            "Diminuir Semana",
+            "Aumentar Semana",
+            "Remover semana 1",
+            "Diminuir Rodadas",
+            "Remover ajuste",
+        )) {
+            compose
+                .onAllNodes(
+                    labelled(label) and isControl,
+                )[0]
+                .assertWidthIsAtLeast(44.dp)
+                .assertHeightIsAtLeast(44.dp)
+        }
+        for (label in listOf("Dia de descanso", "Push day", "Pull-ups: sets → 5")) {
+            compose.onAllNodes(labelled(label) and isControl)[0].assertHeightIsAtLeast(44.dp)
+        }
     }
 
     // weeks
@@ -458,6 +507,15 @@ class ProgramEditorScreenTest {
         compose.onNode(hasText("+ Adicionar ajuste") and isControl).assertIsNotEnabled()
     }
 
+    // With no workout resolved there is nothing to explain yet, only something not done: no hint.
+    @Test
+    fun `offers no override, and no hint, while the week's workout resolves to nothing`() {
+        show("base", Files(programs = listOf(base(workoutId = "gone"))))
+
+        compose.onNode(hasText("+ Adicionar ajuste") and isControl).assertIsNotEnabled()
+        absent("Este treino ainda não tem nada para ajustar.")
+    }
+
     // Dips is eligible through the circuit; the circuit is offered by the id an override names it by.
     @Test
     fun `offers only the exercises and id-tagged circuits the workout contains`() {
@@ -563,6 +621,32 @@ class ProgramEditorScreenTest {
         named("Séries precisa ser pelo menos 1.").assertExists()
         press("Salvar")
         assertEquals(null, files.savedOverrides())
+    }
+
+    @Test
+    fun `refuses a count past the ceiling too`() {
+        show("base", Files(programs = listOf(base())))
+
+        press("+ Adicionar ajuste")
+        press("Pull-ups")
+        type("Séries", "501")
+        press("Adicionar ajuste")
+
+        named("Séries pode ser no máximo 500.").assertExists()
+    }
+
+    @Test
+    fun `adds alongside an existing override rather than replacing it`() {
+        val existing = exerciseOverride("pull-ups", "sets" to 5.0)
+        val files = show("base", Files(programs = listOf(base(existing))))
+
+        press("+ Adicionar ajuste")
+        press("Dips")
+        type("Séries", "2")
+        press("Adicionar ajuste")
+        press("Salvar")
+
+        assertEquals(listOf(existing, exerciseOverride("dips", "sets" to 2.0)), files.savedOverrides())
     }
 
     @Test
@@ -696,6 +780,21 @@ private fun exerciseOverride(
     id: String,
     vararg config: Pair<String, Double>,
 ) = ProgramOverride.ExerciseOverride(id, config.associate { (key, value) -> key to OverrideValue.Numeric(value) })
+
+private const val SETTLE_ROUNDS = 3
+
+/** A dispatcher that runs nothing until told to, so a test holds a write mid-way. */
+private class Steps : Executor {
+    private val queued = ArrayDeque<Runnable>()
+
+    override fun execute(task: Runnable) {
+        queued += task
+    }
+
+    fun run() {
+        while (queued.isNotEmpty()) queued.removeFirst().run()
+    }
+}
 
 /** A text that reads like an i18next key path, "programEditor.week". */
 private val KEY_PATH = Regex("^[a-z][a-zA-Z]*\\.[a-zA-Z.]+$")

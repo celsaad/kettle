@@ -263,6 +263,8 @@ internal class Editor(
         written: () -> Unit,
     ) {
         val library = files.library ?: return
+        // A Delete confirmed while a Save is landing, or the reverse: a second write would close twice.
+        if (writing) return
         writing = true
         scope.launch {
             withContext(NonCancellable) {

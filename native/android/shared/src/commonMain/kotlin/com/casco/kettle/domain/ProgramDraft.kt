@@ -50,36 +50,17 @@ fun ProgramDraft.removingWeek(key: Int): ProgramDraft = copy(weeks = weeks.filte
 fun ProgramDraft.steppingWeek(
     key: Int,
     by: Int,
-): ProgramDraft =
-    withWeek(key) {
-        val number = (it.week + by).coerceAtLeast(1)
-        when (it) {
-            is ProgramWeek.Training -> it.copy(week = number)
-            is ProgramWeek.RestDay -> it.copy(week = number)
-        }
-    }
+): ProgramDraft = withWeek(key) { it.withShared(week = (it.week + by).coerceAtLeast(1)) }
 
 fun ProgramDraft.withDay(
     key: Int,
     day: String,
-): ProgramDraft =
-    withWeek(key) {
-        when (it) {
-            is ProgramWeek.Training -> it.copy(day = day)
-            is ProgramWeek.RestDay -> it.copy(day = day)
-        }
-    }
+): ProgramDraft = withWeek(key) { it.withShared(day = day) }
 
 fun ProgramDraft.withNotes(
     key: Int,
     notes: String,
-): ProgramDraft =
-    withWeek(key) {
-        when (it) {
-            is ProgramWeek.Training -> it.copy(notes = notes)
-            is ProgramWeek.RestDay -> it.copy(notes = notes)
-        }
-    }
+): ProgramDraft = withWeek(key) { it.withShared(notes = notes) }
 
 /**
  * The week keyed [key] switched between rest and training. Rest is a change of kind: the workout and

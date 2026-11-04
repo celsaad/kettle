@@ -78,3 +78,14 @@ fun resolveWorkoutForWeek(
         }
     return ResolvedWeek(workout.copy(blocks = blocks), exercises)
 }
+
+/** The three fields both kinds of week have, changed whichever kind this is. */
+internal fun ProgramWeek.withShared(
+    week: Long = this.week,
+    day: String? = this.day,
+    notes: String? = this.notes,
+): ProgramWeek =
+    when (this) {
+        is ProgramWeek.Training -> copy(week = week, day = day, notes = notes)
+        is ProgramWeek.RestDay -> copy(week = week, day = day, notes = notes)
+    }

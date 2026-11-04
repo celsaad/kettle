@@ -66,14 +66,8 @@ private fun duplicate(weeks: List<ProgramWeek>): ProgramProblem.DuplicateWeek? {
 }
 
 /** The week as the file holds it: day and notes trimmed, and absent when blank. */
-private fun ProgramWeek.trimmed(): ProgramWeek {
-    val day = day?.trim()?.ifEmpty { null }
-    val notes = notes?.trim()?.ifEmpty { null }
-    return when (this) {
-        is ProgramWeek.Training -> copy(day = day, notes = notes)
-        is ProgramWeek.RestDay -> copy(day = day, notes = notes)
-    }
-}
+private fun ProgramWeek.trimmed(): ProgramWeek =
+    withShared(day = day?.trim()?.ifEmpty { null }, notes = notes?.trim()?.ifEmpty { null })
 
 /** The library with [program] in it: in place of the one with its id, or else at the end. */
 fun Library.withProgram(program: Program): Library {

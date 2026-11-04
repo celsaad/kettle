@@ -7,11 +7,7 @@ import kotlinx.datetime.Instant
 // `history-views.ts`' `exerciseHistory`.
 
 /** The library with [exercise] in it: in place of the one with its id, or else at the end. */
-fun Library.withExercise(exercise: Exercise): Library {
-    val at = exercises.indexOfFirst { it.id == exercise.id }
-    val edited = if (at < 0) exercises + exercise else exercises.toMutableList().apply { set(at, exercise) }
-    return copy(exercises = edited)
-}
+fun Library.withExercise(exercise: Exercise): Library = copy(exercises = exercises.upserting(exercise, Exercise::id))
 
 /** The library without exercise [id]. Nothing checks it's unused: that's [workoutsUsing]'s, first. */
 fun Library.withoutExercise(id: String): Library = copy(exercises = exercises.filterNot { it.id == id })

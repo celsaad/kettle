@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
@@ -69,6 +68,7 @@ import com.casco.kettle.shell.form.EditorButtons
 import com.casco.kettle.shell.form.FieldKind
 import com.casco.kettle.shell.form.FieldOptions
 import com.casco.kettle.shell.form.FormField
+import com.casco.kettle.shell.form.SheetColumn
 import com.casco.kettle.shell.form.dashedBorder
 import com.casco.kettle.shell.i18n.deviceUnitSystem
 import com.casco.kettle.shell.i18n.pluralText
@@ -79,7 +79,6 @@ import com.casco.kettle.shell.theme.DialogAction
 import com.casco.kettle.shell.theme.KettleAlertDialog
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
-import com.casco.kettle.shell.theme.MaxContentWidth
 import com.casco.kettle.shell.theme.Spacing
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.NonCancellable
@@ -350,9 +349,6 @@ private fun Editing(
         footer(editor, context)
     }
 }
-
-/** The sheet's column: as wide as the screen up to [MaxContentWidth], centred past it. */
-private val SheetColumn = Modifier.widthIn(max = MaxContentWidth).fillMaxWidth()
 
 @Composable
 private fun Header(editor: Editor) {

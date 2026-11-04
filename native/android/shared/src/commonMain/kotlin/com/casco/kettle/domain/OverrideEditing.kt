@@ -323,8 +323,12 @@ private fun OverrideValue.shown(
         }
     }
 
-/** The key a form value is written under in the file, which an override's patch is keyed by too. */
-private val ConfigKey.rawKey: String
+/**
+ * The key a form value is written under in the file, which an override's patch is keyed by too. The
+ * writer keys them per config type rather than by form field, so this is a second spelling of them;
+ * `OverrideEditingTest` holds it to the writer's, type by type.
+ */
+internal val ConfigKey.rawKey: String
     get() =
         when (this) {
             ConfigKey.WorkSec -> "work_sec"

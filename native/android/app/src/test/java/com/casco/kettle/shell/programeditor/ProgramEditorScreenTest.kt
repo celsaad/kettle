@@ -730,10 +730,131 @@ class ProgramEditorScreenTest {
         named("Pull-ups: reps → 12 · não aplicado — não existe essa configuração para alterar").assertExists()
     }
 
+    // overrides: what a confirm keeps, and what it doesn't invent
+
+    // Spread over the raw block, `exercises: 2` replaced the member list with a number.
+    @Test
+    fun `opens a circuit override carrying a structural key`() {
+        val structural = ProgramOverride.BlockOverride("finisher", mapOf("exercises" to OverrideValue.Numeric(2.0)))
+        show("base", Files(programs = listOf(base(structural))))
+
+        press("Circuito (finisher): exercises → 2 · não aplicado — não existe essa configuração para alterar")
+
+        named("Circuito (finisher)").assertExists()
+        named("Salvar ajuste").assertExists()
+    }
+
+    // The panel seeds an absent rest as 0, which diffed against the circuit's none as a change.
+    @Test
+    fun `does not invent a rest override on a circuit that declares none`() {
+        val files = show("base", Files(programs = listOf(base(workoutId = "bare-day"))))
+
+        press("+ Adicionar ajuste")
+        press("bare")
+        press("Aumentar Rodadas")
+        press("Adicionar ajuste")
+        press("Salvar")
+
+        assertEquals(
+            listOf(ProgramOverride.BlockOverride("bare", mapOf("rounds" to OverrideValue.Numeric(4.0)))),
+            files.savedOverrides(),
+        )
+    }
+
+    // A cleared rest means "no rest", which is 0, not "unchanged", which emitted nothing.
+    @Test
+    fun `clears a rest the circuit does declare, rather than saving an empty override`() {
+        val files = show("base", Files(programs = listOf(base())))
+
+        press("+ Adicionar ajuste")
+        press("finisher")
+        type("Descanso/exercício (seg)", "")
+        press("Adicionar ajuste")
+        press("Salvar")
+
+        assertEquals(listOf(finisherRest(0.0)), files.savedOverrides())
+    }
+
+    @Test
+    fun `still saves a circuit patch the schema accepts`() {
+        val files = show("base", Files(programs = listOf(base())))
+
+        press("+ Adicionar ajuste")
+        press("finisher")
+        type("Descanso/exercício (seg)", "0")
+        press("Adicionar ajuste")
+        press("Salvar")
+
+        assertEquals(listOf(finisherRest(0.0)), files.savedOverrides())
+    }
+
+    // The form has nowhere to show `reps` on a reps exercise; dropping it on Save would erase it.
+    @Test
+    fun `keeps a key the form cannot show instead of erasing it on save`() {
+        val files = show("base", Files(programs = listOf(base(exerciseOverride("pull-ups", "reps" to 12.0)))))
+
+        press("Pull-ups: reps → 12 · não aplicado — não existe essa configuração para alterar")
+        type("Séries", "5")
+        press("Salvar ajuste")
+        press("Salvar")
+
+        assertEquals(listOf(exerciseOverride("pull-ups", "reps" to 12.0, "sets" to 5.0)), files.savedOverrides())
+    }
+
+    // Back to the base value: an override with no keys would be a blank row that changes nothing.
+    @Test
+    fun `removes an override that ends up with nothing in it rather than saving a blank row`() {
+        val files = show("base", Files(programs = listOf(base(exerciseOverride("dips", "sets" to 5.0)))))
+
+        press("Dips: sets → 5")
+        type("Séries", "4")
+        press("Salvar ajuste")
+        press("Salvar")
+
+        assertEquals(null, files.savedOverrides())
+    }
+
+    @Test
+    fun `saves against the override it opened`() {
+        val overrides = arrayOf(exerciseOverride("pull-ups", "sets" to 5.0), exerciseOverride("dips", "sets" to 3.0))
+        val files = show("base", Files(programs = listOf(base(*overrides))))
+
+        press("Dips: sets → 3")
+        type("Séries", "6")
+        press("Salvar ajuste")
+        press("Salvar")
+
+        assertEquals(listOf(overrides[0], exerciseOverride("dips", "sets" to 6.0)), files.savedOverrides())
+    }
+
+    /**
+     * RN's "does not throw when the list shrinks underneath the open panel" has no native path to it:
+     * the rows are inert while the panel is up, and everything else that changes a week's overrides
+     * (a rest day, another workout, removing the week) closes that week's panel first. This pins that.
+     */
+    @Test
+    fun `closes the panel whenever the week's overrides can change under it`() {
+        show("base", Files(programs = listOf(base(exerciseOverride("pull-ups", "sets" to 5.0)))))
+
+        // A rest day, round trip: the open edit goes, with the overrides it was editing.
+        press("Pull-ups: sets → 5")
+        press("Dia de descanso")
+        press("Dia de descanso")
+        absent("Salvar ajuste")
+
+        // Another workout, while choosing what to patch in the old one.
+        press("+ Adicionar ajuste")
+        named("finisher").assertExists()
+        press("Push day")
+        press("Pull day")
+        absent("finisher")
+        named("+ Adicionar ajuste").assertExists()
+    }
+
     private fun Files.savedOverrides() = (savedWeeks().single() as ProgramWeek.Training).overrides
 
     private class Files(
-        private val workouts: List<Workout> = listOf(pushDay, pullDay, empty),
+        private val workouts: List<Workout> = listOf(pushDay, pullDay, empty, bareDay),
         private val programs: List<Program> = emptyList(),
     ) : FakeStoredFiles() {
         private val library = Library(1, listOf(pullUps, dips, rows), workouts, programs)
@@ -766,6 +887,23 @@ private val finisher =
 private val pushDay = Workout("push-day", "Push day", listOf(WorkoutBlock.ExerciseBlock("pull-ups"), finisher))
 private val pullDay = Workout("pull-day", "Pull day", listOf(WorkoutBlock.ExerciseBlock("rows")))
 private val empty = Workout("empty", "Empty", emptyList())
+
+/** A circuit with no rests of its own, which the panel still shows as 0. */
+private val bareDay =
+    Workout(
+        "bare-day",
+        "Bare day",
+        listOf(
+            WorkoutBlock.Circuit(
+                id = "bare",
+                rounds = 3,
+                members = listOf(CircuitMember("pull-ups"), CircuitMember("dips")),
+            ),
+        ),
+    )
+
+private fun finisherRest(seconds: Double) =
+    ProgramOverride.BlockOverride("finisher", mapOf("rest_between_exercises_sec" to OverrideValue.Numeric(seconds)))
 
 private fun base(
     vararg overrides: ProgramOverride,

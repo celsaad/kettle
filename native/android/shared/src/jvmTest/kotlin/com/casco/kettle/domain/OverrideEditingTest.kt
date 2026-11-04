@@ -2,6 +2,7 @@ package com.casco.kettle.domain
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
@@ -302,6 +303,48 @@ class OverrideEditingTest {
                 "2",
                 adding(finisherTarget).typed(ConfigKey.Rounds, "").steppingRounds(1).values[ConfigKey.Rounds],
             )
+        }
+    }
+
+    /**
+     * `rawKey` spells the file's keys a second time, so it is held to the writer's own: a field whose
+     * key drifted would seed blank and emit a patch the merge ignores as unknown.
+     */
+    @Nested
+    inner class RawKeys {
+        private val everyField =
+            listOf(
+                ExerciseConfig.Hiit(30.0, 30.0, 4),
+                ExerciseConfig.Emom(60.0, 10.0, 8),
+                ExerciseConfig.Amrap(720.0),
+                ExerciseConfig.Reps(
+                    sets = 3,
+                    targetRepsMin = 8,
+                    targetRepsMax = 12,
+                    targetWeightKg = 20.0,
+                    restSec = 60.0,
+                ),
+                ExerciseConfig.TimedHold(sets = 3, holdSecMin = 20.0, holdSecMax = 45.0, restSec = 45.0),
+                ExerciseConfig.Cardio(600.0, 2000.0),
+                ExerciseConfig.Rest(90.0),
+            )
+
+        @Test
+        fun `spells every exercise field as the writer does`() {
+            assertEquals(FORM_TYPES.toSet(), everyField.map { it.type }.toSet())
+            for (config in everyField) {
+                assertEquals(
+                    config.toRaw().second.keys,
+                    configFields(config.type).map { it.key.rawKey }.toSet(),
+                    "${config.type}",
+                )
+            }
+        }
+
+        @Test
+        fun `spells a circuit's own params as the writer does`() {
+            val keys = BLOCK_CONFIG_FIELDS.map { it.key.rawKey }
+            assertTrue(finisher.toRaw().keys.containsAll(keys), "$keys in ${finisher.toRaw().keys}")
         }
     }
 

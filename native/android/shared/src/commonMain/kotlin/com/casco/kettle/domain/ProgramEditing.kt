@@ -70,11 +70,7 @@ private fun ProgramWeek.trimmed(): ProgramWeek =
     withShared(day = day?.trim()?.ifEmpty { null }, notes = notes?.trim()?.ifEmpty { null })
 
 /** The library with [program] in it: in place of the one with its id, or else at the end. */
-fun Library.withProgram(program: Program): Library {
-    val at = programs.indexOfFirst { it.id == program.id }
-    val edited = if (at < 0) programs + program else programs.toMutableList().apply { set(at, program) }
-    return copy(programs = edited)
-}
+fun Library.withProgram(program: Program): Library = copy(programs = programs.upserting(program, Program::id))
 
 /** The library without program [id]. Nothing in it points at a program, so nothing is left dangling. */
 fun Library.withoutProgram(id: String): Library = copy(programs = programs.filterNot { it.id == id })

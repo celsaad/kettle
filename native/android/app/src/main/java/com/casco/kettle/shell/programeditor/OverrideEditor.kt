@@ -276,8 +276,9 @@ private fun RoundsStepper(
     onStep: (Int) -> Unit,
 ) {
     val colors = KettleTheme.colors
-    val label = stringResource(R.string.workoutEditor_rounds)
-    Text(stringResource(R.string.exerciseForm_field_rounds), style = KettleType.small, color = colors.textSecondary)
+    // One name for the field, its buttons and its refusal, which names it as `FieldName.Rounds`.
+    val label = stringResource(R.string.exerciseForm_field_rounds)
+    Text(label, style = KettleType.small, color = colors.textSecondary)
     Row(horizontalArrangement = Arrangement.spacedBy(Spacing.one), verticalAlignment = Alignment.CenterVertically) {
         StepButton("−", stringResource(R.string.common_decrease, label)) { onStep(-1) }
         Text(

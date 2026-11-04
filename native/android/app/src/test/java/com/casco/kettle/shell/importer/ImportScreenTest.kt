@@ -5,7 +5,6 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -498,7 +497,8 @@ class ImportScreenTest {
         shown("base-6")
     }
 
-    // Focus doesn't move and the result swaps in below it, so nothing re-reads on its own.
+    // Focus doesn't move and the result swaps in below it, so nothing re-reads on its own. A pane title,
+    // which TalkBack speaks as the card appears: a live region new to the tree sent nothing on a device.
     @Test
     fun `announces the result, which a screen reader would otherwise miss`() {
         picks(Library(1, listOf(dips), emptyList(), emptyList()))
@@ -508,7 +508,7 @@ class ImportScreenTest {
         compose
             .onNode(
                 hasText("Importado") and
-                    SemanticsMatcher.expectValue(SemanticsProperties.LiveRegion, LiveRegionMode.Polite),
+                    SemanticsMatcher.expectValue(SemanticsProperties.PaneTitle, "Importado. 1 novos, 0 atualizados."),
             ).assertExists()
     }
 

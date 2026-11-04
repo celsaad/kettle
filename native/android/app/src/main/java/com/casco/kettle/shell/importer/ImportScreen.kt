@@ -18,14 +18,12 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
@@ -166,11 +164,16 @@ private fun Sources(importer: Importer) {
             .fillMaxWidth()
             .heightIn(min = 48.dp)
             .clip(ButtonShape)
-            .background(colors.accentSoft)
-            .clickable(enabled = canReview, role = Role.Button, onClick = importer::reviewPaste)
-            .alpha(if (canReview) 1f else DISABLED_ALPHA),
+            .background(colors.accentSoft.dimmedUnless(canReview))
+            .clickable(enabled = canReview, role = Role.Button, onClick = importer::reviewPaste),
         contentAlignment = Alignment.Center,
-    ) { Text(stringResource(R.string.import_reviewPaste), style = KettleType.heading, color = colors.accentText) }
+    ) {
+        Text(
+            stringResource(R.string.import_reviewPaste),
+            style = KettleType.heading,
+            color = colors.accentText.dimmedUnless(canReview),
+        )
+    }
 }
 
 /**
@@ -302,84 +305,6 @@ private fun mergeErrorText(error: MergeError): String =
         }
     }
 
-/**
- * Pinned below the scroll rather than its last child: a re-imported library renders a row per id and a
- * line per changed field, which put Merge screens down with nothing saying it was there. Once the write
- * lands the pair becomes Done alone: Cancel beside a finished import would suggest it could be undone.
- */
-@Composable
-private fun Footer(importer: Importer) {
-    val colors = KettleTheme.colors
-    HorizontalDivider(thickness = 1.dp, color = colors.border)
-    Box(
-        Modifier
-            .fillMaxWidth()
-            .padding(start = Spacing.three, end = Spacing.three, top = Spacing.two + 2.dp, bottom = Spacing.one),
-        contentAlignment = Alignment.Center,
-    ) {
-        Row(SheetColumn, horizontalArrangement = Arrangement.spacedBy(Spacing.three - 4.dp)) {
-            if (importer.applied != null) {
-                FooterButton(
-                    stringResource(R.string.common_done),
-                    Modifier.weight(1f),
-                    primary = true,
-                    onClick = importer.close,
-                )
-                return@Row
-            }
-            FooterButton(
-                stringResource(R.string.common_cancel),
-                Modifier.weight(1f),
-                primary = false,
-                onClick = importer.close,
-            )
-            FooterButton(
-                stringResource(R.string.import_mergeButton),
-                Modifier.weight(PRIMARY_WEIGHT),
-                primary = true,
-                enabled = importer.canMerge,
-                onClick = importer::merge,
-            )
-        }
-    }
-}
-
-/** RN's editor buttons: Cancel outlined, the primary filled and the wider, as the step the screen is for. */
-@Composable
-private fun FooterButton(
-    text: String,
-    modifier: Modifier,
-    primary: Boolean,
-    enabled: Boolean = true,
-    onClick: () -> Unit,
-) {
-    val colors = KettleTheme.colors
-    val surface =
-        if (primary) {
-            Modifier.background(colors.accent)
-        } else {
-            Modifier.border(1.5.dp, colors.border, ButtonShape)
-        }
-    Box(
-        modifier
-            .heightIn(min = 52.dp)
-            .clip(ButtonShape)
-            .then(surface)
-            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
-            .alpha(if (enabled) 1f else DISABLED_ALPHA),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(text, style = KettleType.heading, color = if (primary) colors.onAccent else colors.textSecondary)
-    }
-}
-
 internal val BoxShape = RoundedCornerShape(14.dp)
-private val ButtonShape = RoundedCornerShape(15.dp)
-
-/** RN's `opacity: 0.5` on a control that can't be pressed yet. */
-private const val DISABLED_ALPHA = 0.5f
-
-/** RN's `flex: 1.4` against Cancel's 1. */
-private const val PRIMARY_WEIGHT = 1.4f
 
 private const val KILOBYTE = 1024

@@ -20,12 +20,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.collapse
 import androidx.compose.ui.semantics.expand
-import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -86,8 +85,11 @@ internal fun PreviewSection(
 
 /**
  * What landed, announced: the screen changes under the reader without focus moving, so TalkBack would
- * otherwise read none of it. The rows are the preview's, without the diffs, which describe a "before"
- * the write has already replaced.
+ * otherwise read none of it. A pane title rather than a live region: Compose sends a live region's
+ * event only when its content changes, and this card is new, so on a device nothing was spoken. A pane
+ * appearing is the event TalkBack reads for a section that wasn't there, and it speaks RN's own
+ * announcement. The rows are the preview's, without the diffs, which describe a "before" the write has
+ * already replaced.
  */
 @Composable
 internal fun Applied(
@@ -96,13 +98,14 @@ internal fun Applied(
 ) {
     val colors = KettleTheme.colors
     val new = items.count { it.isNew }
+    val announcement = stringResource(R.string.import_applied_announcement, "$new", "${items.size - new}")
     Column(
         Modifier
             .padding(top = Spacing.three - 2.dp)
             .fillMaxWidth()
             .clip(BoxShape)
             .background(colors.accentSoft)
-            .semantics(mergeDescendants = true) { liveRegion = LiveRegionMode.Polite }
+            .semantics(mergeDescendants = true) { paneTitle = announcement }
             .padding(Spacing.two + 4.dp),
     ) {
         Text(stringResource(R.string.import_applied_title), style = KettleType.heading, color = colors.accentText)

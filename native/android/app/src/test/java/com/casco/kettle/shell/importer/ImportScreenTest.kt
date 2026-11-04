@@ -7,6 +7,7 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHeightIsAtLeast
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasAnyAncestor
@@ -14,6 +15,9 @@ import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.Library
@@ -104,6 +108,70 @@ class ImportScreenTest : ImportHarness() {
         shown("Não foi possível ler esse arquivo: Permission denied")
         button("Escolher exercises.yaml").assertIsEnabled()
         files.nothingWritten()
+    }
+
+    // where a refusal lands (#289): under the source that produced it. After every source, a paste's
+    // refusal sat below three packs, off screen, and Review read as a button that did nothing.
+
+    // First-timer order: packs, file, paste, brief. The brief is what used to sit above the refusal.
+    @Test
+    fun `shows a paste's refusal under the paste box, not after the other sources`() {
+        paste(serializeLibraryYaml(Library(1, emptyList(), listOf(legDay), emptyList())))
+
+        assertEquals(
+            listOf("Revisar texto colado", UNKNOWN_SQUATS, SHARE_BRIEF),
+            inOrder(SHARE_BRIEF, UNKNOWN_SQUATS, "Revisar texto colado"),
+        )
+    }
+
+    // Returning order: file, brief, paste, packs.
+    @Test
+    fun `shows a file's refusal under the file box`() {
+        picks(Library(1, emptyList(), listOf(legDay), emptyList()))
+        show(Files(log = SessionLog(listOf(unfinished), emptyList())))
+        press("Escolher exercises.yaml")
+
+        assertEquals(
+            listOf("Escolher exercises.yaml", UNKNOWN_SQUATS, SHARE_BRIEF, PACKS_TITLE),
+            inOrder(PACKS_TITLE, SHARE_BRIEF, UNKNOWN_SQUATS, "Escolher exercises.yaml"),
+        )
+    }
+
+    @Test
+    fun `shows a pack's refusal under the pack that was tapped`() {
+        show(Files(library = null))
+        press("Academia com Barra", substring = true)
+
+        assertEquals(
+            listOf("Academia com Barra", NOT_LOADED, "Kettlebell Essencial", "Escolher exercises.yaml"),
+            inOrder("Escolher exercises.yaml", "Kettlebell Essencial", NOT_LOADED, "Academia com Barra"),
+        )
+        compose.onAllNodesWithText(NOT_LOADED).assertCountEquals(1)
+    }
+
+    // Focus stays on Review, so the refusal has to announce itself. A pane title, as Applied's card: a
+    // live region newly composed sends nothing in Compose. Each refusal is a new node, so pressing Review
+    // again on the same broken text is a pane appearing again, not a silent no-change.
+    @Test
+    fun `announces a refusal, and announces it again when the same one comes back`() {
+        paste(serializeLibraryYaml(Library(1, emptyList(), listOf(legDay), emptyList())))
+        val refusal = compose.onNode(hasText(UNKNOWN_SQUATS) and paneTitled(UNKNOWN_SQUATS))
+        val first = refusal.fetchSemanticsNode().id
+
+        press("Revisar texto colado")
+
+        assertTrue(first != refusal.fetchSemanticsNode().id)
+    }
+
+    // Short enough that the last pack row ends at the bottom edge once scrolled to, so what's drawn under it
+    // starts off screen.
+    @Test
+    @Config(qualifiers = "pt-w400dp-h640dp")
+    fun `brings a refusal into view when it lands below the fold`() {
+        show(Files(library = null, log = SessionLog(listOf(unfinished), emptyList())))
+        button("Kettlebell Essencial", substring = true).performScrollTo().performClick()
+
+        compose.onNodeWithText(NOT_LOADED).assertIsDisplayed()
     }
 
     @Test
@@ -619,3 +687,8 @@ class ImportScreenTest : ImportHarness() {
         compose.onAllNodes(hasTextMatching(KEY_PATH)).assertCountEquals(0)
     }
 }
+
+private const val UNKNOWN_SQUATS = "O treino \"leg-day\" referencia o exercício desconhecido \"squats\""
+private const val NOT_LOADED = "A biblioteca ainda não foi carregada."
+
+private fun paneTitled(title: String) = SemanticsMatcher.expectValue(SemanticsProperties.PaneTitle, title)

@@ -105,6 +105,40 @@ sealed interface ImportRefusal {
 val ImportRefusal.aboutContent: Boolean
     get() = this is ImportRefusal.InvalidYaml || this is ImportRefusal.SchemaMismatch || this is ImportRefusal.Merge
 
+/**
+ * Which source a refusal answers, so it's drawn under that source rather than after all of them (#289):
+ * below three starter packs it sat off screen, and Review read as a button that did nothing. [Preview]
+ * is a Merge that wouldn't write, when the sources are already gone and the preview is all there is.
+ */
+sealed interface RefusalSite {
+    data object File : RefusalSite
+
+    data object Paste : RefusalSite
+
+    data class Pack(
+        val id: String,
+    ) : RefusalSite
+
+    data object Preview : RefusalSite
+}
+
+/**
+ * A refusal and where it's drawn. Deliberately not a data class: each refusal is its own instance, so
+ * the screen keys on it and the same refusal twice is a new node, announced again (see [RefusalBlock]).
+ */
+class Refused(
+    val why: ImportRefusal,
+    val at: RefusalSite,
+)
+
+private val ImportSource.site: RefusalSite
+    get() =
+        when (this) {
+            is ImportSource.File -> RefusalSite.File
+            is ImportSource.Pasted -> RefusalSite.Paste
+            is ImportSource.Pack -> RefusalSite.Pack(id)
+        }
+
 /** A preview waiting on Merge: what it came from, and what merging it would write. */
 data class ReadyMerge(
     val source: ImportSource,
@@ -124,7 +158,7 @@ internal class Importer(
     /** The picker and the read after it, which is when a second source could race the first. */
     var busy by mutableStateOf(false)
         private set
-    var refusal by mutableStateOf<ImportRefusal?>(null)
+    var refused by mutableStateOf<Refused?>(null)
         private set
     var ready by mutableStateOf<ReadyMerge?>(null)
         private set
@@ -170,7 +204,7 @@ internal class Importer(
             try {
                 when (val pick = actions.pickFile()) {
                     FilePick.Cancelled -> Unit
-                    is FilePick.Failed -> refuse(ImportRefusal.ReadFailed(pick.detail))
+                    is FilePick.Failed -> refuse(ImportRefusal.ReadFailed(pick.detail), RefusalSite.File)
                     is FilePick.Picked -> review(pick.text, ImportSource.File(pick.name, pick.sizeBytes))
                 }
             } finally {
@@ -251,20 +285,23 @@ internal class Importer(
                     applied = merge.preview.items
                     ready = null
                 } else {
-                    refuse(ImportRefusal.SaveFailed(refused))
+                    refuse(ImportRefusal.SaveFailed(refused), RefusalSite.Preview)
                 }
             }
         }
     }
 
     private fun clear() {
-        refusal = null
+        refused = null
         ready = null
     }
 
     /** Every refusal comes through here, so none can stand under a "Copied" left from a different one. */
-    private fun refuse(why: ImportRefusal) {
-        refusal = why
+    private fun refuse(
+        why: ImportRefusal,
+        at: RefusalSite,
+    ) {
+        refused = Refused(why, at)
         handoff.forget()
     }
 
@@ -274,8 +311,8 @@ internal class Importer(
     ) {
         when (val parsed = parseLibraryYaml(text)) {
             is ParseResult.Ok -> reviewLibrary(parsed.value, source)
-            is ParseResult.InvalidYaml -> refuse(ImportRefusal.InvalidYaml(parsed.detail))
-            is ParseResult.SchemaMismatch -> refuse(ImportRefusal.SchemaMismatch(parsed.detail))
+            is ParseResult.InvalidYaml -> refuse(ImportRefusal.InvalidYaml(parsed.detail), source.site)
+            is ParseResult.SchemaMismatch -> refuse(ImportRefusal.SchemaMismatch(parsed.detail), source.site)
         }
     }
 
@@ -285,12 +322,12 @@ internal class Importer(
     ) {
         val current = files.library
         if (current == null) {
-            refuse(ImportRefusal.LibraryNotLoaded)
+            refuse(ImportRefusal.LibraryNotLoaded, source.site)
             return
         }
         when (val merged = mergeLibraries(current, incoming)) {
             is MergeResult.Ok -> ready = ReadyMerge(source, ImportPreview(current, merged.library, merged.summary))
-            is MergeResult.Refused -> refuse(ImportRefusal.Merge(merged.error))
+            is MergeResult.Refused -> refuse(ImportRefusal.Merge(merged.error), source.site)
         }
     }
 }

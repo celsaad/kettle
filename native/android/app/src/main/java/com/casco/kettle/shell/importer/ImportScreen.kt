@@ -97,13 +97,15 @@ private fun Body(
             onClick = importer::pickFile,
             busy = importer.busy,
         )
+        RefusalAt(RefusalSite.File, importer)
         if (!packsFirst) AssistantBlock(importer, files.library, content)
         PasteSection(importer)
         if (!packsFirst) StarterPacks(content, importer)
         if (packsFirst) AssistantBlock(importer, files.library, content)
     }
     ready?.let { SourceCard(it.source) }
-    importer.refusal?.let { RefusalBlock(it, importer) }
+    // Each source draws its own refusal; only a Merge that wouldn't write lands here, under the preview's card.
+    RefusalAt(RefusalSite.Preview, importer)
     if (ready != null) {
         val locale = LocalConfiguration.current.locales[0]
         PreviewSection(ready.preview, files.preferences?.unitSystem ?: deviceUnitSystem(locale), importer)

@@ -18,7 +18,12 @@ here, next to what it describes.
 
 ## Unreleased
 
-Nothing since 0.14.0.
+### What changed
+
+- **Import says why it refused something right where you pressed**: a paste that won't import shows
+  its reason under the paste box, a file's under the file button and a starter pack's under that
+  pack, instead of below every starter pack where it was easy to miss. TalkBack reads it out too
+  (#289).
 
 ---
 

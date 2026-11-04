@@ -4,6 +4,7 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import com.casco.kettle.brownfield.ReactNativeHostManager
+import com.casco.kettle.shell.files.LibraryWrites
 import com.casco.kettle.shell.nav.RouteReport
 import com.facebook.react.modules.core.DeviceEventManagerModule
 import expo.modules.brownfield.BrownfieldMessaging
@@ -11,7 +12,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
 /**
@@ -106,9 +106,6 @@ object JsBridge {
     /** Where the finish backup runs: off both JS's thread and the main one, for the life of the process. */
     private val background = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-    /** One adopt at a time: each reads the file and writes it back, so two at once would drop one. */
-    private val adopting = Mutex()
-
     /** JS's messages arrive on its own thread. */
     private fun receive(message: Map<String, Any?>) {
         channel.receive(message)
@@ -155,20 +152,20 @@ object JsBridge {
     private fun adopt(message: Map<String, Any?>) {
         val exerciseId = message["exerciseId"] as? String
         val weightKg = (message["weightKg"] as? Number)?.toDouble()?.takeIf { it.isFinite() && it > 0 }
-        val adopt = adoptTargetWeight
+        val write = adoptTargetWeight
         when {
             exerciseId == null || weightKg == null -> {
                 Log.w(TAG, "An adopted load JS sent malformed; nothing was written")
             }
 
             // MainActivity sets it before any surface opens, so this is a shell wired wrong.
-            adopt == null -> {
+            write == null -> {
                 Log.w(TAG, "A load was adopted with no library to write it to; nothing was written")
             }
 
             else -> {
                 background.launch {
-                    if (!adopting.withLock { adopt(exerciseId, weightKg) }) return@launch
+                    if (!LibraryWrites.lock.withLock { write(exerciseId, weightKg) }) return@launch
                     filesChanged(FileKind.LIBRARY)
                     main.post { onLibraryWritten?.invoke() }
                 }

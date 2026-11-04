@@ -10,7 +10,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
-import java.io.IOException
 
 /**
  * The launch's seed and repair of `exercises.yaml` (#220, #221), once per process, on an IO thread.
@@ -48,6 +47,7 @@ object LibraryGate {
      */
     fun awaitPrepared(context: Context) = runBlocking { prepared(context) }
 
+    @Suppress("TooGenericExceptionCaught") // Why is at the catch.
     private fun prepare(app: Context) {
         val paths = StoragePaths(app.filesDir)
         val language =
@@ -72,9 +72,11 @@ object LibraryGate {
                     Log.w(TAG, "exercises.yaml failed to parse (${prepared.why}); reseeded, $kept")
                 }
             }
-        } catch (error: IOException) {
-            // A disk that refuses leaves RN to find what's there, which on a first launch is nothing and
-            // shows its error: no worse than a crash, and the next launch tries again.
+        } catch (error: Exception) {
+            // Anything, not just a disk that refuses: this rethrows on the main thread from
+            // awaitPrepared, before any screen, so a shipped-content defect or a SecurityException would
+            // crash every launch. Degraded, RN finds what's there, which on a first launch is nothing
+            // and shows its error, and the next launch tries again.
             Log.e(TAG, "Could not prepare the library", error)
         }
     }

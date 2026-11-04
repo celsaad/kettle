@@ -54,8 +54,8 @@ retrofit, so answer them out loud even when the answer is no.
 - [ ] **Does it need error checks, an error boundary, or a graceful degrade?** Ask per layer: does a
       storage call need an `isFileStorageSupported` guard; does an in-app form need `validateConfig`-style
       validation (the zod schema does *not* run on that path); can a render throw here cost a workout in
-      progress? Degrading beats crashing — `safe-notifications.ts`, `PreparedLibrary.kt`'s reseed of a
-      corrupt library, and native Support's store states (`TipJar.kt`) are the patterns to copy.
+      progress? Degrading beats crashing — `safe-notifications.ts`, `PreparedLibrary.kt`'s reseed of
+      a corrupt library, and native Support's store states (`TipJar.kt`) are the patterns to copy.
 - [ ] **Add tests if it makes sense.** Pure logic, error and empty branches, validation wiring: yes.
       Layout, animation, real audio and file writes: drive the running app instead. See "Writing tests".
 - [ ] `pnpm test`
@@ -91,14 +91,15 @@ mistake here that cannot be fixed for anyone who has already installed it.
 - `src/storage/` — all file I/O, via `expo-file-system`'s **class-based `File`/`Directory` API**.
   One file per session (`session-files.ts`), so a mid-workout flush never rewrites history. It also
   holds the readers for the content the app *ships*: `seed-library.ts` (the web build's in-memory
-  library; native writes the real seed on a first launch, `PreparedLibrary.kt`) and `content-packs.ts`
-  (bundled libraries native Import offers, merged in on a tap, read here for the tests that hold them). The content itself is data in `src/content/`, which native reads too: an English
-  `library.yaml` plus a `<lang>.json` string table per language (`library-translation.ts`), and
-  `packs.json` for the pack order. **New shipped content goes in a pack, not in the seed** — the seed
-  can only ever reach a fresh install. A new pack is a directory, a `packs.json` entry, a line in
-  `content-packs.ts`'s import map, and its import-screen row (`import.packs.<id>.name`/`.detail` in
-  all three bundles); `content-packs.test.ts` fails when any of them is missing. See the
-  decision log for the four rules a pack has to respect; the prefixed-id one is the load-bearing one.
+  library; native writes the real seed on a first launch, `PreparedLibrary.kt`) and
+  `content-packs.ts` (bundled libraries native Import offers, merged in on a tap, read here for the
+  tests that hold them). The content itself is data in `src/content/`, which native reads too: an
+  English `library.yaml` plus a `<lang>.json` string table per language (`library-translation.ts`),
+  and `packs.json` for the pack order. **New shipped content goes in a pack, not in the seed** — the
+  seed can only ever reach a fresh install. A new pack is a directory, a `packs.json` entry, a line
+  in `content-packs.ts`'s import map, and its import-screen row (`import.packs.<id>.name`/`.detail`
+  in all three bundles); `content-packs.test.ts` fails when any of them is missing. See the decision
+  log for the four rules a pack has to respect; the prefixed-id one is the load-bearing one.
 - `src/state/` — zustand stores (`library-store`, `session-history-store`, and a read-only
   `preferences-store`, since native Settings writes that file) and `selectors/`, derived/display logic
   split per view (`records`, `logged-sessions`, `session-summary`, …).
@@ -169,9 +170,9 @@ are house rules here rather than a backlog — cheap as you go, tedious to retro
 ### Code
 
 - **A card is for one privileged object; a list of peers is rows.** Lists use `ListRow` +
-  `ListRowSeparator` + `ListHeaderRule` from native's `shell/list/ListRow.kt` — no fill, no border, no
-  radius, a hairline between neighbours, and no horizontal padding, since the screen's own inset is
-  the column everything else lines up on. A row that can't use the component (History's expands;
+  `ListRowSeparator` + `ListHeaderRule` from native's `shell/list/ListRow.kt` — no fill, no border,
+  no radius, a hairline between neighbours, and no horizontal padding, since the screen's own inset
+  is the column everything else lines up on. A row that can't use the component (History's expands;
   Settings' are section siblings rather than list children) shares its exported metrics rather than
   retyping them. Sibling lists that look subtly unlike each other read as a bug, not a distinction.
 - Modal screens: register by adding the name to `SHEET_ROUTES` (`src/constants/sheet-routes.ts`), which gives

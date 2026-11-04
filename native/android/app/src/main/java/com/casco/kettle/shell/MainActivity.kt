@@ -110,7 +110,8 @@ class MainActivity :
         BrownfieldState.set(NATIVE_TAB_BAR, true)
         retireExpoReminder()
         handJsItsWrites()
-        // RN's library load only parses from the library flip (#221): native seeds and repairs first.
+        // RN's library load only parses from the library flip (#245), so native seeds and repairs first
+        // (#221).
         LibraryGate.awaitPrepared(this)
         // What showReactNativeFragment does, minus the fragment: the surface is
         // one view for the whole app, which ShellLayout places.

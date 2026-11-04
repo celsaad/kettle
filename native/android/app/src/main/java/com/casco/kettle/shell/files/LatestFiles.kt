@@ -188,7 +188,7 @@ class LatestFiles(
      * the library is left as it was.
      */
     suspend fun writeLibrary(library: Library) {
-        withContext(io) { files.writeLibrary(library) }
+        LibraryWrites.lock.withLock { withContext(io) { files.writeLibrary(library) } }
         this.library = library
         reread()
     }
@@ -228,6 +228,15 @@ class LatestFiles(
                 onRead(log, shown)
             }
     }
+}
+
+/**
+ * The process's one lock on writing `exercises.yaml`. The runner's adopt reads the file and writes it
+ * back (`adoptTargetWeight`), so an editor's or Import's save landing between the two would be lost,
+ * or would lose the adopt. Every library write takes it, one after another.
+ */
+object LibraryWrites {
+    val lock = Mutex()
 }
 
 /** The shell's [LatestFiles], for a native screen to read. */

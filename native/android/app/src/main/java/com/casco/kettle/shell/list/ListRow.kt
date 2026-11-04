@@ -20,8 +20,8 @@ import com.casco.kettle.shell.theme.Spacing
 // radius, one per item. A card is for one privileged object, and twenty-six bordered boxes down a
 // screen is twenty-six frames competing with the names inside them, while the fill bought nothing,
 // since nothing sits behind a row that it needs lifting off. So: no fill, no border, a hairline between
-// neighbours, and no horizontal padding, since the card's padding on top of the screen's inset every
-// name past the title and search above it. The metrics are shared rather than retyped per screen,
+// neighbours, and no horizontal padding: the card's padding sat on top of the screen's, insetting
+// every name past the title and search above it. The metrics are shared rather than retyped per screen,
 // since sibling lists that look subtly unlike each other read as a bug, not a distinction. RN's
 // `list-row.tsx` held this until its last list went native (#245).
 

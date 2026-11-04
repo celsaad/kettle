@@ -80,7 +80,8 @@ $steps = @(
   # Native Library's row and Import open their native sheets over it, and back returns to it (#234).
   @('tap:Library', 'tab:Library'), @('tap:Push-ups', 'Edit exercise'), @('back', 'tab:Library'),
   @('tap:Import', 'Import library'), @('back', 'tab:Library'),
-  # Native Home's gear and New workout open native Settings and the native editor over it, and back returns
+  # Native Home's gear and New workout open native Settings and the native editor over it, and
+  # back returns
   # (#235, #238).
   @('tap:Workouts', 'tab:Workouts'), @('tap:Settings', 'Settings'), @('back', 'tab:Workouts'),
   @('tap:New workout', 'New workout'), @('back', 'tab:Workouts'),

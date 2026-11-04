@@ -20,7 +20,8 @@ decision assembled across several commits. Open work belongs in the sections at 
   and Settings each held a byte-identical copy of that style — so twenty-six workouts meant twenty-six
   frames competing with the twenty-six names inside them. They are hairline-separated rows now, in
   `components/list-row.tsx` then and native's `shell/list/ListRow.kt` since the library flip (#245),
-  which exists as much to stop the five copies reappearing as to change them. Three things worth knowing before adding a sixth list:
+  which exists as much to stop the five copies reappearing as to change them. Three things worth
+  knowing before adding a sixth list:
 
   - **The metrics are exported** (`ListRowMinHeight`, `ListRowVerticalPadding`) because two screens
     need a row that is *not* `ListRow`: History's expands in place, so it is a vertical container with
@@ -600,11 +601,12 @@ decision assembled across several commits. Open work belongs in the sections at 
     longer reading.
 - ✅ **New shipped content goes in a bundled pack, not in the seed — the seed cannot reach an install
   that already exists.** The seed is written on the one launch that finds no `exercises.yaml` (by
-  native's `prepareLibrary` since the library flip, #245; by RN's `loadLibrary` before it), so everything added to the seed is visible only to people who have not
-  installed the app yet. That is the whole argument, and it is structural rather than a preference:
-  the population most likely to want more content is precisely the one the seed cannot serve. The
-  second argument is the entry above — the seed is also the web build's entire library and the reseed
-  target for a corrupt file, so every exercise added to it enlarges what a recovery hands back.
+  native's `prepareLibrary` since the library flip, #245; by RN's `loadLibrary` before it), so
+  everything added to the seed is visible only to people who have not installed the app yet. That is
+  the whole argument, and it is structural rather than a preference: the population most likely to
+  want more content is precisely the one the seed cannot serve. The second argument is the entry
+  above — the seed is also the web build's entire library and the reseed target for a corrupt file,
+  so every exercise added to it enlarges what a recovery hands back.
 
   So `src/content/packs/` holds curated libraries the app ships **without seeding**, listed on
   the import screen and merged in on a tap. Three today: a low-impact one (chair and wall support,
@@ -1122,8 +1124,8 @@ Kept as a record of where each landed, since §12 is where they're numbered.
     backgrounded is only noticed on foreground return, so the raw elapsed there is however long you
     were away — a 25s plank logged 60s until a regression test caught it. Anything that later ends a
     step from the catch-up path needs the same clamp.
-- **Merge conflict transparency** (§12.5): **a field-level diff** (`domain/library-diff.ts`, native's
-  `LibraryDiff.kt` since the library flip deleted RN Import, #245), shallower
+- **Merge conflict transparency** (§12.5): **a field-level diff** (`domain/library-diff.ts`,
+  native's `LibraryDiff.kt` since the library flip deleted RN Import, #245), shallower
   for workouts and programs than for exercises — see §12.5 for why that asymmetry is deliberate.
 - Earlier: `rest` stayed first-class (§12.1), rep-block rest is an auto timer that's skippable
   (§12.3), and `blocks` grew a `circuit` kind for supersets/circuits (§12.4) without a rewrite.

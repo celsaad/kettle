@@ -124,7 +124,8 @@
 
 
 - ⚠️ **`Clipboard.getStringAsync()` resolves `''` for a denied paste as well as an empty clipboard,
-  and the two cannot be told apart.** Confirmed from
+  and the two cannot be told apart.** *(History: `expo-clipboard` left with RN Import in the library
+  flip, #245. Kept for the iOS port, which meets the same prompt.)* Confirmed from
   `node_modules/expo-clipboard/build/Clipboard.d.ts`, which says so outright: on iOS 16+ a paste is
   behind a system permission prompt, and a denial returns an empty string, with "no way to
   distinguish between an empty clipboard and denied permission". So the natural reading of that

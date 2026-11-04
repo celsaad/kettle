@@ -124,11 +124,6 @@ wanting states and assignees, it wants GitHub issues instead.
     hasn't been updated. The drift they'd be consolidated to prevent cannot happen silently, and a
     per-type record of lambdas would trade three separately-named, separately-documented functions
     computing three different things for one table with worse narrowing.
-  - **`new-exercise-form.tsx` is no longer a meaningful copy.** It and `exercise-editor.tsx` and
-    `program-override-editor.tsx` all import the same `buildExercise`/`CONFIG_FIELDS`/`TYPE_OPTIONS`/
-    `validateConfig`/`configToStrings`/`fieldUnitLabel` from `domain/exercise-form.ts`. What's left
-    duplicated is JSX layout for a different container with different actions, and no logic has
-    drifted — `validateConfig` is wired in both save paths.
   - **The long files stay until something needs changing in them.** No defect tracks to any of them,
     and the two biggest are the two riskiest to touch (`use-session-runner.ts` is the timer path).
     Two have since been split on their own merits — `state/selectors.ts` into one module per concern,

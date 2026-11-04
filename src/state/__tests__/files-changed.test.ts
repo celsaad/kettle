@@ -1,11 +1,10 @@
 const mockLibraryWrite = jest.fn();
-const mockQuarantineWrite = jest.fn();
 let mockLibraryText = '';
-// The library is read through the real `loadLibrary`, down to the file, because the reseed of a
-// corrupt one is part of what a re-read has to do. The other two files are mocked at their module.
+// The library is read through the real `loadLibrary`, down to the file, because what a re-read does
+// with an unreadable one is part of the contract: native owns it, so RN keeps what it had and writes
+// nothing. The other two files are mocked at their module.
 jest.mock('@/storage/paths', () => ({
   isFileStorageSupported: true,
-  ensureStorageReady: jest.fn(),
   storagePaths: {
     libraryFile: {
       get exists() {
@@ -16,7 +15,6 @@ jest.mock('@/storage/paths', () => ({
       write: (text: string) => mockLibraryWrite(text),
     },
   },
-  quarantineFile: () => ({ exists: false, create: jest.fn(), write: (text: string) => mockQuarantineWrite(text) }),
 }));
 
 const mockListSessions = jest.fn();
@@ -35,7 +33,6 @@ import { onFilesChanged } from '@/state/files-changed';
 import { useLibraryStore } from '@/state/library-store';
 import { usePreferencesStore } from '@/state/preferences-store';
 import { useSessionHistoryStore } from '@/state/session-history-store';
-import { seedLibraryFor } from '@/storage/seed-library';
 
 /**
  * The shell tells RN which file it has just written, and the store that reads that file reads it
@@ -59,7 +56,6 @@ const aSession = (id: string): Session => ({
 beforeEach(() => {
   mockLibraryText = '';
   mockLibraryWrite.mockReset();
-  mockQuarantineWrite.mockReset();
   mockListSessions.mockReset();
   mockLoadPreferences.mockReset();
   // In beforeEach rather than after the assertions, so a failed one can't leave a spy behind.
@@ -94,15 +90,17 @@ programs: []
   expect(useLibraryStore.getState().library?.exercises.map((exercise) => exercise.name)).toEqual(['Bench']);
 });
 
-// The same recovery a cold start takes: the bad file is moved aside, never overwritten, and the app
-// carries on with the seed rather than an error screen.
-it('reseeds from a corrupt library, keeping the bad file aside', async () => {
+// Native seeds and repairs before RN starts, and writes atomically, so an unreadable file here is a
+// stray hand mid-run. Reseeding it, as RN did before the library flip (#245), would make RN a second
+// writer racing native's own; the library already on screen is still the user's.
+it('keeps the library it had, and writes nothing, when the file is unreadable', async () => {
+  jest.spyOn(console, 'warn').mockImplementation(() => {});
   mockLibraryText = 'exercises: [unclosed';
 
   await onFilesChanged('library');
 
-  expect(mockQuarantineWrite).toHaveBeenCalledWith('exercises: [unclosed');
-  expect(useLibraryStore.getState()).toMatchObject({ status: 'ready', library: seedLibraryFor('en') });
+  expect(useLibraryStore.getState()).toMatchObject({ status: 'ready', library: before });
+  expect(mockLibraryWrite).not.toHaveBeenCalled();
 });
 
 it('re-reads the session log', async () => {

@@ -124,10 +124,6 @@ android {
         }
     }
 
-    // initWith copies release's settings but not its sources, and the benchmark is timed as Play's
-    // build, so it compiles release's code (the M5 flips, all off) rather than a copy of it.
-    sourceSets.getByName("benchmark").java.srcDir("src/release/java")
-
     packaging {
         // RN, Hermes and several Expo modules each ship their own copy of libc++_shared. libworklets:
         // expo-modules-core's published AAR carries an unstripped copy of react-native-worklets'

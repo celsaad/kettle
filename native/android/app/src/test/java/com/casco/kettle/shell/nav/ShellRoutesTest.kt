@@ -1,74 +1,43 @@
 package com.casco.kettle.shell.nav
 
 import com.casco.kettle.shell.exerciseeditor.EXERCISE_EDITOR_PATH
+import com.casco.kettle.shell.importer.IMPORT_PATH
 import com.casco.kettle.shell.programeditor.PROGRAM_EDITOR_PATH
 import com.casco.kettle.shell.sessioneditor.SESSION_EDITOR_PATH
 import com.casco.kettle.shell.workouteditor.WORKOUT_EDITOR_PATH
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * The flip gate on M5's writer screens (#231). The flips are passed in rather than read from the
- * build: the unit tests run on debug alone, so release's are only reachable this way.
+ * What the shell draws natively, in every build: since the library flip (#245) there is no gate left,
+ * so a writer screen that fell back to RN on Play would be RN's second writer of its file again.
  */
 class ShellRoutesTest {
-    private val importScreen = Screen.Native {}
-    private val writers = mapOf(Flip.Library to mapOf("/import" to importScreen))
-
     @Test
-    fun `a gated path is native with its flip on, as in debug`() {
-        val routes = routesFor(Flip.entries.toSet(), writers)
-
-        assertSame(importScreen, routes.screenAt("/import"))
+    fun `every writer screen is native`() {
+        val writers =
+            listOf(
+                EXERCISE_EDITOR_PATH,
+                WORKOUT_EDITOR_PATH,
+                PROGRAM_EDITOR_PATH,
+                IMPORT_PATH,
+                SESSION_EDITOR_PATH,
+                "/settings",
+            )
+        for (path in writers) {
+            assertTrue(path, shellRoutes.screenAt(path) is Screen.Native)
+        }
     }
 
     @Test
-    fun `a gated path stays RN with its flip off, as in release`() {
-        val routes = routesFor(emptySet(), writers)
-
-        assertEquals(Screen.Rn, routes.screenAt("/import"))
+    fun `the tabs are native`() {
+        for (tab in Tab.entries) assertTrue(tab.path, shellRoutes.screenAt(tab.path) is Screen.Native)
     }
 
-    /** A library writer (#241): native on `.dev`, RN's on Play until the library flip releases. */
+    /** M5's landmark: the session runner is the one RN screen left, until M6. */
     @Test
-    fun `the exercise editor is native only with the library flip on`() {
-        assertTrue(routesFor(setOf(Flip.Library)).screenAt(EXERCISE_EDITOR_PATH) is Screen.Native)
-        assertEquals(Screen.Rn, routesFor(emptySet()).screenAt(EXERCISE_EDITOR_PATH))
-    }
-
-    /** Another library writer (#242), on the same flip. */
-    @Test
-    fun `the workout editor is native only with the library flip on`() {
-        assertTrue(routesFor(setOf(Flip.Library)).screenAt(WORKOUT_EDITOR_PATH) is Screen.Native)
-        assertEquals(Screen.Rn, routesFor(emptySet()).screenAt(WORKOUT_EDITOR_PATH))
-    }
-
-    /** The third library writer (#243), on the same flip. */
-    @Test
-    fun `the program editor is native only with the library flip on`() {
-        assertTrue(routesFor(setOf(Flip.Library)).screenAt(PROGRAM_EDITOR_PATH) is Screen.Native)
-        assertEquals(Screen.Rn, routesFor(emptySet()).screenAt(PROGRAM_EDITOR_PATH))
-    }
-
-    /** The sessions flip has released (#240), so the session editor is native in release builds too. */
-    @Test
-    fun `the session editor is native whatever the flips`() {
-        assertTrue(routesFor(emptySet()).screenAt(SESSION_EDITOR_PATH) is Screen.Native)
-    }
-
-    /** The preferences flip has released (#238), so Settings is native in release builds too. */
-    @Test
-    fun `Settings is native whatever the flips`() {
-        assertTrue(routesFor(emptySet()).screenAt("/settings") is Screen.Native)
-    }
-
-    @Test
-    fun `the read-only screens are native whatever the flips`() {
-        val on = routesFor(Flip.entries.toSet(), writers).screenAt(Tab.History.path)
-
-        assertTrue(on is Screen.Native)
-        assertSame(on, routesFor(emptySet(), writers).screenAt(Tab.History.path))
+    fun `the runner is RN's`() {
+        assertEquals(Screen.Rn, shellRoutes.screenAt("/session"))
     }
 }

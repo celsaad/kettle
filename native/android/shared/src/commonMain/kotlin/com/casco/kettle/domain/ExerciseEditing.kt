@@ -9,6 +9,21 @@ import kotlinx.datetime.Instant
 /** The library with [exercise] in it: in place of the one with its id, or else at the end. */
 fun Library.withExercise(exercise: Exercise): Library = copy(exercises = exercises.upserting(exercise, Exercise::id))
 
+/**
+ * The library with [weightKg] as `reps` exercise [id]'s target load, or null where there's nothing to
+ * set: no such exercise, or one of another type, which has no target weight. The runner's one-tap
+ * adopt (#220), sent as `setTargetWeight` with kilograms straight off a logged set, so no display
+ * conversion stands between the set and the file.
+ */
+fun Library.withTargetWeight(
+    id: String,
+    weightKg: Double,
+): Library? {
+    val exercise = exercises.firstOrNull { it.id == id && it.config is ExerciseConfig.Reps } ?: return null
+    val config = exercise.config as ExerciseConfig.Reps
+    return withExercise(exercise.copy(config = config.copy(targetWeightKg = weightKg)))
+}
+
 /** The library without exercise [id]. Nothing checks it's unused: that's [workoutsUsing]'s, first. */
 fun Library.withoutExercise(id: String): Library = copy(exercises = exercises.filterNot { it.id == id })
 

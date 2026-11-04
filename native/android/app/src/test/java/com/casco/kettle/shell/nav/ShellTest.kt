@@ -39,6 +39,7 @@ import com.casco.kettle.domain.Session
 import com.casco.kettle.shell.files.FakeStoredFiles
 import com.casco.kettle.shell.files.LatestFiles
 import com.casco.kettle.shell.files.LocalLatestFiles
+import com.casco.kettle.shell.importer.IMPORT_PATH
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.LightColors
 import kotlinx.coroutines.CoroutineScope
@@ -65,11 +66,11 @@ class ShellTest {
     private val sent = mutableListOf<String>()
 
     /**
-     * Release's routes, every unreleased writer still RN's, whatever build runs the tests: Import stands
-     * for an RN sheet below, which it stays on Play until the library flip, where `.dev` draws it
-     * natively. Settings was the example until its flip released (#238).
+     * The app's routes with Import's registration taken out, so it stands for an RN sheet below. None is
+     * RN's on any build since the library flip (#245), but the shell presents RN sheets until routing
+     * moves native (#223), and Import's stub route is still there to present.
      */
-    private val shellRoutes = routesFor(on = emptySet())
+    private val shellRoutes = com.casco.kettle.shell.nav.shellRoutes - IMPORT_PATH
 
     private lateinit var surface: View
     private lateinit var shell: ShellLayout
@@ -307,7 +308,7 @@ class ShellTest {
     fun `the bar leaves while RN shows something above the tabs`() {
         val navigator = show()
 
-        compose.runOnIdle { navigator.onRoute("/import") }
+        compose.runOnIdle { navigator.onRoute(IMPORT_PATH) }
 
         tab("Workouts").assertDoesNotExist()
         assertSurfaceShown(true)
@@ -373,7 +374,7 @@ class ShellTest {
         val navigator = show(shellRoutes + ("/history" to Screen.Native { Text("Native history") }))
         tab("History").performClick()
 
-        compose.runOnIdle { navigator.onRoute("/import") }
+        compose.runOnIdle { navigator.onRoute(IMPORT_PATH) }
 
         assertSurfaceShown(true)
 
@@ -402,7 +403,7 @@ class ShellTest {
     @Test
     fun `a touch on a native sheet never reaches the stub, where one on an RN sheet does`() {
         show(withNativeSupport)
-        report("/import")
+        report(IMPORT_PATH)
 
         tapTheSheet()
 
@@ -418,7 +419,7 @@ class ShellTest {
     @Test
     fun `the sheet hands over from RN to native and back`() {
         show(withNativeSupport)
-        report("/import")
+        report(IMPORT_PATH)
         assertSurfaceShown(true)
 
         report("/support")
@@ -426,7 +427,7 @@ class ShellTest {
         compose.onNodeWithText("Native support").assertIsDisplayed()
         assertSurfaceShown(false)
 
-        report("/import")
+        report(IMPORT_PATH)
 
         compose.onNodeWithText("Native support").assertDoesNotExist()
         assertSurfaceShown(true)

@@ -75,9 +75,9 @@ function resetStore() {
   mockPriorSessions = [];
 }
 
-const mockSetTargetWeightKg = jest.fn(() => Promise.resolve());
-jest.mock('@/state/library-store', () => ({
-  useLibraryStore: { getState: () => ({ setTargetWeightKg: mockSetTargetWeightKg }) },
+const mockReportTargetWeight = jest.fn();
+jest.mock('@/hooks/brownfield-module', () => ({
+  reportTargetWeight: (...args: unknown[]) => mockReportTargetWeight(...args),
 }));
 
 jest.mock('@/state/session-history-store', () => ({
@@ -1233,8 +1233,8 @@ describe(`adopting last time's load`, () => {
     await press(result.current.adoptPreviousLoad);
 
     expect(result.current.weightKg).toBe(32.5);
-    // Kilograms straight through, with no display round trip — see setTargetWeightKg.
-    expect(mockSetTargetWeightKg).toHaveBeenCalledWith('pullups', 32.5);
+    // Kilograms straight through, with no display round trip — see reportTargetWeight.
+    expect(mockReportTargetWeight).toHaveBeenCalledWith('pullups', 32.5);
   });
 
   it('does nothing when last time was bodyweight', async () => {
@@ -1255,7 +1255,7 @@ describe(`adopting last time's load`, () => {
     const { result } = await mount(workoutOf(single('dips')));
     await press(result.current.adoptPreviousLoad);
 
-    expect(mockSetTargetWeightKg).not.toHaveBeenCalled();
+    expect(mockReportTargetWeight).not.toHaveBeenCalled();
   });
 });
 

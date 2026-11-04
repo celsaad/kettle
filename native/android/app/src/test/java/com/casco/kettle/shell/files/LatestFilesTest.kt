@@ -7,6 +7,7 @@ import com.casco.kettle.domain.SessionLog
 import com.casco.kettle.domain.ThemePreference
 import com.casco.kettle.domain.UnitSystem
 import com.casco.kettle.shell.nav.TabNavigator
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asCoroutineDispatcher
@@ -134,6 +135,31 @@ class LatestFilesTest {
         assertEquals(listOf("Push"), names())
     }
 
+    /**
+     * A first launch: the shell's read is asked for before the seed is written, as it will be once RN
+     * starts lazily (#223) and nothing in `onCreate` waits any more. It waits for the seed instead of
+     * landing with no library and leaving Home empty until the next read.
+     */
+    @Test
+    fun `a read waits for the launch's seed, and then finds it`() {
+        val seeded = CompletableDeferred<Unit>()
+        val files =
+            LatestFiles(
+                DiskFiles(StoragePaths(folder.root)),
+                CoroutineScope(Dispatchers.Unconfined),
+                io = Dispatchers.Unconfined,
+                prepared = { seeded.await() },
+            )
+
+        files.reread()
+        assertNull(files.sessionLog)
+
+        writeWorkout("Seeded")
+        seeded.complete(Unit)
+
+        assertEquals(listOf("Seeded"), files.library?.workouts?.map { it.name })
+    }
+
     /** History must not show "no sessions yet" for the moment before it has looked. */
     @Test
     fun `there is no log until the first read lands, and then an empty folder is an empty one`() {
@@ -235,7 +261,8 @@ class LatestFilesTest {
                 DiskFiles(StoragePaths(folder.root)),
                 CoroutineScope(Dispatchers.Unconfined),
                 io = Dispatchers.Unconfined,
-            ) { _, preferences -> heard += preferences }
+                onRead = { _, preferences -> heard += preferences },
+            )
         files.reread()
         val chosen = Preferences(UnitSystem.IMPERIAL, ThemePreference.DARK, true, false, null)
 

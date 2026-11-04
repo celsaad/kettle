@@ -16,9 +16,14 @@ import androidx.compose.ui.unit.dp
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.Spacing
 
-// `src/components/list-row.tsx`, which holds the reasoning: a list of peers is rows, with no fill, no
-// border and no horizontal padding, and a hairline between neighbours. The metrics are shared rather
-// than retyped per screen, since sibling lists that look subtly unlike each other read as a bug.
+// A list of peers is rows, not cards. These used to be cards: a filled surface with a border and a
+// radius, one per item. A card is for one privileged object, and twenty-six bordered boxes down a
+// screen is twenty-six frames competing with the names inside them, while the fill bought nothing,
+// since nothing sits behind a row that it needs lifting off. So: no fill, no border, a hairline between
+// neighbours, and no horizontal padding: the card's padding sat on top of the screen's, insetting
+// every name past the title and search above it. The metrics are shared rather than retyped per screen,
+// since sibling lists that look subtly unlike each other read as a bug, not a distinction. RN's
+// `list-row.tsx` held this until its last list went native (#245).
 
 /** For a row that can't be a [ListRow]: share these rather than retyping them. */
 val ListRowMinHeight = 56.dp

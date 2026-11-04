@@ -80,7 +80,7 @@ import kotlinx.coroutines.withContext
 /** Where the program editor is registered, as Program detail and Programs push it: `id` to edit, none to create. */
 const val PROGRAM_EDITOR_PATH = "/program-editor"
 
-/** What `shellRoutes` registers at [PROGRAM_EDITOR_PATH], behind the library flip. */
+/** What `shellRoutes` registers at [PROGRAM_EDITOR_PATH]. */
 @Composable
 fun ProgramEditorRoute(params: Map<String, String>) =
     ProgramEditorScreen(

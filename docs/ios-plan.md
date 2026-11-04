@@ -20,6 +20,11 @@
 >
 > **The sessions flip (#240) did the same to the session editor**: `session-editor.tsx` is a stub too,
 > so an RN-only build can still log sessions but can no longer correct one.
+>
+> **The library flip (#245) leaves an RN-only build with no library at all.** The editors and Import
+> are stubs, and RN's library load only parses: native seeds a first launch's library and repairs a
+> corrupt one, so an iOS build with no native shell opens on an error. Restoring the seed in RN would
+> make it a second writer again; the port is what fixes this (#220).
 
 The app is closer to iOS than the docs suggest. There is no `ios/` tree to write, no architecture to
 port, and no storage layer to rethink: `expo prebuild --platform ios` generates the native project the

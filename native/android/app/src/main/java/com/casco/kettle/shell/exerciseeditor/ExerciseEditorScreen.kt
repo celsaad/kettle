@@ -66,7 +66,7 @@ import kotlinx.datetime.TimeZone
 /** Where the exercise editor is registered, as Library pushes it: with an `id` to edit, none to create. */
 const val EXERCISE_EDITOR_PATH = "/exercise-editor"
 
-/** What `shellRoutes` registers at [EXERCISE_EDITOR_PATH], behind the library flip. */
+/** What `shellRoutes` registers at [EXERCISE_EDITOR_PATH]. */
 @Composable
 fun ExerciseEditorRoute(params: Map<String, String>) =
     ExerciseEditorScreen(
@@ -86,9 +86,9 @@ class ExerciseEditorActions(
 )
 
 /**
- * An exercise's plan (#241), as RN's `exercise-editor.tsx`: its name, type, config and notes, the
- * bundled drawing of a seeded one, and Recent, what the log holds of it. Native's first writer of the
- * library, and the only one once the library flip (#222) releases.
+ * An exercise's plan (#241), as RN's `exercise-editor.tsx` was, now the empty stub at this path: its
+ * name, type, config and notes, the bundled drawing of a seeded one, and Recent, what the log holds of
+ * it. One of the library's writers, all native from the library flip (#245).
  *
  * Save-at-the-end: the form is this screen's copy, so closing writes nothing, and Save writes the
  * whole library once, with this exercise in it, as it is on disk by then.

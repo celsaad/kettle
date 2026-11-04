@@ -58,9 +58,8 @@ fun ProgramDetailRoute(params: Map<String, String>) =
 
 /**
  * One program's weeks (#233), as RN's `program-detail.tsx`, now the empty stub at this path. A training
- * week names its workout and starts it in RN's runner; a rest week says so and starts nothing. Edit is
- * RN's editor until the library flip. [open] is `JsBridge.open`, a parameter so a test hears each
- * route opened.
+ * week names its workout and starts it in RN's runner; a rest week says so and starts nothing. Edit
+ * opens the program editor. [open] is `JsBridge.open`, a parameter so a test hears each route opened.
  */
 @Composable
 fun ProgramDetailScreen(

@@ -107,12 +107,3 @@ export const contentPacks: ContentPack[] = packList.map(({ id, idPrefix }) => {
 export function contentPackLibrary(pack: ContentPack, language: string | undefined): Library {
   return localizeLibrary(pack.library, translationFor(pack.translations, language));
 }
-
-/** What a pack row reports it is about to add, counted off the structure so it can't drift from it. */
-export function contentPackCounts(pack: ContentPack): { exercises: number; workouts: number; programs: number } {
-  return {
-    exercises: pack.library.exercises.length,
-    workouts: pack.library.workouts.length,
-    programs: pack.library.programs.length,
-  };
-}

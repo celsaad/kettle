@@ -54,8 +54,8 @@ retrofit, so answer them out loud even when the answer is no.
 - [ ] **Does it need error checks, an error boundary, or a graceful degrade?** Ask per layer: does a
       storage call need an `isFileStorageSupported` guard; does an in-app form need `validateConfig`-style
       validation (the zod schema does *not* run on that path); can a render throw here cost a workout in
-      progress? Degrading beats crashing — `safe-notifications.ts`, `library-file.ts`'s reseed of a
-      corrupt library, and native Support's store states (`TipJar.kt`) are the patterns to copy.
+      progress? Degrading beats crashing — `safe-notifications.ts`, `PreparedLibrary.kt`'s reseed of
+      a corrupt library, and native Support's store states (`TipJar.kt`) are the patterns to copy.
 - [ ] **Add tests if it makes sense.** Pure logic, error and empty branches, validation wiring: yes.
       Layout, animation, real audio and file writes: drive the running app instead. See "Writing tests".
 - [ ] `pnpm test`
@@ -86,20 +86,20 @@ mistake here that cannot be fixed for anyone who has already installed it.
 
 - `src/domain/` — pure logic, no I/O. `types.ts` (domain model), `schema.ts` (zod validation of raw
   YAML), `yaml-mapping.ts`, `merge.ts` (import merges by `id`, whole-object replace), `program.ts`
-  (week resolution + override application). The exercise form keeps its data model here too
-  (`exercise-form.ts`, editing an exercise's *plan*), so the screen stays thin and the parts worth
-  testing need no React tree. Editing what was *logged* is native's since the sessions flip (#240).
+  (week resolution + override application). Every editor is native's since the library flip (#245),
+  so the form logic lives in `:shared` (`ExerciseForm.kt`, `SessionEntryForm.kt`) rather than here.
 - `src/storage/` — all file I/O, via `expo-file-system`'s **class-based `File`/`Directory` API**.
   One file per session (`session-files.ts`), so a mid-workout flush never rewrites history. It also
-  holds the readers for the content the app *ships*: `seed-library.ts` (written on a first launch
-  with no library) and `content-packs.ts` (bundled libraries the import screen offers, merged in on a
-  tap). The content itself is data in `src/content/`, which native reads too: an English
-  `library.yaml` plus a `<lang>.json` string table per language (`library-translation.ts`), and
-  `packs.json` for the pack order. **New shipped content goes in a pack, not in the seed** — the seed
-  can only ever reach a fresh install. A new pack is a directory, a `packs.json` entry, a line in
-  `content-packs.ts`'s import map, and its import-screen row (`import.packs.<id>.name`/`.detail` in
-  all three bundles); `content-packs.test.ts` fails when any of them is missing. See the
-  decision log for the four rules a pack has to respect; the prefixed-id one is the load-bearing one.
+  holds the readers for the content the app *ships*: `seed-library.ts` (the web build's in-memory
+  library; native writes the real seed on a first launch, `PreparedLibrary.kt`) and
+  `content-packs.ts` (bundled libraries native Import offers, merged in on a tap, read here for the
+  tests that hold them). The content itself is data in `src/content/`, which native reads too: an
+  English `library.yaml` plus a `<lang>.json` string table per language (`library-translation.ts`),
+  and `packs.json` for the pack order. **New shipped content goes in a pack, not in the seed** — the
+  seed can only ever reach a fresh install. A new pack is a directory, a `packs.json` entry, a line
+  in `content-packs.ts`'s import map, and its import-screen row (`import.packs.<id>.name`/`.detail`
+  in all three bundles); `content-packs.test.ts` fails when any of them is missing. See the decision
+  log for the four rules a pack has to respect; the prefixed-id one is the load-bearing one.
 - `src/state/` — zustand stores (`library-store`, `session-history-store`, and a read-only
   `preferences-store`, since native Settings writes that file) and `selectors/`, derived/display logic
   split per view (`records`, `logged-sessions`, `session-summary`, …).
@@ -170,9 +170,9 @@ are house rules here rather than a backlog — cheap as you go, tedious to retro
 ### Code
 
 - **A card is for one privileged object; a list of peers is rows.** Lists use `ListRow` +
-  `ListRowSeparator` + `ListHeaderRule` from `components/list-row.tsx` — no fill, no border, no
-  radius, a hairline between neighbours, and no horizontal padding, since the screen's own inset is
-  the column everything else lines up on. A row that can't use the component (History's expands;
+  `ListRowSeparator` + `ListHeaderRule` from native's `shell/list/ListRow.kt` — no fill, no border,
+  no radius, a hairline between neighbours, and no horizontal padding, since the screen's own inset
+  is the column everything else lines up on. A row that can't use the component (History's expands;
   Settings' are section siblings rather than list children) shares its exported metrics rather than
   retyping them. Sibling lists that look subtly unlike each other read as a bug, not a distinction.
 - Modal screens: register by adding the name to `SHEET_ROUTES` (`src/constants/sheet-routes.ts`), which gives
@@ -183,8 +183,8 @@ are house rules here rather than a backlog — cheap as you go, tedious to retro
   session runner is always dark (`RunnerColors`) regardless of scheme. Colors, spacing and the type
   scale (`ThemedText`'s sizes) are edited in `constants/theme.json`, which both UIs read; `theme.ts`
   re-exports them and holds their notes.
-- In-app forms write straight to the store and never pass through the zod schema, so they need their
-  own validation (see `validateConfig` in `domain/exercise-form.ts`).
+- In-app forms write straight to the file and never pass through the schema, so they need their own
+  validation (see `validateConfig` in `:shared`'s `ExerciseForm.kt`).
 - **Weights are stored in kilograms, always.** The library is a file users export and share, so it
   can't change meaning with the reader's settings. `domain/units.ts` is the only converter and
   `useUnitSystem()` the only reader of the preference — never store a pound value, and never format a

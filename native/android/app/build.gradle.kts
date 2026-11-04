@@ -334,6 +334,8 @@ dependencies {
     implementation(libs.navigation.compose)
     // Support's tip jar (#198). expo-iap went with RN's Support, so this is the APK's only Play Billing.
     implementation(libs.billing)
+    // The workout editor's block drag (#242). Nothing it adds touches the network (#226).
+    implementation(libs.reorderable)
     debugImplementation(libs.compose.ui.tooling)
 
     testImplementation(project(":strings"))

@@ -17,6 +17,7 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import com.casco.kettle.domain.Library
 import com.casco.kettle.shell.R
+import com.casco.kettle.shell.files.LatestFiles
 import com.casco.kettle.shell.files.ShippedContent
 import com.casco.kettle.shell.i18n.pluralText
 import com.casco.kettle.shell.list.ListHeaderRule
@@ -69,6 +70,19 @@ internal fun StarterPacks(
             }
         }
     }
+}
+
+/**
+ * Whether the packs lead: nothing logged is what "new here" means everywhere else in the app, and it
+ * costs no stored flag. Settled by the first read of the log and kept for the visit, so neither a log
+ * that lands late nor a session that lands while the sheet is up reorders it under the reader. Before
+ * that read it's the first-run order, as RN's empty store gave.
+ */
+@Composable
+internal fun packsFirst(files: LatestFiles): Boolean {
+    val log = files.sessionLog
+    // Keyed on whether the log is read, not on the log: worked out again once, when it lands.
+    return remember(log != null) { log?.logged.isNullOrEmpty() }
 }
 
 /**

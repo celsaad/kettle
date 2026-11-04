@@ -1,5 +1,10 @@
 package com.casco.kettle.shell.importer
 
+import android.content.res.Configuration
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsActions
@@ -51,6 +56,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 import java.io.IOException
+import java.util.Locale
 import java.util.concurrent.Executor
 
 /**
@@ -74,27 +80,40 @@ class ImportScreenTest {
     /** What the next tap on the file row gets back from the picker. */
     private var picked: suspend () -> FilePick = { FilePick.Cancelled }
 
+    private lateinit var latest: LatestFiles
+
+    /**
+     * [io] holds the file work until it's run; [readFirst] false leaves the first read held in it too.
+     * [locale] stands in for the reader's language where a test changes it under the sheet.
+     */
     private fun show(
         files: Files = Files(),
         io: Steps? = null,
+        readFirst: Boolean = true,
+        locale: State<Locale>? = null,
     ): Files {
         val dispatcher = io?.asCoroutineDispatcher() ?: Dispatchers.Unconfined
-        val latest = LatestFiles(files, CoroutineScope(Dispatchers.Unconfined), io = dispatcher).apply { reread() }
-        io?.run()
+        latest = LatestFiles(files, CoroutineScope(Dispatchers.Unconfined), io = dispatcher).apply { reread() }
+        if (readFirst) io?.run()
         compose.setContent {
-            KettleTheme(darkTheme = false) {
-                ImportScreen(
-                    latest,
-                    ShippedContent(RuntimeEnvironment.getApplication().assets),
-                    ImportActions(
-                        pickFile = {
-                            picks += 1
-                            picked()
-                        },
-                        close = { closed += 1 },
-                        libraryChanged = { libraryChanged += 1 },
-                    ),
-                )
+            val configuration =
+                locale?.let { Configuration(LocalConfiguration.current).apply { setLocale(it.value) } }
+                    ?: LocalConfiguration.current
+            CompositionLocalProvider(LocalConfiguration provides configuration) {
+                KettleTheme(darkTheme = false) {
+                    ImportScreen(
+                        latest,
+                        ShippedContent(RuntimeEnvironment.getApplication().assets),
+                        ImportActions(
+                            pickFile = {
+                                picks += 1
+                                picked()
+                            },
+                            close = { closed += 1 },
+                            libraryChanged = { libraryChanged += 1 },
+                        ),
+                    )
+                }
             }
         }
         return files
@@ -396,6 +415,17 @@ class ImportScreenTest {
         compose.onAllNodesWithText(SAME_VALUES).assertCountEquals(2)
     }
 
+    // The noun at the end of the row says new or updated; read aloud, the glyph is noise.
+    @Test
+    fun `keeps the row's glyph from TalkBack`() {
+        picks(Library(1, listOf(pullUps, dips), emptyList(), emptyList()))
+        chooseFile()
+
+        compose.onAllNodesWithText("↻").assertCountEquals(0)
+        compose.onAllNodesWithText("+").assertCountEquals(0)
+        shown("exercício atualizado")
+    }
+
     // a long preview
 
     @Test
@@ -590,6 +620,27 @@ class ImportScreenTest {
         )
     }
 
+    // What it writes is the reader's data from the tap on, so a language change after it renames nothing.
+    @Test
+    fun `freezes the pack in the language it was picked in`() {
+        val locale = mutableStateOf(Locale.forLanguageTag("pt"))
+        val files = show(locale = locale)
+        press("Firme e Forte", substring = true)
+
+        locale.value = Locale.ENGLISH
+        compose.waitForIdle()
+        press("Mesclar e importar")
+
+        assertEquals(
+            "Levantar da Cadeira",
+            files.written
+                .single()
+                .exercises
+                .first { it.id == "ss-sit-to-stand" }
+                .name,
+        )
+    }
+
     @Test
     fun `refuses a pack the same way it refuses a file when the library has not loaded`() {
         val files = show(Files(library = null))
@@ -615,6 +666,29 @@ class ImportScreenTest {
         show(Files(log = SessionLog(listOf(unfinished), emptyList())))
 
         assertTrue(top("Escolher exercises.yaml") < top(PACKS_TITLE))
+    }
+
+    // RN reads the order once so it can't move under the reader; a log that lands late settles it.
+    @Test
+    fun `settles the order on the first read of the log`() {
+        val io = Steps()
+        show(Files(log = SessionLog(listOf(unfinished), emptyList())), io, readFirst = false)
+
+        io.run()
+        compose.waitForIdle()
+
+        assertTrue(top("Escolher exercises.yaml") < top(PACKS_TITLE))
+    }
+
+    @Test
+    fun `keeps the order when a session lands while the sheet is up`() {
+        val files = show()
+
+        files.log = SessionLog(listOf(unfinished), emptyList())
+        latest.reread()
+        compose.waitForIdle()
+
+        assertTrue(top(PACKS_TITLE) < top("Escolher exercises.yaml"))
     }
 
     @Test
@@ -669,7 +743,7 @@ class ImportScreenTest {
     private class Files(
         private val library: Library? = current,
         private val preferences: Preferences? = null,
-        private val log: SessionLog = SessionLog.Empty,
+        var log: SessionLog = SessionLog.Empty,
     ) : FakeStoredFiles() {
         val written = mutableListOf<Library>()
 

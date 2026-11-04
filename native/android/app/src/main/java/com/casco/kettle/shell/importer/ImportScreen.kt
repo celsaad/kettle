@@ -63,8 +63,7 @@ fun ImportScreen(
 ) {
     val scope = rememberCoroutineScope()
     val importer = remember { Importer(files, scope, actions) }
-    // Nothing logged is what "new here" means everywhere else in the app, and it costs no stored flag.
-    val packsFirst = files.sessionLog?.logged.isNullOrEmpty()
+    val packsFirst = packsFirst(files)
     Column(
         Modifier
             .fillMaxSize()

@@ -22,6 +22,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.collapse
 import androidx.compose.ui.semantics.expand
 import androidx.compose.ui.semantics.liveRegion
@@ -177,7 +178,8 @@ private fun ChangedRow(item: ChangedItem) {
     ) {
         Text(
             if (item.isNew) "+" else "↻",
-            Modifier.width(GLYPH_WIDTH),
+            // Decoration: the noun at the end of the row says new or updated, and TalkBack would read "↻".
+            Modifier.width(GLYPH_WIDTH).clearAndSetSemantics {},
             style = KettleType.default.copy(fontWeight = FontWeight.Bold, textAlign = TextAlign.Center),
             color = if (item.isNew) colors.accentText else colors.accentCalmText,
         )

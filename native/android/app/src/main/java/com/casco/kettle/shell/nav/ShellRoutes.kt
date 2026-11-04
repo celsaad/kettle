@@ -20,6 +20,8 @@ import com.casco.kettle.shell.sessioneditor.SessionEditorRoute
 import com.casco.kettle.shell.settings.SettingsRoute
 import com.casco.kettle.shell.stats.StatsRoute
 import com.casco.kettle.shell.support.SupportRoute
+import com.casco.kettle.shell.workouteditor.WORKOUT_EDITOR_PATH
+import com.casco.kettle.shell.workouteditor.WorkoutEditorRoute
 
 /**
  * The tab bar's destinations, in bar order. [path] is the route RN knows the tab by, kept even once a
@@ -93,6 +95,7 @@ private val writerRoutes: Map<Flip, Map<String, Screen>> =
         Flip.Library to
             mapOf(
                 EXERCISE_EDITOR_PATH to Screen.Native { params -> ExerciseEditorRoute(params) },
+                WORKOUT_EDITOR_PATH to Screen.Native { params -> WorkoutEditorRoute(params) },
             ),
     )
 

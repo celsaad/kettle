@@ -19,18 +19,25 @@ import com.casco.kettle.shell.theme.KettleType
  * two timed types stand out from the counted ones.
  */
 @Composable
-fun ExerciseBadge(config: ExerciseConfig) =
-    Badge(
-        when (config) {
-            is ExerciseConfig.Hiit -> BadgeKind.Hiit
-            is ExerciseConfig.TimedHold -> BadgeKind.Hold
-            is ExerciseConfig.Reps -> BadgeKind.Reps
-            is ExerciseConfig.Cardio -> BadgeKind.Cardio
-            is ExerciseConfig.Emom -> BadgeKind.Emom
-            is ExerciseConfig.Amrap -> BadgeKind.Amrap
-            is ExerciseConfig.Rest -> BadgeKind.Rest
-        },
-    )
+fun ExerciseBadge(
+    config: ExerciseConfig,
+    /**
+     * Shown in place of the type, in the accent, as RN's `overrideLabel`: the workout editor's mark on
+     * a rest block whose duration the workout sets for itself.
+     */
+    overrideLabel: String? = null,
+) = Badge(
+    when (config) {
+        is ExerciseConfig.Hiit -> BadgeKind.Hiit
+        is ExerciseConfig.TimedHold -> BadgeKind.Hold
+        is ExerciseConfig.Reps -> BadgeKind.Reps
+        is ExerciseConfig.Cardio -> BadgeKind.Cardio
+        is ExerciseConfig.Emom -> BadgeKind.Emom
+        is ExerciseConfig.Amrap -> BadgeKind.Amrap
+        is ExerciseConfig.Rest -> BadgeKind.Rest
+    },
+    overrideLabel,
+)
 
 /** The same tag for a logged entry, which is of the type its exercise was when it ran. */
 @Composable
@@ -60,16 +67,20 @@ private enum class BadgeKind(
 }
 
 @Composable
-private fun Badge(kind: BadgeKind) {
+private fun Badge(
+    kind: BadgeKind,
+    overrideLabel: String? = null,
+) {
     val colors = KettleTheme.colors
     val (background, text) =
-        when (kind) {
-            BadgeKind.Hiit -> colors.accentSoft to colors.accentText
-            BadgeKind.Hold -> colors.accentCalmSoft to colors.accentCalmText
+        when {
+            overrideLabel != null -> colors.accentSoft to colors.accentText
+            kind == BadgeKind.Hiit -> colors.accentSoft to colors.accentText
+            kind == BadgeKind.Hold -> colors.accentCalmSoft to colors.accentCalmText
             else -> colors.backgroundSelected to colors.textSecondary
         }
     Text(
-        kind.label,
+        overrideLabel ?: kind.label,
         Modifier
             .clip(BadgeShape)
             .background(background)

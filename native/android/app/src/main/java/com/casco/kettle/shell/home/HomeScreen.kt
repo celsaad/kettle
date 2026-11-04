@@ -71,6 +71,7 @@ import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.MaxContentWidth
 import com.casco.kettle.shell.theme.Spacing
+import com.casco.kettle.shell.workouteditor.WORKOUT_EDITOR_PATH
 import kotlinx.coroutines.flow.Flow
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
@@ -282,7 +283,6 @@ private fun SessionParams.routeParams(): Map<String, String> =
 
 private const val SESSION_PATH = "/session"
 private const val IMPORT_PATH = "/import"
-private const val WORKOUT_EDITOR_PATH = "/workout-editor"
 
 /** What `StartupBenchmark` waits for. The two share no code, so change both. */
 private const val HOME_SCREEN_TAG = "home-screen"

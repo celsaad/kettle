@@ -18,6 +18,12 @@ here, next to what it describes.
 
 ## Unreleased
 
+Nothing since 0.14.0.
+
+---
+
+## 0.14.0 — versionCode 20, 4 November 2026
+
 ### What changed
 
 - **Settings is native**, and looks and works as it did: units, appearance, session sounds, the
@@ -34,6 +40,38 @@ here, next to what it describes.
 - **Every tab is labelled**, not only the one you're on, so Library and Programs no longer have to
   be guessed from their icons. At large text sizes a label shrinks just enough to stay on one line
   rather than breaking mid-word (#265).
+
+### Play release notes
+
+Counted at 279 (en-US) and 285 (pt-BR), against a limit of 500. Re-count programmatically
+if you edit them rather than trusting these numbers — over-limit copy is a rejected upload, not a
+truncated one.
+
+Names the one change a user can see, the tab labels, and folds the native rebuild into "behind the
+scenes": everything rebuilt looks and works as it did, and the promise that matters is that the
+library and history carry over. Two blocks, as in 0.8.0 onwards: the Play listing does not carry
+ja-JP.
+
+```
+<en-US>
+What's new
+
+Every tab now shows its name, not just the one you're on.
+
+Settings, Import and the library and session editors were rebuilt behind the scenes. They look and work as before, and your library and history carry over untouched.
+
+Report anything that hangs or loses data.
+</en-US>
+<pt-BR>
+Novidades
+
+Todas as abas agora mostram o nome, não só a que está aberta.
+
+Configurações, Importar e os editores da biblioteca e das sessões foram refeitos por dentro. Eles funcionam como antes, e sua biblioteca e seu histórico continuam intactos.
+
+Relate travamentos ou perda de dados.
+</pt-BR>
+```
 
 ---
 

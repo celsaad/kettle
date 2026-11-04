@@ -10,8 +10,11 @@
 > sheets (#155) and the `filesChanged` re-read (#154). **M4 has shipped**: 0.13.0 carries Support,
 > the program guide, exercise progress, Stats and History as Compose screens, which meets its
 > landmark. M1–M4 are tracked as GitHub issues #141–#156, #194 and
-> #196–#202, whose open/closed state is the live record. **M5 is ticketed** (#230–#245, map
-> #219); M6 onward is ticketed next. Written against the tree at `54eb9f8`, SDK 57.
+> #196–#202, whose open/closed state is the live record. **M5 is done**: every ticket (#230–#245,
+> map #219) is closed and 0.14.0 carries it. Programs, Program detail, Library, Home, Settings, Import
+> and the four editors are Compose screens, and native owns the preferences, edited-session and
+> library files, which meets its landmark: the only RN left is the session runner. M6 onward is
+> ticketed next. Written against the tree at `54eb9f8`, SDK 57.
 > **Everything after M0 was conditional on a "go"**: had the spike failed, this file would carry a
 > banner saying so and the decision log the reason, so the idea isn't re-proposed from scratch.
 
@@ -359,10 +362,10 @@ Every screen is ported to the same definition of done:
 
 **Landmark: History and Stats are native in production.**
 
-### M5 — Library ownership flips · ~5–7 weeks
+### M5 — Library ownership flips · ~5–7 weeks · done, in 0.14.0
 
-> **Ticketed** (#230–#245, with #228), charted on the wayfinder map #219, whose closed tickets hold
-> the reasoning. The issues' open/closed state is the live record.
+> **Done** (#230–#245 and #228, all closed), charted on the wayfinder map #219, whose closed tickets
+> hold the reasoning. 0.14.0 carries all three flips; the CHANGELOG has the release.
 
 The largest milestone, because it moves ownership of the library file, of edited session files and
 of the preferences file. **Routing does not move in M5** (#223): RN stays the router behind M4's stub

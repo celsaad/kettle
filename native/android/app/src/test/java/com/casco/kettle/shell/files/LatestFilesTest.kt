@@ -277,6 +277,26 @@ class LatestFilesTest {
         assertEquals(log("written behind the sheet"), files.sessionLog)
     }
 
+    /**
+     * The read after a write is launched, not awaited: until it lands, the library shown must already
+     * be the one written, or a second write built on it drops the first (#242's quick-add, then Save).
+     */
+    @Test
+    fun `a library write shows at once, before the read after it lands`() {
+        val main = Tasks()
+        val io = Tasks()
+        val scope = CoroutineScope(main.asCoroutineDispatcher())
+        val files = LatestFiles(FakeFiles(), scope, io.asCoroutineDispatcher())
+        val written = Library(1, emptyList(), emptyList(), emptyList())
+
+        scope.launch { files.writeLibrary(written) }
+        main.run()
+        io.run()
+        main.run()
+
+        assertEquals(written, files.library)
+    }
+
     @Test
     fun `a read that finishes after a newer one is dropped`() {
         val main = Tasks()

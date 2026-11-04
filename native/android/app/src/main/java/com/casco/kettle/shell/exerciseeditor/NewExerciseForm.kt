@@ -33,18 +33,22 @@ import com.casco.kettle.shell.theme.Spacing
  * would lose it. Built on the editor's own [ExerciseFormFields] and `submitExercise`, so the checks
  * the editor runs are the checks this runs; RN's copy had fallen behind on both.
  *
- * Only ever creates, so the type stays open and there is no stored weight to guard. Writes nothing:
- * [onCreate] gets the built exercise, and the caller saves it with the workout.
+ * Only ever creates, so the type stays open and there is no stored weight to guard. Writes nothing
+ * itself: [onCreate] gets the built exercise, and the caller writes it.
+ *
+ * [state] is what's typed. A caller that can dispose the form while it is still open, as the workout
+ * editor's list does to whatever is scrolled out of view, holds it, so the values come back with it.
  */
 @Composable
 fun NewExerciseForm(
     units: UnitSystem,
     onCreate: (Exercise) -> Unit,
     onCancel: () -> Unit,
+    state: NewExerciseFormState = remember { NewExerciseFormState() },
 ) {
     val colors = KettleTheme.colors
-    var draft by remember { mutableStateOf(ExerciseDraft.New) }
-    var problem by remember { mutableStateOf<ExerciseProblem?>(null) }
+    var draft by state::draft
+    var problem by state::problem
 
     Column(
         Modifier
@@ -75,6 +79,12 @@ fun NewExerciseForm(
             compact = true,
         )
     }
+}
+
+/** What the quick-add form holds: the draft, and why its Create refused. */
+class NewExerciseFormState {
+    var draft by mutableStateOf(ExerciseDraft.New)
+    var problem by mutableStateOf<ExerciseProblem?>(null)
 }
 
 private val CardShape = RoundedCornerShape(14.dp)

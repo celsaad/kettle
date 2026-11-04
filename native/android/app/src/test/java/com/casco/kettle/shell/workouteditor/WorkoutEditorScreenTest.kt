@@ -1,5 +1,7 @@
 package com.casco.kettle.shell.workouteditor
 
+import androidx.compose.ui.focus.FocusManager
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -23,6 +25,7 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.unit.dp
@@ -37,8 +40,10 @@ import com.casco.kettle.domain.WorkoutBlock
 import com.casco.kettle.shell.files.FakeStoredFiles
 import com.casco.kettle.shell.files.LatestFiles
 import com.casco.kettle.shell.theme.KettleTheme
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.asCoroutineDispatcher
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -46,6 +51,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import java.io.IOException
+import java.util.concurrent.Executor
 
 /**
  * The workout editor (#242), case for case from RN's `workout-editor.test.tsx`, plus the move half of
@@ -66,13 +72,16 @@ class WorkoutEditorScreenTest {
 
     private lateinit var latest: LatestFiles
 
+    private lateinit var focus: FocusManager
+
     private fun show(
         id: String? = null,
         files: Files = Files(),
+        io: CoroutineDispatcher = Dispatchers.Unconfined,
     ): Files {
-        latest =
-            LatestFiles(files, CoroutineScope(Dispatchers.Unconfined), io = Dispatchers.Unconfined).apply { reread() }
+        latest = LatestFiles(files, CoroutineScope(Dispatchers.Unconfined), io = io).apply { reread() }
         compose.setContent {
+            focus = LocalFocusManager.current
             KettleTheme(darkTheme = false) {
                 WorkoutEditorScreen(
                     id,
@@ -110,6 +119,17 @@ class WorkoutEditorScreenTest {
     private val isControl =
         SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button) or
             SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Checkbox)
+
+    /**
+     * Runs [io]'s queued file work, and the main thread's after it, until neither has any: a write's
+     * continuation resumes on the main thread, and may queue the next write.
+     */
+    private fun settle(io: Steps) {
+        repeat(SETTLE_ROUNDS) {
+            io.run()
+            compose.waitForIdle()
+        }
+    }
 
     private fun grip(name: String) = named("Reordenar $name")
 
@@ -444,6 +464,66 @@ class WorkoutEditorScreenTest {
         named("Adicionar circuito (2)").assertExists()
     }
 
+    /**
+     * The read after the quick-add's write is launched, not awaited. A Save in between built on the
+     * library from before it, and wrote a workout pointing at an exercise the file no longer held.
+     */
+    @Test
+    fun `saves a quick-added exercise with the workout, though the read after its write hasn't landed`() {
+        val io = Steps()
+        val files = Files()
+        show(files = files, io = io.asCoroutineDispatcher())
+        io.run()
+        press("+ Adicionar bloco")
+        createExercise("Ring Row")
+        // The write lands; the read it launches doesn't, yet.
+        io.runFirst()
+
+        type("Nome", "Row day")
+        press("Salvar")
+        settle(io)
+
+        val saved = files.written.last()
+        assertEquals("ring-row", saved.exercises.last().id)
+        assertEquals(listOf("ring-row"), saved.workouts.single().exerciseIds())
+    }
+
+    // A Save while the quick-add was still being written did nothing, and wanted a second tap.
+    @Test
+    fun `saves once the quick-add's write lands, when Save is tapped while it is landing`() {
+        val io = Steps()
+        val files = Files()
+        show(files = files, io = io.asCoroutineDispatcher())
+        io.run()
+        type("Nome", "Row day")
+        press("+ Adicionar bloco")
+        createExercise("Ring Row")
+
+        press("Salvar")
+        settle(io)
+
+        assertEquals(listOf("ring-row"), files.savedWorkout("row-day").exerciseIds())
+        assertEquals(1, closed)
+    }
+
+    // The picker is a lazy list item, disposed once scrolled out of view, and the form with it.
+    @Test
+    fun `keeps what was typed into the quick-add through scrolling it out of view`() {
+        show("push-day", Files(workouts = listOf(pushDay(*Array(40) { WorkoutBlock.ExerciseBlock("pull-ups") }))))
+        press("+ Adicionar bloco")
+        press("+ Novo exercício")
+        quickAddName().performTextReplacement("Ring Row")
+
+        // A lazy list keeps a focused item composed, so the loss needs the focus gone, as dismissing
+        // the keyboard leaves it.
+        compose.runOnIdle { focus.clearFocus() }
+        compose.onNode(hasScrollToNodeAction()).performScrollToIndex(0)
+        compose.onNodeWithText("Criar e adicionar").assertDoesNotExist()
+        named("Criar e adicionar")
+
+        quickAddName().assert(hasText("Ring Row"))
+    }
+
     @Test
     fun `keeps the form open with its values when the save is refused`() {
         show(files = Files().apply { failure = IOException("disk full") })
@@ -535,6 +615,20 @@ class WorkoutEditorScreenTest {
         named("SUBSTITUÍDO").assertExists()
     }
 
+    // Truncated to pick the plural, 2.5 s read as "2 segundos".
+    @Test
+    fun `shows a fractional override as it is`() {
+        val rest =
+            WorkoutBlock.ExerciseBlock(
+                "rest",
+                com.casco.kettle.domain
+                    .BlockConfigOverride(durationSec = 2.5),
+            )
+        show("push-day", Files(workouts = listOf(pushDay(rest))))
+
+        named("2.5 segundos").assertExists()
+    }
+
     @Test
     fun `every control is a button or checkbox at least 44dp tall`() {
         show("push-day", Files(workouts = listOf(pushDay())))
@@ -599,6 +693,23 @@ private fun pushDay(vararg blocks: WorkoutBlock) =
     Workout("push-day", "Push day", blocks.toList().ifEmpty { listOf(WorkoutBlock.ExerciseBlock("pull-ups")) })
 
 private fun Workout.exerciseIds() = blocks.map { (it as WorkoutBlock.ExerciseBlock).exerciseId }
+
+private const val SETTLE_ROUNDS = 3
+
+/** A dispatcher that runs nothing until told to, so a test holds a write or a read mid-way. */
+private class Steps : Executor {
+    private val queued = ArrayDeque<Runnable>()
+
+    override fun execute(task: Runnable) {
+        queued += task
+    }
+
+    fun run() {
+        while (queued.isNotEmpty()) queued.removeFirst().run()
+    }
+
+    fun runFirst() = queued.removeFirst().run()
+}
 
 private fun hasStateDescription(text: String) = SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, text)
 

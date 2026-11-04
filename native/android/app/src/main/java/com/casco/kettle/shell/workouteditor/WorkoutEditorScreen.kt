@@ -31,7 +31,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.collapse
@@ -154,6 +156,9 @@ private class Editor(
         private set
     private var writing = false
 
+    /** A Save tapped while the quick-add's write was still landing: run once it has, not dropped. */
+    private var saveAfterWrite = false
+
     /** The cancel, and the close that follows a write. */
     val close = actions.close
 
@@ -192,6 +197,10 @@ private class Editor(
     }
 
     fun save() {
+        if (writing) {
+            saveAfterWrite = true
+            return
+        }
         failure = null
         when (val submitted = submitWorkout(draft, existing)) {
             is WorkoutSubmit.Refused -> {
@@ -251,6 +260,11 @@ private class Editor(
                 failure = refused?.let { Failure(kind, it) }
                 writing = false
                 if (refused == null) written()
+                if (saveAfterWrite) {
+                    saveAfterWrite = false
+                    // Not after a refusal: its reason would be replaced before it was read.
+                    if (refused == null) save()
+                }
             }
         }
     }
@@ -294,8 +308,16 @@ private fun Editing(
         items(blocks, key = { it.key }) { draft ->
             ReorderableItem(reorder, key = draft.key, modifier = SheetColumn) { dragging ->
                 val lift by animateDpAsState(if (dragging) 8.dp else 0.dp, label = "lift")
+                // RN's pickup haptic, so a grab that took reads differently from one that missed.
+                val haptic = LocalHapticFeedback.current
+                val handle =
+                    Modifier.draggableHandle(
+                        onDragStarted = { haptic.performHapticFeedback(HapticFeedbackType.LongPress) },
+                    )
+                // A block whose exercise is gone draws nothing, as in RN, but still counts here: it is
+                // still in the workout, and in the file Save writes.
                 val place =
-                    BlockPlace(blocks.indexOf(draft), blocks.size, Modifier.draggableHandle()) {
+                    BlockPlace(blocks.indexOf(draft), blocks.size, handle) {
                         editor.draft = editor.draft.movingBy(draft.key, it)
                     }
                 Box(Modifier.shadow(lift, RoundedCornerShape(16.dp))) {

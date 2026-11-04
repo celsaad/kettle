@@ -19,6 +19,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -38,7 +39,6 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.Exercise
-import com.casco.kettle.domain.ExerciseConfig
 import com.casco.kettle.domain.UnitSystem
 import com.casco.kettle.domain.WorkoutBlock
 import com.casco.kettle.domain.canRemoveMember
@@ -51,7 +51,6 @@ import com.casco.kettle.shell.R
 import com.casco.kettle.shell.form.FieldKind
 import com.casco.kettle.shell.form.FieldOptions
 import com.casco.kettle.shell.form.FormField
-import com.casco.kettle.shell.form.dashedBorder
 import com.casco.kettle.shell.i18n.pluralText
 import com.casco.kettle.shell.library.ExerciseBadge
 import com.casco.kettle.shell.library.exerciseSummary
@@ -91,7 +90,7 @@ internal class BlockPlace(
  * planned, since the grip is the row's one reorder control.
  */
 @Composable
-private fun Grip(
+internal fun Grip(
     name: String,
     place: BlockPlace,
 ) {
@@ -118,7 +117,7 @@ private fun Grip(
 
 /** The ✕ that removes [label]'s thing: icon-only, so named, and a 44dp target round a small glyph. */
 @Composable
-private fun RemoveButton(
+internal fun RemoveButton(
     label: String,
     enabled: Boolean = true,
     onClick: () -> Unit,
@@ -132,61 +131,6 @@ private fun RemoveButton(
         .alpha(if (enabled) 1f else DISABLED_ALPHA),
     contentAlignment = Alignment.Center,
 ) { Text("✕", Modifier.clearAndSetSemantics {}, color = KettleTheme.colors.textSecondary) }
-
-/**
- * One plain block, as RN's `WorkoutBlockRow`. A rest is dashed, a gap in the workout rather than a
- * thing in it, and a rest whose duration this workout overrides says the override's seconds.
- */
-@Composable
-internal fun BlockRow(
-    exercise: Exercise,
-    block: WorkoutBlock.ExerciseBlock,
-    units: UnitSystem,
-    place: BlockPlace,
-    onRemove: () -> Unit,
-) {
-    val colors = KettleTheme.colors
-    val isRest = exercise.config is ExerciseConfig.Rest
-    val overrideSec = block.configOverride?.durationSec?.takeIf { it != 0.0 }
-    val summary =
-        if (isRest && overrideSec != null) {
-            pluralText(
-                R.plurals.workoutEditor_overrideSeconds,
-                R.string.workoutEditor_overrideSeconds_zero,
-                overrideSec.toInt(),
-            )
-        } else {
-            exerciseSummary(exercise.config, units)
-        }
-    val surface =
-        if (isRest) {
-            Modifier.dashedBorder(1.dp, colors.border, BlockRadius)
-        } else {
-            Modifier
-                .clip(BlockShape)
-                .background(colors.backgroundElement)
-                .border(1.dp, colors.border, BlockShape)
-        }
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .then(surface)
-            .padding(start = Spacing.one, end = Spacing.one, top = Spacing.two, bottom = Spacing.two),
-        horizontalArrangement = Arrangement.spacedBy(Spacing.two),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Grip(exercise.name, place)
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(exercise.name, style = if (isRest) KettleType.default else KettleType.heading, color = colors.text)
-            Text(summary, style = KettleType.small, color = colors.textSecondary)
-        }
-        ExerciseBadge(
-            exercise.config,
-            overrideLabel = overrideSec?.let { stringResource(R.string.workoutEditor_overrideBadge) },
-        )
-        RemoveButton(stringResource(R.string.workoutEditor_removeAccessibility, exercise.name), onClick = onRemove)
-    }
-}
 
 /**
  * One circuit, as RN's `WorkoutCircuitBlock`: its members, its optional id, and its rounds and rests.
@@ -287,7 +231,8 @@ private fun BlockIdField(
     onChange: (WorkoutBlock.Circuit) -> Unit,
 ) {
     val colors = KettleTheme.colors
-    var open by remember { mutableStateOf(false) }
+    // Saveable: the circuit is a lazy list item, disposed while scrolled out of view.
+    var open by rememberSaveable { mutableStateOf(false) }
     val id = circuit.id
     Row(
         Modifier
@@ -416,7 +361,7 @@ private fun RowScope.RestField(
     )
 }
 
-private val BlockRadius = 16.dp
-private val BlockShape = RoundedCornerShape(BlockRadius)
+internal val BlockRadius = 16.dp
+internal val BlockShape = RoundedCornerShape(BlockRadius)
 private val GripSize = 48.dp
 private const val DISABLED_ALPHA = 0.4f

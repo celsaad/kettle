@@ -30,6 +30,7 @@ import com.casco.kettle.domain.Exercise
 import com.casco.kettle.domain.toggledMember
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.exerciseeditor.NewExerciseForm
+import com.casco.kettle.shell.exerciseeditor.NewExerciseFormState
 import com.casco.kettle.shell.form.dashedBorder
 import com.casco.kettle.shell.library.ExerciseBadge
 import com.casco.kettle.shell.theme.KettleTheme
@@ -51,11 +52,18 @@ internal class Pickers {
     var quickAdd by mutableStateOf(false)
         private set
 
+    /**
+     * The quick-add's values, held here rather than in the form: the form sits in a lazy list item,
+     * which is disposed once scrolled out of view, and a refused create must keep what was typed.
+     */
+    var form by mutableStateOf(NewExerciseFormState())
+        private set
+
     /** Opens [mode]'s picker, or closes it if it was open, starting it empty either way. */
     fun toggle(mode: PickerMode) {
         open = if (open == mode) null else mode
         selection = emptyList()
-        quickAdd = false
+        showQuickAdd(false)
     }
 
     fun close() {
@@ -66,7 +74,9 @@ internal class Pickers {
         selection = toggledMember(selection, exerciseId)
     }
 
+    /** Shows the quick-add, or hides it; either way the next one starts empty. */
     fun showQuickAdd(shown: Boolean) {
+        if (shown != quickAdd) form = NewExerciseFormState()
         quickAdd = shown
     }
 }
@@ -89,7 +99,12 @@ internal fun ExercisePicker(
     val colors = KettleTheme.colors
     Column(Modifier.padding(top = Spacing.two), verticalArrangement = Arrangement.spacedBy(Spacing.one + 2.dp)) {
         if (pickers.quickAdd) {
-            NewExerciseForm(context.units, onCreate = actions.create, onCancel = { pickers.showQuickAdd(false) })
+            NewExerciseForm(
+                context.units,
+                onCreate = actions.create,
+                onCancel = { pickers.showQuickAdd(false) },
+                state = pickers.form,
+            )
             return@Column
         }
         if (mode == PickerMode.Circuit) {

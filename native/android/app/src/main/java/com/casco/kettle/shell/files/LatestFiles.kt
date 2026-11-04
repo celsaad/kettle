@@ -175,11 +175,15 @@ class LatestFiles(
     }
 
     /**
-     * Writes [library] over the file and reads the files again, so every screen shows the edit as the
-     * file has it. Throws [IOException] when the disk refuses, and the library is left as it was.
+     * Writes [library] over the file, shows it once the write lands, and reads the files again. Shown
+     * before the read, not after it: the read is launched, not awaited, and an editor writing again in
+     * between would otherwise build on the library from before this write and drop it, as the workout
+     * editor's Save did a quick-added exercise (#242). Throws [IOException] when the disk refuses, and
+     * the library is left as it was.
      */
     suspend fun writeLibrary(library: Library) {
         withContext(io) { files.writeLibrary(library) }
+        this.library = library
         reread()
     }
 

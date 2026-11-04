@@ -9,10 +9,14 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.stringResource
+import com.casco.kettle.shell.R
 import com.casco.kettle.shell.files.LocalLatestFiles
 import com.casco.kettle.shell.files.ShippedContent
 import com.casco.kettle.shell.rn.FileKind
 import com.casco.kettle.shell.rn.JsBridge
+import com.casco.kettle.shell.system.confirmCopy
 import com.casco.kettle.shell.system.copyToClipboard
 import com.casco.kettle.shell.system.readClipboard
 import com.casco.kettle.shell.system.shareText
@@ -29,15 +33,17 @@ const val IMPORT_PATH = "/import"
 fun ImportRoute() {
     val activity = LocalActivity.current ?: return
     val pickFile = rememberFilePicker(activity)
+    val view = LocalView.current
+    val copied = stringResource(R.string.import_copied)
     ImportScreen(
         LocalLatestFiles.current,
         remember { ShippedContent(activity.assets) },
-        remember(pickFile) {
+        remember(pickFile, view, copied) {
             ImportActions(
                 pickFile = pickFile,
                 close = JsBridge::back,
                 libraryChanged = { JsBridge.filesChanged(FileKind.LIBRARY) },
-                copy = activity::copyToClipboard,
+                copy = { text -> activity.copyToClipboard(text).also { if (it) view.confirmCopy(copied) } },
                 readClipboard = activity::readClipboard,
                 share = activity::shareText,
             )

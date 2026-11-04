@@ -16,10 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.liveRegion
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.AssistantBrief
 import com.casco.kettle.domain.Library
@@ -92,22 +89,20 @@ internal fun CopyAction(
     SmallButton(
         if (confirmed) stringResource(R.string.import_copied) else idle,
         KettleTheme.colors.textSecondary,
-        announced = confirmed,
     ) { handoff.copy(target, text()) }
     if (handoff.failed(target)) Note(stringResource(R.string.import_copyFailed))
 }
 
 /**
- * The outlined small button the copies and the clipboard paste share, named by its own text.
- * [announced] makes it a polite live region, for "Copied": its words change while focus stays on it,
- * which TalkBack wouldn't otherwise re-read. Only while it holds, so the label going back to idle two
- * seconds later isn't read out too.
+ * The outlined small button the copies and the clipboard paste share, named by its own text. Not a
+ * live region, though "Copied" changes its words under focus: from Android 13 the system announces a
+ * copy itself, and on a device a live region here was read on the way back to idle, not on "Copied"
+ * (Compose fires from the node's previous state). The route confirms a copy below 13 instead.
  */
 @Composable
 internal fun SmallButton(
     text: String,
     color: Color,
-    announced: Boolean = false,
     onClick: () -> Unit,
 ) {
     Box(
@@ -116,7 +111,6 @@ internal fun SmallButton(
             .clip(SmallShape)
             .border(1.dp, KettleTheme.colors.border, SmallShape)
             .clickable(role = Role.Button, onClick = onClick)
-            .semantics { if (announced) liveRegion = LiveRegionMode.Polite }
             .padding(horizontal = Spacing.two + 2.dp),
         contentAlignment = Alignment.CenterStart,
     ) { Text(text, style = KettleType.smallMedium, color = color) }

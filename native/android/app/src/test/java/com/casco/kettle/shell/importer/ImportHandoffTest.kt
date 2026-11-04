@@ -1,6 +1,5 @@
 package com.casco.kettle.shell.importer
 
-import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
@@ -48,15 +47,14 @@ class ImportHandoffTest : ImportHarness() {
         )
     }
 
-    // Focus stays on the button, so its "Copied" is a live region, or TalkBack wouldn't re-read it.
+    // The label is the confirmation on screen. Not a live region: from Android 13 the system announces a
+    // copy itself, and the route announces below 13 (`confirmCopy`), so the button adds nothing to hear.
     @Test
-    fun `confirms the copy on the button and to a screen reader`() {
+    fun `confirms the copy on the button, without announcing it twice`() {
         refusedForUnknownExercise()
-        // Only while it says "Copied", so the label going back two seconds later isn't read out too.
-        button("Copiar erro").assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.LiveRegion))
         press("Copiar erro")
 
-        button(COPIED).assert(SemanticsMatcher.expectValue(SemanticsProperties.LiveRegion, LiveRegionMode.Polite))
+        button(COPIED).assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.LiveRegion))
     }
 
     // A read failure is the platform's, and an assistant can do nothing about a denied file handle.

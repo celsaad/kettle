@@ -4,6 +4,21 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.os.Build
+import android.view.View
+
+/**
+ * Tells a screen reader a copy landed, where the system won't: Android 13 announces every copy itself
+ * (its "Copied" toast), and its guidance is that an app doesn't double it; 12L and lower announce
+ * nothing, so the app does.
+ */
+internal fun View.confirmCopy(confirmation: String) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) return
+    // Deprecated from API 36 for live regions and pane titles; neither reaches a copy that changes no
+    // layout, and this only runs on 32 and lower, where nothing is deprecated.
+    @Suppress("DEPRECATION")
+    announceForAccessibility(confirmation)
+}
 
 /** False where the clipboard refused, so a control never claims a copy that didn't happen. */
 internal fun Context.copyToClipboard(text: String): Boolean =

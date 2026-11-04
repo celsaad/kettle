@@ -35,8 +35,12 @@ import com.casco.kettle.shell.theme.Spacing
 
 // The editors' text fields: the session editor's (#239) and the exercise form's (#241), one look.
 
-/** What a field takes: a number, a line of text, or notes, which wrap and grow. */
-enum class FieldKind { Number, Text, Notes }
+/**
+ * What a field takes: a number, a line of text, notes, which wrap and grow, or code, which wraps and
+ * grows too but is never capitalized or corrected: YAML is whitespace-significant, and a keyboard that
+ * "helpfully" capitalizes an id or swaps in a smart quote breaks it on the way in.
+ */
+enum class FieldKind { Number, Text, Notes, Code }
 
 /**
  * How a field looks and behaves beyond its value and words. [minHeight] is a floor, never a height.
@@ -60,7 +64,7 @@ internal fun FormField(
     options: FieldOptions = FieldOptions(),
 ) {
     val colors = KettleTheme.colors
-    val singleLine = options.kind != FieldKind.Notes
+    val singleLine = options.kind == FieldKind.Number || options.kind == FieldKind.Text
     val fill = options.fill.takeOrElse { colors.background }
     BasicTextField(
         value,
@@ -80,6 +84,7 @@ internal fun FormField(
                     } else {
                         KeyboardType.Text
                     },
+                autoCorrectEnabled = options.kind != FieldKind.Code,
             ),
         singleLine = singleLine,
         cursorBrush = SolidColor(colors.text),

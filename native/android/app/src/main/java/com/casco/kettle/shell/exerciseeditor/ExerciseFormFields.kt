@@ -275,7 +275,7 @@ internal fun configProblemText(problem: ConfigProblem): String =
     }
 
 @get:StringRes
-private val ExerciseType.label: Int
+internal val ExerciseType.label: Int
     get() =
         when (this) {
             ExerciseType.Reps -> R.string.exerciseForm_type_reps
@@ -288,7 +288,7 @@ private val ExerciseType.label: Int
         }
 
 @get:StringRes
-private val FieldName.label: Int
+internal val FieldName.label: Int
     get() =
         when (this) {
             FieldName.Work -> R.string.exerciseForm_field_work

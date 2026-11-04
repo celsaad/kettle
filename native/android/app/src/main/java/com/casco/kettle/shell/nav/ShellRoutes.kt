@@ -8,6 +8,8 @@ import com.casco.kettle.shell.exerciseeditor.EXERCISE_EDITOR_PATH
 import com.casco.kettle.shell.exerciseeditor.ExerciseEditorRoute
 import com.casco.kettle.shell.history.HistoryRoute
 import com.casco.kettle.shell.home.HomeRoute
+import com.casco.kettle.shell.importer.IMPORT_PATH
+import com.casco.kettle.shell.importer.ImportRoute
 import com.casco.kettle.shell.library.LibraryRoute
 import com.casco.kettle.shell.programdetail.PROGRAM_DETAIL_PATH
 import com.casco.kettle.shell.programdetail.ProgramDetailRoute
@@ -99,6 +101,7 @@ private val writerRoutes: Map<Flip, Map<String, Screen>> =
                 EXERCISE_EDITOR_PATH to Screen.Native { params -> ExerciseEditorRoute(params) },
                 WORKOUT_EDITOR_PATH to Screen.Native { params -> WorkoutEditorRoute(params) },
                 PROGRAM_EDITOR_PATH to Screen.Native { params -> ProgramEditorRoute(params) },
+                IMPORT_PATH to Screen.Native { ImportRoute() },
             ),
     )
 

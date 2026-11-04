@@ -156,6 +156,9 @@ private class Editor(
         private set
     private var writing = false
 
+    /** Whether the write in flight closes the sheet once it lands: a Save's or a Delete's. */
+    private var closing = false
+
     /** A Save tapped while the quick-add's write was still landing: run once it has, not dropped. */
     private var saveAfterWrite = false
 
@@ -181,7 +184,7 @@ private class Editor(
      */
     fun create(exercise: Exercise) {
         val mode = pickers.open ?: return
-        write(Failure.Kind.Save, { it.withExercise(exercise) }) {
+        write(Failure.Kind.Save, { it.withExercise(exercise) }, closes = false) {
             pickers.showQuickAdd(false)
             if (mode == PickerMode.Block) pick(exercise.id) else pickers.toggleMember(exercise.id)
         }
@@ -197,8 +200,11 @@ private class Editor(
     }
 
     fun save() {
+        // Queued only behind the quick-add's write. Behind a Save's, it is a double tap, which would
+        // write twice and close twice, the second close popping the screen under the sheet; behind a
+        // Delete's, it would write the deleted workout back.
         if (writing) {
-            saveAfterWrite = true
+            if (!closing) saveAfterWrite = true
             return
         }
         failure = null
@@ -210,7 +216,7 @@ private class Editor(
             // Deleted elsewhere while the sheet was up, it goes back in with the edit, as an exercise does.
             is WorkoutSubmit.Built -> {
                 problem = null
-                write(Failure.Kind.Save, { it.withWorkout(submitted.workout) }, close)
+                write(Failure.Kind.Save, { it.withWorkout(submitted.workout) }, closes = true, close)
             }
         }
     }
@@ -228,7 +234,7 @@ private class Editor(
     fun delete() {
         val workout = existing ?: return
         deleting = inUse()
-        if (deleting == null) write(Failure.Kind.Delete, { it.withoutWorkout(workout.id) }, close)
+        if (deleting == null) write(Failure.Kind.Delete, { it.withoutWorkout(workout.id) }, closes = true, close)
     }
 
     private fun inUse(): Deleting.InUse? {
@@ -239,17 +245,19 @@ private class Editor(
 
     /**
      * [change] applied to the library as it is now, not as it was when the sheet opened, then
-     * [written]. Not cancelled with the screen once it starts, since RN's stores must hear a file that
-     * changed.
+     * [written], which [closes] the sheet or doesn't. Not cancelled with the screen once it starts,
+     * since RN's stores must hear a file that changed.
      */
     private fun write(
         kind: Failure.Kind,
         change: (Library) -> Library,
+        closes: Boolean,
         written: () -> Unit,
     ) {
         val library = files.library ?: return
         if (writing) return
         writing = true
+        closing = closes
         scope.launch {
             withContext(NonCancellable) {
                 val refused =
@@ -259,6 +267,7 @@ private class Editor(
                     }
                 failure = refused?.let { Failure(kind, it) }
                 writing = false
+                closing = false
                 if (refused == null) written()
                 if (saveAfterWrite) {
                     saveAfterWrite = false

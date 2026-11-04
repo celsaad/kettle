@@ -506,6 +506,41 @@ class WorkoutEditorScreenTest {
         assertEquals(1, closed)
     }
 
+    // A double tap: queued behind its own write, the second Save wrote again and closed twice, and
+    // the second close popped the screen under the sheet.
+    @Test
+    fun `writes and closes once for a double-tapped Save`() {
+        val io = Steps()
+        val files = Files()
+        show(files = files, io = io.asCoroutineDispatcher())
+        io.run()
+        type("Nome", "Push day")
+
+        press("Salvar")
+        press("Salvar")
+        settle(io)
+
+        assertEquals(1, files.written.size)
+        assertEquals(1, closed)
+    }
+
+    // Queued behind the delete, a Save wrote the deleted workout back into the library.
+    @Test
+    fun `writes nothing more for a Save tapped while a delete is landing`() {
+        val io = Steps()
+        val files = Files(workouts = listOf(pushDay()))
+        show("push-day", files, io.asCoroutineDispatcher())
+        io.run()
+
+        press("Excluir treino")
+        compose.pressDialogButton("Excluir")
+        press("Salvar")
+        settle(io)
+
+        assertEquals(listOf(emptyList<Workout>()), files.written.map { it.workouts })
+        assertEquals(1, closed)
+    }
+
     // The picker is a lazy list item, disposed once scrolled out of view, and the form with it.
     @Test
     fun `keeps what was typed into the quick-add through scrolling it out of view`() {

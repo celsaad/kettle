@@ -344,6 +344,48 @@ class ExerciseEditorScreenTest {
         compose.onNode(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Image)).assertDoesNotExist()
     }
 
+    // The sheet is still dismissing after its write lands: a second Save wrote again, and its close
+    // popped the screen under the sheet (#277).
+    @Test
+    fun `writes and closes once for a Save tapped after the first has landed`() {
+        val files = Files(exercises = listOf(pullUps))
+        show("pull-ups", files)
+
+        press("Salvar")
+        press("Salvar")
+
+        assertEquals(1, files.written.size)
+        assertEquals(1, closed)
+    }
+
+    // Tapped while the sheet was still dismissing after the delete, Save wrote the exercise back (#277).
+    @Test
+    fun `keeps a deleted exercise deleted through a Save tapped after the delete has landed`() {
+        val files = Files(exercises = listOf(pullUps))
+        show("pull-ups", files)
+
+        press("Excluir exercício")
+        compose.pressDialogButton("Excluir")
+        press("Salvar")
+
+        assertEquals(listOf(emptyList<Exercise>()), files.written.map { it.exercises })
+        assertEquals(1, closed)
+    }
+
+    // A refused write leaves the sheet up, so a retry must still be able to write and close it.
+    @Test
+    fun `writes and closes on a retried Save once the disk takes it`() {
+        val files = Files(exercises = listOf(pullUps)).apply { failure = IOException("disk full") }
+        show("pull-ups", files)
+
+        press("Salvar")
+        files.failure = null
+        press("Salvar")
+
+        assertEquals(1, files.written.size)
+        assertEquals(1, closed)
+    }
+
     // Degrading beats losing the edit: the sheet stays open, with it, and says why.
     @Test
     fun `stays open and says why when the disk refuses the write`() {

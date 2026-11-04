@@ -541,6 +541,67 @@ class WorkoutEditorScreenTest {
         assertEquals(1, closed)
     }
 
+    // The sheet is still dismissing after its write lands: a second Save wrote again, and its close
+    // popped the screen under the sheet (#277).
+    @Test
+    fun `writes and closes once for a Save tapped after the first has landed`() {
+        val files = Files(workouts = listOf(pushDay()))
+        show("push-day", files)
+
+        press("Salvar")
+        press("Salvar")
+
+        assertEquals(1, files.written.size)
+        assertEquals(1, closed)
+    }
+
+    // Tapped while the sheet was still dismissing after the delete, Save wrote the workout back (#277).
+    @Test
+    fun `keeps a deleted workout deleted through a Save tapped after the delete has landed`() {
+        val files = Files(workouts = listOf(pushDay()))
+        show("push-day", files)
+
+        press("Excluir treino")
+        compose.pressDialogButton("Excluir")
+        press("Salvar")
+
+        assertEquals(listOf(emptyList<Workout>()), files.written.map { it.workouts })
+        assertEquals(1, closed)
+    }
+
+    // A refused write leaves the sheet up, so a retry must still be able to write and close it.
+    @Test
+    fun `writes and closes on a retried Save once the disk takes it`() {
+        val files = Files(workouts = listOf(pushDay())).apply { failure = IOException("disk full") }
+        show("push-day", files)
+
+        press("Salvar")
+        files.failure = null
+        press("Salvar")
+
+        assertEquals(1, files.written.size)
+        assertEquals(1, closed)
+    }
+
+    // A closed sheet has nothing further to write, a quick-added exercise included.
+    @Test
+    fun `writes no quick-added exercise once the sheet has closed`() {
+        val files = Files(workouts = listOf(pushDay()))
+        show("push-day", files)
+        press("+ Adicionar bloco")
+        press("+ Novo exercício")
+
+        press("Salvar")
+        quickAddName().performTextReplacement("Ring Row")
+        type("Séries", "3")
+        type("Reps alvo", "8")
+        type("Descanso (sec)", "90")
+        press("Criar e adicionar")
+
+        assertEquals(1, files.written.size)
+        assertEquals(1, closed)
+    }
+
     // The picker is a lazy list item, disposed once scrolled out of view, and the form with it.
     @Test
     fun `keeps what was typed into the quick-add through scrolling it out of view`() {

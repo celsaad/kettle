@@ -184,6 +184,20 @@ class SessionEditorScreenTest {
         assertEquals(1, closed)
     }
 
+    // The sheet is still dismissing after its write lands: a second Save wrote again, and its close
+    // popped the screen under the sheet (#277).
+    @Test
+    fun `writes and closes once for a Save tapped after the first has landed`() {
+        val files = Files(aSession())
+        show(files)
+
+        press("Salvar")
+        press("Salvar")
+
+        assertEquals(1, files.written.size)
+        assertEquals(1, closed)
+    }
+
     // Degrading beats losing the correction: the screen stays open, with the edit, and says why.
     @Test
     fun `stays open and says why when the disk refuses the write`() {

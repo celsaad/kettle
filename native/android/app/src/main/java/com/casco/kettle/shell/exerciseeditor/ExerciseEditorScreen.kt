@@ -152,9 +152,17 @@ private class Editor(
         private set
     private var writing = false
 
+    /**
+     * Set once a write has closed the sheet, and never cleared. RN takes a while to dismiss it, and a
+     * tap in between would write again: a second close pops the screen under the sheet, and a Save
+     * after a Delete writes the deleted exercise back.
+     */
+    private var closed = false
+
     fun cancel() = actions.close()
 
     fun save() {
+        if (closed) return
         failure = null
         when (val submitted = submitExercise(draft, existing, units)) {
             is ExerciseSubmit.Refused -> {
@@ -184,6 +192,7 @@ private class Editor(
      * started using the exercise meanwhile would be left pointing at nothing.
      */
     fun delete() {
+        if (closed) return
         val exercise = existing ?: return
         deleting = inUse()
         if (deleting == null) write(Failure.Kind.Delete) { it.withoutExercise(exercise.id) }
@@ -214,6 +223,7 @@ private class Editor(
                     writeOrRefusal {
                         files.writeLibrary(change(library))
                         actions.libraryChanged()
+                        closed = true
                         actions.close()
                     }
                 failure = refused?.let { Failure(kind, it) }

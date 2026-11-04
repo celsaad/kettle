@@ -198,6 +198,20 @@ class SessionEditorScreenTest {
         assertEquals(1, closed)
     }
 
+    // A refused write leaves the sheet up, so a retry must still be able to write and close it.
+    @Test
+    fun `writes and closes on a retried Save once the disk takes it`() {
+        val files = Files(aSession()).apply { failure = IOException("disk full") }
+        show(files)
+
+        press("Salvar")
+        files.failure = null
+        press("Salvar")
+
+        assertEquals(1, files.written.size)
+        assertEquals(1, closed)
+    }
+
     // Degrading beats losing the correction: the screen stays open, with the edit, and says why.
     @Test
     fun `stays open and says why when the disk refuses the write`() {

@@ -223,11 +223,13 @@ private class Editor(
                     writeOrRefusal {
                         files.writeLibrary(change(library))
                         actions.libraryChanged()
-                        closed = true
-                        actions.close()
                     }
                 failure = refused?.let { Failure(kind, it) }
                 writing = false
+                if (refused == null) {
+                    closed = true
+                    actions.close()
+                }
             }
         }
     }

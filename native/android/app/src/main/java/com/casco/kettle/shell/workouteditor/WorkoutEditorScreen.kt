@@ -208,7 +208,6 @@ private class Editor(
     }
 
     fun save() {
-        // A sheet closed by a landed write: see [closed].
         if (closed) return
         // Queued only behind the quick-add's write. Behind a Save's, it is a double tap, which would
         // write twice and close twice, the second close popping the screen under the sheet; behind a

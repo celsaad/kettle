@@ -265,10 +265,12 @@ private class Editor(
                     writeOrRefusal {
                         files.writeSession(edited)
                         actions.sessionsChanged()
-                        closed = true
-                        actions.close()
                     }
                 saving = false
+                if (failure == null) {
+                    closed = true
+                    actions.close()
+                }
             }
         }
     }

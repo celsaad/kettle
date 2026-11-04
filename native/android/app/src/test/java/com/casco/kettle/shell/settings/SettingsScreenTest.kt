@@ -151,6 +151,19 @@ class SettingsScreenTest {
         assertEquals(0, actions.preferencesChanged)
     }
 
+    // A permission withdrawn is refused like a full disk, not left to escape the write and crash.
+    @Test
+    fun `says so when the folder could not be saved for want of permission`() {
+        files.failing = true
+        files.refusal = SecurityException()
+        show()
+
+        press("Pasta de backup")
+
+        text("não pôde ser salva")
+        assertEquals(0, actions.preferencesChanged)
+    }
+
     // And the grant, natively: a folder whose permission wasn't kept stops working at the restart too.
     @Test
     fun `says so when the folder's grant could not be kept`() {
@@ -564,6 +577,9 @@ class SettingsScreenTest {
         var library: Library? = null
         var log = SessionLog.Empty
         var failing = false
+
+        /** What a failing write throws: a full disk, or a permission withdrawn. */
+        var refusal: Exception = IOException("disk full")
         val written = mutableListOf<Preferences>()
 
         override fun sessionLog() = log
@@ -573,7 +589,7 @@ class SettingsScreenTest {
         override fun preferences() = stored
 
         override fun writePreferences(preferences: Preferences) {
-            if (failing) throw IOException("disk full")
+            if (failing) throw refusal
             written += preferences
             stored = preferences
         }

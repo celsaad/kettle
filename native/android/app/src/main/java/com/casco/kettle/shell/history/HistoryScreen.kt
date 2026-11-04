@@ -41,6 +41,7 @@ import com.casco.kettle.shell.export.logShareRefused
 import com.casco.kettle.shell.export.rememberFileShare
 import com.casco.kettle.shell.files.LatestFiles
 import com.casco.kettle.shell.files.LocalLatestFiles
+import com.casco.kettle.shell.files.writeOrRefusal
 import com.casco.kettle.shell.i18n.pluralText
 import com.casco.kettle.shell.list.ListHeaderRule
 import com.casco.kettle.shell.list.ListRowSeparator
@@ -65,7 +66,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.TimeZone
-import java.io.IOException
 
 /** What `shellRoutes` registers at `/history`, the tab. */
 @Composable
@@ -261,16 +261,11 @@ private class Deleting(
             // keep listing a session that no longer exists.
             withContext(NonCancellable) {
                 val refused =
-                    try {
+                    writeOrRefusal {
                         files.deleteSession(row.id)
                         sessionsChanged()
-                        null
-                    } catch (e: IOException) {
-                        e
-                    } catch (e: SecurityException) {
-                        e
                     }
-                failure = refused?.let { DeleteFailure(row.id, it.message.orEmpty()) }
+                failure = refused?.let { DeleteFailure(row.id, it) }
             }
         }
     }

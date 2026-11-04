@@ -226,6 +226,20 @@ class HistoryScreenTest {
         compose.onNodeWithText("Excluir sessão?").assertDoesNotExist()
     }
 
+    // A SecurityException often has no message; the row must still say why, not end at the colon.
+    @Test
+    fun `says a delete was refused even when the disk gives no reason`() {
+        val files = Files(push, legs).apply { failure = SecurityException() }
+        show(files)
+
+        row("Leg day").performClick()
+        action("Excluir").performClick()
+        compose.pressDialogButton("Excluir")
+
+        compose.onNodeWithText("Não foi possível excluir: SecurityException").assertExists()
+        row("Leg day").assertExists()
+    }
+
     @Test
     fun `narrows both the list and the summary to what matched`() {
         show()
@@ -412,8 +426,8 @@ class HistoryScreenTest {
         private val sessions = sessions.toMutableList()
         val deleted = mutableListOf<String>()
 
-        /** Thrown by the next delete, as a full disk or a locked file would. */
-        var failure: IOException? = null
+        /** Thrown by the next delete, as a full disk, a locked file or a withdrawn permission would. */
+        var failure: Exception? = null
 
         override fun sessionLog() = SessionLog(sessions.toList(), errors)
 

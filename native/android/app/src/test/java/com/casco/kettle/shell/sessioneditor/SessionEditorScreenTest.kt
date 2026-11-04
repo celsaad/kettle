@@ -30,8 +30,8 @@ import com.casco.kettle.domain.ThemePreference
 import com.casco.kettle.domain.TimedHoldSetLog
 import com.casco.kettle.domain.UnitSystem
 import com.casco.kettle.domain.Workout
+import com.casco.kettle.shell.files.FakeStoredFiles
 import com.casco.kettle.shell.files.LatestFiles
-import com.casco.kettle.shell.files.StoredFiles
 import com.casco.kettle.shell.theme.KettleTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -399,7 +399,7 @@ class SessionEditorScreenTest {
     private class Files(
         vararg sessions: Session,
         private val preferences: Preferences? = null,
-    ) : StoredFiles {
+    ) : FakeStoredFiles() {
         private val sessions = sessions.toMutableList()
         val written = mutableListOf<Session>()
 
@@ -412,8 +412,6 @@ class SessionEditorScreenTest {
 
         override fun preferences() = preferences
 
-        override fun deleteSession(id: String) = error("The session editor deletes nothing")
-
         /** RN writing the file behind the editor's back, as `.dev`'s second writer can. */
         fun rewrite(session: Session) = sessions.replaceAll { if (it.id == session.id) session else it }
 
@@ -422,10 +420,6 @@ class SessionEditorScreenTest {
             written += session
             sessions.replaceAll { if (it.id == session.id) session else it }
         }
-
-        override fun writeLibrary(library: Library) = error("Not a library writer")
-
-        override fun writePreferences(preferences: Preferences) = error("The session editor writes no preferences")
     }
 
     private companion object {

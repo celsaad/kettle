@@ -37,10 +37,9 @@ import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.Library
 import com.casco.kettle.domain.Preferences
 import com.casco.kettle.domain.Session
-import com.casco.kettle.domain.SessionLog
+import com.casco.kettle.shell.files.FakeStoredFiles
 import com.casco.kettle.shell.files.LatestFiles
 import com.casco.kettle.shell.files.LocalLatestFiles
-import com.casco.kettle.shell.files.StoredFiles
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.LightColors
 import kotlinx.coroutines.CoroutineScope
@@ -123,13 +122,7 @@ class ShellTest {
 
     private fun unreadFiles() =
         LatestFiles(
-            object : StoredFiles {
-                override fun sessionLog() = SessionLog.Empty
-
-                override fun library(): Library? = null
-
-                override fun preferences(): Preferences? = null
-
+            object : FakeStoredFiles() {
                 override fun deleteSession(id: String) = Unit
 
                 override fun writeSession(session: Session) = Unit
@@ -166,13 +159,7 @@ class ShellTest {
 
     private val noFiles =
         LatestFiles(
-            object : StoredFiles {
-                override fun sessionLog() = SessionLog.Empty
-
-                override fun library(): Library? = null
-
-                override fun preferences(): Preferences? = null
-
+            object : FakeStoredFiles() {
                 override fun deleteSession(id: String) = Unit
 
                 override fun writeSession(session: Session) = Unit

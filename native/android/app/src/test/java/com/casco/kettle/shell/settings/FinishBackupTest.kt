@@ -1,12 +1,11 @@
 package com.casco.kettle.shell.settings
 
-import com.casco.kettle.domain.Library
 import com.casco.kettle.domain.Preferences
 import com.casco.kettle.domain.Session
 import com.casco.kettle.domain.SessionLog
 import com.casco.kettle.domain.ThemePreference
 import com.casco.kettle.domain.UnitSystem
-import com.casco.kettle.shell.files.StoredFiles
+import com.casco.kettle.shell.files.FakeStoredFiles
 import com.casco.kettle.storage.BackupFailure
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -99,22 +98,12 @@ class FinishBackupTest {
     private class Files(
         private val folderUri: String?,
         private val log: SessionLog,
-    ) : StoredFiles {
+    ) : FakeStoredFiles() {
         val reads = AtomicInteger()
 
         override fun sessionLog() = log.also { reads.incrementAndGet() }
 
-        override fun library(): Library? = null
-
         override fun preferences() = Preferences(UnitSystem.METRIC, ThemePreference.SYSTEM, false, true, folderUri)
-
-        override fun deleteSession(id: String) = error("A backup deletes no session")
-
-        override fun writeSession(session: Session) = error("A backup writes no session")
-
-        override fun writeLibrary(library: Library) = error("Not a library writer")
-
-        override fun writePreferences(preferences: Preferences) = error("A backup writes no preferences")
     }
 
     private companion object {

@@ -24,14 +24,13 @@ import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.Exercise
 import com.casco.kettle.domain.ExerciseConfig
 import com.casco.kettle.domain.Library
-import com.casco.kettle.domain.Preferences
 import com.casco.kettle.domain.RepsSetLog
 import com.casco.kettle.domain.Session
 import com.casco.kettle.domain.SessionEntry
 import com.casco.kettle.domain.SessionLog
 import com.casco.kettle.domain.Workout
+import com.casco.kettle.shell.files.FakeStoredFiles
 import com.casco.kettle.shell.files.LatestFiles
-import com.casco.kettle.shell.files.StoredFiles
 import com.casco.kettle.shell.nav.Tab
 import com.casco.kettle.shell.rn.Stacking
 import com.casco.kettle.shell.theme.KettleTheme
@@ -227,6 +226,20 @@ class HistoryScreenTest {
         compose.onNodeWithText("Excluir sessão?").assertDoesNotExist()
     }
 
+    // A SecurityException often has no message; the row must still say why, not end at the colon.
+    @Test
+    fun `says a delete was refused even when the disk gives no reason`() {
+        val files = Files(push, legs).apply { failure = SecurityException() }
+        show(files)
+
+        row("Leg day").performClick()
+        action("Excluir").performClick()
+        compose.pressDialogButton("Excluir")
+
+        compose.onNodeWithText("Não foi possível excluir: SecurityException").assertExists()
+        row("Leg day").assertExists()
+    }
+
     @Test
     fun `narrows both the list and the summary to what matched`() {
         show()
@@ -409,30 +422,22 @@ class HistoryScreenTest {
     private class Files(
         vararg sessions: Session,
         private val errors: List<String> = emptyList(),
-    ) : StoredFiles {
+    ) : FakeStoredFiles() {
         private val sessions = sessions.toMutableList()
         val deleted = mutableListOf<String>()
 
-        /** Thrown by the next delete, as a full disk or a locked file would. */
-        var failure: IOException? = null
+        /** Thrown by the next delete, as a full disk, a locked file or a withdrawn permission would. */
+        var failure: Exception? = null
 
         override fun sessionLog() = SessionLog(sessions.toList(), errors)
 
         override fun library() = Library(1, listOf(pullUps, dips), listOf(pushDay, legDay), emptyList())
-
-        override fun preferences(): Preferences? = null
 
         override fun deleteSession(id: String) {
             failure?.let { throw it }
             deleted += id
             sessions.removeAll { it.id == id }
         }
-
-        override fun writeSession(session: Session) = error("History writes no session")
-
-        override fun writeLibrary(library: Library) = error("Not a library writer")
-
-        override fun writePreferences(preferences: Preferences) = error("History writes no preferences")
     }
 }
 

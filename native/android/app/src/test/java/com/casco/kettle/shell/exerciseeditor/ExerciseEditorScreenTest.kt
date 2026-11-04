@@ -33,8 +33,8 @@ import com.casco.kettle.domain.ThemePreference
 import com.casco.kettle.domain.UnitSystem
 import com.casco.kettle.domain.Workout
 import com.casco.kettle.domain.WorkoutBlock
+import com.casco.kettle.shell.files.FakeStoredFiles
 import com.casco.kettle.shell.files.LatestFiles
-import com.casco.kettle.shell.files.StoredFiles
 import com.casco.kettle.shell.theme.KettleTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -398,7 +398,7 @@ class ExerciseEditorScreenTest {
         private val workouts: List<Workout> = emptyList(),
         private val preferences: Preferences? = null,
         private val sessions: List<Session> = emptyList(),
-    ) : StoredFiles {
+    ) : FakeStoredFiles() {
         private var library = Library(1, exercises, workouts, emptyList())
         val written = mutableListOf<Library>()
 
@@ -411,10 +411,6 @@ class ExerciseEditorScreenTest {
 
         override fun preferences() = preferences
 
-        override fun deleteSession(id: String) = error("The exercise editor deletes no session")
-
-        override fun writeSession(session: Session) = error("The exercise editor writes no session")
-
         /** RN writing the library behind the editor's back, as `.dev`'s second writer can. */
         fun rewrite(change: (Library) -> Library) {
             library = change(library)
@@ -425,8 +421,6 @@ class ExerciseEditorScreenTest {
             written += library
             this.library = library
         }
-
-        override fun writePreferences(preferences: Preferences) = error("The exercise editor writes no preferences")
     }
 }
 

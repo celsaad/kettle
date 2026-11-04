@@ -3,7 +3,6 @@ package com.casco.kettle.shell.sessioneditor
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,14 +15,8 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -32,23 +25,16 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.casco.kettle.domain.EntryDraft
 import com.casco.kettle.domain.EntryField
 import com.casco.kettle.domain.EntryProblem
-import com.casco.kettle.domain.FieldUnit
 import com.casco.kettle.domain.Library
 import com.casco.kettle.domain.Session
 import com.casco.kettle.domain.SessionEditing
@@ -60,7 +46,6 @@ import com.casco.kettle.domain.entryFields
 import com.casco.kettle.domain.exerciseName
 import com.casco.kettle.domain.firstProblem
 import com.casco.kettle.domain.isZeroForm
-import com.casco.kettle.domain.jsNumber
 import com.casco.kettle.domain.sessionEditing
 import com.casco.kettle.domain.sessionEntryResult
 import com.casco.kettle.domain.sessionStartDay
@@ -68,6 +53,8 @@ import com.casco.kettle.domain.workoutNameFor
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.files.LatestFiles
 import com.casco.kettle.shell.files.LocalLatestFiles
+import com.casco.kettle.shell.files.writeOrRefusal
+import com.casco.kettle.shell.form.EditorButtons
 import com.casco.kettle.shell.form.FormField
 import com.casco.kettle.shell.history.entryResultText
 import com.casco.kettle.shell.i18n.deviceUnitSystem
@@ -76,6 +63,8 @@ import com.casco.kettle.shell.library.ExerciseBadge
 import com.casco.kettle.shell.list.TextAction
 import com.casco.kettle.shell.rn.FileKind
 import com.casco.kettle.shell.rn.JsBridge
+import com.casco.kettle.shell.theme.DialogAction
+import com.casco.kettle.shell.theme.KettleAlertDialog
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.MaxContentWidth
@@ -86,7 +75,6 @@ import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.TimeZone
-import java.io.IOException
 
 /** Where the session editor is registered, as History's Edit pushes it, with the session's `id`. */
 const val SESSION_EDITOR_PATH = "/session-editor"
@@ -267,19 +255,12 @@ private class Editor(
         saving = true
         scope.launch {
             withContext(NonCancellable) {
-                val refused =
-                    try {
+                failure =
+                    writeOrRefusal {
                         files.writeSession(edited)
                         actions.sessionsChanged()
                         actions.close()
-                        null
-                    } catch (e: IOException) {
-                        e
-                    } catch (e: SecurityException) {
-                        e
                     }
-                // A refusal with no message (a SecurityException often has none) still says something.
-                failure = refused?.let { it.message ?: it.javaClass.simpleName }
                 saving = false
             }
         }
@@ -329,7 +310,7 @@ private fun Editing(
         editor.problem?.let { problemText(it) }
             ?: editor.failure?.let { stringResource(R.string.common_saveFailed, it) }
     refusal?.let { Text(it, Modifier.padding(top = Spacing.two), style = KettleType.small, color = colors.accentText) }
-    Buttons(onCancel = editor::cancel, onSave = editor::save)
+    EditorButtons(stringResource(R.string.common_save), onCancel = editor::cancel, onPrimary = editor::save)
 
     editor.confirming?.let { draft ->
         RemoveDialog(
@@ -426,51 +407,17 @@ private fun DraftRows(
 }
 
 @Composable
-private fun Buttons(
-    onCancel: () -> Unit,
-    onSave: () -> Unit,
-) {
-    val colors = KettleTheme.colors
-    Row(Modifier.padding(top = Spacing.four), horizontalArrangement = Arrangement.spacedBy(Spacing.three - 4.dp)) {
-        Box(
-            Modifier
-                .weight(1f)
-                .heightIn(min = 52.dp)
-                .clip(ButtonShape)
-                .border(1.5.dp, colors.border, ButtonShape)
-                .clickable(role = Role.Button, onClick = onCancel),
-            contentAlignment = Alignment.Center,
-        ) { Text(stringResource(R.string.common_cancel), style = KettleType.heading, color = colors.textSecondary) }
-        Box(
-            Modifier
-                .weight(SAVE_WEIGHT)
-                .heightIn(min = 52.dp)
-                .clip(ButtonShape)
-                .background(colors.accent)
-                .clickable(role = Role.Button, onClick = onSave),
-            contentAlignment = Alignment.Center,
-        ) { Text(stringResource(R.string.common_save), style = KettleType.heading, color = colors.onAccent) }
-    }
-}
-
-@Composable
 private fun RemoveDialog(
     name: String,
     onDismiss: () -> Unit,
     onConfirm: () -> Unit,
 ) {
-    val colors = KettleTheme.colors
-    val buttons = ButtonDefaults.textButtonColors(contentColor = colors.accentText)
-    AlertDialog(
+    KettleAlertDialog(
+        title = stringResource(R.string.sessionEditor_removeEntryConfirmTitle),
+        body = stringResource(R.string.sessionEditor_removeEntryConfirmBody, name),
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.sessionEditor_removeEntryConfirmTitle)) },
-        text = { Text(stringResource(R.string.sessionEditor_removeEntryConfirmBody, name)) },
-        confirmButton = { TextButton(onConfirm, colors = buttons) { Text(stringResource(R.string.common_delete)) } },
-        dismissButton = { TextButton(onDismiss, colors = buttons) { Text(stringResource(R.string.common_cancel)) } },
-        // History's dialog's surfaces, for its reason: Kettle's checked pairings, not Material's defaults.
-        containerColor = colors.backgroundElement,
-        titleContentColor = colors.text,
-        textContentColor = colors.textSecondary,
+        confirm = DialogAction(stringResource(R.string.common_delete), onConfirm),
+        dismiss = DialogAction(stringResource(R.string.common_cancel), onDismiss),
     )
 }
 
@@ -498,7 +445,3 @@ private fun Secondary(
 ) = Text(text, modifier, style = KettleType.small, color = KettleTheme.colors.textSecondary)
 
 private val EmptyLibrary = Library(1, emptyList(), emptyList(), emptyList())
-private val ButtonShape = RoundedCornerShape(15.dp)
-
-/** RN's `flex: 1.4` against Cancel's 1: Save is the wider of the two, as the step the screen is for. */
-private const val SAVE_WEIGHT = 1.4f

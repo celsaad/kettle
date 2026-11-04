@@ -26,6 +26,7 @@ import com.casco.kettle.domain.UnitSystem
 import com.casco.kettle.domain.preferencesOrDefault
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.files.LatestFiles
+import com.casco.kettle.shell.files.writeOrRefusal
 import com.casco.kettle.shell.i18n.deviceUnitSystem
 import com.casco.kettle.shell.support.SupporterFile
 import com.casco.kettle.shell.theme.KettleTheme
@@ -37,7 +38,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.IOException
 
 /** The folder picker's answer. Backing out is [Cancelled], never a failure: it's how a mis-tap closes. */
 sealed interface FolderPick {
@@ -206,13 +206,10 @@ internal class PreferencesSaver(
         // RN never told, and its choice held over every read for the rest of the run.
         val landed =
             withContext(NonCancellable) {
-                try {
+                writeOrRefusal {
                     files.writePreferences(next)
                     changed()
-                    true
-                } catch (_: IOException) {
-                    false
-                }
+                } == null
             }
         return Written(next, landed)
     }

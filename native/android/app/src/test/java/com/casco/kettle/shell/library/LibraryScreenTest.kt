@@ -25,12 +25,11 @@ import com.casco.kettle.domain.Exercise
 import com.casco.kettle.domain.ExerciseConfig
 import com.casco.kettle.domain.Library
 import com.casco.kettle.domain.Preferences
-import com.casco.kettle.domain.Session
 import com.casco.kettle.domain.SessionLog
 import com.casco.kettle.domain.ThemePreference
 import com.casco.kettle.domain.UnitSystem
+import com.casco.kettle.shell.files.FakeStoredFiles
 import com.casco.kettle.shell.files.LatestFiles
-import com.casco.kettle.shell.files.StoredFiles
 import com.casco.kettle.shell.nav.Tab
 import com.casco.kettle.shell.rn.Stacking
 import com.casco.kettle.shell.theme.KettleTheme
@@ -260,20 +259,12 @@ class LibraryScreenTest {
         vararg exercises: Exercise,
         private val library: Library? = Library(1, exercises.toList(), emptyList(), emptyList()),
         private val preferences: Preferences? = null,
-    ) : StoredFiles {
+    ) : FakeStoredFiles() {
         override fun sessionLog() = SessionLog(emptyList(), emptyList())
 
         override fun library() = library
 
         override fun preferences() = preferences
-
-        override fun deleteSession(id: String) = error("Library deletes nothing")
-
-        override fun writeSession(session: Session) = error("Library writes no session")
-
-        override fun writeLibrary(library: Library) = error("Not a library writer")
-
-        override fun writePreferences(preferences: Preferences) = error("Library writes no preferences")
     }
 }
 

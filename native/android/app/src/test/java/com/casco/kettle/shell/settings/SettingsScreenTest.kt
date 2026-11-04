@@ -26,8 +26,8 @@ import com.casco.kettle.domain.SupporterState
 import com.casco.kettle.domain.ThemePreference
 import com.casco.kettle.domain.UnitSystem
 import com.casco.kettle.domain.Workout
+import com.casco.kettle.shell.files.FakeStoredFiles
 import com.casco.kettle.shell.files.LatestFiles
-import com.casco.kettle.shell.files.StoredFiles
 import com.casco.kettle.shell.support.SupporterFile
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.storage.BackupFailure
@@ -143,6 +143,19 @@ class SettingsScreenTest {
     @Test
     fun `says so when the folder was chosen but could not be saved`() {
         files.failing = true
+        show()
+
+        press("Pasta de backup")
+
+        text("não pôde ser salva")
+        assertEquals(0, actions.preferencesChanged)
+    }
+
+    // A permission withdrawn is refused like a full disk, not left to escape the write and crash.
+    @Test
+    fun `says so when the folder could not be saved for want of permission`() {
+        files.failing = true
+        files.refusal = SecurityException()
         show()
 
         press("Pasta de backup")
@@ -559,11 +572,14 @@ class SettingsScreenTest {
         compose.onNodeWithText("Configurações").assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.Heading))
     }
 
-    private class Files : StoredFiles {
+    private class Files : FakeStoredFiles() {
         var stored: Preferences? = null
         var library: Library? = null
         var log = SessionLog.Empty
         var failing = false
+
+        /** What a failing write throws: a full disk, or a permission withdrawn. */
+        var refusal: Exception = IOException("disk full")
         val written = mutableListOf<Preferences>()
 
         override fun sessionLog() = log
@@ -572,14 +588,8 @@ class SettingsScreenTest {
 
         override fun preferences() = stored
 
-        override fun deleteSession(id: String) = error("Settings deletes no session")
-
-        override fun writeSession(session: Session) = error("Settings writes no session")
-
-        override fun writeLibrary(library: Library) = error("Not a library writer")
-
         override fun writePreferences(preferences: Preferences) {
-            if (failing) throw IOException("disk full")
+            if (failing) throw refusal
             written += preferences
             stored = preferences
         }

@@ -70,7 +70,12 @@ class MainActivity :
     private val paths by lazy { StoragePaths(filesDir) }
 
     private val latestFiles by lazy {
-        LatestFiles(DiskFiles(paths), lifecycleScope) { log, preferences -> reconcileReminder(log, preferences) }
+        LatestFiles(
+            DiskFiles(paths),
+            lifecycleScope,
+            onRead = { log, preferences -> reconcileReminder(log, preferences) },
+            prepared = { LibraryGate.prepared(this) },
+        )
     }
 
     private val navigator =

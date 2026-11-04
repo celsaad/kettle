@@ -34,13 +34,19 @@ object LibraryGate {
     }
 
     /**
+     * Suspends until the job has run: what native's own reads wait on (`LatestFiles`), so a first
+     * launch's screens find the seed, whenever RN starts.
+     */
+    suspend fun prepared(context: Context) {
+        start(context)
+        checkNotNull(preparing).await()
+    }
+
+    /**
      * Blocks until the job has run. On the main thread, which is where RN starts: a read and parse of
      * one small file on every launch, and a write on the launches that seed or repair it.
      */
-    fun awaitPrepared(context: Context) {
-        start(context)
-        runBlocking { checkNotNull(preparing).await() }
-    }
+    fun awaitPrepared(context: Context) = runBlocking { prepared(context) }
 
     private fun prepare(app: Context) {
         val paths = StoragePaths(app.filesDir)

@@ -120,6 +120,13 @@ class LatestFiles(
     private val io: CoroutineDispatcher = Dispatchers.IO,
     /** Each read as it lands, on [scope]'s thread: the rest-day reminder reconciles from it (#236). */
     private val onRead: (SessionLog, Preferences?) -> Unit = { _, _ -> },
+    /**
+     * What every read waits for first: the launch's seed and repair of the library (`LibraryGate`).
+     * Without it a first launch's read could land before the seed did and show no library until the
+     * next one. Today `onCreate` has already waited before the first read, for RN's sake, but RN's
+     * start goes lazy (#223) and this mustn't depend on it.
+     */
+    private val prepared: suspend () -> Unit = {},
 ) {
     /** Null until the first read lands, so a screen can tell "not read yet" from "no sessions". */
     var sessionLog by mutableStateOf<SessionLog?>(null)
@@ -209,6 +216,7 @@ class LatestFiles(
         reading?.cancel()
         reading =
             scope.launch {
+                prepared()
                 val (log, library, preferences) =
                     withContext(io) { Triple(files.sessionLog(), files.library(), files.preferences()) }
                 // The held choice for the reminder too, so the alarm agrees with the toggle on screen.

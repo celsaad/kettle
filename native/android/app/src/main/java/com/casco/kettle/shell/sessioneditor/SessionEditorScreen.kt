@@ -206,6 +206,12 @@ private class Editor(
         private set
     private var saving = false
 
+    /**
+     * Set once the write has closed the sheet, and never cleared. RN takes a while to dismiss it, and
+     * a Save in between would write again, its second close popping the screen under the sheet.
+     */
+    private var closed = false
+
     val readOnly get() = editing.readOnly
 
     /** Writes nothing: the drafts are this screen's copy, and go with it. */
@@ -247,7 +253,7 @@ private class Editor(
      * file that changed, or they keep listing the session as it was.
      */
     fun save() {
-        if (saving) return
+        if (saving || closed) return
         failure = null
         problem = firstProblem(drafts)
         if (problem != null) return
@@ -259,9 +265,12 @@ private class Editor(
                     writeOrRefusal {
                         files.writeSession(edited)
                         actions.sessionsChanged()
-                        actions.close()
                     }
                 saving = false
+                if (failure == null) {
+                    closed = true
+                    actions.close()
+                }
             }
         }
     }

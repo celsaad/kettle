@@ -159,6 +159,13 @@ private class Editor(
     /** Whether the write in flight closes the sheet once it lands: a Save's or a Delete's. */
     private var closing = false
 
+    /**
+     * Set once a write has closed the sheet, and never cleared. RN takes a while to dismiss it, and a
+     * tap in between would write again: a second close pops the screen under the sheet, and a Save
+     * after a Delete writes the deleted workout back.
+     */
+    private var closed = false
+
     /** A Save tapped while the quick-add's write was still landing: run once it has, not dropped. */
     private var saveAfterWrite = false
 
@@ -183,6 +190,7 @@ private class Editor(
      * the next. A refused write keeps the form up, its values in it.
      */
     fun create(exercise: Exercise) {
+        if (closed) return
         val mode = pickers.open ?: return
         write(Failure.Kind.Save, { it.withExercise(exercise) }, closes = false) {
             pickers.showQuickAdd(false)
@@ -200,6 +208,7 @@ private class Editor(
     }
 
     fun save() {
+        if (closed) return
         // Queued only behind the quick-add's write. Behind a Save's, it is a double tap, which would
         // write twice and close twice, the second close popping the screen under the sheet; behind a
         // Delete's, it would write the deleted workout back.
@@ -232,6 +241,7 @@ private class Editor(
 
     /** Asks [inUse] again: the library is read again while the confirm is up. */
     fun delete() {
+        if (closed) return
         val workout = existing ?: return
         deleting = inUse()
         if (deleting == null) write(Failure.Kind.Delete, { it.withoutWorkout(workout.id) }, closes = true, close)
@@ -268,7 +278,10 @@ private class Editor(
                 failure = refused?.let { Failure(kind, it) }
                 writing = false
                 closing = false
-                if (refused == null) written()
+                if (refused == null) {
+                    if (closes) closed = true
+                    written()
+                }
                 if (saveAfterWrite) {
                     saveAfterWrite = false
                     // Not after a refusal: its reason would be replaced before it was read.

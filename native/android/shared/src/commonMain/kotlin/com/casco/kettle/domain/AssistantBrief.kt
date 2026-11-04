@@ -61,16 +61,3 @@ private fun schemaSection(
     words: AssistantBrief.Words,
     schema: String,
 ): String = listOf(words.schemaHeading, "```json", schema.trimEnd('\n'), "```").joinToString("\n")
-
-/** The `type:` a file spells, which is what the assistant has to write back. */
-private val ExerciseType.fileName: String
-    get() =
-        when (this) {
-            ExerciseType.Hiit -> "hiit"
-            ExerciseType.Emom -> "emom"
-            ExerciseType.Amrap -> "amrap"
-            ExerciseType.Reps -> "reps"
-            ExerciseType.TimedHold -> "timed_hold"
-            ExerciseType.Cardio -> "cardio"
-            ExerciseType.Rest -> "rest"
-        }

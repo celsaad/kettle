@@ -15,10 +15,10 @@ import kotlinx.coroutines.launch
  */
 enum class CopyTarget { Brief, Report }
 
-/** The last copy, by which button made it, since both can be on screen and only one may say "Copied". */
-data class Copy(
+/** How the last copy went, and which button made it: both can be on screen, and only one may say "Copied". */
+data class CopyOutcome(
     val target: CopyTarget,
-    val took: Boolean,
+    val succeeded: Boolean,
 )
 
 /**
@@ -30,11 +30,10 @@ internal class Handoff(
     private val scope: CoroutineScope,
     private val actions: ImportActions,
 ) {
-    var copied by mutableStateOf<Copy?>(null)
-        private set
+    private var lastCopy by mutableStateOf<CopyOutcome?>(null)
 
     /**
-     * Apart from [copied]: a sheet that couldn't open says nothing about the clipboard, and folding the
+     * Apart from a copy's outcome: a sheet that couldn't open says nothing about the clipboard, and folding the
      * two together would put "couldn't reach the clipboard" under a button that never touched it.
      */
     var shareFailed by mutableStateOf(false)
@@ -52,16 +51,22 @@ internal class Handoff(
     ) {
         shareFailed = false
         expiry?.cancel()
-        val took = actions.copy(text)
-        copied = Copy(target, took)
-        if (took) {
+        val succeeded = actions.copy(text)
+        lastCopy = CopyOutcome(target, succeeded)
+        if (succeeded) {
             expiry =
                 scope.launch {
                     delay(COPIED_FOR_MS)
-                    copied = null
+                    lastCopy = null
                 }
         }
     }
+
+    /** [target]'s last copy took, and still says so. */
+    fun confirmed(target: CopyTarget) = lastCopy == CopyOutcome(target, succeeded = true)
+
+    /** [target]'s last copy was refused by the clipboard. */
+    fun failed(target: CopyTarget) = lastCopy == CopyOutcome(target, succeeded = false)
 
     /** A sheet that won't open degrades to a note, with the clipboard button under it as the way through. */
     fun share(text: String) {
@@ -72,7 +77,7 @@ internal class Handoff(
     /** A new refusal or a new hand-off, so no "Copied" stands over something it didn't copy. */
     fun forget() {
         expiry?.cancel()
-        copied = null
+        lastCopy = null
     }
 }
 

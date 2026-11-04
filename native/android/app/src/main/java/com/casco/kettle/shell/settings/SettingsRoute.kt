@@ -16,7 +16,6 @@ import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import com.casco.kettle.domain.Preferences
 import com.casco.kettle.shell.export.FileShare
-import com.casco.kettle.shell.export.copyToClipboard
 import com.casco.kettle.shell.files.LatestFiles
 import com.casco.kettle.shell.files.LocalLatestFiles
 import com.casco.kettle.shell.files.StoragePaths
@@ -25,6 +24,7 @@ import com.casco.kettle.shell.rn.FileKind
 import com.casco.kettle.shell.rn.JsBridge
 import com.casco.kettle.shell.rn.Stacking
 import com.casco.kettle.shell.support.DiskSupporterFile
+import com.casco.kettle.shell.system.copyToClipboard
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext

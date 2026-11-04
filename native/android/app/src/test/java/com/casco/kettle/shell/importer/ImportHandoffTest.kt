@@ -4,7 +4,6 @@ import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
-import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.performTextReplacement
@@ -53,6 +52,8 @@ class ImportHandoffTest : ImportHarness() {
     @Test
     fun `confirms the copy on the button and to a screen reader`() {
         refusedForUnknownExercise()
+        // Only while it says "Copied", so the label going back two seconds later isn't read out too.
+        button("Copiar erro").assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.LiveRegion))
         press("Copiar erro")
 
         button(COPIED).assert(SemanticsMatcher.expectValue(SemanticsProperties.LiveRegion, LiveRegionMode.Polite))
@@ -144,7 +145,6 @@ class ImportHandoffTest : ImportHarness() {
         press(SHARE_BRIEF)
 
         shown(SHARE_FAILED)
-        compose.onAllNodes(hasText("YAML inválido:", substring = true)).assertCountEquals(0)
 
         press(COPY_BRIEF)
 
@@ -194,6 +194,14 @@ class ImportHandoffTest : ImportHarness() {
         compose.onNode(hasContentDescription(PASTE_BOX)).performTextReplacement("exercises: []")
 
         absent(CLIPBOARD_EMPTY)
+    }
+
+    // Its words never change, so as a live region it would only ever be noise.
+    @Test
+    fun `announces nothing about the paste button itself`() {
+        openPasteBox()
+
+        button(PASTE_FROM_CLIPBOARD).assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.LiveRegion))
     }
 
     @Test

@@ -34,15 +34,7 @@ internal fun RefusalBlock(
         Text(message, style = KettleType.small, color = colors.accentText)
         if (!refusal.aboutContent) return@Column
         val report = "${stringResource(R.string.import_repairPrompt)}\n\n$message"
-        CopyButton(
-            copyLabel(importer, CopyTarget.Report, stringResource(R.string.import_copyError)),
-            colors.textSecondary,
-        ) { importer.handoff.copy(CopyTarget.Report, report) }
-        if (importer.handoff.copied ==
-            Copy(CopyTarget.Report, took = false)
-        ) {
-            Note(stringResource(R.string.import_copyFailed))
-        }
+        CopyAction(importer.handoff, CopyTarget.Report, stringResource(R.string.import_copyError)) { report }
     }
 }
 

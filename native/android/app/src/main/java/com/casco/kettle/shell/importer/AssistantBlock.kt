@@ -59,20 +59,8 @@ internal fun AssistantBlock(
         Modifier.padding(top = Spacing.three - 2.dp),
         verticalArrangement = Arrangement.spacedBy(Spacing.one + 2.dp),
     ) {
-        CopyButton(
-            copyLabel(importer, CopyTarget.Brief, stringResource(R.string.import_copyBriefInstead)),
-            colors.textSecondary,
-        ) { importer.handoff.copy(CopyTarget.Brief, brief()) }
-        when {
-            importer.handoff.shareFailed -> Note(stringResource(R.string.import_shareFailed))
-
-            importer.handoff.copied ==
-                Copy(
-                    CopyTarget.Brief,
-                    took = false,
-                )
-            -> Note(stringResource(R.string.import_copyFailed))
-        }
+        CopyAction(importer.handoff, CopyTarget.Brief, stringResource(R.string.import_copyBriefInstead), brief)
+        if (importer.handoff.shareFailed) Note(stringResource(R.string.import_shareFailed))
     }
 }
 
@@ -88,32 +76,47 @@ private fun briefWords() =
         schemaHeading = stringResource(R.string.import_brief_schemaHeading),
     )
 
-/** [idle], or "Copied" while [target]'s last copy took: keyed by button, so only the pressed one says so. */
-@Composable
-internal fun copyLabel(
-    importer: Importer,
-    target: CopyTarget,
-    idle: String,
-): String = if (importer.handoff.copied == Copy(target, took = true)) stringResource(R.string.import_copied) else idle
-
 /**
- * The outlined small button the copies and the clipboard paste share. A polite live region: its own
- * words switch to "Copied" while focus stays on it, which TalkBack wouldn't otherwise re-read. No label
- * of its own, since its text names it.
+ * A copy button and its outcome: its label says "Copied" while [target]'s last copy holds, keyed by
+ * button so only the one pressed says so, and a note under it when the clipboard refused, so it never
+ * claims a copy that didn't happen. [text] is built at the press.
  */
 @Composable
-internal fun CopyButton(
+internal fun CopyAction(
+    handoff: Handoff,
+    target: CopyTarget,
+    idle: String,
+    text: () -> String,
+) {
+    val confirmed = handoff.confirmed(target)
+    SmallButton(
+        if (confirmed) stringResource(R.string.import_copied) else idle,
+        KettleTheme.colors.textSecondary,
+        announced = confirmed,
+    ) { handoff.copy(target, text()) }
+    if (handoff.failed(target)) Note(stringResource(R.string.import_copyFailed))
+}
+
+/**
+ * The outlined small button the copies and the clipboard paste share, named by its own text.
+ * [announced] makes it a polite live region, for "Copied": its words change while focus stays on it,
+ * which TalkBack wouldn't otherwise re-read. Only while it holds, so the label going back to idle two
+ * seconds later isn't read out too.
+ */
+@Composable
+internal fun SmallButton(
     text: String,
     color: Color,
+    announced: Boolean = false,
     onClick: () -> Unit,
 ) {
     Box(
         Modifier
             .heightIn(min = 44.dp)
-            .clip(CopyShape)
-            .border(1.dp, KettleTheme.colors.border, CopyShape)
+            .clip(SmallShape)
+            .border(1.dp, KettleTheme.colors.border, SmallShape)
             .clickable(role = Role.Button, onClick = onClick)
-            .semantics { liveRegion = LiveRegionMode.Polite }
+            .semantics { if (announced) liveRegion = LiveRegionMode.Polite }
             .padding(horizontal = Spacing.two + 2.dp),
         contentAlignment = Alignment.CenterStart,
     ) { Text(text, style = KettleType.smallMedium, color = color) }
@@ -123,4 +126,4 @@ internal fun CopyButton(
 @Composable
 internal fun Note(text: String) = Text(text, style = KettleType.small, color = KettleTheme.colors.textSecondary)
 
-private val CopyShape = RoundedCornerShape(12.dp)
+private val SmallShape = RoundedCornerShape(12.dp)

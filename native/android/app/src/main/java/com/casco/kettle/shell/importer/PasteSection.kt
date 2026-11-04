@@ -58,22 +58,7 @@ internal fun PasteSection(importer: Importer) {
             FieldOptions(kind = FieldKind.Code, minHeight = 132.dp, fill = colors.backgroundElement),
         )
     }
-    // The return leg of the trip the brief starts: on a phone the alternative is a long-press, a Paste
-    // bubble and a caret, for text that arrived from another app seconds ago.
-    Column(
-        Modifier.padding(top = Spacing.three - 2.dp),
-        verticalArrangement = Arrangement.spacedBy(Spacing.one + 2.dp),
-    ) {
-        CopyButton(stringResource(R.string.import_pasteFromClipboard), colors.accentText, importer::pasteFromClipboard)
-        importer.pasteNote?.let {
-            // "Empty, or access was denied": Android can't tell the reader which, so neither is claimed.
-            Note(
-                stringResource(
-                    if (it == PasteNote.Empty) R.string.import_clipboardEmpty else R.string.import_clipboardFailed,
-                ),
-            )
-        }
-    }
+    ClipboardRow(importer)
     // Off while a file is being read, as the pack rows are, so a second source can't race the first.
     val canReview = !importer.busy && importer.pasted.isNotBlank()
     Box(
@@ -91,5 +76,32 @@ internal fun PasteSection(importer: Importer) {
             style = KettleType.heading,
             color = colors.accentText.dimmedUnless(canReview),
         )
+    }
+}
+
+/**
+ * Paste from clipboard and its note. The return leg of the trip the brief starts: on a phone the
+ * alternative is a long-press, a Paste bubble and a caret, for text that arrived from another app
+ * seconds ago.
+ */
+@Composable
+private fun ClipboardRow(importer: Importer) {
+    Column(
+        Modifier.padding(top = Spacing.three - 2.dp),
+        verticalArrangement = Arrangement.spacedBy(Spacing.one + 2.dp),
+    ) {
+        SmallButton(
+            stringResource(R.string.import_pasteFromClipboard),
+            KettleTheme.colors.accentText,
+            onClick = importer::pasteFromClipboard,
+        )
+        importer.pasteNote?.let {
+            // "Empty, or access was denied": Android can't tell the reader which, so neither is claimed.
+            Note(
+                stringResource(
+                    if (it == PasteNote.Empty) R.string.import_clipboardEmpty else R.string.import_clipboardFailed,
+                ),
+            )
+        }
     }
 }

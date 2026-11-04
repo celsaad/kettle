@@ -19,6 +19,22 @@ data class WorkoutShape(
  */
 enum class ExerciseType { Hiit, Emom, Amrap, Reps, TimedHold, Cardio, Rest }
 
+/**
+ * The `type:` a file spells, as the assistant brief lists it. The parser and the writer keep their own
+ * spellings beside each type's fields; `AssistantBriefTest` holds this one to the writer's.
+ */
+val ExerciseType.fileName: String
+    get() =
+        when (this) {
+            ExerciseType.Hiit -> "hiit"
+            ExerciseType.Emom -> "emom"
+            ExerciseType.Amrap -> "amrap"
+            ExerciseType.Reps -> "reps"
+            ExerciseType.TimedHold -> "timed_hold"
+            ExerciseType.Cardio -> "cardio"
+            ExerciseType.Rest -> "rest"
+        }
+
 val ExerciseConfig.type: ExerciseType
     get() =
         when (this) {

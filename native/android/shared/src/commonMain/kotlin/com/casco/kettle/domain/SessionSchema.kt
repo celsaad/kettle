@@ -51,13 +51,13 @@ private fun SchemaReader.entry(
  */
 private val entryReaders: Map<String, SchemaReader.(Fields, String?) -> SessionEntry?> =
     mapOf(
-        "timed_hold" to SchemaReader::timedHold,
-        "reps" to SchemaReader::reps,
-        "rest" to SchemaReader::rest,
-        "hiit" to SchemaReader::hiit,
-        "emom" to SchemaReader::emom,
-        "amrap" to SchemaReader::amrap,
-        "cardio" to SchemaReader::cardio,
+        ExerciseType.TimedHold.yamlName to SchemaReader::timedHold,
+        ExerciseType.Reps.yamlName to SchemaReader::reps,
+        ExerciseType.Rest.yamlName to SchemaReader::rest,
+        ExerciseType.Hiit.yamlName to SchemaReader::hiit,
+        ExerciseType.Emom.yamlName to SchemaReader::emom,
+        ExerciseType.Amrap.yamlName to SchemaReader::amrap,
+        ExerciseType.Cardio.yamlName to SchemaReader::cardio,
     )
 
 private val RPE = Bounds(min = 1.0, max = 10.0)

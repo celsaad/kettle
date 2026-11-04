@@ -30,20 +30,20 @@ private fun Exercise.toRaw(): Map<String, Any?> {
 internal fun ExerciseConfig.toRaw(): Pair<String, Map<String, Any?>> =
     when (this) {
         is ExerciseConfig.Hiit -> {
-            "hiit" to optionals("work_sec" to workSec, "rest_sec" to restSec, "rounds" to rounds)
+            ExerciseType.Hiit.yamlName to optionals("work_sec" to workSec, "rest_sec" to restSec, "rounds" to rounds)
         }
 
         is ExerciseConfig.Emom -> {
-            "emom" to
+            ExerciseType.Emom.yamlName to
                 optionals("interval_sec" to intervalSec, "total_minutes" to totalMinutes, "target_reps" to targetReps)
         }
 
         is ExerciseConfig.Amrap -> {
-            "amrap" to optionals("time_cap_sec" to timeCapSec)
+            ExerciseType.Amrap.yamlName to optionals("time_cap_sec" to timeCapSec)
         }
 
         is ExerciseConfig.Reps -> {
-            "reps" to
+            ExerciseType.Reps.yamlName to
                 optionals(
                     "sets" to sets,
                     "target_reps_min" to targetRepsMin,
@@ -54,7 +54,7 @@ internal fun ExerciseConfig.toRaw(): Pair<String, Map<String, Any?>> =
         }
 
         is ExerciseConfig.TimedHold -> {
-            "timed_hold" to
+            ExerciseType.TimedHold.yamlName to
                 optionals(
                     "sets" to sets,
                     "hold_sec_min" to holdSecMin,
@@ -64,11 +64,12 @@ internal fun ExerciseConfig.toRaw(): Pair<String, Map<String, Any?>> =
         }
 
         is ExerciseConfig.Cardio -> {
-            "cardio" to optionals("duration_sec" to durationSec, "distance_meters" to distanceMeters)
+            ExerciseType.Cardio.yamlName to
+                optionals("duration_sec" to durationSec, "distance_meters" to distanceMeters)
         }
 
         is ExerciseConfig.Rest -> {
-            "rest" to optionals("duration_sec" to durationSec)
+            ExerciseType.Rest.yamlName to optionals("duration_sec" to durationSec)
         }
     }
 

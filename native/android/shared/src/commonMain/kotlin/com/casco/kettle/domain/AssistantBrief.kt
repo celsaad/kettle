@@ -43,7 +43,7 @@ private fun inventory(
         listOf(words.inventoryHeading) +
             section(
                 words.exercisesLabel,
-                library.exercises.map { "  ${it.id} (${it.config.type.fileName}) — ${it.name}" },
+                library.exercises.map { "  ${it.id} (${it.config.type.yamlName}) — ${it.name}" },
                 words,
             ) +
             section(words.workoutsLabel, library.workouts.map { "  ${it.id} — ${it.name}" }, words) +

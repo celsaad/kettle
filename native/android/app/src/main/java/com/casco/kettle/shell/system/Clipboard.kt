@@ -20,13 +20,23 @@ internal fun View.confirmCopy(confirmation: String) {
     announceForAccessibility(confirmation)
 }
 
-/** False where the clipboard refused, so a control never claims a copy that didn't happen. */
+/**
+ * False where the clipboard refused, so a control never claims a copy that didn't happen. No label:
+ * one is metadata nothing here reads, and Settings' copy passed the text again as its label, sending
+ * the whole of it to the binder twice.
+ *
+ * A clip past the binder's limit (about 1 MB) fails as a `RuntimeException` wrapping
+ * `TransactionTooLargeException`, the same as [shareText]: the brief grows with the library, and the
+ * copy is the fallback for exactly the brief too big to share, so it must say no rather than crash.
+ * A withdrawn permission is a `SecurityException`, which is one too.
+ */
+@Suppress("TooGenericExceptionCaught")
 internal fun Context.copyToClipboard(text: String): Boolean =
     try {
         val clipboard = getSystemService(ClipboardManager::class.java) ?: return false
-        clipboard.setPrimaryClip(ClipData.newPlainText(text, text))
+        clipboard.setPrimaryClip(ClipData.newPlainText(null, text))
         true
-    } catch (_: SecurityException) {
+    } catch (_: RuntimeException) {
         false
     }
 

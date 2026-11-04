@@ -92,23 +92,21 @@ class AssistantBriefTest {
         assertTrue(brief.endsWith("```json\n$schema\n```"))
     }
 
-    // The assistant writes back what the brief spells, so it has to be the file's own spelling.
+    // The assistant writes back what the brief spells, and the readers and writers share this spelling, so
+    // it's checked against the format's own list (docs/authoring-exercises-yaml.md), not against itself.
     @Test
-    fun `spells each type as the file does`() {
-        val configs =
-            listOf(
-                ExerciseConfig.Hiit(30.0, 15.0, 4),
-                ExerciseConfig.Emom(60.0, 10.0),
-                ExerciseConfig.Amrap(600.0),
-                ExerciseConfig.Reps(3, 8, restSec = 90.0),
-                ExerciseConfig.TimedHold(3, holdSecMin = 30.0, restSec = 60.0),
-                ExerciseConfig.Cardio(durationSec = 600.0),
-                ExerciseConfig.Rest(60.0),
-            )
-        assertEquals(ExerciseType.entries.toSet(), configs.map { it.type }.toSet())
-        for (config in configs) {
-            val yaml = serializeLibraryYaml(Library(1, listOf(Exercise("x", "X", config)), emptyList(), emptyList()))
-            assertTrue("type: ${config.type.fileName}\n" in yaml, "${config.type}: $yaml")
-        }
+    fun `spells each type as the format does`() {
+        assertEquals(
+            mapOf(
+                ExerciseType.Hiit to "hiit",
+                ExerciseType.Emom to "emom",
+                ExerciseType.Amrap to "amrap",
+                ExerciseType.Reps to "reps",
+                ExerciseType.TimedHold to "timed_hold",
+                ExerciseType.Cardio to "cardio",
+                ExerciseType.Rest to "rest",
+            ),
+            ExerciseType.entries.associateWith { it.yamlName },
+        )
     }
 }

@@ -20,10 +20,10 @@ data class WorkoutShape(
 enum class ExerciseType { Hiit, Emom, Amrap, Reps, TimedHold, Cardio, Rest }
 
 /**
- * The `type:` a file spells, as the assistant brief lists it. The parser and the writer keep their own
- * spellings beside each type's fields; `AssistantBriefTest` holds this one to the writer's.
+ * The `type:` value a file spells for each type, in the library and in a session alike: the one
+ * spelling the readers, the writers and the assistant brief all use, so a rename is one line.
  */
-val ExerciseType.fileName: String
+val ExerciseType.yamlName: String
     get() =
         when (this) {
             ExerciseType.Hiit -> "hiit"

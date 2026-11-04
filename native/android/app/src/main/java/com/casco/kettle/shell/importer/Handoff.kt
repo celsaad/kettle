@@ -28,7 +28,9 @@ data class CopyOutcome(
  */
 internal class Handoff(
     private val scope: CoroutineScope,
-    private val actions: ImportActions,
+    /** The clipboard and the share sheet, each saying whether it took. */
+    private val copyText: (String) -> Boolean,
+    private val shareText: (String) -> Boolean,
 ) {
     private var lastCopy by mutableStateOf<CopyOutcome?>(null)
 
@@ -51,7 +53,7 @@ internal class Handoff(
     ) {
         shareFailed = false
         expiry?.cancel()
-        val succeeded = actions.copy(text)
+        val succeeded = copyText(text)
         lastCopy = CopyOutcome(target, succeeded)
         if (succeeded) {
             expiry =
@@ -71,7 +73,7 @@ internal class Handoff(
     /** A sheet that won't open degrades to a note, with the clipboard button under it as the way through. */
     fun share(text: String) {
         forget()
-        shareFailed = !actions.share(text)
+        shareFailed = !shareText(text)
     }
 
     /** A new refusal or a new hand-off, so no "Copied" stands over something it didn't copy. */

@@ -145,7 +145,7 @@ internal class Importer(
         private set
 
     /** The brief out and the refusal back: the two hand-offs to an assistant. */
-    val handoff = Handoff(scope, actions)
+    val handoff = Handoff(scope, actions.copy, actions.share)
 
     /**
      * One flag for both lists, which never show together: someone who opened the full list to find an

@@ -27,6 +27,7 @@ import com.casco.kettle.domain.SessionLog
 import com.casco.kettle.domain.serializeLibraryYaml
 import kotlinx.coroutines.CompletableDeferred
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -105,7 +106,7 @@ class ImportScreenTest : ImportHarness() {
         picked = { FilePick.Failed("Permission denied") }
         val files = chooseFile()
 
-        shown("Não foi possível ler esse arquivo: Permission denied")
+        shown(READ_FAILED)
         button("Escolher exercises.yaml").assertIsEnabled()
         files.nothingWritten()
     }
@@ -137,6 +138,32 @@ class ImportScreenTest : ImportHarness() {
         )
     }
 
+    // A pick that fails never reaches the parser, so it takes its own path to the file's site.
+    @Test
+    fun `shows a failed pick under the file box`() {
+        picked = { FilePick.Failed("Permission denied") }
+        show(Files(log = SessionLog(listOf(unfinished), emptyList())))
+        press("Escolher exercises.yaml")
+
+        assertEquals(
+            listOf("Escolher exercises.yaml", READ_FAILED, SHARE_BRIEF),
+            inOrder(SHARE_BRIEF, READ_FAILED, "Escolher exercises.yaml"),
+        )
+    }
+
+    // The sources are gone once a preview is up, so a write that fails answers the preview's card.
+    @Test
+    fun `shows a failed write under the preview's source card`() {
+        picks(Library(1, listOf(dips), emptyList(), emptyList()), "more.yaml")
+        chooseFile(Files().apply { failure = IOException("no space left") })
+        press("Mesclar e importar")
+
+        assertEquals(
+            listOf("more.yaml", SAVE_FAILED, "dips"),
+            inOrder("dips", SAVE_FAILED, "more.yaml"),
+        )
+    }
+
     @Test
     fun `shows a pack's refusal under the pack that was tapped`() {
         show(Files(library = null))
@@ -160,7 +187,7 @@ class ImportScreenTest : ImportHarness() {
 
         press("Revisar texto colado")
 
-        assertTrue(first != refusal.fetchSemanticsNode().id)
+        assertNotEquals(first, refusal.fetchSemanticsNode().id)
     }
 
     // Short enough that the last pack row ends at the bottom edge once scrolled to, so what's drawn under it
@@ -492,10 +519,26 @@ class ImportScreenTest : ImportHarness() {
 
         press("Mesclar e importar")
 
-        shown("Não foi possível salvar sua biblioteca: no space left")
+        shown(SAVE_FAILED)
         files.nothingWritten()
         assertEquals(0, libraryChanged)
         button("Mesclar e importar").assertIsEnabled()
+    }
+
+    // The failure's slot outlives the preview, so a retry that lands has to take the failure with it,
+    // or "couldn't save" stands over the card saying it saved.
+    @Test
+    fun `drops a failed write's message once a retry lands`() {
+        picks(Library(1, listOf(dips), emptyList(), emptyList()))
+        val files = chooseFile(Files().apply { failure = IOException("no space left") })
+        press("Mesclar e importar")
+        shown(SAVE_FAILED)
+
+        files.failure = null
+        press("Mesclar e importar")
+
+        shown("Importado")
+        absent(SAVE_FAILED)
     }
 
     // A second tap while the first write is landing would write twice.
@@ -690,5 +733,7 @@ class ImportScreenTest : ImportHarness() {
 
 private const val UNKNOWN_SQUATS = "O treino \"leg-day\" referencia o exercício desconhecido \"squats\""
 private const val NOT_LOADED = "A biblioteca ainda não foi carregada."
+private const val READ_FAILED = "Não foi possível ler esse arquivo: Permission denied"
+private const val SAVE_FAILED = "Não foi possível salvar sua biblioteca: no space left"
 
 private fun paneTitled(title: String) = SemanticsMatcher.expectValue(SemanticsProperties.PaneTitle, title)

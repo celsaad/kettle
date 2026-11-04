@@ -275,17 +275,19 @@ internal class Importer(
         writing = true
         scope.launch {
             withContext(NonCancellable) {
-                val refused =
+                val saveError =
                     writeOrRefusal {
                         files.writeLibrary(merge.preview.merged)
                         actions.libraryChanged()
                     }
                 writing = false
-                if (refused == null) {
+                if (saveError == null) {
+                    // A retry after a failed write: the failure's slot is still drawn under Applied.
+                    refused = null
                     applied = merge.preview.items
                     ready = null
                 } else {
-                    refuse(ImportRefusal.SaveFailed(refused), RefusalSite.Preview)
+                    refuse(ImportRefusal.SaveFailed(saveError), RefusalSite.Preview)
                 }
             }
         }

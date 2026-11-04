@@ -28,6 +28,9 @@ here, next to what it describes.
   its title in your language (#238).
 - **Editing a past session is native**, and works as it did: correct a rep count, a load or an RPE,
   or remove a set, and History and Stats show it at once (#240).
+- **Every tab is labelled**, not only the one you're on, so Library and Programs no longer have to
+  be guessed from their icons. At large text sizes a label shrinks just enough to stay on one line
+  rather than breaking mid-word (#265).
 
 ---
 

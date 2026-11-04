@@ -6,7 +6,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
@@ -16,6 +20,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.key
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.compose.NavHost
@@ -131,14 +136,42 @@ internal fun TabBar(
             NavigationBarItem(
                 selected = selected,
                 onClick = { onSelect(tab) },
-                // Only the selected tab shows its label, so only the others need the icon to name them.
-                icon = { Icon(painterResource(tab.icon), contentDescription = name.takeUnless { selected }) },
-                label = { Text(name) },
-                // As RN's bar did: with four tabs, Material shows only the selected one's label, and
-                // the icon moves up as it appears.
-                alwaysShowLabel = false,
+                // The label names every tab, so the icon names none: a description too would announce
+                // each tab twice.
+                icon = { Icon(painterResource(tab.icon), contentDescription = null) },
+                label = { TabLabel(name) },
+                // Every tab labelled, as Material 3's bar is (#265). Hiding the unselected ones was
+                // Material 2's guidance for four or more, carried over from RN's bar, and it left the
+                // book and the calendar to be guessed at: Programs' calendar reads as Stats' just as
+                // easily.
+                alwaysShowLabel = true,
                 colors = itemColors,
             )
         }
     }
+}
+
+/**
+ * A tab's label on one line, at the size the device's font scale asks for while that fits its slot, and
+ * shrunk until it does when it doesn't, never below its size at 1x (#265). Four labels share the bar's
+ * width, and wrapped they broke mid-word in every locale at 2x ("Workout/s", "Bibliote/ca",
+ * "ワーク/アウト"). A fixed cap on the scale was tried and can't work: 1.3x fit on a 411dp phone, but on
+ * a 360dp one ja's ワークアウト wrapped at 1.15x, and the cap that fits there throws large text away on
+ * every wider phone, and on labels as short as 履歴. Only the label: the screens above the bar still scale
+ * all the way.
+ *
+ * [BasicText] because Material's [Text] has no auto-size yet, so the item's style and colour are taken
+ * from the locals [NavigationBarItem] sets for its label, as [Text] would.
+ */
+@Composable
+private fun TabLabel(name: String) {
+    val style = LocalTextStyle.current.merge(color = LocalContentColor.current)
+    val fontScale = LocalDensity.current.fontScale
+    val autoSize =
+        if (fontScale > 1f) {
+            TextAutoSize.StepBased(minFontSize = style.fontSize / fontScale, maxFontSize = style.fontSize)
+        } else {
+            null
+        }
+    BasicText(name, style = style, maxLines = 1, autoSize = autoSize)
 }

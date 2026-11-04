@@ -26,13 +26,12 @@ import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertTopPositionInRootIsEqualTo
 import androidx.compose.ui.test.assertWidthIsAtLeast
-import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
-import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.Library
 import com.casco.kettle.domain.Preferences
@@ -215,14 +214,11 @@ class ShellTest {
         }
 
     /**
-     * A tab by its name, which is its label while selected and its icon's description otherwise. By its
-     * role too: a native tab's screen can carry its tab's name as its heading, as History's does.
+     * A tab by its label. By its role too: a native tab's screen can carry its tab's name as its
+     * heading, as History's does.
      */
     private fun tab(label: String) =
-        compose.onNode(
-            (hasText(label) or hasContentDescription(label)) and
-                SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Tab),
-        )
+        compose.onNode(hasText(label) and SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Tab))
 
     @Test
     fun `the bar opens on Workouts, with every tab a selectable Tab`() {
@@ -262,23 +258,20 @@ class ShellTest {
     }
 
     /**
-     * Only the selected tab shows its label, as on RN's bar. The others have nothing on screen to name
-     * them, so their icon does, and only theirs: the selected one is named by its label already.
-     *
-     * The hidden labels are still composed, at alpha 0, which is why this can't assert them absent.
-     * TalkBack never sees them: Compose leaves transparent nodes out of the accessibility tree, and a
-     * device's uiautomator dump has no text for an unselected tab at all.
+     * Every tab shows its label (#265), so the label is each tab's whole name and the icon adds none: a
+     * description on the icon as well would have TalkBack read the tab twice. Selected or not, since the
+     * old bar described the icon of every tab but the selected one.
      */
     @Test
-    fun `an unselected tab is named by its icon, and the selected one by its label alone`() {
+    fun `every tab is named once, by its label, whichever is selected`() {
         show()
+        tab("History").performClick()
         compose.mainClock.advanceTimeBy(ANIMATIONS_SETTLED)
 
-        // On the tab, since Home's title reads the same.
-        tab("Workouts").assert(hasText("Workouts"))
-        compose.onNodeWithContentDescription("Workouts").assertDoesNotExist()
-        for (label in listOf("Library", "History", "Programs")) {
-            compose.onNodeWithContentDescription(label).assertExists()
+        for (label in listOf("Workouts", "Library", "History", "Programs")) {
+            tab(label)
+                .assert(SemanticsMatcher.expectValue(SemanticsProperties.Text, listOf(AnnotatedString(label))))
+                .assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.ContentDescription))
         }
     }
 

@@ -249,7 +249,7 @@ In [`session.test.tsx`](../src/app/__tests__/session.test.tsx):
 
 **Not testable here, so checked by hand:**
 
-- in the browser ([`verifying-in-the-browser.md`](verifying-in-the-browser.md)): the layout at large
+- in the browser (`verifying-in-the-browser.md`, deleted with the web build in M6): the layout at large
   text, and the scrolling
 - on a device: hardware back closing only the sheet, and TalkBack/VoiceOver focus staying inside it
 

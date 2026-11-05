@@ -6,8 +6,8 @@ import { ThemeOverrideProvider } from '@/hooks/theme-context';
 import en from '@/i18n/locales/en.json';
 
 /**
- * Pins the dynamic-type gate, which can't be verified in the browser: react-native-web always
- * reports `fontScale: 1`, so the large-text branch is unreachable there.
+ * Pins the dynamic-type gate, which a device check only reaches with the system text size turned up,
+ * so it is the branch most likely to rot unseen.
  *
  * It matters because the runner screens are `flex: 1` with no ScrollView — overflow clips instead of
  * scrolling, and what clips is the bottom of the screen, where the primary action lives. Dropping

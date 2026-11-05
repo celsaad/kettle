@@ -29,9 +29,9 @@
 The app is closer to iOS than the docs suggest. There is no `ios/` tree to write, no architecture to
 port, and no storage layer to rethink: `expo prebuild --platform ios` generates the native project the
 same way [`android.yml`](../.github/workflows/android.yml) generates `android/`, and every storage
-guard in the app is `Platform.OS !== 'web'` rather than `=== 'android'`. What was missing is six
-small code changes — five of them now in — a set of deliberate decisions about background
-behaviour, and about $99/yr plus a Mac.
+path was guarded by `Platform.OS !== 'web'` rather than `=== 'android'` (and since web ended in M6,
+by nothing at all). What was missing is six small code changes — five of them now in — a set of
+deliberate decisions about background behaviour, and about $99/yr plus a Mac.
 
 **Two of those six were latent bugs rather than iOS work** — a purchase request that could only
 succeed on Play (2.1), and a localization gap that would ship the app in English to every Portuguese
@@ -51,7 +51,7 @@ these were missing:
 | Native project generation | no `ios/` in the tree | CNG. Same prebuild path Android already uses; nothing is checked in to port |
 | App icon | [`assets/expo.icon/`](../assets/expo.icon) via [`app.json`](../app.json) `ios.icon` | Already an Icon Composer bundle, and `icon.json` already declares a `watchOS` circle mask |
 | Tab bar | [`(tabs)/_layout.tsx`](../src/app/(tabs)/_layout.tsx) | Every `NativeTabs.Trigger.Icon` already carries `sf={{ default, selected }}` beside its `md=`. The iOS tab bar renders natively today |
-| File storage | [`storage/paths.ts:5`](../src/storage/paths.ts#L5) | `isFileStorageSupported = Platform.OS !== 'web'`, so iOS gets the real document directory, not the web degrade |
+| File storage | [`storage/paths.ts`](../src/storage/paths.ts) | No platform guard (web, the only unsupported platform, ended in M6), so iOS gets the real document directory |
 | Session timing | [`use-session-runner.ts`](../src/hooks/use-session-runner.ts) | Recomputes from `Date.now()` on every `AppState` change instead of accumulating ticks. Written for Android throttling; it is exactly what survives iOS *suspending* the app |
 | Confirm dialogs | everywhere `Alert.alert` is used | Real on iOS. The no-op is web only |
 | Keyboard | [`session-exercise-picker.tsx:74`](../src/components/session-exercise-picker.tsx#L74) | Already branches `Platform.OS === 'ios' ? 'padding' : undefined` |
@@ -127,8 +127,8 @@ puts it where typecheck can check it against expo-iap's `RequestPurchaseProps` a
 pin the shape without a React tree. This was the one line where a silent iOS-only failure lands on
 the screen that asks the user for money.
 
-`isTipJarSupported` ([`tip-store.ts:11`](../src/state/tip-store.ts#L11)) is already `!== 'web'`, so it
-needs nothing. `safe-iap.ts`'s `requireOptionalNativeModule('ExpoIap')` guard works identically on iOS.
+`isTipJarSupported` in `tip-store.ts` was `!== 'web'`, so it needed nothing; the file went with RN
+Support when the tip jar moved to native Play Billing in M4 (`TipJar.kt`), and web ended in M6. `safe-iap.ts`'s `requireOptionalNativeModule('ExpoIap')` guard works identically on iOS.
 
 ### 2.2 Two locale strings name Google Play — *shipped*
 

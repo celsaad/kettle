@@ -1,9 +1,4 @@
 import { Directory, File, Paths } from 'expo-file-system';
-import { Platform } from 'react-native';
-
-/** expo-file-system has no web implementation; storage degrades to no-op/unsupported there. */
-export const isFileStorageSupported = Platform.OS !== 'web';
-
 type ResolvedPaths = {
   root: Directory;
   sessionsDir: Directory;
@@ -13,8 +8,8 @@ type ResolvedPaths = {
 
 let resolved: ResolvedPaths | null = null;
 
-// Lazy: constructing Directory/File touches the native module immediately, which must not happen
-// at module-import time (breaks web/SSR bundling, which imports this module transitively).
+// Lazy: constructing Directory/File touches the native module immediately, which must not happen at
+// module-import time — every test that imports a store pulls this module in transitively.
 function resolvePaths(): ResolvedPaths {
   if (!resolved) {
     const root = new Directory(Paths.document, 'exercise-tracker');

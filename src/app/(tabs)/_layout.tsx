@@ -11,8 +11,7 @@ export default function TabLayout() {
   return (
     // Label and icon colors have to be set explicitly: without them the native tab bar falls back to
     // platform defaults, which are picked for a system-colored bar, not this app's `backgroundElement`
-    // — against the near-white light-mode bar that left labels invisible and icons washed out. Same
-    // focused/unfocused pairing the web tab bar uses (`_layout.web.tsx`): accentText / textSecondary.
+    // — against the near-white light-mode bar that left labels invisible and icons washed out.
     // Inside the native shell, its bar replaces this one, and this stays as the router (hostedTabOptions).
     <NativeTabs
       {...hostedTabOptions()}

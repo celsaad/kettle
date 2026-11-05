@@ -114,13 +114,12 @@
   which child it is. So `backup.ts` remembers the URI of each file it wrote, in `backup-targets.json`,
   and falls back to that when the name finds nothing.
 
-- ⚠️ **Web is not a persistence target.** `expo-file-system` has no web implementation. The storage
-  layer detects this (`isFileStorageSupported` in `paths.ts`) and degrades gracefully: on web,
-  `loadLibrary()` returns the seed library in-memory (no persistence, matching the old mock-data web
-  experience) and `listSessions()`/all writes are no-ops instead of throwing. This was a real bug
-  caught mid-implementation — `src/storage/paths.ts` originally constructed `Directory`/`File`
-  instances at module-import time, which crashed `expo export --platform web` (and would have crashed
-  the web runtime too); fixed by making path resolution lazy.
+- ⚠️ **Web is not a persistence target.** *(History: the web build ended in M6, #298, and the
+  `isFileStorageSupported` guards went with it.)* `expo-file-system` has no web implementation, so the
+  storage layer used to detect web and degrade to an in-memory seed with no-op writes. Path
+  resolution in `src/storage/paths.ts` stays lazy: constructing `Directory`/`File` at module-import
+  time touches the native module, which crashed `expo export --platform web` then and would break
+  every test that imports a store now.
 
 
 - ⚠️ **`Clipboard.getStringAsync()` resolves `''` for a denied paste as well as an empty clipboard,
@@ -138,7 +137,8 @@
   denied, which is why `pasteFromClipboard`'s `catch` is the one branch that can still say
   "couldn't read" outright.
 
-- ⚠️ **`Share.share()` rejects on cancel on web, but resolves on cancel on native.** React Native's
+- ⚠️ **`Share.share()` rejects on cancel on web, but resolves on cancel on native.** *(History: the
+  web build ended in M6, #298.)* React Native's
   `Share` reports dismissal as `{ action: 'dismissedAction' }`; `react-native-web`'s forwards
   straight to `window.navigator.share`
   (`node_modules/react-native-web/dist/exports/Share/index.js`), which rejects with an `AbortError`

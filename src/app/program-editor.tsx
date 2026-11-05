@@ -5,7 +5,7 @@
  * `native/android/.../programeditor/ProgramEditorScreen.kt`, and native is the library's only
  * writer from the library flip (#245). Goes when routing moves native, after M6 (#223).
  *
- * Outside the shell (iOS, web, Expo Go) this is an empty sheet: M5 keeps no RN fallback (#220).
+ * Outside the shell (iOS, Expo Go) this is an empty sheet: M5 keeps no RN fallback (#220).
  */
 export default function ProgramEditorStub() {
   return null;

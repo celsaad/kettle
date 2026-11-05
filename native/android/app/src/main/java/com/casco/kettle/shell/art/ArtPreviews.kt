@@ -26,7 +26,7 @@ private val SheetCell = 120.dp
 
 /**
  * Every generated drawing once, tinted the way a screen will tint it, and labelled with the first id
- * that uses it: the eyeball check against the same drawings in RN's web build, which no test can
+ * that uses it: the eyeball check against the same drawings in RN's screens, which no test can
  * make. The labels are developer-facing.
  */
 @OptIn(ExperimentalLayoutApi::class)

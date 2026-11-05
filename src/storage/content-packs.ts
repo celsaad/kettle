@@ -20,8 +20,8 @@ import { localizeLibrary, parseShippedLibrary, translationFor } from '@/storage/
  *
  * **Why these aren't in the seed.** The seed is written once, on the first launch that finds
  * no `exercises.yaml`, which makes it structurally incapable of reaching a device that already has
- * the app — the population most likely to want more content. It is also the web build's entire
- * library and the target a corrupt library is reset to, so every exercise added to it enlarges the
+ * the app — the population most likely to want more content. It is also the target a corrupt
+ * library is reset to, so every exercise added to it enlarges the
  * thing a recovery hands back (decision log). Packs answer both: they arrive with an app update,
  * every install can take them or leave them, and the seed stays the small honest thing a reseed can
  * restore.

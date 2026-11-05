@@ -15,7 +15,7 @@
         "paths": [
           {
             "name": "expo-file-system",
-            "message": "File I/O lives in src/storage/, behind isFileStorageSupported (web has no file system)."
+            "message": "File I/O lives in src/storage/."
           }
         ]
       }

@@ -13,8 +13,8 @@ import { renderScreen } from '@/test-support/render';
  * What the sheet says and how it closes. Which items it lists is session-outline.test.ts's to pin;
  * the fixtures here are real outlines of real `buildSteps` output, so this only adds the words.
  *
- * The layout — the rail, the scroll, the header clearance — can't be asserted here and is checked in
- * the browser (docs/verifying-in-the-browser.md).
+ * The layout — the rail, the scroll, the header clearance — can't be asserted here and is checked on
+ * a device.
  */
 
 const exercises: Exercise[] = [

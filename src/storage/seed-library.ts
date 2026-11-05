@@ -7,8 +7,8 @@ import { localizeLibrary, parseShippedLibrary, translationFor } from '@/storage/
 
 /**
  * The starter library: written to exercises.yaml the first time the app launches and no library file
- * exists yet, so the app never opens empty. It is also the web build's entire library and what a
- * corrupt exercises.yaml is reset to, which is why it stays deliberately small.
+ * exists yet, so the app never opens empty. It is also what a corrupt exercises.yaml is reset to,
+ * which is why it stays deliberately small.
  *
  * The content is `src/content/seed/library.yaml`, a file in the user's own format that the native app
  * reads as well. Its authoring constraints (`foundations` first, weeks in written order, every week
@@ -40,11 +40,10 @@ export function seedLibrary(): Library {
 }
 
 /**
- * The seed as the user's language will read it — the single entry point anything seeding a library
- * should call. Falls back to the English structure for any language with no table.
- *
- * The language is a parameter rather than read here so it stays testable per-language; `library-file`
- * passes whatever i18next is currently on, which is the language the rest of the UI is rendering in.
+ * The seed as a user in `language` would get it, falling back to the English structure for a language
+ * with no table. Native does the seeding (`PreparedLibrary.kt`), so since web ended in M6 only
+ * `seed-library.test.ts` calls this. It stays because that test is what proves each translation table
+ * native ships still localizes the whole seed.
  */
 export function seedLibraryFor(language: string | undefined): Library {
   return localizeLibrary(seedLibrary(), translationFor(seedTranslations, language));

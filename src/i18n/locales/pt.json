@@ -414,7 +414,6 @@
     "data": "Dados",
     "exportLibrary": "Exportar biblioteca",
     "exportLibraryDetail": "Compartilhe exercises.yaml — todos os exercícios, treinos e programas.",
-    "exportUnavailable": "Não disponível na versão para navegador.",
     "exportFailed": "Não foi possível compartilhar esse arquivo: {{detail}}",
     "exportHistory": "Exportar histórico",
     "exportHistoryDetail_one": "Compartilhe sua única sessão registrada em um só arquivo.",

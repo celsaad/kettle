@@ -5,7 +5,6 @@ const mockLibraryCreate = jest.fn();
 let mockLibraryText: string | null = null;
 
 jest.mock('@/storage/paths', () => ({
-  isFileStorageSupported: true,
   storagePaths: {
     libraryFile: {
       get exists() {

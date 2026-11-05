@@ -3,7 +3,7 @@ import type { ErrorBoundaryProps } from 'expo-router';
 import { usePreventRemove } from 'expo-router/react-navigation';
 import { useKeepAwake } from 'expo-keep-awake';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
@@ -66,14 +66,12 @@ export function ErrorBoundary({ error }: ErrorBoundaryProps) {
 }
 
 export default function SessionScreen() {
-  // suppressDeactivateWarnings is the library's own escape hatch for this exact race, and without it
-  // leaving this screen always threw. useKeepAwake's cleanup calls deactivateKeepAwake() with no
-  // .catch() unless the flag is set; on web, activate() only records the tag *after* awaiting
-  // navigator.wakeLock.request(), so any unmount that beats that promise — which is every unmount
-  // here, since finishing/closing navigates immediately — leaves deactivate with no tag to release
-  // and it throws ERR_KEEP_AWAKE_TAG_INVALID ("The wake lock with tag _r_N_ has not activated yet")
-  // as an unhandled rejection. The flag makes that path .catch(() => {}) instead. Nothing is leaked:
-  // the browser releases a screen wake lock on its own when the page/tab goes away.
+  // suppressDeactivateWarnings: useKeepAwake's cleanup calls deactivateKeepAwake() with no .catch()
+  // unless this flag is set, so any rejection there is unhandled. Releasing an unknown tag is a no-op on
+  // both native platforms, but Android's deactivate still rejects when there is no current activity
+  // (`throwingActivity`), which an unmount during teardown can hit. The flag catches it; nothing leaks,
+  // since FLAG_KEEP_SCREEN_ON belongs to the window and goes with it. It was added for a web-only race
+  // (decision log), and the web build ended in M6.
   useKeepAwake(undefined, { suppressDeactivateWarnings: true });
   const { t } = useTranslation();
   // The finished session doubles as the "are we done" flag: the runner hands it over on the same call
@@ -414,11 +412,8 @@ function ActiveSession({
    * iOS, and Android's back already runs through JS. On Android the Coming up sheet's `BackHandler`
    * still takes back first, having subscribed after the navigator did; the check below is for iOS's
    * swipe, which never reaches that handler.
-   *
-   * Off on web, where `Alert` is a no-op: a guard there would swallow the browser's back with no dialog
-   * to answer. The runner's unmount stamps the session ended instead.
    */
-  usePreventRemove(Platform.OS !== 'web', () => {
+  usePreventRemove(true, () => {
     if (upcomingOpen) closeUpcoming();
     else if (adding) setAdding(false);
     else if (swapping) setSwappingAt(null);
@@ -478,8 +473,8 @@ function ActiveSession({
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'bottom', 'left', 'right']}>
-      {/* Hidden while the sheet is open, so a screen reader stays inside it. aria-hidden rather than
-          the native props, which react-native-web drops; RN maps it onto both of them. */}
+      {/* Hidden while the sheet is open, so a screen reader stays inside it. One aria-hidden rather
+          than the two native props, since RN maps it onto both. */}
       <View style={styles.content} aria-hidden={upcomingOpen}>
         {/* The runner itself, hidden while a picker is open for the same reason. The pickers render
             inside `content`, so this is the sheet's aria-hidden one level down, with the pickers as
@@ -577,10 +572,8 @@ function ActiveSession({
                   Never coexists with the ad-hoc ADD control beside it: an ad-hoc session has no
                   workout, so it has no blocks and therefore no circuit.
 
-                  `aria-hidden` rather than `accessibilityElementsHidden`/`importantForAccessibility`,
-                  which react-native-web drops (docs/verifying-in-the-browser.md) — a browser check
-                  found the spacer still reachable, so the web build announced "Encerrar" twice. RN
-                  maps `aria-hidden` onto both native equivalents.
+                  `aria-hidden` rather than `accessibilityElementsHidden`/`importantForAccessibility`:
+                  RN maps it onto both native equivalents, so one prop covers both platforms.
                 */}
                   <ThemedText type="code" style={[styles.finishLabel, styles.finishSpacer]} aria-hidden>
                     {t('session.finish.label')}
@@ -790,8 +783,8 @@ const styles = StyleSheet.create({
     color: RunnerColors.background,
   },
   // Takes the leftover width, so the name can ellipsize inside it (with numberOfLines) instead of
-  // growing to its intrinsic width and shoving the dots and "Finish" off the right edge. minWidth: 0 is
-  // what actually lets it shrink below that intrinsic width on web, where the flex default is auto.
+  // growing to its intrinsic width and shoving the dots and "Finish" off the right edge. minWidth: 0 states
+  // the shrink outright; Yoga's own default is already 0, so this costs nothing.
   workoutNameButton: {
     flex: 1,
     minWidth: 0,

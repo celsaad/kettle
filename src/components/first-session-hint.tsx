@@ -21,9 +21,9 @@ import { useLoggedSessions } from '@/state/session-history-store';
  * unmounts before `ActiveSession` ever mounts.
  *
  * Who sees it is derived, not persisted — `sessions.length === 0`, the same test the Workouts tab's
- * first-run card uses. A "seen" flag would mean a new file, a new store and a web build with nowhere
- * to write it, to answer a question the log already answers. The count-in runs before the runner
- * creates a session, so the count is still zero on the very session this describes.
+ * first-run card uses. A "seen" flag would mean a new file and a new store, to answer a question the
+ * log already answers. The count-in runs before the runner creates a session, so the count is still
+ * zero on the very session this describes.
  *
  * **That test is "has a session on record", not "has finished one", and the difference is real.**
  * `use-session-runner.ts` calls `startSession` on mount, before a single set exists, and backing out
@@ -58,11 +58,6 @@ import { useLoggedSessions } from '@/state/session-history-store';
  * **Muted sessions see nothing.** `sessionSounds` defaults on, but a user who turned it off would get
  * a hint promising sound that no longer plays, on the one screen with no way to argue back. Cheaper
  * to stay quiet than to write a second sentence for a case where the advice doesn't hold.
- *
- * Web sees it on every session, knowingly: there is no persistence there, so `listSessions` always
- * comes back empty and the count never leaves zero. Same trade as step 3 of `FirstRunCard`, recorded
- * for the same reason — web is what `docs/verifying-in-the-browser.md` drives, and an unexplained
- * always-on hint there is a bug report waiting to be written.
  */
 export function FirstSessionHint() {
   const { t } = useTranslation();

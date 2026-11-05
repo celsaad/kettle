@@ -330,7 +330,8 @@ decision assembled across several commits. Open work belongs in the sections at 
   role and label only, so in a browser the handle is a named `role="slider"` with no actions and no
   position. Verified by reading the rendered attributes, not assumed. So the non-gesture reorder is
   **native-only, and a browser check cannot see it**; the jest tests cover the wiring, and TalkBack on
-  a device is the only thing that can confirm the rest. Don't "fix" the missing web actions.
+  a device is the only thing that can confirm the rest. (The web build ended in M6, #298, so there are
+  no web actions left to fix; only TalkBack can still confirm the rest.)
 
 - ✅ **Backups go into a folder the user nominates, not into anyone's cloud.** The gap this closes is
   that a lost phone loses the entire training log, and "export anytime" is a manual ritual nobody
@@ -435,9 +436,10 @@ decision assembled across several commits. Open work belongs in the sections at 
   `listSessions()` reading every session file at app launch (O(total sessions ever logged)) — if that
   ever becomes a real problem, the fix is lazy/paginated loading or a small separate index file, not
   changing the live-workout write path.
-- **Web has no persistence** (by necessity — `expo-file-system` doesn't support it); it now degrades
-  to an ephemeral in-memory seed library instead of crashing, which is a reasonable dev/preview
-  experience but not real usage.
+- **Web had no persistence** (by necessity — `expo-file-system` doesn't support it); it degraded to
+  an ephemeral in-memory seed library instead of crashing, which was a reasonable dev/preview
+  experience but not real usage. The web build ended in M6 (#298), and the
+  `isFileStorageSupported` guards went with it.
 - ✅ **Fixed: starting a workout with zero runnable steps trapped the user on a blank screen.** Found
   by deliberately reasoning through edge cases, then confirmed in the running app: a workout with no
   blocks (fully allowed by `workout-editor.tsx` — only `name` is validated on save) resolved to
@@ -509,7 +511,9 @@ decision assembled across several commits. Open work belongs in the sections at 
   and on the empty-workout `Close` alike. Nothing leaks by suppressing it: the browser drops a screen
   wake lock on its own when the page goes away. Verified by driving a full session to completion and
   out: previously every such run logged the `pageerror`; the run after the fix logged no console
-  errors of any kind.
+  errors of any kind. The web build ended in M6 (#298). The flag stays because it still guards
+  something: native releases an unknown tag without complaint, but Android's `deactivate` rejects
+  when there is no current activity, and without the flag that rejection is unhandled.
 - ✅ **Fixed: a batch of UI-truthfulness bugs found by auditing the screens against the code.**
   (1) `history.tsx` had **`"July 2026"` hardcoded** — frozen to one month, and sitting on top of stat
   tiles that are `historyStats(sessions)` over *all* sessions; now reads "All time", matching both the
@@ -578,9 +582,9 @@ decision assembled across several commits. Open work belongs in the sections at 
 
   Two content rules, deliberate rather than incidental: exercise `notes` describe **the app's own
   progression model only** — never form cues, injury or diet, so the app keeps describing its data
-  model rather than prescribing training — and the seed is also the web build's entire library and the
-  reseed target for a corrupt `exercises.yaml`, so it has to stay small enough to be a reasonable thing
-  to reset to.
+  model rather than prescribing training — and the seed was also the web build's entire library (until
+  web ended in M6) and is the reseed target for a corrupt `exercises.yaml`, so it has to stay small
+  enough to be a reasonable thing to reset to.
 
   **The seed ships per-language, as one English structure plus a string table** (`seed/<lang>.json`)
   — reversing an earlier English-only call, whose reasoning was that a locale-picked seed doubles every
@@ -605,7 +609,8 @@ decision assembled across several commits. Open work belongs in the sections at 
   everything added to the seed is visible only to people who have not installed the app yet. That is
   the whole argument, and it is structural rather than a preference: the population most likely to
   want more content is precisely the one the seed cannot serve. The second argument is the entry
-  above — the seed is also the web build's entire library and the reseed target for a corrupt file,
+  above — the seed is the reseed target for a corrupt file (and was the web build's entire library
+  until M6),
   so every exercise added to it enlarges what a recovery hands back.
 
   So `src/content/packs/` holds curated libraries the app ships **without seeding**, listed on
@@ -676,7 +681,8 @@ decision assembled across several commits. Open work belongs in the sections at 
   free to truncate 16 KB and some do.
 
 - ✅ **Fixed: `exportLibrary`/`exportSession` threw past their own `.catch()`.** Resolving `.uri`
-  constructs an `expo-file-system` `File`, which has no web implementation and throws *synchronously* —
+  constructs an `expo-file-system` `File`, which had no web implementation (web ended in M6) and threw
+  *synchronously* —
   before `share()`'s async body is entered — so the throw escaped the returned promise and every
   caller's `.catch()` missed it, surfacing as an unhandled error. Both are now `async`, which turns it
   into a rejection those existing handlers catch. Fixes the crash on Library's export and the same
@@ -901,9 +907,9 @@ decision assembled across several commits. Open work belongs in the sections at 
   Wednesday is the next workout.
 
   **Rejected: a persisted "rest day done" flag.** It never guesses, which is its whole appeal — but
-  web can't persist anything at all (see the platform constraints in `AGENTS.md`), so it would behave
-  differently there for no reason a user could see, and anyone who never taps the button stays stuck
-  on the rest card. **Rejected: skipping rest slots entirely** and showing them as a footnote on the
+  web couldn't persist anything at all, so it would have behaved differently there for no reason a
+  user could see (web ended in M6, #298, so only the next reason still holds), and anyone who never
+  taps the button stays stuck on the rest card. **Rejected: skipping rest slots entirely** and showing them as a footnote on the
   workout card. It cannot get stuck, and it is why the feature would have been pointless: the app
   would never actually say today is a rest day. What replaces both is the card's "train anyway" link,
   so the arithmetic being wrong for someone costs them one tap rather than blocking them.

@@ -5,7 +5,7 @@
  * library's only writer from the library flip (#245). Goes when routing moves native, after M6
  * (#223).
  *
- * Outside the shell (iOS, web, Expo Go) this is an empty sheet: M5 keeps no RN fallback (#220).
+ * Outside the shell (iOS, Expo Go) this is an empty sheet: M5 keeps no RN fallback (#220).
  */
 export default function ImportStub() {
   return null;

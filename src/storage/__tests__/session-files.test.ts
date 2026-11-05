@@ -2,7 +2,6 @@ const mockWrite = jest.fn();
 const mockCreate = jest.fn();
 
 jest.mock('@/storage/paths', () => ({
-  isFileStorageSupported: true,
   ensureStorageReady: jest.fn(),
   sessionFile: () => ({ exists: true, create: mockCreate, write: mockWrite }),
   storagePaths: {},

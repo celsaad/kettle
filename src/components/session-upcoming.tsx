@@ -57,7 +57,7 @@ export function SessionUpcoming({ step, items, ends, holdElapsedSec, restRemaini
   return (
     // Modal on the overlay rather than on the sheet: iOS hides only a modal view's *siblings*, and the
     // runner beneath is a sibling of this overlay, not of the sheet. session.tsx also hides the runner
-    // with aria-hidden, which is what reaches Android and the web.
+    // with aria-hidden, which is what reaches Android.
     <View style={styles.overlay} accessibilityViewIsModal onAccessibilityEscape={onClose}>
       {/* Hidden from assistive tech: the × is the named way out, and a second "Close" spanning the
           whole screen would only be one more thing to swipe past. */}
@@ -379,8 +379,6 @@ const styles = StyleSheet.create({
     bottom: 0,
     backgroundColor: 'rgba(0,0,0,0.55)',
   },
-  // pointerEvents as style rather than as a prop: react-native-web warns that the prop is deprecated,
-  // and the web build is otherwise warning-free apart from expo-notifications.
   column: {
     flex: 1,
     pointerEvents: 'box-none',

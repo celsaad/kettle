@@ -885,8 +885,8 @@ describe('finishSession', () => {
 
 /**
  * The net under the screen's leave guard. Whatever takes the runner down without finishing — a route
- * removed without asking, or back on the web build, where the guard is off — must still leave the
- * session stamped as ended. Otherwise it counts as zero minutes and `exerciseHistory` skips it.
+ * removed without asking — must still leave the session stamped as ended. Otherwise it counts as zero
+ * minutes and `exerciseHistory` skips it.
  */
 describe('unmounting mid-session', () => {
   it('stamps the session ended, keeping what was logged', async () => {

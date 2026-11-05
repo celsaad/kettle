@@ -1,4 +1,4 @@
-import { Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { ThemedText } from '@/components/themed-text';
@@ -62,7 +62,7 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: MaxContentWidth,
     paddingHorizontal: Spacing.three,
-    paddingTop: Platform.select({ web: Spacing.six, default: Spacing.three }),
+    paddingTop: Spacing.three,
     paddingBottom: Spacing.three - 2,
   },
   // Height comes from the button, and the grabber centers against it, so the two don't stack.

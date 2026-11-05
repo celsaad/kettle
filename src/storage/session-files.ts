@@ -2,17 +2,14 @@ import { File } from 'expo-file-system';
 
 import { parseSessionYaml, serializeSessionYaml } from '@/domain/yaml-mapping';
 import type { Session, SessionEntry } from '@/domain/types';
-import { ensureStorageReady, isFileStorageSupported, sessionFile, storagePaths } from '@/storage/paths';
+import { ensureStorageReady, sessionFile, storagePaths } from '@/storage/paths';
 
 export type ListSessionsResult = { sessions: Session[]; errors: string[] };
 
 /**
  * Reads every session file. One malformed file produces an error entry, not a crash.
- * On web (unsupported by expo-file-system) this degrades to an empty, non-persisted history.
  */
 export async function listSessions(): Promise<ListSessionsResult> {
-  if (!isFileStorageSupported) return { sessions: [], errors: [] };
-
   ensureStorageReady();
 
   const files = storagePaths.sessionsDir
@@ -62,7 +59,6 @@ export function takeWriteFailure(): string | null {
  * and `takeWriteFailure` is what stops that from being silent.
  */
 function writeSession(session: Session): void {
-  if (!isFileStorageSupported) return;
   try {
     ensureStorageReady();
     const file = sessionFile(session.id);

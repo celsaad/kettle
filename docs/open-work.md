@@ -345,12 +345,6 @@ interpolated rather than translated. Notes on the structural ones:
 - **The sheet's drawn signal is early on a pop** (`RnFrames`, #155): going back from an RN sheet drew
   the destination uncovered for a frame or two before the transition, on the emulator (#207).
 
-- **`Alert.alert` is a no-op on web.** react-native-web ships `class Alert { static alert() {} }`, so
-  every confirm dialog silently does nothing in the browser — all the deletes and finish-session.
-  Native is unaffected and web is a dev/preview target, so this is logged rather than fixed. It does
-  mean a browser check of any confirm flow proves nothing unless the script patches it, which is how
-  session delete was actually verified end to end.
-
 One of the three found in the runner audit that produced the resume-race fix above is still here. The
 other two are fixed (see the roll-up above); this one stayed because it is not a defect:
 

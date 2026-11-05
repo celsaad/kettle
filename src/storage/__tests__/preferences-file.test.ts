@@ -12,12 +12,8 @@ const mockFile = {
   write: jest.fn(),
   create: jest.fn(),
 };
-let mockStorageSupported = true;
 
 jest.mock('@/storage/paths', () => ({
-  get isFileStorageSupported() {
-    return mockStorageSupported;
-  },
   ensureStorageReady: jest.fn(),
   storagePaths: {
     get preferencesFile() {
@@ -37,7 +33,6 @@ const stored = {
 };
 
 beforeEach(() => {
-  mockStorageSupported = true;
   mockFile.exists = true;
   mockFile.text.mockReset();
   mockFile.write.mockReset();
@@ -143,11 +138,6 @@ describe('loadPreferences', () => {
 
   it('returns null when the read itself throws', async () => {
     mockFile.text.mockRejectedValue(new Error('device storage unavailable'));
-    expect(await loadPreferences()).toBeNull();
-  });
-
-  it('returns null on web, where there is no file storage', async () => {
-    mockStorageSupported = false;
     expect(await loadPreferences()).toBeNull();
   });
 });

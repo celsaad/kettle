@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { ThemedText } from '@/components/themed-text';
@@ -74,10 +74,7 @@ export function SessionExercisePicker({ replacing, candidates, onCancel, onSelec
           shortened the list the sheet sank until all of it was behind the keyboard. It read as the
           tray closing after a few letters. Capped at the overlay's height, so a long list scrolls in
           what is left above the keyboard instead of pushing the search field off the top. */}
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'web' ? undefined : 'padding'}
-        keyboardVerticalOffset={overlayTop}
-        style={styles.keyboardAvoider}>
+      <KeyboardAvoidingView behavior="padding" keyboardVerticalOffset={overlayTop} style={styles.keyboardAvoider}>
         <View style={styles.sheet}>
           <ThemedText type="code" style={styles.label}>
             {t(replacing === undefined ? 'session.adhoc.pickerTitle' : 'session.swap.title')}

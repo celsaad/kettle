@@ -431,22 +431,38 @@ and stubs.
 ### M6 — The session runner · ~4–6 weeks
 
 AGENTS.md calls the runner "make-or-break", so it moves **whole and last**, never split across the
-boundary.
+boundary. Charted by the M6 map (#292); its acceptance is the runner inventory (#294).
 
-- A native foreground service that owns the wall-clock session state, with the step model
-  (`session-steps.ts` → `:shared`). The Compose runner UI binds to that service.
-- Sounds, haptics, keep-awake, announcements, and the time-sensitive and background cue
-  notifications, moved from `expo-audio`, `expo-haptics`, `expo-keep-awake` and
-  `expo-notifications` to the platform APIs.
-- The leave-guard, the Coming up sheet, the swap and add pickers, and the number pad.
-- The runner's M5 requests to native (`setTargetWeight`, `sessionFinished` → `backupResult`, #220)
-  become direct native calls.
-- **It ports behind a `/session` stub**, as M4 and M5's screens did, and splits inside the milestone
-  (#223): the step model (`session-steps.ts`) into `:shared` with tests, then the foreground service
-  owning the clock, sounds and cues, then the Compose UI, then real device sessions and closed testing.
-- Verified the way the runner always has to be: **real sessions on a real device**, including
-  backgrounding, screen lock, a phone call mid-rest, and process death mid-set. Then a closed-testing
-  track for at least one week of real use before production.
+**Release shape.** Every slice below lands **dark**, behind a `nativeRunner` flag in `Flips.kt`
+(debug on, release off), so `.dev` runs the native runner while Play keeps RN. Then **one flip
+release** goes through closed testing and its PR deletes the RN runner, and then routing moves.
+The web build goes first (#298), so the RN runner's deletion has no web exit to keep.
+
+- **Groundwork (#302).** One `openRunner` for every entry point. With the flag on it opens a
+  full-screen native runner (tab bar hidden) behind a `/session-native` stub, and `runnerDone`
+  hands back.
+- **The step model (#303)** (`session-steps.ts`, `session-outline.ts`) into `:shared`, held to the TS
+  by `conformance/steps.yaml` while both runners exist. Plus one plan resolver that the UI uses to
+  pick a screen and the service uses to own the plan.
+- **The engine (#304)**: the runner as a pure state machine in `:shared`. **Pause belongs to the step's
+  clock** and clears on a step change, which deliberately differs from the RN runner.
+- **The foreground service (#305)** (`health` type, #293) owns the clock, the count-in, every write
+  and **every cue**. Sounds play from it whether the runner is visible or not. The per-step scheduled
+  notifications go, and a step that ends while the runner isn't visible posts an alert instead
+  (#296). Its write rereads native's files directly, and `setTargetWeight` and `sessionFinished` →
+  `backupResult` (#220) become direct calls.
+- **The Compose UI (#306)**: the leave guard (one back chain, the number pad first), Coming up, the
+  swap and add pickers, the number pad and completion. Exits that leave the *app* keep the session
+  running. Exits inside the app are guarded and end in Finish (#297).
+- **Process death (#307).** The session file alone can't rebuild a running session, so the service
+  also keeps a private, disposable **runner-state file**. That doesn't bend the format rule under
+  "Not doing", which covers files the user owns. After a kill, a blocking Resume / Finish prompt
+  appears at the next launch (#295). This is the fix for the stranded session.
+- **The flip release (#308).** It needs Play's first foreground-service declaration. Its PR deletes
+  the RN runner, its messages and its packages (`expo-audio`, `expo-haptics`, `expo-keep-awake`, and
+  `expo-notifications`, brought forward from M7). Closed testing comes first: at least one week and
+  five real sessions on the S25+, plus the full device script (backgrounding, screen lock, a phone
+  call mid-rest, process death mid-set, the cue and exit checks). Production waits for both.
 
 The foreground service is also what `docs/watch-remote-plan.md` needs, so this milestone makes that
 plan a few days of work rather than a project.
@@ -454,22 +470,27 @@ plan a few days of work rather than a project.
 **Landmark: the runner is native in production** and survives a week of closed testing with no lost
 session.
 
-**Then routing moves to native, as a release of its own** (#223), before M7 deletes RN. It was
+**Then routing moves to native, as a release of its own (#309)**, before M7 deletes RN. It was
 planned for M5, and moved here because every hard question it raised (a cut-down expo-router for one
 route, a hand-back message pair, forwarding back to RN, the View sheet kept only so RN could sit above
-it) came from the runner still being RN. Once RN draws nothing it is mostly deletion: `TabNavigator`
-becomes a `Navigator` that owns the back stack, `shellRoutes` becomes a typed native route table, and
-the RN tabs, sheets and stubs (#190), expo-router, and every steering and route-report message go.
-`kettle://` links are parsed natively. `NavigateReceiver` and the route-check scripts stay,
-retargeted. The View sheet stays as it is; whether a Compose sheet should follow is #229. **Gate: a
-`:benchmark` cold-start run against the last release.** Its hand-off is written when M6 is charted.
+it) came from the runner still being RN. Once RN draws nothing it is mostly deletion:
+- `TabNavigator` becomes a `Navigator` that owns the back stack, with a runner slot that drops
+  navigation while a session runs.
+- `shellRoutes` becomes a typed native route table.
+- The RN tabs, sheets and stubs (#190), expo-router, and every steering and route-report message
+  go.
+- `kettle://` links are parsed natively, `kettle://session` included.
+- `NavigateReceiver` and the route-check scripts stay, retargeted.
+- The View sheet stays as it is; whether a Compose sheet should follow is #229.
+
+**Gate: a `:benchmark` cold-start run against the last release.**
 
 ### M7 — React Native removed (Android) · ~1–2 weeks
 
 - Delete the AAR, `expo-brownfield`, Hermes and the RN surfaces.
-- `expo-notifications` leaves with the runner's step cues. The rest-day reminder already moved to a
-  native alarm in M5 (#236), so delete its launch-time cancel of Expo's leftover request with the
-  module. (The tip jar already moved to Play Billing with Support in M4.)
+- `expo-notifications` already left with the RN runner in M6 (#308). The rest-day reminder moved to
+  a native alarm in M5 (#236); if its launch-time cancel of Expo's leftover request outlived the
+  module, delete it here. (The tip jar already moved to Play Billing with Support in M4.)
 - Re-check the **Data Safety** claim: list every Gradle dependency that touches the network and
   confirm none transmits anything. That includes `sh.calvin.reorderable`, which the workout editor
   brought in M5 (#226).

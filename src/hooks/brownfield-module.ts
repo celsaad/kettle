@@ -28,6 +28,15 @@ export function isHosted(): boolean {
 }
 
 /**
+ * Whether the shell draws the native runner over its stub route (#302): `.dev` while the flip is on.
+ * False on Play and outside the shell, where `session-native.tsx` is an empty screen nobody draws over.
+ */
+export function drawsNativeRunner(): boolean {
+  // The shell's MainActivity sets it, from its own registration. The two share no code, so change both.
+  return getBrownfield()?.getSharedStateValue('nativeRunner') === true;
+}
+
+/**
  * Tells the shell a session has just been finished and written, so it backs the log up into the
  * user's folder (#220): native owns the folder from the preferences flip, and answers `backupResult`,
  * which `safe-brownfield.ts` hands the history store. Nothing outside the shell backs up, as M5's "no

@@ -20,6 +20,8 @@ import { useEffect } from 'react';
  * between tests.
  */
 export const router = {
+  // True unless a test says otherwise: every screen but a cold-start link's has one under it.
+  canGoBack: jest.fn(() => true),
   back: jest.fn(),
   push: jest.fn(),
   dismissTo: jest.fn(),

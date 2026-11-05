@@ -4,8 +4,9 @@
 # the two matrices are kept identical, so a step added to one is added to both.
 #
 # Needs com.casco.kettle.dev from native-dev.sh, running against Metro and past its splash, on a
-# phone in English whose .dev install still holds the seed library. The runner steps finish a real
-# session, which joins the .dev history. It never touches com.casco.kettle.
+# phone in English whose .dev install still holds the seed library. The RN runner's steps finish a
+# real session, which joins the .dev history; the native runner's placeholder writes nothing. It
+# never touches com.casco.kettle.
 #
 # The matrix is .dev's, which runs with the nativeRunner flip on (#302): a start from a native screen
 # opens the native runner's placeholder, which shows its start's params, and a release build opens

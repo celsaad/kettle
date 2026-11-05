@@ -18,6 +18,14 @@ const val NATIVE_RUNNER_PATH = "/session-native"
 fun isRunnerPath(path: String?): Boolean = path == RUNNER_PATH || path == NATIVE_RUNNER_PATH
 
 /**
+ * Whether this build draws the native runner: read off the registration, not the flag, so nothing can
+ * push the native runner's stub without a screen over it. [openRunner] defaults to it, and the shell
+ * tells JS (`drawsNativeRunner` in `src/hooks/brownfield-module.ts`), so a stub reached any other way,
+ * as by a `kettle://session-native` link on Play, backs out rather than refusing back over nothing.
+ */
+val nativeRunnerDrawn: Boolean get() = shellRoutes.screenAt(NATIVE_RUNNER_PATH) is Screen.Native
+
+/**
  * The one way into a runner (#297): the native one behind its stub while [nativeRunner] is on, as on
  * `.dev`, and RN's otherwise, as on Play until the flip release (#308). Both read the same params.
  * [open] is `JsBridge.open`, a parameter so a test hears the push.
@@ -25,7 +33,7 @@ fun isRunnerPath(path: String?): Boolean = path == RUNNER_PATH || path == NATIVE
 fun openRunner(
     start: RunnerStart,
     open: (Stacking, String, Map<String, String>) -> Unit = JsBridge::open,
-    nativeRunner: Boolean = NATIVE_RUNNER,
+    nativeRunner: Boolean = nativeRunnerDrawn,
 ) = open(Stacking.Push, if (nativeRunner) NATIVE_RUNNER_PATH else RUNNER_PATH, start.routeParams())
 
 /** A start's params as the runner's route reads them, `src/app/session.tsx`'s. */

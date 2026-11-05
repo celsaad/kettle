@@ -11,8 +11,8 @@
 
   The expected texts are English UI strings plus names from the seed library, so the phone has to be
   in English and the .dev install has to still hold the seed's exercises, workouts and program.
-  The runner steps finish a real session, which joins the .dev history. It never touches
-  com.casco.kettle.
+  The RN runner's steps finish a real session, which joins the .dev history; the native runner's
+  placeholder writes nothing. It never touches com.casco.kettle.
 
   What the matrix pins: tabs in any order, every modal and back from it, a message sent from a modal
   (which must not stack a second copy of the tabs, since back would then walk through stale screens),

@@ -72,6 +72,11 @@ jest.mock('@/state/session-history-store', () => ({
   useSessionHistoryStore: { getState: () => ({ backupAnswered: mockBackupAnswered }) },
 }));
 
+// Who hears it has its own suite (app/__tests__/session-native.test.tsx); this one only checks the
+// message gets there.
+const mockEmitRunnerDone = jest.fn();
+jest.mock('@/hooks/runner-done', () => ({ emitRunnerDone: () => mockEmitRunnerDone() }));
+
 /** Lets the dismissal commit and anything waiting on it run. */
 const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -89,6 +94,7 @@ beforeEach(() => {
   mockBackupAnswered.mockClear();
   mockPush.mockClear();
   mockReplace.mockClear();
+  mockEmitRunnerDone.mockClear();
   jest.resetModules();
   ({ announceHostReady } = require('@/hooks/safe-brownfield'));
 });
@@ -177,6 +183,16 @@ it('hands a backup result to the history store, and drops one without an answer'
   fromShell({ type: 'backupResult' });
 
   expect(mockBackupAnswered.mock.calls).toEqual([[true], [false]]);
+  expect(mockNavigate).not.toHaveBeenCalled();
+});
+
+// The native runner's Done (#302): the stub under it hears it, and nothing navigates from here.
+it('hands the native runner being done to its stub', () => {
+  announceHostReady();
+
+  fromShell({ type: 'runnerDone' });
+
+  expect(mockEmitRunnerDone).toHaveBeenCalledTimes(1);
   expect(mockNavigate).not.toHaveBeenCalled();
 });
 

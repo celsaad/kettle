@@ -2,6 +2,15 @@
 
 > **Not executed.** This is a forward-looking plan; nothing below has shipped. Written against the
 > tree at `59a9663`.
+>
+> **Rebase this onto M6 before executing it.** The seam, the rest notification and the i18n section
+> below are written against the RN runner, which M6 deletes. Once M6 ships, the native runner's
+> foreground service owns the clock, and its ongoing notification is the card this plan wants. It has
+> a countdown chronometer, which undercuts the "no live ticking timer" item in the out-of-scope list
+> if Wear bridges it. Pause, Resume and Next on that notification are **deliberately absent from M6**
+> (#296), which kept the builder a function of live state so actions can be added later. Adding them
+> is the first piece of this plan, and it is planned work for after the migration rather than a
+> parked idea.
 
 The watch never holds data. It holds no library, writes no session files, and has nothing to merge —
 it only drives the step the phone is already running. That constraint is the entire reason this is a

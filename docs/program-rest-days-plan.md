@@ -302,7 +302,7 @@ Named up front, because each is a rewrite if discovered halfway.
 
 ## Verification beyond the suite
 
-Per `docs/verifying-in-the-browser.md`, driven in the running app:
+Per `docs/verifying-in-the-browser.md` (deleted with the web build in M6), driven in the running app:
 
 1. Import a two-day program with a rest day between and confirm the Today card shows rest, then
    confirm "Train anyway" starts the right workout.

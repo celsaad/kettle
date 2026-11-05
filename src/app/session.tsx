@@ -66,14 +66,12 @@ export function ErrorBoundary({ error }: ErrorBoundaryProps) {
 }
 
 export default function SessionScreen() {
-  // suppressDeactivateWarnings is the library's own escape hatch for this exact race, and without it
-  // leaving this screen always threw. useKeepAwake's cleanup calls deactivateKeepAwake() with no
-  // .catch() unless the flag is set; on web, activate() only records the tag *after* awaiting
-  // navigator.wakeLock.request(), so any unmount that beats that promise — which is every unmount
-  // here, since finishing/closing navigates immediately — leaves deactivate with no tag to release
-  // and it throws ERR_KEEP_AWAKE_TAG_INVALID ("The wake lock with tag _r_N_ has not activated yet")
-  // as an unhandled rejection. The flag makes that path .catch(() => {}) instead. Nothing is leaked:
-  // the browser releases a screen wake lock on its own when the page/tab goes away.
+  // suppressDeactivateWarnings: useKeepAwake's cleanup calls deactivateKeepAwake() with no .catch()
+  // unless this flag is set, so any rejection there is unhandled. Releasing an unknown tag is a no-op on
+  // both native platforms, but Android's deactivate still rejects when there is no current activity
+  // (`throwingActivity`), which an unmount during teardown can hit. The flag catches it; nothing leaks,
+  // since FLAG_KEEP_SCREEN_ON belongs to the window and goes with it. It was added for a web-only race
+  // (decision log), and the web build ended in M6.
   useKeepAwake(undefined, { suppressDeactivateWarnings: true });
   const { t } = useTranslation();
   // The finished session doubles as the "are we done" flag: the runner hands it over on the same call
@@ -785,8 +783,8 @@ const styles = StyleSheet.create({
     color: RunnerColors.background,
   },
   // Takes the leftover width, so the name can ellipsize inside it (with numberOfLines) instead of
-  // growing to its intrinsic width and shoving the dots and "Finish" off the right edge. minWidth: 0 is
-  // what actually lets it shrink below that intrinsic width on web, where the flex default is auto.
+  // growing to its intrinsic width and shoving the dots and "Finish" off the right edge. minWidth: 0 states
+  // the shrink outright; Yoga's own default is already 0, so this costs nothing.
   workoutNameButton: {
     flex: 1,
     minWidth: 0,

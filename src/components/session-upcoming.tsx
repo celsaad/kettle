@@ -57,7 +57,7 @@ export function SessionUpcoming({ step, items, ends, holdElapsedSec, restRemaini
   return (
     // Modal on the overlay rather than on the sheet: iOS hides only a modal view's *siblings*, and the
     // runner beneath is a sibling of this overlay, not of the sheet. session.tsx also hides the runner
-    // with aria-hidden, which is what reaches Android and the web.
+    // with aria-hidden, which is what reaches Android.
     <View style={styles.overlay} accessibilityViewIsModal onAccessibilityEscape={onClose}>
       {/* Hidden from assistive tech: the × is the named way out, and a second "Close" spanning the
           whole screen would only be one more thing to swipe past. */}

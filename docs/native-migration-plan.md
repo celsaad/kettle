@@ -55,7 +55,7 @@ and talks to JS over `BrownfieldMessaging`.
 
 Isolated is chosen over the integrated approach because it leaves the root project untouched: `pnpm
 test`, lint, the web build and the browser verification keep working until the milestone that deletes
-them. **Expo marks brownfield support as alpha, and its dev client doesn't support brownfield.** Those
+them (for web, M6: #298). **Expo marks brownfield support as alpha, and its dev client doesn't support brownfield.** Those
 are the two risks Milestone 0 exists to retire.
 
 ## Milestones

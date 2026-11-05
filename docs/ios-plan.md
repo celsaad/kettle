@@ -127,8 +127,8 @@ puts it where typecheck can check it against expo-iap's `RequestPurchaseProps` a
 pin the shape without a React tree. This was the one line where a silent iOS-only failure lands on
 the screen that asks the user for money.
 
-`isTipJarSupported` ([`tip-store.ts:11`](../src/state/tip-store.ts#L11)) is already `!== 'web'`, so it
-needs nothing. `safe-iap.ts`'s `requireOptionalNativeModule('ExpoIap')` guard works identically on iOS.
+`isTipJarSupported` in `tip-store.ts` was `!== 'web'`, so it needed nothing; the file went with RN
+Support when the tip jar moved to native Play Billing in M4 (`TipJar.kt`), and web ended in M6. `safe-iap.ts`'s `requireOptionalNativeModule('ExpoIap')` guard works identically on iOS.
 
 ### 2.2 Two locale strings name Google Play — *shipped*
 

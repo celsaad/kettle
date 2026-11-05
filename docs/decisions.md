@@ -330,8 +330,8 @@ decision assembled across several commits. Open work belongs in the sections at 
   role and label only, so in a browser the handle is a named `role="slider"` with no actions and no
   position. Verified by reading the rendered attributes, not assumed. So the non-gesture reorder is
   **native-only, and a browser check cannot see it**; the jest tests cover the wiring, and TalkBack on
-  a device is the only thing that can confirm the rest. Don't "fix" the missing web actions. (The web
-  build ended in M6, #298; the conclusion that only TalkBack can confirm this stands.)
+  a device is the only thing that can confirm the rest. (The web build ended in M6, #298, so there are
+  no web actions left to fix; only TalkBack can still confirm the rest.)
 
 - ✅ **Backups go into a folder the user nominates, not into anyone's cloud.** The gap this closes is
   that a lost phone loses the entire training log, and "export anytime" is a manual ritual nobody
@@ -511,7 +511,9 @@ decision assembled across several commits. Open work belongs in the sections at 
   and on the empty-workout `Close` alike. Nothing leaks by suppressing it: the browser drops a screen
   wake lock on its own when the page goes away. Verified by driving a full session to completion and
   out: previously every such run logged the `pageerror`; the run after the fix logged no console
-  errors of any kind. The web build ended in M6 (#298); the flag stays, since it costs native nothing.
+  errors of any kind. The web build ended in M6 (#298). The flag stays because it still guards
+  something: native releases an unknown tag without complaint, but Android's `deactivate` rejects
+  when there is no current activity, and without the flag that rejection is unhandled.
 - ✅ **Fixed: a batch of UI-truthfulness bugs found by auditing the screens against the code.**
   (1) `history.tsx` had **`"July 2026"` hardcoded** — frozen to one month, and sitting on top of stat
   tiles that are `historyStats(sessions)` over *all* sessions; now reads "All time", matching both the

@@ -6,12 +6,18 @@ import com.casco.kettle.domain.Library
 import com.casco.kettle.domain.ParseResult
 import com.casco.kettle.domain.Preferences
 import com.casco.kettle.domain.RecordKind
+import com.casco.kettle.domain.RunnerStep
 import com.casco.kettle.domain.Session
 import com.casco.kettle.domain.SessionEntry
+import com.casco.kettle.domain.StepBuildResult
 import com.casco.kettle.domain.SupporterState
 import com.casco.kettle.domain.UnitSystem
+import com.casco.kettle.domain.addSetForMember
+import com.casco.kettle.domain.buildStepsForExercise
+import com.casco.kettle.domain.buildStepsWithLimits
 import com.casco.kettle.domain.diffBlockOverride
 import com.casco.kettle.domain.diffExerciseOverride
+import com.casco.kettle.domain.dropLastSetForMember
 import com.casco.kettle.domain.emomIntervalCount
 import com.casco.kettle.domain.entryBest
 import com.casco.kettle.domain.filterByName
@@ -37,8 +43,11 @@ import com.casco.kettle.domain.serializeSessionYaml
 import com.casco.kettle.domain.sessionDurationMinutes
 import com.casco.kettle.domain.sessionEntryResult
 import com.casco.kettle.domain.sessionSetCount
+import com.casco.kettle.domain.setStepsForMember
+import com.casco.kettle.domain.swapExerciseForMember
 import com.casco.kettle.domain.toDisplayWeight
 import com.casco.kettle.domain.translationFor
+import com.casco.kettle.domain.upcomingOutline
 import com.casco.kettle.domain.weightStep
 import it.krzeminski.snakeyaml.engine.kmp.api.Load
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -71,6 +80,7 @@ class ConformanceTest {
             "repair" to ::runRepair,
             "search" to ::runSearch,
             "session" to ::runSession,
+            "steps" to ::runSteps,
             "supporter" to ::runSupporter,
             "units" to ::runUnits,
         )
@@ -258,6 +268,70 @@ class ConformanceTest {
 
     private fun runSession(case: Case): Any = golden(parseSessionYaml(case.string("input")!!), ::sessionJson)
 
+    /** The ops and output shapes are in the header of `conformance/steps.yaml`. */
+    private fun runSteps(case: Case): Any {
+        val library = mustParseLibrary(case.string("library")!!)
+        val workout =
+            case.string("workout")?.let { id -> library.workouts.single { it.id == id } } ?: library.workouts.first()
+        val built =
+            if (case.flag(
+                    "adhoc",
+                )
+            ) {
+                StepBuildResult(emptyList(), false)
+            } else {
+                buildStepsWithLimits(workout, library.exercises)
+            }
+        val ops = case.mapsOrEmpty("ops")
+        if (case.string("op") == "mutate") {
+            var steps = built.steps
+            return ops.map { op ->
+                val result = stepOp(library, steps, op)
+                if (result is List<*>) {
+                    @Suppress("UNCHECKED_CAST")
+                    steps = result as List<RunnerStep>
+                }
+                mapOf("op" to op, "result" to if (result is List<*>) steps.map(::stepJson) else result)
+            }
+        }
+        val steps =
+            ops.fold(built.steps) { steps, op ->
+                @Suppress("UNCHECKED_CAST")
+                (stepOp(library, steps, op) as? List<RunnerStep>) ?: steps
+            }
+        val indices = case.intsOrNull("at") ?: (-1..steps.size).toList()
+        return when (val op = case.string("op")) {
+            "build" -> {
+                buildJson(built.truncated, steps, case.flag("brief"))
+            }
+
+            "outline" -> {
+                indices.map { at -> mapOf("at" to at, "items" to upcomingOutline(steps, at).map(::upcomingJson)) }
+            }
+
+            else -> {
+                error("unknown op $op")
+            }
+        }
+    }
+
+    private fun stepOp(
+        library: Library,
+        steps: List<RunnerStep>,
+        op: Map<String, Any?>,
+    ): Any {
+        val member = op["member"] as String
+        val exercise = { library.exercises.single { it.id == op["exercise"] } }
+        return when (val name = op["op"]) {
+            "count" -> setStepsForMember(steps, member)
+            "addSet" -> addSetForMember(steps, member)
+            "dropLastSet" -> dropLastSetForMember(steps, member)
+            "swap" -> swapExerciseForMember(steps, member, op["from"] as Int, exercise(), op["newMember"] as String)
+            "append" -> steps + buildStepsForExercise(exercise(), op["block"] as Int, member)
+            else -> error("unknown op $name")
+        }
+    }
+
     private fun runUnits(case: Case): Any {
         val system = case.string("system")?.let(::unitSystem)
         return when (val op = case.string("op")) {
@@ -302,6 +376,13 @@ class Case(
     fun maps(key: String): List<Map<String, Any?>> = fields[key] as List<Map<String, Any?>>
 
     fun number(key: String): Double = (fields[key] as Number).toDouble()
+
+    fun flag(key: String): Boolean = fields[key] == true
+
+    @Suppress("UNCHECKED_CAST")
+    fun mapsOrEmpty(key: String): List<Map<String, Any?>> = fields[key] as List<Map<String, Any?>>? ?: emptyList()
+
+    fun intsOrNull(key: String): List<Int>? = (fields[key] as List<*>?)?.map { it as Int }
 }
 
 /**

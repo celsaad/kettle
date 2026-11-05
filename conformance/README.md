@@ -13,8 +13,9 @@ Each suite is two files:
   keyed by case name. Never hand-edit these.
 
 `src/domain/__tests__/conformance.test.ts` checks the TypeScript output against the goldens. When a
-change to `src/domain/` is meant to change behaviour, run `pnpm run conformance:update`. The golden
-diff it leaves is part of the review, because a change there is a change to what users' files mean.
+change to `src/domain/`, or to the runner's `session-steps.ts` or `session-outline.ts`, is meant to
+change behaviour, run `pnpm run conformance:update`. The golden diff it leaves is part of the review,
+because a change there is a change to what users' files mean.
 
 `native/android/shared/src/jvmTest/.../ConformanceTest.kt` checks the Kotlin port against the same
 files, read in place. It finds suites by listing this directory, and one with no Kotlin runner yet is
@@ -35,6 +36,7 @@ reported as skipped under its own name, never as passing. Porting a suite is add
 | `search` | `rankByName` and `filterByName` over `names` with `query` | `{ ranked, filtered }`, lists of names |
 | `preferences` | `parsePreferences(input)`, the text of a `preferences.json` | the preferences with defaults filled in, or `null` where the file is refused |
 | `supporter` | `parseSupporterState(input)`, the text of a `supporter.json` | the supporter state, the empty one where the file is refused |
+| `steps` | the runner's `buildStepsWithLimits`, its mid-session edits, and `upcomingOutline`, over the workout in `library` | the step list, the list after each edit, or the outline per index (the file's header) |
 | `records` | `entryBest` over each entry of the session file in `session`, `recordKey(exercise, kind)`, or `sessionDurationMinutes` of the session in `session` | a list of `{ kind, value, reps, oneRepMaxKg }` or `null` per entry; the key string; whole minutes |
 
 The `source` cases read `site/examples/` and the shipped seed and packs in `src/content/` in place,
@@ -54,6 +56,11 @@ Settings reads it until M5.
 `records` is not a file at all but what one means: which entries are a record, and on what. RN's
 runner keeps its live best-marker past M4 while native Stats and exercise progress read the same
 rules, so the two sides must agree on what counts as doing more, and on how long a session ran.
+
+`steps` isn't a file either: it is what a workout *runs*, step by step, held while the RN and native
+runners both exist (#303). Its goldens come from `src/hooks/session-steps.ts`, which M6's flip release
+deletes, so that release has to decide what becomes of the suite: it keeps the corpus or retires it,
+and either way it needs a writer other than TS.
 
 ## Reading the goldens
 

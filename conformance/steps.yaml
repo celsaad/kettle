@@ -1,0 +1,551 @@
+# The session runner's step model: a workout expanded into the steps it runs, the mid-session edits to
+# that list, and the Coming up outline built from it. Pure, and held here because two runners exist
+# until M6's flip release deletes the RN one (#292, #303).
+#
+# The Next card's lookahead isn't here: in TS it is private to the runner, which #303 leaves
+# unchanged, so it has no export to generate goldens from. Kotlin's is pinned by `RunnerStepsTest`.
+#
+# Every case has a `library` (inline YAML that must parse) and an `op`. The step list is the
+# `workout` named, or the library's first, through `buildStepsWithLimits`; or empty with `adhoc: true`.
+#
+# - `build`: `{ truncated, length, steps }`. With `brief: true`, `head` and `tail` (three steps each)
+#   in place of `steps`, for the ceiling cases whose lists run to 20,000.
+# - `mutate`: applies `ops` in order, each to the list the one before it left, and gives
+#   `[{ op, result }]`. `result` is the list after the op, or a number for `count`.
+# - `outline`: applies `ops` first, then `upcomingOutline(steps, at)` for every `at` from -1 to one
+#   past the end, or the case's own `at` list: `[{ at, items }]`.
+#
+# Ops: `count` (setStepsForMember of `member`), `addSet` / `dropLastSet` (of `member`), `swap`
+# (swapExerciseForMember: `member` from step index `from` onward, to `exercise` under `newMember`),
+# and `append` (buildStepsForExercise of `exercise` at `block` under `member`, added to the end: how
+# an ad-hoc session grows).
+#
+# Steps are the camelCase `RunnerStep` from `src/hooks/session-steps.ts`. Absent optionals are absent.
+#
+# What no case here can reach, because the schema refuses the input that would: the per-exercise
+# ceiling (2000 steps of one count), a 0-second hold end, and zero-work configs. Those are Kotlin unit
+# tests beside the port (`RunnerStepsTest`), from `build-steps.test.ts`.
+
+x-library: &library |
+  version: 1
+  exercises:
+    - { id: pullups, name: Pull-ups, type: reps, config: { sets: 3, target_reps_min: 6, target_reps_max: 10, rest_sec: 90 } }
+    - { id: pushups, name: Push-ups, type: reps, config: { sets: 2, target_reps_min: 12, rest_sec: 45 } }
+    - { id: bench, name: Bench, type: reps, config: { sets: 3, target_reps_min: 5, target_weight: 80, rest_sec: 120 }, notes: Pause at the chest }
+    - { id: lsit, name: L-Sit, type: timed_hold, config: { sets: 3, hold_sec_min: 15, rest_sec: 60 } }
+    - { id: plank, name: Plank, type: timed_hold, config: { sets: 2, hold_sec_min: 15, hold_sec_max: 25, rest_sec: 30 } }
+    - { id: deadhang, name: Dead Hang, type: timed_hold, config: { sets: 2, rest_sec: 30 } }
+    - { id: burpees, name: Burpees, type: hiit, config: { work_sec: 40, rest_sec: 20, rounds: 4 } }
+    - { id: clean, name: Clean, type: emom, config: { interval_sec: 30, total_minutes: 10, target_reps: 3 } }
+    - { id: everyminute, name: Every Minute, type: emom, config: { interval_sec: 60, total_minutes: 5 } }
+    - { id: uneven, name: Uneven, type: emom, config: { interval_sec: 45, total_minutes: 10 } }
+    - { id: grinder, name: Grinder, type: amrap, config: { time_cap_sec: 600 } }
+    - { id: row, name: Row, type: cardio, config: { distance_meters: 2000 } }
+    - { id: bike, name: Bike, type: cardio, config: { duration_sec: 900, distance_meters: 8000 } }
+    - { id: rest, name: Rest, type: rest, config: { duration_sec: 120 } }
+    - { id: norest, name: No Rest, type: rest, config: { duration_sec: 0 } }
+    - { id: nonstop-reps, name: Nonstop Reps, type: reps, config: { sets: 3, target_reps_min: 8, rest_sec: 0 } }
+    - { id: nonstop-hold, name: Nonstop Hold, type: timed_hold, config: { sets: 3, hold_sec_min: 20, rest_sec: 0 } }
+    - { id: nonstop-hiit, name: Nonstop HIIT, type: hiit, config: { work_sec: 30, rest_sec: 0, rounds: 3 } }
+    - { id: dips, name: Dips, type: reps, config: { sets: 5, target_reps_min: 10, rest_sec: 75 } }
+    - { id: single, name: Single, type: reps, config: { sets: 1, target_reps_min: 3, rest_sec: 60 } }
+  workouts:
+    - id: reps
+      name: Reps
+      blocks: [{ type: exercise, exercise: pullups }]
+    - id: weighted
+      name: Weighted
+      blocks: [{ type: exercise, exercise: bench }]
+    - id: holds
+      name: Holds
+      blocks:
+        - { type: exercise, exercise: lsit }
+        - { type: exercise, exercise: plank }
+        - { type: exercise, exercise: deadhang }
+    - id: hiit
+      name: HIIT
+      blocks: [{ type: exercise, exercise: burpees }]
+    - id: emoms
+      name: EMOMs
+      blocks:
+        - { type: exercise, exercise: clean }
+        - { type: exercise, exercise: everyminute }
+    - id: one-shots
+      name: One-shots
+      blocks:
+        - { type: exercise, exercise: grinder }
+        - { type: exercise, exercise: row }
+        - { type: exercise, exercise: bike }
+        - { type: exercise, exercise: rest }
+        - { type: exercise, exercise: rest, config: { duration_sec: 45 } }
+        - { type: exercise, exercise: norest }
+    - id: back-to-back
+      name: Back to back
+      blocks:
+        - { type: exercise, exercise: nonstop-reps }
+        - { type: exercise, exercise: nonstop-hold }
+        - { type: exercise, exercise: nonstop-hiit }
+    - id: circuit
+      name: Circuit
+      blocks:
+        - { type: circuit, rounds: 3, rest_between_exercises_sec: 15, rest_between_rounds_sec: 60, exercises: [{ exercise: pullups }, { exercise: pushups }, { exercise: lsit }] }
+    - id: circuit-no-rest
+      name: Circuit, no rest
+      blocks:
+        - { type: circuit, rounds: 3, exercises: [{ exercise: pullups }, { exercise: pushups }, { exercise: lsit }] }
+    - id: circuit-one-round
+      name: Circuit, one round
+      blocks:
+        - { type: circuit, rounds: 1, exercises: [{ exercise: pullups }, { exercise: pushups }, { exercise: lsit }] }
+    - id: circuit-hiit
+      name: Circuit with HIIT
+      blocks:
+        - { type: circuit, rounds: 3, exercises: [{ exercise: burpees }, { exercise: pullups }] }
+    - id: circuit-ghost
+      name: Circuit with a missing member
+      blocks:
+        - { type: exercise, exercise: pushups }
+        - { type: circuit, rounds: 2, rest_between_exercises_sec: 10, exercises: [{ exercise: pullups }, { exercise: ghost }, { exercise: lsit }] }
+    - id: circuit-rest-member
+      name: Circuit with a rest member
+      blocks:
+        - { type: circuit, rounds: 2, exercises: [{ exercise: plank }, { exercise: rest, config: { duration_sec: 30 } }] }
+    - id: circuit-all-ghosts
+      name: Circuit of missing members
+      blocks:
+        - { type: circuit, rounds: 2, exercises: [{ exercise: ghost }, { exercise: phantom }] }
+        - { type: exercise, exercise: single }
+    - id: missing
+      name: Missing
+      blocks:
+        - { type: exercise, exercise: ghost }
+    - id: mixed
+      name: Mixed
+      blocks:
+        - { type: exercise, exercise: pullups }
+        - { type: exercise, exercise: rest }
+        - { type: exercise, exercise: pushups }
+        - { type: circuit, rounds: 3, exercises: [{ exercise: burpees }, { exercise: pullups }] }
+        - { type: exercise, exercise: clean }
+        - { type: exercise, exercise: grinder }
+    - id: circuit-heavy
+      name: Circuit-heavy
+      blocks:
+        - { type: circuit, rounds: 1, rest_between_exercises_sec: 20, exercises: [{ exercise: pushups }, { exercise: pullups }] }
+        - { type: exercise, exercise: rest }
+        - { type: circuit, rounds: 3, rest_between_exercises_sec: 20, rest_between_rounds_sec: 60, exercises: [{ exercise: plank }, { exercise: lsit }, { exercise: deadhang }] }
+        - { type: exercise, exercise: rest }
+        - { type: circuit, rounds: 1, rest_between_exercises_sec: 20, exercises: [{ exercise: plank }, { exercise: lsit }] }
+    - id: swap-host
+      name: Swap host
+      blocks:
+        - { type: exercise, exercise: pushups }
+        - { type: exercise, exercise: pullups }
+        - { type: exercise, exercise: grinder }
+    - id: swap-types
+      name: Swap types
+      blocks:
+        - { type: exercise, exercise: pushups }
+        - { type: exercise, exercise: pullups }
+        - { type: exercise, exercise: dips }
+        - { type: exercise, exercise: bench }
+  programs: []
+
+cases:
+  # --- build: one exercise type at a time ---
+
+  - name: reps-rest-between-sets-not-after-the-last
+    library: *library
+    workout: reps
+    op: build
+
+  - name: reps-carry-target-weight-and-notes
+    library: *library
+    workout: weighted
+    op: build
+
+  - name: holds-fixed-range-and-max-effort
+    why: holdEndSec is the top of the range, the minimum alone, or absent for a max-effort hold.
+    library: *library
+    workout: holds
+    op: build
+
+  - name: hiit-one-interval-per-round-rest-between
+    library: *library
+    workout: hiit
+    op: build
+
+  - name: emom-intervals-from-duration-not-minutes
+    why: 30s over ten minutes is 20 intervals, not 10; a 60s interval is the only case they coincide.
+    library: *library
+    workout: emoms
+    op: build
+
+  - name: emom-uneven-interval-is-floored-not-truncated
+    why: 13⅓ intervals is 13, and the floor is not a ceiling, so truncated stays false.
+    library: |
+      version: 1
+      exercises:
+        - { id: uneven, name: Uneven, type: emom, config: { interval_sec: 45, total_minutes: 10 } }
+      workouts:
+        - { id: w, name: W, blocks: [{ type: exercise, exercise: uneven }] }
+      programs: []
+    op: build
+
+  - name: emom-interval-longer-than-the-block-runs-once
+    library: |
+      version: 1
+      exercises:
+        - { id: long, name: Long, type: emom, config: { interval_sec: 90, total_minutes: 1 } }
+      workouts:
+        - { id: w, name: W, blocks: [{ type: exercise, exercise: long }] }
+      programs: []
+    op: build
+
+  - name: one-shots-amrap-cardio-and-standalone-rest
+    why: >-
+      Cardio counts up without a duration and down with one. A block config replaces a Rest's
+      duration, and a 0-second standalone rest is kept, since it is a logged entry.
+    library: *library
+    workout: one-shots
+    op: build
+
+  - name: zero-rest-emits-no-rest-steps
+    library: *library
+    workout: back-to-back
+    op: build
+
+  # --- build: circuits ---
+
+  - name: circuit-round-robin-with-member-and-round-rest
+    why: >-
+      Each visit is one set numbered by its round, with a memberKey stable across rounds. Circuit rest
+      takes the position of the work it follows, and none follows the last round.
+    library: *library
+    workout: circuit
+    op: build
+
+  - name: circuit-without-rest-configured
+    library: *library
+    workout: circuit-no-rest
+    op: build
+
+  - name: circuit-hiit-member-runs-its-rounds-every-visit
+    library: *library
+    workout: circuit-hiit
+    op: build
+
+  - name: circuit-numbers-only-the-resolved-members
+    library: *library
+    workout: circuit-ghost
+    op: build
+
+  - name: circuit-member-config-overrides-a-rest
+    library: *library
+    workout: circuit-rest-member
+    op: build
+
+  - name: circuit-of-missing-members-is-skipped
+    library: *library
+    workout: circuit-all-ghosts
+    op: build
+
+  - name: missing-exercise-block-is-skipped
+    library: *library
+    workout: missing
+    op: build
+
+  # --- build: the workout ceiling ---
+
+  - name: ceiling-a-schema-legal-circuit-of-a-million-steps
+    why: >-
+      Two 500-round HIIT members over 500 rounds is 999,999 steps. The workout ceiling stops it at a
+      whole member visit past 20,000 and reports truncated.
+    library: |
+      version: 1
+      exercises:
+        - { id: h, name: H, type: hiit, config: { work_sec: 30, rest_sec: 20, rounds: 500 } }
+        - { id: h2, name: H2, type: hiit, config: { work_sec: 30, rest_sec: 20, rounds: 500 } }
+      workouts:
+        - id: w
+          name: W
+          blocks:
+            - { type: circuit, rounds: 500, rest_between_exercises_sec: 15, rest_between_rounds_sec: 60, exercises: [{ exercise: h }, { exercise: h2 }] }
+      programs: []
+    op: build
+    brief: true
+
+  - name: ceiling-a-block-list-that-runs-away
+    why: >-
+      22 blocks of 999 steps each, no circuit. Checked per block, so the list ends after whole blocks:
+      the 21st starts under 20,000 and is kept, and the 22nd is refused.
+    library: |
+      version: 1
+      exercises:
+        - { id: big, name: Big, type: reps, config: { sets: 500, target_reps_min: 5, rest_sec: 60 } }
+      workouts:
+        - id: w
+          name: W
+          blocks:
+            - &big { type: exercise, exercise: big }
+            - *big
+            - *big
+            - *big
+            - *big
+            - *big
+            - *big
+            - *big
+            - *big
+            - *big
+            - *big
+            - *big
+            - *big
+            - *big
+            - *big
+            - *big
+            - *big
+            - *big
+            - *big
+            - *big
+            - *big
+            - *big
+      programs: []
+    op: build
+    brief: true
+
+  - name: ceiling-just-under-is-not-truncated
+    why: 20 blocks of 999 steps is 19,980, which the ceiling never notices.
+    library: |
+      version: 1
+      exercises:
+        - { id: big, name: Big, type: reps, config: { sets: 500, target_reps_min: 5, rest_sec: 60 } }
+      workouts:
+        - id: w
+          name: W
+          blocks:
+            - &big { type: exercise, exercise: big }
+            - *big
+            - *big
+            - *big
+            - *big
+            - *big
+            - *big
+            - *big
+            - *big
+            - *big
+            - *big
+            - *big
+            - *big
+            - *big
+            - *big
+            - *big
+            - *big
+            - *big
+            - *big
+            - *big
+      programs: []
+    op: build
+    brief: true
+
+  # --- mutate ---
+
+  - name: add-set-leads-with-a-cloned-rest-and-renumbers
+    library: *library
+    workout: mixed
+    op: mutate
+    ops:
+      - { op: count, member: '0' }
+      - { op: addSet, member: '0' }
+      - { op: count, member: '0' }
+
+  - name: add-set-to-a-back-to-back-exercise-adds-no-rest
+    library: *library
+    workout: back-to-back
+    op: mutate
+    ops:
+      - { op: addSet, member: '0' }
+      - { op: addSet, member: '1' }
+
+  - name: add-set-to-a-member-not-in-the-list-does-nothing
+    library: *library
+    workout: reps
+    op: mutate
+    ops:
+      - { op: addSet, member: '7' }
+      - { op: count, member: '7' }
+
+  - name: add-set-counts-only-sets-not-rounds
+    why: A HIIT member has no set steps, so there is nothing to clone and the list is unchanged.
+    library: *library
+    workout: hiit
+    op: mutate
+    ops:
+      - { op: count, member: '0' }
+      - { op: addSet, member: '0' }
+
+  - name: drop-last-set-takes-the-rest-before-it-and-stops-at-one
+    library: *library
+    workout: mixed
+    op: mutate
+    ops:
+      - { op: dropLastSet, member: '0' }
+      - { op: dropLastSet, member: '0' }
+      - { op: dropLastSet, member: '0' }
+      - { op: count, member: '0' }
+
+  - name: drop-last-set-with-no-rest-before-it
+    library: *library
+    workout: back-to-back
+    op: mutate
+    ops:
+      - { op: dropLastSet, member: '0' }
+
+  - name: add-then-drop-round-trips
+    library: *library
+    workout: holds
+    op: mutate
+    ops:
+      - { op: addSet, member: '1' }
+      - { op: dropLastSet, member: '1' }
+
+  - name: swap-takes-the-remaining-count-and-the-new-targets
+    why: Two of Pull-ups' three sets are left at step 6, so Dips runs two sets, with its own reps and rest.
+    library: *library
+    workout: swap-host
+    op: mutate
+    ops:
+      - { op: swap, member: '1', from: 5, exercise: dips, newMember: '1:swap-1' }
+      - { op: count, member: '1:swap-1' }
+
+  - name: swap-grows-a-substitute-with-fewer-sets
+    library: *library
+    workout: swap-host
+    op: mutate
+    ops:
+      - { op: swap, member: '1', from: 3, exercise: single, newMember: '1:swap-1' }
+
+  - name: swap-to-a-back-to-back-substitute-adds-no-rest
+    library: *library
+    workout: swap-host
+    op: mutate
+    ops:
+      - { op: swap, member: '1', from: 3, exercise: nonstop-reps, newMember: '1:swap-1' }
+
+  - name: swap-to-a-hold-sizes-it-like-reps
+    library: *library
+    workout: swap-host
+    op: mutate
+    ops:
+      - { op: swap, member: '0', from: 0, exercise: deadhang, newMember: '0:swap-1' }
+
+  - name: swap-to-other-types-runs-their-own-shape
+    library: *library
+    why: >-
+      HIIT rounds and EMOM intervals are not sets, so there is no count to carry over. Each `from` is
+      where that member starts in the list the swap before it left.
+    workout: swap-types
+    op: mutate
+    ops:
+      - { op: swap, member: '0', from: 0, exercise: burpees, newMember: '0:swap-1' }
+      - { op: swap, member: '1', from: 7, exercise: clean, newMember: '1:swap-1' }
+      - { op: swap, member: '2', from: 27, exercise: grinder, newMember: '2:swap-1' }
+      - { op: swap, member: '3', from: 28, exercise: row, newMember: '3:swap-1' }
+
+  - name: swap-with-nothing-left-or-no-such-member-does-nothing
+    library: *library
+    workout: swap-host
+    op: mutate
+    ops:
+      - { op: swap, member: '0', from: 4, exercise: dips, newMember: '0:swap-1' }
+      - { op: swap, member: '9', from: 0, exercise: dips, newMember: '9:swap-1' }
+
+  - name: append-builds-an-ad-hoc-queue
+    library: *library
+    adhoc: true
+    op: mutate
+    ops:
+      - { op: append, exercise: pushups, block: 0, member: 'adhoc-0' }
+      - { op: append, exercise: burpees, block: 1, member: 'adhoc-1' }
+
+  # --- outline ---
+
+  - name: outline-single-exercises-rest-blocks-and-units
+    library: *library
+    workout: mixed
+    op: outline
+
+  - name: outline-emom-units-minutes-and-intervals
+    library: *library
+    workout: emoms
+    op: outline
+    at: [-1, 0, 19, 20, 24, 25]
+
+  - name: outline-the-circuit-you-are-in
+    library: *library
+    workout: circuit
+    op: outline
+
+  - name: outline-a-circuit-with-no-rest
+    library: *library
+    workout: circuit-no-rest
+    op: outline
+
+  - name: outline-a-single-round-circuit
+    library: *library
+    workout: circuit-one-round
+    op: outline
+
+  - name: outline-a-hiit-member-counts-rounds-not-steps
+    library: *library
+    workout: circuit-hiit
+    op: outline
+
+  - name: outline-unreached-circuit-lists-resolved-members
+    library: *library
+    workout: circuit-ghost
+    op: outline
+    at: [-1, 0, 2]
+
+  - name: outline-a-circuit-heavy-workout
+    library: *library
+    workout: circuit-heavy
+    op: outline
+
+  - name: outline-after-a-swap-and-an-added-set
+    library: *library
+    workout: swap-host
+    op: outline
+    ops:
+      - { op: swap, member: '1', from: 5, exercise: dips, newMember: '1:swap-1' }
+      - { op: addSet, member: '0' }
+
+  - name: outline-an-ad-hoc-queue
+    library: *library
+    adhoc: true
+    op: outline
+    ops:
+      - { op: append, exercise: pushups, block: 0, member: 'adhoc-0' }
+      - { op: append, exercise: lsit, block: 1, member: 'adhoc-1' }
+      - { op: append, exercise: row, block: 2, member: 'adhoc-2' }
+
+  - name: outline-ends-where-a-truncated-list-ends
+    why: Rounds are the ones present in the list, not the circuit's configured total.
+    library: |
+      version: 1
+      exercises:
+        - { id: h, name: H, type: hiit, config: { work_sec: 30, rest_sec: 20, rounds: 500 } }
+        - { id: p, name: P, type: reps, config: { sets: 3, target_reps_min: 5, rest_sec: 60 } }
+      workouts:
+        - id: w
+          name: W
+          blocks:
+            - { type: circuit, rounds: 30, exercises: [{ exercise: h }, { exercise: p }] }
+            - { type: exercise, exercise: p }
+      programs: []
+    op: outline
+    at: [-1, 0, 500]
+
+  - name: outline-of-an-empty-list-is-empty
+    library: *library
+    adhoc: true
+    op: outline

@@ -42,7 +42,7 @@ data class RepsTarget(
 
 /** Null on a max-effort hold, which has no target to preview: the caller says so instead. */
 fun holdTarget(step: RunnerStep.Hold): HoldTarget? =
-    step.holdTargetSec?.let { HoldTarget(it, step.holdTargetMaxSec?.takeIf { it.isConfigured() }) }
+    step.holdTargetSec?.let { min -> HoldTarget(min, step.holdTargetMaxSec?.takeIf { max -> max.isConfigured() }) }
 
 fun repsTarget(step: RunnerStep.Reps): RepsTarget = RepsTarget(step.targetReps, step.targetRepsMax?.takeIf { it != 0L })
 

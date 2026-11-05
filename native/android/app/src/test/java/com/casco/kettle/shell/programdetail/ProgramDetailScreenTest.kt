@@ -22,7 +22,9 @@ import com.casco.kettle.domain.OverrideValue
 import com.casco.kettle.domain.Program
 import com.casco.kettle.domain.ProgramOverride
 import com.casco.kettle.domain.ProgramWeek
+import com.casco.kettle.domain.RunnerStart
 import com.casco.kettle.domain.SessionLog
+import com.casco.kettle.domain.SessionParams
 import com.casco.kettle.domain.Workout
 import com.casco.kettle.domain.WorkoutBlock
 import com.casco.kettle.shell.files.FakeStoredFiles
@@ -53,6 +55,7 @@ class ProgramDetailScreenTest {
     val compose = createComposeRule()
 
     private val opened = mutableListOf<Triple<Stacking, String, Map<String, String>>>()
+    private val started = mutableListOf<RunnerStart>()
     private var closed = 0
 
     private fun show(
@@ -69,6 +72,7 @@ class ProgramDetailScreenTest {
                     programId,
                     latest,
                     { how, path, params -> opened += Triple(how, path, params) },
+                    { started += it },
                     { closed++ },
                 )
             }
@@ -125,13 +129,10 @@ class ProgramDetailScreenTest {
 
         control("Começar Semana 1 · Day 1").assertHeightIsAtLeast(48.dp).assertWidthIsAtLeast(48.dp).performClick()
 
-        assertEquals(
-            listOf(Triple(Stacking.Push, "/session", mapOf("programId" to "base", "week" to "1", "day" to "Day 1"))),
-            opened,
-        )
+        assertEquals(listOf(RunnerStart.Planned(SessionParams.ProgramSlot("base", 1, "Day 1"))), started)
     }
 
-    // RN's push left an undefined `day` out, and the runner reads its absence as "no day".
+    // How a missing day is pushed is openRunner's (OpenRunnerTest); here, that the start has none.
     @Test
     fun `starts a week with no day without one`() {
         val plain = Program("plain", "Plain", listOf(ProgramWeek.Training(2, workoutId = "push-day")))
@@ -139,11 +140,11 @@ class ProgramDetailScreenTest {
 
         control("Começar Semana 2").performClick()
 
-        assertEquals(listOf(Triple(Stacking.Push, "/session", mapOf("programId" to "plain", "week" to "2"))), opened)
+        assertEquals(listOf(RunnerStart.Planned(SessionParams.ProgramSlot("plain", 2, null))), started)
     }
 
     // The schema takes `day: ""`, and RN tested `week.day` for truth, so an empty one is no day at all,
-    // in the label and the name it gives the start control. The push still carries it, as RN's did.
+    // in the label and the name it gives the start control. The start still carries it, as RN's push did.
     @Test
     fun `labels a week with an empty day as one with none`() {
         val blank = Program("blank", "Blank", listOf(ProgramWeek.Training(3, "", "push-day")))
@@ -152,10 +153,7 @@ class ProgramDetailScreenTest {
         compose.onNodeWithText("Semana 3").assertExists()
         control("Começar Semana 3").performClick()
 
-        assertEquals(
-            listOf(Triple(Stacking.Push, "/session", mapOf("programId" to "blank", "week" to "3", "day" to ""))),
-            opened,
-        )
+        assertEquals(listOf(RunnerStart.Planned(SessionParams.ProgramSlot("blank", 3, ""))), started)
     }
 
     @Test

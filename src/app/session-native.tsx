@@ -1,0 +1,30 @@
+/**
+ * The native runner's stub (#302, #190): an empty route that RN pushes and pops like any other, so its
+ * stack, back and route reports stay as they were, while the shell draws the runner full screen over
+ * it. Only `.dev` opens it until the flip release (#308); Play opens `session.tsx`, which never learns
+ * this route exists. Goes when routing moves native (#309).
+ *
+ * Nothing removes it but the runner's own Done. Back, a `kettle://` link to a tab and the shell's
+ * navigate are all refused, silently: the native runner owns its exits and their questions (#297),
+ * where RN's runner asked "Finish session?" itself (#152's rule, retired for this route). The shell's
+ * runnerDone drops the guard, and the back after it is the only removal that gets through.
+ */
+import { router } from 'expo-router';
+import { usePreventRemove } from 'expo-router/react-navigation';
+import { useEffect, useState } from 'react';
+
+import { onRunnerDone } from '@/hooks/runner-done';
+
+const refuse = () => {};
+
+export default function NativeRunnerStub() {
+  const [done, setDone] = useState(false);
+  usePreventRemove(!done, refuse);
+  useEffect(() => onRunnerDone(() => setDone(true)), []);
+  // After the render that dropped the guard, which the navigator reads by then: a back sent from the
+  // listener itself would still meet it.
+  useEffect(() => {
+    if (done) router.back();
+  }, [done]);
+  return null;
+}

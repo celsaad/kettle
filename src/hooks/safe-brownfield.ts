@@ -14,6 +14,7 @@
 import { router, type Href } from 'expo-router';
 
 import { getBrownfield, isHosted } from '@/hooks/brownfield-module';
+import { emitRunnerDone } from '@/hooks/runner-done';
 import { onFilesChanged } from '@/state/files-changed';
 import { useSessionHistoryStore } from '@/state/session-history-store';
 
@@ -28,7 +29,8 @@ let subscribed = false;
  * second copy of the tabs over them, and back then walks through the stale screens; `dismissTo` gets
  * that right but does nothing between tabs. So a message always starts from the tabs, and a modal it
  * opens backs out to one. If a screen refuses to leave (the runner's "Finish session?"), the message
- * is dropped and the user's answer decides. All three were seen on a device (#152).
+ * is dropped and the user's answer decides. All three were seen on a device (#152). The native runner's
+ * stub refuses too, without asking, so a message over it is simply dropped (#302).
  */
 function onShellMessage(message: Record<string, unknown>): void {
   // The shell's JsBridge.filesChanged. The two share no code, so change both.
@@ -39,6 +41,11 @@ function onShellMessage(message: Record<string, unknown>): void {
   // The shell's answer to brownfield-module's reportSessionFinished. The two share no code, so change both.
   if (message.type === 'backupResult') {
     if (typeof message.failed === 'boolean') useSessionHistoryStore.getState().backupAnswered(message.failed);
+    return;
+  }
+  // The shell's JsBridge.runnerDone. The two share no code, so change both.
+  if (message.type === 'runnerDone') {
+    emitRunnerDone();
     return;
   }
   // The shell's JsBridge.open, with its Stacking as the type. The two share no code, so change both.

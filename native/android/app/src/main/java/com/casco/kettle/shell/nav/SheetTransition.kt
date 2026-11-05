@@ -44,7 +44,8 @@ data class RouteReport(
 
 /**
  * The three kinds of place RN can be, as far as the sheet goes. [Runner] is everything above the tabs
- * that isn't a sheet, which today is only the runner: RN presents it full screen itself until M6.
+ * that isn't a sheet, which is only a runner: RN's, which it presents full screen itself, or the stub
+ * under the native one, which the shell draws full screen over everything (#302).
  */
 enum class Place { Tab, Sheet, Runner }
 

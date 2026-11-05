@@ -139,7 +139,7 @@ class RunnerRecoveryTest {
 
         /** A read that failed once mustn't cost the session: the state file stays for the next launch. */
         @Test
-        fun `keeps the state file when the session file is there but unreadable`() {
+        fun `keeps the state file when reading the session file failed`() {
             val runner = busyRunner()
 
             assertEquals(
@@ -150,13 +150,15 @@ class RunnerRecoveryTest {
         }
 
         @Test
-        fun `deletes the state file silently when the session file is gone or already finished`() {
+        fun `deletes the state file silently when the session file is gone, finished or doesn't parse`() {
             val runner = busyRunner()
             val text = encodeRunnerSnapshot(runner.snapshot)
             val finished = stored(runner).copy(session = runner.written.copy(endedAt = "2026-07-27T10:00:00.000Z"))
 
             assertEquals(RunnerRecovery.DeleteSilently, recoverRunner(text, SessionFile.Absent))
             assertEquals(RunnerRecovery.DeleteSilently, recoverRunner("{", SessionFile.Absent))
+            // A parse failure won't fix itself, so keeping the state file would offer nothing forever.
+            assertEquals(RunnerRecovery.DeleteSilently, recoverRunner(text, SessionFile.Corrupt))
             assertEquals(RunnerRecovery.DeleteSilently, recoverRunner(text, finished))
         }
 
@@ -210,7 +212,8 @@ class RunnerRecoveryTest {
                     resumed.state.session.entries
                         .single() as SessionEntry.Reps
                 ).sets
-            assertEquals(3_600.0, sets.single().restTakenSec)
+            // The planned 90 s, not the hour the app was dead (#304, decided on review).
+            assertEquals(90.0, sets.single().restTakenSec)
             assertTrue(RunnerEffect.WriteSession(resumed.state.session) in resumed.effects)
         }
 
@@ -241,6 +244,33 @@ class RunnerRecoveryTest {
             assertFalse(resumed.snapshot.clock.paused)
             val logged = reduceRunner(resumed, RunnerCommand.Advance(resumed.snapshot.visit), T0 + 620 * MS).state
             assertEquals(6L, (logged.session.entries.single() as SessionEntry.Reps).sets.single().reps)
+        }
+
+        @Test
+        fun `logs a standalone rest that ran out during the kill at its length, and ends there if it was last`() {
+            val runner = Runner(Workout("w", "W", listOf(single("dips"), single("rest"))))
+            repeat(3) { runner.advance() }
+            runner.tick(20)
+            val resumed = resumeRunner(promptFor(runner), T0 + 3_600 * MS)
+
+            assertTrue(resumed.state.finished)
+            assertEquals(
+                SessionEntry.Rest("rest", 60.0),
+                resumed.state.session.entries
+                    .last(),
+            )
+            assertEquals(isoInstant(T0 + 60 * MS), resumed.state.session.endedAt)
+        }
+
+        @Test
+        fun `logs a rest still running at the return as the time taken so far`() {
+            val runner = Runner(workoutOf(single("pullups")))
+            runner.advance()
+            val resumed = resumeRunner(promptFor(runner), T0 + 40 * MS)
+            val unpaused = reduceRunner(resumed.state, RunnerCommand.TogglePause, T0 + 40 * MS).state
+            val skipped = reduceRunner(unpaused, RunnerCommand.Advance(unpaused.snapshot.visit), T0 + 40 * MS).state
+
+            assertEquals(40.0, (skipped.session.entries.single() as SessionEntry.Reps).sets.single().restTakenSec)
         }
 
         @Test

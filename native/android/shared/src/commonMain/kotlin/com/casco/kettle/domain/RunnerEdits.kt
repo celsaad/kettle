@@ -23,7 +23,7 @@ fun canAddSet(snapshot: RunnerSnapshot): Boolean {
  */
 fun canDropSet(state: RunnerState): Boolean {
     val step = state.snapshot.step ?: return false
-    return canAddSet(state.snapshot) && aboveFloor(state, step.memberKey)
+    return canAddSet(state.snapshot) && dropped(state, step.memberKey) != null
 }
 
 private fun loggedSets(
@@ -60,8 +60,8 @@ fun blockTotal(snapshot: RunnerSnapshot): Int = snapshot.workoutBlockCount ?: sn
  * ([canAddSet], [canDropSet], [swapCandidates]) left to the UI that shows them, and the undo record
  * cleared by every edit, even one that changes nothing. Two refusals RN's hook leaves to its screen
  * are kept here, because without them an edit corrupts the session: a circuit member's sets
- * (`StepMutations.kt` refuses them), and a drop below the sets already logged plus the one in progress,
- * which removes the step on screen and leaves the index past the list.
+ * (`StepMutations.kt` refuses them), and a drop reaching work already done or the step on screen,
+ * which leaves the index past the list ([dropped]).
  */
 internal fun editSteps(
     state: RunnerState,
@@ -77,10 +77,7 @@ internal fun editSteps(
             }
 
             RunnerCommand.DropSet -> {
-                key
-                    ?.takeIf {
-                        aboveFloor(state, it)
-                    }?.let { snapshot.copy(steps = dropLastSetForMember(steps, it)) }
+                key?.let { dropped(state, it) }?.let { snapshot.copy(steps = it) }
             }
 
             is RunnerCommand.Swap -> {
@@ -99,11 +96,22 @@ internal fun editSteps(
     }
 }
 
-/** RN's floor: more sets than are logged plus the one in progress, so the drop leaves both alone. */
-private fun aboveFloor(
+/**
+ * The list without [memberKey]'s last set, or null where that drop would reach work already done:
+ * RN's floor, more sets than are logged plus the one in progress, and a positional one, since a zero
+ * set is never logged and the log alone would then let the drop remove the step on screen.
+ */
+private fun dropped(
     state: RunnerState,
     memberKey: String,
-): Boolean = setStepsForMember(state.snapshot.steps, memberKey) > loggedSets(state, memberKey) + 1
+): List<RunnerStep>? {
+    val steps = state.snapshot.steps
+    val shorter = dropLastSetForMember(steps, memberKey)
+    val lastSet = steps.indexOfLast { it.memberKey == memberKey && (it is RunnerStep.Reps || it is RunnerStep.Hold) }
+    val removedFrom = lastSet - (steps.size - shorter.size - 1)
+    val aboveFloor = setStepsForMember(steps, memberKey) > loggedSets(state, memberKey) + 1
+    return shorter.takeIf { it !== steps && aboveFloor && removedFrom > state.snapshot.stepIndex }
+}
 
 /**
  * [exercise] for what's left of [memberKey], under a key nothing has used, `<key>~swap<n>`, which no

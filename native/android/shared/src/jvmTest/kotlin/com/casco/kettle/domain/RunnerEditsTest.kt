@@ -149,6 +149,41 @@ class RunnerEditsTest {
             assertSame(before, runner.snapshot)
         }
 
+        /**
+         * A zero set is never logged, so a floor counted from the log alone let a drop remove the set
+         * on screen and leave the index past the list (#314 review). The floor is also positional now.
+         */
+        @Test
+        fun `never drops the set on screen after a zero set`() {
+            val runner = Runner(workoutOf(single("pullups")))
+            runner.send(RunnerCommand.SetReps(0))
+            runner.advance()
+            runner.advance()
+            assertEquals(2, runner.index)
+
+            runner.send(RunnerCommand.DropSet)
+            runner.send(RunnerCommand.DropSet)
+
+            assertEquals(3, runner.snapshot.steps.size)
+            assertEquals(2L, runner.work().setIndex)
+            assertFalse(canDropSet(runner.state))
+        }
+
+        @Test
+        fun `never drops the rest on screen after a zero set`() {
+            val runner = Runner(workoutOf(single("pullups")))
+            runner.advance()
+            runner.advance()
+            runner.send(RunnerCommand.SetReps(0))
+            runner.advance()
+            assertTrue(runner.step is RunnerStep.Rest)
+
+            runner.send(RunnerCommand.DropSet)
+
+            assertTrue(runner.step is RunnerStep.Rest)
+            assertEquals(5, runner.snapshot.steps.size)
+        }
+
         @Test
         fun `does not retract a logged set when Prev follows a mutation`() {
             val runner = Runner(workoutOf(single("pullups")))

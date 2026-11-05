@@ -1,5 +1,7 @@
 package com.casco.kettle.domain
 
+import kotlin.math.ceil
+
 // Surviving process death (#295): a state file left behind means the service died with a session
 // running. The next launch reads it and the session file it names, and either offers Resume or Finish,
 // offers Finish only, or deletes the state file with nobody told. Launch never crashes on either file.
@@ -26,8 +28,11 @@ sealed interface SessionFile {
         val modifiedAt: Long,
     ) : SessionFile
 
-    /** There, but it couldn't be read or parsed. */
+    /** There, but reading it failed: an I/O error, which may not happen next time. */
     data object Unreadable : SessionFile
+
+    /** Read, but not a session: it won't parse next time either. */
+    data object Corrupt : SessionFile
 
     data object Absent : SessionFile
 }
@@ -58,12 +63,15 @@ sealed interface RunnerRecovery {
         override val finished: Session get() = session.copy(endedAt = isoInstant(modifiedAt))
     }
 
-    /** Nothing left to finish: the session file is gone or already finished. */
+    /**
+     * Nothing left to finish: the session file is gone, already finished, or doesn't parse, which
+     * can't be stamped and stays among History's errors, as any unreadable session file does.
+     */
     data object DeleteSilently : RunnerRecovery
 
     /**
-     * The session file is there but couldn't be read. Keep the state file and offer nothing, so a
-     * read that failed once is tried again at the next launch rather than costing the session.
+     * Reading the session file failed. Keep the state file and offer nothing, so a read that failed
+     * once is tried again at the next launch rather than costing the session.
      */
     data object Leave : RunnerRecovery
 }
@@ -81,7 +89,7 @@ fun recoverRunner(
     file: SessionFile,
 ): RunnerRecovery =
     when (file) {
-        SessionFile.Absent -> RunnerRecovery.DeleteSilently
+        SessionFile.Absent, SessionFile.Corrupt -> RunnerRecovery.DeleteSilently
         SessionFile.Unreadable -> RunnerRecovery.Leave
         is SessionFile.Read -> recoverFrom(stateText, file)
     }
@@ -105,6 +113,10 @@ private fun fits(
  * at [now], so a countdown that ran out during the kill commits and advances one step. It then lands
  * paused, whatever it was, so the user picks it up rather than finding a clock already running.
  *
+ * One difference from a live return: a rest that ran out during the kill logs its planned length, not
+ * the hours the app was dead, which nobody spent resting. A live return logs the real time, since
+ * there the user was away from the screen, not gone.
+ *
  * That includes a rest or a reps step, whose RN screens have no Resume control: every step kind
  * pauses and resumes through [RunnerCommand.TogglePause], so the screen that lands paused offers it.
  *
@@ -115,8 +127,7 @@ fun resumeRunner(
     prompt: RunnerRecovery.Prompt,
     now: Long,
 ): RunnerTransition {
-    val rebuilt = RunnerState(prompt.snapshot, prompt.session)
-    val caught = reduceRunner(rebuilt, RunnerCommand.TimeUpdate(rebuilt.snapshot.visit), now)
+    val caught = caughtUp(RunnerState(prompt.snapshot, prompt.session), now)
     val paused =
         if (caught.state.finished || caught.state.snapshot.clock.paused) {
             caught
@@ -127,3 +138,22 @@ fun resumeRunner(
     val quiet = paused.effects.filterNot { it is RunnerEffect.PlayCue || it is RunnerEffect.StepEnded }
     return RunnerTransition(paused.state, quiet)
 }
+
+/**
+ * The catch-up, with a rest that ended during the kill committed at its own end, so it logs its
+ * length, and the step after it started fresh at [now], as a live catch-up starts it.
+ */
+private fun caughtUp(
+    state: RunnerState,
+    now: Long,
+): RunnerTransition {
+    val snapshot = state.snapshot
+    val clock = snapshot.clock
+    val restEnd = clock.phaseStartedAt + clock.pausedMs + ceil(clock.stepEndSec).toLong() * MS_PER_SECOND
+    val update = RunnerCommand.TimeUpdate(snapshot.visit)
+    if (snapshot.step !is RunnerStep.Rest || clock.paused || restEnd >= now) return reduceRunner(state, update, now)
+    val ended = reduceRunner(state, update, restEnd)
+    return if (ended.state.finished) ended else RunnerTransition(seeded(ended.state, now), ended.effects)
+}
+
+private const val MS_PER_SECOND = 1000L

@@ -77,6 +77,7 @@ internal fun PasteSection(importer: Importer) {
             color = colors.accentText.dimmedUnless(canReview),
         )
     }
+    RefusalAt(RefusalSite.Paste, importer)
 }
 
 /**

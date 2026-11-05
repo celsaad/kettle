@@ -69,6 +69,8 @@ internal fun StarterPacks(
                 }
             }
         }
+        // Outside the row's clickable, so the refusal and its Copy error aren't folded into the row's button.
+        RefusalAt(RefusalSite.Pack(id), importer)
     }
 }
 

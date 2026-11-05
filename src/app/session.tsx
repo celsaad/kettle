@@ -475,8 +475,8 @@ function ActiveSession({
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'bottom', 'left', 'right']}>
-      {/* Hidden while the sheet is open, so a screen reader stays inside it. aria-hidden rather than
-          the two native props: RN maps it onto both of them. */}
+      {/* Hidden while the sheet is open, so a screen reader stays inside it. One aria-hidden rather
+          than the two native props, since RN maps it onto both. */}
       <View style={styles.content} aria-hidden={upcomingOpen}>
         {/* The runner itself, hidden while a picker is open for the same reason. The pickers render
             inside `content`, so this is the sheet's aria-hidden one level down, with the pickers as

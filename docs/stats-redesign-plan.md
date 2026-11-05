@@ -173,7 +173,7 @@ One PR, one commit per step, so each is reviewable on its own:
 ## Verification
 
 `pnpm test`, `pnpm run typecheck`, `pnpm run format`, `pnpm run lint`. Then drive the screen in the
-browser per [`verifying-in-the-browser.md`](verifying-in-the-browser.md) for layout in both schemes, and
+browser per `verifying-in-the-browser.md` (deleted in M6) for layout in both schemes, and
 on a device at the largest system font size — that is the case four weeks was chosen for, and a
 browser can't reproduce it.
 

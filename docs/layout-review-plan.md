@@ -291,7 +291,7 @@ Locale keys land in **both** `en.json` and `pt.json` in the same commit, per the
 ## Verification
 
 Tests cannot reach any of this. Each phase ends by driving the running app per
-[verifying-in-the-browser.md](verifying-in-the-browser.md), plus a device pass for Phase 3:
+`verifying-in-the-browser.md` (deleted with the web build in M6), plus a device pass for Phase 3:
 
 - Workouts: the list is reachable under the card at default *and* at 200% text scale; the empty-session
   link is distinguishable from the FAB at a glance.

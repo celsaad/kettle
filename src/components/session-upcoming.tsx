@@ -379,7 +379,6 @@ const styles = StyleSheet.create({
     bottom: 0,
     backgroundColor: 'rgba(0,0,0,0.55)',
   },
-  // pointerEvents as style rather than as a prop, which React Native has deprecated.
   column: {
     flex: 1,
     pointerEvents: 'box-none',

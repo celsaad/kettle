@@ -412,7 +412,8 @@ warns about) at the preferences flip. Both go with the RN runner in M6.
 - **Weight handling carries over unchanged**: kilograms are stored, and `previousWeightKg` is passed
   through every edit path.
 - **No RN fallback for unhosted builds.** Web browsed an in-memory seed read from `src/content/`,
-  with no writes, until the web build ended in M6 (#298). The iOS RN build loses the reminder until iOS goes native.
+  with no writes, until the web build ended in M6 (#298). The iOS RN build loses the reminder until
+  iOS goes native.
 
 **Writer screens land unrouted**, behind a `Flips.kt` pair (#231): every `Flip` on in the debug
 source set, none in release (which `:benchmark` builds too). `.dev` draws the native writer while
@@ -566,8 +567,8 @@ already says. That plan's Phase 5, changing the decision log and the README, app
 - **No phoning home** holds for every Gradle dependency, not just the ones that look like SDKs. Check
   transitive dependencies of anything new.
 - **Docs that die with RN** are rewritten or deleted in the milestone that kills their subject, not
-  after: `verifying-in-the-browser.md` (deleted in M6 with the web build), `sdk-57-api-notes.md` (M7), the jest sections of
-  AGENTS.md (shrinking from M4 on), and `building-android.md` (M2).
+  after: `verifying-in-the-browser.md` (deleted in M6 with the web build), `sdk-57-api-notes.md`
+  (M7), the jest sections of AGENTS.md (shrinking from M4 on), and `building-android.md` (M2).
 
 ## Not doing
 
@@ -578,6 +579,7 @@ already says. That plan's Phase 5, changing the decision log and the README, app
   native, so a regression can always be traced to either the port or the redesign, never both.
 - **No integrated brownfield, and no RN-host-with-native-views approach.** Both leave RN in charge of
   navigation until a final big-bang flip, which is exactly what this plan is built to avoid.
-- **The web build is not replaced.** It ended in M6 (#298), ahead of the RN runner's deletion. The landing site is static and unaffected.
+- **The web build is not replaced.** It ended in M6 (#298), ahead of the RN runner's deletion. The
+  landing site is static and unaffected.
 - **No new network-using SDK** (crash reporting, analytics, remote config) slips in as part of the
   move. The zero-data-collected claim is unchanged.

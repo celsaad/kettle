@@ -21,8 +21,9 @@ import { useLoggedSessions } from '@/state/session-history-store';
  * unmounts before `ActiveSession` ever mounts.
  *
  * Who sees it is derived, not persisted — `sessions.length === 0`, the same test the Workouts tab's
- * first-run card uses. A "seen" flag would mean a new file and a new store, to answer a question the log already answers. The count-in runs before the runner
- * creates a session, so the count is still zero on the very session this describes.
+ * first-run card uses. A "seen" flag would mean a new file and a new store, to answer a question the
+ * log already answers. The count-in runs before the runner creates a session, so the count is still
+ * zero on the very session this describes.
  *
  * **That test is "has a session on record", not "has finished one", and the difference is real.**
  * `use-session-runner.ts` calls `startSession` on mount, before a single set exists, and backing out

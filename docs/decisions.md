@@ -581,8 +581,8 @@ decision assembled across several commits. Open work belongs in the sections at 
   Two content rules, deliberate rather than incidental: exercise `notes` describe **the app's own
   progression model only** — never form cues, injury or diet, so the app keeps describing its data
   model rather than prescribing training — and the seed was also the web build's entire library (until
-  web ended in M6) and is the reseed target for a corrupt `exercises.yaml`, so it has to stay small enough to be a reasonable thing
-  to reset to.
+  web ended in M6) and is the reseed target for a corrupt `exercises.yaml`, so it has to stay small
+  enough to be a reasonable thing to reset to.
 
   **The seed ships per-language, as one English structure plus a string table** (`seed/<lang>.json`)
   — reversing an earlier English-only call, whose reasoning was that a locale-picked seed doubles every
@@ -906,8 +906,8 @@ decision assembled across several commits. Open work belongs in the sections at 
 
   **Rejected: a persisted "rest day done" flag.** It never guesses, which is its whole appeal — but
   web couldn't persist anything at all, so it would have behaved differently there for no reason a
-  user could see (web ended in M6, #298, so only the next reason still holds), and anyone who never taps the button stays stuck
-  on the rest card. **Rejected: skipping rest slots entirely** and showing them as a footnote on the
+  user could see (web ended in M6, #298, so only the next reason still holds), and anyone who never
+  taps the button stays stuck on the rest card. **Rejected: skipping rest slots entirely** and showing them as a footnote on the
   workout card. It cannot get stuck, and it is why the feature would have been pointless: the app
   would never actually say today is a rest day. What replaces both is the card's "train anyway" link,
   so the arithmetic being wrong for someone costs them one tap rather than blocking them.

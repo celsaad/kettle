@@ -22,6 +22,9 @@ kotlin {
             // Calendar days in the reader's zone, which the Stats selectors' windows are counted in.
             // `api`, since those selectors take an Instant and a TimeZone.
             api(libs.kotlinx.datetime)
+            // The runner's state file. Its element API only, as `:strings` and `:theme` use it, so no
+            // compiler plugin: the snapshot's JSON is written out by hand and versioned there.
+            implementation(libs.kotlinx.serialization.json)
         }
         jvmTest.dependencies {
             implementation(project.dependencies.platform(libs.junit.bom))

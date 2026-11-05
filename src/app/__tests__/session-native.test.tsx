@@ -3,7 +3,7 @@ import { act } from 'react';
 
 import NativeRunnerStub from '@/app/session-native';
 import { emitRunnerDone } from '@/hooks/runner-done';
-import { attemptLeave, router } from '@/test-support/expo-router';
+import { attemptLeave, router, setNavigationReady } from '@/test-support/expo-router';
 
 jest.mock('expo-router', () => require('@/test-support/expo-router'));
 jest.mock('expo-router/react-navigation', () => require('@/test-support/expo-router'));
@@ -11,8 +11,9 @@ jest.mock('expo-router/react-navigation', () => require('@/test-support/expo-rou
 let mockDrawn = true;
 jest.mock('@/hooks/brownfield-module', () => ({ drawsNativeRunner: () => mockDrawn }));
 
-beforeEach(() => {
+beforeEach(async () => {
   mockDrawn = true;
+  await setNavigationReady(true);
   router.canGoBack.mockReturnValue(true);
 });
 
@@ -50,11 +51,18 @@ describe('with no native runner drawn over it', () => {
     expect(await attemptLeave()).toBe(false);
   });
 
-  it('goes to the tabs when a cold-start link left nothing to go back to', async () => {
+  // A link that launches the app mounts the stub before the root navigator is ready, when every
+  // navigation call throws into the root error boundary. Navigating from a plain effect did.
+  it('waits for navigation to be ready on a cold-start link, then goes to the tabs', async () => {
     mockDrawn = false;
-    router.canGoBack.mockReturnValue(false);
+    await setNavigationReady(false);
+    router.canGoBack.mockImplementation(() => false);
 
     await render(<NativeRunnerStub />);
+
+    expect(router.replace).not.toHaveBeenCalled();
+
+    await setNavigationReady(true);
 
     expect(router.replace).toHaveBeenCalledWith('/');
     expect(router.back).not.toHaveBeenCalled();

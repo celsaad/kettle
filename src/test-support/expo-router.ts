@@ -20,13 +20,47 @@ import { useEffect } from 'react';
  * between tests.
  */
 export const router = {
-  // True unless a test says otherwise: every screen but a cold-start link's has one under it.
-  canGoBack: jest.fn(() => true),
-  back: jest.fn(),
-  push: jest.fn(),
-  dismissTo: jest.fn(),
-  replace: jest.fn(),
+  // As the real one: false until navigation is ready, which every test but a cold start's already is.
+  canGoBack: jest.fn(() => navigationReady),
+  back: jest.fn(() => assertReady()),
+  push: jest.fn(() => assertReady()),
+  dismissTo: jest.fn(() => assertReady()),
+  replace: jest.fn(() => assertReady()),
 };
+
+/**
+ * Whether expo-router can navigate yet. A link that launches the app mounts its screen before the root
+ * navigator is ready, and every navigation call until then throws, as `store.assertIsReady` does; a
+ * focus effect waits for it. Ready unless a test says otherwise, and a test that says so resets it.
+ */
+let navigationReady = true;
+const waitingFocusEffects = new Set<() => void>();
+
+function assertReady() {
+  if (!navigationReady) throw new Error('Attempted to navigate before mounting the Root Layout component.');
+}
+
+/** Makes navigation ready, or not; ready runs the focus effects that were waiting, in its own `act`. */
+export async function setNavigationReady(ready: boolean) {
+  navigationReady = ready;
+  if (!ready) return;
+  const waiting = [...waitingFocusEffects];
+  waitingFocusEffects.clear();
+  await act(async () => {
+    for (const effect of waiting) effect();
+  });
+}
+
+/** Stands in for `useFocusEffect`: runs once navigation is ready, as the real one waits for it. */
+export function useFocusEffect(effect: () => void) {
+  useEffect(() => {
+    if (navigationReady) return effect();
+    waitingFocusEffects.add(effect);
+    return () => {
+      waitingFocusEffects.delete(effect);
+    };
+  }, [effect]);
+}
 
 let searchParams: Record<string, string | undefined> = {};
 

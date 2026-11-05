@@ -137,7 +137,7 @@ data class StepBuildResult(
 )
 
 /** The step with its circuit position stamped on, whatever kind it is. */
-private fun RunnerStep.at(position: CircuitPosition): RunnerStep =
+private fun RunnerStep.withCircuit(position: CircuitPosition): RunnerStep =
     when (this) {
         is RunnerStep.Hold -> copy(circuit = position)
         is RunnerStep.Reps -> copy(circuit = position)
@@ -146,7 +146,7 @@ private fun RunnerStep.at(position: CircuitPosition): RunnerStep =
     }
 
 /** JS truthiness for an optional number: absent, 0 and NaN are all "not configured". */
-private fun Double?.isConfigured(): Boolean = this != null && this != 0.0 && !isNaN()
+internal fun Double?.isConfigured(): Boolean = this != null && this != 0.0 && !isNaN()
 
 /**
  * The whole workout, expanded, and whether a ceiling cut it short. The workout ceiling is checked per
@@ -235,7 +235,7 @@ private fun expandCircuit(
                     CircuitVisit(round + 1, block.rounds),
                 )
             if (visit.truncated) truncated = true
-            visit.steps.mapTo(steps) { it.at(at) }
+            visit.steps.mapTo(steps) { it.withCircuit(at) }
             val between = block.restBetweenExercisesSec
             if (slot < members.size - 1 &&
                 between.isConfigured()

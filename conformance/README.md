@@ -14,8 +14,8 @@ Each suite is two files:
 
 `src/domain/__tests__/conformance.test.ts` checks the TypeScript output against the goldens. When a
 change to `src/domain/`, or to the runner's `session-steps.ts` or `session-outline.ts`, is meant to
-change behaviour, run `pnpm run conformance:update`. The golden
-diff it leaves is part of the review, because a change there is a change to what users' files mean.
+change behaviour, run `pnpm run conformance:update`. The golden diff it leaves is part of the review,
+because a change there is a change to what users' files mean.
 
 `native/android/shared/src/jvmTest/.../ConformanceTest.kt` checks the Kotlin port against the same
 files, read in place. It finds suites by listing this directory, and one with no Kotlin runner yet is

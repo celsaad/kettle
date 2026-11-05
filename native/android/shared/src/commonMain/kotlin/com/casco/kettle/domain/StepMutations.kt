@@ -2,9 +2,16 @@ package com.casco.kettle.domain
 
 // Mid-session edits to a running step list, from `session-steps.ts`.
 //
-// **Circuit members are not a legal target, and the caller enforces it.** A member's setIndex there
-// is its round, and its steps aren't contiguous, so "one more set" would mean "one more round": a
-// different operation. Nothing here can tell from a step alone.
+// **Circuit members are refused**: each edit returns a circuit member's list unchanged. A member's
+// setIndex there is its round, and its steps aren't contiguous, so "one more set" would mean "one
+// more round", a different operation. TS leaves this to its caller; here the edits enforce it, so the
+// native runner can't get it wrong.
+
+/** Whether [memberKey] belongs to a circuit, which no edit may target. */
+private fun inCircuit(
+    steps: List<RunnerStep>,
+    memberKey: String,
+): Boolean = steps.any { it.memberKey == memberKey && it.circuit != null }
 
 /** A member's own set steps, in list order: the ones "Set 3 of 4" counts. */
 private fun setStepIndices(
@@ -47,7 +54,8 @@ fun addSetForMember(
     steps: List<RunnerStep>,
     memberKey: String,
 ): List<RunnerStep> {
-    val lastIndex = setStepIndices(steps, memberKey).lastOrNull() ?: return steps
+    val lastIndex =
+        setStepIndices(steps, memberKey).lastOrNull()?.takeUnless { inCircuit(steps, memberKey) } ?: return steps
     val rest = steps.firstOrNull { it is RunnerStep.Rest && it.memberKey == memberKey && !it.standalone }
     val inserted = listOfNotNull(rest, steps[lastIndex])
     return renumber(steps.subList(0, lastIndex + 1) + inserted + steps.subList(lastIndex + 1, steps.size), memberKey)
@@ -62,7 +70,7 @@ fun dropLastSetForMember(
     memberKey: String,
 ): List<RunnerStep> {
     val indices = setStepIndices(steps, memberKey)
-    if (indices.size <= 1) return steps
+    if (indices.size <= 1 || inCircuit(steps, memberKey)) return steps
     val lastIndex = indices.last()
     val before = steps[lastIndex - 1]
     val dropsRest = before is RunnerStep.Rest && before.memberKey == memberKey && !before.standalone
@@ -87,7 +95,8 @@ fun swapExerciseForMember(
     val remaining = setStepIndices(steps, memberKey).count { it >= fromIndex }
     val lastIndex = steps.indexOfLast { it.memberKey == memberKey }
     // Non-circuit members are contiguous, which is what makes "the rest of this member" a slice.
-    val start = steps.getOrNull(fromIndex)?.takeIf { remaining > 0 && lastIndex >= fromIndex }
+    val start =
+        steps.getOrNull(fromIndex)?.takeIf { remaining > 0 && lastIndex >= fromIndex && !inCircuit(steps, memberKey) }
     val replacement =
         start?.let {
             resized(buildStepsForExercise(exercise, it.blockIndex, newMemberKey), newMemberKey, remaining)

@@ -94,6 +94,17 @@ class RunnerStepsTest {
         assertEquals(steps, swapExerciseForMember(steps, "0", 0, reps("empty", 0), "0:swap-1"))
     }
 
+    // A circuit member's sets are its rounds, so none of the edits may touch one (#303's spec).
+    @Test
+    fun `refuses to add, drop or swap a circuit member's sets`() {
+        val circuit = WorkoutBlock.Circuit(rounds = 3, members = listOf(CircuitMember("a"), CircuitMember("b")))
+        val steps = buildSteps(workoutOf(circuit), listOf(reps("a", 1), reps("b", 1)))
+
+        assertEquals(steps, addSetForMember(steps, "0:0"))
+        assertEquals(steps, dropLastSetForMember(steps, "0:0"))
+        assertEquals(steps, swapExerciseForMember(steps, "0:0", 0, reps("c", 2), "0:swap-1"))
+    }
+
     @Test
     fun `previews a hold's range, a fixed mark, and no target for a max-effort hold`() {
         fun hold(

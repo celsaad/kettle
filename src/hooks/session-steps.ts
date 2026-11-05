@@ -123,6 +123,25 @@ export function formatRepsTarget(step: Extract<RunnerStep, { kind: 'reps' }>): s
 }
 
 /**
+ * The step the Next card previews from `index`: the one after it, or the one after that when the
+ * next is a rest (inter-set or a standalone Rest block), so it always shows real work rather than
+ * "Rest". An exercise screen's very next step is usually its own trailing rest, which is why the skip
+ * is there. Here rather than in the runner so `conformance/steps.yaml` can hold it.
+ */
+export function upcomingStep(steps: RunnerStep[], index: number): RunnerStep | undefined {
+  const next = steps[index + 1];
+  return next?.kind === 'rest' ? steps[index + 2] : next;
+}
+
+/**
+ * Whether a rest step follows `index`, which the reps button names ("Log set → Rest"). It can't be
+ * assumed: back-to-back sets (`rest_sec: 0`) emit no rest step at all.
+ */
+export function restFollows(steps: RunnerStep[], index: number): boolean {
+  return steps[index + 1]?.kind === 'rest';
+}
+
+/**
  * Where a circuit member's single visit sits in the circuit's rounds. Set only when expanding a
  * circuit member: the circuit's own `rounds` is what repeats the member, not the member's own
  * `sets` — so each visit is exactly one set, and no inter-set rest is inserted (rest between visits

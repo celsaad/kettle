@@ -1,5 +1,5 @@
 import { parsePreferences, type Preferences } from '@/domain/preferences';
-import { ensureStorageReady, isFileStorageSupported, storagePaths } from '@/storage/paths';
+import { ensureStorageReady, storagePaths } from '@/storage/paths';
 
 /**
  * Reads preferences.json, which native Settings writes (#238). Never throws, and returns `null` — not
@@ -12,8 +12,6 @@ import { ensureStorageReady, isFileStorageSupported, storagePaths } from '@/stor
  * rather than any workout data being lost.
  */
 export async function loadPreferences(): Promise<Preferences | null> {
-  if (!isFileStorageSupported) return null;
-
   try {
     ensureStorageReady();
     if (!storagePaths.preferencesFile.exists) return null;

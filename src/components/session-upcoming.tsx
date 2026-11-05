@@ -379,8 +379,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     backgroundColor: 'rgba(0,0,0,0.55)',
   },
-  // pointerEvents as style rather than as a prop: react-native-web warns that the prop is deprecated,
-  // and the web build is otherwise warning-free apart from expo-notifications.
+  // pointerEvents as style rather than as a prop, which React Native has deprecated.
   column: {
     flex: 1,
     pointerEvents: 'box-none',

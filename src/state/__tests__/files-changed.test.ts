@@ -4,7 +4,6 @@ let mockLibraryText = '';
 // with an unreadable one is part of the contract: native owns it, so RN keeps what it had and writes
 // nothing. The other two files are mocked at their module.
 jest.mock('@/storage/paths', () => ({
-  isFileStorageSupported: true,
   storagePaths: {
     libraryFile: {
       get exists() {

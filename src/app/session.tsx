@@ -3,7 +3,7 @@ import type { ErrorBoundaryProps } from 'expo-router';
 import { usePreventRemove } from 'expo-router/react-navigation';
 import { useKeepAwake } from 'expo-keep-awake';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
@@ -414,11 +414,8 @@ function ActiveSession({
    * iOS, and Android's back already runs through JS. On Android the Coming up sheet's `BackHandler`
    * still takes back first, having subscribed after the navigator did; the check below is for iOS's
    * swipe, which never reaches that handler.
-   *
-   * Off on web, where `Alert` is a no-op: a guard there would swallow the browser's back with no dialog
-   * to answer. The runner's unmount stamps the session ended instead.
    */
-  usePreventRemove(Platform.OS !== 'web', () => {
+  usePreventRemove(true, () => {
     if (upcomingOpen) closeUpcoming();
     else if (adding) setAdding(false);
     else if (swapping) setSwappingAt(null);
@@ -479,7 +476,7 @@ function ActiveSession({
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'bottom', 'left', 'right']}>
       {/* Hidden while the sheet is open, so a screen reader stays inside it. aria-hidden rather than
-          the native props, which react-native-web drops; RN maps it onto both of them. */}
+          the two native props: RN maps it onto both of them. */}
       <View style={styles.content} aria-hidden={upcomingOpen}>
         {/* The runner itself, hidden while a picker is open for the same reason. The pickers render
             inside `content`, so this is the sheet's aria-hidden one level down, with the pickers as
@@ -577,10 +574,8 @@ function ActiveSession({
                   Never coexists with the ad-hoc ADD control beside it: an ad-hoc session has no
                   workout, so it has no blocks and therefore no circuit.
 
-                  `aria-hidden` rather than `accessibilityElementsHidden`/`importantForAccessibility`,
-                  which react-native-web drops (docs/verifying-in-the-browser.md) — a browser check
-                  found the spacer still reachable, so the web build announced "Encerrar" twice. RN
-                  maps `aria-hidden` onto both native equivalents.
+                  `aria-hidden` rather than `accessibilityElementsHidden`/`importantForAccessibility`:
+                  RN maps it onto both native equivalents, so one prop covers both platforms.
                 */}
                   <ThemedText type="code" style={[styles.finishLabel, styles.finishSpacer]} aria-hidden>
                     {t('session.finish.label')}

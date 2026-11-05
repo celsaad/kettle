@@ -51,8 +51,8 @@ retrofit, so answer them out loud even when the answer is no.
       keys go into **all three** of `en.json`, `pt.json` and `ja.json`. User data is never
       translated. See "Conventions and house rules"; these are cheap now and tedious later, which is
       why they're a checklist item.
-- [ ] **Does it need error checks, an error boundary, or a graceful degrade?** Ask per layer: does a
-      storage call need an `isFileStorageSupported` guard; does an in-app form need `validateConfig`-style
+- [ ] **Does it need error checks, an error boundary, or a graceful degrade?** Ask per layer: can a
+      storage call fail without throwing into its caller; does an in-app form need `validateConfig`-style
       validation (the zod schema does *not* run on that path); can a render throw here cost a workout in
       progress? Degrading beats crashing — `safe-notifications.ts`, `PreparedLibrary.kt`'s reseed of
       a corrupt library, and native Support's store states (`TipJar.kt`) are the patterns to copy.
@@ -90,8 +90,8 @@ mistake here that cannot be fixed for anyone who has already installed it.
   so the form logic lives in `:shared` (`ExerciseForm.kt`, `SessionEntryForm.kt`) rather than here.
 - `src/storage/` — all file I/O, via `expo-file-system`'s **class-based `File`/`Directory` API**.
   One file per session (`session-files.ts`), so a mid-workout flush never rewrites history. It also
-  holds the readers for the content the app *ships*: `seed-library.ts` (the web build's in-memory
-  library; native writes the real seed on a first launch, `PreparedLibrary.kt`) and
+  holds the readers for the content the app *ships*: `seed-library.ts` (the seed the tests read;
+  native writes the real seed on a first launch, `PreparedLibrary.kt`) and
   `content-packs.ts` (bundled libraries native Import offers, merged in on a tap, read here for the
   tests that hold them). The content itself is data in `src/content/`, which native reads too: an
   English `library.yaml` plus a `<lang>.json` string table per language (`library-translation.ts`),
@@ -149,11 +149,9 @@ mistake here that cannot be fixed for anyone who has already installed it.
 
 ## Platform constraints that change how you work
 
-- **Web has no persistence.** `expo-file-system` doesn't support it, so the web build runs on an
-  ephemeral in-memory seed library. Every storage function is guarded by `isFileStorageSupported`.
-- **`Alert.alert` is a no-op on web** — react-native-web ships literally `class Alert { static
-  alert() {} }`. Confirm dialogs (deletes, finish-session) silently do nothing in the browser, so a
-  browser check of a confirm flow verifies nothing unless you patch it at runtime in the test script.
+- **There is no web build.** It ended in M6 (#298), so `Platform.OS` is only ever `android` or
+  `ios`, and storage has no unsupported-platform guard. Don't add `react-native-web` back to check a
+  layout: drive the running app on a device instead.
 - Adding a route file requires regenerating `.expo/types/router.d.ts` (briefly run the dev server) or
   `router.push('/new-route')` fails typecheck.
 - **Nothing may phone home.** The Play listing declares zero data collected/shared, which is a product
@@ -179,7 +177,7 @@ are house rules here rather than a backlog — cheap as you go, tedious to retro
   it `presentation: 'modal', headerShown: false` and tells the Android shell to present it as its sheet,
   and open with the shared `ModalHeader` (grabber + pinned close button; it owns the top spacing, so
   the screen's own `scrollContent` has no `paddingTop`).
-- Theming is strict: `useTheme`, `ThemedText`, `ThemedView`, `Spacing.*`, `MaxContentWidth`. The
+- Theming is strict: `useTheme`, `ThemedText`, `Spacing.*`, `MaxContentWidth`. The
   session runner is always dark (`RunnerColors`) regardless of scheme. Colors, spacing and the type
   scale (`ThemedText`'s sizes) are edited in `constants/theme.json`, which both UIs read; `theme.ts`
   re-exports them and holds their notes.
@@ -253,8 +251,8 @@ with every test still green.
   It only costs time when something genuinely hangs.
 
 What tests can't reach — layout, animation, real audio and file writes — is verified by driving the
-running app in a browser. That procedure has enough traps to be its own document:
-[`docs/verifying-in-the-browser.md`](docs/verifying-in-the-browser.md).
+running app on a device or emulator: `scripts/native-dev.sh` puts the `.dev` shell on it, and
+`scripts/route-check.sh` steers it through every route.
 
 ## Delegating
 
@@ -340,7 +338,6 @@ are the index, the banner is the contract.
   where the glossary and decision log live. Indexed by the "Agent skills" section at the end.
 - `docs/building-android.md` — building the Play bundle on GitHub Actions rather than on EAS, and
   the keystore setup it needs first.
-- `docs/verifying-in-the-browser.md` — driving the running app under Playwright.
 - `docs/testing-a11y-i18n-plan.md` — executed; kept for its rationale, not as a backlog.
 - `docs/watch-remote-plan.md` — **not executed.** Driving a running session from a Wear OS wrist via
   the notification shade, with no watch app and no data on the watch.

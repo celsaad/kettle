@@ -1,6 +1,5 @@
 # The starter library. Written to exercises.yaml the first time the app launches and finds no library
-# file, so the app never opens empty. It is also the web build's entire library and what a corrupt
-# exercises.yaml is reset to, which is why it stays deliberately small. New shipped content goes in a
+# file, so the app never opens empty. It is also what a corrupt exercises.yaml is reset to, which is why it stays deliberately small. New shipped content goes in a
 # pack (packs/), not here: the seed only ever reaches a fresh install.
 #
 # This is the structural definition, and it is written in English. The names, notes and day labels a

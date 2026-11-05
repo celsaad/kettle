@@ -62,11 +62,8 @@ tree resolvable. See the decision log for the measurements behind the choice.
 
 The output offers a [development build](https://docs.expo.dev/develop/development-builds/introduction/),
 an [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/), an
-[iOS simulator](https://docs.expo.dev/workflow/ios-simulator/), [Expo Go](https://expo.dev/go), or
-the web.
-
-**Web has no persistence.** `expo-file-system` doesn't support it, so `pnpm expo start --web` degrades
-to an ephemeral in-memory seed library rather than crashing.
+[iOS simulator](https://docs.expo.dev/workflow/ios-simulator/) or [Expo Go](https://expo.dev/go).
+There is no web build; it ended in M6 of the native migration.
 
 Routing is [Expo Router](https://docs.expo.dev/router/introduction) file-based; screens live under
 `src/app`.

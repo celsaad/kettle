@@ -1,5 +1,4 @@
-import { createContext, ReactNode, useContext, useEffect, useMemo } from 'react';
-import { Platform } from 'react-native';
+import { createContext, ReactNode, useContext, useMemo } from 'react';
 
 import { Colors } from '@/constants/theme';
 import type { ThemePreference } from '@/domain/preferences';
@@ -34,16 +33,6 @@ export function ThemeOverrideProvider({ children }: { children: ReactNode }) {
   const systemScheme = useColorScheme();
   const preference = usePreferencesStore((state) => state.preferences.themePreference);
   const scheme: Scheme = preference === 'system' ? (systemScheme === 'dark' ? 'dark' : 'light') : preference;
-
-  // Keeps the web page's own background in sync with the active scheme — including a manual
-  // override, which global.css's prefers-color-scheme media query can't see (it only tracks system
-  // preference). Without this, closing a modal briefly flashes the browser's default white body
-  // through the gap before React repaints. global.css's media query still covers the moment before
-  // this effect has run at all (first paint, pre-hydration).
-  useEffect(() => {
-    if (Platform.OS !== 'web') return;
-    document.body.style.backgroundColor = Colors[scheme].background;
-  }, [scheme]);
 
   const value = useMemo<ThemeContextValue>(
     () => ({

@@ -10,8 +10,6 @@
  * `GeneratedThemeTest` on the native side.
  */
 
-import '@/global.css';
-
 import theme from '@/constants/theme.json';
 
 /**

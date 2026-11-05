@@ -39,7 +39,7 @@ import { useSessionHistoryStore } from '@/state/session-history-store';
 /**
  * The last resort: a throw in this layout, or in any route without a boundary of its own, lands here
  * with nothing above it left to catch a second failure. So it deliberately uses none of the app's own
- * UI — `ThemedText`/`ThemedView` read `useAppTheme`, which *throws* outside `ThemeOverrideProvider`,
+ * UI — `ThemedText` reads `useAppTheme`, which *throws* outside `ThemeOverrideProvider`,
  * and this renders in place of the component that provides it. The scheme comes straight from the OS
  * for the same reason (the stored preference lives in a store this may have failed to hydrate), and
  * the text uses the system font rather than `Fonts.*`, since the app's own faces may be exactly what
@@ -112,18 +112,15 @@ function Navigation() {
 
   return (
     // The root view has to carry a real background: every container React renders into is transparent
-    // by default (verified in the browser — #root and each wrapper below it compute to rgba(0,0,0,0)).
-    // On web the <body> color set in global.css/theme-context.tsx shows through, which is why the
-    // earlier flash fix worked there; on native there's no body, so a modal sliding away exposed the
-    // native window background — white — for the length of the transition.
+    // by default, so a modal sliding away exposed the native window background — white — for the
+    // length of the transition.
     <GestureHandlerRootView style={[styles.root, { backgroundColor: colors.background }]}>
       <ThemeProvider value={navigationTheme}>
         <AnimatedSplashOverlay />
         {/*
-          Native-stack defaults each screen's own contentStyle background to white regardless of theme —
-          a separate issue from (but same symptom as) the web body-background flash fixed in
-          theme-context.tsx/global.css: without this, closing a modal briefly flashes white through the
-          transition before the destination screen's own background paints over it. session overrides to
+          Native-stack defaults each screen's own contentStyle background to white regardless of theme:
+          without this, closing a modal briefly flashes white through the transition before the
+          destination screen's own background paints over it. session overrides to
           RunnerColors.background since the live session runner is always dark regardless of the shell's
           scheme, per the design (constants/theme.ts) — every other screen uses the current theme.
         */}

@@ -7,8 +7,7 @@ import { localizeLibrary, parseShippedLibrary, translationFor } from '@/storage/
 
 /**
  * The starter library: written to exercises.yaml the first time the app launches and no library file
- * exists yet, so the app never opens empty. It is also the web build's entire library and what a
- * corrupt exercises.yaml is reset to, which is why it stays deliberately small.
+ * exists yet, so the app never opens empty. It is also what a corrupt exercises.yaml is reset to, which is why it stays deliberately small.
  *
  * The content is `src/content/seed/library.yaml`, a file in the user's own format that the native app
  * reads as well. Its authoring constraints (`foundations` first, weeks in written order, every week

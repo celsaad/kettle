@@ -393,7 +393,7 @@ What's genuinely missing today, checked directly against the code:
   the app "declares no iOS file sharing", which was true until it wasn't; see `ios-plan.md` §2.4.)
 - ~~**Merge conflict view has no field-level diff**~~ ✅ Shipped — see open question 5 above.
 - ~~**Timed-hold display direction was never revisited**~~ ✅ Settled — see open question 2 above.
-- **Web has no persistence** — `expo-file-system` doesn't support web, so the web build runs on an ephemeral in-memory seed library. This is a platform constraint, not a product gap.
+- ~~**Web has no persistence**~~ — moot: the web build ended in M6 of the native migration (#298).
 - ~~**Known bug (web only): leaving the session screen crashes with a redbox.**~~ ✅ Fixed — see the
   [decision log](decisions.md) for the details. `useKeepAwake` now passes
   `suppressDeactivateWarnings`, the library's own flag for exactly this race.
@@ -412,9 +412,8 @@ What's genuinely missing today, checked directly against the code:
 - ~~**The appearance preference doesn't persist across relaunches.**~~ ✅ Fixed — `themePreference`
   joined `unitSystem` in `preferences.json`, and `theme-context.tsx` reads it from the preferences
   store instead of holding its own `useState`.
-- **`Alert.alert` is a no-op on web** — react-native-web ships an empty implementation, so every
-  confirm dialog (all the deletes, finish-session) silently does nothing in the browser. Native is
-  unaffected, and web is a dev/preview target, so this is logged rather than fixed.
+- ~~**`Alert.alert` is a no-op on web**~~ — moot: the web build ended in M6 of the native migration
+  (#298).
 - ~~**No accessibility or i18n work has been done.**~~ ✅ Closed — both shipped and are now house
   rules for new work rather than workstreams (see AGENTS.md). Every control carries a role and label,
   touch targets are 44px minimum, colors are contrast-measured, the runner survives large text sizes

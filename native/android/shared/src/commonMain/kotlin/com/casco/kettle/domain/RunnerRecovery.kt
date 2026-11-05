@@ -155,5 +155,3 @@ private fun caughtUp(
     val ended = reduceRunner(state, update, restEnd)
     return if (ended.state.finished) ended else RunnerTransition(seeded(ended.state, now), ended.effects)
 }
-
-private const val MS_PER_SECOND = 1000L

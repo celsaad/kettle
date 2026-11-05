@@ -36,7 +36,7 @@ data class ClockAnchor(
     fun wallAt(monotonicMs: Long): Long = wallMs + (monotonicMs - this.monotonicMs)
 }
 
-private const val MS_PER_SECOND = 1000.0
+internal const val MS_PER_SECOND = 1000L
 
 /**
  * Whole seconds the step on screen has run at [now], paused time excluded: floored, as RN's is, since
@@ -47,7 +47,7 @@ fun elapsedSec(
     now: Long,
 ): Long {
     val until = clock.pausedAt ?: now
-    return max(0.0, floor((until - clock.phaseStartedAt - clock.pausedMs) / MS_PER_SECOND)).toLong()
+    return max(0.0, floor((until - clock.phaseStartedAt - clock.pausedMs) / MS_PER_SECOND.toDouble())).toLong()
 }
 
 /** What a rest or countdown interval shows: the seconds left, never below 0. */

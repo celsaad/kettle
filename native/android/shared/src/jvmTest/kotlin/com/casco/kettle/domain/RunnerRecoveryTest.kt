@@ -97,7 +97,7 @@ class RunnerRecoveryTest {
 
     @Nested
     inner class Recovery {
-        private fun stored(runner: Runner) = StoredSession(runner.written, modifiedAt = runner.now + 5 * MS)
+        private fun stored(runner: Runner) = SessionFile.Read(runner.written, modifiedAt = runner.now + 5 * MS)
 
         @Test
         fun `offers Resume or Finish for a snapshot that fits its session file`() {
@@ -115,7 +115,7 @@ class RunnerRecoveryTest {
             val recovery = recoverRunner("{", stored(runner))
 
             assertEquals(RunnerRecovery.FinishOnly(runner.written, runner.now + 5 * MS), recovery)
-            assertEquals(isoTimestamp(runner.now + 5 * MS), (recovery as RunnerRecovery.Finishable).finished.endedAt)
+            assertEquals(isoInstant(runner.now + 5 * MS), (recovery as RunnerRecovery.Finishable).finished.endedAt)
         }
 
         @Test
@@ -137,14 +137,26 @@ class RunnerRecoveryTest {
             assertTrue(recoverRunner(text, other) is RunnerRecovery.FinishOnly)
         }
 
+        /** A read that failed once mustn't cost the session: the state file stays for the next launch. */
+        @Test
+        fun `keeps the state file when the session file is there but unreadable`() {
+            val runner = busyRunner()
+
+            assertEquals(
+                RunnerRecovery.Leave,
+                recoverRunner(encodeRunnerSnapshot(runner.snapshot), SessionFile.Unreadable),
+            )
+            assertEquals(RunnerRecovery.Leave, recoverRunner("{", SessionFile.Unreadable))
+        }
+
         @Test
         fun `deletes the state file silently when the session file is gone or already finished`() {
             val runner = busyRunner()
             val text = encodeRunnerSnapshot(runner.snapshot)
             val finished = stored(runner).copy(session = runner.written.copy(endedAt = "2026-07-27T10:00:00.000Z"))
 
-            assertEquals(RunnerRecovery.DeleteSilently, recoverRunner(text, null))
-            assertEquals(RunnerRecovery.DeleteSilently, recoverRunner("{", null))
+            assertEquals(RunnerRecovery.DeleteSilently, recoverRunner(text, SessionFile.Absent))
+            assertEquals(RunnerRecovery.DeleteSilently, recoverRunner("{", SessionFile.Absent))
             assertEquals(RunnerRecovery.DeleteSilently, recoverRunner(text, finished))
         }
 
@@ -159,7 +171,7 @@ class RunnerRecoveryTest {
 
             val prompt = recoverRunner(encodeRunnerSnapshot(runner.snapshot), stored(runner)) as RunnerRecovery.Prompt
             assertEquals(lastWrite, prompt.snapshot.updatedAt)
-            assertEquals(isoTimestamp(lastWrite), prompt.finished.endedAt)
+            assertEquals(isoInstant(lastWrite), prompt.finished.endedAt)
             assertEquals(runner.written.entries, prompt.finished.entries)
         }
 
@@ -178,7 +190,7 @@ class RunnerRecoveryTest {
         private fun promptFor(runner: Runner) =
             recoverRunner(
                 encodeRunnerSnapshot(runner.snapshot),
-                StoredSession(runner.written, runner.now),
+                SessionFile.Read(runner.written, runner.now),
             ) as RunnerRecovery.Prompt
 
         @Test
@@ -200,6 +212,35 @@ class RunnerRecoveryTest {
                 ).sets
             assertEquals(3_600.0, sets.single().restTakenSec)
             assertTrue(RunnerEffect.WriteSession(resumed.state.session) in resumed.effects)
+        }
+
+        /**
+         * Resume lands paused on any step, rests and reps included, whose RN screens have no Resume
+         * (§2.3). The engine pauses and resumes every kind, so the native screens can offer it (#306).
+         */
+        @Test
+        fun `resumes a rest it landed paused on, which then counts out and advances`() {
+            val runner = Runner(workoutOf(single("burpees")))
+            val back = T0 + 3_600 * MS
+            val landed = resumeRunner(promptFor(runner), back).state
+            assertTrue(landed.snapshot.step is RunnerStep.Rest && landed.snapshot.clock.paused)
+
+            val resumed = reduceRunner(landed, RunnerCommand.TogglePause, back + 5 * MS).state
+            assertEquals(20.0, remainingSec(resumed.snapshot.clock, back + 5 * MS))
+            val ended = reduceRunner(resumed, RunnerCommand.TimeUpdate(resumed.snapshot.visit), back + 25 * MS).state
+            assertEquals(2, ended.snapshot.stepIndex)
+        }
+
+        @Test
+        fun `resumes a reps step it landed paused on, and logs it as usual`() {
+            val runner = Runner(workoutOf(single("pullups")))
+            val landed = resumeRunner(promptFor(runner), T0 + 600 * MS).state
+            assertTrue(landed.snapshot.clock.paused)
+
+            val resumed = reduceRunner(landed, RunnerCommand.TogglePause, T0 + 610 * MS).state
+            assertFalse(resumed.snapshot.clock.paused)
+            val logged = reduceRunner(resumed, RunnerCommand.Advance(resumed.snapshot.visit), T0 + 620 * MS).state
+            assertEquals(6L, (logged.session.entries.single() as SessionEntry.Reps).sets.single().reps)
         }
 
         @Test

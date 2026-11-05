@@ -103,32 +103,29 @@ class RunnerWritesTest {
             assertEquals(1L, runner.entry<SessionEntry.Hiit>("burpees")?.roundsCompleted)
         }
 
-        /**
-         * RN `runner.test:1336`: every step-list edit must clear the undo record. On back-to-back sets,
-         * since RN's case edits from the rest step, which the engine refuses as the screen does.
-         */
+        /** RN `runner.test:1336`: every step-list edit must clear the undo record. */
         @Test
         fun `does not retract a logged set when Prev follows an added set`() {
-            val runner = Runner(workoutOf(single("dips")))
+            val runner = Runner(workoutOf(single("pullups")))
             runner.send(RunnerCommand.SetReps(9))
             runner.advance()
             runner.send(RunnerCommand.AddSet)
             runner.prev()
 
-            assertEquals(listOf(9L), runner.entry<SessionEntry.Reps>("dips")?.sets?.map { it.reps })
+            assertEquals(listOf(9L), runner.pullupSets().map { it.reps })
         }
 
-        /** RN `runner.test:1572`, on back-to-back sets for the same reason. */
+        /** RN `runner.test:1572`. */
         @Test
         fun `does not retract a logged set when Prev follows a swap`() {
-            val runner = Runner(workoutOf(single("dips")))
+            val runner = Runner(workoutOf(single("pullups")))
             runner.send(RunnerCommand.SetReps(9))
             runner.advance()
-            runner.send(RunnerCommand.Swap(runner.exercise("pullups")))
+            runner.send(RunnerCommand.Swap(runner.exercise("dips")))
             runner.prev()
 
             assertEquals(1, runner.entries.size)
-            assertEquals(listOf(9L), runner.entry<SessionEntry.Reps>("dips")?.sets?.map { it.reps })
+            assertEquals(listOf(9L), runner.pullupSets().map { it.reps })
         }
 
         @Test

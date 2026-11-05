@@ -36,7 +36,7 @@ private fun stepEndSec(step: RunnerStep?): Double =
  * The step on screen started afresh at [now]: a new clock, **not paused**, and its inputs seeded.
  *
  * Pause belongs to the step's clock and clears on every step change. RN kept one session-wide flag
- * and re-seeded the next step paused (`use-session-runner.ts:407`), so a rest after a paused interval
+ * and re-seeded the next step paused in its step-change block, so a rest after a paused interval
  * sat at its full time with no Resume on screen. That is deliberately not ported.
  */
 internal fun seeded(

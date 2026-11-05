@@ -2,6 +2,7 @@ package com.casco.kettle.domain
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -264,15 +265,20 @@ class RunnerTimingTest {
             assertEquals(1, runner.entry<SessionEntry.Reps>("pullups")?.sets?.size)
         }
 
+        /**
+         * The other order: the tick that came due while away runs first, stamped when it came due,
+         * just past the rest's end, and the catch-up follows at the moment of return. As in RN, this
+         * holds the other half: that the guard doesn't swallow the update that should advance.
+         */
         @Test
         fun `does not advance twice when the catch-up lands after a queued tick`() {
             val runner = Runner(workoutOf(single("pullups")))
             runner.advance()
             val rest = runner.snapshot.visit
-            runner.now += 300 * MS
-            runner.send(RunnerCommand.TimeUpdate(rest)) // the tick first this time
-            runner.now += 1
-            runner.send(RunnerCommand.TimeUpdate(rest)) // then the catch-up
+            runner.now += 91 * MS
+            runner.send(RunnerCommand.TimeUpdate(rest)) // the queued tick, as it came due
+            runner.now += 209 * MS
+            runner.send(RunnerCommand.TimeUpdate(rest)) // then the catch-up, aimed at the same rest
 
             assertEquals(2, runner.index)
             assertEquals(1, runner.entry<SessionEntry.Reps>("pullups")?.sets?.size)
@@ -552,6 +558,15 @@ class RunnerTimingTest {
     @Nested
     inner class AddRestSeconds {
         @Test
+        fun `moves only a countdown's end, never a hold's or a reps step's`() {
+            val runner = Runner(workoutOf(single("lsit"), single("pullups")))
+            val hold = runner.state
+            runner.send(RunnerCommand.AddRestSeconds(30.0))
+            assertSame(hold, runner.state)
+            assertEquals(15.0, runner.snapshot.clock.stepEndSec)
+        }
+
+        @Test
         fun `extends the countdown`() {
             val runner = Runner(workoutOf(single("burpees")))
             runner.tick(10)
@@ -652,8 +667,8 @@ class RunnerTimingTest {
 
         @Test
         fun `writes times as JS's toISOString does`() {
-            assertEquals("2026-07-27T09:00:00.000Z", isoTimestamp(T0))
-            assertEquals("2026-07-27T09:00:01.007Z", isoTimestamp(T0 + 1007))
+            assertEquals("2026-07-27T09:00:00.000Z", isoInstant(T0))
+            assertEquals("2026-07-27T09:00:01.007Z", isoInstant(T0 + 1007))
         }
     }
 }

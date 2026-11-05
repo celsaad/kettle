@@ -1,8 +1,4 @@
 package com.casco.kettle.domain
-
-import kotlinx.datetime.Instant
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
 import kotlin.math.floor
 import kotlin.math.max
 
@@ -60,19 +56,6 @@ fun remainingSec(
     now: Long,
 ): Double = max(0.0, clock.stepEndSec - elapsedSec(clock, now))
 
-/** [epochMs] as JS's `toISOString` writes it, milliseconds always shown, which the session files hold. */
-internal fun isoTimestamp(epochMs: Long): String {
-    val time = Instant.fromEpochMilliseconds(epochMs).toLocalDateTime(TimeZone.UTC)
-    val ms = epochMs.mod(MS_PER_SECOND.toLong())
-    return "${time.year.pad(YEAR)}-${time.monthNumber.pad()}-${time.dayOfMonth.pad()}" +
-        "T${time.hour.pad()}:${time.minute.pad()}:${time.second.pad()}.${ms.toInt().pad(MILLIS)}Z"
-}
-
-private const val YEAR = 4
-private const val MILLIS = 3
-
-private fun Int.pad(width: Int = 2) = toString().padStart(width, '0')
-
 internal fun togglePause(
     state: RunnerState,
     now: Long,
@@ -88,13 +71,19 @@ internal fun togglePause(
     return RunnerTransition(state.copy(snapshot = snapshot.copy(clock = toggled)), emptyList())
 }
 
-/** The rest screen's +30s, by [seconds]: moves the end, and nothing else. A hold's end is its own and doesn't move. */
+/**
+ * The rest screen's +30s, by [seconds]: moves the end, and nothing else. Only where the clock's end
+ * is the step's end, a rest or a countdown interval, so [StepClock.stepEndSec] never says a hold ends
+ * later than it does. RN's moved its end ref on any step, which only its rest screen ever asked for.
+ */
 internal fun addRestSeconds(
     state: RunnerState,
     seconds: Double,
 ): RunnerTransition {
     val snapshot = state.snapshot
-    if (snapshot.step == null) return unchanged(state)
+    val step = snapshot.step
+    val countsDown = step is RunnerStep.Rest || (step is RunnerStep.Interval && !step.countUp)
+    if (!countsDown) return unchanged(state)
     val clock = snapshot.clock.copy(stepEndSec = max(0.0, snapshot.clock.stepEndSec + seconds))
     return RunnerTransition(state.copy(snapshot = snapshot.copy(clock = clock)), emptyList())
 }

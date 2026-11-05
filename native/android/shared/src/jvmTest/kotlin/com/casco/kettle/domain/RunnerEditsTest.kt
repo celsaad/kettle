@@ -11,8 +11,8 @@ import org.junit.jupiter.api.Test
 
 /**
  * The engine's step-list edits, from RN `use-session-runner.test.tsx`'s restFollows, upcoming, adding
- * and dropping sets, swapping, ad-hoc and re-seeding sections. The engine refuses an edit unless
- * [canAddSet] holds, so where RN edited from a rest step these edit from a set step instead.
+ * and dropping sets, swapping, ad-hoc and re-seeding sections. Edits take whatever step is on screen,
+ * as RN's hook does; [canAddSet], [canDropSet] and [swapCandidates] are the buttons' rules.
  */
 class RunnerEditsTest {
     private fun Runner.repsEntry(index: Int) = entries[index] as SessionEntry.Reps
@@ -144,17 +144,17 @@ class RunnerEditsTest {
             assertEquals(3L, runner.work().setTotal)
             assertFalse(canDropSet(runner.state))
 
-            val before = runner.state
+            val before = runner.snapshot
             runner.send(RunnerCommand.DropSet)
-            assertSame(before, runner.state)
+            assertSame(before, runner.snapshot)
         }
 
         @Test
         fun `does not retract a logged set when Prev follows a mutation`() {
-            val runner = Runner(workoutOf(single("dips")))
+            val runner = Runner(workoutOf(single("pullups")))
             runner.send(RunnerCommand.SetReps(9))
             runner.advance()
-            runner.send(RunnerCommand.AddSet)
+            runner.send(RunnerCommand.AddSet) // from the rest step, as RN's case does
             runner.prev()
 
             assertEquals(1, runner.entries.size)
@@ -182,18 +182,44 @@ class RunnerEditsTest {
             assertEquals(4L, runner.work().setTotal)
         }
 
+        /** RN's hook edits from any step, the rest after a set included; only its screen hides the controls. */
         @Test
-        fun `refuses an edit on a rest step and leaves the state unchanged`() {
+        fun `edits the member of a rest step, as RN's hook does`() {
             val runner = Runner(workoutOf(single("pullups")))
             runner.advance()
             assertTrue(runner.step is RunnerStep.Rest)
-            val before = runner.state
+            assertFalse(canAddSet(runner.snapshot))
 
             runner.send(RunnerCommand.AddSet)
-            assertSame(before, runner.state)
+            assertEquals(4, setStepsForMember(runner.snapshot.steps, "0"))
             runner.send(RunnerCommand.DropSet)
-            assertSame(before, runner.state)
+            assertEquals(3, setStepsForMember(runner.snapshot.steps, "0"))
+
             runner.swap("dips")
+            assertEquals("dips", runner.step?.exerciseId)
+            assertEquals(2L, runner.work().setTotal)
+        }
+
+        /** RN's `mutateSteps` clears undo before it knows whether the list moved. */
+        @Test
+        fun `clears undo even when the edit changes nothing`() {
+            val runner = Runner(workoutOf(circuitOf("pullups", "dips")))
+            runner.advance() // pull-ups round 1, logged; now on dips
+            val steps = runner.snapshot.steps
+            runner.send(RunnerCommand.AddSet) // a circuit member's sets are refused
+            assertSame(steps, runner.snapshot.steps)
+            runner.prev()
+
+            assertEquals(1, runner.repsEntry(0).sets.size)
+        }
+
+        @Test
+        fun `does nothing with nothing on screen`() {
+            val runner = Runner(null)
+            val before = runner.state
+            runner.send(RunnerCommand.AddSet)
+            runner.swap("dips")
+
             assertSame(before, runner.state)
         }
     }
@@ -264,9 +290,10 @@ class RunnerEditsTest {
             val runner = Runner(workoutOf(circuitOf("pullups", "dips")))
             assertEquals(emptyList<Exercise>(), swapCandidates(runner.snapshot, runner.exercises))
 
-            val before = runner.state
+            // Refused by the mutation itself (#303), so the list stands; undo is cleared, as RN's always is.
+            val before = runner.snapshot
             runner.swap("plank")
-            assertSame(before, runner.state)
+            assertSame(before, runner.snapshot)
         }
 
         @Test
@@ -349,16 +376,18 @@ class RunnerEditsTest {
             assertEquals(listOf("dips", "pullups"), runner.entries.map { it.exercise })
         }
 
+        /** The picker leaves both out ([swapCandidates]); RN's hook takes either if asked. */
         @Test
-        fun `refuses the exercise already on screen and the built-in rest`() {
+        fun `swaps even to the exercise on screen, under a fresh key, as RN's hook does`() {
             val runner = Runner(workoutOf(single("pullups")))
-            val before = runner.state
-
+            runner.send(RunnerCommand.SetReps(7))
+            runner.advance()
+            runner.advance()
             runner.swap("pullups")
-            assertSame(before, runner.state)
 
-            runner.swap("rest")
-            assertSame(before, runner.state)
+            assertEquals("0~swap1", runner.step?.memberKey)
+            runner.advance()
+            assertEquals(listOf("pullups", "pullups"), runner.entries.map { it.exercise })
         }
     }
 
@@ -445,12 +474,20 @@ class RunnerEditsTest {
             assertEquals(emptyList<SessionEntry>(), runner.entries)
         }
 
+        /** Only an ad-hoc screen offers it; RN's hook appends to a workout's list just the same. */
         @Test
-        fun `refuses AddExercise in a workout session`() {
+        fun `appends an added exercise to a workout session too`() {
             val runner = Runner(workoutOf(single("pullups")))
-            val before = runner.state
             runner.add("dips")
-            assertSame(before, runner.state)
+
+            assertEquals(8, runner.snapshot.steps.size)
+            assertEquals(
+                "adhoc0",
+                runner.snapshot.steps
+                    .last()
+                    .memberKey,
+            )
+            assertEquals(1, blockTotal(runner.snapshot))
         }
     }
 

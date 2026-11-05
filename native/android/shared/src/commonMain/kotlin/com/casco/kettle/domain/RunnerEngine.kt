@@ -208,7 +208,7 @@ fun startRunner(
     now: Long,
 ): RunnerTransition {
     val slot = (start as? RunnerStart.Planned)?.params as? SessionParams.ProgramSlot
-    val startedAt = isoTimestamp(now)
+    val startedAt = isoInstant(now)
     val session =
         Session(
             SESSION_VERSION,
@@ -353,7 +353,7 @@ private fun complete(
     effects: List<RunnerEffect>,
     now: Long,
 ): RunnerTransition {
-    val session = state.session.copy(endedAt = isoTimestamp(now))
+    val session = state.session.copy(endedAt = isoInstant(now))
     return RunnerTransition(
         state.copy(session = session, finished = true, lastCommit = null),
         effects.filterNot { it is RunnerEffect.WriteSession } +

@@ -23,8 +23,7 @@ fun canAddSet(snapshot: RunnerSnapshot): Boolean {
  */
 fun canDropSet(state: RunnerState): Boolean {
     val step = state.snapshot.step ?: return false
-    return canAddSet(state.snapshot) &&
-        setStepsForMember(state.snapshot.steps, step.memberKey) > loggedSets(state, step.memberKey) + 1
+    return canAddSet(state.snapshot) && aboveFloor(state, step.memberKey)
 }
 
 private fun loggedSets(
@@ -56,51 +55,80 @@ fun swapCandidates(
 /** How many blocks the progress dots count: the workout's, or for an ad-hoc session the exercises added. */
 fun blockTotal(snapshot: RunnerSnapshot): Int = snapshot.workoutBlockCount ?: snapshot.adhocCount
 
+/**
+ * The edit, as RN's hook makes it: on whatever step is on screen, with the buttons' rules
+ * ([canAddSet], [canDropSet], [swapCandidates]) left to the UI that shows them, and the undo record
+ * cleared by every edit, even one that changes nothing. Two refusals RN's hook leaves to its screen
+ * are kept here, because without them an edit corrupts the session: a circuit member's sets
+ * (`StepMutations.kt` refuses them), and a drop below the sets already logged plus the one in progress,
+ * which removes the step on screen and leaves the index past the list.
+ */
 internal fun editSteps(
     state: RunnerState,
     edit: RunnerCommand.StepEdit,
 ): RunnerTransition {
     val snapshot = state.snapshot
     val steps = snapshot.steps
-    val key = snapshot.step?.takeIf { canAddSet(snapshot) }?.memberKey
-    val droppable = key?.takeIf { canDropSet(state) }
+    val key = snapshot.step?.memberKey
     val edited =
         when (edit) {
-            RunnerCommand.AddSet -> key?.let { snapshot.copy(steps = addSetForMember(steps, it)) }
-            RunnerCommand.DropSet -> droppable?.let { snapshot.copy(steps = dropLastSetForMember(steps, it)) }
-            is RunnerCommand.Swap -> key?.let { swapped(snapshot, it, edit.exercise) }
-            is RunnerCommand.AddExercise -> snapshot.takeIf { it.adhoc }?.let { added(it, edit.exercise) }
+            RunnerCommand.AddSet -> {
+                key?.let { snapshot.copy(steps = addSetForMember(steps, it)) }
+            }
+
+            RunnerCommand.DropSet -> {
+                key
+                    ?.takeIf {
+                        aboveFloor(state, it)
+                    }?.let { snapshot.copy(steps = dropLastSetForMember(steps, it)) }
+            }
+
+            is RunnerCommand.Swap -> {
+                key?.let { swapped(snapshot, it, edit.exercise) }
+            }
+
+            is RunnerCommand.AddExercise -> {
+                added(snapshot, edit.exercise)
+            }
         }
-    return if (edited == null || edited.steps === steps) {
-        unchanged(state)
-    } else {
-        RunnerTransition(state.copy(snapshot = edited, lastCommit = null), emptyList())
+    // RN returns before its undo clear only when nothing is on screen; a parked ad-hoc session still adds.
+    return when {
+        key == null && edit !is RunnerCommand.AddExercise -> unchanged(state)
+        edited == null || edited.steps === steps -> RunnerTransition(state.copy(lastCommit = null), emptyList())
+        else -> RunnerTransition(state.copy(snapshot = edited, lastCommit = null), emptyList())
     }
 }
+
+/** RN's floor: more sets than are logged plus the one in progress, so the drop leaves both alone. */
+private fun aboveFloor(
+    state: RunnerState,
+    memberKey: String,
+): Boolean = setStepsForMember(state.snapshot.steps, memberKey) > loggedSets(state, memberKey) + 1
 
 /**
  * [exercise] for what's left of [memberKey], under a key nothing has used, `<key>~swap<n>`, which no
  * expansion issues. Every log is keyed by member, so reusing the key would grow the replaced
- * exercise's entry with the substitute's sets. Null for the exercise already on screen or the rest.
+ * exercise's entry with the substitute's sets. The count moves on every swap asked for, as RN's does.
  */
 private fun swapped(
     snapshot: RunnerSnapshot,
     memberKey: String,
     exercise: Exercise,
-): RunnerSnapshot? {
-    val refused = exercise.id == snapshot.step?.exerciseId || exercise.config is ExerciseConfig.Rest
-    if (refused) return null
+): RunnerSnapshot {
     val count = snapshot.swapCount + 1
     val steps = swapExerciseForMember(snapshot.steps, memberKey, snapshot.stepIndex, exercise, "$memberKey~swap$count")
     return snapshot.copy(steps = steps, swapCount = count)
 }
 
-/** Appended under `adhoc<n>`, its block index the count so far, so its sets start an entry of their own. */
+/**
+ * Appended under `adhoc<n>`, its block index the count so far, so its sets start an entry of their
+ * own. Only an ad-hoc session's screen offers it; like RN's hook, a workout's accepts it too.
+ */
 private fun added(
     snapshot: RunnerSnapshot,
     exercise: Exercise,
-): RunnerSnapshot? {
+): RunnerSnapshot {
     val blockIndex = snapshot.adhocCount
     val built = buildStepsForExercise(exercise, blockIndex, "adhoc$blockIndex")
-    return if (built.isEmpty()) null else snapshot.copy(steps = snapshot.steps + built, adhocCount = blockIndex + 1)
+    return snapshot.copy(steps = snapshot.steps + built, adhocCount = blockIndex + 1)
 }

@@ -19,6 +19,7 @@ import com.casco.kettle.shell.programguide.ProgramGuideRoute
 import com.casco.kettle.shell.programs.ProgramsRoute
 import com.casco.kettle.shell.progress.EXERCISE_PROGRESS_PATH
 import com.casco.kettle.shell.progress.ExerciseProgressRoute
+import com.casco.kettle.shell.runner.RunnerPlaceholderRoute
 import com.casco.kettle.shell.sessioneditor.SESSION_EDITOR_PATH
 import com.casco.kettle.shell.sessioneditor.SessionEditorRoute
 import com.casco.kettle.shell.settings.SettingsRoute
@@ -71,7 +72,7 @@ sealed interface Screen {
  * `preferences.json` and the backup folder (#238), of an edited session file (#240), and of the
  * library (#245). RN's runner still writes new sessions, and nothing else.
  */
-val shellRoutes: Map<String, Screen> =
+private val screenRoutes: Map<String, Screen> =
     mapOf(
         "/support" to Screen.Native { SupportRoute() },
         "/program-guide" to Screen.Native { ProgramGuideRoute() },
@@ -89,6 +90,22 @@ val shellRoutes: Map<String, Screen> =
         PROGRAM_EDITOR_PATH to Screen.Native { params -> ProgramEditorRoute(params) },
         IMPORT_PATH to Screen.Native { ImportRoute() },
     )
+
+/**
+ * The routes with the native runner registered while [nativeRunner] is on (#302). It is a full-screen
+ * destination above the tabs rather than a sheet (`Layer.NativeRunner`), behind a stub RN pushes like
+ * any other. RN's runner stays at its own path either way, which `.dev`'s `kettle://session` links
+ * still reach until routing moves native.
+ */
+fun routesFor(nativeRunner: Boolean): Map<String, Screen> =
+    if (nativeRunner) {
+        screenRoutes + (NATIVE_RUNNER_PATH to Screen.Native { params -> RunnerPlaceholderRoute(params) })
+    } else {
+        screenRoutes
+    }
+
+/** The routes this build registers: `Flips.kt`'s [NATIVE_RUNNER] is on in debug and off in release. */
+val shellRoutes: Map<String, Screen> = routesFor(NATIVE_RUNNER)
 
 /** How [path] renders. */
 fun Map<String, Screen>.screenAt(path: String): Screen = this[path] ?: Screen.Rn

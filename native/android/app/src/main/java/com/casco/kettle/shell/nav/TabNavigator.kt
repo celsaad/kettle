@@ -6,10 +6,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 
 /**
- * The shell's layers, stacked in one frame: the RN surface, a native tab's screen, and a native sheet's
- * (#197). [ShellLayout] shows one at a time, and says why.
+ * The shell's layers, stacked in one frame: the RN surface, a native tab's screen, a native sheet's
+ * (#197), and the native runner's, full screen over everything (#302). [ShellLayout] shows one at a
+ * time, and says why.
  */
-enum class Layer { Surface, NativeTab, NativeSheet }
+enum class Layer { Surface, NativeTab, NativeSheet, NativeRunner }
 
 /**
  * Which tab the shell is on, and which [layer] shows: the RN surface, a native tab, or a native sheet.
@@ -40,26 +41,31 @@ class TabNavigator(
     /**
      * Which layer should show: the surface on an RN tab, and over any tab while RN has something above
      * the tabs, since RN presents its modals and the runner inside the surface. The exception is a route
-     * registered native above the tabs, whose stub RN shows while native draws it in the sheet.
+     * registered native above the tabs, whose stub RN shows while native draws it: in the sheet, or full
+     * screen for the native runner.
      */
     val layer: Layer
         get() =
             when {
                 barShown -> if (current.isRn()) Layer.Surface else Layer.NativeTab
-                rnAt?.let(routes::screenAt) is Screen.Native -> Layer.NativeSheet
-                else -> Layer.Surface
+                rnAt?.let(routes::screenAt) !is Screen.Native -> Layer.Surface
+                runnerShown -> Layer.NativeRunner
+                else -> Layer.NativeSheet
             }
 
-    /** Whether RN shows the runner, which is dark in either scheme (`RunnerColors`). */
-    val runnerShown: Boolean get() = rnAt == RUNNER_PATH
+    /** Whether a runner shows, RN's or native's, which is dark in either scheme (`RunnerColors`). */
+    val runnerShown: Boolean get() = isRunnerPath(rnAt)
 
     /** The path the native sheet draws, while one shows. */
     val nativeSheetPath: String? get() = rnAt.takeIf { layer == Layer.NativeSheet }
 
+    /** The path the native runner's layer draws, while it shows. */
+    val nativeRunnerPath: String? get() = rnAt.takeIf { layer == Layer.NativeRunner }
+
     /**
      * The tab the latest tap steered RN to, its stub for a native one, until RN reports arriving there.
      * A tap's message isn't lost on the way, which would leave this set: `JsChannel` holds it until JS
-     * is ready, and the one place RN drops a navigate, over the runner, has the bar hidden. A report
+     * is ready, and the one place RN drops a navigate, over a runner, has the bar hidden. A report
      * from above the tabs clears it.
      */
     private var pending: Tab? = null
@@ -133,9 +139,4 @@ class TabNavigator(
     }
 
     private fun Tab.isRn() = routes.screenAt(path) == Screen.Rn
-
-    private companion object {
-        /** `src/app/session.tsx`. */
-        const val RUNNER_PATH = "/session"
-    }
 }

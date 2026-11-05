@@ -36,9 +36,11 @@ import com.casco.kettle.domain.Library
 import com.casco.kettle.domain.Program
 import com.casco.kettle.domain.ProgramWeek
 import com.casco.kettle.domain.RepsSetLog
+import com.casco.kettle.domain.RunnerStart
 import com.casco.kettle.domain.Session
 import com.casco.kettle.domain.SessionEntry
 import com.casco.kettle.domain.SessionLog
+import com.casco.kettle.domain.SessionParams
 import com.casco.kettle.domain.Workout
 import com.casco.kettle.domain.WorkoutBlock
 import com.casco.kettle.shell.files.FakeStoredFiles
@@ -79,6 +81,9 @@ class HomeScreenTest {
     val compose = createComposeRule()
 
     private val opened = mutableListOf<Triple<Stacking, String, Map<String, String>>>()
+
+    /** Every start, which `openRunner` turns into a push of whichever runner the flip picks. */
+    private val started = mutableListOf<RunnerStart>()
     private var drawn = 0
 
     /**
@@ -106,6 +111,7 @@ class HomeScreenTest {
                         latest,
                         reselects,
                         open = { how, path, params -> opened += Triple(how, path, params) },
+                        startRunner = { started += it },
                         clock = clock,
                     )
                 }
@@ -216,13 +222,8 @@ class HomeScreenTest {
             .assertWidthIsAtLeast(48.dp)
             .performClick()
 
-        assertEquals(
-            listOf(
-                Triple(Stacking.Push, "/workout-editor", mapOf("id" to "bench")),
-                Triple(Stacking.Push, "/session", mapOf("workoutId" to "bench")),
-            ),
-            opened,
-        )
+        assertEquals(listOf(Triple(Stacking.Push, "/workout-editor", mapOf("id" to "bench"))), opened)
+        assertEquals(listOf(RunnerStart.Planned(SessionParams.Workout("bench"))), started)
     }
 
     // The card: workouts-next-up.test.tsx.
@@ -284,10 +285,7 @@ class HomeScreenTest {
         text("PRÓXIMO · Semana 1 · Day 1").assertExists()
         button("Iniciar treino").assertHeightIsAtLeast(48.dp).performClick()
 
-        assertEquals(
-            listOf(Triple(Stacking.Push, "/session", mapOf("programId" to "base", "week" to "1", "day" to "Day 1"))),
-            opened,
-        )
+        assertEquals(listOf(RunnerStart.Planned(SessionParams.ProgramSlot("base", 1, "Day 1"))), started)
     }
 
     // The schema takes `day: ""`, and RN tested the day for truth, so an empty one is none.
@@ -518,7 +516,7 @@ class HomeScreenTest {
 
         button("Começar uma sessão vazia").assertHeightIsAtLeast(48.dp).performClick()
 
-        assertEquals(listOf(Triple(Stacking.Push, "/session", mapOf("adhoc" to "1"))), opened)
+        assertEquals(listOf(RunnerStart.Adhoc), started)
     }
 
     // A scheduled rest day: no Start button, which is the whole claim, and two ways not to be stuck.
@@ -571,10 +569,7 @@ class HomeScreenTest {
 
         button("Treinar mesmo assim").assertHeightIsAtLeast(48.dp).performClick()
 
-        assertEquals(
-            listOf(Triple(Stacking.Push, "/session", mapOf("programId" to "base", "week" to "1", "day" to "Day 3"))),
-            opened,
-        )
+        assertEquals(listOf(RunnerStart.Planned(SessionParams.ProgramSlot("base", 1, "Day 3"))), started)
     }
 
     // Logging only zeros is skipping the workout, so Day 1 stays up next. Read the raw sessions rather

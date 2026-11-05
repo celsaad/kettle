@@ -26,6 +26,7 @@ import com.casco.kettle.shell.nav.ModalSheet
 import com.casco.kettle.shell.nav.ShellLayout
 import com.casco.kettle.shell.nav.Tab
 import com.casco.kettle.shell.nav.TabNavigator
+import com.casco.kettle.shell.nav.nativeRunnerDrawn
 import com.casco.kettle.shell.nav.shellRoutes
 import com.casco.kettle.shell.reminder.reconcileReminder
 import com.casco.kettle.shell.reminder.retireExpoReminder
@@ -105,9 +106,7 @@ class MainActivity :
         intent.withViewAction()
 
         expoListeners = ExpoActivityListeners(this).also(lifecycle::addObserver)
-        // Read by hostedTabOptions in src/hooks/safe-brownfield.ts, so RN's first frame already has no
-        // bar of its own. The two share no code, so change both.
-        BrownfieldState.set(NATIVE_TAB_BAR, true)
+        tellJsWhatTheShellDraws()
         retireExpoReminder()
         handJsItsWrites()
         // RN's library load only parses from the library flip (#245), so native seeds and repairs first
@@ -258,10 +257,17 @@ class MainActivity :
         if (navigator.back()) return
         if (!moveTaskToBack(false)) finish()
     }
+}
 
-    private companion object {
-        const val NATIVE_TAB_BAR = "nativeTabBar"
-    }
+/**
+ * What the shell draws in RN's place, set before the surface opens so RN's first frame already knows.
+ * `nativeTabBar` is read by isHosted in src/hooks/brownfield-module.ts, so RN draws no bar of its own;
+ * `nativeRunner` by drawsNativeRunner there, so the native runner's stub guards only where native
+ * draws over it (#302). The two share no code, so change both.
+ */
+private fun tellJsWhatTheShellDraws() {
+    BrownfieldState.set("nativeTabBar", true)
+    BrownfieldState.set("nativeRunner", nativeRunnerDrawn)
 }
 
 /**

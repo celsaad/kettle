@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.Exercise
 import com.casco.kettle.domain.Library
 import com.casco.kettle.domain.NextUp
+import com.casco.kettle.domain.RunnerStart
 import com.casco.kettle.domain.Session
 import com.casco.kettle.domain.SessionParams
 import com.casco.kettle.domain.Workout
@@ -65,6 +66,7 @@ import com.casco.kettle.shell.list.SearchBar
 import com.casco.kettle.shell.nav.LocalTabReselects
 import com.casco.kettle.shell.nav.ScrollsToTopOnReselect
 import com.casco.kettle.shell.nav.Tab
+import com.casco.kettle.shell.nav.openRunner
 import com.casco.kettle.shell.rn.JsBridge
 import com.casco.kettle.shell.rn.Stacking
 import com.casco.kettle.shell.theme.KettleTheme
@@ -78,14 +80,14 @@ import kotlinx.datetime.TimeZone
 
 /** What `shellRoutes` registers at `/`, the tab the app opens on. */
 @Composable
-fun HomeRoute() = HomeScreen(LocalLatestFiles.current, LocalTabReselects.current, JsBridge::open)
+fun HomeRoute() = HomeScreen(LocalLatestFiles.current, LocalTabReselects.current, JsBridge::open, { openRunner(it) })
 
 /**
  * Home (#235), the Workouts tab, as RN's `(tabs)/index.tsx`, now the empty stub at this path: what to
  * run next, and everything there is to run. The next-up card is the only path that resolves which
  * program week is due and starts it with that week's overrides; a row's start passes a bare workout.
- * Every route it opens is RN's until the flips: the runner, the workout editor, Import and Settings.
- * [open] is `JsBridge.open`, a parameter so a test hears each one.
+ * [open] is `JsBridge.open`, and [startRunner] is `openRunner`, which picks the runner by the flip
+ * (#302); both parameters, so a test hears each route opened and each start.
  *
  * It is the screen the app's start waits for. The activity's `reportFullyDrawn`, the startup
  * benchmark's end point, waits for the library as well as the first frame, since a frame without it
@@ -99,6 +101,7 @@ fun HomeScreen(
     files: LatestFiles,
     reselected: Flow<Tab>,
     open: (Stacking, String, Map<String, String>) -> Unit,
+    startRunner: (RunnerStart) -> Unit,
     clock: Clock = Clock.System,
 ) {
     val listState = rememberLazyListState()
@@ -133,7 +136,7 @@ fun HomeScreen(
                 // Nothing below the title before there is a library, so the screen never says "none"
                 // before it has looked.
                 if (library != null) {
-                    WhatToRun(nextUp, newHere = sessions.isEmpty(), hasWorkouts = all.isNotEmpty(), open)
+                    WhatToRun(nextUp, newHere = sessions.isEmpty(), hasWorkouts = all.isNotEmpty(), open, startRunner)
                     // Keyed off the whole library, so it doesn't vanish under the finger typing. The
                     // count is the whole library's too: a placeholder only shows while nothing is typed.
                     if (all.isNotEmpty()) {
@@ -152,7 +155,7 @@ fun HomeScreen(
             }
             itemsIndexed(matching, key = { _, workout -> workout.id }) { index, workout ->
                 if (index > 0) ListRowSeparator()
-                WorkoutRow(workout, library?.exercises.orEmpty(), open)
+                WorkoutRow(workout, library?.exercises.orEmpty(), open, startRunner)
             }
             // Told apart: "no workouts yet" is right on a fresh install and wrong to someone with forty
             // who mistyped one.
@@ -178,6 +181,7 @@ private fun WhatToRun(
     newHere: Boolean,
     hasWorkouts: Boolean,
     open: (Stacking, String, Map<String, String>) -> Unit,
+    startRunner: (RunnerStart) -> Unit,
 ) {
     // Gated on a queued workout, not on any card: step one reads "Start the workout below", and a rest
     // card has no Start, which a program opening on a rest day puts a new user in front of.
@@ -189,11 +193,11 @@ private fun WhatToRun(
     if (newHere && hasWorkouts) {
         StarterPackLink(Modifier.padding(top = Spacing.three)) { open(Stacking.Push, IMPORT_PATH, emptyMap()) }
     }
-    nextUp?.let { NextUpCard(it) { params -> open(Stacking.Push, SESSION_PATH, params.routeParams()) } }
+    nextUp?.let { NextUpCard(it) { params -> startRunner(RunnerStart.Planned(params)) } }
     // Under the card's Start, reading as its alternative. Text weight, so it can't be taken for Start's
     // peer; on a rest day and with no workouts, it is the way to train.
     HomeLink(stringResource(R.string.today_startEmpty), Modifier) {
-        open(Stacking.Push, SESSION_PATH, mapOf("adhoc" to "1"))
+        startRunner(RunnerStart.Adhoc)
     }
 }
 
@@ -239,6 +243,7 @@ private fun WorkoutRow(
     workout: Workout,
     exercises: List<Exercise>,
     open: (Stacking, String, Map<String, String>) -> Unit,
+    startRunner: (RunnerStart) -> Unit,
 ) {
     val colors = KettleTheme.colors
     val shape = remember(workout, exercises) { workoutShape(workout, exercises) }
@@ -255,7 +260,7 @@ private fun WorkoutRow(
             Text(workoutShapeText(shape), style = KettleType.small, color = colors.textSecondary)
         }
         RowStartButton(stringResource(R.string.build_startAccessibility, workout.name)) {
-            open(Stacking.Push, SESSION_PATH, SessionParams.Workout(workout.id).routeParams())
+            startRunner(RunnerStart.Planned(SessionParams.Workout(workout.id)))
         }
     }
 }
@@ -269,19 +274,6 @@ private fun nextUpView(
 /** The benchmark's uiautomator finds Home by this, as it found RN Home's testID. */
 private fun Modifier.homeScreenTag() = semantics { testTagsAsResourceId = true }.testTag(HOME_SCREEN_TAG)
 
-/** A start's params as the runner's route reads them, `src/app/session.tsx`'s. */
-private fun SessionParams.routeParams(): Map<String, String> =
-    when (this) {
-        is SessionParams.Workout -> {
-            mapOf("workoutId" to workoutId)
-        }
-
-        is SessionParams.ProgramSlot -> {
-            mapOf("programId" to programId, "week" to week.toString()) + listOfNotNull(day?.let { "day" to it })
-        }
-    }
-
-private const val SESSION_PATH = "/session"
 private const val IMPORT_PATH = "/import"
 
 /** What `StartupBenchmark` waits for. The two share no code, so change both. */

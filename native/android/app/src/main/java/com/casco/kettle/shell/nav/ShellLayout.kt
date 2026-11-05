@@ -23,8 +23,9 @@ import com.casco.kettle.shell.files.LocalLatestFiles
  * view again, as it was under the fragment that hosted it before.
  *
  * Only one [Layer] shows: the surface for an RN tab or anything RN draws above the tabs, the
- * destinations for a native tab, and the [nativeSheet] for a native route in the sheet. The others are
- * invisible, since a view left showing under another still takes touches and TalkBack's focus.
+ * destinations for a native tab, the [nativeSheet] for a native route in the sheet, and the
+ * [nativeRunner] for the native runner. The others are invisible, since a view left showing under
+ * another still takes touches and TalkBack's focus.
  *
  * [theme] wraps every Compose view's content, each a separate composition. The destinations' also
  * let the system splash go ([SplashExit]).
@@ -53,6 +54,12 @@ class ShellLayout(
     internal val nativeSheet: ComposeView =
         composeView { theme { NativeSheet(navigator, routes, onComposed = { nativeFrames.onComposed(it) }) } }
 
+    /**
+     * The native runner (#302), full screen over everything else and outside the sheet: it is no tab's
+     * and no sheet's, and the bar is already gone while RN reports its stub.
+     */
+    internal val nativeRunner: ComposeView = composeView { theme { NativeRunner(navigator, routes) } }
+
     /** When the native sheet has composed the route the sheet arrives at. */
     internal val nativeFrames: NativeFrames = NativeFrames(nativeSheet)
 
@@ -72,7 +79,9 @@ class ShellLayout(
         content.addView(surface, FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
         content.addView(nativeSheet, FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
         content.addView(destinations, FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
+        content.addView(nativeRunner, FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
         nativeSheet.visibility = INVISIBLE
+        nativeRunner.visibility = INVISIBLE
         addView(content, LayoutParams(MATCH_PARENT, 0, 1f))
         this.sheet = sheet(content, this)
         // Wrapping its content, so the bar takes no room at all while RN has something above the tabs.
@@ -89,6 +98,7 @@ class ShellLayout(
         surface.visibility = if (layer == Layer.Surface) VISIBLE else INVISIBLE
         destinations.visibility = if (layer == Layer.NativeTab) VISIBLE else INVISIBLE
         nativeSheet.visibility = if (layer == Layer.NativeSheet) VISIBLE else INVISIBLE
+        nativeRunner.visibility = if (layer == Layer.NativeRunner) VISIBLE else INVISIBLE
     }
 
     private fun composeView(content: @Composable () -> Unit) =

@@ -32,6 +32,8 @@ import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.Library
 import com.casco.kettle.domain.Program
 import com.casco.kettle.domain.ProgramWeek
+import com.casco.kettle.domain.RunnerStart
+import com.casco.kettle.domain.SessionParams
 import com.casco.kettle.domain.overrideNote
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.files.LatestFiles
@@ -40,6 +42,7 @@ import com.casco.kettle.shell.list.ListHeaderRule
 import com.casco.kettle.shell.list.ListRow
 import com.casco.kettle.shell.list.ListRowSeparator
 import com.casco.kettle.shell.list.RowStartButton
+import com.casco.kettle.shell.nav.openRunner
 import com.casco.kettle.shell.rn.JsBridge
 import com.casco.kettle.shell.rn.Stacking
 import com.casco.kettle.shell.theme.KettleTheme
@@ -54,18 +57,26 @@ const val PROGRAM_ID_PARAM = "programId"
 /** What `shellRoutes` registers at [PROGRAM_DETAIL_PATH], opened from a Programs row. */
 @Composable
 fun ProgramDetailRoute(params: Map<String, String>) =
-    ProgramDetailScreen(params[PROGRAM_ID_PARAM], LocalLatestFiles.current, JsBridge::open, JsBridge::back)
+    ProgramDetailScreen(
+        params[PROGRAM_ID_PARAM],
+        LocalLatestFiles.current,
+        JsBridge::open,
+        { openRunner(it) },
+        JsBridge::back,
+    )
 
 /**
  * One program's weeks (#233), as RN's `program-detail.tsx`, now the empty stub at this path. A training
- * week names its workout and starts it in RN's runner; a rest week says so and starts nothing. Edit
- * opens the program editor. [open] is `JsBridge.open`, a parameter so a test hears each route opened.
+ * week names its workout and starts it in a runner; a rest week says so and starts nothing. Edit
+ * opens the program editor. [open] is `JsBridge.open` and [startRunner] is `openRunner` (#302), both
+ * parameters so a test hears each route opened and each start.
  */
 @Composable
 fun ProgramDetailScreen(
     programId: String?,
     files: LatestFiles,
     open: (Stacking, String, Map<String, String>) -> Unit,
+    startRunner: (RunnerStart) -> Unit,
     onClose: () -> Unit,
 ) {
     val library = files.library
@@ -99,7 +110,7 @@ fun ProgramDetailScreen(
                 }
 
                 else -> {
-                    Weeks(program, library, open)
+                    Weeks(program, library, open, startRunner)
                     Close(onClose)
                 }
             }
@@ -112,6 +123,7 @@ private fun Weeks(
     program: Program,
     library: Library,
     open: (Stacking, String, Map<String, String>) -> Unit,
+    startRunner: (RunnerStart) -> Unit,
 ) {
     Header(program.name) { open(Stacking.Push, "/program-editor", mapOf("id" to program.id)) }
     // Starts the list the way every tab screen's does: without it the weeks begin under the title with
@@ -121,9 +133,7 @@ private fun Weeks(
     program.weeks.sortedBy { it.week }.forEachIndexed { index, week ->
         if (index > 0) ListRowSeparator()
         WeekRow(week, library) {
-            val params = mapOf(PROGRAM_ID_PARAM to program.id, "week" to week.week.toString())
-            // Left out rather than empty, as expo-router drops RN's undefined `day`.
-            open(Stacking.Push, "/session", params + listOfNotNull(week.day?.let { "day" to it }))
+            startRunner(RunnerStart.Planned(SessionParams.ProgramSlot(program.id, week.week, week.day)))
         }
     }
 }

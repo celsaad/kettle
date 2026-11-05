@@ -114,6 +114,27 @@ internal fun NativeSheet(
     }
 }
 
+/**
+ * What the native runner's layer shows (#302): the screen registered at the runner's stub path, given
+ * the params RN reported it with. Dark whatever Settings' Appearance says, as RN's runner is
+ * (`RunnerColors`): `runnerShown` keeps the system bars' icons light over it, which a light scheme here
+ * would leave unreadable. A fresh screen per start, as for a sheet.
+ */
+@Composable
+internal fun NativeRunner(
+    navigator: TabNavigator,
+    routes: Map<String, Screen>,
+) {
+    val path = navigator.nativeRunnerPath ?: return
+    val screen = routes.screenAt(path) as? Screen.Native ?: return
+    val params = navigator.params(path)
+    key(params) {
+        KettleTheme(darkTheme = true) {
+            Box(Modifier.fillMaxSize().background(KettleTheme.colors.background)) { screen.content(params) }
+        }
+    }
+}
+
 @Composable
 internal fun TabBar(
     current: Tab,

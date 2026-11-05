@@ -134,6 +134,12 @@ function Navigation() {
               contentStyle: { backgroundColor: RunnerColors.background },
             }}
           />
+          {/*
+            The native runner's stub (#302): the shell draws the runner over it full screen, so RN's own
+            slide would only move an empty screen nobody sees. Not a sheet, so the shell's sheet leaves it
+            alone too.
+          */}
+          <Stack.Screen name="session-native" options={{ headerShown: false, animation: 'none' }} />
           {SHEET_ROUTES.map((name) => (
             <Stack.Screen
               key={name}

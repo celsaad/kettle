@@ -52,6 +52,15 @@ object JsBridge {
     }
 
     /**
+     * The native runner is done (#302): RN's stub under it drops the guard that refuses every other
+     * way off it and goes back, so RN reports where it lands and the shell hands back as from any route.
+     */
+    fun runnerDone() {
+        // What src/hooks/safe-brownfield.ts listens for. The two share no code, so change both.
+        channel.send(mapOf("type" to "runnerDone"))
+    }
+
+    /**
      * Back, as hardware back reaches RN: the sheet's ×, grabber and predictive back send it, so RN stays
      * the router. What `setUpNativeBackHandling`'s callback does with native back off, which it is.
      */

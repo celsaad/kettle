@@ -1,6 +1,9 @@
 # The session runner's step model: a workout expanded into the steps it runs, the mid-session edits to
-# that list, the Coming up outline built from it, and the Next card's lookahead. Pure, and held here
-# because two runners exist until M6's flip release deletes the RN one (#292, #303).
+# that list, and the Coming up outline built from it. Pure, and held here because two runners exist
+# until M6's flip release deletes the RN one (#292, #303).
+#
+# The Next card's lookahead isn't here: in TS it is private to the runner, which #303 leaves
+# unchanged, so it has no export to generate goldens from. Kotlin's is pinned by `RunnerStepsTest`.
 #
 # Every case has a `library` (inline YAML that must parse) and an `op`. The step list is the
 # `workout` named, or the library's first, through `buildStepsWithLimits`; or empty with `adhoc: true`.
@@ -11,8 +14,6 @@
 #   `[{ op, result }]`. `result` is the list after the op, or a number for `count`.
 # - `outline`: applies `ops` first, then `upcomingOutline(steps, at)` for every `at` from -1 to one
 #   past the end, or the case's own `at` list: `[{ at, items }]`.
-# - `preview`: applies `ops` first, then per `at` the step the Next card previews (`upcomingStep`, or
-#   null) and `restFollows`: `[{ at, preview, restFollows }]`.
 #
 # Ops: `count` (setStepsForMember of `member`), `addSet` / `dropLastSet` (of `member`), `swap`
 # (swapExerciseForMember: `member` from step index `from` onward, to `exercise` under `newMember`),
@@ -548,25 +549,3 @@ cases:
     library: *library
     adhoc: true
     op: outline
-
-  # --- preview ---
-
-  - name: preview-skips-one-rest-and-previews-work
-    library: *library
-    workout: mixed
-    op: preview
-
-  - name: preview-back-to-back-has-no-rest-to-skip
-    library: *library
-    workout: back-to-back
-    op: preview
-
-  - name: preview-in-a-circuit
-    library: *library
-    workout: circuit
-    op: preview
-
-  - name: preview-of-standalone-rests
-    library: *library
-    workout: one-shots
-    op: preview

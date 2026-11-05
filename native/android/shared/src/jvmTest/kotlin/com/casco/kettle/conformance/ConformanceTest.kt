@@ -38,7 +38,6 @@ import com.casco.kettle.domain.rankByName
 import com.casco.kettle.domain.recordKey
 import com.casco.kettle.domain.repairLibraryBounds
 import com.casco.kettle.domain.resolveWorkoutForWeek
-import com.casco.kettle.domain.restFollows
 import com.casco.kettle.domain.serializeLibraryYaml
 import com.casco.kettle.domain.serializeSessionYaml
 import com.casco.kettle.domain.sessionDurationMinutes
@@ -49,7 +48,6 @@ import com.casco.kettle.domain.swapExerciseForMember
 import com.casco.kettle.domain.toDisplayWeight
 import com.casco.kettle.domain.translationFor
 import com.casco.kettle.domain.upcomingOutline
-import com.casco.kettle.domain.upcomingStep
 import com.casco.kettle.domain.weightStep
 import it.krzeminski.snakeyaml.engine.kmp.api.Load
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -309,16 +307,6 @@ class ConformanceTest {
 
             "outline" -> {
                 indices.map { at -> mapOf("at" to at, "items" to upcomingOutline(steps, at).map(::upcomingJson)) }
-            }
-
-            "preview" -> {
-                indices.map { at ->
-                    mapOf(
-                        "at" to at,
-                        "preview" to upcomingStep(steps, at)?.let(::stepJson),
-                        "restFollows" to restFollows(steps, at),
-                    )
-                }
             }
 
             else -> {

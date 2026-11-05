@@ -106,8 +106,7 @@ mistake here that cannot be fixed for anyone who has already installed it.
 - `src/hooks/use-session-runner.ts` — the wall-clock session engine. The product plan calls timer
   reliability "the make-or-break issue"; treat this file as high-risk and verify changes by running a
   real session, not by reasoning alone. Its pure parts live next door in `session-steps.ts`
-  (`buildSteps`, the Next card's lookahead, the step model) — importing the runner itself pulls in
-  `expo-audio` and dies on native-module init, which is why that split exists.
+  (`buildSteps`, the step model) — importing the runner itself pulls in `expo-audio` and dies on native-module init, which is why that split exists.
 - `src/app/` — expo-router routes. `src/components/` — shared UI.
 - `site/` — the public landing site (GitHub Pages), plain static HTML with no build step. Not part of
   the app build. `site/format.html` mirrors `schema.ts` — see "Changing the YAML format" below.

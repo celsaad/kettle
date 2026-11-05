@@ -32,10 +32,8 @@ import {
   buildStepsForExercise,
   formatHoldTarget,
   formatRepsTarget,
-  restFollows,
   setStepsForMember,
   swapExerciseForMember,
-  upcomingStep,
 } from '@/hooks/session-steps';
 
 type LastCommitBuffer = 'sets' | 'hiit' | 'emom';
@@ -148,6 +146,18 @@ function previewFor(step: RunnerStep | undefined): RestPreview {
     };
   }
   return null;
+}
+
+/**
+ * What's coming up after the current step — skips a single immediately-following rest step (whether
+ * inter-set or a standalone Rest block) so it always previews the next real work, not "Rest". This is
+ * the same lookahead a rest screen always did (its own next step is essentially never itself rest, so
+ * previewFor(steps[index + 1]) already landed on real work) — generalized so an exercise screen, whose
+ * very next step is usually its own trailing rest, gets the same "what's actually next" preview.
+ */
+function upcomingPreview(steps: RunnerStep[], index: number): RestPreview {
+  const next = steps[index + 1];
+  return previewFor(next?.kind === 'rest' ? steps[index + 2] : next);
 }
 
 export function useSessionRunner(
@@ -1116,9 +1126,12 @@ export function useSessionRunner(
     setRoundsCompleted,
     extraReps,
     setExtraReps,
-    nextPreview: previewFor(upcomingStep(steps, stepIndex)),
+    nextPreview: upcomingPreview(steps, stepIndex),
     upcoming,
-    restFollows: restFollows(steps, stepIndex),
+    // Whether a rest step actually follows, which the reps button names ("Log set → Rest"). It used
+    // to be safe to assume one always did; back-to-back sets (rest_sec: 0) emit no rest step at all,
+    // so the label has to ask rather than promise.
+    restFollows: steps[stepIndex + 1]?.kind === 'rest',
     previousSet,
     beatsPersonalBest,
     adoptPreviousLoad,

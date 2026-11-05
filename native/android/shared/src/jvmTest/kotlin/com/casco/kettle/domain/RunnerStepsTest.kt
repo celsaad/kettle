@@ -147,6 +147,46 @@ class RunnerStepsTest {
         )
     }
 
+    // The Next card's lookahead. TS keeps it private to the runner, so conformance can't hold it; these
+    // are the values its preview cases pinned before #303 was held to leaving the TS unchanged.
+    @Test
+    fun `looks past one rest to the next work, and says whether a rest follows`() {
+        // reps 1, rest, reps 2, rest, reps 3.
+        val steps = buildSteps(workoutOf(one("p")), listOf(reps("p", 3, restSec = 90.0)))
+
+        assertEquals(steps[0], upcomingStep(steps, -1))
+        assertEquals(steps[2], upcomingStep(steps, 0))
+        assertTrue(restFollows(steps, 0))
+        // From the rest itself the next step is already work.
+        assertEquals(steps[2], upcomingStep(steps, 1))
+        assertFalse(restFollows(steps, 1))
+        assertNull(upcomingStep(steps, 4))
+        assertNull(upcomingStep(steps, 5))
+    }
+
+    @Test
+    fun `has no rest to skip between back-to-back sets`() {
+        val steps = buildSteps(workoutOf(one("p")), listOf(reps("p", 3)))
+
+        assertEquals(steps[1], upcomingStep(steps, 0))
+        assertFalse(restFollows(steps, 0))
+    }
+
+    @Test
+    fun `skips only one rest, so two Rest blocks in a row preview nothing`() {
+        val exercises =
+            listOf(
+                Exercise("g", "Grinder", ExerciseConfig.Amrap(600.0)),
+                Exercise("r", "Rest", ExerciseConfig.Rest(120.0)),
+            )
+        val steps = buildSteps(workoutOf(one("g"), one("r"), one("r"), one("g")), exercises)
+
+        assertEquals(steps[2], upcomingStep(steps, 0))
+        assertTrue(restFollows(steps, 0))
+        assertNull(upcomingPreview(steps, 0))
+        assertEquals(steps[3], upcomingStep(steps, 1))
+    }
+
     @Test
     fun `previews nothing for a rest, or past the end`() {
         val rest = RunnerStep.Rest(0, "0", "r", standalone = true, seconds = 60.0)

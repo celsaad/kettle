@@ -14,10 +14,8 @@ import {
   buildStepsForExercise,
   buildStepsWithLimits,
   dropLastSetForMember,
-  restFollows,
   setStepsForMember,
   swapExerciseForMember,
-  upcomingStep,
   type RunnerStep,
 } from '@/hooks/session-steps';
 import { upcomingOutline } from '@/hooks/session-outline';
@@ -255,14 +253,6 @@ const runners: Record<string, (testCase: Case) => unknown> = {
       case 'outline':
         return plain(
           caseIndices(testCase, built.steps.length).map((at) => ({ at, items: upcomingOutline(built.steps, at) })),
-        );
-      case 'preview':
-        return plain(
-          caseIndices(testCase, built.steps.length).map((at) => ({
-            at,
-            preview: upcomingStep(built.steps, at) ?? null,
-            restFollows: restFollows(built.steps, at),
-          })),
         );
       default:
         throw new Error(`unknown op ${String(testCase.op)}`);

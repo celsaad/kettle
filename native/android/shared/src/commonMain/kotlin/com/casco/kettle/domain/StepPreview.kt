@@ -1,7 +1,8 @@
 package com.casco.kettle.domain
 
 // The runner's Next card and its log button's label, as the pure helpers in RN's
-// `use-session-runner.ts` and `session-steps.ts`. The lookahead is held by `conformance/steps.yaml`.
+// `use-session-runner.ts` and `session-steps.ts`. Those are private to the RN runner, which #303
+// leaves unchanged, so `conformance/steps.yaml` can't hold them and `RunnerStepsTest` does.
 //
 // Descriptors rather than strings, so `:shared` holds no user-facing text: the app formats a target
 // the way it formats every other one (`ExerciseSummary.kt`), and translates the rest.

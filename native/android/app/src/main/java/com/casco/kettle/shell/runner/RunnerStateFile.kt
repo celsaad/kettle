@@ -5,7 +5,6 @@ import com.casco.kettle.domain.RunnerSnapshot
 import com.casco.kettle.domain.encodeRunnerSnapshot
 import com.casco.kettle.storage.writeAtomically
 import java.io.File
-import java.io.IOException
 
 /**
  * The running session's state file (#295): the snapshot as versioned JSON, so a session the process
@@ -59,7 +58,11 @@ class RunnerStateFile(
     private fun write(snapshot: RunnerSnapshot) {
         try {
             writeAtomically(file, encodeRunnerSnapshot(snapshot))
-        } catch (e: IOException) {
+        } catch (
+            @Suppress("TooGenericExceptionCaught") e: Exception,
+        ) {
+            // Any failure, not just the disk's: the debounced write runs from its own timer, outside the
+            // effects' guard, so nothing else would catch it (#297).
             Log.w(TAG, "Couldn't write the runner's state file; the session runs on in memory", e)
         }
     }

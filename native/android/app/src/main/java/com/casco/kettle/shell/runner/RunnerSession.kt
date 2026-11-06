@@ -112,7 +112,11 @@ class RunnerSession(
         }
     }
 
-    /** A command or a timer firing. Whatever throws, the last good state stands (#297). */
+    /**
+     * A command or a timer firing, which never throws out (#297). A failed transition leaves the last
+     * good state; one that fails after it has settled keeps the new state, perhaps with no timer, so a
+     * step that ends by itself then waits for the user's tap instead.
+     */
     private fun apply(command: RunnerCommand) {
         val current = state ?: return
         try {

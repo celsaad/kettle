@@ -706,6 +706,23 @@ class RunnerTimingTest {
         }
 
         @Test
+        fun `wakes at once for a step already past its end, so a missed wake isn't the end of it`() {
+            // Seen on the S25+ (#306): a last HIIT round's end wake never ran, and once the step was past
+            // its end nothing scheduled another, Resume included, so the session sat at 0:00 for good.
+            val runner = Runner(workoutOf(single("rest")))
+            val late = T0 + 75 * MS
+
+            assertEquals(late, nextTimeUpdateAt(runner.snapshot, late))
+        }
+
+        @Test
+        fun `doesn't wake at once for a hold past its minimum, which only its end or the user ends`() {
+            val runner = Runner(workoutOf(single("deadhang")))
+
+            assertEquals(null, nextTimeUpdateAt(runner.snapshot, T0 + 75 * MS))
+        }
+
+        @Test
         fun `never wakes for a paused step`() {
             val runner = Runner(workoutOf(single("rest")))
             runner.send(RunnerCommand.TogglePause)

@@ -116,6 +116,16 @@ class RunnerSessionTest {
     }
 
     @Test
+    fun `completes by itself when the workout's last step is a countdown that ends`() {
+        // Seen on the S25+ (#306): the last HIIT round of Foundations · Push sat at 0:00 for good.
+        session(planOf(BURPEES)).begin()
+        loop.advanceBy(3000)
+        // Work, rest, work: 40 + 20 + 40 seconds, and a little over.
+        loop.advanceBy(100_500)
+        assertTrue("still ${views.last()}", view is RunnerView.Completed)
+    }
+
+    @Test
     fun `ends a hold on time by itself, sleeping until its moments rather than polling`() {
         session().begin()
         loop.advanceBy(3000)

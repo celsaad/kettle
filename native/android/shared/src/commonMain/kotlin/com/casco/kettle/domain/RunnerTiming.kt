@@ -91,7 +91,7 @@ private data class Reading(
 
 private val QUIET = Reading(ended = false, tick = false, milestone = false)
 
-private const val TICK_SECONDS = 3
+internal const val TICK_SECONDS = 3
 
 /**
  * A time update: the step on screen ends by itself, or cues, or neither.

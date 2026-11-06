@@ -629,6 +629,98 @@ class RunnerTimingTest {
         }
     }
 
+    /**
+     * The service sleeps until [nextTimeUpdateAt] rather than polling at 1 Hz (#305), so sleeping from
+     * one to the next has to hear everything the ticker would: the same cues, ends and writes, at the
+     * same moments.
+     */
+    @Nested
+    inner class NextWake {
+        private fun Runner.sleepUntil(end: Long) {
+            while (true) {
+                val wake = nextTimeUpdateAt(snapshot, now) ?: return
+                if (wake > end) return
+                now = wake
+                send(RunnerCommand.TimeUpdate(snapshot.visit))
+            }
+        }
+
+        private fun assertSleepMatchesTicker(
+            workout: Workout,
+            seconds: Int,
+        ) {
+            val ticker = Runner(workout).apply { tick(seconds) }
+            val sleeper = Runner(workout).apply { sleepUntil(T0 + seconds * MS) }
+
+            assertEquals(ticker.effects, sleeper.effects)
+            assertEquals(ticker.index, sleeper.index)
+        }
+
+        @Test
+        fun `hears a hiit's milestones, ticks and rests as the ticker does`() =
+            assertSleepMatchesTicker(workoutOf(single("burpees")), 200)
+
+        @Test
+        fun `hears a range hold's minimum, its last seconds and its end`() =
+            assertSleepMatchesTicker(workoutOf(single("plank")), 120)
+
+        @Test
+        fun `hears fixed holds, countdown cardio, emom, amrap and a rest block`() =
+            assertSleepMatchesTicker(
+                workoutOf(single("lsit"), single("row"), single("swings"), single("rest"), single("grinder")),
+                900,
+            )
+
+        @Test
+        fun `wakes first at a hiit work interval's halfway mark`() {
+            val runner = Runner(workoutOf(single("burpees")))
+
+            assertEquals(T0 + 20 * MS, nextTimeUpdateAt(runner.snapshot, runner.now))
+        }
+
+        @Test
+        fun `wakes three seconds before a rest ends, then each second to its end`() {
+            val runner = Runner(workoutOf(single("rest")))
+
+            assertEquals(T0 + 57 * MS, nextTimeUpdateAt(runner.snapshot, T0))
+            assertEquals(T0 + 58 * MS, nextTimeUpdateAt(runner.snapshot, T0 + 57 * MS))
+            assertEquals(T0 + 60 * MS, nextTimeUpdateAt(runner.snapshot, T0 + 59 * MS + 999))
+        }
+
+        @Test
+        fun `moves with +30s`() {
+            val runner = Runner(workoutOf(single("rest")))
+            runner.send(RunnerCommand.AddRestSeconds(30.0))
+
+            assertEquals(T0 + 87 * MS, nextTimeUpdateAt(runner.snapshot, T0))
+        }
+
+        @Test
+        fun `counts paused time out of the wake`() {
+            val runner = Runner(workoutOf(single("rest")))
+            runner.send(RunnerCommand.TogglePause)
+            runner.now += 10 * MS
+            runner.send(RunnerCommand.TogglePause)
+
+            assertEquals(T0 + 67 * MS, nextTimeUpdateAt(runner.snapshot, runner.now))
+        }
+
+        @Test
+        fun `never wakes for a paused step`() {
+            val runner = Runner(workoutOf(single("rest")))
+            runner.send(RunnerCommand.TogglePause)
+
+            assertEquals(null, nextTimeUpdateAt(runner.snapshot, runner.now))
+        }
+
+        @Test
+        fun `never wakes for a step only the user ends, or past a hold's last cue`() {
+            assertEquals(null, Runner(workoutOf(single("pullups"))).let { nextTimeUpdateAt(it.snapshot, it.now) })
+            assertEquals(null, Runner(workoutOf(single("walk"))).let { nextTimeUpdateAt(it.snapshot, it.now) })
+            assertEquals(null, Runner(workoutOf(single("deadhang"))).let { nextTimeUpdateAt(it.snapshot, it.now) })
+        }
+    }
+
     @Nested
     inner class Clock {
         @Test

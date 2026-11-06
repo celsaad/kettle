@@ -167,7 +167,7 @@ class LatestFiles(
      * [IOException] when the disk refuses, and the log is left as it was.
      */
     suspend fun deleteSession(id: String) {
-        withContext(io) { files.deleteSession(id) }
+        SessionWrites.lock.withLock { withContext(io) { files.deleteSession(id) } }
         reread()
     }
 
@@ -176,7 +176,7 @@ class LatestFiles(
      * Throws [IOException] when the disk refuses, and the log is left as it was.
      */
     suspend fun writeSession(session: Session) {
-        withContext(io) { files.writeSession(session) }
+        SessionWrites.lock.withLock { withContext(io) { files.writeSession(session) } }
         reread()
     }
 
@@ -236,6 +236,15 @@ class LatestFiles(
  * or would lose the adopt. Every library write takes it, one after another.
  */
 object LibraryWrites {
+    val lock = Mutex()
+}
+
+/**
+ * The process's one lock on writing the session log. The runner's service writes the running session
+ * from its own thread (#305) while History's Delete and the session editor's Save write from the
+ * screens', so every session write takes it, one after another, as [LibraryWrites] does the library's.
+ */
+object SessionWrites {
     val lock = Mutex()
 }
 

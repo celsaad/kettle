@@ -14,6 +14,7 @@ import com.casco.kettle.brownfield.BrownfieldActivity
 import com.casco.kettle.brownfield.ReactNativeHostManager
 import com.casco.kettle.brownfield.ReactNativeViewFactory
 import com.casco.kettle.brownfield.setUpNativeBackHandling
+import com.casco.kettle.domain.RunnerStart
 import com.casco.kettle.shell.files.DiskFiles
 import com.casco.kettle.shell.files.LatestFiles
 import com.casco.kettle.shell.files.LibraryGate
@@ -23,10 +24,12 @@ import com.casco.kettle.shell.files.adoptTargetWeight
 import com.casco.kettle.shell.nav.LocalSplashExit
 import com.casco.kettle.shell.nav.LocalTabReselects
 import com.casco.kettle.shell.nav.ModalSheet
+import com.casco.kettle.shell.nav.RouteReport
 import com.casco.kettle.shell.nav.ShellLayout
 import com.casco.kettle.shell.nav.Tab
 import com.casco.kettle.shell.nav.TabNavigator
 import com.casco.kettle.shell.nav.nativeRunnerDrawn
+import com.casco.kettle.shell.nav.openRunner
 import com.casco.kettle.shell.nav.shellRoutes
 import com.casco.kettle.shell.reminder.reconcileReminder
 import com.casco.kettle.shell.reminder.retireExpoReminder
@@ -34,6 +37,8 @@ import com.casco.kettle.shell.rn.ExpoActivityListeners
 import com.casco.kettle.shell.rn.JsBridge
 import com.casco.kettle.shell.rn.RnFrames
 import com.casco.kettle.shell.rn.withViewAction
+import com.casco.kettle.shell.runner.RunnerHost
+import com.casco.kettle.shell.runner.RunnerService
 import com.casco.kettle.shell.settings.backUpFinishedSession
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.PreferredKettleTheme
@@ -117,19 +122,7 @@ class MainActivity :
         ReactNativeHostManager.shared.initialize(application)
         val surface = ReactNativeViewFactory.createFrameLayout(this, this, "main")
         setUpNativeBackHandling()
-        lifecycle.addObserver(
-            object : DefaultLifecycleObserver {
-                // The cold start's read, and a read on every return. A new activity over the same
-                // runtime reads too, since it may have missed a hand-back while there was none to hear it.
-                override fun onStart(owner: LifecycleOwner) = latestFiles.reread()
-
-                // And on leaving: the runner writes its session the moment it starts, and someone who
-                // logs one and goes home from the runner never hands the tabs back. Without this the
-                // rest-day alarm stays where the previous session put it, and can fire on a day they
-                // trained (#236).
-                override fun onStop(owner: LifecycleOwner) = latestFiles.reread()
-            },
-        )
+        rereadOnStartAndStop(latestFiles)
         val preferences = paths.preferences
         val layout =
             ShellLayout(
@@ -172,7 +165,8 @@ class MainActivity :
         val sheet = layout.sheet.also { this.sheet = it }
         // After RN's own, so it comes first while the sheet is up: the predictive shrink is the sheet's.
         onBackPressedDispatcher.addCallback(this, sheet.backCallback)
-        listenToJs(sheet, latestFiles)
+        val opensRunner = intent.takeOpenRunner()
+        listenToJs(sheet, latestFiles) { if (opensRunner) attachRunner(navigator.runnerShown) }
         setContentView(layout)
         JsBridge.attach()
         expoListeners.onContentShown()
@@ -184,6 +178,8 @@ class MainActivity :
         setIntent(link)
         expoListeners.onNewIntent(link)
         reactHost?.onNewIntent(link)
+        // This activity's surface is up, so its router hears the push at once.
+        if (link.takeOpenRunner()) attachRunner(navigator.runnerShown)
     }
 
     override fun onResume() {
@@ -259,6 +255,39 @@ class MainActivity :
     }
 }
 
+/** The files read again as this activity starts and stops. */
+private fun LifecycleOwner.rereadOnStartAndStop(files: LatestFiles) =
+    lifecycle.addObserver(
+        object : DefaultLifecycleObserver {
+            // The cold start's read, and a read on every return. A new activity over the same
+            // runtime reads too, since it may have missed a hand-back while there was none to hear it.
+            override fun onStart(owner: LifecycleOwner) = files.reread()
+
+            // And on leaving: the runner writes its session the moment it starts, and someone who
+            // logs one and goes home from the runner never hands the tabs back. Without this the
+            // rest-day alarm stays where the previous session put it, and can fire on a day they
+            // trained (#236).
+            override fun onStop(owner: LifecycleOwner) = files.reread()
+        },
+    )
+
+/** Whether [this] is the runner's shade notification's tap, read once: a recreated activity doesn't reopen it. */
+private fun Intent.takeOpenRunner(): Boolean {
+    val opens = getBooleanExtra(RunnerService.EXTRA_OPEN_RUNNER, false)
+    removeExtra(RunnerService.EXTRA_OPEN_RUNNER)
+    return opens
+}
+
+/**
+ * The runner's shade notification was tapped (#297): back to the running session, through the one way
+ * in, which attaches and ignores the start. Nothing when the runner already shows ([runnerShown]), or
+ * when the session ended in between.
+ */
+private fun attachRunner(runnerShown: Boolean) {
+    val active = RunnerHost.active
+    if (active != null && !runnerShown) openRunner(active.start ?: RunnerStart.Adhoc)
+}
+
 /**
  * What the shell draws in RN's place, set before the surface opens so RN's first frame already knows.
  * `nativeTabBar` is read by isHosted in src/hooks/brownfield-module.ts, so RN draws no bar of its own;
@@ -292,25 +321,40 @@ private fun Activity.holdSplash() {
 /**
  * What this activity hears from JS, until a newer one takes over: the runtime and [JsBridge] outlive
  * it. The tab bar's reports go through [sheet], which passes them on at the frame RN draws them, and
- * a library native wrote at the runner's asking rereads [files].
+ * a library native wrote at the runner's asking rereads [files], as does a session the native
+ * runner's service wrote ([RunnerHost], #297).
  */
 private fun ComponentActivity.listenToJs(
     sheet: ModalSheet,
     files: LatestFiles,
+    firstRoute: () -> Unit,
 ) {
-    JsBridge.onRoute = sheet::onRoute
+    // The first report is this activity's surface mounted. JS outlives the activity and has long said
+    // it's ready, so a push sent before then reaches a router that isn't there yet and is lost: that is
+    // when a notification tap that recreated the activity attaches ([firstRoute]).
+    var heard = false
+    val onRoute: (RouteReport) -> Unit = { report ->
+        sheet.onRoute(report)
+        if (!heard) {
+            heard = true
+            firstRoute()
+        }
+    }
+    JsBridge.onRoute = onRoute
     JsBridge.onRouteWillChange = sheet::onRouteWillChange
     JsBridge.wantsPicture = sheet::wantsPicture
     JsBridge.onLibraryWritten = files::reread
+    RunnerHost.onSessionWritten = files::reread
     RnFrames.onCapture = sheet::capture
     lifecycle.addObserver(
         object : DefaultLifecycleObserver {
             override fun onDestroy(owner: LifecycleOwner) {
-                if (JsBridge.onRoute != sheet::onRoute) return
+                if (JsBridge.onRoute !== onRoute) return
                 JsBridge.onRoute = null
                 JsBridge.onRouteWillChange = null
                 JsBridge.wantsPicture = null
                 JsBridge.onLibraryWritten = null
+                RunnerHost.onSessionWritten = null
                 RnFrames.onCapture = null
             }
         },

@@ -327,7 +327,16 @@
       "reminderTitle": "Quando você quiser",
       "reminderBody_one": "Sua última sessão foi há um dia. Sem cobrança — o Kettle está aqui quando der vontade.",
       "reminderBody_other": "Sua última sessão foi há {{count}} dias. Sem cobrança — o Kettle está aqui quando der vontade.",
-      "reminderBody_zero": "Sua última sessão foi há {{count}} dias. Sem cobrança — o Kettle está aqui quando der vontade."
+      "reminderBody_zero": "Sua última sessão foi há {{count}} dias. Sem cobrança — o Kettle está aqui quando der vontade.",
+      "cuesChannel": "Avisos do treino",
+      "ongoingChannel": "Treino em andamento",
+      "getReady": "Prepare-se",
+      "rest": "Descanso",
+      "paused": "{{step}} · Pausado",
+      "setPosition": "{{step}} · Série {{index}} de {{total}}",
+      "intervalTitle": "Intervalo concluído",
+      "timeUpTitle": "Tempo esgotado",
+      "workoutComplete": "Treino concluído"
     },
     "rest": {
       "label": "DESCANSO",

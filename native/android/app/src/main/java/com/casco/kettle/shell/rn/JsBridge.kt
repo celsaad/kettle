@@ -161,24 +161,32 @@ object JsBridge {
     private fun adopt(message: Map<String, Any?>) {
         val exerciseId = message["exerciseId"] as? String
         val weightKg = (message["weightKg"] as? Number)?.toDouble()?.takeIf { it.isFinite() && it > 0 }
+        if (exerciseId == null || weightKg == null) {
+            Log.w(TAG, "An adopted load JS sent malformed; nothing was written")
+            return
+        }
+        adoptLoad(exerciseId, weightKg)
+    }
+
+    /**
+     * The runner's adopt (#220), off the main thread: [weightKg] becomes [exerciseId]'s target load in
+     * the library, and every screen reads it again. RN's runner asks by message; the native one calls
+     * this directly (#297), so both take the one path and the one lock.
+     */
+    fun adoptLoad(
+        exerciseId: String,
+        weightKg: Double,
+    ) {
         val write = adoptTargetWeight
-        when {
-            exerciseId == null || weightKg == null -> {
-                Log.w(TAG, "An adopted load JS sent malformed; nothing was written")
-            }
-
+        if (write == null) {
             // MainActivity sets it before any surface opens, so this is a shell wired wrong.
-            write == null -> {
-                Log.w(TAG, "A load was adopted with no library to write it to; nothing was written")
-            }
-
-            else -> {
-                background.launch {
-                    if (!LibraryWrites.lock.withLock { write(exerciseId, weightKg) }) return@launch
-                    filesChanged(FileKind.LIBRARY)
-                    main.post { onLibraryWritten?.invoke() }
-                }
-            }
+            Log.w(TAG, "A load was adopted with no library to write it to; nothing was written")
+            return
+        }
+        background.launch {
+            if (!LibraryWrites.lock.withLock { write(exerciseId, weightKg) }) return@launch
+            filesChanged(FileKind.LIBRARY)
+            main.post { onLibraryWritten?.invoke() }
         }
     }
 

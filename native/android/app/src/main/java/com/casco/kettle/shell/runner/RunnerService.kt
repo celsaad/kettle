@@ -115,11 +115,13 @@ class RunnerService : Service() {
     ) {
         if (RunnerHost.active != null) return
         val plan =
-            when (val resolved = DiskFiles(paths).library()?.let { resolveRunnerPlan(start, it) }) {
-                is RunnerPlan.Runnable -> resolved
-                is RunnerPlan.TooLong -> resolved.plan.takeIf { anyway }
-                else -> null
-            }
+            runCatching {
+                when (val resolved = DiskFiles(paths).library()?.let { resolveRunnerPlan(start, it) }) {
+                    is RunnerPlan.Runnable -> resolved
+                    is RunnerPlan.TooLong -> resolved.plan.takeIf { anyway }
+                    else -> null
+                }
+            }.onFailure { Log.w(TAG, "Couldn't resolve the start", it) }.getOrNull()
         if (plan == null) {
             // The screen resolved it to something it couldn't run either, or the library changed under it.
             Log.w(TAG, "Nothing to run for that start; stopping")
@@ -287,7 +289,10 @@ private fun Context.notifyIfAllowed(
         Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
             ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) ==
             PackageManager.PERMISSION_GRANTED
-    if (allowed) NotificationManagerCompat.from(this).notify(id, notification)
+    if (!allowed) return
+    // A post the platform refuses costs the shade, not the session.
+    runCatching { NotificationManagerCompat.from(this).notify(id, notification) }
+        .onFailure { Log.w(TAG, "Couldn't post a runner notification", it) }
 }
 
 private fun PowerManager.WakeLock?.releaseIfHeld() {

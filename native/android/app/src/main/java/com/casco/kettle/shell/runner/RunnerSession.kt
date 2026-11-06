@@ -86,32 +86,42 @@ class RunnerSession(
 
     private fun countInStep() {
         val counting = countIn ?: return
-        val at = now()
-        val update = updateCountIn(counting, at)
-        update.cues.forEach(effects::cue)
-        if (update.done) {
-            countIn = null
-            settle(startRunner(plan, start, at))
-        } else {
-            countIn = update.countIn
-            show(RunnerView.CountingIn(plan, start, update.countIn))
-            val next = counting.startedAt + (update.countIn.elapsedSeconds(at) + 1) * MS_PER_SECOND
-            timer = loop.postDelayed(next - at, ::countInStep)
+        try {
+            val at = now()
+            val update = updateCountIn(counting, at)
+            update.cues.forEach(effects::cue)
+            if (update.done) {
+                countIn = null
+                settle(startRunner(plan, start, at))
+            } else {
+                countIn = update.countIn
+                show(RunnerView.CountingIn(plan, start, update.countIn))
+                val next = counting.startedAt + (update.countIn.elapsedSeconds(at) + 1) * MS_PER_SECOND
+                timer = loop.postDelayed(next - at, ::countInStep)
+            }
+        } catch (
+            @Suppress("TooGenericExceptionCaught") e: Exception,
+        ) {
+            // Nothing has been written unless the session started, so leaving costs nothing; a session
+            // that did start keeps the state settle() left it in.
+            Log.w(TAG, "The count-in failed", e)
+            if (state == null) {
+                countIn = null
+                show(RunnerView.Idle)
+            }
         }
     }
 
+    /** A command or a timer firing. Whatever throws, the last good state stands (#297). */
     private fun apply(command: RunnerCommand) {
         val current = state ?: return
-        val transition =
-            try {
-                reduceRunner(current, command, now())
-            } catch (
-                @Suppress("TooGenericExceptionCaught") e: Exception,
-            ) {
-                Log.w(TAG, "A runner command failed; the last good state stands", e)
-                return
-            }
-        settle(transition)
+        try {
+            settle(reduceRunner(current, command, now()))
+        } catch (
+            @Suppress("TooGenericExceptionCaught") e: Exception,
+        ) {
+            Log.w(TAG, "A runner command failed; the last good state stands", e)
+        }
     }
 
     private fun settle(transition: RunnerTransition) {

@@ -30,6 +30,7 @@ class RunnerSessionTest {
     private val views = mutableListOf<RunnerView>()
     private var backups = 0
     private var failCues = false
+    private var failClock = false
     private val stateFile by lazy { RunnerStateFile(folder.root.resolve("runner-state.json"), loop) }
 
     private fun session(plan: RunnerPlan.Runnable = planOf(PLANK, PULLUPS)) =
@@ -37,7 +38,10 @@ class RunnerSessionTest {
             plan,
             start = null,
             loop = loop,
-            now = { loop.now },
+            now = {
+                check(!failClock) { "no clock" }
+                loop.now
+            },
             effects =
                 RunnerEffects(
                     writeSession = { written += it },
@@ -185,5 +189,17 @@ class RunnerSessionTest {
 
         assertTrue(step is RunnerStep.Rest)
         assertEquals(1, loop.scheduled)
+    }
+
+    @Test
+    fun `leaves a count-in that throws, with nothing written, rather than crash`() {
+        session().begin()
+        loop.advanceBy(1000)
+        failClock = true
+        loop.advanceBy(1000)
+
+        assertEquals(RunnerView.Idle, view)
+        assertTrue(written.isEmpty())
+        assertEquals(0, loop.scheduled)
     }
 }

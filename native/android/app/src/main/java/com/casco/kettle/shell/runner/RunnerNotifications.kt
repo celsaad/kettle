@@ -154,7 +154,7 @@ fun stepEndNotification(
         .setContentIntent(open)
         .setAutoCancel(true)
         .setSilent(silent)
-        .setCategory(NotificationCompat.CATEGORY_ALARM)
+        // No category: an alarm's would let it through Do Not Disturb, which the cues respect (#296).
         .setPriority(NotificationCompat.PRIORITY_HIGH)
         .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
         .build()

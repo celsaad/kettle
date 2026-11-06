@@ -304,7 +304,16 @@
       "reminderChannel": "Reminders",
       "reminderTitle": "Ready when you are",
       "reminderBody_one": "Your last session was a day ago. No pressure — Kettle is here when you want it.",
-      "reminderBody_other": "Your last session was {{count}} days ago. No pressure — Kettle is here when you want it."
+      "reminderBody_other": "Your last session was {{count}} days ago. No pressure — Kettle is here when you want it.",
+      "cuesChannel": "Workout cues",
+      "ongoingChannel": "Workout in progress",
+      "getReady": "Get ready",
+      "rest": "Rest",
+      "paused": "{{step}} · Paused",
+      "setPosition": "{{step}} · Set {{index}} of {{total}}",
+      "intervalTitle": "Interval complete",
+      "timeUpTitle": "Time's up",
+      "workoutComplete": "Workout complete"
     },
     "rest": {
       "label": "REST",

@@ -281,7 +281,16 @@
       "holdBody": "{{workout}} · 下ろして大丈夫です",
       "reminderChannel": "リマインダー",
       "reminderTitle": "いつでもどうぞ",
-      "reminderBody_other": "前回のセッションから{{count}}日経ちました。焦らなくて大丈夫です — やりたくなったら Kettle はここにいます。"
+      "reminderBody_other": "前回のセッションから{{count}}日経ちました。焦らなくて大丈夫です — やりたくなったら Kettle はここにいます。",
+      "cuesChannel": "ワークアウトの合図",
+      "ongoingChannel": "ワークアウト中",
+      "getReady": "準備してください",
+      "rest": "休憩",
+      "paused": "{{step}} · 一時停止中",
+      "setPosition": "{{step}} · {{total}}セット中{{index}}セット目",
+      "intervalTitle": "インターバル終了",
+      "timeUpTitle": "時間です",
+      "workoutComplete": "ワークアウト完了"
     },
     "rest": {
       "label": "休憩",

@@ -34,6 +34,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.progressBarRangeInfo
@@ -161,6 +162,7 @@ internal fun FillBar(
 ) {
     Box(
         Modifier
+            .testTag(BAR_TAG)
             .fillMaxWidth()
             .height(6.dp)
             .clip(CircleShape)
@@ -170,7 +172,13 @@ internal fun FillBar(
         if (marker != null) {
             Row(Modifier.fillMaxWidth()) {
                 if (marker > 0f) Spacer(Modifier.weight(marker))
-                Box(Modifier.width(2.dp).fillMaxHeight().background(RunnerColors.text))
+                Box(
+                    Modifier
+                        .width(2.dp)
+                        .fillMaxHeight()
+                        .background(RunnerColors.text)
+                        .testTag(MARKER_TAG),
+                )
                 if (marker < 1f) Spacer(Modifier.weight(1f - marker))
             }
         }
@@ -246,6 +254,10 @@ internal fun NextCard(preview: StepPreview?) {
         }
     }
 }
+
+/** Decorative, so findable only by tag: the hold's tests ask whether a bar and its mark are drawn. */
+internal const val BAR_TAG = "fill-bar"
+internal const val MARKER_TAG = "fill-bar-marker"
 
 private const val PULSE_LOW = 0.35f
 private const val PULSE_MS = 650

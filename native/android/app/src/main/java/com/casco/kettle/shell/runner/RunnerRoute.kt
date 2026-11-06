@@ -11,6 +11,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -44,7 +45,11 @@ fun RunnerRoute(params: Map<String, String>) {
     val plan = remember(start, files.library) { files.library?.let { resolveRunnerPlan(start, it) } }
     // Saved, so a configuration change mid-wait can't ask the service a second time.
     var opened by rememberSaveable { mutableStateOf(false) }
+    // Whether the service ever answered. After Done or a leave the view is Idle again and the entry is
+    // Waiting while RN pops the route, which mustn't time out into a second hand-back.
+    var answered by rememberSaveable { mutableStateOf(false) }
     val entry = runnerEntry(view, plan, opened)
+    SideEffect { if (entry is RunnerEntry.Attach || entry is RunnerEntry.Complete) answered = true }
     val notifications =
         rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
             // Never blocking: a refusal only costs the shade's notification and the step alerts.
@@ -64,7 +69,7 @@ fun RunnerRoute(params: Map<String, String>) {
             // it couldn't read the file): leave rather than wait on a blank screen.
             RunnerEntry.Waiting -> {
                 delay(SERVICE_ANSWER_MS)
-                if (RunnerHost.view.value == RunnerView.Idle) leave()
+                if (!answered && RunnerHost.view.value == RunnerView.Idle) leave()
             }
 
             else -> {}
@@ -86,21 +91,25 @@ fun RunnerRoute(params: Map<String, String>) {
             soundsOn = preferences.sessionSounds,
         ),
         rememberSecond(view),
-        RunnerActions(
-            send = RunnerHost::send,
-            startAnyway = {
-                ask()
-                RunnerHost.open(context, start, anyway = true)
-            },
-            leave = ::leave,
-            done = {
-                RunnerHost.dismiss()
-                JsBridge.runnerDone()
-            },
-            adopt = JsBridge::adoptLoad,
-        ),
+        routeActions { anyway ->
+            ask()
+            RunnerHost.open(context, start, anyway)
+        },
     )
 }
+
+/** The shell's half of [RunnerActions]. [start] asks the service, "Start anyway" with true. */
+private fun routeActions(start: (anyway: Boolean) -> Unit) =
+    RunnerActions(
+        send = RunnerHost::send,
+        startAnyway = { start(true) },
+        leave = ::leave,
+        done = {
+            RunnerHost.dismiss()
+            JsBridge.runnerDone()
+        },
+        adopt = JsBridge::adoptLoad,
+    )
 
 /** Leaving before a session runs: the service stops with nothing written, and RN takes back. */
 private fun leave() {

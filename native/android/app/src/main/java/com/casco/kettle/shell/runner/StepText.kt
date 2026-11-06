@@ -90,13 +90,7 @@ fun Resources.upcomingTarget(step: WorkStep): String =
         }
 
         is RunnerStep.Interval -> {
-            val progress =
-                if (step.countUp) {
-                    getString(R.string.session_countingUp)
-                } else {
-                    getString(R.string.preview_seconds, jsNumber(step.targetSec))
-                }
-            getString(R.string.preview_interval, progress, step.variant.json)
+            intervalLine(step, rounds = false)
         }
     }
 
@@ -120,19 +114,30 @@ fun Resources.nowCaption(
         }
 
         is RunnerStep.Interval -> {
-            val progress =
-                when {
-                    step.countUp -> getString(R.string.session_countingUp)
-                    step.setTotal > 1 -> getString(R.string.preview_round, "${step.setIndex}", "${step.setTotal}")
-                    else -> getString(R.string.preview_seconds, jsNumber(step.targetSec))
-                }
-            getString(R.string.preview_interval, progress, step.variant.json)
+            intervalLine(step, rounds = true)
         }
 
         is WorkStep -> {
             getString(R.string.session_setOf, "${step.setIndex}", "${step.setTotal}")
         }
     }
+
+/**
+ * "hiit · round 2 of 4", "emom · 30s" or "cardio · counting up": the variant as its YAML id, as RN
+ * puts it, then how far in. [rounds] says the round when there are several; Coming up's targets don't.
+ */
+internal fun Resources.intervalLine(
+    step: RunnerStep.Interval,
+    rounds: Boolean,
+): String {
+    val progress =
+        when {
+            step.countUp -> getString(R.string.session_countingUp)
+            rounds && step.setTotal > 1 -> getString(R.string.preview_round, "${step.setIndex}", "${step.setTotal}")
+            else -> getString(R.string.preview_seconds, jsNumber(step.targetSec))
+        }
+    return getString(R.string.preview_interval, progress, step.variant.json)
+}
 
 private val COUNT_KEYS: Map<WorkUnit, Pair<Pair<Int, Int>, Pair<Int, Int>>> =
     mapOf(

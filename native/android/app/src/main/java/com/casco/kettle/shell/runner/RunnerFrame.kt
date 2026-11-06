@@ -97,17 +97,10 @@ private fun Header(
         ProgressTrack(blockTotal(snapshot), snapshot.step?.blockIndex ?: 0)
         // Ad-hoc only: a planned workout knows what it holds, and here it's the only way to queue anything.
         if (snapshot.adhoc) {
-            TextControl(
-                stringResource(R.string.session_adhoc_addShort),
-                { controls.open(Overlay.ADD_PICKER) },
-                description = stringResource(R.string.session_adhoc_addExercise),
-            )
+            TextControl(stringResource(R.string.session_adhoc_addShort), { controls.open(Overlay.ADD_PICKER) })
         }
-        TextControl(
-            stringResource(R.string.session_finish_label),
-            controls.confirmFinish,
-            description = stringResource(R.string.session_finish_confirmTitle),
-        )
+        // Named by their own words, unlike RN's, whose differing labels Voice Control can't match.
+        TextControl(stringResource(R.string.session_finish_label), controls.confirmFinish)
     }
 }
 

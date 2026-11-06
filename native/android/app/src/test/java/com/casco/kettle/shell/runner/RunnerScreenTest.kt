@@ -1,9 +1,13 @@
 package com.casco.kettle.shell.runner
 
 import androidx.activity.ComponentActivity
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
@@ -12,15 +16,20 @@ import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isDialog
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.CircuitMember
 import com.casco.kettle.domain.CountIn
@@ -66,6 +75,10 @@ class RunnerScreenTest {
 
     /** Back-to-back sets, so the step after its first is its second, where a swap is offered again. */
     private val hang = Exercise("hang", "Suspensão", ExerciseConfig.TimedHold(2, 20.0, null, 0.0))
+    private val maxHold = Exercise("maxhold", "Suspensão máxima", ExerciseConfig.TimedHold(1, null, null, 30.0))
+    private val fixedHold = Exercise("fixedhold", "Isometria fixa", ExerciseConfig.TimedHold(1, 30.0, null, 30.0))
+    private val everyMinute = Exercise("emom", "Swing", ExerciseConfig.Emom(60.0, 5.0, 10))
+    private val grinder = Exercise("amrap", "Moedor", ExerciseConfig.Amrap(600.0))
     private val row = Exercise("row", "Remo", ExerciseConfig.Cardio())
     private val burpees = Exercise("burpees", "Burpees", ExerciseConfig.Hiit(20.0, 10.0, 2))
     private val rest = Exercise("rest", "Descanso", ExerciseConfig.Rest(60.0))
@@ -76,7 +89,8 @@ class RunnerScreenTest {
             ->
             Exercise("extra$index", name, ExerciseConfig.Reps(3, 8, restSec = 60.0))
         }
-    private val exercises = listOf(squat, plank, hang, row, burpees, rest) + extras
+    private val exercises =
+        listOf(squat, plank, hang, maxHold, fixedHold, everyMinute, grinder, row, burpees, rest) + extras
 
     private var entry by mutableStateOf<RunnerEntry>(RunnerEntry.Loading)
     private var prior by mutableStateOf<List<Session>>(emptyList())
@@ -108,6 +122,7 @@ class RunnerScreenTest {
     ) = RunnerEntry.Attach(RunnerView.Running(plan, state.snapshot, state.session))
 
     private var shown = false
+    private var fontScale by mutableStateOf(1f)
 
     /** The first call sets the content; a later one only changes what it shows, as a new view would. */
     private fun show(next: RunnerEntry) {
@@ -118,20 +133,28 @@ class RunnerScreenTest {
         }
         shown = true
         compose.setContent {
-            KettleTheme(darkTheme = true) {
-                RunnerScreen(
-                    entry,
-                    RunnerEnvironment(prior, UnitSystem.METRIC, soundsOn),
-                    T0,
-                    RunnerActions(
-                        send = { sent += it },
-                        startAnyway = { startedAnyway += 1 },
-                        leave = { left += 1 },
-                        done = { done += 1 },
-                        adopt = { id, kg -> adopted += id to kg },
-                    ),
-                )
+            val density = LocalDensity.current
+            CompositionLocalProvider(LocalDensity provides Density(density.density, fontScale)) {
+                Screen()
             }
+        }
+    }
+
+    @Composable
+    private fun Screen() {
+        KettleTheme(darkTheme = true) {
+            RunnerScreen(
+                entry,
+                RunnerEnvironment(prior, UnitSystem.METRIC, soundsOn),
+                T0,
+                RunnerActions(
+                    send = { sent += it },
+                    startAnyway = { startedAnyway += 1 },
+                    leave = { left += 1 },
+                    done = { done += 1 },
+                    adopt = { id, kg -> adopted += id to kg },
+                ),
+            )
         }
     }
 
@@ -364,7 +387,7 @@ class RunnerScreenTest {
     @Test
     fun `Finish in the header asks first, and Cancel keeps the session`() {
         show(running(plan(block(squat))))
-        button("Encerrar o treino?").performClick()
+        button("Encerrar").performClick()
         dialogButton("Cancelar").performClick()
         assertTrue(sent.none { it == RunnerCommand.Finish })
     }
@@ -429,6 +452,7 @@ class RunnerScreenTest {
         compose.onNode(isDialog()).assertDoesNotExist()
         button("Adicionar exercício").performClick()
         compose.onNodeWithText("ADICIONAR EXERCÍCIO").assertExists()
+        compose.onNode(hasContentDescription("Buscar exercícios")).performTextInput("Remo")
         button("Remo").performClick()
         assertEquals(RunnerCommand.AddExercise(row), sent.last())
     }
@@ -482,6 +506,95 @@ class RunnerScreenTest {
         compose.onNodeWithText("Sessão avulsa").assertExists()
         back()
         assertEquals(1, done)
+    }
+
+    // what the review found unpinned
+
+    private val isProgressBar = SemanticsMatcher.keyIsDefined(SemanticsProperties.ProgressBarRangeInfo)
+
+    @Test
+    fun `block progress draws nothing below two blocks, and an ad-hoc session counts what was added`() {
+        show(running(plan(block(squat))))
+        compose.onNode(isProgressBar).assertDoesNotExist()
+        show(running(plan(block(squat), block(plank))))
+        compose.onNode(isProgressBar).assertExists()
+        val adhoc = RunnerPlan.Runnable(null, exercises, emptyList())
+        val two = started(adhoc).after(RunnerCommand.AddExercise(squat), RunnerCommand.AddExercise(plank))
+        show(running(adhoc, two))
+        compose.onNode(isProgressBar).assertExists()
+    }
+
+    @Test
+    fun `the Next card's drawing goes before the card does as text grows`() {
+        val drawing = hasContentDescription("Prancha: antebraços", substring = true)
+        show(running(plan(block(plank))))
+        compose.onNode(drawing).assertExists()
+        fontScale = 1.3f
+        show(running(plan(block(plank))))
+        compose.onNode(drawing).assertDoesNotExist()
+        compose.onNodeWithText("PRÓXIMO").assertExists()
+        fontScale = 1.6f
+        show(running(plan(block(plank))))
+        compose.onNodeWithText("PRÓXIMO").assertDoesNotExist()
+    }
+
+    @Test
+    fun `a hold's bar marks the minimum only on a real range, and a max-effort hold has no bar`() {
+        show(running(plan(block(plank))))
+        compose.onNode(hasTestTag(BAR_TAG)).assertExists()
+        compose.onNode(hasTestTag(MARKER_TAG), useUnmergedTree = true).assertExists()
+        show(running(plan(block(fixedHold))))
+        compose.onNode(hasTestTag(BAR_TAG)).assertExists()
+        compose.onNode(hasTestTag(MARKER_TAG), useUnmergedTree = true).assertDoesNotExist()
+        show(running(plan(block(maxHold))))
+        compose.onNode(hasTestTag(BAR_TAG)).assertDoesNotExist()
+        compose.onNodeWithText("sem meta · contando para cima").assertExists()
+    }
+
+    @Test
+    fun `an EMOM says its minute, and its stepper sends the minute's reps`() {
+        show(running(plan(block(everyMinute))))
+        compose.onNodeWithText("EMOM").assertExists()
+        compose.onNodeWithText("Minuto 1 de 5").assertExists()
+        compose.onNodeWithText("REPS NESTE MINUTO").assertExists()
+        button("Aumentar REPS NESTE MINUTO").performClick()
+        assertEquals(RunnerCommand.SetReps(11), sent.last())
+    }
+
+    @Test
+    fun `an AMRAP has rounds and extra-reps steppers`() {
+        show(running(plan(block(grinder))))
+        button("Aumentar RODADAS").performClick()
+        assertEquals(RunnerCommand.SetRounds(1), sent.last())
+        button("Aumentar +REPS").performClick()
+        assertEquals(RunnerCommand.SetExtraReps(1), sent.last())
+    }
+
+    @Test
+    fun `Coming up's NOW row counts a rest down, a hold up, and shows no clock for reps`() {
+        val reps = plan(block(squat))
+        show(running(reps, started(reps).advanced()))
+        button("Pernas").performClick()
+        compose.onNodeWithText("AGORA · DESCANSO").assertExists()
+        // The NOW row's alone: the rest screen's own clock is hidden from a reader under the sheet.
+        compose.onNodeWithText("1:30").assertExists()
+        button("Fechar").performClick()
+        show(running(plan(block(plank))))
+        button("Pernas").performClick()
+        compose.onNodeWithText("0:00").assertExists()
+        button("Fechar").performClick()
+        show(running(reps))
+        button("Pernas").performClick()
+        compose.onNodeWithText("AGORA").assertExists()
+        compose.onNodeWithText(":", substring = true).assertDoesNotExist()
+    }
+
+    @Test
+    fun `Coming up closes from its backdrop`() {
+        show(running(plan(block(squat))))
+        button("Pernas").performClick()
+        compose.onRoot().performTouchInput { click(Offset(centerX, 4f)) }
+        compose.onNodeWithText("A SEGUIR").assertDoesNotExist()
     }
 
     // announcements

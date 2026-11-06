@@ -8,7 +8,7 @@ import { filterByName, rankByName } from '@/domain/search';
 import { parseSupporterState } from '@/domain/tip';
 import type { Library, WorkoutBlock } from '@/domain/types';
 import { fromDisplayWeight, toDisplayWeight, weightStep, type UnitSystem } from '@/domain/units';
-import { entryBest, recordKey, type RecordKind } from '@/state/selectors/records';
+import { entryBest, recordKey, sessionRecords, type RecordKind } from '@/state/selectors/records';
 import {
   addSetForMember,
   buildStepsForExercise,
@@ -222,6 +222,16 @@ const runners: Record<string, (testCase: Case) => unknown> = {
         const result = parseSessionYaml(testCase.session as string);
         if (!result.ok) throw new Error(`fixture session does not parse: ${JSON.stringify(result.error)}`);
         return sessionSetCount(result.data);
+      }
+      case 'sessionRecords': {
+        const parse = (yaml: string) => {
+          const result = parseSessionYaml(yaml);
+          if (!result.ok) throw new Error(`fixture session does not parse: ${JSON.stringify(result.error)}`);
+          return result.data;
+        };
+        const library = mustParseLibrary(testCase.library as string);
+        const prior = (testCase.prior as string[]).map(parse);
+        return sessionRecords(parse(testCase.session as string), prior, library.exercises);
       }
       default:
         throw new Error(`unknown op ${String(testCase.op)}`);

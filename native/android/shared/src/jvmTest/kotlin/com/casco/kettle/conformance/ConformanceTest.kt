@@ -9,6 +9,7 @@ import com.casco.kettle.domain.RecordKind
 import com.casco.kettle.domain.RunnerStep
 import com.casco.kettle.domain.Session
 import com.casco.kettle.domain.SessionEntry
+import com.casco.kettle.domain.SessionRecord
 import com.casco.kettle.domain.StepBuildResult
 import com.casco.kettle.domain.SupporterState
 import com.casco.kettle.domain.UnitSystem
@@ -42,6 +43,7 @@ import com.casco.kettle.domain.serializeLibraryYaml
 import com.casco.kettle.domain.serializeSessionYaml
 import com.casco.kettle.domain.sessionDurationMinutes
 import com.casco.kettle.domain.sessionEntryResult
+import com.casco.kettle.domain.sessionRecords
 import com.casco.kettle.domain.sessionSetCount
 import com.casco.kettle.domain.setStepsForMember
 import com.casco.kettle.domain.swapExerciseForMember
@@ -261,6 +263,15 @@ class ConformanceTest {
                 sessionSetCount(checkNotNull(session) { "fixture session does not parse" }.value)
             }
 
+            "sessionRecords" -> {
+                val parse = { yaml: String ->
+                    checkNotNull(parseSessionYaml(yaml) as? ParseResult.Ok) { "fixture session does not parse" }.value
+                }
+                val library = mustParseLibrary(case.string("library")!!)
+                sessionRecords(parse(case.string("session")!!), case.strings("prior").map(parse), library.exercises)
+                    .map(::sessionRecordJson)
+            }
+
             else -> {
                 error("unknown op $op")
             }
@@ -449,6 +460,30 @@ private fun entryBestJson(best: EntryBest?): Map<String, Any?>? =
     best?.let {
         mapOf("kind" to it.kind.json, "value" to it.value, "reps" to it.reps, "oneRepMaxKg" to it.oneRepMaxKg)
     }
+
+/** As RN's `SessionRecord`: the kind, who, and the kind's own fields. */
+private fun sessionRecordJson(record: SessionRecord): Map<String, Any?> {
+    val who =
+        mapOf("kind" to record.kind.json, "exerciseId" to record.exerciseId, "exerciseName" to record.exerciseName)
+    return who +
+        when (record) {
+            is SessionRecord.HeaviestSet -> {
+                mapOf("weightKg" to record.weightKg, "reps" to record.reps, "oneRepMaxKg" to record.oneRepMaxKg)
+            }
+
+            is SessionRecord.MostReps -> {
+                mapOf("reps" to record.reps)
+            }
+
+            is SessionRecord.LongestHold -> {
+                mapOf("holdSec" to record.holdSec)
+            }
+
+            is SessionRecord.MostRounds -> {
+                mapOf("rounds" to record.rounds)
+            }
+        }
+}
 
 /** As RN's `EntryResult`, with an absent optional left out rather than null. */
 private fun entryResultJson(result: EntryResult): Map<String, Any> {

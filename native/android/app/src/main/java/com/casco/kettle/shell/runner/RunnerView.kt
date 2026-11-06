@@ -7,7 +7,7 @@ import com.casco.kettle.domain.RunnerStart
 import com.casco.kettle.domain.Session
 
 /** Where the finish backup (#220) has got to, which the completion screen warns from (#306). */
-enum class FinishBackup { PENDING, NONE, OK, FAILED }
+enum class FinishBackupState { PENDING, NONE, OK, FAILED }
 
 /**
  * What the runner's screen observes (#295): a value that changes only on transitions. The screen
@@ -40,6 +40,9 @@ sealed interface RunnerView {
     data class Completed(
         val plan: RunnerPlan.Runnable,
         val session: Session,
-        val backup: FinishBackup,
+        val backup: FinishBackupState,
     ) : RunnerView
 }
+
+/** `:shared`'s is internal to it; the runner's screens and notifications count in the same seconds. */
+internal const val MS_PER_SECOND = 1000L

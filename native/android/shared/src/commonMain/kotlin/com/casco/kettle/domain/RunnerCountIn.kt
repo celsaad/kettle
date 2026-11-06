@@ -12,6 +12,9 @@ data class CountIn(
     /** The numeral on screen at [now]: 3, then 2, then 1, a second each. */
     fun numeral(now: Long): Int = (COUNT_IN_SECONDS - elapsed(now)).coerceIn(1, COUNT_IN_SECONDS)
 
+    /** When it ends, which is when the session starts: what the shade's chronometer counts down to. */
+    val endsAt: Long get() = startedAt + COUNT_IN_SECONDS * MS_PER_SECOND
+
     internal fun elapsed(now: Long): Int = elapsedSec(StepClock(startedAt, null, 0, 0.0), now).toInt()
 }
 

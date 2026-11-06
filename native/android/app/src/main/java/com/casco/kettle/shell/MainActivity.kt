@@ -24,6 +24,7 @@ import com.casco.kettle.shell.files.adoptTargetWeight
 import com.casco.kettle.shell.nav.LocalSplashExit
 import com.casco.kettle.shell.nav.LocalTabReselects
 import com.casco.kettle.shell.nav.ModalSheet
+import com.casco.kettle.shell.nav.RouteReport
 import com.casco.kettle.shell.nav.ShellLayout
 import com.casco.kettle.shell.nav.Tab
 import com.casco.kettle.shell.nav.TabNavigator
@@ -164,11 +165,11 @@ class MainActivity :
         val sheet = layout.sheet.also { this.sheet = it }
         // After RN's own, so it comes first while the sheet is up: the predictive shrink is the sheet's.
         onBackPressedDispatcher.addCallback(this, sheet.backCallback)
-        listenToJs(sheet, latestFiles)
+        val opensRunner = intent.takeOpenRunner()
+        listenToJs(sheet, latestFiles) { if (opensRunner) attachRunner(navigator.runnerShown) }
         setContentView(layout)
         JsBridge.attach()
         expoListeners.onContentShown()
-        attachRunner(intent, navigator.runnerShown)
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -177,7 +178,8 @@ class MainActivity :
         setIntent(link)
         expoListeners.onNewIntent(link)
         reactHost?.onNewIntent(link)
-        attachRunner(link, navigator.runnerShown)
+        // This activity's surface is up, so its router hears the push at once.
+        if (link.takeOpenRunner()) attachRunner(navigator.runnerShown)
     }
 
     override fun onResume() {
@@ -269,17 +271,19 @@ private fun LifecycleOwner.rereadOnStartAndStop(files: LatestFiles) =
         },
     )
 
+/** Whether [this] is the runner's shade notification's tap, read once: a recreated activity doesn't reopen it. */
+private fun Intent.takeOpenRunner(): Boolean {
+    val opens = getBooleanExtra(RunnerService.EXTRA_OPEN_RUNNER, false)
+    removeExtra(RunnerService.EXTRA_OPEN_RUNNER)
+    return opens
+}
+
 /**
  * The runner's shade notification was tapped (#297): back to the running session, through the one way
  * in, which attaches and ignores the start. Nothing when the runner already shows ([runnerShown]), or
- * when the session ended in between. The extra goes once read, so a recreated activity doesn't reopen.
+ * when the session ended in between.
  */
-private fun attachRunner(
-    intent: Intent,
-    runnerShown: Boolean,
-) {
-    if (!intent.getBooleanExtra(RunnerService.EXTRA_OPEN_RUNNER, false)) return
-    intent.removeExtra(RunnerService.EXTRA_OPEN_RUNNER)
+private fun attachRunner(runnerShown: Boolean) {
     val active = RunnerHost.active
     if (active != null && !runnerShown) openRunner(active.start ?: RunnerStart.Adhoc)
 }
@@ -323,8 +327,20 @@ private fun Activity.holdSplash() {
 private fun ComponentActivity.listenToJs(
     sheet: ModalSheet,
     files: LatestFiles,
+    firstRoute: () -> Unit,
 ) {
-    JsBridge.onRoute = sheet::onRoute
+    // The first report is this activity's surface mounted. JS outlives the activity and has long said
+    // it's ready, so a push sent before then reaches a router that isn't there yet and is lost: that is
+    // when a notification tap that recreated the activity attaches ([firstRoute]).
+    var heard = false
+    val onRoute: (RouteReport) -> Unit = { report ->
+        sheet.onRoute(report)
+        if (!heard) {
+            heard = true
+            firstRoute()
+        }
+    }
+    JsBridge.onRoute = onRoute
     JsBridge.onRouteWillChange = sheet::onRouteWillChange
     JsBridge.wantsPicture = sheet::wantsPicture
     JsBridge.onLibraryWritten = files::reread
@@ -333,7 +349,7 @@ private fun ComponentActivity.listenToJs(
     lifecycle.addObserver(
         object : DefaultLifecycleObserver {
             override fun onDestroy(owner: LifecycleOwner) {
-                if (JsBridge.onRoute != sheet::onRoute) return
+                if (JsBridge.onRoute !== onRoute) return
                 JsBridge.onRoute = null
                 JsBridge.onRouteWillChange = null
                 JsBridge.wantsPicture = null

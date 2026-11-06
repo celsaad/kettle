@@ -23,7 +23,7 @@ import com.casco.kettle.domain.updateCountIn
  * - [publish] gets a new view only when the snapshot or the session changed, not for a cue alone.
  * - A command that throws is logged and the last good state kept (#297).
  *
- * Only [send], [leave] and [setRunnerVisible] are called from other threads; each posts to the loop.
+ * Everything a caller calls posts to the loop, so state is only ever read and written there.
  */
 class RunnerSession(
     private val plan: RunnerPlan.Runnable,
@@ -38,10 +38,12 @@ class RunnerSession(
     private var timer: Cancellable? = null
     private var shown: RunnerView? = null
 
-    @Volatile private var left = false
+    /** Left before the count-in was over, or before it had begun, which a late [begin] mustn't undo. */
+    private var abandoned = false
 
     fun begin() =
         loop.post {
+            if (abandoned) return@post
             countIn = CountIn(now())
             countInStep()
         }
@@ -50,18 +52,17 @@ class RunnerSession(
 
     /**
      * Leaves during the count-in, which has written nothing, so nothing is left behind (#297). Once
-     * the session runs it can only be finished; false then.
+     * the session runs it can only be finished, and this does nothing. Decided on the loop, where a
+     * count-in ending in the meantime has already started the session.
      */
-    fun leave(): Boolean {
-        if (state != null || left) return false
-        left = true
+    fun leave() =
         loop.post {
+            if (state != null) return@post
+            abandoned = true
             timer?.cancel()
             countIn = null
             show(RunnerView.Idle)
         }
-        return true
-    }
 
     /** What the runner's screen reports (#306): alerts only while it isn't showing, a flush as it goes. */
     fun setRunnerVisible(visible: Boolean) =
@@ -76,15 +77,15 @@ class RunnerSession(
             val completed = shown as? RunnerView.Completed ?: return@post
             val outcome =
                 when (failed) {
-                    null -> FinishBackup.NONE
-                    true -> FinishBackup.FAILED
-                    false -> FinishBackup.OK
+                    null -> FinishBackupState.NONE
+                    true -> FinishBackupState.FAILED
+                    false -> FinishBackupState.OK
                 }
             show(completed.copy(backup = outcome))
         }
 
     private fun countInStep() {
-        val counting = countIn?.takeUnless { left } ?: return
+        val counting = countIn ?: return
         val at = now()
         val update = updateCountIn(counting, at)
         update.cues.forEach(effects::cue)
@@ -119,7 +120,7 @@ class RunnerSession(
         effects.carryOut(transition.effects, after.snapshot)
         if (after.finished) {
             timer?.cancel()
-            show(RunnerView.Completed(plan, after.session, FinishBackup.PENDING))
+            show(RunnerView.Completed(plan, after.session, FinishBackupState.PENDING))
             return
         }
         val running = shown as? RunnerView.Running
@@ -147,5 +148,4 @@ class RunnerSession(
 /** Whole seconds into the count-in at [now]. */
 private fun CountIn.elapsedSeconds(now: Long): Long = (now - startedAt) / MS_PER_SECOND
 
-private const val MS_PER_SECOND = 1000L
 private const val TAG = "RunnerSession"

@@ -279,8 +279,9 @@ androidComponents {
         variant.sources.java?.addGeneratedSourceDirectory(generateTheme, GenerateTheme::output)
         // The seed and packs RN bundles too, packaged as they are: nothing to generate, so read in place.
         variant.sources.assets?.addStaticSourceDirectory(contentDir.asFile.path)
-        // The runner's cues (#305), the files RN plays, read in place for the same reason.
-        variant.sources.assets?.addStaticSourceDirectory(soundsDir.asFile.path)
+        // The runner's cues (#305), the files RN plays, read in place for the same reason. Debug alone
+        // until the flip release (#308), which ships the service, so a Play build is unchanged.
+        if (variant.buildType == "debug") variant.sources.assets?.addStaticSourceDirectory(soundsDir.asFile.path)
     }
 }
 

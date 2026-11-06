@@ -82,7 +82,7 @@ class RunnerSessionTest {
         session.begin()
         loop.advanceBy(1500)
 
-        assertTrue(session.leave())
+        session.leave()
         loop.advanceBy(10_000)
         assertEquals(RunnerView.Idle, view)
         assertTrue(written.isEmpty())
@@ -94,8 +94,21 @@ class RunnerSessionTest {
         val session = session()
         session.begin()
         loop.advanceBy(3000)
+        session.leave()
 
-        assertFalse(session.leave())
+        assertTrue(view is RunnerView.Running)
+        assertEquals(1, loop.scheduled)
+    }
+
+    @Test
+    fun `stays left when the leave lands before the count-in began`() {
+        val session = session()
+        session.leave()
+        session.begin()
+        loop.advanceBy(10_000)
+
+        assertEquals(RunnerView.Idle, view)
+        assertTrue(written.isEmpty())
     }
 
     @Test
@@ -154,14 +167,14 @@ class RunnerSessionTest {
         session.send(RunnerCommand.Finish)
 
         val completed = view as RunnerView.Completed
-        assertEquals(FinishBackup.PENDING, completed.backup)
+        assertEquals(FinishBackupState.PENDING, completed.backup)
         assertTrue(completed.session.endedAt != null)
         assertEquals(1, backups)
         assertEquals(0, loop.scheduled)
         assertFalse(stateFile.file.exists())
 
         session.backedUp(failed = true)
-        assertEquals(FinishBackup.FAILED, (view as RunnerView.Completed).backup)
+        assertEquals(FinishBackupState.FAILED, (view as RunnerView.Completed).backup)
     }
 
     @Test

@@ -86,7 +86,7 @@ class RunnerService : Service() {
         // At once, whatever comes next: a service started in the foreground that doesn't say so within
         // seconds is an ANR, and one that stops first is a crash.
         if (!enterForeground(placeholder())) return START_NOT_STICKY
-        if (session == null && intent?.action == ACTION_START) {
+        if (intent?.action == ACTION_START) {
             val start = runnerStartFrom(intent.params())
             val anyway = intent.getBooleanExtra(EXTRA_ANYWAY, false)
             loop.post { begin(start, anyway) }
@@ -100,15 +100,20 @@ class RunnerService : Service() {
         scope.cancel()
         loop.post { cues.close() }
         thread.quitSafely()
-        wakeLock?.takeIf { it.isHeld }?.release()
+        wakeLock.releaseIfHeld()
         super.onDestroy()
     }
 
-    /** On the runner's thread: the plan read from the library as it is now, then the count-in. */
+    /**
+     * On the runner's thread: the plan read from the library as it is now, then the count-in. A start
+     * landing while a session is active attaches instead (#297); checked here, on the thread that sets
+     * it, so a double-tapped Start can't begin two.
+     */
     private fun begin(
         start: RunnerStart?,
         anyway: Boolean,
     ) {
+        if (RunnerHost.active != null) return
         val plan =
             when (val resolved = DiskFiles(paths).library()?.let { resolveRunnerPlan(start, it) }) {
                 is RunnerPlan.Runnable -> resolved
@@ -121,15 +126,19 @@ class RunnerService : Service() {
             main.post(::stop)
             return
         }
+        var current: RunnerSession? = null
         val created =
             RunnerSession(
                 plan,
                 start,
                 loop,
                 now = { anchor.wallAt(SystemClock.elapsedRealtime()) },
-                effects(),
-                RunnerHost::publish,
+                effects { current },
+                // Only while it's still the session: a finish backup answering after a new session began
+                // mustn't put the old completion back over it.
+                publish = { view -> if (RunnerHost.session === current) RunnerHost.publish(view) },
             )
+        current = created
         session = created
         RunnerHost.session = created
         created.setRunnerVisible(RunnerHost.visible)
@@ -137,7 +146,8 @@ class RunnerService : Service() {
         cues.whenLoaded(SOUNDS_TIMEOUT_MS, created::begin)
     }
 
-    private fun effects(): RunnerEffects {
+    /** The effects of [owner]'s session, which the finish backup answers to. */
+    private fun effects(owner: () -> RunnerSession?): RunnerEffects {
         val notifications = NotificationManagerCompat.from(this)
         return RunnerEffects(
             writeSession = { writeSessionFile(paths.sessions, it) },
@@ -156,7 +166,7 @@ class RunnerService : Service() {
                 ),
             backUp = {
                 val app = applicationContext
-                background.launch { session?.backedUp(app.backUpFinishedSession()) }
+                background.launch { owner()?.backedUp(app.backUpFinishedSession()) }
             },
         )
     }
@@ -175,8 +185,8 @@ class RunnerService : Service() {
             // the finish backup, whose answer the completion screen warns from.
             is RunnerView.Completed -> {
                 leaveForeground()
-                wakeLock?.takeIf { it.isHeld }?.release()
-                if (view.backup != FinishBackup.PENDING) stop()
+                wakeLock.releaseIfHeld()
+                if (view.backup != FinishBackupState.PENDING) stop()
             }
 
             RunnerView.Idle -> {
@@ -278,6 +288,10 @@ private fun Context.notifyIfAllowed(
             ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) ==
             PackageManager.PERMISSION_GRANTED
     if (allowed) NotificationManagerCompat.from(this).notify(id, notification)
+}
+
+private fun PowerManager.WakeLock?.releaseIfHeld() {
+    if (this?.isHeld == true) release()
 }
 
 /** The session's partial wake lock, held. A ceiling rather than none, so a bug can't hold it forever. */

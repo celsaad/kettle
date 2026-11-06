@@ -42,8 +42,8 @@ fun ongoingContent(
     val title = view.plan.workout?.name ?: resources.getString(R.string.format_adHocSession)
     return when (view) {
         is RunnerView.CountingIn -> {
-            val end = view.countIn.startedAt + COUNT_IN_MS
-            OngoingContent(title, resources.getString(R.string.session_notification_getReady), Chronometer(end, true))
+            val getReady = resources.getString(R.string.session_notification_getReady)
+            OngoingContent(title, getReady, Chronometer(view.countIn.endsAt, true))
         }
 
         is RunnerView.Running -> {
@@ -186,6 +186,3 @@ const val ONGOING_CHANNEL = "workout-in-progress"
 
 /** expo-notifications' fallback channel's id (`BaseNotificationBuilder.kt`), on purpose. */
 const val CUES_CHANNEL = "expo_notifications_fallback_notification_channel"
-
-private const val COUNT_IN_MS = 3000L
-private const val MS_PER_SECOND = 1000L

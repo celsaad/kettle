@@ -44,8 +44,6 @@ object RunnerHost {
         anyway: Boolean = false,
     ) {
         if (active != null) return
-        // A completion nobody dismissed is behind this start, not part of it.
-        dismiss()
         ContextCompat.startForegroundService(context, RunnerService.startIntent(context, start, anyway))
     }
 
@@ -53,8 +51,10 @@ object RunnerHost {
         session?.send(command)
     }
 
-    /** Leaves during the count-in, which stops the service with nothing written; false once it runs. */
-    fun leave(): Boolean = session?.leave() ?: false
+    /** Leaves during the count-in, which stops the service with nothing written; nothing once it runs. */
+    fun leave() {
+        session?.leave()
+    }
 
     /** What the runner's screen reports as it comes and goes (#306), held for a session started after. */
     fun setRunnerVisible(visible: Boolean) {

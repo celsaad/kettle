@@ -6,12 +6,17 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 
 class ComposeThemeTest {
-    /** A theme.json with every group at its smallest, each overridable as the JSON inside its braces. */
+    /**
+     * A theme.json with every group at its smallest, each overridable as the JSON inside its braces. One
+     * parameter per group is the point, so a test overrides the group it's about and nothing else.
+     */
+    @Suppress("LongParameterList")
     private fun theme(
         light: String = """"text": "#26221c"""",
         dark: String = """"text": "#f0ece2"""",
         runner: String = """"text": "#f3efe4"""",
         spacing: String = """"half": 2""",
+        fonts: String = """"body": "HankenGrotesk_400Regular", "display": "SpaceGrotesk_600SemiBold"""",
         type: String = """"small": { "font": "body", "fontSize": 13, "lineHeight": 18 }""",
     ) = """
         {
@@ -19,6 +24,7 @@ class ComposeThemeTest {
           "RunnerColors": { $runner },
           "Spacing": { $spacing },
           "MaxContentWidth": 480,
+          "Fonts": { $fonts },
           "Type": { $type }
         }
         """.trimIndent()
@@ -33,9 +39,12 @@ class ComposeThemeTest {
             import androidx.compose.runtime.Immutable
             import androidx.compose.ui.graphics.Color
             import androidx.compose.ui.text.TextStyle
+            import androidx.compose.ui.text.font.Font
+            import androidx.compose.ui.text.font.FontFamily
             import androidx.compose.ui.text.font.FontWeight
             import androidx.compose.ui.unit.dp
             import androidx.compose.ui.unit.sp
+            import com.casco.kettle.shell.R
 
 
             """.trimIndent(),
@@ -92,20 +101,28 @@ class ComposeThemeTest {
 
             val MaxContentWidth = 480.dp
             """.trimIndent(),
-            ("/**" + generateTheme(theme()).substringAfter("/**").substringBefore("/**\n * `Type`")).trimEnd(),
+            ("/**" + generateTheme(theme()).substringAfter("/**").substringBefore("/** `Fonts`")).trimEnd(),
         )
     }
 
     @Test
-    fun `the type scale becomes KettleType, last in the file`() {
+    fun `the fonts become a family per typeface, then the type scale KettleType, last in the file`() {
         assertEquals(
             """
-            /**
-             * `Type`: ThemedText's types. In the system font, at the weight of the RN font each names, until
-             * the shell bundles RN's fonts.
-             */
+            /** `Fonts`' typefaces, each a family of the faces theme.json names in it, from RN's packages. */
+            private val HankenGrotesk =
+                FontFamily(
+                    Font(R.font.hankengrotesk_400regular, FontWeight.Normal),
+                )
+
+            private val SpaceGrotesk =
+                FontFamily(
+                    Font(R.font.spacegrotesk_600semibold, FontWeight.SemiBold),
+                )
+
+            /** `Type`: ThemedText's types, each in its `Fonts` role's family and weight. */
             object KettleType {
-                val small = TextStyle(fontWeight = FontWeight.Normal, fontSize = 13.sp, lineHeight = 18.sp)
+                val small = TextStyle(fontFamily = HankenGrotesk, fontWeight = FontWeight.Normal, fontSize = 13.sp, lineHeight = 18.sp)
 
                 /** Every token by its theme.json name, in file order. */
                 internal val tokens =
@@ -116,7 +133,7 @@ class ComposeThemeTest {
 
 
             """.trimIndent(),
-            "/**\n * `Type`" + generateTheme(theme()).substringAfter("/**\n * `Type`"),
+            "/** `Fonts`" + generateTheme(theme()).substringAfter("/** `Fonts`"),
         )
     }
 
@@ -203,7 +220,7 @@ class ComposeThemeTest {
     }
 
     @Test
-    fun `a type style takes its role's weight, and only the sizes it sets`() {
+    fun `a type style takes its role's family and weight, and only the sizes it sets`() {
         val kotlin =
             generateTheme(
                 theme(
@@ -215,11 +232,15 @@ class ComposeThemeTest {
 
         assertEquals(
             listOf(
-                "val title = TextStyle(fontWeight = FontWeight.SemiBold, fontSize = 40.sp, letterSpacing = (-0.8).sp)",
+                "val title = TextStyle(fontFamily = SpaceGrotesk, fontWeight = FontWeight.SemiBold, " +
+                    "fontSize = 40.sp, letterSpacing = (-0.8).sp)",
             ),
             lines(kotlin, "title"),
         )
-        assertEquals(listOf("val numeral = TextStyle(fontWeight = FontWeight.SemiBold)"), lines(kotlin, "numeral"))
+        assertEquals(
+            listOf("val numeral = TextStyle(fontFamily = SpaceGrotesk, fontWeight = FontWeight.SemiBold)"),
+            lines(kotlin, "numeral"),
+        )
     }
 
     @Test
@@ -237,6 +258,56 @@ class ComposeThemeTest {
             val message = refusal(theme(type = type))
 
             assertTrue(path in message, "$type: $message")
+        }
+    }
+
+    @Test
+    fun `a family holds each face its roles name once, lightest first, in the order the families appear`() {
+        val kotlin =
+            generateTheme(
+                theme(
+                    fonts =
+                        """"display": "SpaceGrotesk_600SemiBold", "body": "HankenGrotesk_400Regular", """ +
+                            """"displayBold": "SpaceGrotesk_700Bold", "displayMedium": "SpaceGrotesk_500Medium", """ +
+                            """"heading": "SpaceGrotesk_600SemiBold"""",
+                ),
+            )
+
+        assertEquals(
+            """
+            private val SpaceGrotesk =
+                FontFamily(
+                    Font(R.font.spacegrotesk_500medium, FontWeight.Medium),
+                    Font(R.font.spacegrotesk_600semibold, FontWeight.SemiBold),
+                    Font(R.font.spacegrotesk_700bold, FontWeight.Bold),
+                )
+
+            private val HankenGrotesk =
+                FontFamily(
+                    Font(R.font.hankengrotesk_400regular, FontWeight.Normal),
+                )
+            """.trimIndent(),
+            kotlin.substringAfter("from RN's packages. */\n").substringBefore("\n\n/**"),
+        )
+    }
+
+    @Test
+    fun `a font that isn't one of RN's packaged faces is refused by its role`() {
+        val names =
+            listOf(
+                "\"Roboto\"",
+                "\"SpaceGrotesk_600Bold\"",
+                "\"SpaceGrotesk_650SemiBold\"",
+                "\"SpaceGrotesk_400Regular_Italic\"",
+                "\"spaceGrotesk_600SemiBold\"",
+                "\"Space-Grotesk_600SemiBold\"",
+                "\"Spacing_400Regular\"",
+                "600",
+            )
+        for (name in names) {
+            val message = refusal(theme(fonts = """"body": "HankenGrotesk_400Regular", "display": $name"""))
+
+            assertTrue("Fonts.display" in message, "$name: $message")
         }
     }
 }

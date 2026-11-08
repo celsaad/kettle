@@ -196,15 +196,25 @@ val generateStrings by tasks.registering(GenerateStrings::class) {
 
 /**
  * The `:theme` generator, the same way: `theme.json` becomes a Kotlin source file in a build directory,
- * so a color changed there reaches Compose on the next build with no hand edit.
+ * so a color changed there reaches Compose on the next build with no hand edit. The faces its `Fonts`
+ * names are copied out of RN's `@expo-google-fonts` packages into `res/font` by the same run, so the
+ * generated families can't name a face this build didn't bundle.
  */
 abstract class GenerateTheme : JavaExec() {
     @get:InputFile
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val theme: RegularFileProperty
 
+    /** Every `@expo-google-fonts` package, since which faces are read is theme.json's to say. */
+    @get:InputDirectory
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val fonts: DirectoryProperty
+
     @get:OutputDirectory
     abstract val output: DirectoryProperty
+
+    @get:OutputDirectory
+    abstract val res: DirectoryProperty
 }
 
 val themeGenerator: Configuration by configurations.creating {
@@ -218,11 +228,18 @@ val contentDir: Directory = rootProject.layout.projectDirectory.dir("../../src/c
 /** The theme RN reads too, read in place, so a color has one home for both UIs. */
 val themeFile: RegularFile = rootProject.layout.projectDirectory.file("../../src/constants/theme.json")
 
+/**
+ * The font packages RN loads its faces from, read from the JS install rather than kept as a second
+ * copy: the shell can't build without that install anyway, since the RN AAR comes from it.
+ */
+val fontsDir: Directory = rootProject.layout.projectDirectory.dir("../../node_modules/@expo-google-fonts")
+
 val generateTheme by tasks.registering(GenerateTheme::class) {
     classpath = themeGenerator
     mainClass.set("com.casco.kettle.theme.MainKt")
     theme.set(themeFile)
-    argumentProviders.add { listOf(theme.get().asFile.path, output.get().asFile.path) }
+    fonts.set(fontsDir)
+    argumentProviders.add { listOf(theme, fonts, output, res).map { it.get().asFile.path } }
 }
 
 /**
@@ -277,6 +294,7 @@ androidComponents {
         // `java`, not `kotlin`: Kotlin 2.1's Android plugin compiles .kt files in the Java sources but
         // doesn't read AGP's `kotlin` set, which left the generated file out of the build.
         variant.sources.java?.addGeneratedSourceDirectory(generateTheme, GenerateTheme::output)
+        variant.sources.res?.addGeneratedSourceDirectory(generateTheme, GenerateTheme::res)
         // The seed and packs RN bundles too, packaged as they are: nothing to generate, so read in place.
         variant.sources.assets?.addStaticSourceDirectory(contentDir.asFile.path)
         // The runner's cues (#305), the files RN plays, read in place for the same reason. Debug alone

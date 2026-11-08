@@ -12,8 +12,33 @@ data class Theme(
     val runner: Map<String, String>,
     val spacing: Map<String, String>,
     val maxContentWidth: String,
+    val fonts: Map<String, Face>,
     val type: Map<String, TypeStyle>,
 )
+
+/**
+ * One of `Fonts`' faces, by the name `expo-font` loads it under in RN, which `@expo-google-fonts` also
+ * names its file and directory by: `SpaceGrotesk_600SemiBold` is
+ * `space-grotesk/600SemiBold/SpaceGrotesk_600SemiBold.ttf`.
+ */
+data class Face(
+    val name: String,
+    val family: String,
+    val weight: Int,
+    /** [weight] as the package spells it, `SemiBold` for 600. */
+    val weightWord: String,
+) {
+    /** Compose's `FontWeight` constant for [weight], which is the package's word everywhere but 400. */
+    val weightName: String get() = if (weightWord == REGULAR) "Normal" else weightWord
+
+    /** Its file under `node_modules/@expo-google-fonts`. */
+    val path: String get() = "${family.replace(WORD_START, "-").lowercase()}/$weight$weightWord/$name.ttf"
+
+    /** Its name under `res/font`, which takes lowercase letters, digits and underscores only. */
+    val resource: String get() = name.lowercase()
+}
+
+private val WORD_START = Regex("(?<=[a-z0-9])(?=[A-Z])")
 
 /** One of `Type`'s styles: the RN font role it's set in, and its sizes as written, absent where unset. */
 data class TypeStyle(
@@ -23,27 +48,30 @@ data class TypeStyle(
     val letterSpacing: String?,
 )
 
+private const val REGULAR = "Regular"
+
+/** The weights `@expo-google-fonts` packages, lightest first, as it spells them: 100 is `Thin`, 900 `Black`. */
+private val WEIGHT_WORDS =
+    listOf("Thin", "ExtraLight", "Light", REGULAR, "Medium", "SemiBold", "Bold", "ExtraBold", "Black")
+private const val WEIGHT_STEP = 100
+
+/** An upright face's name: a PascalCase family, then its weight as a number and as a word. */
+private val FACE = Regex("((?:[A-Z][a-z0-9]*)+)_([1-9]00)([A-Za-z]+)")
+
 /**
- * The weight each of RN's font roles (`Fonts` in theme.ts) is drawn at, Space Grotesk's for the
- * display roles and Hanken Grotesk's for the body ones. Native sets these in the system font until the
- * shell bundles both families, so the weight is what carries the hierarchy across meanwhile.
+ * The generated file's own top-level names, which a family would collide with. A family's name is the
+ * property its `FontFamily` is generated as.
  */
-val FONT_WEIGHTS =
-    mapOf(
-        "display" to "SemiBold",
-        "displayMedium" to "Medium",
-        "displayBold" to "Bold",
-        "body" to "Normal",
-        "bodyMedium" to "Medium",
-        "bodySemiBold" to "SemiBold",
-    )
+private val GENERATED_NAMES =
+    setOf("KettleColors", "LightColors", "DarkColors", "RunnerColors", "Spacing", "MaxContentWidth", "KettleType")
 
 private const val COLORS = "Colors"
 private const val RUNNER_COLORS = "RunnerColors"
 private const val SPACING = "Spacing"
 private const val MAX_CONTENT_WIDTH = "MaxContentWidth"
+private const val FONTS = "Fonts"
 private const val TYPE = "Type"
-private val GROUPS = listOf(COLORS, RUNNER_COLORS, SPACING, MAX_CONTENT_WIDTH, TYPE)
+private val GROUPS = listOf(COLORS, RUNNER_COLORS, SPACING, MAX_CONTENT_WIDTH, FONTS, TYPE)
 private val SIZES = listOf("fontSize", "lineHeight", "letterSpacing")
 
 /**
@@ -59,6 +87,7 @@ fun parseTheme(json: String): Theme {
     val light = primitives(objectAt(schemes, "light"), "$COLORS.light") { it.isString }
     val dark = primitives(objectAt(schemes, "dark"), "$COLORS.dark") { it.isString }
     require(light.keys == dark.keys) { "$COLORS.light and $COLORS.dark have to hold the same tokens" }
+    val fonts = primitives(objectAt(root, FONTS), FONTS) { it.isString }.mapValues { (role, name) -> face(role, name) }
 
     return Theme(
         light = light,
@@ -68,20 +97,43 @@ fun parseTheme(json: String): Theme {
         maxContentWidth =
             (root.getValue(MAX_CONTENT_WIDTH) as? JsonPrimitive)?.takeIf(::isNumber)?.content
                 ?: refuse("$MAX_CONTENT_WIDTH isn't a number"),
-        type = objectAt(root, TYPE).mapValues { (key, value) -> typeStyle(key, value) },
+        fonts = fonts,
+        type = objectAt(root, TYPE).mapValues { (key, value) -> typeStyle(key, value, fonts.keys) },
     )
+}
+
+/**
+ * [name] as one of the faces `@expo-google-fonts` packages, refused by [role] otherwise. Italics are
+ * refused with the rest: nothing RN draws is set in one.
+ */
+private fun face(
+    role: String,
+    name: String,
+): Face {
+    val (family, digits, word) =
+        FACE.matchEntire(name)?.destructured
+            ?: refuse(
+                "$FONTS.$role has to name an upright @expo-google-fonts face, like SpaceGrotesk_600SemiBold, not $name",
+            )
+    val weight = digits.toInt()
+    require(
+        WEIGHT_WORDS.getOrNull(weight / WEIGHT_STEP - 1) == word,
+    ) { "$FONTS.$role: $name isn't spelled $digits$word" }
+    require(family !in GENERATED_NAMES) { "$FONTS.$role: $family is a name the generated theme already uses" }
+    return Face(name, family, weight, word)
 }
 
 private fun typeStyle(
     key: String,
     value: kotlinx.serialization.json.JsonElement,
+    roles: Set<String>,
 ): TypeStyle {
     val name = "$TYPE.$key"
     require(IDENTIFIER.matches(key) && key !in RESERVED) { "$name can't be the name of a Kotlin property" }
     val style = value as? JsonObject ?: refuse("$name isn't an object")
     require(style.keys.all { it == "font" || it in SIZES }) { "$name holds something other than font and $SIZES" }
     val font = (style["font"] as? JsonPrimitive)?.takeIf { it.isString }?.content
-    require(font in FONT_WEIGHTS) { "$name.font has to be one of ${FONT_WEIGHTS.keys}" }
+    require(font in roles) { "$name.font has to be one of $FONTS' $roles" }
     val sizes =
         SIZES.associateWith { size ->
             style[size]?.let {

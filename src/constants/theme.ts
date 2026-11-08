@@ -53,19 +53,11 @@ export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
 export const RunnerColors = theme.RunnerColors;
 
 /**
- * The families, by the role `theme.json`'s `Type` names them by. The families themselves aren't in
- * `theme.json`: Compose needs the font files bundled as resources before it can use them, so until
- * then native sets each role in the system font at its weight (`FONT_WEIGHTS` in `:theme`, which
- * refuses a role this doesn't list).
+ * The faces, by the role `Type` names them by, as the names `expo-font` loads them under
+ * (`font-faces.ts`). Native reads the same names: `:theme` copies each face out of its
+ * `@expo-google-fonts` package into the shell's resources.
  */
-export const Fonts = {
-  display: 'SpaceGrotesk_600SemiBold',
-  displayMedium: 'SpaceGrotesk_500Medium',
-  displayBold: 'SpaceGrotesk_700Bold',
-  body: 'HankenGrotesk_400Regular',
-  bodyMedium: 'HankenGrotesk_500Medium',
-  bodySemiBold: 'HankenGrotesk_600SemiBold',
-} as const;
+export const Fonts = theme.Fonts;
 
 export const Spacing = theme.Spacing;
 

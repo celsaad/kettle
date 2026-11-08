@@ -1,10 +1,4 @@
 import {
-  HankenGrotesk_400Regular,
-  HankenGrotesk_500Medium,
-  HankenGrotesk_600SemiBold,
-} from '@expo-google-fonts/hanken-grotesk';
-import { SpaceGrotesk_500Medium, SpaceGrotesk_600SemiBold, SpaceGrotesk_700Bold } from '@expo-google-fonts/space-grotesk';
-import {
   DarkTheme,
   DefaultTheme,
   Stack,
@@ -16,6 +10,7 @@ import {
 } from 'expo-router';
 import type { ErrorBoundaryProps } from 'expo-router';
 import { useFonts } from 'expo-font';
+import { FontFaces } from '@/constants/font-faces';
 import { useEffect } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
@@ -154,14 +149,7 @@ function Navigation() {
 }
 
 export default function RootLayout() {
-  const [fontsLoaded] = useFonts({
-    SpaceGrotesk_500Medium,
-    SpaceGrotesk_600SemiBold,
-    SpaceGrotesk_700Bold,
-    HankenGrotesk_400Regular,
-    HankenGrotesk_500Medium,
-    HankenGrotesk_600SemiBold,
-  });
+  const [fontsLoaded] = useFonts(FontFaces);
 
   const libraryStatus = useLibraryStore((state) => state.status);
   const hydrateLibrary = useLibraryStore((state) => state.hydrate);

@@ -121,7 +121,8 @@ mistake here that cannot be fixed for anyone who has already installed it.
   module (the domain port), a Compose `:app`, and `:strings`, which generates `:app`'s string
   resources from the RN locale bundles on every build (never committed; plurals go through
   `pluralText`, not `pluralStringResource`), `:theme`, which generates its Compose theme from
-  `src/constants/theme.json` the same way, and `:art`, which turns `src/content/art/*.svg` into
+  `src/constants/theme.json` the same way and copies the fonts its `Fonts` names out of
+  `node_modules/@expo-google-fonts`, and `:art`, which turns `src/content/art/*.svg` into
   VectorDrawables and fails the build on any SVG outside the subset `src/content/art/README.md`
   names. Its own Gradle build, not part of the Expo one.
   `gradlew build` from that directory compiles, tests and lints it, and ktlint, detekt and Android

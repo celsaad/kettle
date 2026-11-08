@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -95,7 +94,7 @@ internal fun OutlineButton(
 
 /**
  * A text control with no frame: Finish, ADD, SWAP, Cancel, a countdown's Skip. Named by its own words
- * unless [description] says more than they do, as Finish's "Finish session?" does.
+ * unless [description] says more than they do, as last time's adopt does: it saves the load too.
  */
 @Composable
 internal fun TextControl(
@@ -130,8 +129,9 @@ internal fun GlyphButton(
     size: Dp = MinTarget,
 ) {
     Box(
+        // A minimum, not a fixed size, so the glyph has room at large text sizes (AGENTS.md).
         Modifier
-            .size(size)
+            .sizeIn(minWidth = size, minHeight = size)
             .clip(CircleShape)
             .border(1.dp, RunnerColors.border, CircleShape)
             .alpha(if (enabled) 1f else DISABLED_ALPHA)

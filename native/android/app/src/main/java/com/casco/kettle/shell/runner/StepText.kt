@@ -23,8 +23,11 @@ fun formatClock(totalSeconds: Double): String {
 }
 
 /** "15s" or "15–25s", as RN's `formatHoldTarget`. */
-fun holdTargetText(target: HoldTarget): String =
-    target.maxSec?.let { "${jsNumber(target.minSec)}–${jsNumber(it)}s" } ?: "${jsNumber(target.minSec)}s"
+fun Resources.holdTargetText(target: HoldTarget): String =
+    getString(
+        R.string.format_seconds,
+        target.maxSec?.let { "${jsNumber(target.minSec)}–${jsNumber(it)}" } ?: jsNumber(target.minSec),
+    )
 
 fun repsTargetText(target: RepsTarget): String = target.max?.let { "${target.min}–$it" } ?: "${target.min}"
 

@@ -120,7 +120,8 @@ internal fun NumberPad(
                     if (key == null) {
                         Box(modifier)
                     } else {
-                        val description = if (key == BACKSPACE) stringResource(R.string.common_delete) else key
+                        // A digit is named by its own text; only the backspace glyph needs a label.
+                        val description = if (key == BACKSPACE) stringResource(R.string.common_delete) else null
                         PadKey(key, description, modifier) {
                             entry = if (key == BACKSPACE) entry.backspace() else entry.type(key.single())
                         }
@@ -152,7 +153,7 @@ internal fun NumberPad(
 @Composable
 private fun PadKey(
     key: String,
-    description: String,
+    description: String?,
     modifier: Modifier,
     onClick: () -> Unit,
 ) {
@@ -162,7 +163,7 @@ private fun PadKey(
             .clip(RoundedCornerShape(12.dp))
             .border(1.dp, RunnerColors.border, RoundedCornerShape(12.dp))
             .clickable(role = Role.Button, onClick = onClick)
-            .semantics { contentDescription = description },
+            .then(if (description != null) Modifier.semantics { contentDescription = description } else Modifier),
         contentAlignment = Alignment.Center,
     ) {
         Text(key, style = KettleType.heading, color = RunnerColors.text)

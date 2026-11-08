@@ -27,6 +27,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.casco.kettle.domain.RunnerCommand
 import com.casco.kettle.domain.preferencesOrDefault
 import com.casco.kettle.domain.resolveRunnerPlan
 import com.casco.kettle.shell.files.LocalLatestFiles
@@ -34,6 +35,7 @@ import com.casco.kettle.shell.i18n.deviceUnitSystem
 import com.casco.kettle.shell.nav.runnerStartFrom
 import com.casco.kettle.shell.rn.JsBridge
 import kotlinx.coroutines.delay
+import java.util.concurrent.atomic.AtomicBoolean
 
 /** What `shellRoutes` registers at the native runner's path while the flip is on (#302, #306). */
 @Composable
@@ -80,7 +82,9 @@ fun RunnerRoute(params: Map<String, String>) {
         RunnerHost.setRunnerVisible(true)
         onStopOrDispose { RunnerHost.setRunnerVisible(false) }
     }
-    RunnerWindow(keepAwake = entry is RunnerEntry.Attach || entry is RunnerEntry.Complete)
+    // Set when this screen sends Finish, so the completion it leads to doesn't buzz as an advance would.
+    val finishing = remember { AtomicBoolean(false) }
+    RunnerWindow(keepAwake = entry is RunnerEntry.Attach || entry is RunnerEntry.Complete, finishing)
     val locale = LocalConfiguration.current.locales[0]
     val preferences = preferencesOrDefault(files.preferences, deviceUnitSystem(locale))
     RunnerScreen(
@@ -91,7 +95,7 @@ fun RunnerRoute(params: Map<String, String>) {
             soundsOn = preferences.sessionSounds,
         ),
         rememberSecond(view),
-        routeActions { anyway ->
+        routeActions(finishing) { anyway ->
             ask()
             RunnerHost.open(context, start, anyway)
         },
@@ -99,17 +103,22 @@ fun RunnerRoute(params: Map<String, String>) {
 }
 
 /** The shell's half of [RunnerActions]. [start] asks the service, "Start anyway" with true. */
-private fun routeActions(start: (anyway: Boolean) -> Unit) =
-    RunnerActions(
-        send = RunnerHost::send,
-        startAnyway = { start(true) },
-        leave = ::leave,
-        done = {
-            RunnerHost.dismiss()
-            JsBridge.runnerDone()
-        },
-        adopt = JsBridge::adoptLoad,
-    )
+private fun routeActions(
+    finishing: AtomicBoolean,
+    start: (anyway: Boolean) -> Unit,
+) = RunnerActions(
+    send = { command ->
+        if (command == RunnerCommand.Finish) finishing.set(true)
+        RunnerHost.send(command)
+    },
+    startAnyway = { start(true) },
+    leave = ::leave,
+    done = {
+        RunnerHost.dismiss()
+        JsBridge.runnerDone()
+    },
+    adopt = JsBridge::adoptLoad,
+)
 
 /** Leaving before a session runs: the service stops with nothing written, and RN takes back. */
 private fun leave() {
@@ -124,7 +133,10 @@ private fun leave() {
  * screen reader hears each new step once (§3.10).
  */
 @Composable
-private fun RunnerWindow(keepAwake: Boolean) {
+private fun RunnerWindow(
+    keepAwake: Boolean,
+    finishing: AtomicBoolean,
+) {
     val view = LocalView.current
     DisposableEffect(view, keepAwake) {
         view.keepScreenOn = keepAwake
@@ -137,6 +149,12 @@ private fun RunnerWindow(keepAwake: Boolean) {
         var last: Pair<String, Int>? = null
         var spoken: String? = null
         RunnerHost.view.collect { shown ->
+            // The advance that ends the workout buzzes like any other; a Finish doesn't, as RN's didn't.
+            if (shown is RunnerView.Completed && last != null) {
+                val watching = lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)
+                if (watching && !finishing.get()) view.performHapticFeedback(ADVANCE_HAPTIC)
+                last = null
+            }
             val running = shown as? RunnerView.Running ?: return@collect
             val snapshot = running.snapshot
             val position = snapshot.sessionId to snapshot.stepIndex

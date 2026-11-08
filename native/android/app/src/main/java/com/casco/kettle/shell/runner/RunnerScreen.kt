@@ -69,7 +69,9 @@ fun RunnerScreen(
     val running = (entry as? RunnerEntry.Attach)?.view as? RunnerView.Running
     // Bound to the step they opened on: once the visit moves, by a tap or by the step's own clock,
     // they are gone, and stay gone if Prev comes back to it.
-    val open = running?.let { overlays.on(it.snapshot.visit) } ?: RunnerOverlays()
+    // The swap picker too once there's nothing left to swap to: it draws nothing then, and left marked
+    // open it would keep the body hidden from a reader and take the next back for a sheet nobody sees.
+    val open = running?.let { overlays.on(it.snapshot.visit).withoutDeadSwap(it) } ?: RunnerOverlays()
     SideEffect { if (open != overlays) overlays = open }
     val close = { overlay: Overlay -> overlays = overlays.close(overlay) }
     RunnerBack(entry, { visit -> overlays.on(visit).open }, close, { confirming = true }, actions)
@@ -210,6 +212,11 @@ private fun Overlays(
     if (Overlay.PAD in open && pad != null) {
         NumberPad(pad) { close(Overlay.PAD) }
     }
+}
+
+private fun RunnerOverlays.withoutDeadSwap(view: RunnerView.Running): RunnerOverlays {
+    val swappable = view.snapshot.step is WorkStep && swapCandidates(view.snapshot, view.plan.exercises).isNotEmpty()
+    return if (swappable) this else close(Overlay.SWAP_PICKER)
 }
 
 /** Every exercise but the built-in rest: what an ad-hoc session can add. */

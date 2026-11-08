@@ -11,6 +11,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
@@ -595,6 +596,60 @@ class RunnerScreenTest {
         button("Pernas").performClick()
         compose.onRoot().performTouchInput { click(Offset(centerX, 4f)) }
         compose.onNodeWithText("A SEGUIR").assertDoesNotExist()
+    }
+
+    // from #317's review
+
+    @Test
+    fun `the pad closes itself when its step ends`() {
+        val plan = plan(block(squat))
+        val start = started(plan)
+        show(running(plan, start))
+        button("Reps concluídas: 5. Toque para inserir um valor exato.").performClick()
+        button("Definir").assertExists()
+        entry = running(plan, start.advanced())
+        compose.waitForIdle()
+        button("Definir").assertDoesNotExist()
+    }
+
+    @Test
+    fun `the body is hidden from a reader under Coming up`() {
+        show(running(plan(block(squat))))
+        button("Pernas").performClick()
+        compose.onNodeWithText("A SEGUIR").assertExists()
+        compose.onNodeWithText("Série 1 de 2 · meta 5").assertDoesNotExist()
+    }
+
+    @Test
+    fun `an ad-hoc session's Coming up has no end`() {
+        val adhoc = RunnerPlan.Runnable(null, exercises, emptyList())
+        show(running(adhoc, started(adhoc).after(RunnerCommand.AddExercise(squat))))
+        button("Sessão avulsa").performClick()
+        compose.onNodeWithText("A SEGUIR").assertExists()
+        compose.onNodeWithText("FIM DO TREINO").assertDoesNotExist()
+    }
+
+    @Test
+    fun `back closes the add picker before asking to finish`() {
+        val adhoc = RunnerPlan.Runnable(null, exercises, emptyList())
+        show(running(adhoc, started(adhoc).after(RunnerCommand.AddExercise(squat))))
+        button("ADICIONAR").performClick()
+        compose.onNodeWithText("ADICIONAR EXERCÍCIO").assertExists()
+        back()
+        compose.onNodeWithText("ADICIONAR EXERCÍCIO").assertDoesNotExist()
+        compose.onNode(isDialog()).assertDoesNotExist()
+        back()
+        compose.onNodeWithText("Encerrar o treino?").assertExists()
+    }
+
+    @Test
+    fun `a digit key is named by its own text, and only backspace carries a label`() {
+        show(running(plan(block(squat))))
+        button("Reps concluídas: 5. Toque para inserir um valor exato.").performClick()
+        compose.onNode(hasText("1") and isButton).assert(
+            SemanticsMatcher("no label") { SemanticsProperties.ContentDescription !in it.config },
+        )
+        compose.onNode(hasContentDescription("Excluir") and isButton).assertExists()
     }
 
     // announcements

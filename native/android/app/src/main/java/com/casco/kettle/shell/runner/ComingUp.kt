@@ -157,29 +157,25 @@ private fun UpcomingEntry(
         }
 
         is UpcomingItem.MoreRounds -> {
-            Column {
-                Kicker(
-                    pluralText(
-                        R.plurals.session_upcoming_roundsAfter,
-                        R.string.session_upcoming_roundsAfter_zero,
-                        item.count,
-                    ),
-                )
-                for (name in item.names) Text(name, style = KettleType.default, color = RunnerColors.text)
-            }
+            Collapsed(
+                pluralText(
+                    R.plurals.session_upcoming_roundsAfter,
+                    R.string.session_upcoming_roundsAfter_zero,
+                    item.count,
+                ),
+                item.names,
+            )
         }
 
         is UpcomingItem.Circuit -> {
-            Column {
-                Kicker(
-                    pluralText(
-                        R.plurals.session_upcoming_circuitRounds,
-                        R.string.session_upcoming_circuitRounds_zero,
-                        item.rounds,
-                    ),
-                )
-                for (name in item.names) Text(name, style = KettleType.default, color = RunnerColors.text)
-            }
+            Collapsed(
+                pluralText(
+                    R.plurals.session_upcoming_circuitRounds,
+                    R.string.session_upcoming_circuitRounds_zero,
+                    item.rounds,
+                ),
+                item.names,
+            )
         }
     }
 }
@@ -192,6 +188,18 @@ private fun Entry(
     Column(Modifier.semantics(mergeDescendants = true) {}) {
         Text(name, style = KettleType.heading, color = RunnerColors.text)
         Text(detail, style = KettleType.small, color = RunnerColors.textSecondary)
+    }
+}
+
+/** Rounds or a circuit folded into one item: its kicker, then the names it holds. */
+@Composable
+private fun Collapsed(
+    kicker: String,
+    names: List<String>,
+) {
+    Column {
+        Kicker(kicker)
+        for (name in names) Text(name, style = KettleType.default, color = RunnerColors.text)
     }
 }
 

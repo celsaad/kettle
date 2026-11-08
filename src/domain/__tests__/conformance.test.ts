@@ -6,7 +6,7 @@ import { findProgramWeek, programWeekNumbers, resolveWorkoutForWeek } from '@/do
 import { emomIntervalCount } from '@/domain/schema';
 import { filterByName, rankByName } from '@/domain/search';
 import { parseSupporterState } from '@/domain/tip';
-import type { Library, WorkoutBlock } from '@/domain/types';
+import type { Library, Session, WorkoutBlock } from '@/domain/types';
 import { fromDisplayWeight, toDisplayWeight, weightStep, type UnitSystem } from '@/domain/units';
 import { entryBest, recordKey, sessionRecords, type RecordKind } from '@/state/selectors/records';
 import {
@@ -78,6 +78,12 @@ function libraryText(testCase: Case, key: string): string {
   return typeof testCase.source === 'string'
     ? readFileSync(`${repoRoot}/${testCase.source}`, 'utf8')
     : (testCase[key] as string);
+}
+
+function mustParseSession(yaml: string): Session {
+  const result = parseSessionYaml(yaml);
+  if (!result.ok) throw new Error(`fixture session does not parse: ${JSON.stringify(result.error)}`);
+  return result.data;
 }
 
 function mustParseLibrary(yaml: string): Library {
@@ -200,38 +206,22 @@ const runners: Record<string, (testCase: Case) => unknown> = {
   supporter: (testCase) => parseSupporterState(testCase.input as string),
 
   records: (testCase) => {
+    const session = () => mustParseSession(testCase.session as string);
     switch (testCase.op) {
-      case 'entryBest': {
-        const result = parseSessionYaml(testCase.session as string);
-        if (!result.ok) throw new Error(`fixture session does not parse: ${JSON.stringify(result.error)}`);
-        return result.data.entries.map((entry) => entryBest(entry));
-      }
+      case 'entryBest':
+        return session().entries.map((entry) => entryBest(entry));
       case 'recordKey':
         return recordKey(testCase.exercise as string, testCase.kind as RecordKind);
-      case 'sessionDurationMinutes': {
-        const result = parseSessionYaml(testCase.session as string);
-        if (!result.ok) throw new Error(`fixture session does not parse: ${JSON.stringify(result.error)}`);
-        return sessionDurationMinutes(result.data);
-      }
-      case 'sessionEntryResult': {
-        const result = parseSessionYaml(testCase.session as string);
-        if (!result.ok) throw new Error(`fixture session does not parse: ${JSON.stringify(result.error)}`);
-        return plain(result.data.entries.map((entry) => sessionEntryResult(entry)));
-      }
-      case 'sessionSetCount': {
-        const result = parseSessionYaml(testCase.session as string);
-        if (!result.ok) throw new Error(`fixture session does not parse: ${JSON.stringify(result.error)}`);
-        return sessionSetCount(result.data);
-      }
+      case 'sessionDurationMinutes':
+        return sessionDurationMinutes(session());
+      case 'sessionEntryResult':
+        return plain(session().entries.map((entry) => sessionEntryResult(entry)));
+      case 'sessionSetCount':
+        return sessionSetCount(session());
       case 'sessionRecords': {
-        const parse = (yaml: string) => {
-          const result = parseSessionYaml(yaml);
-          if (!result.ok) throw new Error(`fixture session does not parse: ${JSON.stringify(result.error)}`);
-          return result.data;
-        };
         const library = mustParseLibrary(testCase.library as string);
-        const prior = (testCase.prior as string[]).map(parse);
-        return sessionRecords(parse(testCase.session as string), prior, library.exercises);
+        const prior = (testCase.prior as string[]).map(mustParseSession);
+        return sessionRecords(session(), prior, library.exercises);
       }
       default:
         throw new Error(`unknown op ${String(testCase.op)}`);

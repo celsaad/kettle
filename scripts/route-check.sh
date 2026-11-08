@@ -5,12 +5,12 @@
 #
 # Needs com.casco.kettle.dev from native-dev.sh, running against Metro and past its splash, on a
 # phone in English whose .dev install still holds the seed library. The RN runner's steps finish a
-# real session, which joins the .dev history; the native runner's placeholder writes nothing. It
-# never touches com.casco.kettle.
+# real session, which joins the .dev history, and so do the native runner's (#306). It never
+# touches com.casco.kettle.
 #
 # The matrix is .dev's, which runs with the nativeRunner flip on (#302): a start from a native screen
-# opens the native runner's placeholder, which shows its start's params, and a release build opens
-# RN's runner there instead. Every other route is the same in both since the library flip (#245).
+# opens the native runner, which is waited on past its count-in (its Finish only shows once the
+# session runs), and a release build opens RN's runner there instead. Every other route is the same in both since the library flip (#245).
 #
 # Usage: scripts/route-check.sh [--device <adb serial>]
 set -euo pipefail
@@ -57,9 +57,9 @@ steps=(
   # A native tab's row opens its native sheet over that tab (#197, #233), and back returns to it.
   'tap:Programs|tab:Programs' 'tap:Foundations · 4 Weeks · No Equipment|Week 1 · Day 1'
   # Over that native sheet, the native editor and the native runner each come back to it (#155, #233).
-  # Back over the runner is refused without a word, so only its Done leaves (#302).
+  # Back over a running session asks first, and completion's Done leaves (#297, #306).
   'tap:Edit program|Edit program' 'back|Week 1 · Day 1'
-  'tap:Start Week 1 · Day 1|programId=foundations' 'back|programId=foundations'
+  'tap:Start Week 1 · Day 1|Finish' 'back|Finish session?' 'tap:Finish|Workout complete'
   'tap:Done|Week 1 · Day 1'
   'back|tab:Programs'
   # Native Library's row and Import open their native sheets over it, and back returns to it (#234).
@@ -78,8 +78,9 @@ steps=(
   # Sent while in the background, it lands, and shows once the app is in front again.
   '/history|' 'front|tab:History'
   # Over the native runner, a message is dropped with no question asked, and Done hands back (#302).
-  '/session-native?workoutId=foundations-push|workoutId=foundations-push'
-  '/library|workoutId=foundations-push' 'tap:Done|tab:History'
+  '/session-native?workoutId=foundations-push|Finish'
+  '/library|Finish' 'back|Finish session?' 'tap:Cancel|Finish'
+  'back|Finish session?' 'tap:Finish|Workout complete' 'tap:Done|tab:History'
   # Over a running session. Cancel must leave the runner on top, with nothing stacked over it.
   '/session?workoutId=foundations-push|Finish'
   '/library|Finish session?' 'tap:CANCEL|Finish'

@@ -3,6 +3,20 @@
 # live "this beats your best" cue, and the native Stats and exercise progress screens read them too, so
 # the two have to agree on what counts as doing more, or a session is a record on one screen and not on
 # the other. `entryBest` is null for an entry that competes for nothing.
+#
+# `sessionRecords` is what the completion screen lists: what `session` beat across `prior` (session
+# YAML each), named from `library` (inline YAML). Both runners show it, so the badge can't differ.
+x-records-library: &records-library |
+  version: 1
+  exercises:
+    - { id: bench, name: Bench, type: reps, config: { sets: 3, target_reps_min: 5, rest_sec: 120 } }
+    - { id: squat, name: Squat, type: reps, config: { sets: 3, target_reps_min: 5, rest_sec: 120 } }
+    - { id: curl, name: Curl, type: reps, config: { sets: 3, target_reps_min: 8, rest_sec: 60 } }
+    - { id: pullups, name: Pull-ups, type: reps, config: { sets: 3, target_reps_min: 5, rest_sec: 90 } }
+    - { id: plank, name: Plank, type: timed_hold, config: { sets: 2, hold_sec_min: 30, rest_sec: 30 } }
+    - { id: grinder, name: Grinder, type: amrap, config: { time_cap_sec: 600 } }
+  workouts: []
+  programs: []
 cases:
   - name: loaded-sets-compete-on-the-heaviest
     why: The estimate is the best across every set, which is not always the heaviest one's.
@@ -244,3 +258,130 @@ cases:
       ended_at: "2026-08-01T10:30:00.000Z"
       entries:
         - { exercise: burpees, type: hiit, rounds_completed: 0 }
+  - name: records-are-strictly-greater-than-a-prior-best
+    why: A tie is not a record and neither is a first-ever entry; each kind competes on its own number.
+    op: sessionRecords
+    library: *records-library
+    prior:
+      - |
+        version: 1
+        id: p1
+        workout: null
+        started_at: "2026-07-01T10:00:00.000Z"
+        ended_at: "2026-07-01T10:30:00.000Z"
+        entries:
+          - exercise: bench
+            type: reps
+            sets: [{ reps: 5, weight: 90, rest_taken_sec: 120 }]
+          - exercise: squat
+            type: reps
+            sets: [{ reps: 5, weight: 120, rest_taken_sec: 120 }]
+          - exercise: pullups
+            type: reps
+            sets: [{ reps: 8, rest_taken_sec: 90 }]
+          - { exercise: plank, type: timed_hold, sets: [{ hold_sec: 40, rest_taken_sec: 0 }] }
+          - { exercise: grinder, type: amrap, rounds_completed: 5, extra_reps: 0 }
+    session: |
+      version: 1
+      id: s
+      workout: null
+      started_at: "2026-08-01T10:00:00.000Z"
+      ended_at: "2026-08-01T10:30:00.000Z"
+      entries:
+        - exercise: bench
+          type: reps
+          sets: [{ reps: 8, weight: 85, rest_taken_sec: 120 }, { reps: 3, weight: 95, rest_taken_sec: 120 }]
+        - exercise: squat
+          type: reps
+          sets: [{ reps: 5, weight: 120, rest_taken_sec: 120 }]
+        - exercise: curl
+          type: reps
+          sets: [{ reps: 10, weight: 15, rest_taken_sec: 60 }]
+        - exercise: pullups
+          type: reps
+          sets: [{ reps: 9, rest_taken_sec: 90 }]
+        - { exercise: plank, type: timed_hold, sets: [{ hold_sec: 45, rest_taken_sec: 0 }] }
+        - { exercise: grinder, type: amrap, rounds_completed: 6, extra_reps: 2 }
+  - name: records-skip-the-session-itself-and-unfinished-ones
+    why: >-
+      The caller reads the session and the log from one store, so the session is in its own prior; an
+      abandoned session's heavier set mustn't suppress a real record.
+    op: sessionRecords
+    library: *records-library
+    prior:
+      - |
+        version: 1
+        id: s
+        workout: null
+        started_at: "2026-08-01T10:00:00.000Z"
+        ended_at: "2026-08-01T10:30:00.000Z"
+        entries:
+          - exercise: bench
+            type: reps
+            sets: [{ reps: 3, weight: 95, rest_taken_sec: 120 }]
+      - |
+        version: 1
+        id: abandoned
+        workout: null
+        started_at: "2026-07-20T10:00:00.000Z"
+        ended_at: null
+        entries:
+          - exercise: bench
+            type: reps
+            sets: [{ reps: 1, weight: 200, rest_taken_sec: 120 }]
+      - |
+        version: 1
+        id: p1
+        workout: null
+        started_at: "2026-07-01T10:00:00.000Z"
+        ended_at: "2026-07-01T10:30:00.000Z"
+        entries:
+          - exercise: bench
+            type: reps
+            sets: [{ reps: 5, weight: 90, rest_taken_sec: 120 }]
+    session: |
+      version: 1
+      id: s
+      workout: null
+      started_at: "2026-08-01T10:00:00.000Z"
+      ended_at: "2026-08-01T10:30:00.000Z"
+      entries:
+        - exercise: bench
+          type: reps
+          sets: [{ reps: 3, weight: 95, rest_taken_sec: 120 }]
+  - name: records-name-one-per-exercise-and-kind-and-fall-back-to-the-id
+    why: >-
+      The same exercise in two blocks is two entries, which mustn't list one record twice; an exercise
+      since deleted from the library is named by its id.
+    op: sessionRecords
+    library: *records-library
+    prior:
+      - |
+        version: 1
+        id: p1
+        workout: null
+        started_at: "2026-07-01T10:00:00.000Z"
+        ended_at: "2026-07-01T10:30:00.000Z"
+        entries:
+          - exercise: bench
+            type: reps
+            sets: [{ reps: 5, weight: 90, rest_taken_sec: 120 }]
+          - exercise: gone
+            type: reps
+            sets: [{ reps: 5, weight: 20, rest_taken_sec: 60 }]
+    session: |
+      version: 1
+      id: s
+      workout: null
+      started_at: "2026-08-01T10:00:00.000Z"
+      ended_at: "2026-08-01T10:30:00.000Z"
+      entries:
+        - exercise: bench
+          type: reps
+          sets: [{ reps: 5, weight: 100, rest_taken_sec: 120 }]
+        - exercise: bench
+          type: reps
+          sets: [{ reps: 2, weight: 95, rest_taken_sec: 120 }]
+        - exercise: gone
+          type: reps
+          sets: [{ reps: 5, weight: 25, rest_taken_sec: 60 }]

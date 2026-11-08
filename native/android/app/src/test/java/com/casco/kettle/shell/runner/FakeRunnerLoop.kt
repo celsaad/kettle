@@ -38,6 +38,9 @@ internal class FakeRunnerLoop(
         return Cancellable { entry.cancelled = true }
     }
 
+    /** Loses every timer not yet run, as one end wake was lost on a device (#306), leaving the clock alone. */
+    fun dropPending() = pending.clear()
+
     fun advanceBy(ms: Long) {
         val end = now + ms
         while (true) {

@@ -113,5 +113,61 @@
     }
   ],
   "set-count-is-one-per-interval-performed": 19,
-  "set-count-of-a-round-less-interval-is-zero": 0
+  "set-count-of-a-round-less-interval-is-zero": 0,
+  "records-are-strictly-greater-than-a-prior-best": [
+    {
+      "kind": "heaviestSet",
+      "exerciseId": "bench",
+      "exerciseName": "Bench",
+      "weightKg": 95,
+      "reps": 3,
+      "oneRepMaxKg": 107.66666666666666
+    },
+    {
+      "kind": "mostReps",
+      "exerciseId": "pullups",
+      "exerciseName": "Pull-ups",
+      "reps": 9
+    },
+    {
+      "kind": "longestHold",
+      "exerciseId": "plank",
+      "exerciseName": "Plank",
+      "holdSec": 45
+    },
+    {
+      "kind": "mostRounds",
+      "exerciseId": "grinder",
+      "exerciseName": "Grinder",
+      "rounds": 6
+    }
+  ],
+  "records-skip-the-session-itself-and-unfinished-ones": [
+    {
+      "kind": "heaviestSet",
+      "exerciseId": "bench",
+      "exerciseName": "Bench",
+      "weightKg": 95,
+      "reps": 3,
+      "oneRepMaxKg": 104.50000000000001
+    }
+  ],
+  "records-name-one-per-exercise-and-kind-and-fall-back-to-the-id": [
+    {
+      "kind": "heaviestSet",
+      "exerciseId": "bench",
+      "exerciseName": "Bench",
+      "weightKg": 100,
+      "reps": 5,
+      "oneRepMaxKg": 116.66666666666667
+    },
+    {
+      "kind": "heaviestSet",
+      "exerciseId": "gone",
+      "exerciseName": "gone",
+      "weightKg": 25,
+      "reps": 5,
+      "oneRepMaxKg": 29.166666666666668
+    }
+  ]
 }

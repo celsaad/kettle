@@ -19,7 +19,7 @@ import com.casco.kettle.shell.programguide.ProgramGuideRoute
 import com.casco.kettle.shell.programs.ProgramsRoute
 import com.casco.kettle.shell.progress.EXERCISE_PROGRESS_PATH
 import com.casco.kettle.shell.progress.ExerciseProgressRoute
-import com.casco.kettle.shell.runner.RunnerPlaceholderRoute
+import com.casco.kettle.shell.runner.RunnerRoute
 import com.casco.kettle.shell.sessioneditor.SESSION_EDITOR_PATH
 import com.casco.kettle.shell.sessioneditor.SessionEditorRoute
 import com.casco.kettle.shell.settings.SettingsRoute
@@ -99,7 +99,7 @@ private val screenRoutes: Map<String, Screen> =
  */
 fun routesFor(nativeRunner: Boolean): Map<String, Screen> =
     if (nativeRunner) {
-        screenRoutes + (NATIVE_RUNNER_PATH to Screen.Native { params -> RunnerPlaceholderRoute(params) })
+        screenRoutes + (NATIVE_RUNNER_PATH to Screen.Native { params -> RunnerRoute(params) })
     } else {
         screenRoutes
     }

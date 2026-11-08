@@ -75,6 +75,7 @@ class RunnerService : Service() {
         loop = HandlerLoop(Handler(thread.looper))
         cues = RunnerCues(this, loop) { DiskFiles(paths).preferences()?.sessionSounds ?: true }
         anchor = ClockAnchor(System.currentTimeMillis(), SystemClock.elapsedRealtime())
+        RunnerHost.now = { anchor.wallAt(SystemClock.elapsedRealtime()) }
         scope.launch { RunnerHost.view.collect(::show) }
     }
 
@@ -97,6 +98,7 @@ class RunnerService : Service() {
     override fun onDestroy() {
         session = null
         RunnerHost.session = null
+        RunnerHost.now = System::currentTimeMillis
         scope.cancel()
         loop.post { cues.close() }
         thread.quitSafely()

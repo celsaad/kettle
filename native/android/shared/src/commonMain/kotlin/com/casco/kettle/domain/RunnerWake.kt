@@ -21,9 +21,25 @@ fun nextTimeUpdateAt(
     val clock = snapshot.clock
     if (step == null || clock.paused) return null
     val elapsed = elapsedSec(clock, now)
+    // A step already past its end wakes at once. A wake that never ran (seen once on a device, #306)
+    // otherwise left nothing scheduled, since every moment below is in its past, and the session sat
+    // on 0:00 for good, through a Resume too. Waking now lets the next update end it.
+    val overdue = endSecond(step, clock.stepEndSec)?.let { elapsed >= it } == true
     val second = wakeSeconds(step, clock.stepEndSec).filter { it > elapsed }.minOrNull()
-    return second?.let { clock.phaseStartedAt + clock.pausedMs + it * MS_PER_SECOND }
+    return if (overdue) now else second?.let { clock.phaseStartedAt + clock.pausedMs + it * MS_PER_SECOND }
 }
+
+/** The elapsed second at which [step] ends by itself, or null for one only the user ends. */
+private fun endSecond(
+    step: RunnerStep,
+    endSec: Double,
+): Long? =
+    when (step) {
+        is RunnerStep.Hold -> step.holdEndSec?.let(::wholeSecondAt)
+        is RunnerStep.Rest -> wholeSecondAt(endSec)
+        is RunnerStep.Interval -> if (step.countUp) null else wholeSecondAt(endSec)
+        is RunnerStep.Reps -> null
+    }
 
 /** Every elapsed second at which [reading] can change for [step]: its milestone, last ticks and end. */
 private fun wakeSeconds(

@@ -37,7 +37,7 @@ reported as skipped under its own name, never as passing. Porting a suite is add
 | `preferences` | `parsePreferences(input)`, the text of a `preferences.json` | the preferences with defaults filled in, or `null` where the file is refused |
 | `supporter` | `parseSupporterState(input)`, the text of a `supporter.json` | the supporter state, the empty one where the file is refused |
 | `steps` | the runner's `buildStepsWithLimits`, its mid-session edits, and `upcomingOutline`, over the workout in `library` | the step list, the list after each edit, or the outline per index (the file's header) |
-| `records` | `entryBest` over each entry of the session file in `session`, `recordKey(exercise, kind)`, or `sessionDurationMinutes` of the session in `session` | a list of `{ kind, value, reps, oneRepMaxKg }` or `null` per entry; the key string; whole minutes |
+| `records` | by `op`: `entryBest`, `sessionEntryResult` or `sessionSetCount` over the session file in `session`; `recordKey(exercise, kind)`; `sessionDurationMinutes` of `session`; or `sessionRecords` of `session` against the session files in `prior`, named from the inline `library` | a list of `{ kind, value, reps, oneRepMaxKg }` or `null` per entry; a list of entry results; a set count; the key string; whole minutes; a list of `{ kind, exerciseId, exerciseName, … }` records, the kind's own fields after |
 
 The `source` cases read `site/examples/` and the shipped seed and packs in `src/content/` in place,
 so an edit to that content moves their goldens, and the diff is the record of what changed. `localize`

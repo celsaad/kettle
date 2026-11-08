@@ -91,3 +91,94 @@ fun estimatedOneRepMaxKg(
 
 private const val MAX_ESTIMABLE_REPS = 12
 private const val EPLEY_REPS = 30.0
+
+/**
+ * What a session beat, for the completion screen: `sessionRecords` in `src/state/selectors/records.ts`,
+ * held to it by `conformance/records.yaml`. [exerciseName] is the user's own and renders verbatim.
+ */
+sealed interface SessionRecord {
+    val kind: RecordKind
+    val exerciseId: String
+    val exerciseName: String
+
+    /** [oneRepMaxKg] is the best estimate across the entry, which is not always the heaviest set's. */
+    data class HeaviestSet(
+        override val exerciseId: String,
+        override val exerciseName: String,
+        val weightKg: Double,
+        val reps: Long,
+        val oneRepMaxKg: Double?,
+    ) : SessionRecord {
+        override val kind get() = RecordKind.HeaviestSet
+    }
+
+    data class MostReps(
+        override val exerciseId: String,
+        override val exerciseName: String,
+        val reps: Double,
+    ) : SessionRecord {
+        override val kind get() = RecordKind.MostReps
+    }
+
+    data class LongestHold(
+        override val exerciseId: String,
+        override val exerciseName: String,
+        val holdSec: Double,
+    ) : SessionRecord {
+        override val kind get() = RecordKind.LongestHold
+    }
+
+    data class MostRounds(
+        override val exerciseId: String,
+        override val exerciseName: String,
+        val rounds: Double,
+    ) : SessionRecord {
+        override val kind get() = RecordKind.MostRounds
+    }
+}
+
+/**
+ * What [session] beat across the finished sessions in [priorSessions]: strictly greater, so a tie is no
+ * record, and only against a prior best, so a first-ever entry is none either. [session] is skipped in
+ * [priorSessions], since a caller reads both from the one log. One record per exercise and kind, the
+ * best of them, when one exercise was logged in two blocks.
+ */
+fun sessionRecords(
+    session: Session,
+    priorSessions: List<Session>,
+    exercises: List<Exercise>,
+): List<SessionRecord> {
+    val before = bestByKey(priorSessions.filter { it.id != session.id })
+    val beaten =
+        session.entries
+            .mapNotNull { entry -> entryBest(entry)?.let { entry.exercise to it } }
+            .filter { (exercise, best) -> before[recordKey(exercise, best.kind)]?.let { best.value > it } == true }
+    // The first of equals, as RN's keeps the record it collected first.
+    val strongest = linkedMapOf<String, Pair<String, EntryBest>>()
+    for ((exercise, best) in beaten) {
+        val key = recordKey(exercise, best.kind)
+        if ((strongest[key]?.second?.value ?: Double.NEGATIVE_INFINITY) < best.value) strongest[key] = exercise to best
+    }
+    return strongest.values.map { (exercise, best) -> recordOf(exercise, exerciseName(exercises, exercise), best) }
+}
+
+/** Every finished session's best per exercise and kind, by [recordKey]. */
+private fun bestByKey(sessions: List<Session>): Map<String, Double> =
+    sessions
+        .filter { it.endedAt != null }
+        .flatMap { it.entries }
+        .mapNotNull { entry -> entryBest(entry)?.let { recordKey(entry.exercise, it.kind) to it.value } }
+        .groupBy({ it.first }, { it.second })
+        .mapValues { (_, values) -> values.max() }
+
+private fun recordOf(
+    id: String,
+    name: String,
+    best: EntryBest,
+): SessionRecord =
+    when (best.kind) {
+        RecordKind.HeaviestSet -> SessionRecord.HeaviestSet(id, name, best.value, best.reps, best.oneRepMaxKg)
+        RecordKind.MostReps -> SessionRecord.MostReps(id, name, best.value)
+        RecordKind.LongestHold -> SessionRecord.LongestHold(id, name, best.value)
+        RecordKind.MostRounds -> SessionRecord.MostRounds(id, name, best.value)
+    }

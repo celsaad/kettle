@@ -3,6 +3,7 @@ package com.casco.kettle.shell.runner
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
@@ -32,9 +33,16 @@ class RecoveryDialogTest {
     private fun show(
         recovery: RunnerRecovery.Finishable,
         failure: String? = null,
+        inert: Boolean = false,
     ) = compose.setContent {
         KettleTheme(darkTheme = false) {
-            RecoveryDialog(recovery, "Treino da manhã", failure, onResume = { taps += "resume" }) { taps += "finish" }
+            RecoveryDialog(
+                recovery,
+                "Treino da manhã",
+                failure,
+                inert,
+                RecoveryAnswers(resume = { taps += "resume" }, finish = { taps += "finish" }),
+            )
         }
     }
 
@@ -63,5 +71,14 @@ class RecoveryDialogTest {
         show(prompt, failure = "disk full")
 
         compose.onNodeWithText("Não foi possível salvar: disk full", substring = true).assertExists()
+    }
+
+    // While Resume rebuilds or Finish writes, the buttons do nothing, and say so to a screen reader.
+    @Test
+    fun `disables both buttons while an answer is under way`() {
+        show(prompt, inert = true)
+
+        compose.onNode(hasText("Continuar") and isButton).assertIsNotEnabled()
+        compose.onNode(hasText("Encerrar") and isButton).assertIsNotEnabled()
     }
 }

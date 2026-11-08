@@ -40,7 +40,6 @@ import com.casco.kettle.shell.rn.withViewAction
 import com.casco.kettle.shell.runner.LaunchRecovery
 import com.casco.kettle.shell.runner.RunnerHost
 import com.casco.kettle.shell.runner.RunnerService
-import com.casco.kettle.shell.runner.RunnerView
 import com.casco.kettle.shell.runner.runnerStateDir
 import com.casco.kettle.shell.settings.backUpFinishedSession
 import com.casco.kettle.shell.theme.KettleTheme
@@ -264,12 +263,21 @@ class MainActivity :
  * After the library is ready and before any screen can start a session (#307): with no service
  * running, a session the process died under puts up the Resume / Finish prompt, and what the dead
  * service left in the shade goes. Two small reads, like the library gate's.
+ *
+ * Once per process: a dead service's leftovers can only meet a fresh process, and an activity made
+ * again later could land while a service is starting and not yet showing, which a clear would stop.
  */
 private fun Activity.recoverRunner(paths: StoragePaths) {
-    if (!nativeRunnerDrawn || RunnerHost.session != null || RunnerHost.view.value != RunnerView.Idle) return
-    RunnerService.clearAfterDeath(this)
-    LaunchRecovery.recoverAtLaunch(runnerStateDir(noBackupFilesDir), paths.sessions)
+    if (!nativeRunnerDrawn || runnerRecovered) return
+    runnerRecovered = true
+    val app = applicationContext
+    LaunchRecovery.recoverAtLaunch(runnerStateDir(noBackupFilesDir), paths.sessions) {
+        RunnerService.clearAfterDeath(app)
+    }
 }
+
+/** Whether this process has run [recoverRunner]: on the main thread only, as onCreate is. */
+private var runnerRecovered = false
 
 /** The files read again as this activity starts and stops. */
 private fun LifecycleOwner.rereadOnStartAndStop(files: LatestFiles) =

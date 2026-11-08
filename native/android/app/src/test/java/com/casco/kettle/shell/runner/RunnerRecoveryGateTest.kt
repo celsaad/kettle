@@ -1,6 +1,9 @@
 package com.casco.kettle.shell.runner
 
 import android.app.Application
+import android.content.ComponentName
+import android.content.ContextWrapper
+import android.content.Intent
 import androidx.test.core.app.ApplicationProvider
 import com.casco.kettle.domain.RunnerRecovery
 import com.casco.kettle.domain.RunnerStart
@@ -113,26 +116,54 @@ class RunnerRecoveryGateTest {
     }
 
     @Test
-    fun `asks at launch about a state file the process died with`() {
+    fun `asks at launch about a state file the process died with, clearing what the dead service left`() {
         val (stateDir, sessions) = killed()
-        LaunchRecovery.recoverAtLaunch(stateDir, sessions)
+        var cleared = 0
+        LaunchRecovery.recoverAtLaunch(stateDir, sessions) { cleared++ }
 
         assertTrue((LaunchRecovery.state.value as RecoveryState.Asking).found.recovery is RunnerRecovery.Prompt)
+        assertEquals(1, cleared)
     }
 
     @Test
-    fun `asks nothing at launch while a session runs, which the runner attaches to instead`() {
+    fun `asks nothing and clears nothing at launch while a session runs, which the runner attaches to instead`() {
         val (stateDir, sessions) = killed()
+        var cleared = 0
         RunnerHost.publish(RunnerView.Running(planOf(PULLUPS), start.snapshot, start.session))
-        LaunchRecovery.recoverAtLaunch(stateDir, sessions)
+        LaunchRecovery.recoverAtLaunch(stateDir, sessions) { cleared++ }
 
         assertNull(LaunchRecovery.state.value)
+        assertEquals(0, cleared)
+    }
+
+    @Test
+    fun `clears nothing at launch while a resume is rebuilding, which would stop the service doing it`() {
+        val (stateDir, sessions) = killed()
+        var cleared = 0
+        LaunchRecovery.ask(found)
+        LaunchRecovery.resume(app)
+        LaunchRecovery.recoverAtLaunch(stateDir, sessions) { cleared++ }
+
+        assertEquals(RecoveryState.Resuming(found), LaunchRecovery.state.value)
+        assertEquals(0, cleared)
+    }
+
+    @Test
+    fun `asks again when the service can't even be started`() {
+        val refusing =
+            object : ContextWrapper(app) {
+                override fun startForegroundService(service: Intent?): ComponentName = error("not allowed")
+            }
+        LaunchRecovery.ask(found)
+        LaunchRecovery.resume(refusing)
+
+        assertEquals(RecoveryState.Asking(found), LaunchRecovery.state.value)
     }
 
     @Test
     fun `finishes from the prompt, backs up, and lets sessions start again`() {
         val (stateDir, sessions) = killed()
-        LaunchRecovery.recoverAtLaunch(stateDir, sessions)
+        LaunchRecovery.recoverAtLaunch(stateDir, sessions) {}
         val asking = LaunchRecovery.state.value as RecoveryState.Asking
         val written = mutableListOf<Session>()
         var backups = 0

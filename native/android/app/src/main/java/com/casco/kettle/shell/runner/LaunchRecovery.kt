@@ -33,13 +33,17 @@ object LaunchRecovery {
     /**
      * At launch, once the library is ready and before any screen can start a session (#307): a state
      * file left in [stateDir] with no session running means the process died under one, so the prompt
-     * goes up. With the service alive there's nothing to ask, since the runner attaches to it instead.
+     * goes up, after [clearAfterDeath] has taken down what the dead service left in the shade. With the
+     * service alive, or a prompt already up or resuming, there's nothing to ask or clear: the runner
+     * attaches, or the prompt carries on, and a clear would stop the service doing the work.
      */
     fun recoverAtLaunch(
         stateDir: File,
         sessionsDir: File,
+        clearAfterDeath: () -> Unit,
     ) {
         if (RunnerHost.session != null || RunnerHost.active != null || recoveries.value != null) return
+        clearAfterDeath()
         findRunnerRecovery(stateDir, sessionsDir)?.let(::ask)
     }
 

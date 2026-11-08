@@ -60,36 +60,42 @@ fun RecoveryPrompt() {
         found.recovery,
         name,
         failure,
-        onResume = {
-            if (!inert) {
+        inert,
+        RecoveryAnswers(
+            resume = {
                 LaunchRecovery.resume(context)
                 scope.launch { openOnceResumed(recoveredStart(session)) }
-            }
-        },
-        onFinish = {
-            if (!inert) {
+            },
+            finish = {
                 finishing = true
                 scope.launch {
                     failure = finishFromPrompt(context, files, found)
                     finishing = false
                 }
-            }
-        },
+            },
+        ),
     )
 }
+
+/** What the prompt's two buttons do. */
+class RecoveryAnswers(
+    val resume: () -> Unit,
+    val finish: () -> Unit,
+)
 
 /**
  * Resume or Finish for [recovery]'s session, called [workoutName] (the user's, verbatim). Nothing
  * dismisses it but an answer: one session at a time, and this one is still open (#295). [failure] is
- * why the disk refused a Finish.
+ * why the disk refused a Finish. [inert] while an answer is under way: both buttons disabled, so a
+ * second tap can't land, and a screen reader says so rather than offering two that do nothing.
  */
 @Composable
 fun RecoveryDialog(
     recovery: RunnerRecovery.Finishable,
     workoutName: String,
     failure: String?,
-    onResume: () -> Unit,
-    onFinish: () -> Unit,
+    inert: Boolean,
+    answers: RecoveryAnswers,
 ) {
     val resumable = recovery is RunnerRecovery.Prompt
     val body =
@@ -98,12 +104,22 @@ fun RecoveryDialog(
             workoutName,
         )
     val refused = failure?.let { stringResource(R.string.common_saveFailed, it) }
-    val finish = DialogAction(stringResource(R.string.session_recovery_finish), onFinish)
+    val finish =
+        DialogAction(stringResource(R.string.session_recovery_finish), enabled = !inert, onClick = answers.finish)
     KettleAlertDialog(
         title = stringResource(R.string.session_recovery_title),
         body = listOfNotNull(body, refused).joinToString("\n\n"),
         onDismissRequest = null,
-        confirm = if (resumable) DialogAction(stringResource(R.string.session_recovery_resume), onResume) else finish,
+        confirm =
+            if (resumable) {
+                DialogAction(
+                    stringResource(R.string.session_recovery_resume),
+                    enabled = !inert,
+                    onClick = answers.resume,
+                )
+            } else {
+                finish
+            },
         dismiss = finish.takeIf { resumable },
     )
 }

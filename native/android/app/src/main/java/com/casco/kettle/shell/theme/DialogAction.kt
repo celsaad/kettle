@@ -7,11 +7,15 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.window.DialogProperties
 
-/** One of a dialog's buttons: its words and what it does. */
+/** One of a dialog's buttons: its words and what it does, or, not [enabled], that it does nothing now. */
 internal data class DialogAction(
     val label: String,
+    val enabled: Boolean,
     val onClick: () -> Unit,
-)
+) {
+    // Enabled, the usual case, keeping `DialogAction(label) { … }` and `DialogAction(label, onClick)`.
+    constructor(label: String, onClick: () -> Unit) : this(label, true, onClick)
+}
 
 /**
  * An alert in Kettle's surfaces rather than Material's defaults, which aren't Kettle's palette and
@@ -33,8 +37,23 @@ internal fun KettleAlertDialog(
         onDismissRequest = onDismissRequest ?: {},
         title = { Text(title) },
         text = { Text(body) },
-        confirmButton = { TextButton(confirm.onClick, colors = buttons) { Text(confirm.label) } },
-        dismissButton = dismiss?.let { { TextButton(it.onClick, colors = buttons) { Text(it.label) } } },
+        confirmButton = {
+            TextButton(
+                confirm.onClick,
+                enabled = confirm.enabled,
+                colors = buttons,
+            ) { Text(confirm.label) }
+        },
+        dismissButton =
+            dismiss?.let {
+                {
+                    TextButton(
+                        it.onClick,
+                        enabled = it.enabled,
+                        colors = buttons,
+                    ) { Text(it.label) }
+                }
+            },
         containerColor = colors.backgroundElement,
         titleContentColor = colors.text,
         textContentColor = colors.textSecondary,

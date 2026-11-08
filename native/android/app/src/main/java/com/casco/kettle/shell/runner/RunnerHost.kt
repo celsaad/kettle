@@ -69,7 +69,23 @@ object RunnerHost {
 
     internal val visible: Boolean get() = runnerVisible
 
+    /**
+     * The service's clock, anchored on `elapsedRealtime()` (`ClockAnchor`), which the screen draws its
+     * seconds from too: on the plain wall clock, a network time correction mid-session showed a rest at
+     * 0:00 for as long as the correction before it ended, or ended it with time still showing. The wall
+     * clock while no service runs, when there's nothing timed to draw.
+     */
+    @Volatile var now: () -> Long = System::currentTimeMillis
+        internal set
+
+    /**
+     * A completion only ever follows a session that's active or already complete, so one arriving while
+     * the host is Idle is stale: the finish backup's answer, republishing the completion with its
+     * outcome after Done dismissed it. Kept, it put the old completion back, and the next runner opened
+     * on that rather than on its own start (#317's review; the likely cause of a Done that stuck).
+     */
     internal fun publish(view: RunnerView) {
+        if (view is RunnerView.Completed && views.value == RunnerView.Idle) return
         views.value = view
     }
 }

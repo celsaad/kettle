@@ -196,10 +196,10 @@ private fun rememberSecond(view: RunnerView): Long {
             else -> 0L
         }
     val ticking = view is RunnerView.Active
-    return produceState(System.currentTimeMillis(), offset, ticking) {
-        value = System.currentTimeMillis()
+    return produceState(RunnerHost.now(), offset, ticking) {
+        value = RunnerHost.now()
         while (ticking) {
-            val now = System.currentTimeMillis()
+            val now = RunnerHost.now()
             value = now
             delay(MS_PER_SECOND - Math.floorMod(now - offset, MS_PER_SECOND))
         }

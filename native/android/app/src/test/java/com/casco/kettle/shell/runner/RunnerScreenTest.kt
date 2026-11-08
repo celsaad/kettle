@@ -615,6 +615,7 @@ class RunnerScreenTest {
     @Test
     fun `the body is hidden from a reader under Coming up`() {
         show(running(plan(block(squat))))
+        compose.onNodeWithText("Série 1 de 2 · meta 5").assertExists()
         button("Pernas").performClick()
         compose.onNodeWithText("A SEGUIR").assertExists()
         compose.onNodeWithText("Série 1 de 2 · meta 5").assertDoesNotExist()
@@ -655,7 +656,7 @@ class RunnerScreenTest {
     // announcements
 
     @Test
-    fun `each step announces once in the reader's language, a hold its end and a rest its configured seconds`() {
+    fun `a step's announcement is in the reader's language, a hold's its end and a rest's its configured seconds`() {
         val resources = compose.activity.resources
         val hold = buildSteps(Workout("w", "W", listOf(block(plank))), exercises).first() as RunnerStep.Hold
         assertEquals("Prancha, série 1 de 2, segure 30 segundos", resources.announcement(hold))

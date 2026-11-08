@@ -116,6 +116,22 @@ class RunnerSessionTest {
     }
 
     @Test
+    fun `ends a step whose end wake was lost, on the next thing that happens`() {
+        // Seen on the S25+ (#306): an end wake never ran and the session sat on 0:00. With every timer
+        // lost and the step long past its end, a pause and resume reschedules, and that wakes at once.
+        val session = session(planOf(ROW)).apply { begin() }
+        loop.advanceBy(3000)
+        loop.dropPending()
+        loop.now += 70_000
+
+        session.send(RunnerCommand.TogglePause)
+        session.send(RunnerCommand.TogglePause)
+        loop.advanceBy(0)
+
+        assertTrue("still ${views.last()}", view is RunnerView.Completed)
+    }
+
+    @Test
     fun `completes by itself when the workout's last step is a countdown that ends`() {
         // Seen on the S25+ (#306): the last HIIT round of Foundations · Push sat at 0:00 for good.
         session(planOf(BURPEES)).begin()

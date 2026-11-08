@@ -25,7 +25,6 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.expand
 import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -120,12 +119,9 @@ private fun WorkoutName(
     Row(
         modifier
             .heightIn(min = MinTarget)
-            .clickable(role = Role.Button, onClick = openUpcoming)
+            // The hint as the click's own label: a second onClick in semantics lost to the clickable's.
+            .clickable(role = Role.Button, onClickLabel = hint, onClick = openUpcoming)
             .semantics {
-                onClick(label = hint) {
-                    openUpcoming()
-                    true
-                }
                 if (!upcomingOpen) {
                     expand {
                         openUpcoming()

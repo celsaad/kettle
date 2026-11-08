@@ -44,7 +44,7 @@ object RunnerHost {
         start: RunnerStart?,
         anyway: Boolean = false,
     ) {
-        if (active != null) return
+        if (active != null || LaunchRecovery.state.value != null) return
         ContextCompat.startForegroundService(context, RunnerService.startIntent(context, start, anyway))
     }
 
@@ -83,11 +83,16 @@ object RunnerHost {
      * A completion only ever follows a session that's active or already complete, so one arriving while
      * the host is Idle is stale: the finish backup's answer, republishing the completion with its
      * outcome after Done dismissed it. Kept, it put the old completion back, and the next runner opened
-     * on that rather than on its own start (#317's review; the likely cause of a Done that stuck).
+     * on that rather than on its own start (#317's review; the likely cause of a Done that stuck). Only
+     * that answer, which carries an outcome: a completion still pending can follow Idle, when a resume
+     * after process death finds the last step ran out during the kill (#307).
      */
     internal fun publish(view: RunnerView) {
         // In one step: this runs on the runner's thread and dismiss() on the main one, and a separate read
         // and write let a Done land between them and the stale completion back in.
-        views.update { if (view is RunnerView.Completed && it == RunnerView.Idle) it else view }
+        views.update { if (view.isBackupAnswer() && it == RunnerView.Idle) it else view }
     }
 }
+
+/** The finish backup's republished completion, the one kind that can only ever follow the session. */
+private fun RunnerView.isBackupAnswer() = this is RunnerView.Completed && backup != FinishBackupState.PENDING

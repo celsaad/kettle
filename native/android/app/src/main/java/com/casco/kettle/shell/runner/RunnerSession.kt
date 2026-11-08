@@ -41,11 +41,27 @@ class RunnerSession(
     /** Left before the count-in was over, or before it had begun, which a late [begin] mustn't undo. */
     private var abandoned = false
 
-    fun begin() =
+    /**
+     * Counts in, or with [rebuilt], picks up a session the process died under (#307): `resumeRunner`'s,
+     * already caught up and paused, so there's no count-in, and its effects (a rest that ran out, or the
+     * whole session ending during the kill) are carried out as any transition's are.
+     */
+    fun begin(rebuilt: RunnerTransition? = null) =
         loop.post {
             if (abandoned) return@post
-            countIn = CountIn(now())
-            countInStep()
+            if (rebuilt == null) {
+                countIn = CountIn(now())
+                countInStep()
+                return@post
+            }
+            if (state != null || countIn != null) return@post
+            try {
+                settle(rebuilt)
+            } catch (
+                @Suppress("TooGenericExceptionCaught") e: Exception,
+            ) {
+                Log.w(TAG, "Couldn't resume the session", e)
+            }
         }
 
     fun send(command: RunnerCommand) = loop.post { apply(command) }

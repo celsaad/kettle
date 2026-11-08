@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.ComposeView
 import com.casco.kettle.shell.files.LocalLatestFiles
+import com.casco.kettle.shell.runner.RecoveryPrompt
 
 /**
  * The app's chrome around the one RN surface (Q3 in docs/native-migration-plan.md): the destinations
@@ -85,7 +86,16 @@ class ShellLayout(
         addView(content, LayoutParams(MATCH_PARENT, 0, 1f))
         this.sheet = sheet(content, this)
         // Wrapping its content, so the bar takes no room at all while RN has something above the tabs.
-        val bar = composeView { theme { if (navigator.barShown) TabBar(navigator.current, navigator::select) } }
+        // The launch's Resume / Finish prompt (#307) rides in the bar's view, the one Compose view never
+        // hidden, so whether it shows can't hang on which layer does. The dialog is a window of its own,
+        // over every layer.
+        val bar =
+            composeView {
+                theme {
+                    if (navigator.barShown) TabBar(navigator.current, navigator::select)
+                    RecoveryPrompt()
+                }
+            }
         addView(bar, LayoutParams(MATCH_PARENT, WRAP_CONTENT))
     }
 

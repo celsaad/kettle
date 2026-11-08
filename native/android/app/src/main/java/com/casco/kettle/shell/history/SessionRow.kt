@@ -154,7 +154,10 @@ private fun Detail(
         // Delete never reads as the intended action.
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
             Spacer(Modifier.weight(1f))
-            TextAction(stringResource(R.string.common_delete), KettleType.small, colors.textSecondary, actions.delete)
+            // Hidden on the row the runner's service is writing (#295): the next set logged would write it back.
+            actions.delete?.let {
+                TextAction(stringResource(R.string.common_delete), KettleType.small, colors.textSecondary, it)
+            }
             // Hidden rather than disabled while a session runs: the runner owns that file and writes
             // through its own copy, so an edit made here would be lost at the next set logged.
             if (row.editable) {

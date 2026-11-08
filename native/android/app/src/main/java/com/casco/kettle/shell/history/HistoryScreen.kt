@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -54,6 +55,8 @@ import com.casco.kettle.shell.nav.Tab
 import com.casco.kettle.shell.rn.FileKind
 import com.casco.kettle.shell.rn.JsBridge
 import com.casco.kettle.shell.rn.Stacking
+import com.casco.kettle.shell.runner.RunnerHost
+import com.casco.kettle.shell.runner.RunnerView
 import com.casco.kettle.shell.theme.DialogAction
 import com.casco.kettle.shell.theme.KettleAlertDialog
 import com.casco.kettle.shell.theme.KettleTheme
@@ -73,6 +76,7 @@ fun HistoryRoute() {
     val files = LocalLatestFiles.current
     val share = rememberFileShare()
     val scope = rememberCoroutineScope()
+    val runner by RunnerHost.view.collectAsState()
     HistoryScreen(
         files,
         TimeZone.currentSystemDefault(),
@@ -89,6 +93,7 @@ fun HistoryRoute() {
             },
             sessionsChanged = { JsBridge.filesChanged(FileKind.SESSIONS) },
         ),
+        runningId = (runner as? RunnerView.Running)?.session?.id,
     )
 }
 
@@ -112,6 +117,8 @@ class HistoryActions(
  * file; nothing else that writes the log can be on screen with History (#187), so nothing is guarded.
  *
  * [reselected] carries taps on the tab already showing; one on History scrolls back to the top.
+ * [runningId] is the session the native runner's service is writing, whose row offers no Delete: one
+ * writer while a session runs (#295), and its next set would write the file back anyway.
  */
 @Composable
 fun HistoryScreen(
@@ -119,6 +126,7 @@ fun HistoryScreen(
     zone: TimeZone,
     reselected: Flow<Tab>,
     actions: HistoryActions,
+    runningId: String? = null,
 ) {
     val log = files.sessionLog
     val library = files.library ?: EmptyLibrary
@@ -165,7 +173,9 @@ fun HistoryScreen(
                     name = listing.nameOf(row),
                     expanded = expandedId == row.id,
                     failure = deleting.failure?.takeIf { it.id == row.id }?.reason,
-                    rowActions(row, actions, deleting) { expandedId = if (expandedId == row.id) null else row.id },
+                    rowActions(row, actions, deleting, deletable = row.id != runningId) {
+                        expandedId = if (expandedId == row.id) null else row.id
+                    },
                 )
             }
             // No first-run half: an empty log is what a new install is, and the line above already
@@ -211,10 +221,10 @@ private data class MatchCount(
     val total: Int,
 )
 
-/** What a row's controls do, bound to its session by the screen. */
+/** What a row's controls do, bound to its session by the screen. [delete] null offers none. */
 internal class RowActions(
     val toggle: () -> Unit,
-    val delete: () -> Unit,
+    val delete: (() -> Unit)?,
     val edit: () -> Unit,
     val export: () -> Unit,
 )
@@ -224,13 +234,14 @@ private fun rowActions(
     row: HistorySessionView,
     actions: HistoryActions,
     deleting: Deleting,
+    deletable: Boolean,
     toggle: () -> Unit,
 ) = RowActions(
     toggle = {
         toggle()
         deleting.dismissFailure(row.id)
     },
-    delete = { deleting.confirming = row },
+    delete = { deleting.confirming = row }.takeIf { deletable },
     edit = { actions.open(Stacking.Push, "/session-editor", mapOf("id" to row.id)) },
     export = { actions.export(row.id) },
 )

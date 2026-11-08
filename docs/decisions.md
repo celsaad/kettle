@@ -897,6 +897,26 @@ decision assembled across several commits. Open work belongs in the sections at 
   editor built from the view sends corrections to whatever sits at that offset. (RN also had to apply
   removals back to front; native writes the edited session whole, once, so that one went with it.)
 
+- ✅ **The native runner keeps a private state file, and a session killed under it is Finished, not
+  left unfinished.** (Native M6, settled on #295, landed in #307.) The session file can't rebuild a
+  running session: it has no step index, circuit position, pause state or per-set timestamps, zero
+  sets are never written, and swaps and ad-hoc additions leave no trace in it. So the runner's service
+  also writes its snapshot as versioned JSON, one file per session under app-private, no-backup
+  storage (`runner/<session id>.json`), and deletes it when the session ends. Two decisions follow
+  from it, and both outlive any one commit:
+
+  - **The state file is outside the migration plan's "Not doing" rule** on file layout and format.
+    That rule protects files the user owns: the library and the log they export, share and back up.
+    The state file is the app's own disposable working state, never exported or backed up, and gone
+    once its session ends. A future file of the same kind gets the same answer; a file the user could
+    reach does not.
+  - **After a kill, the launch asks Resume or Finish, and Finish *finishes*.** It stamps `ended_at`
+    with the snapshot's last write (or, when the snapshot is unreadable, the session file's mtime) and
+    counts toward stats and records, rather than leaving an unfinished row in History. Keeping a
+    declined snapshot around as `declined`, so #281 could later resume it exactly, was considered and
+    rejected: it breaks the disposable boundary, and abandoned snapshots would pile up. Sessions the
+    RN runner stranded have no snapshot, get no prompt and no sweep, and stay unfinished for #281.
+
 - ✅ **A program's rest day clears itself by elapsed calendar days, and stores nothing.** A week with
   `rest_day: true` holds a place in the rotation but is never run, so — unlike every other slot —
   *nothing about it is ever logged*. That breaks the assumption the whole scheduler rests on:

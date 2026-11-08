@@ -637,7 +637,9 @@ class RunnerTimingTest {
     @Nested
     inner class NextWake {
         private fun Runner.sleepUntil(end: Long) {
-            while (true) {
+            // Stops at the finish as the service does (`RunnerSession.settle`): a finished session's
+            // snapshot still holds its last step, which reads as overdue and would wake at once for ever.
+            while (!state.finished) {
                 val wake = nextTimeUpdateAt(snapshot, now) ?: return
                 if (wake > end) return
                 now = wake

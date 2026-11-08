@@ -33,4 +33,12 @@ class RunnerHostTest {
 
         assertEquals(FinishBackupState.FAILED, (RunnerHost.view.value as RunnerView.Completed).backup)
     }
+
+    @Test
+    fun `shows a completion straight from Idle, as a resume whose last step ran out during the kill`() {
+        // Process death (#307): the rebuilt session is complete before it ever showed as running.
+        RunnerHost.publish(completed)
+
+        assertEquals(completed, RunnerHost.view.value)
+    }
 }

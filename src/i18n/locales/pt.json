@@ -395,6 +395,13 @@
       "reps": "{{name}}, série {{index}} de {{total}}, alvo {{target}} repetições",
       "interval": "{{name}}, {{index}} de {{total}}, {{seconds}} segundos",
       "rest": "Descanso, {{seconds}} segundos"
+    },
+    "recovery": {
+      "title": "Treino interrompido",
+      "resumeBody": "{{workout}} ainda estava em andamento quando o Kettle fechou. Continue-o, pausado onde você parou, ou encerre-o com o que você registrou.",
+      "finishOnlyBody": "{{workout}} ainda estava em andamento quando o Kettle fechou e não pode ser continuado de onde parou. Encerre-o para manter o que você registrou.",
+      "resume": "Continuar",
+      "finish": "Encerrar"
     }
   },
   "settings": {

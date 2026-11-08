@@ -40,6 +40,8 @@ sealed interface SessionFile {
 sealed interface RunnerRecovery {
     /** What a Finish from the prompt writes: the session file as it stands, stamped ended at [finished]'s time. */
     sealed interface Finishable : RunnerRecovery {
+        /** The session file as the service last wrote it. */
+        val session: Session
         val finished: Session
     }
 
@@ -50,14 +52,14 @@ sealed interface RunnerRecovery {
      */
     data class Prompt(
         val snapshot: RunnerSnapshot,
-        val session: Session,
+        override val session: Session,
     ) : Finishable {
         override val finished: Session get() = session.copy(endedAt = isoInstant(snapshot.updatedAt))
     }
 
     /** The state file can't be resumed, but the session can still be finished, as of its file's last write. */
     data class FinishOnly(
-        val session: Session,
+        override val session: Session,
         val modifiedAt: Long,
     ) : Finishable {
         override val finished: Session get() = session.copy(endedAt = isoInstant(modifiedAt))
@@ -154,4 +156,55 @@ private fun caughtUp(
     if (snapshot.step !is RunnerStep.Rest || clock.paused || restEnd >= now) return reduceRunner(state, update, now)
     val ended = reduceRunner(state, update, restEnd)
     return if (ended.state.finished) ended else RunnerTransition(seeded(ended.state, now), ended.effects)
+}
+
+/**
+ * The start [session] was written from, read back: what [startRunner] stamps on the file, inverted. A
+ * program week where the file names one, the workout where it names only that, and ad hoc for neither.
+ */
+fun recoveredStart(session: Session): RunnerStart {
+    val program = session.program
+    val week = session.programWeek
+    val workout = session.workout
+    return when {
+        program != null && week != null -> {
+            RunnerStart.Planned(
+                SessionParams.ProgramSlot(program, week, session.programDay),
+            )
+        }
+
+        workout != null -> {
+            RunnerStart.Planned(SessionParams.Workout(workout))
+        }
+
+        else -> {
+            RunnerStart.Adhoc
+        }
+    }
+}
+
+/**
+ * What a Resume runs: [snapshot]'s steps, which are the truth once a session has started (#297), with
+ * the workout's name and the exercises its pickers offer resolved from [library] as it is now. A
+ * workout that no longer resolves, deleted or edited down to nothing runnable, keeps the library's
+ * name, or its id for one, as History names it (`workoutNameFor`), rather than turning into an ad-hoc
+ * session; its pickers then offer the whole library.
+ */
+fun resumedPlan(
+    session: Session,
+    snapshot: RunnerSnapshot,
+    library: Library,
+): RunnerPlan.Runnable {
+    val resolved =
+        when (val plan = resolveRunnerPlan(recoveredStart(session), library)) {
+            is RunnerPlan.Runnable -> plan
+            is RunnerPlan.TooLong -> plan.plan
+            else -> null
+        }
+    val workout =
+        resolved?.workout
+            ?: session.workout?.let { id ->
+                library.workouts.firstOrNull { it.id == id } ?: Workout(id, id, emptyList())
+            }
+    return RunnerPlan.Runnable(workout, resolved?.exercises ?: library.exercises, snapshot.steps)
 }

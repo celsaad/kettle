@@ -40,7 +40,7 @@ class RunnerEffectsTest {
     private val alerts = mutableListOf<Pair<StepEndAlert, Boolean>>()
     private var soundsOn = true
     private var failWrites = false
-    private val stateFile by lazy { RunnerStateFile(folder.root.resolve("runner-state.json"), loop) }
+    private val stateFile by lazy { RunnerStateFile(folder.root.resolve("runner"), loop) }
 
     private val effects by lazy {
         RunnerEffects(
@@ -69,7 +69,7 @@ class RunnerEffectsTest {
     }
 
     private fun saved(): RunnerSnapshot? =
-        stateFile.file.takeIf { it.exists() }?.let {
+        stateFile.dir.listFiles().orEmpty().singleOrNull()?.let {
             (
                 decodeRunnerSnapshot(
                     it.readText(),
@@ -172,11 +172,11 @@ class RunnerEffectsTest {
     @Test
     fun `keeps the session running when the state file can't be written`() {
         val blocked = folder.newFile("not-a-dir")
-        val file = RunnerStateFile(blocked.resolve("runner-state.json"), loop)
+        val file = RunnerStateFile(blocked.resolve("runner"), loop)
         val start = started(PULLUPS)
         file.save(start.state.snapshot, debounce = false)
 
-        assertFalse(file.file.exists())
+        assertFalse(file.written())
     }
 
     @Test

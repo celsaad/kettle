@@ -80,3 +80,6 @@ internal fun started(
     vararg exercises: Exercise,
     now: Long = T0,
 ): RunnerTransition = startRunner(planOf(*exercises), null, now)
+
+/** Whether a state file has been written and not since deleted, for whichever session. */
+internal fun RunnerStateFile.written(): Boolean = dir.listFiles().orEmpty().any { sessionIdOfStateFile(it) != null }

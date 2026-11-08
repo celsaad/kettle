@@ -37,8 +37,10 @@ import com.casco.kettle.shell.rn.ExpoActivityListeners
 import com.casco.kettle.shell.rn.JsBridge
 import com.casco.kettle.shell.rn.RnFrames
 import com.casco.kettle.shell.rn.withViewAction
+import com.casco.kettle.shell.runner.LaunchRecovery
 import com.casco.kettle.shell.runner.RunnerHost
 import com.casco.kettle.shell.runner.RunnerService
+import com.casco.kettle.shell.runner.runnerStateDir
 import com.casco.kettle.shell.settings.backUpFinishedSession
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.PreferredKettleTheme
@@ -117,6 +119,7 @@ class MainActivity :
         // RN's library load only parses from the library flip (#245), so native seeds and repairs first
         // (#221).
         LibraryGate.awaitPrepared(this)
+        recoverRunner(paths)
         // What showReactNativeFragment does, minus the fragment: the surface is
         // one view for the whole app, which ShellLayout places.
         ReactNativeHostManager.shared.initialize(application)
@@ -165,8 +168,9 @@ class MainActivity :
         val sheet = layout.sheet.also { this.sheet = it }
         // After RN's own, so it comes first while the sheet is up: the predictive shrink is the sheet's.
         onBackPressedDispatcher.addCallback(this, sheet.backCallback)
-        val opensRunner = intent.takeOpenRunner()
-        listenToJs(sheet, latestFiles) { if (opensRunner) attachRunner(navigator.runnerShown) }
+        // Any launch with the service alive attaches, the shade notification's tap or not (#297): a Recents
+        // swipe leaves the session running, and the relaunch comes back to it with no prompt.
+        listenToJs(sheet, latestFiles) { attachRunner(navigator.runnerShown) }
         setContentView(layout)
         JsBridge.attach()
         expoListeners.onContentShown()
@@ -255,6 +259,26 @@ class MainActivity :
     }
 }
 
+/**
+ * After the library is ready and before any screen can start a session (#307): with no service
+ * running, a session the process died under puts up the Resume / Finish prompt, and what the dead
+ * service left in the shade goes. Two small reads, like the library gate's.
+ *
+ * Once per process: a dead service's leftovers can only meet a fresh process, and an activity made
+ * again later could land while a service is starting and not yet showing, which a clear would stop.
+ */
+private fun Activity.recoverRunner(paths: StoragePaths) {
+    if (!nativeRunnerDrawn || runnerRecovered) return
+    runnerRecovered = true
+    val app = applicationContext
+    LaunchRecovery.recoverAtLaunch(runnerStateDir(noBackupFilesDir), paths.sessions) {
+        RunnerService.clearAfterDeath(app)
+    }
+}
+
+/** Whether this process has run [recoverRunner]: on the main thread only, as onCreate is. */
+private var runnerRecovered = false
+
 /** The files read again as this activity starts and stops. */
 private fun LifecycleOwner.rereadOnStartAndStop(files: LatestFiles) =
     lifecycle.addObserver(
@@ -271,7 +295,7 @@ private fun LifecycleOwner.rereadOnStartAndStop(files: LatestFiles) =
         },
     )
 
-/** Whether [this] is the runner's shade notification's tap, read once: a recreated activity doesn't reopen it. */
+/** Whether [this] is the runner's shade notification's tap, taken off the intent so it acts once. */
 private fun Intent.takeOpenRunner(): Boolean {
     val opens = getBooleanExtra(RunnerService.EXTRA_OPEN_RUNNER, false)
     removeExtra(RunnerService.EXTRA_OPEN_RUNNER)
@@ -279,9 +303,9 @@ private fun Intent.takeOpenRunner(): Boolean {
 }
 
 /**
- * The runner's shade notification was tapped (#297): back to the running session, through the one way
- * in, which attaches and ignores the start. Nothing when the runner already shows ([runnerShown]), or
- * when the session ended in between.
+ * Back to the running session (#297), on a launch with the service alive or the shade notification's
+ * tap: through the one way in, which attaches and ignores the start. Nothing when the runner already
+ * shows ([runnerShown]), or when no session is running.
  */
 private fun attachRunner(runnerShown: Boolean) {
     val active = RunnerHost.active

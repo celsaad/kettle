@@ -66,7 +66,10 @@ class HistoryScreenTest {
     private var sessionsChanged = 0
     private val reselects = MutableSharedFlow<Tab>(extraBufferCapacity = 1)
 
-    private fun show(files: Files = Files(push, legs)) {
+    private fun show(
+        files: Files = Files(push, legs),
+        runningId: String? = null,
+    ) {
         val latest =
             LatestFiles(files, CoroutineScope(Dispatchers.Unconfined), io = Dispatchers.Unconfined).apply { reread() }
         compose.setContent {
@@ -80,6 +83,7 @@ class HistoryScreenTest {
                         export = { exported += it },
                         sessionsChanged = { sessionsChanged += 1 },
                     ),
+                    runningId,
                 )
             }
         }
@@ -299,6 +303,20 @@ class HistoryScreenTest {
 
         action("Excluir").assertExists()
         action("Editar").assertDoesNotExist()
+    }
+
+    // One writer while a session runs (#295): the service writes that file, and a delete from here would
+    // come back at the next set logged. An unfinished row nothing is writing, as RN left them, keeps it.
+    @Test
+    fun `offers no Delete on the session the runner is writing`() {
+        show(Files(push.copy(endedAt = null), legs.copy(endedAt = null)), runningId = push.id)
+
+        row("Push day").performClick()
+        action("Excluir").assertDoesNotExist()
+        action("Exportar").assertExists()
+
+        row("Leg day").performClick()
+        action("Excluir").assertExists()
     }
 
     /** Export shares one session, or the whole log from the header (`FileShare`, #238). */

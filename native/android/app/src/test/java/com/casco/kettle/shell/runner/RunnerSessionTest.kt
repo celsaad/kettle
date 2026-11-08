@@ -3,8 +3,13 @@ package com.casco.kettle.shell.runner
 import com.casco.kettle.domain.RunnerCommand
 import com.casco.kettle.domain.RunnerCue
 import com.casco.kettle.domain.RunnerPlan
+import com.casco.kettle.domain.RunnerRecovery
 import com.casco.kettle.domain.RunnerStep
 import com.casco.kettle.domain.Session
+import com.casco.kettle.domain.SnapshotRead
+import com.casco.kettle.domain.decodeRunnerSnapshot
+import com.casco.kettle.domain.resumeRunner
+import com.casco.kettle.domain.startRunner
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -31,7 +36,7 @@ class RunnerSessionTest {
     private var backups = 0
     private var failCues = false
     private var failClock = false
-    private val stateFile by lazy { RunnerStateFile(folder.root.resolve("runner-state.json"), loop) }
+    private val stateFile by lazy { RunnerStateFile(folder.root.resolve("runner"), loop) }
 
     private fun session(plan: RunnerPlan.Runnable = planOf(PLANK, PULLUPS)) =
         RunnerSession(
@@ -71,12 +76,12 @@ class RunnerSessionTest {
         assertTrue(view is RunnerView.CountingIn)
         loop.advanceBy(2999)
         assertTrue(written.isEmpty())
-        assertFalse(stateFile.file.exists())
+        assertFalse(stateFile.written())
 
         loop.advanceBy(1)
         assertEquals(listOf(RunnerCue.TICK, RunnerCue.TICK, RunnerCue.TICK, RunnerCue.EXERCISE_CHANGE), cues)
         assertEquals(1, written.size)
-        assertTrue(stateFile.file.exists())
+        assertTrue(stateFile.written())
         assertTrue(step is RunnerStep.Hold)
     }
 
@@ -90,7 +95,7 @@ class RunnerSessionTest {
         loop.advanceBy(10_000)
         assertEquals(RunnerView.Idle, view)
         assertTrue(written.isEmpty())
-        assertFalse(stateFile.file.exists())
+        assertFalse(stateFile.written())
     }
 
     @Test
@@ -201,7 +206,7 @@ class RunnerSessionTest {
         assertTrue(completed.session.endedAt != null)
         assertEquals(1, backups)
         assertEquals(0, loop.scheduled)
-        assertFalse(stateFile.file.exists())
+        assertFalse(stateFile.written())
 
         session.backedUp(failed = true)
         assertEquals(FinishBackupState.FAILED, (view as RunnerView.Completed).backup)
@@ -227,5 +232,43 @@ class RunnerSessionTest {
         assertEquals(RunnerView.Idle, view)
         assertTrue(written.isEmpty())
         assertEquals(0, loop.scheduled)
+    }
+
+    /** The launch's Resume (#307): [plan]'s session, as the service left it at T0, rebuilt [awayMs] later. */
+    private fun resumed(
+        plan: RunnerPlan.Runnable,
+        awayMs: Long,
+    ): RunnerSession {
+        val dead = startRunner(plan, null, T0).state
+        stateFile.save(dead.snapshot, debounce = false)
+        loop.advanceBy(awayMs)
+        val session = session(plan)
+        session.begin(resumeRunner(RunnerRecovery.Prompt(dead.snapshot, dead.session), loop.now))
+        loop.advanceBy(0)
+        return session
+    }
+
+    @Test
+    fun `resumes a rebuilt session paused, with no count-in, its state file rewritten`() {
+        resumed(planOf(PLANK, PULLUPS), awayMs = 5_000)
+
+        val running = view as RunnerView.Running
+        assertTrue(running.snapshot.clock.paused)
+        assertTrue(views.none { it is RunnerView.CountingIn })
+        assertTrue(cues.isEmpty())
+        val saved = decodeRunnerSnapshot(runnerStateFileFor(stateFile.dir, running.snapshot.sessionId).readText())
+        assertEquals(running.snapshot, (saved as SnapshotRead.Read).snapshot)
+
+        loop.advanceBy(600_000) // paused: nothing ends by itself
+        assertEquals(running.snapshot.stepIndex, (view as RunnerView.Running).snapshot.stepIndex)
+    }
+
+    @Test
+    fun `completes a resumed session whose last step ran out during the kill`() {
+        resumed(planOf(ROW), awayMs = 600_000)
+
+        assertTrue(view is RunnerView.Completed)
+        assertEquals(1, backups)
+        assertFalse(stateFile.written())
     }
 }

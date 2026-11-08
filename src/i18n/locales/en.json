@@ -372,6 +372,13 @@
       "reps": "{{name}}, set {{index}} of {{total}}, target {{target}} reps",
       "interval": "{{name}}, {{index}} of {{total}}, {{seconds}} seconds",
       "rest": "Rest, {{seconds}} seconds"
+    },
+    "recovery": {
+      "title": "Workout interrupted",
+      "resumeBody": "{{workout}} was still running when Kettle closed. Resume it, paused where you left off, or finish it with what you've logged.",
+      "finishOnlyBody": "{{workout}} was still running when Kettle closed, and can't be picked up where it stopped. Finish it to keep what you've logged.",
+      "resume": "Resume",
+      "finish": "Finish"
     }
   },
   "settings": {

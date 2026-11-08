@@ -333,6 +333,18 @@ class RunnerScreenTest {
         assertEquals(RunnerCommand.Advance(resting.snapshot.visit), sent.last())
     }
 
+    // A resume after process death lands paused (#307), and a rest has no Pause of its own: frozen with
+    // nothing to unfreeze it but Skip, as it was on the S25+.
+    @Test
+    fun `a paused rest offers Resume in place of +30s`() {
+        val paused = started(plan(block(squat))).advanced().after(RunnerCommand.TogglePause)
+        show(running(plan(block(squat)), paused))
+        button("+30s").assertDoesNotExist()
+        button("Continuar").performClick()
+        assertEquals(RunnerCommand.TogglePause, sent.last())
+        button("Pular descanso →").assertExists()
+    }
+
     // the number pad
 
     @Test

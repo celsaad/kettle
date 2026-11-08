@@ -65,16 +65,26 @@ fun RunnerScreen(
 ) {
     var overlays by remember { mutableStateOf(RunnerOverlays()) }
     var pad by remember { mutableStateOf<PadRequest?>(null) }
-    var confirming by remember { mutableStateOf(false) }
+    // The visit "Finish session?" was asked on: like the overlays, it closes once that step is left, so
+    // a rest ending under it can't have Finish log the next step's seeded target as a set (#317's review).
+    var confirmingAt by remember { mutableStateOf<Long?>(null) }
     val running = (entry as? RunnerEntry.Attach)?.view as? RunnerView.Running
     // Bound to the step they opened on: once the visit moves, by a tap or by the step's own clock,
     // they are gone, and stay gone if Prev comes back to it.
     // The swap picker too once there's nothing left to swap to: it draws nothing then, and left marked
     // open it would keep the body hidden from a reader and take the next back for a sheet nobody sees.
     val open = running?.let { overlays.on(it.snapshot.visit).withoutDeadSwap(it) } ?: RunnerOverlays()
-    SideEffect { if (open != overlays) overlays = open }
+    val confirming = confirmingAt != null && confirmingAt == running?.snapshot?.visit
+    SideEffect {
+        if (open != overlays) overlays = open
+        if (!confirming && confirmingAt != null) confirmingAt = null
+    }
+    // Read when asked, not when composed: a lambda holding an earlier composition's view would bind the
+    // dialog to a visit already left, and it would close as it opened.
+    val current by rememberUpdatedState(running)
+    val askToFinish = { confirmingAt = current?.snapshot?.visit }
     val close = { overlay: Overlay -> overlays = overlays.close(overlay) }
-    RunnerBack(entry, { visit -> overlays.on(visit).open }, close, { confirming = true }, actions)
+    RunnerBack(entry, { visit -> overlays.on(visit).open }, close, askToFinish, actions)
     val controlsFor = { view: RunnerView.Running ->
         StepControls(
             send = actions.send,
@@ -83,7 +93,7 @@ fun RunnerScreen(
                 pad = it
                 overlays = overlays.open(Overlay.PAD, view.snapshot.visit)
             },
-            confirmFinish = { confirming = true },
+            confirmFinish = askToFinish,
             adopt = { id, kg ->
                 actions.send(RunnerCommand.SetWeight(kg))
                 actions.adopt(id, kg)
@@ -104,8 +114,8 @@ fun RunnerScreen(
         }
     }
     if (confirming && running != null) {
-        FinishDialog({ confirming = false }) {
-            confirming = false
+        FinishDialog({ confirmingAt = null }) {
+            confirmingAt = null
             actions.send(RunnerCommand.Finish)
         }
     }

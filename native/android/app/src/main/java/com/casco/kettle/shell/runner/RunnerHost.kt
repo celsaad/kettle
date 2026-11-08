@@ -7,6 +7,7 @@ import com.casco.kettle.domain.RunnerStart
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 
 /**
  * The running session, for the life of the process (#297): what the runner's screen observes and
@@ -64,7 +65,7 @@ object RunnerHost {
 
     /** The completion screen's Done: the session is behind us. */
     fun dismiss() {
-        if (views.value is RunnerView.Completed) views.value = RunnerView.Idle
+        views.update { if (it is RunnerView.Completed) RunnerView.Idle else it }
     }
 
     internal val visible: Boolean get() = runnerVisible
@@ -85,7 +86,8 @@ object RunnerHost {
      * on that rather than on its own start (#317's review; the likely cause of a Done that stuck).
      */
     internal fun publish(view: RunnerView) {
-        if (view is RunnerView.Completed && views.value == RunnerView.Idle) return
-        views.value = view
+        // In one step: this runs on the runner's thread and dismiss() on the main one, and a separate read
+        // and write let a Done land between them and the stale completion back in.
+        views.update { if (view is RunnerView.Completed && it == RunnerView.Idle) it else view }
     }
 }

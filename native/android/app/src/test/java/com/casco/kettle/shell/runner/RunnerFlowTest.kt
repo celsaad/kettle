@@ -60,6 +60,18 @@ class RunnerFlowTest {
     }
 
     @Test
+    fun `a route that attached never starts a session once it goes idle`() {
+        // #317's review: a notification tap or a relaunch attaches without asking, so after Done the
+        // route saw Idle with nothing asked, took that for a fresh start, and began a session nobody saw.
+        assertEquals(RunnerEntry.Waiting, runnerEntry(RunnerView.Idle, runnable, opened = false, answered = true))
+        // Nor does it draw its own start's Rest week over the hand-back.
+        assertEquals(
+            RunnerEntry.Waiting,
+            runnerEntry(RunnerView.Idle, RunnerPlan.RestWeek, opened = false, answered = true),
+        )
+    }
+
+    @Test
     fun `an unread library shows nothing yet`() {
         assertEquals(RunnerEntry.Loading, runnerEntry(RunnerView.Idle, null, opened = false))
     }

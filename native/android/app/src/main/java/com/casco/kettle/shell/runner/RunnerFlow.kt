@@ -35,16 +35,21 @@ sealed interface RunnerEntry {
  * route has asked the service already: `RunnerHost.active` is only set once the service publishes its
  * count-in, so without it a recomposition or a second tap in between would start a second session,
  * and the Idle a leave publishes before RN pops the route would start a new one.
+ *
+ * [answered] is whether this route has ever shown the service's session, asked for or attached to.
+ * One that attached, by a notification tap or a relaunch, asked nothing, so after its Done the Idle
+ * it sees must not read as a fresh start: that began a session nobody saw (#317's review).
  */
 fun runnerEntry(
     view: RunnerView,
     plan: RunnerPlan?,
     opened: Boolean,
+    answered: Boolean = false,
 ): RunnerEntry =
     when {
         view is RunnerView.Active -> RunnerEntry.Attach(view)
         view is RunnerView.Completed -> RunnerEntry.Complete(view)
-        opened -> RunnerEntry.Waiting
+        opened || answered -> RunnerEntry.Waiting
         plan == null -> RunnerEntry.Loading
         plan is RunnerPlan.Runnable -> RunnerEntry.Start
         else -> RunnerEntry.Before(plan)

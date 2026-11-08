@@ -47,10 +47,11 @@ fun RunnerRoute(params: Map<String, String>) {
     val plan = remember(start, files.library) { files.library?.let { resolveRunnerPlan(start, it) } }
     // Saved, so a configuration change mid-wait can't ask the service a second time.
     var opened by rememberSaveable { mutableStateOf(false) }
-    // Whether the service ever answered. After Done or a leave the view is Idle again and the entry is
-    // Waiting while RN pops the route, which mustn't time out into a second hand-back.
+    // Whether this route ever showed the service's session, started here or attached to. After Done or a
+    // leave the view is Idle again while RN pops the route: that mustn't start a session for a route
+    // that attached, nor time out into a second hand-back.
     var answered by rememberSaveable { mutableStateOf(false) }
-    val entry = runnerEntry(view, plan, opened)
+    val entry = runnerEntry(view, plan, opened, answered)
     SideEffect { if (entry is RunnerEntry.Attach || entry is RunnerEntry.Complete) answered = true }
     val notifications =
         rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {

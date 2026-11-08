@@ -653,6 +653,20 @@ class RunnerScreenTest {
         compose.onNode(hasContentDescription("Excluir") and isButton).assertExists()
     }
 
+    @Test
+    fun `the Finish dialog closes itself when the step it was asked on ends`() {
+        // #317's review: a rest ending under the dialog seeded the next set, and Finish logged it.
+        val plan = plan(block(squat))
+        val resting = started(plan).advanced()
+        show(running(plan, resting))
+        back()
+        compose.onNodeWithText("Encerrar o treino?").assertExists()
+        entry = running(plan, resting.advanced())
+        compose.waitForIdle()
+        compose.onNodeWithText("Encerrar o treino?").assertDoesNotExist()
+        assertTrue(sent.none { it == RunnerCommand.Finish })
+    }
+
     // announcements
 
     @Test

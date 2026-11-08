@@ -917,9 +917,6 @@ decision assembled across several commits. Open work belongs in the sections at 
     rejected: it breaks the disposable boundary, and abandoned snapshots would pile up. Sessions the
     RN runner stranded have no snapshot, get no prompt and no sweep, and stay unfinished for #281.
 
-  The file is named for its session, not fixed, because that is what lets a corrupt snapshot still be
-  finished: the name says which session it was when the contents can't.
-
 - ✅ **A program's rest day clears itself by elapsed calendar days, and stores nothing.** A week with
   `rest_day: true` holds a place in the rotation but is never run, so — unlike every other slot —
   *nothing about it is ever logged*. That breaks the assumption the whole scheduler rests on:

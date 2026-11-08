@@ -73,12 +73,25 @@ object LaunchRecovery {
     fun resume(context: Context) {
         val asking = recoveries.value as? RecoveryState.Asking ?: return
         recoveries.value = RecoveryState.Resuming(asking.found)
-        ContextCompat.startForegroundService(context, RunnerService.resumeIntent(context))
+        try {
+            ContextCompat.startForegroundService(context, RunnerService.resumeIntent(context))
+        } catch (
+            @Suppress("TooGenericExceptionCaught") e: RuntimeException,
+        ) {
+            // Refused before the service ran, so the files are as the prompt read them: ask again.
+            Log.w(TAG, "Couldn't start the service to resume", e)
+            resumeFailed(asking.found)
+        }
     }
 
-    /** The service couldn't rebuild it: the prompt again, whose Finish still works from the files. */
-    internal fun resumeFailed() {
-        recoveries.update { if (it is RecoveryState.Resuming) RecoveryState.Asking(it.found) else it }
+    /**
+     * The service couldn't rebuild it, so the prompt goes up again, about [found]: the files read
+     * afresh, since a rebuild that failed partway may have written to them, and a prompt still holding
+     * the old snapshot would Finish over that write. Null, with nothing left to ask, lets sessions start.
+     * Every way a resume can fail ends here or in [answered], so the gate can't stay shut.
+     */
+    internal fun resumeFailed(found: FoundRecovery?) {
+        recoveries.update { if (it is RecoveryState.Resuming) found?.let { RecoveryState.Asking(it) } else it }
     }
 
     /** Finished from the prompt, or resumed and running: sessions can start again. */

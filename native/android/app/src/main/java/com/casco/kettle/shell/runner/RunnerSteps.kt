@@ -152,8 +152,9 @@ private fun HoldClock(
 }
 
 /**
- * A rest counts down against its total, which +30s moves. No Pause: a step change now clears pause
- * (#304), so no rest starts paused with no way to resume on screen.
+ * A rest counts down against its total, which +30s moves. No Pause: a step change clears pause (#304),
+ * so a live rest never starts paused. A resume after process death does land one paused (#307), and
+ * then Resume takes +30s's place, or the clock would sit frozen with only Skip to move it on.
  */
 @Composable
 internal fun RestScreen(context: StepContext) {
@@ -167,11 +168,19 @@ internal fun RestScreen(context: StepContext) {
         controls = {
             Row(horizontalArrangement = Arrangement.spacedBy(Spacing.two)) {
                 PrevTextButton(context)
-                OutlineButton(
-                    stringResource(R.string.session_rest_add30),
-                    { context.send(RunnerCommand.AddRestSeconds(REST_BUMP_SEC)) },
-                    Modifier.weight(1f),
-                )
+                if (context.paused) {
+                    OutlineButton(
+                        stringResource(R.string.session_resume),
+                        { context.send(RunnerCommand.TogglePause) },
+                        Modifier.weight(1f),
+                    )
+                } else {
+                    OutlineButton(
+                        stringResource(R.string.session_rest_add30),
+                        { context.send(RunnerCommand.AddRestSeconds(REST_BUMP_SEC)) },
+                        Modifier.weight(1f),
+                    )
+                }
                 PrimaryButton(
                     stringResource(R.string.session_rest_skip),
                     context::advance,

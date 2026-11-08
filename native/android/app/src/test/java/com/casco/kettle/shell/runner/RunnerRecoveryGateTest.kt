@@ -83,12 +83,25 @@ class RunnerRecoveryGateTest {
     }
 
     @Test
-    fun `asks again when the service couldn't resume`() {
+    fun `asks again when the service couldn't resume, about the files as they are now`() {
         LaunchRecovery.ask(found)
         LaunchRecovery.resume(app)
-        LaunchRecovery.resumeFailed()
+        val reread = found.copy(stateFile = File("reread.json"))
+        LaunchRecovery.resumeFailed(reread)
 
-        assertEquals(RecoveryState.Asking(found), LaunchRecovery.state.value)
+        assertEquals(RecoveryState.Asking(reread), LaunchRecovery.state.value)
+    }
+
+    @Test
+    fun `lets sessions start when a failed resume leaves nothing to ask about`() {
+        LaunchRecovery.ask(found)
+        LaunchRecovery.resume(app)
+        nextStarted()
+        LaunchRecovery.resumeFailed(null)
+        RunnerHost.open(app, RunnerStart.Adhoc)
+
+        assertNull(LaunchRecovery.state.value)
+        assertEquals(RunnerService::class.java.name, nextStarted()?.component?.className)
     }
 
     @Test

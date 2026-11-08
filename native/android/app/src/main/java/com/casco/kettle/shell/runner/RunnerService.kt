@@ -92,18 +92,24 @@ class RunnerService : Service() {
     ): Int {
         // At once, whatever comes next: a service started in the foreground that doesn't say so within
         // seconds is an ANR, and one that stops first is a crash.
-        if (!enterForeground(placeholder())) return START_NOT_STICKY
+        if (!enterForeground(placeholder())) {
+            if (intent?.action == ACTION_RESUME) LaunchRecovery.resumeFailed(recoveryNow())
+            return START_NOT_STICKY
+        }
         when (intent?.action) {
             ACTION_START -> {
                 val start = runnerStartFrom(intent.params())
                 val anyway = intent.getBooleanExtra(EXTRA_ANYWAY, false)
-                loop.post { take({ DiskFiles(paths).startOpening(start, anyway) }) }
+                loop.post { host({ DiskFiles(paths).startOpening(start, anyway) }) }
             }
 
             ACTION_RESUME -> {
                 loop.post {
                     val now = anchor.wallAt(SystemClock.elapsedRealtime())
-                    take({ DiskFiles(paths).resumeOpening(now) }, refused = LaunchRecovery::resumeFailed)
+                    host(
+                        { DiskFiles(paths).resumeOpening(now) },
+                        refused = { LaunchRecovery.resumeFailed(recoveryNow()) },
+                    )
                 }
             }
         }
@@ -127,11 +133,16 @@ class RunnerService : Service() {
      * while a session is active attaches instead (#297); checked here, on the thread that sets it, so a
      * double-tapped Start can't begin two. Nothing to run stops the service, after [refused].
      */
-    private fun take(
+    private fun host(
         open: () -> Opening?,
         refused: () -> Unit = {},
     ) {
-        if (RunnerHost.active != null) return
+        if (RunnerHost.active != null) {
+            // Unreachable for a resume, which the launch only offers with no session running; answered
+            // anyway, so the gate a resume shuts can't stay shut.
+            refused()
+            return
+        }
         val opening = runCatching(open).onFailure { Log.w(TAG, "Couldn't resolve the session", it) }.getOrNull()
         if (opening == null) {
             // The screen resolved it to something it couldn't run either, or the library changed under it.
@@ -166,7 +177,7 @@ class RunnerService : Service() {
             // from here on attaches to it. A rebuild that threw shows nothing, and the prompt comes back.
             loop.post {
                 if (RunnerHost.view.value == RunnerView.Idle) {
-                    LaunchRecovery.resumeFailed()
+                    LaunchRecovery.resumeFailed(recoveryNow())
                     main.post(::stop)
                 } else {
                     LaunchRecovery.answered()
@@ -280,6 +291,19 @@ class RunnerService : Service() {
                 for ((key, value) in start?.routeParams().orEmpty()) putExtra(EXTRA_PARAM_PREFIX + key, value)
             }
 
+        /**
+         * What a process killed under a session leaves behind, cleared, for a launch with no session
+         * running (#307). On the S25+ the system kept the dead service's record, still in the
+         * foreground, and with it the ongoing notification, which an app's own cancel() can't remove
+         * while a foreground service owns it. Stopping that record takes the notification down with it.
+         */
+        fun clearAfterDeath(context: Context) {
+            context.stopService(Intent(context, RunnerService::class.java))
+            val notifications = NotificationManagerCompat.from(context)
+            notifications.cancel(ONGOING_ID)
+            notifications.cancel(ALERT_ID)
+        }
+
         fun resumeIntent(context: Context): Intent = Intent(context, RunnerService::class.java).setAction(ACTION_RESUME)
 
         private fun Intent.params(): Map<String, String> =
@@ -323,6 +347,10 @@ private fun DiskFiles.resumeOpening(now: Long): Opening? {
     val plan = resumedPlan(prompt.session, prompt.snapshot, library() ?: NO_LIBRARY)
     return Opening(plan, recoveredStart(prompt.session), resumeRunner(prompt, now))
 }
+
+/** What the launch's prompt would find now, for one put back up after a resume failed (#307). */
+private fun Context.recoveryNow(): FoundRecovery? =
+    findRunnerRecovery(runnerStateDir(noBackupFilesDir), StoragePaths(filesDir).sessions)
 
 /** What the shade shows for the instant before the plan has resolved. */
 private fun Context.placeholder(): Notification {

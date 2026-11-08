@@ -30,15 +30,15 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.withTimeoutOrNull
 
 /**
- * The launch's prompt after process death (#307), while [LaunchRecovery] is asking: Resume or Finish, or
- * Finish only. Composed once, in the shell, over whatever is showing; the dialog is its own window, so
- * it covers RN's surface and the tab bar too.
+ * The launch's prompt after process death (#307), while [LaunchRecovery] holds a session. Composed once,
+ * in the shell, over whatever is showing; the dialog is its own window, so it covers RN's surface and
+ * the tab bar too.
  *
- * - **Resume** has the service rebuild the session, then opens the runner on it once it's running, so
- *   the runner attaches rather than seeing nothing running and starting a session of its own.
+ * - **Resume** has the service rebuild the session. The prompt stays up, inert, until the service says
+ *   how that went, so nothing can be tapped in between, then the runner opens on what it published: it
+ *   attaches rather than seeing nothing running and starting a session of its own.
  * - **Finish** writes the session finished, deletes its state file, and runs the finish backup.
  */
 @Composable
@@ -48,30 +48,30 @@ fun RecoveryPrompt() {
     val context = LocalContext.current
     val files = LocalLatestFiles.current
     val state by LaunchRecovery.state.collectAsState()
-    val asking = state as? RecoveryState.Asking
-    var failure by remember(asking) { mutableStateOf<String?>(null) }
-    var busy by remember(asking) { mutableStateOf(false) }
-    if (asking == null) return
-    val session = asking.found.recovery.session
+    val found = state?.found
+    var failure by remember(found) { mutableStateOf<String?>(null) }
+    var finishing by remember(found) { mutableStateOf(false) }
+    if (found == null) return
+    val inert = finishing || state is RecoveryState.Resuming
+    val session = found.recovery.session
     val library = files.library
     val name = LocalResources.current.sessionName(library?.let { workoutNameFor(session, it) } ?: session.workout)
     RecoveryDialog(
-        asking.found.recovery,
+        found.recovery,
         name,
         failure,
         onResume = {
-            if (!busy) {
-                busy = true
+            if (!inert) {
                 LaunchRecovery.resume(context)
-                scope.launch { openOnceRunning(recoveredStart(session)) }
+                scope.launch { openOnceResumed(recoveredStart(session)) }
             }
         },
         onFinish = {
-            if (!busy) {
-                busy = true
+            if (!inert) {
+                finishing = true
                 scope.launch {
-                    failure = finishFromPrompt(context, files, asking.found)
-                    busy = false
+                    failure = finishFromPrompt(context, files, found)
+                    finishing = false
                 }
             }
         },
@@ -109,20 +109,14 @@ fun RecoveryDialog(
 }
 
 /**
- * The runner, opened once the service has published the resumed session, or its completion when its
- * last step ran out during the kill. A resume the service gave up on puts the prompt back instead.
+ * The runner, opened once the service has answered the Resume with a session, running or, when its last
+ * step ran out during the kill, completed. A resume that failed puts the prompt back instead.
  */
-private suspend fun openOnceRunning(start: RunnerStart) {
-    val shown =
-        withTimeoutOrNull(RESUME_ANSWER_MS) {
-            RunnerHost.view.first { it is RunnerView.Active || it is RunnerView.Completed }
-        }
-    if (shown != null) {
-        openRunner(start)
-    } else {
-        // Still rebuilding, or it gave up and the prompt is back. A session that does start later is in
-        // the shade, whose tap attaches.
-        Log.w(TAG, "No resumed session to open the runner on")
+private suspend fun openOnceResumed(start: RunnerStart) {
+    LaunchRecovery.state.first { it !is RecoveryState.Resuming }
+    when (RunnerHost.view.value) {
+        is RunnerView.Active, is RunnerView.Completed -> openRunner(start)
+        RunnerView.Idle -> Log.w(TAG, "The resume failed; the prompt is back")
     }
 }
 
@@ -148,5 +142,4 @@ private suspend fun finishFromPrompt(
 
 private val background = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-private const val RESUME_ANSWER_MS = 5000L
 private const val TAG = "RecoveryPrompt"

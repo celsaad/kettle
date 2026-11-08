@@ -410,11 +410,12 @@ class RunnerScreenTest {
     }
 
     @Test
-    fun `Coming up and the pad close themselves on a step change too`() {
+    fun `Coming up closes itself on a step change too`() {
         val plan = plan(block(squat))
         val start = started(plan)
         show(running(plan, start))
         button("Pernas").performClick()
+        compose.onNodeWithText("A SEGUIR").assertExists()
         entry = running(plan, start.advanced())
         compose.waitForIdle()
         compose.onNodeWithText("A SEGUIR").assertDoesNotExist()
@@ -435,7 +436,9 @@ class RunnerScreenTest {
     fun `the swap picker searches above eight candidates, ignoring accents, and sends the pick`() {
         show(running(plan(block(squat))))
         button("TROCAR").performClick()
+        button("Terra").assertExists()
         compose.onNode(hasContentDescription("Buscar exercícios")).performTextInput("bulgaro")
+        button("Terra").assertDoesNotExist()
         button("Búlgaro").performClick()
         assertEquals(RunnerCommand.Swap(extras[0]), sent.last())
         compose.onNodeWithText("TROCAR EXERCÍCIO").assertDoesNotExist()
@@ -665,6 +668,18 @@ class RunnerScreenTest {
         compose.waitForIdle()
         compose.onNodeWithText("Encerrar o treino?").assertDoesNotExist()
         assertTrue(sent.none { it == RunnerCommand.Finish })
+    }
+
+    @Test
+    fun `a tap on the pad's own empty space keeps it open, with what was typed`() {
+        // #317's review: the sheet let taps it didn't handle fall through to the backdrop, which closed it.
+        show(running(plan(block(squat))))
+        button("Reps concluídas: 5. Toque para inserir um valor exato.").performClick()
+        button("1").performClick()
+        button("2").performClick()
+        compose.onNodeWithText("12").performClick()
+        button("Definir").assertExists()
+        compose.onNodeWithText("12").assertExists()
     }
 
     // announcements

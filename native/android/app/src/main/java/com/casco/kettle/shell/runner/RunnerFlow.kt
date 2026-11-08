@@ -44,7 +44,7 @@ fun runnerEntry(
     view: RunnerView,
     plan: RunnerPlan?,
     opened: Boolean,
-    answered: Boolean = false,
+    answered: Boolean,
 ): RunnerEntry =
     when {
         view is RunnerView.Active -> RunnerEntry.Attach(view)

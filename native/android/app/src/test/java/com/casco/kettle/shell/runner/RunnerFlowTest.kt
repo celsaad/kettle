@@ -44,19 +44,28 @@ class RunnerFlowTest {
 
     @Test
     fun `a running session is attached to, whatever the route asked for`() {
-        assertEquals(RunnerEntry.Attach(running), runnerEntry(running, RunnerPlan.RestWeek, opened = false))
-        assertEquals(RunnerEntry.Attach(countingIn), runnerEntry(countingIn, RunnerPlan.Missing, opened = false))
+        assertEquals(
+            RunnerEntry.Attach(running),
+            runnerEntry(running, RunnerPlan.RestWeek, opened = false, answered = false),
+        )
+        assertEquals(
+            RunnerEntry.Attach(countingIn),
+            runnerEntry(countingIn, RunnerPlan.Missing, opened = false, answered = false),
+        )
     }
 
     @Test
     fun `a session that ended while away shows its completion rather than starting another`() {
-        assertEquals(RunnerEntry.Complete(completed), runnerEntry(completed, runnable, opened = false))
+        assertEquals(
+            RunnerEntry.Complete(completed),
+            runnerEntry(completed, runnable, opened = false, answered = false),
+        )
     }
 
     @Test
     fun `only a runnable plan starts, and only once`() {
-        assertEquals(RunnerEntry.Start, runnerEntry(RunnerView.Idle, runnable, opened = false))
-        assertEquals(RunnerEntry.Waiting, runnerEntry(RunnerView.Idle, runnable, opened = true))
+        assertEquals(RunnerEntry.Start, runnerEntry(RunnerView.Idle, runnable, opened = false, answered = false))
+        assertEquals(RunnerEntry.Waiting, runnerEntry(RunnerView.Idle, runnable, opened = true, answered = false))
     }
 
     @Test
@@ -73,22 +82,34 @@ class RunnerFlowTest {
 
     @Test
     fun `an unread library shows nothing yet`() {
-        assertEquals(RunnerEntry.Loading, runnerEntry(RunnerView.Idle, null, opened = false))
+        assertEquals(RunnerEntry.Loading, runnerEntry(RunnerView.Idle, null, opened = false, answered = false))
     }
 
     @Test
     fun `a plan that can't start says why before any count-in`() {
         val tooLong = RunnerPlan.TooLong(runnable)
-        assertEquals(RunnerEntry.Before(tooLong), runnerEntry(RunnerView.Idle, tooLong, opened = false))
-        assertEquals(RunnerEntry.Before(RunnerPlan.RestWeek), runnerEntry(RunnerView.Idle, RunnerPlan.RestWeek, false))
+        assertEquals(
+            RunnerEntry.Before(tooLong),
+            runnerEntry(RunnerView.Idle, tooLong, opened = false, answered = false),
+        )
+        assertEquals(
+            RunnerEntry.Before(RunnerPlan.RestWeek),
+            runnerEntry(RunnerView.Idle, RunnerPlan.RestWeek, false, answered = false),
+        )
         val empty = RunnerPlan.NoSteps(workout)
-        assertEquals(RunnerEntry.Before(empty), runnerEntry(RunnerView.Idle, empty, opened = false))
-        assertEquals(RunnerEntry.Before(RunnerPlan.Missing), runnerEntry(RunnerView.Idle, RunnerPlan.Missing, false))
+        assertEquals(RunnerEntry.Before(empty), runnerEntry(RunnerView.Idle, empty, opened = false, answered = false))
+        assertEquals(
+            RunnerEntry.Before(RunnerPlan.Missing),
+            runnerEntry(RunnerView.Idle, RunnerPlan.Missing, false, answered = false),
+        )
     }
 
     @Test
     fun `Start anyway on a long workout waits on the service like any start`() {
-        assertEquals(RunnerEntry.Waiting, runnerEntry(RunnerView.Idle, RunnerPlan.TooLong(runnable), opened = true))
+        assertEquals(
+            RunnerEntry.Waiting,
+            runnerEntry(RunnerView.Idle, RunnerPlan.TooLong(runnable), opened = true, answered = false),
+        )
     }
 
     @Test

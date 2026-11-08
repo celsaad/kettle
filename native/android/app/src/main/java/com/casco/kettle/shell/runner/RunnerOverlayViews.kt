@@ -31,6 +31,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -80,6 +81,9 @@ internal fun OverlaySheet(
                 .imePadding()
                 .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
                 .background(RunnerColors.backgroundElement)
+                // Absorbs the taps nothing inside handles, as M3's Surface does: they fell through to the
+                // backdrop behind and closed the sheet, the pad losing what had been typed into it.
+                .pointerInput(Unit) {}
                 .semantics { paneTitle = title }
                 .padding(Spacing.three),
             verticalArrangement = Arrangement.spacedBy(Spacing.two),

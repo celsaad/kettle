@@ -87,7 +87,7 @@ class RunnerEffects(
             }
 
             is RunnerEffect.Completed -> {
-                stateFile.delete()
+                stateFile.delete(after.sessionId)
                 // A last step that ended by itself has just posted "Workout complete", which is the
                 // news; a Finish was tapped on the screen, where there's nothing to tell.
                 if (!alerted) alerts.clear()

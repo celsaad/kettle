@@ -20,9 +20,15 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import com.casco.kettle.domain.ClockAnchor
+import com.casco.kettle.domain.Library
 import com.casco.kettle.domain.RunnerPlan
+import com.casco.kettle.domain.RunnerRecovery
 import com.casco.kettle.domain.RunnerStart
+import com.casco.kettle.domain.RunnerTransition
+import com.casco.kettle.domain.recoveredStart
 import com.casco.kettle.domain.resolveRunnerPlan
+import com.casco.kettle.domain.resumeRunner
+import com.casco.kettle.domain.resumedPlan
 import com.casco.kettle.shell.MainActivity
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.files.DiskFiles
@@ -87,10 +93,19 @@ class RunnerService : Service() {
         // At once, whatever comes next: a service started in the foreground that doesn't say so within
         // seconds is an ANR, and one that stops first is a crash.
         if (!enterForeground(placeholder())) return START_NOT_STICKY
-        if (intent?.action == ACTION_START) {
-            val start = runnerStartFrom(intent.params())
-            val anyway = intent.getBooleanExtra(EXTRA_ANYWAY, false)
-            loop.post { begin(start, anyway) }
+        when (intent?.action) {
+            ACTION_START -> {
+                val start = runnerStartFrom(intent.params())
+                val anyway = intent.getBooleanExtra(EXTRA_ANYWAY, false)
+                loop.post { take({ DiskFiles(paths).startOpening(start, anyway) }) }
+            }
+
+            ACTION_RESUME -> {
+                loop.post {
+                    val now = anchor.wallAt(SystemClock.elapsedRealtime())
+                    take({ DiskFiles(paths).resumeOpening(now) }, refused = LaunchRecovery::resumeFailed)
+                }
+            }
         }
         return START_NOT_STICKY
     }
@@ -107,34 +122,29 @@ class RunnerService : Service() {
     }
 
     /**
-     * On the runner's thread: the plan read from the library as it is now, then the count-in. A start
-     * landing while a session is active attaches instead (#297); checked here, on the thread that sets
-     * it, so a double-tapped Start can't begin two.
+     * On the runner's thread: [open]'s session made the one this service and [RunnerHost] run, holding
+     * the wake lock, then counted into, or resumed from the launch's prompt (#307). A request landing
+     * while a session is active attaches instead (#297); checked here, on the thread that sets it, so a
+     * double-tapped Start can't begin two. Nothing to run stops the service, after [refused].
      */
-    private fun begin(
-        start: RunnerStart?,
-        anyway: Boolean,
+    private fun take(
+        open: () -> Opening?,
+        refused: () -> Unit = {},
     ) {
         if (RunnerHost.active != null) return
-        val plan =
-            runCatching {
-                when (val resolved = DiskFiles(paths).library()?.let { resolveRunnerPlan(start, it) }) {
-                    is RunnerPlan.Runnable -> resolved
-                    is RunnerPlan.TooLong -> resolved.plan.takeIf { anyway }
-                    else -> null
-                }
-            }.onFailure { Log.w(TAG, "Couldn't resolve the start", it) }.getOrNull()
-        if (plan == null) {
+        val opening = runCatching(open).onFailure { Log.w(TAG, "Couldn't resolve the session", it) }.getOrNull()
+        if (opening == null) {
             // The screen resolved it to something it couldn't run either, or the library changed under it.
-            Log.w(TAG, "Nothing to run for that start; stopping")
+            Log.w(TAG, "Nothing to run; stopping")
+            refused()
             main.post(::stop)
             return
         }
         var current: RunnerSession? = null
         val created =
             RunnerSession(
-                plan,
-                start,
+                opening.plan,
+                opening.start,
                 loop,
                 now = { anchor.wallAt(SystemClock.elapsedRealtime()) },
                 effects { current },
@@ -147,7 +157,22 @@ class RunnerService : Service() {
         RunnerHost.session = created
         created.setRunnerVisible(RunnerHost.visible)
         if (wakeLock?.isHeld != true) wakeLock = sessionWakeLock()
-        cues.whenLoaded(SOUNDS_TIMEOUT_MS, created::begin)
+        val rebuilt = opening.rebuilt
+        if (rebuilt == null) {
+            cues.whenLoaded(SOUNDS_TIMEOUT_MS) { created.begin() }
+        } else {
+            created.begin(rebuilt)
+            // Next on the loop, after the rebuild has settled: answered once the session shows, so a start
+            // from here on attaches to it. A rebuild that threw shows nothing, and the prompt comes back.
+            loop.post {
+                if (RunnerHost.view.value == RunnerView.Idle) {
+                    LaunchRecovery.resumeFailed()
+                    main.post(::stop)
+                } else {
+                    LaunchRecovery.answered()
+                }
+            }
+        }
     }
 
     /** The effects of [owner]'s session, which the finish backup answers to. */
@@ -156,7 +181,7 @@ class RunnerService : Service() {
         return RunnerEffects(
             writeSession = { writeSessionFile(paths.sessions, it) },
             onSessionWritten = { main.post { RunnerHost.onSessionWritten?.invoke() } },
-            stateFile = RunnerStateFile(runnerStateFile(noBackupFilesDir), loop),
+            stateFile = RunnerStateFile(runnerStateDir(noBackupFilesDir), loop),
             sounds = cues,
             alerts =
                 StepAlerts(
@@ -238,6 +263,9 @@ class RunnerService : Service() {
         /** On MainActivity's intent: open the runner, attached to the running session. */
         const val EXTRA_OPEN_RUNNER = "com.casco.kettle.shell.OPEN_RUNNER"
 
+        /** Rebuilds the session the launch's prompt asked about (#307), from its state file. */
+        const val ACTION_RESUME = "com.casco.kettle.shell.runner.RESUME"
+
         private const val ACTION_START = "com.casco.kettle.shell.runner.START"
         private const val EXTRA_ANYWAY = "anyway"
         private const val EXTRA_PARAM_PREFIX = "param."
@@ -252,6 +280,8 @@ class RunnerService : Service() {
                 for ((key, value) in start?.routeParams().orEmpty()) putExtra(EXTRA_PARAM_PREFIX + key, value)
             }
 
+        fun resumeIntent(context: Context): Intent = Intent(context, RunnerService::class.java).setAction(ACTION_RESUME)
+
         private fun Intent.params(): Map<String, String> =
             extras
                 ?.keySet()
@@ -259,6 +289,39 @@ class RunnerService : Service() {
                 .filter { it.startsWith(EXTRA_PARAM_PREFIX) }
                 .associate { it.removePrefix(EXTRA_PARAM_PREFIX) to getStringExtra(it).orEmpty() }
     }
+}
+
+/** What the service is asked to run: [plan] to count into, or, with [rebuilt], the launch's Resume. */
+private class Opening(
+    val plan: RunnerPlan.Runnable,
+    val start: RunnerStart?,
+    val rebuilt: RunnerTransition? = null,
+)
+
+/** [start] read against the library as it is now, so the screen and the service can't run different plans. */
+private fun DiskFiles.startOpening(
+    start: RunnerStart?,
+    anyway: Boolean,
+): Opening? {
+    val plan =
+        when (val resolved = library()?.let { resolveRunnerPlan(start, it) }) {
+            is RunnerPlan.Runnable -> resolved
+            is RunnerPlan.TooLong -> resolved.plan.takeIf { anyway }
+            else -> null
+        }
+    return plan?.let { Opening(it, start) }
+}
+
+/**
+ * The session the launch's prompt is resuming (#307), rebuilt from its snapshot, caught up to [now]
+ * and paused. The plan's name and pickers come from the library as it is now; its steps are the
+ * snapshot's. Null for anything else, which leaves the files as they are for the prompt's Finish.
+ */
+private fun DiskFiles.resumeOpening(now: Long): Opening? {
+    val resuming = LaunchRecovery.state.value as? RecoveryState.Resuming
+    val prompt = resuming?.found?.recovery as? RunnerRecovery.Prompt ?: return null
+    val plan = resumedPlan(prompt.session, prompt.snapshot, library() ?: NO_LIBRARY)
+    return Opening(plan, recoveredStart(prompt.session), resumeRunner(prompt, now))
 }
 
 /** What the shade shows for the instant before the plan has resolved. */
@@ -311,5 +374,8 @@ private fun Context.sessionWakeLock(): PowerManager.WakeLock =
 private const val ONGOING_ID = 3051
 private const val ALERT_ID = 3052
 private const val SOUNDS_TIMEOUT_MS = 1000L
+
+/** What a resume names its workout from when the library can't be read: the snapshot still has every step. */
+private val NO_LIBRARY = Library(1, emptyList(), emptyList(), emptyList())
 private const val WAKE_LOCK_CEILING_MS = 6 * 60 * 60 * 1000L
 private const val TAG = "RunnerService"

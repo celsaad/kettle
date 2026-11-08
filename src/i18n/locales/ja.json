@@ -349,6 +349,13 @@
       "reps": "{{name}}、{{total}}セット中{{index}}セット目、目標{{target}}レップ",
       "interval": "{{name}}、{{total}}中{{index}}、{{seconds}}秒",
       "rest": "休憩、{{seconds}}秒"
+    },
+    "recovery": {
+      "title": "ワークアウトが中断されました",
+      "resumeBody": "Kettle が閉じたとき、{{workout}} はまだ実行中でした。中断したところから一時停止の状態で再開するか、記録した内容で終了できます。",
+      "finishOnlyBody": "Kettle が閉じたとき、{{workout}} はまだ実行中でしたが、中断したところから再開することはできません。記録した内容を残すには終了してください。",
+      "resume": "再開",
+      "finish": "終了"
     }
   },
   "settings": {

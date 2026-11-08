@@ -356,4 +356,68 @@ class RunnerRecoveryTest {
             assertEquals(RepsSetLog(11, 12.5, 8.0, 0.0), (state.session.entries[1] as SessionEntry.Reps).sets.single())
         }
     }
+
+    /** What a Resume runs: the session's start, read back from its file, against the library as it is now. */
+    @Nested
+    inner class ResumedPlan {
+        private val workout = workoutOf(single("pullups"), single("plank"))
+        private val library = Library(1, RUNNER_EXERCISES, listOf(workout), emptyList())
+
+        @Test
+        fun `reads a workout's start back from the session it wrote`() {
+            val session = Runner(workout).written
+
+            assertEquals(RunnerStart.Planned(SessionParams.Workout("w")), recoveredStart(session))
+        }
+
+        @Test
+        fun `reads a program week's start back, its day included`() {
+            val session = Runner(workout).written.copy(program = "p", programWeek = 2, programDay = "Day 1")
+
+            assertEquals(RunnerStart.Planned(SessionParams.ProgramSlot("p", 2, "Day 1")), recoveredStart(session))
+        }
+
+        @Test
+        fun `reads an ad-hoc session's start back as ad hoc`() {
+            assertEquals(RunnerStart.Adhoc, recoveredStart(Runner(null).written))
+        }
+
+        @Test
+        fun `runs the snapshot's steps, not the workout's as the library has it now`() {
+            val runner = Runner(workout)
+            runner.send(RunnerCommand.Swap(runner.exercise("dips")))
+            val edited = library.copy(workouts = listOf(workoutOf(single("lsit"))))
+
+            val plan = resumedPlan(runner.written, runner.snapshot, edited)
+
+            assertEquals(runner.snapshot.steps, plan.steps)
+            assertEquals("W", plan.workout?.name)
+            assertEquals(RUNNER_EXERCISES, plan.exercises)
+        }
+
+        @Test
+        fun `keeps a workout deleted since by its id, as History names it`() {
+            val runner = Runner(workout)
+
+            val plan = resumedPlan(runner.written, runner.snapshot, library.copy(workouts = emptyList()))
+
+            assertEquals("w", plan.workout?.name)
+            assertEquals(RUNNER_EXERCISES, plan.exercises)
+        }
+
+        @Test
+        fun `keeps the library's name for a workout edited since to nothing it can run`() {
+            val runner = Runner(workout)
+            val emptied = library.copy(workouts = listOf(Workout("w", "Renamed", listOf(single("gone")))))
+
+            assertEquals("Renamed", resumedPlan(runner.written, runner.snapshot, emptied).workout?.name)
+        }
+
+        @Test
+        fun `resumes an ad-hoc session with no workout`() {
+            val runner = Runner(null)
+
+            assertEquals(null, resumedPlan(runner.written, runner.snapshot, library).workout)
+        }
+    }
 }

@@ -312,7 +312,7 @@ private fun PickerOptions(
                     .clip(KeyShape)
                     .keyFace()
                     .clickable(role = Role.Button) { onSelect(exercise) }
-                    .padding(horizontal = Spacing.three, vertical = Spacing.two),
+                    .padding(horizontal = Spacing.three),
                 contentAlignment = Alignment.CenterStart,
             ) {
                 Text(exercise.name, style = KettleType.heading, color = RunnerColors.text)

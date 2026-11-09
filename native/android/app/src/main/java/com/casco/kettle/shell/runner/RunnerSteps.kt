@@ -175,11 +175,17 @@ internal fun RestScreen(context: StepContext) {
             ) {
                 PrevTextButton({ context.send(RunnerCommand.Prev) }, ButtonLook.Rest.minHeight)
                 if (context.paused) {
-                    RestOutline(stringResource(R.string.session_resume)) { context.send(RunnerCommand.TogglePause) }
+                    OutlineButton(
+                        stringResource(R.string.session_resume),
+                        { context.send(RunnerCommand.TogglePause) },
+                        look = ButtonLook.Rest,
+                    )
                 } else {
-                    RestOutline(stringResource(R.string.session_rest_add30)) {
-                        context.send(RunnerCommand.AddRestSeconds(REST_BUMP_SEC))
-                    }
+                    OutlineButton(
+                        stringResource(R.string.session_rest_add30),
+                        { context.send(RunnerCommand.AddRestSeconds(REST_BUMP_SEC)) },
+                        look = ButtonLook.Rest,
+                    )
                 }
                 PrimaryButton(
                     stringResource(R.string.session_rest_skip),
@@ -190,14 +196,6 @@ internal fun RestScreen(context: StepContext) {
             }
         },
     )
-}
-
-@Composable
-private fun RestOutline(
-    label: String,
-    onClick: () -> Unit,
-) {
-    OutlineButton(label, onClick, look = ButtonLook.Rest)
 }
 
 private val HOLD_NUMERAL = 96.sp

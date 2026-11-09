@@ -53,6 +53,7 @@ internal data class ButtonLook(
     val shape: Shape,
     val border: Dp,
     val fill: Color = RunnerColors.accent,
+    val pad: Dp = Spacing.two,
 ) {
     companion object {
         /** The tall buttons along the bottom, where a hand lands without looking. */
@@ -97,7 +98,7 @@ internal fun PrimaryButton(
             .clip(look.shape)
             .background(look.fill)
             .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
-            .padding(horizontal = Spacing.two, vertical = Spacing.one),
+            .padding(horizontal = look.pad, vertical = Spacing.one),
         contentAlignment = Alignment.Center,
     ) {
         Text(label, style = KettleType.heading, color = RunnerColors.background, textAlign = TextAlign.Center)
@@ -115,7 +116,8 @@ internal fun CompactButton(
         label,
         onClick,
         modifier.widthIn(min = CompactMinWidth),
-        look = ButtonLook.Compact,
+        // RN's centred one-choice buttons pad wider than its sheet actions, for a longer translation.
+        look = ButtonLook.Compact.copy(pad = Spacing.three),
     )
 }
 
@@ -322,5 +324,5 @@ private val OUTLINE_PAD = 12.dp
 /** Prev's word is RN's plain code face, untracked, unlike the other quiet controls. */
 private val PrevStyle = KettleType.code.copy(color = RunnerColors.textSecondary)
 
-/** RN's `rgba(207,106,55,0.4)`: an accent outline on an accent-soft fill. */
+/** RN's 0.4 outline on a soft fill, `rgba(207,106,55,0.4)` or the calm blue's: the tint at 40%. */
 internal const val SOFT_BORDER_ALPHA = 0.4f

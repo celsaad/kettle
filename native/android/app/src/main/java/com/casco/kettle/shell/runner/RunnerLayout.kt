@@ -40,7 +40,7 @@ internal fun Modifier.bleed(
         val placeable = measurable.measure(constraints)
         val above = top.roundToPx()
         layout(placeable.width, maxOf(placeable.height - above - bottom.roundToPx(), 0)) {
-            placeable.place(0, -above)
+            placeable.placeRelative(0, -above)
         }
     }
 
@@ -57,7 +57,7 @@ internal fun Modifier.hang(
         val before = start.roundToPx()
         val total = before + end.roundToPx()
         val placeable = measurable.measure(constraints.offset(horizontal = total))
-        layout(maxOf(placeable.width - total, 0), placeable.height) { placeable.place(-before, 0) }
+        layout(maxOf(placeable.width - total, 0), placeable.height) { placeable.placeRelative(-before, 0) }
     }
 
 /** Reserves [label]'s width without drawing or announcing it, so two tracks line up in a column. */

@@ -172,7 +172,10 @@ private fun Stepper(
         // RN spaces a 44dp circle 14dp from a 36dp value. Here the circle sits in a 48dp target and the
         // value is one, so the gap is what puts each circle where RN draws it; RN's own would leave two
         // AMRAP steppers 16dp wider than the column, squeezing the last + into an oval.
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(STEPPER_GAP)) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(STEPPER_ROW_GAP),
+        ) {
             GlyphButton(
                 "−",
                 stringResource(R.string.common_decrease, label),
@@ -208,10 +211,7 @@ private fun variantLabel(variant: IntervalVariant): Int =
 
 private val CLOCK_NUMERAL = 88.sp
 
-/**
- * The slack under Skip's words in its 48dp target, (48 − its 26dp line) / 2: it overhangs the
- * frame's 16dp bottom padding, and the controls' 8dp gap above, as RN's text-only Skip has neither.
- */
+/** The slack under Skip's words in its 48dp target, (48 − its 26dp line) / 2, which hangs into the frame's padding. */
 private val SKIP_SLACK = 11.dp
-private val STEPPER_GAP = 6.dp
+private val STEPPER_ROW_GAP = 6.dp
 private const val SECONDS_PER_MINUTE = 60.0

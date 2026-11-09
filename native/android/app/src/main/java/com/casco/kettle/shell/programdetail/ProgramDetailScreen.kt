@@ -23,7 +23,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -49,6 +48,7 @@ import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.MaxContentWidth
 import com.casco.kettle.shell.theme.Spacing
+import com.casco.kettle.shell.theme.TypeIcon
 
 /** Where Program detail is registered, and the param that names its program, as Programs pushes it. */
 const val PROGRAM_DETAIL_PATH = "/program-detail"
@@ -156,7 +156,7 @@ private fun Header(
                 .semantics { contentDescription = edit },
             contentAlignment = Alignment.Center,
         ) {
-            Text("✎", Modifier.clearAndSetSemantics {}, style = KettleType.heading, color = colors.textSecondary)
+            TypeIcon(R.drawable.icon_edit, KettleType.heading, colors.textSecondary)
         }
     }
 }

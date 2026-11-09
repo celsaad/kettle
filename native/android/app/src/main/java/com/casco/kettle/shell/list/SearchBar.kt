@@ -15,12 +15,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.casco.kettle.shell.R
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.Spacing
+import com.casco.kettle.shell.theme.TypeIcon
 
 /**
  * The search box every list screen shares, one component since four copies of it drifted in RN. The
@@ -55,7 +56,7 @@ fun SearchBar(
                 horizontalArrangement = Arrangement.spacedBy(Spacing.two),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text("⌕", Modifier.clearAndSetSemantics {}, color = colors.textSecondary)
+                TypeIcon(R.drawable.icon_search, KettleType.default, colors.textSecondary)
                 Box(Modifier.weight(1f)) {
                     // Inside the field's own node, which takes its name from it, as Material's does.
                     if (value.isEmpty()) {

@@ -55,6 +55,7 @@ import com.casco.kettle.shell.list.ListRow
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.RunnerColors
 import com.casco.kettle.shell.theme.Spacing
+import com.casco.kettle.shell.theme.TypeIcon
 
 /**
  * A dimmed backdrop that dismisses, and a sheet at the bottom. Drawn over the runner's body, which the
@@ -342,12 +343,7 @@ private fun PickerSearch(
                 horizontalArrangement = Arrangement.spacedBy(Spacing.two),
             ) {
                 // Decorative: the field is named by its description, and the glyph says nothing more.
-                Text(
-                    "⌕",
-                    Modifier.clearAndSetSemantics {},
-                    style = KettleType.default,
-                    color = RunnerColors.textSecondary,
-                )
+                TypeIcon(R.drawable.icon_search, KettleType.default, RunnerColors.textSecondary)
                 Box(Modifier.weight(1f)) {
                     if (query.isEmpty()) Text(label, style = textStyle, color = RunnerColors.textSecondary)
                     field()

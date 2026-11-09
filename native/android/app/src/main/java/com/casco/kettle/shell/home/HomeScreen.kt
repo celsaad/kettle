@@ -35,7 +35,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -73,6 +72,7 @@ import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.MaxContentWidth
 import com.casco.kettle.shell.theme.Spacing
+import com.casco.kettle.shell.theme.TypeIcon
 import com.casco.kettle.shell.workouteditor.WORKOUT_EDITOR_PATH
 import kotlinx.coroutines.flow.Flow
 import kotlinx.datetime.Clock
@@ -231,7 +231,7 @@ private fun TitleRow(onSettings: () -> Unit) {
                     .border(1.dp, colors.border, GearShape),
                 contentAlignment = Alignment.Center,
             ) {
-                Text("⚙", Modifier.clearAndSetSemantics {}, color = colors.textSecondary)
+                TypeIcon(R.drawable.icon_settings, KettleType.default, colors.textSecondary)
             }
         }
     }

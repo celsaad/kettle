@@ -17,7 +17,6 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.collapse
 import androidx.compose.ui.semantics.expand
 import androidx.compose.ui.semantics.semantics
@@ -31,6 +30,7 @@ import com.casco.kettle.shell.i18n.pluralText
 import com.casco.kettle.shell.list.ListRowMinHeight
 import com.casco.kettle.shell.list.ListRowVerticalPadding
 import com.casco.kettle.shell.list.TextAction
+import com.casco.kettle.shell.theme.Chevron
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.Spacing
@@ -87,7 +87,7 @@ internal fun SessionRow(
                 Text(name, style = KettleType.heading, color = colors.text)
                 Text(details(row), style = KettleType.small, color = colors.textSecondary)
             }
-            Text(if (expanded) "⌄" else "›", Modifier.clearAndSetSemantics {}, color = colors.textSecondary)
+            Chevron(expanded)
         }
         if (expanded) Detail(row, failure, actions)
     }

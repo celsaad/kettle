@@ -54,6 +54,7 @@ import com.casco.kettle.shell.form.FormField
 import com.casco.kettle.shell.i18n.pluralText
 import com.casco.kettle.shell.library.ExerciseBadge
 import com.casco.kettle.shell.library.exerciseSummary
+import com.casco.kettle.shell.theme.Chevron
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.Spacing
@@ -255,7 +256,7 @@ private fun BlockIdField(
             style = KettleType.small,
             color = colors.textSecondary,
         )
-        Text(if (open) "⌄" else "›", Modifier.clearAndSetSemantics {}, color = colors.textSecondary)
+        Chevron(expanded = open)
     }
     if (open) {
         val focus = remember { FocusRequester() }

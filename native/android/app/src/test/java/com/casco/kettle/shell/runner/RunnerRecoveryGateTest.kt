@@ -40,6 +40,8 @@ class RunnerRecoveryGateTest {
     @After
     fun clear() {
         LaunchRecovery.answered()
+        // An open these tests send is never answered by a service, so its pending start is cleared here.
+        RunnerHost.startEnded()
         RunnerHost.publish(RunnerView.Idle)
     }
 

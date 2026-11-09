@@ -123,7 +123,7 @@ private fun routeActions(
 
 /** Leaving before a session runs: the service stops with nothing written, and RN takes back. */
 private fun leave() {
-    RunnerHost.leave()
+    if (RunnerHost.leave() == Leave.RUNNING) return
     RunnerHost.dismiss()
     JsBridge.runnerDone()
 }

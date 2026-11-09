@@ -15,9 +15,10 @@ private val USAGE = listOf("<theme.json>", "<@expo-google-fonts dir>", "<output 
  */
 fun main(args: Array<String>) {
     require(args.size == USAGE.size) { "usage: ${USAGE.joinToString(" ")}" }
-    // Positional, in USAGE's order, which `:app`'s generateTheme task passes them in.
-    val (themeFile, fonts, source) = args
-    val res = args[USAGE.lastIndex]
+    // In USAGE's order, which `:app`'s generateTheme task passes them in. Two pairs, since detekt
+    // allows three entries to a destructuring.
+    val (themeFile, fonts) = args
+    val (source, res) = args.drop(2)
     val json = File(themeFile).readText()
     val kotlin = generateTheme(json)
     val faces = fontFaces(parseTheme(json)).map { File(fonts, it.path) to it }

@@ -2,11 +2,11 @@ package com.casco.kettle.theme
 
 import kotlin.math.roundToInt
 
-/** Where the generated file lives in `:app`, as its package and as the path under a source root. */
-const val OUTPUT_PACKAGE = "com.casco.kettle.shell.theme"
-
 /** `:app`'s namespace, whose `R` the generated families' font resources are in. */
 private const val APP_PACKAGE = "com.casco.kettle.shell"
+
+/** Where the generated file lives in `:app`, as its package and as the path under a source root. */
+const val OUTPUT_PACKAGE = "$APP_PACKAGE.theme"
 
 /**
  * theme.json as one Kotlin file: `Colors`' two schemes as `LightColors` and `DarkColors`,

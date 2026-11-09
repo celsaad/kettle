@@ -946,8 +946,8 @@ decision assembled across several commits. Open work belongs in the sections at 
   ported and held by the conformance corpus.** (Native migration, settled on #147.) The split, and
   what falls on each side:
   - **Values go in data files.** Translations are the locale bundles (`src/i18n/locales/*.json`, read
-    by `:strings`). Colors, spacing and the type scale are `src/constants/theme.json` (read by
-    `:theme`), and `theme.ts` is a thin re-export under the names RN already imports. Native generates
+    by `:strings`). Colors, spacing, the type scale and its fonts are `src/constants/theme.json`
+    (read by `:theme`), and `theme.ts` is a thin re-export under the names RN already imports. Native generates
     its code from them on every build into a build directory, so nothing generated is committed and
     nothing can go stale. The Swift app in M8 reads the same files, not a Kotlin copy.
   - **Behaviour isn't data.** Parser rules, ceilings like `MAX_SETS`, unit steps and search
@@ -974,9 +974,9 @@ decision assembled across several commits. Open work belongs in the sections at 
     `Fonts` names each role's face the way `expo-font` loads it (`SpaceGrotesk_600SemiBold`), and
     `:theme` copies those faces out of `node_modules/@expo-google-fonts` into a generated `res/font`
     beside the families it emits. Native's build already depends on a JS install, so reading the TTFs
-    from there costs nothing new and keeps RN's package version as the shell's too. Rejected: committing the TTFs under `native/android` with a test that
-    they match `node_modules` byte for byte, which is a second copy to bump by hand on every package
-    update. **When the last RN screen goes,** the two `@expo-google-fonts` packages stay in
+    from there costs nothing new and keeps RN's package version as the shell's too. Rejected:
+    committing the TTFs under `native/android` with a test that they match `node_modules` byte for
+    byte, which is a second copy to bump by hand on every package update. **When the last RN screen goes,** the two `@expo-google-fonts` packages stay in
     `package.json` as the fonts' source, and `knip` needs an exception naming `:theme` as their
     reader, since no TS will import them any more (`font-faces.ts` is the last that does).
   - Hand-kept lists remain where a data file can't reach, on purpose: `LocalePreviews` names each

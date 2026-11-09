@@ -310,4 +310,20 @@ class ComposeThemeTest {
             assertTrue("Fonts.display" in message, "$name: $message")
         }
     }
+
+    @Test
+    fun `a family can't take a name the generated file already declares`() {
+        val declared =
+            Regex("""^(?:internal |private )?(?:data class|object|val) (\w+)""", RegexOption.MULTILINE)
+                .findAll(generateTheme(theme()))
+                .map { it.groupValues[1] }
+                .toSet() - setOf("HankenGrotesk", "SpaceGrotesk")
+        assertTrue("KettleType" in declared, "$declared")
+        for (name in declared) {
+            val message =
+                refusal(theme(fonts = """"body": "HankenGrotesk_400Regular", "display": "${name}_600SemiBold""""))
+
+            assertTrue("Fonts.display" in message, "$name: $message")
+        }
+    }
 }

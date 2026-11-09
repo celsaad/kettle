@@ -191,16 +191,7 @@ private fun PadKeys(
                         // Drawn as an empty key, as RN's, so the grid reads whole; nothing to press.
                         Box(modifier.heightIn(min = KEY_HEIGHT).clip(KeyShape).keyFace())
                     } else {
-                        // A digit is named by its own text; only the backspace icon needs a label.
-                        val description =
-                            if (key ==
-                                PadKeyKind.Backspace
-                            ) {
-                                stringResource(R.string.common_delete)
-                            } else {
-                                null
-                            }
-                        PadKey(key, description, modifier) { onKey(key) }
+                        PadKey(key, modifier) { onKey(key) }
                     }
                 }
             }
@@ -211,10 +202,11 @@ private fun PadKeys(
 @Composable
 private fun PadKey(
     key: PadKeyKind,
-    description: String?,
     modifier: Modifier,
     onClick: () -> Unit,
 ) {
+    // A digit is named by its own text; only the backspace icon needs a label.
+    val description = if (key is PadKeyKind.Backspace) stringResource(R.string.common_delete) else null
     Box(
         modifier
             .heightIn(min = KEY_HEIGHT)

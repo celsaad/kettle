@@ -178,7 +178,7 @@ internal fun TextControl(
  */
 internal data class SymbolLook(
     val size: Dp,
-    val symbol: TextStyle = KettleType.heading.copy(color = RunnerColors.textSecondary),
+    val symbolType: TextStyle = KettleType.heading.copy(color = RunnerColors.textSecondary),
     val border: Dp = 1.dp,
     val accent: Boolean = false,
     val fill: Color = Color.Transparent,
@@ -221,7 +221,7 @@ internal fun SymbolButton(
     look: SymbolLook = SymbolLook.Small,
 ) {
     RoundButton(description, onClick, enabled, look) {
-        TypeIcon(symbol, look.symbol, if (look.accent) RunnerColors.accent else look.symbol.color)
+        TypeIcon(symbol, look.symbolType, if (look.accent) RunnerColors.accent else look.symbolType.color)
     }
 }
 

@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Material Symbols "backspace", 400 regular, in place of the "⌫" a Text used to draw: copied out of
-     @expo-google-fonts/material-symbols, as the tab icons are. Apache 2.0, like the font. -->
+     @expo-google-fonts/material-symbols, as the tab icons are. Apache 2.0, like the font.
+     Mirrored right to left, as Material's own backspace icon is (the ⌫ glyph wasn't). -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
     android:height="24dp"
     android:viewportWidth="960"
-    android:viewportHeight="960">
+    android:viewportHeight="960"
+    android:autoMirrored="true">
     <path
         android:fillColor="#FFFFFFFF"
         android:pathData="M456 640 560 536 664 640 720 584 616 480 720 376 664 320 560 424 456 320 400 376 504 480 400 584ZM360 800Q341 800 324 791.5Q307 783 296 768L80 480L296 192Q307 177 324 168.5Q341 160 360 160H800Q833 160 856.5 183.5Q880 207 880 240V720Q880 753 856.5 776.5Q833 800 800 800ZM180 480 360 720Q360 720 360 720Q360 720 360 720H800Q800 720 800 720Q800 720 800 720V240Q800 240 800 240Q800 240 800 240H360Q360 240 360 240Q360 240 360 240ZM580 480Q580 480 580 480Q580 480 580 480Q580 480 580 480Q580 480 580 480Q580 480 580 480Q580 480 580 480Q580 480 580 480Q580 480 580 480Z" />

@@ -139,7 +139,11 @@ internal fun NumberPad(
             }
         }
         PadKeys(request.allowDecimal) { key ->
-            entry = if (key == BACKSPACE) entry.backspace() else entry.type(key.single())
+            entry =
+                when (key) {
+                    is PadKeyKind.Character -> entry.type(key.char)
+                    PadKeyKind.Backspace -> entry.backspace()
+                }
         }
         Row(
             Modifier.padding(top = Spacing.one),
@@ -170,13 +174,14 @@ internal fun NumberPad(
     }
 }
 
-/** The 3×4 grid; [onKey] gets a digit, the point, or [BACKSPACE]. */
+/** The 3×4 grid; [onKey] gets a digit, the point, or backspace. */
 @Composable
 private fun PadKeys(
     allowDecimal: Boolean,
-    onKey: (String) -> Unit,
+    onKey: (PadKeyKind) -> Unit,
 ) {
-    val keys = DIGITS + listOf(if (allowDecimal) "." else null, "0", BACKSPACE)
+    val point = if (allowDecimal) PadKeyKind.Character('.') else null
+    val keys = DIGITS + listOf(point, PadKeyKind.Character('0'), PadKeyKind.Backspace)
     Column(verticalArrangement = Arrangement.spacedBy(KEY_GAP)) {
         for (row in keys.chunked(KEYS_PER_ROW)) {
             Row(horizontalArrangement = Arrangement.spacedBy(KEY_GAP)) {
@@ -187,7 +192,14 @@ private fun PadKeys(
                         Box(modifier.heightIn(min = KEY_HEIGHT).clip(KeyShape).keyFace())
                     } else {
                         // A digit is named by its own text; only the backspace icon needs a label.
-                        val description = if (key == BACKSPACE) stringResource(R.string.common_delete) else null
+                        val description =
+                            if (key ==
+                                PadKeyKind.Backspace
+                            ) {
+                                stringResource(R.string.common_delete)
+                            } else {
+                                null
+                            }
                         PadKey(key, description, modifier) { onKey(key) }
                     }
                 }
@@ -198,7 +210,7 @@ private fun PadKeys(
 
 @Composable
 private fun PadKey(
-    key: String,
+    key: PadKeyKind,
     description: String?,
     modifier: Modifier,
     onClick: () -> Unit,
@@ -213,10 +225,9 @@ private fun PadKey(
         contentAlignment = Alignment.Center,
     ) {
         val style = KettleType.heading.copy(fontSize = KEY_LABEL)
-        if (key == BACKSPACE) {
-            TypeIcon(R.drawable.icon_backspace, style, RunnerColors.text)
-        } else {
-            Text(key, style = style, color = RunnerColors.text)
+        when (key) {
+            is PadKeyKind.Character -> Text(key.char.toString(), style = style, color = RunnerColors.text)
+            PadKeyKind.Backspace -> TypeIcon(R.drawable.icon_backspace, style, RunnerColors.text)
         }
     }
 }
@@ -358,10 +369,16 @@ private fun PickerSearch(
     )
 }
 
-private val DIGITS = listOf("1", "2", "3", "4", "5", "6", "7", "8", "9")
+/** A keypad key: one that types its character, drawn as that character, or backspace, drawn as its icon. */
+private sealed interface PadKeyKind {
+    data class Character(
+        val char: Char,
+    ) : PadKeyKind
 
-/** The key that isn't a character: drawn as its icon, and named, where every other key is its text. */
-private const val BACKSPACE = "backspace"
+    data object Backspace : PadKeyKind
+}
+
+private val DIGITS = ('1'..'9').map(PadKeyKind::Character)
 private const val KEYS_PER_ROW = 3
 private const val SEARCH_THRESHOLD = 8
 private const val BACKDROP_ALPHA = 0.55f

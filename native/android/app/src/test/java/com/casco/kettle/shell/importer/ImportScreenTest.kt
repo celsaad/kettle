@@ -393,9 +393,11 @@ class ImportScreenTest : ImportHarness() {
     // nothing (TypeIconTest), so the words are the whole of what TalkBack reads.
     @Test
     fun `says in words whether a row is new or updated`() {
+        // dips is new to the library, pull-ups already in it.
         picks(Library(1, listOf(pullUps, dips), emptyList(), emptyList()))
         chooseFile()
 
+        shown("novo exercício")
         shown("exercício atualizado")
     }
 

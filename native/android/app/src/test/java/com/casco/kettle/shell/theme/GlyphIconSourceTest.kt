@@ -13,13 +13,17 @@ import java.io.File
 class GlyphIconSourceTest {
     @Test
     fun `no Text in the app's sources draws a glyph icon`() {
-        // A one-character non-ASCII literal, or a lone +, as a Text's first argument, named or not, or as
-        // either branch of an if; or set as a View's text. Neither is ever a word, so every hit is an
-        // icon. A glyph passed in through a variable gets past it: the price of a scan over a UI test.
-        val glyph = """"(?:[^\x00-\x7F]|\+)""""
+        // A one-character non-ASCII literal (with any emoji variation selector), or a lone +: as a Text's
+        // first argument, named or not, or either branch of an if; set as a View's text; returned by a
+        // when branch; or held in a val, which is how the sheet's × and the keypad's ⌫ hid from a scan of
+        // the calls alone. Neither is ever a word, so every hit is an icon. A glyph built at run time
+        // still gets past it: the price of a scan over a UI test.
+        val glyph = """"(?:[^\x00-\x7F]\x{FE0F}?|\+)""""
         val inText = """\bText\(\s*(?:text\s*=\s*)?(?:if \(.*?\) (?:"[^"]*" else )?)?$glyph"""
         val onView = """\btext = $glyph"""
-        val glyphIcon = Regex("$inText|$onView")
+        val inWhen = """-> $glyph"""
+        val held = """\bval \w+(?::\s*String)? = $glyph"""
+        val glyphIcon = Regex("$inText|$onView|$inWhen|$held")
         val hits =
             File("src/main/java")
                 .walkTopDown()

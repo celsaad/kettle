@@ -527,6 +527,17 @@ it) came from the runner still being RN. Once RN draws nothing it is mostly dele
   versions. With the AAR gone, most of that goes; the two jobs may fold back into one, and
   `android.yml` (rewritten for the shell in #149) and `scripts/native-dev.ps1` lose their RN steps
   too.
+- **Repoint the device scripts.** Each `.sh` and its `.ps1` twin change together:
+  - **`native-dev`**: its AAR and Metro steps go, leaving build and install.
+  - **The debug receivers**: `NavigateReceiver` and `FilesChangedReceiver` hand their message to
+    `JsBridge`, so a route only lands once RN's JS has loaded from Metro. Point them at native
+    navigation, which owns routing by then (#309), and at the native file reload. Delete
+    `FilesChangedReceiver` if nothing native needs telling.
+  - **`route-check`**: drop its "start it against Metro" precondition, and any `/session` rows left
+    from RN's runner.
+  - **`session-check` (#315)**: drop starting Metro, `adb reverse`, and the relaunch it does when the
+    app can't load its JS. Those are its flakiest steps, since an adb server restart drops the tunnel
+    mid-run.
 - **Rerun the startup benchmark, all-native against today's app** (M2's numbers, #150). Two things
   have to survive the deletion:
   - **The marker.** Already native: Home's port (#235) moved `reportFullyDrawn` to Compose's

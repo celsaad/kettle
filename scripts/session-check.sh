@@ -23,9 +23,9 @@
 # service's gating, not the app lifecycle that sets it in a real session. The Home check is the one
 # that sends the app away for real and leaves the flag alone; keep it.
 #
-# On an emulator, doze is forced (`deviceidle force-idle`) and a PIN set for the timing check, and a
-# call is placed to check a cue is skipped. On a phone the lock settings are left alone and the call
-# check is skipped, saying so.
+# On an emulator, doze is forced (`deviceidle force-idle`) and a PIN set for the timing check, each
+# confirmed before the rest is timed, and a call is rung (never answered) to check a cue is skipped.
+# On a phone the lock settings are left alone and the call check is skipped, saying so.
 #
 # Leaves the target as it found it, a failing or interrupted run included: the .dev data folder
 # restored byte for byte (checked), POST_NOTIFICATIONS granted, the emulator's PIN and doze cleared,
@@ -33,12 +33,11 @@
 # folder, with the backup in it, is kept after a failing run and removed after a clean one. It never
 # touches com.casco.kettle.
 #
-# Not covered, and kept as a manual list in .github/pull_request_template.md: a real Recents swipe,
-# tapping the shade notification to reattach, music ducking by ear, a real call on a phone, and a long
-# session against an OEM's background killer.
+# What it can't check, by gesture, ear or time, is the manual list in .github/pull_request_template.md.
 #
-# The checks read English text (alert titles, the recovery prompt's buttons), so the target's language
-# has to be English.
+# The checks read English text (alert titles from en.json's session.notification keys, the recovery
+# prompt's buttons), so the target's language has to be English. They also hardcode the alert's ids
+# and channel; the Kotlin side points back here.
 #
 # Usage: scripts/session-check.sh [--device <adb serial>]
 # Not -e: a check that fails says so and the run carries on to the next; setup steps exit themselves.
@@ -242,7 +241,7 @@ restore() {
   a shell am force-stop "$package"
   if [ "$backed_up" = 1 ]; then
     # The runner's state files aren't in the backup, and there were none at the start (checked). The
-    # folder is only cleared once the archive that replaces it is there to.
+    # data folder is cleared only when the archive that replaces it is on the device.
     a shell "run-as $package sh -c 'rm -rf $data/no_backup/runner; [ -s /data/local/tmp/session-check.tar ] && cd $data && rm -rf files/exercise-tracker && tar -xf /data/local/tmp/session-check.tar'"
     a shell rm -f /data/local/tmp/session-check.tar
     if [ "$(checksums)" = "$(cat "$work/checksums")" ]; then
@@ -346,6 +345,8 @@ close_session
 
 step 'Cue cadence, alert gating and content, sounds on'
 open_session zz-check-cues && wait_running
+a shell dumpsys activity services "$package" | grep -q 'isForeground=true .*types=0x00000100'
+check 'the service runs in the foreground, typed health' $?
 id=$(field "$(report)" sessionId)
 start=$(field "$(state_of "$id")" phaseStartedAt)
 count_in=$(focus_since $((start - 3500)) $((start + 500)) | wc -l | tr -d ' ')
@@ -487,10 +488,10 @@ if [ "$emulator" = 1 ]; then
   tried=$(focus_since $((start + 4500)) $((start + 10600)) | wc -l | tr -d ' ')
   played=$(focus_since $((start + 4500)) $((start + 11400)) abandon | wc -l | tr -d ' ')
   [ "$tried" -gt 0 ] && [ "$played" = 0 ]
-  check 'a cue during a call is skipped' $? "$tried requests, $played played"
+  check 'a cue while a call rings is skipped' $? "$tried requests, $played played"
   close_session
 else
-  skip 'a cue during a call: needs an emulator (adb emu gsm call); check it by hand on a phone'
+  skip 'a cue while a call rings: needs an emulator (adb emu gsm call); check it by hand on a phone'
 fi
 
 step "A rest's timing with the screen off, then the finish path"
@@ -501,9 +502,15 @@ wait_for 3 at_step 1 || true
 rest_start=$(field "$(state_of "$id")" phaseStartedAt)
 if [ "$emulator" = 1 ]; then
   a shell locksettings set-pin "$pin" >/dev/null && pin_set=1
+  a shell locksettings verify --old "$pin" >/dev/null 2>&1; check 'the PIN lock is set' $?
 fi
 a shell input keyevent KEYCODE_SLEEP
-if [ "$emulator" = 1 ]; then a shell dumpsys deviceidle force-idle >/dev/null; fi
+sleep 1
+a shell dumpsys power | grep -qE 'mWakefulness=(Asleep|Dozing)'; check 'the screen is off' $?
+if [ "$emulator" = 1 ]; then
+  a shell dumpsys deviceidle force-idle >/dev/null
+  [ "$(a shell dumpsys deviceidle get deep | tr -d '\r')" = IDLE ]; check 'the device is in deep doze' $?
+fi
 # Waited out, not polled: a broadcast to the app every half second could keep it awake and hide a late
 # wake. The state file is read without waking the app.
 sleep 10

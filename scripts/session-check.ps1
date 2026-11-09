@@ -5,39 +5,12 @@
 .DESCRIPTION
   Leaving the count-in, a stale advance, cue cadence, the step-end alert's gating and content, the
   sounds preference, notifications denied, process death, and a rest's timing with the screen off,
-  then the finish path. Each check prints PASS or FAIL on its own line. The twin of
-  session-check.sh, step for step; the two change together, that file's header carries the reasoning,
-  and the test library they plant is session-check-library.yaml.
+  then the finish path. Each check prints PASS or FAIL on its own line.
 
-  Needs the .dev APK built (native-dev.ps1, or gradlew :app:assembleDebug once the RN AAR is in
-  mavenLocal), and a target that's booted, unlocked and running no session. It installs the APK (after
-  checking the cue sounds made it in), and starts Metro first if nothing answers on 8081: Expo starts
-  adb's server itself as it comes up, which can drop the device, so it settles before any device step.
-
-  The evidence is what a person would read by hand: the session's state file
-  (no_backup/runner/<id>.json, device wall-clock ms), its session file, dumpsys audio's
-  requestAudioFocus() and abandonAudioFocus() lines (a cue that played abandons its focus; one the
-  system refused doesn't), the live "Notification List" of dumpsys notification (never its archive),
-  and dumpsys activity services. The session is driven through the debug-only RunnerCommandReceiver,
-  so nothing taps the screen except the recovery prompt, which only ever shows on an unlocked launch.
-
-  Caveat: the alert checks report the runner's visibility through the receiver, so they test the
-  service's gating, not the app lifecycle that sets it in a real session. The Home check is the one
-  that sends the app away for real and leaves the flag alone; keep it.
-
-  On an emulator, doze is forced and a PIN set for the timing check, and a call is rung (never
-  answered) to check a cue is skipped. On a phone the lock settings are left alone and the call check
-  is skipped, saying so. The checks read English text, so the target's language has to be English.
-
-  Leaves the target as it found it, a failing or interrupted run included: the .dev data folder
-  restored byte for byte (checked), POST_NOTIFICATIONS granted, the emulator's PIN and doze cleared,
-  and Metro stopped if this started it (one already running is the caller's, and stays). Its temp
-  folder, with the backup in it, is kept after a failing run and removed after a clean one. It never
-  touches com.casco.kettle.
-
-  Not covered, and kept as a manual list in .github/pull_request_template.md: a real Recents swipe,
-  tapping the shade notification to reattach, music ducking by ear, a real call on a phone, and a
-  long session against an OEM's background killer.
+  The twin of session-check.sh, step for step: the two change together, and that file's header is
+  the reference for what this needs, what it reads as evidence, its caveats, and how it leaves the
+  target. The test library they plant is session-check-library.yaml. What neither can check is the
+  manual list in .github/pull_request_template.md.
 
 .PARAMETER Device
   The adb serial to use when more than one device is attached.
@@ -335,6 +308,7 @@ try {
 
   Step 'Cue cadence, alert gating and content, sounds on'
   if (OpenSession 'zz-check-cues') { WaitRunning | Out-Null }
+  Check 'the service runs in the foreground, typed health' ([bool]((A shell dumpsys activity services $package) -match 'isForeground=true .*types=0x00000100'))
   $id = Field sessionId
   $start = [long](StateOf $id).phaseStartedAt
   $countIn = Count (FocusSince ($start - 3500) ($start + 500))
@@ -472,10 +446,10 @@ try {
     A emu gsm cancel 5550100 | Out-Null
     $tried = Count (FocusSince ($start + 4500) ($start + 10600))
     $played = Count (FocusSince ($start + 4500) ($start + 11400) 'abandon')
-    Check 'a cue during a call is skipped' ($tried -gt 0 -and $played -eq 0) "$tried requests, $played played"
+    Check 'a cue while a call rings is skipped' ($tried -gt 0 -and $played -eq 0) "$tried requests, $played played"
     CloseSession
   } else {
-    Skip 'a cue during a call: needs an emulator (adb emu gsm call); check it by hand on a phone'
+    Skip 'a cue while a call rings: needs an emulator (adb emu gsm call); check it by hand on a phone'
   }
 
   Step "A rest's timing with the screen off, then the finish path"
@@ -487,9 +461,16 @@ try {
   if ($emulator) {
     A shell locksettings set-pin $pin | Out-Null
     $pinSet = $LASTEXITCODE -eq 0
+    A shell locksettings verify --old $pin 2>&1 | Out-Null
+    Check 'the PIN lock is set' ($LASTEXITCODE -eq 0)
   }
   A shell input keyevent KEYCODE_SLEEP
-  if ($emulator) { A shell dumpsys deviceidle force-idle | Out-Null }
+  Start-Sleep -Seconds 1
+  Check 'the screen is off' ([bool]((A shell dumpsys power) -match 'mWakefulness=(Asleep|Dozing)'))
+  if ($emulator) {
+    A shell dumpsys deviceidle force-idle | Out-Null
+    Check 'the device is in deep doze' (((A shell dumpsys deviceidle get deep) -join '') -eq 'IDLE')
+  }
   # Waited out, not polled: a broadcast to the app every half second could keep it awake and hide a
   # late wake. The state file is read without waking the app.
   Start-Sleep -Seconds 10
@@ -519,7 +500,8 @@ try {
   A shell am force-stop $package
   if ($backedUp) {
     # The runner's state files aren't in the backup, and there were none at the start (checked).
-    # The runner's folder is cleared, and the data folder only once the archive that replaces it is there.
+    # The runner's state files aren't in the backup, and there were none at the start (checked). The
+    # data folder is cleared only when the archive that replaces it is on the device.
     A shell "run-as $package sh -c 'rm -rf $data/no_backup/runner; [ -s /data/local/tmp/session-check.tar ] && cd $data && rm -rf files/exercise-tracker && tar -xf /data/local/tmp/session-check.tar'"
     A shell rm -f /data/local/tmp/session-check.tar
     if ((Checksums) -eq $checksumsBefore) {

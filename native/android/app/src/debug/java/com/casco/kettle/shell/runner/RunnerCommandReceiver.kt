@@ -24,7 +24,8 @@ import org.json.JSONObject
  * the session as it stands ([RunnerHost.active]), unless `--el visit` names one: then the engine
  * refuses a stale one, as it would a late tap, which is what lets the script check it does.
  *
- * Debug only, and behind the same permission as `NavigateReceiver`.
+ * Debug only, and behind the same permission as `NavigateReceiver`. Both scripts parse `report`'s keys
+ * and these command names, so a rename goes into both twins.
  */
 class RunnerCommandReceiver : BroadcastReceiver() {
     override fun onReceive(

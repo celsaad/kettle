@@ -184,5 +184,8 @@ fun createRunnerChannels(context: Context) {
 
 const val ONGOING_CHANNEL = "workout-in-progress"
 
-/** expo-notifications' fallback channel's id (`BaseNotificationBuilder.kt`), on purpose. */
+/**
+ * expo-notifications' fallback channel's id (`BaseNotificationBuilder.kt`), on purpose.
+ * scripts/session-check checks the step-end alert is on it, so a change here goes into both twins.
+ */
 const val CUES_CHANNEL = "expo_notifications_fallback_notification_channel"

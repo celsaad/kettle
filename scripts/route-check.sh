@@ -4,13 +4,12 @@
 # the two matrices are kept identical, so a step added to one is added to both.
 #
 # Needs com.casco.kettle.dev from native-dev.sh, running against Metro and past its splash, on a
-# phone in English whose .dev install still holds the seed library. The RN runner's steps finish a
-# real session, which joins the .dev history, and so do the native runner's (#306). It never
-# touches com.casco.kettle.
+# phone in English whose .dev install still holds the seed library. The runner's steps finish real
+# sessions, which join the .dev history (#306). It never touches com.casco.kettle.
 #
-# The matrix is .dev's, which runs with the nativeRunner flip on (#302): a start from a native screen
-# opens the native runner, which is waited on past its count-in (its Finish only shows once the
-# session runs), and a release build opens RN's runner there instead. Every other route is the same in both since the library flip (#245).
+# A start opens the native runner, in every build since the flip release (#308), and is waited on
+# past its count-in: its Finish only shows once the session runs. Every route is the same in debug
+# and release.
 #
 # Usage: scripts/route-check.sh [--device <adb serial>]
 set -euo pipefail
@@ -81,12 +80,7 @@ steps=(
   '/session-native?workoutId=foundations-push|Finish'
   '/library|Finish' 'back|Finish session?' 'tap:Cancel|Finish'
   'back|Finish session?' 'tap:Finish|Workout complete' 'tap:Done|tab:History'
-  # Over a running session. Cancel must leave the runner on top, with nothing stacked over it.
-  '/session?workoutId=foundations-push|Finish'
-  '/library|Finish session?' 'tap:CANCEL|Finish'
-  'back|Finish session?' 'tap:CANCEL|Finish'
-  '/programs|Finish session?' 'tap:FINISH|Workout complete'
-  'tap:Done|tab:History' 'back|tab:Workouts' 'back|'
+  'back|tab:Workouts' 'back|'
 )
 
 # A dump that fails (it gives up on a screen that isn't idle for a second) writes nothing, so without

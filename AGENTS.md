@@ -23,8 +23,8 @@ it's `pnpm test --ci`, not `npm test -- --ci`.
 - `pnpm run knip` — unused files, dependencies and exports, and any import `package.json` doesn't
   list. Same rule as a lint warning: delete the dead code, or name a genuine exception in
   `knip.jsonc` with its reason.
-- `pnpm test` — jest via `jest-expo`. Covers the domain layer, the session runner, the highest-branch
-  screens and the stores. Under a minute, so run it. A single file is `pnpm jest <path>`.
+- `pnpm test` — jest via `jest-expo`. Covers the domain layer, the shipped content and its mirrors,
+  the stores and the native runner's stub route; the runner itself is `:shared`'s and `:app`'s tests. Under a minute, so run it. A single file is `pnpm jest <path>`.
 - `pnpm run format` — oxfmt (same Oxc toolchain as oxlint, so they agree). Run it instead of matching
   the style by hand, and never reach for `pnpm dlx prettier`, which has no config here and would
   reformat the file to its own defaults. **Markdown and `package.json` are excluded on purpose** —
@@ -54,8 +54,9 @@ retrofit, so answer them out loud even when the answer is no.
 - [ ] **Does it need error checks, an error boundary, or a graceful degrade?** Ask per layer: can a
       storage call fail without throwing into its caller; does an in-app form need `validateConfig`-style
       validation (the zod schema does *not* run on that path); can a render throw here cost a workout in
-      progress? Degrading beats crashing — `safe-notifications.ts`, `PreparedLibrary.kt`'s reseed of
-      a corrupt library, and native Support's store states (`TipJar.kt`) are the patterns to copy.
+      progress? Degrading beats crashing — `RunnerService.kt`'s `notifyIfAllowed`,
+      `PreparedLibrary.kt`'s reseed of a corrupt library, and native Support's store states
+      (`TipJar.kt`) are the patterns to copy.
 - [ ] **Add tests if it makes sense.** Pure logic, error and empty branches, validation wiring: yes.
       Layout, animation, real audio and file writes: drive the running app instead. See "Writing tests".
 - [ ] `pnpm test`
@@ -103,11 +104,12 @@ mistake here that cannot be fixed for anyone who has already installed it.
 - `src/state/` — zustand stores (`library-store`, `session-history-store`, and a read-only
   `preferences-store`, since native Settings writes that file) and `selectors/`, derived/display logic
   split per view (`records`, `logged-sessions`, `session-summary`, …).
-- `src/hooks/use-session-runner.ts` — the wall-clock session engine. The product plan calls timer
-  reliability "the make-or-break issue"; treat this file as high-risk and verify changes by running a
-  real session, not by reasoning alone. Its pure parts live next door in `session-steps.ts`
-  (`buildSteps`, the step model) — importing the runner itself pulls in `expo-audio` and dies on
-  native-module init, which is why that split exists.
+- The session runner is native's since the flip release (#308): a headless engine in `:shared`
+  (`RunnerEngine.kt`, with the step model in `RunnerSteps.kt`) that `:app`'s foreground service
+  (`shell/runner/RunnerService.kt`) owns and feeds the time, and the Compose runner over it. The
+  product plan calls timer reliability "the make-or-break issue"; treat the engine and the service as
+  high-risk and verify changes by running a real session (`scripts/session-check.sh`), not by
+  reasoning alone.
 - `src/app/` — expo-router routes. `src/components/` — shared UI.
 - `site/` — the public landing site (GitHub Pages), plain static HTML with no build step. Not part of
   the app build. `site/format.html` mirrors `schema.ts` — see "Changing the YAML format" below.
@@ -145,8 +147,9 @@ mistake here that cannot be fixed for anyone who has already installed it.
 - `conformance/` — the format's behaviour as data: hand-written YAML inputs and generated golden
   outputs, checked by `conformance.test.ts` and by the Kotlin runner in `:shared`. It exists so the
   Kotlin port can be held to exactly what the TS parser does; its README is the contract. A behaviour
-  change in `src/domain/`, `session-steps.ts` or `session-outline.ts` needs `pnpm run
-  conformance:update`, and the golden diff is part of the review.
+  change in `src/domain/` needs `pnpm run conformance:update`, and the golden diff is part of the
+  review. `steps` has no TS twin since the flip release: its goldens are written from `:shared`
+  (`./gradlew :shared:jvmTest -PupdateConformance`), as the README says.
 
 **YAML is snake_case, domain code is camelCase**, bridged only in `yaml-mapping.ts`. Program
 `overrides` are partial *raw* (snake_case) patches — that asymmetry is deliberate and load-bearing.
@@ -161,8 +164,8 @@ mistake here that cannot be fixed for anyone who has already installed it.
 - **Nothing may phone home.** The Play listing declares zero data collected/shared, which is a product
   claim, not an accident (see the tip-jar entry in the decision log). Any SDK that transmits — Sentry,
   EAS Update, analytics, RevenueCat — breaks it and needs a Data Safety declaration. Don't add one
-  without raising it first. `expo-notifications` is fine as used (local notifications only);
-  `getExpoPushTokenAsync` would not be.
+  without raising it first. Local notifications are fine (the runner's and the rest-day reminder's are
+  posted on the device); a push token would not be.
 
 ## Conventions and house rules
 
@@ -182,15 +185,15 @@ are house rules here rather than a backlog — cheap as you go, tedious to retro
   and open with the shared `ModalHeader` (grabber + pinned close button; it owns the top spacing, so
   the screen's own `scrollContent` has no `paddingTop`).
 - Theming is strict: `useTheme`, `ThemedText`, `Spacing.*`, `MaxContentWidth`. The
-  session runner is always dark (`RunnerColors`) regardless of scheme. Colors, spacing and the type
+  session runner is always dark (`theme.json`'s `RunnerColors`) regardless of scheme. Colors, spacing and the type
   scale (`ThemedText`'s sizes) are edited in `constants/theme.json`, which both UIs read; `theme.ts`
   re-exports them and holds their notes.
 - In-app forms write straight to the file and never pass through the schema, so they need their own
   validation (see `validateConfig` in `:shared`'s `ExerciseForm.kt`).
 - **Weights are stored in kilograms, always.** The library is a file users export and share, so it
-  can't change meaning with the reader's settings. `domain/units.ts` is the only converter and
-  `useUnitSystem()` the only reader of the preference — never store a pound value, and never format a
-  weight without going through `toDisplayWeight`. Anything editing a *stored* weight must also pass
+  can't change meaning with the reader's settings. `domain/units.ts` and its `:shared` port
+  (`Units.kt`) are the only converters — never store a pound value, and never format a weight without
+  going through `toDisplayWeight`. Anything editing a *stored* weight must also pass
   `previousWeightKg`, or an untouched field silently drifts on save (see the decision log).
 - **Comments explain why, not what** — trade-offs, root causes, and deliberate scope cuts. Match the
   surrounding density; don't annotate self-evident lines.
@@ -235,7 +238,7 @@ with every test still green.
   `async` too, or React reports nested scopes.
 - **Mock at our own boundary** (`@/storage/*`, `@/state/session-history-store`), not at
   `expo-file-system` — assertions then read as "what got persisted" rather than "what got written".
-  Screens read the library from the real zustand store, so setup is `useLibraryStore.setState(...)`.
+  A screen that reads the library reads the real zustand store, so setup is `useLibraryStore.setState(...)`.
 - `src/test-support/` holds the shared fixtures and the `expo-router` stand-in. That one is a module
   rather than an inline factory because `jest.mock`'s factory is hoisted above every `const` and may
   not close over one; `jest.mock('expo-router', () => require('@/test-support/expo-router'))` works.
@@ -245,10 +248,6 @@ with every test still green.
   both bundles and resets the locale after every test). An English-locale assertion *cannot* catch a
   hardcoded English string — `t('x.y')` and the literal it returns render identically. It only catches
   a rendered key path. Three screens have shipped with hardcoded strings for exactly this reason.
-- **Alert-driven confirm flows go through `pressAlertButton`**, which reaches into the spied
-  `Alert.alert` call and runs the handler in its own `act` scope. `Alert` renders nothing, so its
-  buttons aren't in the tree; and the handler writes to the store, so without `act` React reports an
-  unwrapped update from inside the *store*, naming a file nowhere near the test that caused it.
 - Finish with `pnpm run format`; don't hand-align a new test file against the rest.
 - `testTimeout` is 30s, not jest's 5s default. Screen tests pay a one-off lazy-init cost on the first
   render in a file (~0.5s locally, far more on CI's contended 2-core runner, where the default failed).
@@ -384,8 +383,8 @@ are the index, the banner is the contract.
   The runner's "Coming up" sheet: tapping the workout name
   opens a read-only timeline of what's left, with the circuit round you're in spelled out and the rest
   collapsed. Names what it deliberately doesn't do (circuit names are the follow-up, and a format
-  change), plus a bug it found outside its scope: leaving the runner by back or swipe strands the
-  session unfinished.
+  change), plus a bug it found outside its scope, RN's runner stranding a session left by back or
+  swipe, which went with that runner (#308).
 
 Three rules about keeping the plan files honest, in the order they get broken:
 

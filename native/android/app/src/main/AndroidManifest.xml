@@ -12,11 +12,23 @@
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="com.android.vending.BILLING" />
     <!--
-      The rest-day reminder's (#236). expo-notifications' manifest already merges both in, so the
-      merged manifest doesn't change; declared here so they outlive that module in M7.
+      The rest-day reminder's (#236), and POST_NOTIFICATIONS the runner's too. Declared here, where
+      expo-notifications' manifest once merged them in, so they outlived it (#308).
     -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!--
+      The runner's foreground service (#305), on Play from the flip release (#308) with its Console
+      declaration. `health` is the type whose documented purpose is exercise trackers (#293), and
+      HIGH_SAMPLING_RATE_SENSORS is its install-time prerequisite: no prompt, and nothing reads a
+      sensor. WAKE_LOCK holds the session's clock through Doze.
+    -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_HEALTH" />
+    <uses-permission
+        android:name="android.permission.HIGH_SAMPLING_RATE_SENSORS"
+        tools:ignore="HighSamplingRate" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission
         android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32"
@@ -61,19 +73,6 @@
         android:theme="@style/AppTheme"
         tools:targetApi="33">
 
-        <meta-data
-            android:name="com.google.firebase.messaging.default_notification_color"
-            android:resource="@color/notification_icon_color" />
-        <meta-data
-            android:name="com.google.firebase.messaging.default_notification_icon"
-            android:resource="@drawable/notification_icon" />
-        <meta-data
-            android:name="expo.modules.notifications.default_notification_color"
-            android:resource="@color/notification_icon_color" />
-        <meta-data
-            android:name="expo.modules.notifications.default_notification_icon"
-            android:resource="@drawable/notification_icon" />
-
         <activity
             android:name=".MainActivity"
             android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|uiMode|smallestScreenSize|assetsPaths|locale|layoutDirection"
@@ -115,6 +114,12 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/shared_files" />
         </provider>
+
+        <!-- No stopWithTask, so a Recents swipe leaves the session running (#297). -->
+        <service
+            android:name=".runner.RunnerService"
+            android:exported="false"
+            android:foregroundServiceType="health" />
 
         <!-- The rest-day reminder (#236): its alarm and its reschedule after a reboot. -->
         <receiver

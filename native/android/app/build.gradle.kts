@@ -62,7 +62,10 @@ android {
         // ones Expo modules read (below; `generatedResources()` in LocalePreviews.kt skips them).
         manifestPlaceholders["appName"] = expo["name"] as String
         resValue("color", "splashscreen_background", pluginOption("expo-splash-screen", "backgroundColor"))
-        resValue("color", "notification_icon_color", pluginOption("expo-notifications", "color"))
+        // The shade's accent is the launcher icon's background, the one brand colour app.json holds since
+        // expo-notifications and its plugin's `color` went in the flip release (#308).
+        val brandColor = expoAndroid["adaptiveIcon"].asJsonObject()["backgroundColor"] as String
+        resValue("color", "notification_icon_color", brandColor)
         // expo-system-ui sets the night mode from this on every launch, and its library default is
         // `light`: without it, Settings → Appearance → System stays light on a dark phone. Prebuild
         // wrote it from app.json, preferring the android-specific key, and left the default when unset.
@@ -123,10 +126,6 @@ android {
             matchingFallbacks += "release"
         }
     }
-
-    // initWith copies release's settings but not its sources, and the benchmark is timed as Play's
-    // build, so it compiles release's code (the nativeRunner flip, off) rather than a copy of it.
-    sourceSets.getByName("benchmark").java.srcDir("src/release/java")
 
     packaging {
         // RN, Hermes and several Expo modules each ship their own copy of libc++_shared. libworklets:
@@ -297,9 +296,8 @@ androidComponents {
         variant.sources.res?.addGeneratedSourceDirectory(generateTheme, GenerateTheme::res)
         // The seed and packs RN bundles too, packaged as they are: nothing to generate, so read in place.
         variant.sources.assets?.addStaticSourceDirectory(contentDir.asFile.path)
-        // The runner's cues (#305), the files RN plays, read in place for the same reason. Debug alone
-        // until the flip release (#308), which ships the service, so a Play build is unchanged.
-        if (variant.buildType == "debug") variant.sources.assets?.addStaticSourceDirectory(soundsDir.asFile.path)
+        // The runner's cues (#305), the files RN played, read in place for the same reason.
+        variant.sources.assets?.addStaticSourceDirectory(soundsDir.asFile.path)
     }
 }
 
@@ -340,8 +338,6 @@ dependencies {
     implementation("host.exp.exponent:expo.core:${npmVersion("expo")}")
     implementation("host.exp.exponent:expo.modules:${npmVersion("expo-modules-core")}")
     implementation("host.exp.exponent:expo.modules.splashscreen:${npmVersion("expo-splash-screen")}")
-    // Only to cancel 0.13's pending Expo reminder (#236); goes with the module in M7.
-    implementation("host.exp.exponent:expo.modules.notifications:${npmVersion("expo-notifications")}")
     // BrownfieldActivity is an AppCompatActivity, and the AAR only compiles against fragment-ktx.
     implementation(libs.appcompat)
     implementation(libs.fragment.ktx)

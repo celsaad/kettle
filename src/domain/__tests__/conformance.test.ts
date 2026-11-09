@@ -9,16 +9,6 @@ import { parseSupporterState } from '@/domain/tip';
 import type { Library, Session, WorkoutBlock } from '@/domain/types';
 import { fromDisplayWeight, toDisplayWeight, weightStep, type UnitSystem } from '@/domain/units';
 import { entryBest, recordKey, sessionRecords, type RecordKind } from '@/state/selectors/records';
-import {
-  addSetForMember,
-  buildStepsForExercise,
-  buildStepsWithLimits,
-  dropLastSetForMember,
-  setStepsForMember,
-  swapExerciseForMember,
-  type RunnerStep,
-} from '@/hooks/session-steps';
-import { upcomingOutline } from '@/hooks/session-outline';
 import { localizeLibrary, translationFor, type LibraryTranslation } from '@/storage/library-translation';
 import { sessionDurationMinutes, sessionEntryResult, sessionSetCount } from '@/state/selectors/session-summary';
 import {
@@ -43,6 +33,9 @@ import {
  *
  * Outputs are normalised to what both implementations can promise. A refusal is its kind plus the
  * sorted refused paths, never zod's or js-yaml's wording. Absent optionals are absent, not null.
+ *
+ * `steps` is the one suite with no runner here: its TS twin went with RN's runner (#308), so the
+ * Kotlin runner in `:shared` is both its check and its writer (the corpus README).
  */
 // oxlint-disable-next-line no-underscore-dangle -- node's own global; the name isn't ours to choose.
 declare const __dirname: string;
@@ -90,51 +83,6 @@ function mustParseLibrary(yaml: string): Library {
   const result = parseLibraryYaml(yaml);
   if (!result.ok) throw new Error(`fixture library does not parse: ${JSON.stringify(result.error)}`);
   return result.data;
-}
-
-type StepOp = { op: string; member?: string; from?: number; exercise?: string; newMember?: string; block?: number };
-
-/** One mid-session op on a step list: a count, or the list it leaves. See the header of `steps.yaml`. */
-function stepOp(library: Library, steps: RunnerStep[], op: StepOp): number | RunnerStep[] {
-  const exercise = () => library.exercises.find((candidate) => candidate.id === op.exercise)!;
-  switch (op.op) {
-    case 'count':
-      return setStepsForMember(steps, op.member!);
-    case 'addSet':
-      return addSetForMember(steps, op.member!);
-    case 'dropLastSet':
-      return dropLastSetForMember(steps, op.member!);
-    case 'swap':
-      return swapExerciseForMember(steps, op.member!, op.from!, exercise(), op.newMember!);
-    case 'append':
-      return [...steps, ...buildStepsForExercise(exercise(), op.block!, op.member!)];
-    default:
-      throw new Error(`unknown op ${op.op}`);
-  }
-}
-
-/** A case's step list: its workout built (or an empty ad-hoc one), then its `ops` applied in order. */
-function caseSteps(testCase: Case): { library: Library; built: { steps: RunnerStep[]; truncated: boolean } } {
-  const library = mustParseLibrary(testCase.library as string);
-  const workout =
-    testCase.workout === undefined
-      ? library.workouts[0]
-      : library.workouts.find((candidate) => candidate.id === testCase.workout)!;
-  let built = testCase.adhoc
-    ? { steps: [] as RunnerStep[], truncated: false }
-    : buildStepsWithLimits(workout, library.exercises);
-  if (testCase.op !== 'mutate') {
-    for (const op of (testCase.ops ?? []) as StepOp[]) {
-      const result = stepOp(library, built.steps, op);
-      if (Array.isArray(result)) built = { ...built, steps: result };
-    }
-  }
-  return { library, built };
-}
-
-/** Every index from -1 (nothing on screen yet) to one past the end, or the case's own `at`. */
-function caseIndices(testCase: Case, length: number): number[] {
-  return (testCase.at as number[] | undefined) ?? Array.from({ length: length + 2 }, (_, i) => i - 1);
 }
 
 const runners: Record<string, (testCase: Case) => unknown> = {
@@ -223,37 +171,6 @@ const runners: Record<string, (testCase: Case) => unknown> = {
         const prior = (testCase.prior as string[]).map(mustParseSession);
         return sessionRecords(session(), prior, library.exercises);
       }
-      default:
-        throw new Error(`unknown op ${String(testCase.op)}`);
-    }
-  },
-
-  steps: (testCase) => {
-    const { library, built } = caseSteps(testCase);
-    switch (testCase.op) {
-      case 'build':
-        return testCase.brief
-          ? plain({
-              truncated: built.truncated,
-              length: built.steps.length,
-              head: built.steps.slice(0, 3),
-              tail: built.steps.slice(-3),
-            })
-          : plain({ truncated: built.truncated, length: built.steps.length, steps: built.steps });
-      case 'mutate': {
-        let steps = built.steps;
-        return plain(
-          ((testCase.ops ?? []) as StepOp[]).map((op) => {
-            const result = stepOp(library, steps, op);
-            if (Array.isArray(result)) steps = result;
-            return { op, result };
-          }),
-        );
-      }
-      case 'outline':
-        return plain(
-          caseIndices(testCase, built.steps.length).map((at) => ({ at, items: upcomingOutline(built.steps, at) })),
-        );
       default:
         throw new Error(`unknown op ${String(testCase.op)}`);
     }

@@ -82,7 +82,7 @@ class HomeScreenTest {
 
     private val opened = mutableListOf<Triple<Stacking, String, Map<String, String>>>()
 
-    /** Every start, which `openRunner` turns into a push of whichever runner the flip picks. */
+    /** Every start, which `openRunner` turns into a push of the runner's stub. */
     private val started = mutableListOf<RunnerStart>()
     private var drawn = 0
 

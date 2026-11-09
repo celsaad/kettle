@@ -15,7 +15,7 @@ class TabNavigatorTest {
     fun `the runner shows while RN reports it, and not once RN is back on a tab`() {
         assertEquals(false, navigator.runnerShown)
 
-        navigator.onRoute("/session")
+        navigator.onRoute(NATIVE_RUNNER_PATH)
 
         assertEquals(true, navigator.runnerShown)
 
@@ -139,7 +139,7 @@ class TabNavigatorTest {
         val navigator = TabNavigator(rnRoutes, sent::add, reread = { handBacks++ })
 
         navigator.onRoute("/history")
-        navigator.onRoute("/session")
+        navigator.onRoute(NATIVE_RUNNER_PATH)
         navigator.onRoute("/session-summary")
         navigator.onRoute("/history")
         navigator.onRoute("/library")

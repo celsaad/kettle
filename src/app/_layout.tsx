@@ -22,7 +22,7 @@ import { AnimatedSplashOverlay } from '@/components/animated-icon';
 // before any screen renders a translated string.
 import '@/i18n';
 import { isSheetRoute, SHEET_ROUTES } from '@/constants/sheet-routes';
-import { Colors, RunnerColors, MaxContentWidth, Spacing } from '@/constants/theme';
+import { Colors, MaxContentWidth, Spacing } from '@/constants/theme';
 import { ThemeOverrideProvider, useAppTheme } from '@/hooks/theme-context';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { isHosted } from '@/hooks/brownfield-module';
@@ -115,20 +115,10 @@ function Navigation() {
         {/*
           Native-stack defaults each screen's own contentStyle background to white regardless of theme:
           without this, closing a modal briefly flashes white through the transition before the
-          destination screen's own background paints over it. session overrides to
-          RunnerColors.background since the live session runner is always dark regardless of the shell's
-          scheme, per the design (constants/theme.ts) — every other screen uses the current theme.
+          destination screen's own background paints over it.
         */}
         <Stack screenOptions={{ contentStyle: { backgroundColor: colors.background } }}>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen
-            name="session"
-            options={{
-              presentation: 'modal',
-              headerShown: false,
-              contentStyle: { backgroundColor: RunnerColors.background },
-            }}
-          />
           {/*
             The native runner's stub (#302): the shell draws the runner over it full screen, so RN's own
             slide would only move an empty screen nobody sees. Not a sheet, so the shell's sheet leaves it

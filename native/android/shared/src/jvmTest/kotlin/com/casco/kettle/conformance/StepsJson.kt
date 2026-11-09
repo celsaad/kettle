@@ -7,17 +7,25 @@ import com.casco.kettle.domain.UpcomingMember
 
 /**
  * The step model in the goldens' shape: RN's `RunnerStep` as JSON, an absent optional left out
- * rather than null, which is why each field goes through [putPresent].
+ * rather than null, which is why each field goes through [putPresent]. In the order [goldenJson]
+ * writes, which is what TS wrote for all but a few spread-built steps (#308).
  */
 internal fun stepJson(step: RunnerStep): Map<String, Any?> =
     buildMap {
+        put(
+            "kind",
+            when (step) {
+                is RunnerStep.Hold -> "hold"
+                is RunnerStep.Reps -> "reps"
+                is RunnerStep.Interval -> "interval"
+                is RunnerStep.Rest -> "rest"
+            },
+        )
         put("blockIndex", step.blockIndex)
         put("memberKey", step.memberKey)
         put("exerciseId", step.exerciseId)
-        putPresent("circuit", step.circuit?.let(::circuitJson))
         when (step) {
             is RunnerStep.Hold -> {
-                put("kind", "hold")
                 put("exerciseName", step.exerciseName)
                 putPresent("holdTargetSec", step.holdTargetSec)
                 putPresent("holdTargetMaxSec", step.holdTargetMaxSec)
@@ -28,7 +36,6 @@ internal fun stepJson(step: RunnerStep): Map<String, Any?> =
             }
 
             is RunnerStep.Reps -> {
-                put("kind", "reps")
                 put("exerciseName", step.exerciseName)
                 put("targetReps", step.targetReps)
                 putPresent("targetRepsMax", step.targetRepsMax)
@@ -39,7 +46,6 @@ internal fun stepJson(step: RunnerStep): Map<String, Any?> =
             }
 
             is RunnerStep.Interval -> {
-                put("kind", "interval")
                 put("exerciseName", step.exerciseName)
                 put("variant", step.variant.json)
                 put("targetSec", step.targetSec)
@@ -52,11 +58,11 @@ internal fun stepJson(step: RunnerStep): Map<String, Any?> =
             }
 
             is RunnerStep.Rest -> {
-                put("kind", "rest")
                 put("standalone", step.standalone)
                 put("seconds", step.seconds)
             }
         }
+        putPresent("circuit", step.circuit?.let(::circuitJson))
     }
 
 private fun circuitJson(position: CircuitPosition): Map<String, Any> =

@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 
 import type { Preferences } from '@/domain/preferences';
-import type { UnitSystem } from '@/domain/units';
 import { deviceUnitSystem } from '@/i18n';
 import { loadPreferences } from '@/storage/preferences-file';
 
@@ -56,14 +55,5 @@ export const usePreferencesStore = create<PreferencesStoreState>((set, get) => (
     });
   },
 }));
-
-/**
- * The display unit is ambient, like the theme — every component that renders a weight needs it, and
- * none of them need anything else from this store. Mirrors `useTheme()` rather than threading a prop
- * down through the session runner and both exercise forms.
- */
-export function useUnitSystem(): UnitSystem {
-  return usePreferencesStore((state) => state.preferences.unitSystem);
-}
 
 /** One list's chosen order. Narrow selector so a change on Build doesn't re-render Programs. */

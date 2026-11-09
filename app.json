@@ -47,20 +47,6 @@
       ],
       "expo-sharing",
       [
-        "expo-notifications",
-        {
-          "icon": "./assets/images/icon.png",
-          "color": "#c05c2b"
-        }
-      ],
-      [
-        "expo-audio",
-        {
-          "recordAudioAndroid": false,
-          "enableBackgroundPlayback": false
-        }
-      ],
-      [
         "expo-localization",
         {
           "supportedLocales": {

@@ -8,10 +8,10 @@ import com.casco.kettle.shell.files.StoredFiles
 import com.casco.kettle.storage.BackupFailure
 
 /**
- * The runner's finish backup (#220): RN sends `sessionFinished` once `completeSession` has written the
- * session, and this backs the log on disk up into the folder the preferences name. Null where none is
- * set, which is nothing to report, and otherwise whether it failed, which RN's completion screen warns
- * from. Blocking, like `backUp`: the caller's to run off the main thread.
+ * The runner's finish backup (#220): once the runner has written the finished session, this backs the
+ * log on disk up into the folder the preferences name. Null where none is set, which is nothing to
+ * report, and otherwise whether it failed, which the completion screen warns from. Blocking, like
+ * `backUp`: the caller's to run off the main thread.
  *
  * The log is read inside [oneBackupAtATime], not before it: the archive is the whole log, so the
  * backup that writes last decides what the folder holds, and one that read before waiting its turn

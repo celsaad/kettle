@@ -11,21 +11,21 @@
 
   The expected texts are English UI strings plus names from the seed library, so the phone has to be
   in English and the .dev install has to still hold the seed's exercises, workouts and program.
-  The RN runner's steps finish a real session, which joins the .dev history, and so do the native
-  runner's (#306). It never touches com.casco.kettle.
+  The runner's steps finish real sessions, which join the .dev history (#306). It never touches
+  com.casco.kettle.
 
   What the matrix pins: tabs in any order, every modal and back from it, a message sent from a modal
   (which must not stack a second copy of the tabs, since back would then walk through stale screens),
-  and a message over a running session, which must wait on "Finish session?".
+  and a message over a running session, which the runner drops without asking (#302).
 
   The matrix describes today's routes, so it moves with the migration. When a screen goes native, its
   steps stop going through a navigate message and its expected text may change. Since the shell's tab
   bar (M3), tab steps check which tab it has selected, and back between tabs is the shell's. Update
   the matrix in the same PR, rather than deleting a step that starts failing.
 
-  The matrix is .dev's, which runs with the nativeRunner flip on (#302): a start from a native screen
-  opens the native runner, which is waited on past its count-in (its Finish only shows once the
-  session runs), and a release build opens RN's runner there instead. Every other route is the same in both since the library flip (#245).
+  A start opens the native runner, in every build since the flip release (#308), and is waited on
+  past its count-in: its Finish only shows once the session runs. Every route is the same in debug
+  and release.
 
 .PARAMETER Device
   The adb serial to use when more than one device is attached.
@@ -98,12 +98,7 @@ $steps = @(
   @('/session-native?workoutId=foundations-push', 'Finish'),
   @('/library', 'Finish'), @('back', 'Finish session?'), @('tap:Cancel', 'Finish'),
   @('back', 'Finish session?'), @('tap:Finish', 'Workout complete'), @('tap:Done', 'tab:History'),
-  # Over a running session. Cancel must leave the runner on top, with nothing stacked over it.
-  @('/session?workoutId=foundations-push', 'Finish'),
-  @('/library', 'Finish session?'), @('tap:CANCEL', 'Finish'),
-  @('back', 'Finish session?'), @('tap:CANCEL', 'Finish'),
-  @('/programs', 'Finish session?'), @('tap:FINISH', 'Workout complete'),
-  @('tap:Done', 'tab:History'), @('back', 'tab:Workouts'), @('back', $null)
+  @('back', 'tab:Workouts'), @('back', $null)
 )
 
 # A dump that fails (it gives up on a screen that isn't idle for a second) writes nothing, so without

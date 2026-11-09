@@ -55,6 +55,12 @@ tasks.named<Test>("jvmTest") {
     listOf("../../src/content", "../../site/examples").forEach {
         inputs.dir(rootProject.layout.projectDirectory.dir(it)).withPathSensitivity(PathSensitivity.RELATIVE)
     }
+    // `-PupdateConformance` rewrites the goldens of the suites only Kotlin implements (ConformanceTest's
+    // KOTLIN_WRITES), which `pnpm run conformance:update` can't reach; never up to date, so it always runs.
+    if (providers.gradleProperty("updateConformance").isPresent) {
+        systemProperty("kettle.updateConformance", "true")
+        outputs.upToDateWhen { false }
+    }
     testLogging {
         events("passed", "skipped", "failed")
     }

@@ -1007,15 +1007,15 @@
         "kind": "rest",
         "blockIndex": 0,
         "memberKey": "0:circuit-rest",
+        "exerciseId": "pullups",
+        "standalone": false,
+        "seconds": 15,
         "circuit": {
           "round": 1,
           "rounds": 3,
           "member": 1,
           "memberTotal": 3
-        },
-        "exerciseId": "pullups",
-        "standalone": false,
-        "seconds": 15
+        }
       },
       {
         "kind": "reps",
@@ -1037,15 +1037,15 @@
         "kind": "rest",
         "blockIndex": 0,
         "memberKey": "0:circuit-rest",
+        "exerciseId": "pushups",
+        "standalone": false,
+        "seconds": 15,
         "circuit": {
           "round": 1,
           "rounds": 3,
           "member": 2,
           "memberTotal": 3
-        },
-        "exerciseId": "pushups",
-        "standalone": false,
-        "seconds": 15
+        }
       },
       {
         "kind": "hold",
@@ -1068,15 +1068,15 @@
         "kind": "rest",
         "blockIndex": 0,
         "memberKey": "0:circuit-rest",
+        "exerciseId": "pullups",
+        "standalone": false,
+        "seconds": 60,
         "circuit": {
           "round": 1,
           "rounds": 3,
           "member": 3,
           "memberTotal": 3
-        },
-        "exerciseId": "pullups",
-        "standalone": false,
-        "seconds": 60
+        }
       },
       {
         "kind": "reps",
@@ -1099,15 +1099,15 @@
         "kind": "rest",
         "blockIndex": 0,
         "memberKey": "0:circuit-rest",
+        "exerciseId": "pullups",
+        "standalone": false,
+        "seconds": 15,
         "circuit": {
           "round": 2,
           "rounds": 3,
           "member": 1,
           "memberTotal": 3
-        },
-        "exerciseId": "pullups",
-        "standalone": false,
-        "seconds": 15
+        }
       },
       {
         "kind": "reps",
@@ -1129,15 +1129,15 @@
         "kind": "rest",
         "blockIndex": 0,
         "memberKey": "0:circuit-rest",
+        "exerciseId": "pushups",
+        "standalone": false,
+        "seconds": 15,
         "circuit": {
           "round": 2,
           "rounds": 3,
           "member": 2,
           "memberTotal": 3
-        },
-        "exerciseId": "pushups",
-        "standalone": false,
-        "seconds": 15
+        }
       },
       {
         "kind": "hold",
@@ -1160,15 +1160,15 @@
         "kind": "rest",
         "blockIndex": 0,
         "memberKey": "0:circuit-rest",
+        "exerciseId": "pullups",
+        "standalone": false,
+        "seconds": 60,
         "circuit": {
           "round": 2,
           "rounds": 3,
           "member": 3,
           "memberTotal": 3
-        },
-        "exerciseId": "pullups",
-        "standalone": false,
-        "seconds": 60
+        }
       },
       {
         "kind": "reps",
@@ -1191,15 +1191,15 @@
         "kind": "rest",
         "blockIndex": 0,
         "memberKey": "0:circuit-rest",
+        "exerciseId": "pullups",
+        "standalone": false,
+        "seconds": 15,
         "circuit": {
           "round": 3,
           "rounds": 3,
           "member": 1,
           "memberTotal": 3
-        },
-        "exerciseId": "pullups",
-        "standalone": false,
-        "seconds": 15
+        }
       },
       {
         "kind": "reps",
@@ -1221,15 +1221,15 @@
         "kind": "rest",
         "blockIndex": 0,
         "memberKey": "0:circuit-rest",
+        "exerciseId": "pushups",
+        "standalone": false,
+        "seconds": 15,
         "circuit": {
           "round": 3,
           "rounds": 3,
           "member": 2,
           "memberTotal": 3
-        },
-        "exerciseId": "pushups",
-        "standalone": false,
-        "seconds": 15
+        }
       },
       {
         "kind": "hold",
@@ -1858,15 +1858,15 @@
         "kind": "rest",
         "blockIndex": 1,
         "memberKey": "1:circuit-rest",
+        "exerciseId": "pullups",
+        "standalone": false,
+        "seconds": 10,
         "circuit": {
           "round": 1,
           "rounds": 2,
           "member": 1,
           "memberTotal": 2
-        },
-        "exerciseId": "pullups",
-        "standalone": false,
-        "seconds": 10
+        }
       },
       {
         "kind": "hold",
@@ -1906,15 +1906,15 @@
         "kind": "rest",
         "blockIndex": 1,
         "memberKey": "1:circuit-rest",
+        "exerciseId": "pullups",
+        "standalone": false,
+        "seconds": 10,
         "circuit": {
           "round": 2,
           "rounds": 2,
           "member": 1,
           "memberTotal": 2
-        },
-        "exerciseId": "pullups",
-        "standalone": false,
-        "seconds": 10
+        }
       },
       {
         "kind": "hold",
@@ -2118,15 +2118,15 @@
         "kind": "rest",
         "blockIndex": 0,
         "memberKey": "0:circuit-rest",
+        "exerciseId": "h",
+        "standalone": false,
+        "seconds": 60,
         "circuit": {
           "round": 10,
           "rounds": 500,
           "member": 2,
           "memberTotal": 2
-        },
-        "exerciseId": "h",
-        "standalone": false,
-        "seconds": 60
+        }
       }
     ]
   },

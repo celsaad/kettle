@@ -2,7 +2,7 @@
  * The RN app's half of its conversation with the native shell that hosts it
  * (docs/native-migration-plan.md): the "ready" handshake from M2, from M3 the navigate messages
  * native steers the surface with and the filesChanged ones that make a store re-read its file, and
- * from M5 the answer to the runner's finish backup, which RN asks for and native performs. The shell
+ * from M6 the native runner's Done, which its stub route waits for. The shell
  * loses anything it sends before JS listens — the native module only starts forwarding once a
  * listener exists — so it holds its messages until "ready", and "ready" is only true once the listener
  * is in place.
@@ -16,7 +16,6 @@ import { router, type Href } from 'expo-router';
 import { getBrownfield, isHosted } from '@/hooks/brownfield-module';
 import { emitRunnerDone } from '@/hooks/runner-done';
 import { onFilesChanged } from '@/state/files-changed';
-import { useSessionHistoryStore } from '@/state/session-history-store';
 
 let subscribed = false;
 
@@ -28,19 +27,14 @@ let subscribed = false;
  * Everything above the tabs is dismissed first. `navigate` alone, from a modal or the runner, pushes a
  * second copy of the tabs over them, and back then walks through the stale screens; `dismissTo` gets
  * that right but does nothing between tabs. So a message always starts from the tabs, and a modal it
- * opens backs out to one. If a screen refuses to leave (the runner's "Finish session?"), the message
- * is dropped and the user's answer decides. All three were seen on a device (#152). The native runner's
- * stub refuses too, without asking, so a message over it is simply dropped (#302).
+ * opens backs out to one. If a screen refuses to leave, the message is dropped. All three were seen on
+ * a device (#152). The one that refuses is the native runner's stub, without asking, so a message
+ * over a running session is simply dropped (#302): the runner owns its exits.
  */
 function onShellMessage(message: Record<string, unknown>): void {
   // The shell's JsBridge.filesChanged. The two share no code, so change both.
   if (message.type === 'filesChanged') {
     void onFilesChanged(message.kind);
-    return;
-  }
-  // The shell's answer to brownfield-module's reportSessionFinished. The two share no code, so change both.
-  if (message.type === 'backupResult') {
-    if (typeof message.failed === 'boolean') useSessionHistoryStore.getState().backupAnswered(message.failed);
     return;
   }
   // The shell's JsBridge.runnerDone. The two share no code, so change both.
@@ -120,7 +114,7 @@ export function hostedTabOptions(): { hidden?: boolean; backBehavior?: 'none' } 
 
 /**
  * A modal route's options for whoever presents it. Inside the shell (M3) the native sheet slides it in
- * and out, so RN's own animation would be a second one; the runner isn't a sheet, and keeps its slide.
+ * and out, so RN's own animation would be a second one.
  */
 export function hostedModalOptions(): { animation?: 'none' } {
   if (!isHosted()) return {};

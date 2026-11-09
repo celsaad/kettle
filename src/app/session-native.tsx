@@ -1,23 +1,22 @@
 /**
  * The native runner's stub (#302, #190): an empty route that RN pushes and pops like any other, so its
  * stack, back and route reports stay as they were, while the shell draws the runner full screen over
- * it. Only `.dev` opens it until the flip release (#308); Play opens `session.tsx`, which never learns
- * this route exists. Goes when routing moves native (#309).
+ * it. From the flip release (#308) it is the only runner there is. Goes when routing moves native (#309).
  *
  * Nothing removes it but the runner's own Done. Back, a `kettle://` link to a tab and the shell's
  * navigate are all refused, silently: the native runner owns its exits and their questions (#297),
  * where RN's runner asked "Finish session?" itself (#152's rule, retired for this route). The shell's
  * runnerDone drops the guard, and the back after it is the only removal that gets through.
  *
- * Only where the shell draws the runner over it, though. The route ships in every bundle, so on Play a
- * `kettle://session-native` link reaches it with nothing on top, and outside the shell nothing ever
- * is: there it leaves at once, since a guard over a blank screen would leave nothing to press.
+ * Only where the shell draws the runner over it, though, which is wherever the shell hosts this
+ * surface. Outside the shell nothing ever is: there it leaves at once, since a guard over a blank
+ * screen would leave nothing to press.
  */
 import { router, useFocusEffect } from 'expo-router';
 import { usePreventRemove } from 'expo-router/react-navigation';
 import { useCallback, useEffect, useState } from 'react';
 
-import { drawsNativeRunner } from '@/hooks/brownfield-module';
+import { isHosted } from '@/hooks/brownfield-module';
 import { onRunnerDone } from '@/hooks/runner-done';
 
 const refuse = () => {};
@@ -29,7 +28,7 @@ function leave(): void {
 }
 
 export default function NativeRunnerStub() {
-  const [drawn] = useState(drawsNativeRunner);
+  const [drawn] = useState(isHosted);
   const [done, setDone] = useState(false);
   const guarded = drawn && !done;
   usePreventRemove(guarded, refuse);

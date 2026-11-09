@@ -55,7 +55,7 @@ export type ProgressView = {
  * its config rather than a measurement.
  *
  * The runner ends a hold at `holdSecMax ?? holdSecMin` and clamps the logged `holdSec` to that end
- * (`use-session-runner.ts`), so a 45s stretch logs 45s every time it is finished. It can go down, by
+ * (`:shared`'s `RunnerCommit.kt`), so a 45s stretch logs 45s every time it is finished. It can go down, by
  * ending early, and never up — the same reason `entryBest` leaves `hiit` and `emom` out, and on a
  * mobility-heavy log it was most of the screen: a dozen rows reading "no change" forever.
  *

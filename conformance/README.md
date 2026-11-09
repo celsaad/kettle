@@ -9,17 +9,21 @@ user's import.
 Each suite is two files:
 
 - **`<suite>.yaml`** — the inputs, hand-written. Every case has a `name`, and some have a `why`.
-- **`<suite>.expected.json`** — the outputs, **generated** from the TypeScript implementation and
-  keyed by case name. Never hand-edit these.
+- **`<suite>.expected.json`** — the outputs, **generated** from the TypeScript implementation (or,
+  for `steps`, the Kotlin one) and keyed by case name. Never hand-edit these.
 
 `src/domain/__tests__/conformance.test.ts` checks the TypeScript output against the goldens. When a
-change to `src/domain/`, or to the runner's `session-steps.ts` or `session-outline.ts`, is meant to
-change behaviour, run `pnpm run conformance:update`. The golden diff it leaves is part of the review,
-because a change there is a change to what users' files mean.
+change to `src/domain/` is meant to change behaviour, run `pnpm run conformance:update`, then
+`pnpm run format`. The golden diff it leaves is part of the review, because a change there is a change
+to what users' files mean.
 
 `native/android/shared/src/jvmTest/.../ConformanceTest.kt` checks the Kotlin port against the same
 files, read in place. It finds suites by listing this directory, and one with no Kotlin runner yet is
 reported as skipped under its own name, never as passing. Porting a suite is adding its runner there.
+
+A suite whose TS twin is gone is written from Kotlin instead: `steps`, since the flip release (#308).
+A change to `:shared`'s `RunnerSteps.kt` or `SessionOutline.kt` that is meant to change behaviour is
+`./gradlew :shared:jvmTest -PupdateConformance` from `native/android`, then `pnpm run format`.
 
 ## Suites
 
@@ -36,7 +40,7 @@ reported as skipped under its own name, never as passing. Porting a suite is add
 | `search` | `rankByName` and `filterByName` over `names` with `query` | `{ ranked, filtered }`, lists of names |
 | `preferences` | `parsePreferences(input)`, the text of a `preferences.json` | the preferences with defaults filled in, or `null` where the file is refused |
 | `supporter` | `parseSupporterState(input)`, the text of a `supporter.json` | the supporter state, the empty one where the file is refused |
-| `steps` | the runner's `buildStepsWithLimits`, its mid-session edits, and `upcomingOutline`, over the workout in `library` | the step list, the list after each edit, or the outline per index (the file's header) |
+| `steps` | the runner's `buildStepsWithLimits`, its mid-session edits, and `upcomingOutline`, over the workout in `library`; **Kotlin only** | the step list, the list after each edit, or the outline per index (the file's header) |
 | `records` | by `op`: `entryBest`, `sessionEntryResult` or `sessionSetCount` over the session file in `session`; `recordKey(exercise, kind)`; `sessionDurationMinutes` of `session`; or `sessionRecords` of `session` against the session files in `prior`, named from the inline `library` | a list of `{ kind, value, reps, oneRepMaxKg }` or `null` per entry; a list of entry results; a set count; the key string; whole minutes; a list of `{ kind, exerciseId, exerciseName, … }` records, the kind's own fields after |
 
 The `source` cases read `site/examples/` and the shipped seed and packs in `src/content/` in place,
@@ -57,10 +61,11 @@ Settings reads it until M5.
 runner keeps its live best-marker past M4 while native Stats and exercise progress read the same
 rules, so the two sides must agree on what counts as doing more, and on how long a session ran.
 
-`steps` isn't a file either: it is what a workout *runs*, step by step, held while the RN and native
-runners both exist (#303). Its goldens come from `src/hooks/session-steps.ts`, which M6's flip release
-deletes, so that release has to decide what becomes of the suite: it keeps the corpus or retires it,
-and either way it needs a writer other than TS.
+`steps` isn't a file either: it is what a workout *runs*, step by step. It held the native runner to
+RN's while both existed (#303). The flip release (#308) deleted RN's, `src/hooks/session-steps.ts`
+with it, and kept the corpus: it is still the plainest statement of what each workout runs, and a
+change to it still shows up as a golden diff. Its goldens are Kotlin's from then on, written by the
+command above.
 
 ## Reading the goldens
 

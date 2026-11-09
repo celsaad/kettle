@@ -9,6 +9,7 @@ import com.casco.kettle.shell.files.StoragePaths
 import org.junit.After
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -81,6 +82,8 @@ class RunnerServiceTest {
         service.startCommand(0, 1)
         idleRunner()
         val first = RunnerHost.session
+        // Still waiting on its sounds, so nothing has shown: `active` alone can't be what refuses the second.
+        assertNull(RunnerHost.active)
         // The library gone under it: resolved, the second start would find nothing and stop the service.
         library.delete()
         service.get().onStartCommand(intent, 0, 2)

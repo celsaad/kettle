@@ -68,6 +68,9 @@ class RunnerService : Service() {
     private var wakeLock: PowerManager.WakeLock? = null
 
     @Volatile private var session: RunnerSession? = null
+
+    /** Set by [onDestroy], for a start already posted to the runner's thread, which still runs there. */
+    @Volatile private var destroyed = false
     private var foreground = false
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -91,14 +94,17 @@ class RunnerService : Service() {
         // At once, whatever comes next: a service started in the foreground that doesn't say so within
         // seconds is an ANR, and one that stops first is a crash.
         if (!enterForeground(placeholder())) {
-            if (intent?.action == ACTION_RESUME) LaunchRecovery.resumeFailed(recoveryNow())
+            when (intent?.action) {
+                ACTION_START -> RunnerHost.startEnded()
+                ACTION_RESUME -> LaunchRecovery.resumeFailed(recoveryNow())
+            }
             return START_NOT_STICKY
         }
         when (intent?.action) {
             ACTION_START -> {
                 val start = runnerStartFrom(intent.params())
                 val anyway = intent.getBooleanExtra(EXTRA_ANYWAY, false)
-                loop.post { host({ DiskFiles(paths).startOpening(start, anyway) }) }
+                loop.post { host({ DiskFiles(paths).startOpening(start, anyway) }, refused = RunnerHost::startEnded) }
             }
 
             ACTION_RESUME -> {
@@ -115,11 +121,19 @@ class RunnerService : Service() {
     }
 
     override fun onDestroy() {
-        session = null
-        RunnerHost.session = null
+        destroyed = true
+        RunnerHost.release(session)
+        // A start this service was sent and never got to, so the next one isn't refused for it (#318).
+        RunnerHost.startEnded()
         RunnerHost.now = System::currentTimeMillis
         scope.cancel()
-        loop.post { cues.close() }
+        loop.post {
+            // Again behind whatever start was already queued here: one that got past [destroyed] and
+            // adopted a session mustn't stay the host's, refusing every start after it (#318).
+            RunnerHost.release(session)
+            session = null
+            cues.close()
+        }
         thread.quitSafely()
         wakeLock.releaseIfHeld()
         super.onDestroy()
@@ -128,14 +142,15 @@ class RunnerService : Service() {
     /**
      * On the runner's thread: [open]'s session made the one this service and [RunnerHost] run, holding
      * the wake lock, then counted into, or resumed from the launch's prompt (#307). A request landing
-     * while a session is active attaches instead (#297); checked here, on the thread that sets it, so a
-     * double-tapped Start can't begin two. Nothing to run stops the service, after [refused].
+     * while this service holds a session attaches instead (#297), checked on its own [session] and not
+     * only on [RunnerHost.active], which stays null until the count-in shows (#318); [RunnerHost.adopt]
+     * checks again as it takes the new one. Nothing to run stops the service, after [refused].
      */
     private fun host(
         open: () -> Opening?,
-        refused: () -> Unit = {},
+        refused: () -> Unit,
     ) {
-        if (RunnerHost.active != null) {
+        if (destroyed || session != null || RunnerHost.active != null) {
             // Unreachable for a resume, which the launch only offers with no session running; answered
             // anyway, so the gate a resume shuts can't stay shut.
             refused()
@@ -159,26 +174,31 @@ class RunnerService : Service() {
                 effects { current },
                 // Only while it's still the session: a finish backup answering after a new session began
                 // mustn't put the old completion back over it.
-                publish = { view -> if (RunnerHost.session === current) RunnerHost.publish(view) },
+                publish = RunnerHost.publisher({ current }) { main.post(::stop) },
             )
         current = created
-        session = created
-        RunnerHost.session = created
-        created.setRunnerVisible(RunnerHost.visible)
-        if (wakeLock?.isHeld != true) wakeLock = sessionWakeLock()
-        val rebuilt = opening.rebuilt
-        if (rebuilt == null) {
-            cues.whenLoaded(SOUNDS_TIMEOUT_MS) { created.begin() }
+        // Refused by the one thread that adopts while this service already holds a session: not this
+        // start's to stop, since that session is still running in it.
+        if (!RunnerHost.adopt(created)) {
+            refused()
         } else {
-            created.begin(rebuilt)
-            // Next on the loop, after the rebuild has settled: answered once the session shows, so a start
-            // from here on attaches to it. A rebuild that threw shows nothing, and the prompt comes back.
-            loop.post {
-                if (RunnerHost.view.value == RunnerView.Idle) {
-                    LaunchRecovery.resumeFailed(recoveryNow())
-                    main.post(::stop)
-                } else {
-                    LaunchRecovery.answered()
+            session = created
+            created.setRunnerVisible(RunnerHost.visible)
+            if (wakeLock?.isHeld != true) wakeLock = sessionWakeLock()
+            val rebuilt = opening.rebuilt
+            if (rebuilt == null) {
+                cues.whenLoaded(SOUNDS_TIMEOUT_MS) { created.begin() }
+            } else {
+                created.begin(rebuilt)
+                // Next on the loop, after the rebuild has settled: answered once the session shows, so a start
+                // from here on attaches to it. A rebuild that threw shows nothing, and the prompt comes back.
+                loop.post {
+                    if (RunnerHost.view.value == RunnerView.Idle) {
+                        LaunchRecovery.resumeFailed(recoveryNow())
+                        main.post(::stop)
+                    } else {
+                        LaunchRecovery.answered()
+                    }
                 }
             }
         }

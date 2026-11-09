@@ -27,7 +27,25 @@ internal class FakeRunnerLoop(
 
     val scheduled: Int get() = pending.count { !it.cancelled }
 
-    override fun post(block: () -> Unit) = block()
+    private val held = mutableListOf<() -> Unit>()
+    private var holding = false
+
+    override fun post(block: () -> Unit) {
+        if (holding) held += block else block()
+    }
+
+    /**
+     * Queues every post until [release], as the runner's thread does with one sent from the main thread
+     * while a timer's block is due ahead of it. Timers still fire on [advanceBy].
+     */
+    fun hold() {
+        holding = true
+    }
+
+    fun release() {
+        holding = false
+        held.toList().also { held.clear() }.forEach { it() }
+    }
 
     override fun postDelayed(
         delayMs: Long,

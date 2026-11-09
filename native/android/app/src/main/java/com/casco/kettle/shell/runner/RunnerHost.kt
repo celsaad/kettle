@@ -20,8 +20,18 @@ object RunnerHost {
     /** Changes only on transitions (#295). */
     val view: StateFlow<RunnerView> = views.asStateFlow()
 
-    /** The service's, while it runs one. */
+    /** The service's, while it runs one. Set only by [adopt], cleared only by [release]. */
     @Volatile internal var session: RunnerSession? = null
+
+    /**
+     * From [open] sending the start until the session it made first shows, or the service gives up
+     * (#318): the ~100 ms, up to the sounds' timeout, when nothing the screen can see says a session
+     * is coming, so [active] can't be what refuses a second start. Under [lock], since the main thread
+     * and the runner's both move it.
+     */
+    private var pending = PendingStart.NONE
+
+    private val lock = Any()
 
     @Volatile private var runnerVisible = false
 
@@ -37,24 +47,41 @@ object RunnerHost {
      * Starts [start] in the service, which counts in and resolves it again itself, or attaches to
      * the session already running and ignores [start]. Called from the visible runner, which is what
      * lets a foreground service start (#293). [anyway] is "Start anyway" on a workout too long to run
-     * in full.
+     * in full. Refused while a start is already on its way, whoever asked for it (#318).
      */
     fun open(
         context: Context,
         start: RunnerStart?,
         anyway: Boolean = false,
     ) {
-        if (active != null || LaunchRecovery.state.value != null) return
-        ContextCompat.startForegroundService(context, RunnerService.startIntent(context, start, anyway))
+        synchronized(lock) {
+            if (pending != PendingStart.NONE || active != null || LaunchRecovery.state.value != null) return
+            pending = PendingStart.SENT
+        }
+        runCatching { ContextCompat.startForegroundService(context, RunnerService.startIntent(context, start, anyway)) }
+            .onFailure { startEnded() }
+            .getOrThrow()
     }
 
     fun send(command: RunnerCommand) {
         session?.send(command)
     }
 
-    /** Leaves during the count-in, which stops the service with nothing written; nothing once it runs. */
-    fun leave() {
-        session?.leave()
+    /**
+     * Leaves during the count-in, which stops the service with nothing written; nothing once it runs.
+     * A leave before the service has a session is held for it (#318). False only when the session is
+     * already running: the screen then stays on it, rather than handing back to RN with it unseen.
+     */
+    fun leave(): Boolean {
+        val current =
+            synchronized(lock) {
+                if (pending == PendingStart.SENT || pending == PendingStart.LEFT) {
+                    pending = PendingStart.LEFT
+                    return true
+                }
+                session
+            }
+        return current?.leave() ?: true
     }
 
     /** What the runner's screen reports as it comes and goes (#306), held for a session started after. */
@@ -69,6 +96,53 @@ object RunnerHost {
     }
 
     internal val visible: Boolean get() = runnerVisible
+
+    /**
+     * The service's new session, made the one the screen talks to and the start it answers over; a
+     * leave held for it is applied now. False, adopting nothing, while one is already held: checked
+     * on the runner's thread, which is the only one that adopts, so two starts can't begin two (#318).
+     */
+    internal fun adopt(created: RunnerSession): Boolean {
+        val heldLeave =
+            synchronized(lock) {
+                if (session != null || active != null) return false
+                session = created
+                val held = pending == PendingStart.LEFT
+                // Still starting until it first shows: a resume, which [open] didn't send, has none.
+                if (pending != PendingStart.NONE) pending = PendingStart.ADOPTED
+                held
+            }
+        if (heldLeave) created.leave()
+        return true
+    }
+
+    /** [owned] is over with its service: no longer the session, unless a newer one already is. */
+    internal fun release(owned: RunnerSession?) {
+        synchronized(lock) { if (session === owned) session = null }
+    }
+
+    /** The start [open] sent came to nothing (no plan, no foreground) or the service is gone. */
+    internal fun startEnded() {
+        synchronized(lock) { pending = PendingStart.NONE }
+    }
+
+    /**
+     * What [owner]'s session publishes, while it's still the session, with an Idle also calling [stop]:
+     * a leave before the count-in has shown anything publishes Idle over Idle, which the service's
+     * collector never sees, so without this the service stayed up behind Home with nothing to run.
+     */
+    internal fun publisher(
+        owner: () -> RunnerSession?,
+        stop: () -> Unit,
+    ): (RunnerView) -> Unit =
+        { view ->
+            if (session === owner()) {
+                // Its first view, whatever it is, is the start answered: [active] or Idle say the rest.
+                synchronized(lock) { if (pending == PendingStart.ADOPTED) pending = PendingStart.NONE }
+                publish(view)
+                if (view == RunnerView.Idle) stop()
+            }
+        }
 
     /**
      * The service's clock, anchored on `elapsedRealtime()` (`ClockAnchor`), which the screen draws its
@@ -92,6 +166,20 @@ object RunnerHost {
         // and write let a Done land between them and the stale completion back in.
         views.update { if (view.isBackupAnswer() && it == RunnerView.Idle) it else view }
     }
+}
+
+/** Where [RunnerHost.open]'s start is before its session shows (#318). */
+private enum class PendingStart {
+    NONE,
+
+    /** Sent to the service, which has no session for it yet. */
+    SENT,
+
+    /** Sent, then left before the service had a session: [RunnerHost.adopt] leaves the one it's given. */
+    LEFT,
+
+    /** The service's session, which a leave now goes to, hasn't shown anything yet. */
+    ADOPTED,
 }
 
 /** The finish backup's republished completion, the one kind that can only ever follow the session. */

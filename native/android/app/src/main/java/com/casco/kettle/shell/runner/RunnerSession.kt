@@ -11,6 +11,7 @@ import com.casco.kettle.domain.nextTimeUpdateAt
 import com.casco.kettle.domain.reduceRunner
 import com.casco.kettle.domain.startRunner
 import com.casco.kettle.domain.updateCountIn
+import java.util.concurrent.atomic.AtomicReference
 
 /**
  * One session as the service hosts it (#305): the count-in it owns (#297), then #304's engine, fed
@@ -38,8 +39,12 @@ class RunnerSession(
     private var timer: Cancellable? = null
     private var shown: RunnerView? = null
 
-    /** Left before the count-in was over, or before it had begun, which a late [begin] mustn't undo. */
-    private var abandoned = false
+    /**
+     * Whether it was left or started, decided once. Set off the loop by [leave], on the caller's thread,
+     * so a leave sent as the count-in ends wins against the last tick even though its block is queued
+     * behind it (#318); a late [begin] can't undo a leave either.
+     */
+    private val phase = AtomicReference(Phase.OPEN)
 
     /**
      * Counts in, or with [rebuilt], picks up a session the process died under (#307): `resumeRunner`'s,
@@ -48,13 +53,13 @@ class RunnerSession(
      */
     fun begin(rebuilt: RunnerTransition? = null) =
         loop.post {
-            if (abandoned) return@post
+            if (phase.get() == Phase.LEFT) return@post
             if (rebuilt == null) {
                 countIn = CountIn(now())
                 countInStep()
                 return@post
             }
-            if (state != null || countIn != null) return@post
+            if (state != null || countIn != null || !phase.compareAndSet(Phase.OPEN, Phase.STARTED)) return@post
             try {
                 settle(rebuilt)
             } catch (
@@ -68,17 +73,19 @@ class RunnerSession(
 
     /**
      * Leaves during the count-in, which has written nothing, so nothing is left behind (#297). Once
-     * the session runs it can only be finished, and this does nothing. Decided on the loop, where a
-     * count-in ending in the meantime has already started the session.
+     * the session runs it can only be finished, and this does nothing. Whether it left, answered at
+     * once: false when the count-in had already ended, and the session is running.
      */
-    fun leave() =
-        loop.post {
-            if (state != null) return@post
-            abandoned = true
-            timer?.cancel()
-            countIn = null
-            show(RunnerView.Idle)
+    fun leave(): Boolean {
+        if (phase.compareAndSet(Phase.OPEN, Phase.LEFT)) {
+            loop.post {
+                timer?.cancel()
+                countIn = null
+                show(RunnerView.Idle)
+            }
         }
+        return phase.get() == Phase.LEFT
+    }
 
     /** What the runner's screen reports (#306): alerts only while it isn't showing, a flush as it goes. */
     fun setRunnerVisible(visible: Boolean) =
@@ -101,10 +108,13 @@ class RunnerSession(
         }
 
     private fun countInStep() {
-        val counting = countIn ?: return
+        // Not after a leave whose own block is still queued: no tick for a count-in already left.
+        val counting = countIn?.takeIf { phase.get() != Phase.LEFT } ?: return
         try {
             val at = now()
             val update = updateCountIn(counting, at)
+            // A leave already sent wins, start cue and all; its own block, queued behind this one, shows Idle.
+            if (update.done && !phase.compareAndSet(Phase.OPEN, Phase.STARTED)) return
             update.cues.forEach(effects::cue)
             if (update.done) {
                 countIn = null
@@ -122,6 +132,8 @@ class RunnerSession(
             // that did start keeps the state settle() left it in.
             Log.w(TAG, "The count-in failed", e)
             if (state == null) {
+                // Ended as a leave does, so a leave after this one still says it left.
+                phase.set(Phase.LEFT)
                 countIn = null
                 show(RunnerView.Idle)
             }
@@ -174,6 +186,8 @@ class RunnerSession(
         publish(view)
     }
 }
+
+private enum class Phase { OPEN, LEFT, STARTED }
 
 /** Whole seconds into the count-in at [now]. */
 private fun CountIn.elapsedSeconds(now: Long): Long = (now - startedAt) / MS_PER_SECOND

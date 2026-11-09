@@ -103,10 +103,28 @@ class RunnerSessionTest {
         val session = session()
         session.begin()
         loop.advanceBy(3000)
-        session.leave()
 
+        assertFalse(session.leave())
         assertTrue(view is RunnerView.Running)
         assertEquals(1, loop.scheduled)
+    }
+
+    @Test
+    fun `a leave sent as the count-in ends still leaves, though its block runs after the last tick`() {
+        // #318: back pressed right at the end of the count-in queued its block behind the last tick, which
+        // started the session while the route had already handed back to RN.
+        val session = session()
+        session.begin()
+        loop.advanceBy(2999)
+        loop.hold()
+
+        assertTrue(session.leave())
+        loop.advanceBy(1)
+        loop.release()
+        loop.advanceBy(10_000)
+        assertEquals(RunnerView.Idle, view)
+        assertTrue(written.isEmpty())
+        assertFalse(stateFile.written())
     }
 
     @Test

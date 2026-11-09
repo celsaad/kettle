@@ -10,60 +10,67 @@ import com.casco.kettle.domain.UpcomingMember
  * rather than null, which is why each field goes through [putPresent]. In the order [goldenJson]
  * writes, which is what TS wrote for all but a few spread-built steps (#308).
  */
-internal fun stepJson(step: RunnerStep): Map<String, Any?> =
-    buildMap {
-        put(
-            "kind",
-            when (step) {
-                is RunnerStep.Hold -> "hold"
-                is RunnerStep.Reps -> "reps"
-                is RunnerStep.Interval -> "interval"
-                is RunnerStep.Rest -> "rest"
-            },
-        )
-        put("blockIndex", step.blockIndex)
-        put("memberKey", step.memberKey)
-        put("exerciseId", step.exerciseId)
+internal fun stepJson(step: RunnerStep): Map<String, Any?> {
+    val (kind, fields) =
         when (step) {
             is RunnerStep.Hold -> {
-                put("exerciseName", step.exerciseName)
-                putPresent("holdTargetSec", step.holdTargetSec)
-                putPresent("holdTargetMaxSec", step.holdTargetMaxSec)
-                putPresent("holdEndSec", step.holdEndSec)
-                put("setIndex", step.setIndex)
-                put("setTotal", step.setTotal)
-                putPresent("notes", step.notes)
+                "hold" to
+                    buildMap {
+                        put("exerciseName", step.exerciseName)
+                        putPresent("holdTargetSec", step.holdTargetSec)
+                        putPresent("holdTargetMaxSec", step.holdTargetMaxSec)
+                        putPresent("holdEndSec", step.holdEndSec)
+                        put("setIndex", step.setIndex)
+                        put("setTotal", step.setTotal)
+                        putPresent("notes", step.notes)
+                    }
             }
 
             is RunnerStep.Reps -> {
-                put("exerciseName", step.exerciseName)
-                put("targetReps", step.targetReps)
-                putPresent("targetRepsMax", step.targetRepsMax)
-                putPresent("targetWeightKg", step.targetWeightKg)
-                put("setIndex", step.setIndex)
-                put("setTotal", step.setTotal)
-                putPresent("notes", step.notes)
+                "reps" to
+                    buildMap {
+                        put("exerciseName", step.exerciseName)
+                        put("targetReps", step.targetReps)
+                        putPresent("targetRepsMax", step.targetRepsMax)
+                        putPresent("targetWeightKg", step.targetWeightKg)
+                        put("setIndex", step.setIndex)
+                        put("setTotal", step.setTotal)
+                        putPresent("notes", step.notes)
+                    }
             }
 
             is RunnerStep.Interval -> {
-                put("exerciseName", step.exerciseName)
-                put("variant", step.variant.json)
-                put("targetSec", step.targetSec)
-                put("countUp", step.countUp)
-                put("setIndex", step.setIndex)
-                put("setTotal", step.setTotal)
-                putPresent("targetReps", step.targetReps)
-                putPresent("cardioDistanceMeters", step.cardioDistanceMeters)
-                putPresent("notes", step.notes)
+                "interval" to
+                    buildMap {
+                        put("exerciseName", step.exerciseName)
+                        put("variant", step.variant.json)
+                        put("targetSec", step.targetSec)
+                        put("countUp", step.countUp)
+                        put("setIndex", step.setIndex)
+                        put("setTotal", step.setTotal)
+                        putPresent("targetReps", step.targetReps)
+                        putPresent("cardioDistanceMeters", step.cardioDistanceMeters)
+                        putPresent("notes", step.notes)
+                    }
             }
 
             is RunnerStep.Rest -> {
-                put("standalone", step.standalone)
-                put("seconds", step.seconds)
+                "rest" to
+                    buildMap {
+                        put("standalone", step.standalone)
+                        put("seconds", step.seconds)
+                    }
             }
         }
+    return buildMap {
+        put("kind", kind)
+        put("blockIndex", step.blockIndex)
+        put("memberKey", step.memberKey)
+        put("exerciseId", step.exerciseId)
+        putAll(fields)
         putPresent("circuit", step.circuit?.let(::circuitJson))
     }
+}
 
 private fun circuitJson(position: CircuitPosition): Map<String, Any> =
     mapOf(

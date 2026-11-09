@@ -111,7 +111,7 @@ class MainActivity :
 
         expoListeners = ExpoActivityListeners(this).also(lifecycle::addObserver)
         tellJsWhatTheShellDraws()
-        wireTheAdopt()
+        connectAdoptToLibrary()
         // RN's library load only parses from the library flip (#245), so native seeds and repairs first
         // (#221).
         LibraryGate.awaitPrepared(this)
@@ -319,7 +319,7 @@ private fun tellJsWhatTheShellDraws() {
 }
 
 /** The runner's adopt (#220), on the application's context: a write may outlive the activity that asked. */
-private fun Activity.wireTheAdopt() {
+private fun Activity.connectAdoptToLibrary() {
     val app = applicationContext
     JsBridge.adoptTargetWeight = { id, kg -> app.adoptTargetWeight(id, kg) }
 }

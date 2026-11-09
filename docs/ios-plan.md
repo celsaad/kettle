@@ -25,6 +25,14 @@
 > are stubs, and RN's library load only parses: native seeds a first launch's library and repairs a
 > corrupt one, so an iOS build with no native shell opens on an error. Restoring the seed in RN would
 > make it a second writer again; the port is what fixes this (#220).
+>
+> **The flip release (#308) leaves an RN-only build with no runner.** `session.tsx`, the session
+> hooks (`use-session-runner.ts`, `use-session-sounds.ts`, `safe-notifications.ts`) and
+> `expo-audio`, `expo-notifications`, `expo-haptics` and `expo-keep-awake` are deleted, so the
+> session-timing row below, Phase 4's shipped notification half and its `app.json` audio block
+> describe code that no longer exists. Phase 4's *reasoning* still stands for the native iOS runner
+> (M8): the rest cue has to break through Focus, which is why `app.json` keeps the time-sensitive
+> entitlement.
 
 The app is closer to iOS than the docs suggest. There is no `ios/` tree to write, no architecture to
 port, and no storage layer to rethink: `expo prebuild --platform ios` generates the native project the

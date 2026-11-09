@@ -45,7 +45,7 @@ class SheetTransitionTest {
         assertEquals(Place.Tab, RouteReport("/history", modal = false).place)
         assertEquals(Place.Sheet, RouteReport("/settings", modal = true).place)
         // Above the tabs but not a sheet: the runner, which RN still presents itself.
-        assertEquals(Place.Runner, RouteReport("/session", modal = false).place)
+        assertEquals(Place.Runner, RouteReport(NATIVE_RUNNER_PATH, modal = false).place)
     }
 
     @Test

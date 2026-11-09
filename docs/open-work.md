@@ -20,7 +20,7 @@ wanting states and assignees, it wants GitHub issues instead.
   domain objects stay **camelCase** (`workSec`, `holdSec`). `src/domain/yaml-mapping.ts` bridges the
   two at the file boundary, and nowhere else does.
 - The SDK-57 API shapes this was all verified against — `expo-file-system`'s class-based
-  `File`/`Directory` and `expo-notifications` — are recorded in
+  `File`/`Directory`, and `expo-notifications` until it went (#308) — are recorded in
   [`sdk-57-api-notes.md`](sdk-57-api-notes.md), because the published docs for both are wrong for the
   installed versions.
 
@@ -275,7 +275,9 @@ wanting states and assignees, it wants GitHub issues instead.
 Found while planning the tests/a11y/i18n work (see `testing-a11y-i18n-plan.md`), each verified against
 the code. Listed worst first.
 
-**Fixed since:** `historyStats`'s "1.5h 30m"; the EMOM interval count; weight never being captured;
+**Fixed since** (the runner fixes were RN's runner's, whose files went in the flip release, #308; the
+native port inherited the fixed behaviour, held by `conformance/steps` and `:shared`'s tests):
+`historyStats`'s "1.5h 30m"; the EMOM interval count; weight never being captured;
 side effects inside `setState` updaters; `addRestSeconds` not rescheduling its notification;
 `currentStreak`'s DST stepping; the display-name chip comparison; circuit members writing one entry
 per round (below); `today`/`dateLabel` freezing at module scope (fixed with the I18n-3 locale work —
@@ -297,8 +299,8 @@ interpolated rather than translated. Notes on the structural ones:
 - **Circuit members wrote one entry per round** instead of accumulating. Found by the phase-2 tests,
   not by the architecture pass. `advance()` flushed whenever the *next* step belonged to a different
   member — which in a round-robin circuit is every hand-off — so a 3-round, 3-member circuit produced
-  9 single-set entries where `session-steps.ts`'s own expansion comment says it should produce 3
-  entries of 3 sets. Fixed at the time by separating two questions that had been conflated ("are we
+  9 single-set entries where the step expansion's own comment (now `RunnerSteps.kt`'s) says it
+  should produce 3 entries of 3 sets. Fixed at the time by separating two questions that had been conflated ("are we
   changing exercise right now?" for the audio cue, "is this member finished?" for the flush); the
   second question no longer exists, since each set now writes itself into its member's own entry.
 
@@ -325,9 +327,9 @@ interpolated rather than translated. Notes on the structural ones:
   match is by token (`[\p{L}\p{N}][\p{L}\p{N}\p{M}]*`) rather than by replacing a negated class,
   because Indic/Thai vowel signs are combining marks that must stay attached to their consonant
   while an emoji's U+FE0F is also a mark and must not become an id of its own.
-- **`session-hold.tsx`'s `NaN%`** is guarded the way `session-interval.tsx` already was. Worth noting
-  for the next 0-config bug: nothing validates a program week's override config — the schema types it
-  as a free record of numbers and the in-app override editor doesn't call `validateConfig` — so the
+- **RN's hold screen's `NaN%`** was guarded the way its interval screen already was. Still worth
+  knowing for the next 0-config bug: nothing validates a program week's override config — the schema
+  types it as a free record of numbers and the override editor doesn't call `validateConfig` — so the
   runner screens can't assume the constraints `validateConfig`/`schema.ts` enforce elsewhere.
 
 - **The sheet's drawn signal is early on a pop** (`RnFrames`, #155): going back from an RN sheet drew
@@ -337,6 +339,7 @@ One of the three found in the runner audit that produced the resume-race fix abo
 other two are fixed (see the roll-up above); this one stayed because it is not a defect:
 
 - **Circuit rest is never recorded.** Its steps use `memberKey: '<block>:circuit-rest'`, which matches
-  no member's accumulating log, so `commitCurrentStep` finds nothing to attribute the rest to. Reads as
+  no member's accumulating log, so the commit (`RunnerCommit.kt`'s `commitRest`) finds nothing to
+  attribute the rest to. Reads as
   intended — `RunnerStep`'s own comment says inter-round rest is "folded into (or discarded after) the
   surrounding work" — so this is a note, not a defect, until someone wants circuit rest in the log.

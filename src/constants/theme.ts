@@ -1,8 +1,8 @@
 /**
  * Kettle's brand palette: one warm token set, remapped for light/dark (the app shell follows the
  * OS color scheme, with a manual override). `theme.json`'s `RunnerColors` is separate and fixed — the
- * live session runner is always dark regardless of the shell's scheme, per the design — and only
- * native reads it since the flip release (#308), so it has notes here but no export.
+ * live session runner is always dark regardless of the shell's scheme, per the design — and its notes
+ * are below, without an export.
  *
  * The values live in `theme.json`, not here, because the native app reads the same file: its
  * Compose theme is generated from it on every build (`native/android/theme`). Edit a color there and
@@ -44,9 +44,12 @@ export const Colors = theme.Colors;
 
 export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
 
-/**
- * `theme.json`'s `RunnerColors`, which has no export here (above): `accentOnSoft` and
- * `accentCalmOnSoft` are label colors for text sitting *on* the soft pill backgrounds, which are translucent and so composite against `background`. The fill colors fail AA
+/*
+ * `RunnerColors`' contrast notes. The tokens live in `theme.json`, which only native's runner reads
+ * since the flip release (#308), so there is no export to hang these on.
+ *
+ * `accentOnSoft` and `accentCalmOnSoft` are label colors for text sitting *on* the soft pill
+ * backgrounds, which are translucent and so composite against `background`. The fill colors fail AA
  * there as text — `accent` measures 4.17 and `accentCalm` 3.79 on their own soft backgrounds, and the
  * pill labels are 12px. These lightened variants measure 5.68 and 5.75. Separate tokens rather than
  * lightening the fills, so the shapes keep their intended weight.

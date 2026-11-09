@@ -6,6 +6,7 @@ import com.casco.kettle.domain.Session
 import com.casco.kettle.domain.SessionLog
 import com.casco.kettle.domain.ThemePreference
 import com.casco.kettle.domain.UnitSystem
+import com.casco.kettle.shell.nav.NATIVE_RUNNER_PATH
 import com.casco.kettle.shell.nav.TabNavigator
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -61,7 +62,7 @@ class LatestFilesTest {
     @Test
     fun `a session RN writes while it is above the tabs shows once the tabs come back`() {
         files.reread()
-        navigator.onRoute("/session")
+        navigator.onRoute(NATIVE_RUNNER_PATH)
 
         writeSession("finished")
 

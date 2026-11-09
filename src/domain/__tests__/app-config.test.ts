@@ -54,11 +54,11 @@ describe('the Files app declaration', () => {
 });
 
 /**
- * `interruptionLevel: 'timeSensitive'` on the rest cue is a request, not a setting: iOS downgrades it
- * to `active` unless the app carries this entitlement, and `expo-notifications`' config plugin writes
- * only `aps-environment`. Nothing observable changes when it's missing — the flag stays in the code,
- * the notification still arrives, and Focus still swallows it — so the declaration is asserted here
- * rather than trusted. (The capability also has to be enabled on the App ID; that half is Phase 5's,
+ * `interruptionLevel: 'timeSensitive'` on a rest cue is a request, not a setting: iOS downgrades it to
+ * `active` unless the app carries this entitlement. RN's runner, which asked for it, went in the flip
+ * release (#308); the entitlement stays for the native iOS runner (M8), whose cue has the same job
+ * (`docs/ios-plan.md`, Phase 4). Nothing observable changes when it's missing — the notification still
+ * arrives, and Focus still swallows it — so the declaration is asserted here rather than trusted. (The capability also has to be enabled on the App ID; that half is Phase 5's,
  * and no test can see it.)
  */
 describe('the time-sensitive entitlement', () => {

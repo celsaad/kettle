@@ -24,7 +24,8 @@ it's `pnpm test --ci`, not `npm test -- --ci`.
   list. Same rule as a lint warning: delete the dead code, or name a genuine exception in
   `knip.jsonc` with its reason.
 - `pnpm test` — jest via `jest-expo`. Covers the domain layer, the shipped content and its mirrors,
-  the stores and the native runner's stub route; the runner itself is `:shared`'s and `:app`'s tests. Under a minute, so run it. A single file is `pnpm jest <path>`.
+  the stores and the native runner's stub route; the runner itself is `:shared`'s and `:app`'s tests.
+  Under a minute, so run it. A single file is `pnpm jest <path>`.
 - `pnpm run format` — oxfmt (same Oxc toolchain as oxlint, so they agree). Run it instead of matching
   the style by hand, and never reach for `pnpm dlx prettier`, which has no config here and would
   reformat the file to its own defaults. **Markdown and `package.json` are excluded on purpose** —
@@ -238,7 +239,6 @@ with every test still green.
   `async` too, or React reports nested scopes.
 - **Mock at our own boundary** (`@/storage/*`, `@/state/session-history-store`), not at
   `expo-file-system` — assertions then read as "what got persisted" rather than "what got written".
-  A screen that reads the library reads the real zustand store, so setup is `useLibraryStore.setState(...)`.
 - `src/test-support/` holds the shared fixtures and the `expo-router` stand-in. That one is a module
   rather than an inline factory because `jest.mock`'s factory is hoisted above every `const` and may
   not close over one; `jest.mock('expo-router', () => require('@/test-support/expo-router'))` works.
@@ -333,9 +333,10 @@ are the index, the banner is the contract.
   limit, so an over-length note fails the suite rather than the upload.
 - `docs/product-plan.md` — the data model, file formats and roadmap.
 - `docs/authoring-exercises-yaml.md` — the YAML reference, kept exact against `schema.ts`.
-- `docs/sdk-57-api-notes.md` — the `expo-file-system` / `expo-notifications` shapes confirmed from
-  `node_modules`, because the published docs are wrong for them. (Its `expo-iap` notes are history:
-  the tip jar moved to Play Billing in M4.)
+- `docs/sdk-57-api-notes.md` — the `expo-file-system` shapes confirmed from `node_modules`, because
+  the published docs are wrong for them. (Its `expo-iap` notes are history, since the tip jar moved to
+  Play Billing in M4, and so are its `expo-notifications` ones, since the module went in the flip
+  release, #308.)
 - `docs/adding-a-language.md` — the seven-place procedure for shipping a new UI language.
 - `docs/agents/` — per-repo setup the engineering skills read: issue tracker, triage labels, and
   where the glossary and decision log live. Indexed by the "Agent skills" section at the end.

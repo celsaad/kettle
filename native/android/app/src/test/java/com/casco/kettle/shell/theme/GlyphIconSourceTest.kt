@@ -13,9 +13,13 @@ import java.io.File
 class GlyphIconSourceTest {
     @Test
     fun `no Text in the app's sources draws a glyph icon`() {
-        // The glyph as the first argument, named or not, or as either branch of an if. A glyph passed in
-        // through a variable gets past it, which is the price of a scan rather than a UI test.
-        val glyphIcon = Regex("""\bText\(\s*(?:text\s*=\s*)?(?:if \(.*?\) (?:"[^"]*" else )?)?"[⚙✎⌕›⌄]"""")
+        // A one-character non-ASCII literal, or a lone +, as a Text's first argument, named or not, or as
+        // either branch of an if; or set as a View's text. Neither is ever a word, so every hit is an
+        // icon. A glyph passed in through a variable gets past it: the price of a scan over a UI test.
+        val glyph = """"(?:[^\x00-\x7F]|\+)""""
+        val inText = """\bText\(\s*(?:text\s*=\s*)?(?:if \(.*?\) (?:"[^"]*" else )?)?$glyph"""
+        val onView = """\btext = $glyph"""
+        val glyphIcon = Regex("$inText|$onView")
         val hits =
             File("src/main/java")
                 .walkTopDown()

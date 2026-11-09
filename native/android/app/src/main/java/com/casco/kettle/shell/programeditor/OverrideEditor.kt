@@ -280,7 +280,7 @@ private fun RoundsStepper(
     val label = stringResource(R.string.exerciseForm_field_rounds)
     Text(label, style = KettleType.small, color = colors.textSecondary)
     Row(horizontalArrangement = Arrangement.spacedBy(Spacing.one), verticalAlignment = Alignment.CenterVertically) {
-        StepButton("−", stringResource(R.string.common_decrease, label)) { onStep(-1) }
+        StepButton(R.drawable.icon_remove, stringResource(R.string.common_decrease, label)) { onStep(-1) }
         Text(
             text.ifEmpty { "1" },
             Modifier.widthIn(min = 24.dp),
@@ -288,7 +288,7 @@ private fun RoundsStepper(
             color = colors.text,
             textAlign = TextAlign.Center,
         )
-        StepButton("+", stringResource(R.string.common_increase, label)) { onStep(1) }
+        StepButton(R.drawable.icon_add, stringResource(R.string.common_increase, label)) { onStep(1) }
     }
 }
 

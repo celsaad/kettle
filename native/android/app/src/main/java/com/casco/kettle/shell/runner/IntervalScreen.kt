@@ -176,11 +176,11 @@ private fun Stepper(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(STEPPER_ROW_GAP),
         ) {
-            GlyphButton(
-                "−",
+            SymbolButton(
+                R.drawable.icon_remove,
                 stringResource(R.string.common_decrease, label),
                 { set(value - 1) },
-                look = GlyphLook.Stepper,
+                look = SymbolLook.Stepper,
             )
             Box(
                 Modifier
@@ -194,9 +194,9 @@ private fun Stepper(
             ) {
                 Text("$value", style = KettleType.heading, color = RunnerColors.text, textAlign = TextAlign.Center)
             }
-            GlyphButton("+", stringResource(R.string.common_increase, label), {
+            SymbolButton(R.drawable.icon_add, stringResource(R.string.common_increase, label), {
                 set(value + 1)
-            }, look = GlyphLook.Stepper.copy(accent = true))
+            }, look = SymbolLook.Stepper.copy(accent = true))
         }
     }
 }

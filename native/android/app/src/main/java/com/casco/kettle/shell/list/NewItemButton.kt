@@ -6,20 +6,20 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.casco.kettle.shell.R
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.Spacing
+import com.casco.kettle.shell.theme.TypeIcon
 
 /**
  * The floating +, as RN's FAB on every tab that has one: the accent in dark, the ink in light. Its
@@ -43,12 +43,7 @@ fun NewItemButton(
             .semantics { contentDescription = label },
         contentAlignment = Alignment.Center,
     ) {
-        Text(
-            "+",
-            Modifier.clearAndSetSemantics {},
-            style = FabPlusStyle,
-            color = colors.onAccent,
-        )
+        TypeIcon(R.drawable.icon_add, FabPlusStyle, colors.onAccent)
     }
 }
 

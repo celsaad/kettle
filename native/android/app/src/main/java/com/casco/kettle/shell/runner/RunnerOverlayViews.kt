@@ -186,7 +186,7 @@ private fun PadKeys(
                         // Drawn as an empty key, as RN's, so the grid reads whole; nothing to press.
                         Box(modifier.heightIn(min = KEY_HEIGHT).clip(KeyShape).keyFace())
                     } else {
-                        // A digit is named by its own text; only the backspace glyph needs a label.
+                        // A digit is named by its own text; only the backspace icon needs a label.
                         val description = if (key == BACKSPACE) stringResource(R.string.common_delete) else null
                         PadKey(key, description, modifier) { onKey(key) }
                     }
@@ -212,7 +212,12 @@ private fun PadKey(
             .then(if (description != null) Modifier.semantics { contentDescription = description } else Modifier),
         contentAlignment = Alignment.Center,
     ) {
-        Text(key, style = KettleType.heading.copy(fontSize = KEY_LABEL), color = RunnerColors.text)
+        val style = KettleType.heading.copy(fontSize = KEY_LABEL)
+        if (key == BACKSPACE) {
+            TypeIcon(R.drawable.icon_backspace, style, RunnerColors.text)
+        } else {
+            Text(key, style = style, color = RunnerColors.text)
+        }
     }
 }
 
@@ -354,7 +359,9 @@ private fun PickerSearch(
 }
 
 private val DIGITS = listOf("1", "2", "3", "4", "5", "6", "7", "8", "9")
-private const val BACKSPACE = "⌫"
+
+/** The key that isn't a character: drawn as its icon, and named, where every other key is its text. */
+private const val BACKSPACE = "backspace"
 private const val KEYS_PER_ROW = 3
 private const val SEARCH_THRESHOLD = 8
 private const val BACKDROP_ALPHA = 0.55f

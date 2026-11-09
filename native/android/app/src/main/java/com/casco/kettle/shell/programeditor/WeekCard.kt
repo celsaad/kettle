@@ -119,7 +119,7 @@ private fun NumberRow(
             horizontalArrangement = Arrangement.spacedBy(Spacing.one),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            StepButton("−", stringResource(R.string.common_decrease, label)) { onStep(-1) }
+            StepButton(R.drawable.icon_remove, stringResource(R.string.common_decrease, label)) { onStep(-1) }
             Text(
                 "$number",
                 Modifier.widthIn(min = 24.dp),
@@ -127,7 +127,7 @@ private fun NumberRow(
                 color = colors.text,
                 textAlign = TextAlign.Center,
             )
-            StepButton("+", stringResource(R.string.common_increase, label)) { onStep(1) }
+            StepButton(R.drawable.icon_add, stringResource(R.string.common_increase, label)) { onStep(1) }
         }
         RemoveButton(stringResource(R.string.programEditor_removeWeek, "$number"), onClick = onRemove)
     }

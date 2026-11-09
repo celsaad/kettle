@@ -1,5 +1,6 @@
 package com.casco.kettle.shell.runner
 
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -36,6 +37,7 @@ import com.casco.kettle.shell.R
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.RunnerColors
 import com.casco.kettle.shell.theme.Spacing
+import com.casco.kettle.shell.theme.TypeIcon
 
 // The runner's controls. Always dark ([RunnerColors], whatever the scheme), and every one at least
 // [MinTarget] tall and its own target, which is #263's fix: the set row's −/+ were 26px, 4px apart,
@@ -171,55 +173,55 @@ internal fun TextControl(
 
 /**
  * How a round control is drawn: its circle's [size], which can be smaller than the 48dp it takes to
- * touch (#263: RN's set row drew 26px with overlapping slop), its glyph, and whether it's the accented
- * one of a pair, as a stepper's + is.
+ * touch (#263: RN's set row drew 26px with overlapping slop), the type its symbol is sized and coloured
+ * by, and whether it's the accented one of a pair, as a stepper's + is.
  */
-internal data class GlyphLook(
+internal data class SymbolLook(
     val size: Dp,
-    val glyph: TextStyle = KettleType.heading.copy(color = RunnerColors.textSecondary),
+    val symbol: TextStyle = KettleType.heading.copy(color = RunnerColors.textSecondary),
     val border: Dp = 1.dp,
     val accent: Boolean = false,
     val fill: Color = Color.Transparent,
 ) {
     companion object {
         /** The set row's −/+, 26 drawn. */
-        val Small = GlyphLook(26.dp, KettleType.smallMedium.copy(color = RunnerColors.textSecondary))
+        val Small = SymbolLook(26.dp, KettleType.smallMedium.copy(color = RunnerColors.textSecondary))
 
         /** The load's −/+. */
-        val Load = GlyphLook(30.dp)
+        val Load = SymbolLook(30.dp)
 
         /** Coming up's ×: the app's sheet close, in runner colours. */
         val Close =
-            GlyphLook(32.dp, QuietStyle.copy(fontSize = KettleType.heading.fontSize), fill = RunnerColors.background)
+            SymbolLook(32.dp, QuietStyle.copy(fontSize = KettleType.heading.fontSize), fill = RunnerColors.background)
 
         /** An interval's steppers; [accent] for the +. */
         val Stepper =
-            GlyphLook(44.dp, KettleType.title.copy(fontSize = 22.sp, color = RunnerColors.textSecondary), HeavyBorder)
+            SymbolLook(44.dp, KettleType.title.copy(fontSize = 22.sp, color = RunnerColors.textSecondary), HeavyBorder)
 
         /** Reps' big −/+. */
         val Big =
-            GlyphLook(60.dp, KettleType.title.copy(fontSize = 28.sp, color = RunnerColors.textSecondary), HeavyBorder)
+            SymbolLook(60.dp, KettleType.title.copy(fontSize = 28.sp, color = RunnerColors.textSecondary), HeavyBorder)
 
-        /** Prev, beside Pause: its triangle is drawn, so it has no glyph style of its own. */
-        val Prev = GlyphLook(56.dp, border = HeavyBorder)
+        /** Prev, beside Pause: its triangle is drawn, so it has no symbol style of its own. */
+        val Prev = SymbolLook(56.dp, border = HeavyBorder)
     }
 }
 
 /**
- * A glyph-only control, which has nothing on screen to take a name from, so [description] is required.
+ * A symbol-only control, which has nothing on screen to take a name from, so [description] is required.
  * Disabled is drawn dimmed and announced so rather than removed, so its row doesn't reflow mid-set.
  * The touch target is at least [MinTarget] whatever [look] draws.
  */
 @Composable
-internal fun GlyphButton(
-    glyph: String,
+internal fun SymbolButton(
+    @DrawableRes symbol: Int,
     description: String,
     onClick: () -> Unit,
     enabled: Boolean = true,
-    look: GlyphLook = GlyphLook.Small,
+    look: SymbolLook = SymbolLook.Small,
 ) {
     RoundButton(description, onClick, enabled, look) {
-        Text(glyph, style = if (look.accent) look.glyph.copy(color = RunnerColors.accent) else look.glyph)
+        TypeIcon(symbol, look.symbol, if (look.accent) RunnerColors.accent else look.symbol.color)
     }
 }
 
@@ -228,11 +230,11 @@ private fun RoundButton(
     description: String,
     onClick: () -> Unit,
     enabled: Boolean,
-    look: GlyphLook,
+    look: SymbolLook,
     content: @Composable () -> Unit,
 ) {
     Box(
-        // A minimum, not a fixed size, so the glyph has room at large text sizes (AGENTS.md).
+        // A minimum, not a fixed size, so the symbol has room at large text sizes (AGENTS.md).
         Modifier
             .sizeIn(minWidth = MinTarget, minHeight = MinTarget)
             .alpha(if (enabled) 1f else DISABLED_ALPHA)
@@ -268,7 +270,7 @@ internal fun PillControl(
     ) {
         Box(
             Modifier
-                .heightIn(min = GlyphLook.Small.size)
+                .heightIn(min = SymbolLook.Small.size)
                 .clip(CircleShape)
                 .border(1.dp, RunnerColors.border, CircleShape)
                 .padding(horizontal = PILL_PAD),
@@ -285,7 +287,7 @@ internal fun PillControl(
  */
 @Composable
 internal fun PrevIconButton(onClick: () -> Unit) {
-    RoundButton(stringResource(R.string.session_previousStep), onClick, enabled = true, look = GlyphLook.Prev) {
+    RoundButton(stringResource(R.string.session_previousStep), onClick, enabled = true, look = SymbolLook.Prev) {
         Canvas(Modifier.size(width = 9.dp, height = 12.dp)) {
             // Back points the way the layout reads.
             scale(scaleX = if (layoutDirection == LayoutDirection.Rtl) -1f else 1f, scaleY = 1f) {
@@ -307,10 +309,10 @@ internal fun PrevIconButton(onClick: () -> Unit) {
 @Composable
 internal fun PrevTextButton(
     onClick: () -> Unit,
-    size: Dp = GlyphLook.Prev.size,
+    size: Dp = SymbolLook.Prev.size,
 ) {
     Box(
-        // A minimum, as GlyphButton's, so the word has room at large text sizes.
+        // A minimum, as SymbolButton's, so the word has room at large text sizes.
         Modifier
             .sizeIn(minWidth = size, minHeight = size)
             .clip(CircleShape)

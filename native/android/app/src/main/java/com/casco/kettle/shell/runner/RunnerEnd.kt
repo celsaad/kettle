@@ -31,6 +31,7 @@ import com.casco.kettle.shell.R
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.RunnerColors
 import com.casco.kettle.shell.theme.Spacing
+import com.casco.kettle.shell.theme.TypeIcon
 
 // Either end of a session: the count-in before it, and the completion screen after.
 
@@ -91,7 +92,7 @@ internal fun Completion(
                 .clearAndSetSemantics {},
             contentAlignment = Alignment.Center,
         ) {
-            Text("✓", style = KettleType.title.copy(fontSize = CHECK, lineHeight = CHECK), color = RunnerColors.accent)
+            TypeIcon(R.drawable.icon_check, KettleType.title.copy(fontSize = CHECK), RunnerColors.accent)
         }
         Text(
             stringResource(R.string.session_complete_title),

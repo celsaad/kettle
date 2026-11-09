@@ -147,7 +147,9 @@ private fun RepsCounter(context: StepContext) {
     val padLabel = stringResource(R.string.session_reps_repsDone)
     val set = { value: Long -> context.send(RunnerCommand.SetReps(maxOf(0, value))) }
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(STEPPER_GAP)) {
-        GlyphButton("−", stringResource(R.string.common_decrease, label), { set(reps - 1) }, look = GlyphLook.Big)
+        SymbolButton(R.drawable.icon_remove, stringResource(R.string.common_decrease, label), {
+            set(reps - 1)
+        }, look = SymbolLook.Big)
         Column(
             Modifier
                 .sizeIn(minWidth = MinTarget, minHeight = MinTarget)
@@ -162,7 +164,9 @@ private fun RepsCounter(context: StepContext) {
             Numeral("$reps", REPS_NUMERAL)
             Caps(stringResource(R.string.session_reps_repsDoneCaps), Modifier.padding(top = REPS_LABEL_GAP))
         }
-        GlyphButton("+", stringResource(R.string.common_increase, label), { set(reps + 1) }, look = GlyphLook.Big)
+        SymbolButton(R.drawable.icon_add, stringResource(R.string.common_increase, label), {
+            set(reps + 1)
+        }, look = SymbolLook.Big)
     }
 }
 
@@ -204,9 +208,9 @@ private fun LoadControl(context: StepContext) {
     // do and the value keeps RN's room; it stays one line, drawing over that slack if it must.
     Row(verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.hang(start = LOAD_SLACK)) {
-            GlyphButton("−", stringResource(R.string.session_reps_decreaseLoad), {
+            SymbolButton(R.drawable.icon_remove, stringResource(R.string.session_reps_decreaseLoad), {
                 set(display - weightStep(units))
-            }, look = GlyphLook.Load)
+            }, look = SymbolLook.Load)
         }
         Box(
             Modifier
@@ -237,9 +241,9 @@ private fun LoadControl(context: StepContext) {
             )
         }
         Box(Modifier.hang(end = LOAD_SLACK)) {
-            GlyphButton("+", stringResource(R.string.session_reps_increaseLoad), {
+            SymbolButton(R.drawable.icon_add, stringResource(R.string.session_reps_increaseLoad), {
                 set(display + weightStep(units))
-            }, look = GlyphLook.Load)
+            }, look = SymbolLook.Load)
         }
     }
 }
@@ -284,7 +288,7 @@ private val REPS_LABEL_GAP = 6.dp
 private val LOAD_UNIT = 15.sp
 
 /** A load target's slack around its circle, which fits under the card's 14dp padding. */
-private val LOAD_SLACK = (MinTarget - GlyphLook.Load.size) / 2
+private val LOAD_SLACK = (MinTarget - SymbolLook.Load.size) / 2
 
 /** RN's `rgba(243,239,228,0.08)`: an unpicked chip, filled faintly so all three read as choices. */
 private const val CHIP_ALPHA = 0.08f

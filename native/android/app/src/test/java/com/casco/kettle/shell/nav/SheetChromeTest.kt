@@ -48,6 +48,18 @@ class SheetChromeTest {
         assertEquals(1, backs)
     }
 
+    /**
+     * The × is one em of 20sp, centred in its target. Painting gives it the circle as a background,
+     * whose insets became the view's padding and let the icon fill the circle on a device (#267).
+     */
+    @Test
+    fun `the close icon is drawn one em of 20sp across, after painting`() {
+        val close = chrome().labelled("Close")
+
+        assertEquals(CLOSE_ICON_PX, close.width - close.paddingLeft - close.paddingRight)
+        assertEquals(CLOSE_ICON_PX, close.height - close.paddingTop - close.paddingBottom)
+    }
+
     @Test
     fun `the grabber is a labelled 48dp target that TalkBack can close the sheet from`() {
         val grabber = chrome().labelled("Drag handle")
@@ -116,5 +128,8 @@ class SheetChromeTest {
 
         /** Robolectric's default density is 1, so 48dp is 48px. */
         const val TARGET_PX = 48
+
+        /** 20sp at that density and a font scale of 1. */
+        const val CLOSE_ICON_PX = 20
     }
 }

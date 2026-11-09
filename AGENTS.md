@@ -137,7 +137,10 @@ mistake here that cannot be fixed for anyone who has already installed it.
   in M7. `scripts/route-check.sh` steers the running `.dev`
   shell through every route by navigate message and fails on the first screen that isn't the
   expected one. Run it after touching navigation, and update its matrix whenever a screen goes
-  native.
+  native. `scripts/session-check.sh` runs a session's device checks unattended (timing with the screen
+  off, cues, the step-end alert, process death, the finish) and restores `.dev` after. Run it on the
+  `Medium_Phone_API_37.0` AVD after touching the runner, its service, cues or notifications; the PR
+  template lists the checks it can't do.
 
 - `conformance/` — the format's behaviour as data: hand-written YAML inputs and generated golden
   outputs, checked by `conformance.test.ts` and by the Kotlin runner in `:shared`. It exists so the

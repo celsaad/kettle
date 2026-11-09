@@ -399,6 +399,7 @@ private fun Context.sessionWakeLock(): PowerManager.WakeLock =
         .also { it.acquire(WAKE_LOCK_CEILING_MS) }
 
 // Ids apart from the rest-day reminder's, which is tagged with its own channel anyway.
+// scripts/session-check reads both by number, so a change here goes into both twins.
 private const val ONGOING_ID = 3051
 private const val ALERT_ID = 3052
 private const val SOUNDS_TIMEOUT_MS = 1000L

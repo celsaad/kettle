@@ -1,0 +1,48 @@
+# session-check's test library (#315), pushed in place of .dev's own for the run and restored after.
+# Its ids are prefixed so nothing here can be confused with the user's. Both twins push this file.
+version: 1
+exercises:
+  - id: zz-check-reps
+    name: Check Reps
+    type: reps
+    config:
+      sets: 2
+      target_reps_min: 5
+      target_reps_max: 5
+      rest_sec: 6
+  - id: zz-check-hiit
+    name: Check HIIT
+    type: hiit
+    config:
+      work_sec: 10
+      rest_sec: 4
+      rounds: 1
+  - id: zz-check-hold
+    name: Check Hold
+    type: timed_hold
+    config:
+      sets: 1
+      hold_sec_min: 3
+      hold_sec_max: 4
+      rest_sec: 0
+  - id: zz-check-amrap
+    name: Check AMRAP
+    type: amrap
+    config:
+      time_cap_sec: 5
+workouts:
+  - id: zz-check-rest
+    name: Check Rest
+    blocks:
+      - type: exercise
+        exercise: zz-check-reps
+  - id: zz-check-cues
+    name: Check Cues
+    blocks:
+      - type: exercise
+        exercise: zz-check-hiit
+      - type: exercise
+        exercise: zz-check-hold
+      - type: exercise
+        exercise: zz-check-amrap
+programs: []

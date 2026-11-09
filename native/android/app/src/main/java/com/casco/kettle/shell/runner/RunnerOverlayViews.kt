@@ -342,7 +342,7 @@ private fun PickerSearch(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(Spacing.two),
             ) {
-                // Decorative: the field is named by its description, and the glyph says nothing more.
+                // Decorative: the field is named by its description, and the icon says nothing more.
                 TypeIcon(R.drawable.icon_search, KettleType.default, RunnerColors.textSecondary)
                 Box(Modifier.weight(1f)) {
                     if (query.isEmpty()) Text(label, style = textStyle, color = RunnerColors.textSecondary)

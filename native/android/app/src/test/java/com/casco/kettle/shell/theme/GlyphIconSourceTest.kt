@@ -13,7 +13,9 @@ import java.io.File
 class GlyphIconSourceTest {
     @Test
     fun `no Text in the app's sources draws a glyph icon`() {
-        val glyphIcon = Regex("""\bText\(\s*(?:if \(.*?\) )?"[⚙✎⌕›⌄]"""")
+        // The glyph as the first argument, named or not, or as either branch of an if. A glyph passed in
+        // through a variable gets past it, which is the price of a scan rather than a UI test.
+        val glyphIcon = Regex("""\bText\(\s*(?:text\s*=\s*)?(?:if \(.*?\) (?:"[^"]*" else )?)?"[⚙✎⌕›⌄]"""")
         val hits =
             File("src/main/java")
                 .walkTopDown()

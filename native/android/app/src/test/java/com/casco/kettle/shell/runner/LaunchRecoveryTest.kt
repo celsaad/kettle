@@ -174,4 +174,37 @@ class LaunchRecoveryTest {
         assertNull(endedAt(start.session.id))
         assertTrue(find()?.recovery is RunnerRecovery.Prompt)
     }
+
+    /** A read that failed may be a stranded session that reads next time, so the sweep stays due. */
+    @Test
+    fun `stays due after a session file it couldn't read, ending the rest meanwhile`() {
+        writeSessionFile(sessions, start.session.copy(id = "rn", endedAt = null))
+        // A directory where a file should be: reading it fails with an IOException, as a bad disk does.
+        sessions.resolve("bad.yaml").mkdirs()
+
+        sweepStrandedSessions(stateDir, sessions, swept)
+
+        assertTrue(endedAt("rn") != null)
+        assertFalse(swept.exists())
+    }
+
+    /** A stamp the disk refused leaves the session running, and the next launch tries it again. */
+    @Test
+    fun `stays due after a refused write, and ends the session once the disk takes it`() {
+        writeSessionFile(sessions, start.session.copy(id = "rn", endedAt = null))
+        sessions.setWritable(false)
+        try {
+            sweepStrandedSessions(stateDir, sessions, swept)
+
+            assertNull(endedAt("rn"))
+            assertFalse(swept.exists())
+        } finally {
+            sessions.setWritable(true)
+        }
+
+        sweepStrandedSessions(stateDir, sessions, swept)
+
+        assertTrue(endedAt("rn") != null)
+        assertTrue(swept.exists())
+    }
 }

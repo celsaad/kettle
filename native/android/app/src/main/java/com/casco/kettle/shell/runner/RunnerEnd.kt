@@ -1,12 +1,16 @@
 package com.casco.kettle.shell.runner
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -48,7 +52,7 @@ internal fun CountIn(
     val resources = LocalResources.current
     Column(
         Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.spacedBy(Spacing.three, Alignment.CenterVertically),
+        verticalArrangement = Arrangement.spacedBy(Spacing.two, Alignment.CenterVertically),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Caps(stringResource(R.string.session_countdown_getReady))
@@ -58,7 +62,7 @@ internal fun CountIn(
             color = RunnerColors.text,
             textAlign = TextAlign.Center,
         )
-        Numeral("${view.countIn.numeral(now)}", COUNT_NUMERAL, color = RunnerColors.accent)
+        Numeral("${view.countIn.numeral(now)}", COUNT_NUMERAL, color = RunnerColors.accent, leading = COUNT_LEADING)
         if (environment.priorSessions.isEmpty() && environment.soundsOn) {
             Text(
                 stringResource(R.string.session_countdown_firstTimeHint),
@@ -83,20 +87,18 @@ internal fun Completion(
     val resources = LocalResources.current
     // The log is reread on every write, so the finished session is in it: sessionRecords skips it.
     val records = sessionRecords(view.session, environment.priorSessions, view.plan.exercises)
-    Column(
-        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(vertical = Spacing.five),
-        verticalArrangement = Arrangement.spacedBy(Spacing.three),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
+    CenteredColumn {
         Box(
             Modifier
-                .size(72.dp)
+                .padding(bottom = Spacing.one)
+                .size(BADGE)
                 .clip(CircleShape)
                 .background(RunnerColors.accentSoft)
+                .border(1.dp, RunnerColors.accent.copy(alpha = SOFT_BORDER_ALPHA), CircleShape)
                 .clearAndSetSemantics {},
             contentAlignment = Alignment.Center,
         ) {
-            Text("✓", style = KettleType.title, color = RunnerColors.accentOnSoft)
+            Text("✓", style = KettleType.title.copy(fontSize = CHECK, lineHeight = CHECK), color = RunnerColors.accent)
         }
         Text(
             stringResource(R.string.session_complete_title),
@@ -106,25 +108,37 @@ internal fun Completion(
             textAlign = TextAlign.Center,
         )
         Secondary(resources.sessionName(view.plan.workout?.name))
-        for (record in records) RecordCard(record, environment)
+        if (records.isNotEmpty()) {
+            Column(
+                Modifier.fillMaxWidth().padding(top = Spacing.three),
+                verticalArrangement = Arrangement.spacedBy(Spacing.two),
+            ) {
+                for (record in records) RecordCard(record, environment)
+            }
+        }
         if (records.any { it is SessionRecord.HeaviestSet && it.oneRepMaxKg != null }) {
-            Notes(stringResource(R.string.session_complete_oneRepMaxNote))
+            Notes(stringResource(R.string.session_complete_oneRepMaxNote), Modifier.padding(top = Spacing.half))
         }
         if (view.backup == FinishBackupState.FAILED) {
             Text(
                 stringResource(R.string.session_complete_backupFailed),
+                Modifier.padding(top = Spacing.two),
                 style = KettleType.small,
-                color = RunnerColors.accentOnSoft,
+                color = RunnerColors.accentCalmOnSoft,
                 textAlign = TextAlign.Center,
             )
         }
-        PrimaryButton(stringResource(R.string.session_complete_done), onDone)
+        // Compact rather than full width, as RN's: one choice, and nothing left to weigh it against.
+        CompactButton(stringResource(R.string.session_complete_done), onDone, Modifier.padding(top = Spacing.four))
     }
 }
 
 @Composable
-private fun Notes(text: String) {
-    Text(text, style = KettleType.small, color = RunnerColors.textSecondary, textAlign = TextAlign.Center)
+private fun Notes(
+    text: String,
+    modifier: Modifier,
+) {
+    Text(text, modifier, style = KettleType.small, color = RunnerColors.textSecondary, textAlign = TextAlign.Center)
 }
 
 @Composable
@@ -138,13 +152,18 @@ private fun RecordCard(
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
             .background(RunnerColors.backgroundElement)
+            .border(1.dp, RunnerColors.border, RoundedCornerShape(16.dp))
             .semantics(mergeDescendants = true) {}
-            .padding(Spacing.three),
-        verticalArrangement = Arrangement.spacedBy(Spacing.one),
+            .padding(CARD_PAD),
+        verticalArrangement = Arrangement.spacedBy(Spacing.half),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.two)) {
+        Row(
+            Modifier.padding(bottom = Spacing.half),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.two),
+        ) {
             RecordBadge()
-            Text(record.exerciseName, style = KettleType.smallMedium, color = RunnerColors.text, maxLines = 1)
+            Text(record.exerciseName, style = KettleType.smallMedium, color = RunnerColors.textSecondary, maxLines = 1)
         }
         Text(resources.recordText(record, environment.units), style = KettleType.heading, color = RunnerColors.text)
         (record as? SessionRecord.HeaviestSet)?.oneRepMaxKg?.let {
@@ -153,4 +172,32 @@ private fun RecordCard(
     }
 }
 
-private val COUNT_NUMERAL = 72.sp
+private val COUNT_NUMERAL = 56.sp
+
+/** RN's count sets 64 on 56: a looser line than the other numerals' solid one. */
+private const val COUNT_LEADING = 64f / 56f
+private val BADGE = 88.dp
+private val CHECK = 44.sp
+
+/**
+ * Centred down the screen and scrolling once it can't fit, as RN's `justifyContent: 'center'`: the
+ * minimum height is what gives a scrolling column something to centre in.
+ */
+@Composable
+internal fun CenteredColumn(
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    BoxWithConstraints(modifier.fillMaxSize()) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .heightIn(min = maxHeight)
+                .padding(vertical = Spacing.five),
+            verticalArrangement = Arrangement.spacedBy(Spacing.two, Alignment.CenterVertically),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            content = content,
+        )
+    }
+}

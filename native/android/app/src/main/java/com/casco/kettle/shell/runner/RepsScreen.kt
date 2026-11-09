@@ -1,6 +1,7 @@
 package com.casco.kettle.shell.runner
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -10,13 +11,13 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.sizeIn
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -24,10 +25,12 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.casco.kettle.domain.PreviousSet
 import com.casco.kettle.domain.RunnerCommand
 import com.casco.kettle.domain.RunnerStep
@@ -72,15 +75,19 @@ internal fun RepsScreen(
         },
         middle = {
             RepsCounter(context)
-            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.three)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.two)) {
                 StatCard(stringResource(R.string.session_reps_loadCaps), Modifier.weight(1f)) { LoadControl(context) }
                 StatCard(stringResource(R.string.session_reps_rpe), Modifier.weight(1f)) { RpeChoice(context) }
             }
         },
         next = readings.next,
+        middleGap = Spacing.four,
         controls = {
-            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.three)) {
-                PrevTextButton(context)
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(CARD_PAD),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                PrevTextButton({ context.send(RunnerCommand.Prev) })
                 val follows = restFollows(context.snapshot.steps, context.snapshot.stepIndex)
                 PrimaryButton(
                     stringResource(if (follows) R.string.session_reps_logSet else R.string.session_reps_logSetNoRest),
@@ -117,6 +124,7 @@ private fun LastTime(
                 TextControl(
                     text,
                     { context.controls.adopt(step.exerciseId, kg) },
+                    Modifier.hang(start = Spacing.two),
                     style = KettleType.small.copy(color = RunnerColors.accentOnSoft),
                     description =
                         stringResource(
@@ -139,8 +147,8 @@ private fun RepsCounter(context: StepContext) {
     val label = stringResource(R.string.session_reps_repsLabel)
     val padLabel = stringResource(R.string.session_reps_repsDone)
     val set = { value: Long -> context.send(RunnerCommand.SetReps(maxOf(0, value))) }
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.four)) {
-        GlyphButton("−", stringResource(R.string.common_decrease, label), { set(reps - 1) }, size = STEPPER)
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(STEPPER_GAP)) {
+        GlyphButton("−", stringResource(R.string.common_decrease, label), { set(reps - 1) }, look = GlyphLook.Big)
         Column(
             Modifier
                 .sizeIn(minWidth = MinTarget, minHeight = MinTarget)
@@ -152,10 +160,10 @@ private fun RepsCounter(context: StepContext) {
                 },
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Numeral("$reps", BIG_NUMERAL)
-            Caps(stringResource(R.string.session_reps_repsDoneCaps))
+            Numeral("$reps", REPS_NUMERAL)
+            Caps(stringResource(R.string.session_reps_repsDoneCaps), Modifier.padding(top = REPS_LABEL_GAP))
         }
-        GlyphButton("+", stringResource(R.string.common_increase, label), { set(reps + 1) }, size = STEPPER)
+        GlyphButton("+", stringResource(R.string.common_increase, label), { set(reps + 1) }, look = GlyphLook.Big)
     }
 }
 
@@ -169,10 +177,11 @@ private fun StatCard(
         modifier
             .clip(RoundedCornerShape(16.dp))
             .background(RunnerColors.backgroundElement)
-            .padding(Spacing.two),
-        verticalArrangement = Arrangement.spacedBy(Spacing.one),
+            .border(1.dp, RunnerColors.border, RoundedCornerShape(16.dp))
+            .padding(CARD_PAD),
+        verticalArrangement = Arrangement.spacedBy(Spacing.half),
     ) {
-        Caps(label, Modifier.padding(start = Spacing.one))
+        Caps(label, tracking = 1.sp)
         content()
     }
 }
@@ -196,36 +205,53 @@ private fun LoadControl(context: StepContext) {
             stringResource(R.string.session_reps_loadAccessibilityBodyweight)
         }
     val set = { value: Double -> context.send(RunnerCommand.SetWeight(fromDisplayWeight(maxOf(0.0, value), units))) }
+    // The −/+ targets hang their slack into the card's padding, so the circles sit where RN's 30dp ones
+    // do and the value keeps RN's room; it stays one line, drawing over that slack if it must.
     Row(verticalAlignment = Alignment.CenterVertically) {
-        GlyphButton("−", stringResource(R.string.session_reps_decreaseLoad), { set(display - weightStep(units)) })
-        Text(
-            if (kg > 0) {
-                buildAnnotatedString {
-                    append(jsNumber(display))
-                    withStyle(KettleType.small.toSpanStyle()) { append(" $unit") }
-                }
-            } else {
-                AnnotatedString(stringResource(R.string.session_reps_bodyweightAbbr))
-            },
+        Box(Modifier.hang(start = LOAD_SLACK)) {
+            GlyphButton("−", stringResource(R.string.session_reps_decreaseLoad), {
+                set(display - weightStep(units))
+            }, look = GlyphLook.Load)
+        }
+        Box(
             Modifier
                 .weight(1f)
                 .heightIn(min = MinTarget)
                 .clickable(
                     role = Role.Button,
                 ) { context.controls.openPad(PadRequest(padLabel, display, true, unit, set)) }
-                .semantics { contentDescription = description }
-                .padding(top = Spacing.two),
-            style = KettleType.heading,
-            color = RunnerColors.text,
-            textAlign = TextAlign.Center,
-        )
-        GlyphButton("+", stringResource(R.string.session_reps_increaseLoad), { set(display + weightStep(units)) })
+                .semantics(mergeDescendants = true) { contentDescription = description },
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                if (kg > 0) {
+                    buildAnnotatedString {
+                        append(jsNumber(display))
+                        withStyle(
+                            SpanStyle(fontSize = LOAD_UNIT, color = RunnerColors.textSecondary),
+                        ) { append(" $unit") }
+                    }
+                } else {
+                    AnnotatedString(stringResource(R.string.session_reps_bodyweightAbbr))
+                },
+                Modifier.wrapContentWidth(unbounded = true),
+                style = KettleType.heading,
+                color = RunnerColors.text,
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+            )
+        }
+        Box(Modifier.hang(end = LOAD_SLACK)) {
+            GlyphButton("+", stringResource(R.string.session_reps_increaseLoad), {
+                set(display + weightStep(units))
+            }, look = GlyphLook.Load)
+        }
     }
 }
 
 @Composable
 private fun RpeChoice(context: StepContext) {
-    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.one)) {
+    Row(Modifier.padding(top = Spacing.one), horizontalArrangement = Arrangement.spacedBy(RPE_GAP)) {
         for (option in RPE_OPTIONS) {
             val selected = option == context.snapshot.inputs.rpe
             val description = stringResource(R.string.session_reps_rpeOption, jsNumber(option))
@@ -233,8 +259,8 @@ private fun RpeChoice(context: StepContext) {
                 Modifier
                     .weight(1f)
                     .heightIn(min = MinTarget)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(if (selected) RunnerColors.accent else Color.Transparent)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(if (selected) RunnerColors.accent else RunnerColors.text.copy(alpha = CHIP_ALPHA))
                     .clickable(role = Role.Button) { context.send(RunnerCommand.SetRpe(option)) }
                     .semantics {
                         contentDescription = description
@@ -256,4 +282,14 @@ private const val RPE_EASY = 7.0
 private const val RPE_HARD = 8.0
 private const val RPE_LIMIT = 9.0
 private val RPE_OPTIONS = listOf(RPE_EASY, RPE_HARD, RPE_LIMIT)
-private val STEPPER = 64.dp
+private val RPE_GAP = 6.dp
+private val REPS_NUMERAL = 88.sp
+private val STEPPER_GAP = 22.dp
+private val REPS_LABEL_GAP = 6.dp
+private val LOAD_UNIT = 15.sp
+
+/** A load target's slack around its circle: (48 − 30) / 2, under the card's 14dp padding. */
+private val LOAD_SLACK = 9.dp
+
+/** RN's `rgba(243,239,228,0.08)`: an unpicked chip, filled faintly so all three read as choices. */
+private const val CHIP_ALPHA = 0.08f

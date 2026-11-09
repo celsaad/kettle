@@ -1,6 +1,5 @@
 package com.casco.kettle.shell.runner
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -24,7 +23,6 @@ import com.casco.kettle.domain.upcomingPreview
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.RunnerColors
-import com.casco.kettle.shell.theme.Spacing
 
 /** What the number pad is opened for: its label, the value it starts from, and where the value goes. */
 data class PadRequest(
@@ -100,6 +98,8 @@ internal fun stepContext(
 /**
  * "Set 2 of 4", its −/+ (hidden in a circuit, where the count is the block's rounds; − disabled rather
  * than hidden at the floor, so the row doesn't reflow mid-set) and SWAP, each its own 48dp target.
+ * No gap between them: each target's slack around RN's 26dp circle already spaces them, wider than
+ * RN's 4dp, which is the price of targets that don't overlap.
  */
 @Composable
 internal fun SetCountRow(
@@ -108,7 +108,7 @@ internal fun SetCountRow(
 ) {
     val readings = context.readings
     val sets = stringResource(R.string.session_sets_label)
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.two)) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
         Text(label, Modifier.weight(1f, fill = false), style = KettleType.small, color = RunnerColors.textSecondary)
         if (readings.canAddSet) {
             GlyphButton("−", stringResource(R.string.common_decrease, sets), {
@@ -117,11 +117,7 @@ internal fun SetCountRow(
             GlyphButton("+", stringResource(R.string.common_increase, sets), { context.send(RunnerCommand.AddSet) })
         }
         if (readings.canSwap) {
-            TextControl(
-                stringResource(R.string.session_swap_action),
-                { context.controls.open(Overlay.SWAP_PICKER) },
-                style = KettleType.code.copy(color = RunnerColors.accentOnSoft),
-            )
+            PillControl(stringResource(R.string.session_swap_action)) { context.controls.open(Overlay.SWAP_PICKER) }
         }
     }
 }

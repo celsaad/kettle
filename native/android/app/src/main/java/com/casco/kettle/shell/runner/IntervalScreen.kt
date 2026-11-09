@@ -3,8 +3,10 @@ package com.casco.kettle.shell.runner
 import android.content.res.Resources
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.material3.Text
@@ -17,6 +19,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.casco.kettle.domain.IntervalVariant
 import com.casco.kettle.domain.RunnerCommand
@@ -55,13 +58,17 @@ internal fun IntervalScreen(
         controls = {
             PauseRow(context)
             if (step.countUp) {
-                PrimaryButton(stringResource(R.string.session_interval_doneUp), context::advance)
+                PrimaryButton(
+                    stringResource(R.string.session_interval_doneUp),
+                    context::advance,
+                    Modifier.fillMaxWidth(),
+                )
             } else {
                 TextControl(
                     stringResource(R.string.session_interval_skipArrow),
                     context::advance,
-                    Modifier.align(Alignment.CenterHorizontally),
-                    style = KettleType.heading.copy(color = RunnerColors.textSecondary),
+                    Modifier.align(Alignment.CenterHorizontally).bleed(top = Spacing.two, bottom = SKIP_SLACK),
+                    style = KettleType.heading.copy(color = RunnerColors.accent),
                 )
             }
         },
@@ -157,27 +164,36 @@ private fun Stepper(
     val set = { next: Long -> context.send(command(maxOf(0, next))) }
     val description = stringResource(R.string.session_stepperAccessibility, label, "$value")
     Column(
+        Modifier.padding(top = Spacing.three),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(Spacing.one),
     ) {
-        Caps(label)
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.two)) {
-            GlyphButton("−", stringResource(R.string.common_decrease, label), { set(value - 1) })
-            Text(
-                "$value",
+        Caps(label, tracking = 1.2.sp)
+        // RN spaces a 44dp circle 14dp from a 36dp value. Here the circle sits in a 48dp target and the
+        // value is one, so the gap is what puts each circle where RN draws it; RN's own would leave two
+        // AMRAP steppers 16dp wider than the column, squeezing the last + into an oval.
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(STEPPER_GAP)) {
+            GlyphButton(
+                "−",
+                stringResource(R.string.common_decrease, label),
+                { set(value - 1) },
+                look = GlyphLook.Stepper,
+            )
+            Box(
                 Modifier
                     .sizeIn(minWidth = MinTarget, minHeight = MinTarget)
                     .clickable(role = Role.Button) {
                         context.controls.openPad(
                             PadRequest(name, value.toDouble(), false, null) { set(Math.round(it)) },
                         )
-                    }.semantics { contentDescription = description }
-                    .padding(top = Spacing.two),
-                style = KettleType.heading,
-                color = RunnerColors.text,
-                textAlign = TextAlign.Center,
-            )
-            GlyphButton("+", stringResource(R.string.common_increase, label), { set(value + 1) })
+                    }.semantics(mergeDescendants = true) { contentDescription = description },
+                contentAlignment = Alignment.Center,
+            ) {
+                Text("$value", style = KettleType.heading, color = RunnerColors.text, textAlign = TextAlign.Center)
+            }
+            GlyphButton("+", stringResource(R.string.common_increase, label), {
+                set(value + 1)
+            }, look = GlyphLook.Stepper.copy(accent = true))
         }
     }
 }
@@ -191,4 +207,11 @@ private fun variantLabel(variant: IntervalVariant): Int =
     }
 
 private val CLOCK_NUMERAL = 88.sp
+
+/**
+ * The slack under Skip's words in its 48dp target, (48 − its 26dp line) / 2: it overhangs the
+ * frame's 16dp bottom padding, and the controls' 8dp gap above, as RN's text-only Skip has neither.
+ */
+private val SKIP_SLACK = 11.dp
+private val STEPPER_GAP = 6.dp
 private const val SECONDS_PER_MINUTE = 60.0

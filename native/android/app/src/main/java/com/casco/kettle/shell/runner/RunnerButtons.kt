@@ -21,6 +21,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -28,6 +29,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.casco.kettle.shell.R
@@ -285,15 +287,18 @@ internal fun PillControl(
 internal fun PrevIconButton(onClick: () -> Unit) {
     RoundButton(stringResource(R.string.session_previousStep), onClick, enabled = true, look = GlyphLook.Prev) {
         Canvas(Modifier.size(width = 9.dp, height = 12.dp)) {
-            drawPath(
-                Path().apply {
-                    moveTo(size.width, 0f)
-                    lineTo(0f, size.height / 2)
-                    lineTo(size.width, size.height)
-                    close()
-                },
-                RunnerColors.textSecondary,
-            )
+            // Back points the way the layout reads.
+            scale(scaleX = if (layoutDirection == LayoutDirection.Rtl) -1f else 1f, scaleY = 1f) {
+                drawPath(
+                    Path().apply {
+                        moveTo(size.width, 0f)
+                        lineTo(0f, size.height / 2)
+                        lineTo(size.width, size.height)
+                        close()
+                    },
+                    RunnerColors.textSecondary,
+                )
+            }
         }
     }
 }
@@ -323,6 +328,3 @@ private val OUTLINE_PAD = 12.dp
 
 /** Prev's word is RN's plain code face, untracked, unlike the other quiet controls. */
 private val PrevStyle = KettleType.code.copy(color = RunnerColors.textSecondary)
-
-/** RN's 0.4 outline on a soft fill, `rgba(207,106,55,0.4)` or the calm blue's: the tint at 40%. */
-internal const val SOFT_BORDER_ALPHA = 0.4f

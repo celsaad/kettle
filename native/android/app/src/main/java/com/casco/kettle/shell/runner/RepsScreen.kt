@@ -1,7 +1,6 @@
 package com.casco.kettle.shell.runner
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -174,11 +173,7 @@ private fun StatCard(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Column(
-        modifier
-            .clip(RoundedCornerShape(16.dp))
-            .background(RunnerColors.backgroundElement)
-            .border(1.dp, RunnerColors.border, RoundedCornerShape(16.dp))
-            .padding(CARD_PAD),
+        modifier.runnerCard(16.dp),
         verticalArrangement = Arrangement.spacedBy(Spacing.half),
     ) {
         Caps(label, tracking = 1.sp)
@@ -288,8 +283,8 @@ private val STEPPER_GAP = 22.dp
 private val REPS_LABEL_GAP = 6.dp
 private val LOAD_UNIT = 15.sp
 
-/** A load target's slack around its circle: (48 − 30) / 2, under the card's 14dp padding. */
-private val LOAD_SLACK = 9.dp
+/** A load target's slack around its circle, which fits under the card's 14dp padding. */
+private val LOAD_SLACK = (MinTarget - GlyphLook.Load.size) / 2
 
 /** RN's `rgba(243,239,228,0.08)`: an unpicked chip, filled faintly so all three read as choices. */
 private const val CHIP_ALPHA = 0.08f

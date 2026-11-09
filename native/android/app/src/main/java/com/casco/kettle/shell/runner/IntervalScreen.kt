@@ -211,7 +211,10 @@ private fun variantLabel(variant: IntervalVariant): Int =
 
 private val CLOCK_NUMERAL = 88.sp
 
-/** The slack under Skip's words in its 48dp target, (48 − its 26dp line) / 2, which hangs into the frame's padding. */
-private val SKIP_SLACK = 11.dp
+/** The heading face's line at 1×, which Skip's words take. Above [SKIP_SLACK], which reads it. */
+private val HEADING_LINE = 26.dp
+
+/** The slack under Skip's words in its 48dp target, which hangs into the frame's 16dp padding. */
+private val SKIP_SLACK = (MinTarget - HEADING_LINE) / 2
 private val STEPPER_ROW_GAP = 6.dp
 private const val SECONDS_PER_MINUTE = 60.0

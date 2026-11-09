@@ -7,17 +7,17 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.Text
@@ -51,6 +51,7 @@ import androidx.compose.ui.unit.sp
 import com.casco.kettle.domain.Exercise
 import com.casco.kettle.domain.rankByName
 import com.casco.kettle.shell.R
+import com.casco.kettle.shell.list.ListRow
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.RunnerColors
 import com.casco.kettle.shell.theme.Spacing
@@ -281,18 +282,19 @@ internal fun ExercisePicker(
     }
 }
 
-/** The candidates as outlined rows, capped so a long library scrolls inside the sheet above Cancel. */
+/**
+ * The candidates as rows with hairlines between, as every list of peers in the app is (AGENTS.md):
+ * RN's picker drew each as a card, which the native one doesn't copy. [ListRow]'s metrics, with the
+ * runner's own hairline, since it's dark whatever the scheme. Capped so a long library scrolls above
+ * Cancel.
+ */
 @Composable
 private fun PickerOptions(
     shown: List<Exercise>,
     query: String,
     onSelect: (Exercise) -> Unit,
 ) {
-    LazyColumn(
-        Modifier.heightIn(max = 320.dp),
-        contentPadding = PaddingValues(vertical = Spacing.one),
-        verticalArrangement = Arrangement.spacedBy(OPTION_GAP),
-    ) {
+    LazyColumn(Modifier.heightIn(max = 320.dp)) {
         if (shown.isEmpty()) {
             item {
                 Text(
@@ -304,18 +306,10 @@ private fun PickerOptions(
                 )
             }
         }
-        items(shown, key = { it.id }) { exercise ->
-            Box(
-                Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = OPTION_HEIGHT)
-                    .clip(KeyShape)
-                    .keyFace()
-                    .clickable(role = Role.Button) { onSelect(exercise) }
-                    .padding(horizontal = Spacing.three),
-                contentAlignment = Alignment.CenterStart,
-            ) {
-                Text(exercise.name, style = KettleType.heading, color = RunnerColors.text)
+        itemsIndexed(shown, key = { _, exercise -> exercise.id }) { index, exercise ->
+            if (index > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(RunnerColors.border))
+            Box(Modifier.clickable(role = Role.Button) { onSelect(exercise) }) {
+                ListRow { Text(exercise.name, style = KettleType.heading, color = RunnerColors.text) }
             }
         }
     }
@@ -368,8 +362,6 @@ private const val BACKSPACE = "⌫"
 private const val KEYS_PER_ROW = 3
 private const val SEARCH_THRESHOLD = 8
 private const val BACKDROP_ALPHA = 0.55f
-private val OPTION_HEIGHT = 56.dp
-private val OPTION_GAP = 6.dp
 private val SEARCH_TEXT = 14.sp
 private const val SET_WEIGHT = 1.6f
 private val SHEET_RADIUS = 22.dp

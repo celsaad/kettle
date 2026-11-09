@@ -7,7 +7,6 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,7 +21,6 @@ import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -74,9 +72,7 @@ internal fun StepPill(
     val tint = if (calm) RunnerColors.accentCalm else RunnerColors.accent
     Row(
         Modifier
-            .clip(CircleShape)
-            .background(if (calm) RunnerColors.accentCalmSoft else RunnerColors.accentSoft)
-            .border(1.dp, tint.copy(alpha = SOFT_BORDER_ALPHA), CircleShape)
+            .softPill(tint, if (calm) RunnerColors.accentCalmSoft else RunnerColors.accentSoft)
             .padding(horizontal = PILL_PAD_H, vertical = PILL_PAD_V),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(DOT_GAP),
@@ -121,9 +117,7 @@ private fun LiveDot(
 internal fun RecordBadge() {
     Box(
         Modifier
-            .clip(CircleShape)
-            .background(RunnerColors.accentCalmSoft)
-            .border(1.dp, RunnerColors.accentCalm.copy(alpha = SOFT_BORDER_ALPHA), CircleShape)
+            .softPill(RunnerColors.accentCalm, RunnerColors.accentCalmSoft)
             .padding(horizontal = BADGE_PAD_H, vertical = Spacing.one),
     ) {
         Text(
@@ -266,10 +260,7 @@ internal fun NextCard(preview: StepPreview?) {
     Row(
         Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
-            .background(RunnerColors.backgroundElement)
-            .border(1.dp, RunnerColors.border, RoundedCornerShape(18.dp))
-            .padding(CARD_PAD),
+            .runnerCard(18.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(CARD_PAD),
     ) {

@@ -69,15 +69,10 @@ internal fun Frame(
     }
     // No top padding, unlike RN's 8: the header row is 48dp of targets around a line of small text, so
     // its words already sit 15dp down. Below it the same slack counts toward RN's 24dp, and the crumb,
-    // a plain line with none, takes all 24 itself. The crumb rides up into that slack to sit RN's 4dp
-    // under the words: it has no click of its own, so the targets it overlaps still take the tap.
+    // a plain line with none, takes all 24 itself. The crumb sits 11dp lower than RN's 4dp under the
+    // words: raising it into the header's slack made a tap on it open Coming up.
     Column(hidden.fillMaxSize().padding(bottom = Spacing.three)) {
-        Header(
-            view,
-            Overlay.UPCOMING in open,
-            controls,
-            if (step.circuit == null) Modifier else Modifier.bleed(top = 0.dp, bottom = CRUMB_RISE),
-        )
+        Header(view, Overlay.UPCOMING in open, controls)
         step.circuit?.let { CircuitCrumb(it) }
         Spacer(Modifier.height(if (step.circuit == null) Spacing.two else Spacing.four))
         Box(Modifier.weight(1f)) {
@@ -96,11 +91,9 @@ private fun Header(
     view: RunnerView.Running,
     upcomingOpen: Boolean,
     controls: StepControls,
-    modifier: Modifier,
 ) {
     val snapshot = view.snapshot
     Row(
-        modifier,
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.two),
     ) {
@@ -272,8 +265,6 @@ internal fun Before(
     }
 }
 
-/** The header row's slack under its words, (48 − 18) / 2, less RN's 4dp gap to the crumb. */
-private val CRUMB_RISE = 11.dp
 private const val CHEVRON_INSET = 0.25f
 private const val CHEVRON_TOP = 0.375f
 private const val CHEVRON_BOTTOM = 0.625f

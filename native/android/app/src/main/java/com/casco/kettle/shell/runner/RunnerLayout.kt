@@ -23,7 +23,13 @@ import androidx.compose.ui.unit.offset
 internal fun Modifier.halfLeading(line: Int): Modifier =
     layout { measurable, constraints ->
         val placeable = measurable.measure(constraints.copy(minHeight = 0, maxHeight = Constraints.Infinity))
-        layout(placeable.width, line) { placeable.place(0, (line - placeable.height) / 2) }
+        // Within the parent's bounds, or Compose enforces them itself and re-centres, undoing the trim.
+        layout(placeable.width, line.coerceIn(constraints.minHeight, constraints.maxHeight)) {
+            placeable.place(
+                0,
+                (line - placeable.height) / 2,
+            )
+        }
     }
 
 /**
@@ -37,7 +43,8 @@ internal fun Modifier.bleed(
     bottom: Dp,
 ): Modifier =
     layout { measurable, constraints ->
-        val placeable = measurable.measure(constraints)
+        // No minimum: one the parent sets would be enforced on the shorter height and re-centre it.
+        val placeable = measurable.measure(constraints.copy(minHeight = 0))
         val above = top.roundToPx()
         layout(placeable.width, maxOf(placeable.height - above - bottom.roundToPx(), 0)) {
             placeable.placeRelative(0, -above)

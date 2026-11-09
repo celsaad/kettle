@@ -1,7 +1,5 @@
 package com.casco.kettle.shell.runner
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -14,14 +12,11 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -92,9 +87,7 @@ internal fun Completion(
             Modifier
                 .padding(bottom = Spacing.one)
                 .size(BADGE)
-                .clip(CircleShape)
-                .background(RunnerColors.accentSoft)
-                .border(1.dp, RunnerColors.accent.copy(alpha = SOFT_BORDER_ALPHA), CircleShape)
+                .softPill(RunnerColors.accent, RunnerColors.accentSoft)
                 .clearAndSetSemantics {},
             contentAlignment = Alignment.Center,
         ) {
@@ -150,11 +143,8 @@ private fun RecordCard(
     Column(
         Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .background(RunnerColors.backgroundElement)
-            .border(1.dp, RunnerColors.border, RoundedCornerShape(16.dp))
             .semantics(mergeDescendants = true) {}
-            .padding(CARD_PAD),
+            .runnerCard(16.dp),
         verticalArrangement = Arrangement.spacedBy(Spacing.half),
     ) {
         Row(

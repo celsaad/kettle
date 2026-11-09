@@ -7,7 +7,7 @@ import com.casco.kettle.domain.RunnerCommand
 import org.json.JSONObject
 
 /**
- * Lets adb drive a running session, for `scripts/session-check.sh` (#315): the commands a tap would
+ * Lets adb drive a running session, for `scripts/session-check.sh` and its `.ps1` twin (#315): the commands a tap would
  * send, with the screen off and the phone locked, and a report of where the session is.
  *
  *     adb shell am broadcast --es cmd report \
@@ -20,9 +20,9 @@ import org.json.JSONObject
  * runner on top that dropped every navigate after it.
  *
  * Nothing opens a session from here: a foreground service may only start from the visible runner, so
- * the script opens one with a navigate message, as a tap on Start would. And Advance takes its visit
- * from the screen, unless `--el visit` names one: then the engine refuses a stale one, as it would a
- * late tap, which is what lets the script check it does.
+ * the script opens one with a navigate message, as a tap on Start would. And Advance takes the visit of
+ * the session as it stands ([RunnerHost.active]), unless `--el visit` names one: then the engine
+ * refuses a stale one, as it would a late tap, which is what lets the script check it does.
  *
  * Debug only, and behind the same permission as `NavigateReceiver`.
  */
@@ -33,14 +33,38 @@ class RunnerCommandReceiver : BroadcastReceiver() {
     ) {
         resultData =
             when (val cmd = intent.getStringExtra("cmd")) {
-                "advance" -> advance(intent)
-                "prev" -> send(RunnerCommand.Prev)
-                "pause" -> send(RunnerCommand.TogglePause)
-                "add30" -> send(RunnerCommand.AddRestSeconds(REST_BUMP_SEC))
-                "finish" -> send(RunnerCommand.Finish)
-                "visible" -> RunnerHost.setRunnerVisible(intent.getBooleanExtra("value", true)).let { "ok" }
-                "report" -> report()
-                else -> "unknown cmd: $cmd"
+                "advance" -> {
+                    advance(intent)
+                }
+
+                "prev" -> {
+                    send(RunnerCommand.Prev)
+                }
+
+                "pause" -> {
+                    send(RunnerCommand.TogglePause)
+                }
+
+                "add30" -> {
+                    send(RunnerCommand.AddRestSeconds(REST_BUMP_SEC))
+                }
+
+                "finish" -> {
+                    send(RunnerCommand.Finish)
+                }
+
+                "visible" -> {
+                    RunnerHost.setRunnerVisible(intent.getBooleanExtra("value", true))
+                    "ok"
+                }
+
+                "report" -> {
+                    report()
+                }
+
+                else -> {
+                    "unknown cmd: $cmd"
+                }
             }
     }
 

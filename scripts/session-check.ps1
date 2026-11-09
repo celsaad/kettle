@@ -5,8 +5,9 @@
 .DESCRIPTION
   Leaving the count-in, a stale advance, cue cadence, the step-end alert's gating and content, the
   sounds preference, notifications denied, process death, and a rest's timing with the screen off,
-  then the finish path. Each check prints PASS or FAIL on its own line. A port of session-check.sh,
-  step for step; the two change together, and that file's header carries the reasoning.
+  then the finish path. Each check prints PASS or FAIL on its own line. The twin of
+  session-check.sh, step for step; the two change together, that file's header carries the reasoning,
+  and the test library they plant is session-check-library.yaml.
 
   Needs the .dev APK built (native-dev.ps1, or gradlew :app:assembleDebug once the RN AAR is in
   mavenLocal), and a target that's booted, unlocked and running no session. It installs the APK (after
@@ -30,7 +31,9 @@
 
   Leaves the target as it found it, a failing or interrupted run included: the .dev data folder
   restored byte for byte (checked), POST_NOTIFICATIONS granted, the emulator's PIN and doze cleared,
-  and Metro stopped if this started it. It never touches com.casco.kettle.
+  and Metro stopped if this started it (one already running is the caller's, and stays). Its temp
+  folder, with the backup in it, is kept after a failing run and removed after a clean one. It never
+  touches com.casco.kettle.
 
   Not covered, and kept as a manual list in .github/pull_request_template.md: a real Recents swipe,
   tapping the shade notification to reattach, music ducking by ear, a real call on a phone, and a
@@ -84,7 +87,16 @@ function Step([string]$Name) {
 
 # The receiver's answer: the broadcast's result data.
 function Rc { (A shell am broadcast -n $receiver --es cmd @args) -join "`n" -replace '(?s).*data="(.*)"\s*$', '$1' }
-function Report { $r = Rc report; if ($r -match '^\{') { $r | ConvertFrom-Json } else { $null } }
+# Retried, being only a read: this adb's server can restart mid-run, and a read that lands while the
+# device is offline comes back empty. Commands are never retried: a second advance would skip a step.
+function Report {
+  foreach ($i in 1..3) {
+    $r = Rc report
+    if ($r -match '^\{') { return $r | ConvertFrom-Json }
+    WaitFor 10 { ((A get-state 2>$null) -join '') -eq 'device' } | Out-Null
+  }
+  return $null
+}
 function Field([string]$Name) { $r = Report; if ($r) { $r.$Name } else { $null } }
 function View { Field view }
 
@@ -135,7 +147,7 @@ function FocusSince([long]$From, [long]$To = 0, [string]$Kind = 'request') {
 # @() of nothing passed as an argument is one $null, so nulls are dropped before counting.
 function Count($Items) { @($Items | Where-Object { $null -ne $_ }).Count }
 
-# The app's posts in the live list, one line each: id, flags, title and text.
+# The app's posts in the live list, one line each: id, channel, flags, title and text.
 function LiveNotifications {
   $live = $false; $mine = $false; $rec = $null
   foreach ($line in (A shell dumpsys notification --noredact)) {
@@ -146,7 +158,11 @@ function LiveNotifications {
       if ($rec) { $rec }
       $rec = $null
       $mine = $line.Contains("pkg=$package")
-      if ($mine -and $line -match ' id=(\d+)' -and ($id = $Matches[1]) -and $line -match '(flags=[A-Z_|]+)') { $rec = "id=$id $($Matches[1])" }
+      if ($mine -and $line -match ' id=(\d+)') {
+        $rec = "id=$($Matches[1])"
+        if ($line -match '(channel=\S+)') { $rec += " $($Matches[1])" }
+        if ($line -match '(flags=[A-Z_|]+)') { $rec += " $($Matches[1])" }
+      }
     } elseif ($mine -and $line -match 'android\.title=String \((.*)\)$') {
       $rec += " title=$($Matches[1])"
     } elseif ($mine -and $line -match 'android\.text=String \((.*)\)$') {
@@ -155,8 +171,10 @@ function LiveNotifications {
   }
   if ($rec) { $rec }
 }
-# The step-end alert, if one is up: the cues channel's notification, id 3052 (the ongoing one is 3051).
+# The step-end alert, if one is up: id 3052 (the ongoing one is 3051), and checked for its channel.
 function Alert { (LiveNotifications | Where-Object { $_ -like 'id=3052 *' }) -join '' }
+$cuesChannel = 'expo_notifications_fallback_notification_channel'
+function RecoveryAsking { (Field recovery) -eq 'Asking' }
 
 function ServiceRunning { (A shell dumpsys activity services $package) -match 'RunnerService' }
 
@@ -178,7 +196,8 @@ function OpenSession([string]$Workout) {
 }
 function WaitRunning([int]$Seconds = 8) { WaitFor $Seconds { (View) -eq 'Running' } }
 
-# Finishes whatever runs, presses Back on the completion (Done), and waits for Idle.
+# Finishes a running session or leaves a count-in, presses Back on the completion (Done), and waits for
+# Idle.
 function CloseSession {
   switch (View) {
     'Running' { Rc finish | Out-Null; WaitFor 5 { (View) -eq 'Completed' } | Out-Null }
@@ -210,7 +229,7 @@ function Checksums { (AsApp sh -c "cd $data/files/exercise-tracker && find . -ty
 
 $work = Join-Path ([IO.Path]::GetTempPath()) "session-check-$PID"
 New-Item -ItemType Directory -Path $work -Force | Out-Null
-$emulator = ((A shell getprop ro.kernel.qemu 2>$null) -join '') -eq '1'
+$emulator = $false
 $metro = $null
 $pinSet = $false
 $backedUp = $false
@@ -224,9 +243,11 @@ try {
     $expo = Join-Path $root "node_modules/.bin/$(if ($IsWindows) { 'expo.cmd' } else { 'expo' })"
     $metro = Start-Process $expo -ArgumentList 'start', '--port', '8081' -WorkingDirectory $root -PassThru `
       -RedirectStandardOutput (Join-Path $work 'metro.log') -RedirectStandardError (Join-Path $work 'metro.err')
+    $readyBy = (Get-Date).AddMinutes(2)
     do {
       Start-Sleep -Seconds 1
       if ($metro.HasExited) { throw 'Metro exited before it was ready' }
+      if ((Get-Date) -gt $readyBy) { throw "Metro wasn't ready in 2 minutes: see $work/metro.log" }
       # RawContent, not Content: Metro sends no text content type, so Content arrives as bytes.
       $status = try { (Invoke-WebRequest -Uri 'http://localhost:8081/status' -UseBasicParsing -TimeoutSec 2).RawContent } catch { '' }
     } until ($status -match 'packager-status:running')
@@ -235,6 +256,10 @@ try {
     Start-Sleep -Seconds 8
   }
   A wait-for-device
+  # Read once the target is surely online: a property read while adb restarts comes back empty.
+  $serial = if ($Device) { $Device } else { (A get-serialno) -join '' }
+  $emulator = $serial -like 'emulator-*' -or ((A shell getprop ro.boot.qemu) -join '') -eq '1' -or
+    ((A shell getprop ro.kernel.qemu) -join '') -eq '1'
 
   Step 'Checking the APK and the target'
   if (-not (Test-Path $apk)) { throw "No APK at ${apk}: build the .dev app first." }
@@ -263,60 +288,16 @@ try {
   Start-Process adb -ArgumentList ($target + @('exec-out', 'run-as', $package, 'tar', '-cf', '-', 'files/exercise-tracker')) `
     -RedirectStandardOutput $tar -NoNewWindow -Wait
   $checksumsBefore = Checksums
+  # Trusted only once there's something to put back: an empty baseline would make the restore's
+  # comparison pass whatever happened, and an archive missing on the device would restore nothing.
+  if (-not (Test-Path $tar) -or (Get-Item $tar).Length -eq 0 -or -not $checksumsBefore) { throw "Couldn't back up .dev's data folder." }
   A push $tar /data/local/tmp/session-check.tar 2>&1 | Out-Null
+  if (((A shell stat -c %s /data/local/tmp/session-check.tar) -join '') -ne "$((Get-Item $tar).Length)") {
+    throw "Couldn't copy the backup to the device."
+  }
   $backedUp = $true
-  # Its own ids, prefixed, so nothing here can be confused with the user's. The whole library is
-  # replaced rather than added to, so no check depends on what the user's holds.
-  $library = Join-Path $work 'exercises.yaml'
-  [IO.File]::WriteAllText($library, @'
-version: 1
-exercises:
-  - id: zz-check-reps
-    name: Check Reps
-    type: reps
-    config:
-      sets: 2
-      target_reps_min: 5
-      target_reps_max: 5
-      rest_sec: 6
-  - id: zz-check-hiit
-    name: Check HIIT
-    type: hiit
-    config:
-      work_sec: 10
-      rest_sec: 4
-      rounds: 1
-  - id: zz-check-hold
-    name: Check Hold
-    type: timed_hold
-    config:
-      sets: 1
-      hold_sec_min: 3
-      hold_sec_max: 4
-      rest_sec: 0
-  - id: zz-check-amrap
-    name: Check AMRAP
-    type: amrap
-    config:
-      time_cap_sec: 5
-workouts:
-  - id: zz-check-rest
-    name: Check Rest
-    blocks:
-      - type: exercise
-        exercise: zz-check-reps
-  - id: zz-check-cues
-    name: Check Cues
-    blocks:
-      - type: exercise
-        exercise: zz-check-hiit
-      - type: exercise
-        exercise: zz-check-hold
-      - type: exercise
-        exercise: zz-check-amrap
-programs: []
-
-'@.Replace("`r`n", "`n"))
+  # The whole library is replaced rather than added to, so no check depends on what the user's holds.
+  $library = Join-Path $root 'scripts/session-check-library.yaml'
   A push $library /data/local/tmp/session-check-library.yaml 2>&1 | Out-Null
   A shell "run-as $package sh -c 'cat /data/local/tmp/session-check-library.yaml > $data/files/exercise-tracker/exercises.yaml'"
   A shell rm -f /data/local/tmp/session-check-library.yaml
@@ -345,10 +326,11 @@ programs: []
   $first = Report
   Rc advance | Out-Null
   Check 'an advance moves to the rest' (WaitFor 3 { (StepIndex) -eq 1 })
-  if ($first) { Rc advance --el visit $first.visit | Out-Null }
+  # Delivered and then refused: a broadcast that never arrived would leave the step where it is too.
+  $answer = if ($first) { Rc advance --el visit $first.visit } else { '' }
   Start-Sleep -Seconds 1
   $at = StepIndex
-  Check 'an advance carrying the last visit is refused' ($at -eq 1) "on step $at"
+  Check 'an advance carrying the last visit is refused' ($answer -eq 'ok' -and $at -eq 1) "answer '$answer', on step $at"
   CloseSession
 
   Step 'Cue cadence, alert gating and content, sounds on'
@@ -369,7 +351,10 @@ programs: []
     $gap = $ending[$i] - $ending[$i - 1]
     if ($gap -lt 800 -or $gap -gt 1200) { $stray = $true }
   }
-  Check "a countdown's last 3 s and its end cue a second apart" ($ending.Count -eq 4 -and -not $stray) "$($ending.Count) cues, stray gap: $stray"
+  Check "a countdown's last 3 s and its end cue a second apart" ($ending.Count -eq 4 -and -not $stray) "cues and stray gap: $($ending.Count) $([int]$stray)"
+  # What the call check reads: a cue that plays gives its focus back once its sound ends.
+  $released = Count (FocusSince ($start + 4500) ($start + 11400) 'abandon')
+  Check 'a cue that plays gives its focus back' ($released -gt 0) "$released abandons"
   $seen = Alert
   Check 'no alert is posted while the runner is on screen' (-not $seen) $seen
   Rc visible --ez value false | Out-Null
@@ -378,12 +363,13 @@ programs: []
   Start-Sleep -Milliseconds 800
   $hold = Alert
   Check 'a hold that ends off screen posts "Hold complete" and the next exercise' ($hold -like '*title=Hold complete*text=Check AMRAP*') $hold
+  Check 'the alert is on the cues channel' ($hold -like "*channel=$cuesChannel *") $hold
   Check 'with sounds on, the alert is silent: the service played the cue' ($hold -like '*SILENT*') $hold
   Rc visible --ez value true | Out-Null
   Check 'the alert is cleared once the runner is on screen' (WaitFor 3 { -not (Alert) }) (Alert)
   Rc visible --ez value false | Out-Null
   # The AMRAP's 5 s cap ends the workout. The service stops with it, so this last alert stays up after;
-  # whether it should clear is a question for the app, not this check.
+  # whether it should clear is #327, a question for the app, not this check.
   WaitFor 9 { (View) -eq 'Completed' } | Out-Null
   Start-Sleep -Milliseconds 800
   $last = Alert
@@ -417,7 +403,6 @@ programs: []
     A shell input tap ((([int]$Matches[1] + [int]$Matches[3]) / 2) -as [int]) ((([int]$Matches[2] + [int]$Matches[4]) / 2) -as [int])
     return $true
   }
-  function RecoveryAsking { (Field recovery) -eq 'Asking' }
   if (OpenSession 'zz-check-rest') { WaitRunning | Out-Null }
   $id = Field sessionId
   KillApp
@@ -505,8 +490,12 @@ programs: []
   }
   A shell input keyevent KEYCODE_SLEEP
   if ($emulator) { A shell dumpsys deviceidle force-idle | Out-Null }
-  WaitFor 12 { (StepIndex) -eq 2 } | Out-Null
-  $took = [long](StateOf $id).phaseStartedAt - $restStart
+  # Waited out, not polled: a broadcast to the app every half second could keep it awake and hide a
+  # late wake. The state file is read without waking the app.
+  Start-Sleep -Seconds 10
+  $after = StateOf $id
+  $took = [long]$after.phaseStartedAt - $restStart
+  Check 'the rest ends by itself with the screen off' ($after.stepIndex -eq 2)
   Check 'a 6 s rest ends at 6 s ± 1 s with the screen off' ($took -ge 5000 -and $took -le 7000) "$took ms"
   Rc finish | Out-Null
   Check 'Finish completes the session, screen off' (WaitFor 5 { (View) -eq 'Completed' })
@@ -530,7 +519,8 @@ programs: []
   A shell am force-stop $package
   if ($backedUp) {
     # The runner's state files aren't in the backup, and there were none at the start (checked).
-    A shell "run-as $package sh -c 'rm -rf $data/no_backup/runner; cd $data && rm -rf files/exercise-tracker && tar -xf /data/local/tmp/session-check.tar'"
+    # The runner's folder is cleared, and the data folder only once the archive that replaces it is there.
+    A shell "run-as $package sh -c 'rm -rf $data/no_backup/runner; [ -s /data/local/tmp/session-check.tar ] && cd $data && rm -rf files/exercise-tracker && tar -xf /data/local/tmp/session-check.tar'"
     A shell rm -f /data/local/tmp/session-check.tar
     if ((Checksums) -eq $checksumsBefore) {
       Write-Host 'The .dev data folder is byte for byte as it was.'
@@ -539,8 +529,13 @@ programs: []
       $code = 1
     }
   }
-  if ($metro -and -not $metro.HasExited) { Stop-Process -Id $metro.Id -Force -ErrorAction SilentlyContinue }
+  if ($metro -and -not $metro.HasExited) {
+    # On Windows expo.cmd is a cmd.exe wrapper, and stopping it alone leaves node holding 8081: the
+    # whole tree goes. Elsewhere the process is node itself.
+    if ($IsWindows) { taskkill /PID $metro.Id /T /F | Out-Null } else { Stop-Process -Id $metro.Id -Force -ErrorAction SilentlyContinue }
+  }
   Write-Host "`n$script:passed passed, $script:failed failed"
   if ($script:failed -gt 0) { $code = 1 }
+  if ($code -eq 0) { Remove-Item -Recurse -Force $work -ErrorAction SilentlyContinue } else { Write-Host "Kept $work for a look." }
 }
 exit $code

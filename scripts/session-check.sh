@@ -2,8 +2,9 @@
 # Runs the native runner's repeatable device checks unattended against com.casco.kettle.dev (#315):
 # leaving the count-in, a stale advance, cue cadence, the step-end alert's gating and content, the
 # sounds preference, notifications denied, process death, and a rest's timing with the screen off,
-# then the finish path. Each check prints PASS or FAIL on its own line. A port of session-check.ps1,
-# step for step; the two change together.
+# then the finish path. Each check prints PASS or FAIL on its own line. session-check.ps1 is its twin
+# for Windows, step for step; the two change together, and the test library they plant is
+# session-check-library.yaml.
 #
 # Needs the .dev APK built (scripts/native-dev.sh, or `gradlew :app:assembleDebug` once the RN AAR is
 # in mavenLocal), and a target that's booted, unlocked and running no session. It installs the APK
@@ -12,7 +13,8 @@
 #
 # The evidence is what a person would read by hand: the session's state file
 # (`no_backup/runner/<id>.json`, device wall-clock ms), its session file, `dumpsys audio`'s
-# requestAudioFocus() lines (one per cue), the live "Notification List" of `dumpsys notification`
+# requestAudioFocus() and abandonAudioFocus() lines (a cue that played abandons its focus; one the
+# system refused doesn't), the live "Notification List" of `dumpsys notification`
 # (never its archive, which keeps cancelled ones), and `dumpsys activity services`. The session is
 # driven through the debug-only RunnerCommandReceiver, so nothing taps the screen except the recovery
 # prompt, which only ever shows on an unlocked launch.
@@ -27,7 +29,9 @@
 #
 # Leaves the target as it found it, a failing or interrupted run included: the .dev data folder
 # restored byte for byte (checked), POST_NOTIFICATIONS granted, the emulator's PIN and doze cleared,
-# and Metro stopped if this started it. It never touches com.casco.kettle.
+# and Metro stopped if this started it (one already running is the caller's, and stays). Its temp
+# folder, with the backup in it, is kept after a failing run and removed after a clean one. It never
+# touches com.casco.kettle.
 #
 # Not covered, and kept as a manual list in .github/pull_request_template.md: a real Recents swipe,
 # tapping the shade notification to reattach, music ducking by ear, a real call on a phone, and a long
@@ -62,8 +66,6 @@ as_app() { a exec-out run-as "$package" "$@"; }
 
 passed=0
 failed=0
-# 0 when the command given succeeds, 1 when it doesn't: a check's verdict, without -e to stop on it.
-st() { if "$@"; then echo 0; else echo 1; fi; }
 check() {
   # check <name> <0 for a pass> [what was seen instead]
   if [ "$2" = 0 ]; then
@@ -73,17 +75,28 @@ check() {
   fi
 }
 skip() { printf '\033[33mSKIP\033[0m %s\n' "$1"; }
-# A section's header. Waits for the target first: an adb server restarting mid-run marks it offline.
+# A section's header. Waits up to 30 s for the target first: an adb server restarting mid-run marks it
+# offline for a few seconds. Polled, since stock macOS has no `timeout` to bound a wait-for-device.
 step() {
   printf '\n\033[36m== %s\033[0m\n' "$1"
-  if command -v timeout >/dev/null; then timeout 30 adb ${target[@]+"${target[@]}"} wait-for-device || true; fi
+  wait_for 30 target_online || true
 }
+target_online() { [ "$(a get-state 2>/dev/null)" = device ]; }
 
 # --- The receiver, the device's clock and files ---------------------------------------------------
 
 # The receiver's answer: the broadcast's result data.
 rc() { a shell am broadcast -n "$receiver" --es cmd "$@" | sed -n 's/.*data="\(.*\)"$/\1/p'; }
-report() { rc report; }
+# Retried, being only a read: this adb's server can restart mid-run, and a read that lands while the
+# device is offline comes back empty. Commands are never retried: a second advance would skip a step.
+report() {
+  local i out
+  for i in 1 2 3; do
+    out=$(rc report)
+    case "$out" in '{'*) printf '%s' "$out"; return 0 ;; esac
+    wait_for 10 target_online || true
+  done
+}
 # A field of a one-line JSON object, string or number.
 field() { printf '%s' "$1" | sed -n "s/.*\"$2\":\"\{0,1\}\([^\",}]*\).*/\1/p"; }
 view() { field "$(report)" view; }
@@ -120,9 +133,10 @@ step_index() { field "$(report)" stepIndex; }
 
 # The focus requests the app made from [from_ms] to [to_ms] (now, if not given), device wall clock, one
 # millisecond time of day per line; abandons with [kind] abandon. A cue that played abandons its focus
-# when its sound ends, so a request with no abandon after it is one the system refused. `dumpsys audio` stamps them in local time, so the bounds are shifted
-# by the device's own offset; a window across midnight wraps. Its history is capped, so a window has to
-# be recent: count within one, never lines overall.
+# when its sound ends, so a request with no abandon after it is one the system refused. `dumpsys audio`
+# stamps them in local time, so the bounds are shifted by the device's own offset; a window across
+# midnight wraps. Its history is capped, so a window has to be recent: count within one, never lines
+# overall.
 focus_since() {
   local from=$1 to=${2:-$(now_ms)} kind=${3:-request} offset sign hh mm
   offset=$(a shell date +%z | tr -d '\r')
@@ -138,7 +152,7 @@ focus_since() {
     }'
 }
 
-# The app's posts in the live list, one line each: id, flags, title and text.
+# The app's posts in the live list, one line each: id, channel, flags, title and text.
 live_notifications() {
   a shell dumpsys notification --noredact | awk '
     /Notification List:/ { live = 1; next }
@@ -146,13 +160,15 @@ live_notifications() {
     !live { next }
     /NotificationRecord\(/ { if (rec != "") print rec; rec = ""; mine = index($0, "pkg='"$package"'") > 0
       if (mine) { match($0, /id=[0-9]+/); id = substr($0, RSTART + 3, RLENGTH - 3)
-        match($0, /flags=[A-Z_|]+/); rec = "id=" id " " substr($0, RSTART, RLENGTH) } }
+        match($0, /channel=[^ ]+/); rec = "id=" id " " substr($0, RSTART, RLENGTH)
+        match($0, /flags=[A-Z_|]+/); rec = rec " " substr($0, RSTART, RLENGTH) } }
     mine && /android\.title=String/ { sub(/.*String \(/, ""); sub(/\)$/, ""); rec = rec " title=" $0 }
     mine && /android\.text=String/ { sub(/.*String \(/, ""); sub(/\)$/, ""); rec = rec " text=" $0 }
     END { if (rec != "") print rec }'
 }
-# The step-end alert, if one is up: the cues channel's notification, id 3052 (the ongoing one is 3051).
+# The step-end alert, if one is up: id 3052 (the ongoing one is 3051), and checked for its channel.
 alert() { live_notifications | grep '^id=3052 '; }
+cues_channel=expo_notifications_fallback_notification_channel
 
 service_running() { a shell dumpsys activity services "$package" | grep -q 'RunnerService'; }
 
@@ -176,7 +192,8 @@ open_session() {
 is_not_idle() { [ "$(view)" != Idle ]; }
 wait_running() { wait_for "${1:-8}" is_view Running; }
 
-# Finishes whatever runs, presses Back on the completion (Done), and waits for Idle.
+# Finishes a running session or leaves a count-in, presses Back on the completion (Done), and waits for
+# Idle.
 close_session() {
   case "$(view)" in
     Running) rc finish >/dev/null; wait_for 5 is_view Completed || true ;;
@@ -192,7 +209,7 @@ launch() {
   a shell monkey -p "$package" -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1
   wait_for 30 receiver_answers
 }
-receiver_answers() { [ -n "$(report)" ]; }
+receiver_answers() { case "$(report)" in '{'*) return 0 ;; *) return 1 ;; esac; }
 
 write_preferences() {
   # The run's own: sounds as asked, and no backup folder, so a finish writes nothing outside the app.
@@ -206,7 +223,6 @@ write_preferences() {
 
 work=$(mktemp -d)
 emulator=0
-[ "$(a shell getprop ro.kernel.qemu 2>/dev/null | tr -d '\r')" = 1 ] && emulator=1
 metro_pid=
 pin_set=0
 backed_up=0
@@ -225,8 +241,9 @@ restore() {
   a shell pm grant "$package" android.permission.POST_NOTIFICATIONS 2>/dev/null
   a shell am force-stop "$package"
   if [ "$backed_up" = 1 ]; then
-    # The runner's state files aren't in the backup, and there were none at the start (checked).
-    a shell "run-as $package sh -c 'rm -rf $data/no_backup/runner; cd $data && rm -rf files/exercise-tracker && tar -xf /data/local/tmp/session-check.tar'"
+    # The runner's state files aren't in the backup, and there were none at the start (checked). The
+    # folder is only cleared once the archive that replaces it is there to.
+    a shell "run-as $package sh -c 'rm -rf $data/no_backup/runner; [ -s /data/local/tmp/session-check.tar ] && cd $data && rm -rf files/exercise-tracker && tar -xf /data/local/tmp/session-check.tar'"
     a shell rm -f /data/local/tmp/session-check.tar
     if [ "$(checksums)" = "$(cat "$work/checksums")" ]; then
       echo "The .dev data folder is byte for byte as it was."
@@ -238,6 +255,7 @@ restore() {
   if [ -n "$metro_pid" ]; then kill "$metro_pid" 2>/dev/null; wait "$metro_pid" 2>/dev/null; fi
   printf '\n%d passed, %d failed\n' "$passed" "$failed"
   [ "$failed" -gt 0 ] && code=1
+  if [ "$code" = 0 ]; then rm -rf "$work"; else echo "Kept $work for a look." >&2; fi
   exit "$code"
 }
 trap restore EXIT
@@ -247,8 +265,10 @@ if ! curl -s --max-time 2 http://localhost:8081/status | grep -q 'packager-statu
   step 'Starting Metro'
   (cd "$root" && exec node_modules/.bin/expo start --port 8081 >"$work/metro.log" 2>&1) &
   metro_pid=$!
+  ready_by=$((SECONDS + 120))
   until curl -s --max-time 2 http://localhost:8081/status | grep -q 'packager-status:running'; do
     kill -0 "$metro_pid" 2>/dev/null || { echo 'Metro exited before it was ready' >&2; exit 1; }
+    [ $SECONDS -le $ready_by ] || { echo "Metro wasn't ready in 2 minutes: see $work/metro.log" >&2; exit 1; }
     sleep 1
   done
   # Expo starts adb's server itself as it comes up, and on this adb that can restart the one already
@@ -257,6 +277,9 @@ if ! curl -s --max-time 2 http://localhost:8081/status | grep -q 'packager-statu
   sleep 8
 fi
 a wait-for-device
+# Read once the target is surely online: a property read while adb restarts comes back empty.
+case "${target[1]:-$(a get-serialno)}" in emulator-*) emulator=1 ;; esac
+[ "$(a shell getprop ro.boot.qemu | tr -d '\r')" = 1 ] || [ "$(a shell getprop ro.kernel.qemu | tr -d '\r')" = 1 ] && emulator=1
 
 step 'Checking the APK and the target'
 [ -f "$apk" ] || { echo "No APK at $apk: build the .dev app first." >&2; exit 1; }
@@ -276,59 +299,15 @@ done
 step 'Backing up .dev and planting the test library'
 as_app tar -cf - files/exercise-tracker > "$work/data.tar"
 checksums > "$work/checksums"
-a push "$work/data.tar" /data/local/tmp/session-check.tar >/dev/null
+# Trusted only once there's something to put back: an empty baseline would make the restore's
+# comparison pass whatever happened, and an archive missing on the device would restore nothing.
+[ -s "$work/data.tar" ] && [ -s "$work/checksums" ] || { echo "Couldn't back up .dev's data folder." >&2; exit 1; }
+a push "$work/data.tar" /data/local/tmp/session-check.tar >/dev/null 2>&1 &&
+  [ "$(a shell stat -c %s /data/local/tmp/session-check.tar | tr -d '\r')" = "$(wc -c < "$work/data.tar" | tr -d ' ')" ] ||
+  { echo "Couldn't copy the backup to the device." >&2; exit 1; }
 backed_up=1
-# Its own ids, prefixed, so nothing here can be confused with the user's. The whole library is
-# replaced rather than added to, so no check depends on what the user's holds.
-cat > "$work/exercises.yaml" <<'YAML'
-version: 1
-exercises:
-  - id: zz-check-reps
-    name: Check Reps
-    type: reps
-    config:
-      sets: 2
-      target_reps_min: 5
-      target_reps_max: 5
-      rest_sec: 6
-  - id: zz-check-hiit
-    name: Check HIIT
-    type: hiit
-    config:
-      work_sec: 10
-      rest_sec: 4
-      rounds: 1
-  - id: zz-check-hold
-    name: Check Hold
-    type: timed_hold
-    config:
-      sets: 1
-      hold_sec_min: 3
-      hold_sec_max: 4
-      rest_sec: 0
-  - id: zz-check-amrap
-    name: Check AMRAP
-    type: amrap
-    config:
-      time_cap_sec: 5
-workouts:
-  - id: zz-check-rest
-    name: Check Rest
-    blocks:
-      - type: exercise
-        exercise: zz-check-reps
-  - id: zz-check-cues
-    name: Check Cues
-    blocks:
-      - type: exercise
-        exercise: zz-check-hiit
-      - type: exercise
-        exercise: zz-check-hold
-      - type: exercise
-        exercise: zz-check-amrap
-programs: []
-YAML
-a push "$work/exercises.yaml" /data/local/tmp/session-check-library.yaml >/dev/null
+# The whole library is replaced rather than added to, so no check depends on what the user's holds.
+a push "$root/scripts/session-check-library.yaml" /data/local/tmp/session-check-library.yaml >/dev/null 2>&1
 a shell "run-as $package sh -c 'cat /data/local/tmp/session-check-library.yaml > $data/files/exercise-tracker/exercises.yaml'"
 a shell rm -f /data/local/tmp/session-check-library.yaml
 write_preferences true
@@ -357,9 +336,12 @@ first=$(report)
 rc advance >/dev/null
 wait_for 3 at_step 1 && moved=0 || moved=1
 check 'an advance moves to the rest' "$moved"
-rc advance --el visit "$(field "$first" visit)" >/dev/null
+# Delivered and then refused: a broadcast that never arrived would leave the step where it is too.
+visit=$(field "$first" visit)
+answer=$([ -n "$visit" ] && rc advance --el visit "$visit")
 sleep 1
-[ "$(step_index)" = 1 ]; check 'an advance carrying the last visit is refused' $? "on step $(step_index)"
+[ "$answer" = ok ] && [ "$(step_index)" = 1 ]
+check 'an advance carrying the last visit is refused' $? "answer '$answer', on step $(step_index)"
 close_session
 
 step 'Cue cadence, alert gating and content, sounds on'
@@ -376,7 +358,10 @@ midpoint=$(focus_since $((start + 4500)) $((start + 5500)) | wc -l | tr -d ' ')
 [ "$midpoint" = 1 ]; check 'HIIT work cues its midpoint' $? "$midpoint focus requests"
 ending=$(focus_since $((start + 6500)) $((start + 10600)))
 gaps=$(printf '%s\n' "$ending" | awk 'NR > 1 { d = $1 - last; if (d < 800 || d > 1200) bad = 1 } { last = $1 } END { print NR, bad + 0 }')
-[ "$gaps" = '4 0' ]; check "a countdown's last 3 s and its end cue a second apart" $? "count and stray gap: $gaps"
+[ "$gaps" = '4 0' ]; check "a countdown's last 3 s and its end cue a second apart" $? "cues and stray gap: $gaps"
+# What the call check reads: a cue that plays gives its focus back once its sound ends.
+released=$(focus_since $((start + 4500)) $((start + 11400)) abandon | wc -l | tr -d ' ')
+[ "$released" -gt 0 ]; check 'a cue that plays gives its focus back' $? "$released abandons"
 [ -z "$(alert)" ]; check 'no alert is posted while the runner is on screen' $? "$(alert)"
 rc visible --ez value false >/dev/null
 # The hold ends at 4 s, handing over to the AMRAP.
@@ -385,13 +370,15 @@ sleep 0.8
 hold=$(alert)
 case "$hold" in *'title=Hold complete'*'text=Check AMRAP'*) ok=0 ;; *) ok=1 ;; esac
 check 'a hold that ends off screen posts "Hold complete" and the next exercise' $ok "$hold"
+case "$hold" in *"channel=$cues_channel "*) ok=0 ;; *) ok=1 ;; esac
+check 'the alert is on the cues channel' $ok "$hold"
 case "$hold" in *SILENT*) ok=0 ;; *) ok=1 ;; esac
 check 'with sounds on, the alert is silent: the service played the cue' $ok "$hold"
 rc visible --ez value true >/dev/null
 wait_for 3 no_alert; check 'the alert is cleared once the runner is on screen' $? "$(alert)"
 rc visible --ez value false >/dev/null
 # The AMRAP's 5 s cap ends the workout. The service stops with it, so this last alert stays up after;
-# whether it should clear is a question for the app, not this check.
+# whether it should clear is #327, a question for the app, not this check.
 wait_for 9 is_view Completed || true
 sleep 0.8
 last=$(alert)
@@ -463,7 +450,7 @@ quiet=$(focus_since "$from" | wc -l | tr -d ' ')
 interval=$(alert)
 case "$interval" in *'title=Interval complete'*'text=Check Hold'*) ok=0 ;; *) ok=1 ;; esac
 check 'an interval that ends off screen posts "Interval complete" and the next exercise' $ok "$interval"
-case "$interval" in *SILENT*) ok=1 ;; *) ok=0 ;; esac
+case "$interval" in '' | *SILENT*) ok=1 ;; *) ok=0 ;; esac
 check 'with sounds off, the alert sounds itself' $ok "$interval"
 rc visible --ez value true >/dev/null
 close_session
@@ -517,8 +504,11 @@ if [ "$emulator" = 1 ]; then
 fi
 a shell input keyevent KEYCODE_SLEEP
 if [ "$emulator" = 1 ]; then a shell dumpsys deviceidle force-idle >/dev/null; fi
-wait_for 12 at_step 2 || true
+# Waited out, not polled: a broadcast to the app every half second could keep it awake and hide a late
+# wake. The state file is read without waking the app.
+sleep 10
 rest_end=$(field "$(state_of "$id")" phaseStartedAt)
+[ "$(field "$(state_of "$id")" stepIndex)" = 2 ]; check 'the rest ends by itself with the screen off' $?
 took=$((rest_end - rest_start))
 [ "$took" -ge 5000 ] && [ "$took" -le 7000 ]; check 'a 6 s rest ends at 6 s ± 1 s with the screen off' $? "${took} ms"
 rc finish >/dev/null

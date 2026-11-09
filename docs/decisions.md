@@ -436,6 +436,21 @@ decision assembled across several commits. Open work belongs in the sections at 
   `listSessions()` reading every session file at app launch (O(total sessions ever logged)) — if that
   ever becomes a real problem, the fix is lazy/paginated loading or a small separate index file, not
   changing the live-workout write path.
+- **Considered and rejected: a database for the session log, in memory or on disk** (#322). An
+  in-memory one buys nothing: `LatestFiles` already holds the whole log in memory, and a `:memory:`
+  SQLite database is rebuilt from the same YAML on every launch at the same parse cost, and can't be
+  the durable write path §5.2 requires. A persistent one as the source of truth would fork the
+  format, the `conformance/` corpus, the backup folder and iOS's Files-app access. The measured cost
+  was never the file store but how often native re-read it: the whole log was re-parsed after every
+  logged set, every tab tap and every write. A warm read took about 165 ms per 1,000 sessions on a
+  desktop JVM, roughly 85% of it snakeyaml parsing and the rest reading bytes. The fix is #324:
+  native applies its own writes in memory once it is the only writer, and reads the folder only on
+  `onStart`. If cold start with a large log is ever slow on a phone (not yet measured), the remedy
+  is a disposable parse cache in `noBackupFilesDir`, holding parsed sessions only, keyed by a hash
+  of each file's bytes. Size and mtime miss a same-size edit by an mtime-preserving copy, and
+  hashing is cheap next to parsing. It shouldn't hold derived values like bests, which would move
+  logic outside the `records` suite. Only if that file itself grows slow does SQLite enter, in
+  `:shared`, after M7 unpins Kotlin.
 - **Web had no persistence** (by necessity — `expo-file-system` doesn't support it); it degraded to
   an ephemeral in-memory seed library instead of crashing, which was a reasonable dev/preview
   experience but not real usage. The web build ended in M6 (#298), and the

@@ -28,11 +28,9 @@ import com.casco.kettle.shell.nav.RouteReport
 import com.casco.kettle.shell.nav.ShellLayout
 import com.casco.kettle.shell.nav.Tab
 import com.casco.kettle.shell.nav.TabNavigator
-import com.casco.kettle.shell.nav.nativeRunnerDrawn
 import com.casco.kettle.shell.nav.openRunner
 import com.casco.kettle.shell.nav.shellRoutes
 import com.casco.kettle.shell.reminder.reconcileReminder
-import com.casco.kettle.shell.reminder.retireExpoReminder
 import com.casco.kettle.shell.rn.ExpoActivityListeners
 import com.casco.kettle.shell.rn.JsBridge
 import com.casco.kettle.shell.rn.RnFrames
@@ -41,7 +39,6 @@ import com.casco.kettle.shell.runner.LaunchRecovery
 import com.casco.kettle.shell.runner.RunnerHost
 import com.casco.kettle.shell.runner.RunnerService
 import com.casco.kettle.shell.runner.runnerStateDir
-import com.casco.kettle.shell.settings.backUpFinishedSession
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.PreferredKettleTheme
 import com.casco.kettle.shell.theme.preferredColors
@@ -57,7 +54,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
  * shell's own tab bar and back stack (M3, `ShellLayout`). `BrownfieldActivity` is only an
  * `AppCompatActivity`, so this does what the prebuilt app's `ReactActivity` and Expo's delegate
  * wrapper did for it: the splash, Expo modules' activity lifecycle
- * (edge to edge, expo-linking's URLs, expo-notifications' taps), and the host's share of intents,
+ * (edge to edge, expo-linking's URLs), and the host's share of intents,
  * activity results, permission prompts, configuration and focus. Without the results the backup-folder
  * picker and the share sheet never resolve; without the permission interface every prompt answers
  * "denied" unasked; without the configuration a dark-mode switch never reaches JS, since `uiMode` is
@@ -114,8 +111,7 @@ class MainActivity :
 
         expoListeners = ExpoActivityListeners(this).also(lifecycle::addObserver)
         tellJsWhatTheShellDraws()
-        retireExpoReminder()
-        handJsItsWrites()
+        connectAdoptToLibrary()
         // RN's library load only parses from the library flip (#245), so native seeds and repairs first
         // (#221).
         LibraryGate.awaitPrepared(this)
@@ -262,16 +258,19 @@ class MainActivity :
 /**
  * After the library is ready and before any screen can start a session (#307): with no service
  * running, a session the process died under puts up the Resume / Finish prompt, and what the dead
- * service left in the shade goes. Two small reads, like the library gate's.
+ * service left in the shade goes. Two small reads, like the library gate's, plus, once per install,
+ * a read of every session file to end what RN's runner left running (#308).
  *
  * Once per process: a dead service's leftovers can only meet a fresh process, and an activity made
  * again later could land while a service is starting and not yet showing, which a clear would stop.
  */
 private fun Activity.recoverRunner(paths: StoragePaths) {
-    if (!nativeRunnerDrawn || runnerRecovered) return
+    if (runnerRecovered) return
     runnerRecovered = true
     val app = applicationContext
-    LaunchRecovery.recoverAtLaunch(runnerStateDir(noBackupFilesDir), paths.sessions) {
+    // Beside the state dir, not in it: session-check clears that one, and the sweep is once per install.
+    val swept = noBackupFilesDir.resolve("rn-sessions-swept")
+    LaunchRecovery.recoverAtLaunch(runnerStateDir(noBackupFilesDir), paths.sessions, swept) {
         RunnerService.clearAfterDeath(app)
     }
 }
@@ -314,22 +313,17 @@ private fun attachRunner(runnerShown: Boolean) {
 
 /**
  * What the shell draws in RN's place, set before the surface opens so RN's first frame already knows.
- * `nativeTabBar` is read by isHosted in src/hooks/brownfield-module.ts, so RN draws no bar of its own;
- * `nativeRunner` by drawsNativeRunner there, so the native runner's stub guards only where native
- * draws over it (#302). The two share no code, so change both.
+ * `nativeTabBar` is read by isHosted in src/hooks/brownfield-module.ts, so RN draws no bar of its own,
+ * and the native runner's stub guards only where the shell draws the runner over it (#302). The two
+ * share no code, so change both.
  */
 private fun tellJsWhatTheShellDraws() {
     BrownfieldState.set("nativeTabBar", true)
-    BrownfieldState.set("nativeRunner", nativeRunnerDrawn)
 }
 
-/**
- * The writes JS asks native for (#220), on the application's context: a backup the user's folder takes
- * seconds over, or an adopt, may outlive the activity that asked.
- */
-private fun Activity.handJsItsWrites() {
+/** The runner's adopt (#220), on the application's context: a write may outlive the activity that asked. */
+private fun Activity.connectAdoptToLibrary() {
     val app = applicationContext
-    JsBridge.backUpFinishedSession = { app.backUpFinishedSession() }
     JsBridge.adoptTargetWeight = { id, kg -> app.adoptTargetWeight(id, kg) }
 }
 

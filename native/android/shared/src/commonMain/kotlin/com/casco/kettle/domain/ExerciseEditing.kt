@@ -12,8 +12,8 @@ fun Library.withExercise(exercise: Exercise): Library = copy(exercises = exercis
 /**
  * The library with [weightKg] as `reps` exercise [id]'s target load, or null where there's nothing to
  * set: no such exercise, or one of another type, which has no target weight. The runner's one-tap
- * adopt (#220), sent as `setTargetWeight` with kilograms straight off a logged set, so no display
- * conversion stands between the set and the file.
+ * adopt (#220), with kilograms straight off a logged set, so no display conversion stands between the
+ * set and the file.
  */
 fun Library.withTargetWeight(
     id: String,

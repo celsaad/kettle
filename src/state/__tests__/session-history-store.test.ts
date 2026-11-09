@@ -2,8 +2,6 @@ const mockCreateSession = jest.fn();
 const mockFinalizeSession = jest.fn();
 const mockTakeWriteFailure = jest.fn<string | null, []>(() => null);
 const mockListSessions = jest.fn();
-const mockReportSessionFinished = jest.fn();
-jest.mock('@/hooks/brownfield-module', () => ({ reportSessionFinished: () => mockReportSessionFinished() }));
 jest.mock('@/storage/session-files', () => ({
   appendSessionEntry: (session: unknown) => session,
   createSession: (...args: unknown[]) => mockCreateSession(...args),
@@ -21,10 +19,10 @@ import type { Session, SessionEntry } from '@/domain/types';
 import { useSessionHistoryStore } from '@/state/session-history-store';
 
 /**
- * `activeSessionId`/`abandonActiveSession` (which exist for one caller: `session.tsx`'s error
- * boundary, running after React has thrown away the runner and the `Session` ref it held) and
- * `replaceEntry`'s effect on history state, which the runner's suite can't see because it mocks this
- * store out. The rest is exercised through that suite.
+ * `activeSessionId`/`abandonActiveSession` (which existed for one caller: RN's runner's error
+ * boundary, running after React had thrown away the runner and the `Session` ref it held) and
+ * `replaceEntry`'s effect on history state. RN's runner went in the flip release (#308), and these go
+ * with the store when routing moves native (#309).
  */
 function aSession(overrides: Partial<Session> = {}): Session {
   return {
@@ -47,13 +45,11 @@ beforeEach(() => {
     sessions: [],
     errors: [],
     activeSessionId: null,
-    backupFailed: false,
   });
   mockCreateSession.mockReset().mockImplementation((id: string) => aSession({ id }));
   mockFinalizeSession.mockReset().mockImplementation((session: Session, endedAt: string) => ({ ...session, endedAt }));
   mockTakeWriteFailure.mockReset().mockReturnValue(null);
   mockListSessions.mockReset();
-  mockReportSessionFinished.mockReset();
 });
 
 /**
@@ -104,51 +100,6 @@ describe('activeSessionId', () => {
     useSessionHistoryStore.getState().completeSession(session);
 
     expect(useSessionHistoryStore.getState().activeSessionId).toBeNull();
-  });
-});
-
-/**
- * The backup that rides along with a finished session, which native takes from the preferences flip
- * (#220): the store tells the shell once the session is on disk, and the shell's answer is what the
- * completion screen warns from. Whether a folder is set, and the backup itself, are native's
- * (`FinishBackupTest`).
- */
-describe('backing up when a session finishes', () => {
-  // After the write, not before: native reads the log from disk, so a message ahead of `ended_at`
-  // would back up the session as still running.
-  it('tells the shell once the finished session is on disk', () => {
-    const session = useSessionHistoryStore.getState().startSession('w', null, null, null);
-
-    useSessionHistoryStore.getState().completeSession(session);
-
-    expect(mockReportSessionFinished).toHaveBeenCalledTimes(1);
-    expect(mockFinalizeSession.mock.invocationCallOrder[0]).toBeLessThan(
-      mockReportSessionFinished.mock.invocationCallOrder[0],
-    );
-  });
-
-  it("warns from the shell's answer, and leaves the session as it is", () => {
-    const session = useSessionHistoryStore.getState().startSession('w', null, null, null);
-    useSessionHistoryStore.getState().completeSession(session);
-
-    useSessionHistoryStore.getState().backupAnswered(true);
-
-    expect(useSessionHistoryStore.getState().backupFailed).toBe(true);
-    expect(useSessionHistoryStore.getState().sessions[0].endedAt).not.toBeNull();
-
-    useSessionHistoryStore.getState().backupAnswered(false);
-    expect(useSessionHistoryStore.getState().backupFailed).toBe(false);
-  });
-
-  // Cleared as the session finishes rather than when the answer arrives, so the completion screen
-  // never shows the *previous* session's warning while this one's backup is still in flight.
-  it('clears a previous failure as the session finishes, before any answer', () => {
-    useSessionHistoryStore.setState({ backupFailed: true });
-    const session = useSessionHistoryStore.getState().startSession('w', null, null, null);
-
-    useSessionHistoryStore.getState().completeSession(session);
-
-    expect(useSessionHistoryStore.getState().backupFailed).toBe(false);
   });
 });
 

@@ -20,7 +20,7 @@ wanting states and assignees, it wants GitHub issues instead.
   domain objects stay **camelCase** (`workSec`, `holdSec`). `src/domain/yaml-mapping.ts` bridges the
   two at the file boundary, and nowhere else does.
 - The SDK-57 API shapes this was all verified against — `expo-file-system`'s class-based
-  `File`/`Directory` and `expo-notifications` — are recorded in
+  `File`/`Directory`, and `expo-notifications` until it went (#308) — are recorded in
   [`sdk-57-api-notes.md`](sdk-57-api-notes.md), because the published docs for both are wrong for the
   installed versions.
 
@@ -125,14 +125,11 @@ wanting states and assignees, it wants GitHub issues instead.
     per-type record of lambdas would trade three separately-named, separately-documented functions
     computing three different things for one table with worse narrowing.
   - **The long files stay until something needs changing in them.** No defect tracks to any of them,
-    and the two biggest are the two riskiest to touch (`use-session-runner.ts` is the timer path).
+    and the biggest are the riskiest to touch.
     Two have since been split on their own merits — `state/selectors.ts` into one module per concern,
     and `workout-editor.tsx` into its block and picker components (the picker panels were the seam
     named here; the two block editors inside `renderItem` turned out to be the larger half).
-    **`use-session-runner.ts` is the one to keep leaving alone**: a third of it is comments explaining
-    wall-clock anchoring, and its timing refs are read by the tick effect, the foreground-resume effect
-    and the notification fallback, so any split trades one long file for a coordination problem on the
-    path that can lose a workout in progress. `yaml-mapping.ts` likewise — splitting it separates
+    `yaml-mapping.ts` stays — splitting it separates
     halves of a bijection that must be edited together.
 
 - **Colour-code the session progress indicator — mostly settled against, kept for the one live
@@ -168,7 +165,7 @@ wanting states and assignees, it wants GitHub issues instead.
   - **Already expressible — don't add a type for these:** Tabata is `hiit` at 20/10×8; E2MOM is `emom`
     with `intervalSec: 120`; an unconfigured `cardio` is already a count-up stopwatch (see the
     `validateConfig` entry); and distance repeats (400m × 6) are a one-member circuit with `rounds` and
-    rest, since `session-steps.ts` caps a circuit member at one set per round.
+    rest, since the step model (`RunnerSteps.kt`) caps a circuit member at one set per round.
   - **Config extensions, not types:** a weighted hold (`TimedHoldConfig` has no `targetWeightKg`, nor
     `TimedHoldSetLog` a weight), tempo prescriptions, and per-set ladders/pyramids/drop sets. The last
     is the largest by far — `RepsConfig` carries one target range for *all* sets and `buildSteps`
@@ -193,10 +190,11 @@ wanting states and assignees, it wants GitHub issues instead.
 
 - **Drive a running session from the wrist.** Wear OS bridges phone notifications, action buttons
   included, so an ongoing notification carrying Done / Back / +30s is a watch remote with no watch app,
-  no second APK and no sync layer — and the runner's public API is already exactly that vocabulary
-  (`advance()` takes no arguments and reads the step's targets). Full write-up, the verified
-  expo-notifications facts it rests on and the deliberate scope cuts in
-  [`watch-remote-plan.md`](watch-remote-plan.md). Two things worth knowing before opening it: the
+  no second APK and no sync layer. Full write-up and the deliberate scope cuts in
+  [`watch-remote-plan.md`](watch-remote-plan.md), which was written against RN's runner and
+  expo-notifications: since the flip release (#308) the ongoing notification is the service's own
+  (`RunnerNotifications.kt`) and the commands are the engine's, so its mechanics want re-reading
+  against those before anything is built. Two things worth knowing before opening it: the
   standalone Wear OS app was costed and rejected because per-device `expo-file-system` storage makes a
   data-carrying watch a Bluetooth sync project, and `opensAppToForeground` defaults to `true`, which
   would make every wrist tap yank the phone open. (The i18n break this used to carry a fix for — the
@@ -237,8 +235,8 @@ wanting states and assignees, it wants GitHub issues instead.
   **Arabic is the RTL project**, the one `adding-a-language.md` warns is not a bundle. What's already
   known: the `I18nManager` plumbing was deferred deliberately, RN auto-flips the row/padding/gap
   layouts so the physical-direction properties are the small half, and the real work is the drawn glyphs
-  that can't flip (the CSS triangles in `session-hold.tsx` and `session-interval.tsx`, and the Canvas
-  ones in native's `list/RowStartButton.kt` and `home/NextUpCard.kt`) plus the arrows baked into
+  that can't flip (the Canvas ones in native's `list/RowStartButton.kt` and `home/NextUpCard.kt`, and
+  whatever the native runner draws) plus the arrows baked into
   copy (`grep '→' src/i18n/locales/en.json` — getting those out of the strings is worth doing whether or not Arabic ever ships). Three that note
   doesn't carry: `I18nManager.forceRTL` only takes effect after an app restart, and Kettle reads its
   language from the device once at init and never switches it, so the first launch after a phone goes
@@ -266,10 +264,6 @@ wanting states and assignees, it wants GitHub issues instead.
   be the only override there is — which is a feature, not a duplicate, and cheaper than building the
   Settings row it would otherwise take.
 
-- **A native sheet can't grow into the runner yet.** `ModalSheet`'s grow and shrink act on the live
-  view, but RN slides the runner in inside the surface, which is invisible under a native sheet (#197).
-  No M4 sheet opens the runner; the first native screen that does has to handle it.
-
 - **The editors' last literals.** The session editor's and the exercise form's field suffixes (`sec`,
   `min`, `m`) and placeholders (`—`, `0`) are English in every locale, and the session editor's
   per-set labels join with a fixed `"Set 2 · Reps"` order. RN's editors had the same literals, and the
@@ -281,7 +275,9 @@ wanting states and assignees, it wants GitHub issues instead.
 Found while planning the tests/a11y/i18n work (see `testing-a11y-i18n-plan.md`), each verified against
 the code. Listed worst first.
 
-**Fixed since:** `historyStats`'s "1.5h 30m"; the EMOM interval count; weight never being captured;
+**Fixed since** (the runner fixes were RN's runner's, whose files went in the flip release, #308; the
+native port inherited the fixed behaviour, held by `conformance/steps` and `:shared`'s tests):
+`historyStats`'s "1.5h 30m"; the EMOM interval count; weight never being captured;
 side effects inside `setState` updaters; `addRestSeconds` not rescheduling its notification;
 `currentStreak`'s DST stepping; the display-name chip comparison; circuit members writing one entry
 per round (below); `today`/`dateLabel` freezing at module scope (fixed with the I18n-3 locale work —
@@ -303,8 +299,8 @@ interpolated rather than translated. Notes on the structural ones:
 - **Circuit members wrote one entry per round** instead of accumulating. Found by the phase-2 tests,
   not by the architecture pass. `advance()` flushed whenever the *next* step belonged to a different
   member — which in a round-robin circuit is every hand-off — so a 3-round, 3-member circuit produced
-  9 single-set entries where `session-steps.ts`'s own expansion comment says it should produce 3
-  entries of 3 sets. Fixed at the time by separating two questions that had been conflated ("are we
+  9 single-set entries where the step expansion's own comment (now `RunnerSteps.kt`'s) says it
+  should produce 3 entries of 3 sets. Fixed at the time by separating two questions that had been conflated ("are we
   changing exercise right now?" for the audio cue, "is this member finished?" for the flush); the
   second question no longer exists, since each set now writes itself into its member's own entry.
 
@@ -331,16 +327,10 @@ interpolated rather than translated. Notes on the structural ones:
   match is by token (`[\p{L}\p{N}][\p{L}\p{N}\p{M}]*`) rather than by replacing a negated class,
   because Indic/Thai vowel signs are combining marks that must stay attached to their consonant
   while an emoji's U+FE0F is also a mark and must not become an id of its own.
-- **`session-hold.tsx`'s `NaN%`** is guarded the way `session-interval.tsx` already was. Worth noting
-  for the next 0-config bug: nothing validates a program week's override config — the schema types it
-  as a free record of numbers and the in-app override editor doesn't call `validateConfig` — so the
+- **RN's hold screen's `NaN%`** was guarded the way its interval screen already was. Still worth
+  knowing for the next 0-config bug: nothing validates a program week's override config — the schema
+  types it as a free record of numbers and the override editor doesn't call `validateConfig` — so the
   runner screens can't assume the constraints `validateConfig`/`schema.ts` enforce elsewhere.
-
-- **The runner's leave guard is unchecked on a device.** Back and swipe-down now open the Finish
-  dialog (`usePreventRemove` in `session.tsx`), and the runner stamps the session ended if it
-  unmounts anyway. Tests cover what the guard does once called, not that the gestures reach it: that
-  iOS's swipe-down on a `modal` presentation is held by `preventNativeDismiss`, and that Android back
-  opens the dialog with the Coming up sheet closed and closes the sheet when it's open.
 
 - **The sheet's drawn signal is early on a pop** (`RnFrames`, #155): going back from an RN sheet drew
   the destination uncovered for a frame or two before the transition, on the emulator (#207).
@@ -349,6 +339,7 @@ One of the three found in the runner audit that produced the resume-race fix abo
 other two are fixed (see the roll-up above); this one stayed because it is not a defect:
 
 - **Circuit rest is never recorded.** Its steps use `memberKey: '<block>:circuit-rest'`, which matches
-  no member's accumulating log, so `commitCurrentStep` finds nothing to attribute the rest to. Reads as
+  no member's accumulating log, so the commit (`RunnerCommit.kt`'s `commitRest`) finds nothing to
+  attribute the rest to. Reads as
   intended — `RunnerStep`'s own comment says inter-round rest is "folded into (or discarded after) the
   surrounding work" — so this is a note, not a defect, until someone wants circuit rest in the log.

@@ -28,6 +28,11 @@ here, next to what it describes.
 - **Every screen is set in Kettle's own typefaces again**: the screens rebuilt natively had been
   drawn in the phone's system font, and now use the same display and body faces as the rest
   of the app (#264).
+- **The session timer keeps running with the screen locked**: rests count down, holds end and the
+  cues sound with the phone in your pocket, and a notification shows where you are and brings you
+  back to the session with a tap. Swiping Kettle away from Recents leaves the session running. If
+  Android stops the app mid-workout, the next launch offers to resume the session where it was or to
+  finish it, so the workout isn't lost (#308).
 
 ---
 

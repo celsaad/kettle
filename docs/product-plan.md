@@ -284,8 +284,8 @@ React Native timers drift and get throttled when the app backgrounds — fatal f
 
 - **Track time via wall-clock deltas** (`Date.now()` diffs), never by accumulating `setInterval` ticks.
 - On background→foreground, **recompute elapsed from timestamps** rather than trusting the JS timer.
-- Use **`expo-keep-awake`** to prevent screen sleep during a session.
-- Schedule a **local notification** as a fallback so interval cues still fire if the app is backgrounded.
+- Keep the session running and cueing with the screen off: since the flip release (#308) a foreground
+  service owns the clock and plays the cues, and its ongoing notification brings you back.
 
 ### 7.2 Incremental persistence
 
@@ -305,8 +305,8 @@ Implemented as a write-through: an exercise's entry is appended when its first s
 | Import/export | `expo-sharing` (export library or session) + `File.pickFileAsync()` — no `expo-document-picker`, since SDK 57's `expo-file-system` exposes the picker directly |
 | Validation | `zod` (validate YAML→JSON on every load and import) |
 | State | Zustand — hydrate store from YAML on launch; store is runtime source of truth; persist changes back to disk |
-| Timers/cues | `expo-audio` (audio; `expo-av` is superseded), `expo-haptics` (vibration), `expo-notifications` (background fallback), `expo-keep-awake` |
-| Session runner | Hand-rolled, in `use-session-runner.ts` — wall-clock timestamps rather than a formal state machine; XState was not needed |
+| Timers/cues | Native since the flip release (#308): the runner's foreground service plays the cues (`RunnerCues.kt`) and posts its own notifications |
+| Session runner | Native since the flip release (#308): a headless engine in `:shared` (`RunnerEngine.kt`) driven by a foreground service — wall-clock timestamps rather than a formal state machine library |
 
 ---
 

@@ -37,7 +37,7 @@ import com.casco.kettle.shell.rn.JsBridge
 import kotlinx.coroutines.delay
 import java.util.concurrent.atomic.AtomicBoolean
 
-/** What `shellRoutes` registers at the native runner's path while the flip is on (#302, #306). */
+/** What `shellRoutes` registers at the native runner's path (#302, #306). */
 @Composable
 fun RunnerRoute(params: Map<String, String>) {
     val context = LocalContext.current

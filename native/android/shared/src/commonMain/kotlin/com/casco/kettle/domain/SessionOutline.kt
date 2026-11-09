@@ -1,8 +1,9 @@
 package com.casco.kettle.domain
 
 /**
- * What's left in a running workout, for the Coming up sheet, as `upcomingOutline` in RN's
- * `src/hooks/session-outline.ts`, held to it by `conformance/steps.yaml`.
+ * What's left in a running workout, for the Coming up sheet, ported from `upcomingOutline` in RN's
+ * `src/hooks/session-outline.ts` and held by `conformance/steps.yaml`, whose goldens it writes since
+ * the TS twin went (#308).
  *
  * Built from the **live step list, never from the workout's blocks**: the list is what will run, so a
  * swap, an added set, an override, an ad-hoc queue and a truncated workout all come out right without

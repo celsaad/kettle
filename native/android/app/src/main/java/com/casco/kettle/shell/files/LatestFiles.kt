@@ -43,7 +43,7 @@ interface StoredFiles {
 
     /**
      * Replaces [session]'s file with it, whole or not at all: the session editor's Save (#239), where
-     * native is the only writer of an edited session and RN's runner still writes new ones. Throws
+     * native is the only writer of an edited session, as its runner is of new ones (#308). Throws
      * [IOException] when the disk refuses, and the last file stays as it was.
      */
     fun writeSession(session: Session)
@@ -106,10 +106,10 @@ class DiskFiles(
 /**
  * The session log, the library and the preferences as native screens show them, read again by [reread].
  *
- * RN's runner writes new sessions, and nothing else from the library flip (#245): native's session
- * editor edits finished sessions ([writeSession], #240), native Settings writes the preferences
+ * Native writes every file since the flip release (#308): its runner writes new sessions, its session
+ * editor edits finished ones ([writeSession], #240), native Settings writes the preferences
  * ([writePreferences], #238), and native writes the library ([writeLibrary]), the runner's adopt
- * included, which RN asks for by message. The runner is above the tabs, so the shell rereads when RN
+ * included. The runner is above the tabs, so the shell rereads when RN
  * hands the tabs back, on a tap onto a native tab or a native sheet coming up (`TabNavigator`'s
  * `reread`), whenever the app starts or stops being seen (`MainActivity`), and once an adopt lands
  * (`JsBridge.onLibraryWritten`). RN's half of the rule is `filesChanged`.

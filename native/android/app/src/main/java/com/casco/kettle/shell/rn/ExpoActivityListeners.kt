@@ -8,7 +8,7 @@ import androidx.lifecycle.LifecycleOwner
 import expo.modules.ExpoModulesPackage
 
 /**
- * Expo modules' activity hooks (edge to edge, expo-linking's URLs, expo-notifications' taps), which
+ * Expo modules' activity hooks (edge to edge, expo-linking's URLs), which
  * Expo's `ReactActivityDelegateWrapper` dispatches for a `ReactActivity` and nothing dispatches for a
  * `BrownfieldActivity`. Resume, pause and destroy follow the activity's lifecycle, which fires them in
  * the wrapper's order: after `onResume`, before `onPause` and `onDestroy`.

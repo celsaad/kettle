@@ -21,9 +21,8 @@ type LibraryStoreState = {
 
 /**
  * Read-only: native is the library's only writer from the library flip (#245), and says so with
- * `filesChanged('library')`, which calls `reload`. What RN still reads it for is the session runner,
- * which looks up the workout it runs and its exercises. The runner's one write, adopting last time's
- * load as the new target, is a message to native (`reportTargetWeight`), not an action here.
+ * `filesChanged('library')`, which calls `reload`. RN's runner was its last reader, and went in the
+ * flip release (#308); the store goes with routing (#309).
  */
 export const useLibraryStore = create<LibraryStoreState>((set, get) => ({
   status: 'idle',

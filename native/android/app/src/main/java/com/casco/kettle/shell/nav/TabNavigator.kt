@@ -53,7 +53,7 @@ class TabNavigator(
                 else -> Layer.NativeSheet
             }
 
-    /** Whether a runner shows, RN's or native's, which is dark in either scheme (`RunnerColors`). */
+    /** Whether the runner shows, which is dark in either scheme (`RunnerColors`). */
     val runnerShown: Boolean get() = isRunnerPath(rnAt)
 
     /** The path the native sheet draws, while one shows. */

@@ -62,17 +62,20 @@ sealed interface Screen {
 
 /**
  * The native screens' registrations, by the path RN knows the route by. Anything not listed renders
- * RN, which from the library flip (#245) is the session runner alone. Moving a screen to native is one
- * line, plus an empty stub route RN keeps at the same path (#190): RN stays the router, so its stack,
- * back and route reports are unchanged, and native draws the screen whenever RN reports that path: a
- * tab's in `Destinations`, and a modal route's in the sheet (`NativeSheet`, #197), with the same stub
- * behind it.
+ * RN, which from the flip release (#308) is nothing RN still routes to: the runner was the last.
+ * Moving a screen to native was one line, plus an empty stub route RN keeps at the same path (#190):
+ * RN stays the router, so its stack, back and route reports are unchanged, and native draws the
+ * screen whenever RN reports that path: a tab's in `Destinations`, and a modal route's in the sheet
+ * (`NativeSheet`, #197), with the same stub behind it.
  *
  * M5's three ownership flips (#222) have each released, so native is the only writer of
  * `preferences.json` and the backup folder (#238), of an edited session file (#240), and of the
- * library (#245). RN's runner still writes new sessions, and nothing else.
+ * library (#245). The flip release (#308) took the last, new sessions, with RN's runner.
+ *
+ * The runner is a full-screen destination above the tabs rather than a sheet (`Layer.NativeRunner`),
+ * behind a stub RN pushes like any other.
  */
-private val screenRoutes: Map<String, Screen> =
+val shellRoutes: Map<String, Screen> =
     mapOf(
         "/support" to Screen.Native { SupportRoute() },
         "/program-guide" to Screen.Native { ProgramGuideRoute() },
@@ -89,23 +92,8 @@ private val screenRoutes: Map<String, Screen> =
         WORKOUT_EDITOR_PATH to Screen.Native { params -> WorkoutEditorRoute(params) },
         PROGRAM_EDITOR_PATH to Screen.Native { params -> ProgramEditorRoute(params) },
         IMPORT_PATH to Screen.Native { ImportRoute() },
+        NATIVE_RUNNER_PATH to Screen.Native { params -> RunnerRoute(params) },
     )
-
-/**
- * The routes with the native runner registered while [nativeRunner] is on (#302). It is a full-screen
- * destination above the tabs rather than a sheet (`Layer.NativeRunner`), behind a stub RN pushes like
- * any other. RN's runner stays at its own path either way, which `.dev`'s `kettle://session` links
- * still reach until routing moves native.
- */
-fun routesFor(nativeRunner: Boolean): Map<String, Screen> =
-    if (nativeRunner) {
-        screenRoutes + (NATIVE_RUNNER_PATH to Screen.Native { params -> RunnerRoute(params) })
-    } else {
-        screenRoutes
-    }
-
-/** The routes this build registers: `Flips.kt`'s [NATIVE_RUNNER] is on in debug and off in release. */
-val shellRoutes: Map<String, Screen> = routesFor(NATIVE_RUNNER)
 
 /** How [path] renders. */
 fun Map<String, Screen>.screenAt(path: String): Screen = this[path] ?: Screen.Rn

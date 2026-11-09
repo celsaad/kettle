@@ -1,7 +1,7 @@
 package com.casco.kettle.domain
 
 /**
- * What a start resolves to before the first step, as RN's `session.tsx` decides it before its
+ * What a start resolves to before the first step, as RN's `session.tsx` decided it before its
  * count-in (§3.1 of #294's runner inventory). One function so the UI, which picks the screen from
  * it, and the service, which owns the plan from it, can't disagree (#297). Only [Runnable] starts a
  * session.

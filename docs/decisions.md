@@ -283,8 +283,8 @@ decision assembled across several commits. Open work belongs in the sections at 
   **Storage stays metric, unconditionally.** `exercises.yaml` is a file users hand-edit, export and
   share, so `target_weight: 60` has to mean the same thing wherever it's opened — a library whose
   numbers changed meaning with the reader's settings would be unshareable, which is most of the
-  product's pitch. `domain/units.ts` is the only converter; `useUnitSystem()` the only reader of the
-  preference. A pound value must never reach disk.
+  product's pitch. `domain/units.ts` is the only converter (`Units.kt` its `:shared` port), and the
+  preference is read for display only. A pound value must never reach disk.
 
   **The lossy direction is solved by not converting, not by rounding.** Pounds display at 0.1 and
   kilograms store at 0.01, which is what makes a *pound-authored* value survive the trip (135 → 61.23
@@ -1024,9 +1024,14 @@ decision assembled across several commits. Open work belongs in the sections at 
     module's version from `node_modules`. Two things config plugins write into `android/app` stay copies, and
     nothing fails when they drift: the launcher, splash and notification images (prebuild's resized
     output, under `native/android/app/src/main/res`), and the manifest's permissions, intent filters
-    and meta-data. **A change to `app.json`'s icons, permissions or plugins is copied into the shell
-    in the same PR.** The check is to diff the two release merged manifests, which should differ
-    only in the entry point.
+    and meta-data. The notification images are the exception since the flip release (#308): the
+    `expo-notifications` plugin that generated them is gone, so they have no source in `app.json`
+    any more and are the shell's own, edited in place (the build reads their colour from
+    `adaptiveIcon.backgroundColor`). **A change to `app.json`'s icons, permissions or plugins is
+    copied into the shell in the same PR.** The check is to diff the two release merged manifests,
+    which should differ only in the entry point and in what the shell's own code declares with no
+    `app.json` source (the main manifest's header lists it): since the flip release that includes
+    the runner's foreground service and its permissions.
 
   **Rejected, so they aren't re-proposed:**
   - Parsing `theme.ts` from Kotlin, which was #147's first draft. It meant a parser for the subset of

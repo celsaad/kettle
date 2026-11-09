@@ -8,6 +8,9 @@
 >
 > Everything below was confirmed from the installed `.d.ts` files. If a version bumps, re-confirm the
 > same way rather than trusting this page.
+>
+> **The `expo-notifications`, `expo-keep-awake` and `expo-haptics` notes are history**: all three went
+> with RN's runner in the flip release (#308), and the native runner posts its own notifications.
 
 **Installed** (all via `pnpm expo install`, so versions are SDK-57-pinned): `js-yaml`, `zod`,
 `zustand`, `expo-file-system`, `expo-keep-awake`, `expo-haptics`, `expo-notifications`,

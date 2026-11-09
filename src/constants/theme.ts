@@ -1,7 +1,8 @@
 /**
  * Kettle's brand palette: one warm token set, remapped for light/dark (the app shell follows the
- * OS color scheme, with a manual override). `RunnerColors` is separate and fixed — the live
- * session runner is always dark regardless of the shell's scheme, per the design.
+ * OS color scheme, with a manual override). `theme.json`'s `RunnerColors` is separate and fixed — the
+ * live session runner is always dark regardless of the shell's scheme, per the design — and its notes
+ * are below, without an export.
  *
  * The values live in `theme.json`, not here, because the native app reads the same file: its
  * Compose theme is generated from it on every build (`native/android/theme`). Edit a color there and
@@ -43,7 +44,10 @@ export const Colors = theme.Colors;
 
 export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
 
-/**
+/*
+ * `RunnerColors`' contrast notes. The tokens live in `theme.json`, which only native's runner reads
+ * since the flip release (#308), so there is no export to hang these on.
+ *
  * `accentOnSoft` and `accentCalmOnSoft` are label colors for text sitting *on* the soft pill
  * backgrounds, which are translucent and so composite against `background`. The fill colors fail AA
  * there as text — `accent` measures 4.17 and `accentCalm` 3.79 on their own soft backgrounds, and the
@@ -55,7 +59,6 @@ export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
  * `accent` + on `accentSoft` is the 4.17 above, below AA as text; it's held to the 3:1 a control's
  * graphic needs, not the text bar.
  */
-export const RunnerColors = theme.RunnerColors;
 
 /**
  * The faces, by the role `Type` names them by, as the names `expo-font` loads them under

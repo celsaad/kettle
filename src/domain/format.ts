@@ -22,17 +22,6 @@ import { t } from 'i18next';
  */
 
 /**
- * A duration as a running clock, `m:ss` — what every runner timer shows. Numbers only, so nothing in
- * it to translate; it lives here so the rest screen, the interval screen and the Coming up sheet
- * can't disagree about how a clock reads.
- */
-export function formatClock(totalSeconds: number): string {
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-}
-
-/**
  * What was actually logged for one session entry, as data. One variant per shape rather than per
  * exercise type — hiit and amrap both reduce to "rounds", so the renderer doesn't need to care which
  * produced it.
@@ -75,71 +64,6 @@ export function formatEntryResult(result: EntryResult): string {
     case 'rest':
       return t('format.seconds', { n: result.restTakenSec });
   }
-}
-
-/**
- * A logged session's display name: the workout's own name, which is user data and renders verbatim,
- * or a translated stand-in when the session was started ad-hoc and has no workout behind it. The
- * selector returns `null` for that case rather than the English label it used to assemble itself.
- */
-export function formatSessionName(workoutName: string | null): string {
-  return workoutName ?? t('format.adHocSession');
-}
-
-/**
- * A personal record, as data — see `sessionRecords`.
- *
- * `weight` arrives as a finished string rather than as kilograms, which is the one departure from the
- * descriptors above and is forced: a weight can't be rendered without the user's display-unit
- * preference, that preference lives in a zustand store, and this module is imported by the domain
- * layer and by tests that mount nothing. So the view converts through `toDisplayWeight` and hands the
- * result down, exactly as `session-reps.tsx` already does for the live load.
- */
-export type RecordResult =
-  | { kind: 'heaviestSet'; weight: string; reps: number }
-  | { kind: 'mostReps'; reps: number }
-  | { kind: 'longestHold'; holdSec: number }
-  | { kind: 'mostRounds'; rounds: number };
-
-export function formatRecord(result: RecordResult): string {
-  switch (result.kind) {
-    case 'heaviestSet':
-      return t('format.record.heaviestSet', { weight: result.weight, reps: t('format.rep', { count: result.reps }) });
-    case 'mostReps':
-      return t('format.record.mostReps', { reps: t('format.rep', { count: result.reps }) });
-    case 'longestHold':
-      return t('format.record.longestHold', { seconds: t('format.seconds', { n: result.holdSec }) });
-    case 'mostRounds':
-      return t('format.record.mostRounds', { rounds: t('format.round', { count: result.rounds }) });
-  }
-}
-
-/**
- * The estimated one-rep max line. The formula's name is deliberately *not* in here: it belongs in the
- * one-line note the screen renders below the records (`session.complete.oneRepMaxNote`), where it
- * reads as the explanation it is. Inline, "(Epley)" competed with the number for attention while
- * telling a lifter mid-celebration nothing they wanted at that moment — it only matters to someone
- * who has already decided to question the figure, and that person will read the note.
- */
-export function formatOneRepMax(weight: string): string {
-  return t('format.oneRepMax', { weight });
-}
-
-/**
- * What was logged for this set last time, as data — see `previousSetFor`.
- *
- * `weight` arrives as a finished string for the same reason `RecordResult`'s does: this module can't
- * reach the display-unit preference, so the view converts and hands the result down. Absent means the
- * set was bodyweight, which reads differently rather than as "0 kg".
- */
-export type PreviousSetResult = { kind: 'reps'; reps: number; weight?: string } | { kind: 'hold'; holdSec: number };
-
-export function formatPreviousSet(result: PreviousSetResult): string {
-  if (result.kind === 'hold') return t('format.previous.hold', { seconds: t('format.seconds', { n: result.holdSec }) });
-  const reps = t('format.rep', { count: result.reps });
-  return result.weight
-    ? t('format.previous.loaded', { weight: result.weight, reps })
-    : t('format.previous.bodyweight', { reps });
 }
 
 /** A circuit block's configuration, as data — see `circuitShape`. */

@@ -20,7 +20,8 @@
 # and `append` (buildStepsForExercise of `exercise` at `block` under `member`, added to the end: how
 # an ad-hoc session grows).
 #
-# Steps are the camelCase `RunnerStep` from `src/hooks/session-steps.ts`. Absent optionals are absent.
+# Steps are the camelCase `RunnerStep` from `:shared`'s `RunnerSteps.kt`, which writes the goldens since
+# RN's `session-steps.ts` went (#308; the README). Absent optionals are absent.
 #
 # What no case here can reach, because the schema refuses the input that would: the per-exercise
 # ceiling (2000 steps of one count), a 0-second hold end, and zero-work configs. Those are Kotlin unit

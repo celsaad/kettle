@@ -8,23 +8,11 @@
   stores re-read, and RunnerCommandReceiver, session-check's way to drive a running session (#315).
   DUMP is held by the shell user and by no installable app, so adb can send to them and nothing else
   on the phone can.
-
-  Plus the native runner's foreground service (#305), here until the flip release (#308) moves it
-  into the main manifest with its Play declaration, so a Play build is unchanged until then. `health`
-  is the type whose documented purpose is exercise trackers (#293), and HIGH_SAMPLING_RATE_SENSORS is
-  its install-time prerequisite: no prompt, and nothing reads a sensor. No stopWithTask, so a Recents
-  swipe leaves the session running (#297).
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_HEALTH" />
-    <uses-permission
-        android:name="android.permission.HIGH_SAMPLING_RATE_SENSORS"
-        tools:ignore="HighSamplingRate" />
-    <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <application
         android:usesCleartextTraffic="true"
@@ -42,9 +30,5 @@
             android:name="com.casco.kettle.shell.runner.RunnerCommandReceiver"
             android:exported="true"
             android:permission="android.permission.DUMP" />
-        <service
-            android:name="com.casco.kettle.shell.runner.RunnerService"
-            android:exported="false"
-            android:foregroundServiceType="health" />
     </application>
 </manifest>

@@ -2,10 +2,10 @@ package com.casco.kettle.domain
 
 /**
  * The session runner's step model and the workout → step-list expansion, ported from RN's
- * `src/hooks/session-steps.ts` and held to it by `conformance/steps.yaml` while both runners exist
- * (#303). The reasoning behind each rule is in that file's comments, which stay the fuller record
- * until the flip release deletes it. What is repeated here is what a reader of this file can't do
- * without.
+ * `src/hooks/session-steps.ts` and held by `conformance/steps.yaml` (#303), whose goldens it writes
+ * now that the TS twin is gone (#308). The reasoning behind each rule is in that file's comments, which
+ * the flip release deleted: `git log -S` on a rule's name finds them. What is repeated here is what a
+ * reader of this file can't do without.
  *
  * Pure: every function returns a new list and leaves its input alone.
  */

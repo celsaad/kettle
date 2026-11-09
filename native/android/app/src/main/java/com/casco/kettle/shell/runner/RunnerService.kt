@@ -55,8 +55,6 @@ import kotlinx.coroutines.launch
  *   the state file is the truth, read at the next launch (#307).
  * - **The clock** is `elapsedRealtime()` through one [ClockAnchor], so a clock change can't move a step,
  *   plus a partial wake lock for the session, which an FGS keeps through Doze (#293).
- *
- * Declared in the debug manifest alone until the flip release (#308), so a Play build is unchanged.
  */
 class RunnerService : Service() {
     private lateinit var thread: HandlerThread

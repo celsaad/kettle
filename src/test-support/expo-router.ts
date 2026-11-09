@@ -2,7 +2,7 @@ import { act } from '@testing-library/react-native';
 import { useEffect } from 'react';
 
 /**
- * A stand-in for `expo-router`, shared by the screen tests.
+ * A stand-in for `expo-router`, for the screen tests.
  *
  * It lives in its own module rather than inline in each suite because a `jest.mock` factory is
  * hoisted above every `const` in the file and may not close over one — the fix is `require()` inside
@@ -10,21 +10,15 @@ import { useEffect } from 'react';
  *
  *     jest.mock('expo-router', () => require('@/test-support/expo-router'));
  *
- * and then imports `router` / `setSearchParams` from here directly. Same resolved path, same module
- * instance, so assertions see the calls the screen made.
- *
- * `back`, `push`, `dismissTo` and `replace` are the only navigation calls anywhere in `src/`
- * (`dismissTo` for the two places that have to leave a modal *and* land on a tab: `session.tsx`'s
- * error boundary, and deleting a program; `replace` for the program guide handing off to import,
- * which are both modals and would otherwise stack), and `clearMocks` in the jest config resets them
- * between tests.
+ * and then imports `router` from here directly. Same resolved path, same module instance, so
+ * assertions see the calls the screen made. Since the flip release (#308) the native runner's stub is
+ * the one screen RN still has a test for, so this holds only what it calls; `clearMocks` in the jest
+ * config resets them between tests.
  */
 export const router = {
   // As the real one: false until navigation is ready, which every test but a cold start's already is.
   canGoBack: jest.fn(() => navigationReady),
   back: jest.fn(() => assertReady()),
-  push: jest.fn(() => assertReady()),
-  dismissTo: jest.fn(() => assertReady()),
   replace: jest.fn(() => assertReady()),
 };
 
@@ -61,15 +55,6 @@ export function useFocusEffect(effect: () => void) {
     };
   }, [effect]);
 }
-
-let searchParams: Record<string, string | undefined> = {};
-
-/** Stands in for the route's URL params — set it before rendering, as navigation would have. */
-export function setSearchParams(params: Record<string, string | undefined>) {
-  searchParams = params;
-}
-
-export const useLocalSearchParams = () => searchParams;
 
 /**
  * Stands in for `usePreventRemove`, which needs a real navigator. It comes from a different module

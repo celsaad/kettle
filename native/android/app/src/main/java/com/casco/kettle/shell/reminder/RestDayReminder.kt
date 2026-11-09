@@ -21,7 +21,6 @@ import com.casco.kettle.shell.R
 import com.casco.kettle.shell.files.DiskFiles
 import com.casco.kettle.shell.files.StoragePaths
 import com.casco.kettle.shell.i18n.pluralText
-import expo.modules.notifications.service.NotificationsService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -58,19 +57,6 @@ fun Context.reconcileReminder(
     createChannel(this)
     // The same PendingIntent every time, so this replaces the pending alarm rather than adding one.
     alarms.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at.toEpochMilliseconds(), alarmIntent(this))
-}
-
-/**
- * Cancels the Expo request a 0.13 install left pending, so it can't fire beside the native alarm. On
- * every launch, since it's idempotent and needs no flag. Goes in M7 with expo-notifications.
- */
-fun Context.retireExpoReminder() {
-    // Expo's internals, called from outside the module that owns them: a launch that can't cancel is
-    // one that may notify twice, and no reason not to open.
-    runCatching {
-        // The identifier 0.13's RN reminder scheduled under, which RN no longer has (#238).
-        NotificationsService.removeScheduledNotification(this, "kettle-rest-day-reminder")
-    }.onFailure { Log.w(TAG, "Couldn't cancel the Expo reminder", it) }
 }
 
 /** The alarm going off: posts the nudge, or nothing where notifications are denied. */
@@ -119,9 +105,6 @@ class RestDayReminderBootReceiver : BroadcastReceiver() {
         intent: Intent,
     ) {
         if (intent.action != Intent.ACTION_BOOT_COMPLETED) return
-        // A 0.13 upgrade rebooted before its first launch still holds the Expo request, which Expo's own
-        // boot receiver puts back: retired here too, or the two would both fire.
-        context.retireExpoReminder()
         val pending = goAsync()
         CoroutineScope(Dispatchers.IO).launch {
             // An unreadable file already reads as none; this is for the platform refusing the alarm,

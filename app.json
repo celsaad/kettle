@@ -32,7 +32,6 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": true,
-      "permissions": ["android.permission.MODIFY_AUDIO_SETTINGS"],
       "blockedPermissions": ["android.permission.SYSTEM_ALERT_WINDOW", "android.permission.READ_APP_BADGE"]
     },
     "plugins": [
@@ -46,20 +45,6 @@
         }
       ],
       "expo-sharing",
-      [
-        "expo-notifications",
-        {
-          "icon": "./assets/images/icon.png",
-          "color": "#c05c2b"
-        }
-      ],
-      [
-        "expo-audio",
-        {
-          "recordAudioAndroid": false,
-          "enableBackgroundPlayback": false
-        }
-      ],
       [
         "expo-localization",
         {

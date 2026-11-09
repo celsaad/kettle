@@ -66,12 +66,6 @@ jest.mock('expo-router', () => ({
 const mockOnFilesChanged = jest.fn();
 jest.mock('@/state/files-changed', () => ({ onFilesChanged: (kind: unknown) => mockOnFilesChanged(kind) }));
 
-// What the store does with a backup's answer has its own suite (session-history-store.test.ts).
-const mockBackupAnswered = jest.fn();
-jest.mock('@/state/session-history-store', () => ({
-  useSessionHistoryStore: { getState: () => ({ backupAnswered: mockBackupAnswered }) },
-}));
-
 // Who hears it has its own suite (app/__tests__/session-native.test.tsx); this one only checks the
 // message gets there.
 const mockEmitRunnerDone = jest.fn();
@@ -91,7 +85,6 @@ beforeEach(() => {
   mockStack.screensAboveTabs = 0;
   mockStack.guarded = false;
   mockNavigate.mockClear();
-  mockBackupAnswered.mockClear();
   mockPush.mockClear();
   mockReplace.mockClear();
   mockEmitRunnerDone.mockClear();
@@ -173,19 +166,6 @@ it('hands a filesChanged message to the store that reads that file', () => {
   expect(mockNavigate).not.toHaveBeenCalled();
 });
 
-// The runner's finish backup is native's from the preferences flip (#220), and its answer is what the
-// completion screen warns from.
-it('hands a backup result to the history store, and drops one without an answer', () => {
-  announceHostReady();
-
-  fromShell({ type: 'backupResult', failed: true });
-  fromShell({ type: 'backupResult', failed: false });
-  fromShell({ type: 'backupResult' });
-
-  expect(mockBackupAnswered.mock.calls).toEqual([[true], [false]]);
-  expect(mockNavigate).not.toHaveBeenCalled();
-});
-
 // The native runner's Done (#302): the stub under it hears it, and nothing navigates from here.
 it('hands the native runner being done to its stub', () => {
   announceHostReady();
@@ -194,24 +174,6 @@ it('hands the native runner being done to its stub', () => {
 
   expect(mockEmitRunnerDone).toHaveBeenCalledTimes(1);
   expect(mockNavigate).not.toHaveBeenCalled();
-});
-
-it('tells the shell a session finished', () => {
-  mockShared.set('nativeTabBar', true);
-  const { reportSessionFinished } = require('@/hooks/brownfield-module');
-
-  reportSessionFinished();
-
-  expect(mockSent).toEqual([{ type: 'sessionFinished' }]);
-});
-
-// No RN fallback for an unhosted build (#220): iOS, web and Expo Go don't back up after a session.
-it('says nothing about a finished session outside the shell', () => {
-  const { reportSessionFinished } = require('@/hooks/brownfield-module');
-
-  reportSessionFinished();
-
-  expect(mockSent).toEqual([]);
 });
 
 /**
@@ -229,8 +191,8 @@ it('clears the screens above the tabs before it navigates', async () => {
   expect(mockNavigate).toHaveBeenCalledWith('/history');
 });
 
-// The runner's "Finish session?" guard holds the dismissal; navigating anyway would push the tabs
-// over a workout still running underneath. The user's answer decides instead.
+// The native runner's stub holds the dismissal; navigating anyway would push the tabs over a workout
+// still running on top. The runner's own exits decide instead.
 it('goes nowhere while a screen refuses to leave', async () => {
   mockStack.screensAboveTabs = 1;
   mockStack.guarded = true;

@@ -86,8 +86,8 @@ fun HomeRoute() = HomeScreen(LocalLatestFiles.current, LocalTabReselects.current
  * Home (#235), the Workouts tab, as RN's `(tabs)/index.tsx`, now the empty stub at this path: what to
  * run next, and everything there is to run. The next-up card is the only path that resolves which
  * program week is due and starts it with that week's overrides; a row's start passes a bare workout.
- * [open] is `JsBridge.open`, and [startRunner] is `openRunner`, which picks the runner by the flip
- * (#302); both parameters, so a test hears each route opened and each start.
+ * [open] is `JsBridge.open`, and [startRunner] is `openRunner` (#302); both parameters, so a test
+ * hears each route opened and each start.
  *
  * It is the screen the app's start waits for. The activity's `reportFullyDrawn`, the startup
  * benchmark's end point, waits for the library as well as the first frame, since a frame without it

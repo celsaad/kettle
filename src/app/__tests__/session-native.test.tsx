@@ -9,7 +9,7 @@ jest.mock('expo-router', () => require('@/test-support/expo-router'));
 jest.mock('expo-router/react-navigation', () => require('@/test-support/expo-router'));
 
 let mockDrawn = true;
-jest.mock('@/hooks/brownfield-module', () => ({ drawsNativeRunner: () => mockDrawn }));
+jest.mock('@/hooks/brownfield-module', () => ({ isHosted: () => mockDrawn }));
 
 beforeEach(async () => {
   mockDrawn = true;
@@ -39,7 +39,7 @@ describe('under the native runner', () => {
   });
 });
 
-// Play, or outside the shell: a `kettle://session-native` link reaches the route with nothing to draw
+// Outside the shell: a `kettle://session-native` link reaches the route with nothing to draw
 // over it, and a guard here would leave a blank screen that back can't leave.
 describe('with no native runner drawn over it', () => {
   it('backs out at once, unguarded', async () => {

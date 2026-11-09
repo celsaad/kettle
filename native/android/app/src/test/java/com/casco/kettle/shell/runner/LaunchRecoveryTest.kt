@@ -1,9 +1,11 @@
 package com.casco.kettle.shell.runner
 
+import com.casco.kettle.domain.ParseResult
 import com.casco.kettle.domain.RunnerRecovery
 import com.casco.kettle.domain.Session
 import com.casco.kettle.domain.encodeRunnerSnapshot
 import com.casco.kettle.domain.isoInstant
+import com.casco.kettle.domain.parseSessionYaml
 import com.casco.kettle.storage.writeSessionFile
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -140,5 +142,69 @@ class LaunchRecoveryTest {
 
         assertEquals("disk full", refused)
         assertTrue(found.stateFile.exists())
+    }
+
+    private val swept by lazy { folder.root.resolve("rn-sessions-swept") }
+
+    private fun endedAt(id: String) =
+        (parseSessionYaml(sessions.resolve("$id.yaml").readText()) as ParseResult.Ok).value.endedAt
+
+    /** The update past RN's runner (#308): what it left running is ended once, and never again. */
+    @Test
+    fun `ends a session RN's runner left running, at its last write, once per install`() {
+        val rn = start.session.copy(id = "rn", endedAt = null)
+        writeSessionFile(sessions, rn)
+        sessions.resolve("rn.yaml").setLastModified(T0 + 120_000)
+
+        sweepStrandedSessions(stateDir, sessions, swept)
+
+        assertEquals(isoInstant(T0 + 120_000), endedAt("rn"))
+        // Done for good: one left unfinished later is the native runner's prompt's, not this sweep's.
+        writeSessionFile(sessions, rn.copy(id = "later"))
+        sweepStrandedSessions(stateDir, sessions, swept)
+        assertNull(endedAt("later"))
+    }
+
+    @Test
+    fun `leaves a session the native runner's state file names for its prompt`() {
+        killed()
+
+        sweepStrandedSessions(stateDir, sessions, swept)
+
+        assertNull(endedAt(start.session.id))
+        assertTrue(find()?.recovery is RunnerRecovery.Prompt)
+    }
+
+    /** A read that failed may be a stranded session that reads next time, so the sweep stays due. */
+    @Test
+    fun `stays due after a session file it couldn't read, ending the rest meanwhile`() {
+        writeSessionFile(sessions, start.session.copy(id = "rn", endedAt = null))
+        // A directory where a file should be: reading it fails with an IOException, as a bad disk does.
+        sessions.resolve("bad.yaml").mkdirs()
+
+        sweepStrandedSessions(stateDir, sessions, swept)
+
+        assertTrue(endedAt("rn") != null)
+        assertFalse(swept.exists())
+    }
+
+    /** A stamp the disk refused leaves the session running, and the next launch tries it again. */
+    @Test
+    fun `stays due after a refused write, and ends the session once the disk takes it`() {
+        writeSessionFile(sessions, start.session.copy(id = "rn", endedAt = null))
+        sessions.setWritable(false)
+        try {
+            sweepStrandedSessions(stateDir, sessions, swept)
+
+            assertNull(endedAt("rn"))
+            assertFalse(swept.exists())
+        } finally {
+            sessions.setWritable(true)
+        }
+
+        sweepStrandedSessions(stateDir, sessions, swept)
+
+        assertTrue(endedAt("rn") != null)
+        assertTrue(swept.exists())
     }
 }

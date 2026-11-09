@@ -1,8 +1,6 @@
 import { create } from 'zustand';
 
 import type { Session, SessionEntry } from '@/domain/types';
-import { reportSessionFinished } from '@/hooks/brownfield-module';
-import { loggedSessions } from '@/state/selectors/logged-sessions';
 import {
   appendSessionEntry,
   createSession,
@@ -13,6 +11,11 @@ import {
   takeWriteFailure,
 } from '@/storage/session-files';
 
+/**
+ * RN's runner was this store's only writer, and went in the flip release (#308): native writes every
+ * session now. The write actions below have no caller left, and go with the store when routing moves
+ * native (#309), which rewrites what RN hosts.
+ */
 type SessionHistoryState = {
   status: 'idle' | 'loading' | 'ready' | 'error';
   sessions: Session[];
@@ -20,24 +23,13 @@ type SessionHistoryState = {
   /**
    * The session the runner is currently writing to, or null between sessions.
    *
-   * Exists for the crash path: when the runner's render throws, React unmounts it and every ref it
-   * held — including the `Session` it was appending to — so the session's own `ended_at` never gets
-   * written and nothing left in the tree knows which file was in flight. `session.tsx`'s
-   * `ErrorBoundary` reads this to finish that file off. Tracked as an id rather than the object so
-   * there's only ever one copy of the session itself, in `sessions`.
+   * Existed for the crash path: when RN's runner's render threw, React unmounted it and every ref it
+   * held — including the `Session` it was appending to — so the session's own `ended_at` never got
+   * written and nothing left in the tree knew which file was in flight. Its `ErrorBoundary` read this
+   * to finish that file off. Tracked as an id rather than the object so there's only ever one copy of
+   * the session itself, in `sessions`.
    */
   activeSessionId: string | null;
-  /**
-   * Whether the backup the shell took at the end of the last session didn't land: false until it
-   * answers, and false where no folder is set, which native doesn't answer, being nothing to report.
-   *
-   * Separate from `errors` on purpose: that list renders under a heading about *session files*, and a
-   * folder whose grant was revoked is not one of those. The completion screen reads this, which is
-   * the first moment after a workout where saying so costs nothing.
-   */
-  backupFailed: boolean;
-  /** The shell's `backupResult`, the answer to the `sessionFinished` that `completeSession` sends. */
-  backupAnswered: (failed: boolean) => void;
   hydrate: () => Promise<void>;
   /**
    * Reads the log again after another writer changed it (the native shell's `filesChanged`). Never
@@ -105,28 +97,11 @@ function withWriteFailure(errors: string[]): string[] {
   return failure && !errors.includes(failure) ? [...errors, failure] : errors;
 }
 
-/**
- * The log every training view reads: `loggedSessions`, which hides zero work. The default way in, so
- * a new reader gets the filter without having to know it exists; raw `state.sessions` is for the
- * readers that hand over the user's own files (export, backup). `select` narrows what the caller
- * subscribes to, so a reader that only needs a count re-renders only when the count changes.
- */
-export function useLoggedSessions(): Session[];
-export function useLoggedSessions<T>(select: (sessions: Session[]) => T): T;
-export function useLoggedSessions<T>(select?: (sessions: Session[]) => T): T | Session[] {
-  return useSessionHistoryStore((state) => {
-    const sessions = loggedSessions(state.sessions);
-    return select ? select(sessions) : sessions;
-  });
-}
-
 export const useSessionHistoryStore = create<SessionHistoryState>((set, get) => ({
   status: 'idle',
   sessions: [],
   errors: [],
   activeSessionId: null,
-  backupFailed: false,
-  backupAnswered: (failed) => set({ backupFailed: failed }),
   hydrate: async () => {
     set({ status: 'loading' });
     await get().reload();
@@ -174,12 +149,7 @@ export const useSessionHistoryStore = create<SessionHistoryState>((set, get) => 
   completeSession: (session) => {
     const updated = finalizeSession(session, new Date().toISOString());
     const sessions = get().sessions.map((existing) => (existing.id === updated.id ? updated : existing));
-    // Cleared rather than left: whatever the last session's backup did is not this one's answer, and a
-    // stale warning under a fresh completion screen would be worse than a moment with none.
-    set({ sessions, errors: withWriteFailure(get().errors), activeSessionId: null, backupFailed: false });
-    // After the write, since native backs up the log from disk (#220). It runs the backup off its main
-    // thread and answers with `backupResult`, so nothing here waits on a folder a cloud provider backs.
-    reportSessionFinished();
+    set({ sessions, errors: withWriteFailure(get().errors), activeSessionId: null });
     return updated;
   },
   abandonActiveSession: () => {

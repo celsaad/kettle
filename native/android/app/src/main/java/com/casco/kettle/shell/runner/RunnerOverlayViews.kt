@@ -10,13 +10,14 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.Text
@@ -29,8 +30,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.drawOutline
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.ui.graphics.drawscope.inset
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -39,24 +45,28 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.casco.kettle.domain.Exercise
 import com.casco.kettle.domain.rankByName
 import com.casco.kettle.shell.R
+import com.casco.kettle.shell.list.ListRow
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.RunnerColors
 import com.casco.kettle.shell.theme.Spacing
 
 /**
  * A dimmed backdrop that dismisses, and a sheet at the bottom. Drawn over the runner's body, which the
- * frame hides from accessibility while one is open, so a screen reader stays in here.
+ * frame hides from accessibility while one is open, so a screen reader stays in here. [inset] keeps
+ * the sheet inside the runner's column, as RN's pad and pickers are: only Coming up spans the width.
  */
 @Composable
 internal fun OverlaySheet(
     dismissLabel: String?,
     onDismiss: () -> Unit,
     title: String,
+    inset: Boolean = true,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Box(Modifier.fillMaxSize()) {
@@ -79,8 +89,19 @@ internal fun OverlaySheet(
                 .fillMaxWidth()
                 .safeDrawingPadding()
                 .imePadding()
-                .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
+                .then(
+                    if (inset) {
+                        Modifier.padding(
+                            start = Spacing.three,
+                            end = Spacing.three,
+                            bottom = Spacing.three,
+                        )
+                    } else {
+                        Modifier
+                    },
+                ).clip(SheetShape)
                 .background(RunnerColors.backgroundElement)
+                .topBorder()
                 // Absorbs the taps nothing inside handles, as M3's Surface does: they fell through to the
                 // backdrop behind and closed the sheet, the pad losing what had been typed into it.
                 .pointerInput(Unit) {}
@@ -104,40 +125,33 @@ internal fun NumberPad(
 ) {
     var entry by remember(request) { mutableStateOf(PadEntry(request.seed, request.allowDecimal)) }
     OverlaySheet(stringResource(R.string.session_numberPad_dismiss), onDismiss, request.label) {
-        Caps(request.label.uppercase())
-        Row(verticalAlignment = Alignment.Bottom) {
-            Numeral(entry.display, 56.sp)
+        Caps(request.label.uppercase(), Modifier.align(Alignment.CenterHorizontally))
+        Row(Modifier.align(Alignment.CenterHorizontally)) {
+            Numeral(entry.display, PAD_NUMERAL, Modifier.alignByBaseline(), leading = PAD_LEADING)
             if (request.unit != null) {
                 Text(
                     " ${request.unit}",
-                    Modifier.padding(bottom = Spacing.two),
-                    style = KettleType.heading,
+                    Modifier.alignByBaseline(),
+                    style = KettleType.heading.copy(fontSize = PAD_UNIT),
                     color = RunnerColors.textSecondary,
                 )
             }
         }
-        val keys = DIGITS + listOf(if (request.allowDecimal) "." else null, "0", BACKSPACE)
-        for (row in keys.chunked(KEYS_PER_ROW)) {
-            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.two)) {
-                for (key in row) {
-                    val modifier = Modifier.weight(1f)
-                    if (key == null) {
-                        Box(modifier)
-                    } else {
-                        // A digit is named by its own text; only the backspace glyph needs a label.
-                        val description = if (key == BACKSPACE) stringResource(R.string.common_delete) else null
-                        PadKey(key, description, modifier) {
-                            entry = if (key == BACKSPACE) entry.backspace() else entry.type(key.single())
-                        }
-                    }
-                }
-            }
+        PadKeys(request.allowDecimal) { key ->
+            entry = if (key == BACKSPACE) entry.backspace() else entry.type(key.single())
         }
         Row(
-            horizontalArrangement = Arrangement.spacedBy(Spacing.three),
+            Modifier.padding(top = Spacing.one),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.two),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            TextControl(stringResource(R.string.common_cancel), onDismiss)
+            OutlineButton(
+                stringResource(R.string.common_cancel),
+                onDismiss,
+                Modifier.weight(1f),
+                style = QuietStyle,
+                look = ButtonLook.Compact,
+            )
             val value = entry.value
             PrimaryButton(
                 stringResource(R.string.session_numberPad_set),
@@ -147,9 +161,36 @@ internal fun NumberPad(
                         onDismiss()
                     }
                 },
-                Modifier.weight(1f),
+                Modifier.weight(SET_WEIGHT),
                 enabled = value != null,
+                look = ButtonLook.Compact,
             )
+        }
+    }
+}
+
+/** The 3×4 grid; [onKey] gets a digit, the point, or [BACKSPACE]. */
+@Composable
+private fun PadKeys(
+    allowDecimal: Boolean,
+    onKey: (String) -> Unit,
+) {
+    val keys = DIGITS + listOf(if (allowDecimal) "." else null, "0", BACKSPACE)
+    Column(verticalArrangement = Arrangement.spacedBy(KEY_GAP)) {
+        for (row in keys.chunked(KEYS_PER_ROW)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(KEY_GAP)) {
+                for (key in row) {
+                    val modifier = Modifier.weight(1f)
+                    if (key == null) {
+                        // Drawn as an empty key, as RN's, so the grid reads whole; nothing to press.
+                        Box(modifier.heightIn(min = KEY_HEIGHT).clip(KeyShape).keyFace())
+                    } else {
+                        // A digit is named by its own text; only the backspace glyph needs a label.
+                        val description = if (key == BACKSPACE) stringResource(R.string.common_delete) else null
+                        PadKey(key, description, modifier) { onKey(key) }
+                    }
+                }
+            }
         }
     }
 }
@@ -163,16 +204,35 @@ private fun PadKey(
 ) {
     Box(
         modifier
-            .heightIn(min = 56.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .border(1.dp, RunnerColors.border, RoundedCornerShape(12.dp))
+            .heightIn(min = KEY_HEIGHT)
+            .clip(KeyShape)
+            .keyFace()
             .clickable(role = Role.Button, onClick = onClick)
             .then(if (description != null) Modifier.semantics { contentDescription = description } else Modifier),
         contentAlignment = Alignment.Center,
     ) {
-        Text(key, style = KettleType.heading, color = RunnerColors.text)
+        Text(key, style = KettleType.heading.copy(fontSize = KEY_LABEL), color = RunnerColors.text)
     }
 }
+
+/** RN's sheets draw only their top edge, round the corners: the shape's outline, cut off below them. */
+private fun Modifier.topBorder(): Modifier =
+    drawBehind {
+        val stroke = 1.dp.toPx()
+        clipRect(bottom = SHEET_RADIUS.toPx()) {
+            inset(stroke / 2) {
+                drawOutline(
+                    SheetShape.createOutline(size, layoutDirection, this),
+                    RunnerColors.border,
+                    style = Stroke(stroke),
+                )
+            }
+        }
+    }
+
+/** A key's look, and a picker option's: the screen's own dark inside the lighter sheet, outlined. */
+private fun Modifier.keyFace(): Modifier =
+    background(RunnerColors.background).border(1.dp, RunnerColors.border, KeyShape)
 
 /**
  * The swap and add pickers (§3.5), one component: [replacing] is the name being swapped out, null when
@@ -198,42 +258,60 @@ internal fun ExercisePicker(
             },
         )
     OverlaySheet(stringResource(R.string.session_swap_dismiss), onCancel, title) {
-        Caps(title)
+        Caps(title, Modifier.align(Alignment.CenterHorizontally))
         Text(
             if (replacing == null) {
                 stringResource(R.string.session_adhoc_pickerBody)
             } else {
                 stringResource(R.string.session_swap_replacing, replacing)
             },
+            Modifier.fillMaxWidth(),
             style = KettleType.small,
             color = RunnerColors.textSecondary,
+            textAlign = TextAlign.Center,
         )
         if (candidates.size > SEARCH_THRESHOLD) PickerSearch(query) { query = it }
-        LazyColumn(Modifier.heightIn(max = 360.dp)) {
-            if (shown.isEmpty()) {
-                item {
-                    Text(
-                        stringResource(R.string.session_adhoc_noMatches, query.trim()),
-                        Modifier.padding(vertical = Spacing.three),
-                        style = KettleType.small,
-                        color = RunnerColors.textSecondary,
-                    )
-                }
-            }
-            items(shown, key = { it.id }) { exercise ->
+        PickerOptions(shown, query, onSelect)
+        OutlineButton(
+            stringResource(R.string.common_cancel),
+            onCancel,
+            Modifier.fillMaxWidth(),
+            style = QuietStyle,
+            look = ButtonLook.Compact,
+        )
+    }
+}
+
+/**
+ * The candidates as rows with hairlines between, as every list of peers in the app is (AGENTS.md):
+ * RN's picker drew each as a card, which the native one doesn't copy. [ListRow]'s metrics, with the
+ * runner's own hairline, since it's dark whatever the scheme. Capped so a long library scrolls above
+ * Cancel.
+ */
+@Composable
+private fun PickerOptions(
+    shown: List<Exercise>,
+    query: String,
+    onSelect: (Exercise) -> Unit,
+) {
+    LazyColumn(Modifier.heightIn(max = 320.dp)) {
+        if (shown.isEmpty()) {
+            item {
                 Text(
-                    exercise.name,
-                    Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 56.dp)
-                        .clickable(role = Role.Button) { onSelect(exercise) }
-                        .padding(vertical = Spacing.three),
-                    style = KettleType.heading,
-                    color = RunnerColors.text,
+                    stringResource(R.string.session_adhoc_noMatches, query.trim()),
+                    Modifier.fillMaxWidth().padding(vertical = Spacing.three),
+                    style = KettleType.small,
+                    color = RunnerColors.textSecondary,
+                    textAlign = TextAlign.Center,
                 )
             }
         }
-        TextControl(stringResource(R.string.common_cancel), onCancel, Modifier.align(Alignment.CenterHorizontally))
+        itemsIndexed(shown, key = { _, exercise -> exercise.id }) { index, exercise ->
+            if (index > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(RunnerColors.border))
+            Box(Modifier.clickable(role = Role.Button) { onSelect(exercise) }) {
+                ListRow { Text(exercise.name, style = KettleType.heading, color = RunnerColors.text) }
+            }
+        }
     }
 }
 
@@ -243,23 +321,37 @@ private fun PickerSearch(
     onChange: (String) -> Unit,
 ) {
     val label = stringResource(R.string.session_adhoc_search)
+    val textStyle = KettleType.default.copy(fontSize = SEARCH_TEXT)
     BasicTextField(
         query,
         onChange,
         Modifier
             .fillMaxWidth()
             .heightIn(min = MinTarget)
-            .clip(RoundedCornerShape(12.dp))
-            .border(1.dp, RunnerColors.border, RoundedCornerShape(12.dp))
+            .clip(KeyShape)
+            .keyFace()
             .semantics { contentDescription = label }
-            .padding(horizontal = Spacing.three, vertical = Spacing.three),
+            .padding(horizontal = CARD_PAD),
         singleLine = true,
-        textStyle = KettleType.default.copy(color = RunnerColors.text),
+        textStyle = textStyle.copy(color = RunnerColors.text),
         cursorBrush = SolidColor(RunnerColors.accent),
         decorationBox = { field ->
-            Box {
-                if (query.isEmpty()) Text(label, style = KettleType.default, color = RunnerColors.textSecondary)
-                field()
+            Row(
+                Modifier.heightIn(min = MinTarget),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.two),
+            ) {
+                // Decorative: the field is named by its description, and the glyph says nothing more.
+                Text(
+                    "⌕",
+                    Modifier.clearAndSetSemantics {},
+                    style = KettleType.default,
+                    color = RunnerColors.textSecondary,
+                )
+                Box(Modifier.weight(1f)) {
+                    if (query.isEmpty()) Text(label, style = textStyle, color = RunnerColors.textSecondary)
+                    field()
+                }
             }
         },
     )
@@ -269,4 +361,17 @@ private val DIGITS = listOf("1", "2", "3", "4", "5", "6", "7", "8", "9")
 private const val BACKSPACE = "⌫"
 private const val KEYS_PER_ROW = 3
 private const val SEARCH_THRESHOLD = 8
-private const val BACKDROP_ALPHA = 0.6f
+private const val BACKDROP_ALPHA = 0.55f
+private val SEARCH_TEXT = 14.sp
+private const val SET_WEIGHT = 1.6f
+private val SHEET_RADIUS = 22.dp
+private val SheetShape = RoundedCornerShape(topStart = SHEET_RADIUS, topEnd = SHEET_RADIUS)
+private val KeyShape = RoundedCornerShape(14.dp)
+private val KEY_HEIGHT = 54.dp
+private val KEY_GAP = 6.dp
+private val KEY_LABEL = 22.sp
+private val PAD_NUMERAL = 44.sp
+
+/** RN's pad value sets 50 on 44. */
+private const val PAD_LEADING = 50f / 44f
+private val PAD_UNIT = 18.sp

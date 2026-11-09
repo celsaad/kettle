@@ -6,12 +6,12 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -67,12 +67,14 @@ internal fun Frame(
         }
         return
     }
-    Column(
-        hidden.fillMaxSize().padding(vertical = Spacing.three),
-        verticalArrangement = Arrangement.spacedBy(Spacing.three),
-    ) {
+    // No top padding, unlike RN's 8: the header row is 48dp of targets around a line of small text, so
+    // its words already sit 15dp down. Below it the same slack counts toward RN's 24dp, and the crumb,
+    // a plain line with none, takes all 24 itself. The crumb sits 11dp lower than RN's 4dp under the
+    // words: raising it into the header's slack made a tap on it open Coming up.
+    Column(hidden.fillMaxSize().padding(bottom = Spacing.three)) {
         Header(view, Overlay.UPCOMING in open, controls)
         step.circuit?.let { CircuitCrumb(it) }
+        Spacer(Modifier.height(if (step.circuit == null) Spacing.two else Spacing.four))
         Box(Modifier.weight(1f)) {
             when (step) {
                 is RunnerStep.Hold -> HoldScreen(step, context)
@@ -91,7 +93,10 @@ private fun Header(
     controls: StepControls,
 ) {
     val snapshot = view.snapshot
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.two)) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.two),
+    ) {
         WorkoutName(view, upcomingOpen, Modifier.weight(1f)) { controls.open(Overlay.UPCOMING) }
         ProgressTrack(blockTotal(snapshot), snapshot.step?.blockIndex ?: 0)
         // Ad-hoc only: a planned workout knows what it holds, and here it's the only way to queue anything.
@@ -198,11 +203,7 @@ private fun Notice(
     primary: DialogAction,
     secondary: DialogAction? = null,
 ) {
-    Column(
-        modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(vertical = Spacing.five),
-        verticalArrangement = Arrangement.spacedBy(Spacing.three, Alignment.CenterVertically),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
+    CenteredColumn(modifier) {
         Text(
             title,
             Modifier.semantics {
@@ -213,8 +214,8 @@ private fun Notice(
             textAlign = TextAlign.Center,
         )
         Text(body, style = KettleType.small, color = RunnerColors.textSecondary, textAlign = TextAlign.Center)
-        PrimaryButton(primary.label, primary.onClick)
-        if (secondary != null) TextControl(secondary.label, secondary.onClick)
+        CompactButton(primary.label, primary.onClick, Modifier.padding(top = Spacing.two))
+        if (secondary != null) TextControl(secondary.label, secondary.onClick, Modifier.padding(top = Spacing.two))
     }
 }
 

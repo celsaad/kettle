@@ -53,15 +53,15 @@ internal fun ComingUp(
     val close = stringResource(R.string.common_close)
     // The backdrop is hidden from a reader, as RN's: the × already closes, and a second "Close"
     // covering the whole screen would only be one more stop to swipe past.
-    OverlaySheet(null, onClose, title) {
+    OverlaySheet(null, onClose, title, inset = false) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 title,
                 Modifier.weight(1f).semantics { heading() },
-                style = KettleType.code,
+                style = KettleType.code.copy(letterSpacing = CapsTracking),
                 color = RunnerColors.textSecondary,
             )
-            GlyphButton("×", close, onClose)
+            GlyphButton("×", close, onClose, look = GlyphLook.Close)
         }
         LazyColumn(Modifier.heightIn(max = 480.dp)) {
             item { NowRow(step, context, last = items.isEmpty() && !ends) }

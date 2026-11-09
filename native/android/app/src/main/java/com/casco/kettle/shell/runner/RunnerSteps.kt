@@ -13,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.sp
 import com.casco.kettle.domain.PreviousSet
 import com.casco.kettle.domain.RunnerCommand
@@ -25,32 +26,39 @@ import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.RunnerColors
 import com.casco.kettle.shell.theme.Spacing
 
-/** Top, middle, the Next card and the controls, spread down the screen: no scroll, as RN's. */
+/**
+ * Top, middle, the Next card and the controls, spread down the screen: no scroll, as RN's. The top
+ * block is RN's 4dp rhythm, the name and last time's row taking a step more; [middleGap] is the reps
+ * screen's wider one. The controls sit 14dp under the card and 8dp apart, as RN's Done under Pause.
+ */
 @Composable
 internal fun StepLayout(
     top: @Composable ColumnScope.() -> Unit,
     middle: @Composable ColumnScope.() -> Unit,
     next: StepPreview?,
     controls: @Composable ColumnScope.() -> Unit,
+    middleGap: Dp = Spacing.two,
 ) {
     Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.SpaceBetween) {
-        Column(verticalArrangement = Arrangement.spacedBy(Spacing.two), content = top)
+        Column(verticalArrangement = Arrangement.spacedBy(Spacing.one), content = top)
         Column(
             Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(Spacing.two),
+            verticalArrangement = Arrangement.spacedBy(middleGap),
             content = middle,
         )
-        Column(verticalArrangement = Arrangement.spacedBy(Spacing.three)) {
+        Column {
             NextCard(next)
-            controls()
+            Column(Modifier.padding(top = CARD_PAD), verticalArrangement = Arrangement.spacedBy(Spacing.two)) {
+                controls()
+            }
         }
     }
 }
 
 @Composable
 internal fun ExerciseName(name: String) {
-    Text(name, style = KettleType.subtitle, color = RunnerColors.text)
+    Text(name, Modifier.padding(top = Spacing.one), style = KettleType.subtitle, color = RunnerColors.text)
 }
 
 @Composable
@@ -66,7 +74,11 @@ internal fun PreviousRow(
     adopt: (@Composable () -> Unit)? = null,
 ) {
     if (text == null) return
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.two)) {
+    Row(
+        Modifier.padding(top = Spacing.one),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.two),
+    ) {
         if (adopt != null) adopt() else Secondary(text)
         if (beatsBest) RecordBadge()
     }
@@ -75,7 +87,7 @@ internal fun PreviousRow(
 /** Back and Pause, the hold and interval screens' row. */
 @Composable
 internal fun PauseRow(context: StepContext) {
-    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.three), verticalAlignment = Alignment.CenterVertically) {
+    Row(horizontalArrangement = Arrangement.spacedBy(CARD_PAD), verticalAlignment = Alignment.CenterVertically) {
         PrevIconButton { context.send(RunnerCommand.Prev) }
         OutlineButton(
             stringResource(if (context.paused) R.string.session_resume else R.string.session_pause),
@@ -83,16 +95,6 @@ internal fun PauseRow(context: StepContext) {
             Modifier.weight(1f),
         )
     }
-}
-
-/** Prev as words, on the screens with no clock to pause. */
-@Composable
-internal fun PrevTextButton(context: StepContext) {
-    OutlineButton(
-        stringResource(R.string.session_prev),
-        { context.send(RunnerCommand.Prev) },
-        style = QuietStyle,
-    )
 }
 
 /**
@@ -121,7 +123,7 @@ internal fun HoldScreen(
         next = readings.next,
         controls = {
             PauseRow(context)
-            PrimaryButton(stringResource(R.string.session_hold_doneSet), context::advance)
+            PrimaryButton(stringResource(R.string.session_hold_doneSet), context::advance, Modifier.fillMaxWidth())
         },
     )
 }
@@ -132,9 +134,9 @@ private fun HoldClock(
     elapsed: Long,
 ) {
     val target = step.holdTargetSec
-    Row(verticalAlignment = Alignment.Bottom) {
-        Numeral("$elapsed", BIG_NUMERAL)
-        Numeral("s", UNIT_NUMERAL, Modifier.padding(bottom = Spacing.three), RunnerColors.textSecondary)
+    Row {
+        Numeral("$elapsed", HOLD_NUMERAL, Modifier.alignByBaseline())
+        Numeral("s", UNIT_NUMERAL, Modifier.alignByBaseline(), RunnerColors.textSecondary, leading = null)
     }
     if (target != null) {
         val barSec = step.holdTargetMaxSec?.takeIf { it > target } ?: target
@@ -161,37 +163,42 @@ internal fun RestScreen(context: StepContext) {
     StepLayout(
         top = { StepPill(stringResource(R.string.session_rest_label), calm = true) },
         middle = {
-            Numeral(formatClock(context.remaining), BIG_NUMERAL)
+            Numeral(formatClock(context.remaining), REST_NUMERAL, color = RunnerColors.accentCalm)
             Secondary(stringResource(R.string.session_rest_remaining, formatClock(context.snapshot.clock.stepEndSec)))
         },
         next = context.readings.next,
         controls = {
-            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.two)) {
-                PrevTextButton(context)
+            // +30s is sized to its words, not an even share: pt's Skip needs every point it can get.
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(CARD_PAD),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                PrevTextButton({ context.send(RunnerCommand.Prev) }, ButtonLook.Rest.minHeight)
                 if (context.paused) {
                     OutlineButton(
                         stringResource(R.string.session_resume),
                         { context.send(RunnerCommand.TogglePause) },
-                        Modifier.weight(1f),
+                        look = ButtonLook.Rest,
                     )
                 } else {
                     OutlineButton(
                         stringResource(R.string.session_rest_add30),
                         { context.send(RunnerCommand.AddRestSeconds(REST_BUMP_SEC)) },
-                        Modifier.weight(1f),
+                        look = ButtonLook.Rest,
                     )
                 }
                 PrimaryButton(
                     stringResource(R.string.session_rest_skip),
                     context::advance,
-                    Modifier.weight(SKIP_WEIGHT),
+                    Modifier.weight(1f),
+                    look = ButtonLook.RestSkip,
                 )
             }
         },
     )
 }
 
-internal val BIG_NUMERAL = 96.sp
-private val UNIT_NUMERAL = 40.sp
+private val HOLD_NUMERAL = 96.sp
+private val REST_NUMERAL = 100.sp
+private val UNIT_NUMERAL = 38.sp
 private const val REST_BUMP_SEC = 30.0
-private const val SKIP_WEIGHT = 1.4f

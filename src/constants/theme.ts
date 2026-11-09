@@ -49,6 +49,11 @@ export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
  * there as text — `accent` measures 4.17 and `accentCalm` 3.79 on their own soft backgrounds, and the
  * pill labels are 12px. These lightened variants measure 5.68 and 5.75. Separate tokens rather than
  * lightening the fills, so the shapes keep their intended weight.
+ *
+ * On the bare `background`, where native's runner also uses them (#320): `accentCalmOnSoft` measures
+ * 6.86 (completion's backup line) and `accent` 5.05 (a countdown's "Skip →", 20px). The stepper's
+ * `accent` + on `accentSoft` is the 4.17 above, below AA as text; it's held to the 3:1 a control's
+ * graphic needs, not the text bar.
  */
 export const RunnerColors = theme.RunnerColors;
 

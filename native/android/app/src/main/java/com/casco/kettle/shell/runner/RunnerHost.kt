@@ -22,6 +22,7 @@ object RunnerHost {
 
     /** The service's, while it runs one. Set only by [adopt], cleared only by [release]. */
     @Volatile internal var session: RunnerSession? = null
+        private set
 
     /**
      * From [open] sending the start until the session it made first shows, or the service gives up
@@ -69,19 +70,18 @@ object RunnerHost {
 
     /**
      * Leaves during the count-in, which stops the service with nothing written; nothing once it runs.
-     * A leave before the service has a session is held for it (#318). False only when the session is
-     * already running: the screen then stays on it, rather than handing back to RN with it unseen.
+     * A leave before the service has a session is held for it (#318).
      */
-    fun leave(): Boolean {
+    fun leave(): Leave {
         val current =
             synchronized(lock) {
                 if (pending == PendingStart.SENT || pending == PendingStart.LEFT) {
                     pending = PendingStart.LEFT
-                    return true
+                    return Leave.GONE
                 }
                 session
             }
-        return current?.leave() ?: true
+        return if (current == null || current.leave()) Leave.GONE else Leave.RUNNING
     }
 
     /** What the runner's screen reports as it comes and goes (#306), held for a session started after. */
@@ -166,6 +166,18 @@ object RunnerHost {
         // and write let a Done land between them and the stale completion back in.
         views.update { if (view.isBackupAnswer() && it == RunnerView.Idle) it else view }
     }
+}
+
+/** What [RunnerHost.leave] left the screen with. */
+enum class Leave {
+    /** Nothing runs or will: left, held for the session to come, or there was none. RN can take back. */
+    GONE,
+
+    /**
+     * The count-in ended first and the session runs (#318): the screen stays to show it, rather than
+     * hand back to RN with a session running unseen.
+     */
+    RUNNING,
 }
 
 /** Where [RunnerHost.open]'s start is before its session shows (#318). */

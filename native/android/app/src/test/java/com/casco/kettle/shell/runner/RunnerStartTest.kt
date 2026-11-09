@@ -3,7 +3,6 @@ package com.casco.kettle.shell.runner
 import android.app.Application
 import androidx.test.core.app.ApplicationProvider
 import com.casco.kettle.domain.RunnerCommand
-import com.casco.kettle.domain.RunnerCue
 import com.casco.kettle.domain.RunnerStart
 import com.casco.kettle.domain.Session
 import org.junit.After
@@ -37,7 +36,7 @@ class RunnerStartTest {
     @After
     fun clear() {
         RunnerHost.startEnded()
-        RunnerHost.session = null
+        RunnerHost.release(RunnerHost.session)
         RunnerHost.publish(RunnerView.Idle)
     }
 
@@ -55,20 +54,7 @@ class RunnerStartTest {
                 null,
                 loop,
                 now = { loop.now },
-                effects =
-                    RunnerEffects(
-                        writeSession = { written += it },
-                        onSessionWritten = {},
-                        stateFile = stateFile,
-                        sounds =
-                            object : CueSounds {
-                                override fun on() = false
-
-                                override fun play(cue: RunnerCue) = Unit
-                            },
-                        alerts = StepAlerts(post = { _, _ -> }, cancel = {}),
-                        backUp = {},
-                    ),
+                effects = testEffects(stateFile, writeSession = { written += it }),
                 publish = RunnerHost.publisher({ current }) { stops++ },
             )
         current = created
@@ -78,7 +64,7 @@ class RunnerStartTest {
     @Test
     fun `a leave before the service begins ends the session it begins, with nothing written`() {
         RunnerHost.open(app, RunnerStart.Adhoc)
-        assertTrue(RunnerHost.leave())
+        assertEquals(Leave.GONE, RunnerHost.leave())
         begin()
         loop.advanceBy(10_000)
 
@@ -123,22 +109,22 @@ class RunnerStartTest {
         loop.advanceBy(3000)
 
         // The count-in's last tick ran first: the session runs, and the route mustn't hand back to RN.
-        assertFalse(RunnerHost.leave())
+        assertEquals(Leave.RUNNING, RunnerHost.leave())
         assertTrue(RunnerHost.view.value is RunnerView.Running)
         assertEquals(0, stops)
     }
 
     @Test
     fun `still starting while the adopted session waits on its sounds, and a leave then goes to it`() {
-        // The review's interleaving: adopting cleared the start, a second open slipped into the sounds' wait,
-        // and a leave was held for that start, then dropped with it, while the first counted in unseen.
+        // Were adopting to end the start, a second open could slip into the sounds' wait, and a leave there
+        // would be held for that start and dropped with it, while the first counted in unseen.
         RunnerHost.open(app, RunnerStart.Adhoc)
         nextStarted()
         val first = adopted()
         RunnerHost.open(app, RunnerStart.Adhoc)
         assertNull(nextStarted())
 
-        assertTrue(RunnerHost.leave())
+        assertEquals(Leave.GONE, RunnerHost.leave())
         first?.begin()
         loop.advanceBy(10_000)
         assertEquals(RunnerView.Idle, RunnerHost.view.value)

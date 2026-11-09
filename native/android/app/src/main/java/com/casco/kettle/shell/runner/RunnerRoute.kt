@@ -121,13 +121,9 @@ private fun routeActions(
     adopt = JsBridge::adoptLoad,
 )
 
-/**
- * Leaving before a session runs: the service stops with nothing written, and RN takes back. When the
- * count-in ended first and the session is already running, the screen stays to show it (#318),
- * rather than hand back to RN with a session running unseen.
- */
+/** Leaving before a session runs: the service stops with nothing written, and RN takes back. */
 private fun leave() {
-    if (!RunnerHost.leave()) return
+    if (RunnerHost.leave() == Leave.RUNNING) return
     RunnerHost.dismiss()
     JsBridge.runnerDone()
 }

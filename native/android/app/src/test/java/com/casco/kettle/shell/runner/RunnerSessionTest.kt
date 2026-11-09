@@ -48,10 +48,9 @@ class RunnerSessionTest {
                 loop.now
             },
             effects =
-                RunnerEffects(
+                testEffects(
+                    stateFile,
                     writeSession = { written += it },
-                    onSessionWritten = {},
-                    stateFile = stateFile,
                     sounds =
                         object : CueSounds {
                             override fun on() = true
@@ -61,7 +60,6 @@ class RunnerSessionTest {
                                 cues += cue
                             }
                         },
-                    alerts = StepAlerts(post = { _, _ -> }, cancel = {}),
                     backUp = { backups++ },
                 ),
             publish = { views += it },
@@ -120,7 +118,7 @@ class RunnerSessionTest {
 
         assertTrue(session.leave())
         loop.advanceBy(1)
-        loop.release()
+        loop.flushHeld()
         loop.advanceBy(10_000)
         assertEquals(RunnerView.Idle, view)
         assertTrue(written.isEmpty())

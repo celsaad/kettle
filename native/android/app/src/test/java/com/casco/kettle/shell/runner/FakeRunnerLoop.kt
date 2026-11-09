@@ -2,8 +2,10 @@ package com.casco.kettle.shell.runner
 
 import com.casco.kettle.domain.Exercise
 import com.casco.kettle.domain.ExerciseConfig
+import com.casco.kettle.domain.RunnerCue
 import com.casco.kettle.domain.RunnerPlan
 import com.casco.kettle.domain.RunnerTransition
+import com.casco.kettle.domain.Session
 import com.casco.kettle.domain.Workout
 import com.casco.kettle.domain.WorkoutBlock
 import com.casco.kettle.domain.buildSteps
@@ -35,14 +37,14 @@ internal class FakeRunnerLoop(
     }
 
     /**
-     * Queues every post until [release], as the runner's thread does with one sent from the main thread
+     * Queues every post until [flushHeld], as the runner's thread does with one sent from the main thread
      * while a timer's block is due ahead of it. Timers still fire on [advanceBy].
      */
     fun hold() {
         holding = true
     }
 
-    fun release() {
+    fun flushHeld() {
         holding = false
         held.toList().also { held.clear() }.forEach { it() }
     }
@@ -70,6 +72,28 @@ internal class FakeRunnerLoop(
         now = end
     }
 }
+
+/** The session's effects with nothing behind them but [writeSession], [stateFile] and [sounds]. */
+internal fun testEffects(
+    stateFile: RunnerStateFile,
+    writeSession: (Session) -> Unit,
+    sounds: CueSounds = SILENT,
+    backUp: () -> Unit = {},
+) = RunnerEffects(
+    writeSession = writeSession,
+    onSessionWritten = {},
+    stateFile = stateFile,
+    sounds = sounds,
+    alerts = StepAlerts(post = { _, _ -> }, cancel = {}),
+    backUp = backUp,
+)
+
+private val SILENT =
+    object : CueSounds {
+        override fun on() = false
+
+        override fun play(cue: RunnerCue) = Unit
+    }
 
 internal const val T0 = 1_785_142_800_000L // 2026-07-27T09:00:00Z
 

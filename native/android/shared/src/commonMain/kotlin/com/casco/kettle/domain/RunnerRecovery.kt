@@ -105,6 +105,20 @@ private fun recoverFrom(
     return snapshot?.let { RunnerRecovery.Prompt(it, session) } ?: RunnerRecovery.FinishOnly(session, file.modifiedAt)
 }
 
+/**
+ * The sessions RN's runner left unfinished, each ended at its file's last write, as a Finish Only
+ * would (#308). RN wrote no state file, so no launch prompt can ever ask about them, and History
+ * would show them running for good: one RN was running as the update installed, or one it lost to a
+ * kill. One that [runnerSessionIds] names is the native runner's, and stays its prompt's to answer.
+ */
+fun strandedSessions(
+    files: List<SessionFile.Read>,
+    runnerSessionIds: Set<String>,
+): List<Session> =
+    files
+        .filter { it.session.endedAt == null && it.session.id !in runnerSessionIds }
+        .map { it.session.copy(endedAt = isoInstant(it.modifiedAt)) }
+
 private fun fits(
     snapshot: RunnerSnapshot,
     session: Session,

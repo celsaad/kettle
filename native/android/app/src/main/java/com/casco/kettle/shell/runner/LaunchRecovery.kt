@@ -9,7 +9,9 @@ import com.casco.kettle.domain.Session
 import com.casco.kettle.domain.SessionFile
 import com.casco.kettle.domain.parseSessionYaml
 import com.casco.kettle.domain.recoverRunner
+import com.casco.kettle.domain.strandedSessions
 import com.casco.kettle.shell.files.writeOrRefusal
+import com.casco.kettle.storage.writeSessionFile
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -36,13 +38,18 @@ object LaunchRecovery {
      * goes up, after [clearAfterDeath] has taken down what the dead service left in the shade. With the
      * service alive, or a prompt already up or resuming, there's nothing to ask or clear: the runner
      * attaches, or the prompt carries on, and a clear would stop the service doing the work.
+     *
+     * The same quiet launch first ends what RN's runner left running ([sweepStrandedSessions]), once,
+     * with [sweptMarker] saying it's done.
      */
     fun recoverAtLaunch(
         stateDir: File,
         sessionsDir: File,
+        sweptMarker: File,
         clearAfterDeath: () -> Unit,
     ) {
         if (RunnerHost.session != null || RunnerHost.active != null || recoveries.value != null) return
+        sweepStrandedSessions(stateDir, sessionsDir, sweptMarker)
         clearAfterDeath()
         findRunnerRecovery(stateDir, sessionsDir)?.let(::ask)
     }
@@ -195,6 +202,40 @@ internal suspend fun finishRecovered(
         Log.w(TAG, "Couldn't delete the state file ${found.stateFile.name}")
     }
     return refused
+}
+
+/**
+ * Ends each session RN's runner left running ([strandedSessions]), the first launch after the flip
+ * release (#308): one RN had going as the update installed, or one it lost to a kill, which RN
+ * wrote no state file for and no prompt can ask about. Silent, as RN's own crash path was, and at the
+ * file's last write, as a Finish Only is. Once per install: [marker] is written when every session
+ * was read and every stamp landed, and a launch that fell short tries again next time. From then on
+ * an unfinished session is the native runner's, whose state file its prompt answers.
+ *
+ * Never throws, like the rest of the launch's recovery.
+ */
+fun sweepStrandedSessions(
+    stateDir: File,
+    sessionsDir: File,
+    marker: File,
+) {
+    if (marker.exists()) return
+    runCatching {
+        val runnerIds =
+            stateDir
+                .listFiles()
+                .orEmpty()
+                .mapNotNull(::sessionIdOfStateFile)
+                .toSet()
+        val files = sessionsDir.listFiles { file -> file.name.endsWith(".yaml") }.orEmpty().map(::readSessionFile)
+        val read = files.filterIsInstance<SessionFile.Read>()
+        strandedSessions(read, runnerIds).forEach { writeSessionFile(sessionsDir, it) }
+        // An unreadable file may be a stranded session that reads next time; a corrupt one never will.
+        if (files.none { it == SessionFile.Unreadable }) {
+            marker.parentFile?.mkdirs()
+            marker.writeText("")
+        }
+    }.onFailure { Log.w(TAG, "Couldn't end what RN's runner left running; trying again next launch", it) }
 }
 
 private const val TAG = "LaunchRecovery"

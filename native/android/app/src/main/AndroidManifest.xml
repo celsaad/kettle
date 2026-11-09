@@ -2,13 +2,15 @@
 <!--
   What the prebuilt app's manifest says, which config plugins wrote into android/app and so never
   reach the AAR (an M0 build fact). The inventory is in the commit that added this. Merged, it matches
-  the prebuilt app's release manifest except for the entry point, which is this shell's activity.
+  the prebuilt app's release manifest except for the entry point, which is this shell's activity, and
+  what the shell's own code needs that app.json has no source for: the notification and reminder
+  permissions, the runner's foreground service and its four (#308), the reminder's receivers and the
+  export provider.
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="com.android.vending.BILLING" />
     <!--

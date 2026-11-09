@@ -119,7 +119,7 @@ class RunnerRecoveryGateTest {
     fun `asks at launch about a state file the process died with, clearing what the dead service left`() {
         val (stateDir, sessions) = killed()
         var cleared = 0
-        LaunchRecovery.recoverAtLaunch(stateDir, sessions) { cleared++ }
+        LaunchRecovery.recoverAtLaunch(stateDir, sessions, folder.root.resolve("swept")) { cleared++ }
 
         assertTrue((LaunchRecovery.state.value as RecoveryState.Asking).found.recovery is RunnerRecovery.Prompt)
         assertEquals(1, cleared)
@@ -130,7 +130,7 @@ class RunnerRecoveryGateTest {
         val (stateDir, sessions) = killed()
         var cleared = 0
         RunnerHost.publish(RunnerView.Running(planOf(PULLUPS), start.snapshot, start.session))
-        LaunchRecovery.recoverAtLaunch(stateDir, sessions) { cleared++ }
+        LaunchRecovery.recoverAtLaunch(stateDir, sessions, folder.root.resolve("swept")) { cleared++ }
 
         assertNull(LaunchRecovery.state.value)
         assertEquals(0, cleared)
@@ -142,7 +142,7 @@ class RunnerRecoveryGateTest {
         var cleared = 0
         LaunchRecovery.ask(found)
         LaunchRecovery.resume(app)
-        LaunchRecovery.recoverAtLaunch(stateDir, sessions) { cleared++ }
+        LaunchRecovery.recoverAtLaunch(stateDir, sessions, folder.root.resolve("swept")) { cleared++ }
 
         assertEquals(RecoveryState.Resuming(found), LaunchRecovery.state.value)
         assertEquals(0, cleared)
@@ -163,7 +163,7 @@ class RunnerRecoveryGateTest {
     @Test
     fun `finishes from the prompt, backs up, and lets sessions start again`() {
         val (stateDir, sessions) = killed()
-        LaunchRecovery.recoverAtLaunch(stateDir, sessions) {}
+        LaunchRecovery.recoverAtLaunch(stateDir, sessions, folder.root.resolve("swept")) {}
         val asking = LaunchRecovery.state.value as RecoveryState.Asking
         val written = mutableListOf<Session>()
         var backups = 0

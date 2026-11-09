@@ -1,9 +1,11 @@
 package com.casco.kettle.shell.runner
 
+import com.casco.kettle.domain.ParseResult
 import com.casco.kettle.domain.RunnerRecovery
 import com.casco.kettle.domain.Session
 import com.casco.kettle.domain.encodeRunnerSnapshot
 import com.casco.kettle.domain.isoInstant
+import com.casco.kettle.domain.parseSessionYaml
 import com.casco.kettle.storage.writeSessionFile
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -140,5 +142,36 @@ class LaunchRecoveryTest {
 
         assertEquals("disk full", refused)
         assertTrue(found.stateFile.exists())
+    }
+
+    private val swept by lazy { folder.root.resolve("rn-sessions-swept") }
+
+    private fun endedAt(id: String) =
+        (parseSessionYaml(sessions.resolve("$id.yaml").readText()) as ParseResult.Ok).value.endedAt
+
+    /** The update past RN's runner (#308): what it left running is ended once, and never again. */
+    @Test
+    fun `ends a session RN's runner left running, at its last write, once per install`() {
+        val rn = start.session.copy(id = "rn", endedAt = null)
+        writeSessionFile(sessions, rn)
+        sessions.resolve("rn.yaml").setLastModified(T0 + 120_000)
+
+        sweepStrandedSessions(stateDir, sessions, swept)
+
+        assertEquals(isoInstant(T0 + 120_000), endedAt("rn"))
+        // Done for good: one left unfinished later is the native runner's prompt's, not this sweep's.
+        writeSessionFile(sessions, rn.copy(id = "later"))
+        sweepStrandedSessions(stateDir, sessions, swept)
+        assertNull(endedAt("later"))
+    }
+
+    @Test
+    fun `leaves a session the native runner's state file names for its prompt`() {
+        killed()
+
+        sweepStrandedSessions(stateDir, sessions, swept)
+
+        assertNull(endedAt(start.session.id))
+        assertTrue(find()?.recovery is RunnerRecovery.Prompt)
     }
 }

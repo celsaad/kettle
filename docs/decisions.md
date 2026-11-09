@@ -1028,8 +1028,10 @@ decision assembled across several commits. Open work belongs in the sections at 
     `expo-notifications` plugin that generated them is gone, so they have no source in `app.json`
     any more and are the shell's own, edited in place (the build reads their colour from
     `adaptiveIcon.backgroundColor`). **A change to `app.json`'s icons, permissions or plugins is
-    copied into the shell in the same PR.** The check is to diff the two release merged manifests, which should differ
-    only in the entry point.
+    copied into the shell in the same PR.** The check is to diff the two release merged manifests,
+    which should differ only in the entry point and in what the shell's own code declares with no
+    `app.json` source (the main manifest's header lists it): since the flip release that includes
+    the runner's foreground service and its permissions.
 
   **Rejected, so they aren't re-proposed:**
   - Parsing `theme.ts` from Kotlin, which was #147's first draft. It meant a parser for the subset of

@@ -258,7 +258,8 @@ class MainActivity :
 /**
  * After the library is ready and before any screen can start a session (#307): with no service
  * running, a session the process died under puts up the Resume / Finish prompt, and what the dead
- * service left in the shade goes. Two small reads, like the library gate's.
+ * service left in the shade goes. Two small reads, like the library gate's, plus, once per install,
+ * a read of every session file to end what RN's runner left running (#308).
  *
  * Once per process: a dead service's leftovers can only meet a fresh process, and an activity made
  * again later could land while a service is starting and not yet showing, which a clear would stop.
@@ -267,7 +268,9 @@ private fun Activity.recoverRunner(paths: StoragePaths) {
     if (runnerRecovered) return
     runnerRecovered = true
     val app = applicationContext
-    LaunchRecovery.recoverAtLaunch(runnerStateDir(noBackupFilesDir), paths.sessions) {
+    // Beside the state dir, not in it: session-check clears that one, and the sweep is once per install.
+    val swept = noBackupFilesDir.resolve("rn-sessions-swept")
+    LaunchRecovery.recoverAtLaunch(runnerStateDir(noBackupFilesDir), paths.sessions, swept) {
         RunnerService.clearAfterDeath(app)
     }
 }

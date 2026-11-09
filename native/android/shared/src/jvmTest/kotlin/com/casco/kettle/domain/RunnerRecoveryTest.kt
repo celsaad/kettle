@@ -420,4 +420,34 @@ class RunnerRecoveryTest {
             assertEquals(null, resumedPlan(runner.written, runner.snapshot, library).workout)
         }
     }
+
+    /**
+     * Sessions RN's runner left unfinished (#308): nothing of the native runner's names them, so no
+     * prompt ever will, and History would show them running for good.
+     */
+    @Nested
+    inner class StrandedSessions {
+        private fun file(
+            id: String,
+            endedAt: String? = null,
+            modifiedAt: Long = T0 + 120 * MS,
+        ) = SessionFile.Read(
+            Session(1, id, "w", null, null, null, "2026-07-27T09:00:00.000Z", endedAt, emptyList()),
+            modifiedAt,
+        )
+
+        @Test
+        fun `ends an unfinished session no state file names at its file's last write`() {
+            val stranded = strandedSessions(listOf(file("rn")), runnerSessionIds = emptySet())
+
+            assertEquals(listOf("rn" to "2026-07-27T09:02:00.000Z"), stranded.map { it.id to it.endedAt })
+        }
+
+        @Test
+        fun `leaves a finished session, and one the native runner still holds a state file for`() {
+            val files = listOf(file("done", endedAt = "2026-07-27T09:30:00.000Z"), file("native"), file("rn"))
+
+            assertEquals(listOf("rn"), strandedSessions(files, runnerSessionIds = setOf("native")).map { it.id })
+        }
+    }
 }

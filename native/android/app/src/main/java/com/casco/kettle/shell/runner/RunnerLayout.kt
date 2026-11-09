@@ -23,13 +23,10 @@ import androidx.compose.ui.unit.offset
 internal fun Modifier.halfLeading(line: Int): Modifier =
     layout { measurable, constraints ->
         val placeable = measurable.measure(constraints.copy(minHeight = 0, maxHeight = Constraints.Infinity))
-        // Within the parent's bounds, or Compose enforces them itself and re-centres, undoing the trim.
-        layout(placeable.width, line.coerceIn(constraints.minHeight, constraints.maxHeight)) {
-            placeable.place(
-                0,
-                (line - placeable.height) / 2,
-            )
-        }
+        // Within the parent's bounds, or Compose enforces them itself and re-centres, undoing the trim;
+        // and centred on what's reported, so a forced height still splits the difference evenly.
+        val height = line.coerceIn(constraints.minHeight, constraints.maxHeight)
+        layout(placeable.width, height) { placeable.place(0, (height - placeable.height) / 2) }
     }
 
 /**
@@ -43,12 +40,12 @@ internal fun Modifier.bleed(
     bottom: Dp,
 ): Modifier =
     layout { measurable, constraints ->
-        // No minimum: one the parent sets would be enforced on the shorter height and re-centre it.
-        val placeable = measurable.measure(constraints.copy(minHeight = 0))
+        // Measured against bounds grown by the overhang, as hang's are, so the shorter height reported
+        // can't fall under the parent's minimum, which Compose would enforce and re-centre.
         val above = top.roundToPx()
-        layout(placeable.width, maxOf(placeable.height - above - bottom.roundToPx(), 0)) {
-            placeable.placeRelative(0, -above)
-        }
+        val below = bottom.roundToPx()
+        val placeable = measurable.measure(constraints.offset(vertical = above + below))
+        layout(placeable.width, placeable.height - above - below) { placeable.placeRelative(0, -above) }
     }
 
 /**

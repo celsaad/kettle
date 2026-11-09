@@ -211,7 +211,10 @@ private fun variantLabel(variant: IntervalVariant): Int =
 
 private val CLOCK_NUMERAL = 88.sp
 
-/** The heading face's line at 1×, which Skip's words take. Above [SKIP_SLACK], which reads it. */
+/**
+ * The heading face's line at 1× in the display font since #323 (Skip's node measured 23dp at the S25+'s
+ * 0.9 scale). Above [SKIP_SLACK], which reads it.
+ */
 private val HEADING_LINE = 26.dp
 
 /** The slack under Skip's words in its 48dp target, which hangs into the frame's 16dp padding. */

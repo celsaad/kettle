@@ -61,7 +61,7 @@ internal fun ComingUp(
                 style = KettleType.code.copy(letterSpacing = CapsTracking),
                 color = RunnerColors.textSecondary,
             )
-            GlyphButton("×", close, onClose, look = GlyphLook.Close)
+            SymbolButton(R.drawable.icon_close, close, onClose, look = SymbolLook.Close)
         }
         LazyColumn(Modifier.heightIn(max = 480.dp)) {
             item { NowRow(step, context, last = items.isEmpty() && !ends) }

@@ -1,5 +1,6 @@
 package com.casco.kettle.shell.workouteditor
 
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -54,9 +55,11 @@ import com.casco.kettle.shell.form.FormField
 import com.casco.kettle.shell.i18n.pluralText
 import com.casco.kettle.shell.library.ExerciseBadge
 import com.casco.kettle.shell.library.exerciseSummary
+import com.casco.kettle.shell.theme.Chevron
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.Spacing
+import com.casco.kettle.shell.theme.TypeIcon
 
 /** The library's exercises, to draw each block's by its id, and the reader's units to show them in. */
 internal class BlockContext(
@@ -112,10 +115,10 @@ internal fun Grip(
                     )
             },
         contentAlignment = Alignment.Center,
-    ) { Text("⣿", style = KettleType.heading, color = KettleTheme.colors.textSecondary) }
+    ) { TypeIcon(R.drawable.icon_drag, KettleType.heading, KettleTheme.colors.textSecondary) }
 }
 
-/** The ✕ that removes [label]'s thing: icon-only, so named, and a 44dp target round a small glyph. */
+/** The ✕ that removes [label]'s thing: icon-only, so named, and a 44dp target round a small icon. */
 @Composable
 internal fun RemoveButton(
     label: String,
@@ -130,7 +133,7 @@ internal fun RemoveButton(
         .semantics { contentDescription = label }
         .alpha(if (enabled) 1f else DISABLED_ALPHA),
     contentAlignment = Alignment.Center,
-) { Text("✕", Modifier.clearAndSetSemantics {}, color = KettleTheme.colors.textSecondary) }
+) { TypeIcon(R.drawable.icon_close, KettleType.default, KettleTheme.colors.textSecondary) }
 
 /**
  * One circuit, as RN's `WorkoutCircuitBlock`: its members, its optional id, and its rounds and rests.
@@ -255,7 +258,7 @@ private fun BlockIdField(
             style = KettleType.small,
             color = colors.textSecondary,
         )
-        Text(if (open) "⌄" else "›", Modifier.clearAndSetSemantics {}, color = colors.textSecondary)
+        Chevron(expanded = open)
     }
     if (open) {
         val focus = remember { FocusRequester() }
@@ -280,7 +283,7 @@ private fun CircuitConfig(
     Row(horizontalArrangement = Arrangement.spacedBy(Spacing.two), verticalAlignment = Alignment.Bottom) {
         ConfigColumn(stringResource(R.string.workoutEditor_rounds)) {
             val rounds = stringResource(R.string.workoutEditor_rounds)
-            StepButton("−", stringResource(R.string.common_decrease, rounds)) {
+            StepButton(R.drawable.icon_remove, stringResource(R.string.common_decrease, rounds)) {
                 onChange(circuit.withRounds(circuit.rounds - 1))
             }
             Text(
@@ -290,7 +293,7 @@ private fun CircuitConfig(
                 color = KettleTheme.colors.text,
                 textAlign = TextAlign.Center,
             )
-            StepButton("+", stringResource(R.string.common_increase, rounds)) {
+            StepButton(R.drawable.icon_add, stringResource(R.string.common_increase, rounds)) {
                 onChange(circuit.withRounds(circuit.rounds + 1))
             }
         }
@@ -317,10 +320,10 @@ private fun RowScope.ConfigColumn(
     Row(verticalAlignment = Alignment.CenterVertically, content = content)
 }
 
-/** A − or + on a stepper: named by [label], since its glyph says nothing, in a 44dp target. */
+/** A − or + on a stepper: named by [label], since its icon says nothing, in a 44dp target. */
 @Composable
 internal fun StepButton(
-    glyph: String,
+    @DrawableRes icon: Int,
     label: String,
     onClick: () -> Unit,
 ) {
@@ -334,7 +337,7 @@ internal fun StepButton(
             .clickable(role = Role.Button, onClick = onClick)
             .semantics { contentDescription = label },
         contentAlignment = Alignment.Center,
-    ) { Text(glyph, Modifier.clearAndSetSemantics {}, color = colors.textSecondary) }
+    ) { TypeIcon(icon, KettleType.default, colors.textSecondary) }
 }
 
 /**

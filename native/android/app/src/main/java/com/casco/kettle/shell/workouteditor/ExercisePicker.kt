@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -22,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -231,7 +233,10 @@ private fun CheckBox(checked: Boolean) {
             .background(if (checked) colors.accent else colors.backgroundElement)
             .border(1.5.dp, if (checked) colors.accent else colors.border, shape),
         contentAlignment = Alignment.Center,
-    ) { if (checked) Text("✓", style = KettleType.small, color = colors.onAccent) }
+    ) {
+        // Sized to its box, not to the type: the box doesn't grow with the reader's text, so neither can it.
+        if (checked) Icon(painterResource(R.drawable.icon_check), null, Modifier.size(16.dp), tint = colors.onAccent)
+    }
 }
 
 private const val DISABLED_ALPHA = 0.4f

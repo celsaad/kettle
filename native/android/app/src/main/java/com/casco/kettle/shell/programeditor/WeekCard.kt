@@ -21,7 +21,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.collapse
 import androidx.compose.ui.semantics.expand
 import androidx.compose.ui.semantics.semantics
@@ -36,6 +35,7 @@ import com.casco.kettle.shell.R
 import com.casco.kettle.shell.form.FieldKind
 import com.casco.kettle.shell.form.FieldOptions
 import com.casco.kettle.shell.form.FormField
+import com.casco.kettle.shell.theme.Chevron
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.Spacing
@@ -119,7 +119,7 @@ private fun NumberRow(
             horizontalArrangement = Arrangement.spacedBy(Spacing.one),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            StepButton("−", stringResource(R.string.common_decrease, label)) { onStep(-1) }
+            StepButton(R.drawable.icon_remove, stringResource(R.string.common_decrease, label)) { onStep(-1) }
             Text(
                 "$number",
                 Modifier.widthIn(min = 24.dp),
@@ -127,7 +127,7 @@ private fun NumberRow(
                 color = colors.text,
                 textAlign = TextAlign.Center,
             )
-            StepButton("+", stringResource(R.string.common_increase, label)) { onStep(1) }
+            StepButton(R.drawable.icon_add, stringResource(R.string.common_increase, label)) { onStep(1) }
         }
         RemoveButton(stringResource(R.string.programEditor_removeWeek, "$number"), onClick = onRemove)
     }
@@ -192,7 +192,7 @@ private fun WorkoutPicker(
             style = KettleType.smallMedium,
             color = colors.text,
         )
-        Text(if (open) "⌄" else "›", Modifier.clearAndSetSemantics {}, color = colors.textSecondary)
+        Chevron(expanded = open)
     }
     if (!open) return
     Column(Modifier.padding(top = Spacing.one), verticalArrangement = Arrangement.spacedBy(Spacing.one)) {

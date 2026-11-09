@@ -111,10 +111,12 @@ internal fun SetCountRow(
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text(label, Modifier.weight(1f, fill = false), style = KettleType.small, color = RunnerColors.textSecondary)
         if (readings.canAddSet) {
-            GlyphButton("−", stringResource(R.string.common_decrease, sets), {
+            SymbolButton(R.drawable.icon_remove, stringResource(R.string.common_decrease, sets), {
                 context.send(RunnerCommand.DropSet)
             }, readings.canDropSet)
-            GlyphButton("+", stringResource(R.string.common_increase, sets), { context.send(RunnerCommand.AddSet) })
+            SymbolButton(R.drawable.icon_add, stringResource(R.string.common_increase, sets), {
+                context.send(RunnerCommand.AddSet)
+            })
         }
         if (readings.canSwap) {
             PillControl(stringResource(R.string.session_swap_action)) { context.controls.open(Overlay.SWAP_PICKER) }

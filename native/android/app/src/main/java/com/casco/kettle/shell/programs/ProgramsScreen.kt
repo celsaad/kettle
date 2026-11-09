@@ -58,6 +58,7 @@ import com.casco.kettle.shell.programdetail.PROGRAM_DETAIL_PATH
 import com.casco.kettle.shell.programdetail.PROGRAM_ID_PARAM
 import com.casco.kettle.shell.rn.JsBridge
 import com.casco.kettle.shell.rn.Stacking
+import com.casco.kettle.shell.theme.Chevron
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.MaxContentWidth
@@ -184,7 +185,7 @@ private fun ProgramRow(
                     )
                 }
             }
-            Text("›", Modifier.clearAndSetSemantics {}, color = colors.textSecondary)
+            Chevron()
         }
     }
 }

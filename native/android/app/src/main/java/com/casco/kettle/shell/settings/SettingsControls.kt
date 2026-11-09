@@ -23,7 +23,6 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
@@ -31,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import com.casco.kettle.shell.list.ListRowMinHeight
 import com.casco.kettle.shell.list.ListRowSeparator
 import com.casco.kettle.shell.list.ListRowVerticalPadding
+import com.casco.kettle.shell.theme.Chevron
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.Spacing
@@ -153,7 +153,7 @@ internal fun ActionRow(
             }
             // Decoration, as on the list rows: the row is named by its two texts, never by a chevron.
             if (enabled) {
-                Text("›", Modifier.clearAndSetSemantics {}, style = KettleType.default, color = colors.textSecondary)
+                Chevron()
             }
         }
     }

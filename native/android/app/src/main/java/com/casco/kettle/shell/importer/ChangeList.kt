@@ -21,13 +21,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.collapse
 import androidx.compose.ui.semantics.expand
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.COLLAPSED_CHANGES
 import com.casco.kettle.domain.ChangedItem
@@ -45,6 +42,7 @@ import com.casco.kettle.shell.i18n.pluralText
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.Spacing
+import com.casco.kettle.shell.theme.TypeIcon
 
 /** The tiles, the changed ids with what each updated one loses, and the note that updates replace. */
 @Composable
@@ -179,13 +177,14 @@ private fun ChangedRow(item: ChangedItem) {
         horizontalArrangement = Arrangement.spacedBy(Spacing.two + 2.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(
-            if (item.isNew) "+" else "↻",
-            // Decoration: the noun at the end of the row says new or updated, and TalkBack would read "↻".
-            Modifier.width(GLYPH_WIDTH).clearAndSetSemantics {},
-            style = KettleType.default.copy(fontWeight = FontWeight.Bold, textAlign = TextAlign.Center),
-            color = if (item.isNew) colors.accentText else colors.accentCalmText,
-        )
+        // Decoration: the noun at the end of the row says new or updated.
+        Box(Modifier.width(MARK_WIDTH), contentAlignment = Alignment.Center) {
+            TypeIcon(
+                if (item.isNew) R.drawable.icon_add else R.drawable.icon_refresh,
+                KettleType.default,
+                if (item.isNew) colors.accentText else colors.accentCalmText,
+            )
+        }
         // The id, never a name: it's what the file the reader holds says.
         Text(item.id, Modifier.weight(1f), style = KettleType.smallMedium, color = colors.text)
         Text(stringResource(item.noun), style = KettleType.small, color = colors.textSecondary)
@@ -208,7 +207,7 @@ private fun ChangedFields(
 ) {
     val colors = KettleTheme.colors
     Column(
-        Modifier.padding(top = 2.dp, start = GLYPH_WIDTH + Spacing.two + 2.dp),
+        Modifier.padding(top = 2.dp, start = MARK_WIDTH + Spacing.two + 2.dp),
         verticalArrangement = Arrangement.spacedBy(1.dp),
     ) {
         for (change in changes) {
@@ -297,4 +296,4 @@ private fun ShowAllToggle(
 
 private val TileShape = RoundedCornerShape(12.dp)
 
-private val GLYPH_WIDTH = 18.dp
+private val MARK_WIDTH = 18.dp

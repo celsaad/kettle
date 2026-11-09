@@ -668,6 +668,22 @@ class RunnerScreenTest {
         compose.onNode(hasContentDescription("Excluir") and isButton).assertExists()
     }
 
+    // #267's review: the keys became a sealed type, so each kind is pressed through to the value set.
+    @Test
+    fun `the pad's keys type, delete, and set the value`() {
+        show(running(plan(block(squat))))
+        button("Reps concluídas: 5. Toque para inserir um valor exato.").performClick()
+        button("Excluir").performClick()
+        button("1").performClick()
+        button("2").performClick()
+        button("3").performClick()
+        button("Excluir").performClick()
+        button("Definir").performClick()
+
+        // 5, ⌫ → empty; 1 2 3 → 123; ⌫ → 12.
+        assertEquals(RunnerCommand.SetReps(12), sent.last())
+    }
+
     @Test
     fun `the Finish dialog closes itself when the step it was asked on ends`() {
         // #317's review: a rest ending under the dialog seeded the next set, and Finish logged it.

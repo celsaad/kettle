@@ -2,6 +2,7 @@ package com.casco.kettle.shell.nav
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.res.ColorStateList
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.InsetDrawable
 import android.util.TypedValue
@@ -11,7 +12,7 @@ import android.view.VelocityTracker
 import android.view.View
 import android.widget.Button
 import android.widget.FrameLayout
-import android.widget.TextView
+import android.widget.ImageView
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -70,11 +71,10 @@ class SheetChrome(
         }
 
     private val close =
-        TextView(context).apply {
+        ImageView(context).apply {
             id = generateViewId()
-            text = CLOSE_GLYPH
-            gravity = Gravity.CENTER
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, CLOSE_TEXT_SP)
+            setImageResource(R.drawable.icon_close)
+            scaleType = ImageView.ScaleType.FIT_CENTER
             contentDescription = context.getString(R.string.common_close)
             setOnClickListener { requestBack() }
         }
@@ -124,7 +124,7 @@ class SheetChrome(
                 cornerRadius = dp(BAR_HEIGHT_DP).toFloat() / 2
                 setColor(colors.border.toArgb())
             }
-        close.setTextColor(colors.textSecondary.toArgb())
+        close.imageTintList = ColorStateList.valueOf(colors.textSecondary.toArgb())
         close.background =
             InsetDrawable(
                 GradientDrawable().apply {
@@ -134,6 +134,12 @@ class SheetChrome(
                 },
                 targetOverhang,
             )
+        // After the background, which sets the view's padding to its own insets: set before, this was
+        // lost, and the × filled the circle. One em of the 20sp the × was drawn at, growing with the
+        // text size as the glyph did; sp through TypedValue, so Android 14's nonlinear scaling too.
+        val icon = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, CLOSE_ICON_SP, resources.displayMetrics)
+        val pad = ((dp(TARGET_DP) - icon) / 2).toInt().coerceAtLeast(0)
+        close.setPadding(pad, pad, pad, pad)
     }
 
     /**
@@ -219,8 +225,7 @@ class SheetChrome(
 
         /** Wider than the bar, so the drag is easy to start; the same height as the × target. */
         const val GRABBER_WIDTH_DP = 120f
-        const val CLOSE_TEXT_SP = 20f
-        const val CLOSE_GLYPH = "×"
+        const val CLOSE_ICON_SP = 20f
         const val MILLIS_PER_SECOND = 1000
     }
 }

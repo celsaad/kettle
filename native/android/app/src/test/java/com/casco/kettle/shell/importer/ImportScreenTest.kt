@@ -389,14 +389,15 @@ class ImportScreenTest : ImportHarness() {
         compose.onAllNodesWithText(SAME_VALUES).assertCountEquals(2)
     }
 
-    // The noun at the end of the row says new or updated; read aloud, the glyph is noise.
+    // The noun at the end of the row says new or updated, in words: its mark is an icon, which says
+    // nothing (TypeIconTest), so the words are the whole of what TalkBack reads.
     @Test
-    fun `keeps the row's glyph from TalkBack`() {
+    fun `says in words whether a row is new or updated`() {
+        // dips is new to the library, pull-ups already in it.
         picks(Library(1, listOf(pullUps, dips), emptyList(), emptyList()))
         chooseFile()
 
-        compose.onAllNodesWithText("↻").assertCountEquals(0)
-        compose.onAllNodesWithText("+").assertCountEquals(0)
+        shown("novo exercício")
         shown("exercício atualizado")
     }
 

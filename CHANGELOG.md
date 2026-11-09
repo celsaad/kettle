@@ -25,6 +25,9 @@ here, next to what it describes.
   pack, instead of below every starter pack where it was easy to miss. TalkBack reads it out too.
   And a merge that couldn't save, then saved on a second try, no longer leaves "couldn't save"
   standing over the confirmation (#289).
+- **Every screen is set in Kettle's own typefaces again**: the screens rebuilt natively had been
+  drawn in the phone's system font, and now use the same display and body faces as the rest
+  of the app (#264).
 
 ---
 

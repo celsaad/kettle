@@ -5,7 +5,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.text.font.FontWeight
-import com.casco.kettle.theme.FONT_WEIGHTS
 import com.casco.kettle.theme.parseTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -76,7 +75,7 @@ class GeneratedThemeTest {
         val expected =
             theme.type.mapValues { (_, style) ->
                 listOf(
-                    FONT_WEIGHTS.getValue(style.font),
+                    theme.fonts.getValue(style.font).weightName,
                     style.fontSize?.toFloat(),
                     style.lineHeight?.toFloat(),
                     style.letterSpacing?.toFloat(),

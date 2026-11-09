@@ -62,6 +62,14 @@
     "six": 64
   },
   "MaxContentWidth": 480,
+  "Fonts": {
+    "display": "SpaceGrotesk_600SemiBold",
+    "displayMedium": "SpaceGrotesk_500Medium",
+    "displayBold": "SpaceGrotesk_700Bold",
+    "body": "HankenGrotesk_400Regular",
+    "bodyMedium": "HankenGrotesk_500Medium",
+    "bodySemiBold": "HankenGrotesk_600SemiBold"
+  },
   "Type": {
     "default": {
       "font": "body",

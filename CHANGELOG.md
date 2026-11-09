@@ -18,6 +18,12 @@ here, next to what it describes.
 
 ## Unreleased
 
+Nothing since 0.15.0.
+
+---
+
+## 0.15.0 — versionCode 21, 9 November 2026
+
 ### What changed
 
 - **Import says why it refused something right where you pressed**: a paste that won't import shows
@@ -33,6 +39,32 @@ here, next to what it describes.
   back to the session with a tap. Swiping Kettle away from Recents leaves the session running. If
   Android stops the app mid-workout, the next launch offers to resume the session where it was or to
   finish it, so the workout isn't lost (#308).
+
+### Play release notes
+
+Counted at 73 (en-US) and 75 (pt-BR), against a limit of 500. Re-count programmatically
+if you edit them rather than trusting these numbers — over-limit copy is a rejected upload, not a
+truncated one.
+
+Deliberately plain: "updates and fixes", with the closing line 0.14.0 used. Two blocks, as in 0.8.0
+onwards: the Play listing does not carry ja-JP.
+
+```
+<en-US>
+What's new
+
+Updates and fixes.
+
+Report anything that hangs or loses data.
+</en-US>
+<pt-BR>
+Novidades
+
+Atualizações e correções.
+
+Relate travamentos ou perda de dados.
+</pt-BR>
+```
 
 ---
 

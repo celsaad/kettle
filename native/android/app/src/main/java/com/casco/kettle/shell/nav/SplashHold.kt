@@ -6,6 +6,7 @@ import android.view.ViewTreeObserver
 import android.view.animation.AccelerateInterpolator
 import android.window.SplashScreenView
 import androidx.activity.ComponentActivity
+import androidx.annotation.VisibleForTesting
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.setValue
@@ -34,9 +35,10 @@ class SplashHold private constructor(
     var exits by mutableIntStateOf(0)
         private set
 
-    /** Lets the splash go at the next frame. Again is nothing. */
+    /** Lets the splash go at the next frame, and for the rest of this process. Again is nothing. */
     fun release() {
         held = false
+        releasedInProcess = true
     }
 
     override fun onPreDraw(): Boolean {
@@ -79,9 +81,25 @@ class SplashHold private constructor(
             return hold
         }
 
+        /**
+         * Whether this process has let a splash go, as Expo's process-wide flag was. An activity made
+         * again in the same process (a font or display size change) has no system splash to hold, and
+         * holding it anyway would blank it until its files were read. A process brought back after death
+         * starts with this false, and does show the system splash, so it holds. Main thread only.
+         */
+        private var releasedInProcess = false
+
         /** The hold alone, on [content], for a test to hold without a splash theme. */
         internal fun hold(content: View): SplashHold =
-            SplashHold(content).also(content.viewTreeObserver::addOnPreDrawListener)
+            SplashHold(content).also {
+                if (releasedInProcess) it.held = false else content.viewTreeObserver.addOnPreDrawListener(it)
+            }
+
+        /** A fresh process, for a test: Robolectric keeps statics from one test to the next. */
+        @VisibleForTesting
+        internal fun forgetRelease() {
+            releasedInProcess = false
+        }
 
         /**
          * On API 31 to 33 the exit listener can fire after the activity stops, on a `SurfaceControl`

@@ -433,7 +433,10 @@ history_banner() {
   fi
   printf '%s' "$dump" | xmllint --xpath "string(//node[contains(@text, 'be read or written')]/@text)" - 2>/dev/null
 }
-empty_session_files() { in_app "find $data/files/exercise-tracker/sessions -name '*.yaml' -empty" | tr -d '\r'; }
+# A find that failed says so, rather than reading as no empty file: in_app throws its errors away.
+empty_session_files() {
+  in_app "find $data/files/exercise-tracker/sessions -name '*.yaml' -empty || echo 'find failed'" | tr -d '\r'
+}
 banner_before=$(history_banner)
 empty_before=$(empty_session_files)
 open_session zz-check-rest && wait_running
@@ -457,7 +460,7 @@ wait_for 8 no_state_files; check "the prompt's Finish deletes the state file" $?
 case "$(session_file "$id")" in *ended_at:\ 20*) ok=0 ;; *) ok=1 ;; esac
 check "the prompt's Finish stamps ended_at" $ok
 empty=$(empty_session_files)
-[ "$empty" = "$empty_before" ]; check 'two kills leave no new empty session file' $? "$empty"
+[ "$empty" = "$empty_before" ] && [ "${empty#*find failed}" = "$empty" ]; check 'two kills leave no new empty session file' $? "$empty"
 banner=$(history_banner)
 [ "$banner" = "$banner_before" ] && [ "$banner" != 'History not on screen' ]; check "History's banner lists nothing new after the relaunch" $? "'$banner', was '$banner_before'"
 sleep 1

@@ -390,7 +390,8 @@ try {
     $node = $dump.SelectSingleNode("//node[contains(@text, 'be read or written')]")
     if ($node) { $node.GetAttribute('text') } else { '' }
   }
-  function EmptySessionFiles { (InApp "find $data/files/exercise-tracker/sessions -name '*.yaml' -empty") -join ' ' }
+  # A find that failed says so, rather than reading as no empty file: InApp throws its errors away.
+  function EmptySessionFiles { (InApp "find $data/files/exercise-tracker/sessions -name '*.yaml' -empty || echo 'find failed'") -join ' ' }
   $bannerBefore = HistoryBanner
   $emptyBefore = EmptySessionFiles
   if (OpenSession 'zz-check-rest') { WaitRunning | Out-Null }
@@ -413,7 +414,7 @@ try {
   Check "the prompt's Finish deletes the state file" (WaitFor 8 { -not (StateFiles) })
   Check "the prompt's Finish stamps ended_at" ((SessionFile $id) -match 'ended_at: 20')
   $empty = EmptySessionFiles
-  Check 'two kills leave no new empty session file' ($empty -eq $emptyBefore) $empty
+  Check 'two kills leave no new empty session file' ($empty -eq $emptyBefore -and $empty -notmatch 'find failed') $empty
   $banner = HistoryBanner
   Check "History's banner lists nothing new after the relaunch" ($banner -eq $bannerBefore -and $banner -ne 'History not on screen') "'$banner', was '$bannerBefore'"
   Start-Sleep -Seconds 1

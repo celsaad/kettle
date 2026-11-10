@@ -65,16 +65,18 @@ internal fun writeAtomically(
         // Whatever stopped it, an IOException or a SecurityException, the half-written file goes.
         if (!landed) partial.delete()
     }
+    // Absolute, unlike the parentFile above: a bare relative name has no parent until it's made one.
     val dir = file.absoluteFile.parentFile ?: return
     // The write has already landed, so nothing here may undo it: an IOException (Windows can't open a
     // directory), a SecurityException, an UnsupportedOperationException (a filesystem with no such
-    // sync), or a LinkageError (API 24–25, with no `java.nio.file` to call).
+    // sync), or API 24–25's missing `java.nio.file` and `File.toPath`, until #364 makes 26 the floor.
     try {
         syncDirectory(dir)
     } catch (_: IOException) {
     } catch (_: SecurityException) {
     } catch (_: UnsupportedOperationException) {
-    } catch (_: LinkageError) {
+    } catch (_: NoClassDefFoundError) {
+    } catch (_: NoSuchMethodError) {
     }
 }
 

@@ -10,9 +10,10 @@ of truth, in the file that is actually served.
 
 ## The short version
 
-Kettle collects nothing, transmits nothing, and has no account and no server. Your library, session
+Kettle collects nothing, makes no network requests of its own, and has no account and no server. Your library, session
 log, preferences and supporter state live in the app's private storage on your device and are
 removed when you uninstall it. Tips go through Google Play Billing, so payment details never reach
-app code. The website loads no third-party scripts, fonts or analytics either.
+app code; opening the Support screen lets that Google library send Google its own diagnostics,
+which is the one thing that leaves the device. The website loads no third-party scripts, fonts or analytics either.
 
 See the canonical policy for the permission-by-permission breakdown and the import/export details.

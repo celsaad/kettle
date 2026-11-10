@@ -113,7 +113,7 @@ Seus treinos em um arquivo que é seu — escritos à mão ou por uma IA.
 ワークアウトは、あなたのファイルの中に。自分で書いても、AI に書いてもらっても。
 ```
 
-### Full — en-US (3956)
+### Full — en-US (3949)
 
 ```
 Your exercises, workouts and programs live in a plain text file on your phone. Edit it in the app, open it in any text editor, or ask an AI assistant to write you a program and paste the result in — Kettle checks it on your device and shows exactly what would change before anything is saved.
@@ -154,7 +154,7 @@ HISTORY THAT IS YOURS, AND FIXABLE
 Every set goes to a local log: what you did, when you did it. Streaks, weekly totals and per-exercise volume are calculated on your device. Nothing is uploaded. Tapped the wrong number? Open any past session and fix the reps, load or RPE, or remove a set.
 
 WHAT KETTLE DOES NOT DO
-No account. No cloud. No analytics. No crash reporting. No advertising. No third-party SDK that transmits anything. The app makes no network requests of its own, and does not ask for your microphone, camera, location or contacts. There is one optional reminder, off until you turn it on, and it is a local notification.
+No account. No cloud. No analytics, crash-reporting or advertising SDK. The app makes no network requests of its own; the tip jar uses Google Play Billing. It does not ask for your microphone, camera, location or contacts. There is one optional reminder, off until you turn it on, and it is a local notification.
 
 FREE, WITH AN OPTIONAL TIP JAR
 Every feature is unlocked for everyone. No paid tier, no subscription, no trial. An optional tip jar helps cover the developer account fee, and nothing is gated behind it — export included.
@@ -164,7 +164,7 @@ Available in English, Portuguese and Japanese.
 The format is documented at celsaad.github.io/kettle and the source is on GitHub under the MIT license, so you can check any of this yourself.
 ```
 
-### Full — pt-BR (3957)
+### Full — pt-BR (3956)
 
 ```
 Seus exercícios, treinos e programas ficam em um arquivo de texto no seu aparelho. Edite pelo app, abra em qualquer editor, ou peça a um assistente de IA que escreva um programa e cole o resultado — o Kettle valida e mostra o que mudaria antes de salvar.
@@ -205,7 +205,7 @@ UM HISTÓRICO QUE É SEU — E CORRIGÍVEL
 Cada série entra em um registro local: o que você fez e quando. Sequências, totais da semana e volume por exercício são calculados no aparelho. Nada é enviado. Digitou errado? Abra qualquer sessão passada e corrija as repetições, a carga ou a PSE, ou remova uma série.
 
 O QUE O KETTLE NÃO FAZ
-Sem conta. Sem nuvem. Sem análise de uso. Sem relatório de falhas. Sem anúncios. Sem nenhum SDK de terceiros que transmita nada. O app não faz requisições de rede e não pede microfone, câmera, localização nem contatos. Existe um único lembrete opcional, desligado até você ligar, e é uma notificação local.
+Sem conta. Sem nuvem. Sem SDK de análise, relatório de falhas ou anúncios. O app não faz requisições de rede próprias; a caixinha usa o faturamento do Google Play. Não pede microfone, câmera, localização nem contatos. Existe um único lembrete opcional, desligado até você ligar, e é uma notificação local.
 
 GRATUITO, COM CAIXINHA OPCIONAL
 Todos os recursos estão liberados. Não há versão paga, assinatura nem teste. Uma caixinha opcional ajuda a cobrir a taxa de desenvolvedor, e nada fica trancado atrás dela — exportar incluído.
@@ -215,7 +215,7 @@ Disponível em inglês, português e japonês.
 O formato está documentado em celsaad.github.io/kettle e o código está no GitHub sob a licença MIT, então você pode conferir tudo por conta própria.
 ```
 
-### Full — ja-JP (2114)
+### Full — ja-JP (2134)
 
 ```
 エクササイズ、ワークアウト、プログラムは、端末の中のテキストファイルにあります。アプリで編集しても、好きなテキストエディタで開いても、AI アシスタントにプログラムを書いてもらって結果を貼り付けてもかまいません。Kettle は端末の中で検証し、保存する前に何がどう変わるかを正確に示します。
@@ -256,7 +256,7 @@ O formato está documentado em celsaad.github.io/kettle e o código está no Git
 すべてのセットがローカルの記録に入ります。何をしたか、いつしたか。連続日数、週の合計、エクササイズごとのボリュームは、その記録から端末の中で計算されます。どこにもアップロードされません。数字を打ち間違えたら、過去のセッションを開いてレップ、負荷、RPE を直せますし、やっていないセットは削除できます。
 
 Kettle がしないこと
-アカウントなし。クラウドなし。利用状況の分析なし。クラッシュレポートなし。広告なし。何かを送信する第三者 SDK もなし。アプリは自分からネットワークに接続せず、マイク、カメラ、位置情報、連絡先も要求しません。リマインダーが1つだけありますが、自分でオンにするまで動かず、それも端末の中の通知です。
+アカウントなし。クラウドなし。利用状況の分析、クラッシュレポート、広告の SDK もなし。アプリが自分からネットワークに接続することはなく、チップには Google Play の課金システムを使います。マイク、カメラ、位置情報、連絡先も要求しません。リマインダーが1つだけありますが、自分でオンにするまで動かず、それも端末の中の通知です。
 
 無料、チップは任意
 すべての機能が誰にでも開放されています。有料版も、サブスクも、試用期間もありません。任意のチップはデベロッパー登録料の足しになりますが、その裏に隠れている機能はありません。書き出しも含めてです。
@@ -281,7 +281,9 @@ Recorded because the reasoning is not obvious from the answers, and each will be
   and Health Subjects Research.
 - **Data safety — no data collected, no data shared.** Consistent with the above rather than
   contradicting it: Google defines collection as data transmitted off the device, and the session
-  log never leaves it. Play Billing keeps payment data out of app code.
+  log never leaves it. Play Billing keeps payment data out of app code. Play Billing's own diagnostics
+  (sent once the Support screen opens) are read as part of Google Play's billing system, which the form
+  exempts; see the tip-jar entry in `docs/decisions.md`.
 - **Foreground service permissions — not applicable.** `FOREGROUND_SERVICE_MEDIA_PLAYBACK` was
   removed rather than declared; the declaration wanted a public video demonstrating media playback
   for a permission the app never used. See the `enableBackgroundPlayback` commit.

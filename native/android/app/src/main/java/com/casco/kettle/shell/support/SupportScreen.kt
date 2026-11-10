@@ -42,7 +42,7 @@ import com.casco.kettle.shell.theme.MaxContentWidth
 import com.casco.kettle.shell.theme.Spacing
 import com.casco.kettle.shell.theme.card
 
-/** What `shellRoutes` registers at `/support`: the screen on the real file and Play. */
+/** What the route table draws at `/support`: the screen on the real file and Play. */
 @Composable
 fun SupportRoute() {
     val activity = LocalActivity.current ?: return

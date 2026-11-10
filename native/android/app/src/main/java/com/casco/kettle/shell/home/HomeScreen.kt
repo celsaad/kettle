@@ -62,32 +62,34 @@ import com.casco.kettle.shell.list.NewItemButtonClearance
 import com.casco.kettle.shell.list.NoResults
 import com.casco.kettle.shell.list.RowStartButton
 import com.casco.kettle.shell.list.SearchBar
+import com.casco.kettle.shell.nav.Destination
+import com.casco.kettle.shell.nav.LocalNavigator
 import com.casco.kettle.shell.nav.LocalTabReselects
+import com.casco.kettle.shell.nav.Route
 import com.casco.kettle.shell.nav.ScrollsToTopOnReselect
 import com.casco.kettle.shell.nav.Tab
-import com.casco.kettle.shell.nav.openRunner
-import com.casco.kettle.shell.rn.JsBridge
-import com.casco.kettle.shell.rn.Stacking
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.MaxContentWidth
 import com.casco.kettle.shell.theme.Spacing
 import com.casco.kettle.shell.theme.TypeIcon
-import com.casco.kettle.shell.workouteditor.WORKOUT_EDITOR_PATH
 import kotlinx.coroutines.flow.Flow
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 
-/** What `shellRoutes` registers at `/`, the tab the app opens on. */
+/** What the route table draws at `Destination.Workouts`, the tab the app opens on. */
 @Composable
-fun HomeRoute() = HomeScreen(LocalLatestFiles.current, LocalTabReselects.current, JsBridge::open, { openRunner(it) })
+fun HomeRoute() {
+    val navigator = LocalNavigator.current
+    HomeScreen(LocalLatestFiles.current, LocalTabReselects.current, navigator::push, navigator::openRunner)
+}
 
 /**
  * Home (#235), the Workouts tab, as RN's `(tabs)/index.tsx`, now the empty stub at this path: what to
  * run next, and everything there is to run. The next-up card is the only path that resolves which
  * program week is due and starts it with that week's overrides; a row's start passes a bare workout.
- * [open] is `JsBridge.open`, and [startRunner] is `openRunner` (#302); both parameters, so a test
- * hears each route opened and each start.
+ * [open] pushes a route and [startRunner] opens the runner (#302); both parameters, so a test hears
+ * each route opened and each start.
  *
  * It is the screen the app's start waits for. The activity's `reportFullyDrawn`, the startup
  * benchmark's end point, waits for the library as well as the first frame, since a frame without it
@@ -100,7 +102,7 @@ fun HomeRoute() = HomeScreen(LocalLatestFiles.current, LocalTabReselects.current
 fun HomeScreen(
     files: LatestFiles,
     reselected: Flow<Tab>,
-    open: (Stacking, String, Map<String, String>) -> Unit,
+    open: (Route) -> Unit,
     startRunner: (RunnerStart) -> Unit,
     clock: Clock = Clock.System,
 ) {
@@ -132,7 +134,7 @@ fun HomeScreen(
                 ),
         ) {
             item(key = "header") {
-                TitleRow { open(Stacking.Push, "/settings", emptyMap()) }
+                TitleRow { open(Route(Destination.Settings)) }
                 // Nothing below the title before there is a library, so the screen never says "none"
                 // before it has looked.
                 if (library != null) {
@@ -161,12 +163,12 @@ fun HomeScreen(
             // who mistyped one.
             when {
                 library == null -> Unit
-                all.isEmpty() -> item(key = "empty") { NoWorkouts { open(Stacking.Push, IMPORT_PATH, emptyMap()) } }
+                all.isEmpty() -> item(key = "empty") { NoWorkouts { open(Route(Destination.Import)) } }
                 matching.isEmpty() -> item(key = "no-results") { NoResults(query) }
             }
         }
         NewItemButton(stringResource(R.string.build_newWorkout), Modifier.align(Alignment.BottomEnd)) {
-            open(Stacking.Push, WORKOUT_EDITOR_PATH, emptyMap())
+            open(Route(Destination.WorkoutEditor))
         }
     }
 }
@@ -180,7 +182,7 @@ private fun WhatToRun(
     nextUp: NextUp?,
     newHere: Boolean,
     hasWorkouts: Boolean,
-    open: (Stacking, String, Map<String, String>) -> Unit,
+    open: (Route) -> Unit,
     startRunner: (RunnerStart) -> Unit,
 ) {
     // Gated on a queued workout, not on any card: step one reads "Start the workout below", and a rest
@@ -191,7 +193,7 @@ private fun WhatToRun(
     // the first-run card, continuing the block that orients someone new, rather than beside the empty
     // session, whose reading as Start's alternative a second link there would take away.
     if (newHere && hasWorkouts) {
-        StarterPackLink(Modifier.padding(top = Spacing.three)) { open(Stacking.Push, IMPORT_PATH, emptyMap()) }
+        StarterPackLink(Modifier.padding(top = Spacing.three)) { open(Route(Destination.Import)) }
     }
     nextUp?.let { NextUpCard(it) { params -> startRunner(RunnerStart.Planned(params)) } }
     // Under the card's Start, reading as its alternative. Text weight, so it can't be taken for Start's
@@ -242,7 +244,7 @@ private fun TitleRow(onSettings: () -> Unit) {
 private fun WorkoutRow(
     workout: Workout,
     exercises: List<Exercise>,
-    open: (Stacking, String, Map<String, String>) -> Unit,
+    open: (Route) -> Unit,
     startRunner: (RunnerStart) -> Unit,
 ) {
     val colors = KettleTheme.colors
@@ -252,7 +254,7 @@ private fun WorkoutRow(
             Modifier
                 .weight(1f)
                 .heightIn(min = 48.dp)
-                .clickable(role = Role.Button) { open(Stacking.Push, WORKOUT_EDITOR_PATH, mapOf("id" to workout.id)) }
+                .clickable(role = Role.Button) { open(Route(Destination.WorkoutEditor, mapOf("id" to workout.id))) }
                 .wrapContentHeight(Alignment.CenterVertically),
             verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
@@ -273,8 +275,6 @@ private fun nextUpView(
 
 /** The benchmark's uiautomator finds Home by this, as it found RN Home's testID. */
 private fun Modifier.homeScreenTag() = semantics { testTagsAsResourceId = true }.testTag(HOME_SCREEN_TAG)
-
-private const val IMPORT_PATH = "/import"
 
 /** What `StartupBenchmark` waits for. The two share no code, so change both. */
 private const val HOME_SCREEN_TAG = "home-screen"

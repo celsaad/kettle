@@ -4,7 +4,9 @@ import android.app.Activity
 import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
+import androidx.activity.addCallback
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.DefaultLifecycleObserver
@@ -13,28 +15,24 @@ import androidx.lifecycle.lifecycleScope
 import com.casco.kettle.brownfield.BrownfieldActivity
 import com.casco.kettle.brownfield.ReactNativeHostManager
 import com.casco.kettle.brownfield.ReactNativeViewFactory
-import com.casco.kettle.brownfield.setUpNativeBackHandling
 import com.casco.kettle.domain.RunnerStart
 import com.casco.kettle.shell.files.DiskFiles
 import com.casco.kettle.shell.files.LatestFiles
+import com.casco.kettle.shell.files.LibraryAdopt
 import com.casco.kettle.shell.files.LibraryGate
 import com.casco.kettle.shell.files.LocalLatestFiles
 import com.casco.kettle.shell.files.StoragePaths
 import com.casco.kettle.shell.files.adoptTargetWeight
+import com.casco.kettle.shell.nav.LocalNavigator
 import com.casco.kettle.shell.nav.LocalSplashExit
 import com.casco.kettle.shell.nav.LocalTabReselects
 import com.casco.kettle.shell.nav.ModalSheet
-import com.casco.kettle.shell.nav.RouteReport
+import com.casco.kettle.shell.nav.Navigator
+import com.casco.kettle.shell.nav.Route
 import com.casco.kettle.shell.nav.ShellLayout
 import com.casco.kettle.shell.nav.Tab
-import com.casco.kettle.shell.nav.TabNavigator
-import com.casco.kettle.shell.nav.openRunner
-import com.casco.kettle.shell.nav.shellRoutes
 import com.casco.kettle.shell.reminder.reconcileReminder
 import com.casco.kettle.shell.rn.ExpoActivityListeners
-import com.casco.kettle.shell.rn.JsBridge
-import com.casco.kettle.shell.rn.RnFrames
-import com.casco.kettle.shell.rn.withViewAction
 import com.casco.kettle.shell.runner.LaunchRecovery
 import com.casco.kettle.shell.runner.RunnerHost
 import com.casco.kettle.shell.runner.RunnerService
@@ -44,21 +42,17 @@ import com.casco.kettle.shell.theme.PreferredKettleTheme
 import com.casco.kettle.shell.theme.preferredColors
 import com.facebook.react.modules.core.PermissionAwareActivity
 import com.facebook.react.modules.core.PermissionListener
-import expo.modules.brownfield.BrownfieldState
 import expo.modules.splashscreen.SplashScreenManager
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 
 /**
- * The app's entry point: today's RN app as one surface (docs/native-migration-plan.md, M2), inside the
- * shell's own tab bar and back stack (M3, `ShellLayout`). `BrownfieldActivity` is only an
- * `AppCompatActivity`, so this does what the prebuilt app's `ReactActivity` and Expo's delegate
- * wrapper did for it: the splash, Expo modules' activity lifecycle
- * (edge to edge, expo-linking's URLs), and the host's share of intents,
- * activity results, permission prompts, configuration and focus. Without the results the backup-folder
- * picker and the share sheet never resolve; without the permission interface every prompt answers
- * "denied" unasked; without the configuration a dark-mode switch never reaches JS, since `uiMode` is
- * in `configChanges`.
+ * The app's entry point: the shell's tabs, sheet and runner (`ShellLayout`), routed by its own
+ * [Navigator] since #309, with links parsed here. The RN surface is still started and laid out under
+ * everything, drawing nothing, until M7 deletes it (docs/native-migration-plan.md). `BrownfieldActivity`
+ * is only an `AppCompatActivity`, so this does what the prebuilt app's `ReactActivity` and Expo's
+ * delegate wrapper did for it: the splash, Expo modules' activity lifecycle (edge to edge), and the
+ * host's share of activity results, permission prompts, configuration and focus.
  */
 class MainActivity :
     BrownfieldActivity(),
@@ -84,14 +78,10 @@ class MainActivity :
     }
 
     private val navigator =
-        TabNavigator(
-            shellRoutes,
-            navigate = { url ->
-                sheet?.steeredByBar()
-                JsBridge.navigate(url)
-            },
-            reread = { latestFiles.reread() },
+        Navigator(
             onReselect = { tabReselects.tryEmit(it) },
+            // The runner writes its session as it goes, and the screens it covered read it on the way back.
+            onRunnerClosed = { latestFiles.reread() },
         )
 
     /** What [LocalTabReselects] carries. One slot, since a tap's scroll replaces the one before it. */
@@ -104,13 +94,10 @@ class MainActivity :
         // Before super, as in the prebuilt app: it installs the splash theme's exit.
         holdSplash()
         // null, as the prebuilt app's MainActivity passes: the RN fragment is rebuilt from the running
-        // runtime, and a restored copy would sit under it.
+        // runtime, and a restored copy would sit under it. The back stack starts over with it.
         super.onCreate(null)
-        // Before the surface opens: RN reads the intent's link then, and only under ACTION_VIEW.
-        intent.withViewAction()
 
         expoListeners = ExpoActivityListeners(this).also(lifecycle::addObserver)
-        tellJsWhatTheShellDraws()
         connectAdoptToLibrary()
         // RN's library load only parses from the library flip (#245), so native seeds and repairs first
         // (#221).
@@ -120,7 +107,6 @@ class MainActivity :
         // one view for the whole app, which ShellLayout places.
         ReactNativeHostManager.shared.initialize(application)
         val surface = ReactNativeViewFactory.createFrameLayout(this, this, "main")
-        setUpNativeBackHandling()
         rereadOnStartAndStop(latestFiles)
         val preferences = paths.preferences
         val layout =
@@ -128,11 +114,11 @@ class MainActivity :
                 this,
                 surface,
                 navigator,
-                shellRoutes,
                 theme = { content ->
                     CompositionLocalProvider(
                         LocalLatestFiles provides latestFiles,
                         LocalTabReselects provides tabReselects,
+                        LocalNavigator provides navigator,
                         LocalSplashExit provides SplashScreenManager::hide,
                     ) {
                         PreferredKettleTheme(
@@ -154,32 +140,34 @@ class MainActivity :
                 ModalSheet(
                     content,
                     shell,
-                    surface,
                     navigator,
                     colors = { preferredColors(preferences, resources.configuration) },
-                    // The ×'s and the grabber's back is hardware back's, which the sheet's callback hands RN.
+                    // Through the dispatcher, as hardware back goes, so a screen's own back handler hears it.
                     requestBack = onBackPressedDispatcher::onBackPressed,
                 )
             }
-        val sheet = layout.sheet.also { this.sheet = it }
-        // After RN's own, so it comes first while the sheet is up: the predictive shrink is the sheet's.
+        val sheet = layout.sheet
+        navigator.moves = sheet
+        // The shell's back, then the sheet's after it, which comes first while the sheet is up: the
+        // predictive shrink is the sheet's. A screen's own handler, the runner's, composes later still.
+        onBackPressedDispatcher.addCallback(this) { if (!navigator.back()) leave() }
         onBackPressedDispatcher.addCallback(this, sheet.backCallback)
-        // Any launch with the service alive attaches, the shade notification's tap or not (#297): a Recents
-        // swipe leaves the session running, and the relaunch comes back to it with no prompt.
-        listenToJs(sheet, latestFiles) { attachRunner(navigator.runnerShown) }
+        listenForWrites(latestFiles)
+        hearNavigateReceiver(navigator)
         setContentView(layout)
-        JsBridge.attach()
         expoListeners.onContentShown()
+        // Any launch with the service alive attaches, the shade notification's tap or not (#297): a Recents
+        // swipe leaves the session running, and the relaunch comes back to it with no prompt. Before the
+        // link, which a running session then drops.
+        attachRunner(navigator)
+        navigator.openLink(intent)
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        val link = intent.withViewAction()
-        setIntent(link)
-        expoListeners.onNewIntent(link)
-        reactHost?.onNewIntent(link)
-        // This activity's surface is up, so its router hears the push at once.
-        if (link.takeOpenRunner()) attachRunner(navigator.runnerShown)
+        setIntent(intent)
+        if (intent.takeOpenRunner()) attachRunner(navigator)
+        navigator.openLink(intent)
     }
 
     override fun onResume() {
@@ -239,20 +227,32 @@ class MainActivity :
     }
 
     /**
-     * JS has nowhere left to go back to: it has dismissed everything above the tabs, and RN's tab back
-     * is off inside the shell. So the tabs' back is the shell's, Workouts first as it always was.
-     *
-     * Then the app leaves. On Android 12 and later the prebuilt app left this to the platform, which
-     * moves a root task to the back rather than finishing it; it did the same itself on 11 and
-     * earlier. Calling the platform's back here would re-enter RN's own back callback (see
-     * `BrownfieldActivity`), so this moves the task directly, and `BrownfieldActivity`'s `finish()`,
-     * which would bring the router back at its root on the next launch, is never reached. What the
-     * platform adds on 12+ is the system's back animation.
+     * What RN calls when JS has no back handler. Back never reaches JS since #309, so this is only for a
+     * JS exit, and leaves as back does rather than with `BrownfieldActivity`'s `finish()`.
      */
-    override fun invokeDefaultOnBackPressed() {
-        if (navigator.back()) return
-        if (!moveTaskToBack(false)) finish()
+    override fun invokeDefaultOnBackPressed() = leave()
+}
+
+/**
+ * Back with nowhere left to go: the task moves to the back rather than finishing, as the platform does
+ * for a root task on Android 12 and later, so the next launch comes back to where it was. What the
+ * platform adds on 12+ is the system's back animation.
+ */
+private fun Activity.leave() {
+    if (!moveTaskToBack(false)) finish()
+}
+
+/** A `kettle://` link in [intent], parsed natively (#309); one to nowhere is dropped. */
+private fun Navigator.openLink(intent: Intent) {
+    val link = intent.dataString ?: return
+    // Taken off, so a recreated activity, which is handed the same intent, doesn't open it again.
+    intent.data = null
+    val route = Route.fromLink(link)
+    if (route == null) {
+        Log.w("MainActivity", "No route at $link; the link goes nowhere")
+        return
     }
+    navigate(route)
 }
 
 /**
@@ -303,28 +303,18 @@ private fun Intent.takeOpenRunner(): Boolean {
 
 /**
  * Back to the running session (#297), on a launch with the service alive or the shade notification's
- * tap: through the one way in, which attaches and ignores the start. Nothing when the runner already
- * shows ([runnerShown]), or when no session is running.
+ * tap: through the one way in, which attaches whatever the start. Nothing when no session is running,
+ * and the navigator drops it while the runner already shows.
  */
-private fun attachRunner(runnerShown: Boolean) {
-    val active = RunnerHost.active
-    if (active != null && !runnerShown) openRunner(active.start ?: RunnerStart.Adhoc)
-}
-
-/**
- * What the shell draws in RN's place, set before the surface opens so RN's first frame already knows.
- * `nativeTabBar` is read by isHosted in src/hooks/brownfield-module.ts, so RN draws no bar of its own,
- * and the native runner's stub guards only where the shell draws the runner over it (#302). The two
- * share no code, so change both.
- */
-private fun tellJsWhatTheShellDraws() {
-    BrownfieldState.set("nativeTabBar", true)
+private fun attachRunner(navigator: Navigator) {
+    val active = RunnerHost.active ?: return
+    navigator.openRunner(active.start ?: RunnerStart.Adhoc)
 }
 
 /** The runner's adopt (#220), on the application's context: a write may outlive the activity that asked. */
 private fun Activity.connectAdoptToLibrary() {
     val app = applicationContext
-    JsBridge.adoptTargetWeight = { id, kg -> app.adoptTargetWeight(id, kg) }
+    LibraryAdopt.adoptTargetWeight = { id, kg -> app.adoptTargetWeight(id, kg) }
 }
 
 /**
@@ -337,43 +327,32 @@ private fun Activity.holdSplash() {
 }
 
 /**
- * What this activity hears from JS, until a newer one takes over: the runtime and [JsBridge] outlive
- * it. The tab bar's reports go through [sheet], which passes them on at the frame RN draws them, and
- * a library native wrote at the runner's asking rereads [files], as does a session the native
- * runner's service wrote ([RunnerHost], #297).
+ * What this activity hears of the files native writes outside a screen, until a newer one takes over:
+ * a library the runner's adopt wrote ([LibraryAdopt]) and a session the runner's service wrote
+ * ([RunnerHost], #297) each reread [files].
  */
-private fun ComponentActivity.listenToJs(
-    sheet: ModalSheet,
-    files: LatestFiles,
-    firstRoute: () -> Unit,
-) {
-    // The first report is this activity's surface mounted. JS outlives the activity and has long said
-    // it's ready, so a push sent before then reaches a router that isn't there yet and is lost: that is
-    // when a notification tap that recreated the activity attaches ([firstRoute]).
-    var heard = false
-    val onRoute: (RouteReport) -> Unit = { report ->
-        sheet.onRoute(report)
-        if (!heard) {
-            heard = true
-            firstRoute()
-        }
-    }
-    JsBridge.onRoute = onRoute
-    JsBridge.onRouteWillChange = sheet::onRouteWillChange
-    JsBridge.wantsPicture = sheet::wantsPicture
-    JsBridge.onLibraryWritten = files::reread
-    RunnerHost.onSessionWritten = files::reread
-    RnFrames.onCapture = sheet::capture
+private fun ComponentActivity.listenForWrites(files: LatestFiles) {
+    val reread: () -> Unit = files::reread
+    LibraryAdopt.onLibraryWritten = reread
+    RunnerHost.onSessionWritten = reread
     lifecycle.addObserver(
         object : DefaultLifecycleObserver {
             override fun onDestroy(owner: LifecycleOwner) {
-                if (JsBridge.onRoute !== onRoute) return
-                JsBridge.onRoute = null
-                JsBridge.onRouteWillChange = null
-                JsBridge.wantsPicture = null
-                JsBridge.onLibraryWritten = null
+                if (LibraryAdopt.onLibraryWritten !== reread) return
+                LibraryAdopt.onLibraryWritten = null
                 RunnerHost.onSessionWritten = null
-                RnFrames.onCapture = null
+            }
+        },
+    )
+}
+
+/** The debug build's `NavigateReceiver` steers this activity's [navigator], until a newer one takes over. */
+private fun ComponentActivity.hearNavigateReceiver(navigator: Navigator) {
+    Navigator.current = navigator
+    lifecycle.addObserver(
+        object : DefaultLifecycleObserver {
+            override fun onDestroy(owner: LifecycleOwner) {
+                if (Navigator.current === navigator) Navigator.current = null
             }
         },
     )

@@ -3,9 +3,9 @@
   "entry": [
     // Run by hand once per release (see its header); nothing imports it.
     "store/build-assets.js",
-    // Loaded by path from `jest.mock('expo-router', ...)`. Its exports stand in for expo-router's API,
-    // which tests import from 'expo-router' itself, so knip can't see them used.
-    "src/test-support/expo-router.ts",
+    // Nothing in RN imports it since routing moved native (#309), but it holds theme.json's contrast
+    // notes, which JSON can't, and AGENTS.md sends a new color here. M7 decides where they live.
+    "src/constants/theme.ts",
   ],
   // An export its own file also uses is a named part of a public shape — the per-type configs that
   // make up the domain union, the chart layout's point types — and un-exporting them buys nothing.
@@ -20,5 +20,9 @@
     // store/build-assets.js loads these from NODE_PATH, deliberately outside the project (see its header).
     "sharp",
     "playwright",
+    // Native's `:theme` copies the faces `theme.json` names out of these packages (app/build.gradle.kts),
+    // and nothing in JS loads them since #309.
+    "@expo-google-fonts/hanken-grotesk",
+    "@expo-google-fonts/space-grotesk",
   ],
 }

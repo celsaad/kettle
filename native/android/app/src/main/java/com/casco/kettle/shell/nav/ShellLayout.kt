@@ -15,18 +15,16 @@ import com.casco.kettle.shell.files.LocalLatestFiles
 import com.casco.kettle.shell.runner.RecoveryPrompt
 
 /**
- * The app's chrome around the one RN surface (Q3 in docs/native-migration-plan.md): the destinations
- * [routes] registers, stacked over [surface], and the tab bar under both.
+ * The app's chrome: the tabs, the sheet's view and the runner's, stacked in one frame, and the tab bar
+ * under them, all following the [navigator].
  *
- * Plain views rather than one Compose tree, because the surface can't go inside Compose. Hosted in an
- * `AndroidView`, RN's whole tree was missing from the accessibility tree on a device, so TalkBack, and
- * a uiautomator dump, saw an empty screen (#153). As a sibling of the Compose views it is an ordinary
- * view again, as it was under the fragment that hosted it before.
+ * Plain views rather than one Compose tree, because the sheet ([ModalSheet]) shapes and moves views.
+ * The RN [surface] is in the frame too, under everything and never shown: since #309 it draws nothing,
+ * and M7 deletes it.
  *
- * Only one [Layer] shows: the surface for an RN tab or anything RN draws above the tabs, the
- * destinations for a native tab, the [nativeSheet] for a native route in the sheet, and the
- * [nativeRunner] for the native runner. The others are invisible, since a view left showing under
- * another still takes touches and TalkBack's focus.
+ * Only one [Layer] shows: the destinations for a tab, the [nativeSheet] for a sheet, and the
+ * [nativeRunner] for the runner. The others are invisible, since a view left showing under another
+ * still takes touches and TalkBack's focus.
  *
  * [theme] wraps every Compose view's content, each a separate composition. The destinations' also
  * let the system splash go ([SplashExit]).
@@ -34,50 +32,46 @@ import com.casco.kettle.shell.runner.RecoveryPrompt
 @SuppressLint("ViewConstructor") // Built in code, never inflated.
 class ShellLayout(
     context: Context,
-    private val surface: View,
-    navigator: TabNavigator,
-    routes: Map<String, Screen>,
+    surface: View,
+    navigator: Navigator,
     theme: @Composable (content: @Composable () -> Unit) -> Unit,
+    /** The screen each route draws: the route table, or a test's stand-ins. */
+    content: @Composable (Route) -> Unit = { RouteContent(it) },
     sheet: (content: FrameLayout, shell: ShellLayout) -> ModalSheet,
 ) : LinearLayout(context) {
-    private val destinations =
+    internal val destinations =
         composeView {
             theme {
                 SplashExit(LocalLatestFiles.current, LocalSplashExit.current)
-                Destinations(navigator, routes, onLayer = ::showLayer)
+                Destinations(navigator, content, onLayer = ::showLayer)
             }
         }
 
     /**
-     * A native route's screen in the sheet (#197). A view of its own rather than a destination, beside the
-     * surface in the tree, so the sheet shapes and moves it as it does the surface, under the same chrome.
+     * The sheet's screen (#197). A view of its own rather than a destination, so the sheet shapes and
+     * moves it under its chrome.
      */
     internal val nativeSheet: ComposeView =
-        composeView { theme { NativeSheet(navigator, routes, onComposed = { nativeFrames.onComposed(it) }) } }
+        composeView { theme { NativeSheet(navigator, content, onComposed = { nativeFrames.onComposed(it) }) } }
 
-    /**
-     * The native runner (#302), full screen over everything else and outside the sheet: it is no tab's
-     * and no sheet's, and the bar is already gone while RN reports its stub.
-     */
-    internal val nativeRunner: ComposeView = composeView { theme { NativeRunner(navigator, routes) } }
+    /** The runner (#302), full screen over everything else and outside the sheet: no tab's or sheet's. */
+    internal val nativeRunner: ComposeView = composeView { theme { NativeRunner(navigator, content) } }
 
-    /** When the native sheet has composed the route the sheet arrives at. */
+    /** When the sheet's view has composed the route the sheet arrives at. */
     internal val nativeFrames: NativeFrames = NativeFrames(nativeSheet)
 
-    /**
-     * RN's modal routes, presented over the tabs as a native sheet around the same surface (#155),
-     * built by [sheet] inside the frame the surface is in.
-     */
+    /** The sheet routes, presented over the tabs as a sheet (#155), built by [sheet] inside the frame. */
     val sheet: ModalSheet
 
     init {
         orientation = VERTICAL
         (surface.parent as? ViewGroup)?.removeView(surface)
 
-        // The surface first, so a native destination draws over it, and the native sheet straight after,
-        // where the sheet's own views around the surface take it in too.
+        // The surface first and hidden, under everything; the sheet's view straight after, where the
+        // sheet's own views go in around it.
         val content = FrameLayout(context)
         content.addView(surface, FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
+        surface.visibility = INVISIBLE
         content.addView(nativeSheet, FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
         content.addView(destinations, FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
         content.addView(nativeRunner, FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
@@ -85,14 +79,14 @@ class ShellLayout(
         nativeRunner.visibility = INVISIBLE
         addView(content, LayoutParams(MATCH_PARENT, 0, 1f))
         this.sheet = sheet(content, this)
-        // Wrapping its content, so the bar takes no room at all while RN has something above the tabs.
+        // Wrapping its content, so the bar takes no room at all while something shows above the tabs.
         // The launch's Resume / Finish prompt (#307) rides in the bar's view, the one Compose view never
         // hidden, so whether it shows can't hang on which layer does. The dialog is a window of its own,
         // over every layer.
         val bar =
             composeView {
                 theme {
-                    if (navigator.barShown) TabBar(navigator.current, navigator::select)
+                    if (navigator.barShown) TabBar(navigator.tab, navigator::select)
                     RecoveryPrompt()
                 }
             }
@@ -105,7 +99,6 @@ class ShellLayout(
      * Invisible rather than gone, so the hidden layers stay laid out, ready to show.
      */
     fun showLayer(layer: Layer) {
-        surface.visibility = if (layer == Layer.Surface) VISIBLE else INVISIBLE
         destinations.visibility = if (layer == Layer.NativeTab) VISIBLE else INVISIBLE
         nativeSheet.visibility = if (layer == Layer.NativeSheet) VISIBLE else INVISIBLE
         nativeRunner.visibility = if (layer == Layer.NativeRunner) VISIBLE else INVISIBLE
@@ -114,7 +107,7 @@ class ShellLayout(
     private fun composeView(content: @Composable () -> Unit) =
         ComposeView(context).apply {
             // A ComposeView consumes the window insets by default, which would leave none for the
-            // views after it: the bar needs the navigation bar's, and RN reads them for its own.
+            // views after it: the bar needs the navigation bar's.
             consumeWindowInsets = false
             setContent(content)
         }

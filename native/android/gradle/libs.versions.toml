@@ -10,6 +10,13 @@ detektKotlin = "2.0.21"
 ktlintGradle = "14.2.0"
 ktlint = "1.8.0"
 composeBom = "2025.05.01"
+# What the app has shipped since #245, which no BOM names: expo-ui, inside the RN AAR by way of
+# expo-router, raised every Compose group to these, and the shell's code came to use them
+# (`LocalResources` is ui 1.9+). Routing moving native (#309) took expo-ui out, so they're pinned here
+# instead, unchanged. Moving to a stable BOM is a change of its own, since material3's bar and sheet
+# move with it.
+composeShipped = "1.11.0-beta02"
+material3Shipped = "1.5.0-alpha17"
 activityCompose = "1.10.1"
 navigationCompose = "2.9.0"
 appcompat = "1.7.0"
@@ -42,7 +49,12 @@ reorderable = "3.1.0"
 
 [libraries]
 compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
-compose-material3 = { module = "androidx.compose.material3:material3" }
+compose-material3 = { module = "androidx.compose.material3:material3", version.ref = "material3Shipped" }
+# One artifact per Compose group, at the version shipped: each group's own constraints align the rest.
+compose-ui = { module = "androidx.compose.ui:ui", version.ref = "composeShipped" }
+compose-foundation = { module = "androidx.compose.foundation:foundation", version.ref = "composeShipped" }
+compose-animation = { module = "androidx.compose.animation:animation", version.ref = "composeShipped" }
+compose-runtime = { module = "androidx.compose.runtime:runtime", version.ref = "composeShipped" }
 compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
 compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
 compose-ui-test-junit4 = { module = "androidx.compose.ui:ui-test-junit4" }

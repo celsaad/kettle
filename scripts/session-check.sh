@@ -47,7 +47,7 @@ root="$(cd "$(dirname "$0")/.." && pwd)"
 package=com.casco.kettle.dev
 data="/data/data/$package"
 receiver="$package/com.casco.kettle.shell.runner.RunnerCommandReceiver"
-navigator="$package/com.casco.kettle.shell.rn.NavigateReceiver"
+navigator="$package/com.casco.kettle.shell.nav.NavigateReceiver"
 apk="$root/native/android/app/build/outputs/apk/debug/app-debug.apk"
 pin=1234
 
@@ -173,8 +173,8 @@ service_running() { a shell dumpsys activity services "$package" | grep -q 'Runn
 
 # --- Opening and closing sessions -----------------------------------------------------------------
 
-# Opens [workout] by navigate message and waits for its count-in. A message sent before the RN surface
-# is ready is lost, so it's sent again until one lands; one landing over the runner is dropped by design.
+# Opens [workout] by navigate message and waits for its count-in. A message sent before the shell's activity
+# is up is lost, so it's sent again until one lands; one landing over the runner is dropped by design.
 # Each try puts the Metro tunnel back first: an adb server that restarts mid-run drops it, and the app
 # can't load its JS without it, so after two misses it's relaunched too.
 open_session() {
@@ -182,7 +182,7 @@ open_session() {
   for i in 1 2 3 4 5; do
     a reverse tcp:8081 tcp:8081 >/dev/null 2>&1
     [ "$i" = 3 ] && launch
-    navigate "/session-native?workoutId=$1"
+    navigate "/session?workoutId=$1"
     if wait_for 6 is_not_idle; then return 0; fi
   done
   echo "couldn't open $1" >&2

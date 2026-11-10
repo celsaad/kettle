@@ -28,7 +28,7 @@ $root = Split-Path -Parent $PSScriptRoot
 $package = 'com.casco.kettle.dev'
 $data = "/data/data/$package"
 $receiver = "$package/com.casco.kettle.shell.runner.RunnerCommandReceiver"
-$navigator = "$package/com.casco.kettle.shell.rn.NavigateReceiver"
+$navigator = "$package/com.casco.kettle.shell.nav.NavigateReceiver"
 $apk = Join-Path $root 'native/android/app/build/outputs/apk/debug/app-debug.apk'
 $pin = '1234'
 
@@ -153,15 +153,15 @@ function ServiceRunning { (A shell dumpsys activity services $package) -match 'R
 
 # --- Opening and closing sessions -----------------------------------------------------------------
 
-# Opens [workout] by navigate message and waits for its count-in. A message sent before the RN surface
-# is ready is lost, so it's sent again until one lands; one landing over the runner is dropped by design.
+# Opens [workout] by navigate message and waits for its count-in. A message sent before the shell's activity
+# is up is lost, so it's sent again until one lands; one landing over the runner is dropped by design.
 # Each try puts the Metro tunnel back first: an adb server that restarts mid-run drops it, and the app
 # can't load its JS without it, so after two misses it's relaunched too.
 function OpenSession([string]$Workout) {
   foreach ($i in 1..5) {
     A reverse tcp:8081 tcp:8081 | Out-Null
     if ($i -eq 3) { Launch | Out-Null }
-    Navigate "/session-native?workoutId=$Workout"
+    Navigate "/session?workoutId=$Workout"
     if (WaitFor 6 { (View) -ne 'Idle' }) { return $true }
   }
   Write-Host "couldn't open $Workout"

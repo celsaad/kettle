@@ -4,10 +4,9 @@
   plain http, which Android refuses by default, and the dev overlays draw over other apps. Neither
   reaches a release build.
 
-  Plus NavigateReceiver and FilesChangedReceiver, adb's way to steer the RN surface and to make its
-  stores re-read, and RunnerCommandReceiver, session-check's way to drive a running session (#315).
-  DUMP is held by the shell user and by no installable app, so adb can send to them and nothing else
-  on the phone can.
+  Plus NavigateReceiver, adb's way to steer the shell's navigator, and RunnerCommandReceiver,
+  session-check's way to drive a running session (#315). DUMP is held by the shell user and by no
+  installable app, so adb can send to them and nothing else on the phone can.
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
@@ -19,11 +18,7 @@
         tools:replace="android:usesCleartextTraffic"
         tools:targetApi="28">
         <receiver
-            android:name="com.casco.kettle.shell.rn.NavigateReceiver"
-            android:exported="true"
-            android:permission="android.permission.DUMP" />
-        <receiver
-            android:name="com.casco.kettle.shell.rn.FilesChangedReceiver"
+            android:name="com.casco.kettle.shell.nav.NavigateReceiver"
             android:exported="true"
             android:permission="android.permission.DUMP" />
         <receiver

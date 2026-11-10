@@ -53,7 +53,6 @@ abstract class ImportHarness {
     val compose = createComposeRule()
 
     internal var closed = 0
-    internal var libraryChanged = 0
     internal var picks = 0
 
     /** What the next tap on the file row gets back from the picker. */
@@ -100,7 +99,6 @@ abstract class ImportHarness {
                                 picked()
                             },
                             close = { closed += 1 },
-                            libraryChanged = { libraryChanged += 1 },
                             copy = { text ->
                                 copies += text
                                 clipboardTakes

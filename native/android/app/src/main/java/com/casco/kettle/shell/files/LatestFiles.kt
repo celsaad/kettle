@@ -109,10 +109,10 @@ class DiskFiles(
  * Native writes every file since the flip release (#308): its runner writes new sessions, its session
  * editor edits finished ones ([writeSession], #240), native Settings writes the preferences
  * ([writePreferences], #238), and native writes the library ([writeLibrary]), the runner's adopt
- * included. The runner is above the tabs, so the shell rereads when RN
- * hands the tabs back, on a tap onto a native tab or a native sheet coming up (`TabNavigator`'s
- * `reread`), whenever the app starts or stops being seen (`MainActivity`), and once an adopt lands
- * (`JsBridge.onLibraryWritten`). RN's half of the rule is `filesChanged`.
+ * included. A screen's own write reads again as it lands; the runner's service and its adopt write
+ * outside any screen, so the shell rereads as each lands (`RunnerHost.onSessionWritten`,
+ * `LibraryAdopt.onLibraryWritten`), when the runner's slot pops, and whenever the app starts or stops
+ * being seen (`MainActivity`).
  */
 class LatestFiles(
     private val files: StoredFiles,

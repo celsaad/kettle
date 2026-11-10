@@ -7,7 +7,7 @@ export type ExerciseHistoryEntry = { sessionId: string; dateLabel: string; summa
 
 /**
  * The last (up to `limit`) times a given exercise was logged, newest first — `sessions` is already
- * newest-first (session-files.ts's listSessions()/startSession()), so no re-sort needed. Skips
+ * newest-first, as the log is read, so no re-sort needed. Skips
  * unfinished sessions and `rest`-type entries: a rest exercise's own repeat performance isn't
  * meaningful the way a lift's is, so a rest exercise naturally ends up with no history to show.
  */

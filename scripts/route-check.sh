@@ -3,35 +3,43 @@
 # on screen, back included. A port of route-check.ps1, which explains the matrix and what it pins;
 # the two matrices are kept identical, so a step added to one is added to both.
 #
-# Needs com.casco.kettle.dev from native-dev.sh, running against Metro and past its splash, on a
-# phone in English whose .dev install still holds the seed library. The runner's steps finish real
+# Needs com.casco.kettle.dev from native-dev.sh, running against Metro and past its splash, or with
+# --package the release-built com.casco.kettle.bench2 (`gradlew :app:installBenchmark`), which needs
+# no Metro; on a phone in English whose install still holds the seed library. The runner's steps finish real
 # sessions, which join the .dev history (#306). It never touches com.casco.kettle.
 #
 # A start opens the native runner, in every build since the flip release (#308), and is waited on
 # past its count-in: its Finish only shows once the session runs. Every route is the same in debug
-# and release.
+# and release, and routing is native's in both since #309.
 #
-# Usage: scripts/route-check.sh [--device <adb serial>]
+# Usage: scripts/route-check.sh [--device <adb serial>] [--package com.casco.kettle.bench2]
 set -euo pipefail
 
 package='com.casco.kettle.dev'
-receiver="$package/com.casco.kettle.shell.rn.NavigateReceiver"
 
 target=()
 while [ $# -gt 0 ]; do
   case "$1" in
     --device) target=(-s "$2"); shift ;;
+    --package)
+      case "$2" in
+        com.casco.kettle.dev | com.casco.kettle.bench2) package="$2" ;;
+        *) echo "--package is com.casco.kettle.dev or com.casco.kettle.bench2" >&2; exit 2 ;;
+      esac
+      shift
+      ;;
     *) echo "unknown option: $1" >&2; exit 2 ;;
   esac
   shift
 done
 a() { adb ${target[@]+"${target[@]}"} "$@"; }
+receiver="$package/com.casco.kettle.shell.nav.NavigateReceiver"
 
 # action|expect. A route: send it. 'back': press back. 'tap:X': tap the element whose text is X.
 # 'front': bring the app to the front. Expect is an exact on-screen text, or 'tab:X' for the shell's
 # tab X being the selected one; empty means the app is not in front.
 steps=(
-  # Tabs, out of order and repeated. A message moves RN, and the shell's bar follows its report.
+  # Tabs, out of order and repeated. A message moves the navigator, and the bar follows it.
   '/history|tab:History' '/library|tab:Library' '/programs|tab:Programs'
   '/|tab:Workouts' '/programs|tab:Programs' '/history|tab:History'
   '/history|tab:History'
@@ -76,8 +84,8 @@ steps=(
   'back|tab:Library' 'back|tab:Workouts' 'back|'
   # Sent while in the background, it lands, and shows once the app is in front again.
   '/history|' 'front|tab:History'
-  # Over the native runner, a message is dropped with no question asked, and Done hands back (#302).
-  '/session-native?workoutId=foundations-push|Finish'
+  # Over the runner, a message is dropped with no question asked, and Done pops its slot (#302, #309).
+  '/session?workoutId=foundations-push|Finish'
   '/library|Finish' 'back|Finish session?' 'tap:Cancel|Finish'
   'back|Finish session?' 'tap:Finish|Workout complete' 'tap:Done|tab:History'
   'back|tab:Workouts' 'back|'

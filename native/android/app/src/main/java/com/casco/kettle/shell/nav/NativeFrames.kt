@@ -5,14 +5,8 @@ import android.util.Log
 import android.view.View
 import android.view.ViewTreeObserver
 
-/** One route's screen in the native sheet: the path RN reported, and the params it reported it with. */
-internal data class SheetContent(
-    val path: String,
-    val params: Map<String, String>,
-)
-
 /**
- * When the native sheet's screen is there to show (#197), as `RnFrames` knows it for RN's: a transition
+ * When the native sheet's screen is there to show (#197), for the sheet's: a transition
  * started before [view] has composed and laid out the route it arrives at slides in an empty sheet.
  *
  * [NativeSheet] reports each composition to [onComposed], after it applies and before that frame's
@@ -22,12 +16,12 @@ class NativeFrames(
     private val view: View,
 ) {
     /** What the native sheet composed last, or null for nothing. */
-    private var composed: SheetContent? = null
+    private var composed: Route? = null
 
     /** An arrival waiting for its screen. */
     private var held: Hold? = null
 
-    internal fun onComposed(content: SheetContent?) {
+    internal fun onComposed(content: Route?) {
         composed = content
     }
 
@@ -38,7 +32,7 @@ class NativeFrames(
      * first's [then] straight away, so the second starts from where the first ends.
      */
     internal fun awaitComposed(
-        wanted: SheetContent,
+        wanted: Route,
         then: () -> Unit,
     ) {
         flush()
@@ -51,7 +45,7 @@ class NativeFrames(
     }
 
     private inner class Hold(
-        private val wanted: SheetContent,
+        private val wanted: Route,
         private val then: () -> Unit,
     ) : ViewTreeObserver.OnPreDrawListener {
         private val since = SystemClock.uptimeMillis()
@@ -65,7 +59,7 @@ class NativeFrames(
             if (composed == wanted) {
                 release()
             } else if (SystemClock.uptimeMillis() - since >= HOLD_MS) {
-                Log.w(TAG, "The native sheet hadn't composed ${wanted.path} after ${HOLD_MS}ms")
+                Log.w(TAG, "The native sheet hadn't composed ${wanted.destination.path} after ${HOLD_MS}ms")
                 release()
             }
             return false

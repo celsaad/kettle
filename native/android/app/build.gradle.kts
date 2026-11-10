@@ -127,6 +127,13 @@ android {
         }
     }
 
+    // `NavigateReceiver`, adb's way to steer the navigator: the dev build's, and the benchmark build's, so
+    // route-check runs against a release-built shell too (#309). Never Play's release.
+    sourceSets {
+        getByName("debug").java.srcDir("src/steering/java")
+        getByName("benchmark").java.srcDir("src/steering/java")
+    }
+
     packaging {
         // RN, Hermes and several Expo modules each ship their own copy of libc++_shared. libworklets:
         // expo-modules-core's published AAR carries an unstripped copy of react-native-worklets'
@@ -348,6 +355,11 @@ dependencies {
     artGenerator(project(":art"))
 
     implementation(platform(libs.compose.bom))
+    // Over the BOM, at what the app ships (libs.versions.toml's `composeShipped`).
+    implementation(libs.compose.ui)
+    implementation(libs.compose.foundation)
+    implementation(libs.compose.animation)
+    implementation(libs.compose.runtime)
     implementation(libs.compose.material3)
     implementation(libs.compose.ui.tooling.preview)
     implementation(libs.activity.compose)

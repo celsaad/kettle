@@ -58,11 +58,12 @@ import com.casco.kettle.shell.list.NewItemButtonClearance
 import com.casco.kettle.shell.list.NoResults
 import com.casco.kettle.shell.list.SearchBar
 import com.casco.kettle.shell.list.TextAction
+import com.casco.kettle.shell.nav.Destination
+import com.casco.kettle.shell.nav.LocalNavigator
 import com.casco.kettle.shell.nav.LocalTabReselects
+import com.casco.kettle.shell.nav.Route
 import com.casco.kettle.shell.nav.ScrollsToTopOnReselect
 import com.casco.kettle.shell.nav.Tab
-import com.casco.kettle.shell.rn.JsBridge
-import com.casco.kettle.shell.rn.Stacking
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.MaxContentWidth
@@ -70,11 +71,12 @@ import com.casco.kettle.shell.theme.Spacing
 import kotlinx.coroutines.flow.Flow
 import kotlin.reflect.KClass
 
-/** What `shellRoutes` registers at `/library`, the tab. */
+/** What the route table draws at `Destination.Library`, the tab. */
 @Composable
 fun LibraryRoute() {
     val share = rememberFileShare()
-    LibraryScreen(LocalLatestFiles.current, LocalTabReselects.current, JsBridge::open) {
+    val navigator = LocalNavigator.current
+    LibraryScreen(LocalLatestFiles.current, LocalTabReselects.current, navigator::push) {
         logShareRefused(share?.library())
     }
 }
@@ -82,7 +84,7 @@ fun LibraryRoute() {
 /**
  * Library (#234), the library's exercises as rows, as RN's `(tabs)/library.tsx`, now the empty stub at
  * this path: a name search, the type filter, and the header's Export and Import. [open] is
- * `JsBridge.open` and [export] the library's share, parameters so a test hears each one.
+ * a push and [export] the library's share, parameters so a test hears each one.
  *
  * [reselected] carries taps on the tab already showing; one on Library scrolls back to the top.
  */
@@ -90,7 +92,7 @@ fun LibraryRoute() {
 fun LibraryScreen(
     files: LatestFiles,
     reselected: Flow<Tab>,
-    open: (Stacking, String, Map<String, String>) -> Unit,
+    open: (Route) -> Unit,
     export: () -> Unit,
 ) {
     val listState = rememberLazyListState()
@@ -121,7 +123,7 @@ fun LibraryScreen(
                 ),
         ) {
             item(key = "header") {
-                Header(export) { open(Stacking.Push, "/import", emptyMap()) }
+                Header(export) { open(Route(Destination.Import)) }
                 // What the filter left rather than the whole library: with Reps chosen and nothing typed,
                 // the placeholder describes that subset, and the honest count is its own.
                 SearchBar(
@@ -138,7 +140,7 @@ fun LibraryScreen(
             }
             itemsIndexed(visible, key = { _, exercise -> exercise.id }) { index, exercise ->
                 if (index > 0) ListRowSeparator()
-                ExerciseRow(exercise, units) { open(Stacking.Push, "/exercise-editor", mapOf("id" to exercise.id)) }
+                ExerciseRow(exercise, units) { open(Route(Destination.ExerciseEditor, mapOf("id" to exercise.id))) }
             }
             // No first-run card, unlike Programs: a library with no exercises is reachable only by deleting
             // every seeded one, and RN never had one. A search or a filter that empties the list does say
@@ -146,7 +148,7 @@ fun LibraryScreen(
             if (all.isNotEmpty() && visible.isEmpty()) item(key = "no-results") { NoResults(query) }
         }
         NewItemButton(stringResource(R.string.library_newExercise), Modifier.align(Alignment.BottomEnd)) {
-            open(Stacking.Push, "/exercise-editor", emptyMap())
+            open(Route(Destination.ExerciseEditor))
         }
     }
 }

@@ -16,19 +16,17 @@ import androidx.core.view.WindowInsetsCompat
 import com.casco.kettle.shell.theme.KettleColors
 
 /**
- * The views the sheet is made of, around the one RN surface in [content], and their shape (#179): the
- * [live] view, a picture of the tab behind it under a scrim, the sheet's own background, the picture of
- * a sheet on its way out, and the [SheetChrome] over the top.
+ * The views the sheet is made of, around the [live] view in [content], and their shape (#179): the live
+ * view, a picture of the tab behind it under a scrim, the sheet's own background, the picture of a sheet
+ * on its way out, and the [SheetChrome] over the top.
  *
- * The live view is whichever of two shows the sheet's content: the RN surface, never reparented, or
- * [native], the Compose view beside it that draws a route registered native (#197). Either is shaped
- * through its layout params, never a new parent, so RN lays its modal out at the sheet's size in the
- * same frame: a size change commits synchronously (#178).
+ * The live view is the Compose view the sheet's route draws in (#197), shaped through its layout params,
+ * never a new parent.
  */
 class SheetStage(
     private val content: FrameLayout,
-    private val surface: View,
-    private val native: View,
+    /** The view showing the sheet's content. TalkBack reads the chrome before it. */
+    val live: View,
     requestBack: () -> Unit,
     onDrag: (dy: Float) -> Unit,
     onRelease: (dy: Float, velocity: Float) -> Unit,
@@ -45,17 +43,6 @@ class SheetStage(
     /** A sheet's last frame: leaving the screen, or leaving the sheet for the next one. */
     val leaving = picture(content.context)
     val chrome = SheetChrome(content.context, requestBack, onDrag, onRelease)
-
-    /**
-     * The view showing the sheet's content: the surface, or [native] while a native route is the sheet.
-     * TalkBack reads the chrome before whichever it is. A view made live has none of the sheet's shape
-     * yet.
-     */
-    var live: View = surface
-        set(view) {
-            field = view
-            chrome.readBefore(view)
-        }
 
     /** Everything that moves as the sheet: its background, the live view and the chrome. */
     val sheetViews get() = listOf(sheetBack, live, chrome)
@@ -78,20 +65,20 @@ class SheetStage(
         }
 
     init {
-        for (view in listOf(surface, native)) if (view.id == View.NO_ID) view.id = View.generateViewId()
-        var index = content.indexOfChild(surface)
+        if (live.id == View.NO_ID) live.id = View.generateViewId()
+        var index = content.indexOfChild(live)
         for (view in listOf(backdrop, scrim, sheetBack, chrome)) {
             content.addView(view, index++, FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
         }
         // Over everything, the native destinations included, since it leaves over a live tab of either.
         content.addView(leaving, FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
-        // Before either live view in the tree, so TalkBack reads it first, and drawn over both by Z. No
-        // outline, so the Z casts no shadow.
+        // Before the live view in the tree, so TalkBack reads it first, and drawn over it by Z. No outline,
+        // so the Z casts no shadow.
         chrome.translationZ = CHROME_Z_DP * density
         chrome.outlineProvider = null
         chrome.visibility = View.GONE
         chrome.readBefore(live)
-        for (view in listOf(surface, native, sheetBack, leaving)) view.outlineProvider = roundedTop
+        for (view in listOf(live, sheetBack, leaving)) view.outlineProvider = roundedTop
     }
 
     /** The frame's height: off the bottom of the screen from the sheet's top. */

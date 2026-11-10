@@ -34,24 +34,28 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.casco.kettle.shell.R
-import com.casco.kettle.shell.rn.JsBridge
-import com.casco.kettle.shell.rn.Stacking
+import com.casco.kettle.shell.nav.Destination
+import com.casco.kettle.shell.nav.LocalNavigator
+import com.casco.kettle.shell.nav.Route
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.MaxContentWidth
 import com.casco.kettle.shell.theme.Spacing
 
-/** What `shellRoutes` registers at `/program-guide`. */
+/** What the route table draws at `Destination.ProgramGuide`. */
 @Composable
-fun ProgramGuideRoute() = ProgramGuideScreen(open = { how, path -> JsBridge.open(how, path) }, onDone = JsBridge::back)
+fun ProgramGuideRoute() {
+    val navigator = LocalNavigator.current
+    ProgramGuideScreen(replaceWith = navigator::replace, onDone = { navigator.back() })
+}
 
 /**
- * The program guide (#199): `src/app/program-guide.tsx`, prose from the locale bundles only. [open] is
- * `JsBridge.open`, a parameter so a test hears how Import was opened, not only that it was.
+ * The program guide (#199), prose from the locale bundles only. [replaceWith] opens a route in the
+ * guide's place, a parameter so a test hears that Import replaced the guide, not only that it opened.
  */
 @Composable
 fun ProgramGuideScreen(
-    open: (Stacking, String) -> Unit,
+    replaceWith: (Route) -> Unit,
     onDone: () -> Unit,
 ) {
     val colors = KettleTheme.colors
@@ -102,7 +106,7 @@ fun ProgramGuideScreen(
                 // Replace, not push: both are sheets, so a push would leave the reader two deep and drop
                 // them back mid-scroll into a guide they're done with. Replacing means dismissing Import
                 // lands on Programs, which is where the imported program has appeared.
-                OpenImport { open(Stacking.Replace, "/import") }
+                OpenImport { replaceWith(Route(Destination.Import)) }
             }
             Done(onDone)
         }

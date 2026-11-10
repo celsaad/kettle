@@ -61,8 +61,7 @@ import com.casco.kettle.shell.i18n.deviceUnitSystem
 import com.casco.kettle.shell.i18n.formatMonthBadge
 import com.casco.kettle.shell.library.ExerciseBadge
 import com.casco.kettle.shell.list.TextAction
-import com.casco.kettle.shell.rn.FileKind
-import com.casco.kettle.shell.rn.JsBridge
+import com.casco.kettle.shell.nav.LocalNavigator
 import com.casco.kettle.shell.theme.DialogAction
 import com.casco.kettle.shell.theme.KettleAlertDialog
 import com.casco.kettle.shell.theme.KettleTheme
@@ -76,26 +75,21 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.TimeZone
 
-/** Where the session editor is registered, as History's Edit pushes it, with the session's `id`. */
-const val SESSION_EDITOR_PATH = "/session-editor"
-
-/** What `shellRoutes` registers at [SESSION_EDITOR_PATH], in every build. */
+/** What the route table draws at `Destination.SessionEditor`, as History's Edit pushes it, with an `id`. */
 @Composable
-fun SessionEditorRoute(params: Map<String, String>) =
+fun SessionEditorRoute(params: Map<String, String>) {
+    val navigator = LocalNavigator.current
     SessionEditorScreen(
         params["id"],
         LocalLatestFiles.current,
         TimeZone.currentSystemDefault(),
-        SessionEditorActions(close = JsBridge::back, sessionsChanged = { JsBridge.filesChanged(FileKind.SESSIONS) }),
+        SessionEditorActions(close = { navigator.back() }),
     )
+}
 
-/**
- * What the editor asks of the shell, as parameters so a test hears each one. [sessionsChanged] follows
- * a write, so RN's stores re-read the log.
- */
+/** What the editor asks of the shell, as a parameter so a test hears it. */
 class SessionEditorActions(
     val close: () -> Unit,
-    val sessionsChanged: () -> Unit,
 )
 
 /**
@@ -262,10 +256,7 @@ private class Editor(
         scope.launch {
             withContext(NonCancellable) {
                 failure =
-                    writeOrRefusal {
-                        files.writeSession(edited)
-                        actions.sessionsChanged()
-                    }
+                    writeOrRefusal { files.writeSession(edited) }
                 saving = false
                 if (failure == null) {
                     closed = true

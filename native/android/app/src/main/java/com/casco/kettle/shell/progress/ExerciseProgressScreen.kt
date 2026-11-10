@@ -54,13 +54,12 @@ import kotlinx.datetime.TimeZone
 import java.util.Locale
 
 /**
- * Where exercise progress is registered, and the param that names its exercise: the path and key RN's
- * stub route is pushed with. Shared so Stats' rows and this screen can't drift apart on a rename.
+ * The param that names exercise progress's exercise. Shared so Stats' rows and this screen can't drift
+ * apart on a rename.
  */
-const val EXERCISE_PROGRESS_PATH = "/exercise-progress"
 const val EXERCISE_ID_PARAM = "exerciseId"
 
-/** What `shellRoutes` registers at [EXERCISE_PROGRESS_PATH], opened from a Stats row. */
+/** What the route table draws at `Destination.ExerciseProgress`, opened from a Stats row. */
 @Composable
 fun ExerciseProgressRoute(params: Map<String, String>) {
     // Once per opening, as RN's screen read its clock once per mount: the window doesn't creep under

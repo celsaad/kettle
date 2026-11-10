@@ -1,12 +1,7 @@
 import type { Exercise, Library, Program, Workout } from '@/domain/types';
 
 /**
- * Fixture builders for screen tests.
- *
- * Screens read the library through the real zustand store rather than props, so a test's setup is
- * "put this library in the store" — see `setLibrary`. The store itself is left real and only its
- * storage dependency is mocked, per the plan's rule of mocking at *our* boundary (`@/storage/*`):
- * that keeps the store's own add-vs-update-by-id logic under test instead of stubbed out.
+ * Fixture builders for the domain and selector tests.
  */
 
 export function anExercise(overrides: Partial<Exercise> = {}): Exercise {

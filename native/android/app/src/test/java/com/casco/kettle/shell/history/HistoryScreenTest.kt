@@ -31,8 +31,9 @@ import com.casco.kettle.domain.SessionLog
 import com.casco.kettle.domain.Workout
 import com.casco.kettle.shell.files.FakeStoredFiles
 import com.casco.kettle.shell.files.LatestFiles
+import com.casco.kettle.shell.nav.Destination
+import com.casco.kettle.shell.nav.Route
 import com.casco.kettle.shell.nav.Tab
-import com.casco.kettle.shell.rn.Stacking
 import com.casco.kettle.shell.theme.KettleTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -61,9 +62,8 @@ class HistoryScreenTest {
     @get:Rule
     val compose = createComposeRule()
 
-    private val opened = mutableListOf<Triple<Stacking, String, Map<String, String>>>()
+    private val opened = mutableListOf<Route>()
     private val exported = mutableListOf<String?>()
-    private var sessionsChanged = 0
     private val reselects = MutableSharedFlow<Tab>(extraBufferCapacity = 1)
 
     private fun show(
@@ -79,9 +79,8 @@ class HistoryScreenTest {
                     TimeZone.UTC,
                     reselects,
                     HistoryActions(
-                        open = { how, path, params -> opened += Triple(how, path, params) },
+                        open = { opened += it },
                         export = { exported += it },
-                        sessionsChanged = { sessionsChanged += 1 },
                     ),
                     runningId,
                 )
@@ -192,8 +191,6 @@ class HistoryScreenTest {
         compose.pressDialogButton("Excluir")
 
         assertEquals(listOf("legs-1"), files.deleted)
-        // RN's stores re-list the log once native has written it (#187).
-        assertEquals(1, sessionsChanged)
         row("Leg day").assertDoesNotExist()
         row("Push day").assertExists()
         compose.onNodeWithText("Excluir sessão?").assertDoesNotExist()
@@ -209,7 +206,6 @@ class HistoryScreenTest {
         compose.pressDialogButton("Cancelar")
 
         assertEquals(emptyList<String>(), files.deleted)
-        assertEquals(0, sessionsChanged)
         row("Leg day").assertExists()
         compose.onNodeWithText("Excluir sessão?").assertDoesNotExist()
     }
@@ -226,7 +222,6 @@ class HistoryScreenTest {
 
         compose.onNodeWithText("Não foi possível excluir: legs-1.yaml").assertExists()
         row("Leg day").assertExists()
-        assertEquals(0, sessionsChanged)
         compose.onNodeWithText("Excluir sessão?").assertDoesNotExist()
     }
 
@@ -291,7 +286,7 @@ class HistoryScreenTest {
         row("Leg day").performClick()
         action("Editar").assertHeightIsAtLeast(48.dp).performClick()
 
-        assertEquals(listOf(Triple(Stacking.Push, "/session-editor", mapOf("id" to "legs-1"))), opened)
+        assertEquals(listOf(Route(Destination.SessionEditor, mapOf("id" to "legs-1"))), opened)
     }
 
     // The runner owns a running session's file, so an edit from here would be lost at the next set.
@@ -366,7 +361,7 @@ class HistoryScreenTest {
 
         action("Números").performClick()
 
-        assertEquals(listOf(Triple(Stacking.Push, "/analytics", emptyMap<String, String>())), opened)
+        assertEquals(listOf(Route(Destination.Analytics)), opened)
     }
 
     @Test

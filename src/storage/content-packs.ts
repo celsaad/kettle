@@ -78,7 +78,7 @@ export const contentPackSources: Record<string, { yaml: string; translations: Re
  *
  * Order is display order and nothing else — unlike the seed's first program, no pack is anybody's
  * default, because a pack only exists once somebody has chosen it. Each library is parsed when first
- * read rather than here, since expo-router loads the import screen's module at launch.
+ * read rather than here, so loading the module costs nothing until one is.
  */
 export const contentPacks: ContentPack[] = packList.map(({ id, idPrefix }) => {
   const source = contentPackSources[id];

@@ -41,41 +41,42 @@ import com.casco.kettle.shell.list.ListHeaderRule
 import com.casco.kettle.shell.list.ListRow
 import com.casco.kettle.shell.list.ListRowSeparator
 import com.casco.kettle.shell.list.RowStartButton
-import com.casco.kettle.shell.nav.openRunner
-import com.casco.kettle.shell.rn.JsBridge
-import com.casco.kettle.shell.rn.Stacking
+import com.casco.kettle.shell.nav.Destination
+import com.casco.kettle.shell.nav.LocalNavigator
+import com.casco.kettle.shell.nav.Route
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.MaxContentWidth
 import com.casco.kettle.shell.theme.Spacing
 import com.casco.kettle.shell.theme.TypeIcon
 
-/** Where Program detail is registered, and the param that names its program, as Programs pushes it. */
-const val PROGRAM_DETAIL_PATH = "/program-detail"
+/** The param that names Program detail's program, as Programs pushes it. */
 const val PROGRAM_ID_PARAM = "programId"
 
-/** What `shellRoutes` registers at [PROGRAM_DETAIL_PATH], opened from a Programs row. */
+/** What the route table draws at `Destination.ProgramDetail`, opened from a Programs row. */
 @Composable
-fun ProgramDetailRoute(params: Map<String, String>) =
+fun ProgramDetailRoute(params: Map<String, String>) {
+    val navigator = LocalNavigator.current
     ProgramDetailScreen(
         params[PROGRAM_ID_PARAM],
         LocalLatestFiles.current,
-        JsBridge::open,
-        { openRunner(it) },
-        JsBridge::back,
+        navigator::push,
+        navigator::openRunner,
+        { navigator.back() },
     )
+}
 
 /**
  * One program's weeks (#233), as RN's `program-detail.tsx`, now the empty stub at this path. A training
  * week names its workout and starts it in a runner; a rest week says so and starts nothing. Edit
- * opens the program editor. [open] is `JsBridge.open` and [startRunner] is `openRunner` (#302), both
+ * opens the program editor. [open] pushes a route and [startRunner] opens the runner (#302), both
  * parameters so a test hears each route opened and each start.
  */
 @Composable
 fun ProgramDetailScreen(
     programId: String?,
     files: LatestFiles,
-    open: (Stacking, String, Map<String, String>) -> Unit,
+    open: (Route) -> Unit,
     startRunner: (RunnerStart) -> Unit,
     onClose: () -> Unit,
 ) {
@@ -122,10 +123,10 @@ fun ProgramDetailScreen(
 private fun Weeks(
     program: Program,
     library: Library,
-    open: (Stacking, String, Map<String, String>) -> Unit,
+    open: (Route) -> Unit,
     startRunner: (RunnerStart) -> Unit,
 ) {
-    Header(program.name) { open(Stacking.Push, "/program-editor", mapOf("id" to program.id)) }
+    Header(program.name) { open(Route(Destination.ProgramEditor, mapOf("id" to program.id))) }
     // Starts the list the way every tab screen's does: without it the weeks begin under the title with
     // nothing marking where the heading stops.
     ListHeaderRule()

@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.filter
 
 /**
- * Taps on the tab already showing, as [TabNavigator]'s `onReselect` hears them. An event rather than
+ * Taps on the tab already showing, as [Navigator]'s `onReselect` hears them. An event rather than
  * state: a count kept as state would scroll a tab to its top again each time it came back on screen.
  */
 val LocalTabReselects = staticCompositionLocalOf<Flow<Tab>> { emptyFlow() }

@@ -63,7 +63,6 @@ class ProgramEditorScreenTest {
 
     private var closed = 0
     private var deleted = 0
-    private var libraryChanged = 0
 
     /** [io] holds the file work until it's run, for a test that needs a write caught mid-way. */
     private fun show(
@@ -82,7 +81,6 @@ class ProgramEditorScreenTest {
                     ProgramEditorActions(
                         close = { closed += 1 },
                         deleted = { deleted += 1 },
-                        libraryChanged = { libraryChanged += 1 },
                     ),
                 )
             }
@@ -189,7 +187,6 @@ class ProgramEditorScreenTest {
             ),
             files.savedWeeks(),
         )
-        assertEquals(1, libraryChanged)
         assertEquals(1, closed)
     }
 
@@ -406,7 +403,6 @@ class ProgramEditorScreenTest {
         compose.pressDialogButton("Excluir")
 
         assertEquals(emptyList<Program>(), files.written.last().programs)
-        assertEquals(1, libraryChanged)
         // Not back onto Program detail, which would find nothing at the deleted id.
         assertEquals(1, deleted)
         assertEquals(0, closed)

@@ -29,26 +29,24 @@ import androidx.navigation.compose.rememberNavController
 import com.casco.kettle.shell.theme.KettleTheme
 
 /**
- * The back stack of the destinations [routes] registers. Native ones draw their screen; an RN one draws
- * nothing, since the RN surface is a view of its own under this one ([ShellLayout]). [onLayer] is told
- * which layer to show.
+ * The tabs, one entry at a time: NavHost switches between them and holds nothing else, since the back
+ * stack is the [navigator]'s. [onLayer] is told which layer to show.
  */
 @Composable
 internal fun Destinations(
-    navigator: TabNavigator,
-    routes: Map<String, Screen>,
+    navigator: Navigator,
+    content: @Composable (Route) -> Unit,
     onLayer: (Layer) -> Unit,
 ) {
     val navController = rememberNavController()
-    LaunchedEffect(navigator.current) {
-        val route = navigator.current.name
+    LaunchedEffect(navigator.tab) {
+        val route = navigator.tab.name
         val showing = navController.currentDestination?.route
         if (showing == route) return@LaunchedEffect
         navController.navigate(route) {
             // One entry at a time, so NavHost's own back handler never has anything to pop. Back is the
-            // navigator's, and reaches it only after RN has dismissed whatever it has above the tabs.
-            // The entry showing is the one replaced: popping to the start destination does nothing
-            // once the start has itself been replaced, and the stack then grows.
+            // navigator's. The entry showing is the one replaced: popping to the start destination does
+            // nothing once the start has itself been replaced, and the stack then grows.
             if (showing != null) {
                 popUpTo(showing) {
                     inclusive = true
@@ -71,13 +69,11 @@ internal fun Destinations(
         exitTransition = { ExitTransition.None },
     ) {
         for (tab in Tab.entries) {
-            val screen = routes.screenAt(tab.path)
             composable(tab.name) {
-                if (screen !is Screen.Native) return@composable
                 // Opaque to the top, strip included, as NativeSheet is: the window behind is Material's
-                // gray, not the theme's (#227). Here and not in each screen, so every port gets it.
+                // gray, not the theme's (#227). Here and not in each screen, so every tab gets it.
                 Box(Modifier.fillMaxSize().background(KettleTheme.colors.background)) {
-                    screen.content(navigator.params(tab.path))
+                    content(Route(tab.destination))
                 }
             }
         }
@@ -85,52 +81,48 @@ internal fun Destinations(
 }
 
 /**
- * What a native sheet shows (#197): the screen registered at the path RN's stub reports, given that
- * report's params, below the strip [SheetChrome] draws over, which it leaves clear as RN's `ModalHeader`
- * does. [onComposed] hears the path and params composed, or null for nothing, after each composition,
- * so the sheet can hold its arrival until the screen it slides in is there.
+ * What the sheet shows (#197): the route on top of the [navigator]'s sheets, below the strip
+ * [SheetChrome] draws over, which it leaves clear as RN's `ModalHeader` did. [onComposed] hears the route
+ * composed, or null for nothing, after each composition, so the sheet can hold its arrival until the
+ * screen it slides in is there.
  */
 @Composable
 internal fun NativeSheet(
-    navigator: TabNavigator,
-    routes: Map<String, Screen>,
-    onComposed: (SheetContent?) -> Unit,
+    navigator: Navigator,
+    content: @Composable (Route) -> Unit,
+    onComposed: (Route?) -> Unit,
 ) {
-    val path = navigator.nativeSheetPath
-    val screen = path?.let(routes::screenAt) as? Screen.Native
-    val content = path?.let { SheetContent(it, navigator.params(it)) }
-    SideEffect { onComposed(content) }
-    if (screen == null || content == null) return
-    // A fresh screen per route and params, as RN mounts one: progress for one exercise pushed over
-    // another's keeps none of its state. Opaque to the top, strip included, as an RN screen paints its
-    // own: the sheet's picture is this view's, and a see-through strip showed RN's stub as it closed.
-    key(content) {
+    val route = navigator.sheet
+    SideEffect { onComposed(route) }
+    if (route == null) return
+    // A fresh screen per route and params: progress for one exercise pushed over another's keeps none of
+    // its state. Opaque to the top, strip included: the sheet's picture is this view's.
+    key(route) {
         Box(
             Modifier
                 .fillMaxSize()
                 .background(KettleTheme.colors.background)
                 .padding(top = SheetStripHeight),
-        ) { screen.content(content.params) }
+        ) { content(route) }
     }
 }
 
 /**
- * What the native runner's layer shows (#302): the screen registered at the runner's stub path, given
- * the params RN reported it with. Dark whatever Settings' Appearance says, as RN's runner is
- * (`RunnerColors`): `runnerShown` keeps the system bars' icons light over it, which a light scheme here
- * would leave unreadable. A fresh screen per start, as for a sheet.
+ * What the runner's layer shows (#302): the runner, opened with the start its slot holds. Dark whatever
+ * Settings' Appearance says (`RunnerColors`): `runnerShown` keeps the system bars' icons light over it,
+ * which a light scheme here would leave unreadable. A fresh screen per opening of the slot.
  */
 @Composable
 internal fun NativeRunner(
-    navigator: TabNavigator,
-    routes: Map<String, Screen>,
+    navigator: Navigator,
+    content: @Composable (Route) -> Unit,
 ) {
-    val path = navigator.nativeRunnerPath ?: return
-    val screen = routes.screenAt(path) as? Screen.Native ?: return
-    val params = navigator.params(path)
-    key(params) {
+    val slot = navigator.runner ?: return
+    // Through [content], as a tab's and a sheet's screens are, so a test can stand one in for the runner.
+    val route = Route(Destination.Session, slot.start?.routeParams().orEmpty())
+    key(slot) {
         KettleTheme(darkTheme = true) {
-            Box(Modifier.fillMaxSize().background(KettleTheme.colors.background)) { screen.content(params) }
+            Box(Modifier.fillMaxSize().background(KettleTheme.colors.background)) { content(route) }
         }
     }
 }

@@ -49,12 +49,12 @@ import com.casco.kettle.shell.list.ListRowSeparator
 import com.casco.kettle.shell.list.NoResults
 import com.casco.kettle.shell.list.SearchBar
 import com.casco.kettle.shell.list.TextAction
+import com.casco.kettle.shell.nav.Destination
+import com.casco.kettle.shell.nav.LocalNavigator
 import com.casco.kettle.shell.nav.LocalTabReselects
+import com.casco.kettle.shell.nav.Route
 import com.casco.kettle.shell.nav.ScrollsToTopOnReselect
 import com.casco.kettle.shell.nav.Tab
-import com.casco.kettle.shell.rn.FileKind
-import com.casco.kettle.shell.rn.JsBridge
-import com.casco.kettle.shell.rn.Stacking
 import com.casco.kettle.shell.runner.RunnerHost
 import com.casco.kettle.shell.runner.RunnerView
 import com.casco.kettle.shell.theme.DialogAction
@@ -70,19 +70,20 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.TimeZone
 
-/** What `shellRoutes` registers at `/history`, the tab. */
+/** What the route table draws at `/history`, the tab. */
 @Composable
 fun HistoryRoute() {
     val files = LocalLatestFiles.current
     val share = rememberFileShare()
     val scope = rememberCoroutineScope()
     val runner by RunnerHost.view.collectAsState()
+    val navigator = LocalNavigator.current
     HistoryScreen(
         files,
         TimeZone.currentSystemDefault(),
         LocalTabReselects.current,
         HistoryActions(
-            open = JsBridge::open,
+            open = navigator::push,
             // The raw log for Export all, as Settings' Export history: an archive is the user's own files.
             export = { id ->
                 scope.launch {
@@ -91,7 +92,6 @@ fun HistoryRoute() {
                     logShareRefused(if (id == null) sheet.history(sessions) else sheet.session(id))
                 }
             },
-            sessionsChanged = { JsBridge.filesChanged(FileKind.SESSIONS) },
         ),
         runningId = (runner as? RunnerView.Running)?.session?.id,
     )
@@ -99,12 +99,11 @@ fun HistoryRoute() {
 
 /**
  * What History asks of the shell, as parameters so a test hears each one. [export] is a session's id,
- * or null for the whole log. [sessionsChanged] follows a delete, so RN's stores re-list the log (#187).
+ * or null for the whole log.
  */
 class HistoryActions(
-    val open: (Stacking, String, Map<String, String>) -> Unit,
+    val open: (Route) -> Unit,
     val export: (id: String?) -> Unit,
-    val sessionsChanged: () -> Unit,
 )
 
 /**
@@ -136,7 +135,7 @@ fun HistoryScreen(
     var query by rememberSaveable { mutableStateOf("") }
     var expandedId by rememberSaveable { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
-    val deleting = remember(files) { Deleting(files, scope, actions.sessionsChanged) }
+    val deleting = remember(files) { Deleting(files, scope) }
 
     val logged = log?.logged.orEmpty()
     val rows = remember(logged, library, zone) { historySessionsView(logged, library, zone) }
@@ -154,7 +153,7 @@ fun HistoryScreen(
             item(key = "header") {
                 Header(
                     showExportAll = log?.sessions?.isNotEmpty() == true,
-                    onStats = { actions.open(Stacking.Push, "/analytics", emptyMap()) },
+                    onStats = { actions.open(Route(Destination.Analytics)) },
                     onExportAll = { actions.export(null) },
                 )
             }
@@ -242,7 +241,7 @@ private fun rowActions(
         deleting.dismissFailure(row.id)
     },
     delete = { deleting.confirming = row }.takeIf { deletable },
-    edit = { actions.open(Stacking.Push, "/session-editor", mapOf("id" to row.id)) },
+    edit = { actions.open(Route(Destination.SessionEditor, mapOf("id" to row.id))) },
     export = { actions.export(row.id) },
 )
 
@@ -253,7 +252,6 @@ private fun rowActions(
 private class Deleting(
     private val files: LatestFiles,
     private val scope: CoroutineScope,
-    private val sessionsChanged: () -> Unit,
 ) {
     var confirming by mutableStateOf<HistorySessionView?>(null)
     var failure by mutableStateOf<DeleteFailure?>(null)
@@ -268,14 +266,10 @@ private class Deleting(
         confirming = null
         failure = null
         scope.launch {
-            // Not cancelled with the screen: once the file is gone, RN's stores must hear it, or they
-            // keep listing a session that no longer exists.
+            // Not cancelled with the screen: once the file is gone, the log must be read again, or it keeps
+            // listing a session that no longer exists.
             withContext(NonCancellable) {
-                val refused =
-                    writeOrRefusal {
-                        files.deleteSession(row.id)
-                        sessionsChanged()
-                    }
+                val refused = writeOrRefusal { files.deleteSession(row.id) }
                 failure = refused?.let { DeleteFailure(row.id, it) }
             }
         }

@@ -21,8 +21,7 @@ interface CueSounds {
  * service is the running session's only writer, of its session file and its state file both (#295).
  *
  * - [writeSession] is `:shared`'s atomic write, taken under [SessionWrites] so a screen's session write
- *   can't interleave, then [onSessionWritten] has the screens read the log again. There's no
- *   `filesChanged('sessions')`: with the native runner on, nothing in RN reads sessions (#297).
+ *   can't interleave, then [onSessionWritten] has the screens read the log again.
  * - [sounds]' preference is read at each cue, so a toggle mid-session applies on the next one (#296).
  * - [backUp] starts the finish backup, which the caller runs off this thread.
  *

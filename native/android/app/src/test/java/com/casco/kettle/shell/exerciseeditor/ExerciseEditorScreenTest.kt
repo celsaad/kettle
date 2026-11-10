@@ -62,7 +62,6 @@ class ExerciseEditorScreenTest {
     val compose = createComposeRule()
 
     private var closed = 0
-    private var libraryChanged = 0
 
     private lateinit var latest: LatestFiles
 
@@ -78,7 +77,7 @@ class ExerciseEditorScreenTest {
                     id,
                     latest,
                     TimeZone.UTC,
-                    ExerciseEditorActions(close = { closed += 1 }, libraryChanged = { libraryChanged += 1 }),
+                    ExerciseEditorActions(close = { closed += 1 }),
                 )
             }
         }
@@ -140,7 +139,6 @@ class ExerciseEditorScreenTest {
             listOf(Exercise("pull-ups", "Pull-ups", ExerciseConfig.Reps(sets = 4, targetRepsMin = 6, restSec = 90.0))),
             files.written.single().exercises,
         )
-        assertEquals(1, libraryChanged)
         assertEquals(1, closed)
     }
 
@@ -268,7 +266,6 @@ class ExerciseEditorScreenTest {
         compose.pressDialogButton("Excluir")
 
         assertEquals(emptyList<Exercise>(), files.written.single().exercises)
-        assertEquals(1, libraryChanged)
         assertEquals(1, closed)
     }
 
@@ -396,7 +393,6 @@ class ExerciseEditorScreenTest {
 
         compose.onNodeWithText("Não foi possível salvar: disk full").assertExists()
         assertEquals(0, closed)
-        assertEquals(0, libraryChanged)
     }
 
     @Test

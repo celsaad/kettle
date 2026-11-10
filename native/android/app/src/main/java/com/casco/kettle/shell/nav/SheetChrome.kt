@@ -25,25 +25,23 @@ import com.casco.kettle.shell.theme.KettleColors
 import com.casco.kettle.shell.theme.MaxContentWidth
 import com.casco.kettle.shell.theme.Spacing
 
-/** modal-header.tsx's row, which RN's button set the height of. */
+/** RN's `ModalHeader` row, whose button set its height. */
 private const val ROW_DP = 32f
 
 /**
- * RN's `ModalHeader` strip: its top padding, row and bottom padding. The chrome is this tall, and a native
- * sheet's content starts below it, where an RN sheet's does (#197).
+ * The sheet's strip, as RN's `ModalHeader` measured it: its top padding, row and bottom padding. The
+ * chrome is this tall, and a sheet's content starts below it (#197).
  */
 internal val SheetStripHeight: Dp = Spacing.three + ROW_DP.dp + (Spacing.three - 2.dp)
 
 /**
- * The sheet's grabber and ×, drawn over the top of the RN surface where RN's `ModalHeader` leaves its
- * strip empty inside the shell (src/components/modal-header.tsx). They sit where RN's sat: a row
- * [ROW_DP] tall, [Spacing.three] down, centred in the same [MaxContentWidth] column. The two share no
- * code, so change both.
+ * The sheet's grabber and ×, drawn over the top of the sheet's strip. They sit where RN's `ModalHeader`
+ * put them: a row [ROW_DP] tall, [Spacing.three] down, centred in the [MaxContentWidth] column.
  *
  * Plain views rather than Compose: the grabber's drag moves this view with the finger, and only a raw
  * screen coordinate stays still under a moving host.
  *
- * Neither dismisses anything itself. [requestBack] is native back, which the sheet turns into RN's.
+ * Neither dismisses anything itself. [requestBack] is back, which the navigator takes.
  * [onDrag] follows the finger down the screen, and [onRelease] gets the fling velocity in px/s.
  */
 @SuppressLint("ViewConstructor") // Built in code, never inflated.
@@ -112,7 +110,7 @@ class SheetChrome(
     /** The visible part of the strip: RN's header height, the drag gesture's whole target. */
     val stripHeight: Int get() = dp(SheetStripHeight.value)
 
-    /** The surface the content is read from next, after the × and the grabber. */
+    /** The view the content is read from next, after the × and the grabber. */
     fun readBefore(content: View) {
         grabber.accessibilityTraversalBefore = content.id
     }

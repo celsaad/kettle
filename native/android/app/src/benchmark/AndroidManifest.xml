@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Lets Macrobenchmark trace a release build. The benchmark build type only; Play's never carries it. -->
+<!--
+  Lets Macrobenchmark trace a release build, and route-check steer one (NavigateReceiver, behind the
+  DUMP permission only the shell user holds; see the debug manifest). The benchmark build type only;
+  Play's never carries it.
+-->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
@@ -7,6 +11,10 @@
         <profileable
             android:shell="true"
             tools:targetApi="29" />
+        <receiver
+            android:name="com.casco.kettle.shell.nav.NavigateReceiver"
+            android:exported="true"
+            android:permission="android.permission.DUMP" />
     </application>
 
 </manifest>

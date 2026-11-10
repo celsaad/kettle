@@ -20,7 +20,7 @@ import com.casco.kettle.shell.R
 import com.casco.kettle.shell.files.LatestFiles
 import com.casco.kettle.shell.files.LocalLatestFiles
 import com.casco.kettle.shell.files.StoragePaths
-import com.casco.kettle.shell.nav.openRunner
+import com.casco.kettle.shell.nav.LocalNavigator
 import com.casco.kettle.shell.settings.backUpFinishedSession
 import com.casco.kettle.shell.theme.DialogAction
 import com.casco.kettle.shell.theme.KettleAlertDialog
@@ -47,6 +47,7 @@ fun RecoveryPrompt() {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val files = LocalLatestFiles.current
+    val navigator = LocalNavigator.current
     val state by LaunchRecovery.state.collectAsState()
     val found = state?.found
     var failure by remember(found) { mutableStateOf<String?>(null) }
@@ -64,7 +65,7 @@ fun RecoveryPrompt() {
         RecoveryAnswers(
             resume = {
                 LaunchRecovery.resume(context)
-                scope.launch { openOnceResumed(recoveredStart(session)) }
+                scope.launch { openOnceResumed(recoveredStart(session), navigator::openRunner) }
             },
             finish = {
                 finishing = true
@@ -128,7 +129,10 @@ fun RecoveryDialog(
  * The runner, opened once the service has answered the Resume with a session, running or, when its last
  * step ran out during the kill, completed. A resume that failed puts the prompt back instead.
  */
-private suspend fun openOnceResumed(start: RunnerStart) {
+private suspend fun openOnceResumed(
+    start: RunnerStart,
+    openRunner: (RunnerStart) -> Unit,
+) {
     LaunchRecovery.state.first { it !is RecoveryState.Resuming }
     when (RunnerHost.view.value) {
         is RunnerView.Active, is RunnerView.Completed -> openRunner(start)

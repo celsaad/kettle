@@ -14,8 +14,7 @@ import androidx.compose.ui.res.stringResource
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.files.LocalLatestFiles
 import com.casco.kettle.shell.files.ShippedContent
-import com.casco.kettle.shell.rn.FileKind
-import com.casco.kettle.shell.rn.JsBridge
+import com.casco.kettle.shell.nav.LocalNavigator
 import com.casco.kettle.shell.system.confirmCopy
 import com.casco.kettle.shell.system.copyToClipboard
 import com.casco.kettle.shell.system.readClipboard
@@ -25,24 +24,24 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.IOException
 
-/** Where Import is registered, as Home's first-run link, Library and Settings open it. */
-const val IMPORT_PATH = "/import"
-
-/** What `shellRoutes` registers at [IMPORT_PATH]: the screen on SAF and the shell. */
+/**
+ * What the route table draws at `Destination.Import`, as Home's first-run link, Library and Settings open
+ * it: the screen on SAF and the shell.
+ */
 @Composable
 fun ImportRoute() {
     val activity = LocalActivity.current ?: return
     val pickFile = rememberFilePicker(activity)
     val view = LocalView.current
     val copied = stringResource(R.string.import_copied)
+    val navigator = LocalNavigator.current
     ImportScreen(
         LocalLatestFiles.current,
         remember { ShippedContent(activity.assets) },
-        remember(pickFile, view, copied) {
+        remember(pickFile, view, copied, navigator) {
             ImportActions(
                 pickFile = pickFile,
-                close = JsBridge::back,
-                libraryChanged = { JsBridge.filesChanged(FileKind.LIBRARY) },
+                close = { navigator.back() },
                 copy = { text -> activity.copyToClipboard(text).also { if (it) view.confirmCopy(copied) } },
                 readClipboard = activity::readClipboard,
                 share = activity::shareText,

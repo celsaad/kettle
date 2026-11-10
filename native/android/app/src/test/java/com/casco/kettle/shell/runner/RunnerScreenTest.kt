@@ -371,8 +371,10 @@ class RunnerScreenTest {
     // overlays and back
 
     @Test
-    fun `back closes the pad first, then asks to finish`() {
-        show(running(plan(block(squat))))
+    fun `back closes the pad first, then asks to finish, aimed at the set it was asked on`() {
+        val plan = plan(block(squat))
+        val secondSet = started(plan).advanced().advanced()
+        show(running(plan, secondSet))
         button("Reps concluídas: 5. Toque para inserir um valor exato.").performClick()
         back()
         button("Definir").assertDoesNotExist()
@@ -380,7 +382,7 @@ class RunnerScreenTest {
         back()
         compose.onNodeWithText("Encerrar o treino?").assertExists()
         dialogButton("Encerrar").performClick()
-        assertEquals(RunnerCommand.Finish, sent.last())
+        assertEquals(RunnerCommand.Finish(secondSet.snapshot.visit), sent.last())
     }
 
     @Test
@@ -402,7 +404,7 @@ class RunnerScreenTest {
         show(running(plan(block(squat))))
         button("Encerrar").performClick()
         dialogButton("Cancelar").performClick()
-        assertTrue(sent.none { it == RunnerCommand.Finish })
+        assertTrue(sent.none { it is RunnerCommand.Finish })
     }
 
     @Test
@@ -461,10 +463,11 @@ class RunnerScreenTest {
     @Test
     fun `an ad-hoc session parks with Add and an unconfirmed Finish`() {
         val adhoc = RunnerPlan.Runnable(null, exercises, emptyList())
-        show(running(adhoc))
+        val parked = started(adhoc)
+        show(running(adhoc, parked))
         compose.onNodeWithText("Nada na fila").assertExists()
         button("Encerrar").performClick()
-        assertEquals(RunnerCommand.Finish, sent.last())
+        assertEquals(RunnerCommand.Finish(parked.snapshot.visit), sent.last())
         compose.onNode(isDialog()).assertDoesNotExist()
         button("Adicionar exercício").performClick()
         compose.onNodeWithText("ADICIONAR EXERCÍCIO").assertExists()
@@ -695,7 +698,7 @@ class RunnerScreenTest {
         entry = running(plan, resting.advanced())
         compose.waitForIdle()
         compose.onNodeWithText("Encerrar o treino?").assertDoesNotExist()
-        assertTrue(sent.none { it == RunnerCommand.Finish })
+        assertTrue(sent.none { it is RunnerCommand.Finish })
     }
 
     @Test

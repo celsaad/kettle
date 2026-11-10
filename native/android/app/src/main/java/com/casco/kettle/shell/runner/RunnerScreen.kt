@@ -113,10 +113,13 @@ fun RunnerScreen(
             Overlays(stepContext(running, environment, now, controlsFor(running)), running, open.open, pad, close)
         }
     }
-    if (confirming && running != null) {
+    val askedAt = confirmingAt
+    if (confirming && running != null && askedAt != null) {
         FinishDialog({ confirmingAt = null }) {
             confirmingAt = null
-            actions.send(RunnerCommand.Finish)
+            // Aimed at the step it was asked on: should that step end before this lands, the engine
+            // ends the session without logging the one that replaced it (#319).
+            actions.send(RunnerCommand.Finish(askedAt))
         }
     }
 }

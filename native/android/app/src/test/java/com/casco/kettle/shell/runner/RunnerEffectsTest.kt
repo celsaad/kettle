@@ -161,7 +161,7 @@ class RunnerEffectsTest {
         effects.carryOut(start.effects, start.state.snapshot)
         val edit = reduceRunner(start.state, RunnerCommand.SetReps(4), loop.now)
         effects.carryOut(edit.effects, edit.state.snapshot)
-        val finish = reduceRunner(edit.state, RunnerCommand.Finish, loop.now)
+        val finish = reduceRunner(edit.state, RunnerCommand.Finish(edit.state.snapshot.visit), loop.now)
         effects.carryOut(finish.effects, finish.state.snapshot)
         loop.advanceBy(2000)
 
@@ -230,7 +230,7 @@ class RunnerEffectsTest {
         assertEquals(StepEndAlert(StepEndTitle.TIME_UP, nextName = null), alerts.single().first)
 
         val other = started(PULLUPS)
-        val finish = reduceRunner(other.state, RunnerCommand.Finish, T0)
+        val finish = reduceRunner(other.state, RunnerCommand.Finish(other.state.snapshot.visit), T0)
         effects.carryOut(finish.effects, finish.state.snapshot)
         assertTrue("cancel" in events)
     }

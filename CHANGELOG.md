@@ -33,6 +33,9 @@ here, next to what it describes.
   back to the session with a tap. Swiping Kettle away from Recents leaves the session running. If
   Android stops the app mid-workout, the next launch offers to resume the session where it was or to
   finish it, so the workout isn't lost (#308).
+- **Finishing as a rest runs out no longer logs a set you didn't do**: tapping Finish in the
+  instant a rest ended used to save the next set at its target as if you'd done it. Now the
+  session ends with only what you logged (#319).
 
 ---
 

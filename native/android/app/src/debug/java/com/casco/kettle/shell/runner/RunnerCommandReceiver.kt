@@ -20,9 +20,10 @@ import org.json.JSONObject
  * runner on top that dropped every navigate after it.
  *
  * Nothing opens a session from here: a foreground service may only start from the visible runner, so
- * the script opens one with a navigate message, as a tap on Start would. And Advance takes the visit of
- * the session as it stands ([RunnerHost.active]), unless `--el visit` names one: then the engine
- * refuses a stale one, as it would a late tap, which is what lets the script check it does.
+ * the script opens one with a navigate message, as a tap on Start would. And Advance and Finish take the
+ * visit of the session as it stands ([RunnerHost.active]), unless `--el visit` names one: then the
+ * engine refuses a stale Advance, and ends a stale Finish's session without logging the step on screen,
+ * as it would a late tap, which is what lets the script check it does.
  *
  * Debug only, and behind the same permission as `NavigateReceiver`. Both scripts parse `report`'s keys
  * and these command names, so a rename goes into both twins.
@@ -35,7 +36,7 @@ class RunnerCommandReceiver : BroadcastReceiver() {
         resultData =
             when (val cmd = intent.getStringExtra("cmd")) {
                 "advance" -> {
-                    advance(intent)
+                    sendAimed(intent) { RunnerCommand.Advance(it) }
                 }
 
                 "prev" -> {
@@ -51,7 +52,7 @@ class RunnerCommandReceiver : BroadcastReceiver() {
                 }
 
                 "finish" -> {
-                    send(RunnerCommand.Finish)
+                    sendAimed(intent) { RunnerCommand.Finish(it) }
                 }
 
                 "visible" -> {
@@ -69,10 +70,13 @@ class RunnerCommandReceiver : BroadcastReceiver() {
             }
     }
 
-    private fun advance(intent: Intent): String {
+    private fun sendAimed(
+        intent: Intent,
+        command: (visit: Long) -> RunnerCommand,
+    ): String {
         val running = RunnerHost.active as? RunnerView.Running ?: return "refused: not running"
         val visit = if (intent.hasExtra("visit")) intent.getLongExtra("visit", 0) else running.snapshot.visit
-        return send(RunnerCommand.Advance(visit))
+        return send(command(visit))
     }
 
     private fun send(command: RunnerCommand): String {

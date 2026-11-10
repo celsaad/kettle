@@ -117,7 +117,7 @@ private fun routeActions(
     start: (anyway: Boolean) -> Unit,
 ) = RunnerActions(
     send = { command ->
-        if (command == RunnerCommand.Finish) finishing.set(true)
+        if (command is RunnerCommand.Finish) finishing.set(true)
         RunnerHost.send(command)
     },
     startAnyway = { start(true) },

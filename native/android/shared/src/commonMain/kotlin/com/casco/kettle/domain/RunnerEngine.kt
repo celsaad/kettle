@@ -128,10 +128,11 @@ data class RunnerTransition(
 )
 
 /**
- * What the UI and the service ask of the engine. [Advance] and [TimeUpdate] name the [visit] they
- * were aimed at, and one aimed at a step already left does nothing. A ticker and a resume can both
- * land on a step that has just ended, and a tap can land just after a step ended by itself; without
- * that, the second of either commits a step nobody performed.
+ * What the UI and the service ask of the engine. [Advance], [TimeUpdate] and [Finish] name the
+ * [visit] they were aimed at. An Advance or TimeUpdate aimed at a step already left does nothing; a
+ * Finish still ends the session but commits nothing for the step that replaced its own. A ticker and
+ * a resume can both land on a step that has just ended, and a tap can land just after a step ended by
+ * itself; without that, the second of either commits a step nobody performed.
  */
 sealed interface RunnerCommand {
     /** Log the set, Done, Skip, or log the interval: commit the step on screen and move on. */
@@ -152,8 +153,13 @@ sealed interface RunnerCommand {
         val seconds: Double,
     ) : RunnerCommand
 
-    /** Commit the step on screen, then end the session. */
-    data object Finish : RunnerCommand
+    /**
+     * Commit the step on screen if it is still the one at [visit], then end the session. A rest that
+     * ends in the frame before seeds the next set with its target, which nobody did (#319).
+     */
+    data class Finish(
+        val visit: Long,
+    ) : RunnerCommand
 
     sealed interface InputEdit : RunnerCommand
 
@@ -273,8 +279,8 @@ fun reduceRunner(
                 addRestSeconds(state, command.seconds)
             }
 
-            RunnerCommand.Finish -> {
-                finish(state, now)
+            is RunnerCommand.Finish -> {
+                finish(state, aimed = command.visit == state.snapshot.visit, now)
             }
 
             is RunnerCommand.InputEdit -> {
@@ -362,12 +368,16 @@ private fun complete(
     )
 }
 
-/** Commits the step on screen, read from the state rather than from what any caller last saw, then ends. */
+/**
+ * Commits the step on screen, read from the state rather than from what any caller last saw, then
+ * ends. Not [aimed] means that step began after the Finish was asked, so it ends uncommitted.
+ */
 private fun finish(
     state: RunnerState,
+    aimed: Boolean,
     now: Long,
 ): RunnerTransition {
-    val current = state.snapshot.step
+    val current = state.snapshot.step?.takeIf { aimed }
     val committed = current?.let { commitStep(state, it, now).state } ?: state
     return complete(committed, emptyList(), now)
 }

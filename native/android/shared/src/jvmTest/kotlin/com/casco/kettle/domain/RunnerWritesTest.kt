@@ -488,6 +488,33 @@ class RunnerWritesTest {
         }
 
         @Test
+        fun `aimed at a rest that has since ended, ends without logging the set it handed over to`() {
+            // #319: the rest's last tick queued ahead of a Finish seeded the next set, and Finish logged it.
+            val runner = Runner(workoutOf(single("pullups")))
+            runner.advance()
+            val rest = runner.snapshot.visit
+            runner.away(90)
+            check(runner.step is RunnerStep.Reps) { "the rest should have handed over to set 2" }
+            runner.finish(visit = rest)
+
+            assertEquals(1, runner.pullupSets().size)
+            assertNotNull(runner.written.endedAt)
+            assertEquals(1, runner.completions)
+        }
+
+        @Test
+        fun `aimed at the set on screen, logs it`() {
+            val runner = Runner(workoutOf(single("pullups")))
+            runner.advance()
+            runner.away(90)
+            check(runner.step is RunnerStep.Reps) { "the rest should have handed over to set 2" }
+            runner.finish(visit = runner.snapshot.visit)
+
+            assertEquals(2, runner.pullupSets().size)
+            assertEquals(1, runner.completions)
+        }
+
+        @Test
         fun `logs nothing more when it is called a second time`() {
             val runner = Runner(workoutOf(single("pullups")))
             runner.finish()

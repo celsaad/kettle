@@ -42,7 +42,8 @@ internal class Runner(
 
     fun prev() = send(RunnerCommand.Prev)
 
-    fun finish() = send(RunnerCommand.Finish)
+    /** Finish, aimed at the step on screen unless [visit] names an earlier one. */
+    fun finish(visit: Long = snapshot.visit) = send(RunnerCommand.Finish(visit))
 
     /** [seconds] of a 1 Hz ticker, each aimed at whatever step is on screen when it fires. */
     fun tick(seconds: Int) =

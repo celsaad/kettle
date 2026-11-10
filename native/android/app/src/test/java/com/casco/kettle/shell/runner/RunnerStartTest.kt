@@ -137,7 +137,7 @@ class RunnerStartTest {
         RunnerHost.open(app, RunnerStart.Adhoc)
         val first = begin()
         loop.advanceBy(10_000)
-        first?.send(RunnerCommand.Finish)
+        first?.send(RunnerCommand.Finish((RunnerHost.active as RunnerView.Running).snapshot.visit))
         RunnerHost.dismiss()
         RunnerHost.release(first)
         RunnerHost.open(app, RunnerStart.Adhoc)

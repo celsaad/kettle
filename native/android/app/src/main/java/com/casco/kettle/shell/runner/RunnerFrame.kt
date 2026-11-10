@@ -62,7 +62,9 @@ internal fun Frame(
                 stringResource(R.string.session_adhoc_title),
                 stringResource(R.string.session_adhoc_body),
                 DialogAction(stringResource(R.string.session_adhoc_addExercise)) { controls.open(Overlay.ADD_PICKER) },
-                DialogAction(stringResource(R.string.session_finish_label)) { controls.send(RunnerCommand.Finish) },
+                DialogAction(stringResource(R.string.session_finish_label)) {
+                    controls.send(RunnerCommand.Finish(view.snapshot.visit))
+                },
             )
         }
         return

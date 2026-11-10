@@ -204,7 +204,7 @@ class RunnerSessionTest {
     fun `ignores commands sent during the count-in`() {
         val session = session()
         session.begin()
-        session.send(RunnerCommand.Finish)
+        session.send(RunnerCommand.Finish(visit = 0))
         loop.advanceBy(3000)
 
         assertTrue(view is RunnerView.Running)
@@ -215,7 +215,7 @@ class RunnerSessionTest {
         val session = session()
         session.begin()
         loop.advanceBy(3000)
-        session.send(RunnerCommand.Finish)
+        session.send(RunnerCommand.Finish((view as RunnerView.Running).snapshot.visit))
 
         val completed = view as RunnerView.Completed
         assertEquals(FinishBackupState.PENDING, completed.backup)

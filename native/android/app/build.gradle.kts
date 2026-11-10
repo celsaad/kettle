@@ -203,15 +203,15 @@ val generateStrings by tasks.registering(GenerateStrings::class) {
 /**
  * The `:theme` generator, the same way: `theme.json` becomes a Kotlin source file in a build directory,
  * so a color changed there reaches Compose on the next build with no hand edit. The faces its `Fonts`
- * names are copied out of RN's `@expo-google-fonts` packages into `res/font` by the same run, so the
- * generated families can't name a face this build didn't bundle.
+ * names are copied out of `theme/fonts` into `res/font` by the same run, so the generated families
+ * can't name a face this build didn't bundle.
  */
 abstract class GenerateTheme : JavaExec() {
     @get:InputFile
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val theme: RegularFileProperty
 
-    /** Every `@expo-google-fonts` package, since which faces are read is theme.json's to say. */
+    /** The whole fonts directory, since which faces are read is theme.json's to say. */
     @get:InputDirectory
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val fonts: DirectoryProperty
@@ -235,10 +235,10 @@ val contentDir: Directory = rootProject.layout.projectDirectory.dir("../../src/c
 val themeFile: RegularFile = rootProject.layout.projectDirectory.file("../../src/constants/theme.json")
 
 /**
- * The font packages RN loads its faces from, read from the JS install rather than kept as a second
- * copy: the shell can't build without that install anyway, since the RN AAR comes from it.
+ * The faces theme.json names, committed with their OFL licences, since the build reads nothing a JS
+ * install provides (see the fonts entry in docs/decisions.md).
  */
-val fontsDir: Directory = rootProject.layout.projectDirectory.dir("../../node_modules/@expo-google-fonts")
+val fontsDir: Directory = rootProject.layout.projectDirectory.dir("theme/fonts")
 
 val generateTheme by tasks.registering(GenerateTheme::class) {
     classpath = themeGenerator

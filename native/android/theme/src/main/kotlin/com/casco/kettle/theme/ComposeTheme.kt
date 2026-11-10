@@ -52,7 +52,7 @@ fun fontFaces(theme: Theme): List<Face> = theme.fonts.values.distinct()
  * a role's style in code picks a bundled face where there is one rather than a synthesised one.
  */
 private fun StringBuilder.appendFamilies(faces: List<Face>) {
-    appendLine("/** `Fonts`' typefaces, each a family of the faces theme.json names in it, from RN's packages. */")
+    appendLine("/** `Fonts`' typefaces, each a family of the faces theme.json names in it. */")
     val families = faces.groupBy { it.family }
     for ((index, entry) in families.entries.withIndex()) {
         if (index > 0) appendLine()

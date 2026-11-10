@@ -1023,7 +1023,7 @@ decision assembled across several commits. Open work belongs in the sections at 
   ported and held by the conformance corpus.** (Native migration, settled on #147.) The split, and
   what falls on each side:
   - **Values go in data files.** Translations are the locale bundles (`src/i18n/locales/*.json`, read
-    by `:strings`). Colors, spacing, the type scale and its fonts are `src/constants/theme.json`
+    by `:strings`). Colors, spacing, the type scale and its fonts' names are `src/constants/theme.json`
     (read by `:theme`), and `theme.ts` is a thin re-export under the names RN already imports. Native generates
     its code from them on every build into a build directory, so nothing generated is committed and
     nothing can go stale. The Swift app in M8 reads the same files, not a Kotlin copy.
@@ -1047,15 +1047,15 @@ decision assembled across several commits. Open work belongs in the sections at 
     `<use>`. Rejected: a runtime SVG library (AndroidSVG, coil-svg), which is a dependency and an
     asset read where a generated drawable is neither. The notes stay in the data, as XML comments and
     the directory's README.
-  - **The fonts** are the fourth (#264), and the one whose data isn't in the repo. `theme.json`'s
-    `Fonts` names each role's face the way `expo-font` loads it (`SpaceGrotesk_600SemiBold`), and
-    `:theme` copies those faces out of `node_modules/@expo-google-fonts` into a generated `res/font`
-    beside the families it emits. Native's build already depends on a JS install, so reading the TTFs
-    from there costs nothing new and keeps RN's package version as the shell's too. Rejected:
-    committing the TTFs under `native/android` with a test that they match `node_modules` byte for
-    byte, which is a second copy to bump by hand on every package update. **When the last RN screen goes,** the two `@expo-google-fonts` packages stay in
-    `package.json` as the fonts' source, and `knip` needs an exception naming `:theme` as their
-    reader, since no TS will import them any more (`font-faces.ts` is the last that does).
+  - **The fonts** are the fourth (#264). `theme.json`'s `Fonts` names each role's face by its Google
+    Fonts name (`SpaceGrotesk_600SemiBold`), and `:theme` copies those faces out of
+    `native/android/theme/fonts` into a generated `res/font` beside the families it emits. **The TTFs
+    are committed there, with each family's OFL `LICENSE_FONT`** (#357). Until M7 they were read out
+    of `node_modules/@expo-google-fonts`, since the native build needed a JS install for the RN AAR
+    anyway; with RN gone the native build reads nothing a JS install provides, and a font package
+    kept in `package.json` only for Gradle to reach into would be the one thing that broke that.
+    Only the faces `Fonts` names are committed, not the families. A face added to `theme.json` means
+    adding its file, and `:theme` fails the build naming the missing path until it's there.
   - Hand-kept lists remain where a data file can't reach, on purpose: `LocalePreviews` names each
     language, because a `@Preview` locale has to be a compile-time constant; and `libs.versions.toml`
     repeats React Native's Kotlin and AGP, because once M2 hosts the RN AAR, a mismatch fails the

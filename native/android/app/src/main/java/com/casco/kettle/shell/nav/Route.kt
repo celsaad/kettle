@@ -140,8 +140,8 @@ private fun percentBytes(text: String): ByteArray? {
         val c = text[i]
         if (c == '%') {
             val hex = text.substring(i + 1, minOf(i + ESCAPE_LENGTH, text.length))
-            // Two hex digits exactly: toInt alone would take a sign, `%+1`, as an escape.
-            if (hex.length != ESCAPE_LENGTH - 1 || !hex.all { it.isDigit() || it.lowercaseChar() in 'a'..'f' }) {
+            // Two ASCII hex digits exactly: toInt alone would take a sign (`%+1`) and any script's digits.
+            if (hex.length != ESCAPE_LENGTH - 1 || !hex.all { it in HEX_DIGITS }) {
                 return null
             }
             bytes.write(hex.toInt(HEX))
@@ -171,6 +171,7 @@ private const val ESCAPE_LENGTH = 3
 private const val HEX = 16
 private const val BYTE_MASK = 0xFF
 private const val UNRESERVED = "-._~"
+private const val HEX_DIGITS = "0123456789abcdefABCDEF"
 
 /**
  * A start as params, the way a session route names it and [runnerStartFrom] reads it back: the runner's

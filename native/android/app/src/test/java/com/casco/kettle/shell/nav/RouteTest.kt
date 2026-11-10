@@ -40,6 +40,8 @@ class RouteTest {
         assertNull(Route.fromLink("kettle://session?workoutId=bench%"))
         assertNull(Route.parse("/exercise-editor?id=%E2%82"))
         assertNull(Route.parse("/exercise-editor?id=%+1"))
+        // Arabic-Indic digits are digits to isDigit(), and no hex digit to an escape.
+        assertNull(Route.parse("/exercise-editor?id=%\u0663\u0663"))
     }
 
     /** A path's query, not a form: `+` is a plus, as in a program day named "Push+Pull". */

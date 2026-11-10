@@ -239,7 +239,7 @@ wanting states and assignees, it wants GitHub issues instead.
   doesn't carry: `I18nManager.forceRTL` only takes effect after an app restart, and Kettle reads its
   language from the device once at init and never switches it, so the first launch after a phone goes
   Arabic comes up in Arabic and still laid out left-to-right; Arabic has **six** plural categories against en/pt's
-  two, which `intl-pluralrules` covers on Hermes but the bundles' key shape does not; and the runner is
+  two, which i18next and Android's plurals both resolve but the bundles' key shape does not; and the runner is
   where a half-flipped layout costs a workout rather than just looking wrong. Half-implemented RTL is
   worse than none — the plan's words, still true.
 

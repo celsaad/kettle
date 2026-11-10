@@ -144,7 +144,7 @@ so did the job's 90-minute timeout, now 30.
 The shell's `app/build.gradle.kts` gives the release build type an `upload` signing config **only when
 `KETTLE_UPLOAD_KEYSTORE` is set**, reading the path and the three passwords from the environment at
 Gradle time. Nothing is written into a file, so a failed build's tree is safe to attach to a run.
-Everywhere else — a local `:app:build`, `ci.yml`'s `native-app` job — release builds come out
+Everywhere else — a local `:app:build`, `ci.yml`'s `gradlew build` — release builds come out
 unsigned, which is harmless: an unsigned file installs nowhere and Play refuses it.
 
 The debug build type signs with Expo's public template debug key. It signs nothing that leaves a

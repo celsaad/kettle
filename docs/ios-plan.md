@@ -85,7 +85,7 @@ these were missing:
 | Thing | Where | Why it's already fine |
 |---|---|---|
 | Native project generation | no `ios/` in the tree | CNG. Same prebuild path Android already uses; nothing is checked in to port |
-| App icon | [`assets/expo.icon/`](../assets/expo.icon) via [`app.json`](../app.json) `ios.icon` | Already an Icon Composer bundle, and `icon.json` already declares a `watchOS` circle mask |
+| App icon | [`assets/expo.icon/`](../assets/expo.icon) via [`app.json`](#what-appjson-held-for-ios) `ios.icon` | Already an Icon Composer bundle, and `icon.json` already declares a `watchOS` circle mask |
 | Tab bar | [`(tabs)/_layout.tsx`](../src/app/(tabs)/_layout.tsx) | Every `NativeTabs.Trigger.Icon` already carries `sf={{ default, selected }}` beside its `md=`. The iOS tab bar renders natively today |
 | File storage | [`storage/paths.ts`](../src/storage/paths.ts) | No platform guard (web, the only unsupported platform, ended in M6), so iOS gets the real document directory |
 | Session timing | [`use-session-runner.ts`](../src/hooks/use-session-runner.ts) | Recomputes from `Date.now()` on every `AppState` change instead of accumulating ticks. Written for Android throttling; it is exactly what survives iOS *suspending* the app |
@@ -103,7 +103,7 @@ three locale bundles are platform-neutral, and VoiceOver reads the same props Ta
 Everything here is free and needs no Apple Developer account. Do it first: it converts the $99
 decision from a guess into a judgement about a build you have actually driven.
 
-The `ios` block in [`app.json`](../app.json) is **shipped**, bar one field:
+The `ios` block in [`app.json`](#what-appjson-held-for-ios) is **shipped**, bar one field:
 
 - **`bundleIdentifier`** — `com.casco.kettle`. ✅ The App Store and Play namespaces are independent, so
   reusing the Android package is fine and keeps one identifier in the head. Permanent once submitted.
@@ -211,7 +211,7 @@ in the Files app, where the user's own iCloud Drive, Dropbox or Working Copy can
 is a better fit for the data-ownership pitch than the Android SAF dance: the user doesn't nominate a
 folder, they just *have* the folder, and the app writes where it always wrote.
 
-Both keys are in [`app.json`](../app.json)'s `ios.infoPlist`, and `isDocumentsFolderShared` in
+Both keys are in [`app.json`](#what-appjson-held-for-ios)'s `ios.infoPlist`, and `isDocumentsFolderShared` in
 [`backup.ts`](../src/storage/backup.ts) gates the Settings copy on them — a flag that governs a
 paragraph rather than any behaviour, which is why `app-config.test.ts` asserts the keys are still
 there: delete one and the sentence stays on screen describing a folder nothing can see. The copy is
@@ -239,7 +239,7 @@ believing they had a backup that was updating itself.
 
 The most invisible item in this plan, and the cheapest to fix.
 
-[`app.json`](../app.json) lists `"expo-localization"` bare, with no options. Its config plugin only
+[`app.json`](#what-appjson-held-for-ios) lists `"expo-localization"` bare, with no options. Its config plugin only
 writes `ios.infoPlist.CFBundleLocalizations` when it is passed `supportedLocales`
 (`plugin/build/withExpoLocalization.js:46-48` — the `if (supportedLocales != null)` guard is the whole
 mechanism). So an iOS build declares **no** localizations.
@@ -394,7 +394,7 @@ anyone:
   notification is rendered by the system from the content alone. In the foreground
   [`use-session-sounds.ts`](../src/hooks/use-session-sounds.ts) is already playing the real cue, so the
   handler is correct as written and **flipping it would double-cue.** Leave it alone.
-- [`app.json`](../app.json) sets `expo-audio`'s `enableBackgroundPlayback: false`, so the real cues
+- [`app.json`](#what-appjson-held-for-ios) sets `expo-audio`'s `enableBackgroundPlayback: false`, so the real cues
   cannot fire in the background even in principle.
 
 ### The options, verified against the installed module
@@ -522,7 +522,7 @@ It is still a secret; it just isn't that particular unrecoverable one.
 - **Time Sensitive Notifications on the App ID.** The entitlement is declared in `app.json`, but the
   capability also has to be switched on for the identifier in the developer portal or the profile
   won't include it and the build won't sign. Nothing in the repo can check that half.
-- **`ios.config.usesNonExemptEncryption: false` in [`app.json`](../app.json).** ✅ Shipped. Without
+- **`ios.config.usesNonExemptEncryption: false` in [`app.json`](#what-appjson-held-for-ios).** ✅ Shipped. Without
   it *every* build prompts the export-compliance question in App Store Connect and blocks the
   submission until someone answers it by hand. The app genuinely uses no non-exempt encryption —
   there is no network call to encrypt anything for.

@@ -7,9 +7,8 @@
   Each step sends a route to the shell, presses back or taps a button, then waits for an exact text
   to be on screen, read from a uiautomator dump. It stops at the first step that doesn't get there.
   The messages go through NavigateReceiver, which the debug and benchmark builds have, so this needs
-  com.casco.kettle.dev from native-dev.ps1, running against Metro and already past its splash, or
-  with -Package the release-built com.casco.kettle.bench2 (`gradlew :app:installBenchmark`), which
-  bundles its JS and needs no Metro.
+  com.casco.kettle.dev from native-dev.ps1, running and already past its splash, or with -Package
+  the release-built com.casco.kettle.bench2 (`gradlew :app:installBenchmark`).
 
   The expected texts are English UI strings plus names from the seed library, so the phone has to be
   in English and the .dev install has to still hold the seed's exercises, workouts and program.
@@ -167,7 +166,7 @@ try {
   Start-App
   # From wherever the last run or the user left it.
   Send-Route '/'
-  if (-not (Wait-For 'tab:Workouts')) { throw "$package isn't showing Home. Start it against Metro first." }
+  if (-not (Wait-For 'tab:Workouts')) { throw "$package isn't showing Home. Start it first." }
 
   $n = 0
   foreach ($step in $steps) {

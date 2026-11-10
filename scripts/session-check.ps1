@@ -155,11 +155,9 @@ function ServiceRunning { (A shell dumpsys activity services $package) -match 'R
 
 # Opens [workout] by navigate message and waits for its count-in. A message sent before the shell's activity
 # is up is lost, so it's sent again until one lands; one landing over the runner is dropped by design.
-# Each try puts the Metro tunnel back first: an adb server that restarts mid-run drops it, and the app
-# can't load its JS without it, so after two misses it's relaunched too.
+# After two misses it's relaunched too: the activity may not be up yet.
 function OpenSession([string]$Workout) {
   foreach ($i in 1..5) {
-    A reverse tcp:8081 tcp:8081 | Out-Null
     if ($i -eq 3) { Launch | Out-Null }
     Navigate "/session?workoutId=$Workout"
     if (WaitFor 6 { (View) -ne 'Idle' }) { return $true }
@@ -203,31 +201,12 @@ function Checksums { (AsApp sh -c "cd $data/files/exercise-tracker && find . -ty
 $work = Join-Path ([IO.Path]::GetTempPath()) "session-check-$PID"
 New-Item -ItemType Directory -Path $work -Force | Out-Null
 $emulator = $false
-$metro = $null
 $pinSet = $false
 $backedUp = $false
 $checksumsBefore = ''
 $code = 0
 
 try {
-  $status = try { (Invoke-WebRequest -Uri 'http://localhost:8081/status' -UseBasicParsing -TimeoutSec 2).RawContent } catch { '' }
-  if ($status -notmatch 'packager-status:running') {
-    Step 'Starting Metro'
-    $expo = Join-Path $root "node_modules/.bin/$(if ($IsWindows) { 'expo.cmd' } else { 'expo' })"
-    $metro = Start-Process $expo -ArgumentList 'start', '--port', '8081' -WorkingDirectory $root -PassThru `
-      -RedirectStandardOutput (Join-Path $work 'metro.log') -RedirectStandardError (Join-Path $work 'metro.err')
-    $readyBy = (Get-Date).AddMinutes(2)
-    do {
-      Start-Sleep -Seconds 1
-      if ($metro.HasExited) { throw 'Metro exited before it was ready' }
-      if ((Get-Date) -gt $readyBy) { throw "Metro wasn't ready in 2 minutes: see $work/metro.log" }
-      # RawContent, not Content: Metro sends no text content type, so Content arrives as bytes.
-      $status = try { (Invoke-WebRequest -Uri 'http://localhost:8081/status' -UseBasicParsing -TimeoutSec 2).RawContent } catch { '' }
-    } until ($status -match 'packager-status:running')
-    # Expo starts adb's server itself as it comes up, and on some adb builds that restarts the one
-    # already running, dropping the device for a few seconds. So Metro comes first and settles.
-    Start-Sleep -Seconds 8
-  }
   A wait-for-device
   # Read once the target is surely online: a property read while adb restarts comes back empty.
   $serial = if ($Device) { $Device } else { (A get-serialno) -join '' }
@@ -276,7 +255,6 @@ try {
   A shell rm -f /data/local/tmp/session-check-library.yaml
   WritePreferences 'true'
 
-  A reverse tcp:8081 tcp:8081 | Out-Null
   A shell input keyevent KEYCODE_WAKEUP
   A shell wm dismiss-keyguard 2>&1 | Out-Null
   if (-not (Launch)) { throw "$package didn't start." }
@@ -532,11 +510,6 @@ try {
       Write-Host "The .dev data folder differs from its backup: it's in $work/data.tar." -ForegroundColor Red
       $code = 1
     }
-  }
-  if ($metro -and -not $metro.HasExited) {
-    # On Windows expo.cmd is a cmd.exe wrapper, and stopping it alone leaves node holding 8081: the
-    # whole tree goes. Elsewhere the process is node itself.
-    if ($IsWindows) { taskkill /PID $metro.Id /T /F | Out-Null } else { Stop-Process -Id $metro.Id -Force -ErrorAction SilentlyContinue }
   }
   Write-Host "`n$script:passed passed, $script:failed failed"
   if ($script:failed -gt 0) { $code = 1 }

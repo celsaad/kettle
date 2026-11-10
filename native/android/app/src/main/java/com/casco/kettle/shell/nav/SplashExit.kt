@@ -13,9 +13,9 @@ import com.casco.kettle.shell.files.LatestFiles
  * since composing isn't laying out. Normally that is native Home's, the destination the app opens on.
  *
  * In the destinations rather than in Home, which a cold-start link can steer away from before the read
- * lands: Home's effect would be cancelled with it and the splash would never go. And on the read, not
- * on the library: on a fresh install RN writes the seed only once it has started, and a splash waiting
- * for that would hang the app whenever RN couldn't. Home's `reportFullyDrawn` waits for the library.
+ * lands: Home's effect would be cancelled with it and the splash would never go. On the read, which
+ * waits for the library's seed (`LibraryGate`), so a fresh install's first frame isn't an empty Home.
+ * Home's `reportFullyDrawn` waits for the library too.
  */
 @Composable
 internal fun SplashExit(
@@ -32,5 +32,5 @@ internal fun SplashExit(
     }
 }
 
-/** What lets the splash go: `SplashScreenManager.hide` in the app, provided with the files. */
+/** What lets the splash go: the activity's [SplashHold] in the app, provided with the files. */
 val LocalSplashExit = staticCompositionLocalOf<() -> Unit> { {} }

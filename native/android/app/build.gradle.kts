@@ -356,6 +356,8 @@ dependencies {
     implementation(libs.compose.material3)
     implementation(libs.compose.ui.tooling.preview)
     implementation(libs.activity.compose)
+    // The splash theme and its hold (SplashHold).
+    implementation(libs.core.splashscreen)
     implementation(libs.navigation.compose)
     // Support's tip jar (#198). expo-iap went with RN's Support, so this is the APK's only Play Billing.
     implementation(libs.billing)

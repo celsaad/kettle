@@ -3,10 +3,13 @@ package com.casco.kettle.shell
 import android.app.Activity
 import android.content.Intent
 import android.content.res.Configuration
+import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.addCallback
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.DefaultLifecycleObserver
@@ -30,9 +33,9 @@ import com.casco.kettle.shell.nav.ModalSheet
 import com.casco.kettle.shell.nav.Navigator
 import com.casco.kettle.shell.nav.Route
 import com.casco.kettle.shell.nav.ShellLayout
+import com.casco.kettle.shell.nav.SplashHold
 import com.casco.kettle.shell.nav.Tab
 import com.casco.kettle.shell.reminder.reconcileReminder
-import com.casco.kettle.shell.rn.ExpoActivityListeners
 import com.casco.kettle.shell.runner.LaunchRecovery
 import com.casco.kettle.shell.runner.RunnerHost
 import com.casco.kettle.shell.runner.RunnerService
@@ -42,7 +45,6 @@ import com.casco.kettle.shell.theme.PreferredKettleTheme
 import com.casco.kettle.shell.theme.preferredColors
 import com.facebook.react.modules.core.PermissionAwareActivity
 import com.facebook.react.modules.core.PermissionListener
-import expo.modules.splashscreen.SplashScreenManager
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 
@@ -61,7 +63,6 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 class MainActivity :
     BrownfieldActivity(),
     PermissionAwareActivity {
-    private lateinit var expoListeners: ExpoActivityListeners
     private var permissionListener: PermissionListener? = null
     private var permissionResult: (() -> Unit)? = null
 
@@ -95,13 +96,12 @@ class MainActivity :
     override fun onCreate(savedInstanceState: Bundle?) {
         // First, so the library's read overlaps everything up to RN's start, which waits for it.
         LibraryGate.start(this)
-        // Before super, as in the prebuilt app: it installs the splash theme's exit.
-        holdSplash()
+        // Before super: it installs the splash theme's exit.
+        val splash = SplashHold.install(this)
         // null, as the prebuilt app's MainActivity passes: the RN fragment is rebuilt from the running
         // runtime, and a restored copy would sit under it. The back stack starts over with it.
         super.onCreate(null)
-
-        expoListeners = ExpoActivityListeners(this).also(lifecycle::addObserver)
+        drawEdgeToEdge()
         connectAdoptToLibrary()
         // RN's library load only parses from the library flip (#245), so native seeds and repairs first
         // (#221).
@@ -123,7 +123,7 @@ class MainActivity :
                         LocalLatestFiles provides latestFiles,
                         LocalTabReselects provides tabReselects,
                         LocalNavigator provides navigator,
-                        LocalSplashExit provides SplashScreenManager::hide,
+                        LocalSplashExit provides splash::release,
                     ) {
                         PreferredKettleTheme(
                             preferences,
@@ -159,7 +159,6 @@ class MainActivity :
         listenForWrites(latestFiles)
         hearNavigateReceiver(navigator)
         setContentView(layout)
-        expoListeners.onContentShown()
         // The stack this activity's predecessor saved, when it was made again (a font or display size
         // change, the process brought back): RN's router used to keep it in the JS runtime.
         val saved = savedInstanceState?.getStringArrayList(BACK_STACK)
@@ -189,11 +188,6 @@ class MainActivity :
         // act on it.
         permissionResult?.invoke()
         permissionResult = null
-    }
-
-    override fun onUserLeaveHint() {
-        expoListeners.onUserLeaveHint()
-        super.onUserLeaveHint()
     }
 
     @Deprecated("Deprecated in ComponentActivity; RN and Expo still deliver results through it")
@@ -335,12 +329,15 @@ private fun Activity.connectAdoptToLibrary() {
 }
 
 /**
- * Native Home lets the splash go (#235), and RN's first content mustn't first: that is what
- * expo-splash-screen's preventAutoHide stood for, which JS no longer calls.
+ * Under transparent bars on every API level, as React Native's `Window.enableEdgeToEdge` drew the app
+ * (which Expo turned on): no scrim of the app's own on 3-button navigation, and the navigation bar's
+ * contrast left to the platform, which `auto` enforces. `SystemBars.kt` sets the icons' appearance from
+ * the scheme Compose draws. Without it the window isn't edge to edge below API 35, and every
+ * `statusBarsPadding()` and the sheet's status-bar inset would read a different window.
  */
-private fun Activity.holdSplash() {
-    SplashScreenManager.registerOnActivity(this)
-    SplashScreenManager.preventAutoHideCalled = true
+private fun ComponentActivity.drawEdgeToEdge() {
+    val transparent = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT)
+    enableEdgeToEdge(statusBarStyle = transparent, navigationBarStyle = transparent)
 }
 
 /**

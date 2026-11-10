@@ -327,9 +327,9 @@ are the index, the banner is the contract.
 - `docs/native-migration-plan.md` — **M0 executed (go); M1 landed; M2 shipped (0.11.2); M3 shipped
   (0.12.0); M4 shipped (0.13.0); M5 done (0.14.0); M6 done (0.15.0); M7 ticketed (map #335); M8's UI
   decided (Compose Multiplatform).** Moving to Kotlin/Compose (then iOS) inside the shipping
-  app: a native shell hosts the not-yet-migrated RN screens via `expo-brownfield`, and each milestone
-  ships to Play and deletes RN code. Its M0 spike report holds the brownfield build facts any host inherits (AAR scopes, plugin
-  resources, Windows CLI).
+  app: the native shell hosted the not-yet-migrated RN screens via `expo-brownfield` until M7's
+  first PR removed RN (#357), and each milestone ships to Play and deletes RN code. Its M0 spike
+  report holds the brownfield build facts (AAR scopes, plugin resources, Windows CLI), history now.
 - `docs/ios-plan.md` — **partly executed.** Shipping to the App Store: what already works unchanged,
   the six code changes that don't, and the background-cue and iCloud decisions. Five of those six
   have landed, plus the notification half of the background cue; the sixth is a form in App Store

@@ -636,7 +636,7 @@ decision assembled across several commits. Open work belongs in the sections at 
   `unicorn/no-array-sort` / `no-array-reverse` warnings and a clean lint run, so it will come up again.
   All five sites already sort or reverse a **copy** (`[...weeks].sort(…)`); oxlint only recognises that
   for an array declared in the same scope, so it flags correct code. `toSorted` would satisfy it — but
-  it's a runtime builtin, this app runs on Hermes 0.17 (RN 0.86), and nothing checked into the repo
+  it's a runtime builtin, this app ran on Hermes 0.17 (RN 0.86) when this was decided, and nothing checked into the repo
   says whether that build ships it: `hermesc` compiles rather than runs, no RN or Expo package calls
   these methods, and the web build proves nothing because it's V8. Swapping a proven idiom for one
   whose failure mode is *device-only* isn't worth silencing a linter, so each site carries an
@@ -1064,7 +1064,7 @@ decision assembled across several commits. Open work belongs in the sections at 
   what falls on each side:
   - **Values go in data files.** Translations are the locale bundles (`src/i18n/locales/*.json`, read
     by `:strings`). Colors, spacing, the type scale and its fonts' names are `src/constants/theme.json`
-    (read by `:theme`), and `theme.ts` is a thin re-export under the names RN already imports. Native generates
+    (read by `:theme`), and `theme.ts` is a thin re-export that keeps the notes JSON can't. Native generates
     its code from them on every build into a build directory, so nothing generated is committed and
     nothing can go stale. The Swift app in M8 reads the same files, not a Kotlin copy.
   - **Behaviour isn't data.** Parser rules, ceilings like `MAX_SETS`, unit steps and search
@@ -1098,8 +1098,8 @@ decision assembled across several commits. Open work belongs in the sections at 
     adding its file, and `:theme` fails the build naming the missing path until it's there.
   - Hand-kept lists remain where a data file can't reach, on purpose: `LocalePreviews` names each
     language, because a `@Preview` locale has to be a compile-time constant; and `libs.versions.toml`
-    repeats React Native's Kotlin and AGP, because once M2 hosts the RN AAR, a mismatch fails the
-    build loudly.
+    still pins the Kotlin and AGP React Native used, which mattered while the shell hosted the RN AAR
+    (until M7, #357) and stays pinned until the unpin moves it (#342).
   - **What was `app.json`'s is `native/android`'s** (#148, then #357). Until M7 the build read the
     package, version, name and brand colours from `app.json`, and a change to its icons, permissions
     or plugins was copied into the shell by hand. With `app.json` gone each has one home: the version

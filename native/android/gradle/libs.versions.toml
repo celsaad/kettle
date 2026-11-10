@@ -1,6 +1,7 @@
 [versions]
 # AGP and Kotlin are the M0 spike's, which were React Native's own (react-native/gradle/
-# libs.versions.toml), so the shell and the RN AAR it hosts in M2 share one toolchain.
+# libs.versions.toml), so the shell and the RN AAR it hosted until M7 shared one toolchain. Still
+# pinned until the unpin moves them (#342).
 agp = "8.12.0"
 kotlin = "2.1.20"
 # detekt 1.23 is built against Kotlin 2.0.21 and refuses to run on any other compiler; see the

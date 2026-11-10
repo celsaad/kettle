@@ -76,6 +76,8 @@ class MainActivity : ComponentActivity() {
         LibraryGate.start(this)
         // Before super: it installs the splash theme's exit.
         val splash = SplashHold.install(this)
+        // A recreated activity (a font or display size change) shows no system splash, so nothing to hold.
+        if (savedInstanceState != null) splash.release()
         // null, as the RN app passed it, so no view or fragment state is restored: the back stack is
         // restored by hand below. Passing savedInstanceState would change what survives process death
         // and rotation, which is a change of its own, not part of removing RN (#357).

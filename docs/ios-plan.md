@@ -39,8 +39,8 @@
 > `expo-audio`, `expo-notifications`, `expo-haptics` and `expo-keep-awake` are deleted, so the
 > session-timing row below, Phase 4's shipped notification half and its `app.json` audio block
 > describe code that no longer exists. Phase 4's *reasoning* still stands for the native iOS runner
-> (M8): the rest cue has to break through Focus, which is why `app.json` keeps the time-sensitive
-> entitlement.
+> (M8): the rest cue has to break through Focus, which is why the time-sensitive entitlement is in
+> "What `app.json` held for iOS" below.
 
 The app is closer to iOS than the docs suggest. There is no `ios/` tree to write, no architecture to
 port, and no storage layer to rethink: `expo prebuild --platform ios` generates the native project the
@@ -108,9 +108,9 @@ The `ios` block in [`app.json`](#what-appjson-held-for-ios) is **shipped**, bar 
 
 - **`bundleIdentifier`** — `com.casco.kettle`. ✅ The App Store and Play namespaces are independent, so
   reusing the Android package is fine and keeps one identifier in the head. Permanent once submitted.
-- **`buildNumber`** — iOS's `versionCode`. String, not integer. ✅ At `"11"`, the same integer as
-  `android.versionCode`, so one number serves both stores. `/bump` now edits all three fields and
-  `app-config.test.ts` fails if the two ever drift apart — the Phase 6 item below is closed.
+- **`buildNumber`** — iOS's `versionCode`. String, not integer. Until M7 it tracked
+  `android.versionCode`; since then each platform keeps its own build number (Phase 5's `/bump`
+  entry has the rule).
 - **`supportsTablet`** — **decide this by looking, not by reasoning.** The tempting argument is that
   the layouts already cap themselves with `MaxContentWidth` so an iPad gets a centred column rather
   than stretched rows. But `MaxContentWidth` is **480** ([`theme.ts:96`](../src/constants/theme.ts#L96)),

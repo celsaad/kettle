@@ -236,9 +236,8 @@ wanting states and assignees, it wants GitHub issues instead.
   that can't flip (the Canvas ones in native's `list/RowStartButton.kt` and `home/NextUpCard.kt`, and
   whatever the native runner draws) plus the arrows baked into
   copy (`grep '→' src/i18n/locales/en.json` — getting those out of the strings is worth doing whether or not Arabic ever ships). Three that note
-  doesn't carry: `I18nManager.forceRTL` only takes effect after an app restart, and Kettle reads its
-  language from the device once at init and never switches it, so the first launch after a phone goes
-  Arabic comes up in Arabic and still laid out left-to-right; Arabic has **six** plural categories against en/pt's
+  doesn't carry: a language that changes while the app runs has to flip the layout direction too, which
+  nothing tests today; Arabic has **six** plural categories against en/pt's
   two, which i18next and Android's plurals both resolve but the bundles' key shape does not; and the runner is
   where a half-flipped layout costs a workout rather than just looking wrong. Half-implemented RTL is
   worse than none — the plan's words, still true.

@@ -26,12 +26,14 @@ fun PreferredKettleTheme(
     latest: Preferences?,
     reread: Boolean,
     runnerShown: Boolean,
-    splashExits: Int = 0,
+    splashExits: Int,
     content: @Composable () -> Unit,
 ) {
     val dark = rememberPreferredDarkTheme(preferences, latest, reread)
     val window = LocalActivity.current?.window
     val darkIcons = !dark && !runnerShown
+    // A new splashExits already recomposes this, and every composition sets the icons; the key is the
+    // parameter's one use, and says what an exit is for.
     key(splashExits) {
         SideEffect {
             if (window == null) return@SideEffect

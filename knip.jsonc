@@ -14,15 +14,8 @@
   // The Kotlin app has no JavaScript of its own; what knip finds there is Gradle's test-report output.
   "ignore": ["native/**"],
   "ignoreDependencies": [
-    // knip's expo plugin assumes EAS Update unless app.json sets `updates.enabled: false`. It is
-    // absent on purpose: nothing may phone home.
-    "expo-updates",
     // store/build-assets.js loads these from NODE_PATH, deliberately outside the project (see its header).
     "sharp",
     "playwright",
-    // Native's `:theme` copies the faces `theme.json` names out of these packages (app/build.gradle.kts),
-    // and nothing in JS loads them since #309.
-    "@expo-google-fonts/hanken-grotesk",
-    "@expo-google-fonts/space-grotesk",
   ],
 }

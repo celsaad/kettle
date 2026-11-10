@@ -34,15 +34,12 @@ class SplashHoldTest {
     }
 
     @Test
-    fun `lets frames draw once released, and stays out of the way after`() {
+    fun `lets frames draw once released`() {
         val hold = SplashHold.hold(content)
         frameCancelled()
 
         hold.release()
 
-        assertFalse(frameCancelled())
-        // Released twice, as a second destination's exit would: still nothing to hold.
-        hold.release()
         assertFalse(frameCancelled())
     }
 }

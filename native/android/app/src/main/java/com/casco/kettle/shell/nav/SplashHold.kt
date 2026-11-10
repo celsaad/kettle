@@ -79,6 +79,8 @@ class SplashHold private constructor(
             activity.lifecycle.addObserver(
                 object : DefaultLifecycleObserver {
                     override fun onStop(owner: LifecycleOwner) {
+                        // Always true here (the caller checks 31-33); repeated because lint's NewApi
+                        // doesn't follow the caller's range into this callback.
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                             runCatching { activity.splashScreen.clearOnExitAnimationListener() }
                         }

@@ -421,7 +421,7 @@ decision assembled across several commits. Open work belongs in the sections at 
     Swift's side: a bookmark, or the Files-app folder in the entry above. **The pick, kill and
     relaunch test has not been run on a device**, so treat the Android half as strongly evidenced
     rather than observed.
-  - **A `content://` document is not a `file://` path, and five of the differences fail silently:**
+  - **A `content://` document is not a `file://` path, and these differences fail silently:**
     1. **A child isn't addressed by joining a name onto the tree URI.** That produces
        `…/tree/primary%3ADocs/name.yaml`, where a document URI is
        `…/tree/primary%3ADocs/document/primary%3ADocs%2Fname.yaml`. Children come from a query of the

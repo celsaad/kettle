@@ -13,13 +13,17 @@
 > #196–#202, whose open/closed state is the live record. **M5 is done**: every ticket (#230–#245,
 > map #219) is closed and 0.14.0 carries it. Programs, Program detail, Library, Home, Settings, Import
 > and the four editors are Compose screens, and native owns the preferences, edited-session and
-> library files, which meets its landmark: the only RN left is the session runner. M6 onward is
-> ticketed next. Written against the tree at `54eb9f8`, SDK 57.
+> library files, which meets its landmark: the only RN left is the session runner. **M6 is done**:
+> 0.15.0 carries the native runner (#308, map #292), and routing moved native after it (#309), on
+> `master` and shipping with M7. **M7 is ticketed** (map #335): one removal PR (#357), eight unpin
+> PRs (#364, #356, #358–#363) and one release (#365), with retiring the TS domain (#348–#354) after
+> it. **M8's UI is decided: Compose Multiplatform** (#345). Written against the tree at `f1b3fea`,
+> SDK 57.
 > **Everything after M0 was conditional on a "go"**: had the spike failed, this file would carry a
 > banner saying so and the decision log the reason, so the idea isn't re-proposed from scratch.
 
-Kettle moves from Expo / React Native to Kotlin + Jetpack Compose on Android and, later, Swift +
-SwiftUI on iOS. It does that **incrementally, inside the shipping app**: a native shell becomes the
+Kettle moves from Expo / React Native to Kotlin + Jetpack Compose on Android and, later, to iOS
+with Compose Multiplatform (M8). It does that **incrementally, inside the shipping app**: a native shell becomes the
 app Play installs, it hosts the not-yet-migrated React Native screens, and each milestone deletes some
 RN code. At no point is there a second app, a parallel rewrite branch, or a big-bang cutover.
 
@@ -429,7 +433,10 @@ asserted in tests, feature freeze, no redesign.
 **Landmark: the only RN left is the session runner**, plus whatever it renders, behind RN's router
 and stubs.
 
-### M6 — The session runner · ~4–6 weeks
+### M6 — The session runner · ~4–6 weeks · done, the flip in 0.15.0
+
+> **Done** (#298, #302–#309, #315, all closed), charted on the wayfinder map #292. 0.15.0 is the flip
+> only; routing (#309) is merged and reaches Play with M7's release (#365), whose gate is also its.
 
 AGENTS.md calls the runner "make-or-break", so it moves **whole and last**, never split across the
 boundary. Charted by the M6 map (#292); its acceptance is the runner inventory (#294).
@@ -471,7 +478,9 @@ plan a few days of work rather than a project.
 **Landmark: the runner is native in production** and survives a week of closed testing with no lost
 session.
 
-**Then routing moves to native, as a release of its own (#309)**, before M7 deletes RN. It was
+**Then routing moved to native (#309)**, before M7 deletes RN. It was planned as a release of its
+own, and instead rides M7's (#365), since nothing about it is worth a Play release while RN still
+ships an empty surface. It was
 planned for M5, and moved here because every hard question it raised (a cut-down expo-router for one
 route, a hand-back message pair, forwarding back to RN, the View sheet kept only so RN could sit above
 it) came from the runner still being RN. Once RN draws nothing it is mostly deletion:
@@ -484,84 +493,116 @@ it) came from the runner still being RN. Once RN draws nothing it is mostly dele
 - `NavigateReceiver` and the route-check scripts stay, retargeted.
 - The View sheet stays as it is; whether a Compose sheet should follow is #229.
 
-**Gate: a `:benchmark` cold-start run against the last release.**
+**Gate: a `:benchmark` cold-start run**, folded into M7's: `.bench` can't be built from 0.15.0, so
+the one run against #168's baseline in #365 is routing's gate too.
 
-### M7 — React Native removed (Android) · ~1–2 weeks
+### M7 — React Native removed (Android) · ticketed
 
-- Delete the AAR, `expo-brownfield`, Hermes and the RN surfaces.
-- `expo-notifications` already left with the RN runner in M6 (#308). The rest-day reminder moved to
-  a native alarm in M5 (#236); if its launch-time cancel of Expo's leftover request outlived the
-  module, delete it here. (The tip jar already moved to Play Billing with Support in M4.)
-- Re-check the **Data Safety** claim: list every Gradle dependency that touches the network and
-  confirm none transmits anything. That includes `sh.calvin.reorderable`, which the workout editor
-  brought in M5 (#226).
-- **Drop core library desugaring.** `:app` turns it on (#201) because kotlinx-datetime is `java.time`
-  underneath, which Android has only from API 26, and `minSdk` is 24 only because the RN app the shell
-  replaces is (Expo SDK 57's floor). With RN gone, raise `minSdk` to 26 and delete
-  `isCoreLibraryDesugaringEnabled` and the `desugar_jdk_libs` dependency together.
-- **Unpin the Kotlin toolchain.** `native/android/gradle/libs.versions.toml` holds Kotlin and AGP
-  at React Native's own versions (`node_modules/react-native/gradle/libs.versions.toml`), so the shell
-  and the AAR it hosts build with one toolchain. With the AAR gone, that reason goes too. Move Kotlin
-  forward together with the things that move with it:
-  - detekt, whose 1.x line runs only on the Kotlin it was built against;
-  - the Compose compiler plugin;
-  - snakeyaml-engine-kmp, whose newer majors are built with a newer Kotlin than ours can read;
-  - Play Billing's `billing-ktx`, which Support (#198) couldn't use: 9.1.0 is built with Kotlin 2.3.
-    Swap the plain `billing` artifact for it, and replace `PlayTipBilling`'s hand-written coroutine
-    wrappers with ktx's `queryProductDetails`, `queryPurchasesAsync` and `consumePurchase`.
-  - `sh.calvin.reorderable`, pinned at 3.1.0 by the workout editor (#226): any later release built
-    with Kotlin 2.3 or newer has to wait for this.
-  - `kotlinx-datetime`, held at 0.6.x since exercise progress (#200) brought it into `:shared`:
-    0.7 needs a newer Kotlin. It also moves `Instant` and `Clock` into the standard library's
-    `kotlin.time`, so the upgrade changes those imports wherever the selectors and screens use them.
+> **Ticketed** on the wayfinder map #335, whose closed tickets hold the reasoning and the research
+> (#336–#339, #344). The hand-off issues are the spec; this section is their outline.
 
-  If an Expo SDK upgrade moves React Native's Kotlin before M7, follow it then instead.
-- **Let the shell own its `targetSdk`.** While it hosts the AAR it targets what Expo SDK 57 does, so
-  `native/android/app/lint.xml` ignores lint's `OldTargetApi` (#148). Raise the target on the
-  shell's own schedule, then delete that exception so lint flags the next one. The same PR can drop
-  what the shell reads from the RN project only because it hosts it: `app.json` (version, label,
-  colors, interface style) and `node_modules` (Expo module versions) in `app/build.gradle.kts`.
-- **Review the CI scripts.** `ci.yml` splits the native build in two only because `:app` needs the
-  RN AAR: `native-app` installs Node, prebuilds, builds and caches the AAR, installs React Native's
-  NDK and borrows `android.yml`'s ccache, and even `native` installs node_modules for `:app`'s
-  versions. With the AAR gone, most of that goes; the two jobs may fold back into one, and
-  `android.yml` (rewritten for the shell in #149) and `scripts/native-dev.ps1` lose their RN steps
-  too.
-- **Repoint the device scripts.** Each `.sh` and its `.ps1` twin change together:
-  - **`native-dev`**: its AAR and Metro steps go, leaving build and install.
-  - **`route-check`**: drop its "start it against Metro" precondition.
-  - **`session-check` (#315)**: drop starting Metro, `adb reverse`, and the relaunch it does when the
-    app can't load its JS. Those are its flakiest steps, since an adb server restart drops the tunnel
-    mid-run.
-- **Rerun the startup benchmark, all-native against today's app** (M2's numbers, #150). Two things
-  have to survive the deletion:
-  - **The marker.** Already native: Home's port (#235) moved `reportFullyDrawn` to Compose's
-    `ReportDrawnWhen` and deleted `modules/startup-marker`, so `timeToFullDisplayMs` still means
-    "Home drawn". The same port dropped `.bench` as a target, since its Home is now a stub, and the
-    baseline below is what brings it back.
-  - **The baseline.** Today's app can't be built from a tree without RN. Build `.bench` from the
-    commit that merged #168 (`git worktree`, then the script's first step as it is today) rather than
-    reusing M2's table: the same phone a year on, on a newer Android, isn't the same baseline. M2's
-    numbers are the check that the rebuilt baseline still lands where it did.
+**Release shape.** **One Play release**, reached by **sequential PRs on `master`**, each green,
+shippable and revertible on its own. There's no flag, because removal can't land dark. **No other
+Play release goes out in between**, so the toolchain moves can't reach production half-done. The
+toolchain moves ride the same release as removal rather than following it.
 
-  `scripts/startup-benchmark.ps1` loses its AAR step and gains the worktree build. Same S25+, same
-  iterations and compilation modes. Record the result beside M2's table.
+**Removal, one PR (#357).** Its acceptance list is the removal inventory (#336). In outline:
+- **Native replaces what Expo supplied:** `MainActivity` on `ComponentActivity` with a platform theme
+  (appcompat out); Expo's pre-draw splash hold ported as it is (the 400 ms fade, `SplashScreenView`
+  on 31+, the API 31–33 stop-crash workaround), on `core-splashscreen`; `enableEdgeToEdge()`, which
+  Expo did below API 35; and the three libraries the shell used only transitively, declared.
+- **Native builds with no Node.** No `node_modules`, no `app.json`: the version moves to
+  `native/android/gradle.properties` (starting from Play's 0.15.0 / 21, not `app.json`'s), the label
+  and brand colours become resources, and the six font faces are committed with their OFL licences.
+  The locale bundles, `theme.json`, `src/content/` and `conformance/` keep their paths until the TS
+  domain is retired.
+- **The whole Expo layer goes**: the AAR, expo-brownfield, Hermes, `index.ts`, `app.json`,
+  `eas.json`, the metro files, `patches/`, the prebuild and every `expo-*`/`react*` dependency. **The
+  RN iOS route closes for good**; `app.json`'s iOS facts move into `ios-plan.md` for M8.
+- **The APK has no native code left**, so the NDK, `pickFirsts`, ABI filter and ccache go, and CI's
+  two native jobs fold into one Node-free `./gradlew build`.
+- The device scripts lose their AAR, Metro, `adb reverse` and prebuild steps, each `.sh` with its
+  `.ps1` twin.
+- `/bump` and `/release` find platforms by version file. Each platform keeps its own build number;
+  `versionName` is shared.
+- The Node project that's left is the TS domain, zod, plain jest (on babel-jest), oxlint, oxfmt and
+  knip, until the TS domain is retired.
 
-**Landmark: the Android APK contains no JS engine.** The root Expo project survives only if M8
-still needs it (see below).
+**Unpinning, eight PRs, all after removal (#342).** The version set is #337's, the newest stable
+inside every published compatibility table, held no newer than stable Compose Multiplatform supports
+(M8):
 
-### M8 — iOS · sized after M7
+1. `minSdk` 26, with core library desugaring and the unused navigation-compose deleted (#364). Android
+   7.x installs stay on 0.15.0; that was the owner's call, without a usage threshold (#340).
+2. Kotlin 2.4.21 and the libraries pinned to the old compiler (#356).
+3. kotlinx-datetime 0.8, `Instant` and `Clock` to `kotlin.time` (#358).
+4. snakeyaml-engine-kmp 5, after two TAB conformance cases (#359).
+5. billing-ktx in place of `PlayTipBilling`'s coroutine wrappers (#360).
+6. AGP 9.3.3, Gradle 9.7.1 and built-in Kotlin (#361). detekt stays 1.23.8 (2.0 is alpha) and has to
+   be proven still failing a build.
+7. The stable Compose BOM and `compileSdk` 37 (#362). material3 1.4.0 is a downgrade from the
+   1.5 alpha the beta pin carried, accepted as it is.
+8. `targetSdk` 37 and Robolectric 4.17, with `lint.xml`'s `OldTargetApi` exception deleted (#363).
+   #338 found no code change for 37 itself, only two device checks.
+
+Only 2 → 6 → 7 → 8 is a hard chain.
+
+**The release (#365)** goes through M6's gate:
+- closed testing on the S25+ for at least a week and five real sessions, restarted by a lost
+  session, crash or ANR;
+- `session-check`, `route-check` and #308's by-hand checks;
+- **the device TalkBack pass** this plan deferred to the end of the migration, which blocks on reach,
+  name and state, and tickets the rest;
+- **the startup benchmark rerun**, all-native against `.bench` rebuilt from #168's merge commit (M2's
+  numbers check that the baseline still lands where it did), recorded beside M2's table;
+- three install paths: fresh, over 0.15.0 and over 0.14.0.
+
+**Data Safety (#339, #347).** Removal changes nothing on the form. The re-check found that Play
+Billing logs its own usage to Google; the form stays "no data collected", read as part of Google
+Play's billing system, and Kettle's own copy says "no network requests of its own" (#355). The
+release re-runs the dependency diff on its candidate.
+
+**Landmark: the Android APK contains no JS engine** (no `lib/`, no bundle, in the `.aab` and Play's
+universal APK).
+
+**Then the TS domain is retired (#346)**, in seven PRs after the release (#348–#354): every
+conformance golden written from Kotlin with zero diff, so `:shared` and the corpus define the
+format; `library-schema.json` frozen and hand-maintained; each jest guard moved beside what it
+protects (`:strings`, `:art`, `:app`, a new `:repo-checks`); Node down to oxfmt; and the shared data
+out of `src/` to the top level. Constraint 4's "until the TS one is deleted" ends there.
+
+### M8 — iOS · sized after M7 · UI decided: Compose Multiplatform
 
 iOS has never shipped (see `docs/ios-plan.md`), so it has no brownfield phase. It starts native,
-reusing `:shared` for the domain, storage and format, which leaves only the UI to write. The plan
-leaves one decision open here and gives it a deadline, M7:
+reusing `:shared` for the domain, storage and format.
 
-- **SwiftUI** — a fully native UI, with every screen written a second time.
-- **Compose Multiplatform for iOS** — one UI codebase across both platforms, at the cost of a UI
-  that isn't SwiftUI.
+**The UI is Compose Multiplatform (#345)**, because SwiftUI would make every later screen change land
+twice, which for one maintainer outweighs CMP's one-off Android reshaping and its iOS gaps. Why
+SwiftUI was rejected is in the decision log. SwiftUI appears only as islands: the iOS sheet is
+SwiftUI's `.sheet` hosting Compose (so #229 stays optional), and a Live Activity, if one is ever
+built. Swift sees a thin hand-written facade over the default Obj-C export: no SKIE, no Swift export,
+no reshaping of `:shared`'s sealed interfaces. Screens port as they are, plus a fixed list of
+platform conventions that don't count as redesign (the sheet, edge-swipe back, safe areas, iOS
+haptics), switched in `:theme` or the shell rather than per-platform screens.
 
-Either way it is gated on a Mac, a device and the developer account, exactly as `ios-plan.md`
-already says. That plan's Phase 5, changing the decision log and the README, applies here too.
+**What it commits M7 to:** Kotlin and the Compose BOM no newer than stable CMP supports.
+
+**After M7's release**, one PR adds `iosArm64` and `iosSimulatorArm64` to `:shared` with a macOS CI
+job that compiles the klibs and runs the conformance corpus on the simulator. The production file
+layer that replaces `java.io.File`/`java.time` is M8's.
+
+**Phase 1, Android groundwork**, gated only on Xcode:
+- First, two spikes. Does Robolectric's `@Config(qualifiers = "pt")` still pick Portuguese from CMP's
+  `Res`, and does its plural lookup pick Portuguese zero? A failed `pt` spike blocks the resource
+  migration until translation can be tested another way.
+- Then each as a sequential PR that ships to Play: `R` → `Res`, a common `pluralText`, `:strings`,
+  `:art` and `:theme` retargeted to `composeResources`, and the screens moved into a KMP UI module.
+
+**Phase 2, iOS.** The simulator covers a Dynamic Type spike (a `UIFontMetrics`-derived `fontScale`
+past CMP's 1.8× linear cap; if it fails, the cap is accepted and documented), VoiceOver and the sheet
+interop. TestFlight and the background-cue checks wait for a Mac, a device and the developer account,
+exactly as `ios-plan.md` already says. That plan's Phase 5, changing the decision log and the README,
+applies here too.
 
 ## Rules for the duration
 

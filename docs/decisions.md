@@ -956,6 +956,24 @@ decision assembled across several commits. Open work belongs in the sections at 
     rejected: it breaks the disposable boundary, and abandoned snapshots would pile up. Sessions the
     RN runner stranded have no snapshot, get no prompt and no sweep, and stay unfinished for #281.
 
+- ✅ **iOS gets Compose Multiplatform, not SwiftUI.** (Native M8's UI, decided on #345 from the #344
+  research, as M7's map required.) Both reuse `:shared` at the same cost, and about a quarter of
+  `:app` is platform code neither reuses, so the choice is only about the screens. **SwiftUI was
+  rejected because every later screen change would land twice**: for one maintainer that recurring
+  cost outweighs everything CMP costs once (moving `R` to `Res`, retargeting the three generators,
+  a KMP UI module, all landing on the shipping Android app first) and its iOS gaps (Dynamic Type
+  scales linearly to a 1.8× cap; native text editing is experimental). Three things follow and
+  shouldn't be re-litigated per screen:
+
+  - **SwiftUI only as islands**, where Apple requires it or does it clearly better: the iOS sheet
+    (SwiftUI's `.sheet` hosting Compose, which is why a Compose sheet, #229, stays optional) and any
+    future Live Activity.
+  - **Swift sees a thin hand-written Kotlin facade** over the default Obj-C export. SKIE and Swift
+    export were both considered: SKIE because every Kotlin upgrade would wait on it, Swift export
+    because it is alpha. Neither is needed for a facade this small.
+  - **The toolchain is capped by CMP**: Kotlin and the Compose BOM go no newer than the latest stable
+    CMP supports, from M7's unpin on, so M8 never starts with a downgrade.
+
 - ✅ **A program's rest day clears itself by elapsed calendar days, and stores nothing.** A week with
   `rest_day: true` holds a place in the rotation but is never run, so — unlike every other slot —
   *nothing about it is ever logged*. That breaks the assumption the whole scheduler rests on:

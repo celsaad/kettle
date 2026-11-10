@@ -3,14 +3,16 @@ package com.casco.kettle.storage
 import com.casco.kettle.domain.RepsSetLog
 import com.casco.kettle.domain.Session
 import com.casco.kettle.domain.SessionEntry
+import com.casco.kettle.domain.serializeSessionYaml
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.io.TempDir
 import java.io.File
 import java.io.IOException
 
-/** The session editor's write (#239): the one file, replaced whole or not at all. */
+/** The session editor's write (#239), and the runner's: the one file, replaced whole or not at all. */
 class SessionWriteTest {
     @TempDir
     lateinit var dir: File
@@ -57,5 +59,68 @@ class SessionWriteTest {
         }
 
         assertEquals(listOf(session(8)), readSessionLog(dir).sessions)
+    }
+
+    private val fileName = "${session(0).id}.yaml"
+
+    private fun write(
+        reps: Long,
+        beforeRename: () -> Unit = {},
+        syncDirectory: (File) -> Unit = {},
+    ) = writeAtomically(
+        dir.resolve(fileName),
+        serializeSessionYaml(session(reps)),
+        beforeRename,
+        syncDirectory,
+    )
+
+    /** What RN's create-then-write couldn't promise (#333): stopped short, the log reads as it was. */
+    @Test
+    fun `stopped between the write and the rename, leaves the last file whole and no empty one`() {
+        writeSessionFile(dir, session(8))
+
+        assertThrows<IOException> { write(7, beforeRename = { throw IOException("killed") }) }
+
+        assertEquals(listOf(session(8)), readSessionLog(dir).sessions)
+        assertEquals(listOf(fileName), dir.list()?.toList())
+    }
+
+    /** A kill skips the cleanup above, and leaves the `.partial`; the log never reads it as a session. */
+    @Test
+    fun `a partial a kill left behind isn't read as a session`() {
+        writeSessionFile(dir, session(8))
+        dir.resolve("$fileName.partial").writeText("")
+
+        val log = readSessionLog(dir)
+
+        assertEquals(listOf(session(8)), log.sessions)
+        assertEquals(emptyList<Any>(), log.errors)
+    }
+
+    @Test
+    fun `syncs the directory once the rename has landed`() {
+        val synced = mutableListOf<File>()
+
+        write(7, syncDirectory = { folder ->
+            assertTrue(folder.resolve(fileName).exists())
+            synced += folder
+        })
+
+        assertEquals(listOf(dir), synced)
+    }
+
+    /** Best effort: the file is already renamed into place, so a sync that can't run loses nothing. */
+    @Test
+    fun `lands the write when the directory can't be synced, or the platform has no way to`() {
+        listOf(
+            IOException("refused"),
+            SecurityException(),
+            UnsupportedOperationException(),
+            NoClassDefFoundError("java/nio/file/Path"),
+        ).forEachIndexed { i, failure ->
+            write(i.toLong(), syncDirectory = { throw failure })
+
+            assertEquals(listOf(session(i.toLong())), readSessionLog(dir).sessions)
+        }
     }
 }

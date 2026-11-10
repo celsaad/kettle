@@ -6,8 +6,10 @@
 .DESCRIPTION
   Each step sends a route to the shell, presses back or taps a button, then waits for an exact text
   to be on screen, read from a uiautomator dump. It stops at the first step that doesn't get there.
-  The messages go through NavigateReceiver, which only the debug build has, so this needs
-  com.casco.kettle.dev from native-dev.ps1, running against Metro and already past its splash.
+  The messages go through NavigateReceiver, which the debug and benchmark builds have, so this needs
+  com.casco.kettle.dev from native-dev.ps1, running against Metro and already past its splash, or
+  with -Package the release-built com.casco.kettle.bench2 (`gradlew :app:installBenchmark`), which
+  bundles its JS and needs no Metro.
 
   The expected texts are English UI strings plus names from the seed library, so the phone has to be
   in English and the .dev install has to still hold the seed's exercises, workouts and program.
@@ -25,21 +27,25 @@
 
   A start opens the native runner, in every build since the flip release (#308), and is waited on
   past its count-in: its Finish only shows once the session runs. Every route is the same in debug
-  and release.
+  and release, and routing is native's in both since #309.
 
 .PARAMETER Device
   The adb serial to use when more than one device is attached.
+
+.PARAMETER Package
+  The install to steer: com.casco.kettle.dev, or com.casco.kettle.bench2 for a release-built shell.
 
 .EXAMPLE
   ./scripts/route-check.ps1 -Device RXCY204V03W
 #>
 param(
-  [string]$Device
+  [string]$Device,
+  [ValidateSet('com.casco.kettle.dev', 'com.casco.kettle.bench2')]
+  [string]$Package = 'com.casco.kettle.dev'
 )
 
 $ErrorActionPreference = 'Stop'
-$package = 'com.casco.kettle.dev'
-$receiver = "$package/com.casco.kettle.shell.rn.NavigateReceiver"
+$receiver = "$package/com.casco.kettle.shell.nav.NavigateReceiver"
 
 # Per call, not $env:ANDROID_SERIAL, which would outlive the script in the caller's terminal.
 $target = if ($Device) { @('-s', $Device) } else { @() }
@@ -49,7 +55,7 @@ $target = if ($Device) { @('-s', $Device) } else { @() }
 # selected one (its label is on screen whichever tab is showing, so the text alone proves nothing);
 # $null means the app is not in front.
 $steps = @(
-  # Tabs, out of order and repeated. A message moves RN, and the shell's bar follows its report.
+  # Tabs, out of order and repeated. A message moves the navigator, and the bar follows it.
   @('/history', 'tab:History'), @('/library', 'tab:Library'), @('/programs', 'tab:Programs'),
   @('/', 'tab:Workouts'), @('/programs', 'tab:Programs'), @('/history', 'tab:History'),
   @('/history', 'tab:History'),
@@ -94,8 +100,8 @@ $steps = @(
   @('back', 'tab:Library'), @('back', 'tab:Workouts'), @('back', $null),
   # Sent while in the background, it lands, and shows once the app is in front again.
   @('/history', $null), @('front', 'tab:History'),
-  # Over the native runner, a message is dropped with no question asked, and Done hands back (#302).
-  @('/session-native?workoutId=foundations-push', 'Finish'),
+  # Over the runner, a message is dropped with no question asked, and Done pops its slot (#302, #309).
+  @('/session?workoutId=foundations-push', 'Finish'),
   @('/library', 'Finish'), @('back', 'Finish session?'), @('tap:Cancel', 'Finish'),
   @('back', 'Finish session?'), @('tap:Finish', 'Workout complete'), @('tap:Done', 'tab:History'),
   @('back', 'tab:Workouts'), @('back', $null)

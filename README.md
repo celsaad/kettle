@@ -65,26 +65,20 @@ an [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/), 
 [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/) or [Expo Go](https://expo.dev/go).
 There is no web build; it ended in M6 of the native migration.
 
-Routing is [Expo Router](https://docs.expo.dev/router/introduction) file-based; screens live under
-`src/app`.
+Every screen and the routing between them are native (`native/android`, routing since #309); the RN
+surface the shell still starts draws nothing until the native migration's M7 removes it.
 
 ## Project structure
 
 ```
 src/
-  app/                  routes (Expo Router): (tabs)/ for the four tab screens, plus session,
-                         import, settings, support, the program guide, and the exercise /
-                         workout / program / session editors and program detail as modal routes
-  components/           shared UI (themed primitives, session runner sub-views, kettle mark)
   constants/            theme tokens, with the measured contrast ratios recorded alongside them
   domain/               types, zod schemas, YAML<->domain mapping, library merge, display formatting,
                          kg/lb conversion
-  storage/              file I/O (expo-file-system): library, sessions, export, tip and app preferences
-  state/                zustand stores (library, session history, tip, preferences) + derived-display
-                         selectors
-  hooks/                theme context, session runner and its pure step model, announcements
-  i18n/                 i18next setup and the en / pt locale bundles
-  test-support/         shared fixtures and the expo-router stand-in used by the test suite
+  storage/              readers for the content the app ships: the seed library and the packs
+  state/selectors/      derived-display selectors
+  i18n/                 i18next setup and the en / pt / ja locale bundles
+  test-support/         shared fixtures used by the test suite
 site/                   the public landing site (GitHub Pages), static HTML, no build step
 store/                  Play listing copy and generated store graphics
 ```

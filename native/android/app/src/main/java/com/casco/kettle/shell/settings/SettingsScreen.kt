@@ -28,6 +28,8 @@ import com.casco.kettle.shell.R
 import com.casco.kettle.shell.files.LatestFiles
 import com.casco.kettle.shell.files.writeOrRefusal
 import com.casco.kettle.shell.i18n.deviceUnitSystem
+import com.casco.kettle.shell.nav.Destination
+import com.casco.kettle.shell.nav.Route
 import com.casco.kettle.shell.support.SupporterFile
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
@@ -79,17 +81,15 @@ class ReminderActions(
 )
 
 /**
- * What Settings asks of the platform and the shell, as parameters so a test hears each one.
- * [preferencesChanged] follows each write that landed, so RN's stores read the file again (#220);
- * [open] pushes a route, Import's or Support's.
+ * What Settings asks of the platform and the shell, as parameters so a test hears each one. [open]
+ * pushes a route, Import's or Support's.
  */
 class SettingsActions(
     val backup: BackupActions,
     val export: ExportActions,
     val contact: ContactActions,
     val reminder: ReminderActions,
-    val preferencesChanged: () -> Unit,
-    val open: (path: String) -> Unit,
+    val open: (Route) -> Unit,
 )
 
 /**
@@ -114,7 +114,7 @@ fun SettingsScreen(
     val preferences = preferencesOrDefault(files.preferences, units)
     val sessions = files.sessionLog?.sessions.orEmpty()
     val scope = rememberCoroutineScope()
-    val save = remember(files, units, actions) { PreferencesSaver(files, units, scope, actions.preferencesChanged) }
+    val save = remember(files, units, actions) { PreferencesSaver(files, units, scope) }
     Box(
         Modifier
             .fillMaxSize()
@@ -136,8 +136,8 @@ fun SettingsScreen(
                 color = KettleTheme.colors.text,
             )
             PreferenceSections(preferences, save, actions.reminder)
-            DataSection(sessions, scope, actions.export) { actions.open(IMPORT_PATH) }
-            SupportSection(supporter) { actions.open(SUPPORT_PATH) }
+            DataSection(sessions, scope, actions.export) { actions.open(Route(Destination.Import)) }
+            SupportSection(supporter) { actions.open(Route(Destination.Support)) }
             Section(R.string.settings_files) {
                 if (canChooseFolder) {
                     BackupFolder(preferences.backupFolderUri, files.sessionLog?.sessions, save, scope, actions.backup)
@@ -197,20 +197,13 @@ internal class PreferencesSaver(
     private val files: LatestFiles,
     private val units: UnitSystem,
     private val scope: CoroutineScope,
-    private val changed: () -> Unit,
 ) {
     suspend fun write(change: (Preferences) -> Preferences): Written {
         // Read when the write runs, not when it was asked for, so a second quick tap builds on the first.
         val next = change(preferencesOrDefault(files.preferences, units))
-        // Past the sheet closing, as the session editor's Save: a write cut off there could land with
-        // RN never told, and its choice held over every read for the rest of the run.
-        val landed =
-            withContext(NonCancellable) {
-                writeOrRefusal {
-                    files.writePreferences(next)
-                    changed()
-                } == null
-            }
+        // Past the sheet closing, as the session editor's Save: a write cut off there could land unread,
+        // its choice missing from every screen until the next read.
+        val landed = withContext(NonCancellable) { writeOrRefusal { files.writePreferences(next) } == null }
         return Written(next, landed)
     }
 
@@ -221,7 +214,3 @@ internal class PreferencesSaver(
 
     fun launch(change: (Preferences) -> Preferences) = launch(change) {}
 }
-
-// RN's routes, both native behind their stubs. The two share no code, so change both.
-internal const val IMPORT_PATH = "/import"
-internal const val SUPPORT_PATH = "/support"

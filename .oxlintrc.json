@@ -8,27 +8,9 @@
   "rules": {
     "react/react-in-jsx-scope": "off",
     "import/no-unassigned-import": "off",
-    "unicorn/consistent-function-scoping": "off",
-    "no-restricted-imports": [
-      "error",
-      {
-        "paths": [
-          {
-            "name": "expo-file-system",
-            "message": "File I/O lives in src/storage/."
-          }
-        ]
-      }
-    ]
+    "unicorn/consistent-function-scoping": "off"
   },
   "overrides": [
-    {
-      // The document picker hands the screen a File to read; the one exception to the storage rule.
-      "files": ["src/storage/**", "src/app/import.tsx"],
-      "rules": {
-        "no-restricted-imports": "off"
-      }
-    },
     {
       "files": ["src/domain/**"],
       "excludeFiles": ["src/domain/__tests__/**"],

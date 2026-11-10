@@ -51,3 +51,6 @@ store/out/
 
 expo-env.d.ts
 # @end expo-cli
+
+# Agents' git worktrees: other branches checked out locally, never part of this one.
+.claude/worktrees/

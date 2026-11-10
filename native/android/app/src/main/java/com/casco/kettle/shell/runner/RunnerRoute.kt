@@ -28,28 +28,32 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.casco.kettle.domain.RunnerCommand
+import com.casco.kettle.domain.RunnerStart
 import com.casco.kettle.domain.preferencesOrDefault
 import com.casco.kettle.domain.resolveRunnerPlan
+import com.casco.kettle.shell.files.LibraryAdopt
 import com.casco.kettle.shell.files.LocalLatestFiles
 import com.casco.kettle.shell.i18n.deviceUnitSystem
-import com.casco.kettle.shell.nav.runnerStartFrom
-import com.casco.kettle.shell.rn.JsBridge
+import com.casco.kettle.shell.nav.LocalNavigator
 import kotlinx.coroutines.delay
 import java.util.concurrent.atomic.AtomicBoolean
 
-/** What `shellRoutes` registers at the native runner's path (#302, #306). */
+/**
+ * What the runner's slot draws (#302, #306), opened with [start], or with none for the library's first
+ * workout. A session already running is attached to, whatever the start.
+ */
 @Composable
-fun RunnerRoute(params: Map<String, String>) {
+fun RunnerRoute(start: RunnerStart?) {
     val context = LocalContext.current
     val files = LocalLatestFiles.current
+    val navigator = LocalNavigator.current
     val view by RunnerHost.view.collectAsState()
-    val start = remember(params) { runnerStartFrom(params) }
     val plan = remember(start, files.library) { files.library?.let { resolveRunnerPlan(start, it) } }
     // Saved, so a configuration change mid-wait can't ask the service a second time.
     var opened by rememberSaveable { mutableStateOf(false) }
     // Whether this route ever showed the service's session, started here or attached to. After Done or a
-    // leave the view is Idle again while RN pops the route: that mustn't start a session for a route
-    // that attached, nor time out into a second hand-back.
+    // leave the view is Idle again until the slot's pop has composed: that mustn't start a session for a
+    // route that attached, nor time out into a second close.
     var answered by rememberSaveable { mutableStateOf(false) }
     val entry = runnerEntry(view, plan, opened, answered)
     SideEffect { if (entry is RunnerEntry.Attach || entry is RunnerEntry.Complete) answered = true }
@@ -72,7 +76,7 @@ fun RunnerRoute(params: Map<String, String>) {
             // it couldn't read the file): leave rather than wait on a blank screen.
             RunnerEntry.Waiting -> {
                 delay(SERVICE_ANSWER_MS)
-                if (!answered && RunnerHost.view.value == RunnerView.Idle) leave()
+                if (!answered && RunnerHost.view.value == RunnerView.Idle) leave(navigator::closeRunner)
             }
 
             else -> {}
@@ -96,16 +100,20 @@ fun RunnerRoute(params: Map<String, String>) {
             soundsOn = preferences.sessionSounds,
         ),
         rememberSecond(view),
-        routeActions(finishing) { anyway ->
+        routeActions(finishing, navigator::closeRunner) { anyway ->
             ask()
             RunnerHost.open(context, start, anyway)
         },
     )
 }
 
-/** The shell's half of [RunnerActions]. [start] asks the service, "Start anyway" with true. */
+/**
+ * The shell's half of [RunnerActions]. [close] pops the runner's slot; [start] asks the service, "Start
+ * anyway" with true.
+ */
 private fun routeActions(
     finishing: AtomicBoolean,
+    close: () -> Unit,
     start: (anyway: Boolean) -> Unit,
 ) = RunnerActions(
     send = { command ->
@@ -113,19 +121,19 @@ private fun routeActions(
         RunnerHost.send(command)
     },
     startAnyway = { start(true) },
-    leave = ::leave,
+    leave = { leave(close) },
     done = {
         RunnerHost.dismiss()
-        JsBridge.runnerDone()
+        close()
     },
-    adopt = JsBridge::adoptLoad,
+    adopt = LibraryAdopt::adoptLoad,
 )
 
-/** Leaving before a session runs: the service stops with nothing written, and RN takes back. */
-private fun leave() {
+/** Leaving before a session runs: the service stops with nothing written, and [close] pops the slot. */
+private fun leave(close: () -> Unit) {
     if (RunnerHost.leave() == Leave.RUNNING) return
     RunnerHost.dismiss()
-    JsBridge.runnerDone()
+    close()
 }
 
 /**

@@ -64,9 +64,9 @@ import com.casco.kettle.shell.form.dashedBorder
 import com.casco.kettle.shell.i18n.deviceUnitSystem
 import com.casco.kettle.shell.i18n.pluralText
 import com.casco.kettle.shell.list.TextAction
-import com.casco.kettle.shell.nav.Tab
-import com.casco.kettle.shell.rn.FileKind
-import com.casco.kettle.shell.rn.JsBridge
+import com.casco.kettle.shell.nav.Destination
+import com.casco.kettle.shell.nav.LocalNavigator
+import com.casco.kettle.shell.nav.Route
 import com.casco.kettle.shell.theme.DialogAction
 import com.casco.kettle.shell.theme.KettleAlertDialog
 import com.casco.kettle.shell.theme.KettleTheme
@@ -77,32 +77,32 @@ import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-/** Where the program editor is registered, as Program detail and Programs push it: `id` to edit, none to create. */
-const val PROGRAM_EDITOR_PATH = "/program-editor"
-
-/** What `shellRoutes` registers at [PROGRAM_EDITOR_PATH]. */
+/**
+ * What the route table draws at `Destination.ProgramEditor`, as Program detail and Programs push it:
+ * `id` to edit, none to create.
+ */
 @Composable
-fun ProgramEditorRoute(params: Map<String, String>) =
+fun ProgramEditorRoute(params: Map<String, String>) {
+    val navigator = LocalNavigator.current
     ProgramEditorScreen(
         params["id"],
         LocalLatestFiles.current,
         ProgramEditorActions(
-            close = JsBridge::back,
-            // RN's `dismissTo('/programs')`: navigate dismisses everything above the tabs first. A
-            // back would land on Program detail, which looks the program up by id and finds nothing.
-            deleted = { JsBridge.navigate(Tab.Programs.path) },
-            libraryChanged = { JsBridge.filesChanged(FileKind.LIBRARY) },
+            close = { navigator.back() },
+            // Navigate dismisses every sheet first, as RN's `dismissTo('/programs')` did. A back would
+            // land on Program detail, which looks the program up by id and finds nothing.
+            deleted = { navigator.navigate(Route(Destination.Programs)) },
         ),
     )
+}
 
 /**
  * What the editor asks of the shell, as parameters so a test hears each one. [deleted] is the close
- * after a delete, past the detail sheet that opened the editor; [libraryChanged] follows every write.
+ * after a delete, past the detail sheet that opened the editor.
  */
 class ProgramEditorActions(
     val close: () -> Unit,
     val deleted: () -> Unit,
-    val libraryChanged: () -> Unit,
 )
 
 /**
@@ -268,10 +268,7 @@ internal class Editor(
         scope.launch {
             withContext(NonCancellable) {
                 val refused =
-                    writeOrRefusal {
-                        files.writeLibrary(change(library))
-                        actions.libraryChanged()
-                    }
+                    writeOrRefusal { files.writeLibrary(change(library)) }
                 failure = refused?.let { Failure(kind, it) }
                 writing = false
                 if (refused == null) {

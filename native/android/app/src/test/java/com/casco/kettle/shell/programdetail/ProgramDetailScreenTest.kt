@@ -29,7 +29,8 @@ import com.casco.kettle.domain.Workout
 import com.casco.kettle.domain.WorkoutBlock
 import com.casco.kettle.shell.files.FakeStoredFiles
 import com.casco.kettle.shell.files.LatestFiles
-import com.casco.kettle.shell.rn.Stacking
+import com.casco.kettle.shell.nav.Destination
+import com.casco.kettle.shell.nav.Route
 import com.casco.kettle.shell.theme.KettleTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -54,7 +55,7 @@ class ProgramDetailScreenTest {
     @get:Rule
     val compose = createComposeRule()
 
-    private val opened = mutableListOf<Triple<Stacking, String, Map<String, String>>>()
+    private val opened = mutableListOf<Route>()
     private val started = mutableListOf<RunnerStart>()
     private var closed = 0
 
@@ -71,7 +72,7 @@ class ProgramDetailScreenTest {
                 ProgramDetailScreen(
                     programId,
                     latest,
-                    { how, path, params -> opened += Triple(how, path, params) },
+                    { opened += it },
                     { started += it },
                     { closed++ },
                 )
@@ -132,7 +133,7 @@ class ProgramDetailScreenTest {
         assertEquals(listOf(RunnerStart.Planned(SessionParams.ProgramSlot("base", 1, "Day 1"))), started)
     }
 
-    // How a missing day is pushed is openRunner's (OpenRunnerTest); here, that the start has none.
+    // How the runner resolves a missing day is not this screen's; here, that the start has none.
     @Test
     fun `starts a week with no day without one`() {
         val plain = Program("plain", "Plain", listOf(ProgramWeek.Training(2, workoutId = "push-day")))
@@ -175,7 +176,7 @@ class ProgramDetailScreenTest {
 
         control("Editar programa").assertHeightIsAtLeast(48.dp).assertWidthIsAtLeast(48.dp).performClick()
 
-        assertEquals(listOf(Triple(Stacking.Push, "/program-editor", mapOf("id" to "base"))), opened)
+        assertEquals(listOf(Route(Destination.ProgramEditor, mapOf("id" to "base"))), opened)
     }
 
     @Test

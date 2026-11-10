@@ -20,13 +20,12 @@ import kotlinx.coroutines.withContext
 
 /**
  * What Import asks of the shell, as parameters so a test hears each one. [pickFile] is the system
- * document picker and the read after it; [libraryChanged] follows the write. [copy] and [share] say
+ * document picker and the read after it. [copy] and [share] say
  * whether they took, so neither a "Copied" nor silence is ever claimed over one that didn't.
  */
 class ImportActions(
     val pickFile: suspend () -> FilePick,
     val close: () -> Unit,
-    val libraryChanged: () -> Unit,
     val copy: (String) -> Boolean,
     /** Null where the clipboard refused to be read; blank where it held nothing. */
     val readClipboard: () -> String?,
@@ -276,10 +275,7 @@ internal class Importer(
         scope.launch {
             withContext(NonCancellable) {
                 val saveError =
-                    writeOrRefusal {
-                        files.writeLibrary(merge.preview.merged)
-                        actions.libraryChanged()
-                    }
+                    writeOrRefusal { files.writeLibrary(merge.preview.merged) }
                 writing = false
                 if (saveError == null) {
                     // A retry after a failed write: the failure's slot is still drawn under Applied.

@@ -7,7 +7,7 @@
  * every preference change rewrite the library file.
  *
  * There is no default here on purpose: "no preference stored yet" means *follow the device*, which
- * only the store can resolve (see `state/preferences-store.ts`). Baking a static fallback into this
+ * only the reader can resolve (native's `preferencesOrDefault`). Baking a static fallback into this
  * layer would quietly turn an unanswered question into an answer of "metric".
  */
 import { z } from 'zod';
@@ -18,7 +18,7 @@ import { UNIT_SYSTEMS, type UnitSystem } from '@/domain/units';
  * What Settings → Appearance offers: pin a scheme, or defer to the OS.
  *
  * `system` is the intent "follow the device", not an outcome — which is the whole reason this is a
- * three-value preference rather than the `Scheme | null` override it replaced. See `theme-context.tsx`.
+ * three-value preference rather than the `Scheme | null` override it replaced.
  */
 export const THEME_PREFERENCES = ['light', 'dark', 'system'] as const;
 export type ThemePreference = (typeof THEME_PREFERENCES)[number];

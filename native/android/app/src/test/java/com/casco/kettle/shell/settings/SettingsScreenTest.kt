@@ -28,6 +28,8 @@ import com.casco.kettle.domain.UnitSystem
 import com.casco.kettle.domain.Workout
 import com.casco.kettle.shell.files.FakeStoredFiles
 import com.casco.kettle.shell.files.LatestFiles
+import com.casco.kettle.shell.nav.Destination
+import com.casco.kettle.shell.nav.Route
 import com.casco.kettle.shell.support.SupporterFile
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.storage.BackupFailure
@@ -123,7 +125,6 @@ class SettingsScreenTest {
         press("Pasta de backup")
 
         assertEquals(FOLDER, files.written.last().backupFolderUri)
-        assertEquals(1, actions.preferencesChanged)
         text("Documents/Kettle")
     }
 
@@ -148,7 +149,6 @@ class SettingsScreenTest {
         press("Pasta de backup")
 
         text("não pôde ser salva")
-        assertEquals(0, actions.preferencesChanged)
     }
 
     // A permission withdrawn is refused like a full disk, not left to escape the write and crash.
@@ -161,7 +161,6 @@ class SettingsScreenTest {
         press("Pasta de backup")
 
         text("não pôde ser salva")
-        assertEquals(0, actions.preferencesChanged)
     }
 
     // And the grant, natively: a folder whose permission wasn't kept stops working at the restart too.
@@ -443,7 +442,7 @@ class SettingsScreenTest {
         press("Importar biblioteca")
         press("Apoie o Kettle")
 
-        assertEquals(listOf("/import", "/support"), actions.routes)
+        assertEquals(listOf(Route(Destination.Import), Route(Destination.Support)), actions.routes)
     }
 
     @Test
@@ -607,8 +606,7 @@ class SettingsScreenTest {
         val copied = mutableListOf<String>()
         var askedNotifications = 0
         val reminders = mutableListOf<Preferences>()
-        var preferencesChanged = 0
-        val routes = mutableListOf<String>()
+        val routes = mutableListOf<Route>()
 
         val settings =
             SettingsActions(
@@ -637,7 +635,6 @@ class SettingsScreenTest {
                     },
                 ),
                 ReminderActions(askNotifications = { askedNotifications += 1 }, changed = { reminders += it }),
-                preferencesChanged = { preferencesChanged += 1 },
                 open = { routes += it },
             )
     }

@@ -68,7 +68,6 @@ class WorkoutEditorScreenTest {
     val compose = createComposeRule()
 
     private var closed = 0
-    private var libraryChanged = 0
 
     private lateinit var latest: LatestFiles
 
@@ -86,7 +85,7 @@ class WorkoutEditorScreenTest {
                 WorkoutEditorScreen(
                     id,
                     latest,
-                    WorkoutEditorActions(close = { closed += 1 }, libraryChanged = { libraryChanged += 1 }),
+                    WorkoutEditorActions(close = { closed += 1 }),
                 )
             }
         }
@@ -190,7 +189,6 @@ class WorkoutEditorScreenTest {
         press("Salvar")
 
         assertEquals("Push day", files.savedWorkout("push-day").name)
-        assertEquals(1, libraryChanged)
         assertEquals(1, closed)
     }
 
@@ -216,7 +214,6 @@ class WorkoutEditorScreenTest {
 
         named("Não foi possível salvar: disk full").assertExists()
         assertEquals(0, closed)
-        assertEquals(0, libraryChanged)
     }
 
     // blocks
@@ -448,7 +445,6 @@ class WorkoutEditorScreenTest {
                 .last()
                 .id,
         )
-        assertEquals(1, libraryChanged)
         assertEquals(0, closed)
     }
 
@@ -658,7 +654,6 @@ class WorkoutEditorScreenTest {
         compose.pressDialogButton("Excluir")
 
         assertEquals(emptyList<Workout>(), files.written.single().workouts)
-        assertEquals(1, libraryChanged)
         assertEquals(1, closed)
     }
 

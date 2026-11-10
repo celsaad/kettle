@@ -25,8 +25,9 @@ import com.casco.kettle.domain.SessionLog
 import com.casco.kettle.domain.Workout
 import com.casco.kettle.shell.files.FakeStoredFiles
 import com.casco.kettle.shell.files.LatestFiles
+import com.casco.kettle.shell.nav.Destination
+import com.casco.kettle.shell.nav.Route
 import com.casco.kettle.shell.nav.Tab
-import com.casco.kettle.shell.rn.Stacking
 import com.casco.kettle.shell.theme.KettleTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -52,7 +53,7 @@ class ProgramsScreenTest {
     @get:Rule
     val compose = createComposeRule()
 
-    private val opened = mutableListOf<Triple<Stacking, String, Map<String, String>>>()
+    private val opened = mutableListOf<Route>()
     private val reselects = MutableSharedFlow<Tab>(extraBufferCapacity = 1)
 
     private fun show(files: Files = Files(base, peak)) {
@@ -60,7 +61,7 @@ class ProgramsScreenTest {
             LatestFiles(files, CoroutineScope(Dispatchers.Unconfined), io = Dispatchers.Unconfined).apply { reread() }
         compose.setContent {
             KettleTheme(darkTheme = false) {
-                ProgramsScreen(latest, reselects) { how, path, params -> opened += Triple(how, path, params) }
+                ProgramsScreen(latest, reselects) { opened += it }
             }
         }
     }
@@ -155,7 +156,7 @@ class ProgramsScreenTest {
 
         row("Peak week").assertHeightIsAtLeast(48.dp).performClick()
 
-        assertEquals(listOf(Triple(Stacking.Push, "/program-detail", mapOf("programId" to "peak"))), opened)
+        assertEquals(listOf(Route(Destination.ProgramDetail, mapOf("programId" to "peak"))), opened)
     }
 
     @Test
@@ -164,7 +165,7 @@ class ProgramsScreenTest {
 
         control("Como escrever um programa").assertHeightIsAtLeast(48.dp).assertWidthIsAtLeast(48.dp).performClick()
 
-        assertEquals(listOf(Triple(Stacking.Push, "/program-guide", emptyMap<String, String>())), opened)
+        assertEquals(listOf(Route(Destination.ProgramGuide)), opened)
     }
 
     @Test
@@ -173,7 +174,7 @@ class ProgramsScreenTest {
 
         compose.onNode(hasText("Escrever um em YAML →") and isButton).assertHeightIsAtLeast(48.dp).performClick()
 
-        assertEquals(listOf(Triple(Stacking.Push, "/program-guide", emptyMap<String, String>())), opened)
+        assertEquals(listOf(Route(Destination.ProgramGuide)), opened)
     }
 
     @Test
@@ -182,7 +183,7 @@ class ProgramsScreenTest {
 
         control("Novo programa").assertHeightIsAtLeast(48.dp).assertWidthIsAtLeast(48.dp).performClick()
 
-        assertEquals(listOf(Triple(Stacking.Push, "/program-editor", emptyMap<String, String>())), opened)
+        assertEquals(listOf(Route(Destination.ProgramEditor)), opened)
     }
 
     /** #153 dropped re-tap-to-top with RN's bar; each tab's port brings it back for its own list. */

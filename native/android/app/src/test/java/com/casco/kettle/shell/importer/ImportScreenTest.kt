@@ -221,7 +221,6 @@ class ImportScreenTest : ImportHarness() {
                 .exercises
                 .map { it.id },
         )
-        assertEquals(1, libraryChanged)
         // Not closed: the screen stays to say what landed. Done closes it.
         assertEquals(0, closed)
     }
@@ -522,7 +521,6 @@ class ImportScreenTest : ImportHarness() {
 
         shown(SAVE_FAILED)
         files.nothingWritten()
-        assertEquals(0, libraryChanged)
         button("Mesclar e importar").assertIsEnabled()
     }
 

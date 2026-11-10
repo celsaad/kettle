@@ -30,8 +30,9 @@ import com.casco.kettle.domain.ThemePreference
 import com.casco.kettle.domain.UnitSystem
 import com.casco.kettle.shell.files.FakeStoredFiles
 import com.casco.kettle.shell.files.LatestFiles
+import com.casco.kettle.shell.nav.Destination
+import com.casco.kettle.shell.nav.Route
 import com.casco.kettle.shell.nav.Tab
-import com.casco.kettle.shell.rn.Stacking
 import com.casco.kettle.shell.theme.KettleTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -55,7 +56,7 @@ class LibraryScreenTest {
     @get:Rule
     val compose = createComposeRule()
 
-    private val opened = mutableListOf<Triple<Stacking, String, Map<String, String>>>()
+    private val opened = mutableListOf<Route>()
     private var exports = 0
     private val reselects = MutableSharedFlow<Tab>(extraBufferCapacity = 1)
 
@@ -67,7 +68,7 @@ class LibraryScreenTest {
                 LibraryScreen(
                     latest,
                     reselects,
-                    open = { how, path, params -> opened += Triple(how, path, params) },
+                    open = { opened += it },
                     export = { exports++ },
                 )
             }
@@ -198,7 +199,7 @@ class LibraryScreenTest {
 
         compose.onNode(hasText("Importar") and isButton).assertHeightIsAtLeast(48.dp).performClick()
 
-        assertEquals(listOf(Triple(Stacking.Push, "/import", emptyMap<String, String>())), opened)
+        assertEquals(listOf(Route(Destination.Import)), opened)
     }
 
     @Test
@@ -207,7 +208,7 @@ class LibraryScreenTest {
 
         row("Dips").assertHeightIsAtLeast(48.dp).performClick()
 
-        assertEquals(listOf(Triple(Stacking.Push, "/exercise-editor", mapOf("id" to "dips"))), opened)
+        assertEquals(listOf(Route(Destination.ExerciseEditor, mapOf("id" to "dips"))), opened)
     }
 
     @Test
@@ -220,7 +221,7 @@ class LibraryScreenTest {
             .assertWidthIsAtLeast(48.dp)
             .performClick()
 
-        assertEquals(listOf(Triple(Stacking.Push, "/exercise-editor", emptyMap<String, String>())), opened)
+        assertEquals(listOf(Route(Destination.ExerciseEditor)), opened)
     }
 
     @Test

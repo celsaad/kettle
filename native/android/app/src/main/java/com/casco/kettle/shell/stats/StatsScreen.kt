@@ -61,11 +61,11 @@ import com.casco.kettle.shell.list.ListRow
 import com.casco.kettle.shell.list.ListRowMinHeight
 import com.casco.kettle.shell.list.ListRowSeparator
 import com.casco.kettle.shell.list.ListRowVerticalPadding
+import com.casco.kettle.shell.nav.Destination
+import com.casco.kettle.shell.nav.LocalNavigator
+import com.casco.kettle.shell.nav.Route
 import com.casco.kettle.shell.progress.EXERCISE_ID_PARAM
-import com.casco.kettle.shell.progress.EXERCISE_PROGRESS_PATH
 import com.casco.kettle.shell.progress.Readings
-import com.casco.kettle.shell.rn.JsBridge
-import com.casco.kettle.shell.rn.Stacking
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.MaxContentWidth
@@ -77,7 +77,7 @@ import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import java.util.Locale
 
-/** What `shellRoutes` registers at `/analytics`, opened from History's header. */
+/** What the route table draws at `/analytics`, opened from History's header. */
 @Composable
 fun StatsRoute() {
     // Once per opening, as exercise progress reads it: this week, the streak and today's cell are all
@@ -90,7 +90,7 @@ fun StatsRoute() {
         // The locale's calendar, as expo-localization reads RN's from the default locale, which the
         // configuration carries; read through it so a locale change is seen.
         firstWeekday(LocalConfiguration.current.locales[0]),
-        open = JsBridge::open,
+        open = LocalNavigator.current::push,
     )
 }
 
@@ -107,7 +107,7 @@ private const val CALENDAR_WEEKS = 4
  * Nothing here narrows with History's search; it always reports the whole log, which is the only
  * reading that makes "this week" and a streak mean anything.
  *
- * [open] is `JsBridge.open`, a parameter so a test hears which exercise a row opened.
+ * [open] pushes a route, a parameter so a test hears which exercise a row opened.
  */
 @Composable
 fun StatsScreen(
@@ -115,7 +115,7 @@ fun StatsScreen(
     now: Instant,
     zone: TimeZone,
     firstWeekday: DayOfWeek,
-    open: (Stacking, String, Map<String, String>) -> Unit,
+    open: (Route) -> Unit,
 ) {
     val log = files.sessionLog
     val exercises = files.library?.exercises.orEmpty()
@@ -163,7 +163,7 @@ fun StatsScreen(
                 // explains a flat row better than a flat row explains itself.
                 SectionLabel(stringResource(R.string.analytics_progressTitle), locale)
                 ProgressSection(progress, exercises, units) { exerciseId ->
-                    open(Stacking.Push, EXERCISE_PROGRESS_PATH, mapOf(EXERCISE_ID_PARAM to exerciseId))
+                    open(Route(Destination.ExerciseProgress, mapOf(EXERCISE_ID_PARAM to exerciseId)))
                 }
             }
         }

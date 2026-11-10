@@ -2,12 +2,12 @@ package com.casco.kettle.shell.files
 
 import com.casco.kettle.domain.Library
 import com.casco.kettle.domain.Preferences
+import com.casco.kettle.domain.RunnerStart
 import com.casco.kettle.domain.Session
 import com.casco.kettle.domain.SessionLog
 import com.casco.kettle.domain.ThemePreference
 import com.casco.kettle.domain.UnitSystem
-import com.casco.kettle.shell.nav.NATIVE_RUNNER_PATH
-import com.casco.kettle.shell.nav.TabNavigator
+import com.casco.kettle.shell.nav.Navigator
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -25,7 +25,7 @@ import org.junit.rules.TemporaryFolder
 import java.io.IOException
 import java.util.concurrent.Executor
 
-/** RN writes the log and the library until M5, so native reads them again whenever RN hands back the tabs. */
+/** What native screens show of the log, the library and the preferences, and when it is read again. */
 class LatestFilesTest {
     @get:Rule
     val folder = TemporaryFolder()
@@ -40,9 +40,7 @@ class LatestFilesTest {
         )
     }
 
-    private val navigator by lazy {
-        TabNavigator(emptyMap(), navigate = {}, reread = files::reread)
-    }
+    private val navigator by lazy { Navigator(onRunnerClosed = files::reread) }
 
     private fun writeSession(id: String) =
         folder.root.resolve("exercise-tracker/sessions").apply { mkdirs() }.resolve("$id.yaml").writeText(
@@ -59,31 +57,19 @@ class LatestFilesTest {
 
     private fun names() = files.library?.workouts?.map { it.name }
 
+    /** #194's hand-back, now the runner's slot popping: what it wrote shows on the screen it covered. */
     @Test
-    fun `a session RN writes while it is above the tabs shows once the tabs come back`() {
+    fun `a session written while the runner shows is read once its slot pops`() {
         files.reread()
-        navigator.onRoute(NATIVE_RUNNER_PATH)
+        navigator.openRunner(RunnerStart.Adhoc)
 
         writeSession("finished")
 
         assertEquals(emptyList<String>(), ids())
 
-        navigator.onRoute("/history")
+        navigator.closeRunner()
 
         assertEquals(listOf("finished"), ids())
-    }
-
-    /** The names a log-reading screen shows come from it, and RN's editors write it until M5. */
-    @Test
-    fun `the library RN edits above the tabs is read again with the log`() {
-        writeWorkout("Push")
-        files.reread()
-        navigator.onRoute("/edit-workout")
-
-        writeWorkout("Push day")
-        navigator.onRoute("/")
-
-        assertEquals(listOf("Push day"), names())
     }
 
     private fun writeUnits(units: String) =
@@ -96,10 +82,9 @@ class LatestFilesTest {
     fun `the unit system in the preferences file is read again with the log`() {
         writeUnits("metric")
         files.reread()
-        navigator.onRoute("/settings")
 
         writeUnits("imperial")
-        navigator.onRoute("/")
+        files.reread()
 
         assertEquals(UnitSystem.IMPERIAL, files.preferences?.unitSystem)
     }

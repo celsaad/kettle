@@ -59,7 +59,6 @@ class SessionEditorScreenTest {
     val compose = createComposeRule()
 
     private var closed = 0
-    private var sessionsChanged = 0
 
     private lateinit var latest: LatestFiles
 
@@ -72,7 +71,7 @@ class SessionEditorScreenTest {
                     "session-1",
                     latest,
                     TimeZone.UTC,
-                    SessionEditorActions(close = { closed += 1 }, sessionsChanged = { sessionsChanged += 1 }),
+                    SessionEditorActions(close = { closed += 1 }),
                 )
             }
         }
@@ -110,7 +109,6 @@ class SessionEditorScreenTest {
                 sets = listOf(squatEntry.sets[0], squatEntry.sets[1].copy(reps = 7)),
             )
         assertEquals(listOf(aSession(listOf(squat, restEntry, plankEntry))), files.written)
-        assertEquals(1, sessionsChanged)
         assertEquals(1, closed)
     }
 
@@ -223,7 +221,6 @@ class SessionEditorScreenTest {
 
         compose.onNodeWithText("Não foi possível salvar: disk full").assertExists()
         assertEquals(0, closed)
-        assertEquals(0, sessionsChanged)
     }
 
     // A SecurityException often carries no message; the refusal must still show, or Save looks dead.

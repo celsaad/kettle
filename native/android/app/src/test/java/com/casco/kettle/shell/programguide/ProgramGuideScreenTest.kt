@@ -16,7 +16,8 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
-import com.casco.kettle.shell.rn.Stacking
+import com.casco.kettle.shell.nav.Destination
+import com.casco.kettle.shell.nav.Route
 import com.casco.kettle.shell.theme.KettleTheme
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -40,13 +41,13 @@ class ProgramGuideScreenTest {
     @get:Rule
     val compose = createComposeRule()
 
-    private val opened = mutableListOf<Pair<Stacking, String>>()
+    private val opened = mutableListOf<Route>()
     private var dones = 0
 
     private fun show() =
         compose.setContent {
             KettleTheme(darkTheme = false) {
-                ProgramGuideScreen(open = { how, path -> opened += how to path }, onDone = { dones++ })
+                ProgramGuideScreen(replaceWith = { opened += it }, onDone = { dones++ })
             }
         }
 
@@ -67,7 +68,7 @@ class ProgramGuideScreenTest {
             .performClick()
 
         // Replace, not push: why is at the call site.
-        assertEquals(listOf(Stacking.Replace to "/import"), opened)
+        assertEquals(listOf(Route(Destination.Import)), opened)
         assertEquals(0, dones)
     }
 
@@ -83,7 +84,7 @@ class ProgramGuideScreenTest {
             .performClick()
 
         assertEquals(1, dones)
-        assertEquals(emptyList<Pair<Stacking, String>>(), opened)
+        assertEquals(emptyList<Route>(), opened)
     }
 
     @Test

@@ -19,7 +19,7 @@ enum class Across(
 
 /**
  * The sheet's transitions (#155's table), each started at the first frame that draws the route it goes
- * to, RN's or a native sheet's (#197). One runs at a time: starting the next ends the last.
+ * to (#197). One runs at a time: starting the next ends the last.
  */
 class SheetMotion(
     private val stage: SheetStage,
@@ -58,9 +58,9 @@ class SheetMotion(
                 translate((1 - p) * offscreen)
             }
         }
-        // Hidden, over the tab's picture, which looks exactly like the tab, for one more frame: on a
-        // device the drawn signal was still a frame early for a route RN adds, and an open is the one
-        // transition whose first frame shows the live view uncovered (frame tiles, #155).
+        // Hidden, over the tab's picture, which looks exactly like the tab, for one more frame: an open is
+        // the one transition whose first frame shows the live view uncovered (frame tiles, #155), and on
+        // a device the drawn signal ran a frame early for it.
         frame(0f)
         val token = Any()
         waiting = token
@@ -126,9 +126,9 @@ class SheetMotion(
     }
 
     /**
-     * Into the runner, which RN slides up inside the surface: the sheet grows to full height and its
-     * corners flatten over the same length. One layout change up front, then translation alone, so RN
-     * lays the runner out once at its full size; the bottom is clipped by the frame until it arrives.
+     * Into the runner, which shows over everything: the sheet grows to full height and its corners
+     * flatten over the same length. One layout change up front, then translation alone; the bottom is
+     * clipped by the frame until it arrives.
      */
     fun grow() =
         with(stage) {
@@ -146,7 +146,7 @@ class SheetMotion(
             }
         }
 
-    /** [grow], reversed as RN slides the runner away; the sheet takes its own size back at the end. */
+    /** [grow], reversed as the runner goes; the sheet takes its own size back at the end. */
     fun shrink(
         tab: Bitmap?,
         colors: KettleColors,
@@ -167,7 +167,7 @@ class SheetMotion(
         }
     }
 
-    /** Out of the runner to a tab: RN slides the runner away itself, and nothing of the sheet is left. */
+    /** Out of the runner to a tab: nothing of the sheet it grew from is left. */
     fun release() =
         with(stage) {
             cancel()

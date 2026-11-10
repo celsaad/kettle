@@ -27,7 +27,8 @@ import com.casco.kettle.domain.TimedHoldSetLog
 import com.casco.kettle.domain.UnitSystem
 import com.casco.kettle.shell.files.FakeStoredFiles
 import com.casco.kettle.shell.files.LatestFiles
-import com.casco.kettle.shell.rn.Stacking
+import com.casco.kettle.shell.nav.Destination
+import com.casco.kettle.shell.nav.Route
 import com.casco.kettle.shell.theme.KettleTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -62,7 +63,7 @@ class StatsScreenTest {
     /** A Tuesday: the current week began yesterday, on the Monday the tests start weeks on. */
     private val now = Instant.parse("2026-08-18T12:00:00.000Z")
 
-    private val opened = mutableListOf<Triple<Stacking, String, Map<String, String>>>()
+    private val opened = mutableListOf<Route>()
 
     private fun show(
         exercises: List<Exercise>,
@@ -76,9 +77,7 @@ class StatsScreenTest {
             ).apply { reread() }
         compose.setContent {
             KettleTheme(darkTheme = false) {
-                StatsScreen(files, now, TimeZone.UTC, DayOfWeek.MONDAY) { how, path, params ->
-                    opened += Triple(how, path, params)
-                }
+                StatsScreen(files, now, TimeZone.UTC, DayOfWeek.MONDAY) { opened += it }
             }
         }
     }
@@ -205,7 +204,7 @@ class StatsScreenTest {
             .performScrollTo()
             .performClick()
 
-        assertEquals(listOf(Triple(Stacking.Push, "/exercise-progress", mapOf("exerciseId" to "rdl"))), opened)
+        assertEquals(listOf(Route(Destination.ExerciseProgress, mapOf("exerciseId" to "rdl"))), opened)
     }
 
     // History's header already says the all-time totals, one screen back, in the same words.
@@ -229,7 +228,7 @@ class StatsScreenTest {
                     now,
                     TimeZone.UTC,
                     DayOfWeek.MONDAY,
-                ) { _, _, _ -> }
+                ) {}
             }
         }
 

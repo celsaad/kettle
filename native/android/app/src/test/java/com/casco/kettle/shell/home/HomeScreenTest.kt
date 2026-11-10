@@ -45,8 +45,9 @@ import com.casco.kettle.domain.Workout
 import com.casco.kettle.domain.WorkoutBlock
 import com.casco.kettle.shell.files.FakeStoredFiles
 import com.casco.kettle.shell.files.LatestFiles
+import com.casco.kettle.shell.nav.Destination
+import com.casco.kettle.shell.nav.Route
 import com.casco.kettle.shell.nav.Tab
-import com.casco.kettle.shell.rn.Stacking
 import com.casco.kettle.shell.theme.KettleTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -80,9 +81,9 @@ class HomeScreenTest {
     @get:Rule
     val compose = createComposeRule()
 
-    private val opened = mutableListOf<Triple<Stacking, String, Map<String, String>>>()
+    private val opened = mutableListOf<Route>()
 
-    /** Every start, which `openRunner` turns into a push of the runner's stub. */
+    /** Every start, which opens the runner. */
     private val started = mutableListOf<RunnerStart>()
     private var drawn = 0
 
@@ -110,7 +111,7 @@ class HomeScreenTest {
                     HomeScreen(
                         latest,
                         reselects,
-                        open = { how, path, params -> opened += Triple(how, path, params) },
+                        open = { opened += it },
                         startRunner = { started += it },
                         clock = clock,
                     )
@@ -222,7 +223,7 @@ class HomeScreenTest {
             .assertWidthIsAtLeast(48.dp)
             .performClick()
 
-        assertEquals(listOf(Triple(Stacking.Push, "/workout-editor", mapOf("id" to "bench"))), opened)
+        assertEquals(listOf(Route(Destination.WorkoutEditor, mapOf("id" to "bench"))), opened)
         assertEquals(listOf(RunnerStart.Planned(SessionParams.Workout("bench"))), started)
     }
 
@@ -251,7 +252,7 @@ class HomeScreenTest {
             .assertWidthIsAtLeast(48.dp)
             .performClick()
 
-        assertEquals(listOf(Triple(Stacking.Push, "/workout-editor", emptyMap<String, String>())), opened)
+        assertEquals(listOf(Route(Destination.WorkoutEditor)), opened)
     }
 
     /** The only route to Settings until the preferences flip, so losing it would strand the user. */
@@ -265,7 +266,7 @@ class HomeScreenTest {
             .assertWidthIsAtLeast(48.dp)
             .performClick()
 
-        assertEquals(listOf(Triple(Stacking.Push, "/settings", emptyMap<String, String>())), opened)
+        assertEquals(listOf(Route(Destination.Settings)), opened)
     }
 
     @Test
@@ -362,7 +363,7 @@ class HomeScreenTest {
 
         button("Adicionar um programa inicial").assertHeightIsAtLeast(48.dp).performClick()
 
-        assertEquals(listOf(Triple(Stacking.Push, "/import", emptyMap<String, String>())), opened)
+        assertEquals(listOf(Route(Destination.Import)), opened)
     }
 
     @Test
@@ -398,7 +399,7 @@ class HomeScreenTest {
 
         button("Adicionar um programa inicial").performClick()
 
-        assertEquals(listOf(Triple(Stacking.Push, "/import", emptyMap<String, String>())), opened)
+        assertEquals(listOf(Route(Destination.Import)), opened)
     }
 
     // A long workout: the card names no block, and its one summary line is what scales.

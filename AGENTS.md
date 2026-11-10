@@ -17,14 +17,13 @@ it's `pnpm test --ci`, not `npm test -- --ci`.
 - `pnpm run typecheck` — `tsc --noEmit`
 - `pnpm run lint` — oxlint. **Keep it at zero warnings and zero errors.** A warning you genuinely
   can't fix wants a one-line disable naming the reason, not a new accepted baseline. It also holds
-  two of the layer rules below: `src/domain/` imports no React, Expo or store, and only
-  `src/storage/` imports `expo-file-system`. Tests get the jest rules, chiefly the two that catch a
+  a layer rule: `src/domain/` imports no React, Expo or store. Tests get the jest rules, chiefly the two that catch a
   test passing vacuously — no assertion, or an assertion on only one branch.
 - `pnpm run knip` — unused files, dependencies and exports, and any import `package.json` doesn't
   list. Same rule as a lint warning: delete the dead code, or name a genuine exception in
   `knip.jsonc` with its reason.
-- `pnpm test` — jest via `jest-expo`. Covers the domain layer, the shipped content and its mirrors,
-  the stores and the native runner's stub route; the runner itself is `:shared`'s and `:app`'s tests.
+- `pnpm test` — jest via `jest-expo`. Covers the domain layer, the shipped content and its mirrors;
+  every screen and the runner are `:app`'s and `:shared`'s tests since routing moved native (#309).
   Under a minute, so run it. A single file is `pnpm jest <path>`.
 - `pnpm run format` — oxfmt (same Oxc toolchain as oxlint, so they agree). Run it instead of matching
   the style by hand, and never reach for `pnpm dlx prettier`, which has no config here and would
@@ -90,10 +89,10 @@ mistake here that cannot be fixed for anyone who has already installed it.
   YAML), `yaml-mapping.ts`, `merge.ts` (import merges by `id`, whole-object replace), `program.ts`
   (week resolution + override application). Every editor is native's since the library flip (#245),
   so the form logic lives in `:shared` (`ExerciseForm.kt`, `SessionEntryForm.kt`) rather than here.
-- `src/storage/` — all file I/O, via `expo-file-system`'s **class-based `File`/`Directory` API**.
-  One file per session (`session-files.ts`), so a mid-workout flush never rewrites history. It also
-  holds the readers for the content the app *ships*: `seed-library.ts` (the seed the tests read;
-  native writes the real seed on a first launch, `PreparedLibrary.kt`) and
+- `src/storage/` — the readers for the content the app *ships*; every file the app writes is
+  native's since #308, and RN's own readers went with its stores (#309). The readers are
+  `seed-library.ts` (the seed the tests read; native writes the real seed on a first launch,
+  `PreparedLibrary.kt`) and
   `content-packs.ts` (bundled libraries native Import offers, merged in on a tap, read here for the
   tests that hold them). The content itself is data in `src/content/`, which native reads too: an
   English `library.yaml` plus a `<lang>.json` string table per language (`library-translation.ts`),
@@ -102,16 +101,18 @@ mistake here that cannot be fixed for anyone who has already installed it.
   in `content-packs.ts`'s import map, and its import-screen row (`import.packs.<id>.name`/`.detail`
   in all three bundles); `content-packs.test.ts` fails when any of them is missing. See the decision
   log for the four rules a pack has to respect; the prefixed-id one is the load-bearing one.
-- `src/state/` — zustand stores (`library-store`, `session-history-store`, and a read-only
-  `preferences-store`, since native Settings writes that file) and `selectors/`, derived/display logic
-  split per view (`records`, `logged-sessions`, `session-summary`, …).
+- `src/state/selectors/` — derived/display logic split per view (`records`, `logged-sessions`,
+  `session-summary`, …), pure and tested. No screen reads it since the stores went (#309); M7 decides
+  what of it stays.
 - The session runner is native's since the flip release (#308): a headless engine in `:shared`
   (`RunnerEngine.kt`, with the step model in `RunnerSteps.kt`) that `:app`'s foreground service
   (`shell/runner/RunnerService.kt`) owns and feeds the time, and the Compose runner over it. The
   product plan calls timer reliability "the make-or-break issue"; treat the engine and the service as
   high-risk and verify changes by running a real session (`scripts/session-check.sh`), not by
   reasoning alone.
-- `src/app/` — expo-router routes. `src/components/` — shared UI.
+- `index.ts` — the RN entry, a root component that renders nothing. Routing is native's since #309
+  (`shell/nav/`: `Route.kt` is the route table, `Navigator.kt` the back stack and the runner's slot),
+  so the RN surface the shell still starts draws nothing, and M7 deletes it.
 - `site/` — the public landing site (GitHub Pages), plain static HTML with no build step. Not part of
   the app build. `site/format.html` mirrors `schema.ts` — see "Changing the YAML format" below.
   `site/examples/*.yaml` are complete libraries published for readers to import as they are;
@@ -160,8 +161,6 @@ mistake here that cannot be fixed for anyone who has already installed it.
 - **There is no web build.** It ended in M6 (#298), so `Platform.OS` is only ever `android` or
   `ios`, and storage has no unsupported-platform guard. Don't add `react-native-web` back to check a
   layout: drive the running app on a device instead.
-- Adding a route file requires regenerating `.expo/types/router.d.ts` (briefly run the dev server) or
-  `router.push('/new-route')` fails typecheck.
 - **Nothing may phone home.** The Play listing declares zero data collected/shared, which is a product
   claim, not an accident (see the tip-jar entry in the decision log). Any SDK that transmits — Sentry,
   EAS Update, analytics, RevenueCat — breaks it and needs a Data Safety declaration. Don't add one
@@ -181,13 +180,13 @@ are house rules here rather than a backlog — cheap as you go, tedious to retro
   is the column everything else lines up on. A row that can't use the component (History's expands;
   Settings' are section siblings rather than list children) shares its exported metrics rather than
   retyping them. Sibling lists that look subtly unlike each other read as a bug, not a distinction.
-- Modal screens: register by adding the name to `SHEET_ROUTES` (`src/constants/sheet-routes.ts`), which gives
-  it `presentation: 'modal', headerShown: false` and tells the Android shell to present it as its sheet,
-  and open with the shared `ModalHeader` (grabber + pinned close button; it owns the top spacing, so
-  the screen's own `scrollContent` has no `paddingTop`).
-- Theming is strict: `useTheme`, `ThemedText`, `Spacing.*`, `MaxContentWidth`. The
+- Sheet screens: a `Destination` with `Presentation.Sheet` in `shell/nav/Route.kt`, and its branch in
+  `RouteContent` (`ShellRoutes.kt`), which the `when` won't compile without. The shell presents it as
+  its sheet, with the grabber and × drawn over the top by `SheetChrome`; the screen's content starts
+  below that strip and adds no top padding of its own.
+- Theming is strict: `KettleTheme.colors`, `KettleType`, `Spacing.*`, `MaxContentWidth`. The
   session runner is always dark (`theme.json`'s `RunnerColors`) regardless of scheme. Colors, spacing and the type
-  scale (`ThemedText`'s sizes) are edited in `constants/theme.json`, which both UIs read; `theme.ts`
+  scale are edited in `constants/theme.json`, which native's `:theme` generates its Compose theme from; `theme.ts`
   re-exports them and holds their notes.
 - In-app forms write straight to the file and never pass through the schema, so they need their own
   validation (see `validateConfig` in `:shared`'s `ExerciseForm.kt`).
@@ -233,25 +232,20 @@ with every test still green.
 
 ## Writing tests
 
-- **Every RNTL 14 entry point returns a Promise** — `render`, `renderHook` *and* `fireEvent`. A
-  missing `await` doesn't fail loudly: the assertion reads the pre-interaction tree, and the only hint
-  is an "overlapping act() calls" warning from some later test. Around fake timers, `act` must be
-  `async` too, or React reports nested scopes.
-- **Mock at our own boundary** (`@/storage/*`, `@/state/session-history-store`), not at
-  `expo-file-system` — assertions then read as "what got persisted" rather than "what got written".
-- `src/test-support/` holds the shared fixtures and the `expo-router` stand-in. That one is a module
-  rather than an inline factory because `jest.mock`'s factory is hoisted above every `const` and may
-  not close over one; `jest.mock('expo-router', () => require('@/test-support/expo-router'))` works.
+- **Mock at our own boundary**, not at the platform's — assertions then read as "what got persisted"
+  rather than "what got written". Native's screens take a `StoredFiles` (`FakeStoredFiles` in tests).
+- `src/test-support/` holds the shared fixtures. A `jest.mock` factory is hoisted above every `const`
+  and may not close over one, which is why a stand-in there is a module rather than an inline factory.
 - **Prove a regression test fails against the bug it pins**, by reintroducing that bug. A test that
   passes either way is worthless, and this has caught more than one.
-- **To test that a screen is translated, drive it in `pt`** (`changeLanguage('pt')`; the harness loads
-  both bundles and resets the locale after every test). An English-locale assertion *cannot* catch a
-  hardcoded English string — `t('x.y')` and the literal it returns render identically. It only catches
-  a rendered key path. Three screens have shipped with hardcoded strings for exactly this reason.
+- **To test that a screen is translated, drive it in `pt`** (`@Config(qualifiers = "pt")` on a
+  Robolectric test). An English-locale assertion *cannot* catch a hardcoded English string — the
+  resource and the literal it returns render identically. Three screens have shipped with hardcoded
+  strings for exactly this reason.
 - Finish with `pnpm run format`; don't hand-align a new test file against the rest.
-- `testTimeout` is 30s, not jest's 5s default. Screen tests pay a one-off lazy-init cost on the first
-  render in a file (~0.5s locally, far more on CI's contended 2-core runner, where the default failed).
-  It only costs time when something genuinely hangs.
+- `testTimeout` is 30s, not jest's 5s default, a leftover of RN's screen tests, whose first render in
+  a file paid a lazy-init cost that failed the default on CI's 2-core runner. It only costs time when
+  something genuinely hangs; M7 can drop it with the rest of jest's screen setup.
 
 What tests can't reach — layout, animation, real audio and file writes — is verified by driving the
 running app on a device or emulator: `scripts/native-dev.sh` puts the `.dev` shell on it, and

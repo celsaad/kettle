@@ -10,7 +10,6 @@ import { getLocales } from 'expo-localization';
 import i18next, { use } from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
-import type { UnitSystem } from '@/domain/units';
 import en from '@/i18n/locales/en.json';
 import ja from '@/i18n/locales/ja.json';
 import pt from '@/i18n/locales/pt.json';
@@ -62,19 +61,6 @@ use(initReactI18next).init({
   interpolation: { escapeValue: false },
   returnNull: false,
 });
-
-/**
- * The unit system to start from when the user has never chosen one, per `expo-localization`'s
- * `measurementSystem` (`metric` | `us` | `uk` | null).
- *
- * **`uk` maps to metric deliberately.** It's nominally an imperial system, and it is the one the UK
- * uses for body weight — but British gyms load kilo plates and sell kilo dumbbells, so handing a
- * British user pounds would put the app in a different unit from the equipment in front of them.
- * Anything unreported falls back to metric, which is what the stored data already is.
- */
-export function deviceUnitSystem(): UnitSystem {
-  return getLocales()[0]?.measurementSystem === 'us' ? 'imperial' : 'metric';
-}
 
 /** The active UI language tag, for Intl formatters. */
 export function currentLocale(): string {

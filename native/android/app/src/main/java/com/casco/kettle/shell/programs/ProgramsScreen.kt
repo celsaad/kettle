@@ -51,13 +51,13 @@ import com.casco.kettle.shell.list.NewItemButton
 import com.casco.kettle.shell.list.NewItemButtonClearance
 import com.casco.kettle.shell.list.NoResults
 import com.casco.kettle.shell.list.SearchBar
+import com.casco.kettle.shell.nav.Destination
+import com.casco.kettle.shell.nav.LocalNavigator
 import com.casco.kettle.shell.nav.LocalTabReselects
+import com.casco.kettle.shell.nav.Route
 import com.casco.kettle.shell.nav.ScrollsToTopOnReselect
 import com.casco.kettle.shell.nav.Tab
-import com.casco.kettle.shell.programdetail.PROGRAM_DETAIL_PATH
 import com.casco.kettle.shell.programdetail.PROGRAM_ID_PARAM
-import com.casco.kettle.shell.rn.JsBridge
-import com.casco.kettle.shell.rn.Stacking
 import com.casco.kettle.shell.theme.Chevron
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
@@ -66,14 +66,14 @@ import com.casco.kettle.shell.theme.Spacing
 import com.casco.kettle.shell.theme.emptyStateCard
 import kotlinx.coroutines.flow.Flow
 
-/** What `shellRoutes` registers at `/programs`, the tab. */
+/** What the route table draws at `Destination.Programs`, the tab. */
 @Composable
-fun ProgramsRoute() = ProgramsScreen(LocalLatestFiles.current, LocalTabReselects.current, JsBridge::open)
+fun ProgramsRoute() = ProgramsScreen(LocalLatestFiles.current, LocalTabReselects.current, LocalNavigator.current::push)
 
 /**
  * Programs (#232), the library's programs as rows, as RN's `(tabs)/programs.tsx`, now the empty stub
  * at this path: a name search, the program guide behind `?`, and New program, which opens the program
- * editor. [open] is `JsBridge.open`, a parameter so a test hears each route opened.
+ * editor. [open] pushes a route, a parameter so a test hears each one opened.
  *
  * [reselected] carries taps on the tab already showing; one on Programs scrolls back to the top.
  */
@@ -81,7 +81,7 @@ fun ProgramsRoute() = ProgramsScreen(LocalLatestFiles.current, LocalTabReselects
 fun ProgramsScreen(
     files: LatestFiles,
     reselected: Flow<Tab>,
-    open: (Stacking, String, Map<String, String>) -> Unit,
+    open: (Route) -> Unit,
 ) {
     val library = files.library
     val listState = rememberLazyListState()
@@ -90,7 +90,7 @@ fun ProgramsScreen(
     var query by rememberSaveable { mutableStateOf("") }
     val all = library?.programs.orEmpty()
     val matching = remember(all, query) { rankByName(all, query) { it.name } }
-    val openGuide = { open(Stacking.Push, "/program-guide", emptyMap()) }
+    val openGuide = { open(Route(Destination.ProgramGuide)) }
 
     Box(Modifier.fillMaxSize().statusBarsPadding(), contentAlignment = Alignment.TopCenter) {
         LazyColumn(
@@ -123,7 +123,7 @@ fun ProgramsScreen(
             }
             itemsIndexed(matching, key = { _, program -> program.id }) { index, program ->
                 if (index > 0) ListRowSeparator()
-                ProgramRow(program) { open(Stacking.Push, PROGRAM_DETAIL_PATH, mapOf(PROGRAM_ID_PARAM to program.id)) }
+                ProgramRow(program) { open(Route(Destination.ProgramDetail, mapOf(PROGRAM_ID_PARAM to program.id))) }
             }
             // Two empty states, told apart: the first-run card invites you to go read the YAML guide,
             // which is a strange answer to a mistyped program name. Neither before there is a library,
@@ -135,7 +135,7 @@ fun ProgramsScreen(
             }
         }
         NewItemButton(stringResource(R.string.programs_newProgram), Modifier.align(Alignment.BottomEnd)) {
-            open(Stacking.Push, "/program-editor", emptyMap())
+            open(Route(Destination.ProgramEditor))
         }
     }
 }

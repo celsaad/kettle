@@ -19,27 +19,26 @@ import com.casco.kettle.shell.export.FileShare
 import com.casco.kettle.shell.files.LatestFiles
 import com.casco.kettle.shell.files.LocalLatestFiles
 import com.casco.kettle.shell.files.StoragePaths
+import com.casco.kettle.shell.nav.LocalNavigator
 import com.casco.kettle.shell.reminder.reconcileReminder
-import com.casco.kettle.shell.rn.FileKind
-import com.casco.kettle.shell.rn.JsBridge
-import com.casco.kettle.shell.rn.Stacking
 import com.casco.kettle.shell.support.DiskSupporterFile
 import com.casco.kettle.shell.system.copyToClipboard
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-/** What `shellRoutes` registers at `/settings`: the screen on the real files, SAF, the share sheet and the shell. */
+/** What the route table draws at `/settings`: the screen on the real files, SAF, the share sheet and the shell. */
 @Composable
 fun SettingsRoute() {
     val activity = LocalActivity.current ?: return
     val files = LocalLatestFiles.current
+    val navigator = LocalNavigator.current
     val paths = remember { StoragePaths(activity.filesDir) }
     val share = remember { FileShare(activity, paths) }
     val pickFolder = rememberFolderPicker(activity)
     val notifications = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
     val actions =
-        remember(files, pickFolder) {
+        remember(files, pickFolder, navigator) {
             SettingsActions(
                 BackupActions(
                     pickFolder = pickFolder,
@@ -56,8 +55,7 @@ fun SettingsRoute() {
                     },
                     changed = { preferences -> files.reconcileReminder(activity, preferences) },
                 ),
-                preferencesChanged = { JsBridge.filesChanged(FileKind.PREFERENCES) },
-                open = { path -> JsBridge.open(Stacking.Push, path) },
+                open = navigator::push,
             )
         }
     SettingsScreen(

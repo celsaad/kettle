@@ -73,8 +73,7 @@ import com.casco.kettle.shell.form.dashedBorder
 import com.casco.kettle.shell.i18n.deviceUnitSystem
 import com.casco.kettle.shell.i18n.pluralText
 import com.casco.kettle.shell.list.TextAction
-import com.casco.kettle.shell.rn.FileKind
-import com.casco.kettle.shell.rn.JsBridge
+import com.casco.kettle.shell.nav.LocalNavigator
 import com.casco.kettle.shell.theme.DialogAction
 import com.casco.kettle.shell.theme.KettleAlertDialog
 import com.casco.kettle.shell.theme.KettleTheme
@@ -87,25 +86,19 @@ import kotlinx.coroutines.withContext
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
 
-/** Where the workout editor is registered, as Home and Library push it: with an `id` to edit, none to create. */
-const val WORKOUT_EDITOR_PATH = "/workout-editor"
-
-/** What `shellRoutes` registers at [WORKOUT_EDITOR_PATH]. */
-@Composable
-fun WorkoutEditorRoute(params: Map<String, String>) =
-    WorkoutEditorScreen(
-        params["id"],
-        LocalLatestFiles.current,
-        WorkoutEditorActions(close = JsBridge::back, libraryChanged = { JsBridge.filesChanged(FileKind.LIBRARY) }),
-    )
-
 /**
- * What the editor asks of the shell, as parameters so a test hears each one. [libraryChanged] follows
- * every write, the quick-add's too, so RN's stores read the library again.
+ * What the route table draws at `Destination.WorkoutEditor`, as Home and Library push it: with an `id` to
+ * edit, none to create.
  */
+@Composable
+fun WorkoutEditorRoute(params: Map<String, String>) {
+    val navigator = LocalNavigator.current
+    WorkoutEditorScreen(params["id"], LocalLatestFiles.current, WorkoutEditorActions(close = { navigator.back() }))
+}
+
+/** What the editor asks of the shell, as a parameter so a test hears it. */
 class WorkoutEditorActions(
     val close: () -> Unit,
-    val libraryChanged: () -> Unit,
 )
 
 /**
@@ -270,10 +263,7 @@ private class Editor(
         scope.launch {
             withContext(NonCancellable) {
                 val refused =
-                    writeOrRefusal {
-                        files.writeLibrary(change(library))
-                        actions.libraryChanged()
-                    }
+                    writeOrRefusal { files.writeLibrary(change(library)) }
                 failure = refused?.let { Failure(kind, it) }
                 writing = false
                 closing = false

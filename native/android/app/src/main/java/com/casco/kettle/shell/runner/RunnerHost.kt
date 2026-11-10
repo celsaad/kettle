@@ -38,7 +38,7 @@ object RunnerHost {
 
     /**
      * The service wrote the running session, on the main thread: native screens read the log again,
-     * so Home's next-up and History follow (#297). The current activity's, like `JsBridge.onRoute`.
+     * so Home's next-up and History follow (#297). The current activity's, like `LibraryAdopt.onLibraryWritten`.
      */
     var onSessionWritten: (() -> Unit)? = null
 

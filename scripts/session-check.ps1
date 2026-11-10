@@ -377,6 +377,23 @@ try {
     A shell input tap ((([int]$Matches[1] + [int]$Matches[3]) / 2) -as [int]) ((([int]$Matches[2] + [int]$Matches[4]) / 2) -as [int])
     return $true
   }
+  # History's banner title (en.json's history.problemsTitle), or nothing with no unreadable file, and the
+  # session files that are empty (#333). The user's own sessions stay in the log through the run, so the
+  # checks are that a kill adds nothing to either. Read only with History's tab selected, as route-check
+  # reads it, so a dump that failed or a screen that never came can't pass as an empty banner.
+  function HistoryBanner {
+    Navigate '/history'
+    Start-Sleep -Seconds 2
+    $xml = (A exec-out 'f=/sdcard/session-check.xml; rm -f $f; uiautomator dump $f >/dev/null 2>&1; cat $f 2>/dev/null; true') -join ''
+    try { $dump = [xml]$xml } catch { return 'History not on screen' }
+    if ($null -eq $dump.SelectSingleNode("//node[@selected='true'][.//node[@text='History']]")) { return 'History not on screen' }
+    $node = $dump.SelectSingleNode("//node[contains(@text, 'be read or written')]")
+    if ($node) { $node.GetAttribute('text') } else { '' }
+  }
+  # A find that failed says so, rather than reading as no empty file: InApp throws its errors away.
+  function EmptySessionFiles { (InApp "find $data/files/exercise-tracker/sessions -name '*.yaml' -empty || echo 'find failed'") -join ' ' }
+  $bannerBefore = HistoryBanner
+  $emptyBefore = EmptySessionFiles
   if (OpenSession 'zz-check-rest') { WaitRunning | Out-Null }
   $id = Field sessionId
   KillApp
@@ -396,6 +413,10 @@ try {
   TapText 'Finish' | Out-Null
   Check "the prompt's Finish deletes the state file" (WaitFor 8 { -not (StateFiles) })
   Check "the prompt's Finish stamps ended_at" ((SessionFile $id) -match 'ended_at: 20')
+  $empty = EmptySessionFiles
+  Check 'two kills leave no new empty session file' ($empty -eq $emptyBefore -and $empty -notmatch 'find failed') $empty
+  $banner = HistoryBanner
+  Check "History's banner lists nothing new after the relaunch" ($banner -eq $bannerBefore -and $banner -ne 'History not on screen') "'$banner', was '$bannerBefore'"
   Start-Sleep -Seconds 1
 
   Step 'Sounds off'
@@ -499,10 +520,11 @@ try {
   A shell pm grant $package android.permission.POST_NOTIFICATIONS 2>&1 | Out-Null
   A shell am force-stop $package
   if ($backedUp) {
-    # The runner's state files aren't in the backup, and there were none at the start (checked).
     # The runner's state files aren't in the backup, and there were none at the start (checked). The
-    # data folder is cleared only when the archive that replaces it is on the device.
-    A shell "run-as $package sh -c 'rm -rf $data/no_backup/runner; [ -s /data/local/tmp/session-check.tar ] && cd $data && rm -rf files/exercise-tracker && tar -xf /data/local/tmp/session-check.tar'"
+    # data folder is cleared only when the archive that replaces it is on the device. Synced before
+    # anything else (#333): tar doesn't, the checksums below read the page cache, and an emulator killed
+    # soon after (`emu kill`) came back with every restored file present and zero bytes long.
+    A shell "run-as $package sh -c 'rm -rf $data/no_backup/runner; [ -s /data/local/tmp/session-check.tar ] && cd $data && rm -rf files/exercise-tracker && tar -xf /data/local/tmp/session-check.tar; sync'"
     A shell rm -f /data/local/tmp/session-check.tar
     if ((Checksums) -eq $checksumsBefore) {
       Write-Host 'The .dev data folder is byte for byte as it was.'

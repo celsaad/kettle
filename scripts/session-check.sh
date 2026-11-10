@@ -241,8 +241,10 @@ restore() {
   a shell am force-stop "$package"
   if [ "$backed_up" = 1 ]; then
     # The runner's state files aren't in the backup, and there were none at the start (checked). The
-    # data folder is cleared only when the archive that replaces it is on the device.
-    a shell "run-as $package sh -c 'rm -rf $data/no_backup/runner; [ -s /data/local/tmp/session-check.tar ] && cd $data && rm -rf files/exercise-tracker && tar -xf /data/local/tmp/session-check.tar'"
+    # data folder is cleared only when the archive that replaces it is on the device. Synced before
+    # anything else (#333): tar doesn't, the checksums below read the page cache, and an emulator killed
+    # soon after (`emu kill`) came back with every restored file present and zero bytes long.
+    a shell "run-as $package sh -c 'rm -rf $data/no_backup/runner; [ -s /data/local/tmp/session-check.tar ] && cd $data && rm -rf files/exercise-tracker && tar -xf /data/local/tmp/session-check.tar; sync'"
     a shell rm -f /data/local/tmp/session-check.tar
     if [ "$(checksums)" = "$(cat "$work/checksums")" ]; then
       echo "The .dev data folder is byte for byte as it was."
@@ -416,6 +418,27 @@ tap_text() {
   set -- $xy
   a shell input tap $((($1 + $3) / 2)) $((($2 + $4) / 2))
 }
+# History's banner title (en.json's history.problemsTitle), or nothing with no unreadable file, and the
+# session files that are empty (#333). The user's own sessions stay in the log through the run, so the
+# checks are that a kill adds nothing to either. Read only with History's tab selected, as route-check
+# reads it, so a dump that failed or a screen that never came can't pass as an empty banner.
+history_banner() {
+  local dump
+  navigate /history
+  sleep 2
+  dump=$(a exec-out 'f=/sdcard/session-check.xml; rm -f $f; uiautomator dump $f >/dev/null 2>&1; cat $f 2>/dev/null; true')
+  if [ "$(printf '%s' "$dump" | xmllint --xpath "boolean(//node[@selected='true'][.//node[@text='History']])" - 2>/dev/null)" != true ]; then
+    echo 'History not on screen'
+    return
+  fi
+  printf '%s' "$dump" | xmllint --xpath "string(//node[contains(@text, 'be read or written')]/@text)" - 2>/dev/null
+}
+# A find that failed says so, rather than reading as no empty file: in_app throws its errors away.
+empty_session_files() {
+  in_app "find $data/files/exercise-tracker/sessions -name '*.yaml' -empty || echo 'find failed'" | tr -d '\r'
+}
+banner_before=$(history_banner)
+empty_before=$(empty_session_files)
 open_session zz-check-rest && wait_running
 id=$(field "$(report)" sessionId)
 kill_app
@@ -436,6 +459,10 @@ tap_text Finish || true
 wait_for 8 no_state_files; check "the prompt's Finish deletes the state file" $?
 case "$(session_file "$id")" in *ended_at:\ 20*) ok=0 ;; *) ok=1 ;; esac
 check "the prompt's Finish stamps ended_at" $ok
+empty=$(empty_session_files)
+[ "$empty" = "$empty_before" ] && [ "${empty#*find failed}" = "$empty" ]; check 'two kills leave no new empty session file' $? "$empty"
+banner=$(history_banner)
+[ "$banner" = "$banner_before" ] && [ "$banner" != 'History not on screen' ]; check "History's banner lists nothing new after the relaunch" $? "'$banner', was '$banner_before'"
 sleep 1
 
 step 'Sounds off'

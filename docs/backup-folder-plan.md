@@ -3,7 +3,7 @@
 > **Executed; kept for its rationale, not as a backlog.** The approach for letting the user nominate
 > a folder Kettle writes its files into, agreed before any code was written. Why a user-picked SAF
 > folder beat a cloud SDK is in [`decisions.md`](decisions.md); the API facts it rests on are in
-> [`sdk-57-api-notes.md`](sdk-57-api-notes.md). The one section still live is "Still to confirm on a
+> the decision log's "SAF: what the backup folder relies on" entry. The one section still live is "Still to confirm on a
 > device".
 
 ## The problem
@@ -28,7 +28,7 @@ promise").
 SAF URI carries **persistable** permission that survives a relaunch.
 
 **Answer: yes on Android, no on iOS** — read out of the installed native sources, which is the
-standard `sdk-57-api-notes.md` already sets. It is **not** the device relaunch test, which could not
+standard the SDK notes of the time set. It is **not** the device relaunch test, which could not
 be run here (see "Still to confirm on a device").
 
 - **Android persists.** `FilePickerContract.parseResult`
@@ -166,4 +166,4 @@ translation assertion driven in `pt`.
 
 - A `decisions.md` entry for why a user-picked SAF folder beat a cloud SDK or platform auto-backup.
 - A write-up under `## Unreleased` in `CHANGELOG.md`.
-- The SAF findings above folded into `sdk-57-api-notes.md`.
+- The SAF findings above folded into the SDK notes (the decision log's SAF entry since M7).

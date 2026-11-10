@@ -1,5 +1,12 @@
 # Shipping Kettle on iOS — plan
 
+> **The RN iOS route is closed for good.** React Native and Expo left the app at M7 (#357), so
+> `expo prebuild --platform ios`, `app.json` and every RN file this plan links are gone, and iOS is
+> M8's native app (`docs/native-migration-plan.md`). Read the body as history and as reasoning: the
+> background-cue, Files-app, localization and store decisions carry over to M8, and the facts
+> `app.json` held are in "What `app.json` held for iOS" below, which is where a link to `app.json`
+> in the body now points.
+>
 > **Partly executed.** Written against the tree at `d80e5e7`, SDK 57. **Five of Phase 2's six changes have
 > shipped** — everything but 2.3, which is store-side work in App Store Connect — along with the
 > `app.json` block Phase 1 asks for (minus `supportsTablet`) and the notification half of Phase 4.
@@ -48,6 +55,27 @@ ahead, which is why they are fixed and the decision is still open.
 
 The expensive part is not the code. It's the build infrastructure and the review surface, which is why
 those get phases of their own and the code gets one.
+
+## What `app.json` held for iOS
+
+Deleted at M7 (#357). What M8's Xcode project and Info.plist start from, each a decision this plan
+or the decision log already argues:
+
+- **`bundleIdentifier`:** `com.casco.kettle`, the same id as Android's package.
+- **`config.usesNonExemptEncryption: false`**, i.e. `ITSAppUsesNonExemptEncryption = NO`, so App
+  Store Connect doesn't ask the export-compliance question on every upload (Phase 5).
+- **`infoPlist`:** `UIFileSharingEnabled` and `LSSupportsOpeningDocumentsInPlace`, both `true`: the
+  app's Documents folder in the Files app, iOS's answer to the backup folder (the decision log's
+  backup entry).
+- **`entitlements`:** `com.apple.developer.usernotifications.time-sensitive: true`, so the rest cue
+  breaks through Focus (Phase 4).
+- **Localizations:** `en`, `pt`, `ja`, written by `expo-localization`'s
+  `supportedLocales.ios` as `CFBundleLocalizations` (2.5). It has to match the locale bundles; RN
+  checked that with a test, and M8 should too.
+- **The icon:** [`assets/expo.icon/`](../assets/expo.icon), an Icon Composer bundle, kept in the
+  repo for M8.
+- **`buildNumber`:** `"20"`, which tracked Android's versionCode until M7. It isn't carried over:
+  see Phase 5's `/bump` entry for the rule M8 starts from.
 
 ## What already works, unchanged
 
@@ -309,8 +337,8 @@ The question that decides whether iCloud Drive is a config change or a project i
 exposes a ubiquity container at all. **It does not.** Grepping `node_modules/expo-file-system/build/`
 for `icloud|ubiquit|bookmark|securityScoped` returns nothing — no first-party surface, so this needs a
 config plugin plus native code. (Checked against the installed module rather than the published docs,
-on the principle [`sdk-57-api-notes.md`](sdk-57-api-notes.md) exists to record: two of that file's
-three subjects are documented wrong upstream.)
+on the principle the SDK 57 notes of the time recorded: two of their three subjects were documented
+wrong upstream.)
 
 So **both halves of iCloud drop out of the launch**, for different reasons — iCloud Drive because it
 needs native work this plan won't carry, CloudKit because it is session-restore wearing a sync costume
@@ -531,14 +559,14 @@ constraints that shape future work, and claims that become **false** the moment 
 - **`docs/building-ios.md`** — new, mirroring `building-android.md`: the certificate setup, the
   workflow, and what it costs.
 - **[`watch-remote-plan.md`](watch-remote-plan.md)** — per Phase 4.
-- **[`/bump`](../.claude/commands/bump.md)** — ✅ done, ahead of the rest of this phase, because
-  `expo.ios.buildNumber` went into `app.json` the moment Phase 1's block did and a documented
-  invariant nothing enforces is worth less than no invariant. The command now names three fields, and
-  the decision this entry called for went the way it predicted: the two build numbers are kept
-  **numerically identical**, so one integer serves both stores and the changelog heading
-  (`## <version> — versionCode <n>, <date>`) can keep naming only the versionCode without becoming
-  half-true. `app-config.test.ts` asserts the match rather than trusting it, and says what to do if a
-  rejected submission ever needs a second build of one version: raise both.
+- **[`/bump`](../.claude/commands/bump.md)** — finds each platform from its version file, so M8
+  only has to add iOS's (e.g. `native/ios/Version.xcconfig`); with more than one found it asks
+  which platforms to bump. **Each platform has its own build number** (`versionCode`,
+  `CFBundleVersion`), raised only when that platform ships, and **the version name is shared**, taken
+  from `CHANGELOG.md`'s heading; a platform that skips a release skips that version name. That
+  replaced, at M7 (#357), the RN-era rule of one integer serving both stores, which held only while
+  one `app.json` built both. The changelog heading (`## <version> — versionCode <n>, <date>`) names
+  Android's build number, so M8 decides how a heading names iOS's.
 - **[`store-copy.test.ts`](../src/domain/__tests__/store-copy.test.ts)** — a bigger job than a changed
   constant. It asserts Play's whole shape: 80 characters for short, 4000 for full, 500 per release-note
   block, that each heading *declares its own real length*, and that full descriptions keep 30

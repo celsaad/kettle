@@ -3,45 +3,31 @@
 The standing a11y/i18n house rules live in `AGENTS.md`; this is the one-off procedure for shipping a
 new UI language.
 
-Seven places, and only the first three are load-bearing enough to fail loudly if you miss them.
-Verified against the code rather than recalled, and re-checked when `ja` went in as the third. Three
-changes since: step 1's parity is now machine-checked rather than eyeballed, step 7 turned out to be
-both wrong and skipped — the listing copy does live in this repo, and `ja` shipped in the app without
-it — and step 3 is new, because `app.json` stopped being language-agnostic.
+Five places on Android, and only the first two fail loudly if you miss them. Verified against the
+code rather than recalled, and re-checked when `ja` went in as the third. Changes since: step 1's
+parity is now machine-checked rather than eyeballed; step 5 turned out to be both wrong and skipped
+(the listing copy does live in this repo, and `ja` shipped in the app without it); and at M7 (#357)
+two places went: `app.json`'s iOS locale list, which is an M8 note below now, and the jest setup's
+own list of bundles, which reads `resources` since.
 
 1. **`src/i18n/locales/<code>.json`** — the new bundle, at full parity with `en.json`.
    `i18n/__tests__/locale-bundles.test.ts` holds that parity in both directions against every language
    in `resources`, so a key you missed and a key you invented both fail the suite. What it can't check
    is whether the *strings* are right, or whether a screen renders one at all — for that, drive the
    screen in the new locale (`AGENTS.md`, "Writing tests").
-2. **`src/i18n/index.ts`** — import it into `resources`. That map is the *only* list of supported
-   languages: `deviceLanguage()` narrows the device's preferences against `Object.keys(resources)`,
-   so nothing else anywhere selects a language. Key it by language, not region (`pt` serves pt-BR and
-   pt-PT); region still drives dates, numbers and first-weekday through Intl, independently of this.
-3. **`app.json`** — add the code to `expo-localization`'s `supportedLocales.ios`. That option is
-   the only thing that writes `CFBundleLocalizations`; iOS filters `Locale.preferredLanguages`
-   against what the bundle declares, and `deviceLanguage()` narrows *that* — so an undeclared
-   language is reported by no device, `fallbackLng` renders everything in English, and a complete,
-   parity-checked bundle sits in the binary unreachable. Nothing throws, and from every angle except
-   an iPhone the language looks shipped. That silence is why `app-config.test.ts` diffs this list
-   against `resources` and fails when a language is in one and not the other. Keyed
-   `{ "ios": [...] }` rather than as a bare array on purpose: the array form also writes
-   `locales_config.xml`, sets `android:localeConfig` and appends `resourceConfigurations` to
-   `build.gradle`, which is an Android build change and a decision of its own.
-   `docs/ios-plan.md` §2.5 has the mechanism.
-4. **`src/content/seed/<lang>.json`** — the starter library's string table, imported in
+2. **`src/i18n/index.ts`** — import it into `resources`. That map is the list the bundle test and the
+   jest setup read, so a bundle left out of it is checked by nothing and invisible to every test. Key
+   it by language, not region (`pt` serves pt-BR and pt-PT); region still drives dates, numbers and
+   first-weekday through Intl, independently of this.
+3. **`src/content/seed/<lang>.json`** — the starter library's string table, imported in
    `seed-library.ts`, plus one per pack in `src/content/packs/<id>/`, imported in `content-packs.ts`.
    **This is the one that gets forgotten**, because nothing fails: a language with no table falls back
    to English per string, so a new user gets translated chrome around an English library and the suite
    stays green. `seed-library.test.ts` and `content-packs.test.ts` only check languages *already*
    imported (they enforce parity within one, in both directions, and that every table in a directory
    is imported, not that every UI language has one).
-5. **`jest.setup-after-env.js`** — the harness inits i18next with its own explicit `{ en, pt, ja }`
-   resources, deliberately not importing `@/i18n` (which would pull `expo-localization` into every
-   test that touches formatting). A new language isn't visible to tests until it's added here too —
-   and a suite that switches to a missing one asserts English against English and passes regardless.
-6. **`README.md`** — the sentence naming which languages the UI and the seed library ship in.
-7. **The Play listing.** The *copy* is in this repo — `store/README.md` carries a short and a full
+4. **`README.md`** — the sentence naming which languages the UI and the seed library ship in.
+5. **The Play listing.** The *copy* is in this repo — `store/README.md` carries a short and a full
    description per language, and `store-copy.test.ts` checks each block against Play's limit and
    against the length its own heading declares, so a new language has to be named in that test or
    its copy is unchecked. The listing copy also names which languages the app ships in, and the tip
@@ -49,12 +35,17 @@ it — and step 3 is new, because `app.json` stopped being language-agnostic.
    the language in the Play Console is a separate act**, and until it is done a release note tagged
    with the new locale is rejected on upload rather than ignored.
 
+**On iOS, from M8, a sixth:** the app's `CFBundleLocalizations`. iOS filters
+`Locale.preferredLanguages` against what the bundle declares, so an undeclared language is reported
+by no device, everything renders in the fallback, and a complete, parity-checked bundle sits in the
+binary unreachable. Nothing throws, and from every angle except an iPhone the language looks shipped.
+The RN app declared it through `app.json` (`supportedLocales.ios`), with a test diffing that list
+against `resources`; M8's build should hold the same check. `docs/ios-plan.md` §2.5 has the
+mechanism.
+
 One thing that is *not* on the list, checked rather than assumed: nothing about date, number,
 weekday or unit formatting needs touching — all of it reads the device locale through Intl in
-`i18n/format.ts`. `app.json` used to be the other one, on the grounds that the `expo-localization`
-plugin is language-agnostic. That was true of the plugin and false of the config: passing it
-`supportedLocales` is what turned it into step 3, and the paragraph that said otherwise would have
-sent a fourth language out undeclared.
+`i18n/format.ts`, and native's through the platform locale.
 
 Nor is the native app's copy: `:strings` generates its `values-<code>/strings.xml` from whatever
 bundles step 1 left in `src/i18n/locales`, on every build, and `GeneratedStringsTest` round-trips

@@ -379,7 +379,7 @@ decision assembled across several commits. Open work belongs in the sections at 
 
   - **It is Android-only, and that is a platform fact rather than a scope cut.** Android takes a
     persistable URI permission on the picked tree; iOS grants access for the app session only and
-    stores no bookmark. `docs/sdk-57-api-notes.md` has the evidence. A folder chosen on iOS would look
+    stores no bookmark. "SAF: what the backup folder relies on", below, has the evidence. A folder chosen on iOS would look
     set and quietly stop being written to, so the section is hidden there rather than greyed out.
 
     **That stays true about folder *picking*, and iOS has a different answer to the same question.**
@@ -408,6 +408,46 @@ decision assembled across several commits. Open work belongs in the sections at 
     there and forgets where it was — and does not claim to hand the permission back. If the module
     ever exposes a release call, this is the entry that says why to wire it up.
 
+- **SAF: what the backup folder relies on.** The facts `SafBackupFolder.kt` and `:shared`'s
+  `Backup.kt` are built on, found while the folder was RN's (on `expo-file-system` 57, read out of its
+  installed native sources) and carried into the native adapter at #238. Kept here because the code
+  cites them and the SDK notes they first lived in went with RN at M7 (#357).
+
+  - **The grant persists on Android and not on iOS.** On Android the `OPEN_DOCUMENT_TREE` result is
+    kept with `takePersistableUriPermission`, masked to the result's own read/write flags, which is
+    the platform's grant that outlives the process and a reboot (`keepGrant`). iOS's picker grants
+    access for the app session only, and RN's never wrote a security-scoped bookmark, so a folder
+    chosen there would look set and quietly stop being written to. M8 meets the same question on
+    Swift's side: a bookmark, or the Files-app folder in the entry above. **The pick, kill and
+    relaunch test has not been run on a device**, so treat the Android half as strongly evidenced
+    rather than observed.
+  - **A `content://` document is not a `file://` path, and five of the differences fail silently:**
+    1. **A child isn't addressed by joining a name onto the tree URI.** That produces
+       `…/tree/primary%3ADocs/name.yaml`, where a document URI is
+       `…/tree/primary%3ADocs/document/primary%3ADocs%2Fname.yaml`. Children come from a query of the
+       tree's children or from `createDocument`, which is why `list()` builds each URI with
+       `buildDocumentUriUsingTree`. Built that way, the URIs match the ones RN's `list()` recorded,
+       so a `backup-targets.json` an RN backup left still finds its files.
+    2. **A directory can't be made with a path's `mkdirs`**; a tree is created through the provider
+       or not at all.
+    3. **`createDocument` on a name that exists makes a duplicate, not an overwrite.** The provider
+       uniquifies it (`kettle-library (1).yaml`), so every write is find-then-write against the
+       listing. `BackupTest` pins this one: unguarded, it turns a backup folder into one file per
+       session.
+    4. **Opened `"w"`, a document is overwritten from offset zero and not truncated**, so a write
+       shorter than the last leaves the old tail behind: a `kettle-library.yaml` that won't parse, or
+       parses into something wrong, and only when the library shrank. `"wt"` truncates. Delete and
+       recreate also works and is worse, since it leaves a moment with no backup at all.
+    5. **The descriptor has to be closed for the provider to see the write finish.** RN's
+       `FileHandle` kept only the channel and never closed its `ParcelFileDescriptor`
+       (expo/expo#47176, patched in until M7), and backups landed as files that existed and were
+       empty. Native's `use {}` on the stream closes it.
+  - **A document's name is its display name, not its id.** On-device storage's ids are paths, so the
+    last segment reads as the name; Google Drive's are opaque (`acc=1;doc=encoded=…`), and a
+    find-by-name over ids matched nothing there and made a new `(1)`, `(2)` pair every backup. So
+    `list()` reads `COLUMN_DISPLAY_NAME`, and the backup also remembers the URI of each file it wrote,
+    in `backup-targets.json`, falling back to that when no name matches.
+
 - ✅ **The public APK is signed with the Play App Signing key, not with the EAS keystore.** This is the
   one decision in the repo that cannot be undone for anyone who acts on it before it is fixed, which
   is the only reason it is written down at this length.
@@ -433,7 +473,7 @@ decision assembled across several commits. Open work belongs in the sections at 
 
   **What it costs, so nobody re-proposes the alternative to save it.** That download is a manual
   Console step with no API, so a release cannot be fully automated, and `/release` deliberately stops
-  and asks for the file rather than substituting an EAS build. Two alternatives were considered and
+  and asks for the file rather than substituting one it can build. Two alternatives were considered and
   rejected: signing with the EAS keystore and simply warning people (the warning does not help anyone
   who has already installed, and "you will lose your log" is not a footnote), and giving sideloaded
   builds their own application id so the two coexist (no silent loss, but two ids to maintain and
@@ -442,10 +482,10 @@ decision assembled across several commits. Open work belongs in the sections at 
 
   **The workflow's `variant=apk` is for your own phone, and is the likeliest way this goes wrong now.**
   It is one `gh workflow run` away, it lives in this repo, and `docs/building-android.md` describes it
-  as "sideloadable" — which it is, onto a device you control. Two things make it unfit for a release
-  and neither announces itself: the upload-key signature above, and `arm64-v8a` only (deliberately, to
-  skip three quarters of the C++ compile), where the Console's universal APK carries every ABI. The
-  14-day artifact retention was set for the same reason and is worth reading as a hint: "an upload key
+  as "sideloadable" — which it is, onto a device you control. What makes it unfit for a release doesn't
+  announce itself: the upload-key signature above. (Until M7 it was also `arm64-v8a` only, to skip
+  most of a C++ compile; with no RN it is a universal APK, so it now looks even more like the real
+  thing.) The 14-day artifact retention was set for the same reason and is worth reading as a hint: "an upload key
   is not a distribution key."
 
   **F-Droid is the same trap a third time**, and worth knowing before that conversation starts: it
@@ -1060,20 +1100,15 @@ decision assembled across several commits. Open work belongs in the sections at 
     language, because a `@Preview` locale has to be a compile-time constant; and `libs.versions.toml`
     repeats React Native's Kotlin and AGP, because once M2 hosts the RN AAR, a mismatch fails the
     build loudly.
-  - **The shell's share of `app.json`** (#148). The build reads the package, `versionCode`,
-    `version`, `name`, the splash and notification colors and `userInterfaceStyle` (as the string
-    expo-system-ui reads, whose library default pins the app light) from `app.json`, and each Expo
-    module's version from `node_modules`. Two things config plugins write into `android/app` stay copies, and
-    nothing fails when they drift: the launcher, splash and notification images (prebuild's resized
-    output, under `native/android/app/src/main/res`), and the manifest's permissions, intent filters
-    and meta-data. The notification images are the exception since the flip release (#308): the
-    `expo-notifications` plugin that generated them is gone, so they have no source in `app.json`
-    any more and are the shell's own, edited in place (the build reads their colour from
-    `adaptiveIcon.backgroundColor`). **A change to `app.json`'s icons, permissions or plugins is
-    copied into the shell in the same PR.** The check is to diff the two release merged manifests,
-    which should differ only in the entry point and in what the shell's own code declares with no
-    `app.json` source (the main manifest's header lists it): since the flip release that includes
-    the runner's foreground service and its permissions.
+  - **What was `app.json`'s is `native/android`'s** (#148, then #357). Until M7 the build read the
+    package, version, name and brand colours from `app.json`, and a change to its icons, permissions
+    or plugins was copied into the shell by hand. With `app.json` gone each has one home: the version
+    in `native/android/gradle.properties` (`kettle.versionCode` / `kettle.versionName`, which
+    `/bump` moves), the package and the launcher label as literals in `app/build.gradle.kts`, the
+    splash and notification colours in `res/values/colors.xml`, and the launcher, splash and
+    notification images (prebuild's resized output once, kept byte for byte) and the manifest as
+    `app/src`'s own, edited in place. The iOS half of `app.json` is facts in `docs/ios-plan.md`
+    for M8 to start from.
 
   **Rejected, so they aren't re-proposed:**
   - Parsing `theme.ts` from Kotlin, which was #147's first draft. It meant a parser for the subset of
@@ -1178,8 +1213,10 @@ constraint that outlived the work rather than a description of it.
   - **Settings live in `pnpm-workspace.yaml`, not `.npmrc`.** pnpm 10 began moving them and by 11 an
     `.npmrc` entry is read as an npm setting and ignored. `--node-linker=hoisted` on the command line
     is ignored too. Nothing errors — you just get the wrong layout and find out later.
-  - **`nodeLinker: hoisted` is required, not a preference.** Metro and Gradle autolinking both walk a
-    flat tree. Our own code doesn't lean on it: `src/hooks/safe-iap.ts` once imported
+  - **`nodeLinker: hoisted` was required, not a preference, and is kept until #353 without being
+    required.** Metro and Gradle autolinking both walked a flat tree; both left with React Native at
+    M7 (#357), and the layout stayed rather than churn the lockfile for a project that goes when the
+    TS domain retires. Our own code doesn't lean on it: `src/hooks/safe-iap.ts` once imported
     `expo-modules-core`, only a dependency of `expo`, and was the first thing isolated mode broke. It
     now takes the same function from `expo`'s re-export, and `pnpm knip` fails on any import that
     `package.json` doesn't list.
@@ -1187,6 +1224,7 @@ constraint that outlived the work rather than a description of it.
     one directory name; at the default of 120 the longest `@babel` entries breach Windows' 260-char
     path cap and the install dies with `ENOENT` on `mkdir`. `LongPathsEnabled` is off on this machine
     and turning it on needs admin plus a reboot, so the cap is worked around rather than lifted.
+    Still live after M7: jest's TypeScript transform is babel.
 
   The lockfile came from `pnpm import` against the existing `package-lock.json`, so the migration
   changed the manager without re-resolving a single version. Verified past jest, which doesn't

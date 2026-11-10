@@ -1,5 +1,5 @@
 // Same reasoning as `format.ts`: `t` comes from the i18next singleton directly rather than via
-// `@/i18n`, which would pull `expo-localization` into the domain layer and into every test.
+// `@/i18n`, so the domain layer depends on i18next alone.
 import { t } from 'i18next';
 import { z } from 'zod';
 

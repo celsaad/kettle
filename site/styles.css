@@ -11,7 +11,7 @@
    ============================================================ */
 
 /* ---- Self-hosted fonts ------------------------------------
-   Converted from the app's own @expo-google-fonts TTFs, so the site and the app render identical
+   Converted from the app's own TTFs (native/android/theme/fonts), so the site and the app render identical
    type. See fonts/README.md for how to regenerate. The system stack behind them is a real fallback,
    not a placeholder: a missing file degrades instead of breaking.
    ---------------------------------------------------------- */

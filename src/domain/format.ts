@@ -1,7 +1,6 @@
-// Imported from `i18next` directly, not from `@/i18n`. It's the same singleton — `@/i18n` configures
-// this instance — but going via that module would pull `expo-localization` into the domain layer, and
-// into every test that touches formatting. The jest setup initialises the same singleton with the
-// English resources, so these render identically under test.
+// Imported from `i18next` directly, not from `@/i18n`: it's the same singleton, and the domain layer
+// stays dependent on i18next alone, not on the bundles. The jest setup initialises that singleton with
+// `@/i18n`'s resources, in English.
 //
 // The named `t` is that instance's own method, bound to it at module load (i18next binds its
 // prototype members in the constructor), so it reads the *current* language on every call — switching

@@ -63,8 +63,8 @@ export type ContentPack = {
 };
 
 /**
- * Each pack's files, by id. Metro can only bundle a file it can see a static import of, so this map is
- * written by hand; `content-packs.test.ts` holds its keys, `packs.json` and the directories under
+ * Each pack's files, by id, as static imports, so the tests read exactly what ships: native reads
+ * the same directories through `packs.json`. Written by hand; `content-packs.test.ts` holds its keys, `packs.json` and the directories under
  * `src/content/packs/` to one set, so a pack added in one place and not the others fails there.
  */
 export const contentPackSources: Record<string, { yaml: string; translations: Record<string, LibraryTranslation> }> = {

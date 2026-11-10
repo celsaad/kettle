@@ -61,9 +61,8 @@ export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
  */
 
 /**
- * The faces, by the role `Type` names them by, as the names `expo-font` loads them under
- * (`font-faces.ts`). Native reads the same names: `:theme` copies each face out of its
- * `@expo-google-fonts` package into the shell's resources.
+ * The faces, by the role `Type` names them by, as their Google Fonts names. Native's `:theme` copies
+ * each named face out of `native/android/theme/fonts` into the app's resources.
  */
 export const Fonts = theme.Fonts;
 

@@ -17,8 +17,8 @@ data class BackupDocument(
 
 /**
  * The folder the user chose, as the backup sees it, so the logic is tested without a provider. The
- * Android adapter is SAF's (`SafBackupFolder` in `:app`); `docs/sdk-57-api-notes.md` records what each
- * SAF call does that a `file://` path doesn't.
+ * Android adapter is SAF's (`SafBackupFolder` in `:app`); docs/decisions.md ("SAF: what the backup
+ * folder relies on") records what each SAF call does that a `file://` path doesn't.
  */
 interface BackupFolder {
     /** False for a folder deleted, or one whose grant was revoked in system settings. */

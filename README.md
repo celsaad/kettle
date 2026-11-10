@@ -50,23 +50,25 @@ iOS is not planned.
 
 ## Development
 
+The app is the Gradle build in `native/android` (Kotlin and Compose). It needs JDK 21 and the
+Android SDK, and nothing from Node:
+
+```bash
+native/android/gradlew -p native/android build   # tests, ktlint, detekt, Android lint
+scripts/native-dev.sh                            # build the .dev app, install it on a phone, launch it
+```
+
+The repo root is a small Node project as well: the TypeScript domain, the shipped content's tests,
+and the YAML format's reference implementation, which `conformance/` holds the Kotlin port to.
+
 ```bash
 corepack enable      # once; pnpm is pinned by "packageManager" in package.json
 pnpm install
-pnpm expo start
+pnpm test
 ```
 
-**pnpm, not npm.** `pnpm-workspace.yaml` sets `nodeLinker: hoisted`, which Metro and Gradle
-autolinking both need — installing with another manager works but drops the settings that keep the
-tree resolvable. See the decision log for the measurements behind the choice.
-
-The output offers a [development build](https://docs.expo.dev/develop/development-builds/introduction/),
-an [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/), an
-[iOS simulator](https://docs.expo.dev/workflow/ios-simulator/) or [Expo Go](https://expo.dev/go).
-There is no web build; it ended in M6 of the native migration.
-
-Every screen and the routing between them are native (`native/android`, routing since #309); the RN
-surface the shell still starts draws nothing until the native migration's M7 removes it.
+**pnpm, not npm.** `pnpm-workspace.yaml` holds settings another manager ignores; see the decision
+log.
 
 ## Project structure
 
@@ -88,7 +90,7 @@ store/                  Play listing copy and generated store graphics
 ```bash
 pnpm run typecheck    # tsc --noEmit
 pnpm run lint         # oxlint
-pnpm test             # jest, via jest-expo
+pnpm test             # jest
 pnpm run format       # oxfmt (markdown and package.json are excluded; HTML is not)
 ```
 

@@ -25,6 +25,10 @@ here, next to what it describes.
 - **Finishing as a rest runs out no longer logs a set you didn't do**: tapping Finish in the
   instant a rest ended used to save the next set at its target as if you'd done it. Now the
   session ends with only what you logged (#319).
+- **A smaller app with no JavaScript engine inside**: the last of the old React Native app is gone,
+  so Kettle is fully native. Nothing changes in how it looks or works, and your library, history
+  and settings carry over. It also no longer asks for storage access on older Android versions,
+  which it never used (#357).
 
 ---
 

@@ -276,7 +276,7 @@ tasks.withType<Test>().configureEach {
 dependencies {
     coreLibraryDesugaring(libs.desugar.jdk.libs)
     // Used directly throughout (NotificationCompat, ViewCompat, FileProvider, coroutines), and declared
-    // at what the shell resolved while the RN AAR's Expo modules raised them, so its removal moved
+    // at what the shell resolved before M7, when RN's modules raised them, so the removal moved
     // neither.
     implementation(libs.core.ktx)
     implementation(libs.kotlinx.coroutines.android)

@@ -20,6 +20,12 @@
 
     <style name="Base.Theme.App.SplashScreen" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/splashscreen_background</item>
+        <!--
+          Below API 31 the splash is this theme's own window, and with no status bar color it takes the
+          platform default, which drew pink over the dark splash on API 26. 31+ draws its own splash and
+          ignores this.
+        -->
+        <item name="android:statusBarColor">@color/splashscreen_background</item>
         <item name="windowSplashScreenAnimatedIcon">@drawable/splashscreen_logo</item>
         <item name="postSplashScreenTheme">@style/AppTheme</item>
     </style>

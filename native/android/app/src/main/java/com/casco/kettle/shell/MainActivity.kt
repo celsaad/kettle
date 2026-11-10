@@ -2,7 +2,6 @@ package com.casco.kettle.shell
 
 import android.app.Activity
 import android.content.Intent
-import android.content.res.Configuration
 import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
@@ -15,9 +14,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
-import com.casco.kettle.brownfield.BrownfieldActivity
-import com.casco.kettle.brownfield.ReactNativeHostManager
-import com.casco.kettle.brownfield.ReactNativeViewFactory
 import com.casco.kettle.domain.RunnerStart
 import com.casco.kettle.shell.files.DiskFiles
 import com.casco.kettle.shell.files.LatestFiles
@@ -43,31 +39,15 @@ import com.casco.kettle.shell.runner.runnerStateDir
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.PreferredKettleTheme
 import com.casco.kettle.shell.theme.preferredColors
-import com.facebook.react.modules.core.PermissionAwareActivity
-import com.facebook.react.modules.core.PermissionListener
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 
 /**
  * The app's entry point: the shell's tabs, sheet and runner (`ShellLayout`), routed by its own
- * [Navigator] since #309, with links parsed here. The RN surface is still started and laid out under
- * everything, drawing nothing, until M7 deletes it (docs/native-migration-plan.md). `BrownfieldActivity`
- * is only an `AppCompatActivity`, so this does what the prebuilt app's `ReactActivity` and Expo's
- * delegate wrapper did for it: the splash, Expo modules' activity lifecycle (edge to edge), and the
- * host's share of activity results, permission prompts, configuration and focus.
- *
- * Over detekt's function count with overrides alone, the RN host's (permissions, results,
- * configuration, focus) until M7 deletes it and the lifecycle's own, so none can move out.
+ * [Navigator], with links parsed here, under the system splash it holds until Home is drawn
+ * ([SplashHold]) and drawn edge to edge.
  */
-@Suppress("TooManyFunctions")
-class MainActivity :
-    BrownfieldActivity(),
-    PermissionAwareActivity {
-    private var permissionListener: PermissionListener? = null
-    private var permissionResult: (() -> Unit)? = null
-
-    private val reactHost get() = ReactNativeHostManager.shared.getReactHost()
-
+class MainActivity : ComponentActivity() {
     private var sheet: ModalSheet? = null
 
     /** Lazy, since `filesDir` needs the context the activity is given after construction. */
@@ -94,29 +74,24 @@ class MainActivity :
         MutableSharedFlow<Tab>(extraBufferCapacity = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        // First, so the library's read overlaps everything up to RN's start, which waits for it.
+        // First, so the library's read overlaps the activity's own start, up to the wait below.
         LibraryGate.start(this)
         // Before super: it installs the splash theme's exit.
         val splash = SplashHold.install(this)
-        // null, as the prebuilt app's MainActivity passes: the RN fragment is rebuilt from the running
-        // runtime, and a restored copy would sit under it. The back stack starts over with it.
+        // null, as the RN app passed it, so no view or fragment state is restored: the back stack is
+        // restored by hand below. Passing savedInstanceState would change what survives process death
+        // and rotation, which is a change of its own, not part of removing RN (#357).
         super.onCreate(null)
         drawEdgeToEdge()
         connectAdoptToLibrary()
-        // RN's library load only parses from the library flip (#245), so native seeds and repairs first
-        // (#221).
+        // The runner's recovery reads the library, so the launch's seed and repair come first (#221).
         LibraryGate.awaitPrepared(this)
         recoverRunner(paths)
-        // What showReactNativeFragment does, minus the fragment: the surface is
-        // one view for the whole app, which ShellLayout places.
-        ReactNativeHostManager.shared.initialize(application)
-        val surface = ReactNativeViewFactory.createFrameLayout(this, this, "main")
         rereadOnStartAndStop(latestFiles)
         val preferences = paths.preferences
         val layout =
             ShellLayout(
                 this,
-                surface,
                 navigator,
                 theme = { content ->
                     CompositionLocalProvider(
@@ -160,7 +135,7 @@ class MainActivity :
         hearNavigateReceiver(navigator)
         setContentView(layout)
         // The stack this activity's predecessor saved, when it was made again (a font or display size
-        // change, the process brought back): RN's router used to keep it in the JS runtime.
+        // change, the process brought back).
         val saved = savedInstanceState?.getStringArrayList(BACK_STACK)
         if (saved != null) navigator.restore(saved)
         // Any launch with the service alive attaches, the shade notification's tap or not (#297): a Recents
@@ -181,63 +156,6 @@ class MainActivity :
         if (intent.takeOpenRunner()) attachRunner(navigator)
         navigator.openLink(intent)
     }
-
-    override fun onResume() {
-        super.onResume()
-        // RN's own delegate holds a permission result until the activity resumes, which is when JS can
-        // act on it.
-        permissionResult?.invoke()
-        permissionResult = null
-    }
-
-    @Deprecated("Deprecated in ComponentActivity; RN and Expo still deliver results through it")
-    override fun onActivityResult(
-        requestCode: Int,
-        resultCode: Int,
-        data: Intent?,
-    ) {
-        @Suppress("DEPRECATION")
-        super.onActivityResult(requestCode, resultCode, data)
-        reactHost?.onActivityResult(this, requestCode, resultCode, data)
-    }
-
-    override fun requestPermissions(
-        permissions: Array<String>,
-        requestCode: Int,
-        listener: PermissionListener?,
-    ) {
-        permissionListener = listener
-        requestPermissions(permissions, requestCode)
-    }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<String>,
-        grantResults: IntArray,
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        permissionResult = {
-            if (permissionListener?.onRequestPermissionsResult(requestCode, permissions, grantResults) == true) {
-                permissionListener = null
-            }
-        }
-    }
-
-    override fun onConfigurationChanged(newConfig: Configuration) {
-        super.onConfigurationChanged(newConfig)
-        reactHost?.onConfigurationChanged(this)
-    }
-
-    override fun onWindowFocusChanged(hasFocus: Boolean) {
-        super.onWindowFocusChanged(hasFocus)
-        reactHost?.onWindowFocusChange(hasFocus)
-    }
-
-    /**
-     * What RN calls when JS has no back handler. Back never reaches JS since #309, so this is only for a
-     * JS exit, and leaves as back does rather than with `BrownfieldActivity`'s `finish()`.
-     */
-    override fun invokeDefaultOnBackPressed() = leave()
 }
 
 /**
@@ -329,9 +247,9 @@ private fun Activity.connectAdoptToLibrary() {
 }
 
 /**
- * Under transparent bars on every API level, as React Native's `Window.enableEdgeToEdge` drew the app
- * (which Expo turned on): no scrim of the app's own on 3-button navigation, and the navigation bar's
- * contrast left to the platform, which `auto` enforces. `SystemBars.kt` sets the icons' appearance from
+ * Under transparent bars on every API level, as the RN app was drawn (its `WindowUtil`'s edge to
+ * edge): no scrim of the app's own on 3-button navigation, and the navigation bar's contrast left to
+ * the platform, which `auto` enforces. `SystemBars.kt` sets the icons' appearance from
  * the scheme Compose draws. Without it the window isn't edge to edge below API 35, and every
  * `statusBarsPadding()` and the sheet's status-bar inset would read a different window.
  */

@@ -1,22 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  The prebuilt app's debug-only manifest, from React Native's template: Metro serves the bundle over
-  plain http, which Android refuses by default, and the dev overlays draw over other apps. Neither
-  reaches a release build.
-
-  Plus NavigateReceiver, adb's way to steer the shell's navigator, and RunnerCommandReceiver,
-  session-check's way to drive a running session (#315). DUMP is held by the shell user and by no
+  The debug build's receivers: NavigateReceiver, adb's way to steer the shell's navigator, and
+  RunnerCommandReceiver, session-check's way to drive a running session (#315). DUMP is held by the shell user and by no
   installable app, so adb can send to them and nothing else on the phone can.
 -->
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
-
-    <application
-        android:usesCleartextTraffic="true"
-        tools:replace="android:usesCleartextTraffic"
-        tools:targetApi="28">
+    <application>
         <receiver
             android:name="com.casco.kettle.shell.nav.NavigateReceiver"
             android:exported="true"

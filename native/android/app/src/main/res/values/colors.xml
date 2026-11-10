@@ -4,6 +4,4 @@
     <color name="splashscreen_background">#17140d</color>
     <!-- The shade's accent: the launcher icon's background, the brand colour. -->
     <color name="notification_icon_color">#c05c2b</color>
-    <!-- RN's text inputs' accent, which AppTheme hands them until React Native goes. -->
-    <color name="colorPrimary">#023c69</color>
 </resources>

@@ -1,21 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  What the prebuilt app's manifest says, which config plugins wrote into android/app and so never
-  reach the AAR (an M0 build fact). The inventory is in the commit that added this. Merged, it matches
-  the prebuilt app's release manifest except for the entry point, which is this shell's activity, and
-  what the shell's own code needs that app.json has no source for: the notification and reminder
-  permissions, the runner's foreground service and its four (#308), the reminder's receivers and the
-  export provider.
+  The app's manifest. The permissions the release declares are this file's plus what its libraries
+  merge in (Play Billing's network state among them), so a change here is checked against the merged
+  release manifest (app/build/intermediates/merged_manifests/release), not against this file alone.
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Play Billing's, for the tip jar (#198); its library merges it in too. Nothing else is online. -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="com.android.vending.BILLING" />
     <!--
-      The rest-day reminder's (#236), and POST_NOTIFICATIONS the runner's too. Declared here, where
-      expo-notifications' manifest once merged them in, so they outlived it (#308).
+      The rest-day reminder's (#236), and POST_NOTIFICATIONS the runner's too. Declared here rather than
+      left to a library's manifest, which is where they came from until the flip release (#308).
     -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
@@ -31,23 +29,6 @@
         android:name="android.permission.HIGH_SAMPLING_RATE_SENSORS"
         tools:ignore="HighSamplingRate" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
-    <uses-permission
-        android:name="android.permission.READ_EXTERNAL_STORAGE"
-        android:maxSdkVersion="32"
-        tools:replace="android:maxSdkVersion" />
-    <!-- Capped at 32, where it still means something: the prebuilt app's, kept as it was. -->
-    <uses-permission
-        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
-        android:maxSdkVersion="32"
-        tools:ignore="ScopedStorage"
-        tools:replace="android:maxSdkVersion" />
-    <!-- app.json's blockedPermissions: libraries ask for these, and the app doesn't want them. -->
-    <uses-permission
-        android:name="android.permission.READ_APP_BADGE"
-        tools:node="remove" />
-    <uses-permission
-        android:name="android.permission.SYSTEM_ALERT_WINDOW"
-        tools:node="remove" />
 
     <queries>
         <intent>
@@ -64,7 +45,7 @@
         </intent>
     </queries>
 
-    <!-- enableOnBackInvokedCallback: app.json's predictiveBackGestureEnabled: true. -->
+    <!-- enableOnBackInvokedCallback: predictive back, which the shell's back callbacks draw. -->
     <application
         android:allowBackup="true"
         android:enableOnBackInvokedCallback="true"

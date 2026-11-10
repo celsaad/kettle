@@ -2,8 +2,6 @@ package com.casco.kettle.shell.nav
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.view.View
-import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.widget.FrameLayout
@@ -19,8 +17,6 @@ import com.casco.kettle.shell.runner.RecoveryPrompt
  * under them, all following the [navigator].
  *
  * Plain views rather than one Compose tree, because the sheet ([ModalSheet]) shapes and moves views.
- * The RN [surface] is in the frame too, under everything and never shown: since #309 it draws nothing,
- * and M7 deletes it.
  *
  * Only one [Place] shows: the destinations for a tab, the [nativeSheet] for a sheet, and the
  * [nativeRunner] for the runner. The others are invisible, since a view left showing under another
@@ -32,7 +28,6 @@ import com.casco.kettle.shell.runner.RecoveryPrompt
 @SuppressLint("ViewConstructor") // Built in code, never inflated.
 class ShellLayout(
     context: Context,
-    surface: View,
     navigator: Navigator,
     theme: @Composable (content: @Composable () -> Unit) -> Unit,
     /** The screen each route draws: the route table, or a test's stand-ins. */
@@ -65,13 +60,9 @@ class ShellLayout(
 
     init {
         orientation = VERTICAL
-        (surface.parent as? ViewGroup)?.removeView(surface)
 
-        // The surface first and hidden, under everything; the sheet's view straight after, where the
-        // sheet's own views go in around it.
+        // The sheet's view first, where the sheet's own views go in around it.
         val content = FrameLayout(context)
-        content.addView(surface, FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
-        surface.visibility = INVISIBLE
         content.addView(nativeSheet, FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
         content.addView(destinations, FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
         content.addView(nativeRunner, FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))

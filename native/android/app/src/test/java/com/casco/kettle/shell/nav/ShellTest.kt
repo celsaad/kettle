@@ -63,7 +63,6 @@ class ShellTest {
     @get:Rule
     val compose = createAndroidComposeRule<ComponentActivity>()
 
-    private lateinit var surface: View
     private lateinit var shell: ShellLayout
     private lateinit var navigator: Navigator
 
@@ -79,11 +78,9 @@ class ShellTest {
         navigator = Navigator()
         compose.runOnUiThread {
             val activity = compose.activity
-            surface = View(activity)
             shell =
                 ShellLayout(
                     activity,
-                    surface,
                     navigator,
                     // As MainActivity's: a tab reads the files.
                     theme = {
@@ -184,19 +181,6 @@ class ShellTest {
                 .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Tab))
         }
         compose.onNodeWithText("Screen Workouts").assertIsDisplayed()
-    }
-
-    /** RN draws nothing since #309, and a surface left showing would still take touches and TalkBack. */
-    @Test
-    fun `the RN surface never shows, on a tab, in the sheet or under the runner`() {
-        show()
-        compose.runOnIdle { assertEquals(false, surface.isShown) }
-
-        go { push(Route(Destination.Settings)) }
-        compose.runOnIdle { assertEquals(false, surface.isShown) }
-
-        go { openRunner(null) }
-        compose.runOnIdle { assertEquals(false, surface.isShown) }
     }
 
     @Test

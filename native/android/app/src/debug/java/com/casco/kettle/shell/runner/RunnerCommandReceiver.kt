@@ -36,7 +36,7 @@ class RunnerCommandReceiver : BroadcastReceiver() {
         resultData =
             when (val cmd = intent.getStringExtra("cmd")) {
                 "advance" -> {
-                    aimed(intent) { RunnerCommand.Advance(it) }
+                    sendAimed(intent) { RunnerCommand.Advance(it) }
                 }
 
                 "prev" -> {
@@ -52,7 +52,7 @@ class RunnerCommandReceiver : BroadcastReceiver() {
                 }
 
                 "finish" -> {
-                    aimed(intent) { RunnerCommand.Finish(it) }
+                    sendAimed(intent) { RunnerCommand.Finish(it) }
                 }
 
                 "visible" -> {
@@ -70,7 +70,7 @@ class RunnerCommandReceiver : BroadcastReceiver() {
             }
     }
 
-    private fun aimed(
+    private fun sendAimed(
         intent: Intent,
         command: (visit: Long) -> RunnerCommand,
     ): String {

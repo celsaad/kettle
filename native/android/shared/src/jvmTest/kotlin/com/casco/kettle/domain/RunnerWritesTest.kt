@@ -507,6 +507,7 @@ class RunnerWritesTest {
             val runner = Runner(workoutOf(single("pullups")))
             runner.advance()
             runner.away(90)
+            check(runner.step is RunnerStep.Reps) { "the rest should have handed over to set 2" }
             runner.finish(visit = runner.snapshot.visit)
 
             assertEquals(2, runner.pullupSets().size)

@@ -50,22 +50,15 @@ android {
     ndkVersion = rnNdkVersion
 
     defaultConfig {
-        applicationId = expoAndroid["package"] as String
+        applicationId = "com.casco.kettle"
         minSdk = 24
         targetSdk = 36
-        // app.json's, which /bump moves: the shell replaces the Play app in place, so it continues
-        // that app's versionCode line rather than starting one of its own.
-        versionCode = expoAndroid["versionCode"] as Int
-        versionName = expo["version"] as String
-        // app.json's `name`, lowercase as the launcher has always shown it. A placeholder rather than a
-        // string resource, so `R.string` stays the strings generated from the bundles plus the `expo_`
-        // ones Expo modules read (below; `generatedResources()` in LocalePreviews.kt skips them).
-        manifestPlaceholders["appName"] = expo["name"] as String
-        resValue("color", "splashscreen_background", pluginOption("expo-splash-screen", "backgroundColor"))
-        // The shade's accent is the launcher icon's background, the one brand colour app.json holds since
-        // expo-notifications and its plugin's `color` went in the flip release (#308).
-        val brandColor = expoAndroid["adaptiveIcon"].asJsonObject()["backgroundColor"] as String
-        resValue("color", "notification_icon_color", brandColor)
+        // gradle.properties', which /bump moves.
+        versionCode = providers.gradleProperty("kettle.versionCode").get().toInt()
+        versionName = providers.gradleProperty("kettle.versionName").get()
+        // Lowercase, as the launcher has always shown it. A placeholder rather than a string resource,
+        // so `R.string` stays the strings generated from the bundles.
+        manifestPlaceholders["appName"] = "kettle"
         // expo-system-ui sets the night mode from this on every launch, and its library default is
         // `light`: without it, Settings → Appearance → System stays light on a dark phone. Prebuild
         // wrote it from app.json, preferring the android-specific key, and left the default when unset.

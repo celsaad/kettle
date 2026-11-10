@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-  Expo's template default, which AppTheme hands RN's own text inputs. The splash and notification
-  colors are read from app.json's plugin options by the build, as prebuild reads them.
--->
 <resources>
+    <!-- Behind the splash's icon, in both schemes: the session runner's background. -->
+    <color name="splashscreen_background">#17140d</color>
+    <!-- The shade's accent: the launcher icon's background, the brand colour. -->
+    <color name="notification_icon_color">#c05c2b</color>
+    <!-- RN's text inputs' accent, which AppTheme hands them until React Native goes. -->
     <color name="colorPrimary">#023c69</color>
 </resources>

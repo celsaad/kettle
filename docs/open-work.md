@@ -231,8 +231,8 @@ wanting states and assignees, it wants GitHub issues instead.
   [`adding-a-language.md`](adding-a-language.md).
 
   **Arabic is the RTL project**, the one `adding-a-language.md` warns is not a bundle. What's already
-  known: the `I18nManager` plumbing was deferred deliberately, RN auto-flips the row/padding/gap
-  layouts so the physical-direction properties are the small half, and the real work is the drawn glyphs
+  known: RTL was deferred deliberately; Compose's rows and `start`/`end` padding flip with the layout
+  direction, so the physical-direction properties are the small half, and the real work is the drawn glyphs
   that can't flip (the Canvas ones in native's `list/RowStartButton.kt` and `home/NextUpCard.kt`, and
   whatever the native runner draws) plus the arrows baked into
   copy (`grep '→' src/i18n/locales/en.json` — getting those out of the strings is worth doing whether or not Arabic ever ships). Three that note
@@ -321,9 +321,6 @@ interpolated rather than translated. Notes on the structural ones:
   knowing for the next 0-config bug: nothing validates a program week's override config — the schema
   types it as a free record of numbers and the override editor doesn't call `validateConfig` — so the
   runner screens can't assume the constraints `validateConfig`/`schema.ts` enforce elsewhere.
-
-- **The sheet's drawn signal is early on a pop** (`RnFrames`, #155): going back from an RN sheet drew
-  the destination uncovered for a frame or two before the transition, on the emulator (#207).
 
 One of the three found in the runner audit that produced the resume-race fix above is still here. The
 other two are fixed (see the roll-up above); this one stayed because it is not a defect:

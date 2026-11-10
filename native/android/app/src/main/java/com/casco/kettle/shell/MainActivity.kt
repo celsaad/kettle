@@ -80,7 +80,13 @@ class MainActivity : ComponentActivity() {
         // restored by hand below. Passing savedInstanceState would change what survives process death
         // and rotation, which is a change of its own, not part of removing RN (#357).
         super.onCreate(null)
-        drawEdgeToEdge()
+        // Edge to edge as the RN app drew it (its `WindowUtil`, which Expo turned on), which androidx's
+        // defaults match: a transparent status bar; from API 29 a transparent navigation bar with the
+        // platform's contrast enforced (the system's scrim on 3-button nav, none on gesture nav); below
+        // 29, RN's own scrims, 0xE6FFFFFF light and 0x801B1B1B dark. SystemBars.kt sets the icons. Without
+        // it the window isn't edge to edge below API 35, and every statusBarsPadding() and the sheet's
+        // status-bar inset would read a different window.
+        enableEdgeToEdge()
         connectAdoptToLibrary()
         // The runner's recovery reads the library, so the launch's seed and repair come first (#221).
         LibraryGate.awaitPrepared(this)
@@ -103,6 +109,7 @@ class MainActivity : ComponentActivity() {
                             latest = latestFiles.preferences,
                             reread = navigator.barShown,
                             runnerShown = navigator.runnerShown,
+                            splashExits = splash.exits,
                         ) {
                             // The chrome the shell draws itself follows the scheme Compose draws, so
                             // Settings' Appearance repaints the × under the finger. Colors from here,
@@ -243,17 +250,6 @@ private fun Activity.connectAdoptToLibrary() {
     val app = applicationContext
     LibraryAdopt.adoptTargetWeight = { id, kg -> app.adoptTargetWeight(id, kg) }
 }
-
-/**
- * Edge to edge as the RN app drew it (its `WindowUtil`, which Expo turned on), which is androidx's
- * defaults exactly: a transparent status bar; from API 29 a transparent navigation bar with the
- * platform's contrast enforced, so 3-button nav gets the system's scrim and gesture nav none; and
- * below 29, RN's own scrims, `0xE6FFFFFF` light and `0x801B1B1B` dark, since API 26 can't draw dark nav
- * icons over content. `SystemBars.kt` sets the icons' appearance from the scheme Compose draws. Without
- * it the window isn't edge to edge below API 35, and every `statusBarsPadding()` and the sheet's
- * status-bar inset would read a different window.
- */
-private fun ComponentActivity.drawEdgeToEdge() = enableEdgeToEdge()
 
 /**
  * What this activity hears of the files native writes outside a screen, until a newer one takes over:

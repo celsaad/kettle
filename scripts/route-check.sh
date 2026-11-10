@@ -4,8 +4,9 @@
 # the two matrices are kept identical, so a step added to one is added to both.
 #
 # Needs com.casco.kettle.dev from native-dev.sh, running and past its splash, or with --package the
-# release-built com.casco.kettle.bench2 (`gradlew :app:installBenchmark`); on a phone in English whose install still holds the seed library. The runner's steps finish real
-# sessions, which join the .dev history (#306). It never touches com.casco.kettle.
+# release-built com.casco.kettle.bench2 (`gradlew :app:installBenchmark`); on a phone in English
+# whose install still holds the seed library. The runner's steps finish real sessions, which join the
+# .dev history (#306). It never touches com.casco.kettle.
 #
 # A start opens the native runner, in every build since the flip release (#308), and is waited on
 # past its count-in: its Finish only shows once the session runs. Every route is the same in debug

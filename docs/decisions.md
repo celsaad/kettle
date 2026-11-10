@@ -147,8 +147,8 @@ decision assembled across several commits. Open work belongs in the sections at 
   which is the same Oxc toolchain** — so the two agree instead of needing a compatibility shim. Vite+
   was considered first and rejected: it is commercial, and this app is free with a tip jar that only
   covers the Play developer fee, so a per-seat tool can't be justified here. It also couldn't have
-  replaced Metro, which bundles the app, and must never be allowed to drag the test runner with it —
-  `jest-expo` is what makes the RN preset, the transform ignore list and the native-module mocks work.
+  replaced Metro, which bundled the RN app until M7 (#357), and couldn't be allowed to drag the test
+  runner with it: `jest-expo` was what made the RN preset and the native-module mocks work then.
 
   Two exclusions in `.oxfmtrc.json` that are decisions, not oversights, and shouldn't be "fixed":
 
@@ -1216,10 +1216,9 @@ constraint that outlived the work rather than a description of it.
   - **`nodeLinker: hoisted` was required, not a preference, and is kept until #353 without being
     required.** Metro and Gradle autolinking both walked a flat tree; both left with React Native at
     M7 (#357), and the layout stayed rather than churn the lockfile for a project that goes when the
-    TS domain retires. Our own code doesn't lean on it: `src/hooks/safe-iap.ts` once imported
-    `expo-modules-core`, only a dependency of `expo`, and was the first thing isolated mode broke. It
-    now takes the same function from `expo`'s re-export, and `pnpm knip` fails on any import that
-    `package.json` doesn't list.
+    TS domain retires. Our own code doesn't lean on it: `pnpm knip` fails on any import that
+    `package.json` doesn't list. (The first thing isolated mode broke was RN's `src/hooks/safe-iap.ts`,
+    importing `expo-modules-core` through `expo`; it went with the tip jar's move to native, M4.)
   - **`virtualStoreDirMaxLength: 60`.** The virtual store encodes a full package name plus a hash into
     one directory name; at the default of 120 the longest `@babel` entries breach Windows' 260-char
     path cap and the install dies with `ENOENT` on `mkdir`. `LongPathsEnabled` is off on this machine

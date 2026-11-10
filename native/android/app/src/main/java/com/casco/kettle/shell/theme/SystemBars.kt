@@ -3,6 +3,7 @@ package com.casco.kettle.shell.theme
 import androidx.activity.compose.LocalActivity
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.key
 import androidx.core.view.WindowInsetsControllerCompat
 import com.casco.kettle.domain.Preferences
 import java.io.File
@@ -12,27 +13,32 @@ import java.io.File
  * [reread] are passed to), with the system bars' icons drawn to contrast with what's under them (#248). Nothing else
  * sets them: the window's theme leaves them light in either scheme, white on the light background, and
  * a theme attribute couldn't follow Settings → Appearance anyway. [runnerShown] keeps them light over
- * the runner, which is dark in either scheme.
+ * the runner, which is dark in either scheme. Each of [splashExits] sets them again: on API 31 and 32
+ * the splash's exit resets them from the window's theme, with nothing here recomposing to undo it.
  *
  * Each of the shell's Compose views is wrapped in one, so each sets the same window's icons to the same
  * value from the same file and configuration.
  */
+@Suppress("LongParameterList") // Each is an input the bars follow; a holder would serve one call site.
 @Composable
 fun PreferredKettleTheme(
     preferences: File,
     latest: Preferences?,
     reread: Boolean,
     runnerShown: Boolean,
+    splashExits: Int = 0,
     content: @Composable () -> Unit,
 ) {
     val dark = rememberPreferredDarkTheme(preferences, latest, reread)
     val window = LocalActivity.current?.window
     val darkIcons = !dark && !runnerShown
-    SideEffect {
-        if (window == null) return@SideEffect
-        WindowInsetsControllerCompat(window, window.decorView).apply {
-            isAppearanceLightStatusBars = darkIcons
-            isAppearanceLightNavigationBars = darkIcons
+    key(splashExits) {
+        SideEffect {
+            if (window == null) return@SideEffect
+            WindowInsetsControllerCompat(window, window.decorView).apply {
+                isAppearanceLightStatusBars = darkIcons
+                isAppearanceLightNavigationBars = darkIcons
+            }
         }
     }
     KettleTheme(dark, content)

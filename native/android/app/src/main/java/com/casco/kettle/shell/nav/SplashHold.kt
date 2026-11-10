@@ -6,6 +6,9 @@ import android.view.ViewTreeObserver
 import android.view.animation.AccelerateInterpolator
 import android.window.SplashScreenView
 import androidx.activity.ComponentActivity
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.setValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
@@ -23,6 +26,13 @@ class SplashHold private constructor(
     private val content: View,
 ) : ViewTreeObserver.OnPreDrawListener {
     private var held = true
+
+    /**
+     * How many times the splash has exited, as state, so what the exit resets can be set again:
+     * `PreferredKettleTheme` re-applies the bars' icons on each.
+     */
+    var exits by mutableIntStateOf(0)
+        private set
 
     /** Lets the splash go at the next frame. Again is nothing. */
     fun release() {
@@ -44,6 +54,7 @@ class SplashHold private constructor(
             val splash = activity.installSplashScreen()
             val hold = hold(activity.findViewById(android.R.id.content))
             splash.setOnExitAnimationListener { provider ->
+                hold.exits++
                 val view = provider.view
                 view
                     .animate()
@@ -52,10 +63,9 @@ class SplashHold private constructor(
                     .setInterpolator(AccelerateInterpolator())
                     .withEndAction {
                         // The platform's own view directly on 31+, as Expo does: the provider's remove()
-                        // reapplies the theme's light/dark bar appearance over what the app set. On 33+
-                        // that is the only reapply; on 31 and 32 the library has already reapplied the
-                        // theme's bars before this listener runs, so the icons there follow the theme
-                        // until SystemBars recomposes.
+                        // would also reapply the theme's light/dark bar appearance over the app's
+                        // (ThemeUtils.Api31). On 31 and 32 the library has already reset the bars from
+                        // the theme before this listener runs, which `exits` above sets right again.
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                             (view as SplashScreenView).remove()
                         } else {

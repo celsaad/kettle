@@ -36,8 +36,11 @@ class SystemBarIconsTest {
     private fun show(
         latest: () -> Preferences? = { null },
         runnerShown: () -> Boolean = { false },
+        splashExits: () -> Int = { 0 },
     ) {
-        compose.setContent { PreferredKettleTheme(preferences, latest(), reread = false, runnerShown()) {} }
+        compose.setContent {
+            PreferredKettleTheme(preferences, latest(), reread = false, runnerShown(), splashExits()) {}
+        }
         compose.waitForIdle()
     }
 
@@ -105,5 +108,26 @@ class SystemBarIconsTest {
         latest = Preferences(UnitSystem.METRIC, ThemePreference.DARK, false, true, null)
 
         assertEquals(false to false, darkIcons())
+    }
+
+    /**
+     * On API 31 and 32 the splash's exit resets the icons from the window's theme, which leaves them
+     * light on the light scheme, and nothing recomposes to fix them: the exit has to put them back.
+     */
+    @Test
+    fun `puts the icons back after the splash's exit resets them`() {
+        var exits by mutableStateOf(0)
+        show(splashExits = { exits })
+        compose.runOnIdle {
+            val window = compose.activity.window
+            WindowInsetsControllerCompat(window, window.decorView).apply {
+                isAppearanceLightStatusBars = false
+                isAppearanceLightNavigationBars = false
+            }
+        }
+
+        exits++
+
+        assertEquals(true to true, darkIcons())
     }
 }

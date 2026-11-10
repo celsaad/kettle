@@ -11,6 +11,10 @@
 > (#296), which kept the builder a function of live state so actions can be added later. Adding them
 > is the first piece of this plan, and it is planned work for after the migration rather than a
 > parked idea.
+>
+> **Since M7 (#357) there is no `app.json` and no Expo module**, so the evidence tables below that cite
+> `app.json`, `expo-notifications` or `expo-file-system` describe the RN app this plan was costed
+> against. The native service's `RunnerNotifications.kt` is what to re-read them against.
 
 The watch never holds data. It holds no library, writes no session files, and has nothing to merge —
 it only drives the step the phone is already running. That constraint is the entire reason this is a

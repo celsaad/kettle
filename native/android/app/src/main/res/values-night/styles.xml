@@ -1,13 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- AppTheme in a dark system scheme: the dark platform parent, so no white window shows first. -->
+<!-- AppTheme's parent in a dark system scheme: the dark platform theme, so no white window shows first. -->
 <resources>
-    <style name="AppTheme" parent="android:Theme.Material.NoActionBar">
-        <!--
-          Transparent here as well as in enableEdgeToEdge: on API 31 and 32 core-splashscreen re-applies
-          the post-splash theme's bar colors as the splash exits (Impl31.applyAppSystemUiTheme), which
-          would put the platform theme's grey or black bars back over edge-to-edge content.
-        -->
-        <item name="android:statusBarColor">@android:color/transparent</item>
-        <item name="android:navigationBarColor">@android:color/transparent</item>
-    </style>
+    <style name="Base.AppTheme" parent="android:Theme.Material.NoActionBar" />
 </resources>

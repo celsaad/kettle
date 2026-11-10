@@ -26,7 +26,7 @@ class Navigator(
 
     companion object {
         /**
-         * The current activity's navigator, which it clears as it goes: the debug build's
+         * The current activity's navigator, which it clears as it goes: the debug and benchmark builds'
          * `NavigateReceiver` steers it, since a broadcast has no activity of its own to ask.
          */
         var current: Navigator? = null
@@ -47,18 +47,11 @@ class Navigator(
     /** The bar shows on a tab, with nothing over it. */
     val barShown: Boolean get() = sheets.isEmpty() && runner == null
 
-    val layer: Layer
-        get() =
-            when (place) {
-                Place.Runner -> Layer.NativeRunner
-                Place.Sheet -> Layer.NativeSheet
-                Place.Tab -> Layer.NativeTab
-            }
-
     /** Hears every move, before and after: the sheet animates from it. The current activity's sheet. */
     var moves: MoveListener? = null
 
-    private val place: Place get() = placeOf(sheets, runner)
+    /** Where the shell is: which of the tabs, the sheet and the runner shows. */
+    val place: Place get() = placeOf(sheets, runner)
 
     /** A tap on the bar. */
     fun select(tab: Tab) {
@@ -69,14 +62,12 @@ class Navigator(
 
     /** Opens [route] over what shows: a sheet stacks, and a tab's route goes to that tab. */
     fun push(route: Route) {
-        if (runnerShown) return
         if (!route.sheet) return navigate(route)
         go(MoveKind.Push, sheets = sheets + route)
     }
 
     /** Opens [route] in the top sheet's place, so back skips the sheet it replaced. */
     fun replace(route: Route) {
-        if (runnerShown) return
         if (!route.sheet) return navigate(route)
         go(MoveKind.Replace, sheets = sheets.dropLast(1) + route)
     }
@@ -86,7 +77,6 @@ class Navigator(
      * runner's route is the exception, opening over what shows as [openRunner] does.
      */
     fun navigate(route: Route) {
-        if (runnerShown) return
         if (route.destination.presentation == Presentation.Runner) return openRunner(route.runnerStart)
         go(
             MoveKind.Navigate,
@@ -112,7 +102,6 @@ class Navigator(
      * screen's, whatever start it was opened with.
      */
     fun openRunner(start: RunnerStart?) {
-        if (runnerShown) return
         go(MoveKind.Push, runner = RunnerSlot(start))
     }
 
@@ -123,12 +112,32 @@ class Navigator(
         onRunnerClosed()
     }
 
+    /**
+     * The back stack as text an activity can save: the tab's name, then each sheet's path. The runner's
+     * slot isn't in it: a running session is attached to again at launch (`MainActivity`), and a
+     * finished one has nothing to come back to.
+     */
+    fun saved(): List<String> = listOf(tab.name) + sheets.map { it.path }
+
+    /**
+     * Puts back a stack [saved] wrote, as a navigate, so the sheet hears it: what no longer parses (a
+     * route since renamed) is left out, and an unknown tab is Workouts.
+     */
+    fun restore(saved: List<String>) =
+        go(
+            MoveKind.Navigate,
+            tab = Tab.entries.firstOrNull { it.name == saved.firstOrNull() } ?: Tab.Workouts,
+            sheets = saved.drop(1).mapNotNull(Route::parse).filter { it.sheet },
+        )
+
     private fun go(
         kind: MoveKind,
         tab: Tab = this.tab,
         sheets: List<Route> = this.sheets,
         runner: RunnerSlot? = this.runner,
     ) {
+        // The slot's rule, in one place: while it's filled, the only move is the one that empties it.
+        if (this.runner != null && runner != null) return
         val move = Move(place, placeOf(sheets, runner), kind)
         moves?.willMove(move)
         this.tab = tab
@@ -184,12 +193,6 @@ interface MoveListener {
     /** After [move] landed in the navigator's state, before anything has drawn it. */
     fun moved(move: Move)
 }
-
-/**
- * The shell's layers, stacked in one frame: a tab's screen, a sheet's (#197), and the runner's, full
- * screen over everything (#302). [ShellLayout] shows one at a time, and says why.
- */
-enum class Layer { NativeTab, NativeSheet, NativeRunner }
 
 /** The current activity's [Navigator], for every screen that opens, closes or starts something. */
 val LocalNavigator = staticCompositionLocalOf<Navigator> { error("No Navigator: the shell provides one") }

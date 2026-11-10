@@ -529,9 +529,7 @@ it) came from the runner still being RN. Once RN draws nothing it is mostly dele
   too.
 - **Repoint the device scripts.** Each `.sh` and its `.ps1` twin change together:
   - **`native-dev`**: its AAR and Metro steps go, leaving build and install.
-  - **`route-check`**: drop its "start it against Metro" precondition. (#309 already pointed
-    `NavigateReceiver` at the native navigator, deleted `FilesChangedReceiver`, and moved the runner
-    rows to `/session`.)
+  - **`route-check`**: drop its "start it against Metro" precondition.
   - **`session-check` (#315)**: drop starting Metro, `adb reverse`, and the relaunch it does when the
     app can't load its JS. Those are its flakiest steps, since an adb server restart drops the tunnel
     mid-run.

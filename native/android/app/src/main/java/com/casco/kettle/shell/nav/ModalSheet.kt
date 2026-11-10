@@ -101,7 +101,7 @@ class ModalSheet(
         val to = move.to
         place = to
         backCallback.isEnabled = to == Place.Sheet
-        shell.showLayer(navigator.layer)
+        shell.show(navigator.place)
         if (from == Place.Sheet && to == Place.Sheet) stage.layOutAsSheet()
         // Each picture is used once; the tab's stays until the sheet has gone.
         val sheet = sheetPicture.also { sheetPicture = null }

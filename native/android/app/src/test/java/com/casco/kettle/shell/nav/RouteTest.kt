@@ -33,6 +33,32 @@ class RouteTest {
         )
     }
 
+    /** A link is anyone's to type: one that can't be decoded goes nowhere, rather than crashing the launch. */
+    @Test
+    fun `a malformed escape parses to nothing, not a throw`() {
+        assertNull(Route.fromLink("kettle://session?workoutId=%zz"))
+        assertNull(Route.fromLink("kettle://session?workoutId=bench%"))
+        assertNull(Route.parse("/exercise-editor?id=%E2%82"))
+        assertNull(Route.parse("/exercise-editor?id=%+1"))
+    }
+
+    /** A path's query, not a form: `+` is a plus, as in a program day named "Push+Pull". */
+    @Test
+    fun `a plus in a value stays a plus`() {
+        assertEquals(mapOf("day" to "Push+Pull"), Route.parse("/program-detail?day=Push+Pull")?.params)
+    }
+
+    @Test
+    fun `a route writes back out as the path it parses from`() {
+        val routes =
+            listOf(
+                Route(Destination.Workouts),
+                Route(Destination.ProgramDetail, mapOf("programId" to "base", "day" to "Day 1 & 2+")),
+                Route(Destination.SessionEditor, mapOf("id" to "2026-11-09T23-29-54-817Z")),
+            )
+        for (route in routes) assertEquals(route, Route.parse(route.path))
+    }
+
     @Test
     fun `a kettle link parses with the same parser, host and path alike`() {
         assertEquals(Route(Destination.History), Route.fromLink("kettle://history"))

@@ -53,7 +53,11 @@ import kotlinx.coroutines.flow.MutableSharedFlow
  * is only an `AppCompatActivity`, so this does what the prebuilt app's `ReactActivity` and Expo's
  * delegate wrapper did for it: the splash, Expo modules' activity lifecycle (edge to edge), and the
  * host's share of activity results, permission prompts, configuration and focus.
+ *
+ * Over detekt's function count with overrides alone, the RN host's (permissions, results,
+ * configuration, focus) until M7 deletes it and the lifecycle's own, so none can move out.
  */
+@Suppress("TooManyFunctions")
 class MainActivity :
     BrownfieldActivity(),
     PermissionAwareActivity {
@@ -156,11 +160,20 @@ class MainActivity :
         hearNavigateReceiver(navigator)
         setContentView(layout)
         expoListeners.onContentShown()
+        // The stack this activity's predecessor saved, when it was made again (a font or display size
+        // change, the process brought back): RN's router used to keep it in the JS runtime.
+        val saved = savedInstanceState?.getStringArrayList(BACK_STACK)
+        if (saved != null) navigator.restore(saved)
         // Any launch with the service alive attaches, the shade notification's tap or not (#297): a Recents
         // swipe leaves the session running, and the relaunch comes back to it with no prompt. Before the
-        // link, which a running session then drops.
+        // link, which a running session then drops. A restored stack's link was opened the first time.
         attachRunner(navigator)
-        navigator.openLink(intent)
+        if (saved == null) navigator.openLink(intent)
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putStringArrayList(BACK_STACK, ArrayList(navigator.saved()))
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -242,17 +255,18 @@ private fun Activity.leave() {
     if (!moveTaskToBack(false)) finish()
 }
 
-/** A `kettle://` link in [intent], parsed natively (#309); one to nowhere is dropped. */
+/**
+ * A `kettle://` link in [intent], parsed natively (#309); one to nowhere is dropped. Not when Recents
+ * relaunches it: the system hands back the intent the task started with, and a `kettle://session` link
+ * would start the workout it already ran.
+ */
 private fun Navigator.openLink(intent: Intent) {
-    val link = intent.dataString ?: return
+    val replayed = intent.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY != 0
+    val link = intent.dataString?.takeUnless { replayed } ?: return
     // Taken off, so a recreated activity, which is handed the same intent, doesn't open it again.
     intent.data = null
     val route = Route.fromLink(link)
-    if (route == null) {
-        Log.w("MainActivity", "No route at $link; the link goes nowhere")
-        return
-    }
-    navigate(route)
+    if (route != null) navigate(route) else Log.w("MainActivity", "No route at $link; the link goes nowhere")
 }
 
 /**
@@ -274,6 +288,9 @@ private fun Activity.recoverRunner(paths: StoragePaths) {
         RunnerService.clearAfterDeath(app)
     }
 }
+
+/** Where [MainActivity] saves its [Navigator]'s back stack. */
+private const val BACK_STACK = "com.casco.kettle.shell.BACK_STACK"
 
 /** Whether this process has run [recoverRunner]: on the main thread only, as onCreate is. */
 private var runnerRecovered = false
@@ -346,7 +363,10 @@ private fun ComponentActivity.listenForWrites(files: LatestFiles) {
     )
 }
 
-/** The debug build's `NavigateReceiver` steers this activity's [navigator], until a newer one takes over. */
+/**
+ * The debug and benchmark builds' `NavigateReceiver` steers this activity's [navigator], until a newer
+ * one takes over.
+ */
 private fun ComponentActivity.hearNavigateReceiver(navigator: Navigator) {
     Navigator.current = navigator
     lifecycle.addObserver(

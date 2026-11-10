@@ -22,7 +22,7 @@ import com.casco.kettle.shell.runner.RecoveryPrompt
  * The RN [surface] is in the frame too, under everything and never shown: since #309 it draws nothing,
  * and M7 deletes it.
  *
- * Only one [Layer] shows: the destinations for a tab, the [nativeSheet] for a sheet, and the
+ * Only one [Place] shows: the destinations for a tab, the [nativeSheet] for a sheet, and the
  * [nativeRunner] for the runner. The others are invisible, since a view left showing under another
  * still takes touches and TalkBack's focus.
  *
@@ -43,7 +43,7 @@ class ShellLayout(
         composeView {
             theme {
                 SplashExit(LocalLatestFiles.current, LocalSplashExit.current)
-                Destinations(navigator, content, onLayer = ::showLayer)
+                Destinations(navigator, content, onPlace = ::show)
             }
         }
 
@@ -94,14 +94,14 @@ class ShellLayout(
     }
 
     /**
-     * Shows [layer] alone. The destinations call it as the tab changes; the sheet calls it as well, at
+     * Shows [place] alone. The destinations call it as the tab changes; the sheet calls it as well, at
      * the frame a route arrives, since a recomposition would land a frame after the transition starts.
      * Invisible rather than gone, so the hidden layers stay laid out, ready to show.
      */
-    fun showLayer(layer: Layer) {
-        destinations.visibility = if (layer == Layer.NativeTab) VISIBLE else INVISIBLE
-        nativeSheet.visibility = if (layer == Layer.NativeSheet) VISIBLE else INVISIBLE
-        nativeRunner.visibility = if (layer == Layer.NativeRunner) VISIBLE else INVISIBLE
+    fun show(place: Place) {
+        destinations.visibility = if (place == Place.Tab) VISIBLE else INVISIBLE
+        nativeSheet.visibility = if (place == Place.Sheet) VISIBLE else INVISIBLE
+        nativeRunner.visibility = if (place == Place.Runner) VISIBLE else INVISIBLE
     }
 
     private fun composeView(content: @Composable () -> Unit) =

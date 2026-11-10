@@ -5,7 +5,9 @@ import androidx.annotation.StringRes
 import com.casco.kettle.domain.RunnerStart
 import com.casco.kettle.domain.SessionParams
 import com.casco.kettle.shell.R
-import java.net.URLDecoder
+import java.io.ByteArrayOutputStream
+import java.nio.ByteBuffer
+import java.nio.charset.CharacterCodingException
 
 /** How a destination is presented: as a tab under the bar, in the sheet over the tabs, or as the runner. */
 enum class Presentation { Tab, Sheet, Runner }
@@ -59,7 +61,7 @@ data class Route(
     val destination: Destination,
     val params: Map<String, String> = emptyMap(),
 ) {
-    /** Whether this route shows in the sheet, which is what `SHEET_ROUTES` said in RN. */
+    /** Whether this route shows in the sheet. */
     val sheet: Boolean get() = destination.presentation == Presentation.Sheet
 
     /**
@@ -67,6 +69,14 @@ data class Route(
      * as the library's first workout (#303): `kettle://session` on its own still starts something.
      */
     val runnerStart: RunnerStart? get() = runnerStartFrom(params)
+
+    /** This route as the path [parse] reads back to it: what a saved back stack holds. */
+    val path: String
+        get() {
+            if (params.isEmpty()) return destination.path
+            val query = params.entries.joinToString("&") { (key, value) -> "${encode(key)}=${encode(value)}" }
+            return "${destination.path}?$query"
+        }
 
     companion object {
         /**
@@ -79,29 +89,88 @@ data class Route(
             return parse("/" + link.removePrefix(LINK_SCHEME).trimStart('/'))
         }
 
-        /** [path] as a route, `/exercise-editor?id=pushups` say; null for a path no destination has. */
+        /**
+         * [path] as a route, `/exercise-editor?id=pushups` say; null for a path no destination has, or a
+         * query that can't be decoded. Never throws: a link is anyone's to type, and one read at launch
+         * that threw would crash every relaunch until the task went.
+         */
         fun parse(path: String): Route? {
             val (pathname, query) = path.split('?', limit = 2).let { it[0] to it.getOrNull(1) }
             val destination = Destination.entries.firstOrNull { it.path == pathname } ?: return null
-            return Route(destination, queryParams(query))
+            return queryParams(query)?.let { Route(destination, it) }
         }
 
-        private fun queryParams(query: String?): Map<String, String> =
-            query
-                ?.split('&')
-                ?.filter { it.isNotEmpty() }
-                ?.associate { pair ->
+        /** Null when any key or value can't be decoded: half a query is no route. */
+        private fun queryParams(query: String?): Map<String, String>? {
+            val pairs =
+                query?.split('&').orEmpty().filter { it.isNotEmpty() }.map { pair ->
                     val (key, value) = pair.split('=', limit = 2).let { it[0] to it.getOrElse(1) { "" } }
-                    decode(key) to decode(value)
-                }.orEmpty()
-
-        // The charset's name, not a Charset: that overload is API 33, and the app runs from 24.
-        private fun decode(text: String): String = URLDecoder.decode(text, "UTF-8")
+                    percentDecode(key)?.let { k -> percentDecode(value)?.let { v -> k to v } }
+                }
+            return if (null in pairs) null else pairs.filterNotNull().toMap()
+        }
 
         /** What the manifest's intent filter declares. */
         private const val LINK_SCHEME = "kettle://"
     }
 }
+
+/**
+ * [text] with each `%XX` read as a UTF-8 byte, or null for an escape that isn't one (`%zz`, a `%` at the
+ * end) or bytes that aren't UTF-8. A path's query rather than a form's, so `+` stays a plus, which
+ * `URLDecoder` would have read as a space, and nothing here throws, which `URLDecoder` would.
+ */
+private fun percentDecode(text: String): String? {
+    val bytes = percentBytes(text) ?: return null
+    return try {
+        Charsets.UTF_8
+            .newDecoder()
+            .decode(ByteBuffer.wrap(bytes))
+            .toString()
+    } catch (_: CharacterCodingException) {
+        null
+    }
+}
+
+/** [text]'s bytes, each `%XX` as the byte it names; null for an escape that isn't two hex digits. */
+private fun percentBytes(text: String): ByteArray? {
+    val bytes = ByteArrayOutputStream()
+    var i = 0
+    while (i < text.length) {
+        val c = text[i]
+        if (c == '%') {
+            val hex = text.substring(i + 1, minOf(i + ESCAPE_LENGTH, text.length))
+            // Two hex digits exactly: toInt alone would take a sign, `%+1`, as an escape.
+            if (hex.length != ESCAPE_LENGTH - 1 || !hex.all { it.isDigit() || it.lowercaseChar() in 'a'..'f' }) {
+                return null
+            }
+            bytes.write(hex.toInt(HEX))
+            i += ESCAPE_LENGTH
+        } else {
+            bytes.write(c.toString().toByteArray(Charsets.UTF_8))
+            i++
+        }
+    }
+    return bytes.toByteArray()
+}
+
+/** [text] with everything but RFC 3986's unreserved characters escaped, as [percentDecode] reads it. */
+private fun encode(text: String): String =
+    buildString {
+        for (byte in text.toByteArray(Charsets.UTF_8)) {
+            val c = byte.toInt().toChar()
+            if (byte >= 0 && (c.isLetterOrDigit() || c in UNRESERVED)) {
+                append(c)
+            } else {
+                append('%').append("%02X".format(byte.toInt() and BYTE_MASK))
+            }
+        }
+    }
+
+private const val ESCAPE_LENGTH = 3
+private const val HEX = 16
+private const val BYTE_MASK = 0xFF
+private const val UNRESERVED = "-._~"
 
 /**
  * A start as params, the way a session route names it and [runnerStartFrom] reads it back: the runner's

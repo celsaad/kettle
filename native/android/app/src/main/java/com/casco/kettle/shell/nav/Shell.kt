@@ -30,13 +30,13 @@ import com.casco.kettle.shell.theme.KettleTheme
 
 /**
  * The tabs, one entry at a time: NavHost switches between them and holds nothing else, since the back
- * stack is the [navigator]'s. [onLayer] is told which layer to show.
+ * stack is the [navigator]'s. [onPlace] is told which place to show.
  */
 @Composable
 internal fun Destinations(
     navigator: Navigator,
     content: @Composable (Route) -> Unit,
-    onLayer: (Layer) -> Unit,
+    onPlace: (Place) -> Unit,
 ) {
     val navController = rememberNavController()
     LaunchedEffect(navigator.tab) {
@@ -57,8 +57,8 @@ internal fun Destinations(
             restoreState = true
         }
     }
-    val layer = navigator.layer
-    SideEffect { onLayer(layer) }
+    val place = navigator.place
+    SideEffect { onPlace(place) }
 
     NavHost(
         navController = navController,

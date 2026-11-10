@@ -77,7 +77,7 @@ src/
                          kg/lb conversion
   storage/              readers for the content the app ships: the seed library and the packs
   state/selectors/      derived-display selectors
-  i18n/                 i18next setup and the en / pt locale bundles
+  i18n/                 i18next setup and the en / pt / ja locale bundles
   test-support/         shared fixtures used by the test suite
 site/                   the public landing site (GitHub Pages), static HTML, no build step
 store/                  Play listing copy and generated store graphics

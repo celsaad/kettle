@@ -24,7 +24,7 @@ class NavigatorTest {
     fun `it opens on Workouts with the bar up and nothing above it`() {
         assertEquals(Tab.Workouts, navigator.tab)
         assertTrue(navigator.barShown)
-        assertEquals(Layer.NativeTab, navigator.layer)
+        assertEquals(Place.Tab, navigator.place)
         assertNull(navigator.sheet)
     }
 
@@ -43,7 +43,7 @@ class NavigatorTest {
         navigator.push(editor("pushups"))
 
         assertEquals(editor("pushups"), navigator.sheet)
-        assertEquals(Layer.NativeSheet, navigator.layer)
+        assertEquals(Place.Sheet, navigator.place)
         assertFalse(navigator.barShown)
 
         assertTrue(navigator.back())
@@ -113,7 +113,7 @@ class NavigatorTest {
         navigator.openRunner(bench)
 
         assertEquals(RunnerSlot(bench), navigator.runner)
-        assertEquals(Layer.NativeRunner, navigator.layer)
+        assertEquals(Place.Runner, navigator.place)
         assertTrue(navigator.runnerShown)
         assertFalse(navigator.barShown)
     }
@@ -178,11 +178,11 @@ class NavigatorTest {
         navigator.moves =
             object : MoveListener {
                 override fun willMove(move: Move) {
-                    heard += "will ${move.kind} ${navigator.layer}"
+                    heard += "will ${move.kind} ${navigator.place}"
                 }
 
                 override fun moved(move: Move) {
-                    heard += "moved ${move.from}->${move.to} ${navigator.layer}"
+                    heard += "moved ${move.from}->${move.to} ${navigator.place}"
                 }
             }
 
@@ -195,19 +195,63 @@ class NavigatorTest {
 
         assertEquals(
             listOf(
-                "will Push NativeTab",
-                "moved Tab->Sheet NativeSheet",
-                "will Replace NativeSheet",
-                "moved Sheet->Sheet NativeSheet",
-                "will Push NativeSheet",
-                "moved Sheet->Runner NativeRunner",
-                "will Back NativeRunner",
-                "moved Runner->Sheet NativeSheet",
-                "will Back NativeSheet",
-                "moved Sheet->Tab NativeTab",
+                "will Push Tab",
+                "moved Tab->Sheet Sheet",
+                "will Replace Sheet",
+                "moved Sheet->Sheet Sheet",
+                "will Push Sheet",
+                "moved Sheet->Runner Runner",
+                "will Back Runner",
+                "moved Runner->Sheet Sheet",
+                "will Back Sheet",
+                "moved Sheet->Tab Tab",
             ),
             heard,
         )
+    }
+
+    /**
+     * An activity made again (a font or display size change, or the process brought back) starts a new
+     * navigator; the stack it saved puts the user back where they were, not on Workouts.
+     */
+    @Test
+    fun `a saved back stack restores the tab and every sheet over it`() {
+        navigator.select(Tab.Library)
+        navigator.push(editor("pushups"))
+        navigator.push(settings)
+
+        val restored = Navigator().apply { restore(navigator.saved()) }
+
+        assertEquals(Tab.Library, restored.tab)
+        assertEquals(settings, restored.sheet)
+        restored.back()
+        assertEquals(editor("pushups"), restored.sheet)
+    }
+
+    /** The slot isn't saved: a running session is attached to again at launch, and a done one is gone. */
+    @Test
+    fun `the runner's slot is not saved`() {
+        navigator.push(settings)
+        navigator.openRunner(bench)
+
+        val restored = Navigator().apply { restore(navigator.saved()) }
+
+        assertNull(restored.runner)
+        assertEquals(settings, restored.sheet)
+    }
+
+    /** Saved by a build whose routes differ: what still parses comes back, and nothing else. */
+    @Test
+    fun `a saved stack restores what still parses`() {
+        navigator.restore(listOf("Library", "/nowhere", "/settings", "/exercise-editor?id=%zz"))
+
+        assertEquals(Tab.Library, navigator.tab)
+        assertEquals(settings, navigator.sheet)
+        navigator.back()
+        assertNull(navigator.sheet)
+
+        navigator.restore(listOf("NoSuchTab"))
+        assertEquals(Tab.Workouts, navigator.tab)
     }
 
     @Test

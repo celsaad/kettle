@@ -3,10 +3,19 @@
   AppTheme is the window's theme once the splash goes. A platform parent rather than AppCompat's
   DayNight, since the activity is a plain ComponentActivity and Compose draws everything: values-night
   swaps the light parent for the dark one, so the window behind the first frame follows the system
-  scheme. Edge to edge is MainActivity's (`enableEdgeToEdge`), not the theme's.
+  scheme. Edge to edge is MainActivity's (`enableEdgeToEdge`); the bar colors below only keep the
+  splash's exit from undoing it.
 -->
 <resources>
-    <style name="AppTheme" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="AppTheme" parent="android:Theme.Material.Light.NoActionBar">
+        <!--
+          Transparent here as well as in enableEdgeToEdge: on API 31 and 32 core-splashscreen re-applies
+          the post-splash theme's bar colors as the splash exits (Impl31.applyAppSystemUiTheme), which
+          would put the platform theme's grey or black bars back over edge-to-edge content.
+        -->
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+    </style>
 
     <style name="Base.Theme.App.SplashScreen" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/splashscreen_background</item>

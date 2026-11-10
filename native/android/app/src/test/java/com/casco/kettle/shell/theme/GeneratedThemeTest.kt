@@ -5,6 +5,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.text.font.FontWeight
+import com.casco.kettle.shell.R
 import com.casco.kettle.theme.parseTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -12,6 +13,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 import java.io.File
 import kotlin.math.pow
@@ -37,6 +39,16 @@ class GeneratedThemeTest {
 
     private fun channels(color: Color) =
         listOf(color.alpha, color.red, color.green, color.blue).map { (it * 255).roundToInt() }
+
+    /**
+     * The splash's background is a resource, which the system reads before any Compose runs, so it is
+     * a copy of the runner's background rather than generated from it: this keeps the two the same.
+     */
+    @Test
+    fun `the splash background is the runner's`() {
+        val splash = RuntimeEnvironment.getApplication().getColor(R.color.splashscreen_background)
+        assertEquals(channels(theme.runner.getValue("background")), channels(Color(splash)))
+    }
 
     /**
      * Every color token, read back through Compose's own `Color`, so the ARGB order the generator writes

@@ -1,7 +1,8 @@
 # Shipping Kettle on iOS — plan
 
 > **The RN iOS route is closed for good.** React Native and Expo left the app at M7 (#357), so
-> `expo prebuild --platform ios`, `app.json` and every RN file this plan links are gone, and iOS is
+> `expo prebuild --platform ios`, `app.json`, `app-config.test.ts` (which held its iOS keys) and every
+> RN file this plan links are gone, and iOS is
 > M8's native app (`docs/native-migration-plan.md`). Read the body as history and as reasoning: the
 > background-cue, Files-app, localization and store decisions carry over to M8, and the facts
 > `app.json` held are in "What `app.json` held for iOS" below, which is where a link to `app.json`

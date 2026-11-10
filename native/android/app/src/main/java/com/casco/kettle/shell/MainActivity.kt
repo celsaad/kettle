@@ -2,11 +2,9 @@ package com.casco.kettle.shell
 
 import android.app.Activity
 import android.content.Intent
-import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
-import androidx.activity.SystemBarStyle
 import androidx.activity.addCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.CompositionLocalProvider
@@ -247,16 +245,15 @@ private fun Activity.connectAdoptToLibrary() {
 }
 
 /**
- * Under transparent bars on every API level, as the RN app was drawn (its `WindowUtil`'s edge to
- * edge): no scrim of the app's own on 3-button navigation, and the navigation bar's contrast left to
- * the platform, which `auto` enforces. `SystemBars.kt` sets the icons' appearance from
- * the scheme Compose draws. Without it the window isn't edge to edge below API 35, and every
- * `statusBarsPadding()` and the sheet's status-bar inset would read a different window.
+ * Edge to edge as the RN app drew it (its `WindowUtil`, which Expo turned on), which is androidx's
+ * defaults exactly: a transparent status bar; from API 29 a transparent navigation bar with the
+ * platform's contrast enforced, so 3-button nav gets the system's scrim and gesture nav none; and
+ * below 29, RN's own scrims, `0xE6FFFFFF` light and `0x801B1B1B` dark, since API 26 can't draw dark nav
+ * icons over content. `SystemBars.kt` sets the icons' appearance from the scheme Compose draws. Without
+ * it the window isn't edge to edge below API 35, and every `statusBarsPadding()` and the sheet's
+ * status-bar inset would read a different window.
  */
-private fun ComponentActivity.drawEdgeToEdge() {
-    val transparent = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT)
-    enableEdgeToEdge(statusBarStyle = transparent, navigationBarStyle = transparent)
-}
+private fun ComponentActivity.drawEdgeToEdge() = enableEdgeToEdge()
 
 /**
  * What this activity hears of the files native writes outside a screen, until a newer one takes over:

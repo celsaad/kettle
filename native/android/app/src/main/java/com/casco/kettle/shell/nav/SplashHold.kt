@@ -52,7 +52,10 @@ class SplashHold private constructor(
                     .setInterpolator(AccelerateInterpolator())
                     .withEndAction {
                         // The platform's own view directly on 31+, as Expo does: the provider's remove()
-                        // reapplies the theme's system bar appearance over what the app set.
+                        // reapplies the theme's light/dark bar appearance over what the app set. On 33+
+                        // that is the only reapply; on 31 and 32 the library has already reapplied the
+                        // theme's bars before this listener runs, so the icons there follow the theme
+                        // until SystemBars recomposes.
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                             (view as SplashScreenView).remove()
                         } else {

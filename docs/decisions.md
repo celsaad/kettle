@@ -177,6 +177,30 @@ decision assembled across several commits. Open work belongs in the sections at 
     reaches app code. RevenueCat's real advantage is cross-platform entitlements, which is exactly
     what's deferred with iOS. **Adding EAS Update, Sentry, or any analytics would break the same
     claim** — treat zero declarations as a product constraint, not an accident.
+
+    "Inside Google Play" turned out to be incomplete (#339, settled in #347). Since PBL 6.0 the
+    library logs its own usage ("API usage … and service connection issues") through `datatransport`
+    to `firebaselogging.googleapis.com`, with device context attached (model, build fingerprint,
+    locale, country, MCC/MNC, network type, time zone; no advertising or Android ID). It starts once a
+    `BillingClient` exists, which in Kettle is only the Support screen. That was checked on an
+    emulator: no traffic from the app's UID across every other screen, then an upload job and a
+    socket to `firebaselogging` within seconds of opening Support. The form stays "no data
+    collected": we read these logs as part of "Google Play's billing system", which Play exempts when
+    the app never accesses the data, and Kettle never does. Google has not ruled on it either way, and
+    no support ticket was filed. Kettle's own copy (privacy page, site, listing description) says
+    "no network requests *of its own*" and names this exception, so it never claims more than the
+    code does. Two consequences:
+
+    - **Any PBL bump means a re-check.** Read its release notes for logging changes, and re-run
+      #339's `:app:dependencies --configuration releaseRuntimeClasspath` diff for a new transmitting
+      artifact or permission. The release notes are the only first-party record of what the logger
+      sends; its proto is obfuscated.
+    - **Building a `BillingClient` anywhere but Support moves the disclosure.** Deferring it to the
+      tip tap was considered and refused: the buttons would lose Play's localized prices, and
+      recovering an unconsumed purchase would wait for a tap.
+
+    emoji2's launch-time font query was looked at too and doesn't count: it is IPC to Play services,
+    and the fetch and its logging are Play services' own, not the app's or an SDK's.
   - **Tips must stay in-app.** Linking out to Ko-fi/PayPal violates the Play Payments policy for
     non-nonprofit developers. This is the policy risk, not the Data Safety form.
 

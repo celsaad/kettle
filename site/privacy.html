@@ -6,7 +6,7 @@
     <title>Privacy policy — Kettle</title>
     <meta
       name="description"
-      content="Kettle's privacy policy. The app has no server and no account, collects no personal data, and transmits nothing. Your library and session log stay on your device." />
+      content="Kettle's privacy policy. The app has no server and no account, collects no personal data, and makes no network requests of its own. Your library and session log stay on your device." />
     <meta name="color-scheme" content="light dark" />
     <link rel="icon" href="favicon.svg" type="image/svg+xml" />
     <link rel="canonical" href="https://celsaad.github.io/kettle/privacy.html" />
@@ -15,7 +15,7 @@
     <meta property="og:title" content="Kettle privacy policy" />
     <meta
       property="og:description"
-      content="Kettle collects no personal data, has no server and no account, and transmits nothing. This site loads no third-party resources either." />
+      content="Kettle collects no personal data, has no server and no account, and makes no network requests of its own. This site loads no third-party resources either." />
     <meta property="og:url" content="https://celsaad.github.io/kettle/privacy.html" />
     <!-- og:image intentionally absent until a 1200x630 card exists; a broken preview image is worse than a text-only card. -->
     <meta name="twitter:card" content="summary" />
@@ -70,10 +70,10 @@
           <p class="eyebrow">Legal</p>
           <h1>Privacy policy</h1>
           <p class="lede">
-            The short version: Kettle has no server and no account, collects no personal data, and sends nothing anywhere.
-            This page is the long version.
+            The short version: Kettle has no server and no account, collects no personal data, and makes no network requests
+            of its own. This page is the long version.
           </p>
-          <p class="meta">Last updated 7 August 2026 · applies to the Kettle Android app and this website.</p>
+          <p class="meta">Last updated 9 November 2026 · applies to the Kettle Android app and this website.</p>
         </div>
 
         <article class="prose" style="max-width: 70ch">
@@ -119,16 +119,24 @@
             third-party trackers of any kind. The app does not build a usage profile and has nothing to send if it wanted to.
           </p>
 
-          <h2>Network access</h2>
+          <h2 id="network">Network access</h2>
           <p>
-            Under normal use the app makes no network requests. It has no backend to contact, and its features work fully
-            offline. This website behaves the same way: it loads no third-party scripts, fonts, or beacons, and it embeds no
-            analytics.
+            Kettle itself makes no network requests. It has no backend to contact, and its features work fully offline. This
+            website behaves the same way: it loads no third-party scripts, fonts, or beacons, and it embeds no analytics.
           </p>
           <p>
-            The only time data leaves your device is when <em>you</em> choose to move it — for example, exporting your
-            library or history to a file and sharing it, or copying text out to paste elsewhere. Those actions are initiated
-            by you, go where you send them, and are outside Kettle's control once they leave the app.
+            The one exception is Google Play Billing, the Google library the tip jar uses. When you open the Support screen,
+            it connects to Google Play and sends Google its own diagnostics: whether its requests succeeded, along with
+            technical details of the device such as its model and build, language, country, mobile network and network type,
+            and time zone. Kettle never sees those reports, and nothing from your library, session log or settings is in
+            them. Google handles them under
+            <a href="https://policies.google.com/privacy">Google's privacy policy</a>. If you never open the Support screen,
+            nothing is sent.
+          </p>
+          <p>
+            Apart from that, the only time data leaves your device is when <em>you</em> choose to move it — for example,
+            exporting your library or history to a file and sharing it, or copying text out to paste elsewhere. Those actions
+            are initiated by you, go where you send them, and are outside Kettle's control once they leave the app.
           </p>
 
           <h2>Data you import</h2>
@@ -173,8 +181,8 @@
               <strong>Storage</strong> (Android 12 and older only) — reading and writing library files you import or export.
             </li>
             <li>
-              <strong>Internet and network state</strong> — required by the app framework and used by Google Play Billing.
-              Kettle makes no network requests of its own.
+              <strong>Internet and network state</strong> — used only by Google Play Billing, for the tip jar and the
+              diagnostics described under <a href="#network">Network access</a>. Kettle makes no network requests of its own.
             </li>
           </ul>
           <p>Kettle does not request microphone, camera, location, contacts, or health-platform access.</p>
@@ -196,8 +204,8 @@
           <h2>Changes to this policy</h2>
           <p>
             If the app's data practices ever change, this page and its “last updated” date will change with them, and the
-            revision history is public in the project's repository. Kettle's design goal — collecting nothing and
-            transmitting nothing — is not expected to change.
+            revision history is public in the project's repository. Kettle's design goal — collecting nothing, and sending
+            nothing of its own — is not expected to change.
           </p>
 
           <h2>Contact</h2>

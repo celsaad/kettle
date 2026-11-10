@@ -112,6 +112,6 @@ animation, real audio and file writes are verified by driving the running app in
 
 ## Privacy and license
 
-Kettle collects nothing, transmits nothing, and makes no network requests — see
+Kettle collects nothing and makes no network requests of its own — see
 [`PRIVACY.md`](PRIVACY.md). The code is MIT licensed ([`LICENSE`](LICENSE)); your library and session
 log are yours and were never anyone else's.

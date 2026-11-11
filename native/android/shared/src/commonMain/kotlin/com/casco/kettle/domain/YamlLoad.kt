@@ -264,7 +264,7 @@ private class TokenIndentation(
 ) {
     // Split where the engine counts a new line, so a token's mark names the right one.
     private val lines = text.split("\r\n", "\n", "\r")
-    private val tabs = '\t' in text
+    private val hasTab = '\t' in text
     private var flowDepth = 0
 
     // The columns of the open block collections, innermost last.
@@ -308,7 +308,7 @@ private class TokenIndentation(
             }
 
             Token.ID.Key, Token.ID.BlockEntry -> {
-                val tabIndented = tabs && flowDepth == 0 && token.startMark?.let(::tabBefore) == true
+                val tabIndented = hasTab && flowDepth == 0 && token.startMark?.let(::tabBefore) == true
                 if (tabIndented) "tab characters must not be used in indentation" else null
             }
 
@@ -327,10 +327,13 @@ private class TokenIndentation(
         return (first..last).firstOrNull(::deficient)?.let(::deficientIndentation)
     }
 
-    /** Whether [line] holds anything but whitespace, behind fewer leading spaces than [required]. */
+    /**
+     * Whether [line] holds anything but YAML whitespace, behind fewer leading spaces than [required].
+     * Not `isBlank`, which takes NBSP and the full-width U+3000 for whitespace: YAML's is space and TAB.
+     */
     private fun deficient(line: Int): Boolean {
         val text = lines.getOrNull(line).orEmpty()
-        return text.isNotBlank() && text.takeWhile { it == ' ' }.length < required
+        return text.any { it != ' ' && it != '\t' } && text.takeWhile { it == ' ' }.length < required
     }
 
     private fun deficientIndentation(line: Int) = "deficient indentation at line ${line + 1}"

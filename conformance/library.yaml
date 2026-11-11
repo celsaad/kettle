@@ -252,6 +252,10 @@ cases:
     why: as plain-continuation-tab-only, with a blank line between; the blank line is fine at any indent, the TAB-led one after it is not
     input: "version: 1\nexercises: []\nworkouts: []\nprograms: []\nextra: one\n\n\ttwo\n"
 
+  - name: ideographic-space-line-in-quoted-scalar
+    why: a line of only U+3000, the full-width space a Japanese keyboard types, is not an empty line; YAML's whitespace is space and TAB alone, so the line holds content at column 0, one short of the 1 it needs
+    input: "version: 1\nexercises: [{ id: a, name: A, type: rest, notes: \"one\n\u3000\n two\", config: { duration_sec: 1 } }]\nworkouts: []\nprograms: []\n"
+
   - name: flow-sequence-continuation-unindented
     why: the second exercise's line starts at column 0, one short of the 1 a top-level key's flow value needs on every line after its first
     input: "version: 1\nexercises: [{ id: a, name: A, type: rest, config: { duration_sec: 1 } },\n{ id: b, name: B, type: rest, config: { duration_sec: 1 } }]\nworkouts: []\nprograms: []\n"
@@ -281,7 +285,7 @@ cases:
     input: "version: 1\nexercises:\n- { id: a, name: A, type: rest,\nconfig: { duration_sec: 1 } }\nworkouts: []\nprograms: []\n"
 
   - name: flow-continuation-indented-enough
-    why: the ok side of every case above, so the check can't refuse too much; a blank line and a comment line are fine at any indent, a continuation line one space in is enough at the top level, and a TAB may follow those spaces
+    why: the ok side of every case above, so the check can't refuse too much; a blank line and a comment line are fine at any indent, a continuation line one space in is enough for a top-level key's value, and a TAB may follow those spaces
     input: "version: 1\nexercises: [\n  { id: a, name: A, type: rest,\n \tconfig: { duration_sec: 1 } },\n\n# a comment at column 0\n { id: b, name: \"B\n \tB\", type: rest, config: { duration_sec: 1 } }\n ]\nworkouts: []\nprograms: []\nextra:\n  b: [c,\n   \td]\n"
 
   # --- Document shape ---

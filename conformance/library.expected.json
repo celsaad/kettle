@@ -4512,6 +4512,10 @@
     "ok": false,
     "kind": "invalidYaml"
   },
+  "ideographic-space-line-in-quoted-scalar": {
+    "ok": false,
+    "kind": "invalidYaml"
+  },
   "flow-sequence-continuation-unindented": {
     "ok": false,
     "kind": "invalidYaml"

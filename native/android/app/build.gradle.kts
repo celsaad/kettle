@@ -11,7 +11,7 @@ fun uploadKeySetting(setting: String): String? = providers.environmentVariable("
 
 android {
     namespace = "com.casco.kettle.shell"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.casco.kettle"
@@ -282,7 +282,6 @@ dependencies {
     artGenerator(project(":art"))
 
     implementation(platform(libs.compose.bom))
-    // Over the BOM, at what the app ships (libs.versions.toml's `composeShipped`).
     implementation(libs.compose.ui)
     implementation(libs.compose.foundation)
     implementation(libs.compose.animation)

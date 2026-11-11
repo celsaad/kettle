@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "com.casco.kettle.benchmark"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         // Macrobenchmark's floor for startup timing with a full-display marker.

@@ -31,6 +31,10 @@ here, next to what it describes.
   which it never used (#357).
 - **Android 8.0 or newer is now required**: Android 7 is no longer supported. A phone on Android 7
   can update as far as 0.15.0, and keeps your data as it is (#364).
+- **A TAB used as indentation is now refused on import**: a hand-edited library with a TAB before a
+  key, even after spaces, used to import with the TAB read as one more space, which can put the key
+  under a different parent than its author meant. Now Import says the file isn't valid YAML, as the
+  file format always said. Indent with spaces (#381).
 
 ---
 

@@ -19,6 +19,7 @@ import it.krzeminski.snakeyaml.engine.kmp.events.MappingStartEvent
 import it.krzeminski.snakeyaml.engine.kmp.events.NodeEvent
 import it.krzeminski.snakeyaml.engine.kmp.events.ScalarEvent
 import it.krzeminski.snakeyaml.engine.kmp.exceptions.ConstructorException
+import it.krzeminski.snakeyaml.engine.kmp.exceptions.Mark
 import it.krzeminski.snakeyaml.engine.kmp.exceptions.YamlEngineException
 import it.krzeminski.snakeyaml.engine.kmp.nodes.Node
 import it.krzeminski.snakeyaml.engine.kmp.nodes.ScalarNode
@@ -56,8 +57,9 @@ internal sealed interface YamlLoad {
 
 internal fun loadYaml(text: String): YamlLoad =
     try {
-        // A separate pass over the events, before anything is built: an alias bomb is refused while it
-        // is still a few hundred bytes, and depth is counted without the composer's recursion.
+        // Separate passes over the events and the tokens, before anything is built: an alias bomb is
+        // refused while it is still a few hundred bytes, and depth is counted without the composer's
+        // recursion.
         (checkEvents(text) ?: checkTabs(text))?.let(YamlLoad::Invalid)
             ?: YamlLoad.Loaded(Load(loadSettings).loadOne(text))
     } catch (error: YamlEngineException) {
@@ -254,7 +256,7 @@ private fun checkTabs(text: String): String? {
                 }
 
                 Token.ID.Key, Token.ID.BlockEntry -> {
-                    flowDepth == 0 && token.startMark?.let { tabBefore(lines, it.line, it.column) } == true
+                    flowDepth == 0 && token.startMark?.let { tabBefore(lines, it) } == true
                 }
 
                 else -> {
@@ -265,21 +267,20 @@ private fun checkTabs(text: String): String? {
     return if (tabIndented) "tab characters must not be used in indentation" else null
 }
 
-/** Whether a TAB comes before [column] on [line]. The engine's columns count code points, not chars. */
+/** Whether a TAB comes before [mark] on its line. The engine's columns count code points, not chars. */
 private fun tabBefore(
     lines: List<String>,
-    line: Int,
-    column: Int,
+    mark: Mark,
 ): Boolean {
-    val text = lines.getOrNull(line).orEmpty()
+    val text = lines.getOrNull(mark.line).orEmpty()
     var at = 0
     var seen = 0
-    while (seen < column && at < text.length && text[at] != '\t') {
+    while (seen < mark.column && at < text.length && text[at] != '\t') {
         at += if (text[at].isHighSurrogate()) 2 else 1
         seen++
     }
     // Stopped short of the column with text left: on a TAB.
-    return seen < column && at < text.length
+    return seen < mark.column && at < text.length
 }
 
 /** A scalar as the composer types it: an absent or `!` tag is resolved, any other is taken as written. */

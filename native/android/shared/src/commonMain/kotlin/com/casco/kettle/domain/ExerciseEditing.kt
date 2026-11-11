@@ -58,11 +58,12 @@ const val RECENT_LIMIT = 5
 /**
  * The last [limit] times exercise [id] was logged, newest first as [sessions] already are. Unfinished
  * sessions are skipped, and so are rest entries: a rest's repeat performance means nothing the way a
- * lift's does, so a rest exercise has no history to show.
+ * lift's does, so a rest exercise has no history to show. Volumes are in [units], see [entryVolume].
  */
 fun exerciseHistory(
     sessions: List<Session>,
     id: String,
+    units: UnitSystem,
     limit: Int = RECENT_LIMIT,
 ): List<ExerciseHistoryEntry> =
     sessions
@@ -77,7 +78,7 @@ fun exerciseHistory(
                         session.id,
                         session.startedInstant(),
                         sessionEntryResult(it),
-                        entryVolume(it),
+                        entryVolume(it, units),
                     )
                 }
         }.take(limit)
@@ -87,8 +88,15 @@ fun exerciseHistory(
  * One number for how much an entry did, for the Recent chart to compare sessions by. Reps are weighted
  * by load only when a set carries one, so a bodyweight exercise isn't all zeros; cardio prefers
  * distance, and falls back to duration.
+ *
+ * A weighted volume is in [units], since the chart prints it beside fields in the reader's unit: each
+ * set's load is converted before it's multiplied, the way the reader would work it out from the list.
+ * Nothing else here is a weight, so [units] touches nothing else.
  */
-fun entryVolume(entry: SessionEntry): Double =
+fun entryVolume(
+    entry: SessionEntry,
+    units: UnitSystem,
+): Double =
     when (entry) {
         is SessionEntry.TimedHold -> {
             entry.sets.sumOf { it.holdSec }
@@ -96,7 +104,9 @@ fun entryVolume(entry: SessionEntry): Double =
 
         is SessionEntry.Reps -> {
             val weighted = entry.sets.any { it.weightKg != null }
-            entry.sets.sumOf { if (weighted) it.reps * (it.weightKg ?: 0.0) else it.reps.toDouble() }
+            entry.sets.sumOf {
+                if (weighted) it.reps * toDisplayWeight(it.weightKg ?: 0.0, units) else it.reps.toDouble()
+            }
         }
 
         is SessionEntry.Hiit -> {

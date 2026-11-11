@@ -508,7 +508,7 @@
     "pastePlaceholder": "Cole aqui o exercises.yaml completo",
     "packs": {
       "title": "Pacotes iniciais",
-      "detail": "Vêm com o app. Todos os ids têm prefixo, então nada do que você já tem é substituído.",
+      "detail": "Vêm com o app. Um pacote se soma ao que você já tem e nunca substitui seus próprios exercícios ou treinos.",
       "sourceDetail": "Pacote inicial que vem com o app",
       "exerciseCount_one": "{{count}} exercício",
       "exerciseCount_other": "{{count}} exercícios",
@@ -643,7 +643,9 @@
       "repsMaxBelowMin": "O máximo de repetições não pode ser menor que o mínimo.",
       "holdMaxNeedsMin": "Uma faixa de isometria precisa de um mínimo além do máximo.",
       "holdMaxBelowMin": "A isometria máxima não pode ser menor que a mínima."
-    }
+    },
+    "fieldWithUnit": "{{label}} ({{unit}})",
+    "optionalField": "{{label}} · {{optional}}"
   },
   "sessionEditor": {
     "title": "Editar sessão",
@@ -674,7 +676,9 @@
     },
     "error": {
       "cardioNeedsOne": "Informe uma duração ou uma distância."
-    }
+    },
+    "setField": "{{set}} · {{field}}",
+    "removeSetName": "{{remove}} · {{set}}"
   },
   "exerciseArt": {
     "pushups": "Flexão: mãos sob os ombros, corpo em linha reta do calcanhar à cabeça.",
@@ -852,6 +856,8 @@
     "seconds": "{{n}}s",
     "minutes": "{{n}} min",
     "metres": "{{n}} m",
+    "weight": "{{weight}} {{unit}}",
+    "listSeparator": ", ",
     "repsList": "{{list}} repetições",
     "roundsPlusReps": "{{rounds}} + {{reps}}",
     "intervalsWithReps": "{{intervals}} · {{reps}}",
@@ -886,7 +892,10 @@
     "kg": "kg",
     "lb": "lb",
     "kgSpoken": "quilogramas",
-    "lbSpoken": "libras"
+    "lbSpoken": "libras",
+    "seconds": "seg",
+    "minutes": "min",
+    "metres": "m"
   },
   "preview": {
     "hold": "isometria · série {{index}} de {{total}} · alvo {{target}}",

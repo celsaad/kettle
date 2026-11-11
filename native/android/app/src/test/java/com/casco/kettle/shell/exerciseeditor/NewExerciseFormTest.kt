@@ -101,7 +101,7 @@ class NewExerciseFormTest {
         type("Nome", "Pull-ups")
         type("Séries", "4")
         type("Reps alvo", "6")
-        type("Descanso (sec)", "90")
+        type("Descanso (seg)", "90")
         press("Criar e adicionar")
 
         assertEquals(
@@ -117,7 +117,7 @@ class NewExerciseFormTest {
 
         press("HIIT")
 
-        compose.onNodeWithText("Trabalho (sec)").assertExists()
+        compose.onNodeWithText("Trabalho (seg)").assertExists()
         compose.onNodeWithText("Séries").assertDoesNotExist()
     }
 

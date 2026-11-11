@@ -270,7 +270,7 @@ private fun Editing(
         }
     }
     ExerciseNotesField(editor.draft, { editor.draft = it })
-    if (existing != null) Recent(existing, files, zone)
+    if (existing != null) Recent(existing, files, units, zone)
 
     val refusal =
         editor.problem?.let { exerciseProblemText(it) }
@@ -310,10 +310,11 @@ private fun Editing(
 private fun Recent(
     exercise: Exercise,
     files: LatestFiles,
+    units: UnitSystem,
     zone: TimeZone,
 ) {
     val log = files.sessionLog ?: return
-    val history = remember(log, exercise.id) { exerciseHistory(log.logged, exercise.id) }
+    val history = remember(log, exercise.id, units) { exerciseHistory(log.logged, exercise.id, units) }
     if (history.isEmpty()) return
     val colors = KettleTheme.colors
     val locale = LocalConfiguration.current.locales[0]
@@ -359,7 +360,7 @@ private fun DeleteDialog(
                     stringResource(
                         R.string.exerciseEditor_inUseBody,
                         exercise.name,
-                        deleting.workouts.joinToString(", "),
+                        deleting.workouts.joinToString(stringResource(R.string.format_listSeparator)),
                     ),
                 onDismissRequest = editor::dismissDelete,
                 // RN's buttonless alert, which Android titles with the platform's own OK.

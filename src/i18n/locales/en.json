@@ -482,7 +482,7 @@
     "pastePlaceholder": "Paste the whole exercises.yaml here",
     "packs": {
       "title": "Starter packs",
-      "detail": "Bundled with the app. Every id is prefixed, so nothing you already have is replaced.",
+      "detail": "Bundled with the app. A pack adds alongside what you have, and never replaces your own exercises or workouts.",
       "sourceDetail": "Starter pack bundled with the app",
       "exerciseCount_one": "{{count}} exercise",
       "exerciseCount_other": "{{count}} exercises",
@@ -609,7 +609,9 @@
       "repsMaxBelowMin": "The maximum reps can't be fewer than the minimum.",
       "holdMaxNeedsMin": "A hold range needs a minimum as well as a maximum.",
       "holdMaxBelowMin": "The maximum hold can't be shorter than the minimum."
-    }
+    },
+    "fieldWithUnit": "{{label}} ({{unit}})",
+    "optionalField": "{{label}} · {{optional}}"
   },
   "sessionEditor": {
     "title": "Edit session",
@@ -640,7 +642,9 @@
     },
     "error": {
       "cardioNeedsOne": "Enter a duration or a distance."
-    }
+    },
+    "setField": "{{set}} · {{field}}",
+    "removeSetName": "{{remove}} · {{set}}"
   },
   "exerciseArt": {
     "pushups": "Push-up: hands under the shoulders, body in a straight line from heel to head.",
@@ -809,6 +813,8 @@
     "seconds": "{{n}}s",
     "minutes": "{{n}} min",
     "metres": "{{n}} m",
+    "weight": "{{weight}} {{unit}}",
+    "listSeparator": ", ",
     "repsList": "{{list}} reps",
     "roundsPlusReps": "{{rounds}} + {{reps}}",
     "intervalsWithReps": "{{intervals}} · {{reps}}",
@@ -843,7 +849,10 @@
     "kg": "kg",
     "lb": "lb",
     "kgSpoken": "kilograms",
-    "lbSpoken": "pounds"
+    "lbSpoken": "pounds",
+    "seconds": "sec",
+    "minutes": "min",
+    "metres": "m"
   },
   "preview": {
     "hold": "hold · set {{index}} of {{total}} · target {{target}}",

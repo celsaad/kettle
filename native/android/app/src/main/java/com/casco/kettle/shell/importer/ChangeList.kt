@@ -31,6 +31,7 @@ import com.casco.kettle.domain.ChangedItem
 import com.casco.kettle.domain.DiffLabel
 import com.casco.kettle.domain.DiffValue
 import com.casco.kettle.domain.FieldChange
+import com.casco.kettle.domain.FieldUnit
 import com.casco.kettle.domain.ImportPreview
 import com.casco.kettle.domain.LibraryItemKind
 import com.casco.kettle.domain.UnitSystem
@@ -251,7 +252,24 @@ private fun valueText(
         DiffValue.Unset -> stringResource(R.string.import_diff_unset)
         is DiffValue.Text -> value.text
         is DiffValue.Type -> stringResource(value.type.label)
-        is DiffValue.Measured -> listOfNotNull(value.number, unitSuffix(value.unit, units)).joinToString(" ")
+        is DiffValue.Measured -> measuredText(value.number, value.unit, units)
+    }
+
+/**
+ * A value with its unit, as the rest of the app writes one ("90s", "5 min", "400 m"), not with a
+ * field label's suffix: the locale decides the spacing, and ja writes 90秒 with no space before it.
+ */
+@Composable
+internal fun measuredText(
+    number: String,
+    unit: FieldUnit,
+    units: UnitSystem,
+): String =
+    when (unit) {
+        FieldUnit.Weight -> stringResource(R.string.format_weight, unitSuffix(unit, units).orEmpty(), number)
+        FieldUnit.Seconds -> stringResource(R.string.format_seconds, number)
+        FieldUnit.Minutes -> stringResource(R.string.format_minutes, number)
+        FieldUnit.Metres -> stringResource(R.string.format_metres, number)
     }
 
 /**

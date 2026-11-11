@@ -110,16 +110,55 @@ class ExerciseEditingTest {
                     "pushups",
                     listOf(RepsSetLog(10, restTakenSec = 45.0), RepsSetLog(8, restTakenSec = 0.0)),
                 )
-            assertEquals(600.0, exerciseHistory(listOf(session("a", bench)), "bench").single().volume)
-            assertEquals(18.0, exerciseHistory(listOf(session("a", bodyweight)), "pushups").single().volume)
+            assertEquals(
+                600.0,
+                exerciseHistory(listOf(session("a", bench)), "bench", UnitSystem.METRIC).single().volume,
+            )
+            assertEquals(
+                18.0,
+                exerciseHistory(listOf(session("a", bodyweight)), "pushups", UnitSystem.METRIC).single().volume,
+            )
+        }
+
+        // The chart prints this beside fields in the reader's unit, so a pound reader saw kilograms (#271).
+        @Test
+        fun `gives a weighted volume in the reader's unit`() {
+            val imperial = exerciseHistory(listOf(session("a", bench)), "bench", UnitSystem.IMPERIAL).single()
+            // 60 kg shows as 132.3 lb; two sets of five of that.
+            assertEquals(132.3, toDisplayWeight(60.0, UnitSystem.IMPERIAL))
+            assertEquals(1323.0, imperial.volume, 1e-9)
+        }
+
+        @Test
+        fun `leaves volumes that aren't weights the same in either unit`() {
+            val entries =
+                listOf(
+                    SessionEntry.Reps("pushups", listOf(RepsSetLog(10, restTakenSec = 45.0))),
+                    SessionEntry.TimedHold("plank", listOf(TimedHoldSetLog(45.0, restTakenSec = 60.0))),
+                    SessionEntry.Cardio("row", 480.0, 2000.0),
+                    SessionEntry.Cardio("bike", 600.0),
+                )
+            for (entry in entries) {
+                assertEquals(
+                    entryVolume(entry, UnitSystem.METRIC),
+                    entryVolume(entry, UnitSystem.IMPERIAL),
+                    entry.exercise,
+                )
+            }
         }
 
         @Test
         fun `uses distance over duration for cardio, falling back to duration when distance is absent`() {
             val withDistance = SessionEntry.Cardio("row", 480.0, 2000.0)
             val durationOnly = SessionEntry.Cardio("row", 480.0)
-            assertEquals(2000.0, exerciseHistory(listOf(session("a", withDistance)), "row").single().volume)
-            assertEquals(480.0, exerciseHistory(listOf(session("a", durationOnly)), "row").single().volume)
+            assertEquals(
+                2000.0,
+                exerciseHistory(listOf(session("a", withDistance)), "row", UnitSystem.METRIC).single().volume,
+            )
+            assertEquals(
+                480.0,
+                exerciseHistory(listOf(session("a", durationOnly)), "row", UnitSystem.METRIC).single().volume,
+            )
         }
 
         @Test
@@ -128,19 +167,25 @@ class ExerciseEditingTest {
                 listOf(session("running", bench, endedAt = null)) + (1..6).map { session("s$it", bench) }
             assertEquals(
                 listOf("s1", "s2", "s3", "s4", "s5"),
-                exerciseHistory(log, "bench").map { it.sessionId },
+                exerciseHistory(log, "bench", UnitSystem.METRIC).map { it.sessionId },
             )
         }
 
         // A rest's repeat performance isn't the way a lift's is: a rest exercise has no history to show.
         @Test
         fun `leaves rest entries out`() {
-            assertTrue(exerciseHistory(listOf(session("a", SessionEntry.Rest("rest", 60.0))), "rest").isEmpty())
+            assertTrue(
+                exerciseHistory(
+                    listOf(session("a", SessionEntry.Rest("rest", 60.0))),
+                    "rest",
+                    UnitSystem.METRIC,
+                ).isEmpty(),
+            )
         }
 
         @Test
         fun `carries when it started and what was done`() {
-            val entry = exerciseHistory(listOf(session("a", bench)), "bench").single()
+            val entry = exerciseHistory(listOf(session("a", bench)), "bench", UnitSystem.METRIC).single()
             assertEquals(Instant.parse("2026-07-24T09:00:00Z"), entry.startedAt)
             assertEquals(sessionEntryResult(bench), entry.result)
         }

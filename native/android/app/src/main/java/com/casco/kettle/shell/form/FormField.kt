@@ -109,10 +109,7 @@ internal fun FormField(
     )
 }
 
-/**
- * The suffix beside a field's label: kilograms or pounds as the reader's setting says, and RN's
- * literal `sec`, `min` and `m` otherwise, the same in every locale, as RN's `unit` strings are.
- */
+/** The suffix beside a field's label: kilograms or pounds as the reader's setting says, or its unit. */
 @Composable
 internal fun unitSuffix(
     unit: FieldUnit?,
@@ -120,10 +117,18 @@ internal fun unitSuffix(
 ): String? =
     when (unit) {
         FieldUnit.Weight -> stringResource(if (units == UnitSystem.IMPERIAL) R.string.units_lb else R.string.units_kg)
-        FieldUnit.Seconds -> "sec"
-        FieldUnit.Minutes -> "min"
-        FieldUnit.Metres -> "m"
+        FieldUnit.Seconds -> stringResource(R.string.units_seconds)
+        FieldUnit.Minutes -> stringResource(R.string.units_minutes)
+        FieldUnit.Metres -> stringResource(R.string.units_metres)
         null -> null
     }
+
+/** [label] with [unit]'s suffix, "Weight (lb)", or alone for a field with no unit. */
+@Composable
+internal fun withUnit(
+    label: String,
+    unit: FieldUnit?,
+    units: UnitSystem,
+): String = unitSuffix(unit, units)?.let { stringResource(R.string.exerciseForm_fieldWithUnit, label, it) } ?: label
 
 private val FieldShape = RoundedCornerShape(12.dp)

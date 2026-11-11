@@ -380,6 +380,14 @@ class ImportScreenTest : ImportHarness() {
     }
 
     @Test
+    fun `prints a changed rest as a value, not with a field label's suffix`() {
+        picks(Library(1, listOf(pullUps.copy(config = threeSets.copy(restSec = 60.0))), emptyList(), emptyList()))
+        chooseFile()
+
+        shown("Descanso: 90s → 60s")
+    }
+
+    @Test
     fun `says so when an updated id is byte-identical rather than showing a blank indent`() {
         picks(current)
         chooseFile()

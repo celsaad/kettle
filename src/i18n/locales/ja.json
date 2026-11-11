@@ -456,7 +456,7 @@
     "pastePlaceholder": "exercises.yaml の全文をここに貼り付けてください",
     "packs": {
       "title": "スターターパック",
-      "detail": "アプリに同梱されています。すべての id に接頭辞が付くので、既にあるものが置き換わることはありません。",
+      "detail": "アプリに同梱されています。パックは今あるものに追加され、ご自身のエクササイズやワークアウトが置き換わることはありません。",
       "sourceDetail": "アプリ同梱のスターターパック",
       "exerciseCount_other": "エクササイズ{{count}}件",
       "workoutCount_other": "ワークアウト{{count}}件",
@@ -575,7 +575,9 @@
       "repsMaxBelowMin": "レップ数の上限は下限を下回れません。",
       "holdMaxNeedsMin": "ホールドの範囲には、上限だけでなく下限も必要です。",
       "holdMaxBelowMin": "ホールドの上限は下限より短くできません。"
-    }
+    },
+    "fieldWithUnit": "{{label}}（{{unit}}）",
+    "optionalField": "{{label}}（{{optional}}）"
   },
   "sessionEditor": {
     "title": "セッションを編集",
@@ -606,7 +608,9 @@
     },
     "error": {
       "cardioNeedsOne": "時間か距離のどちらかを入力してください。"
-    }
+    },
+    "setField": "{{set}}の{{field}}",
+    "removeSetName": "{{set}}を削除"
   },
   "exerciseArt": {
     "pushups": "腕立て伏せ：手は肩の真下、かかとから頭まで一直線の姿勢。",
@@ -766,6 +770,8 @@
     "seconds": "{{n}}秒",
     "minutes": "{{n}}分",
     "metres": "{{n}} m",
+    "weight": "{{weight}} {{unit}}",
+    "listSeparator": "、",
     "repsList": "{{list}} レップ",
     "roundsPlusReps": "{{rounds}} + {{reps}}",
     "intervalsWithReps": "{{intervals}} · {{reps}}",
@@ -800,7 +806,10 @@
     "kg": "kg",
     "lb": "lb",
     "kgSpoken": "キログラム",
-    "lbSpoken": "ポンド"
+    "lbSpoken": "ポンド",
+    "seconds": "秒",
+    "minutes": "分",
+    "metres": "m"
   },
   "preview": {
     "hold": "ホールド · {{total}}セット中{{index}}セット目 · 目標{{target}}",

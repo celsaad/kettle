@@ -38,7 +38,7 @@ import com.casco.kettle.shell.R
 import com.casco.kettle.shell.form.FieldKind
 import com.casco.kettle.shell.form.FieldOptions
 import com.casco.kettle.shell.form.FormField
-import com.casco.kettle.shell.form.unitSuffix
+import com.casco.kettle.shell.form.withUnit
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.Spacing
@@ -177,7 +177,7 @@ private fun ConfigInput(
     compact: Boolean,
 ) {
     val named = fieldName(field, units)
-    Label(named + optionalSuffix(field), compact)
+    Label(withOptional(field, named), compact)
     FormField(
         draft.values[field.key].orEmpty(),
         { onChange(draft.copy(values = draft.values + (field.key to it))) },
@@ -192,15 +192,19 @@ private fun ConfigInput(
 internal fun fieldName(
     field: ConfigField,
     units: UnitSystem,
-): String {
-    val label = stringResource(field.name.label)
-    return unitSuffix(field.unit, units)?.let { "$label ($it)" } ?: label
-}
+): String = withUnit(stringResource(field.name.label), field.unit, units)
 
-/** " · optional" after an optional field's name, nothing after a required one's. */
+/** [named], marked optional if [field] is: "Hold (max) (sec) · optional". A required field's is unchanged. */
 @Composable
-internal fun optionalSuffix(field: ConfigField): String =
-    if (field.optional) " · " + stringResource(R.string.exerciseEditor_optional) else ""
+internal fun withOptional(
+    field: ConfigField,
+    named: String,
+): String =
+    if (field.optional) {
+        stringResource(R.string.exerciseForm_optionalField, named, stringResource(R.string.exerciseEditor_optional))
+    } else {
+        named
+    }
 
 @Composable
 private fun Label(

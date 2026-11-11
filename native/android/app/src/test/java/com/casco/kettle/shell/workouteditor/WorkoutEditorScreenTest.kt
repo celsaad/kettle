@@ -424,7 +424,7 @@ class WorkoutEditorScreenTest {
         quickAddName().performTextReplacement(name)
         type("Séries", "3")
         type("Reps alvo", "8")
-        type("Descanso (sec)", "90")
+        type("Descanso (seg)", "90")
         press("Criar e adicionar")
     }
 
@@ -591,7 +591,7 @@ class WorkoutEditorScreenTest {
         quickAddName().performTextReplacement("Ring Row")
         type("Séries", "3")
         type("Reps alvo", "8")
-        type("Descanso (sec)", "90")
+        type("Descanso (seg)", "90")
         press("Criar e adicionar")
 
         assertEquals(1, files.written.size)
@@ -642,6 +642,20 @@ class WorkoutEditorScreenTest {
         compose.onNodeWithText("\"Push day\" é usado em Base. Remova-o desses programas primeiro.").assertExists()
         compose.onNode(hasText("Excluir") and hasAnyAncestor(isDialog())).assertDoesNotExist()
         assertEquals(emptyList<Library>(), files.written)
+    }
+
+    // The program names are joined by the bundle's separator, which ja writes as 、 (#387's review).
+    @Test
+    @Config(qualifiers = "ja")
+    fun `lists the programs using it with the Japanese separator`() {
+        val peak = Program("peak", "Peak", listOf(ProgramWeek.Training(week = 1, workoutId = "push-day")))
+        show("push-day", Files(workouts = listOf(pushDay()), programs = listOf(base, peak)))
+
+        press("ワークアウトを削除")
+
+        compose
+            .onNodeWithText("「Push day」はBase、Peakで使われています。先にそれらのプログラムから外してください。")
+            .assertExists()
     }
 
     @Test

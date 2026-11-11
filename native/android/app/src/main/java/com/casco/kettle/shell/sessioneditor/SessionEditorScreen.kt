@@ -381,7 +381,7 @@ private fun DraftRows(
                             form.values[field].orEmpty(),
                             { editor.setField(index, row, field, it) },
                             // Every row has the same labels, so the set is what tells them apart.
-                            name = if (perSet) "$setLabel · $label" else label,
+                            name = if (perSet) setFieldName(setLabel, label) else label,
                             placeholder = if (field.optional) "—" else "0",
                         )
                     }
@@ -396,7 +396,7 @@ private fun DraftRows(
                     colors.textSecondary,
                     onClick = { editor.remove(index, row) },
                     // As the fields: "Remove set" reads the same on every row.
-                    label = if (lastSet) null else "$remove · $setLabel",
+                    label = if (lastSet) null else removeSetName(remove, setLabel),
                 )
             }
             // Typing 0 is how a set gets cleared, and it goes on save without Remove's confirm, so it's

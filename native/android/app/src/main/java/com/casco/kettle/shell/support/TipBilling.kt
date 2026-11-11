@@ -13,6 +13,9 @@ import com.android.billingclient.api.ProductDetails
 import com.android.billingclient.api.Purchase
 import com.android.billingclient.api.QueryProductDetailsParams
 import com.android.billingclient.api.QueryPurchasesParams
+import com.android.billingclient.api.consumePurchase
+import com.android.billingclient.api.queryProductDetails
+import com.android.billingclient.api.queryPurchasesAsync
 import com.casco.kettle.domain.TIP_SKU_LIST
 import com.casco.kettle.domain.TipProduct
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -93,11 +96,12 @@ class PlayTipBilling(
     override suspend fun connect(onUpdate: (PurchaseUpdate) -> Unit): Boolean {
         this.onUpdate = onUpdate
         if (client.isReady) return true
+        // The one wrapper still ours: ktx has no suspend form of startConnection.
         return suspendCancellableCoroutine { continuation ->
             client.startConnection(
                 object : BillingClientStateListener {
                     override fun onBillingSetupFinished(result: BillingResult) {
-                        if (continuation.isActive) continuation.resume(result.responseCode == BillingResponseCode.OK)
+                        if (continuation.isActive) continuation.resume(result.ok)
                     }
 
                     // Before setup finished, it never connected. After, the library reconnects itself.
@@ -119,46 +123,29 @@ class PlayTipBilling(
                     .build()
             }
         val params = QueryProductDetailsParams.newBuilder().setProductList(query).build()
-        val fetched: List<ProductDetails> =
-            suspendCancellableCoroutine<List<ProductDetails>?> { continuation ->
-                client.queryProductDetailsAsync(params) { result, products ->
-                    continuation.resume(
-                        products.productDetailsList.takeIf {
-                            result.responseCode ==
-                                BillingResponseCode.OK
-                        },
-                    )
-                }
-            } ?: return null
+        val fetched = client.queryProductDetails(params)
+        if (!fetched.billingResult.ok) return null
         details.clear()
-        return fetched.mapNotNull { product ->
+        return fetched.productDetailsList.orEmpty().mapNotNull { product ->
             val price = product.oneTimePurchaseOfferDetailsList?.firstOrNull()?.formattedPrice ?: return@mapNotNull null
             details[product.productId] = product
             TipProduct(product.productId, price)
         }
     }
 
-    override suspend fun purchases(): List<StorePurchase>? =
-        suspendCancellableCoroutine { continuation ->
-            client.queryPurchasesAsync(QueryPurchasesParams.newBuilder().setProductType(ProductType.INAPP).build()) {
-                result,
-                purchases,
-                ->
-                continuation.resume(
-                    purchases.map(::storePurchase).takeIf {
-                        result.responseCode ==
-                            BillingResponseCode.OK
-                    },
-                )
-            }
-        }
+    override suspend fun purchases(): List<StorePurchase>? {
+        val held =
+            client.queryPurchasesAsync(
+                QueryPurchasesParams.newBuilder().setProductType(ProductType.INAPP).build(),
+            )
+        if (!held.billingResult.ok) return null
+        return held.purchasesList.map(::storePurchase)
+    }
 
     override suspend fun consume(purchase: StorePurchase): Boolean =
-        suspendCancellableCoroutine { continuation ->
-            client.consumeAsync(ConsumeParams.newBuilder().setPurchaseToken(purchase.token).build()) { result, _ ->
-                continuation.resume(result.responseCode == BillingResponseCode.OK)
-            }
-        }
+        client
+            .consumePurchase(ConsumeParams.newBuilder().setPurchaseToken(purchase.token).build())
+            .billingResult.ok
 
     override fun launch(sku: String) {
         val product = details[sku]
@@ -182,7 +169,7 @@ class PlayTipBilling(
                 BillingFlowParams.newBuilder().setProductDetailsParamsList(listOf(params)).build(),
             )
         // A flow that started reports its end to the listener. One that didn't start reports here only.
-        if (result.responseCode != BillingResponseCode.OK) onUpdate(updateOf(result, null))
+        if (!result.ok) onUpdate(updateOf(result, null))
     }
 
     override fun close() = client.endConnection()
@@ -205,3 +192,5 @@ class PlayTipBilling(
             token = purchase.purchaseToken,
         )
 }
+
+private val BillingResult.ok get() = responseCode == BillingResponseCode.OK

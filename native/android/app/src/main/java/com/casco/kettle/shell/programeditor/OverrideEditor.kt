@@ -37,7 +37,7 @@ import com.casco.kettle.domain.steppingRounds
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.exerciseeditor.configProblemText
 import com.casco.kettle.shell.exerciseeditor.fieldName
-import com.casco.kettle.shell.exerciseeditor.optionalSuffix
+import com.casco.kettle.shell.exerciseeditor.withOptional
 import com.casco.kettle.shell.form.EditorButtons
 import com.casco.kettle.shell.form.FieldOptions
 import com.casco.kettle.shell.form.FormField
@@ -301,6 +301,6 @@ private fun ConfigInput(
     onChange: (String) -> Unit,
 ) {
     val named = fieldName(field, context.units)
-    Text(named + optionalSuffix(field), style = KettleType.small, color = KettleTheme.colors.textSecondary)
+    Text(withOptional(field, named), style = KettleType.small, color = KettleTheme.colors.textSecondary)
     FormField(value, onChange, name = named, placeholder = "", FieldOptions(minHeight = 44.dp))
 }

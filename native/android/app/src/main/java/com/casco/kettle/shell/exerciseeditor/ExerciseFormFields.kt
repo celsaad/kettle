@@ -177,7 +177,7 @@ private fun ConfigInput(
     compact: Boolean,
 ) {
     val named = fieldName(field, units)
-    Label(named + optionalSuffix(field), compact)
+    Label(withOptional(field, named), compact)
     FormField(
         draft.values[field.key].orEmpty(),
         { onChange(draft.copy(values = draft.values + (field.key to it))) },
@@ -194,13 +194,21 @@ internal fun fieldName(
     units: UnitSystem,
 ): String {
     val label = stringResource(field.name.label)
-    return unitSuffix(field.unit, units)?.let { "$label ($it)" } ?: label
+    return unitSuffix(field.unit, units)?.let { stringResource(R.string.exerciseForm_fieldWithUnit, label, it) }
+        ?: label
 }
 
-/** " · optional" after an optional field's name, nothing after a required one's. */
+/** [named] marked optional where [field] is, "Hold (max) (sec) · optional", and as it is otherwise. */
 @Composable
-internal fun optionalSuffix(field: ConfigField): String =
-    if (field.optional) " · " + stringResource(R.string.exerciseEditor_optional) else ""
+internal fun withOptional(
+    field: ConfigField,
+    named: String,
+): String =
+    if (field.optional) {
+        stringResource(R.string.exerciseForm_optionalField, named, stringResource(R.string.exerciseEditor_optional))
+    } else {
+        named
+    }
 
 @Composable
 private fun Label(

@@ -575,7 +575,9 @@
       "repsMaxBelowMin": "レップ数の上限は下限を下回れません。",
       "holdMaxNeedsMin": "ホールドの範囲には、上限だけでなく下限も必要です。",
       "holdMaxBelowMin": "ホールドの上限は下限より短くできません。"
-    }
+    },
+    "fieldWithUnit": "{{label}}（{{unit}}）",
+    "optionalField": "{{label}}（{{optional}}）"
   },
   "sessionEditor": {
     "title": "セッションを編集",
@@ -606,7 +608,9 @@
     },
     "error": {
       "cardioNeedsOne": "時間か距離のどちらかを入力してください。"
-    }
+    },
+    "setField": "{{set}}の{{field}}",
+    "removeSetName": "{{set}}を削除"
   },
   "exerciseArt": {
     "pushups": "腕立て伏せ：手は肩の真下、かかとから頭まで一直線の姿勢。",
@@ -661,7 +665,8 @@
     "deleteExercise": "エクササイズを削除",
     "inUseTitle": "使用中のエクササイズ",
     "inUseBody": "「{{name}}」は{{workouts}}で使われています。先にそれらのワークアウトから外してください。",
-    "deleteConfirmTitle": "エクササイズを削除しますか？"
+    "deleteConfirmTitle": "エクササイズを削除しますか？",
+    "inUseSeparator": "、"
   },
   "workoutEditor": {
     "newTitle": "新しいワークアウト",
@@ -800,7 +805,10 @@
     "kg": "kg",
     "lb": "lb",
     "kgSpoken": "キログラム",
-    "lbSpoken": "ポンド"
+    "lbSpoken": "ポンド",
+    "seconds": "秒",
+    "minutes": "分",
+    "metres": "m"
   },
   "preview": {
     "hold": "ホールド · {{total}}セット中{{index}}セット目 · 目標{{target}}",

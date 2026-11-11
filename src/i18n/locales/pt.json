@@ -643,7 +643,9 @@
       "repsMaxBelowMin": "O máximo de repetições não pode ser menor que o mínimo.",
       "holdMaxNeedsMin": "Uma faixa de isometria precisa de um mínimo além do máximo.",
       "holdMaxBelowMin": "A isometria máxima não pode ser menor que a mínima."
-    }
+    },
+    "fieldWithUnit": "{{label}} ({{unit}})",
+    "optionalField": "{{label}} · {{optional}}"
   },
   "sessionEditor": {
     "title": "Editar sessão",
@@ -674,7 +676,9 @@
     },
     "error": {
       "cardioNeedsOne": "Informe uma duração ou uma distância."
-    }
+    },
+    "setField": "{{set}} · {{field}}",
+    "removeSetName": "{{remove}} · {{set}}"
   },
   "exerciseArt": {
     "pushups": "Flexão: mãos sob os ombros, corpo em linha reta do calcanhar à cabeça.",
@@ -729,7 +733,8 @@
     "deleteExercise": "Excluir exercício",
     "inUseTitle": "Exercício em uso",
     "inUseBody": "\"{{name}}\" é usado em {{workouts}}. Remova-o desses treinos primeiro.",
-    "deleteConfirmTitle": "Excluir exercício?"
+    "deleteConfirmTitle": "Excluir exercício?",
+    "inUseSeparator": ", "
   },
   "workoutEditor": {
     "newTitle": "Novo treino",
@@ -886,7 +891,10 @@
     "kg": "kg",
     "lb": "lb",
     "kgSpoken": "quilogramas",
-    "lbSpoken": "libras"
+    "lbSpoken": "libras",
+    "seconds": "seg",
+    "minutes": "min",
+    "metres": "m"
   },
   "preview": {
     "hold": "isometria · série {{index}} de {{total}} · alvo {{target}}",

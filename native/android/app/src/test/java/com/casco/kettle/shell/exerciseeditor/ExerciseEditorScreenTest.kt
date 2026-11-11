@@ -132,7 +132,7 @@ class ExerciseEditorScreenTest {
         type("Nome", "Pull-ups")
         type("Séries", "4")
         type("Reps alvo", "6")
-        type("Descanso (sec)", "90")
+        type("Descanso (seg)", "90")
         press("Salvar")
 
         assertEquals(
@@ -418,6 +418,35 @@ class ExerciseEditorScreenTest {
 
         compose.onNode(hasText("Novo exercício") and isHeading()).assertExists()
         compose.onNodeWithText("Excluir exercício").assertDoesNotExist()
+    }
+
+    // ja: the language whose brackets, separator and order all differ from English's (#272)
+
+    @Test
+    @Config(qualifiers = "ja")
+    fun `brackets a unit and marks an optional field the way Japanese does`() {
+        show("plank", Files(exercises = listOf(plank)))
+
+        compose.onNodeWithText("休憩（秒）").performScrollTo().assertExists()
+        compose.onNodeWithText("ホールド（秒）（任意）").performScrollTo().assertExists()
+    }
+
+    @Test
+    @Config(qualifiers = "ja")
+    fun `lists the workouts using it with the Japanese separator`() {
+        val legDay = Workout("leg-day", "Leg day", listOf(WorkoutBlock.ExerciseBlock("pull-ups")))
+        val files =
+            Files(
+                exercises = listOf(pullUps),
+                workouts = listOf(pushDay(WorkoutBlock.ExerciseBlock("pull-ups")), legDay),
+            )
+        show("pull-ups", files)
+
+        press("エクササイズを削除")
+
+        compose
+            .onNodeWithText("「Pull-ups」はPush day、Leg dayで使われています。先にそれらのワークアウトから外してください。")
+            .assertExists()
     }
 
     // a11y

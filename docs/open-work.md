@@ -253,12 +253,6 @@ wanting states and assignees, it wants GitHub issues instead.
   strings at all. The system per-app picker would be the only override there is, which is a feature,
   not a duplicate, and cheaper than building the Settings row it would otherwise take.
 
-- **The editors' last literals.** The session editor's and the exercise form's field suffixes (`sec`,
-  `min`, `m`) and placeholders (`—`, `0`) are English in every locale, and the session editor's
-  per-set labels join with a fixed `"Set 2 · Reps"` order. RN's editors had the same literals, and the
-  native ports (#239, #241) kept them for the feature freeze; both now read one `unitSuffix`. Keys in
-  all three bundles, which native's `:strings` reads.
-
 ## Open bugs
 
 Found while planning the tests/a11y/i18n work (see `testing-a11y-i18n-plan.md`), each verified against

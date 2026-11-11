@@ -360,7 +360,7 @@ private fun DeleteDialog(
                     stringResource(
                         R.string.exerciseEditor_inUseBody,
                         exercise.name,
-                        deleting.workouts.joinToString(", "),
+                        deleting.workouts.joinToString(stringResource(R.string.exerciseEditor_inUseSeparator)),
                     ),
                 onDismissRequest = editor::dismissDelete,
                 // RN's buttonless alert, which Android titles with the platform's own OK.

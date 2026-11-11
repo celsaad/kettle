@@ -121,7 +121,7 @@ class SessionEditorScreenTest {
         val files = Files(aSession())
         show(files)
 
-        type("Série 1 · Isometria (sec)", "60")
+        type("Série 1 · Isometria (seg)", "60")
         press("Salvar")
 
         assertEquals(
@@ -273,7 +273,7 @@ class SessionEditorScreenTest {
         val files = Files(aSession())
         show(files)
 
-        type("Série 1 · Isometria (sec)", "0")
+        type("Série 1 · Isometria (seg)", "0")
         press("Salvar")
 
         assertEquals(listOf(squatEntry, restEntry), files.written.single().entries)
@@ -286,7 +286,7 @@ class SessionEditorScreenTest {
         show(files)
 
         compose.onNodeWithText("Back Squat").assertDoesNotExist()
-        type("Série 1 · Isometria (sec)", "50")
+        type("Série 1 · Isometria (seg)", "50")
         press("Salvar")
 
         assertEquals(
@@ -416,9 +416,21 @@ class SessionEditorScreenTest {
     fun `names each field by its set, since every row's labels are alike`() {
         show()
 
-        for (name in listOf("Série 1 · Reps", "Série 2 · Reps", "Série 2 · Carga (kg)", "Série 1 · Isometria (sec)")) {
+        for (name in listOf("Série 1 · Reps", "Série 2 · Reps", "Série 2 · Carga (kg)", "Série 1 · Isometria (seg)")) {
             field(name).assertExists()
         }
+    }
+
+    // The set and the field are put together by the bundle, which in ja reorders and drops the " · " (#272).
+    @Test
+    @Config(qualifiers = "ja")
+    fun `names each field by its set in the order Japanese puts them`() {
+        show()
+
+        for (name in listOf("セット2のレップ", "セット2の負荷（kg）", "セット1のホールド（秒）")) {
+            field(name).assertExists()
+        }
+        compose.onNode(hasContentDescription("セット1を削除") and isButton).assertExists()
     }
 
     private class Files(

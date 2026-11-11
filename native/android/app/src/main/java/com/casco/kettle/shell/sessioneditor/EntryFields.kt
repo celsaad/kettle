@@ -21,8 +21,22 @@ internal fun fieldLabel(
 ): String {
     val label = stringResource(field.label)
     val unit = unitSuffix(field.unit, units)
-    return if (unit == null) label else "$label ($unit)"
+    return if (unit == null) label else stringResource(R.string.exerciseForm_fieldWithUnit, label, unit)
 }
+
+/** A per-set field's name, "Set 2 · Reps": every row's labels are alike, so the set tells them apart. */
+@Composable
+internal fun setFieldName(
+    setLabel: String,
+    label: String,
+): String = stringResource(R.string.sessionEditor_setField, label, setLabel)
+
+/** A per-set Remove's name, "Remove set · Set 2", for the same reason. */
+@Composable
+internal fun removeSetName(
+    remove: String,
+    setLabel: String,
+): String = stringResource(R.string.sessionEditor_removeSetName, remove, setLabel)
 
 @Composable
 internal fun problemText(problem: EntryProblem): String =

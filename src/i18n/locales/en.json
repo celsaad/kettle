@@ -609,7 +609,9 @@
       "repsMaxBelowMin": "The maximum reps can't be fewer than the minimum.",
       "holdMaxNeedsMin": "A hold range needs a minimum as well as a maximum.",
       "holdMaxBelowMin": "The maximum hold can't be shorter than the minimum."
-    }
+    },
+    "fieldWithUnit": "{{label}} ({{unit}})",
+    "optionalField": "{{label}} · {{optional}}"
   },
   "sessionEditor": {
     "title": "Edit session",
@@ -640,7 +642,9 @@
     },
     "error": {
       "cardioNeedsOne": "Enter a duration or a distance."
-    }
+    },
+    "setField": "{{set}} · {{field}}",
+    "removeSetName": "{{remove}} · {{set}}"
   },
   "exerciseArt": {
     "pushups": "Push-up: hands under the shoulders, body in a straight line from heel to head.",
@@ -695,7 +699,8 @@
     "deleteExercise": "Delete exercise",
     "inUseTitle": "Exercise in use",
     "inUseBody": "\"{{name}}\" is used by {{workouts}}. Remove it from those workouts first.",
-    "deleteConfirmTitle": "Delete exercise?"
+    "deleteConfirmTitle": "Delete exercise?",
+    "inUseSeparator": ", "
   },
   "workoutEditor": {
     "newTitle": "New workout",
@@ -843,7 +848,10 @@
     "kg": "kg",
     "lb": "lb",
     "kgSpoken": "kilograms",
-    "lbSpoken": "pounds"
+    "lbSpoken": "pounds",
+    "seconds": "sec",
+    "minutes": "min",
+    "metres": "m"
   },
   "preview": {
     "hold": "hold · set {{index}} of {{total}} · target {{target}}",

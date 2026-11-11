@@ -424,7 +424,7 @@ class WorkoutEditorScreenTest {
         quickAddName().performTextReplacement(name)
         type("Séries", "3")
         type("Reps alvo", "8")
-        type("Descanso (sec)", "90")
+        type("Descanso (seg)", "90")
         press("Criar e adicionar")
     }
 
@@ -591,7 +591,7 @@ class WorkoutEditorScreenTest {
         quickAddName().performTextReplacement("Ring Row")
         type("Séries", "3")
         type("Reps alvo", "8")
-        type("Descanso (sec)", "90")
+        type("Descanso (seg)", "90")
         press("Criar e adicionar")
 
         assertEquals(1, files.written.size)

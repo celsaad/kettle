@@ -86,7 +86,7 @@ fun previousSet(
             previousSetFor(
                 priorSessions,
                 step.exerciseId,
-                (step as WorkStep).setIndex,
+                step.setIndex,
             )
         }
 

@@ -188,9 +188,7 @@ private class MappingKeys {
                 open.removeLast()
             }
 
-            else -> {
-                Unit
-            }
+            else -> {}
         }
         return error
     }

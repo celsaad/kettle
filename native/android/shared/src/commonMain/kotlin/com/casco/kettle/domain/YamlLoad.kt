@@ -57,9 +57,9 @@ internal sealed interface YamlLoad {
 
 internal fun loadYaml(text: String): YamlLoad =
     try {
-        // Separate passes over the events and the tokens, before anything is built: an alias bomb is
-        // refused while it is still a few hundred bytes, and depth is counted without the composer's
-        // recursion.
+        // Separate passes before anything is built. The events: an alias bomb is refused while it is
+        // still a few hundred bytes, and depth is counted without the composer's recursion. The
+        // tokens: they alone say where a `-` was (see [checkTabs]).
         (checkEvents(text) ?: checkTabs(text))?.let(YamlLoad::Invalid)
             ?: YamlLoad.Loaded(Load(loadSettings).loadOne(text))
     } catch (error: YamlEngineException) {

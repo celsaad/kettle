@@ -2,6 +2,9 @@ package com.casco.kettle.shell.nav
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.graphics.Rect
+import android.os.Build
+import android.view.View
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.widget.FrameLayout
@@ -93,6 +96,24 @@ class ShellLayout(
         destinations.visibility = if (place == Place.Tab) VISIBLE else INVISIBLE
         nativeSheet.visibility = if (place == Place.Sheet) VISIBLE else INVISIBLE
         nativeRunner.visibility = if (place == Place.Runner) VISIBLE else INVISIBLE
+    }
+
+    /**
+     * Below API 28 the platform gives focus to a window with none, touch mode or not, as a view becomes
+     * visible or the focused one is cleared; API 28 stopped that in touch mode. A Compose layer handed it
+     * focuses its first text field, and the keyboard rises with nothing tapped (#380). A tap, a
+     * FocusRequester and keyboard navigation focus a layer directly, so they still land; a
+     * `requestFocus` of this view or the decor in touch mode below 28 does not.
+     */
+    private val refusesPlatformFocus get() = Build.VERSION.SDK_INT < Build.VERSION_CODES.P && isInTouchMode
+
+    override fun requestFocus(
+        direction: Int,
+        previouslyFocusedRect: Rect?,
+    ): Boolean = !refusesPlatformFocus && super.requestFocus(direction, previouslyFocusedRect)
+
+    override fun focusableViewAvailable(v: View?) {
+        if (!refusesPlatformFocus) super.focusableViewAvailable(v)
     }
 
     private fun composeView(content: @Composable () -> Unit) =

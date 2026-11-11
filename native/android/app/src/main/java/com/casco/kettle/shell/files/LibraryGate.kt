@@ -57,9 +57,7 @@ object LibraryGate {
                 .toLanguageTag()
         try {
             when (val prepared = prepareLibrary(paths.library, { ShippedContent(app.assets).seed(language) })) {
-                PreparedLibrary.Found -> {
-                    Unit
-                }
+                PreparedLibrary.Found -> {}
 
                 PreparedLibrary.Seeded -> {
                     Log.i(TAG, "No library yet; wrote the seed")

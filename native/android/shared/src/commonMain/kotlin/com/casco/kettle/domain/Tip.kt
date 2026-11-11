@@ -89,7 +89,7 @@ private fun supporterStateOf(fields: Map<*, *>): SupporterState? {
             count >= 0 &&
             (at == null || (at is String && at.isNotEmpty())) &&
             (tier == null || TIERS.containsKey(tier))
-    return if (valid) SupporterState(count!!.toLong(), at as String?, TIERS[tier]) else null
+    return if (valid) SupporterState(count.toLong(), at, TIERS[tier]) else null
 }
 
 /** The file as RN's `JSON.stringify` wrote it, key for key, so either side reads what the other wrote. */

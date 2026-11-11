@@ -64,7 +64,7 @@ fun parseBundle(json: String): List<Entry> {
             if (match == null) {
                 StringEntry(path, value)
             } else {
-                val plural = existing as? PluralEntry ?: PluralEntry(key, emptyMap())
+                val plural = existing ?: PluralEntry(key, emptyMap())
                 plural.copy(forms = plural.forms + (match.groupValues[1] to value))
             }
     }

@@ -98,9 +98,7 @@ fun ProgramDetailScreen(
         ) {
             // Nothing before the library is read, so a program that is there is never called gone.
             when {
-                library == null -> {
-                    Unit
-                }
+                library == null -> {}
 
                 program == null -> {
                     Text(

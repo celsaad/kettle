@@ -227,8 +227,8 @@ describe('the pack list', () => {
   });
 
   it('names the same packs in packs.json, the import map and src/content/packs/', () => {
-    // Three places, because Metro bundles only what a static import names and native reads only what
-    // packs.json lists. A pack in one and not another ships to one app and not the other, or not at all.
+    // Three places, because the tests read only what a static import names and native reads only what
+    // packs.json lists. A pack in one and not another is tested and not shipped, or the other way round.
     const listed = contentPacks.map((pack) => pack.id).toSorted();
     expect(Object.keys(contentPackSources).toSorted()).toEqual(listed);
     expect(contentFiles('packs')).toEqual(listed);

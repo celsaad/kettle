@@ -17,22 +17,21 @@ data class Theme(
 )
 
 /**
- * One of `Fonts`' faces, by the name `expo-font` loads it under in RN, which `@expo-google-fonts` also
- * names its file and directory by: `SpaceGrotesk_600SemiBold` is
- * `space-grotesk/600SemiBold/SpaceGrotesk_600SemiBold.ttf`.
+ * One of `Fonts`' faces, by the name its file has under `native/android/theme/fonts`, a directory per
+ * family: `SpaceGrotesk_600SemiBold` is `space-grotesk/SpaceGrotesk_600SemiBold.ttf`.
  */
 data class Face(
     val name: String,
     val family: String,
     val weight: Int,
-    /** [weight] as the package spells it, `SemiBold` for 600. */
+    /** [weight] as the name spells it, `SemiBold` for 600. */
     val weightWord: String,
 ) {
-    /** Compose's `FontWeight` constant for [weight], which is the package's word everywhere but 400. */
+    /** Compose's `FontWeight` constant for [weight], which is the name's word everywhere but 400. */
     val weightName: String get() = if (weightWord == REGULAR) "Normal" else weightWord
 
-    /** Its file under `node_modules/@expo-google-fonts`. */
-    val path: String get() = "${family.replace(WORD_START, "-").lowercase()}/$weight$weightWord/$name.ttf"
+    /** Its file under `native/android/theme/fonts`. */
+    val path: String get() = "${family.replace(WORD_START, "-").lowercase()}/$name.ttf"
 
     /** Its name under `res/font`, which takes lowercase letters, digits and underscores only. */
     val resource: String get() = name.lowercase()
@@ -50,7 +49,7 @@ data class TypeStyle(
 
 private const val REGULAR = "Regular"
 
-/** The weights `@expo-google-fonts` packages, lightest first, as it spells them: 100 is `Thin`, 900 `Black`. */
+/** The weights a face's name can carry, lightest first, as Google Fonts spells them: 100 is `Thin`, 900 `Black`. */
 private val WEIGHT_WORDS =
     listOf("Thin", "ExtraLight", "Light", REGULAR, "Medium", "SemiBold", "Bold", "ExtraBold", "Black")
 private const val WEIGHT_STEP = 100
@@ -103,8 +102,8 @@ fun parseTheme(json: String): Theme {
 }
 
 /**
- * [name] as one of the faces `@expo-google-fonts` packages, refused by [role] otherwise. Italics are
- * refused with the rest: nothing RN draws is set in one.
+ * [name] as an upright face's name, refused by [role] otherwise. Italics are refused with the rest:
+ * nothing the app draws is set in one.
  */
 private fun face(
     role: String,
@@ -113,7 +112,7 @@ private fun face(
     val (family, digits, word) =
         FACE.matchEntire(name)?.destructured
             ?: refuse(
-                "$FONTS.$role has to name an upright @expo-google-fonts face, like SpaceGrotesk_600SemiBold, not $name",
+                "$FONTS.$role has to name an upright face, like SpaceGrotesk_600SemiBold, not $name",
             )
     val weight = digits.toInt()
     require(

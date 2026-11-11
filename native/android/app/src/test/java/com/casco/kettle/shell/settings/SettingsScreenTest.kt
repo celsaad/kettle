@@ -12,6 +12,7 @@ import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isHeading
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -449,6 +450,16 @@ class SettingsScreenTest {
     fun `thanks a past supporter`() {
         show(supporter = SupporterState(2, "2026-10-01T09:00:00.000Z", null))
 
+        // The section reads the file on Dispatchers.IO, which waitForIdle doesn't wait for: CI's slower
+        // runner asserted before the read landed (#371).
+        compose.waitUntil(READ_TIMEOUT_MS) {
+            compose
+                .onAllNodesWithText(
+                    "Obrigado por apoiar o Kettle.",
+                    substring = true,
+                ).fetchSemanticsNodes()
+                .isNotEmpty()
+        }
         text("Obrigado por apoiar o Kettle.")
     }
 
@@ -664,3 +675,6 @@ private val aSession =
         "2026-10-01T10:00:00.000Z",
         emptyList(),
     )
+
+/** Long enough for an IO read on a loaded CI runner; a failing wait is a real failure, not a flake. */
+private const val READ_TIMEOUT_MS = 5_000L

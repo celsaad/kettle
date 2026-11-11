@@ -1,12 +1,8 @@
 {
-  "enabledPlugins": {
-    "expo@claude-plugins-official": true
-  },
   "permissions": {
     "allow": [
       "Bash(npx oxfmt --check)",
       "Bash(npx oxfmt --check *)",
-      "Bash(npx expo config *)",
       "Bash(pnpm run typecheck)",
       "Bash(pnpm run typecheck *)",
       "Bash(pnpm run lint)",

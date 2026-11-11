@@ -1,6 +1,7 @@
 [versions]
 # AGP and Kotlin are the M0 spike's, which were React Native's own (react-native/gradle/
-# libs.versions.toml), so the shell and the RN AAR it hosts in M2 share one toolchain.
+# libs.versions.toml), so the shell and the RN AAR it hosted until M7 shared one toolchain. Still
+# pinned until the unpin moves them (#342).
 agp = "8.12.0"
 kotlin = "2.1.20"
 # detekt 1.23 is built against Kotlin 2.0.21 and refuses to run on any other compiler; see the
@@ -19,8 +20,9 @@ composeShipped = "1.11.0-beta02"
 material3Shipped = "1.5.0-alpha17"
 activityCompose = "1.10.1"
 navigationCompose = "2.9.0"
-appcompat = "1.7.0"
-fragmentKtx = "1.8.6"
+coreKtx = "1.17.0"
+coreSplashscreen = "1.2.0"
+kotlinxCoroutines = "1.10.2"
 junit = "6.1.3"
 junit4 = "4.13.2"
 robolectric = "4.16.1"
@@ -64,8 +66,9 @@ junit4 = { module = "junit:junit", version.ref = "junit4" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
 activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
 navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigationCompose" }
-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "appcompat" }
-fragment-ktx = { module = "androidx.fragment:fragment-ktx", version.ref = "fragmentKtx" }
+core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
+core-splashscreen = { module = "androidx.core:core-splashscreen", version.ref = "coreSplashscreen" }
+kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlinxCoroutines" }
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter" }
 junit-launcher = { module = "org.junit.platform:junit-platform-launcher" }

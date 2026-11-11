@@ -63,7 +63,7 @@ class StartupBenchmark(
         /**
          * Two bounds, because neither build has a baseline profile and Play's cloud profile can't be had
          * side by side: None is a fresh install running on the JIT, Full is everything compiled ahead.
-         * The JS is Hermes bytecode either way, which neither mode touches.
+         * (The RN baseline's JS is Hermes bytecode either way, which neither mode touches.)
          */
         @JvmStatic
         @Parameterized.Parameters(name = "{0} {1}")

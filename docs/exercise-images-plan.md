@@ -319,8 +319,8 @@ That leaves local bytes, and three shapes, all costed:
   it the source of truth means the picture of your own squat renders only on Android and only after a
   trip through Settings.
 
-**Two API facts found while costing it**, worth keeping regardless — they belong in
-[`sdk-57-api-notes.md`](sdk-57-api-notes.md) if any of this is revisited:
+**Two API facts found while costing it**, about RN's `expo-file-system`, which went at M7 (#357).
+Kept as history; a native picker is `ACTION_OPEN_DOCUMENT` through the ActivityResult API:
 
 - **No dependency is needed to pick a file.** `File.pickFileAsync({ mimeTypes: ['image/*'] })` is in
   the installed `expo-file-system` (`node_modules/expo-file-system/build/File.d.ts:48`) and opens

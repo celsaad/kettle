@@ -1,5 +1,4 @@
 import com.android.build.api.variant.HostTestBuilder
-import groovy.json.JsonSlurper
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -8,83 +7,29 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 }
 
-/** The RN project root: the shell reads its versions from there rather than repeating them. */
-val rnRoot: Directory = rootProject.layout.projectDirectory.dir("../..")
-
-/** A JSON object as JsonSlurper reads one. Unchecked: a file of the wrong shape fails the build here. */
-@Suppress("UNCHECKED_CAST")
-fun Any?.asJsonObject(): Map<String, Any?> = this as Map<String, Any?>
-
-fun readJson(path: String): Map<String, Any?> = JsonSlurper().parse(rnRoot.file(path).asFile).asJsonObject()
-
-/** An Expo module's installed version, which is the version its published Android artifact carries. */
-fun npmVersion(pkg: String): String = readJson("node_modules/$pkg/package.json")["version"] as String
-
-val rnNdkVersion: String =
-    Regex("""^ndkVersion\s*=\s*"([^"]+)"""", RegexOption.MULTILINE)
-        .find(rnRoot.file("node_modules/react-native/gradle/libs.versions.toml").asFile.readText())
-        ?.groupValues
-        ?.get(1)
-        ?: error("ndkVersion not found in react-native's libs.versions.toml")
-
-val expo = readJson("app.json")["expo"].asJsonObject()
-val expoAndroid = expo["android"].asJsonObject()
-
-/** A config plugin's options in app.json, which prebuild writes into android/app and the AAR never carries. */
-fun pluginOption(
-    plugin: String,
-    option: String,
-): String {
-    val entry = (expo["plugins"] as List<*>).filterIsInstance<List<*>>().single { it.first() == plugin }
-    return entry[1].asJsonObject()[option] as String
-}
-
 /** One of the upload key's settings, as android.yml passes them in. Read, never written to a file. */
 fun uploadKeySetting(setting: String): String? = providers.environmentVariable("KETTLE_UPLOAD_$setting").orNull
 
 android {
     namespace = "com.casco.kettle.shell"
     compileSdk = 36
-    // React Native's NDK, read from its own version catalog, which CI's NDK install reads too. Without
-    // it AGP can't strip the RN AAR's native libraries, and packages them with their symbols.
-    ndkVersion = rnNdkVersion
 
     defaultConfig {
-        applicationId = expoAndroid["package"] as String
+        applicationId = "com.casco.kettle"
         minSdk = 24
         targetSdk = 36
-        // app.json's, which /bump moves: the shell replaces the Play app in place, so it continues
-        // that app's versionCode line rather than starting one of its own.
-        versionCode = expoAndroid["versionCode"] as Int
-        versionName = expo["version"] as String
-        // app.json's `name`, lowercase as the launcher has always shown it. A placeholder rather than a
-        // string resource, so `R.string` stays the strings generated from the bundles plus the `expo_`
-        // ones Expo modules read (below; `generatedResources()` in LocalePreviews.kt skips them).
-        manifestPlaceholders["appName"] = expo["name"] as String
-        resValue("color", "splashscreen_background", pluginOption("expo-splash-screen", "backgroundColor"))
-        // The shade's accent is the launcher icon's background, the one brand colour app.json holds since
-        // expo-notifications and its plugin's `color` went in the flip release (#308).
-        val brandColor = expoAndroid["adaptiveIcon"].asJsonObject()["backgroundColor"] as String
-        resValue("color", "notification_icon_color", brandColor)
-        // expo-system-ui sets the night mode from this on every launch, and its library default is
-        // `light`: without it, Settings → Appearance → System stays light on a dark phone. Prebuild
-        // wrote it from app.json, preferring the android-specific key, and left the default when unset.
-        // It goes with the AAR: once expo-system-ui is gone, nothing reads it. The plugin's other half,
-        // the window background from `backgroundColor`, isn't copied: app.json sets neither key.
-        (expoAndroid["userInterfaceStyle"] ?: expo["userInterfaceStyle"])?.let {
-            require(it in listOf("automatic", "light", "dark")) { "app.json: invalid userInterfaceStyle \"$it\"" }
-            resValue("string", "expo_system_ui_user_interface_style", it as String)
-        }
-        // The ABIs the AAR was built for, under the property the RN build takes them as. React Native's
-        // and Hermes's own artifacts carry every ABI whatever the AAR has, so without the filter an arm64
-        // build packages a partial x86 app that installs on an emulator and crashes there.
-        providers.gradleProperty("reactNativeArchitectures").orNull?.let { ndk { abiFilters += it.split(",") } }
+        // gradle.properties', which /bump moves.
+        versionCode = providers.gradleProperty("kettle.versionCode").get().toInt()
+        versionName = providers.gradleProperty("kettle.versionName").get()
+        // Lowercase, as the launcher has always shown it. A placeholder rather than a string resource,
+        // so `R.string` stays the strings generated from the bundles.
+        manifestPlaceholders["appName"] = "kettle"
     }
 
     signingConfigs {
-        // Expo's template debug key, the one every prebuilt debug build is signed with. Sharing it lets
-        // the shell install over a dev build of today's app, which is an update-in-place check for free.
-        // It's public, like every RN project's debug key: it signs nothing that reaches Play.
+        // The debug key every `.dev` build has been signed with, the RN app's included, so a new `.dev`
+        // installs over an old one in place, data and all. Changing it breaks that for every dev
+        // install. It's public: it signs nothing that reaches Play.
         getByName("debug") {
             storeFile = file("debug.keystore")
             storePassword = "android"
@@ -122,7 +67,7 @@ android {
             applicationIdSuffix = ".bench2"
             manifestPlaceholders["appName"] = "Kettle Bench Shell"
             signingConfig = signingConfigs.getByName("debug")
-            // The RN AAR and the libraries publish debug and release only.
+            // The libraries publish debug and release only.
             matchingFallbacks += "release"
         }
     }
@@ -132,13 +77,6 @@ android {
     sourceSets {
         getByName("debug").java.srcDir("src/steering/java")
         getByName("benchmark").java.srcDir("src/steering/java")
-    }
-
-    packaging {
-        // RN, Hermes and several Expo modules each ship their own copy of libc++_shared. libworklets:
-        // expo-modules-core's published AAR carries an unstripped copy of react-native-worklets'
-        // library, the same build id (an M0 build fact).
-        jniLibs { pickFirsts += listOf("**/libc++_shared.so", "**/libworklets.so") }
     }
 
     buildFeatures { compose = true }
@@ -170,7 +108,7 @@ kotlin {
 /** The session's three sounds, `assets/sounds/` at the repo root. */
 val soundsDir: Directory = rootProject.layout.projectDirectory.dir("../../assets/sounds")
 
-/** The RN locale bundles, read in place so there is only one copy of every translation. */
+/** The locale bundles, read in place so there is only one copy of every translation. */
 val localesDir: Directory = rootProject.layout.projectDirectory.dir("../../src/i18n/locales")
 
 /**
@@ -203,15 +141,15 @@ val generateStrings by tasks.registering(GenerateStrings::class) {
 /**
  * The `:theme` generator, the same way: `theme.json` becomes a Kotlin source file in a build directory,
  * so a color changed there reaches Compose on the next build with no hand edit. The faces its `Fonts`
- * names are copied out of RN's `@expo-google-fonts` packages into `res/font` by the same run, so the
- * generated families can't name a face this build didn't bundle.
+ * names are copied out of `theme/fonts` into `res/font` by the same run, so the generated families
+ * can't name a face this build didn't bundle.
  */
 abstract class GenerateTheme : JavaExec() {
     @get:InputFile
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val theme: RegularFileProperty
 
-    /** Every `@expo-google-fonts` package, since which faces are read is theme.json's to say. */
+    /** The whole fonts directory, since which faces are read is theme.json's to say. */
     @get:InputDirectory
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val fonts: DirectoryProperty
@@ -231,14 +169,14 @@ val themeGenerator: Configuration by configurations.creating {
 /** The shipped seed and content packs (`ShippedContent`), at the asset root. */
 val contentDir: Directory = rootProject.layout.projectDirectory.dir("../../src/content")
 
-/** The theme RN reads too, read in place, so a color has one home for both UIs. */
+/** The theme, read in place, so a color has one home. */
 val themeFile: RegularFile = rootProject.layout.projectDirectory.file("../../src/constants/theme.json")
 
 /**
- * The font packages RN loads its faces from, read from the JS install rather than kept as a second
- * copy: the shell can't build without that install anyway, since the RN AAR comes from it.
+ * The faces theme.json names, committed with their OFL licences, since the build reads nothing a JS
+ * install provides (see the fonts entry in docs/decisions.md).
  */
-val fontsDir: Directory = rootProject.layout.projectDirectory.dir("../../node_modules/@expo-google-fonts")
+val fontsDir: Directory = rootProject.layout.projectDirectory.dir("theme/fonts")
 
 val generateTheme by tasks.registering(GenerateTheme::class) {
     classpath = themeGenerator
@@ -301,7 +239,7 @@ androidComponents {
         // doesn't read AGP's `kotlin` set, which left the generated file out of the build.
         variant.sources.java?.addGeneratedSourceDirectory(generateTheme, GenerateTheme::output)
         variant.sources.res?.addGeneratedSourceDirectory(generateTheme, GenerateTheme::res)
-        // The seed and packs RN bundles too, packaged as they are: nothing to generate, so read in place.
+        // The seed and packs, packaged as they are: nothing to generate, so read in place.
         variant.sources.assets?.addStaticSourceDirectory(contentDir.asFile.path)
         // The runner's cues (#305), the files RN played, read in place for the same reason.
         variant.sources.assets?.addStaticSourceDirectory(soundsDir.asFile.path)
@@ -337,17 +275,11 @@ tasks.withType<Test>().configureEach {
 
 dependencies {
     coreLibraryDesugaring(libs.desugar.jdk.libs)
-    // The RN app, published by scripts/native-dev.ps1 (or CI) from the prebuilt project.
-    implementation("com.casco.kettle:brownfield:1.0.0")
-    // The AAR's POM gives every Expo module runtime scope only, so the ones the shell calls directly
-    // are declared again here, at the versions node_modules installed.
-    implementation("expo.modules.brownfield:expo.modules.brownfield:${npmVersion("expo-brownfield")}")
-    implementation("host.exp.exponent:expo.core:${npmVersion("expo")}")
-    implementation("host.exp.exponent:expo.modules:${npmVersion("expo-modules-core")}")
-    implementation("host.exp.exponent:expo.modules.splashscreen:${npmVersion("expo-splash-screen")}")
-    // BrownfieldActivity is an AppCompatActivity, and the AAR only compiles against fragment-ktx.
-    implementation(libs.appcompat)
-    implementation(libs.fragment.ktx)
+    // Used directly throughout (NotificationCompat, ViewCompat, FileProvider, coroutines), and declared
+    // at what the shell resolved before M7, when RN's modules raised them, so the removal moved
+    // neither.
+    implementation(libs.core.ktx)
+    implementation(libs.kotlinx.coroutines.android)
 
     implementation(project(":shared"))
     stringsGenerator(project(":strings"))
@@ -363,6 +295,8 @@ dependencies {
     implementation(libs.compose.material3)
     implementation(libs.compose.ui.tooling.preview)
     implementation(libs.activity.compose)
+    // The splash theme and its hold (SplashHold).
+    implementation(libs.core.splashscreen)
     implementation(libs.navigation.compose)
     // Support's tip jar (#198). expo-iap went with RN's Support, so this is the APK's only Play Billing.
     implementation(libs.billing)

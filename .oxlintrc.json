@@ -1,12 +1,11 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["typescript", "unicorn", "oxc", "react", "import"],
+  "plugins": ["typescript", "unicorn", "oxc", "import"],
   "categories": {
     "correctness": "error",
     "suspicious": "warn"
   },
   "rules": {
-    "react/react-in-jsx-scope": "off",
     "import/no-unassigned-import": "off",
     "unicorn/consistent-function-scoping": "off"
   },
@@ -46,8 +45,8 @@
       // word "it (" in an ordinary source comment as a disabled test. Enabling a plugin inside an
       // override doesn't pull in its category rules, so each one is named. The first two are the
       // ones that matter: a test that asserts nothing, or only on one branch, passes vacuously.
-      "files": ["**/__tests__/**", "**/*.test.ts", "**/*.test.tsx"],
-      "plugins": ["typescript", "unicorn", "oxc", "react", "import", "jest"],
+      "files": ["**/__tests__/**", "**/*.test.ts"],
+      "plugins": ["typescript", "unicorn", "oxc", "import", "jest"],
       "rules": {
         "jest/expect-expect": "error",
         "jest/no-conditional-expect": "error",
@@ -58,7 +57,7 @@
       }
     }
   ],
-  "ignorePatterns": [".expo", "node_modules", "dist"],
+  "ignorePatterns": ["node_modules"],
   "env": {
     "builtin": true
   }

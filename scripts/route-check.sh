@@ -3,10 +3,10 @@
 # on screen, back included. A port of route-check.ps1, which explains the matrix and what it pins;
 # the two matrices are kept identical, so a step added to one is added to both.
 #
-# Needs com.casco.kettle.dev from native-dev.sh, running against Metro and past its splash, or with
-# --package the release-built com.casco.kettle.bench2 (`gradlew :app:installBenchmark`), which needs
-# no Metro; on a phone in English whose install still holds the seed library. The runner's steps finish real
-# sessions, which join the .dev history (#306). It never touches com.casco.kettle.
+# Needs com.casco.kettle.dev from native-dev.sh, running and past its splash, or with --package the
+# release-built com.casco.kettle.bench2 (`gradlew :app:installBenchmark`); on a phone in English
+# whose install still holds the seed library. The runner's steps finish real sessions, which join the
+# .dev history (#306). It never touches com.casco.kettle.
 #
 # A start opens the native runner, in every build since the flip release (#308), and is waited on
 # past its count-in: its Finish only shows once the session runs. Every route is the same in debug
@@ -137,7 +137,7 @@ a shell pm grant "$package" android.permission.POST_NOTIFICATIONS
 start_app
 # From wherever the last run or the user left it.
 send_route '/'
-wait_for 'tab:Workouts' || { echo "$package isn't showing Home. Start it against Metro first." >&2; exit 1; }
+wait_for 'tab:Workouts' || { echo "$package isn't showing Home. Start it first." >&2; exit 1; }
 
 n=0
 for step in "${steps[@]}"; do

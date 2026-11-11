@@ -5,9 +5,9 @@ shouldn't pull fonts from the Google Fonts CDN, and `privacy.html`'s claim that 
 third-party fonts has to stay true.
 
 The six `.woff2` files here are converted from the **exact TTFs the app itself ships**, in
-`node_modules/@expo-google-fonts/{space-grotesk,hanken-grotesk}`. Converting from the app's own
-copies rather than re-downloading from Google keeps the site's type identical to the app's and pins
-both to the same version.
+`native/android/theme/fonts/{space-grotesk,hanken-grotesk}`. Converting from the app's own copies
+rather than re-downloading from Google keeps the site's type identical to the app's and pins both to
+the same version.
 
     space-grotesk-500.woff2      Space Grotesk 500  (display / headings)
     space-grotesk-600.woff2      Space Grotesk 600  (display / headings)
@@ -22,7 +22,7 @@ breaking the page.
 
 ## Regenerating
 
-Only needed if the app's font packages are upgraded. `wawoff2` is a WASM port of Google's own woff2
+Only needed if the app's font files are replaced. `wawoff2` is a WASM port of Google's own woff2
 encoder; install it **outside the repo** — same rule as Playwright, it isn't a project dependency
 and shouldn't become one.
 
@@ -31,7 +31,7 @@ const wawoff = require('wawoff2');
 fs.writeFileSync(dest, Buffer.from(await wawoff.compress(fs.readFileSync(ttf))));
 ```
 
-Both families are SIL Open Font License; `LICENSE_FONT` in each package is the copy that governs
+Both families are SIL Open Font License; `LICENSE_FONT` beside each family's TTFs is the copy that governs
 redistributing them here.
 
 Deliberately **not** subsetted. The full latin sets are 24–31 KB each, the pages are text-light, and

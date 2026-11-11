@@ -6,10 +6,9 @@
 # for Windows, step for step; the two change together, and the test library they plant is
 # session-check-library.yaml.
 #
-# Needs the .dev APK built (scripts/native-dev.sh, or `gradlew :app:assembleDebug` once the RN AAR is
-# in mavenLocal), and a target that's booted, unlocked and running no session. It installs the APK
-# (after checking the cue sounds made it in: mergeDebugAssets can stay up to date and ship without
-# them), and starts Metro if nothing answers on 8081.
+# Needs the .dev APK built (scripts/native-dev.sh, or `gradlew :app:assembleDebug`), and a target
+# that's booted, unlocked and running no session. It installs the APK (after checking the cue sounds
+# made it in: mergeDebugAssets can stay up to date and ship without them).
 #
 # The evidence is what a person would read by hand: the session's state file
 # (`no_backup/runner/<id>.json`, device wall-clock ms), its session file, `dumpsys audio`'s
@@ -28,9 +27,8 @@
 # On a phone the lock settings are left alone and the call check is skipped, saying so.
 #
 # Leaves the target as it found it, a failing or interrupted run included: the .dev data folder
-# restored byte for byte (checked), POST_NOTIFICATIONS granted, the emulator's PIN and doze cleared,
-# and Metro stopped if this started it (one already running is the caller's, and stays). Its temp
-# folder, with the backup in it, is kept after a failing run and removed after a clean one. It never
+# restored byte for byte (checked), POST_NOTIFICATIONS granted, and the emulator's PIN and doze
+# cleared. Its temp folder, with the backup in it, is kept after a failing run and removed after a clean one. It never
 # touches com.casco.kettle.
 #
 # What it can't check, by gesture, ear or time, is the manual list in .github/pull_request_template.md.
@@ -175,12 +173,10 @@ service_running() { a shell dumpsys activity services "$package" | grep -q 'Runn
 
 # Opens [workout] by navigate message and waits for its count-in. A message sent before the shell's activity
 # is up is lost, so it's sent again until one lands; one landing over the runner is dropped by design.
-# Each try puts the Metro tunnel back first: an adb server that restarts mid-run drops it, and the app
-# can't load its JS without it, so after two misses it's relaunched too.
+# After two misses it's relaunched too: the activity may not be up yet.
 open_session() {
   local i
   for i in 1 2 3 4 5; do
-    a reverse tcp:8081 tcp:8081 >/dev/null 2>&1
     [ "$i" = 3 ] && launch
     navigate "/session?workoutId=$1"
     if wait_for 6 is_not_idle; then return 0; fi
@@ -222,7 +218,6 @@ write_preferences() {
 
 work=$(mktemp -d)
 emulator=0
-metro_pid=
 pin_set=0
 backed_up=0
 
@@ -253,7 +248,6 @@ restore() {
       code=1
     fi
   fi
-  if [ -n "$metro_pid" ]; then kill "$metro_pid" 2>/dev/null; wait "$metro_pid" 2>/dev/null; fi
   printf '\n%d passed, %d failed\n' "$passed" "$failed"
   [ "$failed" -gt 0 ] && code=1
   if [ "$code" = 0 ]; then rm -rf "$work"; else echo "Kept $work for a look." >&2; fi
@@ -262,21 +256,6 @@ restore() {
 trap restore EXIT
 trap 'exit 130' INT TERM
 
-if ! curl -s --max-time 2 http://localhost:8081/status | grep -q 'packager-status:running'; then
-  step 'Starting Metro'
-  (cd "$root" && exec node_modules/.bin/expo start --port 8081 >"$work/metro.log" 2>&1) &
-  metro_pid=$!
-  ready_by=$((SECONDS + 120))
-  until curl -s --max-time 2 http://localhost:8081/status | grep -q 'packager-status:running'; do
-    kill -0 "$metro_pid" 2>/dev/null || { echo 'Metro exited before it was ready' >&2; exit 1; }
-    [ $SECONDS -le $ready_by ] || { echo "Metro wasn't ready in 2 minutes: see $work/metro.log" >&2; exit 1; }
-    sleep 1
-  done
-  # Expo starts adb's server itself as it comes up, and on this adb that can restart the one already
-  # running, which drops the device for a few seconds. So Metro comes first, before any device step,
-  # and settles before the target is waited for again.
-  sleep 8
-fi
 a wait-for-device
 # Read once the target is surely online: a property read while adb restarts comes back empty.
 case "${target[1]:-$(a get-serialno)}" in emulator-*) emulator=1 ;; esac
@@ -313,7 +292,6 @@ a shell "run-as $package sh -c 'cat /data/local/tmp/session-check-library.yaml >
 a shell rm -f /data/local/tmp/session-check-library.yaml
 write_preferences true
 
-a reverse tcp:8081 tcp:8081 >/dev/null
 a shell input keyevent KEYCODE_WAKEUP
 a shell wm dismiss-keyguard >/dev/null 2>&1 || true
 launch || { echo "$package didn't start." >&2; exit 1; }

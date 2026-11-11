@@ -13,8 +13,8 @@ import kotlinx.coroutines.runBlocking
 
 /**
  * The launch's seed and repair of `exercises.yaml` (#220, #221), once per process, on an IO thread.
- * RN's library load is parse-only from the library flip, so [awaitPrepared] stands between the shell
- * and `ReactNativeHostManager.initialize`: the ordering is a dependency in code, not a race RN wins.
+ * Everything that reads the library waits for it: native's reads through [prepared], and the launch's
+ * runner recovery through [awaitPrepared].
  */
 object LibraryGate {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -22,8 +22,8 @@ object LibraryGate {
     private var preparing: Deferred<Unit>? = null
 
     /**
-     * Starts the job, if this process hasn't, as early as the activity can, so it overlaps the work
-     * before RN starts. The seed is in the device's language, frozen from then on as the user's data.
+     * Starts the job, if this process hasn't, as early as the activity can, so it overlaps the
+     * activity's own start. The seed is in the device's language, frozen from then on as the user's data.
      */
     @Synchronized
     fun start(context: Context) {
@@ -34,7 +34,7 @@ object LibraryGate {
 
     /**
      * Suspends until the job has run: what native's own reads wait on (`LatestFiles`), so a first
-     * launch's screens find the seed, whenever RN starts.
+     * launch's screens find the seed.
      */
     suspend fun prepared(context: Context) {
         start(context)
@@ -42,8 +42,10 @@ object LibraryGate {
     }
 
     /**
-     * Blocks until the job has run. On the main thread, which is where RN starts: a read and parse of
-     * one small file on every launch, and a write on the launches that seed or repair it.
+     * Blocks until the job has run, on the main thread: `recoverRunner` in `MainActivity` reads the
+     * library before any screen can start a session. A read and parse of one small file on every
+     * launch, and a write on the launches that seed or repair it. Making this async is a change of its
+     * own, and the first lever if a cold-start benchmark regresses.
      */
     fun awaitPrepared(context: Context) = runBlocking { prepared(context) }
 
@@ -75,8 +77,8 @@ object LibraryGate {
         } catch (error: Exception) {
             // Anything, not just a disk that refuses: this rethrows on the main thread from
             // awaitPrepared, before any screen, so a shipped-content defect or a SecurityException would
-            // crash every launch. Degraded, RN finds what's there, which on a first launch is nothing
-            // and shows its error, and the next launch tries again.
+            // crash every launch. Degraded, the screens find what's there, which on a first launch is
+            // nothing and shows their error, and the next launch tries again.
             Log.e(TAG, "Could not prepare the library", error)
         }
     }

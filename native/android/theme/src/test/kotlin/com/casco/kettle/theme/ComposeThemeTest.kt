@@ -109,7 +109,7 @@ class ComposeThemeTest {
     fun `the fonts become a family per typeface, then the type scale KettleType, last in the file`() {
         assertEquals(
             """
-            /** `Fonts`' typefaces, each a family of the faces theme.json names in it, from RN's packages. */
+            /** `Fonts`' typefaces, each a family of the faces theme.json names in it. */
             private val HankenGrotesk =
                 FontFamily(
                     Font(R.font.hankengrotesk_400regular, FontWeight.Normal),
@@ -287,12 +287,12 @@ class ComposeThemeTest {
                     Font(R.font.hankengrotesk_400regular, FontWeight.Normal),
                 )
             """.trimIndent(),
-            kotlin.substringAfter("from RN's packages. */\n").substringBefore("\n\n/**"),
+            kotlin.substringAfter("names in it. */\n").substringBefore("\n\n/**"),
         )
     }
 
     @Test
-    fun `a font that isn't one of RN's packaged faces is refused by its role`() {
+    fun `a font that isn't an upright face's name is refused by its role`() {
         val names =
             listOf(
                 "\"Roboto\"",

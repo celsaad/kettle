@@ -64,8 +64,8 @@ interface StoredFiles {
 }
 
 /**
- * Where RN keeps its files, under expo-file-system's `Paths.document`, which is [filesDir].
- * `src/storage/paths.ts` names the ones RN still reads. The two share no code, so change both.
+ * Where the app keeps its files: `exercise-tracker` under [filesDir], the directory the RN app chose,
+ * kept so every install's data stays where it is. session-check reads the same paths.
  */
 class StoragePaths(
     filesDir: File,
@@ -78,7 +78,7 @@ class StoragePaths(
     val backupTargets = root.resolve("backup-targets.json")
 }
 
-/** [StoredFiles] where RN keeps them. */
+/** [StoredFiles] where [StoragePaths] puts them. */
 class DiskFiles(
     private val paths: StoragePaths,
 ) : StoredFiles {
@@ -89,7 +89,7 @@ class DiskFiles(
     override fun preferences() = readPreferences(paths.preferences)
 
     override fun deleteSession(id: String) {
-        // Named as `sessionFile` in src/storage/paths.ts names it. The two share no code, so change both.
+        // Named as the session writer names it: the session's id.
         val file = paths.sessions.resolve("$id.yaml")
         // File.delete() says only no; the name is what the reader can act on.
         if (file.exists() && !file.delete()) throw IOException(file.name)

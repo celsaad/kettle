@@ -9,7 +9,6 @@ set -euo pipefail
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
 native="$root/native/android"
-abi='-PreactNativeArchitectures=arm64-v8a'
 runner='com.casco.kettle.benchmark/androidx.test.runner.AndroidJUnitRunner'
 
 skip_build=0
@@ -31,11 +30,8 @@ apks=("$native/app/build/outputs/apk/benchmark/app-benchmark.apk")
 benchmark_apk="$native/benchmark/build/outputs/apk/benchmark/benchmark-benchmark.apk"
 
 if [ "$skip_build" = 0 ]; then
-  # All, not Release: the two publications share one coordinate (see native-dev.ps1).
-  step 'Publish the RN AAR to mavenLocal'
-  "$root/android/gradlew" -p "$root/android" publishBrownfieldAllPublicationToMavenLocal "$abi"
   step 'Build the shell (com.casco.kettle.bench2) and the benchmark'
-  "$native/gradlew" -p "$native" :app:assembleBenchmark :benchmark:assembleBenchmark "$abi"
+  "$native/gradlew" -p "$native" :app:assembleBenchmark :benchmark:assembleBenchmark
 fi
 
 # Checked, not assumed: with --skip-build, the APK is whatever the last build left.

@@ -10,8 +10,8 @@
 
   Today's app, com.casco.kettle.bench, was the other target until Home went native (#235): built from
   this tree its Home is an empty stub with no marker, so it can't reach an end point. It comes back in
-  M7 built from a pinned commit in a worktree, with benchmark/rn-app.init.gradle as before (the M7
-  section of docs/native-migration-plan.md). Until then a port's before and after are this script run
+  M7 built from a pinned commit in a worktree, with the benchmark/rn-app.init.gradle that commit
+  carries (the M7 section of docs/native-migration-plan.md). Until then a port's before and after are this script run
   on the commit before it and on the one after.
 
   Never the Play install: the benchmark force-stops its target and resets its compiled code, and
@@ -36,7 +36,6 @@ param(
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
 $native = "$root/native/android"
-$abi = '-PreactNativeArchitectures=arm64-v8a'
 $runner = 'com.casco.kettle.benchmark/androidx.test.runner.AndroidJUnitRunner'
 
 function Invoke-Step([string]$name, [scriptblock]$step) {
@@ -55,12 +54,8 @@ $apks = [ordered]@{
 $benchmarkApk = "$native/benchmark/build/outputs/apk/benchmark/benchmark-benchmark.apk"
 
 if (-not $SkipBuild) {
-  # All, not Release: the two publications share one coordinate (see native-dev.ps1).
-  Invoke-Step 'Publish the RN AAR to mavenLocal' {
-    & "$root/android/gradlew.bat" -p "$root/android" publishBrownfieldAllPublicationToMavenLocal $abi
-  }
   Invoke-Step 'Build the shell (com.casco.kettle.bench2) and the benchmark' {
-    & "$native/gradlew.bat" -p $native :app:assembleBenchmark :benchmark:assembleBenchmark $abi
+    & "$native/gradlew.bat" -p $native :app:assembleBenchmark :benchmark:assembleBenchmark
   }
 }
 

@@ -1,14 +1,21 @@
 {
-  "extends": "expo/tsconfig.base",
   "compilerOptions": {
+    "target": "ESNext",
+    "lib": ["ESNext"],
+    "module": "preserve",
+    "moduleResolution": "bundler",
+    "moduleDetection": "force",
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "noEmit": true,
     "strict": true,
     "noFallthroughCasesInSwitch": true,
     "noImplicitOverride": true,
-    "types": ["jest"],
+    "types": ["jest", "node"],
     "paths": {
-      "@/*": ["./src/*"],
-      "@/assets/*": ["./assets/*"]
+      "@/*": ["./src/*"]
     }
   },
-  "include": ["**/*.ts", "**/*.tsx"]
+  "include": ["**/*.ts"]
 }

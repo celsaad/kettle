@@ -3,15 +3,11 @@
 Backend-free workout tracker. A hand-editable YAML library (exercises, workouts, multi-week programs)
 plus a local session log, one file per session. No server, no account.
 
-> **Expo HAS CHANGED.** Read the exact versioned docs at https://docs.expo.dev/versions/v57.0.0/
-> before writing any code. This applies to library choices too — verify what's current for SDK 57
-> rather than recalling older Expo.
-
 ## Commands
 
-**The package manager is pnpm, not npm** — `pnpm install`, never `npm install`. Installing with npm
-strips `nodeLinker: hoisted` out of the layout that Metro and Gradle autolinking both need; the
-reasoning and the benchmark are in the decision log. Trailing args need no `--` separator, so
+**The package manager is pnpm, not npm** — `pnpm install`, never `npm install`, which ignores
+`pnpm-workspace.yaml` and the lockfile. Its `nodeLinker: hoisted` is kept until the TS project goes
+(#353), no longer required; the decision log has the history. Trailing args need no `--` separator, so
 it's `pnpm test --ci`, not `npm test -- --ci`.
 
 - `pnpm run typecheck` — `tsc --noEmit`
@@ -22,7 +18,7 @@ it's `pnpm test --ci`, not `npm test -- --ci`.
 - `pnpm run knip` — unused files, dependencies and exports, and any import `package.json` doesn't
   list. Same rule as a lint warning: delete the dead code, or name a genuine exception in
   `knip.jsonc` with its reason.
-- `pnpm test` — jest via `jest-expo`. Covers the domain layer, the shipped content and its mirrors;
+- `pnpm test` — jest, with babel stripping the types (`babel.config.js`). Covers the domain layer, the shipped content and its mirrors;
   every screen and the runner are `:app`'s and `:shared`'s tests since routing moved native (#309).
   Under a minute, so run it. A single file is `pnpm jest <path>`.
 - `pnpm run format` — oxfmt (same Oxc toolchain as oxlint, so they agree). Run it instead of matching
@@ -67,8 +63,7 @@ retrofit, so answer them out loud even when the answer is no.
 - [ ] **Touched `native/android`, or moved a golden in `conformance/`?** `gradlew build` from
       `native/android`: tests, ktlint, detekt, Android lint and compiler warnings, all failing on any
       finding. A golden change reaches it because the Kotlin runner reads the same corpus. It needs
-      the RN AAR in mavenLocal first (`scripts/native-dev.sh`, or `.ps1` on Windows, once per native
-      dependency change).
+      no `pnpm install`: the native build reads the repo's plain files and nothing from Node.
 - [ ] **Push the branch and open a PR** (`gh pr create`). The commit message is the durable record —
       root cause, alternatives, deliberate scope cuts go there, not into the docs (see "Docs").
 
@@ -110,9 +105,8 @@ mistake here that cannot be fixed for anyone who has already installed it.
   product plan calls timer reliability "the make-or-break issue"; treat the engine and the service as
   high-risk and verify changes by running a real session (`scripts/session-check.sh`), not by
   reasoning alone.
-- `index.ts` — the RN entry, a root component that renders nothing. Routing is native's since #309
-  (`shell/nav/`: `Route.kt` is the route table, `Navigator.kt` the back stack and the runner's slot),
-  so the RN surface the shell still starts draws nothing, and M7 deletes it.
+- Routing is native's since #309 (`shell/nav/`: `Route.kt` is the route table, `Navigator.kt` the
+  back stack and the runner's slot).
 - `site/` — the public landing site (GitHub Pages), plain static HTML with no build step. Not part of
   the app build. `site/format.html` mirrors `schema.ts` — see "Changing the YAML format" below.
   `site/examples/*.yaml` are complete libraries published for readers to import as they are;
@@ -121,21 +115,20 @@ mistake here that cannot be fixed for anyone who has already installed it.
   examples page makes — every example prefixes its ids so importing one can't overwrite anything the
   reader already has.
 
-- `native/android/` — the native app the migration plan builds: a Kotlin Multiplatform `:shared`
-  module (the domain port), a Compose `:app`, and `:strings`, which generates `:app`'s string
-  resources from the RN locale bundles on every build (never committed; plurals go through
+- `native/android/` — the app: a Kotlin Multiplatform `:shared` module (the domain port), a
+  Compose `:app`, and `:strings`, which generates `:app`'s string resources from the locale bundles
+  on every build (never committed; plurals go through
   `pluralText`, not `pluralStringResource`), `:theme`, which generates its Compose theme from
   `src/constants/theme.json` the same way and copies the fonts its `Fonts` names out of
-  `node_modules/@expo-google-fonts`, and `:art`, which turns `src/content/art/*.svg` into
+  `native/android/theme/fonts` (committed, with their OFL licences), and `:art`, which turns `src/content/art/*.svg` into
   VectorDrawables and fails the build on any SVG outside the subset `src/content/art/README.md`
-  names. Its own Gradle build, not part of the Expo one.
+  names.
   `gradlew build` from that directory compiles, tests and lints it, and ktlint, detekt and Android
   lint hold the same zero-warning rule oxlint does; `gradlew ktlintFormat` is its `pnpm run format`.
-  **`:app` hosts today's RN app from an AAR in mavenLocal**, so it doesn't build until
-  `scripts/native-dev.sh` has published one: that script is the dev loop, AAR to phone to Metro.
-  Each device script is a `.sh` with a step-for-step `.ps1` twin for Windows; a change to one goes
-  into both. Changing `app.json`'s icons, permissions or plugins means copying the change into the
-  shell (see the single-source entry in the decision log). `:benchmark` is a Macrobenchmark of cold
+  The version is `gradle.properties`' (`kettle.versionCode` / `kettle.versionName`, which `/bump`
+  moves), and the icons and manifest are edited in `app/src` itself. `scripts/native-dev.sh` is the
+  dev loop: build, install on a phone, launch. Each device script is a `.sh` with a step-for-step
+  `.ps1` twin for Windows; a change to one goes into both. `:benchmark` is a Macrobenchmark of cold
   start to a drawn Home, run on a phone by `scripts/startup-benchmark.sh`; its end point is
   native Home's `reportFullyDrawn` (`ReportDrawnWhen`), and today's app returns as a baseline
   in M7. `scripts/route-check.sh` steers the running `.dev`
@@ -225,10 +218,9 @@ are house rules here rather than a backlog — cheap as you go, tedious to retro
   words themselves are still checked by hand. (No count is quoted
   here on purpose: the one that used to be went stale, and the bundles are the only honest answer.)
 
-Shipping a whole new language is a seven-place procedure of its own:
-[`docs/adding-a-language.md`](docs/adding-a-language.md). The newest of the seven is `app.json`, and
-it costs nothing to miss and everything to ship missing — an undeclared locale is unreachable on iOS
-with every test still green.
+Shipping a whole new language is a procedure of its own:
+[`docs/adding-a-language.md`](docs/adding-a-language.md). Its iOS step arrives with M8: an
+undeclared locale is unreachable on iOS with every test still green.
 
 ## Writing tests
 
@@ -243,9 +235,6 @@ with every test still green.
   resource and the literal it returns render identically. Three screens have shipped with hardcoded
   strings for exactly this reason.
 - Finish with `pnpm run format`; don't hand-align a new test file against the rest.
-- `testTimeout` is 30s, not jest's 5s default, a leftover of RN's screen tests, whose first render in
-  a file paid a lazy-init cost that failed the default on CI's 2-core runner. It only costs time when
-  something genuinely hangs; M7 can drop it with the rest of jest's screen setup.
 
 What tests can't reach — layout, animation, real audio and file writes — is verified by driving the
 running app on a device or emulator: `scripts/native-dev.sh` puts the `.dev` shell on it, and
@@ -327,11 +316,7 @@ are the index, the banner is the contract.
   limit, so an over-length note fails the suite rather than the upload.
 - `docs/product-plan.md` — the data model, file formats and roadmap.
 - `docs/authoring-exercises-yaml.md` — the YAML reference, kept exact against `schema.ts`.
-- `docs/sdk-57-api-notes.md` — the `expo-file-system` shapes confirmed from `node_modules`, because
-  the published docs are wrong for them. (Its `expo-iap` notes are history, since the tip jar moved to
-  Play Billing in M4, and so are its `expo-notifications` ones, since the module went in the flip
-  release, #308.)
-- `docs/adding-a-language.md` — the seven-place procedure for shipping a new UI language.
+- `docs/adding-a-language.md` — the procedure for shipping a new UI language.
 - `docs/agents/` — per-repo setup the engineering skills read: issue tracker, triage labels, and
   where the glossary and decision log live. Indexed by the "Agent skills" section at the end.
 - `docs/building-android.md` — building the Play bundle on GitHub Actions rather than on EAS, and
@@ -342,9 +327,9 @@ are the index, the banner is the contract.
 - `docs/native-migration-plan.md` — **M0 executed (go); M1 landed; M2 shipped (0.11.2); M3 shipped
   (0.12.0); M4 shipped (0.13.0); M5 done (0.14.0); M6 done (0.15.0); M7 ticketed (map #335); M8's UI
   decided (Compose Multiplatform).** Moving to Kotlin/Compose (then iOS) inside the shipping
-  app: a native shell hosts the not-yet-migrated RN screens via `expo-brownfield`, and each milestone
-  ships to Play and deletes RN code. Its M0 spike report holds the brownfield build facts any host inherits (AAR scopes, plugin
-  resources, Windows CLI).
+  app: the native shell hosted the not-yet-migrated RN screens via `expo-brownfield` until M7's
+  first PR removed RN (#357), and each milestone ships to Play and deletes RN code. Its M0 spike
+  report holds the brownfield build facts (AAR scopes, plugin resources, Windows CLI), history now.
 - `docs/ios-plan.md` — **partly executed.** Shipping to the App Store: what already works unchanged,
   the six code changes that don't, and the background-cue and iCloud decisions. Five of those six
   have landed, plus the notification half of the background cue; the sixth is a form in App Store

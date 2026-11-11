@@ -5,8 +5,10 @@
 > [`docs/open-work.md`](docs/open-work.md). This file is the record of *what changed and when* — it
 > is not a backlog and nothing here is planned work.
 
-Versions are the `version` / `android.versionCode` pair in `app.json`, which is the single source
-both the build and this file follow.
+Versions are the `kettle.versionName` / `kettle.versionCode` pair in
+[`native/android/gradle.properties`](native/android/gradle.properties), which the build reads. Each
+store platform has its own build number, raised only when that platform ships; the version name is
+shared, taken from this file's heading.
 
 **Play release notes are per release, per language, 500 characters each, and are not cumulative** —
 every version needs new ones. Copy is written for en-US, pt-BR and ja-JP; include a language tag only
@@ -17,6 +19,20 @@ here, next to what it describes.
 ---
 
 ## Unreleased
+
+### What changed
+
+- **Finishing as a rest runs out no longer logs a set you didn't do**: tapping Finish in the
+  instant a rest ended used to save the next set at its target as if you'd done it. Now the
+  session ends with only what you logged (#319).
+- **A smaller app with no JavaScript engine inside**: the last of the old React Native app is gone,
+  so Kettle is fully native. Nothing changes in how it looks or works, and your library, history
+  and settings carry over. It also no longer asks for storage access on older Android versions,
+  which it never used (#357).
+
+---
+
+## 0.15.0 — versionCode 21, 9 November 2026
 
 ### What changed
 
@@ -33,9 +49,32 @@ here, next to what it describes.
   back to the session with a tap. Swiping Kettle away from Recents leaves the session running. If
   Android stops the app mid-workout, the next launch offers to resume the session where it was or to
   finish it, so the workout isn't lost (#308).
-- **Finishing as a rest runs out no longer logs a set you didn't do**: tapping Finish in the
-  instant a rest ended used to save the next set at its target as if you'd done it. Now the
-  session ends with only what you logged (#319).
+
+### Play release notes
+
+Counted at 73 (en-US) and 75 (pt-BR), against a limit of 500. Re-count programmatically
+if you edit them rather than trusting these numbers — over-limit copy is a rejected upload, not a
+truncated one.
+
+Deliberately plain: "updates and fixes", with the closing line 0.14.0 used. Two blocks, as in 0.8.0
+onwards: the Play listing does not carry ja-JP.
+
+```
+<en-US>
+What's new
+
+Updates and fixes.
+
+Report anything that hangs or loses data.
+</en-US>
+<pt-BR>
+Novidades
+
+Atualizações e correções.
+
+Relate travamentos ou perda de dados.
+</pt-BR>
+```
 
 ---
 

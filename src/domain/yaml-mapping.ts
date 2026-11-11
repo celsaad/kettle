@@ -761,8 +761,8 @@ export function serializeSessionYaml(session: Session): string {
 }
 
 /**
- * Every session in one document, for the "export history" path — `expo-sharing` hands over a single
- * URI, so a whole log has to arrive as one file rather than as the directory it's stored in.
+ * Every session in one document, for the "export history" path: a share hands over a single file, so
+ * a whole log has to arrive as one file rather than as the directory it's stored in.
  *
  * A wrapper object with a `sessions:` list rather than a stream of `---`-separated documents: it
  * reads back with a plain `load()`, the same as every other file this module produces, and it has

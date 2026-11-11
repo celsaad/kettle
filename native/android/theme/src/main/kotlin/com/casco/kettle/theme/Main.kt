@@ -2,16 +2,13 @@ package com.casco.kettle.theme
 
 import java.io.File
 
-private val USAGE = listOf("<theme.json>", "<@expo-google-fonts dir>", "<output source dir>", "<output res dir>")
+private val USAGE = listOf("<theme.json>", "<fonts dir>", "<output source dir>", "<output res dir>")
 
 /**
  * theme.json written as one Kotlin source file under the source output, at the path its package names,
- * and each face its `Fonts` names copied out of RN's `@expo-google-fonts` packages into the res
- * output's `font/`. Both outputs are cleared first, so nothing an earlier generator wrote can linger
- * beside them.
- *
- * The faces are read from `node_modules` rather than kept as a second copy here, so RN's package
- * version is the shell's too (see the decision log).
+ * and each face its `Fonts` names copied out of the fonts dir (`native/android/theme/fonts`, committed
+ * with their licences; see the decision log) into the res output's `font/`. Both outputs are cleared
+ * first, so nothing an earlier generator wrote can linger beside them.
  */
 fun main(args: Array<String>) {
     require(args.size == USAGE.size) { "usage: ${USAGE.joinToString(" ")}" }
@@ -24,7 +21,7 @@ fun main(args: Array<String>) {
     val faces = fontFaces(parseTheme(json)).map { File(fonts, it.path) to it }
     val missing = faces.filterNot { it.first.isFile }.map { it.first.path }
     require(missing.isEmpty()) {
-        "theme.json's Fonts aren't installed; run pnpm install at the repo root. Missing: $missing"
+        "theme.json's Fonts name faces the fonts dir doesn't have; add their files there. Missing: $missing"
     }
 
     File(source).deleteRecursively()

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- AppTheme's parent in a dark system scheme: the dark platform theme, so no white window shows first. -->
+<resources>
+    <style name="Base.AppTheme" parent="android:Theme.Material.NoActionBar" />
+</resources>

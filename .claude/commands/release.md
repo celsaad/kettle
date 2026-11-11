@@ -4,7 +4,8 @@ argument-hint: "[version, e.g. 0.4.0]"
 allowed-tools: Read, Write, Bash(git:*), Bash(node:*), Bash(gh:*), Bash(sha256sum:*), Bash(apksigner:*), Bash(aapt:*)
 ---
 
-Cut the public release for: **$ARGUMENTS** (if that's empty, use the version currently in `app.json`).
+Cut the public release for: **$ARGUMENTS** (if that's empty, use the `kettle.versionName` currently in
+`native/android/gradle.properties`).
 
 ## Where this starts, and why it isn't `/bump`
 
@@ -12,9 +13,10 @@ Cut the public release for: **$ARGUMENTS** (if that's empty, use the version cur
 artefact are separate concerns**, and folding them together means a version bump you can't land
 without also being ready to ship a binary. This command picks up exactly where that line falls.
 
-So `/bump` has already run by the time you're here. `app.json` carries the version and versionCode,
-`CHANGELOG.md` has a closed-out section for it, and the release commit is on `master`. If any of that
-isn't true, stop and run `/bump` first — **this command never edits `app.json` or the changelog.**
+So `/bump` has already run by the time you're here. `native/android/gradle.properties` carries the
+version and versionCode, `CHANGELOG.md` has a closed-out section for it, and the release commit is on
+`master`. If any of that isn't true, stop and run `/bump` first. **This command never edits a version
+file or the changelog.**
 
 Building the `.aab` that goes to Play is a third thing again, and also not this command's:
 `.github/workflows/android.yml` does it on every merge to `master`, and `docs/building-android.md`
@@ -39,7 +41,7 @@ that's already pushed; a mistake gets a new version, not a moved tag.
 ## 2. The APK
 
 **The public APK is the Play-signed universal APK, downloaded from the Console.** It is not built
-anywhere — not by CI, not by EAS. **Why** is the signing entry in
+anywhere, and not by CI. **Why** is the signing entry in
 [`docs/decisions.md`](../../docs/decisions.md); read it once, and don't re-argue it here. The short
 version is that an APK signed with any other key cannot install over a Play install, and the only way
 across deletes the user's entire training log.
@@ -48,9 +50,9 @@ Get it from **Play Console → Release → App bundle explorer → the versionCo
 Downloads → "Signed, universal APK"**.
 
 **This step is a human's, and this command must stop and ask for it rather than route around it.**
-There is no API for that download, and two substitutes look exactly like the answer:
-`gh workflow run android.yml -f variant=apk`, and `eas build --profile preview`. Both produce a real
-APK, both are signed with the upload key, and neither is a fallback when the Console is inconvenient.
+There is no API for that download, and a substitute looks exactly like the answer:
+`gh workflow run android.yml -f variant=apk`. It produces a real APK, signed with the upload key, and
+it is not a fallback when the Console is inconvenient.
 
 ### Prove it before you attach it
 
@@ -68,7 +70,7 @@ the Console**:
 
 - The signer's SHA-256 matches the **app signing certificate** recorded in
   [`docs/building-android.md`](../../docs/building-android.md). This is the check that catches every
-  wrong-artefact path at once, including both substitutes above. It is the *app signing* certificate,
+  wrong-artefact path at once, including the substitute above. It is the *app signing* certificate,
   not the upload certificate printed beside it in the Console — matching the upload one means you are
   holding exactly the file this must never publish.
 - The **versionCode matches the tag**.

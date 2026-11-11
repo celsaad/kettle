@@ -10,7 +10,7 @@
 > § "Changing the YAML format". The complete YAML samples on this page are parsed by
 > `docs-samples.test.ts` and the field tables by `format-mirrors.test.ts`; the prose is on you.
 
-A backend-free React Native app for planning and tracking workouts. Exercises and workout templates live in a hand-editable YAML library; completed sessions are written by the app to a local store, one file per session. No server, no account — fully local, portable, and power-user friendly.
+A backend-free app for planning and tracking workouts, native on Android (Kotlin and Compose) since the migration that ended React Native at M7. Exercises and workout templates live in a hand-editable YAML library; completed sessions are written by the app to a local store, one file per session. No server, no account — fully local, portable, and power-user friendly.
 
 ---
 
@@ -297,6 +297,11 @@ Implemented as a write-through: an exercise's entry is appended when its first s
 
 ## 8. Recommended Stack
 
+> **The original plan's stack, kept as history.** The app moved to Kotlin and Compose
+> (`docs/native-migration-plan.md`), and React Native and Expo left it at M7 (#357). What survives
+> of this table is the YAML and validation half: `js-yaml` and `zod` in the TS domain, and their
+> Kotlin ports in `:shared`.
+
 | Concern | Choice |
 |---|---|
 | Framework | Expo (managed) — fast iteration, clean access to haptics/audio/notifications/keep-awake |
@@ -397,7 +402,7 @@ What's genuinely missing today, checked directly against the code:
 - ~~**Known bug (web only): leaving the session screen crashes with a redbox.**~~ ✅ Fixed — see the
   [decision log](decisions.md) for the details. `useKeepAwake` now passes
   `suppressDeactivateWarnings`, the library's own flag for exactly this race.
-- ~~**No automated tests at all.**~~ ✅ Closed — jest via `jest-expo`, running in CI alongside
+- ~~**No automated tests at all.**~~ ✅ Closed — jest (via `jest-expo` until M7, plain jest with babel since), running in CI alongside
   typecheck and lint. (`pnpm test` is the suite size; no doc quotes it, because every copy went stale —
   this line itself read "230 tests across 22 files" long after that stopped being true.) Covers
   the domain layer, the wall-clock session runner

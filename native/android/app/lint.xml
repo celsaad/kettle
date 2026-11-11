@@ -1,31 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <lint>
     <!--
-      The launcher and notification icons are the files prebuild generates from app.json's `icon`,
-      copied as they are: the shell ships what the prebuilt app shipped. Changing the artwork is its own
-      change, made in app.json.
+      The launcher, splash and notification icons are the files the RN app's build generated, kept as
+      they were, so the app looks as it always has. They are the artwork's only source now: a change to
+      it is made in res/, at every density.
     -->
     <issue id="IconLauncherShape" severity="ignore" />
     <issue id="IconDuplicates" severity="ignore" />
 
     <!--
-      targetSdk follows the RN app's (Expo SDK 57's), which the shell must not run ahead of while it
-      hosts it: they move together with an SDK bump. The check also depends on the newest platform the
-      machine has installed, so it passed locally and failed on CI's newer image. Remove this once
-      React Native is gone (docs/native-migration-plan.md, M7).
+      targetSdk is still the RN app's (Expo SDK 57's), pinned until the unpin raises it (#342), which
+      removes this ignore with it. The check also depends on the newest platform the machine has
+      installed, so it passed locally and failed on CI's newer image.
     -->
     <issue id="OldTargetApi" severity="ignore" />
-
-    <!--
-      The ABI filter only applies when reactNativeArchitectures is passed, which only the arm64
-      sideload build does. The Play bundle passes nothing and carries every ABI, ChromeOS's included.
-    -->
-    <issue id="ChromeOsAbiSupport">
-        <ignore path="build.gradle.kts" />
-    </issue>
-
-    <!-- These versions are read from node_modules at build time, which a version catalog can't do. -->
-    <issue id="UseTomlInstead">
-        <ignore path="build.gradle.kts" />
-    </issue>
 </lint>

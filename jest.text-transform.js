@@ -1,6 +1,5 @@
-// Jest's half of metro.transformer.js: a `.yaml` import is the file's text. jest-expo maps it to its
-// asset stub (`module.exports = 1`), and a project `transform` key is matched before the
-// preset's.
+// A `.yaml` import is the file's text: the seed and the content packs import their YAML that way
+// (`text-imports.d.ts` types it).
 module.exports = {
   process: (src) => ({ code: `module.exports = ${JSON.stringify(src)};` }),
 };

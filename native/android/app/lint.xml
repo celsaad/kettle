@@ -1,9 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <lint>
     <!--
-      targetSdk is still the RN app's (Expo SDK 57's), pinned until the unpin raises it (#342), which
-      removes this ignore with it. The check also depends on the newest platform the machine has
+      targetSdk stays at 36 until #363 raises it to 37, after the stable BOM and compileSdk 37 (#362),
+      and deletes this ignore with it. The check also depends on the newest platform the machine has
       installed, so it passed locally and failed on CI's newer image.
     -->
     <issue id="OldTargetApi" severity="ignore" />
+    <!--
+      compileSdk 37 is #362's, beside the stable Compose BOM, which lands after AGP 9 (#361); #362
+      deletes this. Scoped to compileSdk's message, so a stale library is still an error; the `.?` is
+      the markup lint's raw message puts around the name, which a plain "compileSdk than" misses.
+    -->
+    <issue id="GradleDependency">
+        <ignore regexp="compileSdk.? than" />
+    </issue>
 </lint>

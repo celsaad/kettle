@@ -3,7 +3,6 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
 }
 
@@ -75,8 +74,8 @@ android {
     // `NavigateReceiver`, adb's way to steer the navigator: the dev build's, and the benchmark build's, so
     // route-check runs against a release-built shell too (#309). Never Play's release.
     sourceSets {
-        getByName("debug").java.srcDir("src/steering/java")
-        getByName("benchmark").java.srcDir("src/steering/java")
+        getByName("debug").kotlin.directories.add("src/steering/kotlin")
+        getByName("benchmark").kotlin.directories.add("src/steering/kotlin")
     }
 
     buildFeatures { compose = true }
@@ -106,6 +105,13 @@ val soundsDir: Directory = rootProject.layout.projectDirectory.dir("../../assets
 /** The locale bundles, read in place so there is only one copy of every translation. */
 val localesDir: Directory = rootProject.layout.projectDirectory.dir("../../src/i18n/locales")
 
+/** What a generator task runs on: a project's runtime jar, resolved here and never published. */
+fun generatorClasspath(name: String): Configuration =
+    configurations.create(name) {
+        isCanBeConsumed = false
+        attributes { attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.JAVA_RUNTIME)) }
+    }
+
 /**
  * The `:strings` generator, run on every build that needs resources. Its output is a build directory
  * and never committed: a generated file in the tree can go stale, and a check that it hasn't is one
@@ -121,17 +127,15 @@ abstract class GenerateStrings : JavaExec() {
     abstract val output: DirectoryProperty
 }
 
-val stringsGenerator: Configuration by configurations.creating {
-    isCanBeConsumed = false
-    attributes { attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.JAVA_RUNTIME)) }
-}
+val stringsGenerator = generatorClasspath("stringsGenerator")
 
-val generateStrings by tasks.registering(GenerateStrings::class) {
-    classpath = stringsGenerator
-    mainClass.set("com.casco.kettle.strings.MainKt")
-    locales.set(localesDir)
-    argumentProviders.add { listOf(locales.get().asFile.path, output.get().asFile.path) }
-}
+val generateStrings =
+    tasks.register<GenerateStrings>("generateStrings") {
+        classpath = stringsGenerator
+        mainClass.set("com.casco.kettle.strings.MainKt")
+        locales.set(localesDir)
+        argumentProviders.add { listOf(locales.get().asFile.path, output.get().asFile.path) }
+    }
 
 /**
  * The `:theme` generator, the same way: `theme.json` becomes a Kotlin source file in a build directory,
@@ -156,10 +160,7 @@ abstract class GenerateTheme : JavaExec() {
     abstract val res: DirectoryProperty
 }
 
-val themeGenerator: Configuration by configurations.creating {
-    isCanBeConsumed = false
-    attributes { attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.JAVA_RUNTIME)) }
-}
+val themeGenerator = generatorClasspath("themeGenerator")
 
 /** The shipped seed and content packs (`ShippedContent`), at the asset root. */
 val contentDir: Directory = rootProject.layout.projectDirectory.dir("../../src/content")
@@ -173,13 +174,14 @@ val themeFile: RegularFile = rootProject.layout.projectDirectory.file("../../src
  */
 val fontsDir: Directory = rootProject.layout.projectDirectory.dir("theme/fonts")
 
-val generateTheme by tasks.registering(GenerateTheme::class) {
-    classpath = themeGenerator
-    mainClass.set("com.casco.kettle.theme.MainKt")
-    theme.set(themeFile)
-    fonts.set(fontsDir)
-    argumentProviders.add { listOf(theme, fonts, output, res).map { it.get().asFile.path } }
-}
+val generateTheme =
+    tasks.register<GenerateTheme>("generateTheme") {
+        classpath = themeGenerator
+        mainClass.set("com.casco.kettle.theme.MainKt")
+        theme.set(themeFile)
+        fonts.set(fontsDir)
+        argumentProviders.add { listOf(theme, fonts, output, res).map { it.get().asFile.path } }
+    }
 
 /**
  * The `:art` generator, the same way again: each drawing in `src/content/art/` becomes a VectorDrawable,
@@ -203,20 +205,18 @@ abstract class GenerateArt : JavaExec() {
     abstract val source: DirectoryProperty
 }
 
-val artGenerator: Configuration by configurations.creating {
-    isCanBeConsumed = false
-    attributes { attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.JAVA_RUNTIME)) }
-}
+val artGenerator = generatorClasspath("artGenerator")
 
-val generateArt by tasks.registering(GenerateArt::class) {
-    classpath = artGenerator
-    mainClass.set("com.casco.kettle.art.MainKt")
-    map.set(contentDir.file("art.json"))
-    drawings.set(contentDir.dir("art"))
-    argumentProviders.add {
-        listOf(map, drawings, res, source).map { it.get().asFile.path }
+val generateArt =
+    tasks.register<GenerateArt>("generateArt") {
+        classpath = artGenerator
+        mainClass.set("com.casco.kettle.art.MainKt")
+        map.set(contentDir.file("art.json"))
+        drawings.set(contentDir.dir("art"))
+        argumentProviders.add {
+            listOf(map, drawings, res, source).map { it.get().asFile.path }
+        }
     }
-}
 
 androidComponents {
     // The unit tests run on debug alone: release and benchmark would run the same tests on the same
@@ -229,10 +229,8 @@ androidComponents {
     onVariants { variant ->
         variant.sources.res?.addGeneratedSourceDirectory(generateStrings, GenerateStrings::output)
         variant.sources.res?.addGeneratedSourceDirectory(generateArt, GenerateArt::res)
-        variant.sources.java?.addGeneratedSourceDirectory(generateArt, GenerateArt::source)
-        // `java`, not `kotlin`: the Kotlin Android plugin (2.1 and 2.4 alike) compiles .kt files in the
-        // Java sources but doesn't read AGP's `kotlin` set, which left the generated file out of the build.
-        variant.sources.java?.addGeneratedSourceDirectory(generateTheme, GenerateTheme::output)
+        variant.sources.kotlin?.addGeneratedSourceDirectory(generateArt, GenerateArt::source)
+        variant.sources.kotlin?.addGeneratedSourceDirectory(generateTheme, GenerateTheme::output)
         variant.sources.res?.addGeneratedSourceDirectory(generateTheme, GenerateTheme::res)
         // The seed and packs, packaged as they are: nothing to generate, so read in place.
         variant.sources.assets?.addStaticSourceDirectory(contentDir.asFile.path)

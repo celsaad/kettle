@@ -16,7 +16,7 @@ android {
     defaultConfig {
         applicationId = "com.casco.kettle"
         minSdk = 26
-        targetSdk = 36
+        targetSdk = 37
         // gradle.properties', which /bump moves.
         versionCode = providers.gradleProperty("kettle.versionCode").get().toInt()
         versionName = providers.gradleProperty("kettle.versionName").get()
@@ -267,6 +267,11 @@ tasks.withType<Test>().configureEach {
     // app's targetSdk. Only the test JVM moves; everything still compiles for 17. No toolchain
     // resolver is configured, so a machine without a JDK 21 fails here loudly rather than downloading one.
     javaLauncher.set(javaToolchains.launcherFor { languageVersion.set(JavaLanguageVersion.of(21)) })
+    // From SDK 37 on, every sandbox's setup (`ApplicationSharedMemory.create`) goes through
+    // Robolectric's FileDescriptorInterceptor, which reaches `FileDescriptor` through JDK internals the
+    // module system won't hand an unnamed module. Without the export every test at the targetSdk fails
+    // before its first line, while those pinned to an older `@Config(sdk = ...)` still pass.
+    jvmArgs("--add-exports=java.base/jdk.internal.access=ALL-UNNAMED")
 }
 
 dependencies {
@@ -304,6 +309,7 @@ dependencies {
     testImplementation(libs.robolectric)
     testImplementation(platform(libs.compose.bom))
     testImplementation(libs.compose.ui.test.junit4)
+    testImplementation(libs.espresso.core)
     // The empty activity the compose rule launches. A debug dependency, never a release one.
     debugImplementation(libs.compose.ui.test.manifest)
 }

@@ -34,9 +34,9 @@ import org.robolectric.annotation.Config
 import org.robolectric.util.ReflectionHelpers
 
 /**
- * Who gives a text field focus (#380). Below API 28 the platform gives a window with no
- * focus one, touch mode or not, as the decor is made visible on a return to the app and as [ShellLayout]
- * shows a layer again, and Compose passes it on to the first text field on the screen.
+ * Who gives a text field focus on Android 8, where [ShellLayout] refuses the focus the platform hands
+ * out on its own (#380): on a return to the app and as a layer shows again, but not a tap's or a
+ * FocusRequester's. Each test composes in touch mode, the only mode the shell refuses anything in.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [26])
@@ -54,6 +54,16 @@ class ShellFocusTest {
         val navigator = Navigator()
         compose.runOnUiThread {
             val activity = compose.activity
+            // Before the shell composes, so an autofocus runs in touch mode too. As the first touch on a
+            // device does: Robolectric's setInTouchMode doesn't reach a window already attached, and the
+            // view root that keeps the mode is hidden API.
+            val root = ReflectionHelpers.callInstanceMethod<Any>(activity.window.decorView, "getViewRootImpl")
+            ReflectionHelpers.callInstanceMethod<Boolean>(
+                root,
+                "ensureTouchMode",
+                ReflectionHelpers.ClassParameter.from(Boolean::class.javaPrimitiveType, true),
+            )
+            assertTrue("the shell only refuses focus in touch mode", activity.window.decorView.isInTouchMode)
             shell =
                 ShellLayout(
                     activity,
@@ -75,16 +85,6 @@ class ShellFocusTest {
             navigator.moves = shell.sheet
             activity.setContentView(shell)
         }
-        // As the first touch on a device does. Robolectric's setInTouchMode doesn't reach a window already
-        // attached, and the view root that keeps the mode is hidden API.
-        compose.runOnUiThread {
-            val root = ReflectionHelpers.callInstanceMethod<Any>(compose.activity.window.decorView, "getViewRootImpl")
-            ReflectionHelpers.callInstanceMethod<Boolean>(
-                root,
-                "ensureTouchMode",
-                ReflectionHelpers.ClassParameter.from(Boolean::class.javaPrimitiveType, true),
-            )
-        }
         compose.waitForIdle()
     }
 
@@ -92,7 +92,6 @@ class ShellFocusTest {
     private fun returnToTheApp() {
         compose.runOnUiThread {
             val decor = compose.activity.window.decorView
-            assertTrue("the platform only hands focus down in touch mode here", decor.isInTouchMode)
             decor.visibility = View.INVISIBLE
             decor.visibility = View.VISIBLE
         }
@@ -107,7 +106,7 @@ class ShellFocusTest {
     }
 
     @Test
-    fun `the tabs shown again as a sheet closes focus no text field`() {
+    fun `closing a sheet focuses no text field`() {
         show()
         compose.runOnUiThread {
             shell.show(Place.Sheet)

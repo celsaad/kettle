@@ -235,8 +235,8 @@ androidComponents {
         variant.sources.res?.addGeneratedSourceDirectory(generateStrings, GenerateStrings::output)
         variant.sources.res?.addGeneratedSourceDirectory(generateArt, GenerateArt::res)
         variant.sources.java?.addGeneratedSourceDirectory(generateArt, GenerateArt::source)
-        // `java`, not `kotlin`: Kotlin 2.1's Android plugin compiles .kt files in the Java sources but
-        // doesn't read AGP's `kotlin` set, which left the generated file out of the build.
+        // `java`, not `kotlin`: the Kotlin Android plugin (2.1 and 2.4 alike) compiles .kt files in the
+        // Java sources but doesn't read AGP's `kotlin` set, which left the generated file out of the build.
         variant.sources.java?.addGeneratedSourceDirectory(generateTheme, GenerateTheme::output)
         variant.sources.res?.addGeneratedSourceDirectory(generateTheme, GenerateTheme::res)
         // The seed and packs, packaged as they are: nothing to generate, so read in place.

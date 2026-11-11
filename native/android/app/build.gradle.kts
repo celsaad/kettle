@@ -74,8 +74,8 @@ android {
     // `NavigateReceiver`, adb's way to steer the navigator: the dev build's, and the benchmark build's, so
     // route-check runs against a release-built shell too (#309). Never Play's release.
     sourceSets {
-        getByName("debug").kotlin.directories.add("src/steering/java")
-        getByName("benchmark").kotlin.directories.add("src/steering/java")
+        getByName("debug").kotlin.directories.add("src/steering/kotlin")
+        getByName("benchmark").kotlin.directories.add("src/steering/kotlin")
     }
 
     buildFeatures { compose = true }
@@ -105,6 +105,13 @@ val soundsDir: Directory = rootProject.layout.projectDirectory.dir("../../assets
 /** The locale bundles, read in place so there is only one copy of every translation. */
 val localesDir: Directory = rootProject.layout.projectDirectory.dir("../../src/i18n/locales")
 
+/** What a generator task runs on: a project's runtime jar, resolved here and never published. */
+fun generatorClasspath(name: String): Configuration =
+    configurations.create(name) {
+        isCanBeConsumed = false
+        attributes { attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.JAVA_RUNTIME)) }
+    }
+
 /**
  * The `:strings` generator, run on every build that needs resources. Its output is a build directory
  * and never committed: a generated file in the tree can go stale, and a check that it hasn't is one
@@ -120,11 +127,7 @@ abstract class GenerateStrings : JavaExec() {
     abstract val output: DirectoryProperty
 }
 
-val stringsGenerator: Configuration =
-    configurations.create("stringsGenerator") {
-        isCanBeConsumed = false
-        attributes { attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.JAVA_RUNTIME)) }
-    }
+val stringsGenerator = generatorClasspath("stringsGenerator")
 
 val generateStrings =
     tasks.register<GenerateStrings>("generateStrings") {
@@ -157,11 +160,7 @@ abstract class GenerateTheme : JavaExec() {
     abstract val res: DirectoryProperty
 }
 
-val themeGenerator: Configuration =
-    configurations.create("themeGenerator") {
-        isCanBeConsumed = false
-        attributes { attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.JAVA_RUNTIME)) }
-    }
+val themeGenerator = generatorClasspath("themeGenerator")
 
 /** The shipped seed and content packs (`ShippedContent`), at the asset root. */
 val contentDir: Directory = rootProject.layout.projectDirectory.dir("../../src/content")
@@ -206,11 +205,7 @@ abstract class GenerateArt : JavaExec() {
     abstract val source: DirectoryProperty
 }
 
-val artGenerator: Configuration =
-    configurations.create("artGenerator") {
-        isCanBeConsumed = false
-        attributes { attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.JAVA_RUNTIME)) }
-    }
+val artGenerator = generatorClasspath("artGenerator")
 
 val generateArt =
     tasks.register<GenerateArt>("generateArt") {

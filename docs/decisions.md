@@ -1096,8 +1096,8 @@ decision assembled across several commits. Open work belongs in the sections at 
     kept in `package.json` only for Gradle to reach into would be the one thing that broke that.
     Only the faces `Fonts` names are committed, not the families. A face added to `theme.json` means
     adding its file, and `:theme` fails the build naming the missing path until it's there.
-  - Hand-kept lists remain where a data file can't reach, on purpose: `LocalePreviews` names each
-    language, because a `@Preview` locale has to be a compile-time constant.
+  - One hand-kept list remains where a data file can't reach, on purpose: `LocalePreviews` names
+    each language, because a `@Preview` locale has to be a compile-time constant.
   - **What was `app.json`'s is `native/android`'s** (#148, then #357). Until M7 the build read the
     package, version, name and brand colours from `app.json`, and a change to its icons, permissions
     or plugins was copied into the shell by hand. With `app.json` gone each has one home: the version

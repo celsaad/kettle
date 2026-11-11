@@ -182,7 +182,7 @@ internal data class SymbolLook(
     val border: Dp = 1.dp,
     val accent: Boolean = false,
     val fill: Color = Color.Transparent,
-    val placement: Placement = Placement.CENTRE,
+    val placement: CirclePlacement = CirclePlacement.CENTRE,
 ) {
     companion object {
         /** The set row's −/+, 26 drawn. */
@@ -214,7 +214,15 @@ internal data class SymbolLook(
  * between them, so centred circles leave as much space inside the pair as beside it (#372); pressing
  * each against the other moves that space outward without shrinking or overlapping a target (#263).
  */
-internal enum class Placement { CENTRE, START, END }
+internal enum class CirclePlacement(
+    val alignment: Alignment,
+    val startInset: Dp,
+    val endInset: Dp,
+) {
+    CENTRE(Alignment.Center, 0.dp, 0.dp),
+    START(Alignment.CenterStart, PAIR_INSET, 0.dp),
+    END(Alignment.CenterEnd, 0.dp, PAIR_INSET),
+}
 
 /**
  * A symbol-only control, which has nothing on screen to take a name from, so [description] is required.
@@ -249,22 +257,15 @@ private fun RoundButton(
             .alpha(if (enabled) 1f else DISABLED_ALPHA)
             .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
             .semantics { contentDescription = description },
-        contentAlignment =
-            when (look.placement) {
-                Placement.CENTRE -> Alignment.Center
-                Placement.START -> Alignment.CenterStart
-                Placement.END -> Alignment.CenterEnd
-            },
+        contentAlignment = look.placement.alignment,
     ) {
         val accentBorder = if (look.accent) RunnerColors.accent.copy(alpha = SOFT_BORDER_ALPHA) else RunnerColors.border
         Box(
             Modifier
                 // The inset is inside the target, so a circle grown by large text takes the far side's
                 // space first and the target only widens once that's gone.
-                .padding(
-                    start = if (look.placement == Placement.START) PAIR_INSET else 0.dp,
-                    end = if (look.placement == Placement.END) PAIR_INSET else 0.dp,
-                ).sizeIn(minWidth = look.size, minHeight = look.size)
+                .padding(start = look.placement.startInset, end = look.placement.endInset)
+                .sizeIn(minWidth = look.size, minHeight = look.size)
                 .clip(CircleShape)
                 .background(if (look.accent) RunnerColors.accentSoft else look.fill)
                 .border(look.border, accentBorder, CircleShape),

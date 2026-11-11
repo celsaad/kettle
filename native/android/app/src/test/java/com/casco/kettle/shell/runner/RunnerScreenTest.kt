@@ -275,8 +275,8 @@ class RunnerScreenTest {
         show(running(plan(block(squat))))
         val minus = button("Diminuir séries").assertIsEnabled().assertIsTarget().getUnclippedBoundsInRoot()
         val plus = button("Aumentar séries").assertIsTarget().getUnclippedBoundsInRoot()
-        val swap = button("TROCAR").assertHeightIsAtLeast(48.dp).getUnclippedBoundsInRoot()
-        // No point is inside two targets (#263), with −/+'s circles pressed together (#372).
+        val swap = button("TROCAR").assertIsTarget().getUnclippedBoundsInRoot()
+        // No point is inside two targets (#263), whichever way −/+ draw their circles inside them (#372).
         assertTrue("− $minus overlaps + $plus", minus.right <= plus.left)
         assertTrue("+ $plus overlaps SWAP $swap", plus.right <= swap.left)
         val floor = started(plan(block(squat))).after(RunnerCommand.DropSet)

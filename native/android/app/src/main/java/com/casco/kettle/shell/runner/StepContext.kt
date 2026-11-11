@@ -113,10 +113,10 @@ internal fun SetCountRow(
         if (readings.canAddSet) {
             SymbolButton(R.drawable.icon_remove, stringResource(R.string.common_decrease, sets), {
                 context.send(RunnerCommand.DropSet)
-            }, readings.canDropSet, SymbolLook.Small.copy(placement = Placement.END))
+            }, readings.canDropSet, look = SymbolLook.Small.copy(placement = CirclePlacement.END))
             SymbolButton(R.drawable.icon_add, stringResource(R.string.common_increase, sets), {
                 context.send(RunnerCommand.AddSet)
-            }, look = SymbolLook.Small.copy(placement = Placement.START))
+            }, look = SymbolLook.Small.copy(placement = CirclePlacement.START))
         }
         if (readings.canSwap) {
             PillControl(stringResource(R.string.session_swap_action)) { context.controls.open(Overlay.SWAP_PICKER) }

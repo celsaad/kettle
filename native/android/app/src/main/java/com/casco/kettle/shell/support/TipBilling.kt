@@ -101,7 +101,7 @@ class PlayTipBilling(
             client.startConnection(
                 object : BillingClientStateListener {
                     override fun onBillingSetupFinished(result: BillingResult) {
-                        if (continuation.isActive) continuation.resume(result.responseCode == BillingResponseCode.OK)
+                        if (continuation.isActive) continuation.resume(result.ok)
                     }
 
                     // Before setup finished, it never connected. After, the library reconnects itself.
@@ -124,7 +124,7 @@ class PlayTipBilling(
             }
         val params = QueryProductDetailsParams.newBuilder().setProductList(query).build()
         val fetched = client.queryProductDetails(params)
-        if (fetched.billingResult.responseCode != BillingResponseCode.OK) return null
+        if (!fetched.billingResult.ok) return null
         details.clear()
         return fetched.productDetailsList.orEmpty().mapNotNull { product ->
             val price = product.oneTimePurchaseOfferDetailsList?.firstOrNull()?.formattedPrice ?: return@mapNotNull null
@@ -138,14 +138,14 @@ class PlayTipBilling(
             client.queryPurchasesAsync(
                 QueryPurchasesParams.newBuilder().setProductType(ProductType.INAPP).build(),
             )
-        if (held.billingResult.responseCode != BillingResponseCode.OK) return null
+        if (!held.billingResult.ok) return null
         return held.purchasesList.map(::storePurchase)
     }
 
     override suspend fun consume(purchase: StorePurchase): Boolean =
         client
             .consumePurchase(ConsumeParams.newBuilder().setPurchaseToken(purchase.token).build())
-            .billingResult.responseCode == BillingResponseCode.OK
+            .billingResult.ok
 
     override fun launch(sku: String) {
         val product = details[sku]
@@ -169,7 +169,7 @@ class PlayTipBilling(
                 BillingFlowParams.newBuilder().setProductDetailsParamsList(listOf(params)).build(),
             )
         // A flow that started reports its end to the listener. One that didn't start reports here only.
-        if (result.responseCode != BillingResponseCode.OK) onUpdate(updateOf(result, null))
+        if (!result.ok) onUpdate(updateOf(result, null))
     }
 
     override fun close() = client.endConnection()
@@ -192,3 +192,5 @@ class PlayTipBilling(
             token = purchase.purchaseToken,
         )
 }
+
+private val BillingResult.ok get() = responseCode == BillingResponseCode.OK

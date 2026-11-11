@@ -228,11 +228,10 @@ private class MappingKeys {
  * same file is refused on the other side. A TAB after the token (`-<TAB>x`, `a:<TAB>b`) is separation
  * on both, so it isn't checked.
  *
- * Inside a flow collection or a quoted scalar this checks nothing, and the two still part there:
- * js-yaml refuses a TAB as separation in a flow collection that is a key's value (`a: {b:<TAB>1}`,
- * `a: [b,<TAB>c]`, though not the same at the top level), and before a quoted scalar's continuation on
- * an unindented line, as deficient indentation, where the engine loads all of them. That is a js-yaml
- * quirk rather than YAML 1.2, and left for its own change.
+ * Continuation lines are not checked, and the two still part there (#382). js-yaml refuses a flow
+ * scalar's or flow collection's continuation line indented by fewer spaces than it needs (`a: "x` /
+ * `y"`, or `a: x` / `<TAB>y`), as YAML 1.2 does, and the engine loads it. js-yaml also refuses a TAB on
+ * the same line as a flow collection under a key (`a: {b:<TAB>1}`), which YAML 1.2 allows.
  *
  * On tokens rather than events, because no event carries where a sequence's `-` was.
  */

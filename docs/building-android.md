@@ -144,6 +144,9 @@ so did the job's 90-minute timeout, now 30.
 The shell's `app/build.gradle.kts` gives the release build type an `upload` signing config **only when
 `KETTLE_UPLOAD_KEYSTORE` is set**, reading the path and the three passwords from the environment at
 Gradle time. Nothing is written into a file, so a failed build's tree is safe to attach to a run.
+That holds because `android.yml` passes `--no-configuration-cache`: `gradle.properties` turns the
+configuration cache on, and with it a configuration that read the passwords is written under
+`native/android/.gradle/`. A signed build run by hand wants the same flag.
 Everywhere else — a local `:app:build`, `ci.yml`'s `gradlew build` — release builds come out
 unsigned, which is harmless: an unsigned file installs nowhere and Play refuses it.
 

@@ -265,6 +265,9 @@ class ThemeSource(
 }
 
 tasks.withType<Test>().configureEach {
+    // Two Robolectric JVMs, not one: the suite is the build's longest task, and CI's runner has the
+    // cores for a second. More forks measured no faster, each paying Robolectric's startup again.
+    maxParallelForks = 2
     jvmArgumentProviders.add(LocaleBundles(localesDir))
     jvmArgumentProviders.add(ThemeSource(themeFile))
     // Robolectric refuses to run SDK 35 or later on a JVM older than 21, and these tests run at the

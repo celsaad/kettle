@@ -1,21 +1,10 @@
 import io.gitlab.arturbosch.detekt.Detekt
 
-// The R8 that Kotlin 2.4 needs, ahead of AGP's own; see `r8` in the catalog.
-buildscript {
-    repositories {
-        google()
-    }
-    dependencies {
-        classpath(libs.r8)
-    }
-}
-
 plugins {
     // Gives the root its own `check`, so ktlint covers this script and settings.gradle.kts too.
     base
     alias(libs.plugins.android.application) apply false
     alias(libs.plugins.android.test) apply false
-    alias(libs.plugins.kotlin.android) apply false
     alias(libs.plugins.kotlin.jvm) apply false
     alias(libs.plugins.kotlin.multiplatform) apply false
     alias(libs.plugins.kotlin.compose) apply false

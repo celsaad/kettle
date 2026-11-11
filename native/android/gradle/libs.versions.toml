@@ -1,12 +1,10 @@
 [versions]
-# AGP is still the M0 spike's, React Native's own; it moves to 9 in #361, which takes built-in Kotlin.
-agp = "8.12.0"
+# The newest AGP inside every published compatibility table (#337): 9.5 is past Kotlin 2.4.21's tested
+# range. Its built-in Kotlin compiles `:app` and `:benchmark`, at the KGP the plugins below put on the
+# classpath. Gradle 9.6+ refuses AGP 8, so the wrapper and this move together.
+agp = "9.3.3"
 # No newer than stable Compose Multiplatform supports, so M8 doesn't start with a downgrade (#345).
 kotlin = "2.4.21"
-# AGP 8.12 bundles R8 8.12, which can't read Kotlin 2.4's metadata; 2.4 needs R8 9.1.29 or newer
-# (developer.android.com/build/kotlin-support). Put on the root buildscript's classpath, which wins over
-# AGP's own. Goes with AGP 9 (#361), whose bundled R8 is new enough.
-r8 = "9.1.57"
 # detekt 1.23 is built against Kotlin 2.0.21 and refuses to run on any other compiler; see the
 # resolution pin in the root build script. detekt 2.0 is still alpha.
 detekt = "1.23.8"
@@ -74,13 +72,11 @@ androidx-test-junit = { module = "androidx.test.ext:junit", version.ref = "andro
 billing = { module = "com.android.billingclient:billing-ktx", version.ref = "billing" }
 reorderable = { module = "sh.calvin.reorderable:reorderable", version.ref = "reorderable" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinxDatetime" }
-r8 = { module = "com.android.tools:r8", version.ref = "r8" }
 snakeyaml-engine-kmp = { module = "it.krzeminski:snakeyaml-engine-kmp", version.ref = "snakeyamlEngineKmp" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 android-test = { id = "com.android.test", version.ref = "agp" }
-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }

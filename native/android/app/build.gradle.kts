@@ -268,9 +268,11 @@ tasks.withType<Test>().configureEach {
     // resolver is configured, so a machine without a JDK 21 fails here loudly rather than downloading one.
     javaLauncher.set(javaToolchains.launcherFor { languageVersion.set(JavaLanguageVersion.of(21)) })
     // From SDK 37 on, every sandbox's setup (`ApplicationSharedMemory.create`) goes through
-    // Robolectric's FileDescriptorInterceptor, which reaches `FileDescriptor` through JDK internals the
-    // module system won't hand an unnamed module. Without the export every test at the targetSdk fails
-    // before its first line, while those pinned to an older `@Config(sdk = ...)` still pass.
+    // Robolectric's FileDescriptorInterceptor, which reaches `FileDescriptor` through
+    // `jdk.internal.access.SharedSecrets`, a package the module system won't hand an unnamed module.
+    // Without the export every test at the targetSdk fails before its first line, while those pinned to
+    // an older `@Config(sdk = ...)` still pass. It goes once a Robolectric release stops calling
+    // `SharedSecrets` there.
     jvmArgs("--add-exports=java.base/jdk.internal.access=ALL-UNNAMED")
 }
 
@@ -309,7 +311,12 @@ dependencies {
     testImplementation(libs.robolectric)
     testImplementation(platform(libs.compose.bom))
     testImplementation(libs.compose.ui.test.junit4)
-    testImplementation(libs.espresso.core)
+    constraints {
+        // Lifts the espresso-core Compose's ui-test brings (3.5.0), whose input injection reflects on
+        // `InputManager.getInstance()`, a method SDK 37 removed. 3.6.1 fails the same way; 3.7.0 is the
+        // first release that works. Delete this once ui-test brings 3.7.0 or later itself.
+        testImplementation(libs.espresso.core)
+    }
     // The empty activity the compose rule launches. A debug dependency, never a release one.
     debugImplementation(libs.compose.ui.test.manifest)
 }

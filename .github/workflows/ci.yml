@@ -7,10 +7,11 @@ on:
     branches: [master]
   pull_request:
 
-# A newer push to the same PR supersedes the run still going. master's runs are never cancelled, so
-# each merge keeps a complete run (and the Gradle cache it writes).
+# A newer push to the same PR supersedes the run still going. master's group is its commit, so every
+# merge gets a run of its own, side by side with the last: grouped by ref instead, a burst of merges
+# would queue, and GitHub drops all but the newest waiting run in a group.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
@@ -111,21 +112,33 @@ jobs:
 
       # The key lets setup-gradle save the configuration cache between runs, which it holds encrypted
       # because a configuration can capture secrets. Without the secret it skips only that part, and
-      # the build still configures from scratch and runs its tasks in parallel.
+      # the build still configures from scratch and runs its tasks in parallel. The secret is a random
+      # AES key, made with `openssl rand -base64 16 | gh secret set GRADLE_ENCRYPTION_KEY`; replacing
+      # it costs one run's configuration, nothing more.
       - uses: gradle/actions/setup-gradle@v4
         with:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
-      # Robolectric fetches its android-all jars (about 500 MB, one per SDK the tests run at) into
-      # ~/.m2 at test time, outside Gradle's caches, so setup-gradle never saved them and every run
-      # downloaded them again. Keyed on the catalog (Robolectric's version) and the app script
-      # (targetSdk); the prefix restore keeps the jars a change didn't touch, and a jar still missing,
-      # like a new test's `@Config(sdk = ...)`, is fetched as before.
+      # Robolectric fetches its android-all jars, one per SDK the tests run at, into ~/.m2 at test
+      # time, outside Gradle's caches, so setup-gradle never saved them and every run downloaded them
+      # again. The key is exactly what picks the jars: Robolectric's version, targetSdk (the default
+      # SDK) and every `@Config(sdk = ...)` in the tests, so no other edit writes a new entry, and one
+      # that adds an SDK does. The prefix restore keeps the jars it didn't change.
+      - name: Name Robolectric's SDK set
+        id: robolectric
+        run: |
+          set=$(
+            grep -h '^robolectric = "' gradle/libs.versions.toml
+            grep -ho 'targetSdk = [0-9]*' app/build.gradle.kts
+            grep -rho '@Config(sdk = [^)]*' app/src/test | sort -u
+          )
+          echo "key=$(printf '%s' "$set" | sha256sum | cut -c1-16)" >> "$GITHUB_OUTPUT"
+
       - name: Restore Robolectric's SDK jars
         uses: actions/cache@v4
         with:
           path: ~/.m2/repository/org/robolectric
-          key: robolectric-${{ hashFiles('native/android/gradle/libs.versions.toml', 'native/android/app/build.gradle.kts') }}
+          key: robolectric-${{ steps.robolectric.outputs.key }}
           restore-keys: robolectric-
 
       - name: Build, lint and test

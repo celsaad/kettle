@@ -94,11 +94,9 @@ jobs:
         # above while configuring, and a cached configuration would write them to disk. A release
         # build runs once, so it has nothing to reuse anyway.
         run: |
-          if [ "$VARIANT" = "apk" ]; then
-            ./gradlew :app:assembleRelease --build-cache --no-configuration-cache
-          else
-            ./gradlew :app:bundleRelease --build-cache --no-configuration-cache
-          fi
+          task=:app:bundleRelease
+          if [ "$VARIANT" = "apk" ]; then task=:app:assembleRelease; fi
+          ./gradlew "$task" --build-cache --no-configuration-cache
 
       # Deleted before the artifact upload rather than after, so a failure in between can't sweep the
       # keystore into a partial artifact.

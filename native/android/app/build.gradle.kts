@@ -265,8 +265,8 @@ class ThemeSource(
 }
 
 tasks.withType<Test>().configureEach {
-    // Two Robolectric JVMs, not one: CI's runner has four cores and the suite is the build's longest
-    // task. Four forks measured no faster than two, each paying Robolectric's startup again.
+    // Two Robolectric JVMs, not one: the suite is the build's longest task, and CI's runner has the
+    // cores for a second. More forks measured no faster, each paying Robolectric's startup again.
     maxParallelForks = 2
     jvmArgumentProviders.add(LocaleBundles(localesDir))
     jvmArgumentProviders.add(ThemeSource(themeFile))

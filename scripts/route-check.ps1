@@ -140,9 +140,13 @@ function Send-Route([string]$url) {
   & adb @target shell am broadcast -n $receiver --es url "'$url'" | Out-Null
 }
 
+# topResumedActivity from Android 10; before it, only mResumedActivity names the top (the API 26 AVD,
+# #364). From 10 on mResumedActivity is per task, so it's read only when there's no topResumedActivity.
 function Test-Foreground {
-  (& adb @target shell dumpsys activity activities | Select-String -Pattern 'topResumedActivity' |
-    Select-Object -First 1) -match [regex]::Escape($package)
+  $dump = & adb @target shell dumpsys activity activities
+  $top = $dump | Select-String -Pattern 'topResumedActivity' | Select-Object -First 1
+  if (-not $top) { $top = $dump | Select-String -Pattern 'mResumedActivity' | Select-Object -First 1 }
+  $top -match [regex]::Escape($package)
 }
 
 # Polls rather than sleeping a fixed time. A dump takes about a second on the S25+, which sets the
@@ -161,8 +165,13 @@ function Wait-For([string]$text) {
 $previousEncoding = [Console]::OutputEncoding
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 try {
-  # The runner asks for it on its first start, and the prompt would sit over every later step.
-  & adb @target shell pm grant $package android.permission.POST_NOTIFICATIONS
+  # The runner asks for it on its first start, and the prompt would sit over every later step. Only from
+  # Android 13, which added it: below that the grant fails, and minSdk is 26 (#364).
+  $sdk = 0
+  [void][int]::TryParse("$(& adb @target shell getprop ro.build.version.sdk)".Trim(), [ref]$sdk)
+  if ($sdk -ge 33) {
+    & adb @target shell pm grant $package android.permission.POST_NOTIFICATIONS
+  }
   Start-App
   # From wherever the last run or the user left it.
   Send-Route '/'

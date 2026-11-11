@@ -6,7 +6,6 @@ import android.media.AudioAttributes
 import android.media.AudioFocusRequest
 import android.media.AudioManager
 import android.media.SoundPool
-import android.os.Build
 import android.util.Log
 import com.casco.kettle.domain.RunnerCue
 import java.io.IOException
@@ -44,14 +43,10 @@ class RunnerCues(
     private val audio = context.getSystemService(AudioManager::class.java)
     private val notifications = context.getSystemService(NotificationManager::class.java)
     private val focus =
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            AudioFocusRequest
-                .Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
-                .setAudioAttributes(attributes)
-                .build()
-        } else {
-            null
-        }
+        AudioFocusRequest
+            .Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
+            .setAudioAttributes(attributes)
+            .build()
 
     private val sounds: Map<RunnerCue, Int> =
         RunnerCue.entries.mapNotNull { cue -> load(cue)?.let { cue to it } }.toMap()
@@ -115,29 +110,11 @@ class RunnerCues(
             it != NotificationManager.INTERRUPTION_FILTER_ALL && it != NotificationManager.INTERRUPTION_FILTER_UNKNOWN
         }
 
-    private fun requestFocus(): Boolean {
-        val granted =
-            if (focus != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                audio.requestAudioFocus(focus)
-            } else {
-                @Suppress("DEPRECATION")
-                audio.requestAudioFocus(
-                    null,
-                    AudioManager.STREAM_MUSIC,
-                    AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK,
-                )
-            }
-        return granted == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
-    }
+    private fun requestFocus(): Boolean = audio.requestAudioFocus(focus) == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
 
     private fun abandonFocus() {
         release = null
-        if (focus != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            audio.abandonAudioFocusRequest(focus)
-        } else {
-            @Suppress("DEPRECATION")
-            audio.abandonAudioFocus(null)
-        }
+        audio.abandonAudioFocusRequest(focus)
     }
 }
 

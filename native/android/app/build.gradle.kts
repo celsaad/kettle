@@ -16,7 +16,7 @@ android {
 
     defaultConfig {
         applicationId = "com.casco.kettle"
-        minSdk = 24
+        minSdk = 26
         targetSdk = 36
         // gradle.properties', which /bump moves.
         versionCode = providers.gradleProperty("kettle.versionCode").get().toInt()
@@ -84,11 +84,6 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
-        // kotlinx-datetime is java.time underneath on Android, which the platform only has from API 26,
-        // and minSdk is 24 because the RN app this replaces in place is (Expo SDK 57's floor). Without
-        // this, exercise progress and Stats would crash on Android 7. Goes at M7 with React Native,
-        // when minSdk can rise to 26 (docs/native-migration-plan.md).
-        isCoreLibraryDesugaringEnabled = true
     }
 
     // Robolectric reads the merged resources, generated strings included.
@@ -277,7 +272,6 @@ tasks.withType<Test>().configureEach {
 }
 
 dependencies {
-    coreLibraryDesugaring(libs.desugar.jdk.libs)
     // Used directly throughout (NotificationCompat, ViewCompat, FileProvider, coroutines), and declared
     // at what the shell resolved before M7, when RN's modules raised them, so the removal moved
     // neither.

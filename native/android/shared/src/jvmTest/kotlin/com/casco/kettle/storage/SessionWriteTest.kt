@@ -116,8 +116,6 @@ class SessionWriteTest {
             IOException("refused"),
             SecurityException(),
             UnsupportedOperationException(),
-            NoClassDefFoundError("java/nio/file/Path"),
-            NoSuchMethodError("toPath"),
         ).forEachIndexed { i, failure ->
             write(i.toLong(), syncDirectory = { throw failure })
 

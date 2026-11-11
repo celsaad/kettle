@@ -271,7 +271,7 @@ private class TokenIndentation(
     private val blocks = ArrayDeque<Int>()
     private var previousLine = -1
 
-    private val required get() = blocks.lastOrNull()?.plus(1) ?: 0
+    private val requiredIndent get() = blocks.lastOrNull()?.plus(1) ?: 0
 
     /** The error [token] makes, if any. */
     fun visit(token: Token): String? = flowLine(token) ?: structure(token)
@@ -328,12 +328,13 @@ private class TokenIndentation(
     }
 
     /**
-     * Whether [line] holds anything but YAML whitespace, behind fewer leading spaces than [required].
-     * Not `isBlank`, which takes NBSP and the full-width U+3000 for whitespace: YAML's is space and TAB.
+     * Whether [line] holds anything but YAML whitespace, behind fewer leading spaces than
+     * [requiredIndent]. Not `isBlank`, which takes NBSP and the full-width U+3000 for whitespace:
+     * YAML's is space and TAB.
      */
     private fun deficient(line: Int): Boolean {
         val text = lines.getOrNull(line).orEmpty()
-        return text.any { it != ' ' && it != '\t' } && text.takeWhile { it == ' ' }.length < required
+        return text.any { it != ' ' && it != '\t' } && text.takeWhile { it == ' ' }.length < requiredIndent
     }
 
     private fun deficientIndentation(line: Int) = "deficient indentation at line ${line + 1}"

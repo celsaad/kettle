@@ -11,13 +11,16 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.assertWidthIsAtLeast
 import androidx.compose.ui.test.click
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasTestTag
@@ -168,6 +171,8 @@ class RunnerScreenTest {
 
     private fun button(label: String) = compose.onNode((hasText(label) or hasContentDescription(label)) and isButton)
 
+    private fun SemanticsNodeInteraction.assertIsTarget() = assertWidthIsAtLeast(48.dp).assertHeightIsAtLeast(48.dp)
+
     private fun dialogButton(label: String) = compose.onNode(hasText(label) and hasAnyAncestor(isDialog()))
 
     // before the first step
@@ -268,9 +273,12 @@ class RunnerScreenTest {
     @Test
     fun `the set row's controls are 48dp targets, and − is disabled at the floor rather than hidden`() {
         show(running(plan(block(squat))))
-        button("Diminuir séries").assertIsEnabled().assertHeightIsAtLeast(48.dp)
-        button("Aumentar séries").assertHeightIsAtLeast(48.dp)
-        button("TROCAR").assertHeightIsAtLeast(48.dp)
+        val minus = button("Diminuir séries").assertIsEnabled().assertIsTarget().getUnclippedBoundsInRoot()
+        val plus = button("Aumentar séries").assertIsTarget().getUnclippedBoundsInRoot()
+        val swap = button("TROCAR").assertHeightIsAtLeast(48.dp).getUnclippedBoundsInRoot()
+        // No point is inside two targets (#263), with −/+'s circles pressed together (#372).
+        assertTrue("− $minus overlaps + $plus", minus.right <= plus.left)
+        assertTrue("+ $plus overlaps SWAP $swap", plus.right <= swap.left)
         val floor = started(plan(block(squat))).after(RunnerCommand.DropSet)
         show(running(plan(block(squat)), floor))
         button("Diminuir séries").assertIsNotEnabled()

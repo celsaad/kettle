@@ -174,7 +174,7 @@ internal fun TextControl(
 /**
  * How a round control is drawn: its circle's [size], which can be smaller than the 48dp it takes to
  * touch (#263: RN's set row drew 26px with overlapping slop), the type its symbol is sized and coloured
- * by, and whether it's the accented one of a pair, as a stepper's + is.
+ * by, whether it's the accented one of a pair, as a stepper's + is, and where in its target it sits.
  */
 internal data class SymbolLook(
     val size: Dp,
@@ -182,6 +182,7 @@ internal data class SymbolLook(
     val border: Dp = 1.dp,
     val accent: Boolean = false,
     val fill: Color = Color.Transparent,
+    val placement: Placement = Placement.CENTRE,
 ) {
     companion object {
         /** The set row's −/+, 26 drawn. */
@@ -206,6 +207,14 @@ internal data class SymbolLook(
         val Prev = SymbolLook(56.dp, border = HeavyBorder)
     }
 }
+
+/**
+ * Where a round control's circle sits in its target: centred, or against one edge with [PAIR_INSET]
+ * kept on that side, for two buttons that should read as one control. The set row's −/+ have nothing
+ * between them, so centred circles leave as much space inside the pair as beside it (#372); pressing
+ * each against the other moves that space outward without shrinking or overlapping a target (#263).
+ */
+internal enum class Placement { CENTRE, START, END }
 
 /**
  * A symbol-only control, which has nothing on screen to take a name from, so [description] is required.
@@ -240,12 +249,22 @@ private fun RoundButton(
             .alpha(if (enabled) 1f else DISABLED_ALPHA)
             .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
             .semantics { contentDescription = description },
-        contentAlignment = Alignment.Center,
+        contentAlignment =
+            when (look.placement) {
+                Placement.CENTRE -> Alignment.Center
+                Placement.START -> Alignment.CenterStart
+                Placement.END -> Alignment.CenterEnd
+            },
     ) {
         val accentBorder = if (look.accent) RunnerColors.accent.copy(alpha = SOFT_BORDER_ALPHA) else RunnerColors.border
         Box(
             Modifier
-                .sizeIn(minWidth = look.size, minHeight = look.size)
+                // The inset is inside the target, so a circle grown by large text takes the far side's
+                // space first and the target only widens once that's gone.
+                .padding(
+                    start = if (look.placement == Placement.START) PAIR_INSET else 0.dp,
+                    end = if (look.placement == Placement.END) PAIR_INSET else 0.dp,
+                ).sizeIn(minWidth = look.size, minHeight = look.size)
                 .clip(CircleShape)
                 .background(if (look.accent) RunnerColors.accentSoft else look.fill)
                 .border(look.border, accentBorder, CircleShape),
@@ -324,6 +343,7 @@ internal fun PrevTextButton(
     }
 }
 
+private val PAIR_INSET = 4.dp
 private const val DISABLED_ALPHA = 0.4f
 private val PILL_PAD = 10.dp
 private val OUTLINE_PAD = 12.dp

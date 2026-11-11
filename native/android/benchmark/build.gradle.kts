@@ -11,7 +11,7 @@ android {
     defaultConfig {
         // Macrobenchmark's floor for startup timing with a full-display marker.
         minSdk = 29
-        targetSdk = 36
+        targetSdk = 37
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 

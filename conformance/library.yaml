@@ -228,6 +228,66 @@ cases:
     why: one space, then a TAB, before a block key; a TAB is never indentation, so b sits one column in, short of a's two, where a loader counting the TAB as a column would line b up with a and take it
     input: "version: 1\nexercises: []\nworkouts: []\nprograms: []\nextra:\n  a: 1\n \tb: 2\n"
 
+  - name: double-quoted-continuation-unindented
+    why: the name's second line starts at column 4, under its key, one space short of the 5 a value in a mapping at column 4 needs; the spec counts a quoted scalar's continuation lines as indentation, where a loader skipping it would read "Goblet squat"
+    input: "version: 1\nexercises:\n  - id: a\n    name: \"Goblet\n    squat\"\n    type: rest\n    config: { duration_sec: 1 }\nworkouts: []\nprograms: []\n"
+
+  - name: single-quoted-continuation-unindented
+    why: the same as double-quoted-continuation-unindented, single-quoted; the second line is at column 4, one short of 5
+    input: "version: 1\nexercises:\n  - id: a\n    name: 'Goblet\n    squat'\n    type: rest\n    config: { duration_sec: 1 }\nworkouts: []\nprograms: []\n"
+
+  - name: double-quoted-continuation-tab-only
+    why: the name's second line is indented by a TAB alone, which is no indentation, so it starts at column 0, short of the 1 a top-level key's value needs
+    input: "version: 1\nexercises: [{ id: a, name: A, type: rest, notes: \"one\n\ttwo\", config: { duration_sec: 1 } }]\nworkouts: []\nprograms: []\n"
+
+  - name: double-quoted-closing-line-unindented
+    why: the line holding only the closing quote is a continuation line too, at column 0, one short of the 1 it needs
+    input: "version: 1\nexercises: [{ id: a, name: A, type: rest, notes: \"one\n\", config: { duration_sec: 1 } }]\nworkouts: []\nprograms: []\n"
+
+  - name: plain-continuation-tab-only
+    why: a plain scalar's second line behind only a TAB, at column 0, one short of the 1 a top-level key's value needs; a loader skipping the TAB reads one plain scalar "one two", and the schema drops the unknown key
+    input: "version: 1\nexercises: []\nworkouts: []\nprograms: []\nextra: one\n\ttwo\n"
+
+  - name: plain-continuation-after-blank-line-tab-only
+    why: as plain-continuation-tab-only, with a blank line between; the blank line is fine at any indent, the TAB-led one after it is not
+    input: "version: 1\nexercises: []\nworkouts: []\nprograms: []\nextra: one\n\n\ttwo\n"
+
+  - name: ideographic-space-line-in-quoted-scalar
+    why: a line of only U+3000, the full-width space a Japanese keyboard types, is not an empty line; YAML's whitespace is space and TAB alone, so the line holds content at column 0, one short of the 1 it needs
+    input: "version: 1\nexercises: [{ id: a, name: A, type: rest, notes: \"one\n\u3000\n two\", config: { duration_sec: 1 } }]\nworkouts: []\nprograms: []\n"
+
+  - name: flow-sequence-continuation-unindented
+    why: the second exercise's line starts at column 0, one short of the 1 a top-level key's flow value needs on every line after its first
+    input: "version: 1\nexercises: [{ id: a, name: A, type: rest, config: { duration_sec: 1 } },\n{ id: b, name: B, type: rest, config: { duration_sec: 1 } }]\nworkouts: []\nprograms: []\n"
+
+  - name: flow-sequence-continuation-tab-only
+    why: as flow-sequence-continuation-unindented, behind a TAB alone, which is no indentation
+    input: "version: 1\nexercises: [{ id: a, name: A, type: rest, config: { duration_sec: 1 } },\n\t{ id: b, name: B, type: rest, config: { duration_sec: 1 } }]\nworkouts: []\nprograms: []\n"
+
+  - name: flow-closing-bracket-unindented
+    why: the line holding only the closing bracket is a continuation line too, at column 0, one short of the 1 it needs; YAML 1.2 refuses the layout many hand-written files use
+    input: "version: 1\nexercises: [\n  { id: a, name: A, type: rest, config: { duration_sec: 1 } },\n]\nworkouts: []\nprograms: []\n"
+
+  - name: flow-mapping-continuation-under-its-key
+    why: the config's second line lines up with its key at column 4, one short of the 5 a value in a mapping at column 4 needs
+    input: "version: 1\nexercises:\n  - id: a\n    name: A\n    type: reps\n    config: { sets: 3,\n    target_reps_min: 5, rest_sec: 60 }\nworkouts: []\nprograms: []\n"
+
+  - name: flow-continuation-space-then-tab
+    why: one space, then a TAB, inside a mapping at column 2; the TAB never counts, so the line is at column 1, two short of the 3 it needs
+    input: "version: 1\nexercises: []\nworkouts: []\nprograms: []\nextra:\n  b: [c,\n \td]\n"
+
+  - name: flow-continuation-in-sequence-entry
+    why: a sequence at column 2 needs its entries' continuation lines at column 3, and this one is at 2, under the `-`
+    input: "version: 1\nexercises:\n  - { id: a, name: A, type: rest,\n  config: { duration_sec: 1 } }\nworkouts: []\nprograms: []\n"
+
+  - name: flow-continuation-in-indentless-sequence-entry
+    why: a sequence written at its key's column (column 0) needs continuation lines at column 1, and this one is at 0
+    input: "version: 1\nexercises:\n- { id: a, name: A, type: rest,\nconfig: { duration_sec: 1 } }\nworkouts: []\nprograms: []\n"
+
+  - name: flow-continuation-indented-enough
+    why: the ok side of every case above, so the check can't refuse too much; a blank line and a comment line are fine at any indent, a continuation line one space in is enough for a top-level key's value, and a TAB may follow those spaces
+    input: "version: 1\nexercises: [\n  { id: a, name: A, type: rest,\n \tconfig: { duration_sec: 1 } },\n\n# a comment at column 0\n { id: b, name: \"B\n \tB\", type: rest, config: { duration_sec: 1 } }\n ]\nworkouts: []\nprograms: []\nextra:\n  b: [c,\n   \td]\n"
+
   # --- Document shape ---
 
   - name: empty-document

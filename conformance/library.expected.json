@@ -4488,6 +4488,88 @@
     "ok": false,
     "kind": "invalidYaml"
   },
+  "double-quoted-continuation-unindented": {
+    "ok": false,
+    "kind": "invalidYaml"
+  },
+  "single-quoted-continuation-unindented": {
+    "ok": false,
+    "kind": "invalidYaml"
+  },
+  "double-quoted-continuation-tab-only": {
+    "ok": false,
+    "kind": "invalidYaml"
+  },
+  "double-quoted-closing-line-unindented": {
+    "ok": false,
+    "kind": "invalidYaml"
+  },
+  "plain-continuation-tab-only": {
+    "ok": false,
+    "kind": "invalidYaml"
+  },
+  "plain-continuation-after-blank-line-tab-only": {
+    "ok": false,
+    "kind": "invalidYaml"
+  },
+  "ideographic-space-line-in-quoted-scalar": {
+    "ok": false,
+    "kind": "invalidYaml"
+  },
+  "flow-sequence-continuation-unindented": {
+    "ok": false,
+    "kind": "invalidYaml"
+  },
+  "flow-sequence-continuation-tab-only": {
+    "ok": false,
+    "kind": "invalidYaml"
+  },
+  "flow-closing-bracket-unindented": {
+    "ok": false,
+    "kind": "invalidYaml"
+  },
+  "flow-mapping-continuation-under-its-key": {
+    "ok": false,
+    "kind": "invalidYaml"
+  },
+  "flow-continuation-space-then-tab": {
+    "ok": false,
+    "kind": "invalidYaml"
+  },
+  "flow-continuation-in-sequence-entry": {
+    "ok": false,
+    "kind": "invalidYaml"
+  },
+  "flow-continuation-in-indentless-sequence-entry": {
+    "ok": false,
+    "kind": "invalidYaml"
+  },
+  "flow-continuation-indented-enough": {
+    "ok": true,
+    "value": {
+      "version": 1,
+      "exercises": [
+        {
+          "id": "a",
+          "name": "A",
+          "type": "rest",
+          "config": {
+            "durationSec": 1
+          }
+        },
+        {
+          "id": "b",
+          "name": "B B",
+          "type": "rest",
+          "config": {
+            "durationSec": 1
+          }
+        }
+      ],
+      "workouts": [],
+      "programs": []
+    }
+  },
   "empty-document": {
     "ok": false,
     "kind": "invalidYaml"

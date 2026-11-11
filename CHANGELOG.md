@@ -35,6 +35,10 @@ here, next to what it describes.
   key or a list item's `-`, even after spaces, used to import with the TAB read as one more space,
   which can put the line under a different parent than its author meant. Now Import says the file
   isn't valid YAML, as the file format always said. Indent with spaces (#381).
+- **A wrapped line has to be indented on import too**: in a hand-edited library, a quoted value or
+  a `[ ]`/`{ }` list carried onto a next line that isn't indented past its key used to import
+  anyway. Now Import says the file isn't valid YAML and names the line. Indent the carried-on line,
+  closing bracket included, with spaces (#382).
 - **Recent volume in pounds**: with pounds selected, the exercise editor's Recent chart showed a
   weighted exercise's volume in kilograms. It now uses your unit (#271).
 - **Editor labels read naturally in Portuguese and Japanese**: the units beside a field (seconds,

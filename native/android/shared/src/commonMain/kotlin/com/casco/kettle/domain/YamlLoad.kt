@@ -7,6 +7,7 @@ import it.krzeminski.snakeyaml.engine.kmp.api.Load
 import it.krzeminski.snakeyaml.engine.kmp.api.LoadSettings
 import it.krzeminski.snakeyaml.engine.kmp.api.lowlevel.Parse
 import it.krzeminski.snakeyaml.engine.kmp.common.FlowStyle
+import it.krzeminski.snakeyaml.engine.kmp.common.ScalarStyle
 import it.krzeminski.snakeyaml.engine.kmp.constructor.ConstructYamlNull
 import it.krzeminski.snakeyaml.engine.kmp.constructor.core.ConstructYamlCoreBool
 import it.krzeminski.snakeyaml.engine.kmp.constructor.core.ConstructYamlCoreInt
@@ -30,6 +31,7 @@ import it.krzeminski.snakeyaml.engine.kmp.resolver.ScalarResolver
 import it.krzeminski.snakeyaml.engine.kmp.scanner.ScannerImpl
 import it.krzeminski.snakeyaml.engine.kmp.scanner.StreamReader
 import it.krzeminski.snakeyaml.engine.kmp.schema.Schema
+import it.krzeminski.snakeyaml.engine.kmp.tokens.ScalarToken
 import it.krzeminski.snakeyaml.engine.kmp.tokens.Token
 
 /**
@@ -59,8 +61,8 @@ internal fun loadYaml(text: String): YamlLoad =
     try {
         // Separate passes before anything is built. The events: an alias bomb is refused while it is
         // still a few hundred bytes, and depth is counted without the composer's recursion. The
-        // tokens: they alone say where a `-` was (see [checkTabs]).
-        (checkEvents(text) ?: checkTabs(text))?.let(YamlLoad::Invalid)
+        // tokens: they alone say where a `-` was, and how a line was indented (see [checkTokens]).
+        (checkEvents(text) ?: checkTokens(text))?.let(YamlLoad::Invalid)
             ?: YamlLoad.Loaded(Load(loadSettings).loadOne(text))
     } catch (error: YamlEngineException) {
         YamlLoad.Invalid(error.message.orEmpty())
@@ -224,63 +226,135 @@ private class MappingKeys {
 }
 
 /**
- * js-yaml refuses a block key or a block sequence's `-` with a TAB anywhere before it on its line
- * (its `firstTabInLine`), since YAML indentation is spaces only. The engine treats a TAB after leading
- * spaces as more indentation, so `a:` / `  b: 1` / ` <TAB>c: 2` loads there with `c` beside `b`, and the
- * same file is refused on the other side. A TAB after the token (`-<TAB>x`, `a:<TAB>b`) is separation
- * on both, so it isn't checked.
+ * The two indentation rules the engine bends, checked over its tokens.
  *
- * Continuation lines are not checked, and the two still part there (#382). js-yaml refuses a flow
- * scalar's or flow collection's continuation line indented by fewer spaces than it needs (`a: "x` /
- * `y"`, or `a: x` / `<TAB>y`), as YAML 1.2 does, and the engine loads it. js-yaml also refuses a TAB on
- * the same line as a flow collection under a key (`a: {b:<TAB>1}`), which YAML 1.2 allows.
+ * A block key or a block sequence's `-` with a TAB anywhere before it on its line is refused, since
+ * YAML indentation is spaces only (js-yaml's `firstTabInLine`). The engine treats a TAB after leading
+ * spaces as more indentation, so `a:` / `  b: 1` / ` <TAB>c: 2` loads there with `c` beside `b`. A TAB
+ * after the token (`-<TAB>x`, `a:<TAB>b`) is separation, so it isn't checked.
  *
- * On tokens rather than events, because no event carries where a sequence's `-` was.
+ * A flow scalar's continuation line (plain, single- or double-quoted) must be indented, by spaces, past
+ * the block collection it sits in: that collection's column plus one, or 0 at the top level. A TAB may
+ * follow those spaces but never counts towards them. That is YAML 1.2's `s-flow-line-prefix(n+1)`, and
+ * js-yaml's "deficient indentation". The engine skips TABs as it reads a continuation line
+ * (krzema12/snakeyaml-engine-kmp#173) and checks quoted ones not at all, so it loads `a: "x` / `y"` and
+ * `a: x` / `<TAB>y`. The same holds for every line of a flow collection after its first, the one
+ * holding only its closing bracket too, so `a: [b,` / `c]` is refused. A line of only whitespace is an
+ * empty line, fine at any indent, and a comment line is no token's, so neither is checked. Nor are
+ * block scalars, where the two loaders agree.
+ *
+ * Not mirrored, deliberately: js-yaml 5 also refuses a TAB on the same line as a flow collection under
+ * a block node (`a: {b:<TAB>1}`), which YAML 1.2 allows as separation. Where the two part, the spec
+ * decides (#382). Those cases join the corpus once Kotlin writes its goldens (#348).
+ *
+ * On tokens rather than events, because no event carries where a sequence's `-` was. An indentless
+ * sequence (`a:` / `- x`) opens no collection token, and needs none: it sits at its parent's column,
+ * so the required indent is the parent's.
  */
-private fun checkTabs(text: String): String? {
-    if ('\t' !in text) return null
-    // Split where the engine counts a new line, so a token's mark names the right one.
-    val lines = text.split("\r\n", "\n", "\r")
-    var flowDepth = 0
-    val tabIndented =
-        ScannerImpl(loadSettings, StreamReader(loadSettings, text)).asSequence().any { token ->
-            when (token.tokenId) {
-                Token.ID.FlowMappingStart, Token.ID.FlowSequenceStart -> {
-                    flowDepth++
-                    false
-                }
-
-                Token.ID.FlowMappingEnd, Token.ID.FlowSequenceEnd -> {
-                    flowDepth--
-                    false
-                }
-
-                Token.ID.Key, Token.ID.BlockEntry -> {
-                    flowDepth == 0 && token.startMark?.let { tabBefore(lines, it) } == true
-                }
-
-                else -> {
-                    false
-                }
-            }
-        }
-    return if (tabIndented) "tab characters must not be used in indentation" else null
+private fun checkTokens(text: String): String? {
+    val indentation = TokenIndentation(text)
+    return ScannerImpl(
+        loadSettings,
+        StreamReader(loadSettings, text),
+    ).asSequence().firstNotNullOfOrNull(indentation::visit)
 }
 
-/** Whether a TAB comes before [mark] on its line. The engine's columns count code points, not chars. */
-private fun tabBefore(
-    lines: List<String>,
-    mark: Mark,
-): Boolean {
-    val text = lines.getOrNull(mark.line).orEmpty()
-    var at = 0
-    var seen = 0
-    while (seen < mark.column && at < text.length && text[at] != '\t') {
-        at += if (text[at].isHighSurrogate()) 2 else 1
-        seen++
+private class TokenIndentation(
+    text: String,
+) {
+    // Split where the engine counts a new line, so a token's mark names the right one.
+    private val lines = text.split("\r\n", "\n", "\r")
+    private val hasTab = '\t' in text
+    private var flowDepth = 0
+
+    // The columns of the open block collections, innermost last.
+    private val blocks = ArrayDeque<Int>()
+    private var previousLine = -1
+
+    private val requiredIndent get() = blocks.lastOrNull()?.plus(1) ?: 0
+
+    /** The error [token] makes, if any. */
+    fun visit(token: Token): String? = flowLine(token) ?: structure(token)
+
+    // Inside a flow collection, closing bracket included, a token opening a line opens a continuation
+    // line. Read before [structure] moves the depth.
+    private fun flowLine(token: Token): String? {
+        val line = token.startMark?.line ?: previousLine
+        val opensLine = flowDepth > 0 && line > previousLine
+        previousLine = token.endMark?.line ?: line
+        return line.takeIf { opensLine && deficient(it) }?.let(::deficientIndentation)
     }
-    // Stopped short of the column with text left: on a TAB.
-    return seen < mark.column && at < text.length
+
+    private fun structure(token: Token): String? =
+        when (token.tokenId) {
+            Token.ID.BlockMappingStart, Token.ID.BlockSequenceStart -> {
+                token.startMark?.let { blocks.addLast(it.column) }
+                null
+            }
+
+            Token.ID.BlockEnd -> {
+                blocks.removeLastOrNull()
+                null
+            }
+
+            Token.ID.FlowMappingStart, Token.ID.FlowSequenceStart -> {
+                flowDepth++
+                null
+            }
+
+            Token.ID.FlowMappingEnd, Token.ID.FlowSequenceEnd -> {
+                flowDepth--
+                null
+            }
+
+            Token.ID.Key, Token.ID.BlockEntry -> {
+                val tabIndented = hasTab && flowDepth == 0 && token.startMark?.let(::tabBefore) == true
+                if (tabIndented) "tab characters must not be used in indentation" else null
+            }
+
+            Token.ID.Scalar -> {
+                (token as ScalarToken).takeIf { it.style in FLOW_SCALAR_STYLES }?.let(::continuation)
+            }
+
+            else -> {
+                null
+            }
+        }
+
+    private fun continuation(scalar: ScalarToken): String? {
+        val first = (scalar.startMark?.line ?: 0) + 1
+        val last = scalar.endMark?.line ?: -1
+        return (first..last).firstOrNull(::deficient)?.let(::deficientIndentation)
+    }
+
+    /**
+     * Whether [line] holds anything but YAML whitespace, behind fewer leading spaces than
+     * [requiredIndent]. Not `isBlank`, which takes NBSP and the full-width U+3000 for whitespace:
+     * YAML's is space and TAB.
+     */
+    private fun deficient(line: Int): Boolean {
+        val text = lines.getOrNull(line).orEmpty()
+        return text.any { it != ' ' && it != '\t' } && text.takeWhile { it == ' ' }.length < requiredIndent
+    }
+
+    private fun deficientIndentation(line: Int) = "deficient indentation at line ${line + 1}"
+
+    /** Whether a TAB comes before [mark] on its line. The engine's columns count code points, not chars. */
+    private fun tabBefore(mark: Mark): Boolean {
+        val text = lines.getOrNull(mark.line).orEmpty()
+        var at = 0
+        var seen = 0
+        while (seen < mark.column && at < text.length && text[at] != '\t') {
+            at += if (text[at].isHighSurrogate()) 2 else 1
+            seen++
+        }
+        // Stopped short of the column with text left: on a TAB.
+        return seen < mark.column && at < text.length
+    }
+
+    private companion object {
+        val FLOW_SCALAR_STYLES = setOf(ScalarStyle.PLAIN, ScalarStyle.SINGLE_QUOTED, ScalarStyle.DOUBLE_QUOTED)
+    }
 }
 
 /** A scalar as the composer types it: an absent or `!` tag is resolved, any other is taken as written. */

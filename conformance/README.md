@@ -114,6 +114,11 @@ Every one of these has a case, because each is a default that differs between YA
   an integer past 2^53 rounds to a double first, the digits are the fewest that read back (the even
   one of two equally near), and the exponent form starts below 1e-6 and from 1e21. A platform's own
   number printing differs from that in layout, and some runtimes' in the digits too.
+- **A continuation line is indented by spaces past its block collection**: every line after the
+  first of a plain or quoted scalar, or of a flow collection (its closing bracket included), needs
+  more leading spaces than the column of the block mapping or sequence it sits in, none at the top
+  level. A TAB may follow those spaces but never counts, a line of only spaces and TABs is empty and
+  passes, and so does a comment line. Some loaders skip TABs here or don't check quoted scalars.
 - **At most 1000 aliases** per document. The 1001st is a YAML error, raised before the schema runs.
 - **Repair clamps what the schema reports as past a ceiling, and the top of the safe-integer range
   is one.** `target_reps_min: 1e16` has no ceiling of its own, and still repairs to 2^53 − 1.

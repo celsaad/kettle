@@ -68,22 +68,19 @@ internal fun writeAtomically(
     // Absolute, unlike the parentFile above: a bare relative name has no parent until it's made one.
     val dir = file.absoluteFile.parentFile ?: return
     // The write has already landed, so nothing here may undo it: an IOException (Windows can't open a
-    // directory), a SecurityException, an UnsupportedOperationException (a filesystem with no such
-    // sync), or API 24–25's missing `java.nio.file` and `File.toPath`, until #364 makes 26 the floor.
+    // directory), a SecurityException, or an UnsupportedOperationException (a filesystem with no such
+    // sync).
     try {
         syncDirectory(dir)
     } catch (_: IOException) {
     } catch (_: SecurityException) {
     } catch (_: UnsupportedOperationException) {
-    } catch (_: NoClassDefFoundError) {
-    } catch (_: NoSuchMethodError) {
     }
 }
 
 /**
  * Makes a rename into [dir] durable (#333): without it, a power cut can lose the write, though never
- * empty the file, since the old one is whole until the rename is. Opening a directory is
- * `java.nio.file`, API 26, which minSdk reaches with #364; below it, the call fails and is skipped.
+ * empty the file, since the old one is whole until the rename is.
  */
 private fun forceDirectory(dir: File) {
     FileChannel.open(dir.toPath(), StandardOpenOption.READ).use { it.force(true) }

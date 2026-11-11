@@ -532,8 +532,9 @@ toolchain moves ride the same release as removal rather than following it.
 inside every published compatibility table, held no newer than stable Compose Multiplatform supports
 (M8):
 
-1. `minSdk` 26, with core library desugaring and the unused navigation-compose deleted (#364). Android
-   7.x installs stay on 0.15.0; that was the owner's call, without a usage threshold (#340).
+1. `minSdk` 26, with core library desugaring deleted (#364). navigation-compose stays: it wasn't
+   unused, since `Shell.kt`'s `NavHost` switches the tabs and keeps each one's state. Android 7.x
+   installs stay on 0.15.0; that was the owner's call, without a usage threshold (#340).
 2. Kotlin 2.4.21 and the libraries pinned to the old compiler (#356).
 3. kotlinx-datetime 0.8, `Instant` and `Clock` to `kotlin.time` (#358).
 4. snakeyaml-engine-kmp 5, after two TAB conformance cases (#359).

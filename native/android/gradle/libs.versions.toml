@@ -32,8 +32,6 @@ junit = "6.1.3"
 junit4 = "4.13.2"
 robolectric = "4.16.1"
 snakeyamlEngineKmp = "4.0.1"
-# Core library desugaring, for java.time below API 26; see app/build.gradle.kts. Goes with minSdk 26 (#364).
-desugarJdkLibs = "2.1.5"
 kotlinxDatetime = "0.8.0"
 kotlinxSerialization = "1.12.0"
 benchmarkMacro = "1.5.0"
@@ -77,7 +75,6 @@ billing = { module = "com.android.billingclient:billing", version.ref = "billing
 reorderable = { module = "sh.calvin.reorderable:reorderable", version.ref = "reorderable" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinxDatetime" }
 r8 = { module = "com.android.tools:r8", version.ref = "r8" }
-desugar-jdk-libs = { module = "com.android.tools:desugar_jdk_libs", version.ref = "desugarJdkLibs" }
 snakeyaml-engine-kmp = { module = "it.krzeminski:snakeyaml-engine-kmp", version.ref = "snakeyamlEngineKmp" }
 
 [plugins]

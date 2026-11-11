@@ -117,7 +117,14 @@ start_app() { a shell monkey -p "$package" -c android.intent.category.LAUNCHER 1
 # Quoted for the device's shell, which would otherwise read the ? and & in a query string.
 send_route() { a shell am broadcast -n "$receiver" --es url "'$1'" >/dev/null; }
 
-in_front() { a shell dumpsys activity activities | grep -m1 topResumedActivity | grep -qF "$package"; }
+# topResumedActivity from Android 10; below it, only mResumedActivity names the top (#364). From 10 on
+# mResumedActivity is per task, so it's read only when there's no topResumedActivity.
+in_front() {
+  local dump top
+  dump="$(a shell dumpsys activity activities)"
+  top="$(grep -m1 topResumedActivity <<<"$dump" || grep -m1 mResumedActivity <<<"$dump" || true)"
+  grep -qF "$package" <<<"$top"
+}
 
 # Polls rather than sleeping a fixed time; 8 s covers a modal's animation plus the runner's first
 # render with room to spare.
@@ -132,8 +139,11 @@ wait_for() {
   return 1
 }
 
-# The runner asks for it on its first start, and the prompt would sit over every later step.
-a shell pm grant "$package" android.permission.POST_NOTIFICATIONS
+# The runner asks for it on its first start, and the prompt would sit over every later step. Only from
+# Android 13, which added it: below that the grant fails, and minSdk is 26 (#364).
+if [ "$(a shell getprop ro.build.version.sdk | tr -d '\r')" -ge 33 ] 2>/dev/null; then
+  a shell pm grant "$package" android.permission.POST_NOTIFICATIONS
+fi
 start_app
 # From wherever the last run or the user left it.
 send_route '/'

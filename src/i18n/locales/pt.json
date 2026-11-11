@@ -508,7 +508,7 @@
     "pastePlaceholder": "Cole aqui o exercises.yaml completo",
     "packs": {
       "title": "Pacotes iniciais",
-      "detail": "Vêm com o app. Todos os ids têm prefixo, então nada do que você já tem é substituído.",
+      "detail": "Vêm com o app. Um pacote se soma ao que você já tem e nunca substitui seus próprios exercícios ou treinos.",
       "sourceDetail": "Pacote inicial que vem com o app",
       "exerciseCount_one": "{{count}} exercício",
       "exerciseCount_other": "{{count}} exercícios",

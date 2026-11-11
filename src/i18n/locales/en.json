@@ -482,7 +482,7 @@
     "pastePlaceholder": "Paste the whole exercises.yaml here",
     "packs": {
       "title": "Starter packs",
-      "detail": "Bundled with the app. Every id is prefixed, so nothing you already have is replaced.",
+      "detail": "Bundled with the app. A pack adds alongside what you have, and never replaces your own exercises or workouts.",
       "sourceDetail": "Starter pack bundled with the app",
       "exerciseCount_one": "{{count}} exercise",
       "exerciseCount_other": "{{count}} exercises",

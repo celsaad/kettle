@@ -4459,6 +4459,31 @@
     "ok": false,
     "kind": "invalidYaml"
   },
+  "tab-after-space-indentation": {
+    "ok": false,
+    "kind": "invalidYaml"
+  },
+  "tab-inside-scalar": {
+    "ok": true,
+    "value": {
+      "version": 1,
+      "exercises": [
+        {
+          "id": "a",
+          "name": "Push\tups",
+          "type": "reps",
+          "config": {
+            "sets": 3,
+            "targetRepsMin": 5,
+            "restSec": 60
+          },
+          "notes": "Slow\tdown"
+        }
+      ],
+      "workouts": [],
+      "programs": []
+    }
+  },
   "empty-document": {
     "ok": false,
     "kind": "invalidYaml"

@@ -216,6 +216,14 @@ cases:
   - name: tab-indentation
     input: "version: 1\nexercises:\n\t- id: a\nworkouts: []\nprograms: []\n"
 
+  - name: tab-after-space-indentation
+    why: two spaces, then a TAB, before a block key; a loader that only checks the first indent character takes it
+    input: "version: 1\nexercises: []\nworkouts: []\nprograms: []\nextra:\n  a: 1\n  \tb: 2\n"
+
+  - name: tab-inside-scalar
+    why: a TAB within a block-mapping value, quoted or plain, is content rather than indentation, and survives as is
+    input: "version: 1\nexercises:\n  - id: a\n    name: \"Push\tups\"\n    type: reps\n    notes: Slow\tdown\n    config: { sets: 3, target_reps_min: 5, rest_sec: 60 }\nworkouts: []\nprograms: []\n"
+
   # --- Document shape ---
 
   - name: empty-document

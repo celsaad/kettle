@@ -99,24 +99,21 @@ class ShellLayout(
     }
 
     /**
-     * No focus the platform assigns on its own in touch mode below API 28 (#380). There `ViewRootImpl`
-     * gives a window with nothing focused a focus whenever a view becomes visible
-     * (`focusableViewAvailable`): the decor on every return to the app, which reaches the layers through
-     * [requestFocus], and a layer [show] makes visible, which reaches it through
-     * [focusableViewAvailable]. API 28 stopped both in touch mode for apps that target 28. A Compose view
-     * handed that focus moves it to its first focusable node, which in touch mode is the first text
-     * field, and the keyboard rises over Home with nothing tapped. A tap, a screen's own FocusRequester
-     * and keyboard navigation focus a Compose view directly rather than through here, so they still land.
+     * Below API 28 the platform gives focus to a window with none, touch mode or not, as a view becomes
+     * visible or the focused one is cleared; API 28 stopped that in touch mode. A Compose layer handed it
+     * focuses its first text field, and the keyboard rises with nothing tapped (#380). A tap, a
+     * FocusRequester and keyboard navigation focus a layer directly, so they still land; a
+     * `requestFocus` of this view or the decor in touch mode below 28 does not.
      */
-    private val assignsNoFocus get() = Build.VERSION.SDK_INT < Build.VERSION_CODES.P && isInTouchMode
+    private val refusesPlatformFocus get() = Build.VERSION.SDK_INT < Build.VERSION_CODES.P && isInTouchMode
 
     override fun requestFocus(
         direction: Int,
         previouslyFocusedRect: Rect?,
-    ): Boolean = !assignsNoFocus && super.requestFocus(direction, previouslyFocusedRect)
+    ): Boolean = !refusesPlatformFocus && super.requestFocus(direction, previouslyFocusedRect)
 
     override fun focusableViewAvailable(v: View?) {
-        if (!assignsNoFocus) super.focusableViewAvailable(v)
+        if (!refusesPlatformFocus) super.focusableViewAvailable(v)
     }
 
     private fun composeView(content: @Composable () -> Unit) =

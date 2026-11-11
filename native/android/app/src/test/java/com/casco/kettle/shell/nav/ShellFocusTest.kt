@@ -4,11 +4,14 @@ import android.view.View
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsNotFocused
@@ -31,11 +34,12 @@ import org.robolectric.annotation.Config
 import org.robolectric.util.ReflectionHelpers
 
 /**
- * Who gives a text field focus (#380). Below API 28 the platform hands focus down from the window's root
- * whenever its decor is made visible again, touch mode or not, and Compose passes it on to the first
- * text field on the screen, which raises the keyboard over Home on every return to the app.
+ * Who gives a text field focus (#380). Below API 28 the platform gives a window with no
+ * focus one, touch mode or not, as the decor is made visible on a return to the app and as [ShellLayout]
+ * shows a layer again, and Compose passes it on to the first text field on the screen.
  */
 @RunWith(RobolectricTestRunner::class)
+@Config(sdk = [26])
 class ShellFocusTest {
     @get:Rule
     val compose = createAndroidComposeRule<ComponentActivity>()
@@ -45,7 +49,8 @@ class ShellFocusTest {
 
     private lateinit var shell: ShellLayout
 
-    private fun show() {
+    /** The shell with one text field, which focuses itself as it composes when [autofocus] says so. */
+    private fun show(autofocus: Boolean = false) {
         val navigator = Navigator()
         compose.runOnUiThread {
             val activity = compose.activity
@@ -62,7 +67,9 @@ class ShellFocusTest {
                     },
                     content = {
                         var text by remember { mutableStateOf("") }
-                        BasicTextField(text, { text = it }, Modifier.testTag(FIELD))
+                        val focus = remember { FocusRequester() }
+                        BasicTextField(text, { text = it }, Modifier.testTag(FIELD).focusRequester(focus))
+                        if (autofocus) LaunchedEffect(Unit) { focus.requestFocus() }
                     },
                 ) { content, shell -> ModalSheet(content, shell, navigator, { LightColors }, {}) }
             navigator.moves = shell.sheet
@@ -93,16 +100,14 @@ class ShellFocusTest {
     }
 
     @Test
-    @Config(sdk = [26])
-    fun `a return to the app on Android 8 focuses no text field`() {
+    fun `a return to the app focuses no text field`() {
         show()
         returnToTheApp()
         compose.onNodeWithTag(FIELD).assertIsNotFocused()
     }
 
     @Test
-    @Config(sdk = [26])
-    fun `the tabs shown again on Android 8, as a sheet closes, focus no text field`() {
+    fun `the tabs shown again as a sheet closes focus no text field`() {
         show()
         compose.runOnUiThread {
             shell.show(Place.Sheet)
@@ -113,11 +118,16 @@ class ShellFocusTest {
     }
 
     @Test
-    @Config(sdk = [26])
-    fun `a tap on Android 8 still focuses the field`() {
+    fun `a tap still focuses the field`() {
         show()
         returnToTheApp()
         compose.onNodeWithTag(FIELD).performClick()
+        compose.onNodeWithTag(FIELD).assertIsFocused()
+    }
+
+    @Test
+    fun `a field that focuses itself still does`() {
+        show(autofocus = true)
         compose.onNodeWithTag(FIELD).assertIsFocused()
     }
 

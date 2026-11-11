@@ -90,11 +90,14 @@ jobs:
           KETTLE_UPLOAD_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_PASSWORD }}
           KETTLE_UPLOAD_KEY_ALIAS: ${{ secrets.ANDROID_UPLOAD_KEY_ALIAS }}
           KETTLE_UPLOAD_KEY_PASSWORD: ${{ secrets.ANDROID_UPLOAD_KEY_PASSWORD }}
+        # Without the configuration cache, which gradle.properties turns on: signing reads the passwords
+        # above while configuring, and a cached configuration would write them to disk. A release
+        # build runs once, so it has nothing to reuse anyway.
         run: |
           if [ "$VARIANT" = "apk" ]; then
-            ./gradlew :app:assembleRelease --build-cache
+            ./gradlew :app:assembleRelease --build-cache --no-configuration-cache
           else
-            ./gradlew :app:bundleRelease --build-cache
+            ./gradlew :app:bundleRelease --build-cache --no-configuration-cache
           fi
 
       # Deleted before the artifact upload rather than after, so a failure in between can't sweep the

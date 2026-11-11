@@ -1,8 +1,17 @@
 name: CI
 
+# Push only for master: a PR branch is covered by pull_request, and running both put two identical
+# runs of every job on each push to an open PR.
 on:
   push:
+    branches: [master]
   pull_request:
+
+# A newer push to the same PR supersedes the run still going. master's runs are never cancelled, so
+# each merge keeps a complete run (and the Gradle cache it writes).
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   check:
@@ -100,7 +109,24 @@ jobs:
             21
             17
 
+      # The key lets setup-gradle save the configuration cache between runs, which it holds encrypted
+      # because a configuration can capture secrets. Without the secret it skips only that part, and
+      # the build still configures from scratch and runs its tasks in parallel.
       - uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
+
+      # Robolectric fetches its android-all jars (about 500 MB, one per SDK the tests run at) into
+      # ~/.m2 at test time, outside Gradle's caches, so setup-gradle never saved them and every run
+      # downloaded them again. Keyed on the catalog (Robolectric's version) and the app script
+      # (targetSdk); the prefix restore keeps the jars a change didn't touch, and a jar still missing,
+      # like a new test's `@Config(sdk = ...)`, is fetched as before.
+      - name: Restore Robolectric's SDK jars
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository/org/robolectric
+          key: robolectric-${{ hashFiles('native/android/gradle/libs.versions.toml', 'native/android/app/build.gradle.kts') }}
+          restore-keys: robolectric-
 
       - name: Build, lint and test
         run: ./gradlew build

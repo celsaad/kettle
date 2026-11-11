@@ -53,7 +53,8 @@ compose-ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest" }
 junit4 = { module = "junit:junit", version.ref = "junit4" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
 # Compose's ui-test brings 3.5.0, whose input injection reflects on `InputManager.getInstance()`,
-# which SDK 37 no longer has. Declared to lift it, not used directly.
+# which SDK 37 no longer has (3.6.1 still does; 3.7.0 is the first that runs). Declared to lift it,
+# not used directly, so it goes once ui-test brings 3.7.0 or later itself.
 espresso-core = { module = "androidx.test.espresso:espresso-core", version.ref = "espresso" }
 activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
 navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigationCompose" }

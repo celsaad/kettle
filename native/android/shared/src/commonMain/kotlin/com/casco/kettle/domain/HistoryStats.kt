@@ -2,12 +2,12 @@ package com.casco.kettle.domain
 
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.DayOfWeek
-import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
 import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Instant
 
 // Ported from `src/state/selectors/history-stats.ts`, deleted with RN History (#202), its last reader:
 // each rule's reasoning is kept beside it here in short, and in full in that file's git history. Days are calendar

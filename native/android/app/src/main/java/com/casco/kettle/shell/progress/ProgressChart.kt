@@ -25,8 +25,8 @@ import com.casco.kettle.domain.ProgressSession
 import com.casco.kettle.domain.progressChartLayout
 import com.casco.kettle.shell.theme.KettleColors
 import com.casco.kettle.shell.theme.KettleTheme
-import kotlinx.datetime.Instant
 import kotlin.math.ceil
+import kotlin.time.Instant
 
 /**
  * One exercise's value, session by session, across [window]: the chart the Getting stronger row's

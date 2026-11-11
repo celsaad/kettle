@@ -8,7 +8,6 @@ import androidx.annotation.StringRes
 import com.casco.kettle.domain.UnitSystem
 import com.casco.kettle.shell.R
 import kotlinx.datetime.DayOfWeek
-import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
@@ -16,6 +15,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import kotlin.time.Instant
 
 /**
  * `formatMonthDay` in `src/i18n/format.ts`: Intl's `{ month: 'short', day: 'numeric' }`, which is the

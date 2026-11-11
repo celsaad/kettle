@@ -1,12 +1,12 @@
 package com.casco.kettle.domain
 
-import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import kotlin.time.Instant
 
 /**
  * `src/state/selectors/__tests__/exercise-progress.test.ts`, case for case. The measure itself is

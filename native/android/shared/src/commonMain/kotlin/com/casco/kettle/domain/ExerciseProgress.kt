@@ -1,10 +1,10 @@
 package com.casco.kettle.domain
 
 import kotlinx.datetime.DateTimeUnit
-import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
 import kotlin.math.abs
+import kotlin.time.Instant
 
 /**
  * One exercise's trend over a window: `ExerciseProgress` in `src/state/selectors/exercise-progress.ts`,

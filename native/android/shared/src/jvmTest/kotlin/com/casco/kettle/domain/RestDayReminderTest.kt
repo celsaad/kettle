@@ -1,12 +1,12 @@
 package com.casco.kettle.domain
 
-import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
+import kotlin.time.Instant
 
 /**
  * The reminder's arithmetic and its reasons to schedule nothing, ported from RN's suite, which went

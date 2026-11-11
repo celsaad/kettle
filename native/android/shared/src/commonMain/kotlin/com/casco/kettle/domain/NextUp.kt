@@ -1,9 +1,9 @@
 package com.casco.kettle.domain
 
-import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.daysUntil
 import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Instant
 
 /** What a "start this" on Home's card starts: a bare workout, or one program slot with its overrides. */
 sealed interface SessionParams {

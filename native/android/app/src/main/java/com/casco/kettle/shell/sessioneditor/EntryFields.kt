@@ -8,7 +8,7 @@ import com.casco.kettle.domain.EntryProblem
 import com.casco.kettle.domain.UnitSystem
 import com.casco.kettle.domain.jsNumber
 import com.casco.kettle.shell.R
-import com.casco.kettle.shell.form.unitSuffix
+import com.casco.kettle.shell.form.withUnit
 
 // The session editor's fields' words: `ENTRY_FIELDS`' labels and units, and the validation
 // messages, which `:shared` returns as descriptors (`EntryProblem`) for the screen to put into words.
@@ -18,20 +18,19 @@ import com.casco.kettle.shell.form.unitSuffix
 internal fun fieldLabel(
     field: EntryField,
     units: UnitSystem,
-): String {
-    val label = stringResource(field.label)
-    val unit = unitSuffix(field.unit, units)
-    return if (unit == null) label else stringResource(R.string.exerciseForm_fieldWithUnit, label, unit)
-}
+): String = withUnit(stringResource(field.label), field.unit, units)
 
-/** A per-set field's name, "Set 2 · Reps": every row's labels are alike, so the set tells them apart. */
+// The two per-set names are helpers only to keep DraftRows under detekt's LongMethod limit; why the
+// set is in them is said where they're used.
+
+/** A per-set field's name: "Set 2 · Reps". */
 @Composable
 internal fun setFieldName(
     setLabel: String,
     label: String,
 ): String = stringResource(R.string.sessionEditor_setField, label, setLabel)
 
-/** A per-set Remove's name, "Remove set · Set 2", for the same reason. */
+/** A per-set Remove's name: "Remove set · Set 2". */
 @Composable
 internal fun removeSetName(
     remove: String,

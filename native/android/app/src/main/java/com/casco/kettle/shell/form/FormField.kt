@@ -123,4 +123,12 @@ internal fun unitSuffix(
         null -> null
     }
 
+/** [label] with [unit]'s suffix, "Weight (lb)", or alone for a field with no unit. */
+@Composable
+internal fun withUnit(
+    label: String,
+    unit: FieldUnit?,
+    units: UnitSystem,
+): String = unitSuffix(unit, units)?.let { stringResource(R.string.exerciseForm_fieldWithUnit, label, it) } ?: label
+
 private val FieldShape = RoundedCornerShape(12.dp)

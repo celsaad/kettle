@@ -224,6 +224,10 @@ cases:
     why: two spaces, then a TAB, before a block key; refused however a loader counts the TAB, so this pins the refusal, and tab-after-one-space-indentation is the case that tells the loaders apart
     input: "version: 1\nexercises: []\nworkouts: []\nprograms: []\nextra:\n  a: 1\n  \tb: 2\n"
 
+  - name: tab-after-one-space-indentation
+    why: one space, then a TAB, before a block key; a TAB is never indentation, so b sits one column in, short of a's two, where a loader counting the TAB as a column would line b up with a and take it
+    input: "version: 1\nexercises: []\nworkouts: []\nprograms: []\nextra:\n  a: 1\n \tb: 2\n"
+
   # --- Document shape ---
 
   - name: empty-document

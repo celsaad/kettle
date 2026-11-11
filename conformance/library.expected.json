@@ -4484,6 +4484,10 @@
     "ok": false,
     "kind": "invalidYaml"
   },
+  "tab-after-one-space-indentation": {
+    "ok": false,
+    "kind": "invalidYaml"
+  },
   "empty-document": {
     "ok": false,
     "kind": "invalidYaml"

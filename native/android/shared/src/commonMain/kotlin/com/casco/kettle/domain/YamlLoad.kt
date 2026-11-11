@@ -26,7 +26,10 @@ import it.krzeminski.snakeyaml.engine.kmp.nodes.Tag
 import it.krzeminski.snakeyaml.engine.kmp.resolver.BaseScalarResolver
 import it.krzeminski.snakeyaml.engine.kmp.resolver.CoreScalarResolver
 import it.krzeminski.snakeyaml.engine.kmp.resolver.ScalarResolver
+import it.krzeminski.snakeyaml.engine.kmp.scanner.ScannerImpl
+import it.krzeminski.snakeyaml.engine.kmp.scanner.StreamReader
 import it.krzeminski.snakeyaml.engine.kmp.schema.Schema
+import it.krzeminski.snakeyaml.engine.kmp.tokens.Token
 
 /**
  * The YAML loader for the app's files: snakeyaml-engine-kmp, the multiplatform port of
@@ -55,7 +58,8 @@ internal fun loadYaml(text: String): YamlLoad =
     try {
         // A separate pass over the events, before anything is built: an alias bomb is refused while it
         // is still a few hundred bytes, and depth is counted without the composer's recursion.
-        checkEvents(text)?.let(YamlLoad::Invalid) ?: YamlLoad.Loaded(Load(loadSettings).loadOne(text))
+        (checkEvents(text) ?: checkTabs(text))?.let(YamlLoad::Invalid)
+            ?: YamlLoad.Loaded(Load(loadSettings).loadOne(text))
     } catch (error: YamlEngineException) {
         YamlLoad.Invalid(error.message.orEmpty())
     }
@@ -215,6 +219,68 @@ private class MappingKeys {
             is AliasEvent -> anchors[event.alias.value]
             else -> null
         }
+}
+
+/**
+ * js-yaml refuses a block key or a block sequence's `-` with a TAB anywhere before it on its line
+ * (its `firstTabInLine`), since YAML indentation is spaces only. The engine treats a TAB after leading
+ * spaces as more indentation, so `a:` / `  b: 1` / ` <TAB>c: 2` loads there with `c` beside `b`, and the
+ * same file is refused on the other side. A TAB after the token (`-<TAB>x`, `a:<TAB>b`) is separation
+ * on both, so it isn't checked.
+ *
+ * Inside a flow collection or a quoted scalar this checks nothing, and the two still part there:
+ * js-yaml refuses a TAB as separation in a flow collection that is a key's value (`a: {b:<TAB>1}`,
+ * `a: [b,<TAB>c]`, though not the same at the top level), and before a quoted scalar's continuation on
+ * an unindented line, as deficient indentation, where the engine loads all of them. That is a js-yaml
+ * quirk rather than YAML 1.2, and left for its own change.
+ *
+ * On tokens rather than events, because no event carries where a sequence's `-` was.
+ */
+private fun checkTabs(text: String): String? {
+    if ('\t' !in text) return null
+    // Split where the engine counts a new line, so a token's mark names the right one.
+    val lines = text.split("\r\n", "\n", "\r")
+    var flowDepth = 0
+    val tabIndented =
+        ScannerImpl(loadSettings, StreamReader(loadSettings, text)).asSequence().any { token ->
+            when (token.tokenId) {
+                Token.ID.FlowMappingStart, Token.ID.FlowSequenceStart -> {
+                    flowDepth++
+                    false
+                }
+
+                Token.ID.FlowMappingEnd, Token.ID.FlowSequenceEnd -> {
+                    flowDepth--
+                    false
+                }
+
+                Token.ID.Key, Token.ID.BlockEntry -> {
+                    flowDepth == 0 && token.startMark?.let { tabBefore(lines, it.line, it.column) } == true
+                }
+
+                else -> {
+                    false
+                }
+            }
+        }
+    return if (tabIndented) "tab characters must not be used in indentation" else null
+}
+
+/** Whether a TAB comes before [column] on [line]. The engine's columns count code points, not chars. */
+private fun tabBefore(
+    lines: List<String>,
+    line: Int,
+    column: Int,
+): Boolean {
+    val text = lines.getOrNull(line).orEmpty()
+    var at = 0
+    var seen = 0
+    while (seen < column && at < text.length && text[at] != '\t') {
+        at += if (text[at].isHighSurrogate()) 2 else 1
+        seen++
+    }
+    // Stopped short of the column with text left: on a TAB.
+    return seen < column && at < text.length
 }
 
 /** A scalar as the composer types it: an absent or `!` tag is resolved, any other is taken as written. */

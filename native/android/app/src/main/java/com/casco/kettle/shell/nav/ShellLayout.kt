@@ -2,6 +2,9 @@ package com.casco.kettle.shell.nav
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.graphics.Rect
+import android.os.Build
+import android.view.View
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.widget.FrameLayout
@@ -93,6 +96,27 @@ class ShellLayout(
         destinations.visibility = if (place == Place.Tab) VISIBLE else INVISIBLE
         nativeSheet.visibility = if (place == Place.Sheet) VISIBLE else INVISIBLE
         nativeRunner.visibility = if (place == Place.Runner) VISIBLE else INVISIBLE
+    }
+
+    /**
+     * No focus the platform assigns on its own in touch mode below API 28 (#380). There `ViewRootImpl`
+     * gives a window with nothing focused a focus whenever a view becomes visible
+     * (`focusableViewAvailable`): the decor on every return to the app, which reaches the layers through
+     * [requestFocus], and a layer [show] makes visible, which reaches it through
+     * [focusableViewAvailable]. API 28 stopped both in touch mode for apps that target 28. A Compose view
+     * handed that focus moves it to its first focusable node, which in touch mode is the first text
+     * field, and the keyboard rises over Home with nothing tapped. A tap, a screen's own FocusRequester
+     * and keyboard navigation focus a Compose view directly rather than through here, so they still land.
+     */
+    private val assignsNoFocus get() = Build.VERSION.SDK_INT < Build.VERSION_CODES.P && isInTouchMode
+
+    override fun requestFocus(
+        direction: Int,
+        previouslyFocusedRect: Rect?,
+    ): Boolean = !assignsNoFocus && super.requestFocus(direction, previouslyFocusedRect)
+
+    override fun focusableViewAvailable(v: View?) {
+        if (!assignsNoFocus) super.focusableViewAvailable(v)
     }
 
     private fun composeView(content: @Composable () -> Unit) =

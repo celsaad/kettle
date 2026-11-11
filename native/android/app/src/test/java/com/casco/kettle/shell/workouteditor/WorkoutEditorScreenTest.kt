@@ -644,6 +644,20 @@ class WorkoutEditorScreenTest {
         assertEquals(emptyList<Library>(), files.written)
     }
 
+    // The program names are joined by the bundle's separator, which ja writes as 、 (#387's review).
+    @Test
+    @Config(qualifiers = "ja")
+    fun `lists the programs using it with the Japanese separator`() {
+        val peak = Program("peak", "Peak", listOf(ProgramWeek.Training(week = 1, workoutId = "push-day")))
+        show("push-day", Files(workouts = listOf(pushDay()), programs = listOf(base, peak)))
+
+        press("ワークアウトを削除")
+
+        compose
+            .onNodeWithText("「Push day」はBase、Peakで使われています。先にそれらのプログラムから外してください。")
+            .assertExists()
+    }
+
     @Test
     fun `deletes an unreferenced workout once confirmed`() {
         val files = show("push-day", Files(workouts = listOf(pushDay())))

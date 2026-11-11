@@ -665,8 +665,7 @@
     "deleteExercise": "エクササイズを削除",
     "inUseTitle": "使用中のエクササイズ",
     "inUseBody": "「{{name}}」は{{workouts}}で使われています。先にそれらのワークアウトから外してください。",
-    "deleteConfirmTitle": "エクササイズを削除しますか？",
-    "inUseSeparator": "、"
+    "deleteConfirmTitle": "エクササイズを削除しますか？"
   },
   "workoutEditor": {
     "newTitle": "新しいワークアウト",
@@ -771,6 +770,8 @@
     "seconds": "{{n}}秒",
     "minutes": "{{n}}分",
     "metres": "{{n}} m",
+    "weight": "{{weight}} {{unit}}",
+    "listSeparator": "、",
     "repsList": "{{list}} レップ",
     "roundsPlusReps": "{{rounds}} + {{reps}}",
     "intervalsWithReps": "{{intervals}} · {{reps}}",

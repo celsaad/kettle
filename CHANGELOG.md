@@ -39,7 +39,8 @@ here, next to what it describes.
   weighted exercise's volume in kilograms. It now uses your unit (#271).
 - **Editor labels read naturally in Portuguese and Japanese**: the units beside a field (seconds,
   minutes, metres), and the way a field's name, its unit, "optional" and its set number are put
-  together, now follow your language instead of English punctuation and word order (#272).
+  together, now follow your language instead of English punctuation and word order. Import's list
+  of changes writes values the way the rest of the app does, "90s" rather than "90 sec" (#272).
 
 ---
 

@@ -733,8 +733,7 @@
     "deleteExercise": "Excluir exercício",
     "inUseTitle": "Exercício em uso",
     "inUseBody": "\"{{name}}\" é usado em {{workouts}}. Remova-o desses treinos primeiro.",
-    "deleteConfirmTitle": "Excluir exercício?",
-    "inUseSeparator": ", "
+    "deleteConfirmTitle": "Excluir exercício?"
   },
   "workoutEditor": {
     "newTitle": "Novo treino",
@@ -857,6 +856,8 @@
     "seconds": "{{n}}s",
     "minutes": "{{n}} min",
     "metres": "{{n}} m",
+    "weight": "{{weight}} {{unit}}",
+    "listSeparator": ", ",
     "repsList": "{{list}} repetições",
     "roundsPlusReps": "{{rounds}} + {{reps}}",
     "intervalsWithReps": "{{intervals}} · {{reps}}",

@@ -699,8 +699,7 @@
     "deleteExercise": "Delete exercise",
     "inUseTitle": "Exercise in use",
     "inUseBody": "\"{{name}}\" is used by {{workouts}}. Remove it from those workouts first.",
-    "deleteConfirmTitle": "Delete exercise?",
-    "inUseSeparator": ", "
+    "deleteConfirmTitle": "Delete exercise?"
   },
   "workoutEditor": {
     "newTitle": "New workout",
@@ -814,6 +813,8 @@
     "seconds": "{{n}}s",
     "minutes": "{{n}} min",
     "metres": "{{n}} m",
+    "weight": "{{weight}} {{unit}}",
+    "listSeparator": ", ",
     "repsList": "{{list}} reps",
     "roundsPlusReps": "{{rounds}} + {{reps}}",
     "intervalsWithReps": "{{intervals}} · {{reps}}",

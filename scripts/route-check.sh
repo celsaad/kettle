@@ -117,16 +117,13 @@ start_app() { a shell monkey -p "$package" -c android.intent.category.LAUNCHER 1
 # Quoted for the device's shell, which would otherwise read the ? and & in a query string.
 send_route() { a shell am broadcast -n "$receiver" --es url "'$1'" >/dev/null; }
 
-# topResumedActivity from Android 10; before it, only mResumedActivity names the top (the API 26 AVD,
-# #364). From 10 on mResumedActivity is per task, so it's read only when there's no topResumedActivity.
+# topResumedActivity from Android 10; below it, only mResumedActivity names the top (#364). From 10 on
+# mResumedActivity is per task, so it's read only when there's no topResumedActivity.
 in_front() {
-  local dump
+  local dump top
   dump="$(a shell dumpsys activity activities)"
-  if grep -q topResumedActivity <<<"$dump"; then
-    grep -m1 topResumedActivity <<<"$dump" | grep -qF "$package"
-  else
-    grep -m1 mResumedActivity <<<"$dump" | grep -qF "$package"
-  fi
+  top="$(grep -m1 topResumedActivity <<<"$dump" || grep -m1 mResumedActivity <<<"$dump" || true)"
+  grep -qF "$package" <<<"$top"
 }
 
 # Polls rather than sleeping a fixed time; 8 s covers a modal's animation plus the runner's first

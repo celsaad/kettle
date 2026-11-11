@@ -13,7 +13,7 @@ import org.robolectric.annotation.Config
 /**
  * Who tells a screen reader a copy landed (#244). From Android 13 the system does, with its own
  * "Copied" (seen on a device as a notification event), and its guidance is that an app doesn't double
- * it; below 13 nothing does, so the app has to. minSdk is 26, so both sides ship.
+ * it; below 13 nothing does, so the app has to. minSdk is below 33, so both sides ship.
  */
 @RunWith(RobolectricTestRunner::class)
 class ConfirmCopyTest {

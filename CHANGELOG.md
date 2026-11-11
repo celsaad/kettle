@@ -29,8 +29,8 @@ here, next to what it describes.
   so Kettle is fully native. Nothing changes in how it looks or works, and your library, history
   and settings carry over. It also no longer asks for storage access on older Android versions,
   which it never used (#357).
-- **Android 8.0 or newer is now required**: Android 7.x (7.0 and 7.1) is no longer supported. A
-  phone on 7.x keeps the version it has, 0.15.0, and your data on it stays as it is (#364).
+- **Android 8.0 or newer is now required**: Android 7 is no longer supported. A phone on Android 7
+  can update as far as 0.15.0, and keeps your data as it is (#364).
 
 ---
 

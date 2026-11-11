@@ -20,8 +20,7 @@ import kotlin.time.Instant
 /**
  * `formatMonthDay` in `src/i18n/format.ts`: Intl's `{ month: 'short', day: 'numeric' }`, which is the
  * locale's own best pattern for those fields, "Aug 4" or "4 de ago.". `SimpleDateFormat` because
- * `getBestDateTimePattern` writes its pattern in that class's syntax, which `java.time`'s formatter
- * reads differently in places.
+ * `getBestDateTimePattern` returns a pattern for that class.
  */
 fun formatMonthDay(
     at: Instant,

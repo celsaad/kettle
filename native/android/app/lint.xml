@@ -1,14 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <lint>
     <!--
-      The launcher, splash and notification icons are the files the RN app's build generated, kept as
-      they were, so the app looks as it always has. They are the artwork's only source now: a change to
-      it is made in res/, at every density.
-    -->
-    <issue id="IconLauncherShape" severity="ignore" />
-    <issue id="IconDuplicates" severity="ignore" />
-
-    <!--
       targetSdk is still the RN app's (Expo SDK 57's), pinned until the unpin raises it (#342), which
       removes this ignore with it. The check also depends on the newest platform the machine has
       installed, so it passed locally and failed on CI's newer image.

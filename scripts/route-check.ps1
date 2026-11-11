@@ -140,8 +140,8 @@ function Send-Route([string]$url) {
   & adb @target shell am broadcast -n $receiver --es url "'$url'" | Out-Null
 }
 
-# topResumedActivity from Android 10; before it, only mResumedActivity names the top (the API 26 AVD,
-# #364). From 10 on mResumedActivity is per task, so it's read only when there's no topResumedActivity.
+# topResumedActivity from Android 10; below it, only mResumedActivity names the top (#364). From 10 on
+# mResumedActivity is per task, so it's read only when there's no topResumedActivity.
 function Test-Foreground {
   $dump = & adb @target shell dumpsys activity activities
   $top = $dump | Select-String -Pattern 'topResumedActivity' | Select-Object -First 1

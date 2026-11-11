@@ -20,6 +20,12 @@ here, next to what it describes.
 
 ## Unreleased
 
+Nothing since 0.16.0.
+
+---
+
+## 0.16.0 — versionCode 22, 11 November 2026
+
 ### What changed
 
 - **Finishing as a rest runs out no longer logs a set you didn't do**: tapping Finish in the
@@ -45,6 +51,33 @@ here, next to what it describes.
   minutes, metres), and the way a field's name, its unit, "optional" and its set number are put
   together, now follow your language instead of English punctuation and word order. Import's list
   of changes writes values the way the rest of the app does, "90s" rather than "90 sec" (#272).
+
+### Play release notes
+
+Counted at 73 (en-US) and 75 (pt-BR), against a limit of 500. Re-count programmatically
+if you edit them rather than trusting these numbers — over-limit copy is a rejected upload, not a
+truncated one.
+
+Generic, as in 0.15.0: the engine's removal changes nothing a user sees, and the Android 8 floor
+can't be told to the users it affects, since Play doesn't offer them this update. Two blocks, as in
+0.8.0 onwards: the Play listing does not carry ja-JP.
+
+```
+<en-US>
+What's new
+
+Updates and fixes.
+
+Report anything that hangs or loses data.
+</en-US>
+<pt-BR>
+Novidades
+
+Atualizações e correções.
+
+Relate travamentos ou perda de dados.
+</pt-BR>
+```
 
 ---
 

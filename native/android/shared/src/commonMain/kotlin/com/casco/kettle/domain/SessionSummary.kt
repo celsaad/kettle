@@ -1,6 +1,6 @@
 package com.casco.kettle.domain
 
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 
 /**
  * How long [session] ran, in whole minutes: `sessionDurationMinutes` in

@@ -101,7 +101,7 @@ internal fun SessionRow(
 internal fun dateBadge(row: HistorySessionView): Pair<String, String> {
     val locale = LocalConfiguration.current.locales[0]
     return row.day
-        ?.dayOfMonth
+        ?.day
         ?.toString()
         .orEmpty() to row.day?.let { formatMonthBadge(it, locale) }.orEmpty()
 }

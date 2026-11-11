@@ -71,11 +71,11 @@ import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.MaxContentWidth
 import com.casco.kettle.shell.theme.Spacing
 import com.casco.kettle.shell.theme.card
-import kotlinx.datetime.Clock
 import kotlinx.datetime.DayOfWeek
-import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import java.util.Locale
+import kotlin.time.Clock
+import kotlin.time.Instant
 
 /** What the route table draws at `/analytics`, opened from History's header. */
 @Composable

@@ -1,7 +1,7 @@
 package com.casco.kettle.domain
 
-import kotlinx.datetime.Instant
 import kotlin.math.abs
+import kotlin.time.Instant
 
 /** The drawing's height. Fixed: nothing in it is a control, and every number is in the list below it. */
 const val CHART_HEIGHT = 168f

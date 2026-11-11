@@ -1,11 +1,11 @@
 package com.casco.kettle.domain
 
-import kotlinx.datetime.Instant
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import kotlin.time.Instant
 
 /**
  * What the exercise editor (#241) does to the library, and what it shows of the log: RN's store's

@@ -174,7 +174,7 @@ private fun Subtitle(
     // The workout's own name, interpolated rather than translated.
     val name = workoutNameFor(session, library) ?: stringResource(R.string.format_adHocSession)
     Secondary(
-        stringResource(R.string.sessionEditor_subtitle, day.dayOfMonth, formatMonthBadge(day, locale), name),
+        stringResource(R.string.sessionEditor_subtitle, day.day, formatMonthBadge(day, locale), name),
         Modifier.padding(top = 2.dp),
     )
 }

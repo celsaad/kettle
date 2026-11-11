@@ -1,6 +1,6 @@
 package com.casco.kettle.domain
 
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 
 // What the exercise editor (#241) does to the library, and what it shows of the log. The library
 // edits were RN's library store's `saveExercise` and `deleteExercise`; the rest is

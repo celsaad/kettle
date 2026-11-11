@@ -24,9 +24,9 @@ import com.casco.kettle.shell.i18n.pluralText
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
+import kotlin.time.Clock
+import kotlin.time.Instant
 
 /**
  * The opt-in rest-day nudge (#221, #236): one pending alarm, sitting a couple of days past the newest

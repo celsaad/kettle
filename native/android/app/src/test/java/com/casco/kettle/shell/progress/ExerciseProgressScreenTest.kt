@@ -24,7 +24,6 @@ import com.casco.kettle.shell.files.LatestFiles
 import com.casco.kettle.shell.theme.KettleTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -33,6 +32,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import kotlin.time.Duration.Companion.days
+import kotlin.time.Instant
 
 /**
  * Exercise progress (#200), case for case from RN's `exercise-progress.test.tsx`, on the harness recipe

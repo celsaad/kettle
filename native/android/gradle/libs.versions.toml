@@ -34,8 +34,7 @@ robolectric = "4.16.1"
 snakeyamlEngineKmp = "4.0.1"
 # Core library desugaring, for java.time below API 26; see app/build.gradle.kts. Goes with minSdk 26 (#364).
 desugarJdkLibs = "2.1.5"
-# 0.6.x until #358, which takes 0.8 and moves Instant and Clock to kotlin.time with it.
-kotlinxDatetime = "0.6.2"
+kotlinxDatetime = "0.8.0"
 kotlinxSerialization = "1.12.0"
 benchmarkMacro = "1.5.0"
 uiautomator = "2.4.1"

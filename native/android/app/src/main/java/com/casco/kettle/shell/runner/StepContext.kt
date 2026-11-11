@@ -98,8 +98,8 @@ internal fun stepContext(
 /**
  * "Set 2 of 4", its −/+ (hidden in a circuit, where the count is the block's rounds; − disabled rather
  * than hidden at the floor, so the row doesn't reflow mid-set) and SWAP, each its own 48dp target.
- * No gap between them: each target's slack around RN's 26dp circle already spaces them, wider than
- * RN's 4dp, which is the price of targets that don't overlap.
+ * No gap between them: −'s circle sits at its target's end and +'s at its start, so the pair's slack
+ * falls outside it and spaces them from the label and SWAP rather than from each other.
  */
 @Composable
 internal fun SetCountRow(
@@ -113,10 +113,10 @@ internal fun SetCountRow(
         if (readings.canAddSet) {
             SymbolButton(R.drawable.icon_remove, stringResource(R.string.common_decrease, sets), {
                 context.send(RunnerCommand.DropSet)
-            }, readings.canDropSet)
+            }, readings.canDropSet, look = SymbolLook.Small.copy(placement = CirclePlacement.END))
             SymbolButton(R.drawable.icon_add, stringResource(R.string.common_increase, sets), {
                 context.send(RunnerCommand.AddSet)
-            })
+            }, look = SymbolLook.Small.copy(placement = CirclePlacement.START))
         }
         if (readings.canSwap) {
             PillControl(stringResource(R.string.session_swap_action)) { context.controls.open(Overlay.SWAP_PICKER) }

@@ -31,6 +31,8 @@ $receiver = "$package/com.casco.kettle.shell.runner.RunnerCommandReceiver"
 $navigator = "$package/com.casco.kettle.shell.nav.NavigateReceiver"
 $apk = Join-Path $root 'native/android/app/build/outputs/apk/debug/app-debug.apk'
 $pin = '1234'
+# The HIIT work's cues, midpoint to change, end by here (ms after its start), with room for a late one.
+$workEnd = 11400
 
 # Per call, not $env:ANDROID_SERIAL, which would outlive the script in the caller's terminal.
 $target = if ($Device) { @('-s', $Device) } else { @() }
@@ -298,8 +300,8 @@ try {
     if ($gap -lt 800 -or $gap -gt 1200) { $stray = $true }
   }
   Check "a countdown's last 3 s and its end cue a second apart" ($ending.Count -eq 4 -and -not $stray) "cues and stray gap: $($ending.Count) $([int]$stray)"
-  # What the call check reads: out of a call, the same cues all play.
-  $played = Count (CuesSince ($start + 4500) ($start + 11400) 'played')
+  # What the call check reads: out of a call, the work's cues play.
+  $played = Count (CuesSince ($start + 4500) ($start + $workEnd) 'played')
   Check 'out of a call, the cues play' ($played -gt 0) "$played played"
   $seen = Alert
   Check 'no alert is posted while the runner is on screen' (-not $seen) $seen
@@ -437,8 +439,8 @@ try {
     WaitFor 12 { (StepIndex) -eq 1 } | Out-Null
     Start-Sleep -Milliseconds 1500
     A emu gsm cancel 5550100 | Out-Null
-    $skipped = Count (CuesSince ($start + 4500) ($start + 11400) 'skipped')
-    $played = Count (CuesSince ($start + 4500) ($start + 11400) 'played')
+    $skipped = Count (CuesSince ($start + 4500) ($start + $workEnd) 'skipped')
+    $played = Count (CuesSince ($start + 4500) ($start + $workEnd) 'played')
     Check 'a cue while a call rings is skipped' ($skipped -gt 0 -and $played -eq 0) "$skipped skipped, $played played"
     CloseSession
   } else {

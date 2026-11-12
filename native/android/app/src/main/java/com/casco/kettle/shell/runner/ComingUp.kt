@@ -110,7 +110,6 @@ private fun NowRow(
     RailItem(
         tint = if (resting) RunnerColors.accentCalm else RunnerColors.accent,
         last = last,
-        first = true,
         now = true,
     ) {
         Column(Modifier.semantics(mergeDescendants = true) {}) {
@@ -223,13 +222,13 @@ private fun Kicker(text: String) {
  * One timeline item: its node on the rail, the line through it, and the item beside them. The line is
  * drawn behind the whole row's height, top edge to bottom, so it meets the next item's line whatever
  * the item's height: a fixed-length line stopped short under any item taller than it, and left a gap
- * above the next node besides. The first item's starts at its node, the last's ends there.
+ * above the next node besides. The NOW item, always the first, starts its line at its node; the last
+ * ends its line there.
  */
 @Composable
 private fun RailItem(
     tint: Color,
     last: Boolean,
-    first: Boolean = false,
     now: Boolean = false,
     content: @Composable BoxScope.() -> Unit,
 ) {
@@ -242,7 +241,7 @@ private fun RailItem(
                 .fillMaxHeight()
                 .drawBehind {
                     val middle = (Spacing.one + node / 2).toPx()
-                    val top = if (first) middle else 0f
+                    val top = if (now) middle else 0f
                     val bottom = if (last) middle else size.height
                     if (bottom > top) {
                         drawLine(rail, Offset(center.x, top), Offset(center.x, bottom), strokeWidth = 1.dp.toPx())

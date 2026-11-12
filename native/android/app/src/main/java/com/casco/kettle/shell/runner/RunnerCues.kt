@@ -2,6 +2,7 @@ package com.casco.kettle.shell.runner
 
 import android.app.NotificationManager
 import android.content.Context
+import android.content.pm.ApplicationInfo
 import android.media.AudioAttributes
 import android.media.AudioManager
 import android.media.SoundPool
@@ -23,8 +24,10 @@ import java.io.IOException
  *   wrong. Without focus nothing refuses it for us, so the audio mode is what says so.
  * - Do Not Disturb is respected: anything but "all" silences them.
  *
- * Each cue logs whether it played or was skipped: `scripts/session-check.sh` reads its cadence from
- * those lines, since a cue that leaves no focus request behind has no other trace outside the app.
+ * In a debuggable build, each cue logs whether it played or was skipped and why:
+ * `scripts/session-check.sh` reads its cadence from those lines, since a cue that leaves no focus
+ * request behind has no other trace outside the app. Debug-only, as `docs/decisions.md` has it, so a
+ * release session doesn't log a line a second.
  *
  * Only called from the runner's [loop].
  */
@@ -48,6 +51,7 @@ class RunnerCues(
             .build()
     private val audio = context.getSystemService(AudioManager::class.java)
     private val notifications = context.getSystemService(NotificationManager::class.java)
+    private val debuggable = context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0
 
     private val sounds: Map<RunnerCue, Int> =
         RunnerCue.entries.mapNotNull { cue -> load(cue)?.let { cue to it } }.toMap()
@@ -79,18 +83,16 @@ class RunnerCues(
 
     override fun play(cue: RunnerCue) {
         val id = sounds[cue]?.takeIf { it in loaded }
-        when {
-            id == null || doNotDisturb() -> {}
-
-            audio.mode != AudioManager.MODE_NORMAL -> {
-                Log.i(TAG, "skipped ${cue.name}: audio mode ${audio.mode}")
+        val mode = audio.mode
+        val skipped =
+            when {
+                id == null -> "not loaded"
+                doNotDisturb() -> "Do Not Disturb"
+                mode != AudioManager.MODE_NORMAL -> "audio mode $mode"
+                else -> null
             }
-
-            else -> {
-                pool.play(id, 1f, 1f, 1, 0, 1f)
-                Log.i(TAG, "played ${cue.name}")
-            }
-        }
+        if (id != null && skipped == null) pool.play(id, 1f, 1f, 1, 0, 1f)
+        if (debuggable) Log.i(TAG, if (skipped == null) "played ${cue.name}" else "skipped ${cue.name}: $skipped")
     }
 
     fun close() = pool.release()

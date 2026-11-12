@@ -48,6 +48,8 @@ receiver="$package/com.casco.kettle.shell.runner.RunnerCommandReceiver"
 navigator="$package/com.casco.kettle.shell.nav.NavigateReceiver"
 apk="$root/native/android/app/build/outputs/apk/debug/app-debug.apk"
 pin=1234
+# The HIIT work's cues, midpoint to change, end by here (ms after its start), with room for a late one.
+work_end=11400
 
 target=()
 while [ $# -gt 0 ]; do
@@ -332,8 +334,8 @@ midpoint=$(cues_since $((start + 4500)) $((start + 5500)) | wc -l | tr -d ' ')
 ending=$(cues_since $((start + 6500)) $((start + 10600)))
 gaps=$(printf '%s\n' "$ending" | awk 'NR > 1 { d = $1 - last; if (d < 800 || d > 1200) bad = 1 } { last = $1 } END { print NR, bad + 0 }')
 [ "$gaps" = '4 0' ]; check "a countdown's last 3 s and its end cue a second apart" $? "cues and stray gap: $gaps"
-# What the call check reads: out of a call, the same cues all play.
-played=$(cues_since $((start + 4500)) $((start + 11400)) played | wc -l | tr -d ' ')
+# What the call check reads: out of a call, the work's cues play.
+played=$(cues_since $((start + 4500)) $((start + work_end)) played | wc -l | tr -d ' ')
 [ "$played" -gt 0 ]; check 'out of a call, the cues play' $? "$played played"
 [ -z "$(alert)" ]; check 'no alert is posted while the runner is on screen' $? "$(alert)"
 rc visible --ez value false >/dev/null
@@ -482,8 +484,8 @@ if [ "$emulator" = 1 ]; then
   wait_for 12 at_step 1 || true
   sleep 1.5
   a emu gsm cancel 5550100 >/dev/null
-  skipped=$(cues_since $((start + 4500)) $((start + 11400)) skipped | wc -l | tr -d ' ')
-  played=$(cues_since $((start + 4500)) $((start + 11400)) played | wc -l | tr -d ' ')
+  skipped=$(cues_since $((start + 4500)) $((start + work_end)) skipped | wc -l | tr -d ' ')
+  played=$(cues_since $((start + 4500)) $((start + work_end)) played | wc -l | tr -d ' ')
   [ "$skipped" -gt 0 ] && [ "$played" = 0 ]
   check 'a cue while a call rings is skipped' $? "$skipped skipped, $played played"
   close_session

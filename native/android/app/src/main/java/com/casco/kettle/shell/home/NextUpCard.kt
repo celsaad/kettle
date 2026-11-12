@@ -76,6 +76,8 @@ private fun QueuedCard(
         Column(
             Modifier
                 .fillMaxWidth()
+                // A floor, never a height: its text sets it at any real size, but it is a control.
+                .heightIn(min = 48.dp)
                 .clickable(
                     onClickLabel = stringResource(R.string.today_previewAction),
                     role = Role.Button,

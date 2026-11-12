@@ -52,6 +52,7 @@ import com.casco.kettle.shell.files.LatestFiles
 import com.casco.kettle.shell.nav.Destination
 import com.casco.kettle.shell.nav.Route
 import com.casco.kettle.shell.nav.Tab
+import com.casco.kettle.shell.nav.routeParams
 import com.casco.kettle.shell.theme.KettleTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -679,6 +680,48 @@ class HomeScreenTest {
         compose.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Workout 60"))
 
         row("Workout 60").assertIsDisplayed()
+    }
+
+    // The card's preview (#280): everything above Start opens it, and Start stays its own target.
+
+    private fun queuedFiles() = Files(library(programs = listOf(program(ProgramWeek.Training(1, "Day 1", "push-day")))))
+
+    @Test
+    fun `tapping the card opens the workout preview on that slot, and starts nothing`() {
+        show(queuedFiles())
+
+        compose.onNode(opensPreview).performClick()
+
+        val slot = RunnerStart.Planned(SessionParams.ProgramSlot("base", 1, "Day 1"))
+        assertEquals(listOf(Route(Destination.WorkoutPreview, slot.routeParams())), opened)
+        assertEquals(emptyList<RunnerStart>(), started)
+    }
+
+    @Test
+    fun `Start is not the preview button, and opens no route`() {
+        show(queuedFiles())
+
+        button("Iniciar treino").performClick()
+
+        assertEquals(listOf(RunnerStart.Planned(SessionParams.ProgramSlot("base", 1, "Day 1"))), started)
+        assertEquals(emptyList<Route>(), opened)
+        compose.onAllNodes(opensPreview and hasText("Iniciar treino")).assertCountEquals(0)
+    }
+
+    @Test
+    fun `a rest day's card has no preview button`() {
+        show(restDayFiles())
+
+        text("Dia de descanso").assertExists()
+        compose.onAllNodes(opensPreview).assertCountEquals(0)
+    }
+
+    /** One node, named by its words rather than a label that would drift from them. */
+    @Test
+    fun `the preview button's name carries the workout's`() {
+        show(queuedFiles())
+
+        compose.onNode(opensPreview).assert(hasText("Push day", substring = true)).assertHeightIsAtLeast(48.dp)
     }
 
     private val isButton = SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button)

@@ -205,20 +205,24 @@ fun upcomingOutline(
  */
 fun sessionOutline(steps: List<RunnerStep>): List<UpcomingItem> =
     upcomingOutline(steps, stepIndex = -1).map { item ->
-        if (item is UpcomingItem.Circuit) firstRound(steps, item.blockIndex) else item
+        (item as? UpcomingItem.Circuit)?.let { firstRound(steps, it.blockIndex) } ?: item
     }
 
+/**
+ * Null when the block has no circuit work, which a Circuit item can't come from, but this is drawn in a
+ * frame, so the item it would replace stands instead of a throw.
+ */
 private fun firstRound(
     steps: List<RunnerStep>,
     blockIndex: Int,
-): UpcomingItem.Round {
+): UpcomingItem.Round? {
     val work = steps.filterIsInstance<WorkStep>().filter { it.blockIndex == blockIndex && it.circuit != null }
-    val first = work.first().round
+    val circuit = work.firstOrNull()?.circuit ?: return null
     return UpcomingItem.Round(
         blockIndex,
-        first,
-        checkNotNull(work.first().circuit).rounds,
-        distinctMembers(work.filter { it.round == first }),
+        circuit.round,
+        circuit.rounds,
+        distinctMembers(work.filter { it.round == circuit.round }),
     )
 }
 

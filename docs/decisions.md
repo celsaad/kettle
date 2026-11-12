@@ -43,8 +43,14 @@ decision assembled across several commits. Open work belongs in the sections at 
   with a now, a next and an end, and showing position is the reason it exists. It lives inside the
   always-dark runner with its own vocabulary, so it can't read as a subtly different copy of
   `ListRow`. The reasoning, and the two row-based layouts drawn and rejected, are in
-  [`up-next-plan.md`](up-next-plan.md). Don't restyle it into rows, and don't take it as licence for
-  a second rail anywhere else.
+  [`up-next-plan.md`](up-next-plan.md). Don't restyle it into rows.
+
+  **Home's workout preview (#280) shares that exception, and is the only other place that may.** It
+  is the same object, one session's sequence to its end, before it starts rather than partway. It is
+  drawn by the same component (`shell/timeline`), so it can't drift into a subtly different rail any
+  more than Coming up can into a subtly different `ListRow`. What licenses it is that it shows a
+  *session*, not that it is read-only or on a sheet: a list of workouts, programs or logged sessions is
+  peers, and stays rows.
 
 - ✅ **List sorting was built, collapsed, and then deleted. Don't rebuild it.** Workouts, Library and
   Programs had a three-option order control (`custom` / A–Z / `recent`) in a permanent row of pills.

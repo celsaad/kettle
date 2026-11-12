@@ -56,6 +56,7 @@ steps=(
   '/workout-editor|New workout' 'back|tab:History'
   '/workout-editor?id=foundations-push|Edit workout' 'back|tab:History'
   '/workout-preview?workoutId=foundations-push|NEXT UP' 'back|tab:History'
+  '/workout-preview?programId=foundations&week=1&day=Day%201|NEXT UP · Week 1 · Day 1' 'back|tab:History'
   '/exercise-progress?exerciseId=pushups|Push-ups' 'back|tab:History'
   '/program-detail?programId=foundations|Week 1 · Day 1' 'back|tab:History'
   '/program-editor|New program' 'back|tab:History'

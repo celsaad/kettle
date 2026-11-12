@@ -57,7 +57,7 @@ internal fun ComingUp(
             }
             if (ends) {
                 item {
-                    TimelineItem(RunnerColors.border, RunnerColors.textSecondary, last = true) {
+                    TimelineItem(ComingUpColors, RunnerColors.textSecondary, last = true) {
                         Caps(stringResource(R.string.session_upcoming_end))
                     }
                 }
@@ -82,7 +82,7 @@ private fun NowRow(
             is RunnerStep.Reps -> null
         }
     TimelineItem(
-        rail = RunnerColors.border,
+        ComingUpColors,
         tint = if (resting) RunnerColors.accentCalm else RunnerColors.accent,
         last = last,
         now = true,

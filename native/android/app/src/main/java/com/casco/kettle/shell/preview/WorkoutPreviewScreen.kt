@@ -41,6 +41,7 @@ import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.MaxContentWidth
 import com.casco.kettle.shell.theme.Spacing
 import com.casco.kettle.shell.timeline.OutlineItem
+import com.casco.kettle.shell.timeline.OutlineMode
 import com.casco.kettle.shell.timeline.TimelineColors
 import com.casco.kettle.shell.timeline.TimelineItem
 
@@ -105,7 +106,16 @@ fun WorkoutPreviewScreen(
 
                 // A truncated workout previews the steps that will run, which is what TooLong carries.
                 is RunnerPlan.TooLong -> {
-                    Preview(plan.plan, slot, units)
+                    Preview(plan.plan, slot, units) {
+                        Message(
+                            stringResource(
+                                R.string.session_tooLong_body,
+                                plan.plan.workout
+                                    ?.name
+                                    .orEmpty(),
+                            ),
+                        )
+                    }
                 }
 
                 is RunnerPlan.Runnable -> {
@@ -121,6 +131,7 @@ private fun Preview(
     plan: RunnerPlan.Runnable,
     slot: SessionParams.ProgramSlot?,
     units: UnitSystem,
+    note: @Composable () -> Unit = {},
 ) {
     // Only an ad-hoc plan has no workout, and no route here names one; said rather than left blank.
     val workout = plan.workout
@@ -129,6 +140,9 @@ private fun Preview(
         return
     }
     Header(workout, plan.exercises, slot)
+    // A workout the step ceiling cuts short says so, as the runner does before its count-in: the list
+    // under it is what will run, which isn't the whole workout.
+    Box(Modifier.padding(top = Spacing.two)) { note() }
     ListHeaderRule()
     Outline(plan.steps, units)
 }
@@ -177,8 +191,8 @@ private fun Outline(
         )
     val items = remember(steps) { sessionOutline(steps) }
     Column(Modifier.padding(top = Spacing.three)) {
-        items.forEach { item -> OutlineItem(item, timeline, last = false, preview = units) }
-        TimelineItem(colors.border, colors.textSecondary, last = true) {
+        items.forEach { item -> OutlineItem(item, timeline, last = false, OutlineMode.Preview(units)) }
+        TimelineItem(timeline, colors.textSecondary, last = true) {
             Text(stringResource(R.string.session_upcoming_end), style = KettleType.code, color = colors.textSecondary)
         }
     }

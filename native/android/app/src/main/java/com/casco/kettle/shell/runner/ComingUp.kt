@@ -7,7 +7,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -20,6 +23,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
@@ -67,17 +73,17 @@ internal fun ComingUp(
             item { NowRow(step, context, last = items.isEmpty() && !ends) }
             items(items.size) { index ->
                 val item = items[index]
+                val circuit = item !is UpcomingItem.Exercise && item !is UpcomingItem.Rest
                 RailItem(
-                    circuit = item !is UpcomingItem.Exercise && item !is UpcomingItem.Rest,
-                    last =
-                        !ends && index == items.size - 1,
+                    tint = if (circuit) RunnerColors.accentCalm else RunnerColors.textSecondary,
+                    last = !ends && index == items.size - 1,
                 ) {
                     UpcomingEntry(item, resources)
                 }
             }
             if (ends) {
                 item {
-                    RailItem(circuit = false, last = true) {
+                    RailItem(RunnerColors.textSecondary, last = true) {
                         Caps(stringResource(R.string.session_upcoming_end))
                     }
                 }
@@ -101,7 +107,12 @@ private fun NowRow(
             is RunnerStep.Interval -> if (step.countUp) context.elapsed.toDouble() else context.remaining
             is RunnerStep.Reps -> null
         }
-    RailItem(circuit = false, last = last, now = true, calm = resting) {
+    RailItem(
+        tint = if (resting) RunnerColors.accentCalm else RunnerColors.accent,
+        last = last,
+        first = true,
+        now = true,
+    ) {
         Column(Modifier.semantics(mergeDescendants = true) {}) {
             Text(
                 stringResource(if (resting) R.string.session_upcoming_nowRest else R.string.session_upcoming_now),
@@ -208,32 +219,44 @@ private fun Kicker(text: String) {
     Text(text, Modifier.semantics { heading() }, style = KettleType.code, color = RunnerColors.accentCalmOnSoft)
 }
 
-/** One timeline item: its node on the rail, the line down to the next, and the item beside them. */
+/**
+ * One timeline item: its node on the rail, the line through it, and the item beside them. The line is
+ * drawn behind the whole row's height, top edge to bottom, so it meets the next item's line whatever
+ * the item's height: a fixed-length line stopped short under any item taller than it, and left a gap
+ * above the next node besides. The first item's starts at its node, the last's ends there.
+ */
 @Composable
 private fun RailItem(
-    circuit: Boolean,
+    tint: Color,
     last: Boolean,
+    first: Boolean = false,
     now: Boolean = false,
-    calm: Boolean = false,
     content: @Composable BoxScope.() -> Unit,
 ) {
-    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.three)) {
-        Column(Modifier.width(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            val tint =
-                when {
-                    now && calm -> RunnerColors.accentCalm
-                    now -> RunnerColors.accent
-                    circuit -> RunnerColors.accentCalm
-                    else -> RunnerColors.textSecondary
-                }
+    val node = if (now) 12.dp else 8.dp
+    Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(Spacing.three)) {
+        val rail = RunnerColors.border
+        Box(
+            Modifier
+                .width(16.dp)
+                .fillMaxHeight()
+                .drawBehind {
+                    val middle = (Spacing.one + node / 2).toPx()
+                    val top = if (first) middle else 0f
+                    val bottom = if (last) middle else size.height
+                    if (bottom > top) {
+                        drawLine(rail, Offset(center.x, top), Offset(center.x, bottom), strokeWidth = 1.dp.toPx())
+                    }
+                },
+            contentAlignment = Alignment.TopCenter,
+        ) {
             Box(
                 Modifier
                     .padding(top = Spacing.one)
-                    .size(if (now) 12.dp else 8.dp)
+                    .size(node)
                     .clip(CircleShape)
                     .background(tint),
             )
-            if (!last) Box(Modifier.width(1.dp).heightIn(min = 40.dp).background(RunnerColors.border))
         }
         Box(Modifier.padding(bottom = if (last) 0.dp else Spacing.three), content = content)
     }

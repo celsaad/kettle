@@ -3,7 +3,6 @@ package com.casco.kettle.shell.runner
 import android.app.NotificationManager
 import android.content.Context
 import android.media.AudioAttributes
-import android.media.AudioFocusRequest
 import android.media.AudioManager
 import android.media.SoundPool
 import android.util.Log
@@ -16,11 +15,18 @@ import java.io.IOException
  *
  * - `SoundPool`, preloaded when the service starts, on `USAGE_MEDIA`: they follow the media volume
  *   and still play with the ringer on silent, as RN's `playsInSilentMode` did.
- * - Transient may-duck focus for each cue, released after it, so music dips and comes back. A cue the
- *   platform refuses focus for, as during a call, is skipped, not queued: a late tick is wrong.
+ * - No audio focus: a cue mixes over whatever else is playing and leaves it alone. Asking for
+ *   transient may-duck focus, as this once did, let any app that answers a transient loss by pausing
+ *   (which many music players do) stop the music for every cue, ticks included. The cost is a cue
+ *   that loud music can mask.
+ * - With the phone in a call, ringing or screening, a cue is skipped, not queued: a late tick is
+ *   wrong. Without focus nothing refuses it for us, so the audio mode is what says so.
  * - Do Not Disturb is respected: anything but "all" silences them.
  *
- * Only called from the runner's [loop], which also releases the focus.
+ * Each cue logs whether it played or was skipped: `scripts/session-check.sh` reads its cadence from
+ * those lines, since a cue that leaves no focus request behind has no other trace outside the app.
+ *
+ * Only called from the runner's [loop].
  */
 class RunnerCues(
     private val context: Context,
@@ -42,17 +48,11 @@ class RunnerCues(
             .build()
     private val audio = context.getSystemService(AudioManager::class.java)
     private val notifications = context.getSystemService(NotificationManager::class.java)
-    private val focus =
-        AudioFocusRequest
-            .Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
-            .setAudioAttributes(attributes)
-            .build()
 
     private val sounds: Map<RunnerCue, Int> =
         RunnerCue.entries.mapNotNull { cue -> load(cue)?.let { cue to it } }.toMap()
     private val loaded = mutableSetOf<Int>()
     private var whenLoaded: (() -> Unit)? = null
-    private var release: Cancellable? = null
 
     init {
         pool.setOnLoadCompleteListener { _, id, status ->
@@ -78,18 +78,22 @@ class RunnerCues(
     override fun on(): Boolean = soundsOn()
 
     override fun play(cue: RunnerCue) {
-        val id = sounds[cue]?.takeIf { it in loaded } ?: return
-        if (doNotDisturb() || !requestFocus()) return
-        pool.play(id, 1f, 1f, 1, 0, 1f)
-        release?.cancel()
-        release = loop.postDelayed(FOCUS_HOLD_MS, ::abandonFocus)
+        val id = sounds[cue]?.takeIf { it in loaded }
+        when {
+            id == null || doNotDisturb() -> {}
+
+            audio.mode != AudioManager.MODE_NORMAL -> {
+                Log.i(TAG, "skipped ${cue.name}: audio mode ${audio.mode}")
+            }
+
+            else -> {
+                pool.play(id, 1f, 1f, 1, 0, 1f)
+                Log.i(TAG, "played ${cue.name}")
+            }
+        }
     }
 
-    fun close() {
-        release?.cancel()
-        abandonFocus()
-        pool.release()
-    }
+    fun close() = pool.release()
 
     private fun fireLoaded() {
         val then = whenLoaded ?: return
@@ -109,13 +113,6 @@ class RunnerCues(
         notifications.currentInterruptionFilter.let {
             it != NotificationManager.INTERRUPTION_FILTER_ALL && it != NotificationManager.INTERRUPTION_FILTER_UNKNOWN
         }
-
-    private fun requestFocus(): Boolean = audio.requestAudioFocus(focus) == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
-
-    private fun abandonFocus() {
-        release = null
-        audio.abandonAudioFocusRequest(focus)
-    }
 }
 
 /** The repo's `assets/sounds/` names, packaged as they are. */
@@ -126,6 +123,4 @@ private fun fileOf(cue: RunnerCue): String =
         RunnerCue.MILESTONE -> "milestone.wav"
     }
 
-/** Longer than the longest cue, so the duck lasts the sound and no more. */
-private const val FOCUS_HOLD_MS = 800L
 private const val TAG = "RunnerCues"

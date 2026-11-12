@@ -43,6 +43,7 @@
     "restDayBody": "Nothing in the program to run here. Kettle queues your next session when it's due.",
     "restDaySkip": "Train anyway",
     "startSession": "Start session",
+    "previewAction": "See the exercises",
     "firstRun": {
       "title": "NEW HERE?",
       "step1Title": "Start the workout below",
@@ -56,6 +57,9 @@
     "starterPacks": "Add a starter program",
     "moreBlocks_one": "+{{count}} more",
     "moreBlocks_other": "+{{count}} more"
+  },
+  "workoutPreview": {
+    "notFound": "This workout isn't in your library any more."
   },
   "build": {
     "title": "Workouts",

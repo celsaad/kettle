@@ -52,22 +52,28 @@ fun exerciseSummary(
         }
     }
 
+/** " · 20 kg" in the reader's [units], or nothing for no weight: also the Home preview's (#280). */
+@Composable
+internal fun weightSuffix(
+    kg: Double?,
+    units: UnitSystem,
+): String =
+    if (kg == null || kg == 0.0) {
+        ""
+    } else {
+        stringResource(
+            R.string.summary_repsWeight,
+            stringResource(weightUnit(units)),
+            jsNumber(toDisplayWeight(kg, units)),
+        )
+    }
+
 @Composable
 private fun repsSummary(
     config: ExerciseConfig.Reps,
     units: UnitSystem,
 ): String {
-    val kg = config.targetWeightKg
-    val weight =
-        if (kg == null || kg == 0.0) {
-            ""
-        } else {
-            stringResource(
-                R.string.summary_repsWeight,
-                stringResource(weightUnit(units)),
-                jsNumber(toDisplayWeight(kg, units)),
-            )
-        }
+    val weight = weightSuffix(config.targetWeightKg, units)
     return stringResource(
         R.string.summary_reps,
         rangeLabel(config.targetRepsMin.toDouble(), config.targetRepsMax?.toDouble()),

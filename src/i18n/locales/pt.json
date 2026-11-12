@@ -43,6 +43,7 @@
     "restDayBody": "Não há nada do programa para executar aqui. O Kettle coloca sua próxima sessão na fila quando for a hora.",
     "restDaySkip": "Treinar mesmo assim",
     "startSession": "Iniciar treino",
+    "previewAction": "Ver os exercícios",
     "firstRun": {
       "title": "PRIMEIRA VEZ?",
       "step1Title": "Comece o treino abaixo",
@@ -57,6 +58,9 @@
     "moreBlocks_one": "+{{count}} a mais",
     "moreBlocks_other": "+{{count}} a mais",
     "moreBlocks_zero": "+{{count}} a mais"
+  },
+  "workoutPreview": {
+    "notFound": "Este treino não está mais na sua biblioteca."
   },
   "build": {
     "title": "Treinos",

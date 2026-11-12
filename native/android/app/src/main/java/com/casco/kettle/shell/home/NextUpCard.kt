@@ -52,41 +52,64 @@ import com.casco.kettle.shell.theme.card
 fun NextUpCard(
     nextUp: NextUp,
     start: (SessionParams) -> Unit,
+    preview: (SessionParams) -> Unit,
 ) = when (nextUp) {
-    is NextUp.Queued -> QueuedCard(nextUp, start)
+    is NextUp.Queued -> QueuedCard(nextUp, start, preview)
     is NextUp.Rest -> RestDayCard(nextUp, start)
 }
 
+/**
+ * Everything above Start opens the preview (#280), so the movement names this card leaves out are one
+ * tap away without starting anything. Its words name it, label to notes, so it takes no label of its
+ * own, which would only drift from what's on screen; the click label is what a reader hears it does.
+ * Start stays a separate target, never inside this one.
+ */
 @Composable
 private fun QueuedCard(
     queued: NextUp.Queued,
     start: (SessionParams) -> Unit,
+    preview: (SessionParams) -> Unit,
 ) {
     val colors = KettleTheme.colors
     val shape = remember(queued.workout, queued.exercises) { workoutShape(queued.workout, queued.exercises) }
     Column(Modifier.padding(top = Spacing.three)) {
-        val label = queued.weekNumber?.let { stringResource(R.string.today_nextUpWeek, weekLabel(it, queued.weekDay)) }
-        Text(label ?: stringResource(R.string.today_nextUp), style = KettleType.label, color = colors.accentText)
-        // User data, so its length is theirs, and two lines names any workout.
-        Text(
-            queued.workout.name,
-            Modifier.padding(top = Spacing.one),
-            style = KettleType.subtitle,
-            color = colors.text,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-        )
-        // Two lines, not one: a mixed workout's summary drops its tail, the duration, at phone width,
-        // and the duration is the part you decide on.
-        Text(
-            workoutShapeText(shape),
-            Modifier.padding(top = Spacing.two),
-            style = KettleType.default,
-            color = colors.textSecondary,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-        )
-        WeekNotes(queued.weekNotes)
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .clickable(
+                    onClickLabel = stringResource(R.string.today_previewAction),
+                    role = Role.Button,
+                ) { preview(queued.sessionParams) },
+        ) {
+            val label =
+                queued.weekNumber?.let {
+                    stringResource(
+                        R.string.today_nextUpWeek,
+                        weekLabel(it, queued.weekDay),
+                    )
+                }
+            Text(label ?: stringResource(R.string.today_nextUp), style = KettleType.label, color = colors.accentText)
+            // User data, so its length is theirs, and two lines names any workout.
+            Text(
+                queued.workout.name,
+                Modifier.padding(top = Spacing.one),
+                style = KettleType.subtitle,
+                color = colors.text,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+            // Two lines, not one: a mixed workout's summary drops its tail, the duration, at phone width,
+            // and the duration is the part you decide on.
+            Text(
+                workoutShapeText(shape),
+                Modifier.padding(top = Spacing.two),
+                style = KettleType.default,
+                color = colors.textSecondary,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+            WeekNotes(queued.weekNotes)
+        }
         Row(
             Modifier
                 .padding(top = Spacing.three)
@@ -174,7 +197,7 @@ private fun WeekNotes(notes: String?) {
  * tested it for truth: the schema takes `day: ""`.
  */
 @Composable
-private fun weekLabel(
+internal fun weekLabel(
     number: Long,
     day: String?,
 ): String {

@@ -27,6 +27,9 @@ here, next to what it describes.
   are still skipped during a call (#392).
 - **Coming up's timeline is joined up again**: the line between items stopped short under any
   item taller than one line, such as a circuit. It now runs from each item to the next (#392).
+- **See today's workout before you start it**: tap the next-up card on Home, anywhere above
+  Start, to see every exercise in order, with its sets, targets and weights, so you know what to
+  get out first. For a program week, it shows that week's changes (#280).
 
 ---
 

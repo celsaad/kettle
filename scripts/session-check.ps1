@@ -31,6 +31,8 @@ $receiver = "$package/com.casco.kettle.shell.runner.RunnerCommandReceiver"
 $navigator = "$package/com.casco.kettle.shell.nav.NavigateReceiver"
 $apk = Join-Path $root 'native/android/app/build/outputs/apk/debug/app-debug.apk'
 $pin = '1234'
+# The HIIT work's cues, midpoint to change, end by here (ms after its start), with room for a late one.
+$workEnd = 11400
 
 # Per call, not $env:ANDROID_SERIAL, which would outlive the script in the caller's terminal.
 $target = if ($Device) { @('-s', $Device) } else { @() }
@@ -96,24 +98,18 @@ function SessionFile([string]$Id) { (InApp "cat $data/files/exercise-tracker/ses
 function SessionCount { @((InApp "ls $data/files/exercise-tracker/sessions") -split '\s+' | Where-Object { $_ }).Count }
 function StepIndex { Field stepIndex }
 
-# The focus requests (or, with -Kind abandon, abandons) the app made from [from] to [to] (now, if not
-# given), device wall clock, as milliseconds of the local day. dumpsys audio stamps them in local time,
-# so the bounds are shifted by the device's own offset; a window across midnight wraps. Its history is
-# capped, so a window has to be recent: count within one, never lines overall.
-function FocusSince([long]$From, [long]$To = 0, [string]$Kind = 'request') {
+# The cues the app tried from [from] to [to] (now, if not given), device wall clock, one epoch
+# millisecond each: -Kind played or skipped narrows them, and both is the default. RunnerCues logs one
+# line per cue it was asked for while sounds are on. Logcat's buffer is capped, so a window has to be
+# recent: count within one, never lines overall.
+function CuesSince([long]$From, [long]$To = 0, [string]$Kind = '') {
   if (-not $To) { $To = NowMs }
-  $offset = (A shell date +%z) -join ''
-  $shift = ([int]$offset.Substring(1, 2) * 3600 + [int]$offset.Substring(3, 2) * 60) * 1000
-  if ($offset.StartsWith('-')) { $shift = -$shift }
-  $day = 86400000
-  $lo = ((($From + $shift) % $day) + $day) % $day
-  $hi = ((($To + $shift) % $day) + $day) % $day
-  A shell dumpsys audio | ForEach-Object {
+  A logcat -d -v epoch -s RunnerCues:I | ForEach-Object {
     $f = $_ -split '\s+' | Where-Object { $_ }
-    if ($f.Count -ge 3 -and $f[2] -eq "${Kind}AudioFocus()" -and $_.Contains("callingPack=$package")) {
-      $t = $f[1] -split ':'
-      $ms = (([int]$t[0] * 60 + [int]$t[1]) * 60 + [int]$t[2]) * 1000 + [int]$t[3]
-      if ($(if ($lo -le $hi) { $ms -ge $lo -and $ms -le $hi } else { $ms -ge $lo -or $ms -le $hi })) { $ms }
+    if ($f.Count -ge 6 -and $f[4] -eq 'RunnerCues:' -and (-not $Kind -or $f[5] -eq $Kind)) {
+      $t = $f[0] -split '\.'
+      $ms = [long]$t[0] * 1000 + [long](($t[1] + '000').Substring(0, 3))
+      if ($ms -ge $From -and $ms -le $To) { $ms }
     }
   }
 }
@@ -289,24 +285,24 @@ try {
   Check 'the service runs in the foreground, typed health' ([bool]((A shell dumpsys activity services $package) -match 'isForeground=true .*types=0x00000100'))
   $id = Field sessionId
   $start = [long](StateOf $id).phaseStartedAt
-  $countIn = Count (FocusSince ($start - 3500) ($start + 500))
-  Check 'the count-in cues 3 ticks and the exercise change' ($countIn -eq 4) "$countIn focus requests"
+  $countIn = Count (CuesSince ($start - 3500) ($start + 500))
+  Check 'the count-in cues 3 ticks and the exercise change' ($countIn -eq 4) "$countIn cues"
   # The HIIT work is 10 s: its midpoint at 5, ticks at 7, 8 and 9, the change at 10. The runner is on
   # screen as it ends, so no alert may be posted.
   WaitFor 14 { (StepIndex) -eq 1 } | Out-Null
   Start-Sleep -Milliseconds 800
-  $midpoint = Count (FocusSince ($start + 4500) ($start + 5500))
-  Check 'HIIT work cues its midpoint' ($midpoint -eq 1) "$midpoint focus requests"
-  $ending = @(FocusSince ($start + 6500) ($start + 10600))
+  $midpoint = Count (CuesSince ($start + 4500) ($start + 5500))
+  Check 'HIIT work cues its midpoint' ($midpoint -eq 1) "$midpoint cues"
+  $ending = @(CuesSince ($start + 6500) ($start + 10600))
   $stray = $false
   for ($i = 1; $i -lt $ending.Count; $i++) {
     $gap = $ending[$i] - $ending[$i - 1]
     if ($gap -lt 800 -or $gap -gt 1200) { $stray = $true }
   }
   Check "a countdown's last 3 s and its end cue a second apart" ($ending.Count -eq 4 -and -not $stray) "cues and stray gap: $($ending.Count) $([int]$stray)"
-  # What the call check reads: a cue that plays gives its focus back once its sound ends.
-  $released = Count (FocusSince ($start + 4500) ($start + 11400) 'abandon')
-  Check 'a cue that plays gives its focus back' ($released -gt 0) "$released abandons"
+  # What the call check reads: out of a call, the work's cues play.
+  $played = Count (CuesSince ($start + 4500) ($start + $workEnd) 'played')
+  Check 'out of a call, the cues play' ($played -gt 0) "$played played"
   $seen = Alert
   Check 'no alert is posted while the runner is on screen' (-not $seen) $seen
   Rc visible --ez value false | Out-Null
@@ -405,8 +401,8 @@ try {
   Rc visible --ez value false | Out-Null
   WaitFor 14 { (StepIndex) -eq 1 } | Out-Null
   Start-Sleep -Milliseconds 800
-  $quiet = Count (FocusSince $from)
-  Check 'with sounds off, no cue requests focus' ($quiet -eq 0) "$quiet focus requests"
+  $quiet = Count (CuesSince $from)
+  Check 'with sounds off, no cue is tried' ($quiet -eq 0) "$quiet cues"
   $interval = Alert
   Check 'an interval that ends off screen posts "Interval complete" and the next exercise' ($interval -like '*title=Interval complete*text=Check Hold*') $interval
   Check 'with sounds off, the alert sounds itself' ($interval -and $interval -notlike '*SILENT*') $interval
@@ -422,8 +418,8 @@ try {
   if (OpenSession 'zz-check-cues') { WaitRunning | Out-Null }
   Rc visible --ez value false | Out-Null
   Check 'with notifications denied, the session runs' (WaitFor 14 { (StepIndex) -eq 1 })
-  $cues = Count (FocusSince $from)
-  Check 'with notifications denied, the cues still play' ($cues -gt 0) "$cues focus requests"
+  $cues = Count (CuesSince $from 0 'played')
+  Check 'with notifications denied, the cues still play' ($cues -gt 0) "$cues played"
   $shown = (LiveNotifications) -join '; '
   Check 'with notifications denied, nothing shows in the shade' (-not $shown) $shown
   Rc visible --ez value true | Out-Null
@@ -443,9 +439,9 @@ try {
     WaitFor 12 { (StepIndex) -eq 1 } | Out-Null
     Start-Sleep -Milliseconds 1500
     A emu gsm cancel 5550100 | Out-Null
-    $tried = Count (FocusSince ($start + 4500) ($start + 10600))
-    $played = Count (FocusSince ($start + 4500) ($start + 11400) 'abandon')
-    Check 'a cue while a call rings is skipped' ($tried -gt 0 -and $played -eq 0) "$tried requests, $played played"
+    $skipped = Count (CuesSince ($start + 4500) ($start + $workEnd) 'skipped')
+    $played = Count (CuesSince ($start + 4500) ($start + $workEnd) 'played')
+    Check 'a cue while a call rings is skipped' ($skipped -gt 0 -and $played -eq 0) "$skipped skipped, $played played"
     CloseSession
   } else {
     Skip 'a cue while a call rings: needs an emulator (adb emu gsm call); check it by hand on a phone'

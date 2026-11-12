@@ -20,7 +20,13 @@ here, next to what it describes.
 
 ## Unreleased
 
-Nothing since 0.16.0.
+### What changed
+
+- **Session sounds no longer pause your music**: a tick or cue used to make some music apps stop
+  for a moment and start again. The sounds now play over your music and leave it playing. They
+  are still skipped during a call (#392).
+- **Coming up's timeline is joined up again**: the line between items stopped short under any
+  item taller than one line, such as a circuit. It now runs from each item to the next (#392).
 
 ---
 

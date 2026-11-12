@@ -11,9 +11,9 @@
 # made it in: mergeDebugAssets can stay up to date and ship without them).
 #
 # The evidence is what a person would read by hand: the session's state file
-# (`no_backup/runner/<id>.json`, device wall-clock ms), its session file, `dumpsys audio`'s
-# requestAudioFocus() and abandonAudioFocus() lines (a cue that played abandons its focus; one the
-# system refused doesn't), the live "Notification List" of `dumpsys notification`
+# (`no_backup/runner/<id>.json`, device wall-clock ms), its session file, the RunnerCues lines in
+# logcat (one per cue, played or skipped: cues take no audio focus, so they leave no other trace), the
+# live "Notification List" of `dumpsys notification`
 # (never its archive, which keeps cancelled ones), and `dumpsys activity services`. The session is
 # driven through the debug-only RunnerCommandReceiver, so nothing taps the screen except the recovery
 # prompt, which only ever shows on an unlocked launch.
@@ -48,6 +48,8 @@ receiver="$package/com.casco.kettle.shell.runner.RunnerCommandReceiver"
 navigator="$package/com.casco.kettle.shell.nav.NavigateReceiver"
 apk="$root/native/android/app/build/outputs/apk/debug/app-debug.apk"
 pin=1234
+# The HIIT work's cues, midpoint to change, end by here (ms after its start), with room for a late one.
+work_end=11400
 
 target=()
 while [ $# -gt 0 ]; do
@@ -128,24 +130,16 @@ session_file() { in_app "cat $data/files/exercise-tracker/sessions/$1.yaml"; }
 session_count() { in_app "ls $data/files/exercise-tracker/sessions" | wc -w | tr -d ' '; }
 step_index() { field "$(report)" stepIndex; }
 
-# The focus requests the app made from [from_ms] to [to_ms] (now, if not given), device wall clock, one
-# millisecond time of day per line; abandons with [kind] abandon. A cue that played abandons its focus
-# when its sound ends, so a request with no abandon after it is one the system refused. `dumpsys audio`
-# stamps them in local time, so the bounds are shifted by the device's own offset; a window across
-# midnight wraps. Its history is capped, so a window has to be recent: count within one, never lines
-# overall.
-focus_since() {
-  local from=$1 to=${2:-$(now_ms)} kind=${3:-request} offset sign hh mm
-  offset=$(a shell date +%z | tr -d '\r')
-  sign=${offset:0:1}; hh=$((10#${offset:1:2})); mm=$((10#${offset:3:2}))
-  local shift_ms=$(((hh * 3600 + mm * 60) * 1000))
-  [ "$sign" = - ] && shift_ms=$((-shift_ms))
-  local day=86400000
-  local lo=$((((from + shift_ms) % day + day) % day)) hi=$((((to + shift_ms) % day + day) % day))
-  a shell dumpsys audio | awk -v lo="$lo" -v hi="$hi" -v kind="$kind" -v pkg="callingPack=$package" '
-    $3 == kind "AudioFocus()" && index($0, pkg) {
-      split($2, t, ":"); ms = ((t[1] * 60 + t[2]) * 60 + t[3]) * 1000 + t[4]
-      if (lo <= hi ? (ms >= lo && ms <= hi) : (ms >= lo || ms <= hi)) print ms
+# The cues the app tried from [from_ms] to [to_ms] (now, if not given), device wall clock, one epoch
+# millisecond per line: [kind] played or skipped narrows them, and both is the default. RunnerCues logs
+# one line per cue it was asked for while sounds are on. Logcat's buffer is capped, so a window has to
+# be recent: count within one, never lines overall.
+cues_since() {
+  local from=$1 to=${2:-$(now_ms)} kind=${3:-}
+  a logcat -d -v epoch -s RunnerCues:I | awk -v lo="$from" -v hi="$to" -v kind="$kind" '
+    $5 == "RunnerCues:" && (kind == "" || $6 == kind) {
+      split($1, t, "."); ms = t[1] * 1000 + substr(t[2] "000", 1, 3)
+      if (ms >= lo && ms <= hi) print ms
     }'
 }
 
@@ -329,20 +323,20 @@ a shell dumpsys activity services "$package" | grep -q 'isForeground=true .*type
 check 'the service runs in the foreground, typed health' $?
 id=$(field "$(report)" sessionId)
 start=$(field "$(state_of "$id")" phaseStartedAt)
-count_in=$(focus_since $((start - 3500)) $((start + 500)) | wc -l | tr -d ' ')
-[ "$count_in" = 4 ]; check 'the count-in cues 3 ticks and the exercise change' $? "$count_in focus requests"
+count_in=$(cues_since $((start - 3500)) $((start + 500)) | wc -l | tr -d ' ')
+[ "$count_in" = 4 ]; check 'the count-in cues 3 ticks and the exercise change' $? "$count_in cues"
 # The HIIT work is 10 s: its midpoint at 5, ticks at 7, 8 and 9, the change at 10. The runner is on
 # screen as it ends, so no alert may be posted.
 wait_for 14 at_step 1 || true
 sleep 0.8
-midpoint=$(focus_since $((start + 4500)) $((start + 5500)) | wc -l | tr -d ' ')
-[ "$midpoint" = 1 ]; check 'HIIT work cues its midpoint' $? "$midpoint focus requests"
-ending=$(focus_since $((start + 6500)) $((start + 10600)))
+midpoint=$(cues_since $((start + 4500)) $((start + 5500)) | wc -l | tr -d ' ')
+[ "$midpoint" = 1 ]; check 'HIIT work cues its midpoint' $? "$midpoint cues"
+ending=$(cues_since $((start + 6500)) $((start + 10600)))
 gaps=$(printf '%s\n' "$ending" | awk 'NR > 1 { d = $1 - last; if (d < 800 || d > 1200) bad = 1 } { last = $1 } END { print NR, bad + 0 }')
 [ "$gaps" = '4 0' ]; check "a countdown's last 3 s and its end cue a second apart" $? "cues and stray gap: $gaps"
-# What the call check reads: a cue that plays gives its focus back once its sound ends.
-released=$(focus_since $((start + 4500)) $((start + 11400)) abandon | wc -l | tr -d ' ')
-[ "$released" -gt 0 ]; check 'a cue that plays gives its focus back' $? "$released abandons"
+# What the call check reads: out of a call, the work's cues play.
+played=$(cues_since $((start + 4500)) $((start + work_end)) played | wc -l | tr -d ' ')
+[ "$played" -gt 0 ]; check 'out of a call, the cues play' $? "$played played"
 [ -z "$(alert)" ]; check 'no alert is posted while the runner is on screen' $? "$(alert)"
 rc visible --ez value false >/dev/null
 # The hold ends at 4 s, handing over to the AMRAP.
@@ -451,8 +445,8 @@ open_session zz-check-cues && wait_running
 rc visible --ez value false >/dev/null
 wait_for 14 at_step 1 || true
 sleep 0.8
-quiet=$(focus_since "$from" | wc -l | tr -d ' ')
-[ "$quiet" = 0 ]; check 'with sounds off, no cue requests focus' $? "$quiet focus requests"
+quiet=$(cues_since "$from" | wc -l | tr -d ' ')
+[ "$quiet" = 0 ]; check 'with sounds off, no cue is tried' $? "$quiet cues"
 interval=$(alert)
 case "$interval" in *'title=Interval complete'*'text=Check Hold'*) ok=0 ;; *) ok=1 ;; esac
 check 'an interval that ends off screen posts "Interval complete" and the next exercise' $ok "$interval"
@@ -470,8 +464,8 @@ from=$(now_ms)
 open_session zz-check-cues && wait_running
 rc visible --ez value false >/dev/null
 wait_for 14 at_step 1; check 'with notifications denied, the session runs' $?
-cues=$(focus_since "$from" | wc -l | tr -d ' ')
-[ "$cues" -gt 0 ]; check 'with notifications denied, the cues still play' $? "$cues focus requests"
+cues=$(cues_since "$from" "" played | wc -l | tr -d ' ')
+[ "$cues" -gt 0 ]; check 'with notifications denied, the cues still play' $? "$cues played"
 [ -z "$(live_notifications)" ]; check 'with notifications denied, nothing shows in the shade' $? "$(live_notifications)"
 rc visible --ez value true >/dev/null
 close_session
@@ -490,10 +484,10 @@ if [ "$emulator" = 1 ]; then
   wait_for 12 at_step 1 || true
   sleep 1.5
   a emu gsm cancel 5550100 >/dev/null
-  tried=$(focus_since $((start + 4500)) $((start + 10600)) | wc -l | tr -d ' ')
-  played=$(focus_since $((start + 4500)) $((start + 11400)) abandon | wc -l | tr -d ' ')
-  [ "$tried" -gt 0 ] && [ "$played" = 0 ]
-  check 'a cue while a call rings is skipped' $? "$tried requests, $played played"
+  skipped=$(cues_since $((start + 4500)) $((start + work_end)) skipped | wc -l | tr -d ' ')
+  played=$(cues_since $((start + 4500)) $((start + work_end)) played | wc -l | tr -d ' ')
+  [ "$skipped" -gt 0 ] && [ "$played" = 0 ]
+  check 'a cue while a call rings is skipped' $? "$skipped skipped, $played played"
   close_session
 else
   skip 'a cue while a call rings: needs an emulator (adb emu gsm call); check it by hand on a phone'

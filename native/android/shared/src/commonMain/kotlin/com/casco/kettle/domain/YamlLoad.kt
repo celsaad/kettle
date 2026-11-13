@@ -66,6 +66,11 @@ internal fun loadYaml(text: String): YamlLoad =
             ?: YamlLoad.Loaded(Load(loadSettings).loadOne(text))
     } catch (error: YamlEngineException) {
         YamlLoad.Invalid(error.message.orEmpty())
+    } catch (error: IllegalArgumentException) {
+        // The checks above construct a tagged key's scalar themselves, outside the engine's wrapping,
+        // so `!!int x: 1` throws a NumberFormatException from here rather than a YamlEngineException.
+        // Uncaught, 13 bytes in a stored file crash every launch that reads it.
+        YamlLoad.Invalid(error.message ?: error.toString())
     }
 
 /**
@@ -443,11 +448,17 @@ private object UnknownTag : ConstructNode {
 }
 
 // Keys duplicated as typed are refused by default, and [MappingKeys] refuses the ones only JS's
-// spelling makes duplicate. The engine's 3 MB input cap is lifted because js-yaml has none, and the
-// text is already in memory by the time it's here.
+// spelling makes duplicate. The engine's input cap is kept, and spelled out, although js-yaml has none:
+// scanning one long unbroken scalar is quadratic (4 MB took 6 s on a desktop JVM), and the library is
+// parsed on the main thread at every launch, so an uncapped file pasted in once froze each launch after
+// it. Over the cap, a stored library is quarantined and reseeded like any file that won't parse, which
+// no real library comes near, and Import refuses anything past `MAX_IMPORT_CHARS` well before it.
 private val loadSettings =
     LoadSettings(
         schema = YamlCoreSchema,
         maxAliasesForCollections = MAX_ALIASES,
-        codePointLimit = Int.MAX_VALUE,
+        codePointLimit = MAX_CODE_POINTS,
     )
+
+/** The engine's own default, 3 MB. */
+private const val MAX_CODE_POINTS = 3 * 1024 * 1024

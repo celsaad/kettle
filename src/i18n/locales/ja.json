@@ -540,7 +540,8 @@
       "unknownWorkout": "プログラム「{{program}}」の週 {{week}} が不明なワークアウト「{{workout}}」を参照しています",
       "weekWithDay": "{{week}}（{{day}}）",
       "readFailed": "そのファイルを読み込めませんでした: {{detail}}",
-      "saveFailed": "ライブラリを保存できませんでした: {{detail}}"
+      "saveFailed": "ライブラリを保存できませんでした: {{detail}}",
+      "tooLarge": "大きすぎてインポートできません。ライブラリは 512 KB までです。"
     }
   },
   "exerciseForm": {

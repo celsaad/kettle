@@ -63,6 +63,23 @@ class YamlTest {
         assertInvalidYaml(withUnused("!ENV_VARIABLE x"))
     }
 
+    // Constructed by the loader's own key check, outside the engine's wrapping: a NumberFormatException
+    // that escaped every parser, and crashed each launch that read the file it was in.
+    @Test
+    fun `a tagged scalar that isn't its tag is a YAML error, as a key or behind an anchor`() {
+        assertInvalidYaml("$session!!int x: 1\n")
+        assertInvalidYaml(withUnused("&a !!int abc"))
+        assertInvalidYaml("$session!!int 0x: 1\n")
+        assertInvalidYaml("$session!!float y: 1\n")
+    }
+
+    // The engine's cap, kept where js-yaml has none: a long unbroken scalar parses in quadratic time.
+    @Test
+    fun `input past the code point cap is a YAML error`() {
+        assertLoads(withUnused("x".repeat(1024 * 1024)))
+        assertInvalidYaml(withUnused("x".repeat(3 * 1024 * 1024)))
+    }
+
     @Test
     fun `an explicit float that overflows is a YAML error, where the plain one is a string`() {
         assertInvalidYaml(withUnused("!!float 1e400"))

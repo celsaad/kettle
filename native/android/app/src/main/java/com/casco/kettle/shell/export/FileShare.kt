@@ -15,6 +15,7 @@ import com.casco.kettle.domain.isoInstant
 import com.casco.kettle.domain.serializeSessionArchiveYaml
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.files.StoragePaths
+import com.casco.kettle.storage.sessionFile
 import com.casco.kettle.storage.writeAtomically
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -36,9 +37,16 @@ class FileShare(
 ) {
     fun library(): String? = share(paths.library, activity.getString(R.string.settings_shareLibraryTitle))
 
-    /** Named as `sessionFile` in `src/storage/paths.ts` names it. The two share no code, so change both. */
-    fun session(id: String): String? =
-        share(paths.sessions.resolve("$id.yaml"), activity.getString(R.string.settings_shareSessionTitle, id))
+    /** The file [sessionFile] names, which refuses an id that would reach outside the log. */
+    fun session(id: String): String? {
+        val file =
+            try {
+                sessionFile(paths.sessions, id)
+            } catch (error: IOException) {
+                return error.reason()
+            }
+        return share(file, activity.getString(R.string.settings_shareSessionTitle, id))
+    }
 
     /**
      * Writes [sessions] as one archive under the cache, replaced each time, and shares that: a share

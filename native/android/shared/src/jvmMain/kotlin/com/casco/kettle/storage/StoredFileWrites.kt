@@ -12,13 +12,28 @@ import java.nio.file.StandardOpenOption
 
 /**
  * Writes session [session]'s file in [dir], `sessions/` beside the library: native's edit of a finished
- * session (#239). Named as `sessionFile` in `src/storage/paths.ts` names it. The two share no code, so
- * change both. Throws [IOException] when the disk refuses, with the last file left as it was.
+ * session (#239), at the name [sessionFile] gives it. Throws [IOException] when the disk refuses, with
+ * the last file left as it was.
  */
 fun writeSessionFile(
     dir: File,
     session: Session,
-) = writeAtomically(dir.resolve("${session.id}.yaml"), serializeSessionYaml(session))
+) = writeAtomically(sessionFile(dir, session.id), serializeSessionYaml(session))
+
+/**
+ * Session [id]'s file in [dir]. The id is the file's own content, which the schema only requires to be
+ * non-empty, so one holding a separator would name a file outside `sessions/`: `../exercises` is the
+ * library, which editing or deleting that session, or the launch's sweep of unfinished ones, would
+ * overwrite. Throws [IOException] for such an id, as for any write the disk refuses, which every caller
+ * already reports.
+ */
+fun sessionFile(
+    dir: File,
+    id: String,
+): File {
+    if (id.any { it == '/' || it == '\\' || it == '\u0000' }) throw IOException("Not a session id: $id")
+    return dir.resolve("$id.yaml")
+}
 
 /**
  * Writes [library] over [file], `exercises.yaml`: native's library editors, from the library flip

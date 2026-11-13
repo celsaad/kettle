@@ -6,6 +6,7 @@ import androidx.compose.runtime.setValue
 import com.casco.kettle.domain.ChangedItem
 import com.casco.kettle.domain.ImportPreview
 import com.casco.kettle.domain.Library
+import com.casco.kettle.domain.MAX_IMPORT_CHARS
 import com.casco.kettle.domain.MergeError
 import com.casco.kettle.domain.MergeResult
 import com.casco.kettle.domain.ParseResult
@@ -48,6 +49,9 @@ sealed interface FilePick {
     data class Failed(
         val detail: String,
     ) : FilePick
+
+    /** Past [MAX_IMPORT_CHARS], found while reading, so a huge file is never held whole. */
+    data object TooLarge : FilePick
 }
 
 /** Where a preview came from, which its card names: a file, a paste, or a bundled pack. */
@@ -93,6 +97,12 @@ sealed interface ImportRefusal {
     data class SaveFailed(
         val detail: String,
     ) : ImportRefusal
+
+    /**
+     * Past [MAX_IMPORT_CHARS]. Not about the content in the sense a report needs: no one fixes a file
+     * that size by editing it, so there is nothing to hand back.
+     */
+    data object TooLarge : ImportRefusal
 }
 
 /**
@@ -204,6 +214,7 @@ internal class Importer(
                 when (val pick = actions.pickFile()) {
                     FilePick.Cancelled -> Unit
                     is FilePick.Failed -> refuse(ImportRefusal.ReadFailed(pick.detail), RefusalSite.File)
+                    FilePick.TooLarge -> refuse(ImportRefusal.TooLarge, RefusalSite.File)
                     is FilePick.Picked -> review(pick.text, ImportSource.File(pick.name, pick.sizeBytes))
                 }
             } finally {
@@ -307,6 +318,12 @@ internal class Importer(
         text: String,
         source: ImportSource,
     ) {
+        // Before the parse, which is on this thread and slows with the square of a long scalar: a paste
+        // has no read to stop it earlier, as a picked file's has.
+        if (text.length > MAX_IMPORT_CHARS) {
+            refuse(ImportRefusal.TooLarge, source.site)
+            return
+        }
         when (val parsed = parseLibraryYaml(text)) {
             is ParseResult.Ok -> reviewLibrary(parsed.value, source)
             is ParseResult.InvalidYaml -> refuse(ImportRefusal.InvalidYaml(parsed.detail), source.site)

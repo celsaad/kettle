@@ -72,6 +72,20 @@ class PrepareLibraryTest {
         assertEquals(listOf("exercises.yaml"), dir.list()?.toList())
     }
 
+    // The repair rewrites the raw tree, keys the schema ignores included, which the ordinary parse never
+    // walks: a self-referencing alias there overflowed the stack as an Error, past the launch's catch,
+    // and crashed every launch with the file still in place.
+    @Test
+    fun `moves a library aside when its repair can't be finished, rather than crashing`() {
+        val text = libraryWith(200_000, "junk: &a [*a]\n")
+        file.writeText(text)
+
+        val prepared = prepare() as PreparedLibrary.Reseeded
+
+        assertEquals(text, prepared.quarantined?.readText())
+        assertEquals(seed, readLibrary(file))
+    }
+
     @Test
     fun `moves a library broken some other way aside before the seed replaces it`() {
         val text = libraryWith(3, "  - id: broken\n")

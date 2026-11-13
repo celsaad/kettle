@@ -78,9 +78,22 @@ fun prepareLibrary(
     }
 }
 
-/** [text] with the ceilings' refusals clamped, where that leaves a library that reads. */
+/**
+ * [text] with the ceilings' refusals clamped, where that leaves a library that reads. Null, so the file
+ * is quarantined, where the repair itself gives out: it rewrites the whole raw tree, unknown keys
+ * included, which the ordinary parse never walks, so a self-referencing alias under a key the schema
+ * ignores overflows the stack and an alias bomb there exhausts the heap. Either escaped as an Error,
+ * past every `catch (Exception)` on the way to `onCreate`, and crashed each launch with the file
+ * still in place.
+ */
 private fun repaired(text: String): Library? =
-    repairLibraryBounds(text)?.let { (parseLibraryYaml(it) as? ParseResult.Ok)?.value }
+    try {
+        repairLibraryBounds(text)?.let { (parseLibraryYaml(it) as? ParseResult.Ok)?.value }
+    } catch (_: StackOverflowError) {
+        null
+    } catch (_: OutOfMemoryError) {
+        null
+    }
 
 /** Why the parser refuses [text], as RN's log line spelled it, or null where it reads. */
 private fun refusalOf(text: String): String? =

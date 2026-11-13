@@ -13,6 +13,7 @@ import com.casco.kettle.domain.serializePreferences
 import com.casco.kettle.storage.readLibrary
 import com.casco.kettle.storage.readPreferences
 import com.casco.kettle.storage.readSessionLog
+import com.casco.kettle.storage.sessionFile
 import com.casco.kettle.storage.writeAtomically
 import com.casco.kettle.storage.writeLibraryFile
 import com.casco.kettle.storage.writeSessionFile
@@ -89,8 +90,8 @@ class DiskFiles(
     override fun preferences() = readPreferences(paths.preferences)
 
     override fun deleteSession(id: String) {
-        // Named as the session writer names it: the session's id.
-        val file = paths.sessions.resolve("$id.yaml")
+        // Named as the session writer names it, and refused as it refuses an id outside the log.
+        val file = sessionFile(paths.sessions, id)
         // File.delete() says only no; the name is what the reader can act on.
         if (file.exists() && !file.delete()) throw IOException(file.name)
     }

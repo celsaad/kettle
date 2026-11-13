@@ -108,6 +108,10 @@ private fun refusalText(refusal: ImportRefusal): String =
         is ImportRefusal.SaveFailed -> {
             stringResource(R.string.import_error_saveFailed, refusal.detail)
         }
+
+        ImportRefusal.TooLarge -> {
+            stringResource(R.string.import_error_tooLarge)
+        }
     }
 
 @Composable

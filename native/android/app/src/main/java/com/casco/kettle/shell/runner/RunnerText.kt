@@ -15,7 +15,7 @@ import com.casco.kettle.shell.i18n.weightUnit
 
 // The runner's words, as RN's `domain/format.ts` and the session components assemble them. In one
 // place because `:strings` numbers a key's placeholders in the alphabetical order of their names, not
-// in the order they read: `session.reps.setLabel` is (index, target, total). Every call here is in that
+// in the order they read: `preview.reps` is (index, target, total). Every call here is in that
 // order, and the Compose tests in `pt` catch one that isn't. User data (names, notes) goes in verbatim.
 
 /** A stored weight in the user's own unit with its unit, "60 kg". */

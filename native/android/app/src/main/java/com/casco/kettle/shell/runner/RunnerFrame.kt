@@ -166,7 +166,7 @@ private fun EndPill(confirm: () -> Unit) {
                 .heightIn(min = END_HEIGHT)
                 .widthIn(min = END_WIDTH)
                 .clip(CircleShape)
-                .border(END_BORDER, runnerColors.outline, CircleShape)
+                .border(SLOT_BORDER, runnerColors.outline, CircleShape)
                 .padding(horizontal = Spacing.three),
             contentAlignment = Alignment.Center,
         ) {
@@ -267,4 +267,3 @@ private const val CHEVRON_BOTTOM = 0.625f
 
 private val END_HEIGHT = 44.dp
 private val END_WIDTH = 56.dp
-private val END_BORDER = 1.5.dp

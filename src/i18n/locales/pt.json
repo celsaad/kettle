@@ -254,7 +254,8 @@
       "dismiss": "Manter o exercício atual"
     },
     "circuit": {
-      "crumb": "CIRCUITO · RODADA {{index}} DE {{total}}"
+      "crumb": "CIRCUITO · RODADA {{index}} DE {{total}}",
+      "accessibility": "Circuito, rodada {{index}} de {{total}}, exercício {{member}} de {{memberTotal}}"
     },
     "upcoming": {
       "title": "A SEGUIR",

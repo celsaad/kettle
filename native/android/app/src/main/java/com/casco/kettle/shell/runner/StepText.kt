@@ -2,7 +2,6 @@ package com.casco.kettle.shell.runner
 
 import android.content.res.Resources
 import com.casco.kettle.domain.HoldTarget
-import com.casco.kettle.domain.IntervalVariant
 import com.casco.kettle.domain.RepsTarget
 import com.casco.kettle.domain.RunnerStep
 import com.casco.kettle.domain.UpcomingItem
@@ -22,43 +21,6 @@ fun formatClock(totalSeconds: Double): String {
     val whole = totalSeconds.toLong()
     return "${whole / SECONDS_PER_MINUTE}:${(whole % SECONDS_PER_MINUTE).toString().padStart(2, '0')}"
 }
-
-/**
- * The header's label line (#409): the step's kind and where it sits, "Reps · set 1 of 4". Inside a
- * circuit it is the circuit's round instead, which is the count a member's own sets give way to there.
- */
-fun Resources.stepLabel(step: RunnerStep): String {
-    val circuit = step.circuit
-    if (circuit != null) return getString(R.string.session_header_circuit, "${circuit.round}", "${circuit.rounds}")
-    return when (step) {
-        is RunnerStep.Reps -> getString(R.string.session_header_reps, "${step.setIndex}", "${step.setTotal}")
-        is RunnerStep.Hold -> getString(R.string.session_header_hold, "${step.setIndex}", "${step.setTotal}")
-        is RunnerStep.Rest -> getString(R.string.session_header_rest)
-        is RunnerStep.Interval -> intervalLabel(step)
-    }
-}
-
-private fun Resources.intervalLabel(step: RunnerStep.Interval): String {
-    val index = "${step.setIndex}"
-    val total = "${step.setTotal}"
-    // "Minute" only where an interval is one; a 40-second EMOM counts intervals.
-    val emom =
-        if (step.targetSec ==
-            MINUTE_SEC
-        ) {
-            R.string.session_header_emomMinute
-        } else {
-            R.string.session_header_emomInterval
-        }
-    return when (step.variant) {
-        IntervalVariant.HIIT -> getString(R.string.session_header_work, index, total)
-        IntervalVariant.EMOM -> getString(emom, index, total)
-        IntervalVariant.AMRAP -> getString(R.string.session_header_amrap)
-        IntervalVariant.CARDIO -> getString(R.string.session_header_cardio)
-    }
-}
-
-private const val MINUTE_SEC = 60.0
 
 /** "15s" or "15–25s", as RN's `formatHoldTarget`. */
 fun Resources.holdTargetText(target: HoldTarget): String =

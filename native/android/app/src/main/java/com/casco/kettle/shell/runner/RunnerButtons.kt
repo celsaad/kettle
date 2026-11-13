@@ -277,32 +277,6 @@ private fun RoundButton(
     }
 }
 
-/** A small outlined pill with words, SWAP's: named by them, and 48dp to touch whatever it draws. */
-@Composable
-internal fun PillControl(
-    label: String,
-    onClick: () -> Unit,
-) {
-    Box(
-        Modifier
-            .sizeIn(minWidth = MinTarget, minHeight = MinTarget)
-            .clickable(role = Role.Button, onClick = onClick),
-        contentAlignment = Alignment.Center,
-    ) {
-        Box(
-            Modifier
-                .heightIn(min = SymbolLook.Small.size)
-                .clip(CircleShape)
-                .border(1.dp, runnerColors.outline, CircleShape)
-                .padding(horizontal = PILL_PAD),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(label, style = QuietStyle)
-        }
-    }
-}
-
 private val PAIR_INSET = 4.dp
 private const val DISABLED_ALPHA = 0.4f
-private val PILL_PAD = 10.dp
 private val OUTLINE_PAD = 12.dp

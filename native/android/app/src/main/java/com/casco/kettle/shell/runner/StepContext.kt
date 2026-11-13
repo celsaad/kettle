@@ -98,8 +98,7 @@ internal fun stepContext(
 /**
  * The header's action row (#409), borderless: the set count's −/+ beside the word Sets (hidden in a
  * circuit, where the count is the block's rounds; − disabled rather than hidden at the floor, so the row
- * doesn't reflow mid-set), then Swap. Each its own 48dp target. Nothing to offer draws nothing. The
- * reps-set ticket turns Sets into its sheet; until then the −/+ stay here.
+ * doesn't reflow mid-set), then Swap. Each its own 48dp target. Nothing to offer draws nothing.
  */
 @Composable
 internal fun ActionRow(context: StepContext) {

@@ -1,11 +1,7 @@
 package com.casco.kettle.shell.runner
 
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.layout.layout
-import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -44,9 +40,3 @@ internal fun Modifier.hang(
         val placeable = measurable.measure(constraints.offset(horizontal = total))
         layout(maxOf(placeable.width - total, 0), placeable.height) { placeable.placeRelative(-before, 0) }
     }
-
-/** Reserves [label]'s width without drawing or announcing it, so two tracks line up in a column. */
-@Composable
-internal fun WidthOf(label: String) {
-    Text(label, Modifier.alpha(0f).clearAndSetSemantics {}, style = QuietStyle)
-}

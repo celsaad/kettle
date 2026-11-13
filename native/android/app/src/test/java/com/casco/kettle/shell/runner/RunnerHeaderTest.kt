@@ -1,5 +1,6 @@
 package com.casco.kettle.shell.runner
 
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.isDialog
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -42,6 +43,8 @@ class RunnerHeaderTest : RunnerScreenHarness() {
         show(running(plan(circuit)))
         compose.onNodeWithText("Circuito · rodada 1 de 2").assertExists()
         compose.onNodeWithText("Reps · série 1 de 2").assertDoesNotExist()
+        // The member, which the line leaves out, is spoken: the crumb's description, kept for readers.
+        compose.onNode(hasContentDescription("Circuito, rodada 1 de 2, exercício 1 de 2")).assertExists()
     }
 
     @Test

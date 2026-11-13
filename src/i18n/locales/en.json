@@ -243,7 +243,8 @@
       "dismiss": "Keep the current exercise"
     },
     "circuit": {
-      "crumb": "CIRCUIT · ROUND {{index}} OF {{total}}"
+      "crumb": "CIRCUIT · ROUND {{index}} OF {{total}}",
+      "accessibility": "Circuit, round {{index}} of {{total}}, exercise {{member}} of {{memberTotal}}"
     },
     "upcoming": {
       "title": "COMING UP",

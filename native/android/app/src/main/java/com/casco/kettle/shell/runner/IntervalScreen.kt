@@ -41,7 +41,7 @@ internal fun IntervalScreen(
     val target = context.snapshot.clock.stepEndSec
     StepLayout(
         top = {
-            StepHeader(resources.stepLabel(step), step.exerciseName)
+            StepHeader(resources.stepLabel(step), step.exerciseName, resources.circuitSpoken(step))
             StepNotes(step.notes)
         },
         middle = {

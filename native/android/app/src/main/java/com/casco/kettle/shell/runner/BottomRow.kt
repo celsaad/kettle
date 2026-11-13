@@ -185,7 +185,9 @@ internal fun LoggedPanel(
 /** The canvas's 72dp row: taller than the 48dp minimum, being the controls a hand lands on unlooking. */
 private val ROW_HEIGHT = 72.dp
 private val SLOT_WIDTH = 64.dp
-private val SLOT_BORDER = 1.5.dp
+
+/** The bottom area's and the End pill's outline: one weight, so the controls read as one set. */
+internal val SLOT_BORDER = 1.5.dp
 
 /** The side slots' words and Undo's: one style, so the controls in the bottom area can't drift apart. */
 internal val SlotLabel = KettleType.smallMedium.copy(fontWeight = FontWeight.SemiBold)

@@ -57,7 +57,8 @@ internal fun RepsScreen(
     val readings = context.readings
     StepLayout(
         top = {
-            StepHeader(LocalResources.current.stepLabel(step), step.exerciseName)
+            val resources = LocalResources.current
+            StepHeader(resources.stepLabel(step), step.exerciseName, resources.circuitSpoken(step))
             ActionRow(context)
             StepNotes(step.notes)
             LastTime(step, context)
@@ -135,31 +136,36 @@ private fun RepsCounter(
     val label = stringResource(R.string.session_reps_repsLabel)
     val padLabel = stringResource(R.string.session_reps_repsDone)
     val set = { value: Long -> context.send(RunnerCommand.SetReps(maxOf(0, value))) }
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(STEPPER_GAP)) {
-        SymbolButton(R.drawable.icon_remove, stringResource(R.string.common_decrease, label), {
-            set(reps - 1)
-        }, look = SymbolLook.Big)
-        Column(
-            Modifier
-                .sizeIn(minWidth = MinTarget, minHeight = MinTarget)
-                .clickable(role = Role.Button) {
-                    context.controls.openPad(PadRequest(padLabel, reps.toDouble(), false, null) { set(Math.round(it)) })
-                }.semantics {
-                    contentDescription =
-                        resources.getString(R.string.session_reps_repsDoneAccessibility, "$reps")
-                },
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Numeral("$reps", REPS_NUMERAL)
-            // The target beside what's counted against it, now the label line says which set this is.
-            Secondary(
-                stringResource(R.string.session_reps_repsDoneTarget, repsTargetText(repsTarget(step))),
-                Modifier.padding(top = REPS_LABEL_GAP),
-            )
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        // The target above the stepper, as the canvas draws it, not inside it: between − and + it widened the
+        // middle with the text size and, at 2× on the AVD, crushed + into a sliver at the screen's edge.
+        Secondary(
+            stringResource(R.string.session_reps_repsDoneTarget, repsTargetText(repsTarget(step))),
+            Modifier.padding(bottom = REPS_LABEL_GAP),
+        )
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(STEPPER_GAP)) {
+            SymbolButton(R.drawable.icon_remove, stringResource(R.string.common_decrease, label), {
+                set(reps - 1)
+            }, look = SymbolLook.Big)
+            Column(
+                Modifier
+                    .sizeIn(minWidth = MinTarget, minHeight = MinTarget)
+                    .clickable(role = Role.Button) {
+                        context.controls.openPad(
+                            PadRequest(padLabel, reps.toDouble(), false, null) { set(Math.round(it)) },
+                        )
+                    }.semantics {
+                        contentDescription =
+                            resources.getString(R.string.session_reps_repsDoneAccessibility, "$reps")
+                    },
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Numeral("$reps", REPS_NUMERAL)
+            }
+            SymbolButton(R.drawable.icon_add, stringResource(R.string.common_increase, label), {
+                set(reps + 1)
+            }, look = SymbolLook.Big)
         }
-        SymbolButton(R.drawable.icon_add, stringResource(R.string.common_increase, label), {
-            set(reps + 1)
-        }, look = SymbolLook.Big)
     }
 }
 

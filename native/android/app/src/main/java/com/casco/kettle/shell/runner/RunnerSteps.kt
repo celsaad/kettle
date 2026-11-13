@@ -13,6 +13,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.sp
 import com.casco.kettle.domain.PreviousSet
@@ -57,8 +59,11 @@ internal fun StepLayout(
 internal fun StepHeader(
     label: String,
     name: String?,
+    spoken: String? = null,
 ) {
-    Text(label, style = SlotLabel.copy(fontSize = LABEL_SIZE), color = runnerColors.textSecondary)
+    // A circuit's label says its round; [spoken] adds the member, which nothing else on screen does.
+    val described = if (spoken == null) Modifier else Modifier.semantics { contentDescription = spoken }
+    Text(label, described, style = SlotLabel, color = runnerColors.textSecondary)
     if (name != null) ExerciseName(name)
 }
 
@@ -119,7 +124,7 @@ internal fun HoldScreen(
     val readings = context.readings
     StepLayout(
         top = {
-            StepHeader(resources.stepLabel(step), step.exerciseName)
+            StepHeader(resources.stepLabel(step), step.exerciseName, resources.circuitSpoken(step))
             ActionRow(context)
             StepNotes(step.notes)
             PreviousRow(
@@ -164,9 +169,12 @@ private fun HoldClock(
  * the Next card the bottom of the rest screen used to carry. Nothing next names nothing.
  */
 @Composable
-private fun RestHeader(next: StepPreview?) {
+private fun RestHeader(
+    step: RunnerStep,
+    next: StepPreview?,
+) {
     val resources = LocalResources.current
-    StepHeader(stringResource(R.string.session_header_rest), null)
+    StepHeader(resources.stepLabel(step), null, resources.circuitSpoken(step))
     if (next == null) return
     Text(
         stringResource(R.string.session_header_next, next.label),
@@ -192,7 +200,7 @@ internal fun RestScreen(context: StepContext) {
     val logged = context.logged
     val skip = stringResource(R.string.session_rest_skip)
     StepLayout(
-        top = { RestHeader(context.readings.next) },
+        top = { context.snapshot.step?.let { RestHeader(it, context.readings.next) } },
         middle = {
             Numeral(formatClock(context.remaining), REST_NUMERAL)
             Secondary(stringResource(R.string.session_rest_remaining, formatClock(context.snapshot.clock.stepEndSec)))
@@ -214,7 +222,6 @@ internal fun RestScreen(context: StepContext) {
     )
 }
 
-private val LABEL_SIZE = 14.sp
 private val HOLD_NUMERAL = 96.sp
 private val REST_NUMERAL = 100.sp
 private val UNIT_NUMERAL = 38.sp

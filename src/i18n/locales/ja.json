@@ -232,7 +232,8 @@
       "dismiss": "今のエクササイズのままにする"
     },
     "circuit": {
-      "crumb": "サーキット · {{total}}ラウンド中{{index}}ラウンド目"
+      "crumb": "サーキット · {{total}}ラウンド中{{index}}ラウンド目",
+      "accessibility": "サーキット、{{total}}ラウンド中{{index}}ラウンド目、{{memberTotal}}種目中{{member}}種目目"
     },
     "upcoming": {
       "title": "この後",

@@ -93,14 +93,7 @@ internal fun ClockRow(
     context: StepContext,
     exit: RowAction,
 ) {
-    val toggle = { context.send(RunnerCommand.TogglePause) }
-    val main =
-        if (context.paused) {
-            RowAction(stringResource(R.string.session_resume), R.drawable.icon_play, toggle)
-        } else {
-            RowAction(stringResource(R.string.session_pause), R.drawable.icon_pause, toggle)
-        }
-    BottomRow(main, back = { context.send(RunnerCommand.Prev) }, side = exit)
+    BottomRow(pauseAction(context), back = { context.send(RunnerCommand.Prev) }, side = exit)
 }
 
 /**
@@ -127,7 +120,7 @@ internal fun HoldScreen(
         },
         middle = { HoldClock(step, context.elapsed) },
         controls = {
-            ClockRow(context, RowAction(stringResource(R.string.session_done), R.drawable.icon_stop, context::advance))
+            ClockRow(context, doneAction(context))
         },
     )
 }
@@ -158,9 +151,10 @@ private fun HoldClock(
 }
 
 /**
- * A rest counts down against its total, which +30s beside the clock moves. Straight after a commit it
- * shows what was logged with Undo, and then no Back: the two would be the same step back. With nothing
- * to undo (a restored session, a rest after a rest), Back takes Undo's place so there's always a way back.
+ * A rest counts down against its total, which +30s under the clock moves, where the canvas draws it.
+ * Straight after a commit it shows what was logged with Undo, and then no Back: the two would be the
+ * same step back. With nothing to undo (a restored session, a set that logged nothing, an edit since),
+ * Back takes Undo's place so there's always a way back.
  *
  * No Pause: a step change clears pause (#304), so a live rest never starts paused. A resume after process
  * death does land one paused (#307), and then Resume is the main action, Skip moving to the side, or the
@@ -186,13 +180,7 @@ internal fun RestScreen(context: StepContext) {
             if (logged != null) LoggedPanel(logged, context)
             val back = if (logged == null) ({ context.send(RunnerCommand.Prev) }) else null
             if (context.paused) {
-                BottomRow(
-                    RowAction(stringResource(R.string.session_resume), R.drawable.icon_play) {
-                        context.send(RunnerCommand.TogglePause)
-                    },
-                    back,
-                    side = RowAction(stringResource(R.string.session_skip), R.drawable.icon_skip, context::advance),
-                )
+                BottomRow(pauseAction(context), back, side = skipAction(context))
             } else {
                 BottomRow(RowAction(skip, null, context::advance), back)
             }

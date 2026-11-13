@@ -37,6 +37,10 @@ import com.casco.kettle.shell.theme.TypeIcon
  * way out (Skip or Done) on the right. On a screen the clock runs, the main action is Pause, the safe
  * thing to hit from the floor, and the way out moves to the side. [back] null leaves its slot out,
  * which only the rest screen does, and only while Undo is there to step back with instead.
+ *
+ * Back is the engine's Prev, so on a work screen reached straight from a logged step (a set with no rest
+ * after it, the next member of a circuit) it takes that step's log back as it returns to it. It has to:
+ * going back is going back to redo the step, and logging it again over its old log would record it twice.
  */
 @Composable
 internal fun BottomRow(
@@ -92,10 +96,31 @@ private fun SlotButton(action: RowAction) {
         action.icon?.let { TypeIcon(it, KettleType.heading, runnerColors.text) }
         Text(
             action.label,
-            style = KettleType.smallMedium.copy(fontWeight = FontWeight.SemiBold),
+            style = SlotLabel,
             color = runnerColors.text,
             textAlign = TextAlign.Center,
         )
+    }
+}
+
+/** The Done side slot: the way out of a step only a tap ends, or one ended early. */
+@Composable
+internal fun doneAction(context: StepContext) =
+    RowAction(stringResource(R.string.session_done), R.drawable.icon_stop, context::advance)
+
+/** The Skip side slot: leaving early a step whose clock would end it. */
+@Composable
+internal fun skipAction(context: StepContext) =
+    RowAction(stringResource(R.string.session_skip), R.drawable.icon_skip, context::advance)
+
+/** Pause, or Resume while paused: the main action on a screen the clock runs, and on a paused rest. */
+@Composable
+internal fun pauseAction(context: StepContext): RowAction {
+    val toggle = { context.send(RunnerCommand.TogglePause) }
+    return if (context.paused) {
+        RowAction(stringResource(R.string.session_resume), R.drawable.icon_play, toggle)
+    } else {
+        RowAction(stringResource(R.string.session_pause), R.drawable.icon_pause, toggle)
     }
 }
 
@@ -114,8 +139,9 @@ internal fun LoggedPanel(
         Modifier
             .clip(PanelShape)
             .background(runnerColors.backgroundElement)
-            // The canvas's 6dp around the pill, which the target's own 2dp of slack makes up on its right.
-            .padding(start = Spacing.three, top = Spacing.half, end = Spacing.half, bottom = Spacing.half),
+            // The pill 8dp in from the top, the bottom and the right alike, with the target's own 2dp of
+            // slack: at 4dp its outline all but met the panel's rounded corner on the S25+.
+            .padding(start = Spacing.three, top = PILL_INSET, end = PILL_INSET, bottom = PILL_INSET),
         horizontalArrangement = Arrangement.spacedBy(Spacing.two),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -148,7 +174,7 @@ internal fun LoggedPanel(
             ) {
                 Text(
                     stringResource(R.string.session_undo),
-                    style = KettleType.smallMedium.copy(fontWeight = FontWeight.SemiBold),
+                    style = SlotLabel,
                     color = runnerColors.text,
                 )
             }
@@ -160,6 +186,10 @@ internal fun LoggedPanel(
 private val ROW_HEIGHT = 72.dp
 private val SLOT_WIDTH = 64.dp
 private val SLOT_BORDER = 1.5.dp
+
+/** The side slots' words and Undo's: one style, so the controls in the bottom area can't drift apart. */
+private val SlotLabel = KettleType.smallMedium.copy(fontWeight = FontWeight.SemiBold)
+private val PILL_INSET = 6.dp
 
 /** The canvas's Undo pill, inside its 48dp target. */
 private val UNDO_HEIGHT = 44.dp

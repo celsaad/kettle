@@ -54,13 +54,7 @@ internal fun IntervalScreen(
         },
         controls = {
             // A count-up's Done is its only way out; a countdown's Skip leaves early what its clock ends.
-            val exit =
-                if (step.countUp) {
-                    RowAction(stringResource(R.string.session_done), R.drawable.icon_stop, context::advance)
-                } else {
-                    RowAction(stringResource(R.string.session_skip), R.drawable.icon_skip, context::advance)
-                }
-            ClockRow(context, exit)
+            ClockRow(context, if (step.countUp) doneAction(context) else skipAction(context))
         },
     )
 }

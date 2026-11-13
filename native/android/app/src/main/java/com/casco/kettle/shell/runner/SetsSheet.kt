@@ -72,9 +72,9 @@ internal sealed interface SetRow {
 internal data class SetsSheetModel(
     val rows: List<SetRow>,
     /**
-     * The count the session was planned with, null when the plan holds no such member: an ad-hoc
-     * session's, or one added mid-session, has no workout to say "still says" of, and nothing is
-     * "added" to it.
+     * The count the session was planned with, null when the plan holds no such member (an ad-hoc
+     * session's, one added mid-session, a swap's substitute): no workout to say "still says" of, and
+     * nothing "added" to it.
      */
     val planned: Long?,
     /** Remove on the last row: the engine's DropSet rule, never below the sets logged and on screen. */
@@ -82,15 +82,16 @@ internal data class SetsSheetModel(
 )
 
 /**
- * The step on screen's member as the sheet lists it: its logged sets from the session file (under a
- * swap's key and the one before it alike, so the numbering matches the header's), the one on screen,
- * then the ones still planned. Null off a reps or hold step.
+ * The exercise on screen as the sheet lists it, numbered as the header numbers it: its logged sets
+ * from the session file, the one on screen, then the ones still planned. After a swap that's the
+ * substitute's own sets, which the swap numbers from 1, so the replaced exercise's sets aren't listed
+ * under the substitute's name. Null off a reps or hold step.
  */
 internal fun setsSheet(view: RunnerView.Running): SetsSheetModel? {
     val snapshot = view.snapshot
     val step = snapshot.step
     if (step !is RunnerStep.Reps && step !is RunnerStep.Hold) return null
-    val logged = loggedSets(view, baseKey(step.memberKey))
+    val logged = loggedSets(view, step.memberKey)
     val ahead = snapshot.steps.drop(snapshot.stepIndex).count { it is WorkStep && it.memberKey == step.memberKey }
     val planned = plannedSets(view, step)
     val rows =
@@ -104,41 +105,27 @@ internal fun setsSheet(view: RunnerView.Running): SetsSheetModel? {
 
 /**
  * [step]'s member's set count as the plan built it, before any Sets edit (which rewrite the live step's
- * `setTotal`): looked up by the member's base key, since a swap renames what's left `<key>~swap<n>`.
- * Null when the plan has no such member (an ad-hoc session, an exercise added mid-session).
+ * `setTotal`). Null when the plan holds no such member: an ad-hoc session's, one added mid-session, or
+ * a swap's substitute (keyed `<key>~swap<n>`), none of which a workout planned.
  */
 internal fun plannedSets(
     view: RunnerView.Running,
     step: WorkStep,
-): Long? {
-    val base = baseKey(step.memberKey)
-    return view.plan.steps
+): Long? =
+    view.plan.steps
         .filterIsInstance<WorkStep>()
-        .firstOrNull { it.memberKey == base }
+        .firstOrNull { it.memberKey == step.memberKey }
         ?.setTotal
-}
 
-/** The key a member was planned under: a swap only ever appends `~swap<n>` to it. */
-private fun baseKey(memberKey: String): String = memberKey.substringBefore(SWAP_MARK)
-
-/** Every set logged under [base] or a swap of it, in the order the entries were started. */
 private fun loggedSets(
     view: RunnerView.Running,
-    base: String,
+    memberKey: String,
 ): List<PreviousSet> =
-    view.snapshot.entryIndex
-        .filterKeys { it == base || it.startsWith(base + SWAP_MARK) }
-        .values
-        .sorted()
-        .flatMap { index ->
-            when (val entry = view.session.entries.getOrNull(index)) {
-                is SessionEntry.Reps -> entry.sets.map { PreviousSet.Reps(it.reps, it.weightKg) }
-                is SessionEntry.TimedHold -> entry.sets.map { PreviousSet.Hold(it.holdSec) }
-                else -> emptyList()
-            }
-        }
-
-private const val SWAP_MARK = "~swap"
+    when (val entry = view.snapshot.entryIndex[memberKey]?.let(view.session.entries::getOrNull)) {
+        is SessionEntry.Reps -> entry.sets.map { PreviousSet.Reps(it.reps, it.weightKg) }
+        is SessionEntry.TimedHold -> entry.sets.map { PreviousSet.Hold(it.holdSec) }
+        else -> emptyList()
+    }
 
 /** "Sets ⌄" in the header's action row: opens the sheet. Named by its word. */
 @Composable

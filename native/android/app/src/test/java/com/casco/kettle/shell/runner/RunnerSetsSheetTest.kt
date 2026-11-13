@@ -53,15 +53,18 @@ class RunnerSetsSheetTest : RunnerScreenHarness() {
     }
 
     @Test
-    fun `after a swap the count is still the plan's, and the set before the swap is listed`() {
-        // Set 1 of the squat logged, its rest, then the rest of the member swapped for another exercise.
+    fun `after a swap the sheet counts the substitute's sets, as the header does`() {
+        // Set 1 of 2 of the squat logged, its rest, then the rest of the member swapped for another.
         val swapped = started(plan(block(squat))).advanced().advanced().after(RunnerCommand.Swap(extras[0]))
         show(running(plan(block(squat)), swapped))
+        compose.onNodeWithText("Reps · série 1 de 1").assertExists()
         button("Séries").performClick()
-        compose.onNodeWithText("2 séries nesta sessão · planejadas 2").assertExists()
-        compose.onNodeWithText("Registrada").assertExists()
+        // One set, on screen: the squat's isn't listed under the substitute's name, and nothing planned
+        // the substitute, so no "planned" and no footer.
+        compose.onNodeWithText("1 série nesta sessão").assertExists()
+        compose.onNodeWithText("Registrada").assertDoesNotExist()
         compose.onNodeWithText("Agora").assertExists()
-        compose.onNodeWithText("Só esta sessão muda. Seu treino continua com 2 séries.").assertExists()
+        compose.onNodeWithText("Só esta sessão muda", substring = true).assertDoesNotExist()
     }
 
     @Test

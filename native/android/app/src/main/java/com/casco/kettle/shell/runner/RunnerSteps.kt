@@ -23,7 +23,6 @@ import com.casco.kettle.domain.holdTarget
 import com.casco.kettle.domain.jsNumber
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.theme.KettleType
-import com.casco.kettle.shell.theme.RunnerColors
 import com.casco.kettle.shell.theme.Spacing
 
 /**
@@ -58,12 +57,12 @@ internal fun StepLayout(
 
 @Composable
 internal fun ExerciseName(name: String) {
-    Text(name, Modifier.padding(top = Spacing.one), style = KettleType.subtitle, color = RunnerColors.text)
+    Text(name, Modifier.padding(top = Spacing.one), style = KettleType.subtitle, color = runnerColors.text)
 }
 
 @Composable
 internal fun Secondary(text: String) {
-    Text(text, style = KettleType.small, color = RunnerColors.textSecondary)
+    Text(text, style = KettleType.small, color = runnerColors.textSecondary)
 }
 
 /** Last time's line with the PR badge beside it. Absent on a first-ever session: nothing to say yet. */
@@ -136,7 +135,7 @@ private fun HoldClock(
     val target = step.holdTargetSec
     Row {
         Numeral("$elapsed", HOLD_NUMERAL, Modifier.alignByBaseline())
-        Numeral("s", UNIT_NUMERAL, Modifier.alignByBaseline(), RunnerColors.textSecondary, leading = null)
+        Numeral("s", UNIT_NUMERAL, Modifier.alignByBaseline(), runnerColors.textSecondary, leading = null)
     }
     if (target != null) {
         val barSec = step.holdTargetMaxSec?.takeIf { it > target } ?: target
@@ -163,7 +162,7 @@ internal fun RestScreen(context: StepContext) {
     StepLayout(
         top = { StepPill(stringResource(R.string.session_rest_label), calm = true) },
         middle = {
-            Numeral(formatClock(context.remaining), REST_NUMERAL, color = RunnerColors.accentCalm)
+            Numeral(formatClock(context.remaining), REST_NUMERAL)
             Secondary(stringResource(R.string.session_rest_remaining, formatClock(context.snapshot.clock.stepEndSec)))
         },
         next = context.readings.next,
@@ -191,7 +190,7 @@ internal fun RestScreen(context: StepContext) {
                     stringResource(R.string.session_rest_skip),
                     context::advance,
                     Modifier.weight(1f),
-                    look = ButtonLook.RestSkip,
+                    look = ButtonLook.Rest,
                 )
             }
         },

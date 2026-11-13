@@ -10,16 +10,19 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.casco.kettle.shell.theme.RunnerColors
+import com.casco.kettle.shell.theme.RunnerPalette
 
 // The two surfaces RN's runner repeats: a raised card, and a soft-tinted pill with an outline.
 
-/** A raised card: the element fill, a hairline round [radius] corners, RN's 14dp inside. */
-internal fun Modifier.runnerCard(radius: Dp): Modifier {
+/** A raised card in [colors]: the element fill, a hairline round [radius] corners, RN's 14dp inside. */
+internal fun Modifier.runnerCard(
+    radius: Dp,
+    colors: RunnerPalette,
+): Modifier {
     val shape = RoundedCornerShape(radius)
     return clip(shape)
-        .background(RunnerColors.backgroundElement)
-        .border(1.dp, RunnerColors.border, shape)
+        .background(colors.backgroundElement)
+        .border(1.dp, colors.border, shape)
         .padding(CARD_PAD)
 }
 

@@ -22,7 +22,6 @@ import com.casco.kettle.domain.swapCandidates
 import com.casco.kettle.domain.upcomingPreview
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.theme.KettleType
-import com.casco.kettle.shell.theme.RunnerColors
 
 /** What the number pad is opened for: its label, the value it starts from, and where the value goes. */
 data class PadRequest(
@@ -109,7 +108,7 @@ internal fun SetCountRow(
     val readings = context.readings
     val sets = stringResource(R.string.session_sets_label)
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Text(label, Modifier.weight(1f, fill = false), style = KettleType.small, color = RunnerColors.textSecondary)
+        Text(label, Modifier.weight(1f, fill = false), style = KettleType.small, color = runnerColors.textSecondary)
         if (readings.canAddSet) {
             SymbolButton(R.drawable.icon_remove, stringResource(R.string.common_decrease, sets), {
                 context.send(RunnerCommand.DropSet)

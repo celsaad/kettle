@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalResources
@@ -19,7 +20,6 @@ import com.casco.kettle.domain.UpcomingItem
 import com.casco.kettle.domain.WorkStep
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.theme.KettleType
-import com.casco.kettle.shell.theme.RunnerColors
 import com.casco.kettle.shell.timeline.OutlineItem
 import com.casco.kettle.shell.timeline.TimelineColors
 import com.casco.kettle.shell.timeline.TimelineItem
@@ -46,7 +46,7 @@ internal fun ComingUp(
                 title,
                 Modifier.weight(1f).semantics { heading() },
                 style = KettleType.code.copy(letterSpacing = CapsTracking),
-                color = RunnerColors.textSecondary,
+                color = runnerColors.textSecondary,
             )
             SymbolButton(R.drawable.icon_close, close, onClose, look = SymbolLook.Close)
         }
@@ -57,7 +57,7 @@ internal fun ComingUp(
             }
             if (ends) {
                 item {
-                    TimelineItem(ComingUpColors, RunnerColors.textSecondary, last = true) {
+                    TimelineItem(ComingUpColors, runnerColors.textSecondary, last = true) {
                         Caps(stringResource(R.string.session_upcoming_end))
                     }
                 }
@@ -83,7 +83,7 @@ private fun NowRow(
         }
     TimelineItem(
         ComingUpColors,
-        tint = if (resting) RunnerColors.accentCalm else RunnerColors.accent,
+        tint = if (resting) runnerColors.accentCalm else runnerColors.accent,
         last = last,
         now = true,
     ) {
@@ -91,30 +91,33 @@ private fun NowRow(
             Text(
                 stringResource(if (resting) R.string.session_upcoming_nowRest else R.string.session_upcoming_now),
                 style = KettleType.code,
-                color = if (resting) RunnerColors.accentCalmOnSoft else RunnerColors.accentOnSoft,
+                color = if (resting) runnerColors.accentCalmOnSoft else runnerColors.accentOnSoft,
             )
-            if (step is WorkStep) Text(step.exerciseName, style = KettleType.heading, color = RunnerColors.text)
+            if (step is WorkStep) Text(step.exerciseName, style = KettleType.heading, color = runnerColors.text)
             if (clock != null) {
                 Numeral(
                     formatClock(clock),
                     32.sp,
-                    color = if (resting) RunnerColors.accentCalmOnSoft else RunnerColors.accentOnSoft,
+                    color = if (resting) runnerColors.accentCalmOnSoft else runnerColors.accentOnSoft,
                 )
             }
             Text(
                 resources.nowCaption(step, context.snapshot.clock.stepEndSec),
                 style = KettleType.small,
-                color = RunnerColors.textSecondary,
+                color = runnerColors.textSecondary,
             )
         }
     }
 }
 
-private val ComingUpColors =
-    TimelineColors(
-        text = RunnerColors.text,
-        textSecondary = RunnerColors.textSecondary,
-        rail = RunnerColors.border,
-        circuit = RunnerColors.accentCalm,
-        kicker = RunnerColors.accentCalmOnSoft,
-    )
+private val ComingUpColors: TimelineColors
+    @Composable
+    @ReadOnlyComposable
+    get() =
+        TimelineColors(
+            text = runnerColors.text,
+            textSecondary = runnerColors.textSecondary,
+            rail = runnerColors.border,
+            circuit = runnerColors.accentCalm,
+            kicker = runnerColors.accentCalmOnSoft,
+        )

@@ -47,7 +47,7 @@ class GeneratedThemeTest {
     @Test
     fun `the splash background is the runner's`() {
         val splash = RuntimeEnvironment.getApplication().getColor(R.color.splashscreen_background)
-        assertEquals(channels(theme.runner.getValue("background")), channels(Color(splash)))
+        assertEquals(channels(theme.runner.getValue("pace").getValue("background")), channels(Color(splash)))
     }
 
     /**
@@ -61,8 +61,10 @@ class GeneratedThemeTest {
             mapOf(
                 "light" to (theme.light to LightColors.tokens),
                 "dark" to (theme.dark to DarkColors.tokens),
-                "runner" to (theme.runner to RunnerColors.tokens),
-            )
+            ) +
+                RunnerColors.fields.associate { (field, palette) ->
+                    "runner.$field" to (theme.runner.getValue(field) to palette.tokens)
+                }
         for ((name, pair) in groups) {
             val (source, generated) = pair
             assertEquals(
@@ -154,14 +156,30 @@ class GeneratedThemeTest {
             assertContrast(3.64, onAccent, accent.surface())
         }
 
-        with(RunnerColors) {
-            val soft = accentSoft.over(background.surface())
-            val calmSoft = accentCalmSoft.over(background.surface())
-            assertContrast(4.17, accent, soft)
-            assertContrast(3.79, accentCalm, calmSoft)
-            assertContrast(5.68, accentOnSoft, soft)
-            assertContrast(5.75, accentCalmOnSoft, calmSoft)
+        val fields =
+            mapOf(
+                RunnerColors.pace to FieldRatios(17.87, 8.69, 7.58, 3.58, 17.87),
+                RunnerColors.work to FieldRatios(6.68, 5.25, 6.26, 3.47, 17.87),
+                RunnerColors.rest to FieldRatios(6.85, 5.09, 6.85, 3.49, 6.85),
+            )
+        for ((palette, ratios) in fields) {
+            with(palette) {
+                val field = background.surface()
+                assertContrast(ratios.text, text, field)
+                assertContrast(ratios.secondary, textSecondary, field)
+                assertContrast(ratios.secondaryOnCard, textSecondary, backgroundElement.over(field))
+                assertContrast(ratios.edge, outline, field)
+                assertContrast(ratios.edge, track, field)
+                assertContrast(ratios.label, onAccent, accent.surface())
+            }
         }
+        with(RunnerColors.pace) {
+            assertContrast(6.15, accentCalmOnSoft, accentCalmSoft.over(background.surface()))
+        }
+        with(RunnerColors.rest) {
+            assertContrast(4.95, accentOnSoft, accentSoft.over(background.surface()))
+        }
+        assertContrast(6.68, RunnerColors.getReady.numeral, RunnerColors.getReady.background.surface())
 
         // Each level against the card, then against the empty-day cell drawn on that card.
         val calendar =
@@ -179,6 +197,15 @@ class GeneratedThemeTest {
             }
         }
     }
+
+    /** A runner field's recorded ratios: [edge] is its outline's and its track's, [label] the main button's. */
+    private data class FieldRatios(
+        val text: Double,
+        val secondary: Double,
+        val secondaryOnCard: Double,
+        val edge: Double,
+        val label: Double,
+    )
 
     private class ObservedTheme {
         var shell: KettleColors? = null
@@ -211,9 +238,9 @@ class GeneratedThemeTest {
 
         assertEquals(LightColors, seen.shell)
         assertEquals(LightColors.background, seen.shellBackground)
-        assertEquals(RunnerColors.background, seen.runnerBackground)
-        assertEquals(RunnerColors.text, seen.runnerText)
-        assertTrue("the runner's background is dark", RunnerColors.background.luminance() < DARK_LUMINANCE)
+        assertEquals(RunnerColors.pace.background, seen.runnerBackground)
+        assertEquals(RunnerColors.pace.text, seen.runnerText)
+        assertTrue("the runner's background is dark", RunnerColors.pace.background.luminance() < DARK_LUMINANCE)
     }
 
     @Test
@@ -223,8 +250,8 @@ class GeneratedThemeTest {
 
         assertEquals(DarkColors, seen.shell)
         assertEquals(DarkColors.background, seen.shellBackground)
-        assertEquals(RunnerColors.background, seen.runnerBackground)
-        assertEquals(RunnerColors.text, seen.runnerText)
+        assertEquals(RunnerColors.pace.background, seen.runnerBackground)
+        assertEquals(RunnerColors.pace.text, seen.runnerText)
     }
 
     private companion object {

@@ -13,7 +13,8 @@ import java.io.File
  * [reread] are passed to), with the system bars' icons drawn to contrast with what's under them (#248). Nothing else
  * sets them: the window's theme leaves them light in either scheme, white on the light background, and
  * a theme attribute couldn't follow Settings → Appearance anyway. [runnerShown] keeps them light over
- * the runner, which is dark in either scheme. Each of [splashExits] sets them again: on API 31 and 32
+ * the runner, dark in either scheme but for its orange field, which sets its own ([RunnerBarIcons]).
+ * Each of [splashExits] sets them again: on API 31 and 32
  * the splash's exit resets them from the window's theme, with nothing here recomposing to undo it.
  *
  * Each of the shell's Compose views is wrapped in one, so each sets the same window's icons to the same
@@ -44,4 +45,22 @@ fun PreferredKettleTheme(
         }
     }
     KettleTheme(dark, content)
+}
+
+/**
+ * The bars' icons over the runner's field: dark over the orange one, where light icons measure 2.96:1,
+ * light over the rest. Composed inside [PreferredKettleTheme], so its effect runs after that one's in the
+ * same frame and wins; and once the runner closes, `runnerShown` changing recomposes that one, which sets
+ * the shell's icons back.
+ */
+@Composable
+fun RunnerBarIcons(darkIcons: Boolean) {
+    val window = LocalActivity.current?.window
+    SideEffect {
+        if (window == null) return@SideEffect
+        WindowInsetsControllerCompat(window, window.decorView).apply {
+            isAppearanceLightStatusBars = darkIcons
+            isAppearanceLightNavigationBars = darkIcons
+        }
+    }
 }

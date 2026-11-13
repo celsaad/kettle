@@ -108,9 +108,10 @@ internal fun NativeSheet(
 }
 
 /**
- * What the runner's layer shows (#302): the runner, opened with the start its slot holds. Dark whatever
- * Settings' Appearance says (`RunnerColors`): `runnerShown` keeps the system bars' icons light over it,
- * which a light scheme here would leave unreadable. A fresh screen per opening of the slot.
+ * What the runner's layer shows (#302): the runner, opened with the start its slot holds. Its own
+ * colours whatever Settings' Appearance says (`RunnerColors`): `runnerShown` keeps the system bars'
+ * icons light over it, which a light scheme here would leave unreadable, and its orange field darkens
+ * them itself. A fresh screen per opening of the slot.
  */
 @Composable
 internal fun NativeRunner(

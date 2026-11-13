@@ -37,7 +37,6 @@ import com.casco.kettle.domain.blockTotal
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.theme.DialogAction
 import com.casco.kettle.shell.theme.KettleType
-import com.casco.kettle.shell.theme.RunnerColors
 import com.casco.kettle.shell.theme.Spacing
 
 /**
@@ -143,7 +142,7 @@ private fun WorkoutName(
             resources.sessionName(view.plan.workout?.name),
             Modifier.weight(1f, fill = false),
             style = KettleType.small,
-            color = RunnerColors.textSecondary,
+            color = runnerColors.textSecondary,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
@@ -174,7 +173,7 @@ private fun CircuitCrumb(circuit: CircuitPosition) {
             stringResource(R.string.session_circuit_crumb, "${circuit.round}", "${circuit.rounds}"),
             Modifier.weight(1f),
             style = KettleType.code,
-            color = RunnerColors.accentCalmOnSoft,
+            color = runnerColors.accentCalmOnSoft,
             maxLines = 1,
         )
         ProgressTrack(circuit.memberTotal, circuit.member - 1, calm = true)
@@ -185,14 +184,15 @@ private fun CircuitCrumb(circuit: CircuitPosition) {
 /** A down chevron, drawn: RN's is an SVG path, and a text glyph would change with the font. */
 @Composable
 private fun Chevron() {
+    val color = runnerColors.textSecondary
     Canvas(Modifier.size(12.dp)) {
         val stroke = 1.5.dp.toPx()
         val w = size.width
         val left = Offset(w * CHEVRON_INSET, w * CHEVRON_TOP)
         val tip = Offset(w / 2, w * CHEVRON_BOTTOM)
         val right = Offset(w * (1 - CHEVRON_INSET), w * CHEVRON_TOP)
-        drawLine(RunnerColors.textSecondary, left, tip, stroke, StrokeCap.Round)
-        drawLine(RunnerColors.textSecondary, tip, right, stroke, StrokeCap.Round)
+        drawLine(color, left, tip, stroke, StrokeCap.Round)
+        drawLine(color, tip, right, stroke, StrokeCap.Round)
     }
 }
 
@@ -212,10 +212,10 @@ private fun Notice(
                 heading()
             },
             style = KettleType.subtitle,
-            color = RunnerColors.text,
+            color = runnerColors.text,
             textAlign = TextAlign.Center,
         )
-        Text(body, style = KettleType.small, color = RunnerColors.textSecondary, textAlign = TextAlign.Center)
+        Text(body, style = KettleType.small, color = runnerColors.textSecondary, textAlign = TextAlign.Center)
         CompactButton(primary.label, primary.onClick, Modifier.padding(top = Spacing.two))
         if (secondary != null) TextControl(secondary.label, secondary.onClick, Modifier.padding(top = Spacing.two))
     }

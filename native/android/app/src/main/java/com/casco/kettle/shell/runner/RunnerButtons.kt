@@ -15,6 +15,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -35,11 +36,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.theme.KettleType
-import com.casco.kettle.shell.theme.RunnerColors
 import com.casco.kettle.shell.theme.Spacing
 import com.casco.kettle.shell.theme.TypeIcon
 
-// The runner's controls. Always dark ([RunnerColors], whatever the scheme), and every one at least
+// The runner's controls, in the field's colours ([runnerColors]), and every one at least
 // [MinTarget] tall and its own target, which is #263's fix: the set row's −/+ were 26px, 4px apart,
 // with slop that overlapped.
 
@@ -49,14 +49,13 @@ internal val MinTarget = 48.dp
 private val HeavyBorder = 1.5.dp
 
 /**
- * A button's height, corners and outline at RN's three sizes, and the [fill] a [PrimaryButton] takes;
- * an [OutlineButton] has none.
+ * A button's height, corners and outline at RN's three sizes. A [PrimaryButton] is filled with the
+ * field's accent, its ink, so it is the field's inverse on every one (#418); an [OutlineButton] isn't.
  */
 internal data class ButtonLook(
     val minHeight: Dp,
     val shape: Shape,
     val border: Dp,
-    val fill: Color = RunnerColors.accent,
     val pad: Dp = Spacing.two,
 ) {
     companion object {
@@ -65,9 +64,6 @@ internal data class ButtonLook(
 
         /** The rest row's: a step shorter and less rounded, three buttons sharing it. */
         val Rest = ButtonLook(60.dp, RoundedCornerShape(18.dp), HeavyBorder)
-
-        /** Rest's Skip: light rather than accent, a rest being the calm screen. */
-        val RestSkip = Rest.copy(fill = RunnerColors.text)
 
         /** A sheet's actions, and the one-choice buttons that sit centred. */
         val Compact = ButtonLook(52.dp, RoundedCornerShape(15.dp), 1.dp)
@@ -80,8 +76,11 @@ private val CompactMinWidth = 160.dp
 internal val CapsTracking = 1.4.sp
 private val QuietTracking = 1.sp
 
-/** A quiet control's words: the code face in the secondary colour. */
-internal val QuietStyle = KettleType.code.copy(color = RunnerColors.textSecondary, letterSpacing = QuietTracking)
+/** A quiet control's words: the code face in the field's secondary colour. */
+internal val QuietStyle: TextStyle
+    @Composable
+    @ReadOnlyComposable
+    get() = KettleType.code.copy(color = runnerColors.textSecondary, letterSpacing = QuietTracking)
 
 /**
  * The one filled action on a screen: what ends the step. Only as wide as its caller makes it. Disabled
@@ -100,12 +99,12 @@ internal fun PrimaryButton(
             .heightIn(min = look.minHeight)
             .alpha(if (enabled) 1f else DISABLED_ALPHA)
             .clip(look.shape)
-            .background(look.fill)
+            .background(runnerColors.accent)
             .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
             .padding(horizontal = look.pad, vertical = Spacing.one),
         contentAlignment = Alignment.Center,
     ) {
-        Text(label, style = KettleType.heading, color = RunnerColors.background, textAlign = TextAlign.Center)
+        Text(label, style = KettleType.heading, color = runnerColors.onAccent, textAlign = TextAlign.Center)
     }
 }
 
@@ -131,14 +130,14 @@ internal fun OutlineButton(
     label: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    style: TextStyle = KettleType.heading.copy(color = RunnerColors.text),
+    style: TextStyle = KettleType.heading.copy(color = runnerColors.text),
     look: ButtonLook = ButtonLook.Big,
 ) {
     Box(
         modifier
             .heightIn(min = look.minHeight)
             .clip(look.shape)
-            .border(look.border, RunnerColors.border, look.shape)
+            .border(look.border, runnerColors.outline, look.shape)
             .clickable(role = Role.Button, onClick = onClick)
             .padding(horizontal = OUTLINE_PAD, vertical = Spacing.one),
         contentAlignment = Alignment.Center,
@@ -173,35 +172,34 @@ internal fun TextControl(
 
 /**
  * How a round control is drawn: its circle's [size], which can be smaller than the 48dp it takes to
- * touch (#263: RN's set row drew 26px with overlapping slop), the type its symbol is sized and coloured
- * by, whether it's the accented one of a pair, as a stepper's + is, and where in its target it sits.
+ * touch (#263: RN's set row drew 26px with overlapping slop), the type its symbol is sized by, whether
+ * it's the accented one of a pair, as a stepper's + is, whether it is [filled] with the field, and where
+ * in its target it sits. The symbol is the field's secondary colour, or its accent: read as it's drawn,
+ * since the field changes under a look that doesn't.
  */
 internal data class SymbolLook(
     val size: Dp,
-    val symbolType: TextStyle = KettleType.heading.copy(color = RunnerColors.textSecondary),
+    val symbolType: TextStyle = KettleType.heading,
     val border: Dp = 1.dp,
     val accent: Boolean = false,
-    val fill: Color = Color.Transparent,
+    val filled: Boolean = false,
     val placement: CirclePlacement = CirclePlacement.CENTRE,
 ) {
     companion object {
         /** The set row's −/+, 26 drawn. */
-        val Small = SymbolLook(26.dp, KettleType.smallMedium.copy(color = RunnerColors.textSecondary))
+        val Small = SymbolLook(26.dp, KettleType.smallMedium)
 
         /** The load's −/+. */
         val Load = SymbolLook(30.dp)
 
         /** Coming up's ×: the app's sheet close, in runner colours. */
-        val Close =
-            SymbolLook(32.dp, QuietStyle.copy(fontSize = KettleType.heading.fontSize), fill = RunnerColors.background)
+        val Close = SymbolLook(32.dp, KettleType.code.copy(fontSize = KettleType.heading.fontSize), filled = true)
 
         /** An interval's steppers; [accent] for the +. */
-        val Stepper =
-            SymbolLook(44.dp, KettleType.title.copy(fontSize = 22.sp, color = RunnerColors.textSecondary), HeavyBorder)
+        val Stepper = SymbolLook(44.dp, KettleType.title.copy(fontSize = 22.sp), HeavyBorder)
 
         /** Reps' big −/+. */
-        val Big =
-            SymbolLook(60.dp, KettleType.title.copy(fontSize = 28.sp, color = RunnerColors.textSecondary), HeavyBorder)
+        val Big = SymbolLook(60.dp, KettleType.title.copy(fontSize = 28.sp), HeavyBorder)
 
         /** Prev, beside Pause: its triangle is drawn, so it has no symbol style of its own. */
         val Prev = SymbolLook(56.dp, border = HeavyBorder)
@@ -238,7 +236,7 @@ internal fun SymbolButton(
     look: SymbolLook = SymbolLook.Small,
 ) {
     RoundButton(description, onClick, enabled, look) {
-        TypeIcon(symbol, look.symbolType, if (look.accent) RunnerColors.accent else look.symbolType.color)
+        TypeIcon(symbol, look.symbolType, if (look.accent) runnerColors.accent else runnerColors.textSecondary)
     }
 }
 
@@ -259,7 +257,15 @@ private fun RoundButton(
             .semantics { contentDescription = description },
         contentAlignment = look.placement.alignment,
     ) {
-        val accentBorder = if (look.accent) RunnerColors.accent.copy(alpha = SOFT_BORDER_ALPHA) else RunnerColors.border
+        val accentBorder =
+            if (look.accent) {
+                runnerColors.accent.copy(
+                    alpha = SOFT_BORDER_ALPHA,
+                )
+            } else {
+                runnerColors.outline
+            }
+        val fill = if (look.filled) runnerColors.background else Color.Transparent
         Box(
             Modifier
                 // The inset is inside the target, so a circle grown by large text takes the far side's
@@ -267,7 +273,7 @@ private fun RoundButton(
                 .padding(start = look.placement.startInset, end = look.placement.endInset)
                 .sizeIn(minWidth = look.size, minHeight = look.size)
                 .clip(CircleShape)
-                .background(if (look.accent) RunnerColors.accentSoft else look.fill)
+                .background(if (look.accent) runnerColors.accentSoft else fill)
                 .border(look.border, accentBorder, CircleShape),
             contentAlignment = Alignment.Center,
         ) {
@@ -292,7 +298,7 @@ internal fun PillControl(
             Modifier
                 .heightIn(min = SymbolLook.Small.size)
                 .clip(CircleShape)
-                .border(1.dp, RunnerColors.border, CircleShape)
+                .border(1.dp, runnerColors.outline, CircleShape)
                 .padding(horizontal = PILL_PAD),
             contentAlignment = Alignment.Center,
         ) {
@@ -308,6 +314,7 @@ internal fun PillControl(
 @Composable
 internal fun PrevIconButton(onClick: () -> Unit) {
     RoundButton(stringResource(R.string.session_previousStep), onClick, enabled = true, look = SymbolLook.Prev) {
+        val color = runnerColors.textSecondary
         Canvas(Modifier.size(width = 9.dp, height = 12.dp)) {
             // Back points the way the layout reads.
             scale(scaleX = if (layoutDirection == LayoutDirection.Rtl) -1f else 1f, scaleY = 1f) {
@@ -318,7 +325,7 @@ internal fun PrevIconButton(onClick: () -> Unit) {
                         lineTo(size.width, size.height)
                         close()
                     },
-                    RunnerColors.textSecondary,
+                    color,
                 )
             }
         }
@@ -336,11 +343,17 @@ internal fun PrevTextButton(
         Modifier
             .sizeIn(minWidth = size, minHeight = size)
             .clip(CircleShape)
-            .border(HeavyBorder, RunnerColors.border, CircleShape)
+            .border(HeavyBorder, runnerColors.outline, CircleShape)
             .clickable(role = Role.Button, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Text(stringResource(R.string.session_prev), style = PrevStyle, textAlign = TextAlign.Center)
+        // RN's plain code face, untracked, unlike the other quiet controls.
+        Text(
+            stringResource(R.string.session_prev),
+            style = KettleType.code,
+            color = runnerColors.textSecondary,
+            textAlign = TextAlign.Center,
+        )
     }
 }
 
@@ -348,6 +361,3 @@ private val PAIR_INSET = 4.dp
 private const val DISABLED_ALPHA = 0.4f
 private val PILL_PAD = 10.dp
 private val OUTLINE_PAD = 12.dp
-
-/** Prev's word is RN's plain code face, untracked, unlike the other quiet controls. */
-private val PrevStyle = KettleType.code.copy(color = RunnerColors.textSecondary)

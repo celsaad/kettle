@@ -41,7 +41,7 @@ class Navigator(
     var runner by mutableStateOf<RunnerSlot?>(null)
         private set
 
-    /** Whether the runner shows, which is dark in either scheme (`RunnerColors`). */
+    /** Whether the runner shows, in its own colours whatever the scheme (`RunnerColors`). */
     val runnerShown: Boolean get() = runner != null
 
     /** The bar shows on a tab, with nothing over it. */

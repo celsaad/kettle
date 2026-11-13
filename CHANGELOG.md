@@ -34,6 +34,10 @@ here, next to what it describes.
   a session, or a library file too large to read, used to crash or freeze the app on every launch.
   It now sets the bad library aside and starts fresh, as it already did for other broken files.
   Import refuses anything over 512 KB, far larger than any real library.
+- **The session screen shows what the clock is doing**: it turns orange while the clock runs your
+  work (an interval, an EMOM minute, an AMRAP, a hold that stops itself) and blue while you rest.
+  It stays black when you set the pace, as on a set or while paused. In the last three seconds of
+  a rest, the countdown goes orange on black, with the ticks (#418).
 
 ---
 

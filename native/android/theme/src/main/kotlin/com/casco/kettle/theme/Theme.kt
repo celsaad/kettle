@@ -9,7 +9,8 @@ import kotlinx.serialization.json.doubleOrNull
 data class Theme(
     val light: Map<String, String>,
     val dark: Map<String, String>,
-    val runner: Map<String, String>,
+    /** `RunnerColors`: each of [RUNNER_FIELDS] to its tokens, which are the same names in every field. */
+    val runner: Map<String, Map<String, String>>,
     val spacing: Map<String, String>,
     val maxContentWidth: String,
     val fonts: Map<String, Face>,
@@ -62,7 +63,16 @@ private val FACE = Regex("((?:[A-Z][a-z0-9]*)+)_([1-9]00)([A-Za-z]+)")
  * property its `FontFamily` is generated as.
  */
 private val GENERATED_NAMES =
-    setOf("KettleColors", "LightColors", "DarkColors", "RunnerColors", "Spacing", "MaxContentWidth", "KettleType")
+    setOf(
+        "KettleColors",
+        "LightColors",
+        "DarkColors",
+        "RunnerPalette",
+        "RunnerColors",
+        "Spacing",
+        "MaxContentWidth",
+        "KettleType",
+    )
 
 private const val COLORS = "Colors"
 private const val RUNNER_COLORS = "RunnerColors"
@@ -72,6 +82,12 @@ private const val FONTS = "Fonts"
 private const val TYPE = "Type"
 private val GROUPS = listOf(COLORS, RUNNER_COLORS, SPACING, MAX_CONTENT_WIDTH, FONTS, TYPE)
 private val SIZES = listOf("fontSize", "lineHeight", "letterSpacing")
+
+/**
+ * The runner's fields, in the order theme.json has to list them: who sets the pace (a reps set, or
+ * anything paused), the count-in and a rest's last seconds, work the clock runs, and rest.
+ */
+private val RUNNER_FIELDS = listOf("pace", "getReady", "work", "rest")
 
 /**
  * theme.json, read strictly: a group or token this doesn't know is refused rather than skipped, so
@@ -91,7 +107,7 @@ fun parseTheme(json: String): Theme {
     return Theme(
         light = light,
         dark = dark,
-        runner = primitives(objectAt(root, RUNNER_COLORS), RUNNER_COLORS) { it.isString },
+        runner = runnerFields(objectAt(root, RUNNER_COLORS)),
         spacing = primitives(objectAt(root, SPACING), SPACING, ::isNumber),
         maxContentWidth =
             (root.getValue(MAX_CONTENT_WIDTH) as? JsonPrimitive)?.takeIf(::isNumber)?.content
@@ -99,6 +115,17 @@ fun parseTheme(json: String): Theme {
         fonts = fonts,
         type = objectAt(root, TYPE).mapValues { (key, value) -> typeStyle(key, value, fonts.keys) },
     )
+}
+
+private fun runnerFields(group: JsonObject): Map<String, Map<String, String>> {
+    require(group.keys.toList() == RUNNER_FIELDS) { "$RUNNER_COLORS has to hold $RUNNER_FIELDS, in that order" }
+    val fields =
+        RUNNER_FIELDS.associateWith { field ->
+            primitives(objectAt(group, field), "$RUNNER_COLORS.$field") { it.isString }
+        }
+    val tokens = fields.getValue(RUNNER_FIELDS.first()).keys
+    require(fields.values.all { it.keys == tokens }) { "$RUNNER_COLORS' fields have to hold the same tokens" }
+    return fields
 }
 
 /**

@@ -61,17 +61,26 @@ export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
  *
  * `accent` is each field's ink, so the one filled button is the field's inverse and orange is never a
  * button (`onAccent` is its label). `numeral` is the big clock's colour, which only `getReady` sets apart.
- * `outline` is a control's edge and `track` a progress bar's unfilled part, both held to WCAG 1.4.11's
- * 3:1 against their field; `border` stays a decorative hairline, a card's or a separator's.
+ * `outline` is a control's edge, held to WCAG 1.4.11's 3:1 against its field. `track` is a progress
+ * bar's unfilled part, and the fill (`accent`) is held to 3:1 against it, since progress is what the
+ * bar says. On `work` and `rest` the track can't also clear 3:1 against the field: ink on those fields
+ * is only 6.68 and 6.85, short of the 9 two 3:1 steps need. The canvas's tracks there (`#6A3013`,
+ * `#93B8DA`) took the field's side and left the fill at 1.93 against them, on the one field a bar
+ * draws on mid-set. `border` stays a decorative hairline, a card's or a separator's.
  *
  * Measured at the byte alpha both platforms render, translucent tokens composited onto their field:
  *
- * - `pace`: `text` 17.87, `textSecondary` 8.69 (7.58 on `backgroundElement`), `outline`/`track` 3.58,
- *   `accentCalmOnSoft` 6.15 on its soft fill. `getReady`'s orange `numeral` 6.68.
+ * - `pace`: `text` 17.87, `textSecondary` 8.69 (7.58 on `backgroundElement`), `outline`/`track` 3.58
+ *   against the field, the fill 4.99 against the track. `getReady`'s orange `numeral` 6.68.
  * - `work`: `text` 6.68, `textSecondary` 5.25 (6.26 on `backgroundElement`, which is a lighter tint for
- *   that reason: a darker one took the secondary text to 4.20), `outline`/`track` 3.47.
- * - `rest`: `text` 6.85, `textSecondary` 5.09, `outline`/`track` 3.49, `accentOnSoft` 4.95.
+ *   that reason: a darker one took the secondary text to 4.20), `outline` 3.47, the fill 3.02 against
+ *   `track`, which is 2.21 against the field.
+ * - `rest`: `text` 6.85, `textSecondary` 5.09, `outline` 3.49, the fill 3.03 against `track`, which is
+ *   2.26 against the field.
  * - `onAccent` on `accent`, the main button's label: 17.87 on `pace` and `work`, 6.85 on `rest`.
+ * - On `work` and `rest` the header's two bars, the session's and a circuit's, are both ink: there is
+ *   one ink per field, so they are told apart there by height and by the circuit's label beside it.
+ *   Only `pace` keeps the circuit's blue.
  * - A step pill's label on its soft fill, composited onto the field: `accentOnSoft` 13.59 and
  *   `accentCalmOnSoft` 6.15 on `pace`, both 7.98 on `work`, both 4.95 on `rest`.
  *

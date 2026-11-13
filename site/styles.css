@@ -71,7 +71,7 @@
   --accent-soft: rgba(207, 106, 55, 0.12);
   --calm: #3f82c0;
   --calm-text: #2f6493; /* calm-colored TEXT on light bg (AA)  */
-  --ink: #17140d; /* app splash / session background     */
+  --ink: #17140d; /* the site's near-black (the app's was) */
   --on-accent: #17140d; /* near-black label on accent fills    */
 
   /* spacing scale: 4 / 8 / 16 / 24 / 32 / 64 */

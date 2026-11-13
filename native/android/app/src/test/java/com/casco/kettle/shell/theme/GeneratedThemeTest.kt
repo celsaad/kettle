@@ -158,9 +158,9 @@ class GeneratedThemeTest {
 
         val fields =
             mapOf(
-                RunnerColors.pace to FieldRatios(17.87, 8.69, 7.58, 3.58, 17.87),
-                RunnerColors.work to FieldRatios(6.68, 5.25, 6.26, 3.47, 17.87),
-                RunnerColors.rest to FieldRatios(6.85, 5.09, 6.85, 3.49, 6.85),
+                RunnerColors.pace to FieldRatios(17.87, 8.69, 7.58, 3.58, 4.99, 17.87),
+                RunnerColors.work to FieldRatios(6.68, 5.25, 6.26, 3.47, 3.02, 17.87),
+                RunnerColors.rest to FieldRatios(6.85, 5.09, 6.85, 3.49, 3.03, 6.85),
             )
         for ((palette, ratios) in fields) {
             with(palette) {
@@ -169,7 +169,8 @@ class GeneratedThemeTest {
                 assertContrast(ratios.secondary, textSecondary, field)
                 assertContrast(ratios.secondaryOnCard, textSecondary, backgroundElement.over(field))
                 assertContrast(ratios.edge, outline, field)
-                assertContrast(ratios.edge, track, field)
+                // What a bar says is its fill against its track; the track against the field is secondary.
+                assertContrast(ratios.progress, accent, track.surface())
                 assertContrast(ratios.label, onAccent, accent.surface())
             }
         }
@@ -205,12 +206,16 @@ class GeneratedThemeTest {
         }
     }
 
-    /** A runner field's recorded ratios: [edge] is its outline's and its track's, [label] the main button's. */
+    /**
+     * A runner field's recorded ratios: [edge] is its outline's, [progress] a bar's fill against its
+     * track, [label] the main button's.
+     */
     private data class FieldRatios(
         val text: Double,
         val secondary: Double,
         val secondaryOnCard: Double,
         val edge: Double,
+        val progress: Double,
         val label: Double,
     )
 

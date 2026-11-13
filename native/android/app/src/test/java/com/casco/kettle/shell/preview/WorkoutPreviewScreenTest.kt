@@ -3,6 +3,8 @@ package com.casco.kettle.shell.preview
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.isHeading
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithText
 import com.casco.kettle.domain.CircuitMember
 import com.casco.kettle.domain.Exercise
@@ -139,6 +141,24 @@ class WorkoutPreviewScreenTest {
         show(planned(SessionParams.Workout("day")), library(empty))
 
         compose.onNodeWithText("\"Empty day\" não tem blocos", substring = true).assertExists()
+    }
+
+    /** The list under it is what will run, which isn't the whole workout, so the preview says so. */
+    @Test
+    fun `a workout too long to run in full carries the runner's note, and still lists what will run`() {
+        val big = Exercise("big", "Big", ExerciseConfig.Reps(500, 5, restSec = 60.0))
+        val long = Workout("day", "Long day", List(22) { WorkoutBlock.ExerciseBlock("big") })
+        show(planned(SessionParams.Workout("day")), library(long, exercises = listOf(big)))
+
+        compose.onNodeWithText("\"Long day\" pede mais do que o Kettle consegue rodar", substring = true).assertExists()
+        compose.onAllNodesWithText("Big").onFirst().assertExists()
+    }
+
+    @Test
+    fun `a workout that runs in full carries no note`() {
+        show(planned(SessionParams.Workout("day")), library(pullUpsDay))
+
+        compose.onNodeWithText("pede mais do que o Kettle consegue rodar", substring = true).assertDoesNotExist()
     }
 
     @Test

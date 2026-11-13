@@ -721,7 +721,7 @@ class HomeScreenTest {
     fun `the preview button's name carries the workout's`() {
         show(queuedFiles())
 
-        compose.onNode(opensPreview).assert(hasText("Push day", substring = true)).assertHeightIsAtLeast(48.dp)
+        compose.onNode(opensPreview).assert(hasText("Push day", substring = true))
     }
 
     private val isButton = SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button)

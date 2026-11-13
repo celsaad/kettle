@@ -131,7 +131,7 @@ private fun Preview(
     plan: RunnerPlan.Runnable,
     slot: SessionParams.ProgramSlot?,
     units: UnitSystem,
-    note: @Composable () -> Unit = {},
+    note: (@Composable () -> Unit)? = null,
 ) {
     // Only an ad-hoc plan has no workout, and no route here names one; said rather than left blank.
     val workout = plan.workout
@@ -142,7 +142,7 @@ private fun Preview(
     Header(workout, plan.exercises, slot)
     // A workout the step ceiling cuts short says so, as the runner does before its count-in: the list
     // under it is what will run, which isn't the whole workout.
-    Box(Modifier.padding(top = Spacing.two)) { note() }
+    if (note != null) Box(Modifier.padding(top = Spacing.two)) { note() }
     ListHeaderRule()
     Outline(plan.steps, units)
 }

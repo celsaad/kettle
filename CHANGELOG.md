@@ -76,6 +76,9 @@ here, next to what it describes.
   logged ("3 sets · 10, 9, 8"), the exercise you're on is marked Now with its target, and the rest
   is still to come. A circuit you're in shows its round, its rests, and which moves are done. The
   top says how many steps you've done of the total (#415).
+- **Three tabs instead of four**: Today, Library and Progress. Library holds your exercises and
+  your programs, and Progress holds your sessions and your stats, each a switch at the top. Links
+  and shortcuts to the old History and Programs tabs still land in the right place (#411).
 
 ---
 

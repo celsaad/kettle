@@ -74,19 +74,16 @@ import com.casco.kettle.shell.theme.card
 import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.TimeZone
 import java.util.Locale
-import kotlin.time.Clock
 import kotlin.time.Instant
 
-/** What the route table draws at `/analytics`, opened from History's header. */
+/** What the Progress tab draws in its Stats section (#411); History's header switches to it. */
 @Composable
 fun StatsRoute() {
-    // Once per opening, as exercise progress reads it: this week, the streak and today's cell are all
-    // as of when the sheet came up, and a sheet is short-lived.
-    val now = remember { Clock.System.now() }
+    val time = rememberStatsTime()
     StatsScreen(
         LocalLatestFiles.current,
-        now,
-        TimeZone.currentSystemDefault(),
+        time.now,
+        time.zone,
         // The locale's calendar, as expo-localization reads RN's from the default locale, which the
         // configuration carries; read through it so a locale change is seen.
         firstWeekday(LocalConfiguration.current.locales[0]),
@@ -103,7 +100,7 @@ private const val CALENDAR_WEEKS = 4
 /**
  * Stats (#201): the numbers behind History, as RN's `analytics.tsx`, now the empty stub at this path.
  * It answers the two questions an all-time total can't (am I turning up, and is anything moving), and
- * **repeats no all-time totals**: History's header says them, one screen back, in the same words.
+ * **repeats no all-time totals**: History's header says them, a section over, in the same words.
  * Nothing here narrows with History's search; it always reports the whole log, which is the only
  * reading that makes "this week" and a streak mean anything.
  *

@@ -66,9 +66,9 @@ import com.casco.kettle.shell.form.dashedBorder
 import com.casco.kettle.shell.i18n.deviceUnitSystem
 import com.casco.kettle.shell.i18n.pluralText
 import com.casco.kettle.shell.list.TextAction
-import com.casco.kettle.shell.nav.Destination
 import com.casco.kettle.shell.nav.LocalNavigator
 import com.casco.kettle.shell.nav.Route
+import com.casco.kettle.shell.nav.Section
 import com.casco.kettle.shell.theme.DialogAction
 import com.casco.kettle.shell.theme.KettleAlertDialog
 import com.casco.kettle.shell.theme.KettleTheme
@@ -93,7 +93,7 @@ fun ProgramEditorRoute(params: Map<String, String>) {
             close = { navigator.back() },
             // Navigate dismisses every sheet first, as RN's `dismissTo('/programs')` did. A back would
             // land on Program detail, which looks the program up by id and finds nothing.
-            deleted = { navigator.navigate(Route(Destination.Programs)) },
+            deleted = { navigator.navigate(Route.of(Section.PROGRAMS)) },
         ),
     )
 }

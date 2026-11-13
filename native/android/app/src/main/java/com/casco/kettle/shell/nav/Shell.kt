@@ -4,7 +4,10 @@ import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.TextAutoSize
@@ -23,6 +26,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -62,7 +67,7 @@ internal fun Destinations(
 
     NavHost(
         navController = navController,
-        startDestination = Tab.Workouts.name,
+        startDestination = Tab.Today.name,
         modifier = Modifier.fillMaxSize(),
         // As RN's tab bar did: a tab switch has no transition of its own.
         enterTransition = { EnterTransition.None },
@@ -73,7 +78,7 @@ internal fun Destinations(
                 // Opaque to the top, strip included, as NativeSheet is: the window behind is Material's
                 // gray, not the theme's (#227). Here and not in each screen, so every tab gets it.
                 Box(Modifier.fillMaxSize().background(KettleTheme.colors.background)) {
-                    content(Route(tab.destination))
+                    content(navigator.tabRoute(tab))
                 }
             }
         }
@@ -134,40 +139,44 @@ internal fun TabBar(
     onSelect: (Tab) -> Unit,
 ) {
     val colors = KettleTheme.colors
-    // The pairing RN's bar used (src/app/(tabs)/_layout.tsx), so the contrast it was checked at holds.
+    // The canvas's bar (#411): the selected tab an ink-filled pill with its icon in the background's
+    // colour, the inverse the theme's text and background already contrast at, and its label in ink and
+    // bold; the others in the secondary text. On the screen's own background, a hairline above.
     val itemColors =
         NavigationBarItemDefaults.colors(
-            selectedIconColor = colors.accentText,
-            selectedTextColor = colors.accentText,
-            indicatorColor = colors.backgroundSelected,
+            selectedIconColor = colors.background,
+            selectedTextColor = colors.text,
+            indicatorColor = colors.text,
             unselectedIconColor = colors.textSecondary,
             unselectedTextColor = colors.textSecondary,
         )
-    NavigationBar(containerColor = colors.backgroundElement) {
-        for (tab in Tab.entries) {
-            val selected = tab == current
-            val name = stringResource(tab.label)
-            NavigationBarItem(
-                selected = selected,
-                onClick = { onSelect(tab) },
-                // The label names every tab, so the icon names none: a description too would announce
-                // each tab twice.
-                icon = { Icon(painterResource(tab.icon), contentDescription = null) },
-                label = { TabLabel(name) },
-                // Every tab labelled, as Material 3's bar is (#265). Hiding the unselected ones was
-                // Material 2's guidance for four or more, carried over from RN's bar, and it left the
-                // book and the calendar to be guessed at: Programs' calendar reads as Stats' just as
-                // easily.
-                alwaysShowLabel = true,
-                colors = itemColors,
-            )
+    // The theme's background under the hairline too: the border is a translucent ink, which over the
+    // window behind the bar read as a dark rule in the light scheme.
+    Column(Modifier.background(colors.background)) {
+        Box(Modifier.fillMaxWidth().height(1.dp).background(colors.border))
+        NavigationBar(containerColor = colors.background) {
+            for (tab in Tab.entries) {
+                val selected = tab == current
+                val name = stringResource(tab.label)
+                NavigationBarItem(
+                    selected = selected,
+                    onClick = { onSelect(tab) },
+                    // The label names every tab, so the icon names none: a description too would announce
+                    // each tab twice.
+                    icon = { Icon(painterResource(tab.icon), contentDescription = null) },
+                    label = { TabLabel(name, selected) },
+                    // Every tab labelled, as Material 3's bar is (#265) and the canvas draws it.
+                    alwaysShowLabel = true,
+                    colors = itemColors,
+                )
+            }
         }
     }
 }
 
 /**
  * A tab's label on one line, at the size the device's font scale asks for while that fits its slot, and
- * shrunk until it does when it doesn't, never below its size at 1x (#265). Four labels share the bar's
+ * shrunk until it does when it doesn't, never below its size at 1x (#265). Labels share the bar's
  * width, and wrapped they broke mid-word in every locale at 2x ("Workout/s", "Bibliote/ca",
  * "ワーク/アウト"). A fixed cap on the scale was tried and can't work: 1.3x fit on a 411dp phone, but on
  * a 360dp one ja's ワークアウト wrapped at 1.15x, and the cap that fits there throws large text away on
@@ -178,8 +187,12 @@ internal fun TabBar(
  * from the locals [NavigationBarItem] sets for its label, as [Text] would.
  */
 @Composable
-private fun TabLabel(name: String) {
-    val style = LocalTextStyle.current.merge(color = LocalContentColor.current)
+private fun TabLabel(
+    name: String,
+    selected: Boolean,
+) {
+    val weight = if (selected) FontWeight.Bold else FontWeight.Medium
+    val style = LocalTextStyle.current.merge(color = LocalContentColor.current, fontWeight = weight)
     val fontScale = LocalDensity.current.fontScale
     val autoSize =
         if (fontScale > 1f) {

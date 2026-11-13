@@ -29,7 +29,7 @@ class TabBarTest {
         compose.setContent {
             val density = LocalDensity.current
             CompositionLocalProvider(LocalDensity provides Density(density.density, fontScale)) {
-                KettleTheme(darkTheme = false) { TabBar(current = Tab.Workouts, onSelect = {}) }
+                KettleTheme(darkTheme = false) { TabBar(current = Tab.Today, onSelect = {}) }
             }
         }
 
@@ -41,7 +41,7 @@ class TabBarTest {
         return results.single()
     }
 
-    private val labels = listOf("Workouts", "Library", "History", "Programs")
+    private val labels = listOf("Today", "Library", "Progress")
 
     /** Wrapped, four labels in the bar's width broke mid-word at 2x in every locale. */
     @Test

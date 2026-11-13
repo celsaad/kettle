@@ -143,7 +143,7 @@ class ShellTest {
     fun `lets the splash go once the files are read, whichever tab is showing`() {
         val files = unreadFiles()
         show(files = files)
-        go { select(Tab.History) }
+        go { select(Tab.Progress) }
         assertEquals(0, splashExits)
 
         compose.runOnUiThread { files.reread() }
@@ -171,28 +171,28 @@ class ShellTest {
         compose.onNode(hasText(label) and SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Tab))
 
     @Test
-    fun `the bar opens on Workouts, with every tab a selectable Tab`() {
+    fun `the bar opens on Today, with every tab a selectable Tab`() {
         show()
 
-        tab("Workouts").assertIsSelected()
-        for (label in listOf("Library", "History", "Programs")) {
+        tab("Today").assertIsSelected()
+        for (label in listOf("Library", "Progress")) {
             tab(label)
                 .assertIsNotSelected()
                 .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Tab))
         }
-        compose.onNodeWithText("Screen Workouts").assertIsDisplayed()
+        compose.onNodeWithText("Screen Today").assertIsDisplayed()
     }
 
     @Test
     fun `a tap selects the tab and shows its screen`() {
         show()
 
-        tab("History").performClick()
+        tab("Progress").performClick()
 
-        tab("History").assertIsSelected()
-        tab("Workouts").assertIsNotSelected()
-        assertEquals(Tab.History, navigator.tab)
-        compose.onNodeWithText("Screen History").assertIsDisplayed()
+        tab("Progress").assertIsSelected()
+        tab("Today").assertIsNotSelected()
+        assertEquals(Tab.Progress, navigator.tab)
+        compose.onNodeWithText("Screen Progress").assertIsDisplayed()
     }
 
     /**
@@ -203,10 +203,10 @@ class ShellTest {
     @Test
     fun `every tab is named once, by its label, whichever is selected`() {
         show()
-        tab("History").performClick()
+        tab("Progress").performClick()
         compose.mainClock.advanceTimeBy(ANIMATIONS_SETTLED)
 
-        for (label in listOf("Workouts", "Library", "History", "Programs")) {
+        for (label in listOf("Today", "Library", "Progress")) {
             tab(label)
                 .assert(SemanticsMatcher.expectValue(SemanticsProperties.Text, listOf(AnnotatedString(label))))
                 .assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.ContentDescription))
@@ -217,7 +217,7 @@ class ShellTest {
     fun `every tab is at least 48dp each way`() {
         show()
 
-        for (label in listOf("Workouts", "Library", "History", "Programs")) {
+        for (label in listOf("Today", "Library", "Progress")) {
             tab(label).assertHeightIsAtLeast(48.dp).assertWidthIsAtLeast(48.dp)
         }
     }
@@ -241,11 +241,11 @@ class ShellTest {
 
         go { push(Route(Destination.Import)) }
 
-        tab("Workouts").assertDoesNotExist()
+        tab("Today").assertDoesNotExist()
 
         go { back() }
 
-        tab("Workouts").assertIsSelected()
+        tab("Today").assertIsSelected()
     }
 
     /**
@@ -258,7 +258,7 @@ class ShellTest {
         screen = { Box(Modifier.fillMaxSize().testTag("see-through")) }
         show()
 
-        tab("History").performClick()
+        tab("Progress").performClick()
 
         // Drawn by hand, as captureToImage waits on a draw pass Robolectric never dispatches here. The
         // screen's bounds are in the shell's own coordinates: Destinations is the shell's top child.
@@ -326,7 +326,7 @@ class ShellTest {
     @Test
     fun `closing a sheet over a tab shows the tab again`() {
         show()
-        tab("History").performClick()
+        tab("Progress").performClick()
 
         go { push(Route(Destination.SessionEditor, mapOf("id" to "legs-1"))) }
 
@@ -335,7 +335,7 @@ class ShellTest {
 
         go { back() }
 
-        compose.onNodeWithText("Screen History").assertIsDisplayed()
+        compose.onNodeWithText("Screen Progress").assertIsDisplayed()
         compose.onNodeWithText("Screen SessionEditor legs-1").assertDoesNotExist()
     }
 
@@ -350,7 +350,7 @@ class ShellTest {
         compose.onNodeWithText("Screen Session bench").assertIsDisplayed()
         compose.runOnIdle { assertEquals(View.VISIBLE, shell.nativeRunner.visibility) }
         compose.runOnIdle { assertEquals(View.INVISIBLE, shell.nativeSheet.visibility) }
-        tab("Workouts").assertDoesNotExist()
+        tab("Today").assertDoesNotExist()
 
         go { closeRunner() }
 
@@ -362,14 +362,14 @@ class ShellTest {
     @Config(qualifiers = "pt")
     fun `the tabs are labelled in Portuguese`() {
         show()
-        for (label in listOf("Treinos", "Biblioteca", "Histórico", "Programas")) tab(label).assertExists()
+        for (label in listOf("Hoje", "Biblioteca", "Progresso")) tab(label).assertExists()
     }
 
     @Test
     @Config(qualifiers = "ja")
     fun `the tabs are labelled in Japanese`() {
         show()
-        for (label in listOf("ワークアウト", "ライブラリ", "履歴", "プログラム")) tab(label).assertExists()
+        for (label in listOf("今日", "ライブラリ", "進捗")) tab(label).assertExists()
     }
 
     private companion object {

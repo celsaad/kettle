@@ -15,7 +15,7 @@ class RouteTest {
             Route(Destination.ExerciseEditor, mapOf("id" to "pushups")),
             Route.parse("/exercise-editor?id=pushups"),
         )
-        assertEquals(Route(Destination.Workouts), Route.parse("/"))
+        assertEquals(Route(Destination.Today), Route.parse("/"))
     }
 
     /** Every screen is native: a path nobody registered is a bug to drop, not RN's to draw. */
@@ -54,7 +54,8 @@ class RouteTest {
     fun `a route writes back out as the path it parses from`() {
         val routes =
             listOf(
-                Route(Destination.Workouts),
+                Route(Destination.Today),
+                Route.of(Section.PROGRAMS),
                 Route(Destination.ProgramDetail, mapOf("programId" to "base", "day" to "Day 1 & 2+")),
                 Route(Destination.SessionEditor, mapOf("id" to "2026-11-09T23-29-54-817Z")),
             )
@@ -63,9 +64,9 @@ class RouteTest {
 
     @Test
     fun `a kettle link parses with the same parser, host and path alike`() {
-        assertEquals(Route(Destination.History), Route.fromLink("kettle://history"))
-        assertEquals(Route(Destination.History), Route.fromLink("kettle:///history"))
-        assertEquals(Route(Destination.Workouts), Route.fromLink("kettle://"))
+        assertEquals(Route(Destination.Progress), Route.fromLink("kettle://progress"))
+        assertEquals(Route(Destination.Progress), Route.fromLink("kettle:///progress"))
+        assertEquals(Route(Destination.Today), Route.fromLink("kettle://"))
         assertEquals(
             Route(Destination.ExerciseProgress, mapOf("exerciseId" to "pushups")),
             Route.fromLink("kettle://exercise-progress?exerciseId=pushups"),
@@ -103,7 +104,29 @@ class RouteTest {
     @Test
     fun `only the sheet destinations are sheets`() {
         assertTrue(Route(Destination.Settings).sheet)
-        assertFalse(Route(Destination.History).sheet)
+        assertFalse(Route(Destination.Progress).sheet)
         assertFalse(Route(Destination.Session).sheet)
+    }
+
+    /** #411: the four-tab shell's paths land on the tab and section that now hold their screens. */
+    @Test
+    fun `the old tabs' and Stats' links land on their new tab and section`() {
+        val programs = Route.of(Section.PROGRAMS)
+        assertEquals(programs, Route.fromLink("kettle://programs"))
+        assertEquals(
+            Route.of(Section.SESSIONS),
+            Route.fromLink("kettle://history"),
+        )
+        assertEquals(Route.of(Section.STATS), Route.parse("/analytics"))
+        // Its own section wins over one the link carried.
+        assertEquals(programs, Route.parse("/programs?section=exercises"))
+    }
+
+    @Test
+    fun `a tab's section is the one its route names, else its first`() {
+        assertEquals(Section.STATS, Route.of(Section.STATS).section(Tab.Progress))
+        assertEquals(Section.SESSIONS, Route(Destination.Progress).section(Tab.Progress))
+        assertEquals(Section.EXERCISES, Route(Destination.Library, mapOf(SECTION to "nowhere")).section(Tab.Library))
+        assertNull(Route(Destination.Today).section(Tab.Today))
     }
 }

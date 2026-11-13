@@ -241,7 +241,7 @@ class LibraryScreenTest {
         compose.onNode(hasScrollToIndexAction()).performScrollToIndex(many.size)
         compose.onNodeWithText("Biblioteca").assertDoesNotExist()
 
-        reselects.tryEmit(Tab.Programs)
+        reselects.tryEmit(Tab.Progress)
         compose.waitForIdle()
         compose.onNodeWithText("Biblioteca").assertDoesNotExist()
 

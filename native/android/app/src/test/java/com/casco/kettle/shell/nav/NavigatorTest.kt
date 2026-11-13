@@ -21,8 +21,8 @@ class NavigatorTest {
     private fun editor(id: String) = Route(Destination.ExerciseEditor, mapOf("id" to id))
 
     @Test
-    fun `it opens on Workouts with the bar up and nothing above it`() {
-        assertEquals(Tab.Workouts, navigator.tab)
+    fun `it opens on Today with the bar up and nothing above it`() {
+        assertEquals(Tab.Today, navigator.tab)
         assertTrue(navigator.barShown)
         assertEquals(Place.Tab, navigator.place)
         assertNull(navigator.sheet)
@@ -30,11 +30,11 @@ class NavigatorTest {
 
     @Test
     fun `a tap selects a tab, and a tap on the tab showing is a reselect`() {
-        navigator.select(Tab.History)
-        navigator.select(Tab.History)
+        navigator.select(Tab.Progress)
+        navigator.select(Tab.Progress)
 
-        assertEquals(Tab.History, navigator.tab)
-        assertEquals(listOf(Tab.History), reselected)
+        assertEquals(Tab.Progress, navigator.tab)
+        assertEquals(listOf(Tab.Progress), reselected)
     }
 
     @Test
@@ -79,11 +79,11 @@ class NavigatorTest {
     }
 
     @Test
-    fun `back from a tab goes to Workouts, and from Workouts leaves the app`() {
-        navigator.select(Tab.Programs)
+    fun `back from a tab goes to Today, and from Today leaves the app`() {
+        navigator.select(Tab.Library)
 
         assertTrue(navigator.back())
-        assertEquals(Tab.Workouts, navigator.tab)
+        assertEquals(Tab.Today, navigator.tab)
         assertFalse(navigator.back())
     }
 
@@ -93,10 +93,10 @@ class NavigatorTest {
         navigator.push(settings)
         navigator.push(support)
 
-        navigator.navigate(Route(Destination.History))
+        navigator.navigate(Route(Destination.Progress))
 
         assertNull(navigator.sheet)
-        assertEquals(Tab.History, navigator.tab)
+        assertEquals(Tab.Progress, navigator.tab)
 
         navigator.push(settings)
         navigator.navigate(editor("pushups"))
@@ -121,26 +121,26 @@ class NavigatorTest {
     /** What the stub's `usePreventRemove` did: the runner owns its exits (#297, #302). */
     @Test
     fun `while the runner shows, every other navigation is dropped`() {
-        navigator.select(Tab.History)
+        navigator.select(Tab.Progress)
         navigator.push(settings)
         navigator.openRunner(bench)
 
         navigator.select(Tab.Library)
         navigator.push(support)
         navigator.replace(support)
-        navigator.navigate(Route(Destination.Programs))
+        navigator.navigate(Route(Destination.Library))
         navigator.navigate(Route(Destination.Session, mapOf("adhoc" to "1")))
         navigator.openRunner(RunnerStart.Adhoc)
 
         assertTrue("back is taken, not passed on to leave the app", navigator.back())
         assertEquals(RunnerSlot(bench), navigator.runner)
         assertEquals(settings, navigator.sheet)
-        assertEquals(Tab.History, navigator.tab)
+        assertEquals(Tab.Progress, navigator.tab)
     }
 
     @Test
     fun `done pops the slot, back to whatever the runner opened over`() {
-        navigator.select(Tab.Programs)
+        navigator.select(Tab.Library)
         navigator.push(Route(Destination.ProgramDetail))
         navigator.openRunner(bench)
 
@@ -148,7 +148,7 @@ class NavigatorTest {
 
         assertNull(navigator.runner)
         assertEquals(Route(Destination.ProgramDetail), navigator.sheet)
-        assertEquals(Tab.Programs, navigator.tab)
+        assertEquals(Tab.Library, navigator.tab)
         assertEquals(1, runnerClosed)
     }
 
@@ -189,7 +189,7 @@ class NavigatorTest {
         navigator.push(settings)
         navigator.replace(support)
         navigator.openRunner(bench)
-        navigator.select(Tab.History)
+        navigator.select(Tab.Progress)
         navigator.closeRunner()
         navigator.back()
 
@@ -212,7 +212,7 @@ class NavigatorTest {
 
     /**
      * An activity made again (a font or display size change, or the process brought back) starts a new
-     * navigator; the stack it saved puts the user back where they were, not on Workouts.
+     * navigator; the stack it saved puts the user back where they were, not on Today.
      */
     @Test
     fun `a saved back stack restores the tab and every sheet over it`() {
@@ -251,16 +251,42 @@ class NavigatorTest {
         assertNull(navigator.sheet)
 
         navigator.restore(listOf("NoSuchTab"))
-        assertEquals(Tab.Workouts, navigator.tab)
+        assertEquals(Tab.Today, navigator.tab)
     }
 
     @Test
     fun `opening a tab's route goes to the tab rather than stacking it`() {
         navigator.push(settings)
 
-        navigator.push(Route(Destination.Programs))
+        navigator.push(Route(Destination.Library))
 
         assertNull(navigator.sheet)
-        assertEquals(Tab.Programs, navigator.tab)
+        assertEquals(Tab.Library, navigator.tab)
+    }
+
+    /** #411: a tab keeps the section it was sent to, a saved stack keeps it, and the bar returns to it. */
+    @Test
+    fun `a tab's section comes back with the tab, saved and restored too`() {
+        val stats = Route.of(Section.STATS)
+        navigator.navigate(stats)
+        navigator.select(Tab.Today)
+        navigator.select(Tab.Progress)
+
+        assertEquals(stats, navigator.tabRoute(Tab.Progress))
+        assertEquals(stats, Navigator().apply { restore(navigator.saved()) }.tabRoute(Tab.Progress))
+    }
+
+    /** A stack the four-tab shell saved names its tab, which lands on the tab and section holding it now. */
+    @Test
+    fun `a stack saved by the four-tab shell lands on the new tabs`() {
+        navigator.restore(listOf("Programs", "/settings"))
+        assertEquals(Tab.Library, navigator.tab)
+        assertEquals(Section.PROGRAMS, navigator.tabRoute(Tab.Library).section(Tab.Library))
+        assertEquals(settings, navigator.sheet)
+
+        navigator.restore(listOf("History"))
+        assertEquals(Tab.Progress, navigator.tab)
+        navigator.restore(listOf("Workouts"))
+        assertEquals(Tab.Today, navigator.tab)
     }
 }

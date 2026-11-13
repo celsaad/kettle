@@ -78,7 +78,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.datetime.TimeZone
 import kotlin.time.Clock
 
-/** What the route table draws at `Destination.Workouts`, the tab the app opens on. */
+/** What the route table draws at `Destination.Today`, the tab the app opens on. */
 @Composable
 fun HomeRoute() {
     val navigator = LocalNavigator.current
@@ -108,7 +108,7 @@ fun HomeScreen(
     clock: Clock = Clock.System,
 ) {
     val listState = rememberLazyListState()
-    ScrollsToTopOnReselect(Tab.Workouts, reselected, listState)
+    ScrollsToTopOnReselect(Tab.Today, reselected, listState)
     val library = files.library
     val log = files.sessionLog
     ReportDrawnWhen { library != null }

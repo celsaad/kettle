@@ -257,7 +257,9 @@ private fun LoadControl(context: StepContext) {
 /**
  * The set's effort, 6 to 10, optional (#410): one outlined track, empty until a value is picked. The
  * picked one is outlined with a check rather than filled, so it can't be taken for the main action, and
- * picking it again clears it: "I didn't mean to rate this" is one tap. A radio group to a reader.
+ * picking it again clears it: "I didn't mean to rate this" is one tap. A radio group to a reader, each
+ * option named by its own number, so Voice Control's "tap 9" matches the screen; the "Effort ·
+ * optional" line read just before the group says what the numbers are.
  */
 @Composable
 private fun EffortTrack(context: StepContext) {
@@ -289,12 +291,10 @@ private fun EffortOption(
     modifier: Modifier,
     pick: () -> Unit,
 ) {
-    val description = stringResource(R.string.session_reps_rpeOption, jsNumber(option))
     Box(
         modifier
             .heightIn(min = MinTarget)
-            .selectable(selected = selected, role = Role.RadioButton, onClick = pick)
-            .semantics { contentDescription = description },
+            .selectable(selected = selected, role = Role.RadioButton, onClick = pick),
         contentAlignment = Alignment.Center,
     ) {
         Row(

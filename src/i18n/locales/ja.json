@@ -317,7 +317,6 @@
       "loadAccessibilityBodyweight": "負荷: 自重。タップすると正確な値を入力できます。",
       "bodyweightAbbr": "自重",
       "increaseLoad": "負荷を増やす",
-      "rpeOption": "きつさ {{value}}",
       "adoptPrevious": "前回の負荷 {{weight}} {{unit}} を使い、新しい目標として保存する",
       "beatsBest": "自己ベスト更新",
       "logSet": "セットを記録 → 休憩",
@@ -614,7 +613,7 @@
     "field": {
       "reps": "レップ",
       "load": "負荷",
-      "rpe": "RPE",
+      "rpe": "きつさ",
       "hold": "ホールド",
       "rounds": "ラウンド",
       "extraReps": "追加レップ",

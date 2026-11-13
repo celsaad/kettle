@@ -1,6 +1,7 @@
 package com.casco.kettle.shell.runner
 
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
@@ -126,7 +127,9 @@ class RunnerScreenTest : RunnerScreenHarness() {
 
     @Test
     fun `effort starts empty, a pick is marked, and picking it again clears it`() {
-        val effort = { value: String -> compose.onNode(hasContentDescription("Esforço $value") and isSelectable()) }
+        // Named by their own numbers, and radio buttons to a reader, which isSelectable alone wouldn't pin.
+        val radio = SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.RadioButton)
+        val effort = { value: String -> compose.onNode(hasText(value) and isSelectable() and radio) }
         show(running(plan(block(squat))))
         compose.onNodeWithText("Esforço · opcional").assertExists()
         for (value in listOf("6", "7", "8", "9", "10")) effort(value).assertIsNotSelected().assertIsTarget()

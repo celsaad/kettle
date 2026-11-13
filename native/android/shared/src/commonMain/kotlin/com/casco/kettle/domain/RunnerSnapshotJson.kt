@@ -86,6 +86,10 @@ private fun snapshotOf(root: JsonFields): RunnerSnapshot {
                 StepInputs(
                     root.long("reps"),
                     root.double("weightKg"),
+                    // A version 1 file's effort is always a number, the default 8 unless one was picked,
+                    // and nothing in it says which. Kept as read: the set on screen across the update
+                    // logs it, which costs one set an unasked 8, where reading it as empty would drop
+                    // every effort that was picked.
                     root.optionalDouble("rpe"),
                     root.long("roundsCompleted"),
                     root.long("extraReps"),

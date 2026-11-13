@@ -33,6 +33,8 @@ import com.casco.kettle.shell.files.FakeStoredFiles
 import com.casco.kettle.shell.files.LatestFiles
 import com.casco.kettle.shell.nav.Destination
 import com.casco.kettle.shell.nav.Route
+import com.casco.kettle.shell.nav.SECTION
+import com.casco.kettle.shell.nav.Section
 import com.casco.kettle.shell.nav.Tab
 import com.casco.kettle.shell.theme.KettleTheme
 import kotlinx.coroutines.CoroutineScope
@@ -361,7 +363,7 @@ class HistoryScreenTest {
 
         action("Números").performClick()
 
-        assertEquals(listOf(Route(Destination.Analytics)), opened)
+        assertEquals(listOf(Route(Destination.Progress, mapOf(SECTION to Section.STATS))), opened)
     }
 
     @Test
@@ -403,7 +405,7 @@ class HistoryScreenTest {
         compose.waitForIdle()
         compose.onNodeWithText("Histórico").assertDoesNotExist()
 
-        reselects.tryEmit(Tab.History)
+        reselects.tryEmit(Tab.Progress)
         compose.waitForIdle()
         compose.onNodeWithText("Histórico").assertIsDisplayed()
     }

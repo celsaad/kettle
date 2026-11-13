@@ -39,58 +39,50 @@ receiver="$package/com.casco.kettle.shell.nav.NavigateReceiver"
 # 'front': bring the app to the front. Expect is an exact on-screen text, or 'tab:X' for the shell's
 # tab X being the selected one; empty means the app is not in front.
 steps=(
-  # Tabs, out of order and repeated. A message moves the navigator, and the bar follows it.
-  '/history|tab:History' '/library|tab:Library' '/programs|tab:Programs'
-  '/|tab:Workouts' '/programs|tab:Programs' '/history|tab:History'
-  '/history|tab:History'
-  # The shell's own bar and back stack: Workouts first, then out of the app.
-  'tap:Library|tab:Library' 'tap:Programs|tab:Programs' 'back|tab:Workouts'
-  'back|' 'front|tab:Workouts' 'tap:History|tab:History'
+  # Tabs, out of order and repeated, and the four-tab shell's paths, each landing on the tab and section
+  # that now holds its screen (#411). A section is checked as a tab is: its segment is the selected node.
+  '/progress|tab:Progress' '/library|tab:Library' '/|tab:Today' '/history|tab:Sessions'
+  '/programs|tab:Programs' '/analytics|tab:Stats' '/library?section=exercises|tab:Exercises'
+  '/progress|tab:Progress'
+  # The shell's own bar and back stack: Today first, then out of the app. A tab keeps its section.
+  'tap:Library|tab:Exercises' 'tap:Programs|tab:Programs' 'tap:Progress|tab:Progress'
+  'tap:Library|tab:Programs' 'back|tab:Today' 'back|' 'front|tab:Today' 'tap:Progress|tab:Progress'
   # Every modal from a tab, back to that tab after each.
-  '/settings|Settings' 'back|tab:History'
-  '/analytics|Your numbers' 'back|tab:History'
-  '/support|Support Kettle' 'back|tab:History'
-  '/import|Import library' 'back|tab:History'
-  '/exercise-editor|New exercise' 'back|tab:History'
-  '/exercise-editor?id=pushups|Edit exercise' 'back|tab:History'
-  '/workout-editor|New workout' 'back|tab:History'
-  '/workout-editor?id=foundations-push|Edit workout' 'back|tab:History'
-  '/workout-preview?workoutId=foundations-push|NEXT UP' 'back|tab:History'
-  '/workout-preview?programId=foundations&week=1&day=Day%201|NEXT UP · Week 1 · Day 1' 'back|tab:History'
-  '/exercise-progress?exerciseId=pushups|Push-ups' 'back|tab:History'
-  '/program-detail?programId=foundations|Week 1 · Day 1' 'back|tab:History'
-  '/program-editor|New program' 'back|tab:History'
-  '/program-editor?id=foundations|Edit program' 'back|tab:History'
-  '/program-guide|Writing a program by hand' 'back|tab:History'
-  '/session-editor|Edit session' 'back|tab:History'
-  # A native tab's row opens its native sheet over that tab (#197, #233), and back returns to it.
-  'tap:Programs|tab:Programs' 'tap:Foundations · 4 Weeks · No Equipment|Week 1 · Day 1'
+  '/settings|Settings' 'back|tab:Progress' '/support|Support Kettle' 'back|tab:Progress'
+  '/import|Import library' 'back|tab:Progress' '/exercise-editor|New exercise' 'back|tab:Progress'
+  '/exercise-editor?id=pushups|Edit exercise' 'back|tab:Progress' '/workout-editor|New workout'
+  'back|tab:Progress' '/workout-editor?id=foundations-push|Edit workout' 'back|tab:Progress'
+  '/workout-preview?workoutId=foundations-push|NEXT UP' 'back|tab:Progress'
+  '/workout-preview?programId=foundations&week=1&day=Day%201|NEXT UP · Week 1 · Day 1'
+  'back|tab:Progress' '/exercise-progress?exerciseId=pushups|Push-ups' 'back|tab:Progress'
+  '/program-detail?programId=foundations|Week 1 · Day 1' 'back|tab:Progress'
+  '/program-editor|New program' 'back|tab:Progress' '/program-editor?id=foundations|Edit program'
+  'back|tab:Progress' '/program-guide|Writing a program by hand' 'back|tab:Progress'
+  '/session-editor|Edit session' 'back|tab:Progress'
+  # A section's row opens its native sheet over the tab (#197, #233), and back returns to it.
+  'tap:Library|tab:Programs' 'tap:Foundations · 4 Weeks · No Equipment|Week 1 · Day 1'
   # Over that native sheet, the native editor and the native runner each come back to it (#155, #233).
-  # Back over a running session asks first, and completion's Done leaves (#297, #306).
-  'tap:Edit program|Edit program' 'back|Week 1 · Day 1'
-  'tap:Start Week 1 · Day 1|End' 'back|End session?' 'tap:End session|Workout complete'
-  'tap:Done|Week 1 · Day 1'
+  # Back over a running session asks first, End early's sheet (#417), and completion's Done leaves (#297, #306).
+  'tap:Edit program|Edit program' 'back|Week 1 · Day 1' 'tap:Start Week 1 · Day 1|End'
+  'back|End the session early?' 'tap:Save and end|Workout complete' 'tap:Done|Week 1 · Day 1'
   'back|tab:Programs'
-  # Native Library's row and Import open their native sheets over it, and back returns to it (#234).
-  'tap:Library|tab:Library' 'tap:Push-ups|Edit exercise' 'back|tab:Library'
-  'tap:Import|Import library' 'back|tab:Library'
-  # Native Home's gear and New workout open native Settings and the native editor over it, and
-  # back returns
+  # Library's Exercises: a row and Import open their native sheets over it, and back returns to it (#234).
+  'tap:Exercises|tab:Exercises' 'tap:Push-ups|Edit exercise' 'back|tab:Exercises'
+  'tap:Import|Import library' 'back|tab:Exercises'
+  # Today's gear and New workout open native Settings and the native editor over it, and back returns
   # (#235, #238).
-  'tap:Workouts|tab:Workouts' 'tap:Settings|Settings' 'back|tab:Workouts'
-  'tap:New workout|New workout' 'back|tab:Workouts'
-  # From a modal: to a tab, and to another modal. Either way back reaches Workouts and then leaves.
-  '/library|tab:Library' '/settings|Settings' '/history|tab:History'
-  'back|tab:Workouts'
-  '/library|tab:Library' '/settings|Settings' '/support|Support Kettle'
-  'back|tab:Library' 'back|tab:Workouts' 'back|'
+  'tap:Today|tab:Today' 'tap:Settings|Settings' 'back|tab:Today' 'tap:New workout|New workout'
+  'back|tab:Today'
+  # From a modal: to a tab, and to another modal. Either way back reaches Today and then leaves.
+  '/library|tab:Library' '/settings|Settings' '/progress|tab:Progress' 'back|tab:Today'
+  '/library|tab:Library' '/settings|Settings' '/support|Support Kettle' 'back|tab:Library'
+  'back|tab:Today' 'back|'
   # Sent while in the background, it lands, and shows once the app is in front again.
-  '/history|' 'front|tab:History'
+  '/progress|' 'front|tab:Progress'
   # Over the runner, a message is dropped with no question asked, and Done pops its slot (#302, #309).
-  '/session?workoutId=foundations-push|End'
-  '/library|End' 'back|End session?' 'tap:Cancel|End'
-  'back|End session?' 'tap:End session|Workout complete' 'tap:Done|tab:History'
-  'back|tab:Workouts' 'back|'
+  '/session?workoutId=foundations-push|End' '/library|End' 'back|End the session early?'
+  'tap:Keep going|End' 'back|End the session early?' 'tap:Save and end|Workout complete'
+  'tap:Done|tab:Progress' 'back|tab:Today' 'back|'
 )
 
 # A dump that fails (it gives up on a screen that isn't idle for a second) writes nothing, so without
@@ -105,10 +97,11 @@ screen() {
 xpath() { xmllint --xpath "$1" - 2>/dev/null || true; }
 
 # 'tab:X' is a selected node with the label X inside it: the dump lists Compose's nodes unmerged, so
-# a tab's selected state is on the item and its label is a TextView under it.
+# a tab's selected state is on the item and its label is a TextView under it. A section's segment
+# (#411) is selectable without being a Tab, which Compose reports as checked rather than selected.
 shows() {
   if [ "${1#tab:}" != "$1" ]; then
-    [ "$(screen | xpath "boolean(//node[@selected='true'][.//node[@text='${1#tab:}']])")" = true ]
+    [ "$(screen | xpath "boolean(//node[@selected='true' or @checked='true'][.//node[@text='${1#tab:}']])")" = true ]
   else
     [ "$(screen | xpath "boolean(//node[@text='$1'])")" = true ]
   fi
@@ -149,7 +142,7 @@ fi
 start_app
 # From wherever the last run or the user left it.
 send_route '/'
-wait_for 'tab:Workouts' || { echo "$package isn't showing Home. Start it first." >&2; exit 1; }
+wait_for 'tab:Today' || { echo "$package isn't showing Home. Start it first." >&2; exit 1; }
 
 n=0
 for step in "${steps[@]}"; do

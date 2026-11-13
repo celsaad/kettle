@@ -909,10 +909,15 @@
     "startAccessibility": "Começar {{week}}"
   },
   "tabs": {
-    "workouts": "Treinos",
+    "today": "Hoje",
     "library": "Biblioteca",
-    "history": "Histórico",
-    "programs": "Programas"
+    "progress": "Progresso",
+    "sections": {
+      "exercises": "Exercícios",
+      "programs": "Programas",
+      "sessions": "Sessões",
+      "stats": "Estatísticas"
+    }
   },
   "format": {
     "type": {

@@ -813,10 +813,15 @@
     "startAccessibility": "{{week}}を開始"
   },
   "tabs": {
-    "workouts": "ワークアウト",
+    "today": "今日",
     "library": "ライブラリ",
-    "history": "履歴",
-    "programs": "プログラム"
+    "progress": "進捗",
+    "sections": {
+      "exercises": "エクササイズ",
+      "programs": "プログラム",
+      "sessions": "セッション",
+      "stats": "統計"
+    }
   },
   "format": {
     "type": {

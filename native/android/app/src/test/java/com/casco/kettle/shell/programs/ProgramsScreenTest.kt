@@ -188,17 +188,17 @@ class ProgramsScreenTest {
 
     /** #153 dropped re-tap-to-top with RN's bar; each tab's port brings it back for its own list. */
     @Test
-    fun `a tap on the Programs tab while it shows scrolls back to the top`() {
+    fun `a tap on the Library tab while Programs shows scrolls back to the top`() {
         val many = (1..30).map { Program("p$it", "Program $it", emptyList()) }
         show(Files(*many.toTypedArray()))
         compose.onNode(hasScrollToIndexAction()).performScrollToIndex(many.size)
         compose.onNodeWithText("Programas").assertDoesNotExist()
 
-        reselects.tryEmit(Tab.History)
+        reselects.tryEmit(Tab.Progress)
         compose.waitForIdle()
         compose.onNodeWithText("Programas").assertDoesNotExist()
 
-        reselects.tryEmit(Tab.Programs)
+        reselects.tryEmit(Tab.Library)
         compose.waitForIdle()
         compose.onNodeWithText("Programas").assertIsDisplayed()
     }

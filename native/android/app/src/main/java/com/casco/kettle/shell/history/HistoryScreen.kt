@@ -53,7 +53,9 @@ import com.casco.kettle.shell.nav.Destination
 import com.casco.kettle.shell.nav.LocalNavigator
 import com.casco.kettle.shell.nav.LocalTabReselects
 import com.casco.kettle.shell.nav.Route
+import com.casco.kettle.shell.nav.SECTION
 import com.casco.kettle.shell.nav.ScrollsToTopOnReselect
+import com.casco.kettle.shell.nav.Section
 import com.casco.kettle.shell.nav.Tab
 import com.casco.kettle.shell.runner.RunnerHost
 import com.casco.kettle.shell.runner.RunnerView
@@ -70,7 +72,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.TimeZone
 
-/** What the route table draws at `/history`, the tab. */
+/** What the Progress tab draws in its Sessions section (#411). */
 @Composable
 fun HistoryRoute() {
     val files = LocalLatestFiles.current
@@ -130,7 +132,7 @@ fun HistoryScreen(
     val log = files.sessionLog
     val library = files.library ?: EmptyLibrary
     val listState = rememberLazyListState()
-    ScrollsToTopOnReselect(Tab.History, reselected, listState)
+    ScrollsToTopOnReselect(Tab.Progress, reselected, listState)
 
     var query by rememberSaveable { mutableStateOf("") }
     var expandedId by rememberSaveable { mutableStateOf<String?>(null) }
@@ -153,7 +155,7 @@ fun HistoryScreen(
             item(key = "header") {
                 Header(
                     showExportAll = log?.sessions?.isNotEmpty() == true,
-                    onStats = { actions.open(Route(Destination.Analytics)) },
+                    onStats = { actions.open(Route(Destination.Progress, mapOf(SECTION to Section.STATS))) },
                     onExportAll = { actions.export(null) },
                 )
             }

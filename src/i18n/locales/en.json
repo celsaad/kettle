@@ -861,10 +861,15 @@
     "startAccessibility": "Start {{week}}"
   },
   "tabs": {
-    "workouts": "Workouts",
+    "today": "Today",
     "library": "Library",
-    "history": "History",
-    "programs": "Programs"
+    "progress": "Progress",
+    "sections": {
+      "exercises": "Exercises",
+      "programs": "Programs",
+      "sessions": "Sessions",
+      "stats": "Stats"
+    }
   },
   "format": {
     "type": {

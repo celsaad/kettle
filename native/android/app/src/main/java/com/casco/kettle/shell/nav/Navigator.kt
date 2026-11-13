@@ -21,7 +21,11 @@ class Navigator(
     private val onReselect: (Tab) -> Unit = {},
     private val onRunnerClosed: () -> Unit = {},
 ) {
-    var tab by mutableStateOf(Tab.Workouts)
+    var tab by mutableStateOf(Tab.Today)
+        private set
+
+    /** Each tab's route as last navigated to, which carries its section (#411); a tab not yet is bare. */
+    var tabRoutes by mutableStateOf(emptyMap<Tab, Route>())
         private set
 
     companion object {
@@ -78,19 +82,21 @@ class Navigator(
      */
     fun navigate(route: Route) {
         if (route.destination.presentation == Presentation.Runner) return openRunner(route.runnerStart)
+        val to = Tab.of(route.destination)
         go(
             MoveKind.Navigate,
-            tab = Tab.of(route.destination) ?: tab,
+            tab = to ?: tab,
             sheets = if (route.sheet) listOf(route) else emptyList(),
+            tabRoutes = if (to != null) tabRoutes + (to to route) else tabRoutes,
         )
     }
 
-    /** Back: the top sheet, else Workouts. False when there is nowhere left, and the app should leave. */
+    /** Back: the top sheet, else Today. False when there is nowhere left, and the app should leave. */
     fun back(): Boolean {
         when {
             runnerShown -> Unit
             sheets.isNotEmpty() -> go(MoveKind.Back, sheets = sheets.dropLast(1))
-            tab != Tab.Workouts -> go(MoveKind.Back, tab = Tab.Workouts)
+            tab != Tab.Today -> go(MoveKind.Back, tab = Tab.Today)
             else -> return false
         }
         return true
@@ -113,39 +119,54 @@ class Navigator(
     }
 
     /**
-     * The back stack as text an activity can save: the tab's name, then each sheet's path. The runner's
-     * slot isn't in it: a running session is attached to again at launch (`MainActivity`), and a
-     * finished one has nothing to come back to.
+     * The back stack as text an activity can save: the tab's route, section and all, then each sheet's
+     * path. The runner's slot isn't in it: a running session is attached to again at launch
+     * (`MainActivity`), and a finished one has nothing to come back to.
      */
-    fun saved(): List<String> = listOf(tab.name) + sheets.map { it.path }
+    fun saved(): List<String> = listOf(tabRoute(tab).path) + sheets.map { it.path }
 
     /**
      * Puts back a stack [saved] wrote, as a navigate, so the sheet hears it: what no longer parses (a
-     * route since renamed) is left out, and an unknown tab is Workouts.
+     * route since renamed) is left out, and a tab that doesn't is Today. The four-tab shell saved a tab's
+     * name instead of its path (#411); one of those lands where its screen now is.
      */
-    fun restore(saved: List<String>) =
+    fun restore(saved: List<String>) {
+        val first = saved.firstOrNull()
+        val tabRoute = (LEGACY_TABS[first] ?: first)?.let(Route::parse)?.takeIf { Tab.of(it.destination) != null }
+        val to = tabRoute?.let { Tab.of(it.destination) } ?: Tab.Today
         go(
             MoveKind.Navigate,
-            tab = Tab.entries.firstOrNull { it.name == saved.firstOrNull() } ?: Tab.Workouts,
+            tab = to,
             sheets = saved.drop(1).mapNotNull(Route::parse).filter { it.sheet },
+            tabRoutes = if (tabRoute != null) tabRoutes + (to to tabRoute) else tabRoutes,
         )
+    }
 
     private fun go(
         kind: MoveKind,
         tab: Tab = this.tab,
         sheets: List<Route> = this.sheets,
         runner: RunnerSlot? = this.runner,
+        tabRoutes: Map<Tab, Route> = this.tabRoutes,
     ) {
         // The slot's rule, in one place: while it's filled, the only move is the one that empties it.
         if (this.runner != null && runner != null) return
         val move = Move(place, placeOf(sheets, runner), kind)
         moves?.willMove(move)
         this.tab = tab
+        this.tabRoutes = tabRoutes
         this.sheets = sheets
         this.runner = runner
         moves?.moved(move)
     }
 }
+
+/** The route [tab] shows: its section, once one has been picked or linked to. */
+fun Navigator.tabRoute(tab: Tab): Route = tabRoutes[tab] ?: Route(tab.destination)
+
+/** The tab names the four-tab shell saved, as the paths that now lead where each went (#411). */
+private val LEGACY_TABS =
+    mapOf("Workouts" to "/", "Library" to "/library", "History" to "/history", "Programs" to "/programs")
 
 /** Where a back stack of [sheets] under the runner's [runner] slot is: the runner covers everything. */
 private fun placeOf(

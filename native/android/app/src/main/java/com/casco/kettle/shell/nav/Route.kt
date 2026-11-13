@@ -20,15 +20,13 @@ enum class Destination(
     val path: String,
     val presentation: Presentation,
 ) {
-    Workouts("/", Presentation.Tab),
+    Today("/", Presentation.Tab),
     Library("/library", Presentation.Tab),
-    History("/history", Presentation.Tab),
-    Programs("/programs", Presentation.Tab),
+    Progress("/progress", Presentation.Tab),
     Settings("/settings", Presentation.Sheet),
     Support("/support", Presentation.Sheet),
     ProgramGuide("/program-guide", Presentation.Sheet),
     ExerciseProgress("/exercise-progress", Presentation.Sheet),
-    Analytics("/analytics", Presentation.Sheet),
     ProgramDetail("/program-detail", Presentation.Sheet),
     SessionEditor("/session-editor", Presentation.Sheet),
     ExerciseEditor("/exercise-editor", Presentation.Sheet),
@@ -45,10 +43,9 @@ enum class Tab(
     @StringRes val label: Int,
     @DrawableRes val icon: Int,
 ) {
-    Workouts(Destination.Workouts, R.string.tabs_workouts, R.drawable.tab_workouts),
+    Today(Destination.Today, R.string.tabs_today, R.drawable.tab_today),
     Library(Destination.Library, R.string.tabs_library, R.drawable.tab_library),
-    History(Destination.History, R.string.tabs_history, R.drawable.tab_history),
-    Programs(Destination.Programs, R.string.tabs_programs, R.drawable.tab_programs),
+    Progress(Destination.Progress, R.string.tabs_progress, R.drawable.tab_progress),
     ;
 
     companion object {
@@ -97,9 +94,22 @@ data class Route(
          */
         fun parse(path: String): Route? {
             val (pathname, query) = path.split('?', limit = 2).let { it[0] to it.getOrNull(1) }
-            val destination = Destination.entries.firstOrNull { it.path == pathname } ?: return null
-            return queryParams(query)?.let { Route(destination, it) }
+            val params = queryParams(query) ?: return null
+            // An old path's own section wins over one it carried.
+            return LEGACY[pathname]?.let { it.copy(params = params + it.params) }
+                ?: Destination.entries.firstOrNull { it.path == pathname }?.let { Route(it, params) }
         }
+
+        /**
+         * The paths the four-tab shell had (#411), where a link, a widget or someone's notes may still
+         * point: each lands on the tab and section that now holds its screen, rather than going nowhere.
+         */
+        private val LEGACY =
+            mapOf(
+                "/programs" to Route(Destination.Library, mapOf(SECTION to Section.PROGRAMS)),
+                "/history" to Route(Destination.Progress, mapOf(SECTION to Section.SESSIONS)),
+                "/analytics" to Route(Destination.Progress, mapOf(SECTION to Section.STATS)),
+            )
 
         /** Null when any key or value can't be decoded: half a query is no route. */
         private fun queryParams(query: String?): Map<String, String>? {
@@ -230,3 +240,30 @@ private const val WORKOUT_ID = "workoutId"
 private const val PROGRAM_ID = "programId"
 private const val WEEK = "week"
 private const val DAY = "day"
+
+/** The route param a tab's section rides in (#411): `/library?section=programs`. */
+const val SECTION = "section"
+
+/**
+ * The sections the Library and Progress tabs hold until their own tickets redesign them (#411): each
+ * shows a screen the four-tab shell had as a tab of its own, or Stats, which was a sheet. The first of
+ * each tab's is where it opens with none named.
+ */
+object Section {
+    const val PROGRAMS = "programs"
+    const val EXERCISES = "exercises"
+    const val SESSIONS = "sessions"
+    const val STATS = "stats"
+
+    /** Each tab's sections, its default first; none for a tab without them. */
+    fun of(tab: Tab): List<String> =
+        when (tab) {
+            Tab.Today -> emptyList()
+            Tab.Library -> listOf(EXERCISES, PROGRAMS)
+            Tab.Progress -> listOf(SESSIONS, STATS)
+        }
+}
+
+/** The section [route] names on its tab, or the tab's first: an unknown one is the first too. */
+fun Route.section(tab: Tab): String? =
+    params[SECTION]?.takeIf { it in Section.of(tab) } ?: Section.of(tab).firstOrNull()

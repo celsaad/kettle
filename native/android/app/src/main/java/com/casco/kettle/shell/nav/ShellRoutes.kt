@@ -2,20 +2,16 @@ package com.casco.kettle.shell.nav
 
 import androidx.compose.runtime.Composable
 import com.casco.kettle.shell.exerciseeditor.ExerciseEditorRoute
-import com.casco.kettle.shell.history.HistoryRoute
 import com.casco.kettle.shell.home.HomeRoute
 import com.casco.kettle.shell.importer.ImportRoute
-import com.casco.kettle.shell.library.LibraryRoute
 import com.casco.kettle.shell.preview.WorkoutPreviewRoute
 import com.casco.kettle.shell.programdetail.ProgramDetailRoute
 import com.casco.kettle.shell.programeditor.ProgramEditorRoute
 import com.casco.kettle.shell.programguide.ProgramGuideRoute
-import com.casco.kettle.shell.programs.ProgramsRoute
 import com.casco.kettle.shell.progress.ExerciseProgressRoute
 import com.casco.kettle.shell.runner.RunnerRoute
 import com.casco.kettle.shell.sessioneditor.SessionEditorRoute
 import com.casco.kettle.shell.settings.SettingsRoute
-import com.casco.kettle.shell.stats.StatsRoute
 import com.casco.kettle.shell.support.SupportRoute
 import com.casco.kettle.shell.workouteditor.WorkoutEditorRoute
 
@@ -35,13 +31,11 @@ import com.casco.kettle.shell.workouteditor.WorkoutEditorRoute
 internal fun RouteContent(route: Route) {
     val params = route.params
     when (route.destination) {
-        Destination.Workouts -> HomeRoute()
+        Destination.Today -> HomeRoute()
 
-        Destination.Library -> LibraryRoute()
+        Destination.Library -> LibraryTab(route)
 
-        Destination.History -> HistoryRoute()
-
-        Destination.Programs -> ProgramsRoute()
+        Destination.Progress -> ProgressTab(route)
 
         Destination.Settings -> SettingsRoute()
 
@@ -50,8 +44,6 @@ internal fun RouteContent(route: Route) {
         Destination.ProgramGuide -> ProgramGuideRoute()
 
         Destination.ExerciseProgress -> ExerciseProgressRoute(params)
-
-        Destination.Analytics -> StatsRoute()
 
         Destination.ProgramDetail -> ProgramDetailRoute(params)
 

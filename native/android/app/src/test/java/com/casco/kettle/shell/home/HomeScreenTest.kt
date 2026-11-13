@@ -667,7 +667,7 @@ class HomeScreenTest {
         compose.waitForIdle()
         text("Treinos").assertDoesNotExist()
 
-        reselects.tryEmit(Tab.Workouts)
+        reselects.tryEmit(Tab.Today)
         compose.waitForIdle()
         text("Treinos").assertIsDisplayed()
     }

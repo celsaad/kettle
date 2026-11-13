@@ -66,7 +66,7 @@ import com.casco.kettle.shell.theme.Spacing
 import com.casco.kettle.shell.theme.emptyStateCard
 import kotlinx.coroutines.flow.Flow
 
-/** What the route table draws at `Destination.Programs`, the tab. */
+/** What the Library tab draws in its Programs section (#411). */
 @Composable
 fun ProgramsRoute() = ProgramsScreen(LocalLatestFiles.current, LocalTabReselects.current, LocalNavigator.current::push)
 
@@ -85,7 +85,7 @@ fun ProgramsScreen(
 ) {
     val library = files.library
     val listState = rememberLazyListState()
-    ScrollsToTopOnReselect(Tab.Programs, reselected, listState)
+    ScrollsToTopOnReselect(Tab.Library, reselected, listState)
 
     var query by rememberSaveable { mutableStateOf("") }
     val all = library?.programs.orEmpty()

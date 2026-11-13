@@ -20,7 +20,6 @@ import androidx.compose.ui.unit.sp
 import com.casco.kettle.domain.PreviousSet
 import com.casco.kettle.domain.RunnerCommand
 import com.casco.kettle.domain.RunnerStep
-import com.casco.kettle.domain.StepPreview
 import com.casco.kettle.domain.holdTarget
 import com.casco.kettle.domain.jsNumber
 import com.casco.kettle.shell.R
@@ -124,7 +123,11 @@ internal fun HoldScreen(
     val readings = context.readings
     StepLayout(
         top = {
-            StepHeader(resources.stepLabel(step), step.exerciseName, resources.circuitSpoken(step))
+            StepHeader(
+                resources.stepLabel(step, context.snapshot.inputs),
+                step.exerciseName,
+                resources.circuitSpoken(step),
+            )
             ActionRow(context)
             StepNotes(step.notes)
             PreviousRow(
@@ -171,10 +174,11 @@ private fun HoldClock(
 @Composable
 private fun RestHeader(
     step: RunnerStep,
-    next: StepPreview?,
+    context: StepContext,
 ) {
+    val next = context.readings.next
     val resources = LocalResources.current
-    StepHeader(resources.stepLabel(step), null, resources.circuitSpoken(step))
+    StepHeader(resources.stepLabel(step, context.snapshot.inputs), null, resources.circuitSpoken(step))
     if (next == null) return
     Text(
         stringResource(R.string.session_header_next, next.label),
@@ -200,7 +204,7 @@ internal fun RestScreen(context: StepContext) {
     val logged = context.logged
     val skip = stringResource(R.string.session_rest_skip)
     StepLayout(
-        top = { context.snapshot.step?.let { RestHeader(it, context.readings.next) } },
+        top = { context.snapshot.step?.let { RestHeader(it, context) } },
         middle = {
             Numeral(formatClock(context.remaining), REST_NUMERAL)
             Secondary(stringResource(R.string.session_rest_remaining, formatClock(context.snapshot.clock.stepEndSec)))

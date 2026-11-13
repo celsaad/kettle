@@ -58,6 +58,11 @@ here, next to what it describes.
 - **See every set at a glance**: tap Sets on a set to see this session's sets, the ones you've
   logged, the one you're on and the ones still to come, and add a set or remove the last one there.
   Only this session changes; your workout keeps its own number of sets (#410).
+- **Rest out an EMOM minute**: tap Done once your reps are in, and the screen turns blue and counts
+  down to the next minute. The minute still ends on its own, and you can still fix the reps (#417).
+- **Count AMRAP rounds with one big button**: "Round 3 done" is the main button now, with Undo for
+  a tap too many, and the screen shows how many rounds you have and how many you did last time. In
+  the last minute, you can add the reps you got into the unfinished round (#417).
 
 ---
 

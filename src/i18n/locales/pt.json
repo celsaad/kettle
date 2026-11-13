@@ -346,11 +346,9 @@
       "targetDistance": "meta de {{meters}}m",
       "ofTotal": "de {{clock}} total",
       "repsThisMinuteCaps": "REPS NESTE MINUTO",
-      "roundsCaps": "RODADAS",
-      "extraRepsCaps": "+REPS",
       "repsThisMinute": "Reps neste minuto",
-      "roundsLabel": "Rodadas",
-      "extraRepsLabel": "Reps extras"
+      "repsIntoRoundCaps": "REPS NA RODADA {{index}}",
+      "repsIntoRound": "Reps na rodada {{index}}"
     },
     "reps": {
       "repsDoneAccessibility": "Reps concluídas: {{count}}. Toque para inserir um valor exato.",
@@ -406,7 +404,7 @@
       "work": "Esforço · rodada {{index}} de {{total}}",
       "emomMinute": "EMOM · minuto {{index}} de {{total}}",
       "emomInterval": "EMOM · intervalo {{index}} de {{total}}",
-      "amrap": "AMRAP",
+      "amrap": "AMRAP · rodada {{index}}",
       "cardio": "Cardio",
       "circuit": "Circuito · rodada {{index}} de {{total}}",
       "rest": "Descanso",
@@ -430,6 +428,19 @@
       "count_one": "{{count}} série nesta sessão",
       "count_other": "{{count}} séries nesta sessão",
       "count_zero": "{{count}} séries nesta sessão"
+    },
+    "emom": {
+      "resting": "{{label}} · descansando",
+      "minuteStartsIn": "Minuto {{index}} começa em",
+      "intervalStartsIn": "Intervalo {{index}} começa em",
+      "endsIn": "Termina em"
+    },
+    "amrap": {
+      "roundDone": "Rodada {{index}} feita",
+      "rounds_zero": "{{count}} rodadas",
+      "rounds_one": "{{count}} rodada",
+      "rounds_other": "{{count}} rodadas",
+      "lastTime": "última vez {{rounds}}"
     }
   },
   "settings": {

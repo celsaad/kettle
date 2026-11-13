@@ -14,6 +14,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -76,6 +77,11 @@ fun RunnerScreen(
     // open it would keep the body hidden from a reader and take the next back for a sheet nobody sees.
     val open = running?.let { overlays.on(it.snapshot.visit).withoutDeadSwap(it) } ?: RunnerOverlays()
     val confirming = confirmingAt != null && confirmingAt == running?.snapshot?.visit
+    // The visit an EMOM minute was called done on (#417): blue until the minute turns, which moves the
+    // visit. The engine never hears it. Saved with the screen, and the visit is restored with the
+    // snapshot, so a minute rested out before a process death comes back still resting.
+    var restedAt by rememberSaveable { mutableStateOf<Long?>(null) }
+    val resting = restedAt != null && restedAt == running?.snapshot?.visit
     SideEffect {
         if (open != overlays) overlays = open
         if (!confirming && confirmingAt != null) confirmingAt = null
@@ -99,9 +105,11 @@ fun RunnerScreen(
             },
             confirmFinish = askToFinish,
             adopt = { id, kg -> adopting.pickLoad(id, kg, view.snapshot.visit) },
+            // The one reading the field is drawn from, so the header and the colour can't disagree.
+            minute = MinuteRest(resting) { restedAt = view.snapshot.visit },
         )
     }
-    val field = runnerField(entry, now)
+    val field = runnerField(entry, now, resting)
     RunnerBarIcons(field.darkBarIcons)
     Box(
         Modifier.fillMaxSize().background(field.palette.background).safeDrawingPadding(),
@@ -122,8 +130,7 @@ fun RunnerScreen(
             }
         }
     }
-    val askedAt = confirmingAt
-    if (confirming && running != null && askedAt != null) {
+    confirmingAt?.takeIf { confirming && running != null }?.let { askedAt ->
         FinishDialog({ confirmingAt = null }) {
             confirmingAt = null
             // Aimed at the step it was asked on: should that step end before this lands, the engine

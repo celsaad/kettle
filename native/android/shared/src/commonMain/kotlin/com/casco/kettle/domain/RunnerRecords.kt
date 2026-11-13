@@ -61,6 +61,22 @@ fun previousSetFor(
     }
 }
 
+/**
+ * The rounds [exerciseId]'s AMRAP reached the last time it was run, for the pace line's "last time 7"
+ * (#417): the newest finished session that logged one, as [previousSetFor] reads its sets.
+ */
+fun previousAmrapRounds(
+    sessions: List<Session>,
+    exerciseId: String,
+): Long? =
+    sessions
+        .asSequence()
+        .filter { it.endedAt != null }
+        .flatMap { it.entries }
+        .filterIsInstance<SessionEntry.Amrap>()
+        .firstOrNull { it.exercise == exerciseId }
+        ?.roundsCompleted
+
 /** [exerciseId]'s best ever, by the rules the completion screen's records use: [entryBest], finished sessions only. */
 fun personalBestFor(
     sessions: List<Session>,

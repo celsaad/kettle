@@ -51,6 +51,13 @@ class RunnerFieldTest {
     }
 
     @Test
+    fun `an EMOM minute called done is rest until it turns, unless paused`() {
+        val emom = interval(IntervalVariant.EMOM)
+        assertEquals(RunnerField.REST, stepField(emom, clock(60.0), now = 5_000, resting = true))
+        assertEquals(RunnerField.PACE, stepField(emom, clock(60.0, pausedAt = 4_000), now = 5_000, resting = true))
+    }
+
+    @Test
     fun `a rest gets ready on the second its ticks start`() {
         // 60s, so whole seconds 57 to 59 are the three with a tick (the engine's TICK_SECONDS).
         assertEquals(RunnerField.REST, stepField(rest, clock(60.0), now = 0))

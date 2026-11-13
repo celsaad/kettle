@@ -185,4 +185,15 @@ class RunnerRecordsTest {
             assertEquals(0.0, runner.inputs.weightKg)
         }
     }
+
+    @Test
+    fun `an AMRAP's last time is the newest finished session's rounds`() {
+        val amrap = { rounds: Long -> SessionEntry.Amrap("grinder", rounds, 3) }
+        val unfinished = finishedSession("open", amrap(9)).copy(endedAt = null)
+        val prior = listOf(unfinished, finishedSession("last", amrap(7)), finishedSession("older", amrap(5)))
+
+        assertEquals(7L, previousAmrapRounds(prior, "grinder"))
+        assertNull(previousAmrapRounds(prior, "other"))
+        assertNull(previousAmrapRounds(emptyList(), "grinder"))
+    }
 }

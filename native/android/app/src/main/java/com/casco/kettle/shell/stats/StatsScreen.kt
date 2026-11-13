@@ -21,7 +21,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -72,29 +71,19 @@ import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.MaxContentWidth
 import com.casco.kettle.shell.theme.Spacing
 import com.casco.kettle.shell.theme.card
-import kotlinx.coroutines.delay
 import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.TimeZone
 import java.util.Locale
-import kotlin.time.Clock
 import kotlin.time.Instant
 
 /** What the Progress tab draws in its Stats section (#411); History's header switches to it. */
 @Composable
 fun StatsRoute() {
-    // Read again at each local midnight: a tab's section can stay up across one, which a sheet never
-    // did, and this week, the streak and today's cell all turn over with the date.
-    val zone = TimeZone.currentSystemDefault()
-    val now by produceState(Clock.System.now(), zone) {
-        while (true) {
-            delay(untilNextDay(value, zone))
-            value = Clock.System.now()
-        }
-    }
+    val time = rememberStatsTime()
     StatsScreen(
         LocalLatestFiles.current,
-        now,
-        zone,
+        time.now,
+        time.zone,
         // The locale's calendar, as expo-localization reads RN's from the default locale, which the
         // configuration carries; read through it so a locale change is seen.
         firstWeekday(LocalConfiguration.current.locales[0]),

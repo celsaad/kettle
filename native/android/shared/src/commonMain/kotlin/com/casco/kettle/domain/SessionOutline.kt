@@ -198,6 +198,35 @@ fun upcomingOutline(
 }
 
 /**
+ * The whole session before it starts, for Home's preview (#280): the first step included, since no NOW
+ * row is showing it. Each circuit is spelled out as its first round, every member with its target,
+ * where Coming up collapses one it hasn't reached to names: the preview's question is what to pick up,
+ * which names alone half answer, and every round of a circuit runs the same members.
+ */
+fun sessionOutline(steps: List<RunnerStep>): List<UpcomingItem> =
+    upcomingOutline(steps, stepIndex = -1).map { item ->
+        (item as? UpcomingItem.Circuit)?.let { firstRound(steps, it.blockIndex) } ?: item
+    }
+
+/**
+ * Null when the block has no circuit work, which a Circuit item can't come from, but this is drawn in a
+ * frame, so the item it would replace stands instead of a throw.
+ */
+private fun firstRound(
+    steps: List<RunnerStep>,
+    blockIndex: Int,
+): UpcomingItem.Round? {
+    val work = steps.filterIsInstance<WorkStep>().filter { it.blockIndex == blockIndex && it.circuit != null }
+    val circuit = work.firstOrNull()?.circuit ?: return null
+    return UpcomingItem.Round(
+        blockIndex,
+        circuit.round,
+        circuit.rounds,
+        distinctMembers(work.filter { it.round == circuit.round }),
+    )
+}
+
+/**
  * Grouped by member key, not block: a swap gives the substitute a new key inside the same block, and
  * it is listed under its own name. Inter-set rest adds nothing, so a member's sets stay adjacent.
  */

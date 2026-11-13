@@ -43,6 +43,7 @@
     "restDayBody": "プログラム上、ここで行うものはありません。次のセッションは時期が来たら Kettle が用意します。",
     "restDaySkip": "それでもトレーニングする",
     "startSession": "セッションを開始",
+    "previewAction": "エクササイズを見る",
     "firstRun": {
       "title": "はじめての方へ",
       "step1Title": "下のワークアウトを始める",
@@ -55,6 +56,9 @@
     "startEmpty": "空のセッションを開始",
     "starterPacks": "スタータープログラムを追加",
     "moreBlocks_other": "他 {{count}} 件"
+  },
+  "workoutPreview": {
+    "notFound": "このワークアウトはライブラリにありません。"
   },
   "build": {
     "title": "ワークアウト",

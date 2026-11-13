@@ -6,6 +6,7 @@ import com.casco.kettle.shell.history.HistoryRoute
 import com.casco.kettle.shell.home.HomeRoute
 import com.casco.kettle.shell.importer.ImportRoute
 import com.casco.kettle.shell.library.LibraryRoute
+import com.casco.kettle.shell.preview.WorkoutPreviewRoute
 import com.casco.kettle.shell.programdetail.ProgramDetailRoute
 import com.casco.kettle.shell.programeditor.ProgramEditorRoute
 import com.casco.kettle.shell.programguide.ProgramGuideRoute
@@ -59,6 +60,8 @@ internal fun RouteContent(route: Route) {
         Destination.ExerciseEditor -> ExerciseEditorRoute(params)
 
         Destination.WorkoutEditor -> WorkoutEditorRoute(params)
+
+        Destination.WorkoutPreview -> WorkoutPreviewRoute(params)
 
         Destination.ProgramEditor -> ProgramEditorRoute(params)
 

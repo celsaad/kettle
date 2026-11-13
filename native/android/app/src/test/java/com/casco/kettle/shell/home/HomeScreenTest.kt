@@ -1,5 +1,6 @@
 package com.casco.kettle.shell.home
 
+import android.content.Context
 import androidx.activity.FullyDrawnReporter
 import androidx.activity.FullyDrawnReporterOwner
 import androidx.activity.compose.LocalFullyDrawnReporterOwner
@@ -7,6 +8,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assert
@@ -30,6 +32,7 @@ import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.dp
+import androidx.test.core.app.ApplicationProvider
 import com.casco.kettle.domain.Exercise
 import com.casco.kettle.domain.ExerciseConfig
 import com.casco.kettle.domain.Library
@@ -43,11 +46,13 @@ import com.casco.kettle.domain.SessionLog
 import com.casco.kettle.domain.SessionParams
 import com.casco.kettle.domain.Workout
 import com.casco.kettle.domain.WorkoutBlock
+import com.casco.kettle.shell.R
 import com.casco.kettle.shell.files.FakeStoredFiles
 import com.casco.kettle.shell.files.LatestFiles
 import com.casco.kettle.shell.nav.Destination
 import com.casco.kettle.shell.nav.Route
 import com.casco.kettle.shell.nav.Tab
+import com.casco.kettle.shell.nav.routeParams
 import com.casco.kettle.shell.theme.KettleTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -119,7 +124,17 @@ class HomeScreenTest {
             }
         }
 
-    private fun row(name: String) = compose.onNode(hasText(name) and isButton)
+    /**
+     * A list row's button. The next-up card's text is a button too since #280, holding the queued
+     * workout's name, so the card is told apart by the click label only its preview has.
+     */
+    private fun row(name: String) = compose.onNode(hasText(name) and isButton and !opensPreview)
+
+    private val opensPreview =
+        SemanticsMatcher("opens the workout preview") {
+            it.config.getOrNull(SemanticsActions.OnClick)?.label ==
+                ApplicationProvider.getApplicationContext<Context>().getString(R.string.today_previewAction)
+        }
 
     private fun button(text: String) = compose.onNode(hasText(text) and isButton)
 
@@ -469,7 +484,8 @@ class HomeScreenTest {
             ),
         )
 
-        assertEquals(2, maxLines(text(longNote)))
+        // Unmerged: the note is one of the texts inside the card's preview button.
+        assertEquals(2, maxLines(compose.onNodeWithText(longNote, useUnmergedTree = true)))
     }
 
     /** The card's copy only: the row is one line of a scrolling list, not what stands above it. */
@@ -481,7 +497,7 @@ class HomeScreenTest {
             ),
         )
 
-        val copies = compose.onAllNodesWithText("Push day")
+        val copies = compose.onAllNodesWithText("Push day", useUnmergedTree = true)
         copies.assertCountEquals(2)
         assertEquals(listOf(2, Int.MAX_VALUE), (0..1).map { maxLines(copies[it]) }.sorted())
     }
@@ -491,7 +507,8 @@ class HomeScreenTest {
         val weeks = arrayOf(ProgramWeek.Training(1, "Day 1", "push-day"), ProgramWeek.RestDay(1, "Day 2", longNote))
         show(Files(library(programs = listOf(program(*weeks))), sessions = listOf(programSession("Day 1"))))
 
-        assertEquals(2, maxLines(text(longNote)))
+        // Unmerged: the note is one of the texts inside the card's preview button.
+        assertEquals(2, maxLines(compose.onNodeWithText(longNote, useUnmergedTree = true)))
     }
 
     // The empty session, outside the card's conditional so every branch carries it.
@@ -663,6 +680,48 @@ class HomeScreenTest {
         compose.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Workout 60"))
 
         row("Workout 60").assertIsDisplayed()
+    }
+
+    // The card's preview (#280): everything above Start opens it, and Start stays its own target.
+
+    private fun queuedFiles() = Files(library(programs = listOf(program(ProgramWeek.Training(1, "Day 1", "push-day")))))
+
+    @Test
+    fun `tapping the card opens the workout preview on that slot, and starts nothing`() {
+        show(queuedFiles())
+
+        compose.onNode(opensPreview).performClick()
+
+        val slot = RunnerStart.Planned(SessionParams.ProgramSlot("base", 1, "Day 1"))
+        assertEquals(listOf(Route(Destination.WorkoutPreview, slot.routeParams())), opened)
+        assertEquals(emptyList<RunnerStart>(), started)
+    }
+
+    @Test
+    fun `Start is not the preview button, and opens no route`() {
+        show(queuedFiles())
+
+        button("Iniciar treino").performClick()
+
+        assertEquals(listOf(RunnerStart.Planned(SessionParams.ProgramSlot("base", 1, "Day 1"))), started)
+        assertEquals(emptyList<Route>(), opened)
+        compose.onAllNodes(opensPreview and hasText("Iniciar treino")).assertCountEquals(0)
+    }
+
+    @Test
+    fun `a rest day's card has no preview button`() {
+        show(restDayFiles())
+
+        text("Dia de descanso").assertExists()
+        compose.onAllNodes(opensPreview).assertCountEquals(0)
+    }
+
+    /** One node, named by its words rather than a label that would drift from them. */
+    @Test
+    fun `the preview button's name carries the workout's`() {
+        show(queuedFiles())
+
+        compose.onNode(opensPreview).assert(hasText("Push day", substring = true))
     }
 
     private val isButton = SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button)

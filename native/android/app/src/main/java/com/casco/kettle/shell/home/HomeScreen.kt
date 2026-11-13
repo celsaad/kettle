@@ -68,6 +68,7 @@ import com.casco.kettle.shell.nav.LocalTabReselects
 import com.casco.kettle.shell.nav.Route
 import com.casco.kettle.shell.nav.ScrollsToTopOnReselect
 import com.casco.kettle.shell.nav.Tab
+import com.casco.kettle.shell.nav.routeParams
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.MaxContentWidth
@@ -195,7 +196,13 @@ private fun WhatToRun(
     if (newHere && hasWorkouts) {
         StarterPackLink(Modifier.padding(top = Spacing.three)) { open(Route(Destination.Import)) }
     }
-    nextUp?.let { NextUpCard(it) { params -> startRunner(RunnerStart.Planned(params)) } }
+    nextUp?.let {
+        NextUpCard(
+            it,
+            start = { params -> startRunner(RunnerStart.Planned(params)) },
+            preview = { params -> open(Route(Destination.WorkoutPreview, RunnerStart.Planned(params).routeParams())) },
+        )
+    }
     // Under the card's Start, reading as its alternative. Text weight, so it can't be taken for Start's
     // peer; on a rest day and with no workouts, it is the way to train.
     HomeLink(stringResource(R.string.today_startEmpty), Modifier) {

@@ -33,6 +33,7 @@ enum class Destination(
     SessionEditor("/session-editor", Presentation.Sheet),
     ExerciseEditor("/exercise-editor", Presentation.Sheet),
     WorkoutEditor("/workout-editor", Presentation.Sheet),
+    WorkoutPreview("/workout-preview", Presentation.Sheet),
     ProgramEditor("/program-editor", Presentation.Sheet),
     Import("/import", Presentation.Sheet),
     Session("/session", Presentation.Runner),

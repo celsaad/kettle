@@ -234,7 +234,6 @@
       "action": "Swap",
       "title": "Swap {{name}}",
       "replacing": "For the rest of this exercise. Your workout stays as it is.",
-      "dismiss": "Keep the current exercise",
       "keep": "Keep {{name}}",
       "also": {
         "reps": "Also reps",

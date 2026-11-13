@@ -79,7 +79,7 @@ internal fun EndSheet(
 @Composable
 private fun ProgressRow(row: EndRow) {
     Row(
-        Modifier.fillMaxWidth().padding(vertical = ROW_PAD).semantics(mergeDescendants = true) {},
+        Modifier.fillMaxWidth().padding(vertical = Spacing.one).semantics(mergeDescendants = true) {},
         horizontalArrangement = Arrangement.spacedBy(Spacing.two),
     ) {
         Text(row.name, Modifier.weight(1f), style = KettleType.small, color = runnerColors.text)
@@ -88,28 +88,23 @@ private fun ProgressRow(row: EndRow) {
 }
 
 @Composable
-private fun progressText(row: EndRow): String =
-    when {
+private fun progressText(row: EndRow): String {
+    val counted = counted(row.unit)
+    return when {
         row.done == 0 -> stringResource(R.string.session_end_notStarted)
-        row.unit == EndUnit.ONCE -> stringResource(R.string.session_end_done)
-        else -> pluralText(plural(row.unit), zero(row.unit), row.total, "${row.done}")
+        counted == null -> stringResource(R.string.session_end_done)
+        else -> pluralText(counted.first, counted.second, row.total, "${row.done}")
     }
+}
 
-private fun plural(unit: EndUnit): Int =
+/** A counted unit's plural and its `_zero`; null for [EndUnit.ONCE], which is done or not started. */
+private fun counted(unit: EndUnit): Pair<Int, Int>? =
     when (unit) {
-        EndUnit.SETS, EndUnit.ONCE -> R.plurals.session_end_sets
-        EndUnit.ROUNDS -> R.plurals.session_end_rounds
-        EndUnit.MINUTES -> R.plurals.session_end_minutes
-        EndUnit.INTERVALS -> R.plurals.session_end_intervals
-    }
-
-private fun zero(unit: EndUnit): Int =
-    when (unit) {
-        EndUnit.SETS, EndUnit.ONCE -> R.string.session_end_sets_zero
-        EndUnit.ROUNDS -> R.string.session_end_rounds_zero
-        EndUnit.MINUTES -> R.string.session_end_minutes_zero
-        EndUnit.INTERVALS -> R.string.session_end_intervals_zero
+        EndUnit.ONCE -> null
+        EndUnit.SETS -> R.plurals.session_end_sets to R.string.session_end_sets_zero
+        EndUnit.ROUNDS -> R.plurals.session_end_rounds to R.string.session_end_rounds_zero
+        EndUnit.MINUTES -> R.plurals.session_end_minutes to R.string.session_end_minutes_zero
+        EndUnit.INTERVALS -> R.plurals.session_end_intervals to R.string.session_end_intervals_zero
     }
 
 private val ROWS_MAX_HEIGHT = 240.dp
-private val ROW_PAD = 4.dp

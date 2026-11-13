@@ -93,13 +93,13 @@ internal fun Caps(
 }
 
 /**
- * A bar filled to [fraction], 0 to 1, with an optional range band (#417) outlined from [band] to its
+ * A bar filled to [fraction], 0 to 1, with an optional range band (#417) outlined from [bandStart] to its
  * end: a hold's range, the bar running to its top. Decorative: no semantics.
  */
 @Composable
 internal fun FillBar(
     fraction: Float,
-    band: Float? = null,
+    bandStart: Float? = null,
 ) {
     // The box is the track's 6dp, as RN's: the band stands out of it above and below without taking
     // layout space, so a hold's caption sits where an interval's does.
@@ -118,12 +118,12 @@ internal fun FillBar(
                     .background(runnerColors.accent),
             )
         }
-        if (band != null && band < 1f) {
+        if (bandStart != null && bandStart < 1f) {
             Row(Modifier.fillMaxSize()) {
-                if (band > 0f) Spacer(Modifier.weight(band))
+                if (bandStart > 0f) Spacer(Modifier.weight(bandStart))
                 Box(
                     Modifier
-                        .weight(1f - band)
+                        .weight(1f - bandStart)
                         .requiredHeight(BAND_HEIGHT)
                         .border(BAND_STROKE, runnerColors.text, BandShape)
                         .testTag(BAND_TAG),

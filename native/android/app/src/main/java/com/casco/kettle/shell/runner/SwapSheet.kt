@@ -1,7 +1,5 @@
 package com.casco.kettle.shell.runner
 
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -18,10 +16,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.Exercise
 import com.casco.kettle.domain.ExerciseConfig
@@ -30,7 +26,6 @@ import com.casco.kettle.domain.UnitSystem
 import com.casco.kettle.domain.rankByName
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.library.exerciseSummary
-import com.casco.kettle.shell.list.ListRow
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.Spacing
 
@@ -52,7 +47,8 @@ internal fun SwapSheet(
     val other = remember(choices, query) { rankByName(choices.other, query) { it.name } }
     val name = choices.current.name
     val title = stringResource(R.string.session_swap_title, name)
-    OverlaySheet(stringResource(R.string.session_swap_dismiss), onCancel, title) {
+    // The backdrop still closes it, but unnamed: Keep below is the same way out, as on End early.
+    OverlaySheet(null, onCancel, title) {
         Column {
             Text(title, Modifier.semantics { heading() }, style = KettleType.heading, color = runnerColors.text)
             Text(
@@ -96,22 +92,12 @@ private fun LazyListScope.group(
         Text(
             label,
             Modifier.padding(top = Spacing.two, bottom = Spacing.one).semantics { heading() },
-            style = KettleType.small.copy(fontWeight = FontWeight.SemiBold),
+            style = KettleType.smallMedium,
             color = runnerColors.textSecondary,
         )
     }
     itemsIndexed(exercises, key = { _, exercise -> exercise.id }) { index, exercise ->
-        if (index > 0) RunnerHairline()
-        Box(Modifier.clickable(role = Role.Button) { onSelect(exercise) }) {
-            ListRow {
-                Text(exercise.name, Modifier.weight(1f), style = KettleType.heading, color = runnerColors.text)
-                Text(
-                    planText(exercise.config, units, typed),
-                    style = KettleType.small,
-                    color = runnerColors.textSecondary,
-                )
-            }
-        }
+        PickerRow(exercise.name, first = index == 0, planText(exercise.config, units, typed)) { onSelect(exercise) }
     }
 }
 

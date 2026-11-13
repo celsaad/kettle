@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test
 /**
  * The engine's step-list edits, from RN `use-session-runner.test.tsx`'s restFollows, upcoming, adding
  * and dropping sets, swapping, ad-hoc and re-seeding sections. Edits take whatever step is on screen,
- * as RN's hook does; [canAddSet], [canDropSet] and [swapCandidates] are the buttons' rules.
+ * as RN's hook does; [canAddSet], [canDropSet] and [swapChoices] are the buttons' rules.
  */
 class RunnerEditsTest {
     private fun Runner.repsEntry(index: Int) = entries[index] as SessionEntry.Reps
@@ -22,6 +22,10 @@ class RunnerEditsTest {
     private fun Runner.add(id: String) = send(RunnerCommand.AddExercise(exercise(id)))
 
     private fun Runner.swap(id: String) = send(RunnerCommand.Swap(exercise(id)))
+
+    /** Every swap the sheet offers, in its order: its own type first, then the rest. */
+    private fun Runner.swapOffered() =
+        swapChoices(snapshot, exercises)?.let { it.same + it.other }.orEmpty().map { it.id }
 
     private fun summary(items: List<UpcomingItem>) =
         items.map {
@@ -264,7 +268,7 @@ class RunnerEditsTest {
         @Test
         fun `offers every other exercise, minus the one on screen and the built-in rest`() {
             val runner = Runner(workoutOf(single("pullups")))
-            val offered = swapCandidates(runner.snapshot, runner.exercises).map { it.id }
+            val offered = runner.swapOffered()
 
             assertFalse("pullups" in offered)
             assertFalse("rest" in offered)
@@ -282,13 +286,12 @@ class RunnerEditsTest {
             assertEquals("lsit", choices.current.id)
             assertEquals(listOf("plank", "deadhang"), choices.same.map { it.id })
             assertTrue(choices.other.none { it.config is ExerciseConfig.TimedHold || it.config is ExerciseConfig.Rest })
-            assertEquals(choices.same + choices.other, swapCandidates(runner.snapshot, runner.exercises))
         }
 
         @Test
         fun `lists the same type first, then the rest in library order`() {
             val runner = Runner(workoutOf(single("lsit")))
-            val offered = swapCandidates(runner.snapshot, runner.exercises).map { it.id }
+            val offered = runner.swapOffered()
 
             assertEquals(listOf("plank", "deadhang"), offered.take(2))
             assertEquals(
@@ -334,7 +337,7 @@ class RunnerEditsTest {
         @Test
         fun `offers nothing inside a circuit`() {
             val runner = Runner(workoutOf(circuitOf("pullups", "dips")))
-            assertEquals(emptyList<Exercise>(), swapCandidates(runner.snapshot, runner.exercises))
+            assertNull(swapChoices(runner.snapshot, runner.exercises))
 
             // Refused by the mutation itself (#303), so the list stands; undo is cleared, as RN's always is.
             val before = runner.snapshot
@@ -422,7 +425,7 @@ class RunnerEditsTest {
             assertEquals(listOf("dips", "pullups"), runner.entries.map { it.exercise })
         }
 
-        /** The picker leaves both out ([swapCandidates]); RN's hook takes either if asked. */
+        /** The picker leaves both out ([swapChoices]); RN's hook takes either if asked. */
         @Test
         fun `swaps even to the exercise on screen, under a fresh key, as RN's hook does`() {
             val runner = Runner(workoutOf(single("pullups")))

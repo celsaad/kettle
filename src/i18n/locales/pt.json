@@ -245,7 +245,6 @@
       "action": "Trocar",
       "title": "Trocar {{name}}",
       "replacing": "Pelo resto deste exercício. Seu treino continua como está.",
-      "dismiss": "Manter o exercício atual",
       "keep": "Manter {{name}}",
       "also": {
         "reps": "Também de repetições",

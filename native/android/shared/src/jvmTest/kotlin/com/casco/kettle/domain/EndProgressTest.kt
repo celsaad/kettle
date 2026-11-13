@@ -36,6 +36,15 @@ class EndProgressTest {
     }
 
     @Test
+    fun `a HIIT inside a circuit counts the circuit's rounds, not its own on every visit`() {
+        val runner = Runner(workoutOf(circuitOf("burpees", "pullups", rounds = 3)))
+        // Burpees' three rounds and their rests, then the first pull-ups visit: round 1 of burpees done.
+        repeat(5) { runner.advance() }
+        assertEquals("Pull-ups", (runner.step as WorkStep).exerciseName)
+        assertEquals(listOf("Burpees 1/3 ROUNDS", "Pull-ups 0/3 ROUNDS"), runner.progress())
+    }
+
+    @Test
     fun `a swap makes the exercise swapped in a row of its own, and an added set grows the total`() {
         val runner = Runner(workoutOf(single("pullups")))
         runner.send(RunnerCommand.AddSet)

@@ -25,7 +25,6 @@ import com.casco.kettle.domain.Session
 import com.casco.kettle.domain.UnitSystem
 import com.casco.kettle.domain.WorkStep
 import com.casco.kettle.domain.endProgress
-import com.casco.kettle.domain.swapCandidates
 import com.casco.kettle.domain.swapChoices
 import com.casco.kettle.domain.upcomingOutline
 import com.casco.kettle.shell.theme.MaxContentWidth
@@ -231,7 +230,7 @@ private fun Overlays(
 }
 
 private fun RunnerOverlays.withoutDeadSwap(view: RunnerView.Running): RunnerOverlays {
-    val swappable = view.snapshot.step is WorkStep && swapCandidates(view.snapshot, view.plan.exercises).isNotEmpty()
+    val swappable = view.snapshot.step is WorkStep && swapChoices(view.snapshot, view.plan.exercises) != null
     return if (swappable) this else close(Overlay.SWAP_PICKER)
 }
 

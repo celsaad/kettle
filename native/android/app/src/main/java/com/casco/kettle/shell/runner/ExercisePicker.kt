@@ -90,10 +90,7 @@ private fun PickerOptions(
     LazyColumn(Modifier.heightIn(max = 320.dp)) {
         if (shown.isEmpty()) item { NoMatches(query) }
         itemsIndexed(shown, key = { _, exercise -> exercise.id }) { index, exercise ->
-            if (index > 0) RunnerHairline()
-            Box(Modifier.clickable(role = Role.Button) { onSelect(exercise) }) {
-                ListRow { Text(exercise.name, style = KettleType.heading, color = runnerColors.text) }
-            }
+            PickerRow(exercise.name, first = index == 0, onClick = { onSelect(exercise) })
         }
     }
 }
@@ -110,7 +107,10 @@ internal fun NoMatches(query: String) {
     )
 }
 
-/** The hairline between a picker's rows: the runner's own, since its sheets are dark whatever the scheme. */
+/**
+ * The runner's own hairline, since its sheets are dark whatever the scheme: between a picker's rows, and
+ * above and below End early's table.
+ */
 @Composable
 internal fun RunnerHairline() = Box(Modifier.fillMaxWidth().height(1.dp).background(runnerColors.border))
 
@@ -153,3 +153,23 @@ internal fun PickerSearch(
 
 private const val SEARCH_THRESHOLD = 8
 private val SEARCH_TEXT = 14.sp
+
+/**
+ * A picker's row: the hairline above it but on the [first], then the name, and [detail] to its right
+ * when there is one. The add picker's and the swap sheet's, so the two lists can't drift apart.
+ */
+@Composable
+internal fun PickerRow(
+    name: String,
+    first: Boolean,
+    detail: String? = null,
+    onClick: () -> Unit,
+) {
+    if (!first) RunnerHairline()
+    Box(Modifier.clickable(role = Role.Button, onClick = onClick)) {
+        ListRow {
+            Text(name, Modifier.weight(1f), style = KettleType.heading, color = runnerColors.text)
+            if (detail != null) Text(detail, style = KettleType.small, color = runnerColors.textSecondary)
+        }
+    }
+}

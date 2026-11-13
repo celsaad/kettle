@@ -57,8 +57,8 @@ private fun HoldClock(
     }
     if (target != null) {
         val barSec = step.holdTargetMaxSec?.takeIf { it > target } ?: target
-        val band = target.takeIf { barSec > it }?.let { (it / barSec).toFloat() }
-        FillBar(if (barSec > 0) (elapsed / barSec).toFloat() else 0f, band)
+        val bandStart = target.takeIf { barSec > it }?.let { (it / barSec).toFloat() }
+        FillBar(if (barSec > 0) (elapsed / barSec).toFloat() else 0f, bandStart)
     }
     Secondary(holdCaption(step))
 }

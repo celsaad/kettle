@@ -53,7 +53,6 @@ import com.casco.kettle.shell.nav.Destination
 import com.casco.kettle.shell.nav.LocalNavigator
 import com.casco.kettle.shell.nav.LocalTabReselects
 import com.casco.kettle.shell.nav.Route
-import com.casco.kettle.shell.nav.SECTION
 import com.casco.kettle.shell.nav.ScrollsToTopOnReselect
 import com.casco.kettle.shell.nav.Section
 import com.casco.kettle.shell.nav.Tab
@@ -155,7 +154,7 @@ fun HistoryScreen(
             item(key = "header") {
                 Header(
                     showExportAll = log?.sessions?.isNotEmpty() == true,
-                    onStats = { actions.open(Route(Destination.Progress, mapOf(SECTION to Section.STATS))) },
+                    onStats = { actions.open(Route.of(Section.STATS)) },
                     onExportAll = { actions.export(null) },
                 )
             }

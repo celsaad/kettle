@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import com.casco.kettle.shell.R
 import com.casco.kettle.shell.history.HistoryRoute
 import com.casco.kettle.shell.library.LibraryRoute
 import com.casco.kettle.shell.programs.ProgramsRoute
@@ -43,13 +42,13 @@ internal fun ProgressTab(route: Route) =
  * switch rather than a bar's height below it.
  */
 @Composable
-private fun SectionedTab(
+internal fun SectionedTab(
     tab: Tab,
     route: Route,
-    content: @Composable (String) -> Unit,
+    content: @Composable (Section) -> Unit,
 ) {
     val navigator = LocalNavigator.current
-    val section = route.section(tab) ?: Section.of(tab).first()
+    val section = route.section(tab) ?: return
     Column(Modifier.fillMaxSize().statusBarsPadding(), horizontalAlignment = Alignment.CenterHorizontally) {
         Box(
             Modifier
@@ -57,18 +56,8 @@ private fun SectionedTab(
                 .fillMaxWidth()
                 .padding(start = Spacing.three, end = Spacing.three, top = Spacing.two, bottom = Spacing.two),
         ) {
-            Segmented(Section.of(tab).map { it to labelOf(it) }, section) {
-                navigator.navigate(Route(tab.destination, mapOf(SECTION to it)))
-            }
+            Segmented(Section.of(tab).map { it to it.label }, section) { navigator.navigate(Route.of(it)) }
         }
         Box(Modifier.weight(1f)) { content(section) }
     }
 }
-
-private fun labelOf(section: String): Int =
-    when (section) {
-        Section.PROGRAMS -> R.string.tabs_sections_programs
-        Section.SESSIONS -> R.string.tabs_sections_sessions
-        Section.STATS -> R.string.tabs_sections_stats
-        else -> R.string.tabs_sections_exercises
-    }

@@ -106,9 +106,9 @@ data class Route(
          */
         private val LEGACY =
             mapOf(
-                "/programs" to Route(Destination.Library, mapOf(SECTION to Section.PROGRAMS)),
-                "/history" to Route(Destination.Progress, mapOf(SECTION to Section.SESSIONS)),
-                "/analytics" to Route(Destination.Progress, mapOf(SECTION to Section.STATS)),
+                "/programs" to of(Section.PROGRAMS),
+                "/history" to of(Section.SESSIONS),
+                "/analytics" to of(Section.STATS),
             )
 
         /** Null when any key or value can't be decoded: half a query is no route. */
@@ -120,6 +120,9 @@ data class Route(
                 }
             return if (null in pairs) null else pairs.filterNotNull().toMap()
         }
+
+        /** [section] on its tab: the one route each section has. */
+        fun of(section: Section): Route = Route(section.tab.destination, mapOf(SECTION to section.param))
 
         /** What the manifest's intent filter declares. */
         private const val LINK_SCHEME = "kettle://"
@@ -246,24 +249,32 @@ const val SECTION = "section"
 
 /**
  * The sections the Library and Progress tabs hold until their own tickets redesign them (#411): each
- * shows a screen the four-tab shell had as a tab of its own, or Stats, which was a sheet. The first of
- * each tab's is where it opens with none named.
+ * shows a screen the four-tab shell had as a tab of its own, or Stats, which was a sheet. Declared in
+ * switch order, and a tab's first is where it opens with none named: Exercises, so `/library` shows
+ * what it always has.
  */
-object Section {
-    const val PROGRAMS = "programs"
-    const val EXERCISES = "exercises"
-    const val SESSIONS = "sessions"
-    const val STATS = "stats"
+enum class Section(
+    val param: String,
+    val tab: Tab,
+    @StringRes val label: Int,
+) {
+    EXERCISES("exercises", Tab.Library, R.string.tabs_sections_exercises),
+    PROGRAMS("programs", Tab.Library, R.string.tabs_sections_programs),
+    SESSIONS("sessions", Tab.Progress, R.string.tabs_sections_sessions),
+    STATS("stats", Tab.Progress, R.string.tabs_sections_stats),
+    ;
 
-    /** Each tab's sections, its default first; none for a tab without them. */
-    fun of(tab: Tab): List<String> =
-        when (tab) {
-            Tab.Today -> emptyList()
-            Tab.Library -> listOf(EXERCISES, PROGRAMS)
-            Tab.Progress -> listOf(SESSIONS, STATS)
-        }
+    companion object {
+        /** [tab]'s sections in switch order; none for a tab without them. */
+        fun of(tab: Tab): List<Section> = entries.filter { it.tab == tab }
+    }
 }
 
-/** The section [route] names on its tab, or the tab's first: an unknown one is the first too. */
-fun Route.section(tab: Tab): String? =
-    params[SECTION]?.takeIf { it in Section.of(tab) } ?: Section.of(tab).firstOrNull()
+/**
+ * The section this route names on [tab], or the tab's first: an unknown one is the first too. Null on a
+ * tab without sections.
+ */
+fun Route.section(tab: Tab): Section? {
+    val sections = Section.of(tab)
+    return sections.firstOrNull { it.param == params[SECTION] } ?: sections.firstOrNull()
+}

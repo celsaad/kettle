@@ -55,7 +55,7 @@ class RouteTest {
         val routes =
             listOf(
                 Route(Destination.Today),
-                Route(Destination.Library, mapOf(SECTION to Section.PROGRAMS)),
+                Route.of(Section.PROGRAMS),
                 Route(Destination.ProgramDetail, mapOf("programId" to "base", "day" to "Day 1 & 2+")),
                 Route(Destination.SessionEditor, mapOf("id" to "2026-11-09T23-29-54-817Z")),
             )
@@ -111,20 +111,20 @@ class RouteTest {
     /** #411: the four-tab shell's paths land on the tab and section that now hold their screens. */
     @Test
     fun `the old tabs' and Stats' links land on their new tab and section`() {
-        val programs = Route(Destination.Library, mapOf(SECTION to Section.PROGRAMS))
+        val programs = Route.of(Section.PROGRAMS)
         assertEquals(programs, Route.fromLink("kettle://programs"))
         assertEquals(
-            Route(Destination.Progress, mapOf(SECTION to Section.SESSIONS)),
+            Route.of(Section.SESSIONS),
             Route.fromLink("kettle://history"),
         )
-        assertEquals(Route(Destination.Progress, mapOf(SECTION to Section.STATS)), Route.parse("/analytics"))
+        assertEquals(Route.of(Section.STATS), Route.parse("/analytics"))
         // Its own section wins over one the link carried.
         assertEquals(programs, Route.parse("/programs?section=exercises"))
     }
 
     @Test
     fun `a tab's section is the one its route names, else its first`() {
-        assertEquals(Section.STATS, Route(Destination.Progress, mapOf(SECTION to Section.STATS)).section(Tab.Progress))
+        assertEquals(Section.STATS, Route.of(Section.STATS).section(Tab.Progress))
         assertEquals(Section.SESSIONS, Route(Destination.Progress).section(Tab.Progress))
         assertEquals(Section.EXERCISES, Route(Destination.Library, mapOf(SECTION to "nowhere")).section(Tab.Library))
         assertNull(Route(Destination.Today).section(Tab.Today))

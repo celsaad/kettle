@@ -21,6 +21,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -71,22 +72,29 @@ import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.MaxContentWidth
 import com.casco.kettle.shell.theme.Spacing
 import com.casco.kettle.shell.theme.card
+import kotlinx.coroutines.delay
 import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.TimeZone
 import java.util.Locale
 import kotlin.time.Clock
 import kotlin.time.Instant
 
-/** What the route table draws at `/analytics`, opened from History's header. */
+/** What the Progress tab draws in its Stats section (#411); History's header switches to it. */
 @Composable
 fun StatsRoute() {
-    // Once per opening, as exercise progress reads it: this week, the streak and today's cell are all
-    // as of when the sheet came up, and a sheet is short-lived.
-    val now = remember { Clock.System.now() }
+    // Read again at each local midnight: a tab's section can stay up across one, which a sheet never
+    // did, and this week, the streak and today's cell all turn over with the date.
+    val zone = TimeZone.currentSystemDefault()
+    val now by produceState(Clock.System.now(), zone) {
+        while (true) {
+            delay(untilNextDay(value, zone))
+            value = Clock.System.now()
+        }
+    }
     StatsScreen(
         LocalLatestFiles.current,
         now,
-        TimeZone.currentSystemDefault(),
+        zone,
         // The locale's calendar, as expo-localization reads RN's from the default locale, which the
         // configuration carries; read through it so a locale change is seen.
         firstWeekday(LocalConfiguration.current.locales[0]),
@@ -103,7 +111,7 @@ private const val CALENDAR_WEEKS = 4
 /**
  * Stats (#201): the numbers behind History, as RN's `analytics.tsx`, now the empty stub at this path.
  * It answers the two questions an all-time total can't (am I turning up, and is anything moving), and
- * **repeats no all-time totals**: History's header says them, one screen back, in the same words.
+ * **repeats no all-time totals**: History's header says them, a section over, in the same words.
  * Nothing here narrows with History's search; it always reports the whole log, which is the only
  * reading that makes "this week" and a streak mean anything.
  *

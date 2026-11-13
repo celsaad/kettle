@@ -33,7 +33,6 @@ import com.casco.kettle.shell.files.FakeStoredFiles
 import com.casco.kettle.shell.files.LatestFiles
 import com.casco.kettle.shell.nav.Destination
 import com.casco.kettle.shell.nav.Route
-import com.casco.kettle.shell.nav.SECTION
 import com.casco.kettle.shell.nav.Section
 import com.casco.kettle.shell.nav.Tab
 import com.casco.kettle.shell.theme.KettleTheme
@@ -363,7 +362,7 @@ class HistoryScreenTest {
 
         action("Números").performClick()
 
-        assertEquals(listOf(Route(Destination.Progress, mapOf(SECTION to Section.STATS))), opened)
+        assertEquals(listOf(Route.of(Section.STATS)), opened)
     }
 
     @Test

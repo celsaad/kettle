@@ -300,11 +300,9 @@
       "targetDistance": "目標{{meters}}m",
       "ofTotal": "全{{clock}}中",
       "repsThisMinuteCaps": "この1分のレップ",
-      "roundsCaps": "ラウンド",
-      "extraRepsCaps": "＋レップ",
       "repsThisMinute": "この1分のレップ",
-      "roundsLabel": "ラウンド",
-      "extraRepsLabel": "追加レップ"
+      "repsIntoRoundCaps": "{{index}}ラウンド目のレップ",
+      "repsIntoRound": "{{index}}ラウンド目のレップ"
     },
     "reps": {
       "repsDoneAccessibility": "完了レップ: {{count}}。タップすると正確な値を入力できます。",
@@ -360,7 +358,7 @@
       "work": "ワーク · {{total}}ラウンド中{{index}}ラウンド目",
       "emomMinute": "EMOM · {{total}}分中{{index}}分目",
       "emomInterval": "EMOM · {{total}}本中{{index}}本目",
-      "amrap": "AMRAP",
+      "amrap": "AMRAP · {{index}}ラウンド目",
       "cardio": "カーディオ",
       "circuit": "サーキット · {{total}}ラウンド中{{index}}ラウンド目",
       "rest": "休憩",
@@ -378,6 +376,17 @@
       "footer_other": "変わるのはこのセッションだけです。ワークアウトは{{count}}セットのままです。",
       "loadedSet": "{{reps}} × {{weight}}",
       "count_other": "このセッションは{{count}}セット"
+    },
+    "emom": {
+      "resting": "{{label}} · 休憩中",
+      "minuteStartsIn": "{{index}}分目開始まで",
+      "intervalStartsIn": "{{index}}本目開始まで",
+      "endsIn": "終了まで"
+    },
+    "amrap": {
+      "roundDone": "{{index}}ラウンド完了",
+      "rounds_other": "{{count}}ラウンド",
+      "lastTime": "前回 {{rounds}}"
     }
   },
   "settings": {

@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.res.stringResource
+import com.casco.kettle.domain.IntervalVariant
 import com.casco.kettle.domain.LoggedUnit
 import com.casco.kettle.domain.PreviousSet
 import com.casco.kettle.domain.RunnerCommand
@@ -17,6 +18,7 @@ import com.casco.kettle.domain.canAddSet
 import com.casco.kettle.domain.canDropSet
 import com.casco.kettle.domain.elapsedSec
 import com.casco.kettle.domain.offeredLoadKg
+import com.casco.kettle.domain.previousAmrapRounds
 import com.casco.kettle.domain.previousSet
 import com.casco.kettle.domain.progressionLoadKg
 import com.casco.kettle.domain.remainingSec
@@ -38,6 +40,10 @@ data class StepReadings(
     val previous: PreviousSet?,
     /** "Try 53.5 lb" (#410): the load double progression suggests, null when there's none worth a tap. */
     val tryKg: Double? = null,
+    /** An AMRAP's rounds the last time it was run, for its pace line (#417); null off one, or with no history. */
+    val lastRounds: Long? = null,
+    /** An EMOM minute called done (#417), which only the screen knows: see [StepContext.resting]. */
+    val resting: Boolean = false,
     val beatsBest: Boolean,
     val next: StepPreview?,
     val canAddSet: Boolean,
@@ -52,6 +58,8 @@ class StepControls(
     val openPad: (PadRequest) -> Unit,
     val confirmFinish: () -> Unit,
     val adopt: (exerciseId: String, weightKg: Double) -> Unit,
+    /** An EMOM minute's Done (#417): rest out the minute on screen, which still ends on its own clock. */
+    val restOutMinute: () -> Unit,
 )
 
 /**
@@ -67,6 +75,9 @@ class StepContext(
     /** What Undo would take back, null when it has nothing to: [RunnerView.Running.logged]. */
     val logged: LoggedUnit? = null,
 ) {
+    /** An EMOM minute the user called done: blue until it turns. The screen's alone ([StepControls.restOutMinute]). */
+    val resting: Boolean get() = readings.resting
+
     val elapsed: Long get() = elapsedSec(snapshot.clock, now)
     val remaining: Double get() = remainingSec(snapshot.clock, now)
     val paused: Boolean get() = snapshot.clock.paused
@@ -83,6 +94,7 @@ internal fun stepContext(
     environment: RunnerEnvironment,
     now: Long,
     controls: StepControls,
+    resting: Boolean = false,
 ): StepContext {
     val snapshot = view.snapshot
     val state = RunnerState(snapshot, view.session)
@@ -104,11 +116,16 @@ internal fun stepContext(
                     snapshot.inputs.weightKg,
                     environment.units,
                 ),
+            lastRounds =
+                (snapshot.step as? RunnerStep.Interval)
+                    ?.takeIf { it.variant == IntervalVariant.AMRAP }
+                    ?.let { previousAmrapRounds(prior, it.exerciseId) },
             beatsBest = beatsPersonalBest(state, prior, now),
             next = upcomingPreview(snapshot.steps, snapshot.stepIndex),
             canAddSet = canAddSet(snapshot),
             canDropSet = canDropSet(state),
             canSwap = swapCandidates(snapshot, view.plan.exercises).isNotEmpty(),
+            resting = resting,
         )
     return StepContext(snapshot, now, environment.units, readings, controls, view.logged)
 }

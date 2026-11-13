@@ -46,27 +46,40 @@ private const val EVEN_LUMINANCE = 0.179
 internal fun runnerField(
     entry: RunnerEntry,
     now: Long,
+    resting: Boolean = false,
 ): RunnerField {
     val view = (entry as? RunnerEntry.Attach)?.view
     return when (view) {
-        is RunnerView.CountingIn -> RunnerField.GET_READY
-        is RunnerView.Running -> view.snapshot.step?.let { stepField(it, view.snapshot.clock, now) } ?: RunnerField.PACE
-        null -> RunnerField.PACE
+        is RunnerView.CountingIn -> {
+            RunnerField.GET_READY
+        }
+
+        is RunnerView.Running -> {
+            view.snapshot.step?.let { stepField(it, view.snapshot.clock, now, resting) }
+                ?: RunnerField.PACE
+        }
+
+        null -> {
+            RunnerField.PACE
+        }
     }
 }
 
 /**
  * Keyed on what ends the step, so it agrees with the engine's own `reading`: a step it ends by itself is
- * work, one only a tap ends is pace. Paused, nothing is running it, so it is pace too.
+ * work, one only a tap ends is pace. Paused, nothing is running it, so it is pace too. An EMOM minute
+ * called done ([resting], #417) is rest until it turns: the screen's word, which the engine never hears.
  */
 internal fun stepField(
     step: RunnerStep,
     clock: StepClock,
     now: Long,
+    resting: Boolean = false,
 ): RunnerField {
     val ticking = remainingSec(clock, now) <= TICK_SECONDS
     return when {
         clock.paused -> RunnerField.PACE
+        resting -> RunnerField.REST
         step is RunnerStep.Rest -> if (ticking) RunnerField.GET_READY else RunnerField.REST
         step is RunnerStep.Hold -> if (step.holdEndSec != null) RunnerField.WORK else RunnerField.PACE
         step is RunnerStep.Interval -> if (step.countUp) RunnerField.PACE else RunnerField.WORK

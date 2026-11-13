@@ -394,15 +394,6 @@ class RunnerScreenTest : RunnerScreenHarness() {
     }
 
     @Test
-    fun `an AMRAP has rounds and extra-reps steppers`() {
-        show(running(plan(block(grinder))))
-        button("Aumentar RODADAS").performClick()
-        assertEquals(RunnerCommand.SetRounds(1), sent.last())
-        button("Aumentar +REPS").performClick()
-        assertEquals(RunnerCommand.SetExtraReps(1), sent.last())
-    }
-
-    @Test
     fun `Coming up's NOW row counts a rest down, a hold up, and shows no clock for reps`() {
         val reps = plan(block(squat))
         show(running(reps, started(reps).advanced()))

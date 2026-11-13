@@ -10,8 +10,12 @@ import com.casco.kettle.shell.R
 /**
  * The header's label line (#409): the step's kind and where it sits, "Reps · set 1 of 4". Inside a
  * circuit it is the circuit's round instead, which is the count a member's own sets give way to there.
+ * An AMRAP's is the round under way, [amrapRound], which only its inputs know (#417).
  */
-fun Resources.stepLabel(step: RunnerStep): String {
+fun Resources.stepLabel(
+    step: RunnerStep,
+    amrapRound: Long = 1,
+): String {
     // A rest says so even inside a circuit; its spoken line (circuitSpoken) still gives the round.
     val circuit = step.circuit?.takeIf { step !is RunnerStep.Rest }
     if (circuit != null) return getString(R.string.session_header_circuit, "${circuit.round}", "${circuit.rounds}")
@@ -19,17 +23,20 @@ fun Resources.stepLabel(step: RunnerStep): String {
         is RunnerStep.Reps -> getString(R.string.session_header_reps, "${step.setIndex}", "${step.setTotal}")
         is RunnerStep.Hold -> getString(R.string.session_header_hold, "${step.setIndex}", "${step.setTotal}")
         is RunnerStep.Rest -> getString(R.string.session_header_rest)
-        is RunnerStep.Interval -> intervalLabel(step)
+        is RunnerStep.Interval -> intervalLabel(step, amrapRound)
     }
 }
 
-private fun Resources.intervalLabel(step: RunnerStep.Interval): String {
+private fun Resources.intervalLabel(
+    step: RunnerStep.Interval,
+    amrapRound: Long,
+): String {
     val index = "${step.setIndex}"
     val total = "${step.setTotal}"
     return when (step.variant) {
         IntervalVariant.HIIT -> getString(R.string.session_header_work, index, total)
         IntervalVariant.EMOM -> getString(emomLabel(step), index, total)
-        IntervalVariant.AMRAP -> getString(R.string.session_header_amrap)
+        IntervalVariant.AMRAP -> getString(R.string.session_header_amrap, "$amrapRound")
         IntervalVariant.CARDIO -> getString(R.string.session_header_cardio)
     }
 }

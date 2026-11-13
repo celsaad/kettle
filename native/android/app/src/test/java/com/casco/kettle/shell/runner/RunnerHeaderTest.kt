@@ -27,7 +27,7 @@ class RunnerHeaderTest : RunnerScreenHarness() {
                 plank to "Isometria · série 1 de 2",
                 burpees to "Esforço · rodada 1 de 2",
                 everyMinute to "EMOM · minuto 1 de 5",
-                grinder to "AMRAP",
+                grinder to "AMRAP · rodada 1",
                 row to "Cardio",
             )
         for ((exercise, label) in labels) {

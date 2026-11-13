@@ -17,7 +17,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.casco.kettle.domain.IntervalVariant
@@ -25,36 +29,77 @@ import com.casco.kettle.domain.RunnerCommand
 import com.casco.kettle.domain.RunnerStep
 import com.casco.kettle.domain.jsNumber
 import com.casco.kettle.shell.R
+import com.casco.kettle.shell.i18n.pluralText
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.Spacing
 
 /**
- * HIIT, EMOM, AMRAP and cardio. A countdown's Done is a quiet "Skip", since its clock ends it; a
- * count-up's is the filled button, being the only way out.
+ * HIIT, EMOM, AMRAP and cardio. A countdown's way out is a quiet "Skip", since its clock ends it; a
+ * count-up's is Done, being the only way out. An AMRAP has a screen of its own ([AmrapScreen]).
+ *
+ * An EMOM minute's is Done (#417): the reps are in, so the screen turns to rest for what's left of the
+ * minute, and then Skip, which logs it. Done only says so on screen ([StepContext.resting]): the minute
+ * still ends on its own clock and logs the stepper as it stands, which stays editable meanwhile.
  */
 @Composable
 internal fun IntervalScreen(
     step: RunnerStep.Interval,
     context: StepContext,
 ) {
+    if (step.variant == IntervalVariant.AMRAP) return AmrapScreen(step, context)
     val resources = LocalResources.current
     val target = context.snapshot.clock.stepEndSec
+    val emom = step.variant == IntervalVariant.EMOM
+    val resting = emom && context.resting
     StepLayout(
         top = {
-            StepHeader(resources.stepLabel(step), step.exerciseName, resources.circuitSpoken(step))
+            val label = resources.stepLabel(step)
+            StepHeader(
+                if (resting) stringResource(R.string.session_emom_resting, label) else label,
+                step.exerciseName,
+                resources.circuitSpoken(step),
+            )
             StepNotes(step.notes)
         },
         middle = {
+            if (resting) Secondary(resources.nextStartsIn(step))
             Numeral(formatClock(if (step.countUp) context.elapsed.toDouble() else context.remaining), CLOCK_NUMERAL)
             if (!step.countUp) FillBar(if (target > 0) ((target - context.remaining) / target).toFloat() else 0f)
-            Secondary(resources.caption(step))
-            IntervalInputs(step.variant, context)
+            if (!resting) Secondary(resources.caption(step))
+            if (emom) {
+                Stepper(
+                    stringResource(R.string.session_interval_repsThisMinuteCaps),
+                    stringResource(R.string.session_interval_repsThisMinute),
+                    context.snapshot.inputs.reps,
+                    context,
+                ) { RunnerCommand.SetReps(it) }
+            }
         },
         controls = {
-            // A count-up's Done is its only way out; a countdown's Skip leaves early what its clock ends.
-            ClockRow(context, if (step.countUp) doneAction(context) else skipAction(context))
+            val exit =
+                when {
+                    step.countUp -> doneAction(context)
+                    emom && !resting -> minuteDoneAction(context)
+                    else -> skipAction(context)
+                }
+            ClockRow(context, exit)
         },
     )
+}
+
+/** An EMOM minute's Done: rest out the minute on screen. Logging is still the minute's clock, or Skip. */
+@Composable
+private fun minuteDoneAction(context: StepContext) =
+    RowAction(stringResource(R.string.session_done), R.drawable.icon_stop, context.controls.restOutMinute)
+
+/** What the rest after an EMOM's Done counts down to: the next minute, or the step's end after the last. */
+private fun Resources.nextStartsIn(step: RunnerStep.Interval): String {
+    val next = "${step.setIndex + 1}"
+    return when {
+        step.setIndex >= step.setTotal -> getString(R.string.session_emom_endsIn)
+        step.targetSec == EMOM_MINUTE_SEC -> getString(R.string.session_emom_minuteStartsIn, next)
+        else -> getString(R.string.session_emom_intervalStartsIn, next)
+    }
 }
 
 private fun Resources.caption(step: RunnerStep.Interval): String =
@@ -72,42 +117,74 @@ private fun Resources.caption(step: RunnerStep.Interval): String =
         },
     ).joinToString(" · ")
 
-/** An EMOM minute's reps, or an AMRAP's rounds and extra reps. */
+/**
+ * An AMRAP (#417): "Round N done" is the main action, each tap a round, with Undo taking back the last;
+ * Pause sits to the side, and there is no Skip, the cap or End being the ways out. The extra reps come
+ * only in the last minute, since the cap ends the step and logs it in one move: there is no after.
+ */
 @Composable
-private fun IntervalInputs(
-    variant: IntervalVariant,
+private fun AmrapScreen(
+    step: RunnerStep.Interval,
     context: StepContext,
 ) {
+    val resources = LocalResources.current
     val inputs = context.snapshot.inputs
-    when (variant) {
-        IntervalVariant.EMOM -> {
-            Stepper(
-                stringResource(R.string.session_interval_repsThisMinuteCaps),
-                stringResource(R.string.session_interval_repsThisMinute),
-                inputs.reps,
-                context,
-            ) { RunnerCommand.SetReps(it) }
-        }
-
-        IntervalVariant.AMRAP -> {
-            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.four)) {
+    val rounds = inputs.roundsCompleted
+    val round = rounds + 1
+    val target = context.snapshot.clock.stepEndSec
+    StepLayout(
+        top = {
+            StepHeader(resources.stepLabel(step, round), step.exerciseName, resources.circuitSpoken(step))
+            StepNotes(step.notes)
+        },
+        middle = {
+            Numeral(formatClock(context.remaining), CLOCK_NUMERAL)
+            FillBar(if (target > 0) ((target - context.remaining) / target).toFloat() else 0f)
+            PaceLine(rounds, context.readings.lastRounds)
+            if (context.remaining <= LAST_MINUTE_SEC) {
                 Stepper(
-                    stringResource(R.string.session_interval_roundsCaps),
-                    stringResource(R.string.session_interval_roundsLabel),
-                    inputs.roundsCompleted,
-                    context,
-                ) { RunnerCommand.SetRounds(it) }
-                Stepper(
-                    stringResource(R.string.session_interval_extraRepsCaps),
-                    stringResource(R.string.session_interval_extraRepsLabel),
+                    stringResource(R.string.session_interval_repsIntoRoundCaps, "$round"),
+                    stringResource(R.string.session_interval_repsIntoRound, "$round"),
                     inputs.extraReps,
                     context,
                 ) { RunnerCommand.SetExtraReps(it) }
             }
-        }
+        },
+        controls = {
+            if (rounds > 0) {
+                LoggedPanel(stringResource(R.string.session_logged_round, "$rounds")) {
+                    context.send(RunnerCommand.SetRounds(rounds - 1))
+                }
+            }
+            BottomRow(
+                RowAction(stringResource(R.string.session_amrap_roundDone, "$round"), null) {
+                    context.send(RunnerCommand.SetRounds(round))
+                },
+                back = { context.send(RunnerCommand.Prev) },
+                side = pauseAction(context),
+            )
+        },
+    )
+}
 
-        else -> {}
-    }
+/** "7 rounds · last time 7": the count in the text's own ink, last time only once there is one. */
+@Composable
+private fun PaceLine(
+    rounds: Long,
+    lastRounds: Long?,
+) {
+    val count = pluralText(R.plurals.session_amrap_rounds, R.string.session_amrap_rounds_zero, rounds.toInt())
+    val last = lastRounds?.let { stringResource(R.string.session_amrap_lastTime, "$it") }
+    val ink = runnerColors.text
+    Text(
+        buildAnnotatedString {
+            withStyle(SpanStyle(color = ink, fontWeight = FontWeight.SemiBold)) { append(count) }
+            if (last != null) append(" · $last")
+        },
+        style = KettleType.small,
+        color = runnerColors.textSecondary,
+        textAlign = TextAlign.Center,
+    )
 }
 
 /** A whole-number stepper whose numeral opens the pad. [label] is the caps kicker, [name] the pad's. */
@@ -160,4 +237,8 @@ private fun Stepper(
 }
 
 private val CLOCK_NUMERAL = 88.sp
+private const val EMOM_MINUTE_SEC = 60.0
+
+/** When an AMRAP offers its extra reps: the cap's last minute. */
+private const val LAST_MINUTE_SEC = 60.0
 private val STEPPER_ROW_GAP = 6.dp

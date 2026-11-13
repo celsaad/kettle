@@ -232,6 +232,10 @@ final class Runner: ObservableObject {
             self.logSettings()
             guard !self.awaitingDecision else { return }
             self.logDelivered("while away")
+            // Entering the background deactivates the session and posts "interruption began", but
+            // no "ended" ever follows on return: without this, every foreground cue after a trip
+            // to Home is skipped as interrupted. Found on the iPad (P8).
+            if self.st != nil { self.activateAudio() }
             self.removeRunnerNotifications {
                 self.q.async {
                     self.catchUp(mono(), "REPLAY")

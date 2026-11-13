@@ -13,6 +13,7 @@
     "nameRequired": "O nome é obrigatório.",
     "couldNotDeriveId": "Não foi possível gerar um id a partir desse nome.",
     "saveFailed": "Não foi possível salvar: {{detail}}",
+    "libraryTooLarge": "Não salvo: sua biblioteca passaria de {{limit}} MB, grande demais para abrir de novo.",
     "deleteFailed": "Não foi possível excluir: {{detail}}",
     "deleteConfirmBody": "\"{{name}}\" será removido permanentemente.",
     "decrease": "Diminuir {{label}}",

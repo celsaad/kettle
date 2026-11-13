@@ -13,6 +13,7 @@
     "nameRequired": "Name is required.",
     "couldNotDeriveId": "Could not derive an id from that name.",
     "saveFailed": "Couldn't save that: {{detail}}",
+    "libraryTooLarge": "Not saved: your library would be over {{limit}} MB, too large to open again.",
     "deleteFailed": "Couldn't delete that: {{detail}}",
     "deleteConfirmBody": "\"{{name}}\" will be permanently removed.",
     "decrease": "Decrease {{label}}",

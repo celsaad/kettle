@@ -54,9 +54,16 @@ fun writeLibraryFile(
     // Past the parser's cap the next launch would quarantine the whole library, so the write that
     // would get it there is refused instead, where the screen can say so. Chars, not code points: a
     // surrogate pair counts twice, which only ever refuses early.
-    if (text.length > MAX_YAML_CODE_POINTS) throw IOException("The library would be too large to read back")
+    if (text.length > MAX_YAML_CODE_POINTS) throw LibraryTooLargeException()
     writeAtomically(file, text)
 }
+
+/**
+ * [writeLibraryFile]'s refusal of a library past the parser's cap. Its own type, unlike a disk's refusal,
+ * since the words are ours, not the platform's, and the screens translate it. An [IOException], so a
+ * caller that only reports the disk's refusals reports this one too.
+ */
+class LibraryTooLargeException : IOException("The library would be too large to read back")
 
 /**
  * This stream's bytes, or null once it holds more than [limit]: a file too large to take is never held

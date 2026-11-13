@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.MAX_IMPORT_BYTES
 import com.casco.kettle.domain.MergeError
 import com.casco.kettle.shell.R
+import com.casco.kettle.shell.files.text
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.Spacing
@@ -107,7 +108,7 @@ private fun refusalText(refusal: ImportRefusal): String =
         }
 
         is ImportRefusal.SaveFailed -> {
-            stringResource(R.string.import_error_saveFailed, refusal.detail)
+            refusal.refusal.text(R.string.import_error_saveFailed)
         }
 
         ImportRefusal.TooLarge -> {

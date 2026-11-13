@@ -26,6 +26,7 @@ import com.casco.kettle.domain.Program
 import com.casco.kettle.domain.ProgramWeek
 import com.casco.kettle.domain.SessionLog
 import com.casco.kettle.domain.serializeLibraryYaml
+import com.casco.kettle.storage.LibraryTooLargeException
 import kotlinx.coroutines.CompletableDeferred
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
@@ -561,6 +562,19 @@ class ImportScreenTest : ImportHarness() {
         button("Mesclar e importar").assertIsEnabled()
     }
 
+    // The size refusal's words are ours, not the platform's, so they're translated rather than passed
+    // through as an English detail inside the translated frame.
+    @Test
+    fun `says in the reader's language that the merged library would be too large`() {
+        picks(Library(1, listOf(dips), emptyList(), emptyList()))
+        val files = chooseFile(Files().apply { failure = LibraryTooLargeException() })
+
+        press("Mesclar e importar")
+
+        shown(LIBRARY_TOO_LARGE)
+        files.nothingWritten()
+    }
+
     // The failure's slot outlives the preview, so a retry that lands has to take the failure with it,
     // or "couldn't save" stands over the card saying it saved.
     @Test
@@ -771,6 +785,8 @@ private const val UNKNOWN_SQUATS = "O treino \"leg-day\" referencia o exercício
 private const val NOT_LOADED = "A biblioteca ainda não foi carregada."
 private const val READ_FAILED = "Não foi possível ler esse arquivo: Permission denied"
 private const val TOO_LARGE = "Grande demais para importar: uma biblioteca pode ter até 512 KB."
+private const val LIBRARY_TOO_LARGE =
+    "Não salvo: sua biblioteca passaria de 3 MB, grande demais para abrir de novo."
 private const val SAVE_FAILED = "Não foi possível salvar sua biblioteca: no space left"
 
 private fun paneTitled(title: String) = SemanticsMatcher.expectValue(SemanticsProperties.PaneTitle, title)

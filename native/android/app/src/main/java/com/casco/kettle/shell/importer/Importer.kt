@@ -14,7 +14,8 @@ import com.casco.kettle.domain.exceedsImportSize
 import com.casco.kettle.domain.mergeLibraries
 import com.casco.kettle.domain.parseLibraryYaml
 import com.casco.kettle.shell.files.LatestFiles
-import com.casco.kettle.shell.files.writeOrRefusal
+import com.casco.kettle.shell.files.LibraryWriteRefusal
+import com.casco.kettle.shell.files.libraryWriteOrRefusal
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
@@ -96,7 +97,7 @@ sealed interface ImportRefusal {
     ) : ImportRefusal
 
     data class SaveFailed(
-        val detail: String,
+        val refusal: LibraryWriteRefusal,
     ) : ImportRefusal
 
     /**
@@ -287,7 +288,7 @@ internal class Importer(
         scope.launch {
             withContext(NonCancellable) {
                 val saveError =
-                    writeOrRefusal { files.writeLibrary(merge.preview.merged) }
+                    libraryWriteOrRefusal { files.writeLibrary(merge.preview.merged) }
                 writing = false
                 if (saveError == null) {
                     // A retry after a failed write: the failure's slot is still drawn under Applied.

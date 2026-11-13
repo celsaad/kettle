@@ -1,7 +1,6 @@
 package com.casco.kettle.shell.runner
 
 import androidx.compose.foundation.layout.Row
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.res.stringResource
@@ -115,38 +114,16 @@ internal fun stepContext(
 }
 
 /**
- * [step]'s member's set count as the plan built it, before any Sets −/+ (which rewrite the live step's
- * `setTotal`); the live count for an ad-hoc session, whose plan starts empty.
- */
-private fun plannedSets(
-    view: RunnerView.Running,
-    step: RunnerStep.Reps,
-): Long =
-    view.plan.steps
-        .filterIsInstance<RunnerStep.Reps>()
-        .firstOrNull { it.memberKey == step.memberKey }
-        ?.setTotal ?: step.setTotal
-
-/**
- * The header's action row (#409), borderless: the set count's −/+ beside the word Sets (hidden in a
- * circuit, where the count is the block's rounds; − disabled rather than hidden at the floor, so the row
- * doesn't reflow mid-set), then Swap. Each its own 48dp target. Nothing to offer draws nothing.
+ * The header's action row (#409), borderless: Sets, which opens the Sets sheet (#410; not in a circuit,
+ * where the count is the block's rounds), then Swap. Each its own 48dp target. Nothing to offer draws
+ * nothing.
  */
 @Composable
 internal fun ActionRow(context: StepContext) {
     val readings = context.readings
     if (!readings.canAddSet && !readings.canSwap) return
-    val sets = stringResource(R.string.session_sets_label)
     Row(verticalAlignment = Alignment.CenterVertically) {
-        if (readings.canAddSet) {
-            Text(stringResource(R.string.session_header_sets), style = SlotLabel, color = runnerColors.textSecondary)
-            SymbolButton(R.drawable.icon_remove, stringResource(R.string.common_decrease, sets), {
-                context.send(RunnerCommand.DropSet)
-            }, readings.canDropSet, look = SymbolLook.Small.copy(placement = CirclePlacement.END))
-            SymbolButton(R.drawable.icon_add, stringResource(R.string.common_increase, sets), {
-                context.send(RunnerCommand.AddSet)
-            }, look = SymbolLook.Small.copy(placement = CirclePlacement.START))
-        }
+        if (readings.canAddSet) SetsButton { context.controls.open(Overlay.SETS) }
         if (readings.canSwap) {
             TextControl(
                 stringResource(R.string.session_swap_action),

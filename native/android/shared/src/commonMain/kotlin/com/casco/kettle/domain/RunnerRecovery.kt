@@ -220,10 +220,13 @@ fun resumedPlan(
             ?: session.workout?.let { id ->
                 library.workouts.firstOrNull { it.id == id } ?: Workout(id, id, emptyList())
             }
+    // The steps as the plan resolves them, not the snapshot's: the session goes on from the snapshot,
+    // and the plan's steps are what it was planned with, which the Sets sheet and Try count against.
+    // The snapshot's own were edited by any Sets add or drop, so "planned" would say the edited count.
     return RunnerPlan.Runnable(
         workout,
         resolved?.exercises ?: library.exercises,
-        snapshot.steps,
+        resolved?.steps ?: snapshot.steps,
         resolved?.loadsSetByProgram.orEmpty(),
     )
 }

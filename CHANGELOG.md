@@ -55,6 +55,9 @@ here, next to what it describes.
   a "Try" button offers the next load up: your own usual jump, or the smallest plate step. It
   stays hidden when a program sets the weight that week. Tapping it, or last time's set, changes
   this set's load; your exercise only remembers it once you log the set (#410).
+- **See every set at a glance**: tap Sets on a set to see this session's sets, the ones you've
+  logged, the one you're on and the ones still to come, and add a set or remove the last one there.
+  Only this session changes; your workout keeps its own number of sets (#410).
 
 ---
 

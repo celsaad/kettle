@@ -56,7 +56,7 @@ fun runnerEntry(
     }
 
 /** What can open over the runner's body. Declared in the order back closes them. */
-enum class Overlay { PAD, UPCOMING, ADD_PICKER, SWAP_PICKER }
+enum class Overlay { PAD, UPCOMING, ADD_PICKER, SWAP_PICKER, SETS }
 
 sealed interface BackAction {
     data class Close(

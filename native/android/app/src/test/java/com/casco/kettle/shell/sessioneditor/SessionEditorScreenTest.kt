@@ -148,10 +148,10 @@ class SessionEditorScreenTest {
         val files = Files(aSession())
         show(files)
 
-        type("Série 1 · RPE", "88")
+        type("Série 1 · Esforço", "88")
         press("Salvar")
 
-        compose.onNodeWithText("RPE pode ser no máximo 10.").assertExists()
+        compose.onNodeWithText("Esforço pode ser no máximo 10.").assertExists()
         assertEquals(emptyList<Session>(), files.written)
         assertEquals(0, closed)
     }

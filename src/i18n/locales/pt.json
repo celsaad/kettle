@@ -363,8 +363,6 @@
       "loadAccessibilityBodyweight": "Carga: peso corporal. Toque para inserir um valor exato.",
       "bodyweightAbbr": "PC",
       "increaseLoad": "Aumentar carga",
-      "rpe": "RPE",
-      "rpeOption": "RPE {{value}}",
       "adoptPrevious": "Usar a carga da última vez, {{weight}} {{unit}}, e salvar como novo alvo",
       "beatsBest": "Supera seu recorde",
       "logSet": "Registrar série → Descanso",
@@ -372,7 +370,8 @@
       "repsDone": "Reps feitas",
       "loadLabel": "Carga",
       "repsLabel": "Repetições",
-      "repsDoneTarget": "Reps feitas · meta {{target}}"
+      "repsDoneTarget": "Reps feitas · meta {{target}}",
+      "effortLabel": "Esforço · opcional"
     },
     "numberPad": {
       "dismiss": "Fechar teclado",
@@ -682,7 +681,7 @@
     "field": {
       "reps": "Reps",
       "load": "Carga",
-      "rpe": "RPE",
+      "rpe": "Esforço",
       "hold": "Isometria",
       "rounds": "Rodadas",
       "extraReps": "Reps extras",

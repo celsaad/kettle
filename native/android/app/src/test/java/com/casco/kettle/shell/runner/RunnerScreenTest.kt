@@ -1,6 +1,7 @@
 package com.casco.kettle.shell.runner
 
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
@@ -14,6 +15,7 @@ import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isDialog
+import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
@@ -124,11 +126,21 @@ class RunnerScreenTest : RunnerScreenHarness() {
     // the step screens
 
     @Test
-    fun `RPE marks the selected option`() {
+    fun `effort starts empty, a pick is marked, and picking it again clears it`() {
+        // Named by their own numbers, and radio buttons to a reader, which isSelectable alone wouldn't pin.
+        val radio = SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.RadioButton)
+        val effort = { value: String -> compose.onNode(hasText(value) and isSelectable() and radio) }
         show(running(plan(block(squat))))
-        button("RPE 8").assertIsSelected()
-        button("RPE 9").assertIsNotSelected().performClick()
+        compose.onNodeWithText("Esforço · opcional").assertExists()
+        for (value in listOf("6", "7", "8", "9", "10")) effort(value).assertIsNotSelected().assertIsTarget()
+        effort("9").performClick()
         assertEquals(RunnerCommand.SetRpe(9.0), sent.last())
+
+        show(running(plan(block(squat)), started(plan(block(squat))).after(RunnerCommand.SetRpe(9.0))))
+        effort("9").assertIsSelected()
+        effort("8").assertIsNotSelected()
+        effort("9").performClick()
+        assertEquals(RunnerCommand.SetRpe(null), sent.last())
     }
 
     @Test

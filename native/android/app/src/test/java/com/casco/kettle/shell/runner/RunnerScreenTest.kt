@@ -136,7 +136,7 @@ class RunnerScreenTest : RunnerScreenHarness() {
         show(running(plan(block(squat))))
         val minus = button("Diminuir séries").assertIsEnabled().assertIsTarget().getUnclippedBoundsInRoot()
         val plus = button("Aumentar séries").assertIsTarget().getUnclippedBoundsInRoot()
-        val swap = button("TROCAR").assertIsTarget().getUnclippedBoundsInRoot()
+        val swap = button("Trocar").assertIsTarget().getUnclippedBoundsInRoot()
         // No point is inside two targets (#263), whichever way −/+ draw their circles inside them (#372).
         assertTrue("− $minus overlaps + $plus", minus.right <= plus.left)
         assertTrue("+ $plus overlaps SWAP $swap", plus.right <= swap.left)
@@ -150,14 +150,7 @@ class RunnerScreenTest : RunnerScreenHarness() {
         val circuit = WorkoutBlock.Circuit(rounds = 2, members = listOf(CircuitMember("squat"), CircuitMember("plank")))
         show(running(plan(circuit)))
         button("Aumentar séries").assertDoesNotExist()
-        button("TROCAR").assertDoesNotExist()
-    }
-
-    @Test
-    fun `the circuit crumb is one node`() {
-        val circuit = WorkoutBlock.Circuit(rounds = 2, members = listOf(CircuitMember("squat"), CircuitMember("plank")))
-        show(running(plan(circuit)))
-        compose.onNode(hasContentDescription("Circuito, rodada 1 de 2, exercício 1 de 2")).assertExists()
+        button("Trocar").assertDoesNotExist()
     }
 
     @Test
@@ -219,7 +212,7 @@ class RunnerScreenTest : RunnerScreenHarness() {
         compose.onNodeWithText("A SEGUIR").assertExists()
         back()
         compose.onNodeWithText("A SEGUIR").assertDoesNotExist()
-        button("TROCAR").performClick()
+        button("Trocar").performClick()
         compose.onNodeWithText("TROCAR EXERCÍCIO").assertExists()
         back()
         compose.onNodeWithText("TROCAR EXERCÍCIO").assertDoesNotExist()
@@ -239,7 +232,7 @@ class RunnerScreenTest : RunnerScreenHarness() {
         val plan = plan(block(hang))
         val start = started(plan)
         show(running(plan, start))
-        button("TROCAR").performClick()
+        button("Trocar").performClick()
         compose.onNodeWithText("No lugar do que resta de Suspensão").assertExists()
         // Neither the name nor the Next card's preview of it is reachable under the picker.
         assertEquals(0, compose.onAllNodesWithText("Suspensão").fetchSemanticsNodes().size)
@@ -247,7 +240,7 @@ class RunnerScreenTest : RunnerScreenHarness() {
         entry = running(plan, start.advanced())
         compose.waitForIdle()
         compose.onNodeWithText("TROCAR EXERCÍCIO").assertDoesNotExist()
-        button("TROCAR").assertExists()
+        button("Trocar").assertExists()
     }
 
     @Test
@@ -276,7 +269,7 @@ class RunnerScreenTest : RunnerScreenHarness() {
     @Test
     fun `the swap picker searches above eight candidates, ignoring accents, and sends the pick`() {
         show(running(plan(block(squat))))
-        button("TROCAR").performClick()
+        button("Trocar").performClick()
         button("Terra").assertExists()
         compose.onNode(hasContentDescription("Buscar exercícios")).performTextInput("bulgaro")
         button("Terra").assertDoesNotExist()
@@ -371,22 +364,6 @@ class RunnerScreenTest : RunnerScreenHarness() {
     }
 
     @Test
-    fun `the Next card's drawing goes before the card does as text grows`() {
-        // The rest's, the only screen with one since #409: the plank's second set comes next.
-        val drawing = hasContentDescription("Prancha: antebraços", substring = true)
-        val resting = started(plan(block(plank))).advanced()
-        show(running(plan(block(plank)), resting))
-        compose.onNode(drawing).assertExists()
-        fontScale = 1.3f
-        show(running(plan(block(plank)), resting))
-        compose.onNode(drawing).assertDoesNotExist()
-        compose.onNodeWithText("PRÓXIMO").assertExists()
-        fontScale = 1.6f
-        show(running(plan(block(plank)), resting))
-        compose.onNodeWithText("PRÓXIMO").assertDoesNotExist()
-    }
-
-    @Test
     fun `a hold's bar marks the minimum only on a real range, and a max-effort hold has no bar`() {
         show(running(plan(block(plank))))
         compose.onNode(hasTestTag(BAR_TAG)).assertExists()
@@ -402,8 +379,6 @@ class RunnerScreenTest : RunnerScreenHarness() {
     @Test
     fun `an EMOM says its minute, and its stepper sends the minute's reps`() {
         show(running(plan(block(everyMinute))))
-        compose.onNodeWithText("EMOM").assertExists()
-        compose.onNodeWithText("Minuto 1 de 5").assertExists()
         compose.onNodeWithText("REPS NESTE MINUTO").assertExists()
         button("Aumentar REPS NESTE MINUTO").performClick()
         assertEquals(RunnerCommand.SetReps(11), sent.last())
@@ -462,10 +437,10 @@ class RunnerScreenTest : RunnerScreenHarness() {
     @Test
     fun `the body is hidden from a reader under Coming up`() {
         show(running(plan(block(squat))))
-        compose.onNodeWithText("Série 1 de 2 · meta 5").assertExists()
+        compose.onNodeWithText("Reps · série 1 de 2").assertExists()
         button("Pernas").performClick()
         compose.onNodeWithText("A SEGUIR").assertExists()
-        compose.onNodeWithText("Série 1 de 2 · meta 5").assertDoesNotExist()
+        compose.onNodeWithText("Reps · série 1 de 2").assertDoesNotExist()
     }
 
     @Test

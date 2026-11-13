@@ -188,7 +188,6 @@
     "searchPlaceholder_other": "{{count}}件のプログラムを検索"
   },
   "session": {
-    "next": "次",
     "doneNextStep": "完了して次のステップへ",
     "pause": "一時停止",
     "resume": "再開",
@@ -233,8 +232,7 @@
       "dismiss": "今のエクササイズのままにする"
     },
     "circuit": {
-      "crumb": "サーキット · {{total}}ラウンド中{{index}}ラウンド目",
-      "accessibility": "サーキット、{{total}}ラウンド中{{index}}ラウンド目、{{memberTotal}}種目中{{member}}種目目"
+      "crumb": "サーキット · {{total}}ラウンド中{{index}}ラウンド目"
     },
     "upcoming": {
       "title": "この後",
@@ -273,7 +271,6 @@
       "firstTimeHint": "スマホは置いたままで大丈夫。カウントダウンと種目の切り替えは音でお知らせします。"
     },
     "hold": {
-      "label": "ホールド",
       "caption": "目標{{target}}秒 · カウントアップ",
       "captionOpen": "目標なし · カウントアップ"
     },
@@ -296,19 +293,11 @@
       "workoutComplete": "ワークアウト完了"
     },
     "rest": {
-      "label": "休憩",
       "remaining": "全{{total}}中の残り",
       "add30": "+30秒",
       "skip": "休憩をスキップ →"
     },
     "interval": {
-      "variantHiit": "HIIT",
-      "variantEmom": "EMOM",
-      "variantAmrap": "AMRAP",
-      "variantCardio": "カーディオ",
-      "roundLabel": "{{total}}ラウンド中{{index}}ラウンド目",
-      "minuteLabel": "{{total}}分中{{index}}分目",
-      "intervalLabel": "{{total}}本中{{index}}本目",
       "targetReps": "目標{{reps}}レップ",
       "targetDistance": "目標{{meters}}m",
       "ofTotal": "全{{clock}}中",
@@ -320,10 +309,7 @@
       "extraRepsLabel": "追加レップ"
     },
     "reps": {
-      "pillLabel": "レップ",
-      "setLabel": "{{total}}セット中{{index}}セット目 · 目標{{target}}",
       "repsDoneAccessibility": "完了レップ: {{count}}。タップすると正確な値を入力できます。",
-      "repsDoneCaps": "完了レップ",
       "loadCaps": "負荷",
       "decreaseLoad": "負荷を減らす",
       "loadAccessibilityWeighted": "負荷: {{weight}} {{unit}}。タップすると正確な値を入力できます。",
@@ -338,7 +324,8 @@
       "logSetNoRest": "セットを記録 →",
       "repsDone": "完了レップ",
       "loadLabel": "負荷",
-      "repsLabel": "レップ"
+      "repsLabel": "レップ",
+      "repsDoneTarget": "完了レップ · 目標{{target}}"
     },
     "numberPad": {
       "dismiss": "キーパッドを閉じる",
@@ -369,6 +356,19 @@
       "round": "{{index}}ラウンド目",
       "minute": "{{index}}分目",
       "rest": "休憩"
+    },
+    "header": {
+      "reps": "レップ · {{total}}セット中{{index}}セット目",
+      "hold": "ホールド · {{total}}セット中{{index}}セット目",
+      "work": "ワーク · {{total}}ラウンド中{{index}}ラウンド目",
+      "emomMinute": "EMOM · {{total}}分中{{index}}分目",
+      "emomInterval": "EMOM · {{total}}本中{{index}}本目",
+      "amrap": "AMRAP",
+      "cardio": "カーディオ",
+      "circuit": "サーキット · {{total}}ラウンド中{{index}}ラウンド目",
+      "rest": "休憩",
+      "next": "次: {{name}}",
+      "sets": "セット"
     }
   },
   "settings": {

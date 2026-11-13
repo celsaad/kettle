@@ -57,22 +57,13 @@ internal fun RepsScreen(
     val readings = context.readings
     StepLayout(
         top = {
-            StepPill(stringResource(R.string.session_reps_pillLabel), live = false)
-            ExerciseName(step.exerciseName)
-            SetCountRow(
-                stringResource(
-                    R.string.session_reps_setLabel,
-                    step.setIndex,
-                    repsTargetText(repsTarget(step)),
-                    step.setTotal,
-                ),
-                context,
-            )
+            StepHeader(LocalResources.current.stepLabel(step), step.exerciseName)
+            ActionRow(context)
             StepNotes(step.notes)
             LastTime(step, context)
         },
         middle = {
-            RepsCounter(context)
+            RepsCounter(step, context)
             Row(horizontalArrangement = Arrangement.spacedBy(Spacing.two)) {
                 StatCard(stringResource(R.string.session_reps_loadCaps), Modifier.weight(1f)) { LoadControl(context) }
                 StatCard(stringResource(R.string.session_reps_rpe), Modifier.weight(1f)) { RpeChoice(context) }
@@ -135,7 +126,10 @@ private fun LastTime(
 }
 
 @Composable
-private fun RepsCounter(context: StepContext) {
+private fun RepsCounter(
+    step: RunnerStep.Reps,
+    context: StepContext,
+) {
     val resources = LocalResources.current
     val reps = context.snapshot.inputs.reps
     val label = stringResource(R.string.session_reps_repsLabel)
@@ -157,7 +151,11 @@ private fun RepsCounter(context: StepContext) {
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Numeral("$reps", REPS_NUMERAL)
-            Caps(stringResource(R.string.session_reps_repsDoneCaps), Modifier.padding(top = REPS_LABEL_GAP))
+            // The target beside what's counted against it, now the label line says which set this is.
+            Secondary(
+                stringResource(R.string.session_reps_repsDoneTarget, repsTargetText(repsTarget(step))),
+                Modifier.padding(top = REPS_LABEL_GAP),
+            )
         }
         SymbolButton(R.drawable.icon_add, stringResource(R.string.common_increase, label), {
             set(reps + 1)

@@ -42,6 +42,10 @@ here, next to what it describes.
   in the middle and Skip or Done on the right. While a timer runs, the big middle button is Pause,
   so a hurried tap can't end the step by mistake. Right after you log a set, the rest screen shows
   what you logged with an Undo button (#409).
+- **A clearer top of the session screen**: one progress bar runs across the screen under the
+  workout's name, and End sits at the top right. Each step starts with a line saying what it is and
+  where you are ("Reps · set 2 of 4"), then the exercise's name. A rest says what's next at the top
+  rather than in a card at the bottom (#409).
 
 ---
 

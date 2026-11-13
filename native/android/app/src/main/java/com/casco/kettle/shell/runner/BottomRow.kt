@@ -188,7 +188,7 @@ private val SLOT_WIDTH = 64.dp
 private val SLOT_BORDER = 1.5.dp
 
 /** The side slots' words and Undo's: one style, so the controls in the bottom area can't drift apart. */
-private val SlotLabel = KettleType.smallMedium.copy(fontWeight = FontWeight.SemiBold)
+internal val SlotLabel = KettleType.smallMedium.copy(fontWeight = FontWeight.SemiBold)
 private val PILL_INSET = 6.dp
 
 /** The canvas's Undo pill, inside its 48dp target. */

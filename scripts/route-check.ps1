@@ -25,7 +25,7 @@
   the matrix in the same PR, rather than deleting a step that starts failing.
 
   A start opens the native runner, in every build since the flip release (#308), and is waited on
-  past its count-in: its Finish only shows once the session runs. Every route is the same in debug
+  past its count-in: its End only shows once the session runs. Every route is the same in debug
   and release, and routing is native's in both since #309.
 
 .PARAMETER Device
@@ -83,7 +83,7 @@ $steps = @(
   # Over that native sheet, the native editor and the native runner each come back to it (#155, #233).
   # Back over a running session asks first, and completion's Done leaves (#297, #306).
   @('tap:Edit program', 'Edit program'), @('back', 'Week 1 · Day 1'),
-  @('tap:Start Week 1 · Day 1', 'Finish'), @('back', 'Finish session?'), @('tap:Finish', 'Workout complete'),
+  @('tap:Start Week 1 · Day 1', 'End'), @('back', 'End session?'), @('tap:End session', 'Workout complete'),
   @('tap:Done', 'Week 1 · Day 1'),
   @('back', 'tab:Programs'),
   # Native Library's row and Import open their native sheets over it, and back returns to it (#234).
@@ -102,9 +102,9 @@ $steps = @(
   # Sent while in the background, it lands, and shows once the app is in front again.
   @('/history', $null), @('front', 'tab:History'),
   # Over the runner, a message is dropped with no question asked, and Done pops its slot (#302, #309).
-  @('/session?workoutId=foundations-push', 'Finish'),
-  @('/library', 'Finish'), @('back', 'Finish session?'), @('tap:Cancel', 'Finish'),
-  @('back', 'Finish session?'), @('tap:Finish', 'Workout complete'), @('tap:Done', 'tab:History'),
+  @('/session?workoutId=foundations-push', 'End'),
+  @('/library', 'End'), @('back', 'End session?'), @('tap:Cancel', 'End'),
+  @('back', 'End session?'), @('tap:End session', 'Workout complete'), @('tap:Done', 'tab:History'),
   @('back', 'tab:Workouts'), @('back', $null)
 )
 

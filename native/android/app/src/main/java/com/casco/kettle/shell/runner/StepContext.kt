@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.casco.kettle.domain.LoggedUnit
 import com.casco.kettle.domain.PreviousSet
@@ -22,7 +21,6 @@ import com.casco.kettle.domain.remainingSec
 import com.casco.kettle.domain.swapCandidates
 import com.casco.kettle.domain.upcomingPreview
 import com.casco.kettle.shell.R
-import com.casco.kettle.shell.theme.KettleType
 
 /** What the number pad is opened for: its label, the value it starts from, and where the value goes. */
 data class PadRequest(
@@ -98,21 +96,19 @@ internal fun stepContext(
 }
 
 /**
- * "Set 2 of 4", its −/+ (hidden in a circuit, where the count is the block's rounds; − disabled rather
- * than hidden at the floor, so the row doesn't reflow mid-set) and SWAP, each its own 48dp target.
- * No gap between them: −'s circle sits at its target's end and +'s at its start, so the pair's slack
- * falls outside it and spaces them from the label and SWAP rather than from each other.
+ * The header's action row (#409), borderless: the set count's −/+ beside the word Sets (hidden in a
+ * circuit, where the count is the block's rounds; − disabled rather than hidden at the floor, so the row
+ * doesn't reflow mid-set), then Swap. Each its own 48dp target. Nothing to offer draws nothing. The
+ * reps-set ticket turns Sets into its sheet; until then the −/+ stay here.
  */
 @Composable
-internal fun SetCountRow(
-    label: String,
-    context: StepContext,
-) {
+internal fun ActionRow(context: StepContext) {
     val readings = context.readings
+    if (!readings.canAddSet && !readings.canSwap) return
     val sets = stringResource(R.string.session_sets_label)
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Text(label, Modifier.weight(1f, fill = false), style = KettleType.small, color = runnerColors.textSecondary)
         if (readings.canAddSet) {
+            Text(stringResource(R.string.session_header_sets), style = SlotLabel, color = runnerColors.textSecondary)
             SymbolButton(R.drawable.icon_remove, stringResource(R.string.common_decrease, sets), {
                 context.send(RunnerCommand.DropSet)
             }, readings.canDropSet, look = SymbolLook.Small.copy(placement = CirclePlacement.END))
@@ -121,7 +117,11 @@ internal fun SetCountRow(
             }, look = SymbolLook.Small.copy(placement = CirclePlacement.START))
         }
         if (readings.canSwap) {
-            PillControl(stringResource(R.string.session_swap_action)) { context.controls.open(Overlay.SWAP_PICKER) }
+            TextControl(
+                stringResource(R.string.session_swap_action),
+                { context.controls.open(Overlay.SWAP_PICKER) },
+                style = SlotLabel.copy(color = runnerColors.textSecondary),
+            )
         }
     }
 }

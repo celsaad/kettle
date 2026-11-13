@@ -240,10 +240,7 @@
       "accessibility": "サーキット、{{total}}ラウンド中{{index}}ラウンド目、{{memberTotal}}種目中{{member}}種目目"
     },
     "upcoming": {
-      "title": "この後",
       "hint": "このワークアウトの残りを表示します",
-      "now": "いま",
-      "nowRest": "いま · 休憩",
       "end": "ワークアウト終了",
       "rest": "休憩",
       "detail": "{{amount}} · {{target}}",
@@ -409,6 +406,23 @@
       "rounds_other": "{{count}}ラウンド中{{done}}",
       "minutes_other": "{{count}}分中{{done}}",
       "intervals_other": "{{count}}インターバル中{{done}}"
+    },
+    "comingUp": {
+      "title": "この先",
+      "progress_other": "{{count}}ステップ中{{done}}完了",
+      "now": "いま",
+      "done": "完了",
+      "rest": "休憩 {{time}}",
+      "circuitRound": "サーキット · ラウンド{{index}}/{{total}}",
+      "circuitRounds_other": "サーキット · {{count}}ラウンド",
+      "noRestBetween": "種目間の休憩なし",
+      "restBetween": "種目間 {{time}}",
+      "afterRound": "各ラウンド後 {{time}}",
+      "thenRound": "次はラウンド{{round}}",
+      "thenRounds": "次はラウンド{{from}}–{{to}}",
+      "end": "ワークアウト終了",
+      "holdValues": "{{values}}秒",
+      "reps_other": "{{count}}回"
     }
   },
   "settings": {

@@ -218,9 +218,9 @@ class RunnerScreenTest : RunnerScreenHarness() {
     fun `back closes Coming up before the swap picker opens a dialog`() {
         show(running(plan(block(squat))))
         button("Pernas").performClick()
-        compose.onNodeWithText("A SEGUIR").assertExists()
+        compose.onNodeWithText("A seguir").assertExists()
         back()
-        compose.onNodeWithText("A SEGUIR").assertDoesNotExist()
+        compose.onNodeWithText("A seguir").assertDoesNotExist()
         button("Trocar").performClick()
         compose.onNodeWithText("Trocar Agachamento").assertExists()
         back()
@@ -259,10 +259,10 @@ class RunnerScreenTest : RunnerScreenHarness() {
         val start = started(plan)
         show(running(plan, start))
         button("Pernas").performClick()
-        compose.onNodeWithText("A SEGUIR").assertExists()
+        compose.onNodeWithText("A seguir").assertExists()
         entry = running(plan, start.advanced())
         compose.waitForIdle()
-        compose.onNodeWithText("A SEGUIR").assertDoesNotExist()
+        compose.onNodeWithText("A seguir").assertDoesNotExist()
         compose.onNodeWithText("de 1:30 restantes").assertExists()
     }
 
@@ -270,10 +270,10 @@ class RunnerScreenTest : RunnerScreenHarness() {
     fun `Coming up shows the step on screen and ends the workout`() {
         show(running(plan(block(squat))))
         button("Pernas").performClick()
-        compose.onNodeWithText("AGORA").assertExists()
-        compose.onNodeWithText("FIM DO TREINO").assertExists()
+        compose.onNodeWithText("Agora").assertExists()
+        compose.onNodeWithText("Fim do treino").assertExists()
         button("Fechar").performClick()
-        compose.onNodeWithText("A SEGUIR").assertDoesNotExist()
+        compose.onNodeWithText("A seguir").assertDoesNotExist()
     }
 
     @Test
@@ -397,21 +397,13 @@ class RunnerScreenTest : RunnerScreenHarness() {
     }
 
     @Test
-    fun `Coming up's NOW row counts a rest down, a hold up, and shows no clock for reps`() {
+    fun `Coming up's Now stop shows the target, with no clock, and the header counts the work done`() {
         val reps = plan(block(squat))
-        show(running(reps, started(reps).advanced()))
-        button("Pernas").performClick()
-        compose.onNodeWithText("AGORA · DESCANSO").assertExists()
-        // The NOW row's alone: the rest screen's own clock is hidden from a reader under the sheet.
-        compose.onNodeWithText("1:30").assertExists()
-        button("Fechar").performClick()
-        show(running(plan(block(plank))))
-        button("Pernas").performClick()
-        compose.onNodeWithText("0:00").assertExists()
-        button("Fechar").performClick()
         show(running(reps))
         button("Pernas").performClick()
-        compose.onNodeWithText("AGORA").assertExists()
+        compose.onNodeWithText("0 de 2 etapas concluídas").assertExists()
+        compose.onNodeWithText("Agora").assertExists()
+        compose.onNodeWithText("Série 1 de 2 · alvo 5").assertExists()
         compose.onNodeWithText(":", substring = true).assertDoesNotExist()
     }
 
@@ -420,7 +412,7 @@ class RunnerScreenTest : RunnerScreenHarness() {
         show(running(plan(block(squat))))
         button("Pernas").performClick()
         compose.onRoot().performTouchInput { click(Offset(centerX, 4f)) }
-        compose.onNodeWithText("A SEGUIR").assertDoesNotExist()
+        compose.onNodeWithText("A seguir").assertDoesNotExist()
     }
 
     // from #317's review
@@ -442,7 +434,7 @@ class RunnerScreenTest : RunnerScreenHarness() {
         show(running(plan(block(squat))))
         compose.onNodeWithText("Reps · série 1 de 2").assertExists()
         button("Pernas").performClick()
-        compose.onNodeWithText("A SEGUIR").assertExists()
+        compose.onNodeWithText("A seguir").assertExists()
         compose.onNodeWithText("Reps · série 1 de 2").assertDoesNotExist()
     }
 
@@ -451,8 +443,8 @@ class RunnerScreenTest : RunnerScreenHarness() {
         val adhoc = RunnerPlan.Runnable(null, exercises, emptyList())
         show(running(adhoc, started(adhoc).after(RunnerCommand.AddExercise(squat))))
         button("Sessão avulsa").performClick()
-        compose.onNodeWithText("A SEGUIR").assertExists()
-        compose.onNodeWithText("FIM DO TREINO").assertDoesNotExist()
+        compose.onNodeWithText("A seguir").assertExists()
+        compose.onNodeWithText("Fim do treino").assertDoesNotExist()
     }
 
     @Test

@@ -26,7 +26,6 @@ import com.casco.kettle.domain.UnitSystem
 import com.casco.kettle.domain.WorkStep
 import com.casco.kettle.domain.endProgress
 import com.casco.kettle.domain.swapChoices
-import com.casco.kettle.domain.upcomingOutline
 import com.casco.kettle.shell.theme.MaxContentWidth
 import com.casco.kettle.shell.theme.RunnerBarIcons
 import com.casco.kettle.shell.theme.Spacing
@@ -194,9 +193,7 @@ private fun Overlays(
     val snapshot = view.snapshot
     val step = snapshot.step
     if (Overlay.UPCOMING in open && step != null) {
-        ComingUp(step, upcomingOutline(snapshot.steps, snapshot.stepIndex), !snapshot.adhoc, context) {
-            close(Overlay.UPCOMING)
-        }
+        ComingUp(view, !snapshot.adhoc) { close(Overlay.UPCOMING) }
     }
     if (Overlay.ADD_PICKER in open) {
         ExercisePicker(addCandidates(view.plan.exercises), { close(Overlay.ADD_PICKER) }) {

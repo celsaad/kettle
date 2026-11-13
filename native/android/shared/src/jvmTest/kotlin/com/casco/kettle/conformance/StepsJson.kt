@@ -1,7 +1,9 @@
 package com.casco.kettle.conformance
 
 import com.casco.kettle.domain.CircuitPosition
+import com.casco.kettle.domain.ComingUpTimeline
 import com.casco.kettle.domain.RunnerStep
+import com.casco.kettle.domain.TimelineStop
 import com.casco.kettle.domain.UpcomingItem
 import com.casco.kettle.domain.UpcomingMember
 
@@ -142,5 +144,52 @@ internal fun upcomingJson(item: UpcomingItem): Map<String, Any?> =
 
         is UpcomingItem.Circuit -> {
             mapOf("kind" to "circuit", "blockIndex" to item.blockIndex, "rounds" to item.rounds, "names" to item.names)
+        }
+    }
+
+internal fun timelineJson(timeline: ComingUpTimeline): Map<String, Any?> =
+    mapOf("done" to timeline.done, "total" to timeline.total, "stops" to timeline.stops.map(::stopJson))
+
+private fun stopJson(stop: TimelineStop): Map<String, Any?> =
+    when (stop) {
+        is TimelineStop.Exercise -> {
+            mapOf(
+                "kind" to "exercise",
+                "state" to stop.state.json,
+                "memberKey" to stop.memberKey,
+                "step" to stepJson(stop.step),
+                "count" to stop.count,
+                "unit" to stop.unit?.json,
+            )
+        }
+
+        is TimelineStop.Rest -> {
+            mapOf("kind" to "rest", "state" to stop.state.json, "seconds" to stop.seconds)
+        }
+
+        is TimelineStop.Loop -> {
+            mapOf(
+                "kind" to "loop",
+                "blockIndex" to stop.blockIndex,
+                "round" to stop.round,
+                "rounds" to stop.rounds,
+                "lastRound" to stop.lastRound,
+                "betweenMovesSec" to stop.betweenMovesSec,
+                "afterRoundSec" to stop.afterRoundSec,
+                "members" to
+                    stop.members.map {
+                        mapOf("memberKey" to it.memberKey, "state" to it.state.json, "step" to stepJson(it.step))
+                    },
+            )
+        }
+
+        is TimelineStop.Circuit -> {
+            mapOf(
+                "kind" to "circuit",
+                "state" to stop.state.json,
+                "blockIndex" to stop.blockIndex,
+                "rounds" to stop.rounds,
+                "names" to stop.names,
+            )
         }
     }

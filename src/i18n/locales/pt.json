@@ -262,10 +262,7 @@
       "accessibility": "Circuito, rodada {{index}} de {{total}}, exercício {{member}} de {{memberTotal}}"
     },
     "upcoming": {
-      "title": "A SEGUIR",
       "hint": "Mostra o que falta neste treino",
-      "now": "AGORA",
-      "nowRest": "AGORA · DESCANSO",
       "end": "FIM DO TREINO",
       "rest": "Descanso",
       "detail": "{{amount}} · {{target}}",
@@ -471,6 +468,29 @@
       "intervals_zero": "{{done}} de {{count}} intervalos",
       "intervals_one": "{{done}} de {{count}} intervalo",
       "intervals_other": "{{done}} de {{count}} intervalos"
+    },
+    "comingUp": {
+      "title": "A seguir",
+      "progress_zero": "{{done}} de {{count}} etapas concluídas",
+      "progress_one": "{{done}} de {{count}} etapa concluída",
+      "progress_other": "{{done}} de {{count}} etapas concluídas",
+      "now": "Agora",
+      "done": "Concluído",
+      "rest": "Descanso {{time}}",
+      "circuitRound": "Circuito · rodada {{index}} de {{total}}",
+      "circuitRounds_zero": "Circuito · {{count}} rodadas",
+      "circuitRounds_one": "Circuito · {{count}} rodada",
+      "circuitRounds_other": "Circuito · {{count}} rodadas",
+      "noRestBetween": "Sem descanso entre os exercícios",
+      "restBetween": "{{time}} entre os exercícios",
+      "afterRound": "{{time}} após cada rodada",
+      "thenRound": "Depois, rodada {{round}}",
+      "thenRounds": "Depois, rodadas {{from}}–{{to}}",
+      "end": "Fim do treino",
+      "holdValues": "{{values}} s",
+      "reps_zero": "{{count}} repetições",
+      "reps_one": "{{count}} repetição",
+      "reps_other": "{{count}} repetições"
     }
   },
   "settings": {

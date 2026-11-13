@@ -14,6 +14,8 @@
 #   `[{ op, result }]`. `result` is the list after the op, or a number for `count`.
 # - `outline`: applies `ops` first, then `upcomingOutline(steps, at)` for every `at` from -1 to one
 #   past the end, or the case's own `at` list: `[{ at, items }]`.
+# - `timeline`: as `outline`, through `comingUpTimeline(steps, at)`, Coming up's whole-session line
+#   (#415): `[{ at, done, total, stops }]`, each stop done, now or next against `at`.
 #
 # Ops: `count` (setStepsForMember of `member`), `addSet` / `dropLastSet` (of `member`), `swap`
 # (swapExerciseForMember: `member` from step index `from` onward, to `exercise` under `newMember`),
@@ -550,3 +552,48 @@ cases:
     library: *library
     adhoc: true
     op: outline
+
+  # --- timeline ---
+
+  - name: timeline-single-exercises-rest-blocks-and-units
+    library: *library
+    workout: mixed
+    op: timeline
+
+  - name: timeline-the-circuit-you-are-in
+    why: The loop is the round with work left, members done, now or next, and the rests it runs.
+    library: *library
+    workout: circuit
+    op: timeline
+
+  - name: timeline-a-circuit-with-no-rest
+    library: *library
+    workout: circuit-no-rest
+    op: timeline
+
+  - name: timeline-a-hiit-member-in-a-circuit
+    why: A HIIT member's rest between its own rounds is neither a move's rest nor a round's.
+    library: *library
+    workout: circuit-hiit
+    op: timeline
+
+  - name: timeline-after-a-swap-and-an-added-set
+    library: *library
+    workout: swap-host
+    op: timeline
+    ops:
+      - { op: swap, member: '1', from: 5, exercise: dips, newMember: '1:swap-1' }
+      - { op: addSet, member: '0' }
+
+  - name: timeline-an-ad-hoc-queue
+    library: *library
+    adhoc: true
+    op: timeline
+    ops:
+      - { op: append, exercise: pushups, block: 0, member: 'adhoc-0' }
+      - { op: append, exercise: lsit, block: 1, member: 'adhoc-1' }
+
+  - name: timeline-of-an-empty-list-is-empty
+    library: *library
+    adhoc: true
+    op: timeline

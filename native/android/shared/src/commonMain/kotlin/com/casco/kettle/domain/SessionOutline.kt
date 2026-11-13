@@ -66,13 +66,11 @@ sealed interface UpcomingItem {
     ) : UpcomingItem
 }
 
-private const val SECONDS_PER_EMOM_MINUTE = 60.0
-
 /**
  * Sets for reps and holds, rounds for HIIT, and for an EMOM minutes only when its interval is one:
  * a 30s interval over ten minutes would otherwise read "20 minutes".
  */
-private fun unitOf(step: WorkStep): WorkUnit? =
+internal fun unitOf(step: WorkStep): WorkUnit? =
     when (step) {
         is RunnerStep.Reps, is RunnerStep.Hold -> {
             WorkUnit.SET
@@ -85,13 +83,7 @@ private fun unitOf(step: WorkStep): WorkUnit? =
                 }
 
                 IntervalVariant.EMOM -> {
-                    if (step.targetSec ==
-                        SECONDS_PER_EMOM_MINUTE
-                    ) {
-                        WorkUnit.MINUTE
-                    } else {
-                        WorkUnit.INTERVAL
-                    }
+                    if (step.isMinute) WorkUnit.MINUTE else WorkUnit.INTERVAL
                 }
 
                 IntervalVariant.AMRAP, IntervalVariant.CARDIO -> {

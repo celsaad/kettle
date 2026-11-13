@@ -106,25 +106,6 @@ fun Resources.upcomingDetail(item: UpcomingItem.Exercise): String {
     return getString(R.string.session_upcoming_detail, pluralText(plural, zero, item.left), target)
 }
 
-/** The NOW row's caption: set n of N, the interval's progress, or the rest against its total. */
-fun Resources.nowCaption(
-    step: RunnerStep,
-    restTotalSec: Double,
-): String =
-    when (step) {
-        is RunnerStep.Rest -> {
-            getString(R.string.session_rest_remaining, formatClock(restTotalSec))
-        }
-
-        is RunnerStep.Interval -> {
-            intervalLine(step, rounds = true)
-        }
-
-        is WorkStep -> {
-            getString(R.string.session_setOf, "${step.setIndex}", "${step.setTotal}")
-        }
-    }
-
 /**
  * "hiit · round 2 of 4", "emom · 30s" or "cardio · counting up": the variant as its YAML id, as RN
  * puts it, then how far in. [rounds] says the round when there are several; Coming up's targets don't.

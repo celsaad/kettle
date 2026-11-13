@@ -1,64 +1,83 @@
 package com.casco.kettle.shell.runner
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.casco.kettle.domain.RunnerStep
-import com.casco.kettle.domain.UpcomingItem
-import com.casco.kettle.domain.WorkStep
+import com.casco.kettle.domain.SessionEntry
+import com.casco.kettle.domain.StopState
+import com.casco.kettle.domain.TimelineStop
+import com.casco.kettle.domain.comingUpTimeline
 import com.casco.kettle.shell.R
+import com.casco.kettle.shell.i18n.pluralText
 import com.casco.kettle.shell.theme.KettleType
-import com.casco.kettle.shell.timeline.OutlineItem
-import com.casco.kettle.shell.timeline.TimelineColors
-import com.casco.kettle.shell.timeline.TimelineItem
+import com.casco.kettle.shell.theme.Spacing
 
 /**
- * Coming up (§3.6): a read-only timeline of what's left. Its NOW row shows the live clock: a rest
- * counting down against its total, a hold up, nothing for reps. An ad-hoc session has no end node.
+ * Coming up as a subway map (#415): the whole session on one line, done stops ticked with what was
+ * logged, the stop on screen ringed with its target (no clock: the screen behind has it), what's ahead
+ * dim, standalone rests as ticks, and the circuit you're in as a loop off the line. Opens scrolled to
+ * the stop on screen. An ad-hoc session has no end node.
  */
 @Composable
 internal fun ComingUp(
-    step: RunnerStep,
-    items: List<UpcomingItem>,
+    view: RunnerView.Running,
     ends: Boolean,
-    context: StepContext,
     onClose: () -> Unit,
 ) {
-    val title = stringResource(R.string.session_upcoming_title)
-    val close = stringResource(R.string.common_close)
-    // The backdrop is hidden from a reader, as RN's: the × already closes, and a second "Close"
-    // covering the whole screen would only be one more stop to swipe past.
+    val snapshot = view.snapshot
+    val timeline = remember(snapshot.steps, snapshot.stepIndex) { comingUpTimeline(snapshot.steps, snapshot.stepIndex) }
+    val entryOf = { memberKey: String -> snapshot.entryIndex[memberKey]?.let(view.session.entries::getOrNull) }
+    val title = stringResource(R.string.session_comingUp_title)
+    val now = timeline.stops.indexOfFirst { it.state == StopState.NOW }
+    val list = rememberLazyListState(initialFirstVisibleItemIndex = maxOf(0, now - 1))
+    // The backdrop is hidden from a reader: the × already closes, and a second "Close" covering the
+    // whole screen would only be one more stop to swipe past.
     OverlaySheet(null, onClose, title, inset = false) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                title,
-                Modifier.weight(1f).semantics { heading() },
-                style = KettleType.code.copy(letterSpacing = CapsTracking),
-                color = runnerColors.textSecondary,
-            )
-            SymbolButton(R.drawable.icon_close, close, onClose, look = SymbolLook.Close)
+        Row(verticalAlignment = Alignment.Top) {
+            Column(Modifier.weight(1f)) {
+                Text(title, Modifier.semantics { heading() }, style = KettleType.heading, color = runnerColors.text)
+                Secondary(
+                    pluralText(
+                        R.plurals.session_comingUp_progress,
+                        R.string.session_comingUp_progress_zero,
+                        timeline.total,
+                        "${timeline.done}",
+                    ),
+                )
+            }
+            SymbolButton(R.drawable.icon_close, stringResource(R.string.common_close), onClose, look = SymbolLook.Close)
         }
-        LazyColumn(Modifier.heightIn(max = 480.dp)) {
-            item { NowRow(step, context, last = items.isEmpty() && !ends) }
-            items(items.size) { index ->
-                OutlineItem(items[index], ComingUpColors, last = !ends && index == items.size - 1)
+        LazyColumn(Modifier.heightIn(max = LIST_MAX_HEIGHT), state = list) {
+            itemsIndexed(timeline.stops) { index, stop ->
+                StopRow(stop, first = index == 0, last = !ends && index == timeline.stops.lastIndex, entryOf)
             }
             if (ends) {
                 item {
-                    TimelineItem(ComingUpColors, runnerColors.textSecondary, last = true) {
-                        Caps(stringResource(R.string.session_upcoming_end))
+                    RailRow(RailNode.End, StopState.NEXT, first = timeline.stops.isEmpty(), last = true) {
+                        Text(
+                            stringResource(R.string.session_comingUp_end),
+                            style = KettleType.default,
+                            color = runnerColors.text,
+                        )
                     }
                 }
             }
@@ -67,57 +86,117 @@ internal fun ComingUp(
 }
 
 @Composable
-private fun NowRow(
-    step: RunnerStep,
-    context: StepContext,
+private fun StopRow(
+    stop: TimelineStop,
+    first: Boolean,
     last: Boolean,
+    entryOf: (String) -> SessionEntry?,
 ) {
     val resources = LocalResources.current
-    val resting = step is RunnerStep.Rest
-    val clock =
-        when (step) {
-            is RunnerStep.Rest -> context.remaining
-            is RunnerStep.Hold -> context.elapsed.toDouble()
-            is RunnerStep.Interval -> if (step.countUp) context.elapsed.toDouble() else context.remaining
-            is RunnerStep.Reps -> null
+    when (stop) {
+        is TimelineStop.Exercise -> {
+            val node = if (stop.state == StopState.NOW) RailNode.Now else RailNode.Stop
+            RailRow(node, stop.state, first, last) {
+                when (stop.state) {
+                    StopState.DONE -> {
+                        DoneLine(
+                            stop.step.exerciseName,
+                            resources.doneDetail(stop, entryOf(stop.memberKey)),
+                        )
+                    }
+
+                    StopState.NOW -> {
+                        NowStop(stop.step.exerciseName, resources.nowDetail(stop.step))
+                    }
+
+                    StopState.NEXT -> {
+                        NextLine(stop.step.exerciseName, resources.nextDetail(stop))
+                    }
+                }
+            }
         }
-    TimelineItem(
-        ComingUpColors,
-        tint = if (resting) runnerColors.accentCalm else runnerColors.accent,
-        last = last,
-        now = true,
-    ) {
-        Column(Modifier.semantics(mergeDescendants = true) {}) {
-            Text(
-                stringResource(if (resting) R.string.session_upcoming_nowRest else R.string.session_upcoming_now),
-                style = KettleType.code,
-                color = if (resting) runnerColors.accentCalmOnSoft else runnerColors.accentOnSoft,
-            )
-            if (step is WorkStep) Text(step.exerciseName, style = KettleType.heading, color = runnerColors.text)
-            if (clock != null) {
-                Numeral(
-                    formatClock(clock),
-                    32.sp,
-                    color = if (resting) runnerColors.accentCalmOnSoft else runnerColors.accentOnSoft,
+
+        is TimelineStop.Rest -> {
+            RailRow(RailNode.Tick, stop.state, first, last) {
+                Text(
+                    stringResource(R.string.session_comingUp_rest, formatClock(stop.seconds)),
+                    style = KettleType.small,
+                    color = if (stop.state == StopState.NOW) runnerColors.text else runnerColors.textSecondary,
                 )
             }
-            Text(
-                resources.nowCaption(step, context.snapshot.clock.stepEndSec),
-                style = KettleType.small,
-                color = runnerColors.textSecondary,
-            )
+        }
+
+        is TimelineStop.Loop -> {
+            RailRow(RailNode.None, stop.state, first, last) { LoopCard(stop, entryOf) }
+        }
+
+        is TimelineStop.Circuit -> {
+            RailRow(RailNode.Stop, stop.state, first, last) {
+                val kicker =
+                    pluralText(
+                        R.plurals.session_comingUp_circuitRounds,
+                        R.string.session_comingUp_circuitRounds_zero,
+                        stop.rounds,
+                    )
+                val names = stop.names.joinToString(" · ")
+                if (stop.state == StopState.DONE) DoneLine(kicker, names) else NextLine(kicker, names)
+            }
         }
     }
 }
 
-private val ComingUpColors: TimelineColors
-    @Composable
-    @ReadOnlyComposable
-    get() =
-        TimelineColors(
-            text = runnerColors.text,
-            textSecondary = runnerColors.textSecondary,
-            rail = runnerColors.border,
-            circuit = runnerColors.accentCalm,
-            kicker = runnerColors.accentCalmOnSoft,
+/** "✓ Inverted Rows · 3 sets · 10, 9, 8": the name in the text's ink, the rest secondary. Read as done. */
+@Composable
+internal fun DoneLine(
+    name: String,
+    detail: String?,
+) {
+    val done = stringResource(R.string.session_comingUp_done)
+    StopText(name, detail, Modifier.semantics(mergeDescendants = true) { stateDescription = done })
+}
+
+@Composable
+internal fun NextLine(
+    name: String,
+    detail: String?,
+) = StopText(name, detail, Modifier.semantics(mergeDescendants = true) {})
+
+@Composable
+private fun StopText(
+    name: String,
+    detail: String?,
+    modifier: Modifier,
+) {
+    val ink = runnerColors.text
+    Text(
+        buildAnnotatedString {
+            withStyle(SpanStyle(color = ink, fontWeight = FontWeight.SemiBold)) { append(name) }
+            if (detail != null) append(" · $detail")
+        },
+        modifier,
+        style = KettleType.default,
+        color = runnerColors.textSecondary,
+    )
+}
+
+/** The stop on screen: "Now", its name large, and its target. */
+@Composable
+internal fun NowStop(
+    name: String,
+    detail: String,
+) {
+    Column(Modifier.semantics(mergeDescendants = true) {}, verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Text(
+            stringResource(R.string.session_comingUp_now),
+            style = KettleType.small.copy(fontWeight = FontWeight.Bold),
+            color = runnerColors.text,
         )
+        Text(name, style = KettleType.heading, color = runnerColors.text)
+        Text(detail, style = KettleType.small, color = runnerColors.textSecondary)
+    }
+}
+
+private val LIST_MAX_HEIGHT = 520.dp
+
+/** The gap under a stop's text before the next stop's node. */
+internal val STOP_GAP = Spacing.three

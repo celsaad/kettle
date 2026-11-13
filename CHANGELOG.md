@@ -72,6 +72,10 @@ here, next to what it describes.
 - **Ending early shows how far you got**: End opens a sheet listing each exercise's progress, in
   sets, rounds or minutes as fits it. "Keep going" is the big button, so a stray tap doesn't end
   the session (#417).
+- **Coming up shows the whole session as one line**: what you've done is ticked off with what you
+  logged ("3 sets · 10, 9, 8"), the exercise you're on is marked Now with its target, and the rest
+  is still to come. A circuit you're in shows its round, its rests, and which moves are done. The
+  top says how many steps you've done of the total (#415).
 
 ---
 

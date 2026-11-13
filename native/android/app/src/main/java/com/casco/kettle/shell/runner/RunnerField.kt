@@ -3,6 +3,7 @@ package com.casco.kettle.shell.runner
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.graphics.luminance
 import com.casco.kettle.domain.RunnerStep
 import com.casco.kettle.domain.StepClock
 import com.casco.kettle.domain.TICK_SECONDS
@@ -15,7 +16,7 @@ import com.casco.kettle.shell.theme.RunnerPalette
  * it is (#418): an AMRAP and a timed hold are both the clock's work, a max-effort hold and a reps set
  * both yours to end.
  */
-enum class RunnerField(
+internal enum class RunnerField(
     val palette: RunnerPalette,
 ) {
     /** You set the pace: a reps set, a hold or cardio with no end of its own, anything paused. */
@@ -27,8 +28,19 @@ enum class RunnerField(
     /** The clock runs the work: HIIT, EMOM, AMRAP, cardio with a duration, a hold that ends itself. */
     WORK(RunnerColors.work),
 
+    /** Rest, until its last [TICK_SECONDS]. */
     REST(RunnerColors.rest),
+    ;
+
+    /**
+     * Whether the system bars' icons go dark over this field: whichever of black and white contrasts
+     * more with it, so a field's bars follow from its colour and a new light one can't get light icons.
+     */
+    val darkBarIcons: Boolean get() = palette.background.luminance() > EVEN_LUMINANCE
 }
+
+/** The luminance black and white contrast equally with: sqrt(1.05 × 0.05) − 0.05, by WCAG's formula. */
+private const val EVEN_LUMINANCE = 0.179
 
 /** The field [entry] is drawn on at [now]. Every screen around a session is [RunnerField.PACE]. */
 internal fun runnerField(

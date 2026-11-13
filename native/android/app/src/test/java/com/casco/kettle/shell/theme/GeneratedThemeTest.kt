@@ -173,11 +173,18 @@ class GeneratedThemeTest {
                 assertContrast(ratios.label, onAccent, accent.surface())
             }
         }
-        with(RunnerColors.pace) {
-            assertContrast(6.15, accentCalmOnSoft, accentCalmSoft.over(background.surface()))
-        }
-        with(RunnerColors.rest) {
-            assertContrast(4.95, accentOnSoft, accentSoft.over(background.surface()))
+        // A step pill's label on its soft fill, each composited onto its field.
+        val pills =
+            mapOf(
+                RunnerColors.pace to (13.59 to 6.15),
+                RunnerColors.work to (7.98 to 7.98),
+                RunnerColors.rest to (4.95 to 4.95),
+            )
+        for ((palette, ratios) in pills) {
+            with(palette) {
+                assertContrast(ratios.first, accentOnSoft, accentSoft.over(background.surface()))
+                assertContrast(ratios.second, accentCalmOnSoft, accentCalmSoft.over(background.surface()))
+            }
         }
         assertContrast(6.68, RunnerColors.getReady.numeral, RunnerColors.getReady.background.surface())
 
@@ -206,6 +213,12 @@ class GeneratedThemeTest {
         val edge: Double,
         val label: Double,
     )
+
+    /** theme.json repeats pace's tokens in getReady, the parser needing every field whole: held equal here. */
+    @Test
+    fun `get ready is pace but for its numeral`() {
+        assertEquals(RunnerColors.pace, RunnerColors.getReady.copy(numeral = RunnerColors.pace.numeral))
+    }
 
     private class ObservedTheme {
         var shell: KettleColors? = null

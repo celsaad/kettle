@@ -48,10 +48,10 @@ fun PreferredKettleTheme(
 }
 
 /**
- * The bars' icons over the runner's field: dark over the orange one, where light icons measure 2.96:1,
- * light over the rest. Composed inside [PreferredKettleTheme], so its effect runs after that one's in the
- * same frame and wins; and once the runner closes, `runnerShown` changing recomposes that one, which sets
- * the shell's icons back.
+ * The bars' icons over the runner's field, which decides them (`RunnerField.darkBarIcons`): over the
+ * orange one light icons would measure 2.96:1. Composed inside [PreferredKettleTheme], so its effect
+ * runs after that one's in the same frame and wins; and once the runner closes, `runnerShown` changing
+ * recomposes that one, which sets the shell's icons back.
  */
 @Composable
 fun RunnerBarIcons(darkIcons: Boolean) {

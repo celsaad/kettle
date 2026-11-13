@@ -102,7 +102,7 @@ fun RunnerScreen(
         )
     }
     val field = runnerField(entry, now)
-    RunnerBarIcons(darkIcons = field == RunnerField.WORK)
+    RunnerBarIcons(field.darkBarIcons)
     Box(
         Modifier.fillMaxSize().background(field.palette.background).safeDrawingPadding(),
         contentAlignment = Alignment.TopCenter,

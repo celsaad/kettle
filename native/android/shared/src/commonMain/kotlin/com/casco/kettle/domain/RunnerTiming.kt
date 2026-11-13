@@ -91,7 +91,7 @@ private data class Reading(
 
 private val QUIET = Reading(ended = false, tick = false, milestone = false)
 
-/** The countdown's last seconds, each with a tick: also when the runner's screen says "get ready". */
+/** A countdown's last seconds, each of which ticks. Public for the app, whose screen marks them too. */
 const val TICK_SECONDS = 3
 
 /**

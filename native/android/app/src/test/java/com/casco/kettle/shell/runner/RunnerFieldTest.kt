@@ -60,6 +60,11 @@ class RunnerFieldTest {
     }
 
     @Test
+    fun `only the orange field darkens the system bars' icons`() {
+        assertEquals(listOf(RunnerField.WORK), RunnerField.entries.filter { it.darkBarIcons })
+    }
+
+    @Test
     fun `the count-in gets ready, and every screen around a session is pace`() {
         val plan = RunnerPlan.Runnable(Workout("w", "W", emptyList()), emptyList(), emptyList())
         assertEquals(

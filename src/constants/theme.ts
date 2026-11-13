@@ -52,8 +52,9 @@ export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
  *
  * - `pace`, black: you set the pace (a reps set, a hold or cardio with no end of its own, anything
  *   paused), and every screen around a session.
- * - `getReady`: `pace` with an orange `numeral`, for the count-in and a rest's last three seconds,
- *   which are the seconds that tick.
+ * - `getReady`: `pace` with an orange `numeral`, for the count-in and a rest's last `TICK_SECONDS`
+ *   (`RunnerTiming.kt`), the seconds that tick. Every other token is pace's, which `GeneratedThemeTest`
+ *   holds, so an edit to `pace` has to be made here too.
  * - `work`, orange: the clock runs the work (HIIT, EMOM, AMRAP, cardio with a duration, a hold that ends
  *   itself).
  * - `rest`, blue.
@@ -71,8 +72,11 @@ export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
  *   that reason: a darker one took the secondary text to 4.20), `outline`/`track` 3.47.
  * - `rest`: `text` 6.85, `textSecondary` 5.09, `outline`/`track` 3.49, `accentOnSoft` 4.95.
  * - `onAccent` on `accent`, the main button's label: 17.87 on `pace` and `work`, 6.85 on `rest`.
+ * - A step pill's label on its soft fill, composited onto the field: `accentOnSoft` 13.59 and
+ *   `accentCalmOnSoft` 6.15 on `pace`, both 7.98 on `work`, both 4.95 on `rest`.
  *
- * Over `work` the system bars' icons go dark: light ones measure 2.96 on the orange.
+ * Over `work` the system bars' icons go dark (light ones measure 2.96 on the orange): a field's icons
+ * are whichever of black and white contrasts more with it, so this follows from the colour.
  */
 
 /**

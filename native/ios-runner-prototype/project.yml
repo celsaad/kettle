@@ -1,0 +1,36 @@
+# PROTOTYPE — throwaway (#399). Never merged. `xcodegen` regenerates the .xcodeproj from this.
+name: RunnerPrototype
+options:
+  bundleIdPrefix: com.casco.kettle.prototype
+  deploymentTarget:
+    iOS: "26.0"
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    TARGETED_DEVICE_FAMILY: "1" # iPhone-only: the iPad mini runs it in compatibility mode, as the map decided
+    CODE_SIGN_STYLE: Automatic
+    DEVELOPMENT_TEAM: "" # set to your team id, or pick it in Xcode's Signing & Capabilities
+targets:
+  RunnerPrototype:
+    type: application
+    platform: iOS
+    sources: [RunnerPrototype]
+    entitlements:
+      path: RunnerPrototype/RunnerPrototype.entitlements
+      properties:
+        com.apple.developer.usernotifications.time-sensitive: true
+        com.apple.developer.healthkit: true
+        com.apple.developer.healthkit.access: []
+    info:
+      path: RunnerPrototype/Info.plist
+      properties:
+        CFBundleDisplayName: Runner PROTO
+        UILaunchScreen: {}
+        UIFileSharingEnabled: true
+        LSSupportsOpeningDocumentsInPlace: true
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        NSHealthShareUsageDescription: Prototype only - checks whether a workout session keeps the timer alive (P9).
+        NSHealthUpdateUsageDescription: Prototype only - starts and discards a workout session (P9). Nothing is saved.
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.casco.kettle.prototype.runner

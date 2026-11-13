@@ -10,14 +10,14 @@ sealed interface RunnerPlan {
     /**
      * A session to run. [workout] is null only for an ad-hoc session, whose [steps] start empty and
      * grow as the user picks. [exercises] is the library's, with a program week's overrides applied,
-     * which the swap and add pickers offer. [weightSetBy] is the exercises whose load the program week
+     * which the swap and add pickers offer. [loadsSetByProgram] is the exercises whose load the program week
      * sets, where the runner doesn't suggest one of its own (#410).
      */
     data class Runnable(
         val workout: Workout?,
         val exercises: List<Exercise>,
         val steps: List<RunnerStep>,
-        val weightSetBy: Set<String> = emptySet(),
+        val loadsSetByProgram: Set<String> = emptySet(),
     ) : RunnerPlan
 
     /**
@@ -63,21 +63,21 @@ fun resolveRunnerPlan(
             }
 
             null -> {
-                library.workouts.firstOrNull()?.let { Resolved.Found(it, library.exercises) } ?: Resolved.Missing
+                library.workouts.firstOrNull()?.let { Resolved.Found(ResolvedWeek(it, library.exercises)) }
+                    ?: Resolved.Missing
             }
         }
     return when (resolved) {
         Resolved.RestWeek -> RunnerPlan.RestWeek
         Resolved.Missing -> RunnerPlan.Missing
-        is Resolved.Found -> planFor(resolved.workout, resolved.exercises, resolved.weightSetBy)
+        is Resolved.Found -> planFor(resolved.week)
     }
 }
 
 private sealed interface Resolved {
+    /** A plain workout is a week with no overrides: the library's exercises, nothing set by a program. */
     data class Found(
-        val workout: Workout,
-        val exercises: List<Exercise>,
-        val weightSetBy: Set<String> = emptySet(),
+        val week: ResolvedWeek,
     ) : Resolved
 
     data object RestWeek : Resolved
@@ -91,7 +91,11 @@ private fun resolvePlanned(
 ): Resolved =
     when (params) {
         is SessionParams.Workout -> {
-            library.workouts.firstOrNull { it.id == params.workoutId }?.let { Resolved.Found(it, library.exercises) }
+            library.workouts.firstOrNull { it.id == params.workoutId }?.let {
+                Resolved.Found(
+                    ResolvedWeek(it, library.exercises),
+                )
+            }
                 ?: Resolved.Missing
         }
 
@@ -102,19 +106,16 @@ private fun resolvePlanned(
             val resolved = program?.let { resolveWorkoutForWeek(it, params.week, library, params.day) }
             when {
                 week is ProgramWeek.RestDay -> Resolved.RestWeek
-                resolved != null -> Resolved.Found(resolved.workout, resolved.exercises, resolved.weightSetBy)
+                resolved != null -> Resolved.Found(resolved)
                 else -> Resolved.Missing
             }
         }
     }
 
-private fun planFor(
-    workout: Workout,
-    exercises: List<Exercise>,
-    weightSetBy: Set<String>,
-): RunnerPlan {
-    val built = buildStepsWithLimits(workout, exercises)
-    val plan = RunnerPlan.Runnable(workout, exercises, built.steps, weightSetBy)
+private fun planFor(week: ResolvedWeek): RunnerPlan {
+    val workout = week.workout
+    val built = buildStepsWithLimits(workout, week.exercises)
+    val plan = RunnerPlan.Runnable(workout, week.exercises, built.steps, week.loadsSetByProgram)
     return when {
         built.steps.isEmpty() -> RunnerPlan.NoSteps(workout)
         built.truncated -> RunnerPlan.TooLong(plan)

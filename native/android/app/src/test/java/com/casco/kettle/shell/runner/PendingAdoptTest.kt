@@ -22,18 +22,24 @@ class PendingAdoptTest {
 
     @Test
     fun `logging the set, or ending the session on it, adopts the load picked`() {
-        assertTrue(adoptsOn(pending, RunnerCommand.Advance(pending.visit), view(picked)))
-        assertTrue(adoptsOn(pending, RunnerCommand.Finish(pending.visit), view(picked)))
+        assertTrue(writesLibraryOn(pending, RunnerCommand.Advance(pending.visit), view(picked)))
+        assertTrue(writesLibraryOn(pending, RunnerCommand.Finish(pending.visit), view(picked)))
     }
 
     @Test
     fun `a changed load, another visit, another command or nothing pending adopts nothing`() {
         assertFalse(
-            adoptsOn(pending, RunnerCommand.Advance(pending.visit), view(picked.after(RunnerCommand.SetWeight(30.0)))),
+            writesLibraryOn(
+                pending,
+                RunnerCommand.Advance(pending.visit),
+                view(picked.after(RunnerCommand.SetWeight(30.0))),
+            ),
         )
-        assertFalse(adoptsOn(pending, RunnerCommand.Advance(pending.visit + 1), view(picked)))
-        assertFalse(adoptsOn(pending, RunnerCommand.Prev, view(picked)))
-        assertFalse(adoptsOn(null, RunnerCommand.Advance(pending.visit), view(picked)))
-        assertFalse(adoptsOn(pending.copy(exerciseId = "dips"), RunnerCommand.Advance(pending.visit), view(picked)))
+        assertFalse(writesLibraryOn(pending, RunnerCommand.Advance(pending.visit + 1), view(picked)))
+        assertFalse(writesLibraryOn(pending, RunnerCommand.Prev, view(picked)))
+        assertFalse(writesLibraryOn(null, RunnerCommand.Advance(pending.visit), view(picked)))
+        assertFalse(
+            writesLibraryOn(pending.copy(exerciseId = "dips"), RunnerCommand.Advance(pending.visit), view(picked)),
+        )
     }
 }

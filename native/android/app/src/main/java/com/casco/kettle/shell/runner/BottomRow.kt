@@ -24,6 +24,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.LoggedUnit
 import com.casco.kettle.domain.RunnerCommand
@@ -156,28 +157,38 @@ internal fun LoggedPanel(
             )
             Text(resources.loggedText(logged, context.units), style = KettleType.default, color = runnerColors.text)
         }
-        // A 44dp pill centred in its 48dp target, as the canvas draws it. The words are centred by the
-        // box: a Text stretched to a minimum height draws its line at the top of it.
+        OutlinedPill(stringResource(R.string.session_undo), { context.send(RunnerCommand.Prev) })
+    }
+}
+
+/**
+ * The runner's small outlined action, Undo's, Try's and End's: a 44dp pill centred in its 48dp target,
+ * as the canvas draws them, and never filled, so none can be taken for the main action. Named by its own
+ * words. The words are centred by the box: a Text stretched to a minimum height draws its line at the
+ * top of it.
+ */
+@Composable
+internal fun OutlinedPill(
+    label: String,
+    onClick: () -> Unit,
+    minWidth: Dp = 0.dp,
+) {
+    Box(
+        Modifier
+            .sizeIn(minWidth = MinTarget, minHeight = MinTarget)
+            .clickable(role = Role.Button, onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
         Box(
             Modifier
-                .sizeIn(minWidth = MinTarget, minHeight = MinTarget)
-                .clickable(role = Role.Button) { context.send(RunnerCommand.Prev) },
+                .heightIn(min = PILL_HEIGHT)
+                .widthIn(min = minWidth)
+                .clip(CircleShape)
+                .border(SLOT_BORDER, runnerColors.outline, CircleShape)
+                .padding(horizontal = Spacing.three),
             contentAlignment = Alignment.Center,
         ) {
-            Box(
-                Modifier
-                    .heightIn(min = UNDO_HEIGHT)
-                    .clip(CircleShape)
-                    .border(SLOT_BORDER, runnerColors.outline, CircleShape)
-                    .padding(horizontal = Spacing.three),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    stringResource(R.string.session_undo),
-                    style = SlotLabel,
-                    color = runnerColors.text,
-                )
-            }
+            Text(label, style = SlotLabel, color = runnerColors.text)
         }
     }
 }
@@ -193,7 +204,7 @@ internal val SLOT_BORDER = 1.5.dp
 internal val SlotLabel = KettleType.smallMedium.copy(fontWeight = FontWeight.SemiBold)
 private val PILL_INSET = 6.dp
 
-/** The canvas's Undo pill, inside its 48dp target. */
-private val UNDO_HEIGHT = 44.dp
+/** The canvas's pill, inside its 48dp target. */
+private val PILL_HEIGHT = 44.dp
 private val RowShape = RoundedCornerShape(20.dp)
 private val PanelShape = RoundedCornerShape(18.dp)

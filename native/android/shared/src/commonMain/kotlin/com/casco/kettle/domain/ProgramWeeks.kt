@@ -36,12 +36,12 @@ fun programWeeksWithNotes(program: Program): Int =
 
 /**
  * A week's workout and the library's whole exercise list, each with that week's overrides applied, and
- * [weightSetBy], the exercises whose load those overrides set (`target_weight`).
+ * [loadsSetByProgram], the exercises whose load those overrides set (`target_weight`).
  */
 data class ResolvedWeek(
     val workout: Workout,
     val exercises: List<Exercise>,
-    val weightSetBy: Set<String> = emptySet(),
+    val loadsSetByProgram: Set<String> = emptySet(),
 )
 
 /**
@@ -80,8 +80,8 @@ fun resolveWorkoutForWeek(
             val config = (block as? WorkoutBlock.Circuit)?.id?.let(blockOverrides::get)
             if (config != null) applyBlockOverride(block, config) else block
         }
-    val weightSetBy = exerciseOverrides.filterValues { TARGET_WEIGHT_KEY in it }.keys
-    return ResolvedWeek(workout.copy(blocks = blocks), exercises, weightSetBy)
+    val loadsSetByProgram = exerciseOverrides.filterValues { TARGET_WEIGHT_KEY in it }.keys
+    return ResolvedWeek(workout.copy(blocks = blocks), exercises, loadsSetByProgram)
 }
 
 /** The three fields both kinds of week have, changed whichever kind this is. */

@@ -20,7 +20,7 @@ internal data class PendingAdopt(
  * that visit, with the load still the one picked. A load changed after the tap, or a step left another
  * way, writes nothing.
  */
-internal fun adoptsOn(
+internal fun writesLibraryOn(
     pending: PendingAdopt?,
     command: RunnerCommand,
     view: RunnerView.Running?,
@@ -41,8 +41,8 @@ internal fun adoptsOn(
 }
 
 /**
- * The runner's commands with a picked load riding along (#410): [pick] sets the set's load at once and
- * holds it; [send] writes it to the library as the command that logs that set goes out, by [adoptsOn].
+ * The runner's commands with a picked load riding along (#410): [pickLoad] sets the set's load at once and
+ * holds it; [send] writes it to the library as the command that logs that set goes out, by [writesLibraryOn].
  * Anything that leaves the set drops it. [actions] and [view] are read when called, so a held command
  * never acts on a composition already gone.
  */
@@ -52,7 +52,7 @@ internal class AdoptingSend(
 ) {
     private var pending: PendingAdopt? = null
 
-    fun pick(
+    fun pickLoad(
         exerciseId: String,
         weightKg: Double,
         visit: Long,
@@ -63,7 +63,7 @@ internal class AdoptingSend(
 
     fun send(command: RunnerCommand) {
         val held = pending
-        if (held != null && adoptsOn(held, command, view())) actions().adopt(held.exerciseId, held.weightKg)
+        if (held != null && writesLibraryOn(held, command, view())) actions().adopt(held.exerciseId, held.weightKg)
         if (command is RunnerCommand.Advance || command is RunnerCommand.Finish) pending = null
         actions().send(command)
     }

@@ -98,7 +98,7 @@ fun RunnerScreen(
                 overlays = overlays.open(Overlay.PAD, view.snapshot.visit)
             },
             confirmFinish = askToFinish,
-            adopt = { id, kg -> adopting.pick(id, kg, view.snapshot.visit) },
+            adopt = { id, kg -> adopting.pickLoad(id, kg, view.snapshot.visit) },
         )
     }
     val field = runnerField(entry, now)

@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -117,57 +116,32 @@ private fun LastTimeRow(
     val kg = previous?.weightKg?.takeIf { it > 0 }
     val tryKg = context.readings.tryKg
     if (text == null && tryKg == null) return
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.two)) {
-        Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
-            when {
-                text != null && kg != null -> {
-                    TextControl(
-                        text,
-                        { context.controls.adopt(step.exerciseId, kg) },
-                        Modifier.hang(start = Spacing.two),
-                        style = KettleType.small.copy(color = runnerColors.textSecondary),
-                        description =
-                            stringResource(
-                                R.string.session_reps_adoptPrevious,
-                                stringResource(spokenUnit(context.units)),
-                                jsNumber(toDisplayWeight(kg, context.units)),
-                            ),
-                    )
-                }
-
-                text != null -> {
-                    Secondary(text)
-                }
+    val adopt: (@Composable () -> Unit)? =
+        if (text != null && kg != null) {
+            {
+                TextControl(
+                    text,
+                    { context.controls.adopt(step.exerciseId, kg) },
+                    Modifier.hang(start = Spacing.two),
+                    style = KettleType.small.copy(color = runnerColors.textSecondary),
+                    description =
+                        stringResource(
+                            R.string.session_reps_adoptPrevious,
+                            stringResource(spokenUnit(context.units)),
+                            jsNumber(toDisplayWeight(kg, context.units)),
+                        ),
+                )
             }
-            if (context.readings.beatsBest) RecordBadge()
+        } else {
+            null
         }
-        if (tryKg != null) TryButton(tryKg, step, context)
-    }
-}
-
-/** "Try 53.5 lb": an outlined pill, never filled, so it can't be taken for the main action. */
-@Composable
-private fun TryButton(
-    kg: Double,
-    step: RunnerStep.Reps,
-    context: StepContext,
-) {
-    val label = stringResource(R.string.session_reps_tryLoad, LocalResources.current.weightText(kg, context.units))
-    Box(
-        Modifier
-            .sizeIn(minWidth = MinTarget, minHeight = MinTarget)
-            .clickable(role = Role.Button) { context.controls.adopt(step.exerciseId, kg) },
-        contentAlignment = Alignment.Center,
-    ) {
-        Box(
-            Modifier
-                .heightIn(min = TRY_HEIGHT)
-                .clip(CircleShape)
-                .border(SLOT_BORDER, runnerColors.outline, CircleShape)
-                .padding(horizontal = Spacing.three),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(label, style = SlotLabel, color = runnerColors.text)
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.two)) {
+        Box(Modifier.weight(1f)) { PreviousRow(text, context.readings.beatsBest, adopt) }
+        if (tryKg != null) {
+            OutlinedPill(
+                stringResource(R.string.session_reps_tryLoad, resources.weightText(tryKg, context.units)),
+                { context.controls.adopt(step.exerciseId, tryKg) },
+            )
         }
     }
 }
@@ -341,4 +315,3 @@ private val REPS_NUMERAL = 96.sp
 private val STEPPER_GAP = 22.dp
 private val REPS_LABEL_GAP = 6.dp
 private val LOAD_UNIT = 18.sp
-private val TRY_HEIGHT = 44.dp

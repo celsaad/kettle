@@ -224,6 +224,6 @@ fun resumedPlan(
         workout,
         resolved?.exercises ?: library.exercises,
         snapshot.steps,
-        resolved?.weightSetBy.orEmpty(),
+        resolved?.loadsSetByProgram.orEmpty(),
     )
 }

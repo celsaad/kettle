@@ -818,6 +818,14 @@ decision assembled across several commits. Open work belongs in the sections at 
     and the alternative is writing into the program's `overrides`, which are partial *raw* snake_case
     patches (see the note in `AGENTS.md`) — a much larger change for a corner. If a program that
     periodises load by week ever ships, this is the thing to revisit.
+  - **Adopt writes the library on log, not on tap, and Try is hidden where a program sets the load
+    (#410).** A tap on last time or "Try" sets the set's load at once; the library takes it only when
+    that set is logged with that load (Log set, or ending the session on it). The pick is held by the
+    screen in memory (`PendingAdopt.kt`, wired in `RunnerScreen.kt`), so a kill between tap and log
+    leaves the library as it was and the snapshot needn't change; Undo after the log takes the set back
+    but not the target. Try is hidden for an exercise whose load this program week sets (the plan's
+    `loadsSetByProgram`), which is the first bullet's corner seen from the other side: suggesting a
+    load the week would override next time would be the same "appears to do nothing".
   - **Adopt takes the load, never the reps.** Reps re-seed from the target on every set because
     varying reps is the normal thing being logged; pinning last week's would fight double
     progression, which is the progression model the `reps` config exists to express.

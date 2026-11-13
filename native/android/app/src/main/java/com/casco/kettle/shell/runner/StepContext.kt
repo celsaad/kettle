@@ -17,6 +17,7 @@ import com.casco.kettle.domain.beatsPersonalBest
 import com.casco.kettle.domain.canAddSet
 import com.casco.kettle.domain.canDropSet
 import com.casco.kettle.domain.elapsedSec
+import com.casco.kettle.domain.offeredLoadKg
 import com.casco.kettle.domain.previousSet
 import com.casco.kettle.domain.progressionLoadKg
 import com.casco.kettle.domain.remainingSec
@@ -90,11 +91,13 @@ internal fun stepContext(
     val readings =
         StepReadings(
             previous = previousSet(snapshot, prior),
-            // Not offered at or under the load already on screen: there'd be nothing to try.
             tryKg =
-                (snapshot.step as? RunnerStep.Reps)
-                    ?.let { progressionLoadKg(it, prior, environment.units, view.plan.weightSetBy) }
-                    ?.takeIf { it > snapshot.inputs.weightKg },
+                offeredLoadKg(
+                    (snapshot.step as? RunnerStep.Reps)
+                        ?.let { progressionLoadKg(it, prior, environment.units, view.plan.loadsSetByProgram) },
+                    snapshot.inputs.weightKg,
+                    environment.units,
+                ),
             beatsBest = beatsPersonalBest(state, prior, now),
             next = upcomingPreview(snapshot.steps, snapshot.stepIndex),
             canAddSet = canAddSet(snapshot),

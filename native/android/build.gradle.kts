@@ -8,6 +8,8 @@ plugins {
     alias(libs.plugins.kotlin.jvm) apply false
     alias(libs.plugins.kotlin.multiplatform) apply false
     alias(libs.plugins.kotlin.compose) apply false
+    id("com.android.kotlin.multiplatform.library") version "9.3.3" apply false
+    id("org.jetbrains.compose") version "1.12.2" apply false
     alias(libs.plugins.detekt)
     alias(libs.plugins.ktlint)
 }

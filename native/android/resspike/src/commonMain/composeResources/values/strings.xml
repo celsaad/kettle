@@ -1,0 +1,14 @@
+<resources>
+    <string name="greeting">Hello</string>
+    <plurals name="sessions">
+        <item quantity="one">%1$d session</item>
+        <item quantity="other">%1$d sessions</item>
+    </plurals>
+    <string name="sessions_zero">%1$d sessions</string>
+    <!-- Does CMP ever select an explicit `zero` item? -->
+    <plurals name="sessions_with_zero_item">
+        <item quantity="zero">ZERO %1$d</item>
+        <item quantity="one">ONE %1$d</item>
+        <item quantity="other">OTHER %1$d</item>
+    </plurals>
+</resources>

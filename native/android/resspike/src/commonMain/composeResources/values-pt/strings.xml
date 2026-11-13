@@ -1,0 +1,13 @@
+<resources>
+    <string name="greeting">Olá</string>
+    <plurals name="sessions">
+        <item quantity="one">%1$d sessão</item>
+        <item quantity="other">%1$d sessões</item>
+    </plurals>
+    <string name="sessions_zero">%1$d sessões</string>
+    <plurals name="sessions_with_zero_item">
+        <item quantity="zero">ZERO %1$d</item>
+        <item quantity="one">UM %1$d</item>
+        <item quantity="other">OUTROS %1$d</item>
+    </plurals>
+</resources>

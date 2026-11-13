@@ -21,3 +21,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "kettle"
 include(":shared", ":app", ":strings", ":theme", ":art", ":benchmark")
+// PROTOTYPE (#401), never merged.
+include(":resspike")

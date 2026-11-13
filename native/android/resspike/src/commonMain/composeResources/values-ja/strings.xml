@@ -1,0 +1,7 @@
+<resources>
+    <string name="greeting">こんにちは</string>
+    <plurals name="sessions">
+        <item quantity="other">%1$d 回</item>
+    </plurals>
+    <string name="sessions_zero">%1$d 回</string>
+</resources>

@@ -490,7 +490,9 @@
       "holdValues": "{{values}} s",
       "reps_zero": "{{count}} repetições",
       "reps_one": "{{count}} repetição",
-      "reps_other": "{{count}} repetições"
+      "reps_other": "{{count}} repetições",
+      "line": "{{name}} · {{detail}}",
+      "rests": "{{moves}} · {{rounds}}"
     }
   },
   "settings": {

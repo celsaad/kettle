@@ -422,7 +422,9 @@
       "thenRounds": "次はラウンド{{from}}–{{to}}",
       "end": "ワークアウト終了",
       "holdValues": "{{values}}秒",
-      "reps_other": "{{count}}回"
+      "reps_other": "{{count}}回",
+      "line": "{{name}} · {{detail}}",
+      "rests": "{{moves}} · {{rounds}}"
     }
   },
   "settings": {

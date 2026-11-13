@@ -113,7 +113,7 @@ internal fun Resources.loopRests(stop: TimelineStop.Loop): String {
     val rounds =
         stop.afterRoundSec?.let { getString(R.string.session_comingUp_afterRound, formatClock(it)) }
             ?: return moves
-    return getString(R.string.session_upcoming_detail, moves, rounds)
+    return getString(R.string.session_comingUp_rests, moves, rounds)
 }
 
 /** "Then round 3", "Then rounds 3–5", or null on the last. */

@@ -456,7 +456,9 @@
       "end": "End of workout",
       "holdValues": "{{values}} s",
       "reps_one": "{{count}} rep",
-      "reps_other": "{{count}} reps"
+      "reps_other": "{{count}} reps",
+      "line": "{{name}} · {{detail}}",
+      "rests": "{{moves}} · {{rounds}}"
     }
   },
   "settings": {

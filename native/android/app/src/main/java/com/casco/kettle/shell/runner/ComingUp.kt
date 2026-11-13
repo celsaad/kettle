@@ -179,13 +179,13 @@ private fun StopText(
     modifier: Modifier,
 ) {
     val ink = runnerColors.text
-    // The bundle's own "a · b", so a language can order or join the two its way; the name is then found
-    // in it to take the ink.
-    val line = if (detail == null) name else stringResource(R.string.session_upcoming_detail, name, detail)
+    // The bundle's own "name · detail", so a language can order the two its way. The name goes in as a
+    // mark and is put back where the mark landed, so it takes the ink by position, whatever the detail says.
+    val line = if (detail == null) NAME_MARK else stringResource(R.string.session_comingUp_line, detail, NAME_MARK)
+    val start = line.indexOf(NAME_MARK)
     Text(
         buildAnnotatedString {
-            append(line)
-            val start = line.indexOf(name)
+            append(line.replace(NAME_MARK, name))
             if (start >=
                 0
             ) {
@@ -216,3 +216,6 @@ internal fun NowStop(
 }
 
 private val LIST_MAX_HEIGHT = 520.dp
+
+/** A private-use character standing in for the name in the line's format until it's placed. */
+private const val NAME_MARK = "\uE000"

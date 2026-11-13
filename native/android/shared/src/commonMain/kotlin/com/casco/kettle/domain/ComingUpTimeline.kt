@@ -96,7 +96,13 @@ fun comingUpTimeline(
     val onScreen = steps.getOrNull(stepIndex)
     val focus =
         if (onScreen is RunnerStep.Rest && !onScreen.standalone) {
-            (stepIndex until steps.size).firstOrNull { steps[it] is WorkStep } ?: stepIndex
+            // Never past a Rest block, which is a stop of its own: today no rest of this kind sits right
+            // before one, and should one ever, "Now" stays on the rest rather than jumping a stop.
+            (stepIndex until steps.size)
+                .takeWhile {
+                    val step = steps[it]
+                    !(step is RunnerStep.Rest && step.standalone)
+                }.firstOrNull { steps[it] is WorkStep } ?: stepIndex
         } else {
             stepIndex
         }

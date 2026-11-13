@@ -68,6 +68,24 @@ class RunnerComingUpTest : RunnerScreenHarness() {
     }
 
     @Test
+    fun `an exercise that logged nothing is ticked off without a count of work it didn't do`() {
+        val two = plan(block(squat), block(plank))
+        // Both squat sets at 0 reps, which logs no entry: the exercise skipped.
+        val zero = RunnerCommand.SetReps(0)
+        val state =
+            started(two)
+                .after(zero)
+                .advanced()
+                .advanced()
+                .after(zero)
+                .advanced()
+        show(running(two, state))
+        button("Pernas").performClick()
+        compose.onNodeWithText("Agachamento").assertExists()
+        compose.onNodeWithText("Agachamento · 2 séries", substring = true).assertDoesNotExist()
+    }
+
+    @Test
     fun `a rest block is a tick on the line`() {
         val rested = plan(block(squat), block(rest), block(plank))
         show(running(rested))

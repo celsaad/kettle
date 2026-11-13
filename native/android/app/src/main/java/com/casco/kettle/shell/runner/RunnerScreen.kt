@@ -105,7 +105,8 @@ fun RunnerScreen(
             },
             confirmFinish = askToFinish,
             adopt = { id, kg -> adopting.pickLoad(id, kg, view.snapshot.visit) },
-            minute = MinuteRest(restedAt == view.snapshot.visit) { restedAt = view.snapshot.visit },
+            // The one reading the field is drawn from, so the header and the colour can't disagree.
+            minute = MinuteRest(resting) { restedAt = view.snapshot.visit },
         )
     }
     val field = runnerField(entry, now, resting)

@@ -357,7 +357,6 @@
     },
     "reps": {
       "repsDoneAccessibility": "Reps concluídas: {{count}}. Toque para inserir um valor exato.",
-      "loadCaps": "CARGA",
       "decreaseLoad": "Diminuir carga",
       "loadAccessibilityWeighted": "Carga: {{weight}} {{unit}}. Toque para inserir um valor exato.",
       "loadAccessibilityBodyweight": "Carga: peso corporal. Toque para inserir um valor exato.",
@@ -371,7 +370,8 @@
       "loadLabel": "Carga",
       "repsLabel": "Repetições",
       "repsDoneTarget": "Reps feitas · meta {{target}}",
-      "effortLabel": "Esforço · opcional"
+      "effortLabel": "Esforço · opcional",
+      "tryLoad": "Tentar {{weight}}"
     },
     "numberPad": {
       "dismiss": "Fechar teclado",

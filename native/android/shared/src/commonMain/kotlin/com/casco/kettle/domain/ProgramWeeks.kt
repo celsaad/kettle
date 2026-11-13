@@ -34,10 +34,14 @@ fun programWeeksWithNotes(program: Program): Int =
         .distinct()
         .size
 
-/** A week's workout and the library's whole exercise list, each with that week's overrides applied. */
+/**
+ * A week's workout and the library's whole exercise list, each with that week's overrides applied, and
+ * [weightSetBy], the exercises whose load those overrides set (`target_weight`).
+ */
 data class ResolvedWeek(
     val workout: Workout,
     val exercises: List<Exercise>,
+    val weightSetBy: Set<String> = emptySet(),
 )
 
 /**
@@ -76,7 +80,8 @@ fun resolveWorkoutForWeek(
             val config = (block as? WorkoutBlock.Circuit)?.id?.let(blockOverrides::get)
             if (config != null) applyBlockOverride(block, config) else block
         }
-    return ResolvedWeek(workout.copy(blocks = blocks), exercises)
+    val weightSetBy = exerciseOverrides.filterValues { TARGET_WEIGHT_KEY in it }.keys
+    return ResolvedWeek(workout.copy(blocks = blocks), exercises, weightSetBy)
 }
 
 /** The three fields both kinds of week have, changed whichever kind this is. */
@@ -89,3 +94,6 @@ internal fun ProgramWeek.withShared(
         is ProgramWeek.Training -> copy(week = week, day = day, notes = notes)
         is ProgramWeek.RestDay -> copy(week = week, day = day, notes = notes)
     }
+
+/** The raw key a week sets an exercise's load with: overrides are snake_case patches. */
+private const val TARGET_WEIGHT_KEY = "target_weight"

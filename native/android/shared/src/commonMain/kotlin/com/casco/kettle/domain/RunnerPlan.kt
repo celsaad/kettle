@@ -10,12 +10,14 @@ sealed interface RunnerPlan {
     /**
      * A session to run. [workout] is null only for an ad-hoc session, whose [steps] start empty and
      * grow as the user picks. [exercises] is the library's, with a program week's overrides applied,
-     * which the swap and add pickers offer.
+     * which the swap and add pickers offer. [weightSetBy] is the exercises whose load the program week
+     * sets, where the runner doesn't suggest one of its own (#410).
      */
     data class Runnable(
         val workout: Workout?,
         val exercises: List<Exercise>,
         val steps: List<RunnerStep>,
+        val weightSetBy: Set<String> = emptySet(),
     ) : RunnerPlan
 
     /**
@@ -67,7 +69,7 @@ fun resolveRunnerPlan(
     return when (resolved) {
         Resolved.RestWeek -> RunnerPlan.RestWeek
         Resolved.Missing -> RunnerPlan.Missing
-        is Resolved.Found -> planFor(resolved.workout, resolved.exercises)
+        is Resolved.Found -> planFor(resolved.workout, resolved.exercises, resolved.weightSetBy)
     }
 }
 
@@ -75,6 +77,7 @@ private sealed interface Resolved {
     data class Found(
         val workout: Workout,
         val exercises: List<Exercise>,
+        val weightSetBy: Set<String> = emptySet(),
     ) : Resolved
 
     data object RestWeek : Resolved
@@ -99,7 +102,7 @@ private fun resolvePlanned(
             val resolved = program?.let { resolveWorkoutForWeek(it, params.week, library, params.day) }
             when {
                 week is ProgramWeek.RestDay -> Resolved.RestWeek
-                resolved != null -> Resolved.Found(resolved.workout, resolved.exercises)
+                resolved != null -> Resolved.Found(resolved.workout, resolved.exercises, resolved.weightSetBy)
                 else -> Resolved.Missing
             }
         }
@@ -108,9 +111,10 @@ private fun resolvePlanned(
 private fun planFor(
     workout: Workout,
     exercises: List<Exercise>,
+    weightSetBy: Set<String>,
 ): RunnerPlan {
     val built = buildStepsWithLimits(workout, exercises)
-    val plan = RunnerPlan.Runnable(workout, exercises, built.steps)
+    val plan = RunnerPlan.Runnable(workout, exercises, built.steps, weightSetBy)
     return when {
         built.steps.isEmpty() -> RunnerPlan.NoSteps(workout)
         built.truncated -> RunnerPlan.TooLong(plan)

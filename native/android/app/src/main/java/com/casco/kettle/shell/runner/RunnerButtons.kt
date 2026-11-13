@@ -182,13 +182,15 @@ internal data class SymbolLook(
     val accent: Boolean = false,
     val filled: Boolean = false,
     val placement: CirclePlacement = CirclePlacement.CENTRE,
+    val shape: Shape = CircleShape,
 ) {
     companion object {
         /** The set row's −/+, 26 drawn. */
         val Small = SymbolLook(26.dp, KettleType.smallMedium)
 
-        /** The load's −/+. */
-        val Load = SymbolLook(30.dp)
+        /** The load's −/+, the canvas's rounded squares beside the 40sp load (#410). */
+        val Load =
+            SymbolLook(56.dp, KettleType.title.copy(fontSize = 22.sp), HeavyBorder, shape = RoundedCornerShape(16.dp))
 
         /** Coming up's ×: the app's sheet close, in runner colours. */
         val Close = SymbolLook(32.dp, KettleType.code.copy(fontSize = KettleType.heading.fontSize), filled = true)
@@ -267,9 +269,9 @@ private fun RoundButton(
                 // space first and the target only widens once that's gone.
                 .padding(start = look.placement.startInset, end = look.placement.endInset)
                 .sizeIn(minWidth = look.size, minHeight = look.size)
-                .clip(CircleShape)
+                .clip(look.shape)
                 .background(if (look.accent) runnerColors.accentSoft else fill)
-                .border(look.border, accentBorder, CircleShape),
+                .border(look.border, accentBorder, look.shape),
             contentAlignment = Alignment.Center,
         ) {
             content()

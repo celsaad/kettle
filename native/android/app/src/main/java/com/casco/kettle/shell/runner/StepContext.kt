@@ -10,13 +10,16 @@ import com.casco.kettle.domain.PreviousSet
 import com.casco.kettle.domain.RunnerCommand
 import com.casco.kettle.domain.RunnerSnapshot
 import com.casco.kettle.domain.RunnerState
+import com.casco.kettle.domain.RunnerStep
 import com.casco.kettle.domain.StepPreview
 import com.casco.kettle.domain.UnitSystem
 import com.casco.kettle.domain.beatsPersonalBest
 import com.casco.kettle.domain.canAddSet
 import com.casco.kettle.domain.canDropSet
 import com.casco.kettle.domain.elapsedSec
+import com.casco.kettle.domain.offeredLoadKg
 import com.casco.kettle.domain.previousSet
+import com.casco.kettle.domain.progressionLoadKg
 import com.casco.kettle.domain.remainingSec
 import com.casco.kettle.domain.swapCandidates
 import com.casco.kettle.domain.upcomingPreview
@@ -34,6 +37,8 @@ data class PadRequest(
 /** What a step screen shows beside the step: `:shared`'s selectors over the snapshot and the log. */
 data class StepReadings(
     val previous: PreviousSet?,
+    /** "Try 53.5 lb" (#410): the load double progression suggests, null when there's none worth a tap. */
+    val tryKg: Double? = null,
     val beatsBest: Boolean,
     val next: StepPreview?,
     val canAddSet: Boolean,
@@ -86,6 +91,20 @@ internal fun stepContext(
     val readings =
         StepReadings(
             previous = previousSet(snapshot, prior),
+            tryKg =
+                offeredLoadKg(
+                    (snapshot.step as? RunnerStep.Reps)?.let {
+                        progressionLoadKg(
+                            it,
+                            prior,
+                            environment.units,
+                            view.plan.loadsSetByProgram,
+                            plannedSets(view, it),
+                        )
+                    },
+                    snapshot.inputs.weightKg,
+                    environment.units,
+                ),
             beatsBest = beatsPersonalBest(state, prior, now),
             next = upcomingPreview(snapshot.steps, snapshot.stepIndex),
             canAddSet = canAddSet(snapshot),
@@ -94,6 +113,19 @@ internal fun stepContext(
         )
     return StepContext(snapshot, now, environment.units, readings, controls, view.logged)
 }
+
+/**
+ * [step]'s member's set count as the plan built it, before any Sets −/+ (which rewrite the live step's
+ * `setTotal`); the live count for an ad-hoc session, whose plan starts empty.
+ */
+private fun plannedSets(
+    view: RunnerView.Running,
+    step: RunnerStep.Reps,
+): Long =
+    view.plan.steps
+        .filterIsInstance<RunnerStep.Reps>()
+        .firstOrNull { it.memberKey == step.memberKey }
+        ?.setTotal ?: step.setTotal
 
 /**
  * The header's action row (#409), borderless: the set count's −/+ beside the word Sets (hidden in a

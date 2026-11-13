@@ -50,6 +50,11 @@ here, next to what it describes.
   Before, every set was logged at the last effort you picked, or at 8 if you never picked one.
   Tap the picked number again to clear it. When you edit a logged session, the field is called
   Effort there too, no longer RPE (#410).
+- **The load leads on a set, and suggests your next one**: the weight is the big number at the top,
+  with last time's set under it. Once every set last session reached the top of your rep range,
+  a "Try" button offers the next load up: your own usual jump, or the smallest plate step. It
+  stays hidden when a program sets the weight that week. Tapping it, or last time's set, changes
+  this set's load; your exercise only remembers it once you log the set (#410).
 
 ---
 

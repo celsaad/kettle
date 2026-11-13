@@ -174,6 +174,10 @@ class RunnerScreenTest : RunnerScreenHarness() {
         compose.onNodeWithText("RECORDE").assertExists()
         button("Usar a carga da última vez, 50 quilogramas, e salvar como novo alvo").performClick()
         assertEquals(RunnerCommand.SetWeight(50.0), sent.last())
+        // The library takes it only once the set is logged with it (#410), not on the tap.
+        assertEquals(emptyList<Pair<String, Double>>(), adopted)
+        show(running(plan(block(squat)), started(plan(block(squat))).after(RunnerCommand.SetWeight(50.0))))
+        button("Registrar série → Descanso").performClick()
         assertEquals(listOf("squat" to 50.0), adopted)
     }
 

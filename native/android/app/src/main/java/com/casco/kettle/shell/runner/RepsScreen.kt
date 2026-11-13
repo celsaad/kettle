@@ -6,7 +6,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -16,7 +15,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -70,15 +68,16 @@ internal fun RepsScreen(
             StepHeader(resources.stepLabel(step), step.exerciseName, resources.circuitSpoken(step))
             ActionRow(context)
             StepNotes(step.notes)
-            LastTime(step, context)
+            // The canvas's order (#410): the load leads, as the larger number, with last time and the
+            // next load to try right under it; the reps are counted below.
+            Column(Modifier.padding(top = Spacing.two), verticalArrangement = Arrangement.spacedBy(Spacing.one)) {
+                LoadControl(context)
+                LastTimeRow(step, context)
+            }
         },
-        middle = {
-            RepsCounter(step, context)
-            StatCard(stringResource(R.string.session_reps_loadCaps), Modifier.fillMaxWidth()) { LoadControl(context) }
-            EffortTrack(context)
-        },
-        middleGap = Spacing.four,
+        middle = { RepsCounter(step, context) },
         controls = {
+            EffortTrack(context)
             val follows = restFollows(context.snapshot.steps, context.snapshot.stepIndex)
             BottomRow(
                 RowAction(
@@ -101,9 +100,13 @@ private fun spokenUnit(units: UnitSystem) =
         R.string.units_kgSpoken
     }
 
-/** Last time's set, which adopts its load with a tap: there's nothing to take from a bodyweight set. */
+/**
+ * Last time's set as a plain line, still adopting its load with a tap (there's nothing to take from a
+ * bodyweight set), the record badge beside it, and "Try 53.5 lb" at the end when double progression
+ * has one (#410). Either tap sets this set's load; the library takes it only once the set is logged.
+ */
 @Composable
-private fun LastTime(
+private fun LastTimeRow(
     step: RunnerStep.Reps,
     context: StepContext,
 ) {
@@ -111,6 +114,8 @@ private fun LastTime(
     val previous = context.readings.previous as? PreviousSet.Reps
     val text = previous?.let { resources.previousSetText(it, context.units) }
     val kg = previous?.weightKg?.takeIf { it > 0 }
+    val tryKg = context.readings.tryKg
+    if (text == null && tryKg == null) return
     val adopt: (@Composable () -> Unit)? =
         if (text != null && kg != null) {
             {
@@ -118,7 +123,7 @@ private fun LastTime(
                     text,
                     { context.controls.adopt(step.exerciseId, kg) },
                     Modifier.hang(start = Spacing.two),
-                    style = KettleType.small.copy(color = runnerColors.accentOnSoft),
+                    style = KettleType.small.copy(color = runnerColors.textSecondary),
                     description =
                         stringResource(
                             R.string.session_reps_adoptPrevious,
@@ -130,7 +135,15 @@ private fun LastTime(
         } else {
             null
         }
-    PreviousRow(text, context.readings.beatsBest, adopt)
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.two)) {
+        Box(Modifier.weight(1f)) { PreviousRow(text, context.readings.beatsBest, adopt) }
+        if (tryKg != null) {
+            OutlinedPill(
+                stringResource(R.string.session_reps_tryLoad, resources.weightText(tryKg, context.units)),
+                { context.controls.adopt(step.exerciseId, tryKg) },
+            )
+        }
+    }
 }
 
 @Composable
@@ -176,22 +189,11 @@ private fun RepsCounter(
     }
 }
 
-@Composable
-private fun StatCard(
-    label: String,
-    modifier: Modifier,
-    content: @Composable ColumnScope.() -> Unit,
-) {
-    Column(
-        modifier.runnerCard(16.dp, runnerColors),
-        verticalArrangement = Arrangement.spacedBy(Spacing.half),
-    ) {
-        Caps(label, tracking = 1.sp)
-        content()
-    }
-}
-
-/** The load, in display units: −/+ by the equipment's smallest jump, the value opening a decimal pad. */
+/**
+ * The load (#410): the larger number, 40sp with its unit, under a "Load" line, between the canvas's
+ * rounded −/+ squares. The number opens the pad; the load is in the user's own unit, stored in kilograms,
+ * and bottoms out at 0, which logs as bodyweight.
+ */
 @Composable
 private fun LoadControl(context: StepContext) {
     val units = context.units
@@ -210,15 +212,11 @@ private fun LoadControl(context: StepContext) {
             stringResource(R.string.session_reps_loadAccessibilityBodyweight)
         }
     val set = { value: Double -> context.send(RunnerCommand.SetWeight(fromDisplayWeight(maxOf(0.0, value), units))) }
-    // The −/+ targets hang their slack into the card's padding, so the circles sit where RN's 30dp ones
-    // do and the value keeps RN's room; it stays one line, drawing over that slack if it must.
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.hang(start = LOAD_SLACK)) {
-            SymbolButton(R.drawable.icon_remove, stringResource(R.string.session_reps_decreaseLoad), {
-                set(display - weightStep(units))
-            }, look = SymbolLook.Load)
-        }
-        Box(
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.two)) {
+        SymbolButton(R.drawable.icon_remove, stringResource(R.string.session_reps_decreaseLoad), {
+            set(display - weightStep(units))
+        }, look = SymbolLook.Load)
+        Column(
             Modifier
                 .weight(1f)
                 .heightIn(min = MinTarget)
@@ -226,8 +224,9 @@ private fun LoadControl(context: StepContext) {
                     role = Role.Button,
                 ) { context.controls.openPad(PadRequest(padLabel, display, true, unit, set)) }
                 .semantics(mergeDescendants = true) { contentDescription = description },
-            contentAlignment = Alignment.Center,
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
+            Secondary(padLabel)
             Text(
                 if (kg > 0) {
                     buildAnnotatedString {
@@ -239,18 +238,15 @@ private fun LoadControl(context: StepContext) {
                 } else {
                     AnnotatedString(stringResource(R.string.session_reps_bodyweightAbbr))
                 },
-                Modifier.wrapContentWidth(unbounded = true),
-                style = KettleType.heading,
+                style = KettleType.title,
                 color = runnerColors.text,
                 textAlign = TextAlign.Center,
                 maxLines = 1,
             )
         }
-        Box(Modifier.hang(end = LOAD_SLACK)) {
-            SymbolButton(R.drawable.icon_add, stringResource(R.string.session_reps_increaseLoad), {
-                set(display + weightStep(units))
-            }, look = SymbolLook.Load)
-        }
+        SymbolButton(R.drawable.icon_add, stringResource(R.string.session_reps_increaseLoad), {
+            set(display + weightStep(units))
+        }, look = SymbolLook.Load)
     }
 }
 
@@ -315,10 +311,7 @@ private const val EFFORT_HIGH = 10
 private val EFFORT_OPTIONS = (EFFORT_LOW..EFFORT_HIGH).map(Int::toDouble)
 private val TrackShape = RoundedCornerShape(14.dp)
 private val PickedShape = RoundedCornerShape(10.dp)
-private val REPS_NUMERAL = 88.sp
+private val REPS_NUMERAL = 96.sp
 private val STEPPER_GAP = 22.dp
 private val REPS_LABEL_GAP = 6.dp
-private val LOAD_UNIT = 15.sp
-
-/** A load target's slack around its circle, which fits under the card's 14dp padding. */
-private val LOAD_SLACK = (MinTarget - SymbolLook.Load.size) / 2
+private val LOAD_UNIT = 18.sp

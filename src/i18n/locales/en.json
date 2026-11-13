@@ -334,7 +334,6 @@
     },
     "reps": {
       "repsDoneAccessibility": "Reps done: {{count}}. Tap to enter an exact value.",
-      "loadCaps": "LOAD",
       "decreaseLoad": "Decrease load",
       "loadAccessibilityWeighted": "Load: {{weight}} {{unit}}. Tap to enter an exact value.",
       "loadAccessibilityBodyweight": "Load: bodyweight. Tap to enter an exact value.",
@@ -348,7 +347,8 @@
       "loadLabel": "Load",
       "repsLabel": "Reps",
       "repsDoneTarget": "Reps done · target {{target}}",
-      "effortLabel": "Effort · optional"
+      "effortLabel": "Effort · optional",
+      "tryLoad": "Try {{weight}}"
     },
     "numberPad": {
       "dismiss": "Dismiss keypad",

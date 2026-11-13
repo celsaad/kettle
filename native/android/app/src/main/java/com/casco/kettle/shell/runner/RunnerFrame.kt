@@ -1,7 +1,6 @@
 package com.casco.kettle.shell.runner
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,14 +12,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.sizeIn
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.platform.LocalResources
@@ -155,24 +150,7 @@ private fun WorkoutName(
  */
 @Composable
 private fun EndPill(confirm: () -> Unit) {
-    Box(
-        Modifier
-            .sizeIn(minWidth = MinTarget, minHeight = MinTarget)
-            .clickable(role = Role.Button, onClick = confirm),
-        contentAlignment = Alignment.Center,
-    ) {
-        Box(
-            Modifier
-                .heightIn(min = END_HEIGHT)
-                .widthIn(min = END_WIDTH)
-                .clip(CircleShape)
-                .border(SLOT_BORDER, runnerColors.outline, CircleShape)
-                .padding(horizontal = Spacing.three),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(stringResource(R.string.session_finish_label), style = SlotLabel, color = runnerColors.text)
-        }
-    }
+    OutlinedPill(stringResource(R.string.session_finish_label), confirm, minWidth = END_WIDTH)
 }
 
 /** A down chevron, drawn: RN's is an SVG path, and a text glyph would change with the font. */
@@ -265,5 +243,4 @@ private const val CHEVRON_INSET = 0.25f
 private const val CHEVRON_TOP = 0.375f
 private const val CHEVRON_BOTTOM = 0.625f
 
-private val END_HEIGHT = 44.dp
 private val END_WIDTH = 56.dp

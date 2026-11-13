@@ -83,22 +83,22 @@ fun RunnerScreen(
     // Read when asked, not when composed: a lambda holding an earlier composition's view would bind the
     // dialog to a visit already left, and it would close as it opened.
     val current by rememberUpdatedState(running)
+    val currentActions by rememberUpdatedState(actions)
+    val adopting = remember { AdoptingSend({ currentActions }, { current }) }
+    val send = adopting::send
     val askToFinish = { confirmingAt = current?.snapshot?.visit }
     val close = { overlay: Overlay -> overlays = overlays.close(overlay) }
     RunnerBack(entry, { visit -> overlays.on(visit).open }, close, askToFinish, actions)
     val controlsFor = { view: RunnerView.Running ->
         StepControls(
-            send = actions.send,
+            send = send,
             open = { overlays = overlays.open(it, view.snapshot.visit) },
             openPad = {
                 pad = it
                 overlays = overlays.open(Overlay.PAD, view.snapshot.visit)
             },
             confirmFinish = askToFinish,
-            adopt = { id, kg ->
-                actions.send(RunnerCommand.SetWeight(kg))
-                actions.adopt(id, kg)
-            },
+            adopt = { id, kg -> adopting.pickLoad(id, kg, view.snapshot.visit) },
         )
     }
     val field = runnerField(entry, now)
@@ -128,7 +128,7 @@ fun RunnerScreen(
             confirmingAt = null
             // Aimed at the step it was asked on: should that step end before this lands, the engine
             // ends the session without logging the one that replaced it (#319).
-            actions.send(RunnerCommand.Finish(askedAt))
+            send(RunnerCommand.Finish(askedAt))
         }
     }
 }

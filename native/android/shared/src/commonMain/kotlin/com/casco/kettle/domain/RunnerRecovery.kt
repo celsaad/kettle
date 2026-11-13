@@ -220,5 +220,10 @@ fun resumedPlan(
             ?: session.workout?.let { id ->
                 library.workouts.firstOrNull { it.id == id } ?: Workout(id, id, emptyList())
             }
-    return RunnerPlan.Runnable(workout, resolved?.exercises ?: library.exercises, snapshot.steps)
+    return RunnerPlan.Runnable(
+        workout,
+        resolved?.exercises ?: library.exercises,
+        snapshot.steps,
+        resolved?.loadsSetByProgram.orEmpty(),
+    )
 }

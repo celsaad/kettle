@@ -63,8 +63,11 @@ abstract class RunnerScreenHarness {
             ->
             Exercise("extra$index", name, ExerciseConfig.Reps(3, 8, restSec = 60.0))
         }
+
+    /** A rep range with a top, which "Try" needs: every set at 12 last time suggests the next load. */
+    protected val bench = Exercise("bench", "Supino", ExerciseConfig.Reps(2, 8, 12, 60.0, 90.0))
     protected val exercises =
-        listOf(squat, plank, hang, maxHold, fixedHold, everyMinute, grinder, row, burpees, rest) + extras
+        listOf(squat, plank, hang, maxHold, fixedHold, everyMinute, grinder, row, burpees, rest, bench) + extras
 
     protected var entry by mutableStateOf<RunnerEntry>(RunnerEntry.Loading)
     protected var prior by mutableStateOf<List<Session>>(emptyList())

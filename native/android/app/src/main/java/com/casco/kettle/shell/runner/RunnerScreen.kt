@@ -231,6 +231,11 @@ private fun Overlays(
             context.send(RunnerCommand.Swap(it))
         }
     }
+    if (Overlay.SETS in open && step is WorkStep) {
+        setsSheet(view)?.let { model ->
+            SetsSheet(step, model, context) { close(Overlay.SETS) }
+        }
+    }
     if (Overlay.PAD in open && pad != null) {
         NumberPad(pad) { close(Overlay.PAD) }
     }

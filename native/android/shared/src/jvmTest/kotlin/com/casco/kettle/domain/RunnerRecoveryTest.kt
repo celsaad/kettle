@@ -405,14 +405,22 @@ class RunnerRecoveryTest {
         }
 
         @Test
-        fun `runs the snapshot's steps, not the workout's as the library has it now`() {
+        fun `runs the snapshot's steps, while the plan holds what the workout plans now`() {
             val runner = Runner(workout)
             runner.send(RunnerCommand.Swap(runner.exercise("dips")))
+            runner.send(RunnerCommand.AddSet)
             val edited = library.copy(workouts = listOf(workoutOf(single("lsit"))))
 
             val plan = resumedPlan(runner.written, runner.snapshot, edited)
 
-            assertEquals(runner.snapshot.steps, plan.steps)
+            // The session goes on from the snapshot, swap and added set and all.
+            assertEquals(
+                runner.snapshot.steps,
+                resumeRunner(RunnerRecovery.Prompt(runner.snapshot, runner.written), runner.now).state.snapshot.steps,
+            )
+            // The plan's steps are what was planned, as the library has it now: what "planned" counts
+            // against in the Sets sheet and Try, which the snapshot's edited steps would overstate (#410).
+            assertEquals(buildSteps(edited.workouts.single(), RUNNER_EXERCISES), plan.steps)
             assertEquals("W", plan.workout?.name)
             assertEquals(RUNNER_EXERCISES, plan.exercises)
         }

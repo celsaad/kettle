@@ -27,10 +27,10 @@ fun Resources.weightText(
 /** The workout's name verbatim, or the ad-hoc stand-in. */
 fun Resources.sessionName(workoutName: String?): String = workoutName ?: getString(R.string.format_adHocSession)
 
-private fun Resources.reps(count: Long): String =
+internal fun Resources.reps(count: Long): String =
     pluralText(R.plurals.format_rep, R.string.format_rep_zero, count.toInt())
 
-private fun Resources.seconds(value: Double): String = getString(R.string.format_seconds, jsNumber(value))
+internal fun Resources.seconds(value: Double): String = getString(R.string.format_seconds, jsNumber(value))
 
 /** What Undo would take back, after "Logged": "set 1 · 10 × 48.5 lb", "round 3", or the entry's name. */
 fun Resources.loggedText(

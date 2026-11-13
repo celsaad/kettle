@@ -234,9 +234,6 @@
       "body": "\"{{name}}\" não tem blocos, ou nenhum dos seus exercícios tem séries/rodadas/minutos configurados. Adicione um bloco em Treinos, ou confira a configuração de cada exercício, e tente de novo."
     },
     "setOf": "Série {{index}} de {{total}}",
-    "sets": {
-      "label": "séries"
-    },
     "adhoc": {
       "title": "Nada na fila",
       "body": "Adicione um exercício da sua biblioteca e registre nele. Encerre quando quiser.",
@@ -415,6 +412,24 @@
       "rest": "Descanso",
       "next": "A seguir: {{name}}",
       "sets": "Séries"
+    },
+    "setsSheet": {
+      "summary_one": "{{count}} série nesta sessão · planejadas {{planned}}",
+      "summary_other": "{{count}} séries nesta sessão · planejadas {{planned}}",
+      "summary_zero": "{{count}} séries nesta sessão · planejadas {{planned}}",
+      "logged": "Registrada",
+      "now": "Agora",
+      "planned": "Planejada",
+      "added": "Adicionada nesta sessão",
+      "remove": "Remover",
+      "add": "Adicionar série",
+      "footer_one": "Só esta sessão muda. Seu treino continua com {{count}} série.",
+      "footer_other": "Só esta sessão muda. Seu treino continua com {{count}} séries.",
+      "footer_zero": "Só esta sessão muda. Seu treino continua com {{count}} séries.",
+      "loadedSet": "{{reps}} × {{weight}}",
+      "count_one": "{{count}} série nesta sessão",
+      "count_other": "{{count}} séries nesta sessão",
+      "count_zero": "{{count}} séries nesta sessão"
     }
   },
   "settings": {

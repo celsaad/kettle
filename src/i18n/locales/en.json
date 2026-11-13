@@ -223,9 +223,6 @@
       "body": "\"{{name}}\" has no blocks, or none of its exercises have any sets/rounds/minutes configured. Add a block in Workouts, or check each exercise's config, then try again."
     },
     "setOf": "Set {{index}} of {{total}}",
-    "sets": {
-      "label": "sets"
-    },
     "adhoc": {
       "title": "Nothing queued",
       "body": "Add an exercise from your library and log against it. Finish whenever you are done.",
@@ -392,6 +389,21 @@
       "rest": "Rest",
       "next": "Next: {{name}}",
       "sets": "Sets"
+    },
+    "setsSheet": {
+      "summary_one": "{{count}} set this session · planned {{planned}}",
+      "summary_other": "{{count}} sets this session · planned {{planned}}",
+      "logged": "Logged",
+      "now": "Now",
+      "planned": "Planned",
+      "added": "Added this session",
+      "remove": "Remove",
+      "add": "Add a set",
+      "footer_one": "Only this session changes. Your workout still says {{count}} set.",
+      "footer_other": "Only this session changes. Your workout still says {{count}} sets.",
+      "loadedSet": "{{reps}} × {{weight}}",
+      "count_one": "{{count}} set this session",
+      "count_other": "{{count}} sets this session"
     }
   },
   "settings": {

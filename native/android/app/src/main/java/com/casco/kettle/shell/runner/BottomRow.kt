@@ -162,16 +162,34 @@ internal fun LoggedPanel(
 }
 
 /**
- * The runner's small outlined action, Undo's, Try's and End's: a 44dp pill centred in its 48dp target,
- * as the canvas draws them, and never filled, so none can be taken for the main action. Named by its own
- * words. The words are centred by the box: a Text stretched to a minimum height draws its line at the
- * top of it.
+ * The runner's small outlined action, Undo's, Try's, End's and Remove's: a 44dp pill centred in its
+ * 48dp target, as the canvas draws them, and never filled, so none can be taken for the main action.
+ * Named by its own words.
  */
 @Composable
 internal fun OutlinedPill(
     label: String,
     onClick: () -> Unit,
     minWidth: Dp = 0.dp,
+) = Pill(label, onClick, minWidth, filled = false)
+
+/** The pill filled, for the one place it is a sheet's own main action: the Sets sheet's Done. */
+@Composable
+internal fun FilledPill(
+    label: String,
+    onClick: () -> Unit,
+) = Pill(label, onClick, 0.dp, filled = true)
+
+/**
+ * The pill both draw. The words are centred by the box: a Text stretched to a minimum height draws its
+ * line at the top of it.
+ */
+@Composable
+private fun Pill(
+    label: String,
+    onClick: () -> Unit,
+    minWidth: Dp,
+    filled: Boolean,
 ) {
     Box(
         Modifier
@@ -184,11 +202,16 @@ internal fun OutlinedPill(
                 .heightIn(min = PILL_HEIGHT)
                 .widthIn(min = minWidth)
                 .clip(CircleShape)
-                .border(SLOT_BORDER, runnerColors.outline, CircleShape)
-                .padding(horizontal = Spacing.three),
+                .then(
+                    if (filled) {
+                        Modifier.background(runnerColors.accent)
+                    } else {
+                        Modifier.border(SLOT_BORDER, runnerColors.outline, CircleShape)
+                    },
+                ).padding(horizontal = Spacing.three),
             contentAlignment = Alignment.Center,
         ) {
-            Text(label, style = SlotLabel, color = runnerColors.text)
+            Text(label, style = SlotLabel, color = if (filled) runnerColors.onAccent else runnerColors.text)
         }
     }
 }

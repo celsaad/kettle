@@ -5,8 +5,6 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
-import androidx.compose.ui.test.assertIsEnabled
-import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.click
@@ -144,24 +142,19 @@ class RunnerScreenTest : RunnerScreenHarness() {
     }
 
     @Test
-    fun `the set row's controls are 48dp targets, and − is disabled at the floor rather than hidden`() {
+    fun `the action row's Sets and Swap are separate 48dp targets`() {
         show(running(plan(block(squat))))
-        val minus = button("Diminuir séries").assertIsEnabled().assertIsTarget().getUnclippedBoundsInRoot()
-        val plus = button("Aumentar séries").assertIsTarget().getUnclippedBoundsInRoot()
+        val sets = button("Séries").assertIsTarget().getUnclippedBoundsInRoot()
         val swap = button("Trocar").assertIsTarget().getUnclippedBoundsInRoot()
-        // No point is inside two targets (#263), whichever way −/+ draw their circles inside them (#372).
-        assertTrue("− $minus overlaps + $plus", minus.right <= plus.left)
-        assertTrue("+ $plus overlaps SWAP $swap", plus.right <= swap.left)
-        val floor = started(plan(block(squat))).after(RunnerCommand.DropSet)
-        show(running(plan(block(squat)), floor))
-        button("Diminuir séries").assertIsNotEnabled()
+        // No point is inside two targets (#263).
+        assertTrue("Sets $sets overlaps Swap $swap", sets.right <= swap.left)
     }
 
     @Test
-    fun `inside a circuit the set row has no −, + or swap`() {
+    fun `inside a circuit the action row has no Sets or Swap`() {
         val circuit = WorkoutBlock.Circuit(rounds = 2, members = listOf(CircuitMember("squat"), CircuitMember("plank")))
         show(running(plan(circuit)))
-        button("Aumentar séries").assertDoesNotExist()
+        button("Séries").assertDoesNotExist()
         button("Trocar").assertDoesNotExist()
     }
 

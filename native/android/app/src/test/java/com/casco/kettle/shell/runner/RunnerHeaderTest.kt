@@ -1,7 +1,6 @@
 package com.casco.kettle.shell.runner
 
 import androidx.compose.ui.test.hasContentDescription
-import androidx.compose.ui.test.isDialog
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.casco.kettle.domain.CircuitMember
@@ -73,6 +72,6 @@ class RunnerHeaderTest : RunnerScreenHarness() {
     fun `End is a 48dp pill that asks first`() {
         show(running(plan(block(squat))))
         button("Encerrar").assertIsTarget().performClick()
-        compose.onNode(isDialog()).assertExists()
+        compose.onNodeWithText("Encerrar o treino agora?").assertExists()
     }
 }

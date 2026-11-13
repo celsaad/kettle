@@ -36,20 +36,28 @@ private fun loggedSets(
         else -> 0
     }
 
+/** The swap sheet's two groups (#417): [current]'s own type, "Also reps", then every other type. */
+data class SwapChoices(
+    val current: Exercise,
+    val same: List<Exercise>,
+    val other: List<Exercise>,
+)
+
 /**
- * What the exercise on screen could be swapped for: anything in [exercises] but itself and the
- * built-in rest, its own type first, then the rest in library order. [exercises] is the plan's, so a
- * program week's overrides reach the candidates. Empty where no swap is offered.
+ * What the exercise on screen could be swapped for, grouped as the sheet shows them: anything in
+ * [exercises] but itself and the built-in rest, its own type first, then the rest, each in library
+ * order. [exercises] is the plan's, so a program week's overrides reach the choices. Null where no swap
+ * is offered.
  */
-fun swapCandidates(
+fun swapChoices(
     snapshot: RunnerSnapshot,
     exercises: List<Exercise>,
-): List<Exercise> {
+): SwapChoices? {
     val step = snapshot.step?.takeIf { canAddSet(snapshot) }
-    val current = exercises.firstOrNull { it.id == step?.exerciseId } ?: return emptyList()
+    val current = exercises.firstOrNull { it.id == step?.exerciseId } ?: return null
     val others = exercises.filter { it.config !is ExerciseConfig.Rest && it.id != current.id }
-    val (same, different) = others.partition { it.config::class == current.config::class }
-    return same + different
+    val (same, other) = others.partition { it.config::class == current.config::class }
+    return SwapChoices(current, same, other).takeIf { others.isNotEmpty() }
 }
 
 /** How many blocks the progress dots count: the workout's, or for an ad-hoc session the exercises added. */
@@ -57,7 +65,7 @@ fun blockTotal(snapshot: RunnerSnapshot): Int = snapshot.workoutBlockCount ?: sn
 
 /**
  * The edit, as RN's hook makes it: on whatever step is on screen, with the buttons' rules
- * ([canAddSet], [canDropSet], [swapCandidates]) left to the UI that shows them, and the undo record
+ * ([canAddSet], [canDropSet], [swapChoices]) left to the UI that shows them, and the undo record
  * cleared by every edit, even one that changes nothing. Two refusals RN's hook leaves to its screen
  * are kept here, because without them an edit corrupts the session: a circuit member's sets
  * (`StepMutations.kt` refuses them), and a drop reaching work already done or the step on screen,

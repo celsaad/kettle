@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.sp
 import com.casco.kettle.domain.IntervalVariant
 import com.casco.kettle.domain.RunnerCommand
 import com.casco.kettle.domain.RunnerStep
+import com.casco.kettle.domain.isMinute
 import com.casco.kettle.domain.jsNumber
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.i18n.pluralText
@@ -236,6 +237,6 @@ private fun Stepper(
 
 private val CLOCK_NUMERAL = 88.sp
 
-/** When an AMRAP offers its extra reps: the cap's last minute. A span of time, not [isMinute]'s length. */
+/** When an AMRAP offers its extra reps: the cap's last minute. A span of time, not the length [isMinute] checks. */
 private const val LAST_MINUTE_SEC = 60.0
 private val STEPPER_ROW_GAP = 6.dp

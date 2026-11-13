@@ -55,15 +55,18 @@ fun runnerEntry(
         else -> RunnerEntry.Before(plan)
     }
 
-/** What can open over the runner's body. Declared in the order back closes them. */
-enum class Overlay { PAD, UPCOMING, ADD_PICKER, SWAP_PICKER, SETS }
+/**
+ * What can open over the runner's body. Declared in the order back closes them: [END], End early's
+ * sheet (#417), last, so Back closes any other first.
+ */
+enum class Overlay { PAD, UPCOMING, ADD_PICKER, SWAP_PICKER, SETS, END }
 
 sealed interface BackAction {
     data class Close(
         val overlay: Overlay,
     ) : BackAction
 
-    /** "Finish session?" */
+    /** End early's sheet (#417). */
     data object ConfirmFinish : BackAction
 
     /** Leaves before the session runs, which stops the service with nothing written. */

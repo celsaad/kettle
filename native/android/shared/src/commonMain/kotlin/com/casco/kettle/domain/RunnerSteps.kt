@@ -112,6 +112,14 @@ sealed interface RunnerStep {
     ) : RunnerStep
 }
 
+/**
+ * An EMOM whose intervals are minutes, which its header, its rest and End early call them; any other
+ * length counts intervals.
+ */
+val RunnerStep.Interval.isMinute: Boolean get() = targetSec == MINUTE_SEC
+
+private const val MINUTE_SEC = 60.0
+
 /** A step that is work rather than rest: what the Next card and the Coming up sheet describe. */
 sealed interface WorkStep : RunnerStep {
     val exerciseName: String

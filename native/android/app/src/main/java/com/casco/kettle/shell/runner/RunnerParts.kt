@@ -1,6 +1,7 @@
 package com.casco.kettle.shell.runner
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -90,13 +92,16 @@ internal fun Caps(
     Text(label, modifier, style = QuietStyle.copy(letterSpacing = tracking))
 }
 
-/** A bar filled to [fraction], 0 to 1, with an optional mark at [marker]. Decorative: no semantics. */
+/**
+ * A bar filled to [fraction], 0 to 1, with an optional range band (#417) outlined from [bandStart] to its
+ * end: a hold's range, the bar running to its top. Decorative: no semantics.
+ */
 @Composable
 internal fun FillBar(
     fraction: Float,
-    marker: Float? = null,
+    bandStart: Float? = null,
 ) {
-    // The box is the track's 6dp, as RN's: the mark stands out of it above and below without taking
+    // The box is the track's 6dp, as RN's: the band stands out of it above and below without taking
     // layout space, so a hold's caption sits where an interval's does.
     Box(Modifier.testTag(BAR_TAG).width(BAR_WIDTH).height(TRACK_HEIGHT)) {
         Box(
@@ -113,17 +118,16 @@ internal fun FillBar(
                     .background(runnerColors.accent),
             )
         }
-        if (marker != null) {
+        if (bandStart != null && bandStart < 1f) {
             Row(Modifier.fillMaxSize()) {
-                if (marker > 0f) Spacer(Modifier.weight(marker))
+                if (bandStart > 0f) Spacer(Modifier.weight(bandStart))
                 Box(
                     Modifier
-                        .width(2.dp)
-                        .requiredHeight(MARK_HEIGHT)
-                        .background(runnerColors.textSecondary)
-                        .testTag(MARKER_TAG),
+                        .weight(1f - bandStart)
+                        .requiredHeight(BAND_HEIGHT)
+                        .border(BAND_STROKE, runnerColors.text, BandShape)
+                        .testTag(BAND_TAG),
                 )
-                if (marker < 1f) Spacer(Modifier.weight(1f - marker))
             }
         }
     }
@@ -171,13 +175,15 @@ internal fun StepNotes(notes: String?) {
     )
 }
 
-/** Decorative, so findable only by tag: the hold's tests ask whether a bar and its mark are drawn. */
+/** Decorative, so findable only by tag: the hold's tests ask whether a bar and its band are drawn. */
 internal const val BAR_TAG = "fill-bar"
-internal const val MARKER_TAG = "fill-bar-marker"
+internal const val BAND_TAG = "fill-bar-band"
 
 private const val NUMERAL_SCALE_CAP = 1.3f
 private val BAR_WIDTH = 220.dp
-private val MARK_HEIGHT = 16.dp
+private val BAND_HEIGHT = 16.dp
+private val BAND_STROKE = 2.dp
+private val BandShape = RoundedCornerShape(4.dp)
 private val TRACK_HEIGHT = 6.dp
 private val BADGE_PAD_H = 10.dp
 

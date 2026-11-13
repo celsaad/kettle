@@ -22,7 +22,7 @@ import com.casco.kettle.domain.previousAmrapRounds
 import com.casco.kettle.domain.previousSet
 import com.casco.kettle.domain.progressionLoadKg
 import com.casco.kettle.domain.remainingSec
-import com.casco.kettle.domain.swapCandidates
+import com.casco.kettle.domain.swapChoices
 import com.casco.kettle.domain.upcomingPreview
 import com.casco.kettle.shell.R
 
@@ -133,7 +133,7 @@ internal fun stepContext(
             next = upcomingPreview(snapshot.steps, snapshot.stepIndex),
             canAddSet = canAddSet(snapshot),
             canDropSet = canDropSet(state),
-            canSwap = swapCandidates(snapshot, view.plan.exercises).isNotEmpty(),
+            canSwap = swapChoices(snapshot, view.plan.exercises) != null,
         )
     return StepContext(snapshot, now, environment.units, readings, controls, view.logged)
 }

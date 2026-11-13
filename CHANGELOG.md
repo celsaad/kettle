@@ -63,6 +63,15 @@ here, next to what it describes.
 - **Count AMRAP rounds with one big button**: "Round 3 done" is the main button now, with Undo for
   a tap too many, and the screen shows how many rounds you have and how many you did last time. In
   the last minute, you can add the reps you got into the unfinished round (#417).
+- **A hold shows its range**: the bar outlines your target range, and the line under it says
+  where the hold stops on its own, as in "Target 20–45 s · stops at 45" (#417).
+- **Take 15 seconds off a rest**: −15s sits beside +30s under the rest's countdown (#417).
+- **Swapping an exercise is easier to scan**: the search box is always there, exercises of the
+  same type come first under their own heading, and each one shows its sets and targets. "Keep"
+  with the exercise's name closes the list without swapping (#417).
+- **Ending early shows how far you got**: End opens a sheet listing each exercise's progress, in
+  sets, rounds or minutes as fits it. "Keep going" is the big button, so a stray tap doesn't end
+  the session (#417).
 
 ---
 

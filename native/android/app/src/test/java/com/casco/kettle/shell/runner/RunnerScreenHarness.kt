@@ -13,10 +13,8 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertWidthIsAtLeast
-import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
-import androidx.compose.ui.test.isDialog
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
@@ -149,8 +147,6 @@ abstract class RunnerScreenHarness {
     protected fun button(label: String) = compose.onNode((hasText(label) or hasContentDescription(label)) and isButton)
 
     protected fun SemanticsNodeInteraction.assertIsTarget() = assertWidthIsAtLeast(48.dp).assertHeightIsAtLeast(48.dp)
-
-    protected fun dialogButton(label: String) = compose.onNode(hasText(label) and hasAnyAncestor(isDialog()))
 
     protected companion object {
         const val T0 = 1_000_000_000L

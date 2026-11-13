@@ -204,10 +204,7 @@
     "resume": "Resume",
     "prev": "Back",
     "finish": {
-      "label": "End",
-      "confirmTitle": "End session?",
-      "confirmBody": "Everything you've logged, including the set you're on, will be saved.",
-      "confirmAction": "End session"
+      "label": "End"
     },
     "restDay": {
       "title": "Rest day",
@@ -235,9 +232,19 @@
     },
     "swap": {
       "action": "Swap",
-      "title": "SWAP EXERCISE",
-      "replacing": "For the rest of {{name}}",
-      "dismiss": "Keep the current exercise"
+      "title": "Swap {{name}}",
+      "replacing": "For the rest of this exercise. Your workout stays as it is.",
+      "keep": "Keep {{name}}",
+      "also": {
+        "reps": "Also reps",
+        "hold": "Also holds",
+        "hiit": "Also HIIT",
+        "emom": "Also EMOM",
+        "amrap": "Also AMRAP",
+        "cardio": "Also cardio"
+      },
+      "otherTypes": "Other types",
+      "otherMeta": "{{type}} · {{summary}}"
     },
     "circuit": {
       "crumb": "CIRCUIT · ROUND {{index}} OF {{total}}",
@@ -291,8 +298,10 @@
       "firstTimeHint": "Put the phone down — you'll hear each countdown and exercise change."
     },
     "hold": {
-      "caption": "target {{target}}s · counting up",
-      "captionOpen": "no target · counting up"
+      "captionOpen": "no target · counting up",
+      "target": "Target {{range}} s · stops at {{end}}",
+      "targetOnly": "Target {{range}} s",
+      "stopsAt": "Stops at {{end}} s"
     },
     "notification": {
       "restTitle": "Rest complete",
@@ -316,7 +325,8 @@
     "rest": {
       "remaining": "of {{total}} remaining",
       "add30": "+30s",
-      "skip": "Skip rest →"
+      "skip": "Skip rest →",
+      "minus15": "−15s"
     },
     "interval": {
       "targetReps": "target {{reps}} reps",
@@ -414,6 +424,22 @@
       "rounds_one": "{{count}} round",
       "rounds_other": "{{count}} rounds",
       "lastTime": "last time {{rounds}}"
+    },
+    "end": {
+      "title": "End the session early?",
+      "body": "Everything you've logged, including the set you're on, is saved.",
+      "keepGoing": "Keep going",
+      "saveAndEnd": "Save and end",
+      "notStarted": "not started",
+      "done": "done",
+      "sets_one": "{{done}} of {{count}} set",
+      "sets_other": "{{done}} of {{count}} sets",
+      "rounds_one": "{{done}} of {{count}} round",
+      "rounds_other": "{{done}} of {{count}} rounds",
+      "minutes_one": "{{done}} of {{count}} min",
+      "minutes_other": "{{done}} of {{count}} min",
+      "intervals_one": "{{done}} of {{count}} interval",
+      "intervals_other": "{{done}} of {{count}} intervals"
     }
   },
   "settings": {

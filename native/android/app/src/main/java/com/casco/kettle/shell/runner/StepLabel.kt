@@ -4,6 +4,7 @@ import android.content.res.Resources
 import com.casco.kettle.domain.IntervalVariant
 import com.casco.kettle.domain.RunnerStep
 import com.casco.kettle.domain.StepInputs
+import com.casco.kettle.domain.isMinute
 import com.casco.kettle.shell.R
 
 // The step header's label line (#409), and what a reader hears for it inside a circuit.
@@ -67,8 +68,3 @@ fun Resources.circuitSpoken(step: RunnerStep): String? =
             "${it.rounds}",
         )
     }
-
-/** An EMOM whose intervals are minutes, which its header and its rest call them; any other length counts intervals. */
-internal val RunnerStep.Interval.isMinute: Boolean get() = targetSec == MINUTE_SEC
-
-private const val MINUTE_SEC = 60.0

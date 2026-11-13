@@ -209,8 +209,8 @@ class RunnerScreenTest : RunnerScreenHarness() {
         button("Definir").assertDoesNotExist()
         compose.onNode(isDialog()).assertDoesNotExist()
         back()
-        compose.onNodeWithText("Encerrar o treino?").assertExists()
-        dialogButton("Encerrar").performClick()
+        compose.onNodeWithText("Encerrar o treino agora?").assertExists()
+        button("Salvar e encerrar").performClick()
         assertEquals(RunnerCommand.Finish(secondSet.snapshot.visit), sent.last())
     }
 
@@ -222,18 +222,19 @@ class RunnerScreenTest : RunnerScreenHarness() {
         back()
         compose.onNodeWithText("A SEGUIR").assertDoesNotExist()
         button("Trocar").performClick()
-        compose.onNodeWithText("TROCAR EXERCÍCIO").assertExists()
+        compose.onNodeWithText("Trocar Agachamento").assertExists()
         back()
-        compose.onNodeWithText("TROCAR EXERCÍCIO").assertDoesNotExist()
+        compose.onNodeWithText("Trocar Agachamento").assertDoesNotExist()
         compose.onNode(isDialog()).assertDoesNotExist()
     }
 
     @Test
-    fun `Finish in the header asks first, and Cancel keeps the session`() {
+    fun `End in the header asks first, and Keep going keeps the session`() {
         show(running(plan(block(squat))))
         button("Encerrar").performClick()
-        dialogButton("Cancelar").performClick()
+        button("Continuar").performClick()
         assertTrue(sent.none { it is RunnerCommand.Finish })
+        compose.onNodeWithText("Encerrar o treino agora?").assertDoesNotExist()
     }
 
     @Test
@@ -242,13 +243,13 @@ class RunnerScreenTest : RunnerScreenHarness() {
         val start = started(plan)
         show(running(plan, start))
         button("Trocar").performClick()
-        compose.onNodeWithText("No lugar do que resta de Suspensão").assertExists()
+        compose.onNodeWithText("Trocar Suspensão").assertExists()
         // Neither the name nor the Next card's preview of it is reachable under the picker.
         assertEquals(0, compose.onAllNodesWithText("Suspensão").fetchSemanticsNodes().size)
         // The hold ends under it, and the next set, where a swap is offered too, doesn't reopen it.
         entry = running(plan, start.advanced())
         compose.waitForIdle()
-        compose.onNodeWithText("TROCAR EXERCÍCIO").assertDoesNotExist()
+        compose.onNodeWithText("Trocar Suspensão").assertDoesNotExist()
         button("Trocar").assertExists()
     }
 
@@ -276,7 +277,7 @@ class RunnerScreenTest : RunnerScreenHarness() {
     }
 
     @Test
-    fun `the swap picker searches above eight candidates, ignoring accents, and sends the pick`() {
+    fun `the swap sheet searches, ignoring accents, and sends the pick`() {
         show(running(plan(block(squat))))
         button("Trocar").performClick()
         button("Terra").assertExists()
@@ -284,7 +285,7 @@ class RunnerScreenTest : RunnerScreenHarness() {
         button("Terra").assertDoesNotExist()
         button("Búlgaro").performClick()
         assertEquals(RunnerCommand.Swap(extras[0]), sent.last())
-        compose.onNodeWithText("TROCAR EXERCÍCIO").assertDoesNotExist()
+        compose.onNodeWithText("Trocar Agachamento").assertDoesNotExist()
     }
 
     // ad hoc
@@ -373,13 +374,15 @@ class RunnerScreenTest : RunnerScreenHarness() {
     }
 
     @Test
-    fun `a hold's bar marks the minimum only on a real range, and a max-effort hold has no bar`() {
+    fun `a hold's bar bands only a real range, and a max-effort hold has no bar`() {
         show(running(plan(block(plank))))
         compose.onNode(hasTestTag(BAR_TAG)).assertExists()
-        compose.onNode(hasTestTag(MARKER_TAG), useUnmergedTree = true).assertExists()
+        compose.onNode(hasTestTag(BAND_TAG), useUnmergedTree = true).assertExists()
+        compose.onNodeWithText("Meta de 20–30 s · para em 30").assertExists()
         show(running(plan(block(fixedHold))))
         compose.onNode(hasTestTag(BAR_TAG)).assertExists()
-        compose.onNode(hasTestTag(MARKER_TAG), useUnmergedTree = true).assertDoesNotExist()
+        compose.onNode(hasTestTag(BAND_TAG), useUnmergedTree = true).assertDoesNotExist()
+        compose.onNodeWithText("Para em 30 s").assertExists()
         show(running(plan(block(maxHold))))
         compose.onNode(hasTestTag(BAR_TAG)).assertDoesNotExist()
         compose.onNodeWithText("sem meta · contando para cima").assertExists()
@@ -462,7 +465,7 @@ class RunnerScreenTest : RunnerScreenHarness() {
         compose.onNodeWithText("ADICIONAR EXERCÍCIO").assertDoesNotExist()
         compose.onNode(isDialog()).assertDoesNotExist()
         back()
-        compose.onNodeWithText("Encerrar o treino?").assertExists()
+        compose.onNodeWithText("Encerrar o treino agora?").assertExists()
     }
 
     @Test
@@ -498,10 +501,10 @@ class RunnerScreenTest : RunnerScreenHarness() {
         val resting = started(plan).advanced()
         show(running(plan, resting))
         back()
-        compose.onNodeWithText("Encerrar o treino?").assertExists()
+        compose.onNodeWithText("Encerrar o treino agora?").assertExists()
         entry = running(plan, resting.advanced())
         compose.waitForIdle()
-        compose.onNodeWithText("Encerrar o treino?").assertDoesNotExist()
+        compose.onNodeWithText("Encerrar o treino agora?").assertDoesNotExist()
         assertTrue(sent.none { it is RunnerCommand.Finish })
     }
 

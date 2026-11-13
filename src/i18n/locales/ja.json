@@ -193,10 +193,7 @@
     "resume": "再開",
     "prev": "戻る",
     "finish": {
-      "label": "終了",
-      "confirmTitle": "セッションを終了しますか？",
-      "confirmBody": "実行中のセットも含め、記録した内容はすべて保存されます。",
-      "confirmAction": "終了"
+      "label": "終了"
     },
     "restDay": {
       "title": "休養日",
@@ -224,9 +221,20 @@
     },
     "swap": {
       "action": "交換",
-      "title": "エクササイズを交換",
-      "replacing": "{{name}}の残り全体を置き換えます",
-      "dismiss": "今のエクササイズのままにする"
+      "title": "{{name}}を交換",
+      "replacing": "この種目の残りだけを置き換えます。ワークアウトはそのままです。",
+      "dismiss": "今のエクササイズのままにする",
+      "keep": "{{name}}のままにする",
+      "also": {
+        "reps": "ほかのレップ種目",
+        "hold": "ほかのホールド種目",
+        "hiit": "ほかのHIIT種目",
+        "emom": "ほかのEMOM種目",
+        "amrap": "ほかのAMRAP種目",
+        "cardio": "ほかのカーディオ種目"
+      },
+      "otherTypes": "ほかの種類",
+      "otherMeta": "{{type}} · {{summary}}"
     },
     "circuit": {
       "crumb": "サーキット · {{total}}ラウンド中{{index}}ラウンド目",
@@ -269,8 +277,10 @@
       "firstTimeHint": "スマホは置いたままで大丈夫。カウントダウンと種目の切り替えは音でお知らせします。"
     },
     "hold": {
-      "caption": "目標{{target}}秒 · カウントアップ",
-      "captionOpen": "目標なし · カウントアップ"
+      "captionOpen": "目標なし · カウントアップ",
+      "target": "目標{{range}}秒 · {{end}}秒で終了",
+      "targetOnly": "目標{{range}}秒",
+      "stopsAt": "{{end}}秒で終了"
     },
     "notification": {
       "restTitle": "休憩終了",
@@ -293,7 +303,8 @@
     "rest": {
       "remaining": "全{{total}}中の残り",
       "add30": "+30秒",
-      "skip": "休憩をスキップ →"
+      "skip": "休憩をスキップ →",
+      "minus15": "−15秒"
     },
     "interval": {
       "targetReps": "目標{{reps}}レップ",
@@ -387,6 +398,18 @@
       "roundDone": "{{index}}ラウンド完了",
       "rounds_other": "{{count}}ラウンド",
       "lastTime": "前回 {{rounds}}"
+    },
+    "end": {
+      "title": "セッションを途中で終了しますか？",
+      "body": "実行中のセットも含め、記録した内容はすべて保存されます。",
+      "keepGoing": "続ける",
+      "saveAndEnd": "保存して終了",
+      "notStarted": "未着手",
+      "done": "完了",
+      "sets_other": "{{count}}セット中{{done}}",
+      "rounds_other": "{{count}}ラウンド中{{done}}",
+      "minutes_other": "{{count}}分中{{done}}",
+      "intervals_other": "{{count}}インターバル中{{done}}"
     }
   },
   "settings": {

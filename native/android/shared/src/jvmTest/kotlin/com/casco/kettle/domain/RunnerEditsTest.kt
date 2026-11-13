@@ -275,6 +275,17 @@ class RunnerEditsTest {
         }
 
         @Test
+        fun `groups the choices as the sheet shows them, its own type apart from the rest`() {
+            val runner = Runner(workoutOf(single("lsit")))
+            val choices = swapChoices(runner.snapshot, runner.exercises)!!
+
+            assertEquals("lsit", choices.current.id)
+            assertEquals(listOf("plank", "deadhang"), choices.same.map { it.id })
+            assertTrue(choices.other.none { it.config is ExerciseConfig.TimedHold || it.config is ExerciseConfig.Rest })
+            assertEquals(choices.same + choices.other, swapCandidates(runner.snapshot, runner.exercises))
+        }
+
+        @Test
         fun `lists the same type first, then the rest in library order`() {
             val runner = Runner(workoutOf(single("lsit")))
             val offered = swapCandidates(runner.snapshot, runner.exercises).map { it.id }

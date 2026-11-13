@@ -44,12 +44,25 @@ private fun loggedSets(
 fun swapCandidates(
     snapshot: RunnerSnapshot,
     exercises: List<Exercise>,
-): List<Exercise> {
+): List<Exercise> = swapChoices(snapshot, exercises)?.let { it.same + it.other }.orEmpty()
+
+/** The swap sheet's two groups (#417): [current]'s own type, "Also reps", then every other type. */
+data class SwapChoices(
+    val current: Exercise,
+    val same: List<Exercise>,
+    val other: List<Exercise>,
+)
+
+/** [swapCandidates], grouped as the sheet shows them. Null where no swap is offered. */
+fun swapChoices(
+    snapshot: RunnerSnapshot,
+    exercises: List<Exercise>,
+): SwapChoices? {
     val step = snapshot.step?.takeIf { canAddSet(snapshot) }
-    val current = exercises.firstOrNull { it.id == step?.exerciseId } ?: return emptyList()
+    val current = exercises.firstOrNull { it.id == step?.exerciseId } ?: return null
     val others = exercises.filter { it.config !is ExerciseConfig.Rest && it.id != current.id }
-    val (same, different) = others.partition { it.config::class == current.config::class }
-    return same + different
+    val (same, other) = others.partition { it.config::class == current.config::class }
+    return SwapChoices(current, same, other).takeIf { others.isNotEmpty() }
 }
 
 /** How many blocks the progress dots count: the workout's, or for an ad-hoc session the exercises added. */

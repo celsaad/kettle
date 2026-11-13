@@ -18,18 +18,16 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import com.casco.kettle.domain.Exercise
 import com.casco.kettle.domain.ExerciseConfig
 import com.casco.kettle.domain.RunnerCommand
 import com.casco.kettle.domain.Session
 import com.casco.kettle.domain.UnitSystem
 import com.casco.kettle.domain.WorkStep
+import com.casco.kettle.domain.endProgress
 import com.casco.kettle.domain.swapCandidates
+import com.casco.kettle.domain.swapChoices
 import com.casco.kettle.domain.upcomingOutline
-import com.casco.kettle.shell.R
-import com.casco.kettle.shell.theme.DialogAction
-import com.casco.kettle.shell.theme.KettleAlertDialog
 import com.casco.kettle.shell.theme.MaxContentWidth
 import com.casco.kettle.shell.theme.RunnerBarIcons
 import com.casco.kettle.shell.theme.Spacing
@@ -67,16 +65,12 @@ fun RunnerScreen(
 ) {
     var overlays by remember { mutableStateOf(RunnerOverlays()) }
     var pad by remember { mutableStateOf<PadRequest?>(null) }
-    // The visit "Finish session?" was asked on: like the overlays, it closes once that step is left, so
-    // a rest ending under it can't have Finish log the next step's seeded target as a set (#317's review).
-    var confirmingAt by remember { mutableStateOf<Long?>(null) }
     val running = (entry as? RunnerEntry.Attach)?.view as? RunnerView.Running
     // Bound to the step they opened on: once the visit moves, by a tap or by the step's own clock,
     // they are gone, and stay gone if Prev comes back to it.
     // The swap picker too once there's nothing left to swap to: it draws nothing then, and left marked
     // open it would keep the body hidden from a reader and take the next back for a sheet nobody sees.
     val open = running?.let { overlays.on(it.snapshot.visit).withoutDeadSwap(it) } ?: RunnerOverlays()
-    val confirming = confirmingAt != null && confirmingAt == running?.snapshot?.visit
     // The visit an EMOM minute was called done on (#417): blue until the minute turns, which moves the
     // visit. The engine never hears it. Saved with the screen, and the visit is restored with the
     // snapshot, so a minute rested out before a process death comes back still resting.
@@ -84,7 +78,6 @@ fun RunnerScreen(
     val resting = restedAt != null && restedAt == running?.snapshot?.visit
     SideEffect {
         if (open != overlays) overlays = open
-        if (!confirming && confirmingAt != null) confirmingAt = null
     }
     // Read when asked, not when composed: a lambda holding an earlier composition's view would bind the
     // dialog to a visit already left, and it would close as it opened.
@@ -92,7 +85,11 @@ fun RunnerScreen(
     val currentActions by rememberUpdatedState(actions)
     val adopting = remember { AdoptingSend({ currentActions }, { current }) }
     val send = adopting::send
-    val askToFinish = { confirmingAt = current?.snapshot?.visit }
+    // End early is an overlay like the rest (#417): it closes once its step is left, so a rest ending
+    // under it can't have Save and end log the next step's seeded target as a set (#317's review).
+    val askToFinish: () -> Unit = {
+        current?.snapshot?.visit?.let { overlays = overlays.open(Overlay.END, it) }
+    }
     val close = { overlay: Overlay -> overlays = overlays.close(overlay) }
     RunnerBack(entry, { visit -> overlays.on(visit).open }, close, askToFinish, actions)
     val controlsFor = { view: RunnerView.Running ->
@@ -128,14 +125,6 @@ fun RunnerScreen(
             CompositionLocalProvider(LocalRunnerPalette provides RunnerField.PACE.palette) {
                 Overlays(stepContext(running, environment, now, controlsFor(running)), running, open.open, pad, close)
             }
-        }
-    }
-    confirmingAt?.takeIf { confirming && running != null }?.let { askedAt ->
-        FinishDialog({ confirmingAt = null }) {
-            confirmingAt = null
-            // Aimed at the step it was asked on: should that step end before this lands, the engine
-            // ends the session without logging the one that replaced it (#319).
-            send(RunnerCommand.Finish(askedAt))
         }
     }
 }
@@ -194,22 +183,7 @@ private fun RunnerBack(
     }
 }
 
-/** "Finish session?", saying the set on screen is saved too. Finish or Cancel, nothing else. */
-@Composable
-private fun FinishDialog(
-    dismiss: () -> Unit,
-    finish: () -> Unit,
-) {
-    KettleAlertDialog(
-        title = stringResource(R.string.session_finish_confirmTitle),
-        body = stringResource(R.string.session_finish_confirmBody),
-        onDismissRequest = dismiss,
-        confirm = DialogAction(stringResource(R.string.session_finish_confirmAction), finish),
-        dismiss = DialogAction(stringResource(R.string.common_cancel), dismiss),
-    )
-}
-
-/** The pad, Coming up and the pickers, over the body, which [Frame] hides from accessibility meanwhile. */
+/** The pad, Coming up, the pickers and End early, over the body, which [Frame] hides from accessibility meanwhile. */
 @Composable
 private fun Overlays(
     context: StepContext,
@@ -226,14 +200,14 @@ private fun Overlays(
         }
     }
     if (Overlay.ADD_PICKER in open) {
-        ExercisePicker(null, addCandidates(view.plan.exercises), { close(Overlay.ADD_PICKER) }) {
+        ExercisePicker(addCandidates(view.plan.exercises), { close(Overlay.ADD_PICKER) }) {
             close(Overlay.ADD_PICKER)
             context.send(RunnerCommand.AddExercise(it))
         }
     }
-    val swaps = swapCandidates(snapshot, view.plan.exercises)
-    if (Overlay.SWAP_PICKER in open && step is WorkStep && swaps.isNotEmpty()) {
-        ExercisePicker(step.exerciseName, swaps, { close(Overlay.SWAP_PICKER) }) {
+    val swaps = swapChoices(snapshot, view.plan.exercises)
+    if (Overlay.SWAP_PICKER in open && step is WorkStep && swaps != null) {
+        SwapSheet(swaps, context.units, { close(Overlay.SWAP_PICKER) }) {
             close(Overlay.SWAP_PICKER)
             context.send(RunnerCommand.Swap(it))
         }
@@ -245,6 +219,14 @@ private fun Overlays(
     }
     if (Overlay.PAD in open && pad != null) {
         NumberPad(pad) { close(Overlay.PAD) }
+    }
+    if (Overlay.END in open) {
+        EndSheet(endProgress(snapshot), { close(Overlay.END) }) {
+            close(Overlay.END)
+            // Aimed at the step it was asked on: should that step end before this lands, the engine
+            // ends the session without logging the one that replaced it (#319).
+            context.send(RunnerCommand.Finish(snapshot.visit))
+        }
     }
 }
 

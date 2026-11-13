@@ -215,10 +215,7 @@
     "resume": "Continuar",
     "prev": "Voltar",
     "finish": {
-      "label": "Encerrar",
-      "confirmTitle": "Encerrar o treino?",
-      "confirmBody": "Tudo que você registrou, inclusive a série em andamento, será salvo.",
-      "confirmAction": "Encerrar"
+      "label": "Encerrar"
     },
     "restDay": {
       "title": "Dia de descanso",
@@ -246,9 +243,20 @@
     },
     "swap": {
       "action": "Trocar",
-      "title": "TROCAR EXERCÍCIO",
-      "replacing": "No lugar do que resta de {{name}}",
-      "dismiss": "Manter o exercício atual"
+      "title": "Trocar {{name}}",
+      "replacing": "Pelo resto deste exercício. Seu treino continua como está.",
+      "dismiss": "Manter o exercício atual",
+      "keep": "Manter {{name}}",
+      "also": {
+        "reps": "Também de repetições",
+        "hold": "Também isometrias",
+        "hiit": "Também HIIT",
+        "emom": "Também EMOM",
+        "amrap": "Também AMRAP",
+        "cardio": "Também cardio"
+      },
+      "otherTypes": "Outros tipos",
+      "otherMeta": "{{type}} · {{summary}}"
     },
     "circuit": {
       "crumb": "CIRCUITO · RODADA {{index}} DE {{total}}",
@@ -313,8 +321,10 @@
       "firstTimeHint": "Pode largar o celular — você ouve cada contagem e cada troca de exercício."
     },
     "hold": {
-      "caption": "meta de {{target}}s · contando para cima",
-      "captionOpen": "sem meta · contando para cima"
+      "captionOpen": "sem meta · contando para cima",
+      "target": "Meta de {{range}} s · para em {{end}}",
+      "targetOnly": "Meta de {{range}} s",
+      "stopsAt": "Para em {{end}} s"
     },
     "notification": {
       "restTitle": "Descanso concluído",
@@ -339,7 +349,8 @@
     "rest": {
       "remaining": "de {{total}} restantes",
       "add30": "+30s",
-      "skip": "Pular descanso →"
+      "skip": "Pular descanso →",
+      "minus15": "−15s"
     },
     "interval": {
       "targetReps": "meta de {{reps}} reps",
@@ -441,6 +452,26 @@
       "rounds_one": "{{count}} rodada",
       "rounds_other": "{{count}} rodadas",
       "lastTime": "última vez {{rounds}}"
+    },
+    "end": {
+      "title": "Encerrar o treino agora?",
+      "body": "Tudo que você registrou, inclusive a série em andamento, fica salvo.",
+      "keepGoing": "Continuar",
+      "saveAndEnd": "Salvar e encerrar",
+      "notStarted": "não iniciado",
+      "done": "feito",
+      "sets_zero": "{{done}} de {{count}} séries",
+      "sets_one": "{{done}} de {{count}} série",
+      "sets_other": "{{done}} de {{count}} séries",
+      "rounds_zero": "{{done}} de {{count}} rodadas",
+      "rounds_one": "{{done}} de {{count}} rodada",
+      "rounds_other": "{{done}} de {{count}} rodadas",
+      "minutes_zero": "{{done}} de {{count}} min",
+      "minutes_one": "{{done}} de {{count}} min",
+      "minutes_other": "{{done}} de {{count}} min",
+      "intervals_zero": "{{done}} de {{count}} intervalos",
+      "intervals_one": "{{done}} de {{count}} intervalo",
+      "intervals_other": "{{done}} de {{count}} intervalos"
     }
   },
   "settings": {

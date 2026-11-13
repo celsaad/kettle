@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -16,12 +17,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.casco.kettle.domain.PreviousSet
 import com.casco.kettle.domain.RunnerCommand
 import com.casco.kettle.domain.RunnerStep
-import com.casco.kettle.domain.holdTarget
-import com.casco.kettle.domain.jsNumber
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.Spacing
@@ -111,63 +110,6 @@ internal fun ClockRow(
 }
 
 /**
- * A hold counts up. Its bar spans the top of the range, with the minimum a mark to cross only on a real
- * range, and a max-effort hold, with no scale to draw against, has no bar at all.
- */
-@Composable
-internal fun HoldScreen(
-    step: RunnerStep.Hold,
-    context: StepContext,
-) {
-    val resources = LocalResources.current
-    val readings = context.readings
-    StepLayout(
-        top = {
-            StepHeader(
-                resources.stepLabel(step, context.snapshot.inputs),
-                step.exerciseName,
-                resources.circuitSpoken(step),
-            )
-            ActionRow(context)
-            StepNotes(step.notes)
-            PreviousRow(
-                (readings.previous as? PreviousSet.Hold)?.let { resources.previousSetText(it, context.units) },
-                readings.beatsBest,
-            )
-        },
-        middle = { HoldClock(step, context.elapsed) },
-        controls = {
-            ClockRow(context, doneAction(context))
-        },
-    )
-}
-
-@Composable
-private fun HoldClock(
-    step: RunnerStep.Hold,
-    elapsed: Long,
-) {
-    val target = step.holdTargetSec
-    Row {
-        Numeral("$elapsed", HOLD_NUMERAL, Modifier.alignByBaseline())
-        Numeral("s", UNIT_NUMERAL, Modifier.alignByBaseline(), runnerColors.textSecondary, leading = null)
-    }
-    if (target != null) {
-        val barSec = step.holdTargetMaxSec?.takeIf { it > target } ?: target
-        val marker = target.takeIf { barSec > it }?.let { (it / barSec).toFloat() }
-        FillBar(if (barSec > 0) (elapsed / barSec).toFloat() else 0f, marker)
-    }
-    Secondary(
-        holdTarget(step)?.let {
-            stringResource(
-                R.string.session_hold_caption,
-                it.maxSec?.let { max -> "${jsNumber(it.minSec)}–${jsNumber(max)}" } ?: jsNumber(it.minSec),
-            )
-        } ?: stringResource(R.string.session_hold_captionOpen),
-    )
-}
-
-/**
  * A rest's header: its label, then what comes next in the name's place, which on the canvas replaced
  * the Next card the bottom of the rest screen used to carry. Nothing next names nothing.
  */
@@ -190,7 +132,7 @@ private fun RestHeader(
 }
 
 /**
- * A rest counts down against its total, which +30s under the clock moves, where the canvas draws it.
+ * A rest counts down against its total, which −15s and +30s under the clock move, where the canvas draws them.
  * Straight after a commit it shows what was logged with Undo, and then no Back: the two would be the
  * same step back. With nothing to undo (a restored session, a set that logged nothing, an edit since),
  * Back takes Undo's place so there's always a way back.
@@ -208,11 +150,21 @@ internal fun RestScreen(context: StepContext) {
         middle = {
             Numeral(formatClock(context.remaining), REST_NUMERAL)
             Secondary(stringResource(R.string.session_rest_remaining, formatClock(context.snapshot.clock.stepEndSec)))
-            OutlineButton(
-                stringResource(R.string.session_rest_add30),
-                { context.send(RunnerCommand.AddRestSeconds(REST_BUMP_SEC)) },
-                look = ButtonLook.Compact,
-            )
+            Row(Modifier.padding(top = Spacing.two), horizontalArrangement = Arrangement.spacedBy(Spacing.two)) {
+                val width = Modifier.widthIn(min = REST_BUTTON_MIN_WIDTH)
+                OutlineButton(
+                    stringResource(R.string.session_rest_minus15),
+                    { context.send(RunnerCommand.AddRestSeconds(-REST_CUT_SEC)) },
+                    width,
+                    look = ButtonLook.Compact,
+                )
+                OutlineButton(
+                    stringResource(R.string.session_rest_add30),
+                    { context.send(RunnerCommand.AddRestSeconds(REST_BUMP_SEC)) },
+                    width,
+                    look = ButtonLook.Compact,
+                )
+            }
         },
         controls = {
             if (logged != null) LoggedPanel(logged, context)
@@ -226,7 +178,11 @@ internal fun RestScreen(context: StepContext) {
     )
 }
 
-private val HOLD_NUMERAL = 96.sp
 private val REST_NUMERAL = 100.sp
-private val UNIT_NUMERAL = 38.sp
 private const val REST_BUMP_SEC = 30.0
+
+/** −15s (#417): cut past what's left, the rest ends on the next tick, as it would have at its end. */
+private const val REST_CUT_SEC = 15.0
+
+/** The canvas's 84dp: a short label like "+30s" was a pill narrower than a finger. */
+private val REST_BUTTON_MIN_WIDTH = 84.dp

@@ -87,9 +87,10 @@ private fun snapshotOf(root: JsonFields): RunnerSnapshot {
                     root.long("reps"),
                     root.double("weightKg"),
                     // A version 1 file's effort is always a number, the default 8 unless one was picked,
-                    // and nothing in it says which. Kept as read: the set on screen across the update
-                    // logs it, which costs one set an unasked 8, where reading it as empty would drop
-                    // every effort that was picked.
+                    // and nothing in it says which. It is only the set on screen's (earlier sets are in
+                    // the log already), so either reading costs that one set: kept as read, it logs an
+                    // unasked 8 when nothing was picked; read as empty, it would drop the pick when one
+                    // was made. Kept, as it's what the old build would have logged anyway.
                     root.optionalDouble("rpe"),
                     root.long("roundsCompleted"),
                     root.long("extraReps"),

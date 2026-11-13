@@ -63,3 +63,84 @@ private fun withoutLastUnit(entry: SessionEntry): SessionEntry? =
             null
         }
     }
+
+/**
+ * The commit Prev would take back now: [RunnerState.lastCommit], but only on the step its advance
+ * landed on. One step further on, Prev just moves.
+ */
+internal fun undoableCommit(state: RunnerState): LastCommit? =
+    state.lastCommit?.takeIf { it.resultingIndex == state.snapshot.stepIndex }
+
+/** What an undo would take back, for the runner to name beside its Undo. */
+sealed interface LoggedUnit {
+    /** A reps or hold set: the member's [number]th, as logged. */
+    data class Set(
+        val number: Int,
+        val set: PreviousSet,
+    ) : LoggedUnit
+
+    /** A HIIT round, the member's [number]th. */
+    data class Round(
+        val number: Long,
+    ) : LoggedUnit
+
+    /** An EMOM minute, the member's [number]th. */
+    data class Minute(
+        val number: Int,
+    ) : LoggedUnit
+
+    /** A whole entry (AMRAP, cardio, a standalone rest): [exerciseName], null for a rest. */
+    data class Entry(
+        val exerciseName: String?,
+    ) : LoggedUnit
+}
+
+/**
+ * What Prev on the step on screen would take back, or null when it would only move: nothing was just
+ * logged, an edit has cleared the record since, or the session was rebuilt after process death.
+ */
+fun lastLogged(state: RunnerState): LoggedUnit? {
+    val commit = undoableCommit(state)
+    return when {
+        commit == null -> {
+            null
+        }
+
+        commit.kind == UndoKind.ONE_SHOT -> {
+            val step = state.snapshot.steps.getOrNull(commit.resultingIndex - 1)
+            LoggedUnit.Entry((step as? WorkStep)?.exerciseName)
+        }
+
+        else -> {
+            loggedUnit(state.memberEntry(commit.memberKey))
+        }
+    }
+}
+
+/** The last unit of a member's [entry]; null for an entry Prev would leave as it is. */
+private fun loggedUnit(entry: SessionEntry?): LoggedUnit? =
+    when (entry) {
+        is SessionEntry.Reps -> {
+            entry.sets.lastOrNull()?.let {
+                LoggedUnit.Set(entry.sets.size, PreviousSet.Reps(it.reps, it.weightKg))
+            }
+        }
+
+        is SessionEntry.TimedHold -> {
+            entry.sets.lastOrNull()?.let {
+                LoggedUnit.Set(entry.sets.size, PreviousSet.Hold(it.holdSec))
+            }
+        }
+
+        is SessionEntry.Hiit -> {
+            LoggedUnit.Round(entry.roundsCompleted)
+        }
+
+        is SessionEntry.Emom -> {
+            LoggedUnit.Minute(entry.minutes.size)
+        }
+
+        else -> {
+            null
+        }
+    }

@@ -1,5 +1,8 @@
 package com.casco.kettle.shell.runner
 
+import com.casco.kettle.domain.CircuitMember
+import com.casco.kettle.domain.LoggedUnit
+import com.casco.kettle.domain.PreviousSet
 import com.casco.kettle.domain.RunnerCommand
 import com.casco.kettle.domain.RunnerCue
 import com.casco.kettle.domain.RunnerPlan
@@ -7,6 +10,9 @@ import com.casco.kettle.domain.RunnerRecovery
 import com.casco.kettle.domain.RunnerStep
 import com.casco.kettle.domain.Session
 import com.casco.kettle.domain.SnapshotRead
+import com.casco.kettle.domain.Workout
+import com.casco.kettle.domain.WorkoutBlock
+import com.casco.kettle.domain.buildSteps
 import com.casco.kettle.domain.decodeRunnerSnapshot
 import com.casco.kettle.domain.resumeRunner
 import com.casco.kettle.domain.startRunner
@@ -184,6 +190,27 @@ class RunnerSessionTest {
         loop.advanceBy(15_000) // the milestone
 
         assertEquals(before, views.size)
+    }
+
+    @Test
+    fun `tells the screen what Undo would take back, and when an edit that moves nothing clears it`() {
+        val circuit =
+            WorkoutBlock.Circuit(
+                rounds = 2,
+                restBetweenExercisesSec = null,
+                restBetweenRoundsSec = null,
+                members = listOf(CircuitMember("pullups"), CircuitMember("plank")),
+            )
+        val workout = Workout("w", "W", listOf(circuit))
+        val session = session(RunnerPlan.Runnable(workout, RUNNER_EXERCISES, buildSteps(workout, RUNNER_EXERCISES)))
+        session.begin()
+        loop.advanceBy(3000)
+        session.send(RunnerCommand.Advance((view as RunnerView.Running).snapshot.visit))
+        assertEquals(LoggedUnit.Set(1, PreviousSet.Reps(6, 20.0)), (view as RunnerView.Running).logged)
+
+        // A circuit member's sets are refused: the snapshot stays the same object, only the record goes.
+        session.send(RunnerCommand.AddSet)
+        assertEquals(null, (view as RunnerView.Running).logged)
     }
 
     @Test

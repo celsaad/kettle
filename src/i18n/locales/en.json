@@ -200,11 +200,10 @@
   },
   "session": {
     "next": "NEXT",
-    "previousStep": "Previous step",
     "doneNextStep": "Done, next step",
     "pause": "Pause",
     "resume": "Resume",
-    "prev": "Prev",
+    "prev": "Back",
     "finish": {
       "label": "Finish",
       "confirmTitle": "Finish session?",
@@ -298,8 +297,7 @@
     "hold": {
       "label": "HOLD",
       "caption": "target {{target}}s · counting up",
-      "captionOpen": "no target · counting up",
-      "doneSet": "Done set →"
+      "captionOpen": "no target · counting up"
     },
     "notification": {
       "restTitle": "Rest complete",
@@ -340,8 +338,6 @@
       "repsThisMinuteCaps": "REPS THIS MINUTE",
       "roundsCaps": "ROUNDS",
       "extraRepsCaps": "+REPS",
-      "doneUp": "Done →",
-      "skipArrow": "Skip →",
       "repsThisMinute": "Reps this minute",
       "roundsLabel": "Rounds",
       "extraRepsLabel": "Extra reps"
@@ -384,6 +380,18 @@
       "finishOnlyBody": "{{workout}} was still running when Kettle closed, and can't be picked up where it stopped. Finish it to keep what you've logged.",
       "resume": "Resume",
       "finish": "Finish"
+    },
+    "skip": "Skip",
+    "done": "Done",
+    "undo": "Undo",
+    "logged": {
+      "title": "Logged",
+      "setLoaded": "set {{index}} · {{reps}} × {{weight}}",
+      "setBodyweight": "set {{index}} · {{reps}}",
+      "setHold": "set {{index}} · {{seconds}}",
+      "round": "round {{index}}",
+      "minute": "minute {{index}}",
+      "rest": "rest"
     }
   },
   "settings": {

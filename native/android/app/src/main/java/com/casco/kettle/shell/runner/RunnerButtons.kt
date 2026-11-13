@@ -1,7 +1,6 @@
 package com.casco.kettle.shell.runner
 
 import androidx.annotation.DrawableRes
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -21,20 +20,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.graphics.drawscope.scale
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.casco.kettle.shell.R
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.Spacing
 import com.casco.kettle.shell.theme.TypeIcon
@@ -42,6 +36,13 @@ import com.casco.kettle.shell.theme.TypeIcon
 // The runner's controls, in the field's colours ([runnerColors]), and every one at least
 // [MinTarget] tall and its own target, which is #263's fix: the set row's −/+ were 26px, 4px apart,
 // with slop that overlapped.
+
+/** An action in the bottom row: its words, a symbol beside or above them, and what a tap does. */
+internal class RowAction(
+    val label: String,
+    @DrawableRes val icon: Int?,
+    val onClick: () -> Unit,
+)
 
 internal val MinTarget = 48.dp
 
@@ -61,9 +62,6 @@ internal data class ButtonLook(
     companion object {
         /** The tall buttons along the bottom, where a hand lands without looking. */
         val Big = ButtonLook(64.dp, RoundedCornerShape(20.dp), HeavyBorder)
-
-        /** The rest row's: a step shorter and less rounded, three buttons sharing it. */
-        val Rest = ButtonLook(60.dp, RoundedCornerShape(18.dp), HeavyBorder)
 
         /** A sheet's actions, and the one-choice buttons that sit centred. */
         val Compact = ButtonLook(52.dp, RoundedCornerShape(15.dp), 1.dp)
@@ -200,9 +198,6 @@ internal data class SymbolLook(
 
         /** Reps' big −/+. */
         val Big = SymbolLook(60.dp, KettleType.title.copy(fontSize = 28.sp), HeavyBorder)
-
-        /** Prev, beside Pause: its triangle is drawn, so it has no symbol style of its own. */
-        val Prev = SymbolLook(56.dp, border = HeavyBorder)
     }
 }
 
@@ -304,56 +299,6 @@ internal fun PillControl(
         ) {
             Text(label, style = QuietStyle)
         }
-    }
-}
-
-/**
- * Back a step, on the screens that keep the clock: an icon, so it carries a label. The triangle is
- * drawn, as RN's CSS one, rather than a text glyph that changes size and weight with the font.
- */
-@Composable
-internal fun PrevIconButton(onClick: () -> Unit) {
-    RoundButton(stringResource(R.string.session_previousStep), onClick, enabled = true, look = SymbolLook.Prev) {
-        val color = runnerColors.textSecondary
-        Canvas(Modifier.size(width = 9.dp, height = 12.dp)) {
-            // Back points the way the layout reads.
-            scale(scaleX = if (layoutDirection == LayoutDirection.Rtl) -1f else 1f, scaleY = 1f) {
-                drawPath(
-                    Path().apply {
-                        moveTo(size.width, 0f)
-                        lineTo(0f, size.height / 2)
-                        lineTo(size.width, size.height)
-                        close()
-                    },
-                    color,
-                )
-            }
-        }
-    }
-}
-
-/** Prev as a word, in a circle, on the screens with no clock to pause: named by its text. */
-@Composable
-internal fun PrevTextButton(
-    onClick: () -> Unit,
-    size: Dp = SymbolLook.Prev.size,
-) {
-    Box(
-        // A minimum, as SymbolButton's, so the word has room at large text sizes.
-        Modifier
-            .sizeIn(minWidth = size, minHeight = size)
-            .clip(CircleShape)
-            .border(HeavyBorder, runnerColors.outline, CircleShape)
-            .clickable(role = Role.Button, onClick = onClick),
-        contentAlignment = Alignment.Center,
-    ) {
-        // RN's plain code face, untracked, unlike the other quiet controls.
-        Text(
-            stringResource(R.string.session_prev),
-            style = KettleType.code,
-            color = runnerColors.textSecondary,
-            textAlign = TextAlign.Center,
-        )
     }
 }
 

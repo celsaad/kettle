@@ -6,6 +6,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import com.casco.kettle.domain.LoggedUnit
 import com.casco.kettle.domain.PreviousSet
 import com.casco.kettle.domain.RunnerCommand
 import com.casco.kettle.domain.RunnerSnapshot
@@ -61,6 +62,8 @@ class StepContext(
     val units: UnitSystem,
     val readings: StepReadings,
     val controls: StepControls,
+    /** What Undo would take back, null when it has nothing to: [RunnerView.Running.logged]. */
+    val logged: LoggedUnit? = null,
 ) {
     val elapsed: Long get() = elapsedSec(snapshot.clock, now)
     val remaining: Double get() = remainingSec(snapshot.clock, now)
@@ -91,7 +94,7 @@ internal fun stepContext(
             canDropSet = canDropSet(state),
             canSwap = swapCandidates(snapshot, view.plan.exercises).isNotEmpty(),
         )
-    return StepContext(snapshot, now, environment.units, readings, controls)
+    return StepContext(snapshot, now, environment.units, readings, controls, view.logged)
 }
 
 /**

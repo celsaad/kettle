@@ -38,6 +38,10 @@ here, next to what it describes.
   work (an interval, an EMOM minute, an AMRAP, a hold that stops itself) and blue while you rest.
   It stays black when you set the pace, as on a set or while paused. In the last three seconds of
   a rest, the countdown goes orange on black, with the ticks (#418).
+- **One row of buttons at the bottom of every session screen**: Back on the left, the main action
+  in the middle and Skip or Done on the right. While a timer runs, the big middle button is Pause,
+  so a hurried tap can't end the step by mistake. Right after you log a set, the rest screen shows
+  what you logged with an Undo button (#409).
 
 ---
 

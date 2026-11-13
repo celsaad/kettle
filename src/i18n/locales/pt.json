@@ -211,7 +211,6 @@
   },
   "session": {
     "next": "PRÓXIMO",
-    "previousStep": "Etapa anterior",
     "doneNextStep": "Concluído, próxima etapa",
     "pause": "Pausar",
     "resume": "Continuar",
@@ -320,8 +319,7 @@
     "hold": {
       "label": "ISOMETRIA",
       "caption": "meta de {{target}}s · contando para cima",
-      "captionOpen": "sem meta · contando para cima",
-      "doneSet": "Série concluída →"
+      "captionOpen": "sem meta · contando para cima"
     },
     "notification": {
       "restTitle": "Descanso concluído",
@@ -363,8 +361,6 @@
       "repsThisMinuteCaps": "REPS NESTE MINUTO",
       "roundsCaps": "RODADAS",
       "extraRepsCaps": "+REPS",
-      "doneUp": "Concluído →",
-      "skipArrow": "Pular →",
       "repsThisMinute": "Reps neste minuto",
       "roundsLabel": "Rodadas",
       "extraRepsLabel": "Reps extras"
@@ -407,6 +403,18 @@
       "finishOnlyBody": "{{workout}} ainda estava em andamento quando o Kettle fechou e não pode ser continuado de onde parou. Encerre-o para manter o que você registrou.",
       "resume": "Continuar",
       "finish": "Encerrar"
+    },
+    "skip": "Pular",
+    "done": "Concluir",
+    "undo": "Desfazer",
+    "logged": {
+      "title": "Registrado",
+      "setLoaded": "série {{index}} · {{reps}} × {{weight}}",
+      "setBodyweight": "série {{index}} · {{reps}}",
+      "setHold": "série {{index}} · {{seconds}}",
+      "round": "rodada {{index}}",
+      "minute": "minuto {{index}}",
+      "rest": "descanso"
     }
   },
   "settings": {

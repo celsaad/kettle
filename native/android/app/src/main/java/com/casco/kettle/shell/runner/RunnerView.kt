@@ -1,6 +1,7 @@
 package com.casco.kettle.shell.runner
 
 import com.casco.kettle.domain.CountIn
+import com.casco.kettle.domain.LoggedUnit
 import com.casco.kettle.domain.RunnerPlan
 import com.casco.kettle.domain.RunnerSnapshot
 import com.casco.kettle.domain.RunnerStart
@@ -29,11 +30,16 @@ sealed interface RunnerView {
         val countIn: CountIn,
     ) : Active
 
+    /**
+     * [logged] is what Undo would take back, null when there's nothing to: kept in the engine's memory
+     * only, so the view is told it rather than reading it off the snapshot.
+     */
     data class Running(
         override val plan: RunnerPlan.Runnable,
         val snapshot: RunnerSnapshot,
         val session: Session,
         override val start: RunnerStart? = null,
+        val logged: LoggedUnit? = null,
     ) : Active
 
     /** The session is over and written. Held until the completion screen's Done ([RunnerHost.dismiss]). */

@@ -189,7 +189,6 @@
   },
   "session": {
     "next": "次",
-    "previousStep": "前のステップ",
     "doneNextStep": "完了して次のステップへ",
     "pause": "一時停止",
     "resume": "再開",
@@ -276,8 +275,7 @@
     "hold": {
       "label": "ホールド",
       "caption": "目標{{target}}秒 · カウントアップ",
-      "captionOpen": "目標なし · カウントアップ",
-      "doneSet": "セット完了 →"
+      "captionOpen": "目標なし · カウントアップ"
     },
     "notification": {
       "restTitle": "休憩終了",
@@ -317,8 +315,6 @@
       "repsThisMinuteCaps": "この1分のレップ",
       "roundsCaps": "ラウンド",
       "extraRepsCaps": "＋レップ",
-      "doneUp": "完了 →",
-      "skipArrow": "スキップ →",
       "repsThisMinute": "この1分のレップ",
       "roundsLabel": "ラウンド",
       "extraRepsLabel": "追加レップ"
@@ -361,6 +357,18 @@
       "finishOnlyBody": "Kettle が閉じたとき、{{workout}} はまだ実行中でしたが、中断したところから再開することはできません。記録した内容を残すには終了してください。",
       "resume": "再開",
       "finish": "終了"
+    },
+    "skip": "スキップ",
+    "done": "完了",
+    "undo": "元に戻す",
+    "logged": {
+      "title": "記録済み",
+      "setLoaded": "{{index}}セット目 · {{reps}} × {{weight}}",
+      "setBodyweight": "{{index}}セット目 · {{reps}}",
+      "setHold": "{{index}}セット目 · {{seconds}}",
+      "round": "{{index}}ラウンド目",
+      "minute": "{{index}}分目",
+      "rest": "休憩"
     }
   },
   "settings": {

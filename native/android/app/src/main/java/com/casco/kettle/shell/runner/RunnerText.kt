@@ -2,6 +2,7 @@ package com.casco.kettle.shell.runner
 
 import android.content.res.Resources
 import com.casco.kettle.domain.IntervalProgress
+import com.casco.kettle.domain.LoggedUnit
 import com.casco.kettle.domain.PreviousSet
 import com.casco.kettle.domain.SessionRecord
 import com.casco.kettle.domain.StepPreview
@@ -30,6 +31,43 @@ private fun Resources.reps(count: Long): String =
     pluralText(R.plurals.format_rep, R.string.format_rep_zero, count.toInt())
 
 private fun Resources.seconds(value: Double): String = getString(R.string.format_seconds, jsNumber(value))
+
+/** What Undo would take back, after "Logged": "set 1 · 10 × 48.5 lb", "round 3", or the entry's name. */
+fun Resources.loggedText(
+    logged: LoggedUnit,
+    units: UnitSystem,
+): String =
+    when (logged) {
+        is LoggedUnit.Set -> {
+            val index = "${logged.number}"
+            when (val set = logged.set) {
+                is PreviousSet.Hold -> {
+                    getString(R.string.session_logged_setHold, index, seconds(set.holdSec))
+                }
+
+                is PreviousSet.Reps -> {
+                    val kg = set.weightKg?.takeIf { it > 0 }
+                    if (kg == null) {
+                        getString(R.string.session_logged_setBodyweight, index, reps(set.reps))
+                    } else {
+                        getString(R.string.session_logged_setLoaded, index, "${set.reps}", weightText(kg, units))
+                    }
+                }
+            }
+        }
+
+        is LoggedUnit.Round -> {
+            getString(R.string.session_logged_round, "${logged.number}")
+        }
+
+        is LoggedUnit.Minute -> {
+            getString(R.string.session_logged_minute, "${logged.number}")
+        }
+
+        is LoggedUnit.Entry -> {
+            logged.exerciseName ?: getString(R.string.session_logged_rest)
+        }
+    }
 
 /** The Next card's second line, as RN's `previewFor`. */
 fun Resources.previewDetail(preview: StepPreview): String =

@@ -93,8 +93,15 @@ internal fun stepContext(
             previous = previousSet(snapshot, prior),
             tryKg =
                 offeredLoadKg(
-                    (snapshot.step as? RunnerStep.Reps)
-                        ?.let { progressionLoadKg(it, prior, environment.units, view.plan.loadsSetByProgram) },
+                    (snapshot.step as? RunnerStep.Reps)?.let {
+                        progressionLoadKg(
+                            it,
+                            prior,
+                            environment.units,
+                            view.plan.loadsSetByProgram,
+                            plannedSets(view, it),
+                        )
+                    },
                     snapshot.inputs.weightKg,
                     environment.units,
                 ),
@@ -106,6 +113,19 @@ internal fun stepContext(
         )
     return StepContext(snapshot, now, environment.units, readings, controls, view.logged)
 }
+
+/**
+ * [step]'s member's set count as the plan built it, before any Sets −/+ (which rewrite the live step's
+ * `setTotal`); the live count for an ad-hoc session, whose plan starts empty.
+ */
+private fun plannedSets(
+    view: RunnerView.Running,
+    step: RunnerStep.Reps,
+): Long =
+    view.plan.steps
+        .filterIsInstance<RunnerStep.Reps>()
+        .firstOrNull { it.memberKey == step.memberKey }
+        ?.setTotal ?: step.setTotal
 
 /**
  * The header's action row (#409), borderless: the set count's −/+ beside the word Sets (hidden in a

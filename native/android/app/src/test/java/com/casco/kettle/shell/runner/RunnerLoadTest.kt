@@ -59,6 +59,13 @@ class RunnerLoadTest : RunnerScreenHarness() {
     }
 
     @Test
+    fun `adding a set today keeps Try, since it's last session that has to reach the top`() {
+        prior = listOf(lastBench(12))
+        show(running(plan(block(bench)), started(plan(block(bench))).after(RunnerCommand.AddSet)))
+        button("Tentar 62.5 kg").assertExists()
+    }
+
+    @Test
     fun `no Try when a set fell short of the top last time`() {
         prior = listOf(lastBench(11))
         show(running(plan(block(bench))))

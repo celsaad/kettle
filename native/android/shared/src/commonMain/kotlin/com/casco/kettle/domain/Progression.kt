@@ -4,10 +4,15 @@ package com.casco.kettle.domain
 
 /**
  * The load to try on [step]: last session's working load plus a step, once last session logged at
- * least this step's set count and every one of them reached the top of the rep range. Null when there's
+ * least [plannedSets] sets and every one of them reached the top of the rep range. Null when there's
  * nothing to suggest: no range (no top to reach), too few sets or one short of the top, a bodyweight
  * session, no finished session to go on, or a program week that sets this exercise's load itself
  * ([loadsSetByProgram]), which wins over a suggestion.
+ *
+ * [plannedSets] is the count the session was planned with, not the step's live `setTotal`, which the
+ * Sets −/+ rewrites: today's edits mustn't decide whether last session counted. A week that plans more
+ * sets than last session logged hides Try for that week, which is fair: a heavier prescription isn't
+ * the moment to add load as well.
  *
  * A session's working load is its heaviest set, for the base and the step alike, so ramp-up and
  * back-off sets don't pull the two apart. The step is [learnedStepKg], else the smallest jump the
@@ -18,27 +23,34 @@ fun progressionLoadKg(
     priorSessions: List<Session>,
     units: UnitSystem,
     loadsSetByProgram: Set<String> = emptySet(),
+    plannedSets: Long = step.setTotal,
 ): Double? {
     val top = step.targetRepsMax
-    val last = finishedEntries(priorSessions, step.exerciseId).firstOrNull()
+    val entries = finishedEntries(priorSessions, step.exerciseId).toList()
+    val last = entries.firstOrNull()
     val reachedTop =
-        top != null && last != null && last.sets.size >= step.setTotal && last.sets.all { it.reps >= top }
+        top != null && last != null && last.sets.size >= plannedSets && last.sets.all { it.reps >= top }
     val lastKg = last?.let(::workingLoad)?.takeIf { it > 0 }
     if (step.exerciseId in loadsSetByProgram || !reachedTop || lastKg == null) return null
-    val loads = finishedEntries(priorSessions, step.exerciseId).mapNotNull(::workingLoad).toList()
-    return lastKg + (learnedStepKg(loads) ?: fromDisplayWeight(weightStep(units), units))
+    return lastKg + (learnedStepKg(entries.mapNotNull(::workingLoad)) ?: fromDisplayWeight(weightStep(units), units))
 }
 
 /**
  * The user's own last progression jump, from working [loads] newest first: the newest session that
  * set a new high over every session before it, less that earlier best. Getting back to a load after a
  * deload isn't a new high, so it teaches nothing, and nor do runs at the same load. Null with none.
+ * One walk, oldest first, keeping the best so far.
  */
-internal fun learnedStepKg(loads: List<Double>): Double? =
-    loads.indices.firstNotNullOfOrNull { i ->
-        val earlierBest = loads.drop(i + 1).maxOrNull()
-        earlierBest?.let { loads[i] - it }?.takeIf { it > 0 }
+internal fun learnedStepKg(loads: List<Double>): Double? {
+    var best: Double? = null
+    var step: Double? = null
+    for (load in loads.asReversed()) {
+        val before = best
+        if (before != null && load > before) step = load - before
+        if (before == null || load > before) best = load
     }
+    return step
+}
 
 /**
  * [suggestedKg] as Try offers it: only above the load on screen, compared as the user reads them, in

@@ -76,6 +76,15 @@ class ProgressionTest {
     }
 
     @Test
+    fun `counts last session against the planned sets, not today's edited count`() {
+        val prior = listOf(session("last", 12, 20.0, 20.0))
+        // A set added today (setTotal 3) doesn't hide Try; dropping to 1 doesn't let a short session in.
+        assertEquals(22.5, progressionLoadKg(squat.copy(setTotal = 3), prior, UnitSystem.METRIC, plannedSets = 2))
+        val short = listOf(session("short", 12, 20.0))
+        assertNull(progressionLoadKg(squat.copy(setTotal = 1), short, UnitSystem.METRIC, plannedSets = 2))
+    }
+
+    @Test
     fun `a session that logged fewer sets than planned suggests nothing`() {
         // One of two sets, at the top: it didn't reach the top on every set the step plans.
         assertNull(progressionLoadKg(squat, listOf(session("short", 12, 20.0)), UnitSystem.METRIC))

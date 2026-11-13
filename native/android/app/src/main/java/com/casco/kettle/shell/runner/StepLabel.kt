@@ -36,7 +36,7 @@ private fun Resources.intervalLabel(step: RunnerStep.Interval): String {
 
 /** "Minute" only where an interval is one; a 40-second EMOM counts intervals. */
 private fun emomLabel(step: RunnerStep.Interval): Int =
-    if (step.targetSec == SECONDS_PER_MINUTE) {
+    if (step.targetSec == EMOM_MINUTE_SEC) {
         R.string.session_header_emomMinute
     } else {
         R.string.session_header_emomInterval
@@ -44,10 +44,12 @@ private fun emomLabel(step: RunnerStep.Interval): Int =
 
 /**
  * What a reader hears for the label line inside a circuit: the round, and which member of it this is,
- * which the line itself leaves out. Null outside one, where the line says it all.
+ * which the line itself leaves out. Null outside one, where the line says it all, and on a rest: a rest
+ * carries the position of the work it follows, and a description replaces the words it describes, so a
+ * reader would hear the finished member's position and never "Rest".
  */
 fun Resources.circuitSpoken(step: RunnerStep): String? =
-    step.circuit?.let {
+    step.circuit?.takeIf { step !is RunnerStep.Rest }?.let {
         // Placeholders by name, alphabetically: index, member, memberTotal, total.
         getString(
             R.string.session_circuit_accessibility,
@@ -58,4 +60,4 @@ fun Resources.circuitSpoken(step: RunnerStep): String? =
         )
     }
 
-private const val SECONDS_PER_MINUTE = 60.0
+private const val EMOM_MINUTE_SEC = 60.0

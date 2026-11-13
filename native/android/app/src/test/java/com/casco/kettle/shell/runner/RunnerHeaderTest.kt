@@ -48,6 +48,20 @@ class RunnerHeaderTest : RunnerScreenHarness() {
     }
 
     @Test
+    fun `a rest inside a circuit says Rest, to the eye and to a reader`() {
+        val circuit =
+            WorkoutBlock.Circuit(
+                rounds = 2,
+                restBetweenExercisesSec = 30.0,
+                members = listOf(CircuitMember("squat"), CircuitMember("plank")),
+            )
+        show(running(plan(circuit), started(plan(circuit)).advanced()))
+        compose.onNodeWithText("Descanso").assertExists()
+        // The rest carries the finished member's position; spoken, it would replace "Descanso".
+        compose.onNode(hasContentDescription("Circuito", substring = true)).assertDoesNotExist()
+    }
+
+    @Test
     fun `a rest names what comes next in its header`() {
         show(running(plan(block(squat)), started(plan(block(squat))).advanced()))
         compose.onNodeWithText("Descanso").assertExists()

@@ -1,15 +1,7 @@
 package com.casco.kettle.shell.runner
 
-import android.provider.Settings
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -24,16 +16,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
@@ -44,72 +30,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
-import com.casco.kettle.domain.StepPreview
 import com.casco.kettle.shell.R
-import com.casco.kettle.shell.art.ExerciseArt
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.Spacing
 
-// The pieces the runner's screens share that aren't controls: pills, numerals, bars, the Next card.
-
-/** Whether the system has animations off, as RN's `useReducedMotion` reads it. */
-@Composable
-internal fun reducedMotion(): Boolean {
-    val resolver = LocalContext.current.contentResolver
-    return remember(resolver) {
-        Settings.Global.getFloat(resolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f
-    }
-}
-
-/** The step's kind as a pill with a live dot, which pulses unless motion is reduced. */
-@Composable
-internal fun StepPill(
-    label: String,
-    calm: Boolean = false,
-    live: Boolean = true,
-) {
-    val tint = if (calm) runnerColors.accentCalm else runnerColors.accent
-    Row(
-        Modifier
-            .softPill(tint, if (calm) runnerColors.accentCalmSoft else runnerColors.accentSoft)
-            .padding(horizontal = PILL_PAD_H, vertical = PILL_PAD_V),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(DOT_GAP),
-    ) {
-        if (live) LiveDot(tint, if (calm) REST_PULSE_MS else PULSE_MS)
-        Text(
-            label,
-            style = KettleType.code.copy(letterSpacing = CapsTracking),
-            color = if (calm) runnerColors.accentCalmOnSoft else runnerColors.accentOnSoft,
-        )
-    }
-}
-
-@Composable
-private fun LiveDot(
-    tint: Color,
-    periodMs: Int,
-) {
-    val alpha =
-        if (reducedMotion()) {
-            1f
-        } else {
-            val pulse by rememberInfiniteTransition(label = "pulse").animateFloat(
-                initialValue = 1f,
-                targetValue = PULSE_LOW,
-                animationSpec = infiniteRepeatable(tween(periodMs), RepeatMode.Reverse),
-                label = "pulse",
-            )
-            pulse
-        }
-    Box(
-        Modifier
-            .size(DOT)
-            .alpha(alpha)
-            .clip(CircleShape)
-            .background(tint),
-    )
-}
+// The pieces the runner's screens share that aren't controls: numerals, bars, captions.
 
 /** The record badge: words, not colour alone, which is the one signal everyone can read. */
 @Composable
@@ -205,22 +130,21 @@ internal fun FillBar(
 }
 
 /**
- * How far through the blocks, or a circuit's members, as one proportional bar of fixed width, so a
- * long workout can't push Finish off the screen. Nothing below two: one step is not progress. Fills
- * through the step on screen, so the first of five reads as under way.
+ * How far through the blocks, as one bar the width of the screen under the top bar (#409). Nothing
+ * below two: one step is not progress. Fills through the step on screen, so the first of five reads as
+ * under way.
  */
 @Composable
 internal fun ProgressTrack(
     total: Int,
     activeIndex: Int,
-    calm: Boolean = false,
 ) {
     if (total < 2) return
     val done = minOf(activeIndex + 1, total)
     Box(
         Modifier
-            .width(TRACK_WIDTH)
-            .height(if (calm) 3.dp else 4.dp)
+            .fillMaxWidth()
+            .height(TRACK_HEIGHT)
             .clip(CircleShape)
             .background(runnerColors.track)
             .semantics { progressBarRangeInfo = ProgressBarRangeInfo(done.toFloat(), 1f..total.toFloat(), total) },
@@ -229,7 +153,7 @@ internal fun ProgressTrack(
             Modifier
                 .fillMaxWidth(done.toFloat() / total)
                 .fillMaxHeight()
-                .background(if (calm) runnerColors.accentCalm else runnerColors.accent),
+                .background(runnerColors.accent),
         )
     }
 }
@@ -247,50 +171,15 @@ internal fun StepNotes(notes: String?) {
     )
 }
 
-/**
- * What's next, with its drawing. Dropped above 1.5× text, where these screens stop fitting, and its
- * drawing first, above 1.2×, being the one part that doesn't shrink.
- */
-@Composable
-internal fun NextCard(preview: StepPreview?) {
-    val scale = LocalDensity.current.fontScale
-    if (preview == null || scale > MAX_SCALE_FOR_CARD) return
-    val resources = LocalResources.current
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .runnerCard(18.dp, runnerColors),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(CARD_PAD),
-    ) {
-        Caps(stringResource(R.string.session_next))
-        if (scale <= MAX_SCALE_FOR_ART) ExerciseArt(preview.exerciseId, width = 56.dp, color = runnerColors.text)
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Spacing.half)) {
-            Text(preview.label, style = KettleType.heading, color = runnerColors.text)
-            Text(resources.previewDetail(preview), style = KettleType.small, color = runnerColors.textSecondary)
-        }
-    }
-}
-
 /** Decorative, so findable only by tag: the hold's tests ask whether a bar and its mark are drawn. */
 internal const val BAR_TAG = "fill-bar"
 internal const val MARKER_TAG = "fill-bar-marker"
 
-private const val PULSE_LOW = 0.35f
-private const val PULSE_MS = 650
-private const val REST_PULSE_MS = 800
 private const val NUMERAL_SCALE_CAP = 1.3f
-private const val MAX_SCALE_FOR_CARD = 1.5f
-private const val MAX_SCALE_FOR_ART = 1.2f
-private val TRACK_WIDTH = 116.dp
 private val BAR_WIDTH = 220.dp
 private val MARK_HEIGHT = 16.dp
 private val TRACK_HEIGHT = 6.dp
-private val PILL_PAD_H = 12.dp
-private val PILL_PAD_V = 6.dp
-private val DOT_GAP = 7.dp
 private val BADGE_PAD_H = 10.dp
-private val DOT = 7.dp
 
 /** RN's `Spacing.three - 2`, which several of its cards and rows use. */
 internal val CARD_PAD = 14.dp

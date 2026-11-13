@@ -13,6 +13,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.sp
 import com.casco.kettle.domain.PreviousSet
@@ -35,7 +37,6 @@ internal fun StepLayout(
     top: @Composable ColumnScope.() -> Unit,
     middle: @Composable ColumnScope.() -> Unit,
     controls: @Composable ColumnScope.() -> Unit,
-    next: StepPreview? = null,
     middleGap: Dp = Spacing.two,
 ) {
     Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.SpaceBetween) {
@@ -46,13 +47,24 @@ internal fun StepLayout(
             verticalArrangement = Arrangement.spacedBy(middleGap),
             content = middle,
         )
-        Column {
-            NextCard(next)
-            Column(Modifier.padding(top = CARD_PAD), verticalArrangement = Arrangement.spacedBy(Spacing.two)) {
-                controls()
-            }
-        }
+        Column(verticalArrangement = Arrangement.spacedBy(Spacing.two), content = controls)
     }
+}
+
+/**
+ * A step's header (#409): the label line, its kind and where it sits, then the name in the 26sp title,
+ * absent on a rest, whose header says what's next instead.
+ */
+@Composable
+internal fun StepHeader(
+    label: String,
+    name: String?,
+    spoken: String? = null,
+) {
+    // A circuit's label says its round; [spoken] adds the member, which nothing else on screen does.
+    val described = if (spoken == null) Modifier else Modifier.semantics { contentDescription = spoken }
+    Text(label, described, style = SlotLabel, color = runnerColors.textSecondary)
+    if (name != null) ExerciseName(name)
 }
 
 @Composable
@@ -61,8 +73,11 @@ internal fun ExerciseName(name: String) {
 }
 
 @Composable
-internal fun Secondary(text: String) {
-    Text(text, style = KettleType.small, color = runnerColors.textSecondary)
+internal fun Secondary(
+    text: String,
+    modifier: Modifier = Modifier,
+) {
+    Text(text, modifier, style = KettleType.small, color = runnerColors.textSecondary)
 }
 
 /** Last time's line with the PR badge beside it. Absent on a first-ever session: nothing to say yet. */
@@ -109,9 +124,8 @@ internal fun HoldScreen(
     val readings = context.readings
     StepLayout(
         top = {
-            StepPill(stringResource(R.string.session_hold_label))
-            ExerciseName(step.exerciseName)
-            SetCountRow(stringResource(R.string.session_setOf, "${step.setIndex}", "${step.setTotal}"), context)
+            StepHeader(resources.stepLabel(step), step.exerciseName, resources.circuitSpoken(step))
+            ActionRow(context)
             StepNotes(step.notes)
             PreviousRow(
                 (readings.previous as? PreviousSet.Hold)?.let { resources.previousSetText(it, context.units) },
@@ -151,6 +165,27 @@ private fun HoldClock(
 }
 
 /**
+ * A rest's header: its label, then what comes next in the name's place, which on the canvas replaced
+ * the Next card the bottom of the rest screen used to carry. Nothing next names nothing.
+ */
+@Composable
+private fun RestHeader(
+    step: RunnerStep,
+    next: StepPreview?,
+) {
+    val resources = LocalResources.current
+    StepHeader(resources.stepLabel(step), null, resources.circuitSpoken(step))
+    if (next == null) return
+    Text(
+        stringResource(R.string.session_header_next, next.label),
+        Modifier.padding(top = Spacing.one),
+        style = KettleType.heading,
+        color = runnerColors.text,
+    )
+    Secondary(resources.previewDetail(next))
+}
+
+/**
  * A rest counts down against its total, which +30s under the clock moves, where the canvas draws it.
  * Straight after a commit it shows what was logged with Undo, and then no Back: the two would be the
  * same step back. With nothing to undo (a restored session, a set that logged nothing, an edit since),
@@ -165,7 +200,7 @@ internal fun RestScreen(context: StepContext) {
     val logged = context.logged
     val skip = stringResource(R.string.session_rest_skip)
     StepLayout(
-        top = { StepPill(stringResource(R.string.session_rest_label), calm = true) },
+        top = { context.snapshot.step?.let { RestHeader(it, context.readings.next) } },
         middle = {
             Numeral(formatClock(context.remaining), REST_NUMERAL)
             Secondary(stringResource(R.string.session_rest_remaining, formatClock(context.snapshot.clock.stepEndSec)))
@@ -175,7 +210,6 @@ internal fun RestScreen(context: StepContext) {
                 look = ButtonLook.Compact,
             )
         },
-        next = context.readings.next,
         controls = {
             if (logged != null) LoggedPanel(logged, context)
             val back = if (logged == null) ({ context.send(RunnerCommand.Prev) }) else null

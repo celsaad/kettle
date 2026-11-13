@@ -24,7 +24,8 @@ class RunnerBottomRowTest : RunnerScreenHarness() {
         show(running(plan(block(squat))))
         // Once: a work screen has no Next card since #409.
         assertEquals(1, compose.onAllNodesWithText("Agachamento").fetchSemanticsNodes().size)
-        compose.onNodeWithText("Série 1 de 2 · meta 5").assertExists()
+        compose.onNodeWithText("Reps · série 1 de 2").assertExists()
+        compose.onNodeWithText("Reps feitas · meta 5").assertExists()
         button("Aumentar Repetições").performClick()
         assertEquals(RunnerCommand.SetReps(6), sent.last())
         button("Registrar série → Descanso").performClick()

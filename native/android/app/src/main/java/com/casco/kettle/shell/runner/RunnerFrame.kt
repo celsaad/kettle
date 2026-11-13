@@ -1,6 +1,7 @@
 package com.casco.kettle.shell.runner
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -12,24 +13,26 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
-import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.expand
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.casco.kettle.domain.CircuitPosition
 import com.casco.kettle.domain.RunnerCommand
 import com.casco.kettle.domain.RunnerPlan
 import com.casco.kettle.domain.RunnerStep
@@ -68,14 +71,12 @@ internal fun Frame(
         }
         return
     }
-    // No top padding, unlike RN's 8: the header row is 48dp of targets around a line of small text, so
-    // its words already sit 15dp down. Below it the same slack counts toward RN's 24dp, and the crumb,
-    // a plain line with none, takes all 24 itself. The crumb sits 11dp lower than RN's 4dp under the
-    // words: raising it into the header's slack made a tap on it open Coming up.
+    // No top padding: the top bar is 48dp of targets around a line of text, so its words already sit
+    // clear of the status bar. The progress bar runs full width under it, then the step's own header.
     Column(hidden.fillMaxSize().padding(bottom = Spacing.three)) {
         Header(view, Overlay.UPCOMING in open, controls)
-        step.circuit?.let { CircuitCrumb(it) }
-        Spacer(Modifier.height(if (step.circuit == null) Spacing.two else Spacing.four))
+        ProgressTrack(blockTotal(view.snapshot), step.blockIndex)
+        Spacer(Modifier.height(Spacing.three))
         Box(Modifier.weight(1f)) {
             when (step) {
                 is RunnerStep.Hold -> HoldScreen(step, context)
@@ -99,13 +100,11 @@ private fun Header(
         horizontalArrangement = Arrangement.spacedBy(Spacing.two),
     ) {
         WorkoutName(view, upcomingOpen, Modifier.weight(1f)) { controls.open(Overlay.UPCOMING) }
-        ProgressTrack(blockTotal(snapshot), snapshot.step?.blockIndex ?: 0)
         // Ad-hoc only: a planned workout knows what it holds, and here it's the only way to queue anything.
         if (snapshot.adhoc) {
             TextControl(stringResource(R.string.session_adhoc_addShort), { controls.open(Overlay.ADD_PICKER) })
         }
-        // Named by their own words, unlike RN's, whose differing labels Voice Control can't match.
-        TextControl(stringResource(R.string.session_finish_label), controls.confirmFinish)
+        EndPill(controls.confirmFinish)
     }
 }
 
@@ -151,33 +150,28 @@ private fun WorkoutName(
 }
 
 /**
- * "Round n of N" with the members' track, as one node: split, it announced a bare round count and then
- * an unnamed bar duplicating the header's. Finish's width at the end lines the two tracks up.
+ * End, top right: an outlined pill that asks first (`FinishDialog`). Named by its word, so Voice Control
+ * matches what's on screen; 44dp drawn in its 48dp target, as the canvas draws it.
  */
 @Composable
-private fun CircuitCrumb(circuit: CircuitPosition) {
-    val spoken =
-        stringResource(
-            R.string.session_circuit_accessibility,
-            circuit.round,
-            circuit.member,
-            circuit.memberTotal,
-            circuit.rounds,
-        )
-    Row(
-        Modifier.clearAndSetSemantics { contentDescription = spoken },
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(Spacing.two),
+private fun EndPill(confirm: () -> Unit) {
+    Box(
+        Modifier
+            .sizeIn(minWidth = MinTarget, minHeight = MinTarget)
+            .clickable(role = Role.Button, onClick = confirm),
+        contentAlignment = Alignment.Center,
     ) {
-        Text(
-            stringResource(R.string.session_circuit_crumb, "${circuit.round}", "${circuit.rounds}"),
-            Modifier.weight(1f),
-            style = KettleType.code,
-            color = runnerColors.accentCalmOnSoft,
-            maxLines = 1,
-        )
-        ProgressTrack(circuit.memberTotal, circuit.member - 1, calm = true)
-        Box(Modifier.padding(horizontal = Spacing.two)) { WidthOf(stringResource(R.string.session_finish_label)) }
+        Box(
+            Modifier
+                .heightIn(min = END_HEIGHT)
+                .widthIn(min = END_WIDTH)
+                .clip(CircleShape)
+                .border(SLOT_BORDER, runnerColors.outline, CircleShape)
+                .padding(horizontal = Spacing.three),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(stringResource(R.string.session_finish_label), style = SlotLabel, color = runnerColors.text)
+        }
     }
 }
 
@@ -270,3 +264,6 @@ internal fun Before(
 private const val CHEVRON_INSET = 0.25f
 private const val CHEVRON_TOP = 0.375f
 private const val CHEVRON_BOTTOM = 0.625f
+
+private val END_HEIGHT = 44.dp
+private val END_WIDTH = 56.dp

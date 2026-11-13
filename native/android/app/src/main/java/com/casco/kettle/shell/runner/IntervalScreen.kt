@@ -41,9 +41,7 @@ internal fun IntervalScreen(
     val target = context.snapshot.clock.stepEndSec
     StepLayout(
         top = {
-            StepPill(stringResource(variantLabel(step.variant)))
-            ExerciseName(step.exerciseName)
-            resources.setLabel(step)?.let { Secondary(it) }
+            StepHeader(resources.stepLabel(step), step.exerciseName, resources.circuitSpoken(step))
             StepNotes(step.notes)
         },
         middle = {
@@ -58,30 +56,6 @@ internal fun IntervalScreen(
         },
     )
 }
-
-/** "Round n of N" for HIIT; "Minute n of N" only at a 60s EMOM, its interval otherwise; nothing else. */
-private fun Resources.setLabel(step: RunnerStep.Interval): String? =
-    when (step.variant) {
-        IntervalVariant.HIIT -> {
-            getString(R.string.session_interval_roundLabel, "${step.setIndex}", "${step.setTotal}")
-        }
-
-        IntervalVariant.EMOM -> {
-            val key =
-                if (step.targetSec ==
-                    SECONDS_PER_MINUTE
-                ) {
-                    R.string.session_interval_minuteLabel
-                } else {
-                    R.string.session_interval_intervalLabel
-                }
-            getString(key, "${step.setIndex}", "${step.setTotal}")
-        }
-
-        else -> {
-            null
-        }
-    }
 
 private fun Resources.caption(step: RunnerStep.Interval): String =
     listOfNotNull(
@@ -185,14 +159,5 @@ private fun Stepper(
     }
 }
 
-private fun variantLabel(variant: IntervalVariant): Int =
-    when (variant) {
-        IntervalVariant.HIIT -> R.string.session_interval_variantHiit
-        IntervalVariant.EMOM -> R.string.session_interval_variantEmom
-        IntervalVariant.AMRAP -> R.string.session_interval_variantAmrap
-        IntervalVariant.CARDIO -> R.string.session_interval_variantCardio
-    }
-
 private val CLOCK_NUMERAL = 88.sp
 private val STEPPER_ROW_GAP = 6.dp
-private const val SECONDS_PER_MINUTE = 60.0

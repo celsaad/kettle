@@ -199,16 +199,15 @@
     "searchPlaceholder_other": "Search {{count}} programs"
   },
   "session": {
-    "next": "NEXT",
     "doneNextStep": "Done, next step",
     "pause": "Pause",
     "resume": "Resume",
     "prev": "Back",
     "finish": {
-      "label": "Finish",
-      "confirmTitle": "Finish session?",
+      "label": "End",
+      "confirmTitle": "End session?",
       "confirmBody": "Everything you've logged, including the set you're on, will be saved.",
-      "confirmAction": "Finish"
+      "confirmAction": "End session"
     },
     "restDay": {
       "title": "Rest day",
@@ -238,7 +237,7 @@
       "noMatches": "No exercise matches \"{{query}}\""
     },
     "swap": {
-      "action": "SWAP",
+      "action": "Swap",
       "title": "SWAP EXERCISE",
       "replacing": "For the rest of {{name}}",
       "dismiss": "Keep the current exercise"
@@ -295,7 +294,6 @@
       "firstTimeHint": "Put the phone down — you'll hear each countdown and exercise change."
     },
     "hold": {
-      "label": "HOLD",
       "caption": "target {{target}}s · counting up",
       "captionOpen": "no target · counting up"
     },
@@ -319,19 +317,11 @@
       "workoutComplete": "Workout complete"
     },
     "rest": {
-      "label": "REST",
       "remaining": "of {{total}} remaining",
       "add30": "+30s",
       "skip": "Skip rest →"
     },
     "interval": {
-      "variantHiit": "HIIT",
-      "variantEmom": "EMOM",
-      "variantAmrap": "AMRAP",
-      "variantCardio": "CARDIO",
-      "roundLabel": "Round {{index}} of {{total}}",
-      "minuteLabel": "Minute {{index}} of {{total}}",
-      "intervalLabel": "Interval {{index}} of {{total}}",
       "targetReps": "target {{reps}} reps",
       "targetDistance": "target {{meters}}m",
       "ofTotal": "of {{clock}} total",
@@ -343,10 +333,7 @@
       "extraRepsLabel": "Extra reps"
     },
     "reps": {
-      "pillLabel": "REPS",
-      "setLabel": "Set {{index}} of {{total}} · target {{target}}",
       "repsDoneAccessibility": "Reps done: {{count}}. Tap to enter an exact value.",
-      "repsDoneCaps": "REPS DONE",
       "loadCaps": "LOAD",
       "decreaseLoad": "Decrease load",
       "loadAccessibilityWeighted": "Load: {{weight}} {{unit}}. Tap to enter an exact value.",
@@ -361,7 +348,8 @@
       "logSetNoRest": "Log set →",
       "repsDone": "Reps done",
       "loadLabel": "Load",
-      "repsLabel": "Reps"
+      "repsLabel": "Reps",
+      "repsDoneTarget": "Reps done · target {{target}}"
     },
     "numberPad": {
       "dismiss": "Dismiss keypad",
@@ -392,6 +380,19 @@
       "round": "round {{index}}",
       "minute": "minute {{index}}",
       "rest": "rest"
+    },
+    "header": {
+      "reps": "Reps · set {{index}} of {{total}}",
+      "hold": "Hold · set {{index}} of {{total}}",
+      "work": "Work · round {{index}} of {{total}}",
+      "emomMinute": "EMOM · minute {{index}} of {{total}}",
+      "emomInterval": "EMOM · interval {{index}} of {{total}}",
+      "amrap": "AMRAP",
+      "cardio": "Cardio",
+      "circuit": "Circuit · round {{index}} of {{total}}",
+      "rest": "Rest",
+      "next": "Next: {{name}}",
+      "sets": "Sets"
     }
   },
   "settings": {

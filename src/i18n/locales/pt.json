@@ -210,7 +210,6 @@
     "searchPlaceholder_zero": "Buscar {{count}} programas"
   },
   "session": {
-    "next": "PRÓXIMO",
     "doneNextStep": "Concluído, próxima etapa",
     "pause": "Pausar",
     "resume": "Continuar",
@@ -249,7 +248,7 @@
       "noMatches": "Nenhum exercício corresponde a \"{{query}}\""
     },
     "swap": {
-      "action": "TROCAR",
+      "action": "Trocar",
       "title": "TROCAR EXERCÍCIO",
       "replacing": "No lugar do que resta de {{name}}",
       "dismiss": "Manter o exercício atual"
@@ -317,7 +316,6 @@
       "firstTimeHint": "Pode largar o celular — você ouve cada contagem e cada troca de exercício."
     },
     "hold": {
-      "label": "ISOMETRIA",
       "caption": "meta de {{target}}s · contando para cima",
       "captionOpen": "sem meta · contando para cima"
     },
@@ -342,19 +340,11 @@
       "workoutComplete": "Treino concluído"
     },
     "rest": {
-      "label": "DESCANSO",
       "remaining": "de {{total}} restantes",
       "add30": "+30s",
       "skip": "Pular descanso →"
     },
     "interval": {
-      "variantHiit": "HIIT",
-      "variantEmom": "EMOM",
-      "variantAmrap": "AMRAP",
-      "variantCardio": "CARDIO",
-      "roundLabel": "Rodada {{index}} de {{total}}",
-      "minuteLabel": "Minuto {{index}} de {{total}}",
-      "intervalLabel": "Intervalo {{index}} de {{total}}",
       "targetReps": "meta de {{reps}} reps",
       "targetDistance": "meta de {{meters}}m",
       "ofTotal": "de {{clock}} total",
@@ -366,10 +356,7 @@
       "extraRepsLabel": "Reps extras"
     },
     "reps": {
-      "pillLabel": "REPS",
-      "setLabel": "Série {{index}} de {{total}} · meta {{target}}",
       "repsDoneAccessibility": "Reps concluídas: {{count}}. Toque para inserir um valor exato.",
-      "repsDoneCaps": "REPS FEITAS",
       "loadCaps": "CARGA",
       "decreaseLoad": "Diminuir carga",
       "loadAccessibilityWeighted": "Carga: {{weight}} {{unit}}. Toque para inserir um valor exato.",
@@ -384,7 +371,8 @@
       "logSetNoRest": "Registrar série →",
       "repsDone": "Reps feitas",
       "loadLabel": "Carga",
-      "repsLabel": "Repetições"
+      "repsLabel": "Repetições",
+      "repsDoneTarget": "Reps feitas · meta {{target}}"
     },
     "numberPad": {
       "dismiss": "Fechar teclado",
@@ -415,6 +403,19 @@
       "round": "rodada {{index}}",
       "minute": "minuto {{index}}",
       "rest": "descanso"
+    },
+    "header": {
+      "reps": "Reps · série {{index}} de {{total}}",
+      "hold": "Isometria · série {{index}} de {{total}}",
+      "work": "Esforço · rodada {{index}} de {{total}}",
+      "emomMinute": "EMOM · minuto {{index}} de {{total}}",
+      "emomInterval": "EMOM · intervalo {{index}} de {{total}}",
+      "amrap": "AMRAP",
+      "cardio": "Cardio",
+      "circuit": "Circuito · rodada {{index}} de {{total}}",
+      "rest": "Descanso",
+      "next": "A seguir: {{name}}",
+      "sets": "Séries"
     }
   },
   "settings": {

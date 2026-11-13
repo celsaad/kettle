@@ -127,7 +127,7 @@ What to look at, in this order — these are where a first iOS run actually brea
    out (see the comment at the top of `(tabs)/_layout.tsx`).
 2. `ModalHeader`'s grabber and pinned close button against the iOS modal sheet presentation, which is
    not the shape Android draws.
-3. The session runner end to end — it is always dark (`RunnerColors`) regardless of scheme.
+3. The session runner end to end — its fields (`RunnerColors`) ignore the scheme and follow the step's clock.
 4. Safe-area insets on a notched device profile.
 5. The Settings screen, which is where the two platform-gated sections live and where the Play copy is.
 6. **The app in Portuguese and Japanese**, by switching the simulator's language. This is not polish —

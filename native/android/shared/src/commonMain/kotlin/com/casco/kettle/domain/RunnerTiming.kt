@@ -91,7 +91,8 @@ private data class Reading(
 
 private val QUIET = Reading(ended = false, tick = false, milestone = false)
 
-internal const val TICK_SECONDS = 3
+/** A countdown's last seconds, each of which ticks. Public for the app, whose screen marks them too. */
+const val TICK_SECONDS = 3
 
 /**
  * A time update: the step on screen ends by itself, or cues, or neither.

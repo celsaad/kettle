@@ -143,11 +143,12 @@ wanting states and assignees, it wants GitHub issues instead.
   encoding type as well would need a second one.
 
   The constraint that outlives it, and would apply to any categorical colour in the runner: **the
-  runner has two hues and they already mean something.** `RunnerColors` carries `accent` (warm) and
-  `accentCalm` (blue), and the split in use is session vs circuit on the bars, work vs rest on the
-  screens. A per-type scheme needs a categorical palette that doesn't exist yet — build it through
-  the `dataviz` skill's categorical procedure and run its validator against the runner's fixed
-  `background: '#17140d'` rather than picking hues by eye. And hue could not be the only channel:
+  runner's hues already mean something.** Since #418 the whole field says what the clock is doing
+  (black pace, orange work, blue rest), and each field has one ink, so on orange and blue the session
+  and circuit bars are both ink; only the black field keeps the circuit's blue. A per-type scheme
+  needs a categorical palette that doesn't exist yet — build it through the `dataviz` skill's
+  categorical procedure and run its validator against every field in `RunnerColors`, not one
+  background, rather than picking hues by eye. And hue could not be the only channel:
   these are decorative geometry with a fixed height, which the a11y house rules exempt from the touch
   and contrast rules for exactly that reason, and the moment a colour carries meaning that exemption
   lapses.

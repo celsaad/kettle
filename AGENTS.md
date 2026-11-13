@@ -178,7 +178,7 @@ are house rules here rather than a backlog — cheap as you go, tedious to retro
   its sheet, with the grabber and × drawn over the top by `SheetChrome`; the screen's content starts
   below that strip and adds no top padding of its own.
 - Theming is strict: `KettleTheme.colors`, `KettleType`, `Spacing.*`, `MaxContentWidth`. The
-  session runner is always dark (`theme.json`'s `RunnerColors`) regardless of scheme. Colors, spacing and the type
+  session runner ignores the scheme: its field (`theme.json`'s `RunnerColors`) follows the step's clock. Colors, spacing and the type
   scale are edited in `constants/theme.json`, which native's `:theme` generates its Compose theme from; `theme.ts`
   re-exports them and holds their notes.
 - In-app forms write straight to the file and never pass through the schema, so they need their own

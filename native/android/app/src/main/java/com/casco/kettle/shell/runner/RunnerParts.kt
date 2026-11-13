@@ -48,7 +48,6 @@ import com.casco.kettle.domain.StepPreview
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.art.ExerciseArt
 import com.casco.kettle.shell.theme.KettleType
-import com.casco.kettle.shell.theme.RunnerColors
 import com.casco.kettle.shell.theme.Spacing
 
 // The pieces the runner's screens share that aren't controls: pills, numerals, bars, the Next card.
@@ -69,10 +68,10 @@ internal fun StepPill(
     calm: Boolean = false,
     live: Boolean = true,
 ) {
-    val tint = if (calm) RunnerColors.accentCalm else RunnerColors.accent
+    val tint = if (calm) runnerColors.accentCalm else runnerColors.accent
     Row(
         Modifier
-            .softPill(tint, if (calm) RunnerColors.accentCalmSoft else RunnerColors.accentSoft)
+            .softPill(tint, if (calm) runnerColors.accentCalmSoft else runnerColors.accentSoft)
             .padding(horizontal = PILL_PAD_H, vertical = PILL_PAD_V),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(DOT_GAP),
@@ -81,7 +80,7 @@ internal fun StepPill(
         Text(
             label,
             style = KettleType.code.copy(letterSpacing = CapsTracking),
-            color = if (calm) RunnerColors.accentCalmOnSoft else RunnerColors.accentOnSoft,
+            color = if (calm) runnerColors.accentCalmOnSoft else runnerColors.accentOnSoft,
         )
     }
 }
@@ -117,13 +116,13 @@ private fun LiveDot(
 internal fun RecordBadge() {
     Box(
         Modifier
-            .softPill(RunnerColors.accentCalm, RunnerColors.accentCalmSoft)
+            .softPill(runnerColors.accentCalm, runnerColors.accentCalmSoft)
             .padding(horizontal = BADGE_PAD_H, vertical = Spacing.one),
     ) {
         Text(
             stringResource(R.string.session_complete_recordBadge),
             style = KettleType.code.copy(letterSpacing = CapsTracking),
-            color = RunnerColors.accentCalmOnSoft,
+            color = runnerColors.accentCalmOnSoft,
         )
     }
 }
@@ -139,7 +138,7 @@ internal fun Numeral(
     text: String,
     size: TextUnit,
     modifier: Modifier = Modifier,
-    color: Color = RunnerColors.text,
+    color: Color = runnerColors.numeral,
     leading: Float? = 1f,
 ) {
     val density = LocalDensity.current
@@ -179,14 +178,14 @@ internal fun FillBar(
             Modifier
                 .fillMaxSize()
                 .clip(CircleShape)
-                .background(RunnerColors.text.copy(alpha = TRACK_ALPHA)),
+                .background(runnerColors.track),
         ) {
             Box(
                 Modifier
                     .fillMaxWidth(fraction.coerceIn(0f, 1f))
                     .fillMaxHeight()
                     .clip(CircleShape)
-                    .background(RunnerColors.accent),
+                    .background(runnerColors.accent),
             )
         }
         if (marker != null) {
@@ -196,7 +195,7 @@ internal fun FillBar(
                     Modifier
                         .width(2.dp)
                         .requiredHeight(MARK_HEIGHT)
-                        .background(RunnerColors.textSecondary)
+                        .background(runnerColors.textSecondary)
                         .testTag(MARKER_TAG),
                 )
                 if (marker < 1f) Spacer(Modifier.weight(1f - marker))
@@ -223,14 +222,14 @@ internal fun ProgressTrack(
             .width(TRACK_WIDTH)
             .height(if (calm) 3.dp else 4.dp)
             .clip(CircleShape)
-            .background(RunnerColors.text.copy(alpha = HEADER_TRACK_ALPHA))
+            .background(runnerColors.track)
             .semantics { progressBarRangeInfo = ProgressBarRangeInfo(done.toFloat(), 1f..total.toFloat(), total) },
     ) {
         Box(
             Modifier
                 .fillMaxWidth(done.toFloat() / total)
                 .fillMaxHeight()
-                .background(if (calm) RunnerColors.accentCalm else RunnerColors.accent),
+                .background(if (calm) runnerColors.accentCalm else runnerColors.accent),
         )
     }
 }
@@ -242,7 +241,7 @@ internal fun StepNotes(notes: String?) {
     Text(
         notes,
         style = KettleType.small.copy(fontStyle = FontStyle.Italic),
-        color = RunnerColors.textSecondary,
+        color = runnerColors.textSecondary,
         maxLines = 2,
         overflow = TextOverflow.Ellipsis,
     )
@@ -260,15 +259,15 @@ internal fun NextCard(preview: StepPreview?) {
     Row(
         Modifier
             .fillMaxWidth()
-            .runnerCard(18.dp),
+            .runnerCard(18.dp, runnerColors),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(CARD_PAD),
     ) {
         Caps(stringResource(R.string.session_next))
-        if (scale <= MAX_SCALE_FOR_ART) ExerciseArt(preview.exerciseId, width = 56.dp, color = RunnerColors.text)
+        if (scale <= MAX_SCALE_FOR_ART) ExerciseArt(preview.exerciseId, width = 56.dp, color = runnerColors.text)
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Spacing.half)) {
-            Text(preview.label, style = KettleType.heading, color = RunnerColors.text)
-            Text(resources.previewDetail(preview), style = KettleType.small, color = RunnerColors.textSecondary)
+            Text(preview.label, style = KettleType.heading, color = runnerColors.text)
+            Text(resources.previewDetail(preview), style = KettleType.small, color = runnerColors.textSecondary)
         }
     }
 }
@@ -295,9 +294,3 @@ private val DOT = 7.dp
 
 /** RN's `Spacing.three - 2`, which several of its cards and rows use. */
 internal val CARD_PAD = 14.dp
-
-/** RN's `rgba(243,239,228,0.22)`: the header's tracks, a shade stronger than a step bar's. */
-private const val HEADER_TRACK_ALPHA = 0.22f
-
-/** RN's `rgba(243,239,228,0.14)`: a step bar's track. */
-private const val TRACK_ALPHA = 0.14f

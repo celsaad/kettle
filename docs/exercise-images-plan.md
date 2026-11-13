@@ -207,8 +207,8 @@ instead of a naming convention.
 
 ### Rendering and theming
 
-One small component takes the colour from `useTheme` — or from `RunnerColors` inside the runner, which
-is always dark regardless of scheme — and applies it as a `color` prop on the SVG, or as `tintColor`
+One small component takes the colour from `useTheme` — or from the runner's field palette inside the runner,
+which ignores the scheme — and applies it as a `color` prop on the SVG, or as `tintColor`
 on the image. Vector or raster, the drawing renders in exactly **one** colour, which is a real
 constraint on the art: anything relying on two tones is lost. This set is single-weight outline
 throughout, so nothing is lost in practice.

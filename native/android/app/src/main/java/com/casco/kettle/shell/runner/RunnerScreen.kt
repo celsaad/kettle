@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -29,7 +30,7 @@ import com.casco.kettle.shell.R
 import com.casco.kettle.shell.theme.DialogAction
 import com.casco.kettle.shell.theme.KettleAlertDialog
 import com.casco.kettle.shell.theme.MaxContentWidth
-import com.casco.kettle.shell.theme.RunnerColors
+import com.casco.kettle.shell.theme.RunnerBarIcons
 import com.casco.kettle.shell.theme.Spacing
 
 /** What the runner reads besides the service's view: the log as it stands, and two preferences. */
@@ -100,17 +101,25 @@ fun RunnerScreen(
             },
         )
     }
+    val field = runnerField(entry, now)
+    RunnerBarIcons(field.darkBarIcons)
     Box(
-        Modifier.fillMaxSize().background(RunnerColors.background).safeDrawingPadding(),
+        Modifier.fillMaxSize().background(field.palette.background).safeDrawingPadding(),
         contentAlignment = Alignment.TopCenter,
     ) {
-        Box(Modifier.widthIn(max = MaxContentWidth).fillMaxSize().padding(horizontal = Spacing.three)) {
-            RunnerBody(entry, environment, now, actions) { view ->
-                Frame(view, stepContext(view, environment, now, controlsFor(view)), open.open)
+        CompositionLocalProvider(LocalRunnerPalette provides field.palette) {
+            Box(Modifier.widthIn(max = MaxContentWidth).fillMaxSize().padding(horizontal = Spacing.three)) {
+                RunnerBody(entry, environment, now, actions) { view ->
+                    Frame(view, stepContext(view, environment, now, controlsFor(view)), open.open)
+                }
             }
         }
+        // The sheets are surfaces of their own, drawn on pace's whatever field is under them: a pad
+        // turning orange as its rest ran out under it would be the field changing something it doesn't own.
         if (running != null) {
-            Overlays(stepContext(running, environment, now, controlsFor(running)), running, open.open, pad, close)
+            CompositionLocalProvider(LocalRunnerPalette provides RunnerField.PACE.palette) {
+                Overlays(stepContext(running, environment, now, controlsFor(running)), running, open.open, pad, close)
+            }
         }
     }
     val askedAt = confirmingAt

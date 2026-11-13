@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Behind the splash's icon, in both schemes: the session runner's background. -->
-    <color name="splashscreen_background">#17140d</color>
+    <color name="splashscreen_background">#0B0A08</color>
     <!-- The shade's accent: the launcher icon's background, the brand colour. -->
     <color name="notification_icon_color">#c05c2b</color>
 </resources>

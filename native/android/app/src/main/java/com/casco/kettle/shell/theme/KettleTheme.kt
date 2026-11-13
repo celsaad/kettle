@@ -45,10 +45,10 @@ object KettleTheme {
 }
 
 /**
- * The live session runner's theme: [RunnerColors] whatever the system scheme, as the RN runner is.
- * It reads no scheme at all, so nested inside a light [KettleTheme] it is still dark. It sets
- * Material's colors only: a runner screen reads its tokens from [RunnerColors] directly, the way the
- * RN runner does, since [KettleTheme.colors] inside it is still the shell's.
+ * The live session runner's theme: [RunnerColors]' pace field whatever the system scheme. It reads no
+ * scheme at all, so nested inside a light [KettleTheme] it is still dark. It sets Material's colors
+ * only, for the dialogs: a runner screen reads its field's palette (`runnerColors`), which the step's
+ * clock picks, since [KettleTheme.colors] inside it is still the shell's.
  */
 @Composable
 fun RunnerTheme(content: @Composable () -> Unit) {
@@ -71,15 +71,16 @@ private fun KettleColors.toColorScheme(dark: Boolean): ColorScheme =
     )
 
 private val RunnerColorScheme =
-    darkColorScheme(
-        primary = RunnerColors.accent,
-        // The RN runner's labels on an accent fill are set in its background color.
-        onPrimary = RunnerColors.background,
-        background = RunnerColors.background,
-        onBackground = RunnerColors.text,
-        surface = RunnerColors.background,
-        onSurface = RunnerColors.text,
-        surfaceVariant = RunnerColors.backgroundElement,
-        onSurfaceVariant = RunnerColors.textSecondary,
-        outline = RunnerColors.border,
-    )
+    with(RunnerColors.pace) {
+        darkColorScheme(
+            primary = accent,
+            onPrimary = onAccent,
+            background = background,
+            onBackground = text,
+            surface = background,
+            onSurface = text,
+            surfaceVariant = backgroundElement,
+            onSurfaceVariant = textSecondary,
+            outline = border,
+        )
+    }

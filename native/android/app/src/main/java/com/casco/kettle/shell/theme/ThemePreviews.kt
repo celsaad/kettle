@@ -61,10 +61,24 @@ private fun KettleColorsPreview() {
     KettleTheme { Surface { ThemeCatalogue(KettleTheme.colors.tokens) } }
 }
 
-/** Under both system schemes, to show the runner ignoring them. */
-@Preview(name = "runner, light system", uiMode = UI_MODE_NIGHT_NO)
-@Preview(name = "runner, dark system", uiMode = UI_MODE_NIGHT_YES)
+/** Each field, on itself. The system scheme moves none of them, so one preview each is enough. */
+@Preview(name = "runner, pace")
 @Composable
-private fun RunnerColorsPreview() {
-    KettleTheme { RunnerTheme { Surface { ThemeCatalogue(RunnerColors.tokens) } } }
+private fun RunnerPacePreview() = RunnerFieldPreview(RunnerColors.pace)
+
+@Preview(name = "runner, get ready")
+@Composable
+private fun RunnerGetReadyPreview() = RunnerFieldPreview(RunnerColors.getReady)
+
+@Preview(name = "runner, work")
+@Composable
+private fun RunnerWorkPreview() = RunnerFieldPreview(RunnerColors.work)
+
+@Preview(name = "runner, rest")
+@Composable
+private fun RunnerRestPreview() = RunnerFieldPreview(RunnerColors.rest)
+
+@Composable
+private fun RunnerFieldPreview(palette: RunnerPalette) {
+    KettleTheme { RunnerTheme { Surface(color = palette.background) { ThemeCatalogue(palette.tokens) } } }
 }

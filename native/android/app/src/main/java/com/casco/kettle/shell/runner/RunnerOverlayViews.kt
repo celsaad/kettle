@@ -53,7 +53,7 @@ import com.casco.kettle.domain.rankByName
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.list.ListRow
 import com.casco.kettle.shell.theme.KettleType
-import com.casco.kettle.shell.theme.RunnerColors
+import com.casco.kettle.shell.theme.RunnerPalette
 import com.casco.kettle.shell.theme.Spacing
 import com.casco.kettle.shell.theme.TypeIcon
 
@@ -101,8 +101,8 @@ internal fun OverlaySheet(
                         Modifier
                     },
                 ).clip(SheetShape)
-                .background(RunnerColors.backgroundElement)
-                .topBorder()
+                .background(runnerColors.backgroundElement)
+                .topBorder(runnerColors)
                 // Absorbs the taps nothing inside handles, as M3's Surface does: they fell through to the
                 // backdrop behind and closed the sheet, the pad losing what had been typed into it.
                 .pointerInput(Unit) {}
@@ -134,7 +134,7 @@ internal fun NumberPad(
                     " ${request.unit}",
                     Modifier.alignByBaseline(),
                     style = KettleType.heading.copy(fontSize = PAD_UNIT),
-                    color = RunnerColors.textSecondary,
+                    color = runnerColors.textSecondary,
                 )
             }
         }
@@ -189,7 +189,7 @@ private fun PadKeys(
                     val modifier = Modifier.weight(1f)
                     if (key == null) {
                         // Drawn as an empty key, as RN's, so the grid reads whole; nothing to press.
-                        Box(modifier.heightIn(min = KEY_HEIGHT).clip(KeyShape).keyFace())
+                        Box(modifier.heightIn(min = KEY_HEIGHT).clip(KeyShape).keyFace(runnerColors))
                     } else {
                         PadKey(key, modifier) { onKey(key) }
                     }
@@ -211,28 +211,28 @@ private fun PadKey(
         modifier
             .heightIn(min = KEY_HEIGHT)
             .clip(KeyShape)
-            .keyFace()
+            .keyFace(runnerColors)
             .clickable(role = Role.Button, onClick = onClick)
             .then(if (description != null) Modifier.semantics { contentDescription = description } else Modifier),
         contentAlignment = Alignment.Center,
     ) {
         val style = KettleType.heading.copy(fontSize = KEY_LABEL)
         when (key) {
-            is PadKeyKind.Character -> Text(key.char.toString(), style = style, color = RunnerColors.text)
-            PadKeyKind.Backspace -> TypeIcon(R.drawable.icon_backspace, style, RunnerColors.text)
+            is PadKeyKind.Character -> Text(key.char.toString(), style = style, color = runnerColors.text)
+            PadKeyKind.Backspace -> TypeIcon(R.drawable.icon_backspace, style, runnerColors.text)
         }
     }
 }
 
 /** RN's sheets draw only their top edge, round the corners: the shape's outline, cut off below them. */
-private fun Modifier.topBorder(): Modifier =
+private fun Modifier.topBorder(colors: RunnerPalette): Modifier =
     drawBehind {
         val stroke = 1.dp.toPx()
         clipRect(bottom = SHEET_RADIUS.toPx()) {
             inset(stroke / 2) {
                 drawOutline(
                     SheetShape.createOutline(size, layoutDirection, this),
-                    RunnerColors.border,
+                    colors.border,
                     style = Stroke(stroke),
                 )
             }
@@ -240,8 +240,8 @@ private fun Modifier.topBorder(): Modifier =
     }
 
 /** A key's look, and a picker option's: the screen's own dark inside the lighter sheet, outlined. */
-private fun Modifier.keyFace(): Modifier =
-    background(RunnerColors.background).border(1.dp, RunnerColors.border, KeyShape)
+private fun Modifier.keyFace(colors: RunnerPalette): Modifier =
+    background(colors.background).border(1.dp, colors.border, KeyShape)
 
 /**
  * The swap and add pickers (§3.5), one component: [replacing] is the name being swapped out, null when
@@ -276,7 +276,7 @@ internal fun ExercisePicker(
             },
             Modifier.fillMaxWidth(),
             style = KettleType.small,
-            color = RunnerColors.textSecondary,
+            color = runnerColors.textSecondary,
             textAlign = TextAlign.Center,
         )
         if (candidates.size > SEARCH_THRESHOLD) PickerSearch(query) { query = it }
@@ -310,15 +310,15 @@ private fun PickerOptions(
                     stringResource(R.string.session_adhoc_noMatches, query.trim()),
                     Modifier.fillMaxWidth().padding(vertical = Spacing.three),
                     style = KettleType.small,
-                    color = RunnerColors.textSecondary,
+                    color = runnerColors.textSecondary,
                     textAlign = TextAlign.Center,
                 )
             }
         }
         itemsIndexed(shown, key = { _, exercise -> exercise.id }) { index, exercise ->
-            if (index > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(RunnerColors.border))
+            if (index > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(runnerColors.border))
             Box(Modifier.clickable(role = Role.Button) { onSelect(exercise) }) {
-                ListRow { Text(exercise.name, style = KettleType.heading, color = RunnerColors.text) }
+                ListRow { Text(exercise.name, style = KettleType.heading, color = runnerColors.text) }
             }
         }
     }
@@ -338,12 +338,12 @@ private fun PickerSearch(
             .fillMaxWidth()
             .heightIn(min = MinTarget)
             .clip(KeyShape)
-            .keyFace()
+            .keyFace(runnerColors)
             .semantics { contentDescription = label }
             .padding(horizontal = CARD_PAD),
         singleLine = true,
-        textStyle = textStyle.copy(color = RunnerColors.text),
-        cursorBrush = SolidColor(RunnerColors.accent),
+        textStyle = textStyle.copy(color = runnerColors.text),
+        cursorBrush = SolidColor(runnerColors.accent),
         decorationBox = { field ->
             Row(
                 Modifier.heightIn(min = MinTarget),
@@ -351,9 +351,9 @@ private fun PickerSearch(
                 horizontalArrangement = Arrangement.spacedBy(Spacing.two),
             ) {
                 // Decorative: the field is named by its description, and the icon says nothing more.
-                TypeIcon(R.drawable.icon_search, KettleType.default, RunnerColors.textSecondary)
+                TypeIcon(R.drawable.icon_search, KettleType.default, runnerColors.textSecondary)
                 Box(Modifier.weight(1f)) {
-                    if (query.isEmpty()) Text(label, style = textStyle, color = RunnerColors.textSecondary)
+                    if (query.isEmpty()) Text(label, style = textStyle, color = runnerColors.textSecondary)
                     field()
                 }
             }

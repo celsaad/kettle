@@ -29,7 +29,6 @@ import com.casco.kettle.domain.SessionRecord
 import com.casco.kettle.domain.sessionRecords
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.theme.KettleType
-import com.casco.kettle.shell.theme.RunnerColors
 import com.casco.kettle.shell.theme.Spacing
 import com.casco.kettle.shell.theme.TypeIcon
 
@@ -55,15 +54,15 @@ internal fun CountIn(
         Text(
             resources.sessionName(view.plan.workout?.name),
             style = KettleType.subtitle,
-            color = RunnerColors.text,
+            color = runnerColors.text,
             textAlign = TextAlign.Center,
         )
-        Numeral("${view.countIn.numeral(now)}", COUNT_NUMERAL, color = RunnerColors.accent, leading = COUNT_LEADING)
+        Numeral("${view.countIn.numeral(now)}", COUNT_NUMERAL, leading = COUNT_LEADING)
         if (environment.priorSessions.isEmpty() && environment.soundsOn) {
             Text(
                 stringResource(R.string.session_countdown_firstTimeHint),
                 style = KettleType.small,
-                color = RunnerColors.textSecondary,
+                color = runnerColors.textSecondary,
                 textAlign = TextAlign.Center,
             )
         }
@@ -88,17 +87,17 @@ internal fun Completion(
             Modifier
                 .padding(bottom = Spacing.one)
                 .size(BADGE)
-                .softPill(RunnerColors.accent, RunnerColors.accentSoft)
+                .softPill(runnerColors.accent, runnerColors.accentSoft)
                 .clearAndSetSemantics {},
             contentAlignment = Alignment.Center,
         ) {
-            TypeIcon(R.drawable.icon_check, KettleType.title.copy(fontSize = CHECK), RunnerColors.accent)
+            TypeIcon(R.drawable.icon_check, KettleType.title.copy(fontSize = CHECK), runnerColors.accent)
         }
         Text(
             stringResource(R.string.session_complete_title),
             Modifier.semantics { heading() },
             style = KettleType.title,
-            color = RunnerColors.text,
+            color = runnerColors.text,
             textAlign = TextAlign.Center,
         )
         Secondary(resources.sessionName(view.plan.workout?.name))
@@ -118,7 +117,7 @@ internal fun Completion(
                 stringResource(R.string.session_complete_backupFailed),
                 Modifier.padding(top = Spacing.two),
                 style = KettleType.small,
-                color = RunnerColors.accentCalmOnSoft,
+                color = runnerColors.accentCalmOnSoft,
                 textAlign = TextAlign.Center,
             )
         }
@@ -132,7 +131,7 @@ private fun Notes(
     text: String,
     modifier: Modifier,
 ) {
-    Text(text, modifier, style = KettleType.small, color = RunnerColors.textSecondary, textAlign = TextAlign.Center)
+    Text(text, modifier, style = KettleType.small, color = runnerColors.textSecondary, textAlign = TextAlign.Center)
 }
 
 @Composable
@@ -145,7 +144,7 @@ private fun RecordCard(
         Modifier
             .fillMaxWidth()
             .semantics(mergeDescendants = true) {}
-            .runnerCard(16.dp),
+            .runnerCard(16.dp, runnerColors),
         verticalArrangement = Arrangement.spacedBy(Spacing.half),
     ) {
         Row(
@@ -154,9 +153,9 @@ private fun RecordCard(
             horizontalArrangement = Arrangement.spacedBy(Spacing.two),
         ) {
             RecordBadge()
-            Text(record.exerciseName, style = KettleType.smallMedium, color = RunnerColors.textSecondary, maxLines = 1)
+            Text(record.exerciseName, style = KettleType.smallMedium, color = runnerColors.textSecondary, maxLines = 1)
         }
-        Text(resources.recordText(record, environment.units), style = KettleType.heading, color = RunnerColors.text)
+        Text(resources.recordText(record, environment.units), style = KettleType.heading, color = runnerColors.text)
         (record as? SessionRecord.HeaviestSet)?.oneRepMaxKg?.let {
             Secondary(resources.oneRepMaxText(it, environment.units))
         }

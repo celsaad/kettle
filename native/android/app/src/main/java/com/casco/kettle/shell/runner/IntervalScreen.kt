@@ -27,7 +27,6 @@ import com.casco.kettle.domain.RunnerStep
 import com.casco.kettle.domain.jsNumber
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.theme.KettleType
-import com.casco.kettle.shell.theme.RunnerColors
 import com.casco.kettle.shell.theme.Spacing
 
 /**
@@ -68,7 +67,7 @@ internal fun IntervalScreen(
                     stringResource(R.string.session_interval_skipArrow),
                     context::advance,
                     Modifier.align(Alignment.CenterHorizontally).bleed(top = Spacing.two, bottom = SKIP_SLACK),
-                    style = KettleType.heading.copy(color = RunnerColors.accent),
+                    style = KettleType.heading.copy(color = runnerColors.accent),
                 )
             }
         },
@@ -192,7 +191,7 @@ private fun Stepper(
                     }.semantics(mergeDescendants = true) { contentDescription = description },
                 contentAlignment = Alignment.Center,
             ) {
-                Text("$value", style = KettleType.heading, color = RunnerColors.text, textAlign = TextAlign.Center)
+                Text("$value", style = KettleType.heading, color = runnerColors.text, textAlign = TextAlign.Center)
             }
             SymbolButton(R.drawable.icon_add, stringResource(R.string.common_increase, label), {
                 set(value + 1)

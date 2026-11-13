@@ -9,6 +9,7 @@ class ComposeThemeTest {
     /**
      * A theme.json with every group at its smallest, each overridable as the JSON inside its braces. One
      * parameter per group is the point, so a test overrides the group it's about and nothing else.
+     * [runner] is every field's tokens, and [runnerFields] the whole group, for a test about the fields.
      */
     @Suppress("LongParameterList")
     private fun theme(
@@ -18,10 +19,11 @@ class ComposeThemeTest {
         spacing: String = """"half": 2""",
         fonts: String = """"body": "HankenGrotesk_400Regular", "display": "SpaceGrotesk_600SemiBold"""",
         type: String = """"small": { "font": "body", "fontSize": 13, "lineHeight": 18 }""",
+        runnerFields: String = listOf("pace", "getReady", "work", "rest").joinToString { """"$it": { $runner }""" },
     ) = """
         {
           "Colors": { "light": { $light }, "dark": { $dark } },
-          "RunnerColors": { $runner },
+          "RunnerColors": { $runnerFields },
           "Spacing": { $spacing },
           "MaxContentWidth": 480,
           "Fonts": { $fonts },
@@ -52,8 +54,14 @@ class ComposeThemeTest {
         )
     }
 
+    /** The generated file from [from] up to [until], or its end, without the blank lines between. */
+    private fun section(
+        from: String,
+        until: String,
+    ) = generateTheme(theme()).let { (from + it.substringAfter(from).substringBefore(until)).trimEnd() }
+
     @Test
-    fun `every group becomes its Compose counterpart`() {
+    fun `the two schemes become KettleColors and an instance each`() {
         assertEquals(
             """
             /** `Colors.light` and `Colors.dark`: one token set, remapped per scheme. */
@@ -77,11 +85,20 @@ class ComposeThemeTest {
                 KettleColors(
                     text = Color(0xFFF0ECE2),
                 )
+            """.trimIndent(),
+            section("/** `Colors.light`", until = "/** `RunnerColors`' fields"),
+        )
+    }
 
-            /** `RunnerColors`: the live session runner's, dark whatever the system scheme. */
-            object RunnerColors {
-                val text = Color(0xFFF3EFE4)
-
+    @Test
+    fun `the runner's fields become RunnerPalette, each an instance in RunnerColors`() {
+        assertEquals(
+            """
+            /** `RunnerColors`' fields: one token set, remapped per field. */
+            @Immutable
+            data class RunnerPalette(
+                val text: Color,
+            ) {
                 /** Every token by its theme.json name, in file order. */
                 internal val tokens =
                     listOf(
@@ -89,6 +106,46 @@ class ComposeThemeTest {
                     )
             }
 
+            /** `RunnerColors`: the live session runner's fields, the same whatever the system scheme. */
+            object RunnerColors {
+                val pace =
+                    RunnerPalette(
+                        text = Color(0xFFF3EFE4),
+                    )
+
+                val getReady =
+                    RunnerPalette(
+                        text = Color(0xFFF3EFE4),
+                    )
+
+                val work =
+                    RunnerPalette(
+                        text = Color(0xFFF3EFE4),
+                    )
+
+                val rest =
+                    RunnerPalette(
+                        text = Color(0xFFF3EFE4),
+                    )
+
+                /** Every field by its theme.json name, in file order. */
+                internal val fields =
+                    listOf(
+                        "pace" to pace,
+                        "getReady" to getReady,
+                        "work" to work,
+                        "rest" to rest,
+                    )
+            }
+            """.trimIndent(),
+            section("/** `RunnerColors`' fields", until = "object Spacing"),
+        )
+    }
+
+    @Test
+    fun `spacing and the content width become dp`() {
+        assertEquals(
+            """
             object Spacing {
                 val half = 2.dp
 
@@ -101,7 +158,7 @@ class ComposeThemeTest {
 
             val MaxContentWidth = 480.dp
             """.trimIndent(),
-            ("/**" + generateTheme(theme()).substringAfter("/**").substringBefore("/** `Fonts`")).trimEnd(),
+            section("object Spacing", until = "/** `Fonts`"),
         )
     }
 
@@ -161,7 +218,8 @@ class ComposeThemeTest {
     fun `a hex color is opaque whatever its case`() {
         val kotlin = generateTheme(theme(runner = """"text": "#F3efE4""""))
 
-        assertEquals(listOf("val text = Color(0xFFF3EFE4)"), lines(kotlin, "text").filter { it.startsWith("val") })
+        // After the two schemes' own, a line per runner field.
+        assertEquals(List(4) { "text = Color(0xFFF3EFE4)," }, lines(kotlin, "text").drop(2))
     }
 
     private fun refusal(json: String) = assertThrows<IllegalArgumentException> { generateTheme(json) }.message.orEmpty()
@@ -184,11 +242,41 @@ class ComposeThemeTest {
     }
 
     @Test
+    fun `the runner's fields are refused unless they are the four, in order`() {
+        val fields =
+            listOf(
+                """"pace": {}, "getReady": {}, "work": {}""",
+                """"pace": {}, "work": {}, "getReady": {}, "rest": {}""",
+                """"pace": {}, "getReady": {}, "work": {}, "rest": {}, "paused": {}""",
+            )
+        for (group in fields) {
+            val message = refusal(theme(runnerFields = group))
+
+            assertTrue("in that order" in message, "$group: $message")
+        }
+    }
+
+    @Test
+    fun `a token in one runner field but not another is refused`() {
+        val text = """"text": "#ffffff""""
+        val message =
+            refusal(
+                theme(
+                    runnerFields =
+                        """"pace": { $text }, "getReady": { $text }, "work": { $text, "track": "#000000" }, """ +
+                            """"rest": { $text }""",
+                ),
+            )
+
+        assertTrue("the same tokens" in message, message)
+    }
+
+    @Test
     fun `a value of the wrong type for its group is refused`() {
         val cases =
             listOf(
-                theme(runner = """"text": 3""") to "RunnerColors.text",
-                theme(runner = """"text": { "value": "#ffffff" }""") to "RunnerColors.text",
+                theme(runner = """"text": 3""") to "RunnerColors.pace.text",
+                theme(runner = """"text": { "value": "#ffffff" }""") to "RunnerColors.pace.text",
                 theme(spacing = """"half": "2"""") to "Spacing.half",
                 theme(light = """"text": null""", dark = """"text": null""") to "Colors.light.text",
             )
@@ -204,7 +292,7 @@ class ComposeThemeTest {
         for (name in listOf("my-color", "2x", "val", "object", "tokens")) {
             val message = refusal(theme(runner = """"text": "#ffffff", "$name": "#000000""""))
 
-            assertTrue("RunnerColors.$name" in message, "$name: $message")
+            assertTrue("RunnerColors.pace.$name" in message, "$name: $message")
         }
     }
 

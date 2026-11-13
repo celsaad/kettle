@@ -43,7 +43,6 @@ import com.casco.kettle.domain.weightStep
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.i18n.weightUnit
 import com.casco.kettle.shell.theme.KettleType
-import com.casco.kettle.shell.theme.RunnerColors
 import com.casco.kettle.shell.theme.Spacing
 
 /**
@@ -124,7 +123,7 @@ private fun LastTime(
                     text,
                     { context.controls.adopt(step.exerciseId, kg) },
                     Modifier.hang(start = Spacing.two),
-                    style = KettleType.small.copy(color = RunnerColors.accentOnSoft),
+                    style = KettleType.small.copy(color = runnerColors.accentOnSoft),
                     description =
                         stringResource(
                             R.string.session_reps_adoptPrevious,
@@ -177,7 +176,7 @@ private fun StatCard(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Column(
-        modifier.runnerCard(16.dp),
+        modifier.runnerCard(16.dp, runnerColors),
         verticalArrangement = Arrangement.spacedBy(Spacing.half),
     ) {
         Caps(label, tracking = 1.sp)
@@ -227,7 +226,7 @@ private fun LoadControl(context: StepContext) {
                     buildAnnotatedString {
                         append(jsNumber(display))
                         withStyle(
-                            SpanStyle(fontSize = LOAD_UNIT, color = RunnerColors.textSecondary),
+                            SpanStyle(fontSize = LOAD_UNIT, color = runnerColors.textSecondary),
                         ) { append(" $unit") }
                     }
                 } else {
@@ -235,7 +234,7 @@ private fun LoadControl(context: StepContext) {
                 },
                 Modifier.wrapContentWidth(unbounded = true),
                 style = KettleType.heading,
-                color = RunnerColors.text,
+                color = runnerColors.text,
                 textAlign = TextAlign.Center,
                 maxLines = 1,
             )
@@ -259,7 +258,7 @@ private fun RpeChoice(context: StepContext) {
                     .weight(1f)
                     .heightIn(min = MinTarget)
                     .clip(RoundedCornerShape(8.dp))
-                    .background(if (selected) RunnerColors.accent else RunnerColors.text.copy(alpha = CHIP_ALPHA))
+                    .background(if (selected) runnerColors.accent else runnerColors.text.copy(alpha = CHIP_ALPHA))
                     .clickable(role = Role.Button) { context.send(RunnerCommand.SetRpe(option)) }
                     .semantics {
                         contentDescription = description
@@ -270,7 +269,7 @@ private fun RpeChoice(context: StepContext) {
                 Text(
                     jsNumber(option),
                     style = KettleType.smallMedium,
-                    color = if (selected) RunnerColors.background else RunnerColors.text,
+                    color = if (selected) runnerColors.onAccent else runnerColors.text,
                 )
             }
         }

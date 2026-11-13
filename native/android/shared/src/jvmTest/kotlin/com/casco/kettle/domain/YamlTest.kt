@@ -1,7 +1,9 @@
 package com.casco.kettle.domain
 
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertInstanceOf
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 /**
@@ -61,6 +63,36 @@ class YamlTest {
         assertInvalidYaml(withUnused("!foo 3"))
         assertInvalidYaml(withUnused("!!binary aGk="))
         assertInvalidYaml(withUnused("!ENV_VARIABLE x"))
+    }
+
+    // Constructed by the loader's own key check, outside the engine's wrapping: a NumberFormatException
+    // that escaped every parser, and crashed each launch that read the file it was in.
+    @Test
+    fun `a tagged scalar that isn't its tag is a YAML error, as a key or behind an anchor`() {
+        assertInvalidYaml("$session!!int x: 1\n")
+        assertInvalidYaml(withUnused("&a !!int abc"))
+        assertInvalidYaml("$session!!int 0x: 1\n")
+        assertInvalidYaml("$session!!float y: 1\n")
+    }
+
+    // Bytes, as a picked file is counted, so a paste of the same text is held to the same limit.
+    @Test
+    fun `an import's size is counted in UTF-8 bytes`() {
+        assertFalse(exceedsImportSize("x".repeat(MAX_IMPORT_BYTES)))
+        assertTrue(exceedsImportSize("x".repeat(MAX_IMPORT_BYTES + 1)))
+        // Three bytes each, so a third as many characters.
+        assertFalse(exceedsImportSize("あ".repeat(MAX_IMPORT_BYTES / 3)))
+        assertTrue(exceedsImportSize("あ".repeat(MAX_IMPORT_BYTES / 3 + 1)))
+        // A surrogate pair is one four-byte code point.
+        assertFalse(exceedsImportSize("\uD83D\uDCAA".repeat(MAX_IMPORT_BYTES / 4)))
+        assertTrue(exceedsImportSize("\uD83D\uDCAA".repeat(MAX_IMPORT_BYTES / 4) + "x"))
+    }
+
+    // The engine's cap, kept where js-yaml has none: a long unbroken scalar parses in quadratic time.
+    @Test
+    fun `input past the code point cap is a YAML error`() {
+        assertLoads(withUnused("x".repeat(1024 * 1024)))
+        assertInvalidYaml(withUnused("x".repeat(3 * 1024 * 1024)))
     }
 
     @Test

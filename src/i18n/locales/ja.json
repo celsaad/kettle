@@ -13,6 +13,7 @@
     "nameRequired": "名前は必須です。",
     "couldNotDeriveId": "その名前から ID を作れませんでした。",
     "saveFailed": "保存できませんでした: {{detail}}",
+    "libraryTooLarge": "保存されませんでした。ライブラリが {{limit}} MB を超え、開けなくなります。",
     "deleteFailed": "削除できませんでした: {{detail}}",
     "deleteConfirmBody": "「{{name}}」を完全に削除します。",
     "decrease": "{{label}}を減らす",
@@ -540,7 +541,8 @@
       "unknownWorkout": "プログラム「{{program}}」の週 {{week}} が不明なワークアウト「{{workout}}」を参照しています",
       "weekWithDay": "{{week}}（{{day}}）",
       "readFailed": "そのファイルを読み込めませんでした: {{detail}}",
-      "saveFailed": "ライブラリを保存できませんでした: {{detail}}"
+      "saveFailed": "ライブラリを保存できませんでした: {{detail}}",
+      "tooLarge": "大きすぎてインポートできません。ライブラリは {{limit}} KB までです。"
     }
   },
   "exerciseForm": {

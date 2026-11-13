@@ -1,24 +1,45 @@
 package com.casco.kettle.storage
 
 import com.casco.kettle.domain.Library
+import com.casco.kettle.domain.MAX_YAML_CODE_POINTS
 import com.casco.kettle.domain.Session
 import com.casco.kettle.domain.serializeLibraryYaml
 import com.casco.kettle.domain.serializeSessionYaml
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
+import java.io.InputStream
 import java.nio.channels.FileChannel
 import java.nio.file.StandardOpenOption
 
 /**
  * Writes session [session]'s file in [dir], `sessions/` beside the library: native's edit of a finished
- * session (#239). Named as `sessionFile` in `src/storage/paths.ts` names it. The two share no code, so
- * change both. Throws [IOException] when the disk refuses, with the last file left as it was.
+ * session (#239), at the name [sessionFile] gives it. Throws [IOException] when the disk refuses, with
+ * the last file left as it was.
  */
 fun writeSessionFile(
     dir: File,
     session: Session,
-) = writeAtomically(dir.resolve("${session.id}.yaml"), serializeSessionYaml(session))
+) = writeAtomically(sessionFile(dir, session.id), serializeSessionYaml(session))
+
+/**
+ * Session [id]'s file in [dir]. The id is the file's own content, which the schema only requires to be
+ * non-empty, so one holding a separator would name a file outside `sessions/`: `../exercises` is the
+ * library, which editing or deleting that session, or the launch's sweep of unfinished ones, would
+ * overwrite. Throws [IOException] for such an id, as for any write the disk refuses, which every caller
+ * already reports.
+ */
+fun sessionFile(
+    dir: File,
+    id: String,
+): File {
+    if (!isSessionFileId(id)) throw IOException("Not a session id: $id")
+    return dir.resolve("$id.yaml")
+}
+
+/** Whether [id] names a file inside the log, as [sessionFile] needs: no separator, and no NUL. */
+fun isSessionFileId(id: String): Boolean = id.none { it == '/' || it == '\\' || it == '\u0000' }
 
 /**
  * Writes [library] over [file], `exercises.yaml`: native's library editors, from the library flip
@@ -28,7 +49,36 @@ fun writeSessionFile(
 fun writeLibraryFile(
     file: File,
     library: Library,
-) = writeAtomically(file, serializeLibraryYaml(library))
+) {
+    val text = serializeLibraryYaml(library)
+    // Past the parser's cap the next launch would quarantine the whole library, so the write that
+    // would get it there is refused instead, where the screen can say so. Chars, not code points: a
+    // surrogate pair counts twice, which only ever refuses early.
+    if (text.length > MAX_YAML_CODE_POINTS) throw LibraryTooLargeException()
+    writeAtomically(file, text)
+}
+
+/**
+ * [writeLibraryFile]'s refusal of a library past the parser's cap. Its own type, unlike a disk's refusal,
+ * since the words are ours, not the platform's, and the screens translate it. An [IOException], so a
+ * caller that only reports the disk's refusals reports this one too.
+ */
+class LibraryTooLargeException : IOException("The library would be too large to read back")
+
+/**
+ * This stream's bytes, or null once it holds more than [limit]: a file too large to take is never held
+ * whole, whatever size its provider reported.
+ */
+fun InputStream.readAtMost(limit: Int): ByteArray? {
+    val out = ByteArrayOutputStream()
+    val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+    while (true) {
+        val read = read(buffer)
+        if (read < 0) return out.toByteArray()
+        if (out.size() + read > limit) return null
+        out.write(buffer, 0, read)
+    }
+}
 
 /**
  * [text] into [file] through a synced temporary file and a rename, as `AtomicFile` does, so a write cut

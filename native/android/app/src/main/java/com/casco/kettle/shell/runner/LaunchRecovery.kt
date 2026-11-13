@@ -11,6 +11,8 @@ import com.casco.kettle.domain.parseSessionYaml
 import com.casco.kettle.domain.recoverRunner
 import com.casco.kettle.domain.strandedSessions
 import com.casco.kettle.shell.files.writeOrRefusal
+import com.casco.kettle.storage.isSessionFileId
+import com.casco.kettle.storage.sessionFile
 import com.casco.kettle.storage.writeSessionFile
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -134,7 +136,7 @@ fun findRunnerRecovery(
     for (file in files) {
         val sessionId = sessionIdOfStateFile(file) ?: continue
         val found =
-            runCatching { recoveryFor(file, sessionsDir.resolve("$sessionId.yaml")) }
+            runCatching { recoveryFor(file, sessionFile(sessionsDir, sessionId)) }
                 .onFailure { Log.w(TAG, "Couldn't read the state file ${file.name}; left for the next launch", it) }
                 .getOrNull()
         if (found != null) return found
@@ -229,9 +231,20 @@ fun sweepStrandedSessions(
                 .toSet()
         val files = sessionsDir.listFiles { file -> file.name.endsWith(".yaml") }.orEmpty().map(::readSessionFile)
         val read = files.filterIsInstance<SessionFile.Read>()
-        strandedSessions(read, runnerIds).forEach { writeSessionFile(sessionsDir, it) }
+        // An id that names no file in the log can never be stamped, so it's passed over like a corrupt
+        // file rather than holding the sweep due for good. A write the disk refuses may land next time:
+        // it keeps the sweep due, and doesn't stop the sessions after it being ended now.
+        val (writable, unnamed) = strandedSessions(read, runnerIds).partition { isSessionFileId(it.id) }
+        unnamed.forEach { Log.w(TAG, "Left a session unended: its id names no file in the log") }
+        val landed =
+            writable
+                .map { session ->
+                    runCatching { writeSessionFile(sessionsDir, session) }
+                        .onFailure { Log.w(TAG, "Couldn't end a session RN's runner left running", it) }
+                        .isSuccess
+                }.all { it }
         // An unreadable file may be a stranded session that reads next time; a corrupt one never will.
-        if (files.none { it == SessionFile.Unreadable }) {
+        if (landed && files.none { it == SessionFile.Unreadable }) {
             marker.parentFile?.mkdirs()
             marker.writeText("")
         }

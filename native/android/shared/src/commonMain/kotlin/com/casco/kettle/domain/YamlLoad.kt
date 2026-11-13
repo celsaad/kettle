@@ -357,13 +357,27 @@ private class TokenIndentation(
     }
 }
 
-/** A scalar as the composer types it: an absent or `!` tag is resolved, any other is taken as written. */
+/**
+ * A scalar as the composer types it: an absent or `!` tag is resolved, any other is taken as written.
+ * Called from the checks above, outside the engine's own wrapping, so a tag the value isn't (`!!int x`)
+ * is turned into the engine's exception here. As a bare NumberFormatException it escaped every parser,
+ * and 13 bytes in a stored file crashed each launch that read it.
+ */
 private fun constructScalar(event: ScalarEvent): Any? {
     val tag =
         event.tag?.takeIf { it != "!" }?.let(::Tag)
             ?: CoreResolver.resolve(event.value, event.implicit.canOmitTagInPlainScalar())
-    return YamlCoreSchema.schemaTagConstructors[tag]?.construct(ScalarNode(tag, event.value, event.scalarStyle))
-        ?: event.value
+    val constructor = YamlCoreSchema.schemaTagConstructors[tag] ?: return event.value
+    return try {
+        constructor.construct(ScalarNode(tag, event.value, event.scalarStyle))
+    } catch (error: NumberFormatException) {
+        throw ConstructorException(
+            null,
+            null,
+            "cannot construct $tag from ${event.value}: ${error.message}",
+            event.startMark,
+        )
+    } ?: event.value
 }
 
 /**
@@ -443,11 +457,20 @@ private object UnknownTag : ConstructNode {
 }
 
 // Keys duplicated as typed are refused by default, and [MappingKeys] refuses the ones only JS's
-// spelling makes duplicate. The engine's 3 MB input cap is lifted because js-yaml has none, and the
-// text is already in memory by the time it's here.
+// spelling makes duplicate. The engine's input cap is kept, and spelled out, although js-yaml has none:
+// scanning one long unbroken scalar is quadratic (4 MB took 6 s on a desktop JVM), and the library is
+// parsed on the main thread at every launch, so an uncapped file pasted in once froze each launch after
+// it. Over the cap, a stored library is quarantined and reseeded like any file that won't parse, which
+// no real library comes near, and Import refuses anything past `MAX_IMPORT_BYTES` well before it.
 private val loadSettings =
     LoadSettings(
         schema = YamlCoreSchema,
         maxAliasesForCollections = MAX_ALIASES,
-        codePointLimit = Int.MAX_VALUE,
+        codePointLimit = MAX_YAML_CODE_POINTS,
     )
+
+/**
+ * The most any file is read at: the engine's own default, 3 MB. Public, since the library's writer
+ * refuses to write a library this would not read back.
+ */
+const val MAX_YAML_CODE_POINTS = 3 * 1024 * 1024

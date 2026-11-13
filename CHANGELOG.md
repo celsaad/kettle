@@ -30,6 +30,10 @@ here, next to what it describes.
 - **See today's workout before you start it**: tap the next-up card on Home, anywhere above
   Start, to see every exercise in order, with its sets, targets and weights, so you know what to
   get out first. For a program week, it shows that week's changes (#280).
+- **A damaged file can no longer stop the app opening**: a few malformed lines in your library or
+  a session, or a library file too large to read, used to crash or freeze the app on every launch.
+  It now sets the bad library aside and starts fresh, as it already did for other broken files.
+  Import refuses anything over 512 KB, far larger than any real library.
 
 ---
 

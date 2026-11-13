@@ -42,8 +42,10 @@ import com.casco.kettle.domain.workoutsUsing
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.art.ExerciseArt
 import com.casco.kettle.shell.files.LatestFiles
+import com.casco.kettle.shell.files.LibraryWriteRefusal
 import com.casco.kettle.shell.files.LocalLatestFiles
-import com.casco.kettle.shell.files.writeOrRefusal
+import com.casco.kettle.shell.files.libraryWriteOrRefusal
+import com.casco.kettle.shell.files.text
 import com.casco.kettle.shell.form.EditorButtons
 import com.casco.kettle.shell.history.entryResultText
 import com.casco.kettle.shell.i18n.deviceUnitSystem
@@ -217,7 +219,7 @@ private class Editor(
         scope.launch {
             withContext(NonCancellable) {
                 val refused =
-                    writeOrRefusal { files.writeLibrary(change(library)) }
+                    libraryWriteOrRefusal { files.writeLibrary(change(library)) }
                 failure = refused?.let { Failure(kind, it) }
                 writing = false
                 if (refused == null) {
@@ -231,7 +233,7 @@ private class Editor(
     /** A write the disk refused, and why, which a full disk or a withdrawn permission can be. */
     data class Failure(
         val kind: Kind,
-        val detail: String,
+        val refusal: LibraryWriteRefusal,
     ) {
         enum class Kind { Save, Delete }
     }
@@ -283,7 +285,7 @@ private fun Editing(
                     } else {
                         R.string.common_deleteFailed
                     }
-                stringResource(format, it.detail)
+                it.refusal.text(format)
             }
     refusal?.let { Text(it, Modifier.padding(top = Spacing.two), style = KettleType.small, color = colors.accentText) }
 

@@ -62,8 +62,10 @@ import com.casco.kettle.domain.withoutWorkout
 import com.casco.kettle.domain.workoutDraftOf
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.files.LatestFiles
+import com.casco.kettle.shell.files.LibraryWriteRefusal
 import com.casco.kettle.shell.files.LocalLatestFiles
-import com.casco.kettle.shell.files.writeOrRefusal
+import com.casco.kettle.shell.files.libraryWriteOrRefusal
+import com.casco.kettle.shell.files.text
 import com.casco.kettle.shell.form.EditorButtons
 import com.casco.kettle.shell.form.FieldKind
 import com.casco.kettle.shell.form.FieldOptions
@@ -263,7 +265,7 @@ private class Editor(
         scope.launch {
             withContext(NonCancellable) {
                 val refused =
-                    writeOrRefusal { files.writeLibrary(change(library)) }
+                    libraryWriteOrRefusal { files.writeLibrary(change(library)) }
                 failure = refused?.let { Failure(kind, it) }
                 writing = false
                 closing = false
@@ -282,7 +284,7 @@ private class Editor(
 
     data class Failure(
         val kind: Kind,
-        val detail: String,
+        val refusal: LibraryWriteRefusal,
     ) {
         enum class Kind { Save, Delete }
     }
@@ -488,9 +490,8 @@ private fun refusalText(editor: Editor): String? =
         WorkoutProblem.NoId -> stringResource(R.string.common_couldNotDeriveId)
         null -> null
     } ?: editor.failure?.let {
-        stringResource(
+        it.refusal.text(
             if (it.kind == Editor.Failure.Kind.Save) R.string.common_saveFailed else R.string.common_deleteFailed,
-            it.detail,
         )
     }
 

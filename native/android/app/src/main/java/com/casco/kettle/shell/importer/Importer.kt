@@ -6,13 +6,16 @@ import androidx.compose.runtime.setValue
 import com.casco.kettle.domain.ChangedItem
 import com.casco.kettle.domain.ImportPreview
 import com.casco.kettle.domain.Library
+import com.casco.kettle.domain.MAX_IMPORT_BYTES
 import com.casco.kettle.domain.MergeError
 import com.casco.kettle.domain.MergeResult
 import com.casco.kettle.domain.ParseResult
+import com.casco.kettle.domain.exceedsImportSize
 import com.casco.kettle.domain.mergeLibraries
 import com.casco.kettle.domain.parseLibraryYaml
 import com.casco.kettle.shell.files.LatestFiles
-import com.casco.kettle.shell.files.writeOrRefusal
+import com.casco.kettle.shell.files.LibraryWriteRefusal
+import com.casco.kettle.shell.files.libraryWriteOrRefusal
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
@@ -48,6 +51,9 @@ sealed interface FilePick {
     data class Failed(
         val detail: String,
     ) : FilePick
+
+    /** Past [MAX_IMPORT_BYTES], found while reading, so a huge file is never held whole. */
+    data object TooLarge : FilePick
 }
 
 /** Where a preview came from, which its card names: a file, a paste, or a bundled pack. */
@@ -91,8 +97,14 @@ sealed interface ImportRefusal {
     ) : ImportRefusal
 
     data class SaveFailed(
-        val detail: String,
+        val refusal: LibraryWriteRefusal,
     ) : ImportRefusal
+
+    /**
+     * Past [MAX_IMPORT_BYTES]. Not about the content in the sense a report needs: no one fixes a file
+     * that size by editing it, so there is nothing to hand back.
+     */
+    data object TooLarge : ImportRefusal
 }
 
 /**
@@ -204,6 +216,7 @@ internal class Importer(
                 when (val pick = actions.pickFile()) {
                     FilePick.Cancelled -> Unit
                     is FilePick.Failed -> refuse(ImportRefusal.ReadFailed(pick.detail), RefusalSite.File)
+                    FilePick.TooLarge -> refuse(ImportRefusal.TooLarge, RefusalSite.File)
                     is FilePick.Picked -> review(pick.text, ImportSource.File(pick.name, pick.sizeBytes))
                 }
             } finally {
@@ -275,7 +288,7 @@ internal class Importer(
         scope.launch {
             withContext(NonCancellable) {
                 val saveError =
-                    writeOrRefusal { files.writeLibrary(merge.preview.merged) }
+                    libraryWriteOrRefusal { files.writeLibrary(merge.preview.merged) }
                 writing = false
                 if (saveError == null) {
                     // A retry after a failed write: the failure's slot is still drawn under Applied.
@@ -307,6 +320,13 @@ internal class Importer(
         text: String,
         source: ImportSource,
     ) {
+        // Before the parse, which is on this thread and slows with the square of a long scalar: a paste
+        // has no read to stop it earlier, as a picked file's has. In bytes, as the file's is, so the two
+        // sources take the same text.
+        if (exceedsImportSize(text)) {
+            refuse(ImportRefusal.TooLarge, source.site)
+            return
+        }
         when (val parsed = parseLibraryYaml(text)) {
             is ParseResult.Ok -> reviewLibrary(parsed.value, source)
             is ParseResult.InvalidYaml -> refuse(ImportRefusal.InvalidYaml(parsed.detail), source.site)

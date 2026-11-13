@@ -13,6 +13,7 @@
     "nameRequired": "O nome é obrigatório.",
     "couldNotDeriveId": "Não foi possível gerar um id a partir desse nome.",
     "saveFailed": "Não foi possível salvar: {{detail}}",
+    "libraryTooLarge": "Não salvo: sua biblioteca passaria de {{limit}} MB, grande demais para abrir de novo.",
     "deleteFailed": "Não foi possível excluir: {{detail}}",
     "deleteConfirmBody": "\"{{name}}\" será removido permanentemente.",
     "decrease": "Diminuir {{label}}",
@@ -608,7 +609,8 @@
       "unknownWorkout": "O programa \"{{program}}\" na semana {{week}} referencia o treino desconhecido \"{{workout}}\"",
       "weekWithDay": "{{week}} ({{day}})",
       "readFailed": "Não foi possível ler esse arquivo: {{detail}}",
-      "saveFailed": "Não foi possível salvar sua biblioteca: {{detail}}"
+      "saveFailed": "Não foi possível salvar sua biblioteca: {{detail}}",
+      "tooLarge": "Grande demais para importar: uma biblioteca pode ter até {{limit}} KB."
     }
   },
   "exerciseForm": {

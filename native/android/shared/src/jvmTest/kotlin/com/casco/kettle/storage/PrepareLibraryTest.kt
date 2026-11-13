@@ -2,6 +2,7 @@ package com.casco.kettle.storage
 
 import com.casco.kettle.domain.ExerciseConfig
 import com.casco.kettle.domain.Library
+import com.casco.kettle.domain.MAX_YAML_CODE_POINTS
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertNull
@@ -70,6 +71,34 @@ class PrepareLibraryTest {
         assertEquals("Bench", bench?.name)
         assertEquals(500L, (bench?.config as ExerciseConfig.Reps).sets)
         assertEquals(listOf("exercises.yaml"), dir.list()?.toList())
+    }
+
+    // The repair rewrites the raw tree, keys the schema ignores included, which the ordinary parse never
+    // walks: a self-referencing alias there overflowed the stack as an Error, past the launch's catch,
+    // and crashed every launch with the file still in place.
+    @Test
+    fun `moves a library aside when its repair can't be finished, rather than crashing`() {
+        val text = libraryWith(200_000, "junk: &a [*a]\n")
+        file.writeText(text)
+
+        val prepared = prepare() as PreparedLibrary.Reseeded
+
+        assertEquals(text, prepared.quarantined?.readText())
+        assertEquals(seed, readLibrary(file))
+    }
+
+    // Read whole, a file this large could exhaust the heap before the parser's cap refused it.
+    @Test
+    fun `sets a library too large to parse aside unread, and reseeds`() {
+        file.writeText(libraryWith(5, "notes: ${"x".repeat(4 * MAX_YAML_CODE_POINTS)}\n"))
+        val bytes = file.length()
+
+        val prepared = prepare() as PreparedLibrary.Reseeded
+
+        // Set aside by its size, not refused by the parser after a read.
+        assertEquals("tooLarge: $bytes bytes", prepared.why)
+        assertEquals(bytes, prepared.quarantined?.length())
+        assertEquals(seed, readLibrary(file))
     }
 
     @Test

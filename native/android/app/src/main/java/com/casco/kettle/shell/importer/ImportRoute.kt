@@ -11,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
+import com.casco.kettle.domain.MAX_IMPORT_BYTES
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.files.LocalLatestFiles
 import com.casco.kettle.shell.files.ShippedContent
@@ -19,6 +20,7 @@ import com.casco.kettle.shell.system.confirmCopy
 import com.casco.kettle.shell.system.copyToClipboard
 import com.casco.kettle.shell.system.readClipboard
 import com.casco.kettle.shell.system.shareText
+import com.casco.kettle.storage.readAtMost
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -77,18 +79,32 @@ private fun rememberFilePicker(activity: Activity): suspend () -> FilePick {
 /** The platform's own message on a failure: it says what went wrong, and the screen says at which step. */
 private fun Activity.read(uri: Uri): FilePick =
     try {
-        val (name, size) =
-            contentResolver
-                .query(uri, arrayOf(OpenableColumns.DISPLAY_NAME, OpenableColumns.SIZE), null, null, null)
-                ?.use { cursor ->
-                    if (!cursor.moveToFirst()) return@use null
-                    cursor.getString(0) to if (cursor.isNull(1)) null else cursor.getLong(1)
-                } ?: (null to null)
-        val bytes =
-            contentResolver.openInputStream(uri)?.use { it.readBytes() } ?: throw IOException(uri.toString())
-        FilePick.Picked(name ?: uri.lastPathSegment.orEmpty(), size ?: bytes.size.toLong(), bytes.decodeToString())
+        readPick(uri)
     } catch (e: IOException) {
         FilePick.Failed(e.message ?: e.javaClass.simpleName)
     } catch (e: SecurityException) {
         FilePick.Failed(e.message ?: e.javaClass.simpleName)
     }
+
+private fun Activity.readPick(uri: Uri): FilePick {
+    val (name, size) =
+        contentResolver
+            .query(uri, arrayOf(OpenableColumns.DISPLAY_NAME, OpenableColumns.SIZE), null, null, null)
+            ?.use { cursor ->
+                if (!cursor.moveToFirst()) return@use null
+                cursor.getString(0) to if (cursor.isNull(1)) null else cursor.getLong(1)
+            } ?: (null to null)
+    // Bounded as well as checked: the provider's size is optional, and can be wrong.
+    val bytes =
+        if (size != null && size > MAX_IMPORT_BYTES) {
+            null
+        } else {
+            val stream = contentResolver.openInputStream(uri) ?: throw IOException(uri.toString())
+            stream.use { it.readAtMost(MAX_IMPORT_BYTES) }
+        }
+    return if (bytes == null) {
+        FilePick.TooLarge
+    } else {
+        FilePick.Picked(name ?: uri.lastPathSegment.orEmpty(), size ?: bytes.size.toLong(), bytes.decodeToString())
+    }
+}

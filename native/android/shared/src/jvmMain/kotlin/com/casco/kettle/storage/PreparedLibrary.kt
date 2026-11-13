@@ -1,6 +1,7 @@
 package com.casco.kettle.storage
 
 import com.casco.kettle.domain.Library
+import com.casco.kettle.domain.MAX_YAML_CODE_POINTS
 import com.casco.kettle.domain.ParseResult
 import com.casco.kettle.domain.parseLibraryYaml
 import com.casco.kettle.domain.repairLibraryBounds
@@ -52,6 +53,14 @@ fun prepareLibrary(
     seed: () -> Library,
     now: () -> Instant = Instant::now,
 ): PreparedLibrary {
+    // A file this large can't be under the parser's cap, since no code point takes more than four bytes,
+    // so it is set aside unread: read whole, it could exhaust the heap first, crashing every launch.
+    val bytes = file.length()
+    if (bytes > MAX_LIBRARY_BYTES) {
+        val aside = setAside(file, now())
+        writeLibraryFile(file, seed())
+        return PreparedLibrary.Reseeded("tooLarge: $bytes bytes", aside)
+    }
     val text = if (file.exists()) file.readText() else null
     val refusal = text?.let(::refusalOf)
     val repaired = if (text != null && refusal != null) repaired(text) else null
@@ -78,9 +87,22 @@ fun prepareLibrary(
     }
 }
 
-/** [text] with the ceilings' refusals clamped, where that leaves a library that reads. */
+/**
+ * [text] with the ceilings' refusals clamped, where that leaves a library that reads. Null, so the file
+ * is quarantined, where the repair itself gives out: it rewrites the whole raw tree, unknown keys
+ * included, which the ordinary parse never walks, so a self-referencing alias under a key the schema
+ * ignores overflows the stack and an alias bomb there exhausts the heap. Either escaped as an Error,
+ * past every `catch (Exception)` on the way to `onCreate`, and crashed each launch with the file
+ * still in place.
+ */
 private fun repaired(text: String): Library? =
-    repairLibraryBounds(text)?.let { (parseLibraryYaml(it) as? ParseResult.Ok)?.value }
+    try {
+        repairLibraryBounds(text)?.let { (parseLibraryYaml(it) as? ParseResult.Ok)?.value }
+    } catch (_: StackOverflowError) {
+        null
+    } catch (_: OutOfMemoryError) {
+        null
+    }
 
 /** Why the parser refuses [text], as RN's log line spelled it, or null where it reads. */
 private fun refusalOf(text: String): String? =
@@ -90,13 +112,34 @@ private fun refusalOf(text: String): String? =
         is ParseResult.SchemaMismatch -> "schemaMismatch: ${result.detail}"
     }
 
+/** [file] moved to the quarantine's name, or null where the disk refused, which the reseed goes on without. */
+private fun setAside(
+    file: File,
+    at: Instant,
+): File? {
+    val aside = quarantineName(file, at)
+    return try {
+        if (file.renameTo(aside)) aside else null
+    } catch (_: SecurityException) {
+        null
+    }
+}
+
+private fun quarantineName(
+    file: File,
+    at: Instant,
+) = File(file.parentFile, "exercises.invalid-${STAMP.format(at)}.yaml")
+
+/** The most bytes a file within [MAX_YAML_CODE_POINTS] can take as UTF-8. */
+private const val MAX_LIBRARY_BYTES = 4L * MAX_YAML_CODE_POINTS
+
 /** [text] beside [file], or null where the disk refused, which the reseed goes on without. */
 private fun quarantine(
     file: File,
     text: String,
     at: Instant,
 ): File? {
-    val aside = File(file.parentFile, "exercises.invalid-${STAMP.format(at)}.yaml")
+    val aside = quarantineName(file, at)
     return try {
         writeAtomically(aside, text)
         aside

@@ -48,6 +48,21 @@ class SessionWriteTest {
         assertEquals(listOf("2026-07-29-a.yaml"), dir.list()?.toList())
     }
 
+    // The id is the file's content, which the schema only requires to be non-empty: `../exercises` named
+    // the library, which editing that session, or the launch's sweep, would have written over.
+    @Test
+    fun `refuses an id that would name a file outside the folder, and writes nothing`() {
+        val sessions = dir.resolve("sessions").apply { mkdirs() }
+        val library = dir.resolve("exercises.yaml").apply { writeText("library") }
+
+        for (id in listOf("../exercises", "a/b", "..\\exercises", "/tmp/x", "a\u0000b")) {
+            assertThrows<IOException> { writeSessionFile(sessions, session(8).copy(id = id)) }
+        }
+
+        assertEquals("library", library.readText())
+        assertEquals(emptyList<String>(), sessions.list()?.toList())
+    }
+
     @Test
     fun `throws when the disk refuses, and leaves the last file whole`() {
         writeSessionFile(dir, session(8))

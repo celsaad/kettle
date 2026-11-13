@@ -193,7 +193,7 @@ private fun Overlays(
     val snapshot = view.snapshot
     val step = snapshot.step
     if (Overlay.UPCOMING in open && step != null) {
-        ComingUp(view, !snapshot.adhoc) { close(Overlay.UPCOMING) }
+        ComingUp(view) { close(Overlay.UPCOMING) }
     }
     if (Overlay.ADD_PICKER in open) {
         ExercisePicker(addCandidates(view.plan.exercises), { close(Overlay.ADD_PICKER) }) {

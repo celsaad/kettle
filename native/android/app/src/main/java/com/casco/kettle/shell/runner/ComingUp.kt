@@ -20,7 +20,6 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.SessionEntry
 import com.casco.kettle.domain.StopState
@@ -40,10 +39,10 @@ import com.casco.kettle.shell.theme.Spacing
 @Composable
 internal fun ComingUp(
     view: RunnerView.Running,
-    ends: Boolean,
     onClose: () -> Unit,
 ) {
     val snapshot = view.snapshot
+    val ends = !snapshot.adhoc
     val timeline = remember(snapshot.steps, snapshot.stepIndex) { comingUpTimeline(snapshot.steps, snapshot.stepIndex) }
     val entryOf = { memberKey: String -> snapshot.entryIndex[memberKey]?.let(view.session.entries::getOrNull) }
     val title = stringResource(R.string.session_comingUp_title)
@@ -95,31 +94,24 @@ private fun StopRow(
     val resources = LocalResources.current
     when (stop) {
         is TimelineStop.Exercise -> {
-            val node = if (stop.state == StopState.NOW) RailNode.Now else RailNode.Stop
-            RailRow(node, stop.state, first, last) {
-                when (stop.state) {
-                    StopState.DONE -> {
-                        DoneLine(
-                            stop.step.exerciseName,
-                            resources.doneDetail(stop, entryOf(stop.memberKey)),
-                        )
-                    }
-
-                    StopState.NOW -> {
-                        NowStop(stop.step.exerciseName, resources.nowDetail(stop.step))
-                    }
-
-                    StopState.NEXT -> {
-                        NextLine(stop.step.exerciseName, resources.nextDetail(stop))
-                    }
-                }
+            RailRow(nodeFor(stop.state), stop.state, first, last) {
+                StateLine(
+                    stop.state,
+                    stop.step.exerciseName,
+                    done = { resources.doneDetail(stop, entryOf(stop.memberKey)) },
+                    now = { resources.nowDetail(stop.step) },
+                    next = { resources.nextDetail(stop) },
+                )
             }
         }
 
         is TimelineStop.Rest -> {
             RailRow(RailNode.Tick, stop.state, first, last) {
+                val done = stringResource(R.string.session_comingUp_done)
                 Text(
                     stringResource(R.string.session_comingUp_rest, formatClock(stop.seconds)),
+                    // A tick says nothing to a reader, so a rest behind says so, as a done exercise does.
+                    Modifier.semantics { if (stop.state == StopState.DONE) stateDescription = done },
                     style = KettleType.small,
                     color = if (stop.state == StopState.NOW) runnerColors.text else runnerColors.textSecondary,
                 )
@@ -142,6 +134,25 @@ private fun StopRow(
                 if (stop.state == StopState.DONE) DoneLine(kicker, names) else NextLine(kicker, names)
             }
         }
+    }
+}
+
+/** A stop's node on the rail: ringed and dotted for the one on screen, a plain stop otherwise. */
+internal fun nodeFor(state: StopState): RailNode = if (state == StopState.NOW) RailNode.Now else RailNode.Stop
+
+/** A stop's words by its state, the sheet's and the loop's alike: ticked and logged, Now and its target, or ahead. */
+@Composable
+internal fun StateLine(
+    state: StopState,
+    name: String,
+    done: () -> String?,
+    now: () -> String,
+    next: () -> String?,
+) {
+    when (state) {
+        StopState.DONE -> DoneLine(name, done())
+        StopState.NOW -> NowStop(name, now())
+        StopState.NEXT -> NextLine(name, next())
     }
 }
 
@@ -168,10 +179,18 @@ private fun StopText(
     modifier: Modifier,
 ) {
     val ink = runnerColors.text
+    // The bundle's own "a · b", so a language can order or join the two its way; the name is then found
+    // in it to take the ink.
+    val line = if (detail == null) name else stringResource(R.string.session_upcoming_detail, name, detail)
     Text(
         buildAnnotatedString {
-            withStyle(SpanStyle(color = ink, fontWeight = FontWeight.SemiBold)) { append(name) }
-            if (detail != null) append(" · $detail")
+            append(line)
+            val start = line.indexOf(name)
+            if (start >=
+                0
+            ) {
+                addStyle(SpanStyle(color = ink, fontWeight = FontWeight.SemiBold), start, start + name.length)
+            }
         },
         modifier,
         style = KettleType.default,
@@ -185,7 +204,7 @@ internal fun NowStop(
     name: String,
     detail: String,
 ) {
-    Column(Modifier.semantics(mergeDescendants = true) {}, verticalArrangement = Arrangement.spacedBy(2.dp)) {
+    Column(Modifier.semantics(mergeDescendants = true) {}, verticalArrangement = Arrangement.spacedBy(Spacing.half)) {
         Text(
             stringResource(R.string.session_comingUp_now),
             style = KettleType.small.copy(fontWeight = FontWeight.Bold),
@@ -197,6 +216,3 @@ internal fun NowStop(
 }
 
 private val LIST_MAX_HEIGHT = 520.dp
-
-/** The gap under a stop's text before the next stop's node. */
-internal val STOP_GAP = Spacing.three

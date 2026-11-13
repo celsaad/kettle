@@ -52,6 +52,22 @@ class RunnerComingUpTest : RunnerScreenHarness() {
     }
 
     @Test
+    fun `on a rest between moves the next move is Now, and no round rest leaves only the moves`() {
+        val circuit =
+            WorkoutBlock.Circuit(
+                rounds = 2,
+                restBetweenExercisesSec = 15.0,
+                members = listOf(CircuitMember(squat.id), CircuitMember(plank.id)),
+            )
+        val loop = plan(circuit)
+        // The squat logged: the rest before the plank on screen.
+        show(running(loop, started(loop).advanced()))
+        button("Pernas").performClick()
+        compose.onNodeWithText("0:15 entre os exercícios").assertExists()
+        compose.onNodeWithText("Agora").assertExists()
+    }
+
+    @Test
     fun `a rest block is a tick on the line`() {
         val rested = plan(block(squat), block(rest), block(plank))
         show(running(rested))

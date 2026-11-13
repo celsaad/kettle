@@ -123,7 +123,7 @@ internal fun Resources.intervalLine(
     return getString(R.string.preview_interval, progress, step.variant.json)
 }
 
-private val COUNT_KEYS: Map<WorkUnit, Pair<Pair<Int, Int>, Pair<Int, Int>>> =
+internal val COUNT_KEYS: Map<WorkUnit, Pair<Pair<Int, Int>, Pair<Int, Int>>> =
     mapOf(
         WorkUnit.SET to
             (

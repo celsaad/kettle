@@ -23189,7 +23189,7 @@
             },
             {
               "memberKey": "0:1",
-              "state": "next",
+              "state": "now",
               "step": {
                 "kind": "reps",
                 "blockIndex": 0,
@@ -23369,7 +23369,7 @@
             },
             {
               "memberKey": "0:2",
-              "state": "next",
+              "state": "now",
               "step": {
                 "kind": "hold",
                 "blockIndex": 0,
@@ -23488,7 +23488,7 @@
           "members": [
             {
               "memberKey": "0:0",
-              "state": "next",
+              "state": "now",
               "step": {
                 "kind": "reps",
                 "blockIndex": 0,
@@ -23669,7 +23669,7 @@
             },
             {
               "memberKey": "0:1",
-              "state": "next",
+              "state": "now",
               "step": {
                 "kind": "reps",
                 "blockIndex": 0,
@@ -23849,7 +23849,7 @@
             },
             {
               "memberKey": "0:2",
-              "state": "next",
+              "state": "now",
               "step": {
                 "kind": "hold",
                 "blockIndex": 0,
@@ -23968,7 +23968,7 @@
           "members": [
             {
               "memberKey": "0:0",
-              "state": "next",
+              "state": "now",
               "step": {
                 "kind": "reps",
                 "blockIndex": 0,
@@ -24149,7 +24149,7 @@
             },
             {
               "memberKey": "0:1",
-              "state": "next",
+              "state": "now",
               "step": {
                 "kind": "reps",
                 "blockIndex": 0,
@@ -24329,7 +24329,7 @@
             },
             {
               "memberKey": "0:2",
-              "state": "next",
+              "state": "now",
               "step": {
                 "kind": "hold",
                 "blockIndex": 0,
@@ -27280,7 +27280,7 @@
         },
         {
           "kind": "exercise",
-          "state": "next",
+          "state": "now",
           "memberKey": "1:swap-1",
           "step": {
             "kind": "reps",

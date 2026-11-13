@@ -60,7 +60,12 @@ sealed interface TimelineStop {
         override val state: StopState get() = StopState.NOW
     }
 
-    /** A circuit done or still ahead, collapsed to its rounds and the names one round runs. */
+    /**
+     * A circuit done or still ahead, collapsed to the names one round runs and its [rounds]: the rounds
+     * the list runs, as Coming up has always counted one it hasn't reached, which a truncated workout cuts
+     * short. [Loop.rounds] is the circuit's own count instead, being "round 2 of 3" for the one you're in.
+     * [blockIndex] is a stop's identity in the goldens, two circuits otherwise reading alike.
+     */
     data class Circuit(
         val blockIndex: Int,
         val rounds: Int,
@@ -85,6 +90,17 @@ fun comingUpTimeline(
     stepIndex: Int,
 ): ComingUpTimeline {
     val stops = mutableListOf<TimelineStop>()
+    // Where "Now" falls: the step on screen, or on a rest that isn't a stop of its own (between sets,
+    // between moves, after a round, before a swap's substitute) the work it leads to, so the sheet
+    // always has a "you are here".
+    val onScreen = steps.getOrNull(stepIndex)
+    val focus =
+        if (onScreen is RunnerStep.Rest && !onScreen.standalone) {
+            (stepIndex until steps.size).firstOrNull { steps[it] is WorkStep } ?: stepIndex
+        } else {
+            stepIndex
+        }
+    val at = Position(stepIndex, focus)
     var i = 0
     while (i < steps.size) {
         val step = steps[i]
@@ -98,9 +114,9 @@ fun comingUpTimeline(
             }
         val run = steps.subList(i, end)
         when {
-            step.circuit != null -> stops += circuitStop(run, i, stepIndex, state)
+            step.circuit != null -> stops += circuitStop(run, i, at)
             step is RunnerStep.Rest && step.standalone -> stops += TimelineStop.Rest(step.seconds, state)
-            else -> exerciseStop(run, i, stepIndex)?.let(stops::add)
+            else -> exerciseStop(run, i, at)?.let(stops::add)
         }
         i = end
     }
@@ -134,64 +150,71 @@ private fun runEnd(
     return end
 }
 
+/** The step on screen, and where "Now" falls: the work a rest on screen leads to, else the step itself. */
+private data class Position(
+    val stepIndex: Int,
+    val focus: Int,
+)
+
+/** [run]'s work steps with their indices in the whole list, [run] starting at [start]. */
+private fun workIn(
+    run: List<RunnerStep>,
+    start: Int,
+): List<Pair<Int, WorkStep>> =
+    run.withIndex().mapNotNull { (index, step) -> (step as? WorkStep)?.let { start + index to it } }
+
 private fun exerciseStop(
     run: List<RunnerStep>,
     start: Int,
-    stepIndex: Int,
+    at: Position,
 ): TimelineStop.Exercise? {
-    val work =
-        run.withIndex().filter { it.value is WorkStep }.map { (index, step) ->
-            start + index to step as WorkStep
-        }
+    val work = workIn(run, start)
     val first = work.firstOrNull()?.second ?: return null
-    val state = workState(work.map { it.first }, stepIndex)
+    val state = workState(work.map { it.first }, at)
     // Now: the step on screen when it's work, or the set the rest on screen leads to.
-    val shown = if (state == StopState.NOW) work.firstOrNull { it.first >= stepIndex }?.second ?: first else first
+    val shown = if (state == StopState.NOW) work.firstOrNull { it.first >= at.stepIndex }?.second ?: first else first
     return TimelineStop.Exercise(first.memberKey, shown, work.size, unitOf(first), state)
 }
 
 /**
- * Where work at [indices] stands against the step on screen, judged by the work alone: done once all of
- * it is behind, so the rest after an exercise's last set leads on to the next rather than holding it;
- * now once any of it has started, a rest between its own sets or rounds included; otherwise next.
+ * Where work at [indices] stands, judged by the work alone: done once all of it is behind the step on
+ * screen, so the rest after an exercise's last set leaves it done; now once any of it is at or behind
+ * the focus, which is the work a rest on screen leads to; otherwise next.
  */
 private fun workState(
     indices: List<Int>,
-    stepIndex: Int,
+    at: Position,
 ): StopState =
     when {
-        indices.all { it < stepIndex } -> StopState.DONE
-        indices.any { it <= stepIndex } -> StopState.NOW
+        indices.all { it < at.stepIndex } -> StopState.DONE
+        indices.any { it <= at.focus } -> StopState.NOW
         else -> StopState.NEXT
     }
 
 private fun circuitStop(
     run: List<RunnerStep>,
     start: Int,
-    stepIndex: Int,
-    state: StopState,
+    at: Position,
 ): TimelineStop {
-    val work =
-        run.withIndex().filter { it.value is WorkStep }.map { (index, step) ->
-            start + index to step as WorkStep
-        }
+    val work = workIn(run, start)
     val rounds = work.map { it.second.circuitRound }.distinct()
     val blockIndex = run.first().blockIndex
+    val state = workState(work.map { it.first }, at)
     // The round with work left at or after the step on screen: on the rest after a round, the next one.
-    val round = work.firstOrNull { it.first >= stepIndex }?.second?.circuitRound
+    val round = work.firstOrNull { it.first >= at.stepIndex }?.second?.circuitRound
     if (state != StopState.NOW || round == null) {
         val names =
             work
                 .filter { it.second.circuitRound == rounds.firstOrNull() }
                 .map { it.second.exerciseName }
                 .distinct()
-        return TimelineStop.Circuit(blockIndex, rounds.size, names, if (round == null) StopState.DONE else state)
+        return TimelineStop.Circuit(blockIndex, rounds.size, names, state)
     }
     val inRound = work.filter { it.second.circuitRound == round }
     val members =
         inRound.map { it.second.memberKey }.distinct().map { key ->
             val visit = inRound.filter { it.second.memberKey == key }
-            LoopMember(key, visit.first().second, workState(visit.map { it.first }, stepIndex))
+            LoopMember(key, visit.first().second, workState(visit.map { it.first }, at))
         }
     val (betweenMoves, afterRound) = circuitRests(run)
     return TimelineStop.Loop(

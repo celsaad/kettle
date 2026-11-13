@@ -171,19 +171,19 @@ internal fun LoopCard(
             )
             RoundDots(stop.round, stop.rounds)
         }
-        resources.loopRests(stop)?.let { Secondary(it) }
+        Secondary(resources.loopRests(stop))
         stop.members.forEach { member ->
             Row(horizontalArrangement = Arrangement.spacedBy(Spacing.two)) {
-                val node = if (member.state == StopState.NOW) RailNode.Now else RailNode.Stop
-                Canvas(
-                    Modifier.size(RAIL_WIDTH),
-                ) { drawNode(node, member.state, Offset(size.width / 2, NODE_CENTER.toPx()), colors) }
-                val name = member.step.exerciseName
-                when (member.state) {
-                    StopState.DONE -> DoneLine(name, resources.roundValue(entryOf(member.memberKey), stop.round))
-                    StopState.NOW -> NowStop(name, resources.upcomingTarget(member.step))
-                    StopState.NEXT -> NextLine(name, resources.upcomingTarget(member.step))
+                Canvas(Modifier.size(RAIL_WIDTH)) {
+                    drawNode(nodeFor(member.state), member.state, Offset(size.width / 2, NODE_CENTER.toPx()), colors)
                 }
+                StateLine(
+                    member.state,
+                    member.step.exerciseName,
+                    done = { resources.roundValue(entryOf(member.memberKey), stop.round) },
+                    now = { resources.upcomingTarget(member.step) },
+                    next = { resources.upcomingTarget(member.step) },
+                )
             }
         }
         resources.thenRounds(stop)?.let { Secondary(it) }
@@ -214,7 +214,12 @@ private fun RoundDots(
 }
 
 private val RAIL_WIDTH = 24.dp
-private val RAIL_GAP = 12.dp
+
+/** The canvas's 12dp between the rail and a stop's words, on the scale. */
+private val RAIL_GAP = Spacing.two + Spacing.one
+
+/** The gap under a stop's words before the next stop's node. */
+private val STOP_GAP = Spacing.three
 private val NODE_CENTER = 12.dp
 private val LINE = 2.dp
 private val STOP_NODE = 16.dp
@@ -232,7 +237,7 @@ private const val CHECK_RIGHT = 0.5f
 private val LOOP_STROKE = 1.5.dp
 private val LOOP_CORNER = 18.dp
 private val DOT = 10.dp
-private val DOT_GAP = 5.dp
+private val DOT_GAP = Spacing.one
 
 /** Past this many rounds the dots stop reading as a count; the line's "round 2 of 12" carries it. */
 private const val MAX_DOTS = 12

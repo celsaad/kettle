@@ -35,13 +35,14 @@ internal fun Resources.nowDetail(step: WorkStep): String =
     }
 
 /**
- * A stop done, as it was logged: "3 sets · 10, 9, 8", "2 sets · 30, 28 s", "8 rounds", "7 rounds".
- * Without an entry (work that logged nothing) it counts the steps that ran.
+ * A stop done, as it was logged: "3 sets · 10, 9, 8", "2 sets · 30, 28 s", "8 rounds", "5 minutes".
+ * Null without an entry (work that logged nothing), which the tick alone then says: its planned count
+ * would read as work done.
  */
 internal fun Resources.doneDetail(
     stop: TimelineStop.Exercise,
     entry: SessionEntry?,
-): String =
+): String? =
     when (entry) {
         is SessionEntry.Reps -> {
             withCount(stop, entry.sets.size, entry.sets.joinToString(", ") { "${it.reps}" })
@@ -65,8 +66,16 @@ internal fun Resources.doneDetail(
                 ?: getString(R.string.session_end_done)
         }
 
-        else -> {
-            stepCount(stop.unit, stop.count) ?: getString(R.string.session_end_done)
+        is SessionEntry.Hiit -> {
+            stepCount(WorkUnit.ROUND, entry.roundsCompleted.toInt())
+        }
+
+        is SessionEntry.Emom -> {
+            stepCount(stop.unit, entry.minutes.size)
+        }
+
+        is SessionEntry.Rest, null -> {
+            null
         }
     }
 
@@ -93,19 +102,18 @@ internal fun Resources.roundValue(
     }
 }
 
-/** "No rest between moves · 1:00 after each round", or nothing to say for a circuit with no rest at all. */
-internal fun Resources.loopRests(stop: TimelineStop.Loop): String? {
+/**
+ * "No rest between moves · 1:00 after each round": the rest between moves always said, none included,
+ * and the rest after each round only when there is one.
+ */
+internal fun Resources.loopRests(stop: TimelineStop.Loop): String {
     val moves =
         stop.betweenMovesSec?.let { getString(R.string.session_comingUp_restBetween, formatClock(it)) }
             ?: getString(R.string.session_comingUp_noRestBetween)
-    val rounds = stop.afterRoundSec?.let { getString(R.string.session_comingUp_afterRound, formatClock(it)) }
-    return if (stop.betweenMovesSec == null &&
-        rounds == null
-    ) {
-        moves
-    } else {
-        listOfNotNull(moves, rounds).joinToString(" · ")
-    }
+    val rounds =
+        stop.afterRoundSec?.let { getString(R.string.session_comingUp_afterRound, formatClock(it)) }
+            ?: return moves
+    return getString(R.string.session_upcoming_detail, moves, rounds)
 }
 
 /** "Then round 3", "Then rounds 3–5", or null on the last. */
@@ -128,13 +136,7 @@ private fun Resources.stepCount(
     unit: WorkUnit?,
     count: Int,
 ): String? {
-    val (plural, zero) =
-        when (unit ?: return null) {
-            WorkUnit.SET -> R.plurals.session_upcoming_sets to R.string.session_upcoming_sets_zero
-            WorkUnit.ROUND -> R.plurals.session_upcoming_rounds to R.string.session_upcoming_rounds_zero
-            WorkUnit.MINUTE -> R.plurals.session_upcoming_minutes to R.string.session_upcoming_minutes_zero
-            WorkUnit.INTERVAL -> R.plurals.session_upcoming_intervals to R.string.session_upcoming_intervals_zero
-        }
+    val (plural, zero) = COUNT_KEYS.getValue(unit ?: return null).first
     return pluralText(plural, zero, count)
 }
 

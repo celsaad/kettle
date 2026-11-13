@@ -2,6 +2,7 @@ package com.casco.kettle.storage
 
 import com.casco.kettle.domain.ExerciseConfig
 import com.casco.kettle.domain.Library
+import com.casco.kettle.domain.MAX_YAML_CODE_POINTS
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertNull
@@ -83,6 +84,20 @@ class PrepareLibraryTest {
         val prepared = prepare() as PreparedLibrary.Reseeded
 
         assertEquals(text, prepared.quarantined?.readText())
+        assertEquals(seed, readLibrary(file))
+    }
+
+    // Read whole, a file this large could exhaust the heap before the parser's cap refused it.
+    @Test
+    fun `sets a library too large to parse aside unread, and reseeds`() {
+        file.writeText(libraryWith(5, "notes: ${"x".repeat(4 * MAX_YAML_CODE_POINTS)}\n"))
+        val bytes = file.length()
+
+        val prepared = prepare() as PreparedLibrary.Reseeded
+
+        // Set aside by its size, not refused by the parser after a read.
+        assertEquals("tooLarge: $bytes bytes", prepared.why)
+        assertEquals(bytes, prepared.quarantined?.length())
         assertEquals(seed, readLibrary(file))
     }
 

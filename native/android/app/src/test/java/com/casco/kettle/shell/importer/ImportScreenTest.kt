@@ -21,7 +21,7 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.Library
-import com.casco.kettle.domain.MAX_IMPORT_CHARS
+import com.casco.kettle.domain.MAX_IMPORT_BYTES
 import com.casco.kettle.domain.Program
 import com.casco.kettle.domain.ProgramWeek
 import com.casco.kettle.domain.SessionLog
@@ -125,7 +125,16 @@ class ImportScreenTest : ImportHarness() {
 
     @Test
     fun `refuses a paste too large to import before parsing it`() {
-        val files = paste("x".repeat(MAX_IMPORT_CHARS + 1))
+        val files = paste("x".repeat(MAX_IMPORT_BYTES + 1))
+
+        shown(TOO_LARGE)
+        files.nothingWritten()
+    }
+
+    // Counted in bytes, as a picked file is: in characters, this paste was under the limit.
+    @Test
+    fun `holds a paste in a three-byte script to the same limit as a file`() {
+        val files = paste("あ".repeat(MAX_IMPORT_BYTES / 3 + 1))
 
         shown(TOO_LARGE)
         files.nothingWritten()

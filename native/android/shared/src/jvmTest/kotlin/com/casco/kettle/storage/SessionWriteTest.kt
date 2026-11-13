@@ -55,7 +55,7 @@ class SessionWriteTest {
         val sessions = dir.resolve("sessions").apply { mkdirs() }
         val library = dir.resolve("exercises.yaml").apply { writeText("library") }
 
-        for (id in listOf("../exercises", "a/b", "..\\exercises", "/tmp/x")) {
+        for (id in listOf("../exercises", "a/b", "..\\exercises", "/tmp/x", "a\u0000b")) {
             assertThrows<IOException> { writeSessionFile(sessions, session(8).copy(id = id)) }
         }
 

@@ -1,6 +1,7 @@
 package com.casco.kettle.storage
 
 import com.casco.kettle.domain.Library
+import com.casco.kettle.domain.MAX_YAML_CODE_POINTS
 import com.casco.kettle.domain.ParseResult
 import com.casco.kettle.domain.parseLibraryYaml
 import com.casco.kettle.domain.repairLibraryBounds
@@ -52,6 +53,14 @@ fun prepareLibrary(
     seed: () -> Library,
     now: () -> Instant = Instant::now,
 ): PreparedLibrary {
+    // A file this large can't be under the parser's cap, since no code point takes more than four bytes,
+    // so it is set aside unread: read whole, it could exhaust the heap first, crashing every launch.
+    val bytes = file.length()
+    if (bytes > MAX_LIBRARY_BYTES) {
+        val aside = setAside(file, now())
+        writeLibraryFile(file, seed())
+        return PreparedLibrary.Reseeded("tooLarge: $bytes bytes", aside)
+    }
     val text = if (file.exists()) file.readText() else null
     val refusal = text?.let(::refusalOf)
     val repaired = if (text != null && refusal != null) repaired(text) else null
@@ -103,13 +112,34 @@ private fun refusalOf(text: String): String? =
         is ParseResult.SchemaMismatch -> "schemaMismatch: ${result.detail}"
     }
 
+/** [file] moved to the quarantine's name, or null where the disk refused, which the reseed goes on without. */
+private fun setAside(
+    file: File,
+    at: Instant,
+): File? {
+    val aside = quarantineName(file, at)
+    return try {
+        if (file.renameTo(aside)) aside else null
+    } catch (_: SecurityException) {
+        null
+    }
+}
+
+private fun quarantineName(
+    file: File,
+    at: Instant,
+) = File(file.parentFile, "exercises.invalid-${STAMP.format(at)}.yaml")
+
+/** The most bytes a file within [MAX_YAML_CODE_POINTS] can take as UTF-8. */
+private const val MAX_LIBRARY_BYTES = 4L * MAX_YAML_CODE_POINTS
+
 /** [text] beside [file], or null where the disk refused, which the reseed goes on without. */
 private fun quarantine(
     file: File,
     text: String,
     at: Instant,
 ): File? {
-    val aside = File(file.parentFile, "exercises.invalid-${STAMP.format(at)}.yaml")
+    val aside = quarantineName(file, at)
     return try {
         writeAtomically(aside, text)
         aside

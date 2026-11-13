@@ -6,10 +6,11 @@ import androidx.compose.runtime.setValue
 import com.casco.kettle.domain.ChangedItem
 import com.casco.kettle.domain.ImportPreview
 import com.casco.kettle.domain.Library
-import com.casco.kettle.domain.MAX_IMPORT_CHARS
+import com.casco.kettle.domain.MAX_IMPORT_BYTES
 import com.casco.kettle.domain.MergeError
 import com.casco.kettle.domain.MergeResult
 import com.casco.kettle.domain.ParseResult
+import com.casco.kettle.domain.exceedsImportSize
 import com.casco.kettle.domain.mergeLibraries
 import com.casco.kettle.domain.parseLibraryYaml
 import com.casco.kettle.shell.files.LatestFiles
@@ -50,7 +51,7 @@ sealed interface FilePick {
         val detail: String,
     ) : FilePick
 
-    /** Past [MAX_IMPORT_CHARS], found while reading, so a huge file is never held whole. */
+    /** Past [MAX_IMPORT_BYTES], found while reading, so a huge file is never held whole. */
     data object TooLarge : FilePick
 }
 
@@ -99,7 +100,7 @@ sealed interface ImportRefusal {
     ) : ImportRefusal
 
     /**
-     * Past [MAX_IMPORT_CHARS]. Not about the content in the sense a report needs: no one fixes a file
+     * Past [MAX_IMPORT_BYTES]. Not about the content in the sense a report needs: no one fixes a file
      * that size by editing it, so there is nothing to hand back.
      */
     data object TooLarge : ImportRefusal
@@ -319,8 +320,9 @@ internal class Importer(
         source: ImportSource,
     ) {
         // Before the parse, which is on this thread and slows with the square of a long scalar: a paste
-        // has no read to stop it earlier, as a picked file's has.
-        if (text.length > MAX_IMPORT_CHARS) {
+        // has no read to stop it earlier, as a picked file's has. In bytes, as the file's is, so the two
+        // sources take the same text.
+        if (exceedsImportSize(text)) {
             refuse(ImportRefusal.TooLarge, source.site)
             return
         }

@@ -1,12 +1,15 @@
 package com.casco.kettle.storage
 
 import com.casco.kettle.domain.Library
+import com.casco.kettle.domain.MAX_YAML_CODE_POINTS
 import com.casco.kettle.domain.Session
 import com.casco.kettle.domain.serializeLibraryYaml
 import com.casco.kettle.domain.serializeSessionYaml
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
+import java.io.InputStream
 import java.nio.channels.FileChannel
 import java.nio.file.StandardOpenOption
 
@@ -31,9 +34,12 @@ fun sessionFile(
     dir: File,
     id: String,
 ): File {
-    if (id.any { it == '/' || it == '\\' || it == '\u0000' }) throw IOException("Not a session id: $id")
+    if (!isSessionFileId(id)) throw IOException("Not a session id: $id")
     return dir.resolve("$id.yaml")
 }
+
+/** Whether [id] names a file inside the log, as [sessionFile] needs: no separator, and no NUL. */
+fun isSessionFileId(id: String): Boolean = id.none { it == '/' || it == '\\' || it == '\u0000' }
 
 /**
  * Writes [library] over [file], `exercises.yaml`: native's library editors, from the library flip
@@ -43,7 +49,29 @@ fun sessionFile(
 fun writeLibraryFile(
     file: File,
     library: Library,
-) = writeAtomically(file, serializeLibraryYaml(library))
+) {
+    val text = serializeLibraryYaml(library)
+    // Past the parser's cap the next launch would quarantine the whole library, so the write that
+    // would get it there is refused instead, where the screen can say so. Chars, not code points: a
+    // surrogate pair counts twice, which only ever refuses early.
+    if (text.length > MAX_YAML_CODE_POINTS) throw IOException("The library would be too large to read back")
+    writeAtomically(file, text)
+}
+
+/**
+ * This stream's bytes, or null once it holds more than [limit]: a file too large to take is never held
+ * whole, whatever size its provider reported.
+ */
+fun InputStream.readAtMost(limit: Int): ByteArray? {
+    val out = ByteArrayOutputStream()
+    val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+    while (true) {
+        val read = read(buffer)
+        if (read < 0) return out.toByteArray()
+        if (out.size() + read > limit) return null
+        out.write(buffer, 0, read)
+    }
+}
 
 /**
  * [text] into [file] through a synced temporary file and a rename, as `AtomicFile` does, so a write cut

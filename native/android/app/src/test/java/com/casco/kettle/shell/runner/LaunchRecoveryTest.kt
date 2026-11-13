@@ -6,6 +6,7 @@ import com.casco.kettle.domain.Session
 import com.casco.kettle.domain.encodeRunnerSnapshot
 import com.casco.kettle.domain.isoInstant
 import com.casco.kettle.domain.parseSessionYaml
+import com.casco.kettle.domain.serializeSessionYaml
 import com.casco.kettle.storage.writeSessionFile
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -205,6 +206,23 @@ class LaunchRecoveryTest {
         sweepStrandedSessions(stateDir, sessions, swept)
 
         assertTrue(endedAt("rn") != null)
+        assertTrue(swept.exists())
+    }
+
+    // An id the log can't name a file by never stamps: it is passed over, so the sessions beside it are
+    // still ended and the sweep is done, rather than giving up at it on every launch.
+    @Test
+    fun `passes over a session whose id names no file in the log, ending the rest`() {
+        sessions.mkdirs()
+        val library = folder.root.resolve("exercises.yaml").apply { writeText("library") }
+        val hostile = start.session.copy(id = "../exercises", endedAt = null)
+        sessions.resolve("hostile.yaml").writeText(serializeSessionYaml(hostile))
+        writeSessionFile(sessions, start.session.copy(id = "rn", endedAt = null))
+
+        sweepStrandedSessions(stateDir, sessions, swept)
+
+        assertTrue(endedAt("rn") != null)
+        assertEquals("library", library.readText())
         assertTrue(swept.exists())
     }
 }

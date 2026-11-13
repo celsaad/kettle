@@ -11,7 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
-import com.casco.kettle.domain.MAX_IMPORT_CHARS
+import com.casco.kettle.domain.MAX_IMPORT_BYTES
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.files.LocalLatestFiles
 import com.casco.kettle.shell.files.ShippedContent
@@ -20,12 +20,11 @@ import com.casco.kettle.shell.system.confirmCopy
 import com.casco.kettle.shell.system.copyToClipboard
 import com.casco.kettle.shell.system.readClipboard
 import com.casco.kettle.shell.system.shareText
+import com.casco.kettle.storage.readAtMost
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.io.ByteArrayOutputStream
 import java.io.IOException
-import java.io.InputStream
 
 /**
  * What the route table draws at `Destination.Import`, as Home's first-run link, Library and Settings open
@@ -97,27 +96,15 @@ private fun Activity.readPick(uri: Uri): FilePick {
             } ?: (null to null)
     // Bounded as well as checked: the provider's size is optional, and can be wrong.
     val bytes =
-        if (size != null && size > MAX_IMPORT_CHARS) {
+        if (size != null && size > MAX_IMPORT_BYTES) {
             null
         } else {
             val stream = contentResolver.openInputStream(uri) ?: throw IOException(uri.toString())
-            stream.use { it.readAtMost(MAX_IMPORT_CHARS) }
+            stream.use { it.readAtMost(MAX_IMPORT_BYTES) }
         }
     return if (bytes == null) {
         FilePick.TooLarge
     } else {
         FilePick.Picked(name ?: uri.lastPathSegment.orEmpty(), size ?: bytes.size.toLong(), bytes.decodeToString())
-    }
-}
-
-/** This stream's bytes, or null once it holds more than [limit]: a huge file is never held whole. */
-private fun InputStream.readAtMost(limit: Int): ByteArray? {
-    val out = ByteArrayOutputStream()
-    val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
-    while (true) {
-        val read = read(buffer)
-        if (read < 0) return out.toByteArray()
-        if (out.size() + read > limit) return null
-        out.write(buffer, 0, read)
     }
 }

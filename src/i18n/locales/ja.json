@@ -541,7 +541,7 @@
       "weekWithDay": "{{week}}（{{day}}）",
       "readFailed": "そのファイルを読み込めませんでした: {{detail}}",
       "saveFailed": "ライブラリを保存できませんでした: {{detail}}",
-      "tooLarge": "大きすぎてインポートできません。ライブラリは 512 KB までです。"
+      "tooLarge": "大きすぎてインポートできません。ライブラリは {{limit}} KB までです。"
     }
   },
   "exerciseForm": {

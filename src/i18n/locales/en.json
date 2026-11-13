@@ -575,7 +575,7 @@
       "weekWithDay": "{{week}} ({{day}})",
       "readFailed": "Couldn't read that file: {{detail}}",
       "saveFailed": "Couldn't save your library: {{detail}}",
-      "tooLarge": "Too large to import: a library can be up to 512 KB."
+      "tooLarge": "Too large to import: a library can be up to {{limit}} KB."
     }
   },
   "exerciseForm": {

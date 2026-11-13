@@ -196,6 +196,19 @@ class LatestFilesTest {
         assertTrue(sessions.resolve("stuck.yaml").exists())
     }
 
+    @Test
+    fun `refuses to delete by an id that names a file outside the log`() {
+        val library =
+            folder.root.resolve("exercise-tracker/exercises.yaml").apply {
+                parentFile?.mkdirs()
+                writeText("library")
+            }
+        files.reread()
+
+        assertThrows(IOException::class.java) { runBlocking { files.deleteSession("../exercises") } }
+        assertEquals("library", library.readText())
+    }
+
     /** The session editor's Save (#239): the file rewritten where RN keeps it, and the log that shows it. */
     @Test
     fun `writing a session replaces its file and the log shows the edit`() {

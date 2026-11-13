@@ -15,6 +15,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import com.casco.kettle.domain.MAX_IMPORT_BYTES
 import com.casco.kettle.domain.MergeError
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.theme.KettleTheme
@@ -110,7 +111,7 @@ private fun refusalText(refusal: ImportRefusal): String =
         }
 
         ImportRefusal.TooLarge -> {
-            stringResource(R.string.import_error_tooLarge)
+            stringResource(R.string.import_error_tooLarge, MAX_IMPORT_BYTES / BYTES_PER_KB)
         }
     }
 
@@ -136,3 +137,5 @@ private fun mergeErrorText(error: MergeError): String =
             stringResource(R.string.import_error_unknownWorkout, error.programId, week, error.workoutId)
         }
     }
+
+private const val BYTES_PER_KB = 1024

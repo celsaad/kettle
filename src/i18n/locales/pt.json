@@ -609,7 +609,7 @@
       "weekWithDay": "{{week}} ({{day}})",
       "readFailed": "Não foi possível ler esse arquivo: {{detail}}",
       "saveFailed": "Não foi possível salvar sua biblioteca: {{detail}}",
-      "tooLarge": "Grande demais para importar: uma biblioteca pode ter até 512 KB."
+      "tooLarge": "Grande demais para importar: uma biblioteca pode ter até {{limit}} KB."
     }
   },
   "exerciseForm": {

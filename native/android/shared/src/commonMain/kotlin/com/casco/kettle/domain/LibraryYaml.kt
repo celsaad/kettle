@@ -8,15 +8,6 @@ package com.casco.kettle.domain
 fun parseLibraryYaml(text: String): ParseResult<Library> = parseYaml(text) { library(it) }
 
 /**
- * The most an import takes, in characters (a picked file's bytes are held to the same number): many
- * times any library written by hand or by an assistant, the seed included. A library from outside is
- * parsed on the main thread, and once merged it is parsed again at every launch, where parsing grows
- * with the square of a long unbroken scalar's length. Below the parser's own cap, so an import can't
- * merge a library into one too big to read back.
- */
-const val MAX_IMPORT_CHARS = 512 * 1024
-
-/**
  * What [parseLibraryYaml] reads back unchanged, keyed as an author writes the file. An absent
  * optional is left out, and so is `rest_day` on a training week: writing `rest_day: false` on every
  * one would rewrite each program in the user's file the first time the app saved it.

@@ -78,21 +78,17 @@ internal fun RepsScreen(
                 StatCard(stringResource(R.string.session_reps_rpe), Modifier.weight(1f)) { RpeChoice(context) }
             }
         },
-        next = readings.next,
         middleGap = Spacing.four,
         controls = {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(CARD_PAD),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                PrevTextButton({ context.send(RunnerCommand.Prev) })
-                val follows = restFollows(context.snapshot.steps, context.snapshot.stepIndex)
-                PrimaryButton(
+            val follows = restFollows(context.snapshot.steps, context.snapshot.stepIndex)
+            BottomRow(
+                RowAction(
                     stringResource(if (follows) R.string.session_reps_logSet else R.string.session_reps_logSetNoRest),
+                    null,
                     context::advance,
-                    Modifier.weight(1f),
-                )
-            }
+                ),
+                back = { context.send(RunnerCommand.Prev) },
+            )
         },
     )
 }

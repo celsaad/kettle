@@ -388,7 +388,7 @@ private fun finish(
  */
 private fun goPrev(state: RunnerState): RunnerTransition {
     val snapshot = state.snapshot
-    val commit = state.lastCommit?.takeIf { it.resultingIndex == snapshot.stepIndex }
+    val commit = undoableCommit(state)
     if (commit == null && snapshot.stepIndex == 0) return unchanged(state)
     val undone = commit?.let { undoCommit(state, it).copy(lastCommit = null) } ?: state
     val moved = undone.copy(snapshot = undone.snapshot.copy(stepIndex = max(0, snapshot.stepIndex - 1)))

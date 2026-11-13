@@ -2,11 +2,13 @@ package com.casco.kettle.shell.runner
 
 import android.util.Log
 import com.casco.kettle.domain.CountIn
+import com.casco.kettle.domain.LoggedUnit
 import com.casco.kettle.domain.RunnerCommand
 import com.casco.kettle.domain.RunnerPlan
 import com.casco.kettle.domain.RunnerStart
 import com.casco.kettle.domain.RunnerState
 import com.casco.kettle.domain.RunnerTransition
+import com.casco.kettle.domain.lastLogged
 import com.casco.kettle.domain.nextTimeUpdateAt
 import com.casco.kettle.domain.reduceRunner
 import com.casco.kettle.domain.startRunner
@@ -165,9 +167,9 @@ class RunnerSession(
             show(RunnerView.Completed(plan, after.session, FinishBackupState.PENDING))
             return
         }
-        val running = shown as? RunnerView.Running
-        if (running == null || running.snapshot !== after.snapshot || running.session !== after.session) {
-            show(RunnerView.Running(plan, after.snapshot, after.session, start))
+        val logged = lastLogged(after)
+        if ((shown as? RunnerView.Running)?.shows(after, logged) != true) {
+            show(RunnerView.Running(plan, after.snapshot, after.session, start, logged))
         }
         reschedule(after)
     }
@@ -193,3 +195,12 @@ private enum class Phase { OPEN, LEFT, STARTED }
 private fun CountIn.elapsedSeconds(now: Long): Long = (now - startedAt) / MS_PER_SECOND
 
 private const val TAG = "RunnerSession"
+
+/**
+ * Whether this view already shows [state]. The undo record is compared as well: it can clear with
+ * neither the snapshot nor the session changing, on an edit that changes nothing.
+ */
+private fun RunnerView.Running.shows(
+    state: RunnerState,
+    logged: LoggedUnit?,
+) = snapshot === state.snapshot && session === state.session && this.logged == logged

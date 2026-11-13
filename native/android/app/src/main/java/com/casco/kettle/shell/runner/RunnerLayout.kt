@@ -30,25 +30,6 @@ internal fun Modifier.halfLeading(line: Int): Modifier =
     }
 
 /**
- * Lets 48dp targets overhang the space around them by [top] and [bottom], so their words sit where RN
- * draws them: RN's controls are often just text with hitSlop for the rest, and laid out at 48dp they
- * push everything below them down. The targets keep their size; only the layout height shrinks. Use it
- * where the overhang lands on space nothing else can be tapped in: a gap, padding, or plain text.
- */
-internal fun Modifier.bleed(
-    top: Dp,
-    bottom: Dp,
-): Modifier =
-    layout { measurable, constraints ->
-        // Measured against bounds grown by the overhang, as hang's are, so the shorter height reported
-        // can't fall under the parent's minimum, which Compose would enforce and re-centre.
-        val above = top.roundToPx()
-        val below = bottom.roundToPx()
-        val placeable = measurable.measure(constraints.offset(vertical = above + below))
-        layout(placeable.width, placeable.height - above - below) { placeable.placeRelative(0, -above) }
-    }
-
-/**
  * Hangs a target's empty edges out past its place in the row by [start] and [end], so what it draws
  * lines up where RN's does: RN's controls are often smaller than 48dp, or pad only one side. Only
  * over space nothing else can be tapped in: the screen's margin, or a card's padding.

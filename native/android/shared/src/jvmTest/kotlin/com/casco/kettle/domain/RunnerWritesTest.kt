@@ -18,6 +18,48 @@ class RunnerWritesTest {
     @Nested
     inner class Undo {
         @Test
+        fun `names what Prev would take back, straight after the advance and no further`() {
+            val runner = Runner(workoutOf(single("pullups")))
+            assertNull(lastLogged(runner.state))
+
+            runner.advance()
+            assertEquals(LoggedUnit.Set(1, PreviousSet.Reps(6, 20.0)), lastLogged(runner.state))
+
+            runner.advance() // the rest: one step on, Prev only moves
+            assertNull(lastLogged(runner.state))
+        }
+
+        @Test
+        fun `names a hold set, a hiit round, an emom minute and a one-shot entry`() {
+            val hold = Runner(workoutOf(single("plank")))
+            hold.tick(12)
+            hold.advance()
+            assertEquals(LoggedUnit.Set(1, PreviousSet.Hold(12.0)), lastLogged(hold.state))
+
+            val hiit = Runner(workoutOf(single("burpees")))
+            hiit.advance()
+            assertEquals(LoggedUnit.Round(1), lastLogged(hiit.state))
+
+            val emom = Runner(workoutOf(single("swings")))
+            emom.advance()
+            assertEquals(LoggedUnit.Minute(1), lastLogged(emom.state))
+
+            val amrap = Runner(workoutOf(single("grinder"), single("pullups")))
+            amrap.send(RunnerCommand.SetRounds(4))
+            amrap.advance()
+            assertEquals(LoggedUnit.Entry("Grinder"), lastLogged(amrap.state))
+        }
+
+        @Test
+        fun `has nothing to name once an edit clears the record`() {
+            val runner = Runner(workoutOf(single("pullups")))
+            runner.advance()
+            runner.send(RunnerCommand.AddSet)
+
+            assertNull(lastLogged(runner.state))
+        }
+
+        @Test
         fun `retracts the entry a first set had just created`() {
             val runner = Runner(workoutOf(single("pullups")))
             runner.advance()

@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.material3.Text
@@ -53,23 +52,9 @@ internal fun IntervalScreen(
             Secondary(resources.caption(step))
             IntervalInputs(step.variant, context)
         },
-        next = context.readings.next,
         controls = {
-            PauseRow(context)
-            if (step.countUp) {
-                PrimaryButton(
-                    stringResource(R.string.session_interval_doneUp),
-                    context::advance,
-                    Modifier.fillMaxWidth(),
-                )
-            } else {
-                TextControl(
-                    stringResource(R.string.session_interval_skipArrow),
-                    context::advance,
-                    Modifier.align(Alignment.CenterHorizontally).bleed(top = Spacing.two, bottom = SKIP_SLACK),
-                    style = KettleType.heading.copy(color = runnerColors.accent),
-                )
-            }
+            // A count-up's Done is its only way out; a countdown's Skip leaves early what its clock ends.
+            ClockRow(context, if (step.countUp) doneAction(context) else skipAction(context))
         },
     )
 }
@@ -209,14 +194,5 @@ private fun variantLabel(variant: IntervalVariant): Int =
     }
 
 private val CLOCK_NUMERAL = 88.sp
-
-/**
- * The heading face's line at 1× in the display font since #323 (Skip's node measured 23dp at the S25+'s
- * 0.9 scale). Above [SKIP_SLACK], which reads it.
- */
-private val HEADING_LINE = 26.dp
-
-/** The slack under Skip's words in its 48dp target, which hangs into the frame's 16dp padding. */
-private val SKIP_SLACK = (MinTarget - HEADING_LINE) / 2
 private val STEPPER_ROW_GAP = 6.dp
 private const val SECONDS_PER_MINUTE = 60.0

@@ -34,8 +34,8 @@ import com.casco.kettle.shell.theme.Spacing
 internal fun StepLayout(
     top: @Composable ColumnScope.() -> Unit,
     middle: @Composable ColumnScope.() -> Unit,
-    next: StepPreview?,
     controls: @Composable ColumnScope.() -> Unit,
+    next: StepPreview? = null,
     middleGap: Dp = Spacing.two,
 ) {
     Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.SpaceBetween) {
@@ -83,17 +83,17 @@ internal fun PreviousRow(
     }
 }
 
-/** Back and Pause, the hold and interval screens' row. */
+/**
+ * The bottom row on a screen the clock runs: Back, Pause or Resume in the middle, and [exit], the step's
+ * Skip or Done, to the side, so the wide button a hand lands on from the floor is never the one that
+ * ends the step.
+ */
 @Composable
-internal fun PauseRow(context: StepContext) {
-    Row(horizontalArrangement = Arrangement.spacedBy(CARD_PAD), verticalAlignment = Alignment.CenterVertically) {
-        PrevIconButton { context.send(RunnerCommand.Prev) }
-        OutlineButton(
-            stringResource(if (context.paused) R.string.session_resume else R.string.session_pause),
-            { context.send(RunnerCommand.TogglePause) },
-            Modifier.weight(1f),
-        )
-    }
+internal fun ClockRow(
+    context: StepContext,
+    exit: RowAction,
+) {
+    BottomRow(pauseAction(context), back = { context.send(RunnerCommand.Prev) }, side = exit)
 }
 
 /**
@@ -119,10 +119,8 @@ internal fun HoldScreen(
             )
         },
         middle = { HoldClock(step, context.elapsed) },
-        next = readings.next,
         controls = {
-            PauseRow(context)
-            PrimaryButton(stringResource(R.string.session_hold_doneSet), context::advance, Modifier.fillMaxWidth())
+            ClockRow(context, doneAction(context))
         },
     )
 }
@@ -153,45 +151,38 @@ private fun HoldClock(
 }
 
 /**
- * A rest counts down against its total, which +30s moves. No Pause: a step change clears pause (#304),
- * so a live rest never starts paused. A resume after process death does land one paused (#307), and
- * then Resume takes +30s's place, or the clock would sit frozen with only Skip to move it on.
+ * A rest counts down against its total, which +30s under the clock moves, where the canvas draws it.
+ * Straight after a commit it shows what was logged with Undo, and then no Back: the two would be the
+ * same step back. With nothing to undo (a restored session, a set that logged nothing, an edit since),
+ * Back takes Undo's place so there's always a way back.
+ *
+ * No Pause: a step change clears pause (#304), so a live rest never starts paused. A resume after process
+ * death does land one paused (#307), and then Resume is the main action, Skip moving to the side, or the
+ * clock would sit frozen with only Skip to move it on.
  */
 @Composable
 internal fun RestScreen(context: StepContext) {
+    val logged = context.logged
+    val skip = stringResource(R.string.session_rest_skip)
     StepLayout(
         top = { StepPill(stringResource(R.string.session_rest_label), calm = true) },
         middle = {
             Numeral(formatClock(context.remaining), REST_NUMERAL)
             Secondary(stringResource(R.string.session_rest_remaining, formatClock(context.snapshot.clock.stepEndSec)))
+            OutlineButton(
+                stringResource(R.string.session_rest_add30),
+                { context.send(RunnerCommand.AddRestSeconds(REST_BUMP_SEC)) },
+                look = ButtonLook.Compact,
+            )
         },
         next = context.readings.next,
         controls = {
-            // +30s is sized to its words, not an even share: pt's Skip needs every point it can get.
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(CARD_PAD),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                PrevTextButton({ context.send(RunnerCommand.Prev) }, ButtonLook.Rest.minHeight)
-                if (context.paused) {
-                    OutlineButton(
-                        stringResource(R.string.session_resume),
-                        { context.send(RunnerCommand.TogglePause) },
-                        look = ButtonLook.Rest,
-                    )
-                } else {
-                    OutlineButton(
-                        stringResource(R.string.session_rest_add30),
-                        { context.send(RunnerCommand.AddRestSeconds(REST_BUMP_SEC)) },
-                        look = ButtonLook.Rest,
-                    )
-                }
-                PrimaryButton(
-                    stringResource(R.string.session_rest_skip),
-                    context::advance,
-                    Modifier.weight(1f),
-                    look = ButtonLook.Rest,
-                )
+            if (logged != null) LoggedPanel(logged, context)
+            val back = if (logged == null) ({ context.send(RunnerCommand.Prev) }) else null
+            if (context.paused) {
+                BottomRow(pauseAction(context), back, side = skipAction(context))
+            } else {
+                BottomRow(RowAction(skip, null, context::advance), back)
             }
         },
     )

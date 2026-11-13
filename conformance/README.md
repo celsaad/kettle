@@ -22,7 +22,7 @@ files, read in place. It finds suites by listing this directory, and one with no
 reported as skipped under its own name, never as passing. Porting a suite is adding its runner there.
 
 A suite whose TS twin is gone is written from Kotlin instead: `steps`, since the flip release (#308).
-A change to `:shared`'s `RunnerSteps.kt` or `SessionOutline.kt` that is meant to change behaviour is
+A change to `:shared`'s `RunnerSteps.kt`, `SessionOutline.kt` or `ComingUpTimeline.kt` that is meant to change behaviour is
 `./gradlew :shared:jvmTest -PupdateConformance` from `native/android`, then `pnpm run format`.
 
 ## Suites
@@ -40,7 +40,7 @@ A change to `:shared`'s `RunnerSteps.kt` or `SessionOutline.kt` that is meant to
 | `search` | `rankByName` and `filterByName` over `names` with `query` | `{ ranked, filtered }`, lists of names |
 | `preferences` | `parsePreferences(input)`, the text of a `preferences.json` | the preferences with defaults filled in, or `null` where the file is refused |
 | `supporter` | `parseSupporterState(input)`, the text of a `supporter.json` | the supporter state, the empty one where the file is refused |
-| `steps` | the runner's `buildStepsWithLimits`, its mid-session edits, and `upcomingOutline`, over the workout in `library`; **Kotlin only** | the step list, the list after each edit, or the outline per index (the file's header) |
+| `steps` | the runner's `buildStepsWithLimits`, its mid-session edits, `upcomingOutline` and Coming up's `comingUpTimeline`, over the workout in `library`; **Kotlin only** | the step list, the list after each edit, or the outline or timeline per index (the file's header) |
 | `records` | by `op`: `entryBest`, `sessionEntryResult` or `sessionSetCount` over the session file in `session`; `recordKey(exercise, kind)`; `sessionDurationMinutes` of `session`; or `sessionRecords` of `session` against the session files in `prior`, named from the inline `library` | a list of `{ kind, value, reps, oneRepMaxKg }` or `null` per entry; a list of entry results; a set count; the key string; whole minutes; a list of `{ kind, exerciseId, exerciseName, … }` records, the kind's own fields after |
 
 The `source` cases read `site/examples/` and the shipped seed and packs in `src/content/` in place,

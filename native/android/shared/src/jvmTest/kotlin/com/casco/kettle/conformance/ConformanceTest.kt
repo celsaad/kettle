@@ -16,6 +16,7 @@ import com.casco.kettle.domain.UnitSystem
 import com.casco.kettle.domain.addSetForMember
 import com.casco.kettle.domain.buildStepsForExercise
 import com.casco.kettle.domain.buildStepsWithLimits
+import com.casco.kettle.domain.comingUpTimeline
 import com.casco.kettle.domain.diffBlockOverride
 import com.casco.kettle.domain.diffExerciseOverride
 import com.casco.kettle.domain.dropLastSetForMember
@@ -324,6 +325,10 @@ class ConformanceTest {
 
             "outline" -> {
                 indices.map { at -> mapOf("at" to at, "items" to upcomingOutline(steps, at).map(::upcomingJson)) }
+            }
+
+            "timeline" -> {
+                indices.map { at -> mapOf("at" to at) + timelineJson(comingUpTimeline(steps, at)) }
             }
 
             else -> {

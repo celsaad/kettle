@@ -251,10 +251,7 @@
       "accessibility": "Circuit, round {{index}} of {{total}}, exercise {{member}} of {{memberTotal}}"
     },
     "upcoming": {
-      "title": "COMING UP",
       "hint": "Shows what's left in this workout",
-      "now": "NOW",
-      "nowRest": "NOW · REST",
       "end": "END OF WORKOUT",
       "rest": "Rest",
       "detail": "{{amount}} · {{target}}",
@@ -440,6 +437,28 @@
       "minutes_other": "{{done}} of {{count}} min",
       "intervals_one": "{{done}} of {{count}} interval",
       "intervals_other": "{{done}} of {{count}} intervals"
+    },
+    "comingUp": {
+      "title": "Coming up",
+      "progress_one": "{{done}} of {{count}} step done",
+      "progress_other": "{{done}} of {{count}} steps done",
+      "now": "Now",
+      "done": "Done",
+      "rest": "Rest {{time}}",
+      "circuitRound": "Circuit · round {{index}} of {{total}}",
+      "circuitRounds_one": "Circuit · {{count}} round",
+      "circuitRounds_other": "Circuit · {{count}} rounds",
+      "noRestBetween": "No rest between moves",
+      "restBetween": "{{time}} between moves",
+      "afterRound": "{{time}} after each round",
+      "thenRound": "Then round {{round}}",
+      "thenRounds": "Then rounds {{from}}–{{to}}",
+      "end": "End of workout",
+      "holdValues": "{{values}} s",
+      "reps_one": "{{count}} rep",
+      "reps_other": "{{count}} reps",
+      "line": "{{name}} · {{detail}}",
+      "rests": "{{moves}} · {{rounds}}"
     }
   },
   "settings": {

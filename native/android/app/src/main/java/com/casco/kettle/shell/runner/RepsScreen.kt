@@ -65,7 +65,11 @@ internal fun RepsScreen(
     StepLayout(
         top = {
             val resources = LocalResources.current
-            StepHeader(resources.stepLabel(step), step.exerciseName, resources.circuitSpoken(step))
+            StepHeader(
+                resources.stepLabel(step, context.snapshot.inputs),
+                step.exerciseName,
+                resources.circuitSpoken(step),
+            )
             ActionRow(context)
             StepNotes(step.notes)
             // The canvas's order (#410): the load leads, as the larger number, with last time and the

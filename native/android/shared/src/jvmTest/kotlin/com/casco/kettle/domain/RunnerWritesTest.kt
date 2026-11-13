@@ -408,6 +408,20 @@ class RunnerWritesTest {
         }
 
         @Test
+        fun `a round counted or taken back clears the reps entered into it`() {
+            val runner = Runner(workoutOf(single("grinder")))
+            runner.send(RunnerCommand.SetRounds(4))
+            runner.send(RunnerCommand.SetExtraReps(8))
+            runner.send(RunnerCommand.SetRounds(5))
+            assertEquals(0, runner.snapshot.inputs.extraReps)
+            runner.send(RunnerCommand.SetExtraReps(3))
+            runner.send(RunnerCommand.SetRounds(4))
+            runner.advance()
+
+            assertEquals(listOf(SessionEntry.Amrap("grinder", 4, null)), runner.entries)
+        }
+
+        @Test
         fun `logs a standalone rest as its own entry with the time taken`() {
             val rest = Workout("w", "W", listOf(single("pullups"), single("rest"), single("dips")))
             val runner = Runner(rest)

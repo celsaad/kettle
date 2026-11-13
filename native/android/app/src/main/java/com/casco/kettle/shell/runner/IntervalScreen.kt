@@ -48,12 +48,11 @@ internal fun IntervalScreen(
 ) {
     if (step.variant == IntervalVariant.AMRAP) return AmrapScreen(step, context)
     val resources = LocalResources.current
-    val target = context.snapshot.clock.stepEndSec
     val emom = step.variant == IntervalVariant.EMOM
     val resting = emom && context.resting
     StepLayout(
         top = {
-            val label = resources.stepLabel(step)
+            val label = resources.stepLabel(step, context.snapshot.inputs)
             StepHeader(
                 if (resting) stringResource(R.string.session_emom_resting, label) else label,
                 step.exerciseName,
@@ -64,7 +63,7 @@ internal fun IntervalScreen(
         middle = {
             if (resting) Secondary(resources.nextStartsIn(step))
             Numeral(formatClock(if (step.countUp) context.elapsed.toDouble() else context.remaining), CLOCK_NUMERAL)
-            if (!step.countUp) FillBar(if (target > 0) ((target - context.remaining) / target).toFloat() else 0f)
+            if (!step.countUp) FillBar(context.spent)
             if (!resting) Secondary(resources.caption(step))
             if (emom) {
                 Stepper(
@@ -90,14 +89,14 @@ internal fun IntervalScreen(
 /** An EMOM minute's Done: rest out the minute on screen. Logging is still the minute's clock, or Skip. */
 @Composable
 private fun minuteDoneAction(context: StepContext) =
-    RowAction(stringResource(R.string.session_done), R.drawable.icon_stop, context.controls.restOutMinute)
+    RowAction(stringResource(R.string.session_done), R.drawable.icon_stop, context.controls.minute.restOut)
 
 /** What the rest after an EMOM's Done counts down to: the next minute, or the step's end after the last. */
 private fun Resources.nextStartsIn(step: RunnerStep.Interval): String {
     val next = "${step.setIndex + 1}"
     return when {
         step.setIndex >= step.setTotal -> getString(R.string.session_emom_endsIn)
-        step.targetSec == EMOM_MINUTE_SEC -> getString(R.string.session_emom_minuteStartsIn, next)
+        step.isMinute -> getString(R.string.session_emom_minuteStartsIn, next)
         else -> getString(R.string.session_emom_intervalStartsIn, next)
     }
 }
@@ -131,15 +130,14 @@ private fun AmrapScreen(
     val inputs = context.snapshot.inputs
     val rounds = inputs.roundsCompleted
     val round = rounds + 1
-    val target = context.snapshot.clock.stepEndSec
     StepLayout(
         top = {
-            StepHeader(resources.stepLabel(step, round), step.exerciseName, resources.circuitSpoken(step))
+            StepHeader(resources.stepLabel(step, inputs), step.exerciseName, resources.circuitSpoken(step))
             StepNotes(step.notes)
         },
         middle = {
             Numeral(formatClock(context.remaining), CLOCK_NUMERAL)
-            FillBar(if (target > 0) ((target - context.remaining) / target).toFloat() else 0f)
+            FillBar(context.spent)
             PaceLine(rounds, context.readings.lastRounds)
             if (context.remaining <= LAST_MINUTE_SEC) {
                 Stepper(
@@ -237,8 +235,7 @@ private fun Stepper(
 }
 
 private val CLOCK_NUMERAL = 88.sp
-private const val EMOM_MINUTE_SEC = 60.0
 
-/** When an AMRAP offers its extra reps: the cap's last minute. */
+/** When an AMRAP offers its extra reps: the cap's last minute. A span of time, not [isMinute]'s length. */
 private const val LAST_MINUTE_SEC = 60.0
 private val STEPPER_ROW_GAP = 6.dp

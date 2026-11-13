@@ -404,9 +404,15 @@ private fun editInputs(
     val edited =
         when (edit) {
             is RunnerCommand.SetReps -> inputs.copy(reps = max(0, edit.reps))
+
             is RunnerCommand.SetWeight -> inputs.copy(weightKg = max(0.0, edit.weightKg))
+
             is RunnerCommand.SetRpe -> inputs.copy(rpe = edit.rpe)
-            is RunnerCommand.SetRounds -> inputs.copy(roundsCompleted = max(0, edit.rounds))
+
+            // A round counted, or taken back, spends the reps entered into the one under way (#417's
+            // review): kept, they would be logged as reps into the next round as well.
+            is RunnerCommand.SetRounds -> inputs.copy(roundsCompleted = max(0, edit.rounds), extraReps = 0)
+
             is RunnerCommand.SetExtraReps -> inputs.copy(extraReps = max(0, edit.extraReps))
         }
     return if (edited == inputs) {

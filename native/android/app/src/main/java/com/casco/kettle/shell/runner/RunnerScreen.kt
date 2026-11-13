@@ -78,7 +78,8 @@ fun RunnerScreen(
     val open = running?.let { overlays.on(it.snapshot.visit).withoutDeadSwap(it) } ?: RunnerOverlays()
     val confirming = confirmingAt != null && confirmingAt == running?.snapshot?.visit
     // The visit an EMOM minute was called done on (#417): blue until the minute turns, which moves the
-    // visit. The screen's alone, so a process death forgets it; the minute ends on its clock either way.
+    // visit. The engine never hears it. Saved with the screen, and the visit is restored with the
+    // snapshot, so a minute rested out before a process death comes back still resting.
     var restedAt by rememberSaveable { mutableStateOf<Long?>(null) }
     val resting = restedAt != null && restedAt == running?.snapshot?.visit
     SideEffect {
@@ -104,7 +105,7 @@ fun RunnerScreen(
             },
             confirmFinish = askToFinish,
             adopt = { id, kg -> adopting.pickLoad(id, kg, view.snapshot.visit) },
-            restOutMinute = { restedAt = view.snapshot.visit },
+            minute = MinuteRest(restedAt == view.snapshot.visit) { restedAt = view.snapshot.visit },
         )
     }
     val field = runnerField(entry, now, resting)
@@ -116,7 +117,7 @@ fun RunnerScreen(
         CompositionLocalProvider(LocalRunnerPalette provides field.palette) {
             Box(Modifier.widthIn(max = MaxContentWidth).fillMaxSize().padding(horizontal = Spacing.three)) {
                 RunnerBody(entry, environment, now, actions) { view ->
-                    Frame(view, stepContext(view, environment, now, controlsFor(view), resting), open.open)
+                    Frame(view, stepContext(view, environment, now, controlsFor(view)), open.open)
                 }
             }
         }

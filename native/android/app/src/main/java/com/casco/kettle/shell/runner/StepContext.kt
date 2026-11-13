@@ -42,8 +42,6 @@ data class StepReadings(
     val tryKg: Double? = null,
     /** An AMRAP's rounds the last time it was run, for its pace line (#417); null off one, or with no history. */
     val lastRounds: Long? = null,
-    /** An EMOM minute called done (#417), which only the screen knows: see [StepContext.resting]. */
-    val resting: Boolean = false,
     val beatsBest: Boolean,
     val next: StepPreview?,
     val canAddSet: Boolean,
@@ -58,8 +56,16 @@ class StepControls(
     val openPad: (PadRequest) -> Unit,
     val confirmFinish: () -> Unit,
     val adopt: (exerciseId: String, weightKg: Double) -> Unit,
-    /** An EMOM minute's Done (#417): rest out the minute on screen, which still ends on its own clock. */
-    val restOutMinute: () -> Unit,
+    val minute: MinuteRest,
+)
+
+/**
+ * An EMOM minute called done (#417), which only the screen knows: [resting] says it was, and [restOut],
+ * the minute's Done, says so. The minute still ends on its own clock either way.
+ */
+class MinuteRest(
+    val resting: Boolean,
+    val restOut: () -> Unit,
 )
 
 /**
@@ -75,12 +81,16 @@ class StepContext(
     /** What Undo would take back, null when it has nothing to: [RunnerView.Running.logged]. */
     val logged: LoggedUnit? = null,
 ) {
-    /** An EMOM minute the user called done: blue until it turns. The screen's alone ([StepControls.restOutMinute]). */
-    val resting: Boolean get() = readings.resting
+    /** An EMOM minute the user called done: blue until it turns. The screen's alone ([MinuteRest]). */
+    val resting: Boolean get() = controls.minute.resting
 
     val elapsed: Long get() = elapsedSec(snapshot.clock, now)
     val remaining: Double get() = remainingSec(snapshot.clock, now)
     val paused: Boolean get() = snapshot.clock.paused
+
+    /** How much of a countdown is spent, for its [FillBar]: 0 with no end to count to. */
+    val spent: Float
+        get() = snapshot.clock.stepEndSec.let { if (it > 0) ((it - remaining) / it).toFloat() else 0f }
 
     fun send(command: RunnerCommand) = controls.send(command)
 
@@ -94,7 +104,6 @@ internal fun stepContext(
     environment: RunnerEnvironment,
     now: Long,
     controls: StepControls,
-    resting: Boolean = false,
 ): StepContext {
     val snapshot = view.snapshot
     val state = RunnerState(snapshot, view.session)
@@ -125,7 +134,6 @@ internal fun stepContext(
             canAddSet = canAddSet(snapshot),
             canDropSet = canDropSet(state),
             canSwap = swapCandidates(snapshot, view.plan.exercises).isNotEmpty(),
-            resting = resting,
         )
     return StepContext(snapshot, now, environment.units, readings, controls, view.logged)
 }

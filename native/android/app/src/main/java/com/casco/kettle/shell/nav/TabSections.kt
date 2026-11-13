@@ -11,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.casco.kettle.shell.history.HistoryRoute
+import com.casco.kettle.shell.home.WorkoutsRoute
 import com.casco.kettle.shell.library.LibraryRoute
 import com.casco.kettle.shell.programs.ProgramsRoute
 import com.casco.kettle.shell.settings.Segmented
@@ -22,11 +23,15 @@ import com.casco.kettle.shell.theme.Spacing
 // the four-tab shell had, each drawn as it was. The section rides in the route, so a link or a saved back
 // stack lands on it, and the switch is a navigate like any other.
 
-/** Library: Exercises, today's Library tab, and Programs, which was a tab of its own. */
+/** Library: Workouts, which Today held (#412), Exercises, and Programs, which was a tab of its own. */
 @Composable
 internal fun LibraryTab(route: Route) =
     SectionedTab(Tab.Library, route) { section ->
-        if (section == Section.PROGRAMS) ProgramsRoute() else LibraryRoute()
+        when (section) {
+            Section.WORKOUTS -> WorkoutsRoute()
+            Section.PROGRAMS -> ProgramsRoute()
+            else -> LibraryRoute()
+        }
     }
 
 /** Progress: Sessions, which was History, and Stats, which was a sheet off it. */

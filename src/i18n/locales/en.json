@@ -57,7 +57,12 @@
     "startEmpty": "Start an empty session",
     "starterPacks": "Add a starter program",
     "moreBlocks_one": "+{{count}} more",
-    "moreBlocks_other": "+{{count}} more"
+    "moreBlocks_other": "+{{count}} more",
+    "title": "Today",
+    "offThePlan": "Off the plan",
+    "allWorkouts": "All workouts",
+    "emptySession": "Empty session",
+    "emptySessionDetail": "Add exercises as you go"
   },
   "workoutPreview": {
     "notFound": "This workout isn't in your library any more."
@@ -865,6 +870,7 @@
     "library": "Library",
     "progress": "Progress",
     "sections": {
+      "workouts": "Workouts",
       "exercises": "Exercises",
       "programs": "Programs",
       "sessions": "Sessions",

@@ -79,6 +79,10 @@ here, next to what it describes.
 - **Three tabs instead of four**: Today, Library and Progress. Library holds your exercises and
   your programs, and Progress holds your sessions and your stats, each a switch at the top. Links
   and shortcuts to the old History and Programs tabs still land in the right place (#411).
+- **Today shows what's next, not everything**: under today's date and what's up next, "Off the
+  plan" offers the two workouts you ran most recently and an empty session. Every workout, with
+  search and New workout, is now the first section of Library, a tap away from "All workouts"
+  (#412).
 
 ---
 

@@ -40,10 +40,10 @@ class SectionedTabTest {
     private fun segment(label: String) = compose.onNode(hasText(label) and isSelectable())
 
     @Test
-    fun `Library opens on Exercises, and its switch moves to Programs through the route`() {
+    fun `Library opens on Workouts, and its switch moves to Programs through the route`() {
         show(Tab.Library)
-        segment("Exercícios").assertIsSelected()
-        compose.onNodeWithText("screen EXERCISES").assertExists()
+        segment("Treinos").assertIsSelected()
+        compose.onNodeWithText("screen WORKOUTS").assertExists()
 
         segment("Programas").performClick()
 

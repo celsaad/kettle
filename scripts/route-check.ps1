@@ -89,10 +89,10 @@ $steps = @(
   # Library's Exercises: a row and Import open their native sheets over it, and back returns to it (#234).
   @('tap:Exercises', 'tab:Exercises'), @('tap:Push-ups', 'Edit exercise'),
   @('back', 'tab:Exercises'), @('tap:Import', 'Import library'), @('back', 'tab:Exercises'),
-  # Today's gear and New workout open native Settings and the native editor over it, and back returns
-  # (#235, #238).
+  # Today's gear opens native Settings over it, and back returns (#235). All workouts opens Library's
+  # Workouts (#412), whose New workout opens the native editor over it (#238).
   @('tap:Today', 'tab:Today'), @('tap:Settings', 'Settings'), @('back', 'tab:Today'),
-  @('tap:New workout', 'New workout'), @('back', 'tab:Today'),
+  @('tap:All workouts', 'tab:Workouts'), @('tap:New workout', 'New workout'), @('back', 'tab:Workouts'),
   # From a modal: to a tab, and to another modal. Either way back reaches Today and then leaves.
   @('/library', 'tab:Library'), @('/settings', 'Settings'), @('/progress', 'tab:Progress'),
   @('back', 'tab:Today'), @('/library', 'tab:Library'), @('/settings', 'Settings'),

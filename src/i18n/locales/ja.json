@@ -376,7 +376,8 @@
       "remove": "削除",
       "add": "セットを追加",
       "footer_other": "変わるのはこのセッションだけです。ワークアウトは{{count}}セットのままです。",
-      "loadedSet": "{{reps}} × {{weight}}"
+      "loadedSet": "{{reps}} × {{weight}}",
+      "count_other": "このセッションは{{count}}セット"
     }
   },
   "settings": {

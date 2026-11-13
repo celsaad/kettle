@@ -3,6 +3,7 @@ package com.casco.kettle.shell.runner
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.casco.kettle.domain.RunnerCommand
+import com.casco.kettle.domain.RunnerPlan
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -49,6 +50,29 @@ class RunnerSetsSheetTest : RunnerScreenHarness() {
         compose.onNodeWithText("Registrada").assertExists()
         compose.onNodeWithText("Agora").assertExists()
         button("Remover").assertDoesNotExist()
+    }
+
+    @Test
+    fun `after a swap the count is still the plan's, and the set before the swap is listed`() {
+        // Set 1 of the squat logged, its rest, then the rest of the member swapped for another exercise.
+        val swapped = started(plan(block(squat))).advanced().advanced().after(RunnerCommand.Swap(extras[0]))
+        show(running(plan(block(squat)), swapped))
+        button("Séries").performClick()
+        compose.onNodeWithText("2 séries nesta sessão · planejadas 2").assertExists()
+        compose.onNodeWithText("Registrada").assertExists()
+        compose.onNodeWithText("Agora").assertExists()
+        compose.onNodeWithText("Só esta sessão muda. Seu treino continua com 2 séries.").assertExists()
+    }
+
+    @Test
+    fun `an ad-hoc session has no plan to count against, so no planned, footer or added`() {
+        val adhoc = RunnerPlan.Runnable(null, exercises, emptyList())
+        val added = started(adhoc).after(RunnerCommand.AddExercise(squat), RunnerCommand.AddSet)
+        show(running(adhoc, added))
+        button("Séries").performClick()
+        compose.onNodeWithText("3 séries nesta sessão").assertExists()
+        compose.onNodeWithText("Só esta sessão muda", substring = true).assertDoesNotExist()
+        compose.onNodeWithText("Adicionada nesta sessão").assertDoesNotExist()
     }
 
     @Test

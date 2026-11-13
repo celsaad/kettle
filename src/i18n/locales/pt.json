@@ -426,7 +426,10 @@
       "footer_one": "Só esta sessão muda. Seu treino continua com {{count}} série.",
       "footer_other": "Só esta sessão muda. Seu treino continua com {{count}} séries.",
       "footer_zero": "Só esta sessão muda. Seu treino continua com {{count}} séries.",
-      "loadedSet": "{{reps}} × {{weight}}"
+      "loadedSet": "{{reps}} × {{weight}}",
+      "count_one": "{{count}} série nesta sessão",
+      "count_other": "{{count}} séries nesta sessão",
+      "count_zero": "{{count}} séries nesta sessão"
     }
   },
   "settings": {

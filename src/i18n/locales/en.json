@@ -401,7 +401,9 @@
       "add": "Add a set",
       "footer_one": "Only this session changes. Your workout still says {{count}} set.",
       "footer_other": "Only this session changes. Your workout still says {{count}} sets.",
-      "loadedSet": "{{reps}} × {{weight}}"
+      "loadedSet": "{{reps}} × {{weight}}",
+      "count_one": "{{count}} set this session",
+      "count_other": "{{count}} sets this session"
     }
   },
   "settings": {

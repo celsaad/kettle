@@ -98,7 +98,7 @@ internal fun stepContext(
                             prior,
                             environment.units,
                             view.plan.loadsSetByProgram,
-                            plannedSets(view, it),
+                            plannedSets(view, it) ?: it.setTotal,
                         )
                     },
                     snapshot.inputs.weightKg,

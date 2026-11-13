@@ -232,7 +232,7 @@ private fun Overlays(
         }
     }
     if (Overlay.SETS in open && step is WorkStep) {
-        setsSheet(view, context.readings.canDropSet)?.let { model ->
+        setsSheet(view)?.let { model ->
             SetsSheet(step, model, context) { close(Overlay.SETS) }
         }
     }

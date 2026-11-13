@@ -13,12 +13,13 @@ enum class RunnerCue { TICK, EXERCISE_CHANGE, MILESTONE }
 
 /**
  * What's being entered on the step on screen. [weightKg] 0 is bodyweight, logged as an absent weight.
- * [reps] is an EMOM minute's reps too. [rpe] is never re-seeded, so it carries for the session.
+ * [reps] is an EMOM minute's reps too. [rpe] is the set's effort, null until one is picked: it starts
+ * empty on every step (#410), since a value carried from the last set would be logged unasked.
  */
 data class StepInputs(
     val reps: Long,
     val weightKg: Double,
-    val rpe: Double,
+    val rpe: Double?,
     val roundsCompleted: Long,
     val extraReps: Long,
 )
@@ -171,8 +172,9 @@ sealed interface RunnerCommand {
         val weightKg: Double,
     ) : InputEdit
 
+    /** The set's effort; null clears it, which picking the selected value again does. */
     data class SetRpe(
-        val rpe: Double,
+        val rpe: Double?,
     ) : InputEdit
 
     data class SetRounds(
@@ -201,7 +203,6 @@ sealed interface RunnerCommand {
 }
 
 private const val SESSION_VERSION = 1L
-private const val DEFAULT_RPE = 8.0
 
 /**
  * A session's first state, once the count-in is over: the session file is created now, not when the
@@ -235,7 +236,7 @@ fun startRunner(
             stepIndex = 0,
             visit = 0,
             clock = StepClock(now, null, 0, 0.0),
-            inputs = StepInputs(0, 0.0, DEFAULT_RPE, 0, 0),
+            inputs = StepInputs(0, 0.0, null, 0, 0),
             entryIndex = emptyMap(),
             droppedLastSet = emptySet(),
             swapCount = 0,

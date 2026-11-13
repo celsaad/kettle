@@ -88,10 +88,32 @@ class RunnerRecoveryTest {
         }
 
         @Test
-        fun `refuses a version it doesn't know rather than guess at it`() {
-            val future = encodeRunnerSnapshot(busyRunner().snapshot).replace("\"version\":1,", "\"version\":2,")
+        fun `writes an empty effort as null, and reads it back empty or as picked`() {
+            val runner = busyRunner()
+            val empty = runner.snapshot.copy(inputs = runner.snapshot.inputs.copy(rpe = null))
+            val picked = runner.snapshot.copy(inputs = runner.snapshot.inputs.copy(rpe = 7.5))
 
-            assertEquals(SnapshotRead.UnknownVersion(2), decodeRunnerSnapshot(future))
+            assertTrue("\"rpe\":null" in encodeRunnerSnapshot(empty))
+            assertEquals(SnapshotRead.Read(empty), decodeRunnerSnapshot(encodeRunnerSnapshot(empty)))
+            assertEquals(SnapshotRead.Read(picked), decodeRunnerSnapshot(encodeRunnerSnapshot(picked)))
+        }
+
+        /** A session running when the app updates: its version 1 file, effort always a number, still resumes. */
+        @Test
+        fun `reads a version 1 file, whose effort is always a number`() {
+            val runner = busyRunner()
+            val before = runner.snapshot.copy(inputs = runner.snapshot.inputs.copy(rpe = 8.0))
+            val v1 = encodeRunnerSnapshot(before).replace("\"version\":2,", "\"version\":1,")
+
+            assertTrue("\"version\":1," in v1)
+            assertEquals(SnapshotRead.Read(before), decodeRunnerSnapshot(v1))
+        }
+
+        @Test
+        fun `refuses a version it doesn't know rather than guess at it`() {
+            val future = encodeRunnerSnapshot(busyRunner().snapshot).replace("\"version\":2,", "\"version\":3,")
+
+            assertEquals(SnapshotRead.UnknownVersion(3), decodeRunnerSnapshot(future))
         }
     }
 
@@ -121,7 +143,7 @@ class RunnerRecoveryTest {
         @Test
         fun `offers Finish only for an unknown version`() {
             val runner = busyRunner()
-            val future = encodeRunnerSnapshot(runner.snapshot).replace("\"version\":1,", "\"version\":2,")
+            val future = encodeRunnerSnapshot(runner.snapshot).replace("\"version\":2,", "\"version\":3,")
 
             assertTrue(recoverRunner(future, stored(runner)) is RunnerRecovery.FinishOnly)
         }
@@ -353,7 +375,7 @@ class RunnerRecoveryTest {
             state = reduceRunner(state, RunnerCommand.Advance(state.snapshot.visit), runner.now).state
 
             assertEquals(listOf("pullups", "dips"), state.session.entries.map { it.exercise })
-            assertEquals(RepsSetLog(11, 12.5, 8.0, 0.0), (state.session.entries[1] as SessionEntry.Reps).sets.single())
+            assertEquals(RepsSetLog(11, 12.5, null, 0.0), (state.session.entries[1] as SessionEntry.Reps).sets.single())
         }
     }
 

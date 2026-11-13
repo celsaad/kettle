@@ -348,14 +348,20 @@ class RunnerWritesTest {
         }
 
         @Test
-        fun `keeps rpe for the whole session rather than re-seeding it`() {
+        fun `starts effort empty on every set, logging only what was picked on it`() {
             val runner = Runner(workoutOf(single("pullups"), single("dips")))
+            assertNull(runner.inputs.rpe)
             runner.send(RunnerCommand.SetRpe(7.0))
-            repeat(6) { runner.advance() }
+            runner.advance() // set 1, then its rest
+            assertNull(runner.inputs.rpe)
+            runner.advance()
+            assertNull(runner.inputs.rpe) // set 2: the 7 isn't carried
+            runner.send(RunnerCommand.SetRpe(9.0))
+            runner.send(RunnerCommand.SetRpe(null)) // picked, then cleared
+            repeat(4) { runner.advance() }
 
             assertEquals("dips", runner.step?.exerciseId)
-            assertEquals(7.0, runner.inputs.rpe)
-            assertEquals(listOf(7.0, 7.0, 7.0), runner.pullupSets().map { it.rpe })
+            assertEquals(listOf(7.0, null, null), runner.pullupSets().map { it.rpe })
         }
 
         @Test

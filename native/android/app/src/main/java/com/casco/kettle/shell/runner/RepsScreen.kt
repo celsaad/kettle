@@ -1,16 +1,24 @@
 package com.casco.kettle.shell.runner
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.sizeIn
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -44,6 +52,7 @@ import com.casco.kettle.shell.R
 import com.casco.kettle.shell.i18n.weightUnit
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.Spacing
+import com.casco.kettle.shell.theme.TypeIcon
 
 /**
  * Reps: no clock, so no Pause. The numerals open the pad and the −/+ nudge; the load is in the user's
@@ -65,10 +74,8 @@ internal fun RepsScreen(
         },
         middle = {
             RepsCounter(step, context)
-            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.two)) {
-                StatCard(stringResource(R.string.session_reps_loadCaps), Modifier.weight(1f)) { LoadControl(context) }
-                StatCard(stringResource(R.string.session_reps_rpe), Modifier.weight(1f)) { RpeChoice(context) }
-            }
+            StatCard(stringResource(R.string.session_reps_loadCaps), Modifier.fillMaxWidth()) { LoadControl(context) }
+            EffortTrack(context)
         },
         middleGap = Spacing.four,
         controls = {
@@ -247,40 +254,67 @@ private fun LoadControl(context: StepContext) {
     }
 }
 
+/**
+ * The set's effort, 6 to 10, optional (#410): one outlined track, empty until a value is picked. The
+ * picked one is outlined with a check rather than filled, so it can't be taken for the main action, and
+ * picking it again clears it: "I didn't mean to rate this" is one tap. A radio group to a reader.
+ */
 @Composable
-private fun RpeChoice(context: StepContext) {
-    Row(Modifier.padding(top = Spacing.one), horizontalArrangement = Arrangement.spacedBy(RPE_GAP)) {
-        for (option in RPE_OPTIONS) {
-            val selected = option == context.snapshot.inputs.rpe
-            val description = stringResource(R.string.session_reps_rpeOption, jsNumber(option))
-            Box(
-                Modifier
-                    .weight(1f)
-                    .heightIn(min = MinTarget)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(if (selected) runnerColors.accent else runnerColors.text.copy(alpha = CHIP_ALPHA))
-                    .clickable(role = Role.Button) { context.send(RunnerCommand.SetRpe(option)) }
-                    .semantics {
-                        contentDescription = description
-                        this.selected = selected
-                    },
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    jsNumber(option),
-                    style = KettleType.smallMedium,
-                    color = if (selected) runnerColors.onAccent else runnerColors.text,
-                )
+private fun EffortTrack(context: StepContext) {
+    val picked = context.snapshot.inputs.rpe
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Spacing.one)) {
+        Secondary(stringResource(R.string.session_reps_effortLabel))
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .height(IntrinsicSize.Min)
+                .clip(TrackShape)
+                .border(SLOT_BORDER, runnerColors.outline, TrackShape)
+                .selectableGroup(),
+        ) {
+            EFFORT_OPTIONS.forEachIndexed { index, option ->
+                if (index > 0) Box(Modifier.fillMaxHeight().width(1.dp).background(runnerColors.border))
+                EffortOption(option, option == picked, Modifier.weight(1f)) {
+                    context.send(RunnerCommand.SetRpe(if (option == picked) null else option))
+                }
             }
         }
     }
 }
 
-private const val RPE_EASY = 7.0
-private const val RPE_HARD = 8.0
-private const val RPE_LIMIT = 9.0
-private val RPE_OPTIONS = listOf(RPE_EASY, RPE_HARD, RPE_LIMIT)
-private val RPE_GAP = 6.dp
+@Composable
+private fun EffortOption(
+    option: Double,
+    selected: Boolean,
+    modifier: Modifier,
+    pick: () -> Unit,
+) {
+    val description = stringResource(R.string.session_reps_rpeOption, jsNumber(option))
+    Box(
+        modifier
+            .heightIn(min = MinTarget)
+            .selectable(selected = selected, role = Role.RadioButton, onClick = pick)
+            .semantics { contentDescription = description },
+        contentAlignment = Alignment.Center,
+    ) {
+        Row(
+            (if (selected) Modifier.border(SLOT_BORDER, runnerColors.text, PickedShape) else Modifier)
+                .padding(horizontal = Spacing.two, vertical = Spacing.one),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.half),
+        ) {
+            if (selected) TypeIcon(R.drawable.icon_check, KettleType.small, runnerColors.text)
+            Text(jsNumber(option), style = SlotLabel, color = runnerColors.text)
+        }
+    }
+}
+
+/** The canvas's effort scale: the top half of RPE, where a set worth rating sits. */
+private const val EFFORT_LOW = 6
+private const val EFFORT_HIGH = 10
+private val EFFORT_OPTIONS = (EFFORT_LOW..EFFORT_HIGH).map(Int::toDouble)
+private val TrackShape = RoundedCornerShape(14.dp)
+private val PickedShape = RoundedCornerShape(10.dp)
 private val REPS_NUMERAL = 88.sp
 private val STEPPER_GAP = 22.dp
 private val REPS_LABEL_GAP = 6.dp
@@ -288,6 +322,3 @@ private val LOAD_UNIT = 15.sp
 
 /** A load target's slack around its circle, which fits under the card's 14dp padding. */
 private val LOAD_SLACK = (MinTarget - SymbolLook.Load.size) / 2
-
-/** RN's `rgba(243,239,228,0.08)`: an unpicked chip, filled faintly so all three read as choices. */
-private const val CHIP_ALPHA = 0.08f

@@ -22,8 +22,13 @@ import kotlinx.serialization.json.put
 // Written by hand rather than through the serialization plugin, so the file's shape is spelled out
 // here and changes only on purpose. A change that an older reader would misread bumps the version;
 // a reader refuses a version it doesn't know rather than guess at it.
+//
+// Version 2 (#410): effort became optional, written as null when empty. A version 1 reader takes that
+// null for a corrupt file, which is why it's a bump; this reader still takes version 1, whose effort
+// is always a number, so a session running across the update resumes.
 
-private const val SNAPSHOT_VERSION = 1L
+private const val SNAPSHOT_VERSION = 2L
+private val READABLE_VERSIONS = setOf(1L, SNAPSHOT_VERSION)
 
 fun encodeRunnerSnapshot(snapshot: RunnerSnapshot): String =
     buildJsonObject {
@@ -54,7 +59,7 @@ fun decodeRunnerSnapshot(text: String): SnapshotRead =
     try {
         val root = JsonFields(Json.parseToJsonElement(text).jsonObject)
         val version = root.long("version")
-        if (version == SNAPSHOT_VERSION) SnapshotRead.Read(snapshotOf(root)) else SnapshotRead.UnknownVersion(version)
+        if (version in READABLE_VERSIONS) SnapshotRead.Read(snapshotOf(root)) else SnapshotRead.UnknownVersion(version)
     } catch (_: IllegalArgumentException) {
         // kotlinx's parse and accessor failures are all IllegalArgumentExceptions, and so are ours.
         SnapshotRead.Corrupt
@@ -81,7 +86,7 @@ private fun snapshotOf(root: JsonFields): RunnerSnapshot {
                 StepInputs(
                     root.long("reps"),
                     root.double("weightKg"),
-                    root.double("rpe"),
+                    root.optionalDouble("rpe"),
                     root.long("roundsCompleted"),
                     root.long("extraReps"),
                 ),

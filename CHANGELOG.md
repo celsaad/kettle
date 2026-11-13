@@ -46,6 +46,9 @@ here, next to what it describes.
   workout's name, and End sits at the top right. Each step starts with a line saying what it is and
   where you are ("Reps · set 2 of 4"), then the exercise's name. A rest says what's next at the top
   rather than in a card at the bottom (#409).
+- **Effort is optional now**: rating a set from 6 to 10 is up to you, and each set starts unrated.
+  Before, every set was logged at the last effort you picked, or at 8 if you never picked one.
+  Tap the picked number again to clear it (#410).
 
 ---
 

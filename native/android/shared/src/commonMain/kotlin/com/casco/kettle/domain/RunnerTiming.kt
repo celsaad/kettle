@@ -59,7 +59,7 @@ internal fun seeded(
 /**
  * Reps from the target every set, since varying them is what's being logged, and an EMOM minute from
  * its own; load carried from the member's last logged set, else the target, and left alone off a
- * reps step; rounds and extra reps from zero; RPE never re-seeded.
+ * reps step; rounds and extra reps from zero; effort empty, never carried from the last set (#410).
  */
 private fun seededInputs(
     state: RunnerState,
@@ -79,7 +79,7 @@ private fun seededInputs(
         } else {
             inputs.weightKg
         }
-    return inputs.copy(reps = reps, weightKg = weightKg, roundsCompleted = 0, extraReps = 0)
+    return inputs.copy(reps = reps, weightKg = weightKg, rpe = null, roundsCompleted = 0, extraReps = 0)
 }
 
 /** What the clock says about the step on screen at one reading. */

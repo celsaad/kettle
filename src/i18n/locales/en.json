@@ -340,8 +340,7 @@
       "loadAccessibilityBodyweight": "Load: bodyweight. Tap to enter an exact value.",
       "bodyweightAbbr": "BW",
       "increaseLoad": "Increase load",
-      "rpe": "RPE",
-      "rpeOption": "RPE {{value}}",
+      "rpeOption": "Effort {{value}}",
       "adoptPrevious": "Use last time's load, {{weight}} {{unit}}, and save it as the new target",
       "beatsBest": "Beats your best",
       "logSet": "Log set → Rest",
@@ -349,7 +348,8 @@
       "repsDone": "Reps done",
       "loadLabel": "Load",
       "repsLabel": "Reps",
-      "repsDoneTarget": "Reps done · target {{target}}"
+      "repsDoneTarget": "Reps done · target {{target}}",
+      "effortLabel": "Effort · optional"
     },
     "numberPad": {
       "dismiss": "Dismiss keypad",

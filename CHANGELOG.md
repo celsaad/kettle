@@ -140,6 +140,11 @@ here, next to what it describes.
   a hold opens the time picker. Remove a set with its ×, and Undo puts it back exactly; removing an
   exercise's last set removes the exercise, with Undo too. "+ Add a set" copies the set above it,
   with Effort left blank. A rest block shows as a read-only line, since the timer logged it (#442).
+- **Import says what an update will clear**: the review counts new items, updated items and the
+  fields an import will clear, marked with a warning when there are any. Each updated item opens on
+  what changes, such as "Sets 3 → 4", and a field the file leaves out reads "cleared". A workout
+  whose rests or rounds the file changes says which blocks. Items show their name over their id,
+  and the button says how many it imports (#443).
 
 ---
 

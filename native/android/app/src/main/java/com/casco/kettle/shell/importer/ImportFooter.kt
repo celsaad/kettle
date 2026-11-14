@@ -23,6 +23,7 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.form.SheetColumn
+import com.casco.kettle.shell.i18n.pluralText
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.Spacing
@@ -57,8 +58,18 @@ internal fun Footer(importer: Importer) {
                     primary = false,
                     onClick = importer.close,
                 )
+                // "Import 3 items": the button says how much it writes, as the tiles above it counted.
+                // Plain "Import" until there's something to count: "Import 0 items" read as a broken count.
+                val count =
+                    importer.ready
+                        ?.preview
+                        ?.items
+                        ?.size
                 FooterButton(
-                    stringResource(R.string.import_mergeButton),
+                    count?.takeIf { it > 0 }?.let {
+                        pluralText(R.plurals.import_importItems, R.string.import_importItems_zero, it)
+                    }
+                        ?: stringResource(R.string.import_importButton),
                     Modifier.weight(PRIMARY_WEIGHT),
                     primary = true,
                     enabled = importer.canMerge,

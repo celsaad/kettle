@@ -14,7 +14,9 @@ import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isHeading
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -186,11 +188,11 @@ class ImportScreenTest : ImportHarness() {
     fun `shows a failed write under the preview's source card`() {
         picks(Library(1, listOf(dips), emptyList(), emptyList()), "more.yaml")
         chooseFile(Files().apply { failure = IOException("no space left") })
-        press("Mesclar e importar")
+        merge().performClick()
 
         assertEquals(
-            listOf("more.yaml", SAVE_FAILED, "dips"),
-            inOrder("dips", SAVE_FAILED, "more.yaml"),
+            listOf("more.yaml", SAVE_FAILED, "dips · exercício"),
+            inOrder("dips · exercício", SAVE_FAILED, "more.yaml"),
         )
     }
 
@@ -238,11 +240,11 @@ class ImportScreenTest : ImportHarness() {
 
         shown("more.yaml")
         shown("512 B · selecionado dos Arquivos")
-        shown("dips")
-        shown("novo exercício")
+        shown("dips · exercício")
+        shown("Novos")
         files.nothingWritten()
 
-        press("Mesclar e importar")
+        merge().performClick()
 
         assertEquals(
             listOf("pull-ups", "dips"),
@@ -261,13 +263,13 @@ class ImportScreenTest : ImportHarness() {
         picks(Library(1, emptyList(), emptyList(), listOf(base6)))
         val files = chooseFile()
 
-        shown("base-6")
-        shown("novo programa")
+        shown("base-6 · programa")
+        shown("Novos")
         // The only non-zero tile.
         compose.onAllNodesWithText("1").assertCountEquals(1)
         absent(NO_CHANGES)
 
-        press("Mesclar e importar")
+        merge().performClick()
 
         assertEquals(
             listOf("base-6"),
@@ -283,7 +285,7 @@ class ImportScreenTest : ImportHarness() {
         picks(Library(1, emptyList(), emptyList(), listOf(base6.copy(name = "Base 6 v2"))))
         chooseFile(Files(current.copy(programs = listOf(base6))))
 
-        shown("programa atualizado")
+        shown("Atualizados")
     }
 
     @Test
@@ -301,7 +303,7 @@ class ImportScreenTest : ImportHarness() {
         chooseFile()
 
         absent(NO_CHANGES)
-        shown("exercício atualizado")
+        shown("Atualizados")
     }
 
     // pasting
@@ -311,13 +313,13 @@ class ImportScreenTest : ImportHarness() {
         val files = paste(serializeLibraryYaml(Library(1, listOf(dips), emptyList(), emptyList())))
 
         shown("YAML colado")
-        shown("dips")
-        shown("novo exercício")
+        shown("dips · exercício")
+        shown("Novos")
         files.nothingWritten()
         // No file and no I/O on this path at all.
         assertEquals(0, picks)
 
-        press("Mesclar e importar")
+        merge().performClick()
 
         assertEquals(
             listOf("pull-ups", "dips"),
@@ -395,7 +397,7 @@ class ImportScreenTest : ImportHarness() {
         picks(Library(1, listOf(pullUps.copy(config = threeSets.copy(sets = 4))), emptyList(), emptyList()))
         chooseFile()
 
-        shown("Séries: 3 → 4")
+        compose.onNodeWithContentDescription("Séries: era 3, agora 4").assertExists()
     }
 
     // A kilogram figure shown to someone working in pounds describes a change they didn't make.
@@ -406,7 +408,7 @@ class ImportScreenTest : ImportHarness() {
         )
         chooseFile(Files(preferences = imperial))
 
-        shown("Peso: não definido → 143.3 lb")
+        compose.onNodeWithContentDescription("Peso: era não definido, agora 143.3 lb").assertExists()
     }
 
     @Test
@@ -414,7 +416,7 @@ class ImportScreenTest : ImportHarness() {
         picks(Library(1, listOf(pullUps.copy(config = threeSets.copy(restSec = 60.0))), emptyList(), emptyList()))
         chooseFile()
 
-        shown("Descanso: 90s → 60s")
+        compose.onNodeWithContentDescription("Descanso: era 90s, agora 60s").assertExists()
     }
 
     @Test
@@ -434,8 +436,11 @@ class ImportScreenTest : ImportHarness() {
         picks(Library(1, listOf(pullUps, dips), emptyList(), emptyList()))
         chooseFile()
 
-        shown("novo exercício")
-        shown("exercício atualizado")
+        // Under a heading each: what's updated, which can take something away, first.
+        compose.onNode(hasText("Atualizados") and isHeading()).assertExists()
+        compose.onNode(hasText("Novos") and isHeading()).assertExists()
+        shown("dips · exercício")
+        shown("pull-ups · exercício")
     }
 
     // a long preview
@@ -445,8 +450,8 @@ class ImportScreenTest : ImportHarness() {
         picks(Library(1, many, emptyList(), emptyList()))
         chooseFile()
 
-        shown("ex-7")
-        absent("ex-8")
+        shown("ex-7 · exercício")
+        absent("ex-8 · exercício")
         // The whole list's count, not what's hidden: it answers "how long is this".
         shown("Mostrar todas as 30 alterações")
     }
@@ -458,11 +463,11 @@ class ImportScreenTest : ImportHarness() {
 
         button("Mostrar todas as 30 alterações").assert(SemanticsMatcher.keyIsDefined(SemanticsActions.Expand))
         press("Mostrar todas as 30 alterações")
-        shown("ex-29")
+        shown("ex-29 · exercício")
 
         button("Mostrar menos").assert(SemanticsMatcher.keyIsDefined(SemanticsActions.Collapse))
         press("Mostrar menos")
-        absent("ex-29")
+        absent("ex-29 · exercício")
     }
 
     // A layout claim a test can't measure, but the structure it rests on: nothing scrolls between Merge
@@ -472,9 +477,9 @@ class ImportScreenTest : ImportHarness() {
         picks(Library(1, many, emptyList(), emptyList()))
         chooseFile()
 
-        button("Mesclar e importar").assertExists()
-        compose.onAllNodes(hasText("Mesclar e importar") and hasAnyAncestor(hasScrollAction())).assertCountEquals(0)
-        compose.onAllNodes(hasText("ex-0") and hasAnyAncestor(hasScrollAction())).assertCountEquals(1)
+        merge().assertExists()
+        compose.onAllNodes(isMerge and hasAnyAncestor(hasScrollAction())).assertCountEquals(0)
+        compose.onAllNodes(hasText("ex-0 · exercício") and hasAnyAncestor(hasScrollAction())).assertCountEquals(1)
     }
 
     @Test
@@ -482,9 +487,9 @@ class ImportScreenTest : ImportHarness() {
         picks(Library(1, many, emptyList(), emptyList()))
         chooseFile()
         press("Mostrar todas as 30 alterações")
-        press("Mesclar e importar")
+        merge().performClick()
 
-        shown("ex-29")
+        shown("ex-29 · exercício")
     }
 
     @Test
@@ -501,13 +506,13 @@ class ImportScreenTest : ImportHarness() {
     fun `reports what landed instead of vanishing`() {
         picks(Library(1, listOf(dips), emptyList(), listOf(base6)))
         chooseFile()
-        press("Mesclar e importar")
+        merge().performClick()
 
         shown("Importado")
         shown("2 itens novos · 0 atualizados")
         // The ids that landed are still named, so the confirmation is specific.
-        shown("dips")
-        shown("base-6")
+        shown("dips · exercício")
+        shown("base-6 · programa")
     }
 
     // Focus doesn't move and the result swaps in below it, so nothing re-reads on its own. A pane title,
@@ -516,7 +521,7 @@ class ImportScreenTest : ImportHarness() {
     fun `announces the result, which a screen reader would otherwise miss`() {
         picks(Library(1, listOf(dips), emptyList(), emptyList()))
         chooseFile()
-        press("Mesclar e importar")
+        merge().performClick()
 
         compose
             .onNode(
@@ -530,10 +535,10 @@ class ImportScreenTest : ImportHarness() {
     fun `closes on Done, and offers nothing that implies the import could be undone`() {
         picks(Library(1, listOf(dips), emptyList(), emptyList()))
         chooseFile()
-        press("Mesclar e importar")
+        merge().performClick()
 
         absent("Cancelar")
-        absent("Mesclar e importar")
+        compose.onAllNodes(isMerge and isButton).assertCountEquals(0)
         press("Concluir")
 
         assertEquals(1, closed)
@@ -545,7 +550,7 @@ class ImportScreenTest : ImportHarness() {
     fun `counts an update separately from a new item`() {
         picks(Library(1, listOf(pullUps.copy(name = "Pull-ups (renamed)"), dips), emptyList(), emptyList()))
         chooseFile()
-        press("Mesclar e importar")
+        merge().performClick()
 
         shown("1 item novo · 1 atualizado")
     }
@@ -555,11 +560,11 @@ class ImportScreenTest : ImportHarness() {
         picks(Library(1, listOf(dips), emptyList(), emptyList()))
         val files = chooseFile(Files().apply { failure = IOException("no space left") })
 
-        press("Mesclar e importar")
+        merge().performClick()
 
         shown(SAVE_FAILED)
         files.nothingWritten()
-        button("Mesclar e importar").assertIsEnabled()
+        merge().assertIsEnabled()
     }
 
     // The size refusal's words are ours, not the platform's, so they're translated rather than passed
@@ -569,7 +574,7 @@ class ImportScreenTest : ImportHarness() {
         picks(Library(1, listOf(dips), emptyList(), emptyList()))
         val files = chooseFile(Files().apply { failure = LibraryTooLargeException() })
 
-        press("Mesclar e importar")
+        merge().performClick()
 
         shown(LIBRARY_TOO_LARGE)
         files.nothingWritten()
@@ -581,11 +586,11 @@ class ImportScreenTest : ImportHarness() {
     fun `drops a failed write's message once a retry lands`() {
         picks(Library(1, listOf(dips), emptyList(), emptyList()))
         val files = chooseFile(Files().apply { failure = IOException("no space left") })
-        press("Mesclar e importar")
+        merge().performClick()
         shown(SAVE_FAILED)
 
         files.failure = null
-        press("Mesclar e importar")
+        merge().performClick()
 
         shown("Importado")
         absent(SAVE_FAILED)
@@ -599,9 +604,9 @@ class ImportScreenTest : ImportHarness() {
         val files = show(Files(), io)
         press("Escolher exercises.yaml")
 
-        press("Mesclar e importar")
-        button("Mesclar e importar").assertIsNotEnabled()
-        press("Mesclar e importar")
+        merge().performClick()
+        merge().assertIsNotEnabled()
+        merge().performClick()
         io.run()
         compose.waitForIdle()
 
@@ -627,7 +632,7 @@ class ImportScreenTest : ImportHarness() {
         press("Firme e Forte", substring = true)
 
         shown("Pacote inicial que vem com o app")
-        button("Mesclar e importar").assertIsEnabled()
+        merge().assertIsEnabled()
         files.nothingWritten()
     }
 
@@ -636,7 +641,7 @@ class ImportScreenTest : ImportHarness() {
     fun `adds a pack without touching anything already in the library`() {
         val files = show()
         press("Firme e Forte", substring = true)
-        press("Mesclar e importar")
+        merge().performClick()
 
         shown("13 itens novos · 0 atualizados")
         val merged = files.written.single()
@@ -649,7 +654,7 @@ class ImportScreenTest : ImportHarness() {
     fun `merges the pack in the language being read`() {
         val files = show()
         press("Firme e Forte", substring = true)
-        press("Mesclar e importar")
+        merge().performClick()
 
         assertEquals(
             "Levantar da Cadeira",
@@ -670,7 +675,7 @@ class ImportScreenTest : ImportHarness() {
 
         locale.value = Locale.ENGLISH
         compose.waitForIdle()
-        press("Mesclar e importar")
+        merge().performClick()
 
         assertEquals(
             "Levantar da Cadeira",
@@ -743,7 +748,7 @@ class ImportScreenTest : ImportHarness() {
     fun `still merges whichever source is picked, whatever the order`() {
         val files = show(Files(log = SessionLog(listOf(unfinished), emptyList())))
         press("Firme e Forte", substring = true)
-        press("Mesclar e importar")
+        merge().performClick()
 
         assertTrue(
             files.written
@@ -765,7 +770,8 @@ class ImportScreenTest : ImportHarness() {
         press("Colar YAML")
         for (label in listOf(SHARE_BRIEF, COPY_BRIEF, PASTE_FROM_CLIPBOARD)) button(label).assertHeightIsAtLeast(44.dp)
         press("Escolher exercises.yaml")
-        for (label in listOf("Cancelar", "Mesclar e importar", "Mostrar todas as 30 alterações")) {
+        merge().assertHeightIsAtLeast(44.dp)
+        for (label in listOf("Cancelar", "Mostrar todas as 30 alterações")) {
             button(label).assertHeightIsAtLeast(44.dp)
         }
     }

@@ -45,8 +45,37 @@ class ImportPreviewTest {
         with(preview(programOnly)) {
             assertEquals(1, newCount)
             assertEquals(0, updatedCount)
-            assertEquals(0, workoutCount)
         }
+    }
+
+    // An update replaces whole: what it leaves out is cleared, the third tile's count (#443).
+    @Test
+    fun `counts the fields an update clears`() {
+        val noted = pullUps.copy(notes = "Dead hang first.", config = ExerciseConfig.Reps(3, 8, 12, 20.0, 90.0))
+        val before = Library(1, listOf(noted), listOf(pushDay), emptyList())
+        val merged = mergeLibraries(before, Library(1, listOf(pullUps), emptyList(), emptyList())) as MergeResult.Ok
+
+        // The notes, the top of the range and the weight go; nothing else changed.
+        assertEquals(3, ImportPreview(before, merged.library, merged.summary).fieldsCleared(UnitSystem.METRIC))
+    }
+
+    @Test
+    fun `counts nothing cleared by a new item, or an update that only changes values`() {
+        val incoming =
+            Library(
+                1,
+                listOf(Exercise("dips", "Dips", pullUps.config), pullUps.copy(name = "Chin-ups")),
+                emptyList(),
+                emptyList(),
+            )
+
+        assertEquals(0, preview(incoming).fieldsCleared(UnitSystem.METRIC))
+    }
+
+    @Test
+    fun `names an item as the import has it`() {
+        val incoming = Library(1, listOf(pullUps.copy(name = "Chin-ups")), emptyList(), emptyList())
+        with(preview(incoming)) { assertEquals("Chin-ups", name(items.single())) }
     }
 
     // `mergeById` classifies by id, not by value, so re-importing your own export is all updates.
@@ -55,7 +84,6 @@ class ImportPreviewTest {
         with(preview(current)) {
             assertEquals(0, newCount)
             assertEquals(2, updatedCount)
-            assertEquals(1, workoutCount)
         }
     }
 

@@ -32,6 +32,7 @@ import com.casco.kettle.domain.RunnerStart
 import com.casco.kettle.domain.SessionParams
 import com.casco.kettle.domain.programPosition
 import com.casco.kettle.domain.programSessionsPerWeek
+import com.casco.kettle.domain.programWeekNumbers
 import com.casco.kettle.domain.programWorkoutIds
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.files.LatestFiles
@@ -70,7 +71,8 @@ fun ProgramDetailRoute(params: Map<String, String>) {
  * position, not completion, as Today's strip (#412), and the selected week's days as rows. Every
  * training day keeps a Start, as agreed, so a day can still be run out of turn, and a tap on a day
  * opens its preview. [open] pushes a route and [startRunner] opens the runner (#302), both parameters
- * so a test hears each route opened and each start.
+ * so a test hears each route opened and each start. [clock] is a parameter so a test can let rest
+ * days pass.
  */
 @Composable
 fun ProgramDetailScreen(
@@ -78,6 +80,7 @@ fun ProgramDetailScreen(
     files: LatestFiles,
     open: (Route) -> Unit,
     startRunner: (RunnerStart) -> Unit,
+    clock: Clock = Clock.System,
 ) {
     val library = files.library
     val program = library?.programs?.firstOrNull { it.id == programId }
@@ -110,9 +113,12 @@ fun ProgramDetailScreen(
                 }
 
                 else -> {
-                    val position = remember(program, sessions) { programPosition(program, sessions) }
-                    val active = rememberProgramPosition(files, Clock.System)?.program?.id == program.id
-                    Header(program, position.takeIf { active }) {
+                    // Today's own reading when Today runs this program, rest days served and all, so the two
+                    // never name different next slots; the slot after its last session when it doesn't.
+                    val today = rememberProgramPosition(files, clock)?.takeIf { it.program.id == program.id }
+                    val own = remember(program, sessions) { programPosition(program, sessions) }
+                    val position = today ?: own
+                    Header(program, today) {
                         open(Route(Destination.ProgramEditor, mapOf("id" to program.id)))
                     }
                     val slot = SlotActions(program.id, library, open, startRunner)
@@ -175,7 +181,8 @@ private fun Header(
                 TypeIcon(R.drawable.icon_edit, KettleType.heading, colors.textSecondary)
             }
         }
-        val weeks = program.weeks.maxOfOrNull { it.week }?.toInt() ?: 0
+        // Counted as the programs list counts them, so weeks 1, 2 and 4 are three weeks on both.
+        val weeks = programWeekNumbers(program).size
         val parts =
             listOfNotNull(
                 active?.let { stringResource(R.string.programs_active, it.weekNumber) },

@@ -2,7 +2,9 @@ package com.casco.kettle.shell.programdetail
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
@@ -11,13 +13,14 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -44,6 +47,7 @@ import com.casco.kettle.domain.SlotPlace
 import com.casco.kettle.domain.programGrid
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.i18n.pluralText
+import com.casco.kettle.shell.list.fieldFill
 import com.casco.kettle.shell.theme.KettleColors
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
@@ -62,13 +66,16 @@ internal fun ProgramWeeks(
 ) {
     val grid = remember(position) { programGrid(position) }
     val current = position.weekNumber
-    var selected by rememberSaveable(position.program.id) { mutableLongStateOf(current) }
+    // Only what the reader picked is kept; until then, and whenever the pick is gone (a week deleted in
+    // the editor), the week the program stands in, so the default follows a session finished from here.
+    var picked by rememberSaveable(position.program.id) { mutableStateOf<Long?>(null) }
+    val selected = picked?.takeIf { pick -> grid.any { it.week == pick } } ?: current
     val colors = KettleTheme.colors
     Column {
         Heading(stringResource(R.string.programDetail_weeks), stringResource(R.string.programDetail_weeksHint))
         Column(Modifier.selectableGroup()) {
             grid.forEach { week ->
-                WeekTab(week, current, week.week == selected) { selected = week.week }
+                WeekTab(week, current, week.week == selected) { picked = week.week }
             }
         }
         Legend(colors)
@@ -117,7 +124,8 @@ private fun WeekTab(
             .fillMaxWidth()
             .heightIn(min = 48.dp)
             .clip(TabShape)
-            .background(if (selected) colors.backgroundSelected else Color.Transparent)
+            // The filled fields' fill: backgroundSelected under textSecondary is 4.46:1 in dark (theme.ts).
+            .background(if (selected) fieldFill() else Color.Transparent)
             .selectable(selected = selected, role = Role.Tab, onClick = onSelect)
             .clearAndSetSemantics { contentDescription = description }
             .padding(horizontal = Spacing.two),
@@ -125,8 +133,9 @@ private fun WeekTab(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(label, Modifier.width(WeekLabelWidth), style = KettleType.smallMedium, color = colors.text)
-        Squares(week.slots, colors)
-        Text(status.orEmpty(), Modifier.weight(1f), style = KettleType.small, color = colors.textSecondary)
+        // Scrolls rather than spills: a week of ten slots at a large text size is wider than the row.
+        Box(Modifier.weight(1f).horizontalScroll(rememberScrollState())) { Squares(week.slots, colors) }
+        status?.let { Text(it, style = KettleType.small, color = colors.textSecondary) }
     }
 }
 
@@ -169,16 +178,7 @@ private fun DrawScope.drawSlot(
             dash,
         )
         // The next slot ringed even when it's a rest, so the grid always shows where the program stands.
-        if (slot.place == SlotPlace.Current) {
-            val stroke = RING.toPx()
-            drawRoundRect(
-                colors.text,
-                topLeft + Offset(stroke / 2, stroke / 2),
-                Size(side - stroke, side - stroke),
-                corner,
-                style = Stroke(stroke),
-            )
-        }
+        if (slot.place == SlotPlace.Current) ring(topLeft, colors.text, RING.toPx())
         return
     }
     when (slot.place) {
@@ -187,28 +187,30 @@ private fun DrawScope.drawSlot(
         }
 
         SlotPlace.Current -> {
-            val stroke = RING.toPx()
-            drawRoundRect(
-                colors.text,
-                topLeft + Offset(stroke / 2, stroke / 2),
-                Size(side - stroke, side - stroke),
-                corner,
-                style = Stroke(stroke),
-            )
+            ring(topLeft, colors.text, RING.toPx())
             drawCircle(colors.text, CENTRE.toPx() / 2, topLeft + Offset(side / 2, side / 2))
         }
 
         SlotPlace.Ahead -> {
-            val stroke = OUTLINE.toPx()
-            drawRoundRect(
-                colors.calendarEmpty,
-                topLeft + Offset(stroke / 2, stroke / 2),
-                Size(side - stroke, side - stroke),
-                corner,
-                style = Stroke(stroke),
-            )
+            ring(topLeft, colors.calendarEmpty, OUTLINE.toPx())
         }
     }
+}
+
+/** A square's outline, its stroke kept inside the square. */
+private fun DrawScope.ring(
+    topLeft: Offset,
+    color: Color,
+    stroke: Float,
+) {
+    val side = SQUARE.toPx()
+    drawRoundRect(
+        color,
+        topLeft + Offset(stroke / 2, stroke / 2),
+        Size(side - stroke, side - stroke),
+        CornerRadius(CORNER.toPx()),
+        style = Stroke(stroke),
+    )
 }
 
 /** What each mark means, under the grid: the shapes in words. */

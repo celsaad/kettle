@@ -21,6 +21,7 @@ import com.casco.kettle.domain.SlotPlace
 import com.casco.kettle.domain.overrideNote
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.home.weekLabel
+import com.casco.kettle.shell.list.ListHeaderRule
 import com.casco.kettle.shell.list.ListRow
 import com.casco.kettle.shell.list.ListRowSeparator
 import com.casco.kettle.shell.list.RowStartButton
@@ -40,16 +41,20 @@ internal fun DayList(
     slot: SlotActions,
 ) {
     val next = week.slots.indexOfFirst { it.place == SlotPlace.Current }
-    Heading(
-        stringResource(R.string.programs_week, week.week),
-        stringResource(R.string.programDetail_dayOfNext, week.slots.size, next + 1).takeIf {
-            week.week == current &&
-                next >= 0
-        },
-    )
-    week.slots.forEachIndexed { n, day ->
-        ListRowSeparator()
-        DayRow(day, n + 1, slot)
+    // Its own column, so the screen's spacing between sections doesn't land between the rows too.
+    Column {
+        Heading(
+            stringResource(R.string.programs_week, week.week),
+            stringResource(R.string.programDetail_dayOfNext, week.slots.size, next + 1).takeIf {
+                week.week == current &&
+                    next >= 0
+            },
+        )
+        ListHeaderRule()
+        week.slots.forEachIndexed { n, day ->
+            if (n > 0) ListRowSeparator()
+            DayRow(day, n + 1, slot)
+        }
     }
 }
 

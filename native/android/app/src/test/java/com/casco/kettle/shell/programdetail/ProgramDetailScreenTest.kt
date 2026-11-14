@@ -46,6 +46,8 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import kotlin.time.Clock
+import kotlin.time.Instant
 
 /**
  * Program detail (#233), case for case from RN's `program-detail.test.tsx`, on the harness recipe
@@ -68,6 +70,7 @@ class ProgramDetailScreenTest {
         library: Library? = Library(1, emptyList(), listOf(pushDay), listOf(base)),
         programId: String = base.id,
         sessions: List<Session> = emptyList(),
+        clock: Clock = Clock.System,
     ) {
         val latest =
             LatestFiles(
@@ -84,6 +87,7 @@ class ProgramDetailScreenTest {
                     latest,
                     { opened += it },
                     { started += it },
+                    clock,
                 )
             }
         }
@@ -235,6 +239,56 @@ class ProgramDetailScreenTest {
 
         compose.onNodeWithText("Semana 2").assert(isHeading())
         compose.onNode(hasText("Leg day") and isButton).assertExists()
+    }
+
+    /**
+     * Today moves past a rest day once the calendar has served it, and Program detail follows it rather
+     * than its own reading: Mon logged three days ago, Tue's rest is spent, so week 2's Wed is next on
+     * both, and the header says week 2 as the programs list does.
+     */
+    @Test
+    fun `follows Today past a rest day already served`() {
+        val withRest =
+            Program(
+                "rest",
+                "With rest",
+                listOf(
+                    ProgramWeek.Training(1, "Mon", "push-day"),
+                    ProgramWeek.RestDay(1, "Tue"),
+                    ProgramWeek.Training(2, "Wed", "leg-day"),
+                ),
+            )
+        show(
+            library = Library(1, emptyList(), listOf(pushDay, legDay), listOf(withRest)),
+            programId = "rest",
+            sessions = listOf(ran(1, "Mon").copy(program = "rest")),
+            clock = fixedAt("2026-08-04T12:00:00Z"),
+        )
+
+        compose.onNodeWithText("Próximo · Semana 2 · Wed").assertExists()
+        compose.onNodeWithText("Ativo, semana 2", substring = true).assertExists()
+    }
+
+    /** A 3-day week with day 2 next: "of 3" and "day 2" can't trade places unnoticed. */
+    @Test
+    fun `says which day of the week is next`() {
+        val three =
+            Program(
+                "three",
+                "Three",
+                listOf(
+                    ProgramWeek.Training(1, "Mon", "push-day"),
+                    ProgramWeek.Training(1, "Wed", "push-day"),
+                    ProgramWeek.Training(1, "Fri", "push-day"),
+                ),
+            )
+        show(
+            library = Library(1, emptyList(), listOf(pushDay), listOf(three)),
+            programId = "three",
+            sessions = listOf(ran(1, "Mon").copy(program = "three")),
+        )
+
+        compose.onNodeWithText("Dia 2 de 3 é o próximo").assertExists()
     }
 
     @Test
@@ -402,3 +456,9 @@ private fun ran(
     // Some work, or the log hides a finished session that logged none.
     listOf(SessionEntry.Reps("pull-ups", listOf(RepsSetLog(8, restTakenSec = 60.0)))),
 )
+
+/** A clock stopped at [at], so rest days can pass in a test. */
+private fun fixedAt(at: String) =
+    object : Clock {
+        override fun now() = Instant.parse(at)
+    }

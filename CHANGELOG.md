@@ -115,7 +115,7 @@ here, next to what it describes.
   next, and with a backup folder set it says where the log went. Edit log opens the session
   straight away (#416).
 - **A program's page shows where you are**: what's next, with Start and its preview, then every
-  week as a row of squares (done so far, next, still to come, rest, and a dot where the program
+  week as a row of squares (behind you, next, still to come, rest, and a dot where the program
   changes that day). Tap a week to see its days, each with its own Start and preview (#437).
 
 ---

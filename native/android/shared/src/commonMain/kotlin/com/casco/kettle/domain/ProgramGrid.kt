@@ -22,9 +22,9 @@ data class GridSlot(
 }
 
 /**
- * Where [program] stands for someone opening it, active or not: the slot after the one its newest
- * session ran, as Today counts it, so the two never disagree about what comes next. Null for a program
- * with no weeks.
+ * Where [program] stands for someone opening it while Today runs another: the slot after the one its
+ * newest session ran. For the program Today runs, Program detail takes Today's own position instead,
+ * which also moves past rest days already served. Null for a program with no weeks.
  */
 fun programPosition(
     program: Program,

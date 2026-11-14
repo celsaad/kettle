@@ -29,9 +29,13 @@ fun List<EntryDraft>.restoring(removed: RemovedSet): List<EntryDraft> =
         forms.toMutableList().apply { add(removed.row.coerceAtMost(size), removed.form) }
     }
 
-/** Whether draft [entry] takes another set: reps and holds log sets; the other types log one result. */
+/** Whether the entry logs sets, numbered: reps and holds do; the other types log one result. */
+val EntryDraft.logsSets: Boolean
+    get() = entry is SessionEntry.Reps || entry is SessionEntry.TimedHold
+
+/** Whether draft [entry] takes another set: one that logs sets and has one to copy. */
 val EntryDraft.canAddSet: Boolean
-    get() = (entry is SessionEntry.Reps || entry is SessionEntry.TimedHold) && forms.isNotEmpty()
+    get() = logsSets && forms.isNotEmpty()
 
 /**
  * Draft [draft] with a set more, a copy of its last: the same reps and load, or the same hold, with

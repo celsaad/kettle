@@ -165,24 +165,25 @@ private fun RowScope.Cell(
     val label = columnLabel(field, context.units)
     val name = if (context.perSet) setFieldName(setLabel, label) else label
     val value = form.values[field].orEmpty()
-    val editing = editor.editingCell == CellKey(context.index, row, field)
+    val key = CellKey(context.index, row, field)
+    val editing = editor.editingCell == key
     Box(Modifier.weight(1f).padding(start = Spacing.one), contentAlignment = Alignment.CenterEnd) {
         if (editing && field != EntryField.Hold) {
-            InlineField(value, name, { editor.setField(context.index, row, field, it) }, editor::stopEditing)
+            InlineField(value, name, { editor.setField(context.index, row, field, it) }) { editor.stopEditing(key) }
         } else {
             ShownValue(
                 shown(field, value),
                 name,
                 value.isBlank(),
-            ) { editor.startEditing(CellKey(context.index, row, field)) }
+            ) { editor.startEditing(key) }
         }
     }
     if (editing && field == EntryField.Hold) {
         val seconds = value.toDoubleOrNull() ?: 0.0
         DurationDialog(name, seconds, onDone = {
-            editor.stopEditing()
+            editor.stopEditing(key)
             if (it != seconds) editor.setField(context.index, row, field, jsNumber(it))
-        }, onDismiss = editor::stopEditing)
+        }, onDismiss = { editor.stopEditing(key) })
     }
 }
 
@@ -214,6 +215,8 @@ private fun ShownValue(
         )
     Box(
         Modifier
+            // The whole cell, not just its digits: a "5" alone is a target a finger misses.
+            .fillMaxWidth()
             .heightIn(min = 44.dp)
             .clickable(onClick = onTap)
             .clearAndSetSemantics {
@@ -251,6 +254,8 @@ private fun InlineField(
 ) {
     val focus = remember { FocusRequester() }
     LaunchedEffect(Unit) { focus.requestFocus() }
+    // Not state: whether focus has arrived yet. The field starts unfocused, and that first report isn't
+    // a leaving; only a loss after it had focus closes it.
     val focused = remember { booleanArrayOf(false) }
     Box(
         Modifier.onFocusChanged {
@@ -261,7 +266,7 @@ private fun InlineField(
             }
         },
     ) {
-        FormField(value, onChange, name = name, placeholder = "–", FieldOptions(minHeight = 44.dp, focus = focus))
+        FormField(value, onChange, name = name, placeholder = BLANK, FieldOptions(minHeight = 44.dp, focus = focus))
     }
 }
 

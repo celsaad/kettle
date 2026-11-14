@@ -4,6 +4,7 @@ import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
@@ -15,6 +16,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -55,6 +57,7 @@ import com.casco.kettle.shell.form.EditorTitleBar
 import com.casco.kettle.shell.history.entryResultText
 import com.casco.kettle.shell.i18n.deviceUnitSystem
 import com.casco.kettle.shell.i18n.formatMonthBadge
+import com.casco.kettle.shell.library.ExerciseBadge
 import com.casco.kettle.shell.nav.LocalNavigator
 import com.casco.kettle.shell.runner.formatClock
 import com.casco.kettle.shell.theme.KettleTheme
@@ -134,7 +137,8 @@ fun SessionEditorScreen(
                 editing?.let { Body(it, editor, library, units) }
             }
         }
-        editor?.lastRemoved?.let { Sheet { UndoBar(it, editor, library) } }
+        // Keyed on the removal, so each is a node of its own and announced, the same words twice included.
+        editor?.lastRemoved?.let { removed -> key(removed) { Sheet { UndoBar(removed, editor, library) } } }
     }
 }
 
@@ -179,8 +183,8 @@ private fun Subtitle(
 }
 
 /**
- * One session's edit, from the first keystroke to the write: the drafts, the entry whose last set is
- * being asked about, and why Save refused, the form's problem or the disk's.
+ * One session's edit, from the first keystroke to the write: the drafts, the one cell open, the last
+ * removal Undo can put back, and why Save refused, the form's problem or the disk's.
  */
 internal class Editor(
     private val editing: SessionEditing.Editable,
@@ -217,8 +221,12 @@ internal class Editor(
         editingCell = cell
     }
 
-    fun stopEditing() {
-        editingCell = null
+    /**
+     * Closes [cell], and only it: a cell losing focus because another was tapped mustn't close the one
+     * just opened.
+     */
+    fun stopEditing(cell: CellKey) {
+        if (editingCell == cell) editingCell = null
     }
 
     fun setField(
@@ -241,12 +249,20 @@ internal class Editor(
     ) {
         val (rest, removed) = drafts.removingSet(draft, row) ?: return
         editingCell = null
+        // A refusal about the set that just went would point at nothing.
+        problem = null
         drafts = rest
         lastRemoved = removed
     }
 
+    /**
+     * Puts the last removal back. An open cell closes first: its key names a row by position, and the
+     * restored set would slide under it, so the next keystroke would land in a set the user didn't open.
+     */
     fun undo() {
         val removed = lastRemoved ?: return
+        editingCell = null
+        problem = null
         drafts = drafts.restoring(removed)
         lastRemoved = null
     }
@@ -335,6 +351,7 @@ private fun Editing(
             else -> {
                 ReadOnlyEntry(
                     exerciseName(library.exercises, entry.exercise),
+                    entry,
                     resources.entryResultText(sessionEntryResult(entry)),
                 )
             }
@@ -347,9 +364,13 @@ private fun Editing(
 @Composable
 private fun ReadOnlyEntry(
     name: String,
+    entry: SessionEntry,
     result: String,
 ) = Column(Modifier.padding(top = Spacing.four), verticalArrangement = Arrangement.spacedBy(Spacing.one)) {
-    Text(name, style = KettleType.heading, color = KettleTheme.colors.text)
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.two)) {
+        Text(name, Modifier.weight(1f), style = KettleType.heading, color = KettleTheme.colors.text)
+        ExerciseBadge(entry)
+    }
     Text(result, style = KettleType.smallMedium, color = KettleTheme.colors.text)
     Secondary(stringResource(R.string.sessionEditor_readOnlyNote))
 }

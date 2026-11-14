@@ -139,7 +139,7 @@ here, next to what it describes.
 - **Editing a logged session is a table per exercise**: tap an underlined number to change it, and
   a hold opens the time picker. Remove a set with its ×, and Undo puts it back exactly; removing an
   exercise's last set removes the exercise, with Undo too. "+ Add a set" copies the set above it,
-  with Effort left blank. Rests show as read-only lines, since the timer logged them (#442).
+  with Effort left blank. A rest block shows as a read-only line, since the timer logged it (#442).
 
 ---
 

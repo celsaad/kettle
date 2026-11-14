@@ -18,8 +18,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.Library
 import com.casco.kettle.domain.RemovedSet
-import com.casco.kettle.domain.SessionEntry
 import com.casco.kettle.domain.exerciseName
+import com.casco.kettle.domain.logsSets
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.list.TextAction
 import com.casco.kettle.shell.theme.KettleTheme
@@ -40,7 +40,7 @@ internal fun UndoBar(
     val colors = KettleTheme.colors
     val draft = editor.drafts[removed.draft]
     val name = exerciseName(library.exercises, draft.entry.exercise)
-    val perSet = draft.entry is SessionEntry.Reps || draft.entry is SessionEntry.TimedHold
+    val perSet = draft.logsSets
     val text =
         if (perSet && draft.forms.isNotEmpty()) {
             stringResource(R.string.sessionEditor_setRemoved, "${removed.row + 1}", name)
@@ -49,12 +49,13 @@ internal fun UndoBar(
         }
     Row(
         Modifier
+            // The inset outside the pill, so the pill sits above the gesture bar rather than running under it.
+            .navigationBarsPadding()
             .padding(vertical = Spacing.two)
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
             .background(colors.text)
-            .padding(start = Spacing.three)
-            .navigationBarsPadding(),
+            .padding(start = Spacing.three),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(

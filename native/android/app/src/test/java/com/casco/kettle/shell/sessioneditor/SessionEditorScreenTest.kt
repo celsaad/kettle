@@ -354,6 +354,35 @@ class SessionEditorScreenTest {
         assertEquals(aSession(), files.written.single())
     }
 
+    // A cell names its row by position: left open across an Undo, it would be on the restored set instead.
+    @Test
+    fun `closes an open cell on Undo, so typing can't land in the restored set`() {
+        val files = Files(aSession())
+        show(files)
+
+        press("Remover série 1 de Back Squat")
+        cell("Série 1 · Reps").performScrollTo().performClick()
+        press("Desfazer")
+
+        compose.onNode(hasContentDescription("Série 1 · Reps") and hasSetTextAction()).assertDoesNotExist()
+        press("Salvar")
+        assertEquals(aSession(), files.written.single())
+    }
+
+    // The first cell losing focus to the second mustn't close the second as it opens.
+    @Test
+    fun `edits two cells one after another`() {
+        val files = Files(aSession())
+        show(files)
+
+        type("Série 1 · Reps", "10")
+        type("Série 2 · Reps", "11")
+        press("Salvar")
+
+        val sets = (files.written.single().entries[0] as SessionEntry.Reps).sets
+        assertEquals(listOf(10L, 11L), sets.map { it.reps })
+    }
+
     @Test
     fun `adds a set as a copy of the last, its effort blank`() {
         val files = Files(aSession())

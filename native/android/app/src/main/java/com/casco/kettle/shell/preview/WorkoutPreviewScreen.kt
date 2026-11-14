@@ -2,6 +2,7 @@ package com.casco.kettle.shell.preview
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -34,7 +35,11 @@ import com.casco.kettle.shell.files.LocalLatestFiles
 import com.casco.kettle.shell.home.weekLabel
 import com.casco.kettle.shell.home.workoutShapeText
 import com.casco.kettle.shell.i18n.deviceUnitSystem
+import com.casco.kettle.shell.list.EditIconButton
 import com.casco.kettle.shell.list.ListHeaderRule
+import com.casco.kettle.shell.nav.Destination
+import com.casco.kettle.shell.nav.LocalNavigator
+import com.casco.kettle.shell.nav.Route
 import com.casco.kettle.shell.nav.runnerStartFrom
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
@@ -45,16 +50,20 @@ import com.casco.kettle.shell.timeline.OutlineMode
 import com.casco.kettle.shell.timeline.TimelineColors
 import com.casco.kettle.shell.timeline.TimelineItem
 
-/** What the route table draws at `Destination.WorkoutPreview`, opened from Home's next-up card. */
+/** What the route table draws at `Destination.WorkoutPreview`, opened from Home's card and Program detail. */
 @Composable
 fun WorkoutPreviewRoute(params: Map<String, String>) {
-    WorkoutPreviewScreen(runnerStartFrom(params), LocalLatestFiles.current)
+    val navigator = LocalNavigator.current
+    WorkoutPreviewScreen(runnerStartFrom(params), LocalLatestFiles.current) {
+        navigator.push(Route(Destination.WorkoutEditor, mapOf("id" to it)))
+    }
 }
 
 /**
- * What the next-up card will run, read-only (#280): the exercises in order, with their sets, targets
- * and weights, so you know what to get out before you press Start. No Start of its own: the card's
- * stays the one way in.
+ * What a workout will run, read-only (#280, #439): the exercises in order, with their sets, targets,
+ * weights and rests, so you know what to get out before you press Start. For a program day, also the
+ * day's note and what the program changes in it. No Start of its own: Today's and Program detail's
+ * stay the ways in. [onEdit] opens the workout's editor by id.
  *
  * Its params are the session route's, and it resolves them through [resolveRunnerPlan], the runner's
  * own resolver, so a program week's overrides reach the preview exactly as they reach the session. A
@@ -65,6 +74,7 @@ fun WorkoutPreviewRoute(params: Map<String, String>) {
 fun WorkoutPreviewScreen(
     start: RunnerStart?,
     files: LatestFiles,
+    onEdit: (String) -> Unit = {},
 ) {
     val library = files.library
     val units = files.preferences?.unitSystem ?: deviceUnitSystem(LocalConfiguration.current.locales[0])
@@ -72,7 +82,12 @@ fun WorkoutPreviewScreen(
         remember(start, library) {
             library?.let { if (start is RunnerStart.Planned) resolveRunnerPlan(start, it) else RunnerPlan.Missing }
         }
-    val slot = (start as? RunnerStart.Planned)?.params as? SessionParams.ProgramSlot
+    val slot =
+        remember(start, library) {
+            val params = (start as? RunnerStart.Planned)?.params as? SessionParams.ProgramSlot
+            library?.let { lib -> params?.let { daySlot(it, lib) } }
+        }
+    val header = HeaderActions(slot, onEdit)
     Box(
         Modifier
             .fillMaxSize()
@@ -100,13 +115,13 @@ fun WorkoutPreviewScreen(
                 }
 
                 is RunnerPlan.NoSteps -> {
-                    Header(plan.workout, emptyList(), slot)
+                    Header(plan.workout, emptyList(), header)
                     Message(stringResource(R.string.session_nothingToRun_body, plan.workout.name))
                 }
 
                 // A truncated workout previews the steps that will run, which is what TooLong carries.
                 is RunnerPlan.TooLong -> {
-                    Preview(plan.plan, slot, units) {
+                    Preview(plan.plan, header, units) {
                         Message(
                             stringResource(
                                 R.string.session_tooLong_body,
@@ -119,7 +134,7 @@ fun WorkoutPreviewScreen(
                 }
 
                 is RunnerPlan.Runnable -> {
-                    Preview(plan, slot, units)
+                    Preview(plan, header, units)
                 }
             }
         }
@@ -129,7 +144,7 @@ fun WorkoutPreviewScreen(
 @Composable
 private fun Preview(
     plan: RunnerPlan.Runnable,
-    slot: SessionParams.ProgramSlot?,
+    header: HeaderActions,
     units: UnitSystem,
     note: (@Composable () -> Unit)? = null,
 ) {
@@ -139,7 +154,8 @@ private fun Preview(
         Message(stringResource(R.string.workoutPreview_notFound))
         return
     }
-    Header(workout, plan.exercises, slot)
+    Header(workout, plan.exercises, header)
+    header.slot?.let { DayNotes(it, workout) }
     // A workout the step ceiling cuts short says so, as the runner does before its count-in: the list
     // under it is what will run, which isn't the whole workout.
     if (note != null) Box(Modifier.padding(top = Spacing.two)) { note() }
@@ -147,22 +163,38 @@ private fun Preview(
     Outline(plan.steps, units)
 }
 
+/** The program day a preview is for, if any, and the pencil's action. */
+private class HeaderActions(
+    val slot: DaySlot?,
+    val onEdit: (String) -> Unit,
+)
+
 @Composable
 private fun Header(
     workout: Workout,
     exercises: List<Exercise>,
-    slot: SessionParams.ProgramSlot?,
+    actions: HeaderActions,
 ) {
     val colors = KettleTheme.colors
-    val label = slot?.let { stringResource(R.string.today_nextUpWeek, weekLabel(it.week, it.day)) }
-    Text(label ?: stringResource(R.string.today_nextUp), style = KettleType.label, color = colors.accentText)
-    // User data, verbatim. No line cap: this is the one screen whose job is to show all of it.
-    Text(
-        workout.name,
-        Modifier.padding(top = Spacing.one).semantics { heading() },
-        style = KettleType.subtitle,
-        color = colors.text,
-    )
+    val slot = actions.slot
+    // A program day says whose day it is, "Dumbbell Strength · Week 3 · Day 1", not "Next up": Program
+    // detail opens any day here, earlier ones too. The program's name is user data, verbatim.
+    val context = slot?.let { listOfNotNull(it.program?.name, weekLabel(it.week, it.day)).joinToString(" · ") }
+    if (context != null) {
+        Text(context, style = KettleType.smallMedium, color = colors.textSecondary)
+    } else {
+        Text(stringResource(R.string.today_nextUp), style = KettleType.label, color = colors.accentText)
+    }
+    Row(Modifier.padding(top = Spacing.one), verticalAlignment = Alignment.CenterVertically) {
+        // User data, verbatim. No line cap: this is the one screen whose job is to show all of it.
+        Text(
+            workout.name,
+            Modifier.weight(1f).semantics { heading() },
+            style = KettleType.subtitle,
+            color = colors.text,
+        )
+        EditIconButton(stringResource(R.string.workoutPreview_edit)) { actions.onEdit(workout.id) }
+    }
     if (exercises.isNotEmpty()) {
         val shape = remember(workout, exercises) { workoutShape(workout, exercises) }
         Text(
@@ -190,8 +222,9 @@ private fun Outline(
             kicker = colors.accentCalmText,
         )
     val items = remember(steps) { sessionOutline(steps) }
+    val mode = remember(steps, units) { OutlineMode.Preview(units, restsBetweenSets(steps)) }
     Column(Modifier.padding(top = Spacing.three)) {
-        items.forEach { item -> OutlineItem(item, timeline, last = false, OutlineMode.Preview(units)) }
+        items.forEach { item -> OutlineItem(item, timeline, last = false, mode) }
         TimelineItem(timeline, colors.textSecondary, last = true) {
             Text(stringResource(R.string.session_upcoming_end), style = KettleType.code, color = colors.textSecondary)
         }

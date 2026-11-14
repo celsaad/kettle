@@ -65,7 +65,12 @@ private fun UpcomingEntry(
     val resources = LocalResources.current
     when (item) {
         is UpcomingItem.Exercise -> {
-            Entry(item.step.exerciseName, resources.upcomingDetail(item) + weightText(item.step, mode), colors)
+            Entry(
+                item.step.exerciseName,
+                resources.upcomingDetail(item) + weightText(item.step, mode) + restText(item.step, mode),
+                colors,
+                noteOf(item.step, mode),
+            )
         }
 
         is UpcomingItem.Rest -> {
@@ -80,6 +85,7 @@ private fun UpcomingEntry(
                         member.step.exerciseName,
                         resources.upcomingTarget(member.step) + weightText(member.step, mode),
                         colors,
+                        noteOf(member.step, mode),
                     )
                 }
             }
@@ -150,15 +156,43 @@ private fun weightText(
 ): String =
     (mode as? OutlineMode.Preview)?.let { weightSuffix((step as? RunnerStep.Reps)?.targetWeightKg, it.units) }.orEmpty()
 
+/** An exercise's rest between its sets, in the preview only; a circuit's rest is between members. */
+@Composable
+private fun restText(
+    step: WorkStep,
+    mode: OutlineMode,
+): String =
+    (mode as? OutlineMode.Preview)
+        ?.rests
+        ?.get(step.memberKey)
+        ?.let {
+            " · " + stringResource(R.string.workoutPreview_rest, formatClock(it))
+        }.orEmpty()
+
+/** The exercise's note, user data and verbatim, in the preview only. */
+private fun noteOf(
+    step: WorkStep,
+    mode: OutlineMode,
+): String? = step.notes?.takeIf { mode is OutlineMode.Preview && it.isNotBlank() }
+
 @Composable
 private fun Entry(
     name: String,
     detail: String,
     colors: TimelineColors,
+    note: String? = null,
 ) {
     Column(Modifier.semantics(mergeDescendants = true) {}) {
         Text(name, style = KettleType.heading, color = colors.text)
         Text(detail, style = KettleType.small, color = colors.textSecondary)
+        note?.let {
+            Text(
+                it,
+                Modifier.padding(top = Spacing.half),
+                style = KettleType.small,
+                color = colors.textSecondary,
+            )
+        }
     }
 }
 

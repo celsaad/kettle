@@ -74,7 +74,11 @@
     }
   },
   "workoutPreview": {
-    "notFound": "このワークアウトはライブラリにありません。"
+    "notFound": "このワークアウトはライブラリにありません。",
+    "edit": "ワークアウトを編集",
+    "changesTitle": "この日の変更",
+    "changesHint": "プログラムによる変更です。編集するとワークアウト自体が変わります。",
+    "rest": "休憩 {{time}}"
   },
   "build": {
     "workoutCount_other": "{{count}}件のワークアウト",

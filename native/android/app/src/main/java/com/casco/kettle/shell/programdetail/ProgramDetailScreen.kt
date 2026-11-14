@@ -1,6 +1,5 @@
 package com.casco.kettle.shell.programdetail
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -19,11 +17,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.Library
 import com.casco.kettle.domain.Program
 import com.casco.kettle.domain.ProgramPosition
@@ -39,6 +34,7 @@ import com.casco.kettle.shell.files.LatestFiles
 import com.casco.kettle.shell.files.LocalLatestFiles
 import com.casco.kettle.shell.i18n.pluralText
 import com.casco.kettle.shell.library.rememberProgramPosition
+import com.casco.kettle.shell.list.EditIconButton
 import com.casco.kettle.shell.list.ListRowSeparator
 import com.casco.kettle.shell.nav.Destination
 import com.casco.kettle.shell.nav.LocalNavigator
@@ -48,7 +44,6 @@ import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.MaxContentWidth
 import com.casco.kettle.shell.theme.Spacing
-import com.casco.kettle.shell.theme.TypeIcon
 import kotlin.time.Clock
 
 /** The param that names Program detail's program, as Programs pushes it. */
@@ -170,16 +165,7 @@ private fun Header(
                 style = KettleType.subtitle,
                 color = colors.text,
             )
-            // Icon-only, so it carries the name its pencil can't give it.
-            Box(
-                Modifier
-                    .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
-                    .clickable(role = Role.Button, onClick = onEdit)
-                    .semantics { contentDescription = edit },
-                contentAlignment = Alignment.Center,
-            ) {
-                TypeIcon(R.drawable.icon_edit, KettleType.heading, colors.textSecondary)
-            }
+            EditIconButton(edit, onEdit)
         }
         // Counted as the programs list counts them, so weeks 1, 2 and 4 are three weeks on both.
         val weeks = programWeekNumbers(program).size

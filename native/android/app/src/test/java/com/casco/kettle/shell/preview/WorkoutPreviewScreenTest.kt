@@ -5,7 +5,9 @@ import androidx.compose.ui.test.isHeading
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import com.casco.kettle.domain.CircuitMember
 import com.casco.kettle.domain.Exercise
 import com.casco.kettle.domain.ExerciseConfig
@@ -27,6 +29,7 @@ import com.casco.kettle.shell.files.LatestFiles
 import com.casco.kettle.shell.theme.KettleTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -47,12 +50,13 @@ class WorkoutPreviewScreenTest {
     private fun show(
         start: RunnerStart?,
         library: Library,
+        onEdit: (String) -> Unit = {},
     ) {
         val latest =
             LatestFiles(Files(library), CoroutineScope(Dispatchers.Unconfined), io = Dispatchers.Unconfined).apply {
                 reread()
             }
-        compose.setContent { KettleTheme(darkTheme = false) { WorkoutPreviewScreen(start, latest) } }
+        compose.setContent { KettleTheme(darkTheme = false) { WorkoutPreviewScreen(start, latest, onEdit) } }
     }
 
     private fun library(
@@ -88,7 +92,7 @@ class WorkoutPreviewScreenTest {
         show(planned(SessionParams.Workout("day")), library(pullUpsDay))
 
         compose.onNodeWithText("Pull-ups").assertExists()
-        compose.onNodeWithText("3 séries · alvo 8").assertExists()
+        compose.onNodeWithText("3 séries · alvo 8 · descanso 1:30").assertExists()
         compose.onNodeWithText("FIM DO TREINO").assertExists()
     }
 
@@ -107,7 +111,7 @@ class WorkoutPreviewScreenTest {
         val heavy = Exercise("pull-ups", "Pull-ups", ExerciseConfig.Reps(3, 8, targetWeightKg = 20.0, restSec = 90.0))
         show(planned(SessionParams.Workout("day")), library(pullUpsDay, exercises = listOf(heavy)))
 
-        compose.onNodeWithText("3 séries · alvo 8 · 20 kg").assertExists()
+        compose.onNodeWithText("3 séries · alvo 8 · 20 kg · descanso 1:30").assertExists()
     }
 
     @Test
@@ -159,6 +163,76 @@ class WorkoutPreviewScreenTest {
         show(planned(SessionParams.Workout("day")), library(pullUpsDay))
 
         compose.onNodeWithText("pede mais do que o Kettle consegue rodar", substring = true).assertDoesNotExist()
+    }
+
+    @Test
+    fun `an exercise with no rest between its sets says none`() {
+        val noRest = Exercise("pull-ups", "Pull-ups", ExerciseConfig.Reps(3, 8, restSec = 0.0))
+        show(planned(SessionParams.Workout("day")), library(pullUpsDay, exercises = listOf(noRest)))
+
+        compose.onNodeWithText("3 séries · alvo 8").assertExists()
+        compose.onNodeWithText("descanso", substring = true).assertDoesNotExist()
+    }
+
+    @Test
+    fun `an exercise's note is under it`() {
+        val noted = pullUps.copy(notes = "Escápulas para baixo.")
+        show(planned(SessionParams.Workout("day")), library(pullUpsDay, exercises = listOf(noted)))
+
+        compose.onNodeWithText("Escápulas para baixo.").assertExists()
+    }
+
+    @Test
+    fun `a program day names its program and week, not Next up`() {
+        val lib = library(pullUpsDay, listOf(ProgramWeek.Training(2, "Segunda", "day")))
+        show(planned(SessionParams.ProgramSlot("p", 2, "Segunda")), lib)
+
+        compose.onNodeWithText("P · Semana 2 · Segunda").assertExists()
+        compose.onNodeWithText("PRÓXIMO", substring = true).assertDoesNotExist()
+    }
+
+    @Test
+    fun `a bare workout is still Next up`() {
+        show(planned(SessionParams.Workout("day")), library(pullUpsDay))
+
+        compose.onNodeWithText("PRÓXIMO").assertExists()
+    }
+
+    @Test
+    fun `a program day's note shows in full`() {
+        val note = "Hoje é leve: pare duas repetições antes da falha em todas as séries, e anote a carga."
+        val lib = library(pullUpsDay, listOf(ProgramWeek.Training(1, workoutId = "day", notes = note)))
+        show(planned(SessionParams.ProgramSlot("p", 1, null)), lib)
+
+        compose.onNodeWithText(note).assertExists()
+    }
+
+    @Test
+    fun `a program day lists what it changes, and that Edit changes the workout`() {
+        val override = ProgramOverride.ExerciseOverride("pull-ups", mapOf("sets" to OverrideValue.Numeric(5.0)))
+        val lib = library(pullUpsDay, listOf(ProgramWeek.Training(1, workoutId = "day", overrides = listOf(override))))
+        show(planned(SessionParams.ProgramSlot("p", 1, null)), lib)
+
+        compose.onNodeWithText("Alterado neste dia").assert(isHeading())
+        compose.onNodeWithText("Pull-ups: sets → 5").assertExists()
+        compose.onNodeWithText("Definido pelo programa. Editar altera o próprio treino.").assertExists()
+    }
+
+    @Test
+    fun `a day the program doesn't change has no changes section`() {
+        val lib = library(pullUpsDay, listOf(ProgramWeek.Training(1, workoutId = "day")))
+        show(planned(SessionParams.ProgramSlot("p", 1, null)), lib)
+
+        compose.onNodeWithText("Alterado neste dia").assertDoesNotExist()
+    }
+
+    @Test
+    fun `the pencil opens the workout's editor`() {
+        var edited: String? = null
+        show(planned(SessionParams.Workout("day")), library(pullUpsDay)) { edited = it }
+
+        compose.onNodeWithContentDescription("Editar treino").performClick()
+        assertEquals("day", edited)
     }
 
     @Test

@@ -1032,5 +1032,23 @@
     "interval": "{{variant}} · {{progress}}",
     "round": "rodada {{index}} de {{total}}",
     "seconds": "{{n}}s"
+  },
+  "file": {
+    "counts": "{{exercises}} · {{workouts}} · {{programs}}",
+    "assistantTitle": "Peça a um assistente para escrever seu treino",
+    "assistantBody": "Envie a qualquer assistente o formato e sua biblioteca. Cole a resposta de volta e revise cada mudança antes de mesclar.",
+    "shareBrief": "Compartilhar o resumo",
+    "openFile": "Abrir um arquivo .yaml",
+    "openFileDetail": "Do Arquivos, do Drive ou de qualquer app que compartilhe um",
+    "paste": "Colar YAML",
+    "pasteDetail": "De um editor de texto ou de um chat",
+    "packs": "Pacotes iniciais",
+    "takeItWithYou": "Leve com você",
+    "openAsYaml": "Abrir como YAML",
+    "openAsYamlDetail": "Leia como está escrito, pesos em quilos",
+    "shareFile": "Compartilhar arquivo",
+    "exportLog": "Exportar registro",
+    "backupChange": "Trocar pasta",
+    "unitsNote": "Os pesos estão em quilos, como o arquivo os guarda."
   }
 }

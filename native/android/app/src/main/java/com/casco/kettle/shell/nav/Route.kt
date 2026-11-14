@@ -34,6 +34,8 @@ enum class Destination(
     WorkoutPreview("/workout-preview", Presentation.Sheet),
     ProgramEditor("/program-editor", Presentation.Sheet),
     Import("/import", Presentation.Sheet),
+    YourFile("/your-file", Presentation.Sheet),
+    LibraryYaml("/library-yaml", Presentation.Sheet),
     Session("/session", Presentation.Runner),
 }
 

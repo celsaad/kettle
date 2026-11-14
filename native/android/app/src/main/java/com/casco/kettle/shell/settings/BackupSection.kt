@@ -18,12 +18,6 @@ import com.casco.kettle.storage.BackupFailure
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
-/** What a backup said, ok or not: one line, so a stale "backed up" can't sit under a fresh failure. */
-private data class BackupMessage(
-    val ok: Boolean,
-    val text: String,
-)
-
 /**
  * The backup folder's rows (#237): choose it, back up now, and forget it, which only shows once there's
  * a choice to forget. The folder is the user's own path, shown verbatim.
@@ -89,7 +83,7 @@ internal fun BackupFolder(
  * chosen alone. The grant or the URI, either one lost at a restart, leaves a row that looks set and
  * stops working, so either one says so.
  */
-private suspend fun choose(
+internal suspend fun choose(
     backup: BackupActions,
     save: PreferencesSaver,
     resources: Resources,
@@ -116,7 +110,7 @@ private suspend fun choose(
     }
 
 /** Only a refused write carries the platform's own reason, inside a translated sentence. */
-private fun Resources.describe(failure: BackupFailure) =
+internal fun Resources.describe(failure: BackupFailure) =
     when (failure) {
         BackupFailure.NoFolder -> getString(R.string.settings_backupNowNoFolder)
         BackupFailure.Unreachable -> getString(R.string.settings_backupUnreachable)

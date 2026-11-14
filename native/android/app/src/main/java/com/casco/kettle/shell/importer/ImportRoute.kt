@@ -27,11 +27,11 @@ import kotlinx.coroutines.withContext
 import java.io.IOException
 
 /**
- * What the route table draws at `Destination.Import`, as Home's first-run link, Library and Settings open
- * it: the screen on SAF and the shell.
+ * What the route table draws at `Destination.Import`, as Home's first-run link and Settings open it, or
+ * the file sheet on one source (#413): the screen on SAF and the shell.
  */
 @Composable
-fun ImportRoute() {
+fun ImportRoute(params: Map<String, String> = emptyMap()) {
     val activity = LocalActivity.current ?: return
     val pickFile = rememberFilePicker(activity)
     val view = LocalView.current
@@ -49,6 +49,7 @@ fun ImportRoute() {
                 share = activity::shareText,
             )
         },
+        ImportStart.of(params[IMPORT_SOURCE_PARAM]),
     )
 }
 

@@ -77,7 +77,7 @@ fun SettingsRoute() {
  * tapped again.
  */
 @Composable
-private fun rememberFolderPicker(activity: Activity): suspend () -> FolderPick {
+internal fun rememberFolderPicker(activity: Activity): suspend () -> FolderPick {
     val waiting = remember { arrayOfNulls<CompletableDeferred<Uri?>>(1) }
     val launcher =
         rememberLauncherForActivityResult(

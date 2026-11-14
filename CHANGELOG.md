@@ -89,8 +89,10 @@ here, next to what it describes.
   estimated time, which counted only the rest between sets (#412).
 - **Library has tabs for workouts, programs and exercises**: one + at the top makes whatever the
   tab shows. Your current program reads "Active" with its week, and the workouts it uses say so.
-  Exercises name their type before their target, and a Type button filters them. Export and
-  Import are in Settings for now (#413).
+  Exercises name their type before their target, and a Type button filters them (#413).
+- **Your file, in one place**: tap exercises.yaml under Library's title to see what's in it and
+  everything that moves it. Have an assistant write your training, open a file, paste YAML or add a
+  starter pack; read the whole file as YAML, share it or your log; and back it up to a folder (#413).
 
 ---
 

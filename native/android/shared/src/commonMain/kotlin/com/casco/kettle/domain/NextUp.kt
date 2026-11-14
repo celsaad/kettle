@@ -192,14 +192,14 @@ private fun activeProgram(
  * order to read out of it. Relies on `sortedBy` being stable, which is why it has no tiebreak; RN's
  * `localeCompare` one ran a calendar week alphabetically.
  */
-internal fun rotation(program: Program): List<ProgramWeek> = program.weeks.sortedBy { it.week }
+fun rotation(program: Program): List<ProgramWeek> = program.weeks.sortedBy { it.week }
 
 private fun lastTracked(
     program: Program,
     sessions: List<Session>,
 ): Session? = sessions.firstOrNull { it.program == program.id && it.programWeek != null }
 
-private fun nextIndexAfter(
+internal fun nextIndexAfter(
     weeks: List<ProgramWeek>,
     program: Program,
     sessions: List<Session>,

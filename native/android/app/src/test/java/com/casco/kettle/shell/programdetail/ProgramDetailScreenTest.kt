@@ -6,6 +6,8 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHeightIsAtLeast
+import androidx.compose.ui.test.assertIsNotSelected
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertWidthIsAtLeast
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
@@ -13,6 +15,7 @@ import androidx.compose.ui.test.isHeading
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.CircuitMember
 import com.casco.kettle.domain.Exercise
@@ -22,7 +25,10 @@ import com.casco.kettle.domain.OverrideValue
 import com.casco.kettle.domain.Program
 import com.casco.kettle.domain.ProgramOverride
 import com.casco.kettle.domain.ProgramWeek
+import com.casco.kettle.domain.RepsSetLog
 import com.casco.kettle.domain.RunnerStart
+import com.casco.kettle.domain.Session
+import com.casco.kettle.domain.SessionEntry
 import com.casco.kettle.domain.SessionLog
 import com.casco.kettle.domain.SessionParams
 import com.casco.kettle.domain.Workout
@@ -57,14 +63,18 @@ class ProgramDetailScreenTest {
 
     private val opened = mutableListOf<Route>()
     private val started = mutableListOf<RunnerStart>()
-    private var closed = 0
 
     private fun show(
         library: Library? = Library(1, emptyList(), listOf(pushDay), listOf(base)),
         programId: String = base.id,
+        sessions: List<Session> = emptyList(),
     ) {
         val latest =
-            LatestFiles(Files(library), CoroutineScope(Dispatchers.Unconfined), io = Dispatchers.Unconfined).apply {
+            LatestFiles(
+                Files(library, sessions),
+                CoroutineScope(Dispatchers.Unconfined),
+                io = Dispatchers.Unconfined,
+            ).apply {
                 reread()
             }
         compose.setContent {
@@ -74,7 +84,6 @@ class ProgramDetailScreenTest {
                     latest,
                     { opened += it },
                     { started += it },
-                    { closed++ },
                 )
             }
         }
@@ -104,7 +113,7 @@ class ProgramDetailScreenTest {
     fun `lists a training week with its workout and a way to start it`() {
         show()
 
-        compose.onNodeWithText("Push day").assertExists()
+        compose.onNode(hasText("Push day") and isButton).assertExists()
         // By label: the control is a triangle, and the label has to say which week.
         control("Começar Semana 1 · Day 1").assertExists()
     }
@@ -165,7 +174,8 @@ class ProgramDetailScreenTest {
         compose.onNodeWithText("Dia de descanso").assertExists()
         control("Começar Semana 1 · Day 1").assertExists()
         control("Editar programa").assertExists()
-        compose.onNode(hasText("Fechar") and isButton).assertExists()
+        compose.onNodeWithText("Semanas").assert(isHeading())
+        compose.onNode(hasText("Iniciar") and isButton).assertExists()
         // Day labels and notes are user data and stay in the language they were written in.
         compose.onNodeWithText("Walk, nothing heavy.").assertExists()
     }
@@ -179,13 +189,84 @@ class ProgramDetailScreenTest {
         assertEquals(listOf(Route(Destination.ProgramEditor, mapOf("id" to "base"))), opened)
     }
 
+    /** #437: the next slot, as Today counts it, with Start and the preview that carries the full note. */
     @Test
-    fun `Close closes the sheet`() {
+    fun `the next card starts the program's next slot, and opens its preview`() {
+        show(
+            library = Library(1, emptyList(), listOf(pushDay, legDay), listOf(twoWeeks)),
+            programId = "two",
+            sessions = listOf(ran(1, "Mon")),
+        )
+
+        compose.onNodeWithText("Próximo · Semana 1 · Wed").assertExists()
+        compose
+            .onNode(hasText("Iniciar") and isButton)
+            .performScrollTo()
+            .assertHeightIsAtLeast(48.dp)
+            .performClick()
+        compose.onNode(hasText("Prévia e nota completa") and isButton).performScrollTo().performClick()
+
+        assertEquals(listOf(RunnerStart.Planned(SessionParams.ProgramSlot("two", 1, "Wed"))), started)
+        assertEquals(
+            listOf(Route(Destination.WorkoutPreview, mapOf("programId" to "two", "week" to "1", "day" to "Wed"))),
+            opened,
+        )
+    }
+
+    /** Position, not completion: the week it stands in opens, its next day tagged, the one before "Earlier". */
+    @Test
+    fun `opens on the week it stands in, tags the next day, and switches weeks by tab`() {
+        show(
+            library = Library(1, emptyList(), listOf(pushDay, legDay), listOf(twoWeeks)),
+            programId = "two",
+            sessions = listOf(ran(1, "Mon")),
+        )
+
+        compose.onNodeWithText("Dia 2 de 2 é o próximo").assertExists()
+        compose.onNode(hasContentDescription("Semana 1, Esta semana")).assertIsSelected()
+        compose.onNode(hasText("Mon") and hasText("Anterior") and isButton).assertExists()
+
+        compose
+            .onNode(
+                hasContentDescription("Semana 2, 1 dia alterado"),
+            ).performScrollTo()
+            .assertIsNotSelected()
+            .performClick()
+
+        compose.onNodeWithText("Semana 2").assert(isHeading())
+        compose.onNode(hasText("Leg day") and isButton).assertExists()
+    }
+
+    @Test
+    fun `a day row opens that day's preview`() {
         show()
 
-        compose.onNode(hasText("Fechar") and isButton).assertHeightIsAtLeast(48.dp).performClick()
+        compose
+            .onNode(hasText("Push day") and isButton)
+            .performScrollTo()
+            .assertHeightIsAtLeast(48.dp)
+            .performClick()
 
-        assertEquals(1, closed)
+        assertEquals(
+            listOf(
+                Route(
+                    Destination.WorkoutPreview,
+                    mapOf(
+                        "programId" to "base",
+                        "week" to "1",
+                        "day" to "Day 1",
+                    ),
+                ),
+            ),
+            opened,
+        )
+    }
+
+    @Test
+    fun `counts the workouts the program runs`() {
+        show(library = Library(1, emptyList(), listOf(pushDay, legDay), listOf(twoWeeks)), programId = "two")
+
+        compose.onNodeWithText("2 treinos neste programa").performScrollTo().assertExists()
     }
 
     @Test
@@ -251,7 +332,7 @@ class ProgramDetailScreenTest {
     }
 
     /** An icon-only control, named by its label since it has no words of its own. */
-    private fun control(label: String) = compose.onNode(hasContentDescription(label) and isButton)
+    private fun control(label: String) = compose.onNode(hasContentDescription(label) and isButton).performScrollTo()
 
     private val isButton = SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button)
 
@@ -259,8 +340,9 @@ class ProgramDetailScreenTest {
 
     private class Files(
         private val library: Library?,
+        private val sessions: List<Session> = emptyList(),
     ) : FakeStoredFiles() {
-        override fun sessionLog() = SessionLog(emptyList(), emptyList())
+        override fun sessionLog() = SessionLog(sessions, emptyList())
 
         override fun library() = library
     }
@@ -287,3 +369,36 @@ private val circuitWorkout =
             WorkoutBlock.Circuit("finisher", 3, members = listOf(CircuitMember("pull-ups"), CircuitMember("pull-ups"))),
         ),
     )
+private val legDay = Workout("leg-day", "Leg day", emptyList())
+private val twoWeeks =
+    Program(
+        "two",
+        "Two weeks",
+        listOf(
+            ProgramWeek.Training(1, "Mon", "push-day"),
+            ProgramWeek.Training(1, "Wed", "push-day"),
+            ProgramWeek.Training(
+                2,
+                "Mon",
+                "leg-day",
+                overrides = listOf(ProgramOverride.ExerciseOverride("x", mapOf("sets" to OverrideValue.Numeric(4.0)))),
+            ),
+        ),
+    )
+
+/** A finished session run as [day] of [week] of the two-week program. */
+private fun ran(
+    week: Long,
+    day: String,
+) = Session(
+    1,
+    "s-$week-$day",
+    "push-day",
+    "two",
+    week,
+    day,
+    "2026-08-01T10:00:00.000Z",
+    "2026-08-01T10:30:00.000Z",
+    // Some work, or the log hides a finished session that logged none.
+    listOf(SessionEntry.Reps("pull-ups", listOf(RepsSetLog(8, restTakenSec = 60.0)))),
+)

@@ -55,7 +55,7 @@ steps=(
   '/workout-preview?workoutId=foundations-push|NEXT UP' 'back|tab:Progress'
   '/workout-preview?programId=foundations&week=1&day=Day%201|NEXT UP · Week 1 · Day 1'
   'back|tab:Progress' '/exercise-progress?exerciseId=pushups|Push-ups' 'back|tab:Progress'
-  '/program-detail?programId=foundations|Week 1 · Day 1' 'back|tab:Progress'
+  '/program-detail?programId=foundations|Weeks' 'back|tab:Progress'
   '/program-editor|New program' 'back|tab:Progress' '/program-editor?id=foundations|Edit program'
   'back|tab:Progress' '/program-guide|Writing a program by hand' 'back|tab:Progress'
   '/session-editor|Edit session' 'back|tab:Progress'
@@ -63,11 +63,11 @@ steps=(
   '/library-yaml|Weights are in kilograms, as the file stores them.' 'back|tab:Progress'
   '/exercise?id=pushups|YAML' 'back|tab:Progress'
   # A section's row opens its native sheet over the tab (#197, #233), and back returns to it.
-  'tap:Library|tab:Programs' 'tap:Foundations · 4 Weeks · No Equipment|Week 1 · Day 1'
+  'tap:Library|tab:Programs' 'tap:Foundations · 4 Weeks · No Equipment|Weeks'
   # Over that native sheet, the native editor and the native runner each come back to it (#155, #233).
   # Back over a running session asks first, End early's sheet (#417), and completion's Done leaves (#297, #306).
-  'tap:Edit program|Edit program' 'back|Week 1 · Day 1' 'tap:Start Week 1 · Day 1|End'
-  'back|End the session early?' 'tap:Save and end|Edit log' 'tap:Done|Week 1 · Day 1'
+  'tap:Edit program|Edit program' 'back|Weeks' 'tap:Start Week 1 · Day 1|End'
+  'back|End the session early?' 'tap:Save and end|Edit log' 'tap:Done|Weeks'
   'back|tab:Programs'
   # Library's Exercises: a row opens its detail, and Edit the form over that; the header's + opens the
   # form directly. Back returns through each (#234, #413).

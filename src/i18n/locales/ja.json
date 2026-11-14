@@ -68,7 +68,7 @@
     "restDayNext": "次のセッション：{{session}}",
     "strip": {
       "label": "このプログラムの週（順番）",
-      "earlier": "{{slot}}、以前",
+      "earlier": "{{slot}}、通過済み",
       "next": "{{slot}}、次",
       "rest": "{{slot}}、休養",
       "restToday": "{{slot}}、休養、今日"

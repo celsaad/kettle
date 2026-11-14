@@ -360,6 +360,19 @@ class HomeScreenTest {
         text("+8 exercícios a mais").assertExists()
     }
 
+    // "+1 more" would take the fifth exercise's row, so a workout of five lists all five.
+    @Test
+    fun `lists a fifth exercise rather than counting it`() {
+        val files = longFiles()
+        val library = checkNotNull(files.library)
+        val five = library.workouts.single().let { it.copy(blocks = it.blocks.take(5)) }
+        files.library = library.copy(workouts = listOf(five))
+        show(files)
+
+        text("Curl").assertExists()
+        compose.onNodeWithText("a mais", substring = true).assertDoesNotExist()
+    }
+
     // The estimate counted a reps set as its rest alone, so 12 × 3 sets read as 36 minutes (#412).
     @Test
     fun `a long workout is counted in exercises and sets, with no time estimate`() {

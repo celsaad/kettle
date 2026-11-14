@@ -147,8 +147,8 @@ private fun heroKicker(
 
 /**
  * The first [HERO_EXERCISES], each name against its load, then "+N more": a long workout would push Off
- * the plan off the screen, and the preview this card opens lists them all. A name is the user's and
- * wraps; the load never does.
+ * the plan off the screen, and the preview this card opens lists them all. One more than that is listed
+ * whole, since "+1 more" would take its row. A name is the user's and wraps; the load never does.
  */
 @Composable
 private fun PlannedExercises(
@@ -157,8 +157,9 @@ private fun PlannedExercises(
 ) {
     if (exercises.isEmpty()) return
     val colors = KettleTheme.colors
+    val shown = if (exercises.size <= HERO_EXERCISES + 1) exercises.size else HERO_EXERCISES
     Column(Modifier.padding(top = Spacing.two)) {
-        exercises.take(HERO_EXERCISES).forEach { exercise ->
+        exercises.take(shown).forEach { exercise ->
             ListRowSeparator()
             Row(
                 Modifier.fillMaxWidth().padding(vertical = Spacing.two),
@@ -176,7 +177,7 @@ private fun PlannedExercises(
                 }
             }
         }
-        val more = exercises.size - HERO_EXERCISES
+        val more = exercises.size - shown
         if (more > 0) {
             ListRowSeparator()
             Text(
@@ -344,8 +345,8 @@ private val BigButtonHeight = 56.dp
 private val HeroRadius = 20.dp
 
 /**
- * How many exercises the hero card lists before "+N more": one past the board's three, since a "+1 more"
- * row takes the room the fourth exercise would, and four is a common length for a workout.
+ * How many exercises the hero card lists before "+N more", which then stands for two or more: one past
+ * the board's three, as four is a common length for a workout.
  */
 private const val HERO_EXERCISES = 4
 private val BigButtonShape = RoundedCornerShape(16.dp)

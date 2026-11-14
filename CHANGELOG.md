@@ -133,21 +133,25 @@ here, next to what it describes.
 - **The exercise editor uses steppers and the time picker**: sets, reps and rounds are steppers,
   and rests and other required times open the minutes-and-seconds picker. Save sits at the top. Reps
   read "8 to 12", and the same number twice saves as a fixed count, so a saved 8–8 becomes 8. In
-  pounds, the weight says what your file keeps in kilograms. A new exercise starts filled in, so it
-  saves what it shows. An exercise's type is fixed once it's created, and says so; Delete is greyed
-  out while a workout uses the exercise, saying which one (#441).
+  pounds, the weight says what your file keeps in kilograms. A new exercise starts at something
+  worth training, such as 3 sets of 8 to 12 with a 1:30 rest, so it saves what it shows. An
+  exercise's type is fixed once it's created, and says so; Delete is greyed out while a workout
+  uses the exercise, saying which one (#441).
 - **Editing a logged session is a table per exercise**: tap an underlined number to change it, and
   a hold opens the time picker. Remove a set with its ×, and Undo puts it back exactly; removing an
   exercise's last set removes the exercise, with Undo too. "+ Add a set" copies the set above it,
   with Effort left blank. A rest block shows as a read-only line, since the timer logged it (#442).
-- **Import says what an update will clear**: the review counts new items, updated items and the
-  fields an import will clear, marked with a warning when there are any. Each updated item opens on
+- **Import says what an update will clear**: the review counts new items, updated items and
+  everything an import will clear, marked with a warning when there are any: fields the file leaves
+  out, a workout's exercises and a program's weeks, notes and changes. Each updated item opens on
   what changes, such as "Sets 3 → 4", and a field the file leaves out reads "cleared". A workout
   whose rests or rounds the file changes says which blocks. Items show their name over their id,
   and the button says how many it imports (#443).
 - **An exercise's YAML is a file of its own**: it shows the exercise as a complete library, with
   line numbers and colour, so Copy and Share hand over something that imports on its own. It says
   the weights are the file's kilograms, and links to how the format works (#444).
+- **A program carries on after you delete the week you're on**: Home used to start the program
+  over at week 1. It now goes on from the next week that's still there (#456).
 
 ---
 

@@ -65,16 +65,51 @@ class ImportPreview(
     }
 
     /**
-     * Fields the import leaves out of what it replaces, across every updated item, weights in [units]
-     * (#443): a value going to unset, the review's third tile. In practice exercise fields, the diff
-     * that names them one by one; what a workout or program loses shows as its own rows ("Exercises",
-     * "Weeks edited", "Blocks edited") rather than in this count. Diffs every update, so the screen
+     * What the import takes away across every updated item, weights in [units] (#443, widened on #456):
+     * the review's third tile. Each item's own count is [clearedBy]. Diffs every update, so the screen
      * asks once per preview and remembers it.
      */
-    fun fieldsCleared(units: UnitSystem): Int =
-        items.filterNot { it.isNew }.sumOf { item ->
-            changes(item, units).count { it.clears }
-        }
+    fun fieldsCleared(units: UnitSystem): Int = items.filterNot { it.isNew }.sumOf { clearedBy(it, units) }
+
+    /**
+     * What updated [item] takes away: an exercise's fields left unset, or all its old settings when its
+     * type changes; a workout's exercise references that go; a program's weeks that go, and the notes
+     * and changes dropped from the weeks it keeps. Nothing for a new item.
+     */
+    fun clearedBy(
+        item: ChangedItem,
+        units: UnitSystem,
+    ): Int {
+        if (item.isNew) return 0
+        return when (item.kind) {
+            LibraryItemKind.Exercise -> {
+                pair(
+                    Library::exercises,
+                    Exercise::id,
+                    item.id,
+                ) { was, will -> exerciseCleared(was, will, units) }
+            }
+
+            LibraryItemKind.Workout -> {
+                pair(Library::workouts, Workout::id, item.id, ::referencesLost)
+            }
+
+            LibraryItemKind.Program -> {
+                pair(Library::programs, Program::id, item.id, ::programCleared)
+            }
+        } ?: 0
+    }
+
+    private fun <T> pair(
+        list: (Library) -> List<T>,
+        idOf: (T) -> String,
+        id: String,
+        count: (T, T) -> Int,
+    ): Int? {
+        val was = list(before).firstOrNull { idOf(it) == id }
+        val will = list(merged).firstOrNull { idOf(it) == id }
+        return if (was == null || will == null) null else count(was, will)
+    }
 
     /** [item]'s name as the import has it, the user's, verbatim; its id where it has none to find. */
     fun name(item: ChangedItem): String =

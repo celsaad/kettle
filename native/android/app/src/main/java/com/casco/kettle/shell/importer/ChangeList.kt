@@ -185,9 +185,7 @@ private fun ChangeList(
                 val diff = under?.takeIf { !item.isNew }
                 val clears =
                     units?.takeIf { !item.isNew }?.let {
-                        remember(item, it) {
-                            preview.changes(item, it).count { c -> c.clears }
-                        }
+                        remember(item, it) { preview.clearedBy(item, it) }
                     } ?: 0
                 ItemRow(
                     preview,

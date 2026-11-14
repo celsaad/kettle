@@ -54,6 +54,34 @@ class NextUpTest {
             assertEquals(1L, nextWeekAfter(program, listOf(session("prog", 99))).week)
         }
 
+        // Week 3 deleted while on it (#456): carry on into what follows, not over from Week 1.
+        @Test
+        fun `carries on from a deleted week rather than starting over`() {
+            val deleted =
+                Program("prog", "Prog", listOf(1L, 2L, 4L).map { ProgramWeek.Training(it, workoutId = "full") })
+
+            assertEquals(4L, nextWeekAfter(deleted, listOf(session("prog", 3))).week)
+        }
+
+        // A day gone from the week logged: that week again from its first slot, the nearest place standing.
+        @Test
+        fun `carries on in the same week when only the day logged is gone`() {
+            val days =
+                Program(
+                    "prog",
+                    "Prog",
+                    listOf(
+                        ProgramWeek.Training(1, "A", "full"),
+                        ProgramWeek.Training(2, "A", "full"),
+                        ProgramWeek.Training(2, "B", "full"),
+                        ProgramWeek.Training(3, "A", "full"),
+                    ),
+                )
+
+            val next = nextWeekAfter(days, listOf(session("prog", 2, "C")))
+            assertEquals(2L to "A", next.week to next.day)
+        }
+
         @Test
         fun `ignores a session belonging to a different program`() {
             assertEquals(1L, nextWeekAfter(program, listOf(session("other-prog", 2))).week)

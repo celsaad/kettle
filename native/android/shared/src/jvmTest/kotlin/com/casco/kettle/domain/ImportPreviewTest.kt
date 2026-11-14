@@ -59,6 +59,68 @@ class ImportPreviewTest {
         assertEquals(3, ImportPreview(before, merged.library, merged.summary).fieldsCleared(UnitSystem.METRIC))
     }
 
+    private fun cleared(
+        before: Library,
+        incoming: Library,
+    ): Int {
+        val merged = mergeLibraries(before, incoming) as MergeResult.Ok
+        return ImportPreview(before, merged.library, merged.summary).fieldsCleared(UnitSystem.METRIC)
+    }
+
+    // The tile once counted only unset exercise fields, and read 0 for an import that took a lot away (#456).
+    @Test
+    fun `counts a retype's settings the new type doesn't set`() {
+        val noted = pullUps.copy(notes = "Dead hang first.", config = ExerciseConfig.Reps(3, 8, 12, 20.0, 90.0))
+        val before = Library(1, listOf(noted), emptyList(), emptyList())
+        val hold = pullUps.copy(config = ExerciseConfig.TimedHold(3, 30.0, restSec = 60.0))
+
+        // The range's two ends, the weight and the notes; sets and rest change, which isn't clearing them.
+        assertEquals(4, cleared(before, Library(1, listOf(hold), emptyList(), emptyList())))
+    }
+
+    @Test
+    fun `counts each exercise reference a workout loses, a repeat as many times as it goes`() {
+        val blocks = listOf("pull-ups", "dips", "pull-ups", "rows").map { WorkoutBlock.ExerciseBlock(it) }
+        val exercises = listOf("dips", "rows", "squats").map { Exercise(it, it, pullUps.config) } + pullUps
+        val before = Library(1, exercises, listOf(pushDay.copy(blocks = blocks)), emptyList())
+        val after = pushDay.copy(blocks = listOf(blocks[0], WorkoutBlock.ExerciseBlock("squats")))
+
+        // One pull-ups, the dips and the rows go; the squats arriving clears nothing.
+        assertEquals(3, cleared(before, Library(1, emptyList(), listOf(after), emptyList())))
+    }
+
+    @Test
+    fun `counts a program's weeks that go, and the notes and changes its kept weeks drop`() {
+        val press = ProgramOverride.ExerciseOverride("press", emptyMap())
+        val weeks =
+            listOf(
+                ProgramWeek.Training(1, workoutId = "push-day", notes = "Easy.", overrides = listOf(press)),
+                ProgramWeek.Training(2, workoutId = "push-day"),
+                ProgramWeek.RestDay(3),
+            )
+        val before = Library(1, listOf(pullUps), listOf(pushDay), listOf(Program("base", "Base", weeks)))
+        val after = Program("base", "Base", listOf(ProgramWeek.Training(1, workoutId = "push-day"), weeks[1]))
+
+        // Week 3 goes; week 1 keeps its place but loses its note and its change.
+        assertEquals(3, cleared(before, Library(1, emptyList(), emptyList(), listOf(after))))
+    }
+
+    @Test
+    fun `marks a workout's lost exercises as cleared, and its new ones not`() {
+        val before =
+            Library(1, listOf(pullUps, Exercise("squats", "Squats", pullUps.config)), listOf(pushDay), emptyList())
+        val after = pushDay.copy(blocks = listOf(WorkoutBlock.ExerciseBlock("squats")))
+        val merged = mergeLibraries(before, Library(1, emptyList(), listOf(after), emptyList())) as MergeResult.Ok
+        val rows =
+            ImportPreview(
+                before,
+                merged.library,
+                merged.summary,
+            ).changes(ChangedItem("push-day", LibraryItemKind.Workout, false), UnitSystem.METRIC)
+
+        assertEquals(listOf(true, false), rows.filter { it.label == DiffLabel.Exercises }.map { it.clears })
+    }
+
     @Test
     fun `counts nothing cleared by a new item, or an update that only changes values`() {
         val incoming =

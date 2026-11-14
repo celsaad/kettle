@@ -63,8 +63,12 @@ data class FieldChange(
     val from: DiffValue,
     val to: DiffValue,
 ) {
-    /** Whether the update takes the value away, set before and unset after: what Import counts as cleared. */
-    val clears: Boolean get() = to == DiffValue.Unset && from != DiffValue.Unset
+    /**
+     * Whether the update takes the value away, set before and unset after, or a workout's exercises
+     * that go (#456): what Import marks as cleared.
+     */
+    val clears: Boolean get() =
+        (to == DiffValue.Unset && from != DiffValue.Unset) || (label == DiffLabel.Exercises && to == NONE)
 }
 
 /**
@@ -167,10 +171,10 @@ fun diffProgram(
 }
 
 /** A week's place in the rotation: its number and day, which no two weeks share. */
-private fun slot(week: ProgramWeek) = week.week to week.day.orEmpty()
+internal fun slot(week: ProgramWeek) = week.week to week.day.orEmpty()
 
 /** One entry per reference, not per id, as RN's `referencedExercises`. */
-private fun exercisesIn(block: WorkoutBlock): List<String> =
+internal fun exercisesIn(block: WorkoutBlock): List<String> =
     when (block) {
         is WorkoutBlock.ExerciseBlock -> listOf(block.exerciseId)
         is WorkoutBlock.Circuit -> block.members.map { it.exerciseId }

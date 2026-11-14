@@ -40,8 +40,8 @@ class ImportReviewTest : ImportHarness() {
         reviewsAClearingUpdate()
 
         // The tile is one node, its count and its noun: the count is what this asserts.
-        compose.onNodeWithText("campos limpos").assert(hasText("2"))
-        shown("Limpa 2 campos")
+        compose.onNodeWithText("removidos").assert(hasText("2"))
+        shown("2 removidos")
     }
 
     @Test
@@ -108,6 +108,6 @@ class ImportReviewTest : ImportHarness() {
         button("Pull-ups", substring = true).performClick()
 
         compose.onNodeWithContentDescription("Peso: era 20 kg, agora limpo").assertDoesNotExist()
-        shown("Limpa 2 campos")
+        shown("2 removidos")
     }
 }

@@ -672,13 +672,13 @@
       "tooLarge": "Too large to import: a library can be up to {{limit}} KB."
     },
     "reviewTitle": "Review the changes",
-    "fieldsCleared_one": "field cleared",
-    "fieldsCleared_other": "fields cleared",
+    "fieldsCleared_one": "cleared",
+    "fieldsCleared_other": "cleared",
     "sectionUpdated": "Updated",
     "sectionNew": "New",
     "itemSub": "{{id}} · {{kind}}",
-    "clearsCount_one": "Clears {{count}} field",
-    "clearsCount_other": "Clears {{count}} fields",
+    "clearsCount_one": "{{count}} cleared",
+    "clearsCount_other": "{{count}} cleared",
     "importItems_one": "Import {{count}} item",
     "importItems_other": "Import {{count}} items",
     "kind": {

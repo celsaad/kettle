@@ -625,11 +625,11 @@
       "tooLarge": "大きすぎてインポートできません。ライブラリは {{limit}} KB までです。"
     },
     "reviewTitle": "変更を確認",
-    "fieldsCleared_other": "フィールドを消去",
+    "fieldsCleared_other": "消去",
     "sectionUpdated": "更新",
     "sectionNew": "新規",
     "itemSub": "{{id}} · {{kind}}",
-    "clearsCount_other": "{{count}}フィールドを消去",
+    "clearsCount_other": "{{count}}件を消去",
     "importItems_other": "{{count}}件をインポート",
     "kind": {
       "exercise": "種目",

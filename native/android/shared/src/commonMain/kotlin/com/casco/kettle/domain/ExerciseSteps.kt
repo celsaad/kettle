@@ -45,21 +45,46 @@ fun ExerciseDraft.stepping(
 }
 
 /**
- * The draft with every blank required count or time at its field's least, 1 set, a 0:00 rest, a 0:01
- * work interval: what its steppers and time buttons show, so a new exercise saves what it shows
- * rather than being refused for a field that read "1" on screen. Optional fields stay blank, which
- * means something.
+ * A new exercise's starting target, per type (#456): 3 × 8–12 with a 1:30 rest, a 0:30 hold, a HIIT
+ * of 0:30 on and off for 8 rounds. A name-only Save writes something a person would train, not the
+ * least each field takes. No weight: there's no load that suits everyone.
  */
-fun ExerciseDraft.withRequiredFilled(): ExerciseDraft {
+private val DEFAULTS: Map<ExerciseType, Map<ConfigKey, String>> =
+    mapOf(
+        ExerciseType.Reps to
+            mapOf(
+                ConfigKey.Sets to "3",
+                ConfigKey.TargetRepsMin to "8",
+                ConfigKey.TargetRepsMax to "12",
+                ConfigKey.RestSec to "90",
+            ),
+        ExerciseType.TimedHold to mapOf(ConfigKey.Sets to "3", ConfigKey.HoldSecMin to "30", ConfigKey.RestSec to "60"),
+        ExerciseType.Hiit to mapOf(ConfigKey.WorkSec to "30", ConfigKey.RestSec to "30", ConfigKey.Rounds to "8"),
+        ExerciseType.Emom to mapOf(ConfigKey.IntervalSec to "60", ConfigKey.TotalMinutes to "10"),
+        ExerciseType.Amrap to mapOf(ConfigKey.TimeCapSec to "600"),
+        ExerciseType.Rest to mapOf(ConfigKey.DurationSec to "60"),
+    )
+
+/**
+ * The draft with its blanks at the type's starting target, and any other blank required count or time
+ * at its field's least: what its steppers and time buttons show, so a new exercise saves what it shows
+ * rather than being refused for a field that read "3" on screen. An optional field with no default
+ * stays blank, which means something: no weight, a cardio that counts up.
+ */
+fun ExerciseDraft.withDefaults(): ExerciseDraft {
+    val defaults = DEFAULTS[type].orEmpty()
     val blanks =
         configFields(type)
-            .filter { !it.optional && values[it.key].isNullOrBlank() }
+            .filter { values[it.key].isNullOrBlank() }
             .mapNotNull { field ->
-                when {
-                    field.integer -> field.key to "${field.min.toLong()}"
-                    field.unit == FieldUnit.Seconds -> field.key to jsNumber(field.min)
-                    else -> null
-                }
+                val least =
+                    when {
+                        field.optional -> null
+                        field.integer -> "${field.min.toLong()}"
+                        field.unit == FieldUnit.Seconds -> jsNumber(field.min)
+                        else -> null
+                    }
+                (defaults[field.key] ?: least)?.let { field.key to it }
             }
     return if (blanks.isEmpty()) this else copy(values = values + blanks)
 }
@@ -67,19 +92,23 @@ fun ExerciseDraft.withRequiredFilled(): ExerciseDraft {
 /**
  * A new exercise switched to [type]: what it shares with the old one carries over, Sets from reps to a
  * hold say, but not a value the new type refuses, such as Rest's filled 0:00 landing in Cardio's
- * duration, whose least is a second, or typed text that is not a number. Then its own blanks are
- * filled, as a new exercise's are.
+ * duration, whose least is a second, or typed text that is not a number. Then its own blanks take
+ * the type's defaults, as a new exercise's do.
  */
 fun ExerciseDraft.switchingTo(type: ExerciseType): ExerciseDraft {
     val fields = configFields(type).associateBy { it.key }
+    val untouched = DEFAULTS[this.type].orEmpty()
     val kept =
         values.filter { (key, text) ->
             val field = fields[key]
             val number = jsNumberOrNull(text.trim())
+            // The old type's own default, never changed, isn't the user's: the new type's goes in its
+            // place, so a new reps exercise switched to HIIT rests 0:30, not the reps 1:30.
+            val stillDefault = untouched[key] == text
             // Not a number goes too: a time button shows it as 0:00, which Save then refuses unseen.
-            field == null || (number != null && number >= field.min)
+            !stillDefault && (field == null || (number != null && number >= field.min))
         }
-    return copy(type = type, values = kept).withRequiredFilled()
+    return copy(type = type, values = kept).withDefaults()
 }
 
 /** A reps max goes no lower than the min; any other count no lower than its field allows. */

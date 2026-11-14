@@ -39,8 +39,8 @@ import com.casco.kettle.domain.Library
 import com.casco.kettle.domain.UnitSystem
 import com.casco.kettle.domain.draftOf
 import com.casco.kettle.domain.submitExercise
+import com.casco.kettle.domain.withDefaults
 import com.casco.kettle.domain.withExercise
-import com.casco.kettle.domain.withRequiredFilled
 import com.casco.kettle.domain.withoutExercise
 import com.casco.kettle.domain.workoutsUsing
 import com.casco.kettle.shell.R
@@ -145,7 +145,7 @@ private class Editor(
     private val scope: CoroutineScope,
     private val actions: ExerciseEditorActions,
 ) {
-    var draft by mutableStateOf(existing?.let { draftOf(it, units) } ?: ExerciseDraft.New.withRequiredFilled())
+    var draft by mutableStateOf(existing?.let { draftOf(it, units) } ?: ExerciseDraft.New.withDefaults())
     var problem by mutableStateOf<ExerciseProblem?>(null)
         private set
     var failure by mutableStateOf<Failure?>(null)

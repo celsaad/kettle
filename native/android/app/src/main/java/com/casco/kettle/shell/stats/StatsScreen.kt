@@ -200,7 +200,11 @@ private fun ThisWeek(stats: Attendance) {
                 )
             },
     ) {
-        Tile(stats.week.sessions.toString(), stringResource(R.string.analytics_sessionsThisWeek))
+        Tile(
+            stats.week.sessions.toString(),
+            stringResource(R.string.analytics_sessionsThisWeek),
+            Modifier.padding(end = Spacing.three),
+        )
         Box(Modifier.fillMaxHeight().width(1.dp).background(colors.border))
         Tile(
             stringResource(R.string.analytics_hoursMinutes, stats.week.hours, stats.week.minutes),
@@ -330,8 +334,8 @@ private fun SteadyToggle(
  * One exercise's trend, as the board draws it (#414): its name, then what it is at now and the change in
  * ink with ▲ or ▼, then the sparkline, and the way into that exercise's progress screen. The name is
  * user data and renders verbatim; values print through [Readings], as the screen it opens does, so the
- * two show one number. The arrow is drawn, not said: the line's description reads the signed change
- * ("+2.5 kg") that the arrow and its unsigned number show. The click label says what a tap does, which
+ * two show one number. The arrow is drawn, not said: the row's description reads its name and the
+ * signed change ("+2.5 kg") that the arrow and its unsigned number show. The click label says what a tap does, which
  * nothing on screen does.
  */
 @Composable
@@ -354,11 +358,13 @@ private fun ProgressRow(
             row.delta < 0 -> "▼ ${readings.reading(-row.delta)}"
             else -> readings.delta(0.0)
         }
-    val spoken = "$reading · ${readings.delta(row.delta)}" + bestEver?.let { " $it" }.orEmpty()
+    // On the row, not the line: a description inside a merged button replaces the merged text, so one
+    // on the line alone would leave TalkBack reading the numbers without the exercise they belong to.
+    val spoken = "$name, $reading · ${readings.delta(row.delta)}" + bestEver?.let { " $it" }.orEmpty()
     Box(
-        Modifier.clickable(role = Role.Button, onClickLabel = openLabel) {
-            openProgress(row.exerciseId)
-        },
+        Modifier
+            .clickable(role = Role.Button, onClickLabel = openLabel) { openProgress(row.exerciseId) }
+            .semantics { contentDescription = spoken },
     ) {
         ListRow {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -372,7 +378,6 @@ private fun ProgressRow(
                         // in the window is also a mover, so a separate list would say most things twice.
                         bestEver?.let { withStyle(SpanStyle(color = colors.accentText)) { append(" $it") } }
                     },
-                    Modifier.semantics { contentDescription = spoken },
                     style = KettleType.small.copy(fontFeatureSettings = "tnum"),
                     color = colors.textSecondary,
                 )

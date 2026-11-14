@@ -100,7 +100,7 @@ here, next to what it describes.
 - **Progress opens on an overview**: Stats is now Overview, the first of Progress's two tabs, with
   this week's sessions and time side by side. In the training calendar, a rest day is an outline
   and days still to come are blank. Getting stronger shows each change with ▲ or ▼ beside a small
-  line of how it went. The day streak is gone, and Export all now lives in Library's Your file
+  line of how it went. The day streak is gone, and exporting the whole log is Export log in Library's Your file
   (#414).
 
 ---

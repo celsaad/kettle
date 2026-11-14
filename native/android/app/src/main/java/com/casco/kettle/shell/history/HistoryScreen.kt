@@ -105,8 +105,8 @@ class HistoryActions(
  * this path: a one-line summary where six stat tiles used to be, a name search that narrows the line
  * with the list, and rows that expand in place to what each entry put up, with Delete, Edit and Export.
  *
- * It reads the log with zero work taken out, as every training view does (`SessionLog.logged`), and
- * hands the raw one to Export all, since that is the user's own files. Native owns deleting a session
+ * It reads the log with zero work taken out, as every training view does (`SessionLog.logged`); the
+ * whole log's export is Your file's Export log since #414. Native owns deleting a session
  * file; nothing else that writes the log can be on screen with History (#187), so nothing is guarded.
  *
  * [reselected] carries taps on the tab already showing; one on History scrolls back to the top.

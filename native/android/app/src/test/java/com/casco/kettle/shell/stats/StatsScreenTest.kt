@@ -98,12 +98,17 @@ class StatsScreenTest {
         compose.onNodeWithText("12 kg · ▲ 2 kg · melhor marca").assertExists()
     }
 
-    /** The arrow is drawn, not said: a screen reader hears the signed change the arrow stands for. */
+    /**
+     * The arrow is drawn, not said: a screen reader hears the signed change the arrow stands for, after
+     * the exercise's name, since a row's description replaces the words inside it.
+     */
     @Test
-    fun `says the change signed, where the screen draws an arrow`() {
+    fun `says the row's name and its change signed, where the screen draws an arrow`() {
         withSessions(listOf(10.0, 12.0))
 
-        compose.onNode(describedAs(Regex("^12 kg · \\+2 kg · melhor marca$"))).assertExists()
+        compose
+            .onNode(hasText("Dumbbell RDL") and isButton)
+            .assert(describedAs(Regex("^Dumbbell RDL, 12 kg · \\+2 kg · melhor marca$")))
     }
 
     @Test
@@ -111,7 +116,7 @@ class StatsScreenTest {
         withSessions(listOf(12.0, 10.0))
 
         compose.onNodeWithText("10 kg · ▼ 2 kg").assertExists()
-        compose.onNode(describedAs(Regex("^10 kg · −2 kg$"))).assertExists()
+        compose.onNode(describedAs(Regex("^Dumbbell RDL, 10 kg · −2 kg$"))).assertExists()
     }
 
     /**

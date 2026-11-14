@@ -30,7 +30,7 @@ import theme from '@/constants/theme.json';
  *   `background`** — WCAG 1.4.11's bar for a graphic you need to read the chart, which here is
  *   whether a day was trained at all. The rest day's outline (`calendarEmpty`) and the three shades,
  *   dark: 3.85, 4.07, 6.12, 8.32; light: 3.56, 3.32, 5.18, 8.83. The steps *between* levels are
- *   1.4–1.7 and don't have to clear it: every week's row label carries its count and time, and the
+ *   1.36–1.71 and don't have to clear it: every week's row label carries its count and time, and the
  *   legend names the buckets. An early draft had a lowest step at 1.6:1 against the empty cell, which
  *   is why these are measured rather than eyeballed.
  *
@@ -39,7 +39,7 @@ import theme from '@/constants/theme.json';
  * - `onAccent` is the text/icon color to place on top of an accent-colored surface (buttons, active
  *   pills).
  * - `calendarEmpty` is a rest day's outline on the training calendar, and `calendarLevel1`–`3`
- *   trained days by duration. More is darker on a light card and brighter on a dark one, so the two ramps run in
+ *   trained days by duration. More is darker on a light page and brighter on a dark one, so the two ramps run in
  *   opposite directions.
  */
 export const Colors = theme.Colors;

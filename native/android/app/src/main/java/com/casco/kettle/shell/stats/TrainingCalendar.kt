@@ -181,7 +181,8 @@ private fun RowScope.WeekCells(week: CalendarWeek) {
                 drawBox(cell.slot.inset(half), SLOT_RADIUS - half, colors.text, Stroke(CALENDAR_RING_WIDTH.dp.toPx()))
             }
             when {
-                day.isFuture -> {}
+                // Today before a session is still to come, as the board draws it: the ring alone.
+                day.isFuture || (day.isToday && day.level == CalendarLevel.Rest) -> {}
 
                 day.level == CalendarLevel.Rest -> {
                     val stroke = Stroke(OUTLINE_WIDTH.dp.toPx())

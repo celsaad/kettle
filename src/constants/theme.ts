@@ -39,8 +39,8 @@ import theme from '@/constants/theme.json';
  * - `onAccent` is the text/icon color to place on top of an accent-colored surface (buttons, active
  *   pills).
  * - `calendarEmpty` is a rest day's outline on the training calendar, and `calendarLevel1`–`3`
- *   trained days by duration. More is darker on a light page and brighter on a dark one, so the two ramps run in
- *   opposite directions.
+ *   trained days by duration. More is darker on a light page and brighter on a dark one, so the two
+ *   ramps run in opposite directions.
  */
 export const Colors = theme.Colors;
 

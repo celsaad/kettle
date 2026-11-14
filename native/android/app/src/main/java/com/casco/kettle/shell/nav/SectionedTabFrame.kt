@@ -16,16 +16,15 @@ import com.casco.kettle.shell.theme.MaxContentWidth
 import com.casco.kettle.shell.theme.Spacing
 
 /**
- * A tab with sections, Library (#413) and Progress (#414): its [header], then its sections as underline
- * tabs, then [content], the section's screen. The section rides in the route (#411), so a link or a
- * saved back stack lands on it, and a tab is a navigate like any other.
+ * A tab with sections, Library (#413) and Progress (#414): its [header], then the sections of
+ * [section]'s tab as underline tabs, then [content], the section's screen. The section rides in the
+ * route (#411), so a link or a saved back stack lands on it, and a tab is a navigate like any other.
  *
  * The status bar's inset is taken here, once: the screens each take it too, and a parent's padding
  * leaves none for them, so they sit right under the tabs rather than a bar's height below them.
  */
 @Composable
 internal fun SectionedTabFrame(
-    tab: Tab,
     section: Section,
     header: @Composable () -> Unit,
     content: @Composable () -> Unit,
@@ -39,7 +38,7 @@ internal fun SectionedTabFrame(
                 .padding(start = Spacing.three, end = Spacing.three, top = Spacing.two),
         ) {
             header()
-            UnderlineTabs(Section.of(tab).map { it to stringResource(it.label) }, section) {
+            UnderlineTabs(Section.of(section.tab).map { it to stringResource(it.label) }, section) {
                 navigator.navigate(Route.of(it))
             }
         }

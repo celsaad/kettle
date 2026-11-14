@@ -28,7 +28,6 @@ internal fun ProgressTab(
 ) {
     val section = route.section(Tab.Progress) ?: return
     SectionedTabFrame(
-        Tab.Progress,
         section,
         header = {
             Text(

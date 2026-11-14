@@ -44,7 +44,6 @@ internal fun LibraryTab(route: Route) {
     val section = route.section(Tab.Library) ?: return
     val new = NEW.getValue(section)
     SectionedTabFrame(
-        Tab.Library,
         section,
         header = {
             Header(

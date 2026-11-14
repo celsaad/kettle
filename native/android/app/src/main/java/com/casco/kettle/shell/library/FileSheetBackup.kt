@@ -32,8 +32,8 @@ import com.casco.kettle.shell.settings.BackupActions
 import com.casco.kettle.shell.settings.BackupMessage
 import com.casco.kettle.shell.settings.Outcome
 import com.casco.kettle.shell.settings.PreferencesSaver
+import com.casco.kettle.shell.settings.backUpNow
 import com.casco.kettle.shell.settings.choose
-import com.casco.kettle.shell.settings.describe
 import com.casco.kettle.shell.theme.DialogAction
 import com.casco.kettle.shell.theme.KettleAlertDialog
 import com.casco.kettle.shell.theme.KettleTheme
@@ -74,14 +74,12 @@ internal fun BackupRow(
     ) {
         Folder(label, Modifier.weight(1f)) { if (label == null) chooseFolder() else asking = true }
         if (folderUri != null) {
-            BackUpNow(busy = sessions == null || backingUp, backingUp) {
+            BackUpNow(enabled = sessions != null && !backingUp, running = backingUp) {
                 val log = sessions ?: return@BackUpNow
                 message = null
                 backingUp = true
                 scope.launch {
-                    message =
-                        backup.backUp(folderUri, log)?.let { BackupMessage(false, resources.describe(it)) }
-                            ?: BackupMessage(true, resources.getString(R.string.settings_backupDone))
+                    message = backUpNow(backup, folderUri, log, resources)
                     backingUp = false
                 }
             }
@@ -132,8 +130,8 @@ private fun Folder(
 /** Back up now, beside the folder: "Writing…" while it runs, and off until the log has been read. */
 @Composable
 private fun BackUpNow(
-    busy: Boolean,
-    backingUp: Boolean,
+    enabled: Boolean,
+    running: Boolean,
     onClick: () -> Unit,
 ) {
     val colors = KettleTheme.colors
@@ -142,19 +140,23 @@ private fun BackUpNow(
             .heightIn(min = 48.dp)
             .clip(PillShape)
             .border(1.dp, colors.textSecondary, PillShape)
-            .clickable(enabled = !busy, role = Role.Button, onClick = onClick)
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
             .padding(horizontal = Spacing.three),
         contentAlignment = Alignment.Center,
     ) {
         Text(
-            stringResource(if (backingUp) R.string.settings_backupInProgress else R.string.settings_backupNow),
+            stringResource(if (running) R.string.settings_backupInProgress else R.string.settings_backupNow),
             style = KettleType.smallMedium,
             color = colors.text,
         )
     }
 }
 
-/** The chosen folder, titled with its own path: change it, or forget it, which Settings' rows explain. */
+/**
+ * The chosen folder, titled with its own path: change it, or forget it, which Settings' rows explain.
+ * Forget takes the quieter slot rather than a confirmation of its own: it deletes nothing, and the
+ * folder is one pick away again, as in Settings, which asks nothing either.
+ */
 @Composable
 private fun FolderDialog(
     label: String,

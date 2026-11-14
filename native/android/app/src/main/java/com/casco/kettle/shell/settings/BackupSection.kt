@@ -57,9 +57,7 @@ internal fun BackupFolder(
         message = null
         backingUp = true
         scope.launch {
-            message =
-                backup.backUp(folder, log)?.let { BackupMessage(false, resources.describe(it)) }
-                    ?: BackupMessage(true, resources.getString(R.string.settings_backupDone))
+            message = backUpNow(backup, folder, log, resources)
             backingUp = false
         }
     }
@@ -109,8 +107,18 @@ internal suspend fun choose(
         }
     }
 
+/** One Back up now, Settings' and the file sheet's: the folder written, and what to say about it. */
+internal suspend fun backUpNow(
+    backup: BackupActions,
+    folderUri: String,
+    sessions: List<Session>,
+    resources: Resources,
+): BackupMessage =
+    backup.backUp(folderUri, sessions)?.let { BackupMessage(false, resources.describe(it)) }
+        ?: BackupMessage(true, resources.getString(R.string.settings_backupDone))
+
 /** Only a refused write carries the platform's own reason, inside a translated sentence. */
-internal fun Resources.describe(failure: BackupFailure) =
+private fun Resources.describe(failure: BackupFailure) =
     when (failure) {
         BackupFailure.NoFolder -> getString(R.string.settings_backupNowNoFolder)
         BackupFailure.Unreachable -> getString(R.string.settings_backupUnreachable)

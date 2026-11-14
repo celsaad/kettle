@@ -77,7 +77,7 @@ class ImportStartTest : ImportHarness() {
     }
 
     @Test
-    fun `no start, or one the sheet doesn't know, shows every source`() {
+    fun `no start, or one the sheet doesn't know, reads as none`() {
         assertNull(ImportStart.of(null))
         assertNull(ImportStart.of("elsewhere"))
         assertEquals(ImportStart.Packs, ImportStart.of("packs"))

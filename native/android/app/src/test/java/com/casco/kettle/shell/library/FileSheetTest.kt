@@ -38,6 +38,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -59,6 +60,8 @@ class FileSheetTest {
     private val historyShares = mutableListOf<List<Session>>()
     private var folderPicks = 0
     private val backups = mutableListOf<String>()
+    private val shared = mutableListOf<String>()
+    private var shareOpens = true
 
     private fun show(
         files: Files = Files(),
@@ -79,6 +82,8 @@ class FileSheetTest {
                         pickFolder = { FolderPick.Cancelled.also { folderPicks++ } },
                         backUp = { uri, _ -> null.also { backups += uri } },
                     ).takeIf { canChooseFolder },
+                shareText = { text -> shareOpens.also { shared += text } },
+                schema = { "{\"schema\": true}" },
             )
         compose.setContent {
             KettleTheme(darkTheme = false) {
@@ -87,6 +92,8 @@ class FileSheetTest {
         }
         return files
     }
+
+    private fun brief() = compose.onNode(hasText("Compartilhar o resumo") and isButton)
 
     private fun row(title: String) = compose.onNode(hasText(title) and isButton)
 
@@ -105,12 +112,42 @@ class FileSheetTest {
     fun `each way in opens Import on that one source`() {
         show()
 
-        compose.onNode(hasText("Compartilhar o resumo") and isButton).assertHeightIsAtLeast(48.dp).performClick()
         row("Abrir um arquivo .yaml").performClick()
         row("Colar YAML").performClick()
         row("Pacotes iniciais").performClick()
 
-        assertEquals(listOf("assistant", "file", "paste", "packs").map(::importOn), opened)
+        assertEquals(listOf("file", "paste", "packs").map(::importOn), opened)
+    }
+
+    /** It says "Share the brief", so it shares it, rather than opening a second button saying the same. */
+    @Test
+    fun `Share the brief shares the brief, with the library's ids and the schema in it`() {
+        show()
+
+        brief().assertHeightIsAtLeast(48.dp).performClick()
+
+        val text = shared.single()
+        assertTrue("pushups" in text && "push-day" in text && "{\"schema\": true}" in text)
+        assertEquals(emptyList<Route>(), opened)
+    }
+
+    /** No share sheet: Import's assistant source has the copy button that covers it. */
+    @Test
+    fun `where no share sheet opens, Share the brief falls back to Import's copy`() {
+        shareOpens = false
+        show()
+
+        brief().performClick()
+
+        assertEquals(listOf(importOn("assistant")), opened)
+    }
+
+    /** The brief is the library's ids, so it isn't offered empty before the library is read. */
+    @Test
+    fun `Share the brief waits for the library`() {
+        show(Files(library = null))
+
+        brief().assertIsNotEnabled()
     }
 
     /** The packs' own names, from the import bundle, so the row says what a tap leads to. */
@@ -198,21 +235,13 @@ class FileSheetTest {
     class Files(
         private val sessions: List<Session> = emptyList(),
         private val preferences: Preferences? = null,
+        private val library: Library? = seeded,
     ) : FakeStoredFiles() {
         val written = mutableListOf<Preferences>()
 
         override fun sessionLog() = SessionLog(sessions, emptyList())
 
-        override fun library() =
-            Library(
-                1,
-                listOf(
-                    Exercise("pushups", "Push-ups", ExerciseConfig.Reps(3, 10, restSec = 60.0)),
-                    Exercise("breather", "Breather", ExerciseConfig.Rest(60.0)),
-                ),
-                listOf(Workout("push-day", "Push day", emptyList())),
-                emptyList(),
-            )
+        override fun library() = library
 
         override fun preferences() = written.lastOrNull() ?: preferences
 
@@ -222,6 +251,16 @@ class FileSheetTest {
     }
 }
 
+private val seeded =
+    Library(
+        1,
+        listOf(
+            Exercise("pushups", "Push-ups", ExerciseConfig.Reps(3, 10, restSec = 60.0)),
+            Exercise("breather", "Breather", ExerciseConfig.Rest(60.0)),
+        ),
+        listOf(Workout("push-day", "Push day", emptyList())),
+        emptyList(),
+    )
 private const val FOLDER = "content://com.android.externalstorage.documents/tree/primary%3ADocuments%2FKettle"
 private val withFolder = Preferences(UnitSystem.METRIC, ThemePreference.SYSTEM, false, true, FOLDER)
 private val session =

@@ -1,6 +1,5 @@
 package com.casco.kettle.shell.library
 
-import android.content.Intent
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -36,6 +35,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.casco.kettle.domain.AssistantBrief
 import com.casco.kettle.domain.ExerciseConfig
 import com.casco.kettle.domain.Library
 import com.casco.kettle.domain.Session
@@ -50,6 +50,7 @@ import com.casco.kettle.shell.i18n.deviceUnitSystem
 import com.casco.kettle.shell.i18n.pluralText
 import com.casco.kettle.shell.importer.IMPORT_SOURCE_PARAM
 import com.casco.kettle.shell.importer.ImportStart
+import com.casco.kettle.shell.importer.briefWords
 import com.casco.kettle.shell.importer.packStrings
 import com.casco.kettle.shell.nav.Destination
 import com.casco.kettle.shell.nav.LocalNavigator
@@ -59,14 +60,13 @@ import com.casco.kettle.shell.settings.BackupActions
 import com.casco.kettle.shell.settings.ExportActions
 import com.casco.kettle.shell.settings.Outcome
 import com.casco.kettle.shell.settings.PreferencesSaver
-import com.casco.kettle.shell.settings.backUp
-import com.casco.kettle.shell.settings.rememberFolderPicker
+import com.casco.kettle.shell.settings.rememberBackupActions
+import com.casco.kettle.shell.settings.rememberCanChooseFolder
+import com.casco.kettle.shell.system.shareText
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.Spacing
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 /** The library's file name on disk, which the sheet is titled with and Library's header links by. */
 const val LIBRARY_FILE_NAME = "exercises.yaml"
@@ -77,6 +77,10 @@ class FileSheetActions(
     val export: ExportActions,
     /** Null on a device with no folder picker, where the backup row would promise what can't work. */
     val backup: BackupActions?,
+    /** False where no share sheet opened. */
+    val shareText: (String) -> Boolean,
+    /** The library's JSON Schema, which the brief carries. */
+    val schema: () -> String,
 )
 
 /** What the route table draws at `Destination.YourFile`: the sheet on SAF, the share sheet and the shell. */
@@ -86,26 +90,18 @@ fun FileSheetRoute() {
     val navigator = LocalNavigator.current
     val paths = remember { StoragePaths(activity.filesDir) }
     val share = remember { FileShare(activity, paths) }
-    val pickFolder = rememberFolderPicker(activity)
-    val canChooseFolder =
-        remember { Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).resolveActivity(activity.packageManager) != null }
-    val packs = remember { ShippedContent(activity.assets).packs().map { it.id } }
+    val backup = rememberBackupActions(activity, paths)
+    val canChooseFolder = rememberCanChooseFolder(activity)
+    val content = remember { ShippedContent(activity.assets) }
+    val packs = remember { content.packs().map { it.id } }
     val actions =
-        remember(pickFolder, navigator) {
+        remember(backup, navigator) {
             FileSheetActions(
                 open = navigator::push,
                 export = ExportActions(library = share::library, history = share::history),
-                backup =
-                    BackupActions(
-                        pickFolder = pickFolder,
-                        // Off the main thread, since a folder backed by a cloud provider can take seconds.
-                        backUp = {
-                            uri,
-                            sessions,
-                            ->
-                            withContext(Dispatchers.IO) { activity.backUp(paths, uri, sessions) }
-                        },
-                    ).takeIf { canChooseFolder },
+                backup = backup.takeIf { canChooseFolder },
+                shareText = activity::shareText,
+                schema = content::librarySchema,
             )
         }
     FileSheetScreen(LocalLatestFiles.current, packs, actions)
@@ -141,14 +137,9 @@ fun FileSheetScreen(
                 .padding(bottom = Spacing.four)
                 .navigationBarsPadding(),
         ) {
-            Text(
-                LIBRARY_FILE_NAME,
-                Modifier.semantics { heading() },
-                style = KettleType.subtitle.copy(fontFamily = FontFamily.Monospace, fontSize = 22.sp),
-                color = colors.text,
-            )
+            FileNameTitle()
             files.library?.let { Text(counts(it), style = KettleType.small, color = colors.textSecondary) }
-            AssistantCard { importOn(ImportStart.Assistant) }
+            AssistantCard(files.library, actions) { importOn(ImportStart.Assistant) }
             WaysIn(packIds, importOn)
             WaysOut(sessions, actions, share)
             failure?.let { Outcome(stringResource(R.string.settings_exportFailed, it), accent = true) }
@@ -228,13 +219,36 @@ private fun counts(library: Library): String {
     )
 }
 
+/** The file's name as a sheet's title, in monospace: this one's, and the YAML view's. */
+@Composable
+internal fun FileNameTitle() =
+    Text(
+        LIBRARY_FILE_NAME,
+        Modifier.semantics { heading() },
+        style = KettleType.subtitle.copy(fontFamily = FontFamily.Monospace, fontSize = 22.sp),
+        color = KettleTheme.colors.text,
+    )
+
 /**
  * The assistant, a card since it's the one thing here that isn't a row of peers: what it does, and
- * Share the brief, which opens Import on the brief and the paste its reply comes back by.
+ * Share the brief, which opens the share sheet on the brief itself, as Import's does. The reply comes
+ * back by Paste YAML below. Where no share sheet opens, it falls back to Import's assistant source
+ * ([onFallback]), which has the copy button. Off until [library] is read: the brief is the ids in it.
  */
 @Composable
-private fun AssistantCard(onShare: () -> Unit) {
+private fun AssistantCard(
+    library: Library?,
+    actions: FileSheetActions,
+    onFallback: () -> Unit,
+) {
     val colors = KettleTheme.colors
+    val words = briefWords()
+    val onShare = {
+        library?.let {
+            if (!actions.shareText(AssistantBrief.build(it, words, actions.schema()))) onFallback()
+        }
+        Unit
+    }
     Column(
         Modifier
             .padding(top = Spacing.three)
@@ -260,7 +274,7 @@ private fun AssistantCard(onShare: () -> Unit) {
                 .heightIn(min = 48.dp)
                 .clip(ButtonShape)
                 .background(colors.accent)
-                .clickable(role = Role.Button, onClick = onShare)
+                .clickable(enabled = library != null, role = Role.Button, onClick = onShare)
                 .padding(vertical = Spacing.two),
             style = KettleType.heading.copy(fontWeight = FontWeight.SemiBold),
             color = colors.onAccent,

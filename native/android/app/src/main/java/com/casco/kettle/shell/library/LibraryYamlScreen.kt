@@ -15,8 +15,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.sp
 import com.casco.kettle.domain.serializeLibraryYaml
@@ -49,12 +47,7 @@ fun LibraryYamlScreen(files: LatestFiles) {
                 .padding(bottom = Spacing.four)
                 .navigationBarsPadding(),
         ) {
-            Text(
-                LIBRARY_FILE_NAME,
-                Modifier.semantics { heading() },
-                style = KettleType.subtitle.copy(fontFamily = FontFamily.Monospace, fontSize = 22.sp),
-                color = colors.text,
-            )
+            FileNameTitle()
             Text(stringResource(R.string.file_unitsNote), style = KettleType.small, color = colors.textSecondary)
             yaml?.let {
                 SelectionContainer(Modifier.padding(top = Spacing.three).horizontalScroll(rememberScrollState())) {

@@ -35,16 +35,12 @@ fun SettingsRoute() {
     val navigator = LocalNavigator.current
     val paths = remember { StoragePaths(activity.filesDir) }
     val share = remember { FileShare(activity, paths) }
-    val pickFolder = rememberFolderPicker(activity)
+    val backup = rememberBackupActions(activity, paths)
     val notifications = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
     val actions =
-        remember(files, pickFolder, navigator) {
+        remember(files, backup, navigator) {
             SettingsActions(
-                BackupActions(
-                    pickFolder = pickFolder,
-                    // Off the main thread, since a folder backed by a cloud provider can take seconds.
-                    backUp = { uri, sessions -> withContext(Dispatchers.IO) { activity.backUp(paths, uri, sessions) } },
-                ),
+                backup,
                 ExportActions(library = share::library, history = share::history),
                 ContactActions(openLink = activity::openLink, copy = activity::copyToClipboard),
                 ReminderActions(
@@ -61,15 +57,32 @@ fun SettingsRoute() {
     SettingsScreen(
         files,
         remember { DiskSupporterFile(paths.supporter) },
-        canChooseFolder =
-            remember {
-                Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).resolveActivity(activity.packageManager) !=
-                    null
-            },
+        canChooseFolder = rememberCanChooseFolder(activity),
         version = remember { activity.packageManager.getPackageInfo(activity.packageName, 0).versionName },
         actions,
     )
 }
+
+/** The backup folder's two on SAF, as Settings and the file sheet both use them. */
+@Composable
+internal fun rememberBackupActions(
+    activity: Activity,
+    paths: StoragePaths,
+): BackupActions {
+    val pickFolder = rememberFolderPicker(activity)
+    return remember(pickFolder) {
+        BackupActions(
+            pickFolder = pickFolder,
+            // Off the main thread, since a folder backed by a cloud provider can take seconds.
+            backUp = { uri, sessions -> withContext(Dispatchers.IO) { activity.backUp(paths, uri, sessions) } },
+        )
+    }
+}
+
+/** Whether this device has a folder picker at all; without one a backup row promises what can't work. */
+@Composable
+internal fun rememberCanChooseFolder(activity: Activity): Boolean =
+    remember { Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).resolveActivity(activity.packageManager) != null }
 
 /**
  * `OpenDocumentTree` as one suspending call: the folder, with its grant kept, or [FolderPick.Cancelled]
@@ -77,7 +90,7 @@ fun SettingsRoute() {
  * tapped again.
  */
 @Composable
-internal fun rememberFolderPicker(activity: Activity): suspend () -> FolderPick {
+private fun rememberFolderPicker(activity: Activity): suspend () -> FolderPick {
     val waiting = remember { arrayOfNulls<CompletableDeferred<Uri?>>(1) }
     val launcher =
         rememberLauncherForActivityResult(

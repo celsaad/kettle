@@ -186,7 +186,12 @@ private fun Header(
         val parts =
             listOfNotNull(
                 active?.let { stringResource(R.string.programs_active, it.weekNumber) },
-                pluralText(R.plurals.programs_weekCount, R.string.programs_weekCount_zero, weeks),
+                // "No weeks", not "0 weeks", as the programs list says it.
+                if (weeks == 0) {
+                    stringResource(R.string.programs_noWeeks)
+                } else {
+                    pluralText(R.plurals.programs_weekCount, R.string.programs_weekCount_zero, weeks)
+                },
                 programSessionsPerWeek(program)?.let {
                     pluralText(R.plurals.programs_sessionsPerWeek, R.string.programs_sessionsPerWeek_zero, it)
                 },

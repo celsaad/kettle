@@ -65,6 +65,8 @@ class ProgramDetailScreenTest {
 
     private val opened = mutableListOf<Route>()
     private val started = mutableListOf<RunnerStart>()
+    private lateinit var files: Files
+    private lateinit var latest: LatestFiles
 
     private fun show(
         library: Library? = Library(1, emptyList(), listOf(pushDay), listOf(base)),
@@ -72,9 +74,10 @@ class ProgramDetailScreenTest {
         sessions: List<Session> = emptyList(),
         clock: Clock = Clock.System,
     ) {
-        val latest =
+        files = Files(library, sessions)
+        latest =
             LatestFiles(
-                Files(library, sessions),
+                files,
                 CoroutineScope(Dispatchers.Unconfined),
                 io = Dispatchers.Unconfined,
             ).apply {
@@ -291,6 +294,35 @@ class ProgramDetailScreenTest {
         compose.onNodeWithText("Dia 2 de 3 é o próximo").assertExists()
     }
 
+    /** A picked week the editor then deletes falls back to the week the program stands in, list and all. */
+    @Test
+    fun `falls back to the current week when the picked one is gone`() {
+        show(library = Library(1, emptyList(), listOf(pushDay, legDay), listOf(twoWeeks)), programId = "two")
+        compose.onNode(hasContentDescription("Semana 2, 1 dia alterado")).performScrollTo().performClick()
+        compose.onNode(hasText("Leg day") and isButton).assertExists()
+
+        val weekOne = twoWeeks.copy(weeks = twoWeeks.weeks.filter { it.week == 1L })
+        files.library = Library(1, emptyList(), listOf(pushDay, legDay), listOf(weekOne))
+        latest.reread()
+        compose.waitForIdle()
+
+        compose.onNode(hasContentDescription("Semana 1, Esta semana")).assertIsSelected()
+        compose.onNode(hasText("Mon") and isButton).assertExists()
+    }
+
+    /** Only the program Today runs is "Active": another program's header claims no week. */
+    @Test
+    fun `says Active only for the program Today runs`() {
+        val other = Program("other", "Other", listOf(ProgramWeek.Training(1, "Mon", "push-day")))
+        show(
+            library = Library(1, emptyList(), listOf(pushDay, legDay), listOf(twoWeeks, other)),
+            programId = "other",
+            sessions = listOf(ran(1, "Mon")),
+        )
+
+        compose.onNodeWithText("Ativo", substring = true).assertDoesNotExist()
+    }
+
     @Test
     fun `a day row opens that day's preview`() {
         show()
@@ -393,7 +425,7 @@ class ProgramDetailScreenTest {
     private fun num(value: Double) = OverrideValue.Numeric(value)
 
     private class Files(
-        private val library: Library?,
+        var library: Library?,
         private val sessions: List<Session> = emptyList(),
     ) : FakeStoredFiles() {
         override fun sessionLog() = SessionLog(sessions, emptyList())

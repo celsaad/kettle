@@ -99,7 +99,7 @@
     "summaryLine": "{{sessions}} · {{time}} · {{sets}}",
     "matchCount": "{{shown}} de {{total}}",
     "sets": "séries",
-    "searchPlaceholder": "Buscar treinos",
+    "searchPlaceholder": "Filtrar por treino ou exercício",
     "mixed": "misto",
     "edit": "Editar",
     "showExercises": "Mostrar exercícios",
@@ -108,7 +108,13 @@
     "deleteConfirmBody": "\"{{name}}\" em {{day}} {{month}} será removida permanentemente.",
     "problemsTitle_one": "{{count}} arquivo de sessão não pôde ser lido ou gravado",
     "problemsTitle_other": "{{count}} arquivos de sessão não puderam ser lidos ou gravados",
-    "problemsTitle_zero": "{{count}} arquivos de sessão não puderam ser lidos ou gravados"
+    "problemsTitle_zero": "{{count}} arquivos de sessão não puderam ser lidos ou gravados",
+    "thisWeek": "Esta semana",
+    "undated": "Sem data",
+    "weekSummary": "{{sessions}} · {{time}}",
+    "prBadge": "Recorde",
+    "topEntry": "{{exercise}} · {{result}}",
+    "empty": "Nada registrado ainda. As sessões que você concluir aparecem aqui, semana a semana."
   },
   "analytics": {
     "hoursMinutes": "{{hours}}h {{minutes}}min",

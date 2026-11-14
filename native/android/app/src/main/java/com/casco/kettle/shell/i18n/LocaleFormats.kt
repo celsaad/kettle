@@ -55,7 +55,7 @@ fun formatMonthDay(
 ): String = formatMonthDay(date.atStartOfDayIn(TimeZone.UTC), locale, TimeZone.UTC)
 
 /**
- * The short month on a History row's date badge and the session editor's subtitle, "JUL" or "JUL.",
+ * The short month in a session's delete confirm and the session editor's subtitle, "JUL" or "JUL.",
  * uppercased with the locale's rules rather than the default's, which are wrong for Turkish.
  */
 fun formatMonthBadge(

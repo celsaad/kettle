@@ -1,5 +1,6 @@
 package com.casco.kettle.shell.history
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -9,10 +10,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
@@ -20,12 +23,14 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.collapse
 import androidx.compose.ui.semantics.expand
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.HistorySessionView
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.i18n.formatMonthBadge
+import com.casco.kettle.shell.i18n.formatShortWeekday
 import com.casco.kettle.shell.i18n.pluralText
 import com.casco.kettle.shell.list.ListRowMinHeight
 import com.casco.kettle.shell.list.ListRowVerticalPadding
@@ -42,16 +47,21 @@ import com.casco.kettle.shell.theme.Spacing
  *
  * The pressable part takes its name from its own text; expand and collapse are what TalkBack can't
  * infer from the chevron, which is decoration.
+ *
+ * As the board draws it (#414): the day and its weekday, the name with a PR badge when [recordIndex] gives
+ * the place of the entry that set one, the minutes and sets, and one entry's result: that record's, else the
+ * first logged, so the line shows what earned the badge.
  */
 @Composable
 internal fun SessionRow(
     row: HistorySessionView,
     name: String,
-    expanded: Boolean,
-    failure: String?,
+    state: RowState,
+    recordIndex: Int?,
     actions: RowActions,
 ) {
     val colors = KettleTheme.colors
+    val expanded = state.expanded
     Column(Modifier.padding(vertical = ListRowVerticalPadding)) {
         Row(
             Modifier
@@ -79,23 +89,81 @@ internal fun SessionRow(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(Modifier.width(38.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                val (day, month) = dateBadge(row)
-                Text(day, style = KettleType.heading, color = colors.text)
-                Text(month, style = KettleType.code, color = colors.textSecondary)
+                val locale = LocalConfiguration.current.locales[0]
+                Text(
+                    row.day
+                        ?.day
+                        ?.toString()
+                        .orEmpty(),
+                    style = KettleType.heading,
+                    color = colors.text,
+                )
+                Text(
+                    row.day?.let { formatShortWeekday(it, locale) }.orEmpty(),
+                    style = KettleType.small,
+                    color = colors.textSecondary,
+                )
             }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(name, style = KettleType.heading, color = colors.text)
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.two),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(name, Modifier.weight(1f, fill = false), style = KettleType.heading, color = colors.text)
+                    if (recordIndex != null) PrBadge()
+                }
                 Text(details(row), style = KettleType.small, color = colors.textSecondary)
+                topEntry(row, recordIndex)?.let { Text(it, style = KettleType.small, color = colors.text) }
             }
             Chevron(expanded)
         }
-        if (expanded) Detail(row, failure, actions)
+        if (expanded) Detail(row, state.failure, actions)
     }
 }
 
+/** Whether a row is open, and why its delete was refused, if it was: the screen's state for it. */
+internal data class RowState(
+    val expanded: Boolean,
+    val failure: String?,
+)
+
+/** The record's entry, else the first, as "Squat · 3 × 5 · 60 kg". The name is the user's, verbatim. */
+@Composable
+private fun topEntry(
+    row: HistorySessionView,
+    recordIndex: Int?,
+): String? {
+    val entry = row.entries.firstOrNull { it.index == recordIndex } ?: row.entries.firstOrNull() ?: return null
+    return stringResource(
+        R.string.history_topEntry,
+        entry.exerciseName,
+        LocalResources.current.entryResultText(entry.result),
+    )
+}
+
 /**
- * The day of the month and the short month a row's badge shows, which the delete's confirm names the
- * session by too. Blank where `started_at` isn't an instant.
+ * The PR mark on a row's name line: the page's colour on ink, as the board draws it. Text, so the row's
+ * merged name reads it with the rest; a content description here would replace the whole row's words.
+ */
+@Composable
+private fun PrBadge() {
+    val colors = KettleTheme.colors
+    Text(
+        stringResource(R.string.history_prBadge),
+        Modifier
+            .clip(BadgeShape)
+            .background(colors.text)
+            .padding(horizontal = Spacing.one + 2.dp, vertical = 1.dp),
+        style = KettleType.code.copy(fontWeight = FontWeight.Bold),
+        color = colors.background,
+    )
+}
+
+private val BadgeShape = RoundedCornerShape(6.dp)
+
+/**
+ * The day of the month and the short month the delete's confirm names a session by, "29 JUL". Blank
+ * where `started_at` isn't an instant.
  */
 @Composable
 internal fun dateBadge(row: HistorySessionView): Pair<String, String> {

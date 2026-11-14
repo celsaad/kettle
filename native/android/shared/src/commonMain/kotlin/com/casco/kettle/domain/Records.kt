@@ -1,5 +1,7 @@
 package com.casco.kettle.domain
 
+import kotlin.time.Instant
+
 /**
  * What a logged entry competes on: `RecordKind` in `src/state/selectors/records.ts`, which holds the
  * reasoning. [json] is the kind as RN spells it, which [recordKey] writes into every key.
@@ -182,3 +184,48 @@ private fun recordOf(
         RecordKind.LongestHold -> SessionRecord.LongestHold(id, name, best.value)
         RecordKind.MostRounds -> SessionRecord.MostRounds(id, name, best.value)
     }
+
+/**
+ * Which sessions set a record **at the time** (#414), for Sessions' PR badge: one pass over the
+ * finished [sessions] in the order they started, each entry against the best of every session before
+ * it, by [sessionRecords]' rule (strictly greater, and a first-ever entry is no record). Not
+ * [sessionRecords] per session, which judges against the whole log, later sessions included, so a
+ * record since beaten would lose its badge.
+ *
+ * Each such session's id maps to the **index in its `entries`** of its first record entry, in the
+ * order logged: the entry itself, not its exercise, since a session can log one exercise twice and only
+ * one of the two set the record. Sessions that started at the same instant are taken in id order, so the
+ * file order can't decide which earns the badge. A session whose `started_at` isn't an instant has no
+ * place in the order and is left out, and so is never a record or the best one is judged against.
+ */
+fun recordsAtTheTime(sessions: List<Session>): Map<String, Int> {
+    val bests = HashMap<String, Double>()
+    val records = LinkedHashMap<String, Int>()
+    val inOrder =
+        sessions
+            .filter { it.endedAt != null }
+            .mapNotNull { session -> session.startedInstant()?.let { session to it } }
+            .sortedWith(
+                compareBy<Pair<Session, Instant>> { (_, startedAt) ->
+                    startedAt
+                }.thenBy { (session) -> session.id },
+            )
+    for ((session, _) in inOrder) {
+        val entries =
+            session.entries.mapIndexedNotNull {
+                index,
+                entry,
+                ->
+                entryBest(entry)?.let { Triple(index, entry.exercise, it) }
+            }
+        entries
+            .firstOrNull { (_, exercise, best) ->
+                bests[recordKey(exercise, best.kind)]?.let { best.value > it } == true
+            }?.let { (index) -> records[session.id] = index }
+        for ((_, exercise, best) in entries) {
+            val key = recordKey(exercise, best.kind)
+            if (best.value > (bests[key] ?: Double.NEGATIVE_INFINITY)) bests[key] = best.value
+        }
+    }
+    return records
+}

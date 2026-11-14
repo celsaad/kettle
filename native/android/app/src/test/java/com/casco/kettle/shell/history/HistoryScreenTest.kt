@@ -13,6 +13,7 @@ import androidx.compose.ui.test.hasScrollToIndexAction
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isDialog
+import androidx.compose.ui.test.isHeading
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
@@ -30,6 +31,7 @@ import com.casco.kettle.domain.SessionLog
 import com.casco.kettle.domain.Workout
 import com.casco.kettle.shell.files.FakeStoredFiles
 import com.casco.kettle.shell.files.LatestFiles
+import com.casco.kettle.shell.i18n.formatDayRange
 import com.casco.kettle.shell.nav.Destination
 import com.casco.kettle.shell.nav.Route
 import com.casco.kettle.shell.nav.Tab
@@ -37,6 +39,8 @@ import com.casco.kettle.shell.theme.KettleTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.datetime.DayOfWeek
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -45,6 +49,8 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import java.io.IOException
+import java.util.Locale
+import kotlin.time.Instant
 
 /**
  * History (#202), case for case from RN's `history.test.tsx`, on the harness recipe (#193): in `pt`,
@@ -75,7 +81,7 @@ class HistoryScreenTest {
             KettleTheme(darkTheme = false) {
                 HistoryScreen(
                     latest,
-                    TimeZone.UTC,
+                    HistoryTime(Now, TimeZone.UTC, DayOfWeek.MONDAY),
                     reselects,
                     HistoryActions(
                         open = { opened += it },
@@ -272,9 +278,11 @@ class HistoryScreenTest {
     }
 
     @Test
-    fun `stays quiet when there is no history at all`() {
+    fun `says what will fill an empty log, with no search over nothing`() {
         show(Files())
 
+        compose.onNodeWithText("Nada registrado ainda", substring = true).assertExists()
+        compose.onNode(hasSetTextAction()).assertDoesNotExist()
         compose.onNodeWithText("Nada encontrado").assertDoesNotExist()
     }
 
@@ -325,20 +333,98 @@ class HistoryScreenTest {
         action("Exportar tudo").assertDoesNotExist()
     }
 
+    /** #414: weeks, each titled and totalled over what it lists, where one all-time line used to be. */
     @Test
-    fun `states the all-time totals in one line`() {
-        show()
+    fun `groups sessions by week, titled and totalled, with no all-time line`() {
+        show(Files(push, legs, older))
 
-        // 1h, and the leg session's 2 days and 1h: 50h in all, in Stats' "0h 0min" form.
-        compose.onNodeWithText("2 sessões · 50h 0min · 2 séries").assertExists()
+        compose.onNodeWithText("Esta semana").assert(isHeading())
+        // 1h, and the leg session's 2 days and 1h: 50h in this week, in Stats' "0h 0min" form.
+        compose.onNodeWithText("2 sessões · 50h 0min").assertExists()
+        compose
+            .onNodeWithText(
+                formatDayRange(LocalDate(2026, 7, 13), LocalDate(2026, 7, 19), Locale.forLanguageTag("pt")),
+            ).assert(isHeading())
+        compose.onNodeWithText("· 2 séries", substring = true).assertDoesNotExist()
     }
 
-    // Six cards' worth of chrome is what the line replaced; a stray tile label means it grew back.
+    /** #414: an exercise's name finds the sessions it was in, as a workout's does. */
+    @Test
+    fun `finds a session by an exercise in it`() {
+        show()
+
+        search("dips")
+
+        row("Leg day").assertExists()
+        row("Push day").assertDoesNotExist()
+    }
+
+    @Test
+    fun `finds a session by words split between its workout and an exercise`() {
+        show()
+
+        search("leg dips")
+
+        row("Leg day").assertExists()
+        row("Push day").assertDoesNotExist()
+    }
+
+    /**
+     * Deleting the last session a search found leaves no match line over the empty log, where no field
+     * could clear it.
+     */
+    @Test
+    fun `drops a kept search's line once the log is empty`() {
+        val files = Files(legs)
+        show(files)
+        search("leg")
+        row("Leg day").performClick()
+        action("Excluir").performClick()
+        compose.pressDialogButton("Excluir")
+
+        compose.onNodeWithText("Nada registrado ainda", substring = true).assertExists()
+        compose.onNodeWithText("0 de 0", substring = true).assertDoesNotExist()
+    }
+
+    /** A week outside this year carries its year, or a log over a year long titles two weeks alike. */
+    @Test
+    fun `gives a week from another year its year`() {
+        show(Files(push, older.copy(id = "last-year", startedAt = "2025-07-16T09:00:00.000Z")))
+
+        compose.onNodeWithText("2025", substring = true).assert(isHeading())
+        compose.onNodeWithText("Esta semana").assertExists()
+    }
+
+    /**
+     * #414: a PR badge for a record at the time, and the entry that set it under the numbers rather than
+     * the first logged. Dips at 10 beat the 8 before them; pull-ups at 8 only tie, so the line skips them.
+     * The first dips session is no record, being the first.
+     */
+    @Test
+    fun `badges the session that set a record, and shows the entry that did`() {
+        val better =
+            push.copy(
+                id = "push-2",
+                startedAt = "2026-07-29T12:00:00.000Z",
+                entries =
+                    listOf(
+                        SessionEntry.Reps("pull-ups", listOf(RepsSetLog(reps = 8, restTakenSec = 60.0))),
+                        SessionEntry.Reps("dips", listOf(RepsSetLog(reps = 10, restTakenSec = 60.0))),
+                    ),
+            )
+        show(Files(push, legs, better))
+
+        assertEquals(1, compose.onAllNodes(hasText("Recorde")).fetchSemanticsNodes().size)
+        compose.onNodeWithText("Dips · 10 repetições").assertExists()
+        // Unbadged rows show their first entry.
+        compose.onNodeWithText("Dips · 8 repetições").assertExists()
+    }
+
+    // Six cards' worth of chrome is what the old summary line replaced; a stray tile label means it grew back.
     @Test
     fun `draws no stat cards at all`() {
         show()
 
-        compose.onNodeWithText("Esta semana").assertDoesNotExist()
         compose.onNodeWithText("Todo o período").assertDoesNotExist()
         compose.onNodeWithText("dias seguidos").assertDoesNotExist()
         compose.onNodeWithText("séries").assertDoesNotExist()
@@ -361,7 +447,7 @@ class HistoryScreenTest {
         show(Files(push, legs.copy(entries = listOf(skipped))))
 
         row("Leg day").assertDoesNotExist()
-        compose.onNodeWithText("1 sessão · 1h 0min · 1 série").assertExists()
+        compose.onNodeWithText("1 sessão · 1h 0min").assertExists()
     }
 
     /** RN collected these and History is where a missing session would be noticed, so it says why. */
@@ -398,7 +484,7 @@ class HistoryScreenTest {
         compose.onNodeWithText("3 sessões · ", substring = true).assertExists()
         row("Sessão avulsa").assertExists()
         // The field is named by its placeholder, read inside the field's own node.
-        compose.onNode(hasSetTextAction() and hasText("Buscar treinos")).assertExists()
+        compose.onNode(hasSetTextAction() and hasText("Filtrar por treino ou exercício")).assertExists()
         // The workout name is the user's and is never translated, sitting among strings that are.
         row("Push day").assertExists()
     }
@@ -458,3 +544,7 @@ private fun session(
 
 private val push = session("push-1", "push-day", "2026-07-29T09:00:00.000Z", "pull-ups")
 private val legs = session("legs-1", "leg-day", "2026-07-27T09:00:00.000Z", "dips")
+private val older = session("old-1", "push-day", "2026-07-15T09:00:00.000Z", "pull-ups")
+
+/** A Thursday, in the week from Monday 27 July that push and legs were logged in. */
+private val Now = Instant.parse("2026-07-30T12:00:00Z")

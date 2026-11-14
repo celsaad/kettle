@@ -1,5 +1,6 @@
 package com.casco.kettle.domain
 
+import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -68,8 +69,8 @@ class HistoryViewsTest {
 
         assertEquals(
             listOf(
-                HistoryEntryView("L-Sit", EntryResult.Holds(listOf(20.0, 18.5))),
-                HistoryEntryView("gone", EntryResult.Reps(listOf(8L))),
+                HistoryEntryView("L-Sit", EntryResult.Holds(listOf(20.0, 18.5)), 0),
+                HistoryEntryView("gone", EntryResult.Reps(listOf(8L)), 2),
             ),
             row.entries,
         )
@@ -117,5 +118,64 @@ class HistoryViewsTest {
             sessionEntryResult(SessionEntry.Cardio("row", durationSec = 600.0)),
         )
         assertEquals(EntryResult.Rest(90.0), sessionEntryResult(SessionEntry.Rest("rest", 90.0)))
+    }
+
+    /** Sessions' weeks (#414): newest first as listed, each on the reader's own first weekday. */
+    @Test
+    fun `groups rows by the week they started in, on the calendar's first weekday`() {
+        // Sunday 26 July and Saturday 25 July: two weeks counted from Sunday, one from Monday.
+        val rows =
+            historySessionsView(
+                listOf(
+                    session(hold(20.0), startedAt = "2026-07-26T09:00:00.000Z"),
+                    session(hold(20.0), startedAt = "2026-07-25T09:00:00.000Z"),
+                ),
+                library,
+                TimeZone.UTC,
+            )
+
+        assertEquals(
+            listOf(LocalDate(2026, 7, 26) to 1, LocalDate(2026, 7, 19) to 1),
+            historyWeeks(rows, DayOfWeek.SUNDAY).map { it.start to it.rows.size },
+        )
+        assertEquals(
+            listOf(LocalDate(2026, 7, 20) to 2),
+            historyWeeks(rows, DayOfWeek.MONDAY).map { it.start to it.rows.size },
+        )
+    }
+
+    /** "not a date" sorts above ISO text in the log, but its group still comes after every dated week. */
+    @Test
+    fun `puts rows with no day in one week of their own, after the dated ones`() {
+        val rows =
+            historySessionsView(
+                listOf(session(hold(20.0), startedAt = "not a date"), session(hold(20.0))),
+                library,
+                TimeZone.UTC,
+            )
+
+        assertEquals(listOf(LocalDate(2026, 7, 20), null), historyWeeks(rows, DayOfWeek.MONDAY).map { it.start })
+    }
+
+    /**
+     * Offsets that differ can bring a row out of week order in the text-sorted log; the weeks still run
+     * newest first.
+     */
+    @Test
+    fun `orders weeks newest first, whatever order their rows came in`() {
+        val rows =
+            historySessionsView(
+                listOf(
+                    session(hold(20.0), startedAt = "2026-07-14T09:00:00.000Z"),
+                    session(hold(20.0), startedAt = "2026-07-24T09:00:00.000Z"),
+                ),
+                library,
+                TimeZone.UTC,
+            )
+
+        assertEquals(
+            listOf(LocalDate(2026, 7, 20), LocalDate(2026, 7, 13)),
+            historyWeeks(rows, DayOfWeek.MONDAY).map { it.start },
+        )
     }
 }

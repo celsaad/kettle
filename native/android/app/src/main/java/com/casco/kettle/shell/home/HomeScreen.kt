@@ -83,8 +83,10 @@ fun HomeScreen(
     // since a turned day alone moves a rest day on. RN's card stayed put until a file changed.
     val sessions = log?.logged.orEmpty()
     val nextUp = remember(library, log, files.reads) { library?.let { nextUpView(it, sessions, clock) } }
+    // Keyed on the card as well: the workout it offers can move with the day alone, and the list has to
+    // move with it or it shows that workout a second time.
     val offPlan =
-        remember(library, log) {
+        remember(library, log, nextUp) {
             library?.let { offThePlan(it, sessions, except = (nextUp as? NextUp.Queued)?.workout?.id) }.orEmpty()
         }
     val hasWorkouts = library?.workouts.orEmpty().isNotEmpty()

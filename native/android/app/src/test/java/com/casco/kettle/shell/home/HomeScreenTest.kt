@@ -140,8 +140,6 @@ class HomeScreenTest {
     /** Empty session's start, a plus named by what it does (#412). */
     private fun emptySession() = compose.onNode(hasContentDescription("Começar uma sessão vazia") and isButton)
 
-    // The list: workouts-list.test.tsx.
-
     // The card: workouts-next-up.test.tsx.
 
     /** The title and the gear sit above everything an empty library affects, and the gear is the way out. */
@@ -531,6 +529,20 @@ class HomeScreenTest {
 
         text("Dia de descanso").assertDoesNotExist()
         text("PRÓXIMO · Semana 1 · Day 3").assertExists()
+    }
+
+    /** Off the plan reads the card's workout, so it has to follow the card across the day turning. */
+    @Test
+    fun `off the plan drops the card's workout once a turned day queues it`() {
+        val latest = show(restDayProgramFiles())
+        compose.onAllNodesWithText("Pull day").assertCountEquals(1)
+
+        clock.at = Now + 2.days
+        latest.reread()
+        compose.waitForIdle()
+
+        text("PRÓXIMO · Semana 1 · Day 3").assertExists()
+        compose.onAllNodesWithText("Pull day").assertCountEquals(1)
     }
 
     @Test

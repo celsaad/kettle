@@ -31,15 +31,14 @@ import com.casco.kettle.shell.theme.KettleTheme
  * mode, under the 3:1 a meaningful graphic needs, where `accentText` measures 4.53:1 light and 6.58:1
  * dark.
  *
- * A drawn triangle with no words, so [label] is its only name, and it has to say *which* row: a column
+ * A drawn [glyph] with no words, so [label] is its only name, and it has to say *which* row: a column
  * of identical triangles otherwise announces itself the same all the way down. The target is 48dp
- * while the drawn circle stays 36, so it doesn't crowd the name beside it. [plus] draws a plus in
- * the triangle's place, for a start that begins with nothing (Today's Empty session, #412).
+ * while the drawn circle stays 36, so it doesn't crowd the name beside it.
  */
 @Composable
 fun RowStartButton(
     label: String,
-    plus: Boolean = false,
+    glyph: StartGlyph = StartGlyph.Play,
     onClick: () -> Unit,
 ) {
     val colors = KettleTheme.colors
@@ -56,7 +55,7 @@ fun RowStartButton(
             Modifier.size(36.dp).clip(CircleShape).background(colors.accentSoft),
             contentAlignment = Alignment.Center,
         ) {
-            if (plus) {
+            if (glyph == StartGlyph.Plus) {
                 Canvas(Modifier.size(PLUS_SIZE)) {
                     val stroke = PLUS_STROKE.toPx()
                     drawLine(
@@ -92,3 +91,6 @@ fun RowStartButton(
 
 private val PLUS_SIZE = 12.dp
 private val PLUS_STROKE = 2.dp
+
+/** What [RowStartButton] draws: a triangle to start a workout, a plus for one that begins with nothing (#412). */
+enum class StartGlyph { Play, Plus }

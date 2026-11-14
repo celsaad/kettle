@@ -28,6 +28,7 @@ import com.casco.kettle.shell.R
 import com.casco.kettle.shell.i18n.formatLongDate
 import com.casco.kettle.shell.list.ListRow
 import com.casco.kettle.shell.list.RowStartButton
+import com.casco.kettle.shell.list.StartGlyph
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.Spacing
@@ -117,7 +118,7 @@ internal fun EmptySessionRow(onStart: () -> Unit) {
                 color = colors.textSecondary,
             )
         }
-        RowStartButton(stringResource(R.string.today_startEmpty), plus = true, onClick = onStart)
+        RowStartButton(stringResource(R.string.today_startEmpty), StartGlyph.Plus, onStart)
     }
 }
 

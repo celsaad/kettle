@@ -153,9 +153,9 @@ fun FileSheetScreen(
             WaysIn(packIds, importOn)
             WaysOut(sessions, actions, share)
             failure?.let { Outcome(stringResource(R.string.settings_exportFailed, it), accent = true) }
-            // What a backup is here, which Settings said beside its rows until #416: with a picker, what the
-            // folder gets; without one, that the files stay in the app until shared. Either way, that the
-            // log is a record and not a restore, which someone reinstalling needs before, not after.
+            // What a backup is here: with a picker, what the folder gets; without one, that the files stay in
+            // the app until shared. Either way, that the log is a record and not a restore, which someone
+            // reinstalling needs to know before, not after.
             val backup = actions.backup
             if (backup != null) {
                 val units = deviceUnitSystem(LocalConfiguration.current.locales[0])

@@ -192,7 +192,11 @@ class FileSheetTest {
 
         row("Compartilhar arquivo").performScrollTo().performClick()
 
-        compose.onNodeWithText("Não foi possível compartilhar esse arquivo: exercises.yaml").performScrollTo()
+        compose
+            .onNodeWithText(
+                "Não foi possível compartilhar esse arquivo: exercises.yaml",
+            ).performScrollTo()
+            .assertExists()
     }
 
     /** What a backup is, and isn't, under the row that makes one (moved from Settings, #416). */
@@ -200,15 +204,20 @@ class FileSheetTest {
     fun `says what the folder gets, and that the log is a record rather than a restore`() {
         show()
 
-        compose.onNodeWithText("grava kettle-library.yaml e kettle-history.yaml", substring = true).performScrollTo()
-        compose.onNodeWithText("O registro de sessões não", substring = true).performScrollTo()
+        compose
+            .onNodeWithText(
+                "grava kettle-library.yaml e kettle-history.yaml",
+                substring = true,
+            ).performScrollTo()
+            .assertExists()
+        compose.onNodeWithText("O registro de sessões não", substring = true).performScrollTo().assertExists()
     }
 
     @Test
     fun `without a folder picker, says where the files live instead`() {
         show(canChooseFolder = false)
 
-        compose.onNodeWithText("ficam na pasta do próprio app", substring = true).performScrollTo()
+        compose.onNodeWithText("ficam na pasta do próprio app", substring = true).performScrollTo().assertExists()
         compose.onNodeWithText("grava kettle-library.yaml", substring = true).assertDoesNotExist()
     }
 

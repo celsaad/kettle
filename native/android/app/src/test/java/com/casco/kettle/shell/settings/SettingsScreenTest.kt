@@ -62,12 +62,13 @@ class SettingsScreenTest {
         preferences: Preferences? = withFolder(null),
         supporter: SupporterState = SupporterState.EMPTY,
         reads: CoroutineDispatcher = Dispatchers.Unconfined,
+        version: String? = "9.9.9",
     ) {
         files.stored = preferences
         latest = LatestFiles(files, CoroutineScope(reads), io = Dispatchers.Unconfined).apply { reread() }
         compose.setContent {
             KettleTheme(darkTheme = false) {
-                SettingsScreen(latest, FixedSupporter(supporter), "9.9.9", actions.settings)
+                SettingsScreen(latest, FixedSupporter(supporter), version, actions.settings)
             }
         }
     }
@@ -234,6 +235,15 @@ class SettingsScreenTest {
         show()
 
         text("Kettle 9.9.9")
+        text("Nada sai deste dispositivo a menos que você mesmo compartilhe.")
+    }
+
+    /** The promise doesn't depend on there being a version to print beside it. */
+    @Test
+    fun `keeps the privacy note at the foot with no version to print`() {
+        show(version = null)
+
+        missing("Kettle 9.9.9")
         text("Nada sai deste dispositivo a menos que você mesmo compartilhe.")
     }
 

@@ -1140,5 +1140,19 @@
     "secondsSpoken_one": "{{count}} segundo",
     "secondsSpoken_other": "{{count}} segundos",
     "change": "{{label}}, {{time}}. Alterar"
+  },
+  "yamlView": {
+    "asYaml": "Como YAML",
+    "unitsImperial": "Os pesos aqui estão em quilogramas, como o arquivo os guarda; o app mostra libras.",
+    "unitsMetric": "Os pesos aqui estão em quilogramas, como o arquivo os guarda.",
+    "fresh": "Escrito do zero, então os comentários do seu arquivo original não estão aqui.",
+    "copy": "Copiar",
+    "copied": "Copiado",
+    "copyFailed": "Não foi possível copiar.",
+    "share": "Compartilhar",
+    "sendNote": "Copiar e Compartilhar enviam isto como um arquivo completo que se importa sozinho. Aqui é só leitura: para alterar, use Editar.",
+    "formatLink": "Como o formato funciona",
+    "linkCopied": "Nenhum navegador para abrir, então o link foi copiado.",
+    "shareCopied": "Não foi possível abrir o compartilhamento, então foi copiado."
   }
 }

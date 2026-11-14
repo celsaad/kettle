@@ -166,6 +166,19 @@ class TodayPlanTest {
             assertNull(planSummary(Workout("w", "W", listOf(one("squat"))), bodyweight).exercises.single().loadKg)
         }
 
+        // The runner's step ceiling cuts a workout this long short; the card's counts must not follow it.
+        @Test
+        fun `lists every exercise of a workout the step ceiling cuts short, and counts no sets`() {
+            val marathon =
+                Exercise("marathon", "Marathon", ExerciseConfig.Reps(MAX_STEPS_PER_EXERCISE.toLong(), 1, restSec = 0.0))
+            val blocks = List(15) { WorkoutBlock.ExerciseBlock("marathon") }
+
+            val summary = planSummary(Workout("w", "W", blocks), listOf(marathon))
+
+            assertEquals(15, summary.exercises.size)
+            assertNull(summary.sets)
+        }
+
         @Test
         fun `is empty for a workout with nothing to run`() {
             val summary = summaryOf(one("ghost"))

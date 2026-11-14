@@ -357,7 +357,7 @@ class HomeScreenTest {
         text("Press").assertExists()
         text("Curl").assertDoesNotExist()
         text("Crunch").assertDoesNotExist()
-        text("+8 a mais").assertExists()
+        text("+8 exercícios a mais").assertExists()
     }
 
     // The estimate counted a reps set as its rest alone, so 12 × 3 sets read as 36 minutes (#412).
@@ -422,7 +422,7 @@ class HomeScreenTest {
         show(restDayProgramFiles())
 
         compose.onNode(hasContentDescription("Esta semana do programa, em ordem")).assertExists()
-        compose.onNode(hasContentDescription("Day 1, feito")).assertExists()
+        compose.onNode(hasContentDescription("Day 1, anterior")).assertExists()
         compose.onNode(hasContentDescription("Day 2, descanso, hoje")).assertExists()
         compose.onNode(hasContentDescription("Day 3")).assertExists()
     }

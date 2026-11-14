@@ -54,9 +54,9 @@
     },
     "startEmpty": "Começar uma sessão vazia",
     "starterPacks": "Adicionar um programa inicial",
-    "moreBlocks_one": "+{{count}} a mais",
-    "moreBlocks_other": "+{{count}} a mais",
-    "moreBlocks_zero": "+{{count}} a mais",
+    "moreExercises_one": "+{{count}} exercício a mais",
+    "moreExercises_other": "+{{count}} exercícios a mais",
+    "moreExercises_zero": "+{{count}} exercícios a mais",
     "title": "Hoje",
     "offThePlan": "Fora do plano",
     "allWorkouts": "Todos os treinos",
@@ -74,7 +74,7 @@
     "restDayNext": "Próxima sessão: {{session}}.",
     "strip": {
       "label": "Esta semana do programa, em ordem",
-      "done": "{{slot}}, feito",
+      "earlier": "{{slot}}, anterior",
       "next": "{{slot}}, próximo",
       "rest": "{{slot}}, descanso",
       "restToday": "{{slot}}, descanso, hoje"

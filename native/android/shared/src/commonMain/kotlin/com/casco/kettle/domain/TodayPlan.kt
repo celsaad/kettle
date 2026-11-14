@@ -64,24 +64,38 @@ data class PlanSummary(
 )
 
 /**
- * The hero card's summary of [workout], from the steps the runner would build, so a program week's
- * overrides reach it exactly as they reach the session: [workout] and [exercises] as the card holds
- * them, overrides applied. One entry per exercise as written, so a circuit member counts once however
- * many rounds it runs, and the same exercise in two blocks counts twice, as the workout lists it.
+ * The hero card's summary of [workout], with [workout] and [exercises] as the card holds them, a program
+ * week's overrides applied, so the week's load is the one shown. One entry per exercise as written: a
+ * circuit member once however many rounds it runs, the same exercise in two blocks twice, a rest block
+ * and an exercise that is gone not at all.
+ *
+ * The exercises come from the blocks rather than the runner's steps, which a workout past
+ * [MAX_STEPS_PER_WORKOUT] cuts short. The sets can only come from the steps, so a cut-short workout
+ * counts none rather than too few.
  */
 fun planSummary(
     workout: Workout,
     exercises: List<Exercise>,
 ): PlanSummary {
-    val work = buildStepsWithLimits(workout, exercises).steps.filterIsInstance<WorkStep>()
+    val byId = exercises.associateBy { it.id }
     val planned =
-        work.groupBy { it.memberKey }.values.map { steps ->
-            val first = steps.first()
-            PlannedExercise(
-                first.exerciseName,
-                (first as? RunnerStep.Reps)?.targetWeightKg?.takeIf { it.isConfigured() },
-            )
-        }
-    val allSets = work.isNotEmpty() && work.all { it is RunnerStep.Reps || it is RunnerStep.Hold }
+        workout.blocks
+            .flatMap { block ->
+                when (block) {
+                    is WorkoutBlock.ExerciseBlock -> listOf(block.exerciseId)
+                    is WorkoutBlock.Circuit -> block.members.map { it.exerciseId }
+                }
+            }.mapNotNull { byId[it]?.takeIf { exercise -> exercise.config !is ExerciseConfig.Rest } }
+            .map {
+                PlannedExercise(
+                    it.name,
+                    (it.config as? ExerciseConfig.Reps)?.targetWeightKg?.takeIf { kg ->
+                        kg.isConfigured()
+                    },
+                )
+            }
+    val built = buildStepsWithLimits(workout, exercises)
+    val work = built.steps.filterIsInstance<WorkStep>()
+    val allSets = !built.truncated && work.isNotEmpty() && work.all { it is RunnerStep.Reps || it is RunnerStep.Hold }
     return PlanSummary(planned, work.size.takeIf { allSets })
 }

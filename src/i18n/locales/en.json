@@ -54,8 +54,8 @@
     },
     "startEmpty": "Start an empty session",
     "starterPacks": "Add a starter program",
-    "moreBlocks_one": "+{{count}} more",
-    "moreBlocks_other": "+{{count}} more",
+    "moreExercises_one": "+{{count}} more exercise",
+    "moreExercises_other": "+{{count}} more exercises",
     "title": "Today",
     "offThePlan": "Off the plan",
     "allWorkouts": "All workouts",
@@ -71,7 +71,7 @@
     "restDayNext": "Next session: {{session}}.",
     "strip": {
       "label": "This program week, in order",
-      "done": "{{slot}}, done",
+      "earlier": "{{slot}}, earlier",
       "next": "{{slot}}, next",
       "rest": "{{slot}}, rest",
       "restToday": "{{slot}}, rest, today"

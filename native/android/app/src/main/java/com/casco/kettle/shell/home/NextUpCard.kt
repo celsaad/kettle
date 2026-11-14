@@ -21,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
@@ -30,13 +31,11 @@ import com.casco.kettle.domain.PlanSummary
 import com.casco.kettle.domain.PlannedExercise
 import com.casco.kettle.domain.SessionParams
 import com.casco.kettle.domain.UnitSystem
-import com.casco.kettle.domain.jsNumber
 import com.casco.kettle.domain.planSummary
-import com.casco.kettle.domain.toDisplayWeight
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.i18n.pluralText
-import com.casco.kettle.shell.i18n.weightUnit
 import com.casco.kettle.shell.list.ListRowSeparator
+import com.casco.kettle.shell.runner.weightText
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.Spacing
@@ -77,13 +76,7 @@ private fun QueuedCard(
 ) {
     val colors = KettleTheme.colors
     val summary = remember(queued.workout, queued.exercises) { planSummary(queued.workout, queued.exercises) }
-    Column(
-        Modifier
-            .padding(top = Spacing.three)
-            .fillMaxWidth()
-            .card(HeroRadius)
-            .padding(Spacing.three),
-    ) {
+    Column(Modifier.heroCard()) {
         Column(
             Modifier
                 .fillMaxWidth()
@@ -135,14 +128,9 @@ private fun heroKicker(
     summary: PlanSummary,
 ): String {
     val slot = queued.weekNumber?.let { week -> queued.weekDay?.takeIf { it.isNotEmpty() } ?: weekLabel(week, null) }
-    val count = summary.exercises.size
     val exercises =
-        if (count ==
-            0
-        ) {
-            null
-        } else {
-            pluralText(R.plurals.today_exercises, R.string.today_exercises_zero, count)
+        summary.exercises.size.takeIf { it > 0 }?.let {
+            pluralText(R.plurals.today_exercises, R.string.today_exercises_zero, it)
         }
     val contents =
         exercises?.let {
@@ -180,11 +168,7 @@ private fun PlannedExercises(
                 Text(exercise.name, Modifier.weight(1f), style = KettleType.default, color = colors.text)
                 exercise.loadKg?.let { kg ->
                     Text(
-                        stringResource(
-                            R.string.format_weight,
-                            stringResource(weightUnit(units)),
-                            jsNumber(toDisplayWeight(kg, units)),
-                        ),
+                        LocalResources.current.weightText(kg, units),
                         style = KettleType.smallMedium,
                         color = colors.text,
                         maxLines = 1,
@@ -196,7 +180,7 @@ private fun PlannedExercises(
         if (more > 0) {
             ListRowSeparator()
             Text(
-                pluralText(R.plurals.today_moreBlocks, R.string.today_moreBlocks_zero, more),
+                pluralText(R.plurals.today_moreExercises, R.string.today_moreExercises_zero, more),
                 Modifier.padding(top = Spacing.two),
                 style = KettleType.small,
                 color = colors.textSecondary,
@@ -217,13 +201,7 @@ private fun RestDayCard(
     start: (SessionParams) -> Unit,
 ) {
     val colors = KettleTheme.colors
-    Column(
-        Modifier
-            .padding(top = Spacing.three)
-            .fillMaxWidth()
-            .card(HeroRadius)
-            .padding(Spacing.three),
-    ) {
+    Column(Modifier.heroCard()) {
         Text(weekLabel(rest.weekNumber, rest.weekDay), style = KettleType.smallMedium, color = colors.accentCalmText)
         Text(
             stringResource(R.string.today_restDayTitle),
@@ -357,11 +335,18 @@ fun FirstRunCard() {
     }
 }
 
+/** The hero and rest-day cards' box, as the boards draw both (#412). */
+@Composable
+private fun Modifier.heroCard() = padding(top = Spacing.three).fillMaxWidth().card(HeroRadius).padding(Spacing.three)
+
 /** A minimum, as every control's height is, so the label survives a large text size. */
 private val BigButtonHeight = 56.dp
 private val HeroRadius = 20.dp
 
-/** How many exercises the hero card lists before "+N more", as the board draws three. */
+/**
+ * How many exercises the hero card lists before "+N more": one past the board's three, since a "+1 more"
+ * row takes the room the fourth exercise would, and four is a common length for a workout.
+ */
 private const val HERO_EXERCISES = 4
 private val BigButtonShape = RoundedCornerShape(16.dp)
 private val FirstRunRadius = 22.dp

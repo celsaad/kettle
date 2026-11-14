@@ -294,6 +294,22 @@ class NextUpTest {
             assertEquals("Day 1", (view(dayAfter(2), trailingRest) as NextUp.Queued).weekDay)
         }
 
+        // The rest closing the last week names the first week's session, the one the wrap reaches.
+        @Test
+        fun `names the next cycle's first session from a rest closing the last week`() {
+            val twoWeeks =
+                withWeeks(
+                    ProgramWeek.Training(1, "Day 1", "push"),
+                    ProgramWeek.Training(2, "Day 1", "pull"),
+                    ProgramWeek.RestDay(2, "Day 2"),
+                )
+
+            val rest = view(monday, twoWeeks, listOf(session("prog", 2, "Day 1", monday))) as NextUp.Rest
+
+            assertEquals(SessionParams.ProgramSlot("prog", 1, "Day 1"), rest.skipTo)
+            assertEquals("Push", rest.skipToWorkout)
+        }
+
         // A day boundary in local time, not 24 hours: 23:00 to 01:00 the next morning is a day gone by.
         @Test
         fun `counts calendar days in the reader's zone rather than elapsed hours`() {

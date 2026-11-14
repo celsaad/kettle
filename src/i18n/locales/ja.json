@@ -54,7 +54,7 @@
     },
     "startEmpty": "空のセッションを開始",
     "starterPacks": "スタータープログラムを追加",
-    "moreBlocks_other": "他 {{count}} 件",
+    "moreExercises_other": "他 {{count}} 種目",
     "title": "今日",
     "offThePlan": "プラン外",
     "allWorkouts": "すべてのワークアウト",
@@ -68,7 +68,7 @@
     "restDayNext": "次のセッション：{{session}}",
     "strip": {
       "label": "このプログラムの週（順番）",
-      "done": "{{slot}}、完了",
+      "earlier": "{{slot}}、以前",
       "next": "{{slot}}、次",
       "rest": "{{slot}}、休養",
       "restToday": "{{slot}}、休養、今日"

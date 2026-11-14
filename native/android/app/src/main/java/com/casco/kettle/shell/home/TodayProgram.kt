@@ -1,5 +1,6 @@
 package com.casco.kettle.shell.home
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -108,7 +109,8 @@ private fun StripCell(
     val current = slot.place == SlotPlace.Current
     val ink = if (slot.rest) colors.accentCalmText else colors.text
     val name = slot.day?.takeIf { it.isNotEmpty() } ?: slot.number.toString()
-    val description = stripLabel(slot, name)
+    val look = slot.look
+    val description = look.label?.let { stringResource(it, name) } ?: name
     Column(
         modifier
             .heightIn(min = 40.dp)
@@ -119,52 +121,66 @@ private fun StripCell(
         verticalArrangement = Arrangement.Center,
     ) {
         Text(slot.number.toString(), style = KettleType.small, color = colors.textSecondary, maxLines = 1)
-        StripMark(slot, ink)
+        StripMark(look.mark, ink)
     }
 }
 
-/** ✓ behind, a dot for the next workout, a dash for rest, nothing for a workout still ahead. */
+/**
+ * How a slot is drawn and what it is called, decided once so the mark and its words can't disagree.
+ * "Earlier", never "done": the check is position, not completion (#408).
+ */
+private enum class SlotLook(
+    val mark: SlotMark,
+    @StringRes val label: Int?,
+) {
+    Earlier(SlotMark.Check, R.string.today_strip_earlier),
+    Next(SlotMark.Dot, R.string.today_strip_next),
+    Ahead(SlotMark.None, null),
+    Rest(SlotMark.Dash, R.string.today_strip_rest),
+    RestToday(SlotMark.Dash, R.string.today_strip_restToday),
+}
+
+private enum class SlotMark { Check, Dot, Dash, None }
+
+private val StripSlot.look: SlotLook
+    get() =
+        when {
+            rest && place == SlotPlace.Current -> SlotLook.RestToday
+            rest -> SlotLook.Rest
+            place == SlotPlace.Behind -> SlotLook.Earlier
+            place == SlotPlace.Current -> SlotLook.Next
+            else -> SlotLook.Ahead
+        }
+
+/** Decorative geometry, so a fixed size; the cell's description carries the meaning. */
 @Composable
 private fun StripMark(
-    slot: StripSlot,
+    mark: SlotMark,
     ink: Color,
 ) {
     val box = Modifier.size(MarkSize)
-    when {
-        slot.rest -> {
-            Box(box, contentAlignment = Alignment.Center) {
-                Box(Modifier.size(8.dp, 2.dp).background(ink))
-            }
-        }
-
-        slot.place == SlotPlace.Behind -> {
+    when (mark) {
+        SlotMark.Check -> {
             TypeIcon(R.drawable.icon_check, KettleType.default, ink, box)
         }
 
-        slot.place == SlotPlace.Current -> {
+        SlotMark.Dot -> {
             Box(box, contentAlignment = Alignment.Center) {
                 Box(Modifier.size(8.dp).background(ink, CircleShape))
             }
         }
 
-        else -> {
+        SlotMark.Dash -> {
+            Box(box, contentAlignment = Alignment.Center) {
+                Box(Modifier.size(8.dp, 2.dp).background(ink))
+            }
+        }
+
+        SlotMark.None -> {
             Spacer(box)
         }
     }
 }
-
-@Composable
-private fun stripLabel(
-    slot: StripSlot,
-    name: String,
-): String =
-    when {
-        slot.rest && slot.place == SlotPlace.Current -> stringResource(R.string.today_strip_restToday, name)
-        slot.rest -> stringResource(R.string.today_strip_rest, name)
-        slot.place == SlotPlace.Behind -> stringResource(R.string.today_strip_done, name)
-        slot.place == SlotPlace.Current -> stringResource(R.string.today_strip_next, name)
-        else -> name
-    }
 
 /** Seven to a line, a week as most people keep one; a longer week wraps. */
 private const val SLOTS_PER_LINE = 7

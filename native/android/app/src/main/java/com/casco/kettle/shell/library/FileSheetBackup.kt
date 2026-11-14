@@ -45,7 +45,8 @@ import kotlinx.coroutines.launch
 /**
  * The backup folder as one row (#413): the folder, and Back up now beside it once there is one. With
  * none, the row chooses one; with one, it asks whether to change it or forget it, which Settings spread
- * over two more rows. The writing and its messages are Settings' own (`choose`, `describe`).
+ * over two more rows until #416 left them all here. The writing and its messages are `BackupSection.kt`'s
+ * (`choose`, `describe`).
  */
 @Composable
 internal fun BackupRow(
@@ -153,9 +154,9 @@ private fun BackUpNow(
 }
 
 /**
- * The chosen folder, titled with its own path: change it, or forget it, which Settings' rows explain.
+ * The chosen folder, titled with its own path: change it, or forget it, which the captions under the row explain.
  * Forget takes the quieter slot rather than a confirmation of its own: it deletes nothing, and the
- * folder is one pick away again, as in Settings, which asks nothing either.
+ * folder is one pick away again, as Settings' rows did, asking nothing either.
  */
 @Composable
 private fun FolderDialog(

@@ -14,6 +14,13 @@ sealed interface DiffLabel {
 
     data object Blocks : DiffLabel
 
+    /**
+     * Blocks on both sides, at the same place, holding the same exercises, whose settings differ: a
+     * rest length, a circuit's rounds or rests, an override. Without it, an update undoing the
+     * workout editor's rest (#440) read as identical (#443).
+     */
+    data object BlocksEdited : DiffLabel
+
     /** Exercise references a workout gained or lost, as ids: one dropped by the same import has no name left. */
     data object Exercises : DiffLabel
 
@@ -55,7 +62,10 @@ data class FieldChange(
     val label: DiffLabel,
     val from: DiffValue,
     val to: DiffValue,
-)
+) {
+    /** Whether the update takes the value away, set before and unset after: what Import counts as cleared. */
+    val clears: Boolean get() = to == DiffValue.Unset && from != DiffValue.Unset
+}
 
 /**
  * What moved between [before] and [after], the same exercise by id, with weights in [units]. A type
@@ -102,11 +112,21 @@ fun diffWorkout(
     val has = after.blocks.flatMap(::exercisesIn)
     val gone = had.filter { it !in has }
     val added = has.filter { it !in had }
+    // Same place, same exercises, different settings: what the count and the references can't see.
+    val edited =
+        before.blocks.zip(after.blocks).mapIndexedNotNull { i, (was, now) ->
+            (i + 1).takeIf { was != now && exercisesIn(was) == exercisesIn(now) }
+        }
     return listOfNotNull(
         change(DiffLabel.Name, before.name, after.name),
         change(DiffLabel.Blocks, "${before.blocks.size}", "${after.blocks.size}"),
         FieldChange(DiffLabel.Exercises, DiffValue.Text(gone.joinToString(", ")), NONE).takeIf { gone.isNotEmpty() },
         FieldChange(DiffLabel.Exercises, NONE, DiffValue.Text(added.joinToString(", "))).takeIf { added.isNotEmpty() },
+        FieldChange(
+            DiffLabel.BlocksEdited,
+            NONE,
+            DiffValue.Text(edited.joinToString(", ")),
+        ).takeIf { edited.isNotEmpty() },
     )
 }
 

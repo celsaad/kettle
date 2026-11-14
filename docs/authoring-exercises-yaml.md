@@ -558,7 +558,7 @@ There are two ways in, both reaching the same validation and the same preview:
    paste**. Nothing is saved to a file first, which is the shorter path when the YAML came out of a
    chat window rather than an editor.
 
-Either way, review the new/updated summary and confirm with **Merge & import**.
+Either way, review the new/updated summary and confirm with **Import N items**.
 
 If something's malformed, the import screen shows the validation error inline (from
 `parseLibraryYaml`) rather than silently failing — e.g. a missing required field, an unknown

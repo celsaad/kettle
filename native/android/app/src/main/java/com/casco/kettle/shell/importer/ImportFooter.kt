@@ -59,14 +59,16 @@ internal fun Footer(importer: Importer) {
                     onClick = importer.close,
                 )
                 // "Import 3 items": the button says how much it writes, as the tiles above it counted.
-                // Plain "Import" until there's a review to count; "Import 0 items" read as a broken count.
+                // Plain "Import" until there's something to count: "Import 0 items" read as a broken count.
                 val count =
                     importer.ready
                         ?.preview
                         ?.items
                         ?.size
                 FooterButton(
-                    count?.let { pluralText(R.plurals.import_importItems, R.string.import_importItems_zero, it) }
+                    count?.takeIf { it > 0 }?.let {
+                        pluralText(R.plurals.import_importItems, R.string.import_importItems_zero, it)
+                    }
                         ?: stringResource(R.string.import_importButton),
                     Modifier.weight(PRIMARY_WEIGHT),
                     primary = true,

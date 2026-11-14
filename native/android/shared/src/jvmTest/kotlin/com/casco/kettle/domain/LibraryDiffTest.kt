@@ -151,6 +151,30 @@ class LibraryDiffTest {
                 diffWorkout(push(circuit("bench", "dips")), push(circuit("bench", "rows"))),
             )
         }
+
+        // The workout editor's rest (#440) lives in the block: an update dropping it read as identical (#443).
+        @Test
+        fun `names a block whose settings changed, the same exercises in it`() {
+            val rest = WorkoutBlock.ExerciseBlock("rest", BlockConfigOverride(durationSec = 120.0))
+            val before = push(WorkoutBlock.ExerciseBlock("bench"), rest, circuit("bench", "dips"))
+            val after =
+                push(
+                    WorkoutBlock.ExerciseBlock("bench"),
+                    WorkoutBlock.ExerciseBlock("rest"),
+                    circuit("bench", "dips").copy(rounds = 5),
+                )
+
+            assertEquals(
+                listOf(FieldChange(DiffLabel.BlocksEdited, DiffValue.Text("—"), DiffValue.Text("2, 3"))),
+                diffWorkout(before, after),
+            )
+        }
+
+        @Test
+        fun `reports nothing for a workout that is the same`() {
+            val same = push(WorkoutBlock.ExerciseBlock("bench"), circuit("bench", "dips"))
+            assertEquals(emptyList<FieldChange>(), diffWorkout(same, same.copy()))
+        }
     }
 
     @Nested

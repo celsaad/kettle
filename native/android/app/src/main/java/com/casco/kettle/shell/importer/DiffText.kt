@@ -60,7 +60,7 @@ private fun DiffRow(
     val colors = KettleTheme.colors
     val label = labelText(change.label)
     val was = valueText(change.from, units)
-    val cleared = change.to == DiffValue.Unset && change.from != DiffValue.Unset
+    val cleared = change.clears
     val now = if (cleared) stringResource(R.string.import_diff_cleared) else valueText(change.to, units)
     val description = stringResource(R.string.import_diff_rowAccessibility, label, now, was)
     Row(
@@ -85,6 +85,7 @@ internal fun labelText(label: DiffLabel): String =
             DiffLabel.Exercises -> R.string.import_diff_exercises
             DiffLabel.Weeks -> R.string.import_diff_weeks
             DiffLabel.WeeksEdited -> R.string.import_diff_weeksChanged
+            DiffLabel.BlocksEdited -> R.string.import_diff_blocksEdited
             is DiffLabel.Field -> label.name.label
         },
     )

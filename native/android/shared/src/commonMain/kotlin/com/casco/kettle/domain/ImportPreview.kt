@@ -36,9 +36,9 @@ class ImportPreview(
     val updatedCount: Int = items.size - newCount
 
     /**
-     * What updated [item] loses, weights in [units]; nothing for a new one. Asked per row drawn rather
-     * than worked out for every id up front: a re-imported library is all updates, and diffing every
-     * one of them on every frame is the expensive half of the preview for rows nobody sees.
+     * What updated [item] loses, weights in [units]; nothing for a new one. Asked per row drawn, and
+     * once per preview for [fieldsCleared]: a re-imported library is all updates, and diffing every
+     * one of them on every frame would be the expensive half of the preview.
      */
     fun changes(
         item: ChangedItem,
@@ -66,12 +66,14 @@ class ImportPreview(
 
     /**
      * Fields the import leaves out of what it replaces, across every updated item, weights in [units]
-     * (#443): a value going to unset is the one an update takes away, the review's third tile. Diffs
-     * every update, so the screen asks once and remembers it, not per frame.
+     * (#443): a value going to unset, the review's third tile. In practice exercise fields, the diff
+     * that names them one by one; what a workout or program loses shows as its own rows ("Exercises",
+     * "Weeks edited", "Blocks edited") rather than in this count. Diffs every update, so the screen
+     * asks once per preview and remembers it.
      */
     fun fieldsCleared(units: UnitSystem): Int =
         items.filterNot { it.isNew }.sumOf { item ->
-            changes(item, units).count { it.to == DiffValue.Unset && it.from != DiffValue.Unset }
+            changes(item, units).count { it.clears }
         }
 
     /** [item]'s name as the import has it, the user's, verbatim; its id where it has none to find. */

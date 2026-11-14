@@ -635,12 +635,6 @@
     "clipboardFailed": "Couldn’t read the clipboard.",
     "new": "new",
     "updated": "updated",
-    "newExercise": "new exercise",
-    "updatedExercise": "updated exercise",
-    "newWorkout": "new workout",
-    "updatedWorkout": "updated workout",
-    "newProgram": "new program",
-    "updatedProgram": "updated program",
     "diff": {
       "type": "Type",
       "notes": "Notes",
@@ -651,7 +645,8 @@
       "unset": "not set",
       "sameValues": "no field changes — replaced with an identical definition",
       "cleared": "cleared",
-      "rowAccessibility": "{{label}}: was {{was}}, now {{now}}"
+      "rowAccessibility": "{{label}}: was {{was}}, now {{now}}",
+      "blocksEdited": "Blocks edited"
     },
     "noChanges": "No changes — the imported file matches your current library.",
     "showAll_one": "Show the {{count}} change",
@@ -686,7 +681,6 @@
     "clearsCount_other": "Clears {{count}} fields",
     "importItems_one": "Import {{count}} item",
     "importItems_other": "Import {{count}} items",
-    "showChanges": "Show changes",
     "kind": {
       "exercise": "exercise",
       "workout": "workout",

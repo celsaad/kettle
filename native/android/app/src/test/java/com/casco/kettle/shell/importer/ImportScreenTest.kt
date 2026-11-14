@@ -264,7 +264,7 @@ class ImportScreenTest : ImportHarness() {
         val files = chooseFile()
 
         shown("base-6 · programa")
-        shown("base-6 · programa")
+        shown("Novos")
         // The only non-zero tile.
         compose.onAllNodesWithText("1").assertCountEquals(1)
         absent(NO_CHANGES)

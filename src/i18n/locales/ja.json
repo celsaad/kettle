@@ -591,12 +591,6 @@
     "clipboardFailed": "クリップボードを読み取れませんでした。",
     "new": "新規",
     "updated": "更新",
-    "newExercise": "新しいエクササイズ",
-    "updatedExercise": "更新されたエクササイズ",
-    "newWorkout": "新しいワークアウト",
-    "updatedWorkout": "更新されたワークアウト",
-    "newProgram": "新しいプログラム",
-    "updatedProgram": "更新されたプログラム",
     "diff": {
       "type": "種類",
       "notes": "メモ",
@@ -607,7 +601,8 @@
       "unset": "未設定",
       "sameValues": "項目の変更はありません — 同じ内容で置き換えられます",
       "cleared": "消去",
-      "rowAccessibility": "{{label}}：{{was}}から{{now}}"
+      "rowAccessibility": "{{label}}：{{was}}から{{now}}",
+      "blocksEdited": "編集されたブロック"
     },
     "noChanges": "変更はありません — 読み込んだファイルは今のライブラリと同じです。",
     "showAll_other": "{{count}}件の変更をすべて表示",
@@ -618,7 +613,7 @@
       "updatedCount_other": "更新{{count}}件",
       "announcement": "読み込みました。{{new}}、{{updated}}。"
     },
-    "updateNote": "ライブラリから削除されるものはありません。ただし、すでにあるidの項目は丸ごと置き換わるため、インポートに含まれない項目は消去されます。",
+    "updateNote": "ライブラリから削除されるものはありません。ただし、すでにあるidの項目は丸ごと置き換わるため、インポートに含まれないフィールドは消去されます。",
     "error": {
       "invalidYaml": "不正な YAML: {{detail}}",
       "schemaMismatch": "exercises.yaml の形式に合いません — {{detail}}",
@@ -630,13 +625,12 @@
       "tooLarge": "大きすぎてインポートできません。ライブラリは {{limit}} KB までです。"
     },
     "reviewTitle": "変更を確認",
-    "fieldsCleared_other": "項目を消去",
+    "fieldsCleared_other": "フィールドを消去",
     "sectionUpdated": "更新",
     "sectionNew": "新規",
     "itemSub": "{{id}} · {{kind}}",
-    "clearsCount_other": "{{count}}項目を消去",
+    "clearsCount_other": "{{count}}フィールドを消去",
     "importItems_other": "{{count}}件をインポート",
-    "showChanges": "変更を表示",
     "kind": {
       "exercise": "種目",
       "workout": "ワークアウト",

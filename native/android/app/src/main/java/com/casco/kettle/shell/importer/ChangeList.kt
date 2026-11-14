@@ -30,7 +30,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.COLLAPSED_CHANGES
 import com.casco.kettle.domain.ChangedItem
-import com.casco.kettle.domain.DiffValue
 import com.casco.kettle.domain.ImportPreview
 import com.casco.kettle.domain.LibraryItemKind
 import com.casco.kettle.domain.UnitSystem
@@ -83,7 +82,7 @@ internal fun PreviewSection(
     )
     ChangeList(preview, importer, units) { item ->
         if (!item.isNew) {
-            // Asked per row drawn, as `changes` says: an unopened row diffs nothing it doesn't show.
+            // Asked per row drawn, open or folded: a folded row still says what it clears.
             DiffRows(remember(item, units) { preview.changes(item, units) }, units)
         }
     }
@@ -171,7 +170,8 @@ private fun ChangeList(
 ) {
     val colors = KettleTheme.colors
     val ordered = preview.items.filterNot { it.isNew } + preview.items.filter { it.isNew }
-    val shown = ordered.collapsed(importer.showAll)
+    // Each section cut on its own, so a run of updates can't push "New" out of sight behind Show all.
+    val shown = ordered.groupBy { it.isNew }.values.flatMap { it.collapsed(importer.showAll) }
     val open = remember(preview) { mutableStateMapOf<ChangedItem, Boolean>() }
     Column(Modifier.padding(top = Spacing.two)) {
         for ((isNew, items) in shown.groupBy { it.isNew }) {
@@ -186,10 +186,7 @@ private fun ChangeList(
                 val clears =
                     units?.takeIf { !item.isNew }?.let {
                         remember(item, it) {
-                            preview.changes(item, it).count { c ->
-                                c.to == DiffValue.Unset &&
-                                    c.from != DiffValue.Unset
-                            }
+                            preview.changes(item, it).count { c -> c.clears }
                         }
                     } ?: 0
                 ItemRow(
@@ -211,7 +208,12 @@ private fun ChangeList(
         if (ordered.isEmpty()) {
             Text(stringResource(R.string.import_noChanges), style = KettleType.small, color = colors.textSecondary)
         }
-        if (ordered.size > COLLAPSED_CHANGES) ShowAllToggle(ordered.size, importer)
+        if (ordered.groupBy { it.isNew }.values.any { it.size > COLLAPSED_CHANGES }) {
+            ShowAllToggle(
+                ordered.size,
+                importer,
+            )
+        }
     }
 }
 

@@ -679,12 +679,6 @@
     "clipboardFailed": "Não foi possível ler a área de transferência.",
     "new": "novo",
     "updated": "atualizado",
-    "newExercise": "novo exercício",
-    "updatedExercise": "exercício atualizado",
-    "newWorkout": "novo treino",
-    "updatedWorkout": "treino atualizado",
-    "newProgram": "novo programa",
-    "updatedProgram": "programa atualizado",
     "diff": {
       "type": "Tipo",
       "notes": "Notas",
@@ -695,7 +689,8 @@
       "unset": "não definido",
       "sameValues": "nenhum campo alterado — substituído por uma definição idêntica",
       "cleared": "limpo",
-      "rowAccessibility": "{{label}}: era {{was}}, agora {{now}}"
+      "rowAccessibility": "{{label}}: era {{was}}, agora {{now}}",
+      "blocksEdited": "Blocos editados"
     },
     "noChanges": "Nenhuma alteração — o arquivo importado é igual à sua biblioteca atual.",
     "showAll_one": "Mostrar a {{count}} alteração",
@@ -736,7 +731,6 @@
     "importItems_zero": "Importar {{count}} itens",
     "importItems_one": "Importar {{count}} item",
     "importItems_other": "Importar {{count}} itens",
-    "showChanges": "Mostrar mudanças",
     "kind": {
       "exercise": "exercício",
       "workout": "treino",

@@ -267,13 +267,13 @@ class NavigatorTest {
     /** #411: a tab keeps the section it was sent to, a saved stack keeps it, and the bar returns to it. */
     @Test
     fun `a tab's section comes back with the tab, saved and restored too`() {
-        val stats = Route.of(Section.STATS)
-        navigator.navigate(stats)
+        val sessions = Route.of(Section.SESSIONS)
+        navigator.navigate(sessions)
         navigator.select(Tab.Today)
         navigator.select(Tab.Progress)
 
-        assertEquals(stats, navigator.tabRoute(Tab.Progress))
-        assertEquals(stats, Navigator().apply { restore(navigator.saved()) }.tabRoute(Tab.Progress))
+        assertEquals(sessions, navigator.tabRoute(Tab.Progress))
+        assertEquals(sessions, Navigator().apply { restore(navigator.saved()) }.tabRoute(Tab.Progress))
     }
 
     /** A stack the four-tab shell saved names its tab, which lands on the tab and section holding it now. */

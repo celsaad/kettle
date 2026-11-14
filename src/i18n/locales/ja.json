@@ -86,16 +86,8 @@
     "searchPlaceholder_other": "{{count}}件のワークアウトを検索"
   },
   "history": {
-    "title": "履歴",
-    "exportAll": "すべて書き出し",
-    "allTime": "全期間",
-    "stats": "統計",
     "summaryLine": "{{sessions}} · {{time}} · {{sets}}",
-    "thisWeekLabel": "今週",
-    "streak": "連続日数",
     "matchCount": "{{total}}件中{{shown}}件",
-    "sessions": "セッション",
-    "time": "時間",
     "sets": "セット",
     "searchPlaceholder": "ワークアウトを検索",
     "mixed": "混合",
@@ -107,11 +99,11 @@
     "problemsTitle_other": "{{count}}件のセッションファイルを読み書きできませんでした"
   },
   "analytics": {
-    "title": "あなたの数字",
     "hoursMinutes": "{{hours}}時間{{minutes}}分",
-    "calendarTitle": "トレーニング日 · 直近{{count}}週",
+    "sessionsThisWeek": "今週のセッション",
+    "trainedThisWeek": "今週のトレーニング時間",
+    "calendarTitle": "トレーニング日",
     "calendarWeekLabel_other": "{{week}}の週: {{count}}セッション、{{time}}",
-    "calendarRest": "休み",
     "calendarShort": "{{minutes}}分未満",
     "calendarMid": "{{from}}〜{{to}}分",
     "calendarLong": "{{minutes}}分以上",
@@ -840,11 +832,11 @@
     "library": "ライブラリ",
     "progress": "進捗",
     "sections": {
+      "overview": "概要",
       "workouts": "ワークアウト",
       "exercises": "エクササイズ",
       "programs": "プログラム",
-      "sessions": "セッション",
-      "stats": "統計"
+      "sessions": "セッション"
     }
   },
   "format": {

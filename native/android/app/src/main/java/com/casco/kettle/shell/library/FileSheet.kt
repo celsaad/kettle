@@ -279,20 +279,26 @@ private fun AssistantCard(
         )
         Text(stringResource(R.string.file_assistantBody), style = KettleType.small, color = colors.textSecondary)
         // `accent` under white is 3.64:1, which this 20sp label clears as large text (theme.ts).
-        Text(
-            stringResource(R.string.file_shareBrief),
+        // A Box, so the label sits in the middle of the 48dp minimum: a Text given the height draws its
+        // line at the top. Dimmed whole while the library loads, fill and label alike.
+        Box(
             Modifier
                 .fillMaxWidth()
                 .heightIn(min = 48.dp)
+                .alpha(if (library != null) 1f else DISABLED_ALPHA)
                 .clip(ButtonShape)
                 .background(colors.accent)
-                .alpha(if (library != null) 1f else DISABLED_ALPHA)
                 .clickable(enabled = library != null, role = Role.Button, onClick = onShare)
                 .padding(vertical = Spacing.two),
-            style = KettleType.heading.copy(fontWeight = FontWeight.SemiBold),
-            color = colors.onAccent,
-            textAlign = TextAlign.Center,
-        )
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                stringResource(R.string.file_shareBrief),
+                style = KettleType.heading.copy(fontWeight = FontWeight.SemiBold),
+                color = colors.onAccent,
+                textAlign = TextAlign.Center,
+            )
+        }
     }
 }
 

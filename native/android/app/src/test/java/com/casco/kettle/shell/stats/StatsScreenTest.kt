@@ -95,16 +95,28 @@ class StatsScreenTest {
 
         // The name is user data and renders verbatim. 12 kg beat 10 kg inside the window, so it is marked.
         compose.onNodeWithText("Dumbbell RDL").assertExists()
-        compose.onNodeWithText("12 kg · melhor marca").assertExists()
-        compose.onNodeWithText("+2 kg").assertExists()
+        compose.onNodeWithText("12 kg · ▲ 2 kg · melhor marca").assertExists()
+    }
+
+    /**
+     * The arrow is drawn, not said: a screen reader hears the signed change the arrow stands for, after
+     * the exercise's name, since a row's description replaces the words inside it.
+     */
+    @Test
+    fun `says the row's name and its change signed, where the screen draws an arrow`() {
+        withSessions(listOf(10.0, 12.0))
+
+        compose
+            .onNode(hasText("Dumbbell RDL") and isButton)
+            .assert(describedAs(Regex("^Dumbbell RDL, 12 kg · \\+2 kg · melhor marca$")))
     }
 
     @Test
     fun `signs a loss without dressing it as a gain or a record`() {
         withSessions(listOf(12.0, 10.0))
 
-        compose.onNodeWithText("−2 kg").assertExists()
-        compose.onNodeWithText("10 kg").assertExists()
+        compose.onNodeWithText("10 kg · ▼ 2 kg").assertExists()
+        compose.onNode(describedAs(Regex("^Dumbbell RDL, 10 kg · −2 kg$"))).assertExists()
     }
 
     /**
@@ -123,8 +135,8 @@ class StatsScreenTest {
         toggle.performScrollTo().performClick()
 
         compose.onNodeWithText("Dumbbell RDL").assertExists()
-        compose.onNodeWithText("sem mudança").assertExists()
-        compose.onNodeWithText("+0 kg").assertDoesNotExist()
+        compose.onNodeWithText("10 kg · sem mudança").assertExists()
+        compose.onNodeWithText("▲", substring = true).assertDoesNotExist()
         toggle.assert(SemanticsMatcher.keyIsDefined(SemanticsActions.Collapse))
     }
 
@@ -170,16 +182,16 @@ class StatsScreenTest {
         )
     }
 
-    /** The THIS WEEK tiles count the week the calendar's last row shows, and a day streak. */
+    /** The two tiles count the week the calendar's last row shows; the day streak went with #414. */
     @Test
-    fun `counts this week's sessions, time and streak`() {
+    fun `counts this week's sessions and time, and no streak`() {
         val start = now - 60.minutes
         show(listOf(rdl), listOf(session(start, start + 90.minutes, loaded(60.0))))
 
         // Each tile is one node, its number read with what it counts.
-        compose.onNode(hasText("1") and hasText("sessões")).assertExists()
-        compose.onNode(hasText("1h 30min") and hasText("tempo")).assertExists()
-        compose.onNode(hasText("1") and hasText("dias seguidos")).assertExists()
+        compose.onNode(hasText("1") and hasText("Sessões nesta semana")).assertExists()
+        compose.onNode(hasText("1h 30min") and hasText("Treino nesta semana")).assertExists()
+        compose.onNodeWithText("dias seguidos", substring = true).assertDoesNotExist()
     }
 
     // Logging 0 is how the runner skips an exercise, so a session of nothing but skips was no session.
@@ -189,7 +201,7 @@ class StatsScreenTest {
         val skipped = SessionEntry.Reps("rdl", listOf(RepsSetLog(reps = 0, restTakenSec = 60.0)))
         show(listOf(rdl), listOf(session(start, start + 30.minutes, skipped)))
 
-        compose.onNode(hasText("0") and hasText("sessões")).assertExists()
+        compose.onNode(hasText("0") and hasText("Sessões nesta semana")).assertExists()
     }
 
     // The row is the way into the exercise's own progress screen, and it has to say which exercise.
@@ -205,14 +217,6 @@ class StatsScreenTest {
             .performClick()
 
         assertEquals(listOf(Route(Destination.ExerciseProgress, mapOf("exerciseId" to "rdl"))), opened)
-    }
-
-    // History's header already says the all-time totals, one screen back, in the same words.
-    @Test
-    fun `does not repeat the all-time totals`() {
-        withSessions(listOf(10.0, 12.0))
-
-        compose.onNodeWithText("Todo o período").assertDoesNotExist()
     }
 
     /** Before the log is read there's nothing to say, rather than a "train something twice" that flashes. */
@@ -232,7 +236,7 @@ class StatsScreenTest {
             }
         }
 
-        compose.onNodeWithText("Seus números").assert(isHeading())
+        compose.onNodeWithText("Ficando mais forte").assertDoesNotExist()
         compose.onNodeWithText("Treine algo duas vezes e a evolução aparece aqui.").assertDoesNotExist()
     }
 
@@ -240,11 +244,13 @@ class StatsScreenTest {
     fun `is translated`() {
         withSessions(listOf(10.0, 12.0))
 
-        compose.onNodeWithText("Seus números").assert(isHeading())
-        compose.onNodeWithText("FICANDO MAIS FORTE").assertExists()
-        compose.onNodeWithText("DIAS DE TREINO · ÚLTIMAS 4 SEMANAS").assertExists()
-        compose.onNodeWithText("Descanso").assertExists()
-        compose.onNodeWithText("12 kg · melhor marca").assertExists()
+        compose.onNodeWithText("Ficando mais forte").assert(isHeading())
+        compose.onNodeWithText("Últimas 8 semanas").assertExists()
+        compose.onNodeWithText("Dias de treino").assert(isHeading())
+        compose.onNodeWithText("Menos de 30 min").assertExists()
+        // A rest day's outline explains itself, so the legend has no Rest swatch (#414).
+        compose.onNodeWithText("Descanso").assertDoesNotExist()
+        compose.onNodeWithText("12 kg · ▲ 2 kg · melhor marca").assertExists()
         // The exercise name is the user's and is never translated, sitting among strings that are.
         compose.onNodeWithText("Dumbbell RDL").assertExists()
     }

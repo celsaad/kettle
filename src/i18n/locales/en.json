@@ -91,16 +91,8 @@
     "searchPlaceholder_other": "Search {{count}} workouts"
   },
   "history": {
-    "title": "History",
-    "exportAll": "Export all",
-    "allTime": "All time",
-    "stats": "Stats",
     "summaryLine": "{{sessions}} · {{time}} · {{sets}}",
-    "thisWeekLabel": "This week",
-    "streak": "day streak",
     "matchCount": "{{shown}} of {{total}}",
-    "sessions": "sessions",
-    "time": "time",
     "sets": "sets",
     "searchPlaceholder": "Search workouts",
     "mixed": "mixed",
@@ -113,12 +105,12 @@
     "problemsTitle_other": "{{count}} session files couldn't be read or written"
   },
   "analytics": {
-    "title": "Your numbers",
     "hoursMinutes": "{{hours}}h {{minutes}}m",
-    "calendarTitle": "Training days · last {{count}} weeks",
+    "sessionsThisWeek": "Sessions this week",
+    "trainedThisWeek": "Trained this week",
+    "calendarTitle": "Training days",
     "calendarWeekLabel_one": "Week of {{week}}: {{count}} session, {{time}}",
     "calendarWeekLabel_other": "Week of {{week}}: {{count}} sessions, {{time}}",
-    "calendarRest": "Rest",
     "calendarShort": "Under {{minutes}}m",
     "calendarMid": "{{from}}–{{to}}m",
     "calendarLong": "{{minutes}}m+",
@@ -891,11 +883,11 @@
     "library": "Library",
     "progress": "Progress",
     "sections": {
+      "overview": "Overview",
       "workouts": "Workouts",
       "exercises": "Exercises",
       "programs": "Programs",
-      "sessions": "Sessions",
-      "stats": "Stats"
+      "sessions": "Sessions"
     }
   },
   "format": {

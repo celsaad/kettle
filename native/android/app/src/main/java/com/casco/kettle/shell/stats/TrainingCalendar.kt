@@ -163,8 +163,10 @@ private fun WeekRow(
 
 /**
  * One week's days. The slot carries today's ring and the cell the shade, so the ring sits around the
- * cell with a gap of card between rather than eating into the shade. A day still to come is an
- * outline, not an empty cell: rest is something you did, and Friday hasn't happened yet.
+ * cell with a gap of page between rather than eating into the shade. A rest day is an outline at 3:1
+ * against the page (#414), so a day off reads as a day rather than a gap, and a day still to come is
+ * blank: Friday hasn't happened yet. Today untrained is blank too, its ring alone, as the board
+ * draws it: the day isn't over.
  */
 @Composable
 private fun RowScope.WeekCells(week: CalendarWeek) {
@@ -179,10 +181,18 @@ private fun RowScope.WeekCells(week: CalendarWeek) {
                 val half = CALENDAR_RING_WIDTH / 2
                 drawBox(cell.slot.inset(half), SLOT_RADIUS - half, colors.text, Stroke(CALENDAR_RING_WIDTH.dp.toPx()))
             }
-            if (day.isFuture) {
-                drawBox(cell.cell.inset(OUTLINE_WIDTH / 2), CELL_RADIUS, colors.border, Stroke(OUTLINE_WIDTH.dp.toPx()))
-            } else {
-                drawBox(cell.cell, CELL_RADIUS, colors.level(day.level))
+            when {
+                // Today before a session is still to come, as the board draws it: the ring alone.
+                day.isFuture || (day.isToday && day.level == CalendarLevel.Rest) -> {}
+
+                day.level == CalendarLevel.Rest -> {
+                    val stroke = Stroke(OUTLINE_WIDTH.dp.toPx())
+                    drawBox(cell.cell.inset(OUTLINE_WIDTH / 2), CELL_RADIUS, colors.level(day.level), stroke)
+                }
+
+                else -> {
+                    drawBox(cell.cell, CELL_RADIUS, colors.level(day.level))
+                }
             }
         }
     }
@@ -207,12 +217,14 @@ private fun DrawScope.drawBox(
 /** A stroke is centred on its path, so a box drawn [by] in keeps its stroke inside the original. */
 private fun CalendarBox.inset(by: Float) = CalendarBox(x + by, y + by, width - 2 * by, height - 2 * by)
 
-/** Under the first cell rather than under the dates, so the swatches read as the grid's. */
+/**
+ * Under the first cell rather than under the dates, so the swatches read as the grid's. The three
+ * trained shades only (#414): a rest day's outline explains itself.
+ */
 @Composable
 private fun Legend(labelWidth: Dp) {
     val items =
         listOf(
-            CalendarLevel.Rest to stringResource(R.string.analytics_calendarRest),
             CalendarLevel.Short to stringResource(R.string.analytics_calendarShort, CALENDAR_MID_MINUTES),
             CalendarLevel.Mid to
                 stringResource(R.string.analytics_calendarMid, CALENDAR_MID_MINUTES, CALENDAR_LONG_MINUTES),

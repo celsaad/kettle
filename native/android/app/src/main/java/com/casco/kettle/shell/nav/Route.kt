@@ -111,7 +111,7 @@ data class Route(
             mapOf(
                 "/programs" to of(Section.PROGRAMS),
                 "/history" to of(Section.SESSIONS),
-                "/analytics" to of(Section.STATS),
+                "/analytics" to of(Section.OVERVIEW),
             )
 
         /** Null when any key or value can't be decoded: half a query is no route. */
@@ -254,7 +254,9 @@ const val SECTION = "section"
  * The sections the Library and Progress tabs hold (#411): each shows a screen the four-tab shell had as
  * a tab of its own, or Stats, which was a sheet. Declared in tab order, and a tab's first is where it
  * opens with none named. Library's is Workouts (#412), the list Today held until it narrowed to what's
- * next, then Programs and Exercises, as the canvas draws them (#413).
+ * next, then Programs and Exercises, as the canvas draws them (#413). Progress's is Overview, which was
+ * Stats, then Sessions (#414); a saved `?section=stats` names no section now, so it lands on the first,
+ * which is Overview.
  */
 enum class Section(
     val param: String,
@@ -264,8 +266,8 @@ enum class Section(
     WORKOUTS("workouts", Tab.Library, R.string.tabs_sections_workouts),
     PROGRAMS("programs", Tab.Library, R.string.tabs_sections_programs),
     EXERCISES("exercises", Tab.Library, R.string.tabs_sections_exercises),
+    OVERVIEW("overview", Tab.Progress, R.string.tabs_sections_overview),
     SESSIONS("sessions", Tab.Progress, R.string.tabs_sections_sessions),
-    STATS("stats", Tab.Progress, R.string.tabs_sections_stats),
     ;
 
     companion object {

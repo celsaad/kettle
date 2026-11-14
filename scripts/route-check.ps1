@@ -57,7 +57,7 @@ $steps = @(
   # Tabs, out of order and repeated, and the four-tab shell's paths, each landing on the tab and section
   # that now holds its screen (#411). A section is checked as a tab is: its segment is the selected node.
   @('/progress', 'tab:Progress'), @('/library', 'tab:Library'), @('/', 'tab:Today'),
-  @('/history', 'tab:Sessions'), @('/programs', 'tab:Programs'), @('/analytics', 'tab:Stats'),
+  @('/history', 'tab:Sessions'), @('/programs', 'tab:Programs'), @('/analytics', 'tab:Overview'),
   @('/library?section=exercises', 'tab:Exercises'), @('/progress', 'tab:Progress'),
   # The shell's own bar and back stack: Today first, then out of the app. A tab keeps its section.
   @('tap:Library', 'tab:Exercises'), @('tap:Programs', 'tab:Programs'),

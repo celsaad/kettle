@@ -6,14 +6,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -29,57 +24,39 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.home.WorkoutsRoute
-import com.casco.kettle.shell.list.UnderlineTabs
 import com.casco.kettle.shell.nav.Destination
 import com.casco.kettle.shell.nav.LocalNavigator
 import com.casco.kettle.shell.nav.Route
 import com.casco.kettle.shell.nav.Section
+import com.casco.kettle.shell.nav.SectionedTabFrame
 import com.casco.kettle.shell.nav.Tab
 import com.casco.kettle.shell.nav.section
 import com.casco.kettle.shell.programs.ProgramsRoute
 import com.casco.kettle.shell.theme.Chevron
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
-import com.casco.kettle.shell.theme.MaxContentWidth
-import com.casco.kettle.shell.theme.Spacing
 import com.casco.kettle.shell.theme.TypeIcon
 
-/**
- * The Library tab (#413): "Library" and a + that makes whatever the section shows, then the sections
- * as tabs, then the section's list. The section rides in the route (#411), so a link or a saved back
- * stack lands on it, and a tab is a navigate like any other.
- *
- * The status bar's inset is taken here, once: the screens each take it too, and a parent's padding
- * leaves none for them, so they sit right under the tabs rather than a bar's height below them.
- */
+/** The Library tab (#413): "Library" and a + that makes whatever the section shows, over its sections. */
 @Composable
 internal fun LibraryTab(route: Route) {
     val navigator = LocalNavigator.current
     val section = route.section(Tab.Library) ?: return
-    Column(Modifier.fillMaxSize().statusBarsPadding(), horizontalAlignment = Alignment.CenterHorizontally) {
-        Column(
-            Modifier
-                .widthIn(max = MaxContentWidth)
-                .fillMaxWidth()
-                .padding(start = Spacing.three, end = Spacing.three, top = Spacing.two),
-        ) {
-            val new = NEW.getValue(section)
+    val new = NEW.getValue(section)
+    SectionedTabFrame(
+        section,
+        header = {
             Header(
                 stringResource(new.label),
                 onFile = { navigator.push(Route(Destination.YourFile)) },
                 onNew = { navigator.push(Route(new.editor)) },
             )
-            UnderlineTabs(
-                Section.of(Tab.Library).map { it to stringResource(it.label) },
-                section,
-            ) { navigator.navigate(Route.of(it)) }
-        }
-        Box(Modifier.weight(1f)) {
-            when (section) {
-                Section.WORKOUTS -> WorkoutsRoute()
-                Section.PROGRAMS -> ProgramsRoute()
-                else -> LibraryRoute()
-            }
+        },
+    ) {
+        when (section) {
+            Section.WORKOUTS -> WorkoutsRoute()
+            Section.PROGRAMS -> ProgramsRoute()
+            else -> LibraryRoute()
         }
     }
 }

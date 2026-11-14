@@ -96,16 +96,8 @@
     "searchPlaceholder_zero": "Buscar {{count}} treinos"
   },
   "history": {
-    "title": "Histórico",
-    "exportAll": "Exportar tudo",
-    "allTime": "Todo o período",
-    "stats": "Números",
     "summaryLine": "{{sessions}} · {{time}} · {{sets}}",
-    "thisWeekLabel": "Esta semana",
-    "streak": "dias seguidos",
     "matchCount": "{{shown}} de {{total}}",
-    "sessions": "sessões",
-    "time": "tempo",
     "sets": "séries",
     "searchPlaceholder": "Buscar treinos",
     "mixed": "misto",
@@ -119,13 +111,13 @@
     "problemsTitle_zero": "{{count}} arquivos de sessão não puderam ser lidos ou gravados"
   },
   "analytics": {
-    "title": "Seus números",
     "hoursMinutes": "{{hours}}h {{minutes}}min",
-    "calendarTitle": "Dias de treino · últimas {{count}} semanas",
+    "sessionsThisWeek": "Sessões nesta semana",
+    "trainedThisWeek": "Treino nesta semana",
+    "calendarTitle": "Dias de treino",
     "calendarWeekLabel_one": "Semana de {{week}}: {{count}} sessão, {{time}}",
     "calendarWeekLabel_other": "Semana de {{week}}: {{count}} sessões, {{time}}",
     "calendarWeekLabel_zero": "Semana de {{week}}: {{count}} sessões, {{time}}",
-    "calendarRest": "Descanso",
     "calendarShort": "Menos de {{minutes}} min",
     "calendarMid": "{{from}}–{{to}} min",
     "calendarLong": "{{minutes}} min+",
@@ -942,11 +934,11 @@
     "library": "Biblioteca",
     "progress": "Progresso",
     "sections": {
+      "overview": "Visão geral",
       "workouts": "Treinos",
       "exercises": "Exercícios",
       "programs": "Programas",
-      "sessions": "Sessões",
-      "stats": "Estatísticas"
+      "sessions": "Sessões"
     }
   },
   "format": {

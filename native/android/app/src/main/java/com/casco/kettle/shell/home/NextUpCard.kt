@@ -128,21 +128,7 @@ private fun heroKicker(
     summary: PlanSummary,
 ): String {
     val slot = queued.weekNumber?.let { week -> queued.weekDay?.takeIf { it.isNotEmpty() } ?: weekLabel(week, null) }
-    val exercises =
-        summary.exercises.size.takeIf { it > 0 }?.let {
-            pluralText(R.plurals.today_exercises, R.string.today_exercises_zero, it)
-        }
-    val contents =
-        exercises?.let {
-            summary.sets?.let { sets ->
-                stringResource(
-                    R.string.today_exercisesAndSets,
-                    it,
-                    pluralText(R.plurals.today_sets, R.string.today_sets_zero, sets),
-                )
-            } ?: it
-        }
-    return listOfNotNull(stringResource(R.string.today_next), slot, contents).joinToString(" · ")
+    return listOfNotNull(stringResource(R.string.today_next), slot, contentsText(summary)).joinToString(" · ")
 }
 
 /**

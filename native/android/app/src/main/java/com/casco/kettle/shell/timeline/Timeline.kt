@@ -166,7 +166,7 @@ private fun restText(
         ?.rests
         ?.get(step.memberKey)
         ?.let {
-            " · " + stringResource(R.string.workoutPreview_rest, formatClock(it))
+            " · " + stringResource(R.string.session_upcoming_restBetween, formatClock(it))
         }.orEmpty()
 
 /** The exercise's note, user data and verbatim, in the preview only. */

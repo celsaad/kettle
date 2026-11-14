@@ -15,6 +15,6 @@ sealed interface OutlineMode {
      */
     data class Preview(
         val units: UnitSystem,
-        val rests: Map<String, Double> = emptyMap(),
+        val rests: Map<String, Double>,
     ) : OutlineMode
 }

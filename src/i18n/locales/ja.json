@@ -37,7 +37,6 @@
   },
   "today": {
     "nextUp": "次のセッション",
-    "nextUpWeek": "次のセッション · {{week}}",
     "restDayTitle": "休養日",
     "restDaySkip": "それでもトレーニングする",
     "startSession": "セッションを開始",
@@ -77,8 +76,7 @@
     "notFound": "このワークアウトはライブラリにありません。",
     "edit": "ワークアウトを編集",
     "changesTitle": "この日の変更",
-    "changesHint": "プログラムによる変更です。編集するとワークアウト自体が変わります。",
-    "rest": "休憩 {{time}}"
+    "changesHint": "プログラムによる変更です。編集するとワークアウト自体が変わります。"
   },
   "build": {
     "workoutCount_other": "{{count}}件のワークアウト",
@@ -281,7 +279,8 @@
       "moreIntervals_other": "残り{{count}}本",
       "circuitRounds_other": "サーキット · {{count}}ラウンド",
       "circuitLeft_other": "サーキット · 残り{{count}}種目",
-      "roundsAfter_other": "あと{{count}}ラウンド"
+      "roundsAfter_other": "あと{{count}}ラウンド",
+      "restBetween": "休憩 {{time}}"
     },
     "countingUp": "カウントアップ",
     "stepperAccessibility": "{{label}}: {{value}}。タップすると正確な値を入力できます。",

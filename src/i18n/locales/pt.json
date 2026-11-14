@@ -37,7 +37,6 @@
   },
   "today": {
     "nextUp": "PRÓXIMO",
-    "nextUpWeek": "PRÓXIMO · {{week}}",
     "restDayTitle": "Dia de descanso",
     "restDaySkip": "Treinar mesmo assim",
     "startSession": "Iniciar treino",
@@ -83,8 +82,7 @@
     "notFound": "Este treino não está mais na sua biblioteca.",
     "edit": "Editar treino",
     "changesTitle": "Alterado neste dia",
-    "changesHint": "Definido pelo programa. Editar altera o próprio treino.",
-    "rest": "descanso {{time}}"
+    "changesHint": "Definido pelo programa. Editar altera o próprio treino."
   },
   "build": {
     "workoutCount_one": "{{count}} treino",
@@ -331,7 +329,8 @@
       "circuitLeft_other": "CIRCUITO · FALTAM {{count}}",
       "roundsAfter_zero": "MAIS {{count}} RODADAS",
       "roundsAfter_one": "MAIS {{count}} RODADA",
-      "roundsAfter_other": "MAIS {{count}} RODADAS"
+      "roundsAfter_other": "MAIS {{count}} RODADAS",
+      "restBetween": "descanso {{time}}"
     },
     "countingUp": "contando para cima",
     "stepperAccessibility": "{{label}}: {{value}}. Toque para inserir um valor exato.",

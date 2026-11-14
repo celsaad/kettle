@@ -67,7 +67,7 @@ steps=(
   # Over that native sheet, the native editor and the native runner each come back to it (#155, #233).
   # Back over a running session asks first, End early's sheet (#417), and completion's Done leaves (#297, #306).
   'tap:Edit program|Edit program' 'back|Week 1 · Day 1' 'tap:Start Week 1 · Day 1|End'
-  'back|End the session early?' 'tap:Save and end|Workout complete' 'tap:Done|Week 1 · Day 1'
+  'back|End the session early?' 'tap:Save and end|Edit log' 'tap:Done|Week 1 · Day 1'
   'back|tab:Programs'
   # Library's Exercises: a row opens its detail, and Edit the form over that; the header's + opens the
   # form directly. Back returns through each (#234, #413).
@@ -92,7 +92,7 @@ steps=(
   '/progress|' 'front|tab:Progress'
   # Over the runner, a message is dropped with no question asked, and Done pops its slot (#302, #309).
   '/session?workoutId=foundations-push|End' '/library|End' 'back|End the session early?'
-  'tap:Keep going|End' 'back|End the session early?' 'tap:Save and end|Workout complete'
+  'tap:Keep going|End' 'back|End the session early?' 'tap:Save and end|Edit log'
   'tap:Done|tab:Progress' 'back|tab:Today' 'back|'
 )
 

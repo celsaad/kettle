@@ -20,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.casco.kettle.domain.Exercise
 import com.casco.kettle.domain.ExerciseConfig
+import com.casco.kettle.domain.Library
 import com.casco.kettle.domain.RunnerCommand
 import com.casco.kettle.domain.Session
 import com.casco.kettle.domain.UnitSystem
@@ -36,6 +37,10 @@ class RunnerEnvironment(
     val priorSessions: List<Session>,
     val units: UnitSystem,
     val soundsOn: Boolean,
+    /** For the receipt's next program slot (#416); null before the library is read. */
+    val library: Library? = null,
+    /** The backup folder's tree URI, for the receipt's "Backed up" line; null with none chosen. */
+    val backupFolder: String? = null,
 )
 
 /**
@@ -48,6 +53,8 @@ class RunnerActions(
     val leave: () -> Unit,
     val done: () -> Unit,
     val adopt: (exerciseId: String, weightKg: Double) -> Unit,
+    /** The receipt's Edit log (#416): the session editor on the session just finished. */
+    val editLog: (sessionId: String) -> Unit = {},
 )
 
 /**
@@ -144,7 +151,7 @@ private fun RunnerBody(
         }
 
         is RunnerEntry.Complete -> {
-            Completion(entry.view, environment, actions.done)
+            Completion(entry.view, environment, actions)
         }
 
         is RunnerEntry.Attach -> {

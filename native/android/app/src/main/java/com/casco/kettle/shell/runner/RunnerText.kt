@@ -4,7 +4,6 @@ import android.content.res.Resources
 import com.casco.kettle.domain.IntervalProgress
 import com.casco.kettle.domain.LoggedUnit
 import com.casco.kettle.domain.PreviousSet
-import com.casco.kettle.domain.SessionRecord
 import com.casco.kettle.domain.StepPreview
 import com.casco.kettle.domain.UnitSystem
 import com.casco.kettle.domain.jsNumber
@@ -115,31 +114,6 @@ fun Resources.previousSetText(
             } else {
                 getString(R.string.format_previous_loaded, reps(previous.reps), weightText(kg, units))
             }
-        }
-    }
-
-fun Resources.recordText(
-    record: SessionRecord,
-    units: UnitSystem,
-): String =
-    when (record) {
-        is SessionRecord.HeaviestSet -> {
-            getString(R.string.format_record_heaviestSet, reps(record.reps), weightText(record.weightKg, units))
-        }
-
-        is SessionRecord.MostReps -> {
-            getString(R.string.format_record_mostReps, reps(record.reps.toLong()))
-        }
-
-        is SessionRecord.LongestHold -> {
-            getString(R.string.format_record_longestHold, seconds(record.holdSec))
-        }
-
-        is SessionRecord.MostRounds -> {
-            getString(
-                R.string.format_record_mostRounds,
-                pluralText(R.plurals.format_round, R.string.format_round_zero, record.rounds.toInt()),
-            )
         }
     }
 

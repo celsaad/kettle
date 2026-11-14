@@ -34,7 +34,9 @@ import com.casco.kettle.domain.resolveRunnerPlan
 import com.casco.kettle.shell.files.LibraryAdopt
 import com.casco.kettle.shell.files.LocalLatestFiles
 import com.casco.kettle.shell.i18n.deviceUnitSystem
+import com.casco.kettle.shell.nav.Destination
 import com.casco.kettle.shell.nav.LocalNavigator
+import com.casco.kettle.shell.nav.Route
 import kotlinx.coroutines.delay
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -98,9 +100,11 @@ fun RunnerRoute(start: RunnerStart?) {
             priorSessions = files.sessionLog?.logged.orEmpty(),
             units = preferences.unitSystem,
             soundsOn = preferences.sessionSounds,
+            library = files.library,
+            backupFolder = preferences.backupFolderUri,
         ),
         rememberSecond(view),
-        routeActions(finishing, navigator::closeRunner) { anyway ->
+        routeActions(finishing, navigator::closeRunner, navigator::push) { anyway ->
             ask()
             RunnerHost.open(context, start, anyway)
         },
@@ -114,6 +118,7 @@ fun RunnerRoute(start: RunnerStart?) {
 private fun routeActions(
     finishing: AtomicBoolean,
     close: () -> Unit,
+    open: (Route) -> Unit,
     start: (anyway: Boolean) -> Unit,
 ) = RunnerActions(
     send = { command ->
@@ -127,6 +132,12 @@ private fun routeActions(
         close()
     },
     adopt = LibraryAdopt::adoptLoad,
+    // Done's way out, then the editor on what was just logged: the runner owns no file once it's done.
+    editLog = { id ->
+        RunnerHost.dismiss()
+        close()
+        open(Route(Destination.SessionEditor, mapOf("id" to id)))
+    },
 )
 
 /** Leaving before a session runs: the service stops with nothing written, and [close] pops the slot. */

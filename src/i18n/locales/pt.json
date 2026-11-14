@@ -336,7 +336,18 @@
       "done": "Concluir",
       "recordBadge": "RECORDE",
       "oneRepMaxNote": "1RM estimado a partir da sua melhor série, pela fórmula de Epley.",
-      "backupFailed": "Esta sessão está salva neste aparelho, mas a cópia para a sua pasta de backup não foi feita. Veja em Seu arquivo, na Biblioteca."
+      "backupFailed": "Esta sessão está salva neste aparelho, mas a cópia para a sua pasta de backup não foi feita. Veja em Seu arquivo, na Biblioteca.",
+      "dayDone": "Concluído: {{slot}}",
+      "time": "Tempo",
+      "sets": "Séries",
+      "exercises": "Exercícios",
+      "againstLastTime": "Em relação à última vez",
+      "firstTime": "Primeira vez",
+      "same": "Igual",
+      "nextIn": "Próximo em {{program}}: {{next}}",
+      "rest": "Descanso",
+      "backedUp": "Backup feito · {{path}}",
+      "editLog": "Editar registro"
     },
     "countdown": {
       "getReady": "PREPARE-SE",
@@ -977,12 +988,6 @@
       "loaded": "Da última vez · {{weight}} × {{reps}}",
       "bodyweight": "Da última vez · {{reps}}",
       "hold": "Da última vez · {{seconds}}"
-    },
-    "record": {
-      "heaviestSet": "Mais pesado até hoje · {{weight}} × {{reps}}",
-      "mostReps": "Mais repetições até hoje · {{reps}}",
-      "longestHold": "Isometria mais longa até hoje · {{seconds}}",
-      "mostRounds": "Mais rodadas até hoje · {{rounds}}"
     },
     "oneRepMax": "1RM estimado {{weight}}"
   },

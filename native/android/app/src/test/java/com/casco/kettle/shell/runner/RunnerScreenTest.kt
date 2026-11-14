@@ -5,6 +5,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.click
@@ -13,6 +14,7 @@ import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isDialog
+import androidx.compose.ui.test.isHeading
 import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
@@ -20,8 +22,12 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.CircuitMember
 import com.casco.kettle.domain.CountIn
+import com.casco.kettle.domain.Library
+import com.casco.kettle.domain.Program
+import com.casco.kettle.domain.ProgramWeek
 import com.casco.kettle.domain.RepsSetLog
 import com.casco.kettle.domain.RunnerCommand
 import com.casco.kettle.domain.RunnerPlan
@@ -316,18 +322,102 @@ class RunnerScreenTest : RunnerScreenHarness() {
 
     // completion
 
+    /**
+     * The receipt (#416): the day, the numbers, the exercise against last time with its PR and 1RM, said
+     * as one node with the signed change the drawn arrow stands for; Done and Edit log at the foot.
+     */
     @Test
-    fun `completion names the workout, lists what it beat with the 1RM note once, and Done hands back`() {
-        prior = listOf(finished("old", 50.0))
-        val session = finished("s", 60.0)
-        show(RunnerEntry.Complete(RunnerView.Completed(plan(block(squat)), session, FinishBackupState.OK)))
+    fun `completion is a receipt of numbers and each exercise against last time, Done and Edit log`() {
+        prior = listOf(finished("old", 50.0, at = "2026-07-25T10:00:00.000Z"))
+        show(RunnerEntry.Complete(RunnerView.Completed(plan(block(squat)), finished("s", 60.0), FinishBackupState.OK)))
+
         compose.onNodeWithText("Treino concluído").assertExists()
-        compose.onNodeWithText("Pernas").assertExists()
-        compose.onNodeWithText("Mais pesado até hoje · 60 kg × 5 repetições").assertExists()
+        compose.onNodeWithText("Pernas").assert(isHeading())
+        compose.onNode(hasText("30 min") and hasText("Tempo")).assertExists()
+        compose.onNode(hasText("1") and hasText("Séries")).assertExists()
+        compose.onNodeWithText("Em relação à última vez").assertExists()
+        compose
+            .onNode(hasContentDescription("Agachamento, RECORDE", substring = true))
+            .assert(hasContentDescription("1RM", substring = true))
+            .assert(hasContentDescription("+10 kg", substring = true))
         compose.onNodeWithText("1RM estimado a partir da sua melhor série, pela fórmula de Epley.").assertExists()
-        compose.onNodeWithText("Veja em Seu arquivo, na Biblioteca", substring = true).assertDoesNotExist()
+        button("Editar registro").assertHeightIsAtLeast(48.dp).performClick()
         button("Concluir").performClick()
+
+        assertEquals(listOf("s"), editedLogs)
         assertEquals(1, done)
+    }
+
+    /** Logging 0 is how the runner skips: a skipped 60 kg × 0 is no result, no ▲ and no PR. */
+    @Test
+    fun `completion leaves a skipped exercise off the receipt`() {
+        prior = listOf(finished("old", 50.0, at = "2026-07-25T10:00:00.000Z"))
+        val skipped =
+            finished(
+                "s",
+                60.0,
+            ).copy(entries = listOf(SessionEntry.Reps("squat", listOf(RepsSetLog(0, 60.0, restTakenSec = 90.0)))))
+        show(RunnerEntry.Complete(RunnerView.Completed(plan(block(squat)), skipped, FinishBackupState.NONE)))
+
+        compose.onNode(hasContentDescription("Agachamento", substring = true)).assertDoesNotExist()
+        compose.onNodeWithText("Em relação à última vez").assertDoesNotExist()
+    }
+
+    /** The weight held and the reps went up: progress the weight alone would call "Same". */
+    @Test
+    fun `completion shows reps gained at a weight that held`() {
+        prior = listOf(finished("old", 60.0, at = "2026-07-25T10:00:00.000Z"))
+        val more =
+            finished(
+                "s",
+                60.0,
+            ).copy(entries = listOf(SessionEntry.Reps("squat", listOf(RepsSetLog(8, 60.0, restTakenSec = 90.0)))))
+        show(RunnerEntry.Complete(RunnerView.Completed(plan(block(squat)), more, FinishBackupState.NONE)))
+
+        compose.onNode(hasContentDescription("+3 repetições", substring = true)).assertExists()
+        compose.onNode(hasContentDescription("Igual", substring = true)).assertDoesNotExist()
+    }
+
+    @Test
+    fun `completion says first time for an exercise never logged before`() {
+        show(
+            RunnerEntry.Complete(RunnerView.Completed(plan(block(squat)), finished("s", 60.0), FinishBackupState.NONE)),
+        )
+
+        compose.onNode(hasContentDescription("Primeira vez", substring = true)).assertExists()
+        compose.onNode(hasContentDescription("RECORDE", substring = true)).assertDoesNotExist()
+    }
+
+    /** A program day says which, and what the program has next, as Today's card will a tap away. */
+    @Test
+    fun `completion of a program day names the day, and what the program has next`() {
+        library =
+            Library(
+                1,
+                exercises,
+                listOf(Workout("w", "Pernas", listOf(block(squat))), Workout("w2", "Costas", listOf(block(squat)))),
+                listOf(
+                    Program(
+                        "base",
+                        "Base",
+                        listOf(ProgramWeek.Training(1, "Dia 1", "w"), ProgramWeek.Training(1, "Dia 2", "w2")),
+                    ),
+                ),
+            )
+        val day = finished("s", 60.0).copy(program = "base", programWeek = 1, programDay = "Dia 1")
+        prior = listOf(day)
+        show(RunnerEntry.Complete(RunnerView.Completed(plan(block(squat)), day, FinishBackupState.NONE)))
+
+        compose.onNodeWithText("Concluído: Semana 1 · Dia 1").assertExists()
+        compose.onNodeWithText("Próximo em Base: Semana 1 · Dia 2 · Costas").assertExists()
+    }
+
+    @Test
+    fun `completion says where the backup went, with a folder set`() {
+        backupFolder = "content://com.android.externalstorage.documents/tree/primary%3ADocuments%2FKettle"
+        show(RunnerEntry.Complete(RunnerView.Completed(plan(block(squat)), finished("s", 60.0), FinishBackupState.OK)))
+
+        compose.onNodeWithText("Backup feito · Documents/Kettle/kettle-history.yaml").assertExists()
     }
 
     @Test
@@ -526,6 +616,7 @@ class RunnerScreenTest : RunnerScreenHarness() {
     private fun finished(
         id: String,
         kg: Double,
+        at: String = "2026-08-01T10:00:00.000Z",
     ) = Session(
         1,
         id,
@@ -533,7 +624,7 @@ class RunnerScreenTest : RunnerScreenHarness() {
         null,
         null,
         null,
-        "2026-08-01T10:00:00.000Z",
+        at,
         "2026-08-01T10:30:00.000Z",
         listOf(SessionEntry.Reps("squat", listOf(RepsSetLog(5, kg, restTakenSec = 90.0)))),
     )

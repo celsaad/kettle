@@ -71,12 +71,14 @@ decision assembled across several commits. Open work belongs in the sections at 
   failed parse and silently reset the preferences they *did* set. `preferences-file.test.ts` pins
   exactly that, and the same applies to any preference dropped in future.
 
-- ✅ **`entryBest` is the single definition of "doing more", and now has three consumers.** It decides
-  which entry types compete for a record and on what — a loaded exercise on load, a bodyweight one on
-  reps, a hold on seconds — for the completion screen's records, the runner's live best-marker, and
-  the Stats screen's per-exercise trend. It is exported for that third one rather than restated,
-  because three parts of the app disagreeing about whether a session was an improvement is a bug no
-  test would catch.
+- ✅ **`entryBest` is the single definition of "doing more".** It decides which entry types compete
+  for a record and on what — a loaded exercise on load, a bodyweight one on reps, a hold on seconds —
+  for the completion screen's records and its "Against last time" (`againstLastTime`), the runner's
+  live best-marker, Sessions' PR badge, and the Stats screen's per-exercise trend. It is exported for
+  those rather than restated, because parts of the app disagreeing about whether a session was an
+  improvement is a bug no test would catch. One local addition, on the receipt only: at a weight that
+  held, "Against last time" also compares the most reps at that weight (`repsAt`), which `entryBest`'s
+  one number can't say and its goldens hold as is.
 
   **Its omissions are inherited, not re-decided.** `hiit` rounds and `emom` minutes are bounded by the
   exercise's own config, so a rise there reports that the *workout* was edited; `cardio` has real

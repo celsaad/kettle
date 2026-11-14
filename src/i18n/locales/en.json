@@ -311,7 +311,18 @@
       "done": "Done",
       "recordBadge": "PR",
       "oneRepMaxNote": "1RM estimated from your best set with the Epley formula.",
-      "backupFailed": "This session is saved on this device, but the copy to your backup folder didn't go through. Check Your file, in Library."
+      "backupFailed": "This session is saved on this device, but the copy to your backup folder didn't go through. Check Your file, in Library.",
+      "dayDone": "{{slot}} done",
+      "time": "Time",
+      "sets": "Sets",
+      "exercises": "Exercises",
+      "againstLastTime": "Against last time",
+      "firstTime": "First time",
+      "same": "Same",
+      "nextIn": "Next in {{program}}: {{next}}",
+      "rest": "Rest",
+      "backedUp": "Backed up · {{path}}",
+      "editLog": "Edit log"
     },
     "countdown": {
       "getReady": "GET READY",
@@ -920,12 +931,6 @@
       "loaded": "Last time · {{weight}} × {{reps}}",
       "bodyweight": "Last time · {{reps}}",
       "hold": "Last time · {{seconds}}"
-    },
-    "record": {
-      "heaviestSet": "Heaviest ever · {{weight}} × {{reps}}",
-      "mostReps": "Most reps ever · {{reps}}",
-      "longestHold": "Longest hold ever · {{seconds}}",
-      "mostRounds": "Most rounds ever · {{rounds}}"
     },
     "oneRepMax": "Est. 1RM {{weight}}"
   },

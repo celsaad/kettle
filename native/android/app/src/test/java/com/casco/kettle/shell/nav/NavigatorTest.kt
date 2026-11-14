@@ -284,6 +284,11 @@ class NavigatorTest {
         assertEquals(Section.PROGRAMS, navigator.tabRoute(Tab.Library).section(Tab.Library))
         assertEquals(settings, navigator.sheet)
 
+        // Library was Exercises alone then, and Workouts now leads its switch (#412).
+        navigator.restore(listOf("Library"))
+        assertEquals(Tab.Library, navigator.tab)
+        assertEquals(Section.EXERCISES, navigator.tabRoute(Tab.Library).section(Tab.Library))
+
         navigator.restore(listOf("History"))
         assertEquals(Tab.Progress, navigator.tab)
         navigator.restore(listOf("Workouts"))

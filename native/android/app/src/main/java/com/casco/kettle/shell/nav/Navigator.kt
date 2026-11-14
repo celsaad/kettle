@@ -164,9 +164,17 @@ class Navigator(
 /** The route [tab] shows: its section, once one has been picked or linked to. */
 fun Navigator.tabRoute(tab: Tab): Route = tabRoutes[tab] ?: Route(tab.destination)
 
-/** The tab names the four-tab shell saved, as the paths that now lead where each went (#411). */
+/**
+ * The tab names the four-tab shell saved, as the paths that now lead where each went (#411). Library was
+ * Exercises alone then, so it names that section: a bare `/library` opens on Workouts since #412.
+ */
 private val LEGACY_TABS =
-    mapOf("Workouts" to "/", "Library" to "/library", "History" to "/history", "Programs" to "/programs")
+    mapOf(
+        "Workouts" to "/",
+        "Library" to "/library?section=exercises",
+        "History" to "/history",
+        "Programs" to "/programs",
+    )
 
 /** Where a back stack of [sheets] under the runner's [runner] slot is: the runner covers everything. */
 private fun placeOf(

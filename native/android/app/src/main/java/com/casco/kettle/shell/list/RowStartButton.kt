@@ -12,7 +12,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -29,13 +31,14 @@ import com.casco.kettle.shell.theme.KettleTheme
  * mode, under the 3:1 a meaningful graphic needs, where `accentText` measures 4.53:1 light and 6.58:1
  * dark.
  *
- * A drawn triangle with no words, so [label] is its only name, and it has to say *which* row: a column
+ * A drawn [glyph] with no words, so [label] is its only name, and it has to say *which* row: a column
  * of identical triangles otherwise announces itself the same all the way down. The target is 48dp
  * while the drawn circle stays 36, so it doesn't crowd the name beside it.
  */
 @Composable
 fun RowStartButton(
     label: String,
+    glyph: StartGlyph = StartGlyph.Play,
     onClick: () -> Unit,
 ) {
     val colors = KettleTheme.colors
@@ -52,6 +55,26 @@ fun RowStartButton(
             Modifier.size(36.dp).clip(CircleShape).background(colors.accentSoft),
             contentAlignment = Alignment.Center,
         ) {
+            if (glyph == StartGlyph.Plus) {
+                Canvas(Modifier.size(PLUS_SIZE)) {
+                    val stroke = PLUS_STROKE.toPx()
+                    drawLine(
+                        colors.accentText,
+                        Offset(0f, center.y),
+                        Offset(size.width, center.y),
+                        stroke,
+                        StrokeCap.Round,
+                    )
+                    drawLine(
+                        colors.accentText,
+                        Offset(center.x, 0f),
+                        Offset(center.x, size.height),
+                        stroke,
+                        StrokeCap.Round,
+                    )
+                }
+                return@Box
+            }
             Canvas(Modifier.padding(start = 2.dp).size(9.dp, 12.dp)) {
                 val triangle =
                     Path().apply {
@@ -65,3 +88,9 @@ fun RowStartButton(
         }
     }
 }
+
+private val PLUS_SIZE = 12.dp
+private val PLUS_STROKE = 2.dp
+
+/** What [RowStartButton] draws: a triangle to start a workout, a plus for one that begins with nothing (#412). */
+enum class StartGlyph { Play, Plus }

@@ -14,22 +14,16 @@ import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHeightIsAtLeast
-import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertWidthIsAtLeast
 import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.hasContentDescription
-import androidx.compose.ui.test.hasScrollToIndexAction
-import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isHeading
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performScrollToIndex
-import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performSemanticsAction
-import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.dp
 import androidx.test.core.app.ApplicationProvider
@@ -51,6 +45,7 @@ import com.casco.kettle.shell.files.FakeStoredFiles
 import com.casco.kettle.shell.files.LatestFiles
 import com.casco.kettle.shell.nav.Destination
 import com.casco.kettle.shell.nav.Route
+import com.casco.kettle.shell.nav.Section
 import com.casco.kettle.shell.nav.Tab
 import com.casco.kettle.shell.nav.routeParams
 import com.casco.kettle.shell.theme.KettleTheme
@@ -138,109 +133,12 @@ class HomeScreenTest {
 
     private fun button(text: String) = compose.onNode(hasText(text) and isButton)
 
-    private fun search(query: String) = compose.onNode(hasSetTextAction()).performTextInput(query)
-
     private fun text(value: String) = compose.onNodeWithText(value)
 
     private fun top(node: SemanticsNodeInteraction) = node.getBoundsInRoot().top
 
-    // The list: workouts-list.test.tsx.
-
-    /** A library is hand-written and shared, so the order in the file is the order its author meant. */
-    @Test
-    fun `lists workouts in the order the library file wrote them`() {
-        show(listFiles())
-
-        assertTrue(top(row("Zercher day")) < top(row("Bench day")))
-        assertTrue(top(row("Bench day")) < top(row("Amrap day")))
-    }
-
-    /** The placeholder carries the whole library's count, which used to be a line under the title. */
-    @Test
-    fun `is translated`() {
-        show(listFiles())
-
-        text("Treinos").assert(isHeading())
-        compose.onNode(hasSetTextAction() and hasText("Buscar 3 treinos")).assertExists()
-    }
-
-    @Test
-    fun `search narrows the list to one, and keeps the field to clear it with`() {
-        show(listFiles())
-
-        search("bench")
-
-        row("Bench day").assertExists()
-        row("Zercher day").assertDoesNotExist()
-        row("Amrap day").assertDoesNotExist()
-        // Down to one, and the field is still there to clear it with.
-        compose.onNode(hasSetTextAction() and hasText("bench")).assertExists()
-    }
-
-    @Test
-    fun `search ignores case and matches anywhere in the name`() {
-        show(listFiles())
-
-        search("DAY")
-
-        listOf("Zercher day", "Bench day", "Amrap day").forEach { row(it).assertExists() }
-    }
-
-    /** "No workouts yet" is right on a fresh install and wrong in front of someone who mistyped one. */
-    @Test
-    fun `search says nothing matched rather than claiming there are no workouts`() {
-        show(listFiles())
-
-        search("zzz")
-
-        text("Nada encontrado").assertExists()
-        text("Nenhum treino ainda").assertDoesNotExist()
-    }
-
-    @Test
-    fun `still tells a new library it has no workouts yet`() {
-        show(Files(library(workouts = emptyList())))
-
-        text("Nenhum treino ainda").assertExists()
-        text("Nada encontrado").assertDoesNotExist()
-    }
-
-    // Nothing to search in, so the box would only be something else to tap past.
-    @Test
-    fun `offers no search box on an empty library`() {
-        show(Files(library(workouts = emptyList())))
-
-        compose.onNode(hasSetTextAction()).assertDoesNotExist()
-    }
-
-    // Keyed off the whole library: tied to what's visible it would vanish under the finger typing, and
-    // with it the way to clear the search. Jest also pinned the placeholder's count staying at 3, which
-    // a Compose field can't show: its placeholder goes once there is text, RN's reason the count never
-    // narrows.
-    @Test
-    fun `keeps the search box while a search narrows the list to nothing`() {
-        show(listFiles())
-
-        search("zzz")
-
-        row("Zercher day").assertDoesNotExist()
-        compose.onNode(hasSetTextAction() and hasText("zzz")).assertExists()
-    }
-
-    @Test
-    fun `a row opens its workout in the editor, and its start button starts it`() {
-        show(listFiles())
-
-        row("Bench day").assertHeightIsAtLeast(48.dp).performClick()
-        compose
-            .onNode(hasContentDescription("Iniciar Bench day") and isButton)
-            .assertHeightIsAtLeast(48.dp)
-            .assertWidthIsAtLeast(48.dp)
-            .performClick()
-
-        assertEquals(listOf(Route(Destination.WorkoutEditor, mapOf("id" to "bench"))), opened)
-        assertEquals(listOf(RunnerStart.Planned(SessionParams.Workout("bench"))), started)
-    }
+    /** Empty session's start, a plus named by what it does (#412). */
+    private fun emptySession() = compose.onNode(hasContentDescription("Começar uma sessão vazia") and isButton)
 
     // The card: workouts-next-up.test.tsx.
 
@@ -249,25 +147,12 @@ class HomeScreenTest {
     fun `with no workouts keeps the screen chrome rather than rendering nothing`() {
         show(Files(library(workouts = emptyList())))
 
-        text("Treinos").assertExists()
+        text("Hoje").assertExists()
         compose.onNode(hasContentDescription("Configurações") and isButton).assertExists()
         text("Nenhum treino ainda").assertExists()
         text("Iniciar treino").assertDoesNotExist()
         // No card saying the library is empty: the list's own empty state already does.
         text("PRÓXIMO").assertDoesNotExist()
-    }
-
-    @Test
-    fun `with no workouts offers a way out, so the empty state is not a dead end`() {
-        show(Files(library(workouts = emptyList())))
-
-        compose
-            .onNode(hasContentDescription("Novo treino") and isButton)
-            .assertHeightIsAtLeast(48.dp)
-            .assertWidthIsAtLeast(48.dp)
-            .performClick()
-
-        assertEquals(listOf(Route(Destination.WorkoutEditor)), opened)
     }
 
     /** The only route to Settings until the preferences flip, so losing it would strand the user. */
@@ -288,8 +173,8 @@ class HomeScreenTest {
     fun `still suggests a workout when the library has one`() {
         show(seededFiles())
 
-        // Twice: once on the card, once on its row.
-        compose.onAllNodesWithText("Push day").assertCountEquals(2)
+        // Once: "Off the plan" leaves out the workout the card already offers.
+        compose.onAllNodesWithText("Push day").assertCountEquals(1)
         text("Iniciar treino").assertExists()
         text("Nenhum treino ainda").assertDoesNotExist()
     }
@@ -454,8 +339,8 @@ class HomeScreenTest {
     fun `a long workout is described in a single summary line instead`() {
         show(longFiles())
 
-        // 12 × 3 sets × 60s of rest is 36 minutes. Twice: the card and the row.
-        compose.onAllNodesWithText("12 blocos · repetições · ~36 min").assertCountEquals(2)
+        // 12 × 3 sets × 60s of rest is 36 minutes. Once: "Off the plan" leaves the card's workout out.
+        compose.onAllNodesWithText("12 blocos · repetições · ~36 min").assertCountEquals(1)
         text("Iniciar treino").assertExists()
     }
 
@@ -488,7 +373,7 @@ class HomeScreenTest {
         assertEquals(2, maxLines(compose.onNodeWithText(longNote, useUnmergedTree = true)))
     }
 
-    /** The card's copy only: the row is one line of a scrolling list, not what stands above it. */
+    /** The card's name: "Off the plan" leaves the card's workout out, so it is the only copy. */
     @Test
     fun `caps the workout name, which is also the user's to make as long as they like`() {
         show(
@@ -497,9 +382,7 @@ class HomeScreenTest {
             ),
         )
 
-        val copies = compose.onAllNodesWithText("Push day", useUnmergedTree = true)
-        copies.assertCountEquals(2)
-        assertEquals(listOf(2, Int.MAX_VALUE), (0..1).map { maxLines(copies[it]) }.sorted())
+        assertEquals(2, maxLines(compose.onNodeWithText("Push day", useUnmergedTree = true)))
     }
 
     @Test
@@ -511,13 +394,39 @@ class HomeScreenTest {
         assertEquals(2, maxLines(compose.onNodeWithText(longNote, useUnmergedTree = true)))
     }
 
+    // "Off the plan" (#412): what was run lately, never the card's own, and every workout a link away.
+
+    @Test
+    fun `off the plan lists the two run most recently, leaving out the card's, and links to every workout`() {
+        val workouts = listOf(pushDay, zercher, bench, never)
+        val program = program(ProgramWeek.Training(1, "Day 1", "push-day"))
+        val sessions = listOf(session("bench", "2026-07-28T09:00:00Z"), session("zercher", "2026-07-20T09:00:00Z"))
+        show(Files(library(workouts = workouts, programs = listOf(program)), sessions = sessions))
+
+        assertTrue(top(row("Bench day")) < top(row("Zercher day")))
+        row("Amrap day").assertDoesNotExist()
+        button("Todos os treinos").assertHeightIsAtLeast(48.dp).performClick()
+        assertEquals(listOf(Route.of(Section.WORKOUTS)), opened)
+    }
+
+    @Test
+    fun `today is translated, its date over its title`() {
+        show(seededFiles())
+
+        text("Hoje").assert(isHeading())
+        text("Fora do plano").assert(isHeading())
+        text("Sessão vazia").assertExists()
+        // Wednesday, 29 July in Portuguese, in the locale's own order.
+        compose.onNodeWithText("quarta-feira", substring = true).assertExists()
+    }
+
     // The empty session, outside the card's conditional so every branch carries it.
 
     @Test
     fun `offers the empty session alongside a queued workout`() {
         show(seededFiles())
 
-        text("Começar uma sessão vazia").assertExists()
+        emptySession().assertExists()
     }
 
     @Test
@@ -525,14 +434,14 @@ class HomeScreenTest {
         show(Files(library(workouts = emptyList())))
 
         text("Nenhum treino ainda").assertExists()
-        text("Começar uma sessão vazia").assertExists()
+        emptySession().assertExists()
     }
 
     @Test
     fun `starts the empty session with the ad-hoc flag rather than a workout id`() {
         show(seededFiles())
 
-        button("Começar uma sessão vazia").assertHeightIsAtLeast(48.dp).performClick()
+        emptySession().assertHeightIsAtLeast(48.dp).assertWidthIsAtLeast(48.dp).performClick()
 
         assertEquals(listOf(RunnerStart.Adhoc), started)
     }
@@ -622,11 +531,25 @@ class HomeScreenTest {
         text("PRÓXIMO · Semana 1 · Day 3").assertExists()
     }
 
+    /** Off the plan reads the card's workout, so it has to follow the card across the day turning. */
+    @Test
+    fun `off the plan drops the card's workout once a turned day queues it`() {
+        val latest = show(restDayProgramFiles())
+        compose.onAllNodesWithText("Pull day").assertCountEquals(1)
+
+        clock.at = Now + 2.days
+        latest.reread()
+        compose.waitForIdle()
+
+        text("PRÓXIMO · Semana 1 · Day 3").assertExists()
+        compose.onAllNodesWithText("Pull day").assertCountEquals(1)
+    }
+
     @Test
     fun `a rest day leaves the empty session available, so it is never a dead end`() {
         show(restDayProgramFiles())
 
-        text("Começar uma sessão vazia").assertExists()
+        emptySession().assertExists()
     }
 
     // The startup marker: workouts-startup-marker.test.tsx. Where the benchmark stops its clock, so it
@@ -653,33 +576,6 @@ class HomeScreenTest {
         compose.waitForIdle()
 
         assertEquals(1, drawn)
-    }
-
-    /** #153 dropped re-tap-to-top with RN's bar; each tab's port brings it back for its own list. */
-    @Test
-    fun `a tap on the Workouts tab while it shows scrolls back to the top`() {
-        val many = (1..60).map { Workout("w$it", "Workout $it", emptyList()) }
-        show(Files(library(workouts = many), sessions = listOf(session())))
-        compose.onNode(hasScrollToIndexAction()).performScrollToIndex(many.size)
-        text("Treinos").assertDoesNotExist()
-
-        reselects.tryEmit(Tab.Library)
-        compose.waitForIdle()
-        text("Treinos").assertDoesNotExist()
-
-        reselects.tryEmit(Tab.Today)
-        compose.waitForIdle()
-        text("Treinos").assertIsDisplayed()
-    }
-
-    @Test
-    fun `scrolls to reach the last row`() {
-        val many = (1..60).map { Workout("w$it", "Workout $it", emptyList()) }
-        show(Files(library(workouts = many), sessions = listOf(session())))
-
-        compose.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Workout 60"))
-
-        row("Workout 60").assertIsDisplayed()
     }
 
     // The card's preview (#280): everything above Start opens it, and Start stays its own target.
@@ -742,12 +638,6 @@ class HomeScreenTest {
 
     /** The seeded shape a first run has: something to run, nothing logged yet. */
     private fun seededFiles(sessions: List<Session> = emptyList()) = Files(library(), sessions)
-
-    private fun listFiles() =
-        Files(
-            library(workouts = listOf(zercher, bench, never)),
-            sessions = listOf(session("bench", "2026-07-20T09:00:00Z"), session("zercher", "2026-07-01T09:00:00Z")),
-        )
 
     /** A program whose very first slot is a rest day, opened by someone who has logged nothing. */
     private fun restDayFiles() =

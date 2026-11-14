@@ -58,7 +58,12 @@
     "starterPacks": "Adicionar um programa inicial",
     "moreBlocks_one": "+{{count}} a mais",
     "moreBlocks_other": "+{{count}} a mais",
-    "moreBlocks_zero": "+{{count}} a mais"
+    "moreBlocks_zero": "+{{count}} a mais",
+    "title": "Hoje",
+    "offThePlan": "Fora do plano",
+    "allWorkouts": "Todos os treinos",
+    "emptySession": "Sessão vazia",
+    "emptySessionDetail": "Adicione exercícios no caminho"
   },
   "workoutPreview": {
     "notFound": "Este treino não está mais na sua biblioteca."
@@ -913,6 +918,7 @@
     "library": "Biblioteca",
     "progress": "Progresso",
     "sections": {
+      "workouts": "Treinos",
       "exercises": "Exercícios",
       "programs": "Programas",
       "sessions": "Sessões",

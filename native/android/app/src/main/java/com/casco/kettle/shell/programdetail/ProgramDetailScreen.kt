@@ -197,7 +197,7 @@ private fun WeekRow(
             }
         }
         if (week is ProgramWeek.Training) {
-            RowStartButton(stringResource(R.string.programDetail_startAccessibility, label), onStart)
+            RowStartButton(stringResource(R.string.programDetail_startAccessibility, label), onClick = onStart)
         }
     }
 }

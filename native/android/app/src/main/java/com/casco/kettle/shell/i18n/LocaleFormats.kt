@@ -38,6 +38,13 @@ fun formatFullDate(
     zone: TimeZone,
 ): String = format(at, locale, zone, "EEEEMMMd")
 
+/** Today's date line (#412), the weekday, day and month in full, "Friday, 13 November", in the locale's order. */
+fun formatLongDate(
+    at: Instant,
+    locale: Locale,
+    zone: TimeZone,
+): String = format(at, locale, zone, "EEEEdMMMM")
+
 /**
  * [formatMonthDay] for a calendar date, which has no zone of its own: Stats' calendar labels its weeks
  * by the day they start on, already in the reader's zone.

@@ -126,7 +126,7 @@ class RouteTest {
     fun `a tab's section is the one its route names, else its first`() {
         assertEquals(Section.STATS, Route.of(Section.STATS).section(Tab.Progress))
         assertEquals(Section.SESSIONS, Route(Destination.Progress).section(Tab.Progress))
-        assertEquals(Section.EXERCISES, Route(Destination.Library, mapOf(SECTION to "nowhere")).section(Tab.Library))
+        assertEquals(Section.WORKOUTS, Route(Destination.Library, mapOf(SECTION to "nowhere")).section(Tab.Library))
         assertNull(Route(Destination.Today).section(Tab.Today))
     }
 }

@@ -56,7 +56,12 @@
     },
     "startEmpty": "空のセッションを開始",
     "starterPacks": "スタータープログラムを追加",
-    "moreBlocks_other": "他 {{count}} 件"
+    "moreBlocks_other": "他 {{count}} 件",
+    "title": "今日",
+    "offThePlan": "プラン外",
+    "allWorkouts": "すべてのワークアウト",
+    "emptySession": "空のセッション",
+    "emptySessionDetail": "途中でエクササイズを追加"
   },
   "workoutPreview": {
     "notFound": "このワークアウトはライブラリにありません。"
@@ -817,6 +822,7 @@
     "library": "ライブラリ",
     "progress": "進捗",
     "sections": {
+      "workouts": "ワークアウト",
       "exercises": "エクササイズ",
       "programs": "プログラム",
       "sessions": "セッション",

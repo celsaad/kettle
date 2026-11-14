@@ -42,7 +42,11 @@ import kotlinx.datetime.TimeZone
 import kotlin.time.Clock
 import kotlin.time.Instant
 
-/** The param that names Exercise detail's exercise, and Edit's, and the YAML view's item. */
+/**
+ * The param naming the exercise on Exercise detail and on its YAML view: `id`, the word the exercise
+ * editor's route already reads, so Edit passes it on unchanged. Not `EXERCISE_ID_PARAM`, Stats'
+ * progress sheet's `exerciseId`.
+ */
 const val EXERCISE_PARAM = "id"
 
 /** What the route table draws at `Destination.ExerciseDetail`, opened from Library's Exercises. */

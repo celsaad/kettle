@@ -38,7 +38,7 @@ fun LibraryYamlRoute(params: Map<String, String> = emptyMap()) =
  * are the file's kilograms whatever the reader's units, and it says so above them. No editing here.
  *
  * With [exerciseId], Exercise detail's YAML: that one item as it sits under `exercises:`, which copies
- * out as a pasteable piece. An id the library doesn't have shows no YAML.
+ * out as a pasteable piece. An id the library doesn't have says so, as Exercise detail does.
  */
 @Composable
 fun LibraryYamlScreen(
@@ -64,6 +64,14 @@ fun LibraryYamlScreen(
         ) {
             FileNameTitle()
             Text(stringResource(R.string.file_unitsNote), style = KettleType.small, color = colors.textSecondary)
+            if (yaml == null && library != null) {
+                Text(
+                    stringResource(R.string.exerciseDetail_missing),
+                    Modifier.padding(top = Spacing.three),
+                    style = KettleType.default,
+                    color = colors.textSecondary,
+                )
+            }
             yaml?.let {
                 SelectionContainer(Modifier.padding(top = Spacing.three).horizontalScroll(rememberScrollState())) {
                     Text(

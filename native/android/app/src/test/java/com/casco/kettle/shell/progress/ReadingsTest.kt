@@ -43,4 +43,12 @@ class ReadingsTest {
         assertEquals(22.0, readings(RecordKind.HeaviestSet).display(22.0), 0.0)
         assertEquals(22.0, readings(RecordKind.MostReps, UnitSystem.IMPERIAL).display(22.0), 0.0)
     }
+
+    /** A rep, a round and a second are whole, so the axis never steps under one; a weight can. */
+    @Test
+    fun `steps a counted measure's axis in ones at least, and a weight's however finely`() {
+        assertEquals(1.0, readings(RecordKind.MostReps).minStep, 0.0)
+        assertEquals(1.0, readings(RecordKind.LongestHold).minStep, 0.0)
+        assertEquals(0.0, readings(RecordKind.HeaviestSet).minStep, 0.0)
+    }
 }

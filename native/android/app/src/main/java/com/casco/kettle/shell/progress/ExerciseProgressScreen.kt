@@ -201,6 +201,7 @@ internal fun ChartCard(
     readings: Readings,
     dates: Dates,
     window: ClosedRange<Instant>,
+    description: String? = null,
 ) {
     val colors = KettleTheme.colors
     Column(
@@ -212,9 +213,9 @@ internal fun ChartCard(
         ProgressChart(
             row.sessions,
             window,
-            display = readings::display,
-            tickLabel = readings::axis,
+            readings,
             dateLabel = dates::monthDay,
+            description = description,
         )
         // The key is for the dots, so it's drawn only when there are dots other than the latest's.
         if (row.sessions.any { it.newBest }) {

@@ -19,11 +19,13 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.Exercise
+import com.casco.kettle.domain.ExerciseProgress
+import com.casco.kettle.domain.ExerciseTrend
 import com.casco.kettle.domain.Library
 import com.casco.kettle.domain.TREND_WEEKS
 import com.casco.kettle.domain.UnitSystem
 import com.casco.kettle.domain.exerciseHistory
-import com.casco.kettle.domain.exerciseProgress
+import com.casco.kettle.domain.exerciseTrend
 import com.casco.kettle.domain.programWorkoutIds
 import com.casco.kettle.domain.trendWindowStart
 import com.casco.kettle.domain.workoutsUsing
@@ -55,7 +57,8 @@ internal fun LatestFiles.unitsOrDevice(): UnitSystem =
 
 /**
  * Progress: Stats' own reading of this exercise (#413), the same selector, window and chart its Getting
- * stronger row opens, so detail and Stats can't show two numbers. Untrained in the window, it says so.
+ * stronger row opens, so detail and Stats can't show two numbers. Where Getting stronger has no row for
+ * it, it says which of the three reasons it is, so a trained exercise isn't called untrained.
  */
 @Composable
 internal fun ProgressSection(
@@ -66,10 +69,9 @@ internal fun ProgressSection(
 ) {
     val log = files.sessionLog ?: return
     val exercises = files.library?.exercises.orEmpty()
-    val progress =
+    val trend =
         remember(log, exercises, exercise.id, now, zone) {
-            val view = exerciseProgress(log.logged, exercises, TREND_WEEKS, now, zone)
-            (view.movers + view.steady).firstOrNull { it.exerciseId == exercise.id }
+            exerciseTrend(log.logged, exercises, exercise.id, now, zone)
         }
     val colors = KettleTheme.colors
     Row(Modifier.padding(top = Spacing.four), verticalAlignment = Alignment.Bottom) {
@@ -85,19 +87,49 @@ internal fun ProgressSection(
             color = colors.textSecondary,
         )
     }
-    if (progress == null) {
+    if (trend !is ExerciseTrend.Charted) {
         Text(
-            stringResource(R.string.exerciseDetail_notTrained, TREND_WEEKS),
+            when (trend) {
+                ExerciseTrend.Fixed -> stringResource(R.string.exerciseDetail_fixed)
+                ExerciseTrend.TooFew -> stringResource(R.string.exerciseDetail_tooFew, TREND_WEEKS)
+                else -> stringResource(R.string.exerciseDetail_notTrained, TREND_WEEKS)
+            },
             Modifier.padding(top = Spacing.two),
             style = KettleType.small,
             color = colors.textSecondary,
         )
         return
     }
+    val progress = trend.progress
     val readings = Readings(LocalResources.current, progress.kind, files.unitsOrDevice())
     val dates = Dates(LocalConfiguration.current.locales[0], zone)
     Headline(progress, readings, dates)
-    ChartCard(progress, readings, dates, trendWindowStart(now, TREND_WEEKS, zone)..now)
+    ChartCard(
+        progress,
+        readings,
+        dates,
+        trendWindowStart(now, TREND_WEEKS, zone)..now,
+        chartDescription(progress, readings, dates),
+    )
+}
+
+/**
+ * The chart in words, session by session, newest first: Stats' sheet has its list under the chart for
+ * a screen reader to step through, and this page has none.
+ */
+@Composable
+private fun chartDescription(
+    progress: ExerciseProgress,
+    readings: Readings,
+    dates: Dates,
+): String {
+    val resources = LocalResources.current
+    val newBest = stringResource(R.string.exerciseProgress_newBestTag)
+    return progress.sessions.asReversed().joinToString("\n") { session ->
+        val value = readings.reading(session.value) + if (session.newBest) " $newBest" else ""
+        // Placeholders numbered alphabetically: date, then value.
+        resources.getString(R.string.exerciseDetail_chartPoint, dates.fullDate(session.at), value)
+    }
 }
 
 /** The last few times it was logged, newest first, as the editor's Recent listed them. None, no heading. */

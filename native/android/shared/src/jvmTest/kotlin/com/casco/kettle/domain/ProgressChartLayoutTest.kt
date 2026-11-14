@@ -69,7 +69,8 @@ class ProgressChartLayoutTest {
                     listOf(session(0, 13.6), session(40, 22.0)),
                     FROM..TO,
                     WIDTH,
-                ) { it * 2.20462 }
+                    display = { it * 2.20462 },
+                )
 
             assertEquals(listOf(0.0, 20.0, 40.0, 60.0), result.ticks.map { it.value })
         }
@@ -80,6 +81,20 @@ class ProgressChartLayoutTest {
 
             assertEquals(emptyList<ChartTick>(), result.ticks)
             assertTrue(result.points.all { it.y == result.baseline })
+        }
+
+        /** A best of one rep: steps of a third would round to half a rep, which nobody did. */
+        @Test
+        fun `steps no finer than the measure's own least step`() {
+            val result = progressChartLayout(listOf(session(0, 1.0), session(7, 1.0)), FROM..TO, WIDTH, minStep = 1.0)
+
+            assertEquals(listOf(0.0, 1.0), result.ticks.map { it.value })
+        }
+
+        /** 3 × 0.2 is 0.6000000000000001 in binary, which a label would print whole. */
+        @Test
+        fun `puts each tick on its round value, not the step's binary remainder`() {
+            assertEquals(listOf(0.0, 0.2, 0.4, 0.6), layout(session(0, 0.5), session(7, 0.6)).ticks.map { it.value })
         }
 
         @Test

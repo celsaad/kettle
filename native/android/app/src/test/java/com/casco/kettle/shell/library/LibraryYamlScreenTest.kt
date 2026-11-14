@@ -66,10 +66,11 @@ class LibraryYamlScreenTest {
     }
 
     @Test
-    fun `shows no YAML for an exercise the library no longer has`() {
+    fun `says so, with no YAML, for an exercise the library no longer has`() {
         show(exerciseId = "deleted")
 
         compose.onNodeWithText("- id:", substring = true).assertDoesNotExist()
+        compose.onNodeWithText("Este exercício não está mais na sua biblioteca.").assertExists()
     }
 
     /** Null is a library not read yet, and the screen shows no YAML before it has one. */
@@ -78,6 +79,7 @@ class LibraryYamlScreenTest {
         show(Files(library = null))
 
         compose.onNodeWithText("exercises:", substring = true).assertDoesNotExist()
+        compose.onNodeWithText("Este exercício não está mais na sua biblioteca.").assertDoesNotExist()
     }
 
     private class Files(

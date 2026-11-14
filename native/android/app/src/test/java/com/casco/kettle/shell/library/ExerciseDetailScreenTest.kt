@@ -5,6 +5,7 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertHeightIsAtLeast
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isHeading
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -21,6 +22,7 @@ import com.casco.kettle.domain.RepsSetLog
 import com.casco.kettle.domain.Session
 import com.casco.kettle.domain.SessionEntry
 import com.casco.kettle.domain.SessionLog
+import com.casco.kettle.domain.TimedHoldSetLog
 import com.casco.kettle.domain.Workout
 import com.casco.kettle.domain.WorkoutBlock
 import com.casco.kettle.shell.files.FakeStoredFiles
@@ -121,6 +123,52 @@ class ExerciseDetailScreenTest {
         text("Não treinado nas últimas 8 semanas.").assertExists()
     }
 
+    /** Getting stronger needs two sessions; one is still training, and the page doesn't call it none. */
+    @Test
+    fun `says one session is too few to chart, not that it wasn't trained`() {
+        show(files = Files(sessions = listOf(session("a", "2026-07-24T10:00:00Z", 62.5))))
+
+        text("Sessões insuficientes nas últimas 8 semanas para o gráfico: são precisas duas.").assertExists()
+        text("Não treinado nas últimas 8 semanas.").assertDoesNotExist()
+    }
+
+    /** Stats leaves a fixed-length hold out, its log being its config; trained, it still isn't "not trained". */
+    @Test
+    fun `says a fixed-length hold has no trend, not that it wasn't trained`() {
+        show(
+            "plank",
+            Files(
+                sessions =
+                    listOf("2026-07-10T10:00:00Z", "2026-07-24T10:00:00Z").map {
+                        held(it, "plank", 45.0)
+                    },
+            ),
+        )
+
+        text("Cada sessão registra o tempo definido, então não há tendência para mostrar.").assertExists()
+        text("Não treinado nas últimas 8 semanas.").assertDoesNotExist()
+    }
+
+    /** No list under the chart here, as Stats' sheet has: the drawing says its sessions itself. */
+    @Test
+    fun `gives TalkBack the chart's sessions in words, newest first`() {
+        show(
+            files =
+                Files(
+                    sessions =
+                        listOf(
+                            session("b", "2026-07-24T10:00:00Z", 62.5),
+                            session("a", "2026-07-10T10:00:00Z", 60.0),
+                        ),
+                ),
+        )
+
+        compose
+            .onNode(hasContentDescription("62.5 kg · nova melhor marca", substring = true))
+            .assert(hasContentDescription("60 kg", substring = true))
+            .assertExists()
+    }
+
     /** The editor's Recent, moved here: what was logged, and nothing of a session still running. */
     @Test
     fun `lists recent sessions, logged ones only`() {
@@ -214,11 +262,13 @@ private val squat =
         notes = "Brace before every rep.",
     )
 private val lunge = Exercise("lunge", "Lunge", ExerciseConfig.Reps(3, 10, restSec = 60.0))
+private val plank =
+    Exercise("plank", "Plank", ExerciseConfig.TimedHold(1, holdSecMin = 45.0, restSec = 30.0))
 private val pushups = Exercise("pushups", "Push-ups", ExerciseConfig.Reps(3, 10, restSec = 60.0))
 private val fixture =
     Library(
         1,
-        listOf(squat, lunge, pushups),
+        listOf(squat, lunge, plank, pushups),
         listOf(
             Workout("leg-day", "Leg day", listOf(WorkoutBlock.ExerciseBlock("squat"))),
             Workout("push-day", "Push day", listOf(WorkoutBlock.ExerciseBlock("pushups"))),
@@ -242,4 +292,21 @@ private fun session(
     at,
     if (ended) at else null,
     listOf(SessionEntry.Reps("squat", List(3) { RepsSetLog(5, weightKg = kg, restTakenSec = 120.0) })),
+)
+
+/** A finished session of one [sec]-second hold of [exercise], started at [at]. */
+private fun held(
+    at: String,
+    exercise: String,
+    sec: Double,
+) = Session(
+    1,
+    at,
+    null,
+    null,
+    null,
+    null,
+    at,
+    at,
+    listOf(SessionEntry.TimedHold(exercise, listOf(TimedHoldSetLog(sec, restTakenSec = 30.0)))),
 )

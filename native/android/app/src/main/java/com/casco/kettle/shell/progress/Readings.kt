@@ -23,24 +23,13 @@ class Readings(
     private val units: UnitSystem,
 ) {
     fun reading(value: Double): String =
-        when (kind) {
-            RecordKind.HeaviestSet -> {
-                val unit = resources.getString(weightUnit(units))
-                "${jsNumber(toDisplayWeight(value, units))} $unit"
-            }
-
-            RecordKind.LongestHold -> {
-                resources.getString(R.string.format_seconds, jsNumber(roundHalfUp(value)))
-            }
-
-            RecordKind.MostReps, RecordKind.MostRounds -> {
-                val reps = roundHalfUp(value).toInt()
-                resources.pluralText(R.plurals.format_rep, R.string.format_rep_zero, reps)
-            }
-        }
+        labelled(if (kind == RecordKind.HeaviestSet) display(value) else roundHalfUp(value))
 
     /** A stored value in the reader's units, for the chart's axis to be round in (#413). */
     fun display(value: Double): Double = if (kind == RecordKind.HeaviestSet) toDisplayWeight(value, units) else value
+
+    /** The least step the chart's axis counts in: a rep, a round and a second are whole. */
+    val minStep: Double get() = if (kind == RecordKind.HeaviestSet) 0.0 else 1.0
 
     /**
      * An axis line's label, its [value] already in the reader's units: the [top] line carries the unit,
@@ -49,27 +38,23 @@ class Readings(
     fun axis(
         value: Double,
         top: Boolean,
-    ): String {
-        val number = jsNumber(value)
-        if (!top) return number
-        return when (kind) {
+    ): String = if (top) labelled(value) else jsNumber(value)
+
+    /** A value already in the reader's units, with its unit: what [reading] and the axis's top share. */
+    private fun labelled(value: Double): String =
+        when (kind) {
             RecordKind.HeaviestSet -> {
-                "$number ${resources.getString(weightUnit(units))}"
+                "${jsNumber(value)} ${resources.getString(weightUnit(units))}"
             }
 
             RecordKind.LongestHold -> {
-                resources.getString(R.string.format_seconds, number)
+                resources.getString(R.string.format_seconds, jsNumber(value))
             }
 
             RecordKind.MostReps, RecordKind.MostRounds -> {
-                resources.pluralText(
-                    R.plurals.format_rep,
-                    R.string.format_rep_zero,
-                    value.toInt(),
-                )
+                resources.pluralText(R.plurals.format_rep, R.string.format_rep_zero, value.toInt())
             }
         }
-    }
 
     /**
      * The change, signed. The magnitude is read and the sign added, so "−1 rep" pluralises on 1; and a

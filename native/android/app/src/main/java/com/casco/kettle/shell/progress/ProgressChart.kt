@@ -13,6 +13,8 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
@@ -39,19 +41,20 @@ import kotlin.time.Instant
  * first and last points, which collided with it there. Every value is still in the list below, so
  * there is no tap-for-a-value tooltip.
  *
- * A Canvas, so it has no semantics and TalkBack passes over it, as RN's chart is hidden: the list says
- * everything the drawing does, row by row, in words a screen reader can step through.
+ * A Canvas, so it has no semantics of its own. On Stats' sheet TalkBack passes over it, as RN's chart
+ * is hidden: the list under it says everything the drawing does, row by row. Exercise detail has no
+ * such list, so it passes [description] instead.
  *
- * [display] turns a stored value into the reader's units, [tickLabel] writes an axis line's value
- * (true for the top one), and [dateLabel] formats the dates.
+ * [readings] puts a value in the reader's units and writes the axis's labels; [dateLabel] formats the
+ * dates. [description], where no list follows the chart, is what TalkBack reads in the drawing's place.
  */
 @Composable
 fun ProgressChart(
     sessions: List<ProgressSession>,
     window: ClosedRange<Instant>,
-    display: (Double) -> Double,
-    tickLabel: (value: Double, top: Boolean) -> String,
+    readings: Readings,
     dateLabel: (Instant) -> String,
+    description: String? = null,
 ) {
     val colors = KettleTheme.colors
     val measurer = rememberTextMeasurer()
@@ -66,12 +69,13 @@ fun ProgressChart(
     Canvas(
         Modifier
             .fillMaxWidth()
-            .height(CHART_HEIGHT.dp),
+            .height(CHART_HEIGHT.dp)
+            .then(if (description == null) Modifier else Modifier.semantics { contentDescription = description }),
     ) {
         // The layout works in dp, the units its paddings are written in.
-        val layout = progressChartLayout(sessions, window, size.width / density, display)
+        val layout = progressChartLayout(sessions, window, size.width / density, readings::display, readings.minStep)
         if (layout.points.isEmpty()) return@Canvas
-        drawTicks(layout, colors) { tick, top -> measurer.measure(tickLabel(tick, top), secondary) }
+        drawTicks(layout, colors) { tick, top -> measurer.measure(readings.axis(tick, top), secondary) }
         drawSeries(layout, colors)
 
         val dateBaseline = (CHART_HEIGHT - DATE_DROP).dp.toPx()

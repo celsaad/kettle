@@ -117,6 +117,10 @@ here, next to what it describes.
 - **A program's page shows where you are**: what's next, with Start and its preview, then every
   week as a row of squares (behind you, next, still to come, rest, and a dot where the program
   changes that day). Tap a week to see its days, each with its own Start and preview (#437).
+- **The program editor folds by week**: each week is one row you open, with its days inside and
+  one day open at a time. A week's menu moves it up or down, duplicates it right after itself, or
+  deletes it, and the weeks after it renumber to close the gap. A day's changes are labelled
+  "Changes for this day", and Save sits at the top (#438).
 
 ---
 

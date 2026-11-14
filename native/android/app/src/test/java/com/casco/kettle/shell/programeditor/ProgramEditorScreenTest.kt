@@ -2,7 +2,6 @@ package com.casco.kettle.shell.programeditor
 
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
-import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
@@ -18,6 +17,7 @@ import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.unit.dp
@@ -158,9 +158,10 @@ class ProgramEditorScreenTest {
 
     @Test
     fun `refuses the same week twice when neither has a day`() {
-        val files = draftWith(2)
-        // Both weeks now read 1, which is the `week + day` address colliding.
-        press("Diminuir Semana", index = 1)
+        val files = draftWith(1)
+        // A second day, its label cleared: two days of week 1 with none, the `week + day` address colliding.
+        press("+ Adicionar dia")
+        type("Rótulo do dia", "")
 
         press("Salvar")
 
@@ -170,13 +171,12 @@ class ProgramEditorScreenTest {
         assertEquals(emptyList<Library>(), files.written)
     }
 
-    // The point of `day`: two sessions in one week. Refusing it would break multi-session weeks.
     @Test
     fun `allows the same week number when the days differ`() {
-        val files = draftWith(2)
-        press("Diminuir Semana", index = 1)
-        type("Dia · opcional", "Monday", index = 0)
-        type("Dia · opcional", "Thursday", index = 1)
+        val files = draftWith(1)
+        type("Rótulo do dia", "Monday")
+        press("+ Adicionar dia")
+        type("Rótulo do dia", "Thursday")
 
         press("Salvar")
 
@@ -265,15 +265,15 @@ class ProgramEditorScreenTest {
     @Test
     fun `gives every control on a week card a 44dp target`() {
         show("base", Files(programs = listOf(base(exerciseOverride("pull-ups", "sets" to 5.0)))))
-        press("+ Adicionar ajuste")
+        press("+ Adicionar alteração")
         press("finisher")
 
         for (label in listOf(
-            "Diminuir Semana",
-            "Aumentar Semana",
-            "Remover semana 1",
+            "Ações da semana 1",
+            "Mover Dia 1 para cima",
+            "Mover Dia 1 para baixo",
             "Diminuir Rodadas",
-            "Remover ajuste",
+            "Remover alteração",
         )) {
             compose
                 .onAllNodes(
@@ -282,27 +282,24 @@ class ProgramEditorScreenTest {
                 .assertWidthIsAtLeast(44.dp)
                 .assertHeightIsAtLeast(44.dp)
         }
-        for (label in listOf("Dia de descanso", "Push day", "Pull-ups: sets → 5")) {
+        for (label in listOf("Dia de descanso", "Push day", "Pull-ups: sets → 5", "Remover dia", "Semana 1")) {
             compose.onAllNodes(labelled(label) and isControl)[0].assertHeightIsAtLeast(44.dp)
         }
     }
 
-    // weeks
-
-    // Counting would call the re-added week 2 and collide; max+1 keeps the numbering monotonic.
+    /** Deleting a week closes the gap (agreed on #438), and a new one goes past the highest left. */
     @Test
-    fun `numbers a new week past the highest already there, not by count`() {
-        val files = draftWith(2)
-        repeat(3) { press("Aumentar Semana", index = 1) }
-        press("Remover semana 1")
+    fun `deletes a week from its menu, closing the gap, and adds the next one after the last`() {
+        val files = draftWith(3)
+        press("Ações da semana 1")
+        compose.onNodeWithText("Excluir semana").performClick()
 
         press("+ Adicionar semana")
         press("Salvar")
 
-        assertEquals(listOf(5L, 6L), files.savedWeeks().map { it.week })
+        assertEquals(listOf(1L, 2L, 3L), files.savedWeeks().map { it.week })
     }
 
-    // Not left blank: an unset workout is a Save refusal, so the common path needs no picker at all.
     @Test
     fun `defaults a new week to the first workout`() {
         draftWith(1)
@@ -322,20 +319,39 @@ class ProgramEditorScreenTest {
     fun `actually translates its week-card labels`() {
         draftWith(1)
 
-        named("Ajustes · opcional").assertExists()
-        named("Semana").assertExists()
-        absent("Overrides · optional")
+        named("Alterações para este dia").assertExists()
+        named("Rótulo do dia").assertExists()
+        named("Segue de cima para baixo").assertExists()
+        absent("Changes for this day")
     }
 
-    // 1-based throughout: the schema's `positive()` and week resolution both assume it.
+    /** Up from its menu: the two weeks trade numbers, so week 1 now runs what week 2 did. */
     @Test
-    fun `does not let a week number fall below one`() {
-        val files = draftWith(1)
+    fun `moves a week up from its menu`() {
+        val files = draftWith(2)
+        press("Push day")
+        press("Pull day")
+        press("Ações da semana 2")
+        compose.onNodeWithText("Mover para cima").performClick()
 
-        repeat(3) { press("Diminuir Semana") }
         press("Salvar")
 
-        assertEquals(1L, files.savedWeeks().single().week)
+        assertEquals(
+            listOf(1L to "pull-day", 2L to "push-day"),
+            files.savedWeeks().map { it.week to (it as ProgramWeek.Training).workoutId },
+        )
+    }
+
+    /** Right after it, as agreed on #438. */
+    @Test
+    fun `duplicates a week right after it`() {
+        val files = draftWith(1)
+        type("Rótulo do dia", "Mon")
+        press("Duplicar semana 1")
+
+        press("Salvar")
+
+        assertEquals(listOf(1L to "Mon", 2L to "Mon"), files.savedWeeks().map { it.week to it.day })
     }
 
     @Test
@@ -364,15 +380,15 @@ class ProgramEditorScreenTest {
     }
 
     @Test
-    fun `removes a week`() {
-        draftWith(2)
+    fun `removes a day`() {
+        draftWith(1)
+        press("+ Adicionar dia")
 
-        press("Remover semana 1")
+        press("Remover dia")
 
-        named("1 semana").assertExists()
+        named("1 dia").assertExists()
     }
 
-    // Every week needs a workout and there are none, so an added week could only be refused.
     @Test
     fun `explains itself instead of offering an unusable add button`() {
         show(files = Files(workouts = emptyList()))
@@ -383,17 +399,16 @@ class ProgramEditorScreenTest {
     }
 
     // Two cards at week 1, told apart by day, are one week.
+    // Two days of week 1, told apart by label, are one week.
     @Test
     fun `counts weeks rather than week entries`() {
-        draftWith(2)
-        press("Diminuir Semana", index = 1)
-        type("Dia · opcional", "Day 1", index = 0)
-        type("Dia · opcional", "Day 2", index = 1)
+        draftWith(1)
+        press("+ Adicionar dia")
 
         named("1 semana").assertExists()
+        named("2 dias").assertExists()
     }
 
-    // No in-use guard: nothing in the library points at a program, so a delete can't orphan anything.
     @Test
     fun `deletes a program once confirmed, past the detail sheet`() {
         val files = show("base", Files(programs = listOf(base())))
@@ -431,14 +446,14 @@ class ProgramEditorScreenTest {
     @Test
     fun `hides the workout picker and the overrides editor once a week is rest`() {
         draftWith(1)
-        named("Treino").assertExists()
+        named("Push day").assertExists()
 
         press("Dia de descanso")
 
-        absent("Treino")
-        absent("Ajustes · opcional")
-        // Week, day and notes mean the same on either kind of week.
-        named("Semana").assertExists()
+        absent("Push day")
+        absent("Alterações para este dia")
+        // The label and notes mean the same on either kind of day.
+        named("Rótulo do dia").assertExists()
         named("Notas · opcional").assertExists()
     }
 
@@ -446,7 +461,8 @@ class ProgramEditorScreenTest {
     fun `persists a rest week with no workout on it`() {
         val files = draftWith(2)
 
-        press("Dia de descanso", index = 1)
+        // The new week is the one open.
+        press("Dia de descanso")
         press("Salvar")
 
         assertEquals(
@@ -471,36 +487,31 @@ class ProgramEditorScreenTest {
         val files = draftWith(1)
 
         press("Dia de descanso")
-        press("Dia de descanso")
+        press("Treino")
         press("Salvar")
 
         assertEquals("push-day", (files.savedWeeks().single() as ProgramWeek.Training).workoutId)
     }
 
+    /** Two choices, the one in force selected: what a screen reader reads back. */
     @Test
-    fun `announces itself as a switch, with its state`() {
+    fun `announces what the day runs as a choice, with its state`() {
         draftWith(1)
-        val switch = hasText("Dia de descanso") and SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Switch)
+        val rest = hasText("Dia de descanso") and isControl
+        val workout = hasText("Treino") and isControl
 
-        compose
-            .onNode(
-                switch,
-            ).assert(SemanticsMatcher.expectValue(SemanticsProperties.ToggleableState, ToggleableState.Off))
+        compose.onNode(rest).assert(SemanticsMatcher.expectValue(SemanticsProperties.Selected, false))
+        compose.onNode(workout).assert(SemanticsMatcher.expectValue(SemanticsProperties.Selected, true))
         press("Dia de descanso")
-        compose
-            .onNode(
-                switch,
-            ).assert(SemanticsMatcher.expectValue(SemanticsProperties.ToggleableState, ToggleableState.On))
+        compose.onNode(rest).assert(SemanticsMatcher.expectValue(SemanticsProperties.Selected, true))
     }
-
-    // overrides: what the panel offers
 
     @Test
     fun `explains itself when the chosen workout has nothing overridable`() {
         show("base", Files(programs = listOf(base(workoutId = "empty"))))
 
-        named("Este treino ainda não tem nada para ajustar.").assertExists()
-        compose.onNode(hasText("+ Adicionar ajuste") and isControl).assertIsNotEnabled()
+        named("Este treino ainda não tem nada para alterar em um dia.").assertExists()
+        compose.onNode(hasText("+ Adicionar alteração") and isControl).assertIsNotEnabled()
     }
 
     // With no workout resolved there is nothing to explain yet, only something not done: no hint.
@@ -508,8 +519,8 @@ class ProgramEditorScreenTest {
     fun `offers no override, and no hint, while the week's workout resolves to nothing`() {
         show("base", Files(programs = listOf(base(workoutId = "gone"))))
 
-        compose.onNode(hasText("+ Adicionar ajuste") and isControl).assertIsNotEnabled()
-        absent("Este treino ainda não tem nada para ajustar.")
+        compose.onNode(hasText("+ Adicionar alteração") and isControl).assertIsNotEnabled()
+        absent("Este treino ainda não tem nada para alterar em um dia.")
     }
 
     // Dips is eligible through the circuit; the circuit is offered by the id an override names it by.
@@ -517,7 +528,7 @@ class ProgramEditorScreenTest {
     fun `offers only the exercises and id-tagged circuits the workout contains`() {
         show("base", Files(programs = listOf(base())))
 
-        press("+ Adicionar ajuste")
+        press("+ Adicionar alteração")
 
         named("Pull-ups").assertExists()
         named("Dips").assertExists()
@@ -529,7 +540,7 @@ class ProgramEditorScreenTest {
     fun `labels config fields in the user language, not with their keys`() {
         show("base", Files(programs = listOf(base())))
 
-        press("+ Adicionar ajuste")
+        press("+ Adicionar alteração")
         press("Pull-ups")
 
         named("Séries").assertExists()
@@ -543,10 +554,10 @@ class ProgramEditorScreenTest {
     fun `emits only the changed key, in the snake_case the YAML uses`() {
         val files = show("base", Files(programs = listOf(base())))
 
-        press("+ Adicionar ajuste")
+        press("+ Adicionar alteração")
         press("Pull-ups")
         type("Séries", "5")
-        press("Adicionar ajuste")
+        press("Adicionar alteração")
         press("Salvar")
 
         assertEquals(listOf(exerciseOverride("pull-ups", "sets" to 5.0)), files.savedOverrides())
@@ -556,10 +567,10 @@ class ProgramEditorScreenTest {
     fun `emits a block override keyed by the circuit id`() {
         val files = show("base", Files(programs = listOf(base())))
 
-        press("+ Adicionar ajuste")
+        press("+ Adicionar alteração")
         press("finisher")
         press("Aumentar Rodadas")
-        press("Adicionar ajuste")
+        press("Adicionar alteração")
         press("Salvar")
 
         assertEquals(
@@ -574,10 +585,10 @@ class ProgramEditorScreenTest {
         val files = show("base", Files(programs = listOf(base(exerciseOverride("pull-ups", "sets" to 5.0)))))
 
         press("Pull-ups: sets → 5")
-        named("Salvar ajuste").assertExists()
+        named("Salvar alteração").assertExists()
         compose.onNode(hasContentDescription("Séries") and hasText("5")).assertExists()
         type("Séries", "6")
-        press("Salvar ajuste")
+        press("Salvar alteração")
         press("Salvar")
 
         assertEquals(listOf(exerciseOverride("pull-ups", "sets" to 6.0)), files.savedOverrides())
@@ -587,7 +598,7 @@ class ProgramEditorScreenTest {
     fun `removes an override`() {
         val files = show("base", Files(programs = listOf(base(exerciseOverride("pull-ups", "sets" to 5.0)))))
 
-        press("Remover ajuste")
+        press("Remover alteração")
         press("Salvar")
 
         assertEquals(null, (files.savedWeeks().single() as ProgramWeek.Training).overrides)
@@ -609,10 +620,10 @@ class ProgramEditorScreenTest {
     fun `refuses to emit an override the schema would reject, and says why`() {
         val files = show("base", Files(programs = listOf(base())))
 
-        press("+ Adicionar ajuste")
+        press("+ Adicionar alteração")
         press("Pull-ups")
         type("Séries", "0")
-        press("Adicionar ajuste")
+        press("Adicionar alteração")
 
         named("Séries precisa ser pelo menos 1.").assertExists()
         press("Salvar")
@@ -623,10 +634,10 @@ class ProgramEditorScreenTest {
     fun `refuses a count past the ceiling too`() {
         show("base", Files(programs = listOf(base())))
 
-        press("+ Adicionar ajuste")
+        press("+ Adicionar alteração")
         press("Pull-ups")
         type("Séries", "501")
-        press("Adicionar ajuste")
+        press("Adicionar alteração")
 
         named("Séries pode ser no máximo 500.").assertExists()
     }
@@ -636,10 +647,10 @@ class ProgramEditorScreenTest {
         val existing = exerciseOverride("pull-ups", "sets" to 5.0)
         val files = show("base", Files(programs = listOf(base(existing))))
 
-        press("+ Adicionar ajuste")
+        press("+ Adicionar alteração")
         press("Dips")
         type("Séries", "2")
-        press("Adicionar ajuste")
+        press("Adicionar alteração")
         press("Salvar")
 
         assertEquals(listOf(existing, exerciseOverride("dips", "sets" to 2.0)), files.savedOverrides())
@@ -649,14 +660,14 @@ class ProgramEditorScreenTest {
     fun `clears the message once the field is edited again, and then saves`() {
         val files = show("base", Files(programs = listOf(base())))
 
-        press("+ Adicionar ajuste")
+        press("+ Adicionar alteração")
         press("Pull-ups")
         type("Séries", "0")
-        press("Adicionar ajuste")
+        press("Adicionar alteração")
         type("Séries", "5")
 
         absent("Séries precisa ser pelo menos 1.")
-        press("Adicionar ajuste")
+        press("Adicionar alteração")
         press("Salvar")
         assertEquals(listOf(exerciseOverride("pull-ups", "sets" to 5.0)), files.savedOverrides())
     }
@@ -665,10 +676,10 @@ class ProgramEditorScreenTest {
     fun `refuses a negative circuit rest rather than saving one the merge will drop`() {
         show("base", Files(programs = listOf(base())))
 
-        press("+ Adicionar ajuste")
+        press("+ Adicionar alteração")
         press("finisher")
         type("Descanso/exercício (seg)", "-5")
-        press("Adicionar ajuste")
+        press("Adicionar alteração")
 
         named("Descanso/exercício (seg) precisa ser pelo menos 0.").assertExists()
     }
@@ -681,7 +692,7 @@ class ProgramEditorScreenTest {
 
         press("Pull-ups: sets → 5")
         type("Séries", "0")
-        press("Salvar ajuste")
+        press("Salvar alteração")
         named("Séries precisa ser pelo menos 1.").assertExists()
         // Through Cancel, since the rows are inert while the panel is open.
         press("Cancelar")
@@ -698,7 +709,7 @@ class ProgramEditorScreenTest {
 
         press("Pull-ups: sets → 5")
 
-        compose.onAllNodes(hasContentDescription("Remover ajuste") and isControl)[0].assertIsNotEnabled()
+        compose.onAllNodes(hasContentDescription("Remover alteração") and isControl)[0].assertIsNotEnabled()
         compose.onNode(hasText("Dips: sets → 3") and isControl).assertIsNotEnabled()
         press("Cancelar")
         compose.onNode(hasText("Dips: sets → 3") and isControl).assertIsEnabled()
@@ -713,7 +724,7 @@ class ProgramEditorScreenTest {
         press("Pull-ups: sets → 0")
         compose.onNode(hasContentDescription("Séries") and hasText("0")).assertExists()
         type("Séries", "6")
-        press("Salvar ajuste")
+        press("Salvar alteração")
         press("Salvar")
 
         assertEquals(listOf(exerciseOverride("pull-ups", "sets" to 6.0)), files.savedOverrides())
@@ -737,7 +748,7 @@ class ProgramEditorScreenTest {
         press("Circuito (finisher): exercises → 2 · não aplicado — não existe essa configuração para alterar")
 
         named("Circuito (finisher)").assertExists()
-        named("Salvar ajuste").assertExists()
+        named("Salvar alteração").assertExists()
     }
 
     // The panel seeds an absent rest as 0, which diffed against the circuit's none as a change.
@@ -745,10 +756,10 @@ class ProgramEditorScreenTest {
     fun `does not invent a rest override on a circuit that declares none`() {
         val files = show("base", Files(programs = listOf(base(workoutId = "bare-day"))))
 
-        press("+ Adicionar ajuste")
+        press("+ Adicionar alteração")
         press("bare")
         press("Aumentar Rodadas")
-        press("Adicionar ajuste")
+        press("Adicionar alteração")
         press("Salvar")
 
         assertEquals(
@@ -762,10 +773,10 @@ class ProgramEditorScreenTest {
     fun `clears a rest the circuit does declare, rather than saving an empty override`() {
         val files = show("base", Files(programs = listOf(base())))
 
-        press("+ Adicionar ajuste")
+        press("+ Adicionar alteração")
         press("finisher")
         type("Descanso/exercício (seg)", "")
-        press("Adicionar ajuste")
+        press("Adicionar alteração")
         press("Salvar")
 
         assertEquals(listOf(finisherRest(0.0)), files.savedOverrides())
@@ -775,10 +786,10 @@ class ProgramEditorScreenTest {
     fun `still saves a circuit patch the schema accepts`() {
         val files = show("base", Files(programs = listOf(base())))
 
-        press("+ Adicionar ajuste")
+        press("+ Adicionar alteração")
         press("finisher")
         type("Descanso/exercício (seg)", "0")
-        press("Adicionar ajuste")
+        press("Adicionar alteração")
         press("Salvar")
 
         assertEquals(listOf(finisherRest(0.0)), files.savedOverrides())
@@ -791,7 +802,7 @@ class ProgramEditorScreenTest {
 
         press("Pull-ups: reps → 12 · não aplicado — não existe essa configuração para alterar")
         type("Séries", "5")
-        press("Salvar ajuste")
+        press("Salvar alteração")
         press("Salvar")
 
         assertEquals(listOf(exerciseOverride("pull-ups", "reps" to 12.0, "sets" to 5.0)), files.savedOverrides())
@@ -804,7 +815,7 @@ class ProgramEditorScreenTest {
 
         press("Dips: sets → 5")
         type("Séries", "4")
-        press("Salvar ajuste")
+        press("Salvar alteração")
         press("Salvar")
 
         assertEquals(null, files.savedOverrides())
@@ -817,7 +828,7 @@ class ProgramEditorScreenTest {
 
         press("Dips: sets → 3")
         type("Séries", "6")
-        press("Salvar ajuste")
+        press("Salvar alteração")
         press("Salvar")
 
         assertEquals(listOf(overrides[0], exerciseOverride("dips", "sets" to 6.0)), files.savedOverrides())
@@ -835,16 +846,16 @@ class ProgramEditorScreenTest {
         // A rest day, round trip: the open edit goes, with the overrides it was editing.
         press("Pull-ups: sets → 5")
         press("Dia de descanso")
-        press("Dia de descanso")
-        absent("Salvar ajuste")
+        press("Treino")
+        absent("Salvar alteração")
 
         // Another workout, while choosing what to patch in the old one.
-        press("+ Adicionar ajuste")
+        press("+ Adicionar alteração")
         named("finisher").assertExists()
         press("Push day")
         press("Pull day")
         absent("finisher")
-        named("+ Adicionar ajuste").assertExists()
+        named("+ Adicionar alteração").assertExists()
     }
 
     private fun Files.savedOverrides() = (savedWeeks().single() as ProgramWeek.Training).overrides

@@ -68,9 +68,12 @@ internal fun SendActions(yaml: String) {
     // Bumped by every outcome, so a second Copy inside two seconds restarts the timer, not inherits it.
     var said by remember { mutableIntStateOf(0) }
     val copied = stringResource(R.string.yamlView_copied)
+    // Where the app announces a copy (12L and lower), a share's fallback says why it copied.
+    val shareCopied = stringResource(R.string.yamlView_shareCopied)
+    val linkCopied = stringResource(R.string.yamlView_linkCopied)
     val copy = { landed: SendOutcome ->
         val took = context.copyToClipboard(yaml)
-        if (took) view.confirmCopy(copied)
+        if (took) view.confirmCopy(if (landed == SendOutcome.ShareCopied) shareCopied else copied)
         outcome = if (took) landed else SendOutcome.CopyFailed
         said++
     }
@@ -104,7 +107,9 @@ internal fun SendActions(yaml: String) {
     )
     TextAction(stringResource(R.string.yamlView_formatLink), KettleType.smallMedium, colors.text, onClick = {
         if (!context.openLink(FORMAT_URL)) {
-            outcome = if (context.copyToClipboard(FORMAT_URL)) SendOutcome.LinkCopied else SendOutcome.CopyFailed
+            val took = context.copyToClipboard(FORMAT_URL)
+            if (took) view.confirmCopy(linkCopied)
+            outcome = if (took) SendOutcome.LinkCopied else SendOutcome.CopyFailed
             said++
         }
     })

@@ -57,6 +57,27 @@ class ExerciseStepsTest {
         assertEquals(null, filled[ConfigKey.TargetWeightKg])
     }
 
+    // 0:00 would read as set on its button and then be refused by Save: a work interval needs a second.
+    @Test
+    fun `fills a required time at its field's least`() {
+        val hiit = ExerciseDraft("Sprints", ExerciseType.Hiit, emptyMap(), "").withRequiredFilled().values
+        assertEquals("1", hiit[ConfigKey.WorkSec])
+        assertEquals("0", hiit[ConfigKey.RestSec])
+    }
+
+    @Test
+    fun `carries what two types share across a switch`() {
+        assertEquals("4", reps(ConfigKey.Sets to "4").switchingTo(ExerciseType.TimedHold).values[ConfigKey.Sets])
+    }
+
+    // Rest's duration is filled at 0, and Cardio's same key needs a second: carried, Save would refuse it.
+    @Test
+    fun `drops a carried value the new type refuses`() {
+        val rest = ExerciseDraft("Breather", ExerciseType.Rest, emptyMap(), "").withRequiredFilled()
+
+        assertEquals(null, rest.switchingTo(ExerciseType.Cardio).values[ConfigKey.DurationSec])
+    }
+
     @Test
     fun `keeps what is already set`() {
         assertEquals("4", reps(ConfigKey.Sets to "4").withRequiredFilled().values[ConfigKey.Sets])

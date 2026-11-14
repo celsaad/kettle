@@ -16,8 +16,9 @@ import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.ConfigField
 import com.casco.kettle.domain.ConfigKey
 import com.casco.kettle.domain.FORM_TYPES
+import com.casco.kettle.domain.FieldUnit
 import com.casco.kettle.domain.configFields
-import com.casco.kettle.domain.withRequiredFilled
+import com.casco.kettle.domain.switchingTo
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.form.FieldKind
 import com.casco.kettle.shell.form.FormField
@@ -49,8 +50,14 @@ internal fun ExerciseSheetFields(
     Label(stringResource(R.string.exerciseEditor_type), compact = false)
     if (typeLocked) {
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.two), verticalAlignment = Alignment.CenterVertically) {
-            // Announced unavailable, not a pill whose tap does nothing.
-            TypePill(draft.type, active = true, enabled = false, compact = false) {}
+            // Announced unavailable, and why, on the pill itself, as Delete's reason is on Delete.
+            TypePill(
+                draft.type,
+                active = true,
+                compact = false,
+                locked = stringResource(R.string.exerciseEditor_typeLocked),
+            ) {
+            }
             Text(
                 stringResource(R.string.exerciseEditor_typeLocked),
                 style = KettleType.small,
@@ -63,9 +70,8 @@ internal fun ExerciseSheetFields(
                 TypePill(
                     type,
                     type == draft.type,
-                    enabled = true,
                     compact = false,
-                ) { context.onChange(draft.copy(type = type).withRequiredFilled()) }
+                ) { context.onChange(draft.switchingTo(type)) }
             }
         }
     }
@@ -90,14 +96,10 @@ private enum class Section(
     Timing(R.string.exerciseEditor_timing),
 }
 
-/** The weight is the load; anything measured in time, a rest, a work interval, a cap, a duration, is timing. */
+/** The weight is the load; anything measured in time, by its unit, is timing; the rest is the target. */
 private fun sectionOf(field: ConfigField): Section =
-    when (field.key) {
-        ConfigKey.TargetWeightKg -> Section.Load
-
-        ConfigKey.RestSec, ConfigKey.WorkSec, ConfigKey.IntervalSec, ConfigKey.TimeCapSec, ConfigKey.TotalMinutes,
-        ConfigKey.DurationSec,
-        -> Section.Timing
-
+    when {
+        field.key == ConfigKey.TargetWeightKg -> Section.Load
+        field.unit == FieldUnit.Seconds || field.unit == FieldUnit.Minutes -> Section.Timing
         else -> Section.Target
     }

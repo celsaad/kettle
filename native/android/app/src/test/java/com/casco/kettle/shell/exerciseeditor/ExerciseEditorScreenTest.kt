@@ -90,9 +90,8 @@ class ExerciseEditorScreenTest {
     private fun press(label: String) =
         compose
             .onNode((hasText(label) or hasContentDescription(label)) and isButton)
-            .apply {
-                runCatching { performScrollTo() }
-            }.performClick()
+            .apply { if (label != "Salvar") performScrollTo() }
+            .performClick()
 
     /** A control inside the dialog, by its words or its name: the time picker's steppers. */
     private fun pressInDialog(label: String) =
@@ -115,17 +114,18 @@ class ExerciseEditorScreenTest {
         assertEquals(emptyList<Library>(), files.written)
     }
 
-    // A time button can reach 0:00, and a HIIT's work needs a second at least: the form says so.
+    // A typed field can still hold what the schema refuses: a cardio's duration needs a second at least.
     @Test
     fun `surfaces a config error and writes nothing`() {
         val files = Files()
         show(null, files)
 
-        type("Nome", "Sprints")
-        press("HIIT")
+        type("Nome", "Run")
+        press("Cardio")
+        type("Duração (seg)", "0")
         press("Salvar")
 
-        compose.onNodeWithText("Trabalho precisa ser pelo menos 1.").assertExists()
+        compose.onNodeWithText("Duração precisa ser pelo menos 1.").assertExists()
         assertEquals(emptyList<Library>(), files.written)
         assertEquals(0, closed)
     }
@@ -160,7 +160,7 @@ class ExerciseEditorScreenTest {
         // Only its own type shows, locked and saying why: no pill to pick another.
         compose.onNode(hasText("HIIT") and isButton).assertDoesNotExist()
         compose.onNode(hasText("Reps") and isButton).assertIsNotEnabled()
-        compose.onNodeWithText("Definido na criação").assertExists()
+        compose.onNode(hasText("Reps") and isButton).assert(hasStateDescription("Definido na criação"))
         press("Salvar")
 
         assertEquals(
@@ -287,6 +287,26 @@ class ExerciseEditorScreenTest {
 
         assertEquals(
             ExerciseConfig.Reps(sets = 1, targetRepsMin = 1, restSec = 0.0),
+            files.written
+                .single()
+                .exercises
+                .single()
+                .config,
+        )
+    }
+
+    // Its work starts at a second, the least it takes, not at a 0:00 Save would refuse.
+    @Test
+    fun `saves a new HIIT as its controls show it`() {
+        val files = Files()
+        show(null, files)
+
+        type("Nome", "Sprints")
+        press("HIIT")
+        press("Salvar")
+
+        assertEquals(
+            ExerciseConfig.Hiit(workSec = 1.0, restSec = 0.0, rounds = 1),
             files.written
                 .single()
                 .exercises
@@ -508,6 +528,8 @@ class ExerciseEditorScreenTest {
         show("plank", Files(exercises = listOf(plank)))
 
         compose.onNodeWithText("ホールド（秒）（任意）").performScrollTo().assertExists()
+        // The rest is a time button now, named in Japanese's own order and words.
+        compose.onNodeWithContentDescription("休憩、1分。変更").performScrollTo().assertExists()
     }
 
     @Test
@@ -541,7 +563,7 @@ class ExerciseEditorScreenTest {
         )) {
             compose
                 .onNode((hasText(label) or hasContentDescription(label)) and isButton)
-                .apply { runCatching { performScrollTo() } }
+                .apply { if (label != "Salvar") performScrollTo() }
                 .assertHeightIsAtLeast(44.dp)
         }
     }

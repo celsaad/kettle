@@ -2,6 +2,8 @@ package com.casco.kettle.shell.exerciseeditor
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -20,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.ConfigField
 import com.casco.kettle.domain.ConfigKey
 import com.casco.kettle.domain.ExerciseDraft
+import com.casco.kettle.domain.FieldUnit
 import com.casco.kettle.domain.UnitSystem
 import com.casco.kettle.domain.canStep
 import com.casco.kettle.domain.configFields
@@ -30,6 +33,7 @@ import com.casco.kettle.domain.storedWeightKg
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.form.DurationButton
 import com.casco.kettle.shell.form.StepButton
+import com.casco.kettle.shell.library.rangeLabel
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.Spacing
@@ -55,7 +59,7 @@ internal fun FieldControl(
             CountRow(field, context)
         }
 
-        field.unit == com.casco.kettle.domain.FieldUnit.Seconds && !field.optional -> {
+        field.unit == FieldUnit.Seconds && !field.optional -> {
             TimeRow(field, context)
         }
 
@@ -89,6 +93,7 @@ private fun CountRow(
  * The reps as a range, "Reps  − 8 +  to  − 12 +", and what it reads as under it. The top starts at the
  * bottom, a fixed count, and can't go below it; the bottom carries the top up past it.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun RepsRow(context: FieldContext) {
     val fields = configFields(context.draft.type).associateBy { it.key }
@@ -97,7 +102,11 @@ private fun RepsRow(context: FieldContext) {
     val colors = KettleTheme.colors
     Column(Modifier.padding(top = Spacing.two), verticalArrangement = Arrangement.spacedBy(Spacing.one)) {
         Text(fieldName(min, context.units), style = KettleType.default, color = colors.text)
-        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.two), verticalAlignment = Alignment.CenterVertically) {
+        // Wraps rather than clips: two steppers and "to" fill a phone's row at the largest text size.
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(Spacing.two),
+            itemVerticalAlignment = Alignment.CenterVertically,
+        ) {
             Stepper(min, fieldName(min, context.units), context)
             Text(
                 stringResource(R.string.exerciseEditor_repsTo),
@@ -118,10 +127,13 @@ private fun repsHint(
     max: ConfigField,
 ): String {
     val sets = configFields(draft.type).first { it.key == ConfigKey.Sets }
-    val bottom = draft.shownCount(min)
-    val top = draft.shownCount(max)
-    val fixed = "${draft.shownCount(sets)} × $bottom"
-    return stringResource(R.string.exerciseEditor_repsHint, fixed, if (top > bottom) "$fixed–$top" else fixed)
+    val count = draft.shownCount(sets).toInt()
+    val bottom = draft.shownCount(min).toDouble()
+    val top = draft.shownCount(max).toDouble()
+    // The library's own "3 × 8–12", so the shape reads as every row that shows a reps target does.
+    val fixed = stringResource(R.string.library_targetReps, rangeLabel(bottom, null), count, "")
+    val shape = stringResource(R.string.library_targetReps, rangeLabel(bottom, top.takeIf { it > bottom }), count, "")
+    return stringResource(R.string.exerciseEditor_repsHint, fixed, shape)
 }
 
 /** − value +, each button named by the field it moves, and the value announced as it changes. */

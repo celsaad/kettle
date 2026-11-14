@@ -45,9 +45,10 @@ fun ExerciseDraft.stepping(
 }
 
 /**
- * The draft with every blank required count at its field's least and every blank required time at 0:
- * what its steppers and time buttons show, so a new exercise saves what it shows rather than being
- * refused for a field that read "1" on screen. Optional fields stay blank, which means something.
+ * The draft with every blank required count or time at its field's least, 1 set, a 0:00 rest, a 0:01
+ * work interval: what its steppers and time buttons show, so a new exercise saves what it shows
+ * rather than being refused for a field that read "1" on screen. Optional fields stay blank, which
+ * means something.
  */
 fun ExerciseDraft.withRequiredFilled(): ExerciseDraft {
     val blanks =
@@ -56,11 +57,27 @@ fun ExerciseDraft.withRequiredFilled(): ExerciseDraft {
             .mapNotNull { field ->
                 when {
                     field.integer -> field.key to "${field.min.toLong()}"
-                    field.unit == FieldUnit.Seconds -> field.key to "0"
+                    field.unit == FieldUnit.Seconds -> field.key to jsNumber(field.min)
                     else -> null
                 }
             }
     return if (blanks.isEmpty()) this else copy(values = values + blanks)
+}
+
+/**
+ * A new exercise switched to [type]: what it shares with the old one carries over, Sets from reps to a
+ * hold say, but not a value the new type refuses, such as Rest's filled 0:00 landing in Cardio's
+ * duration, whose least is a second. Then its own blanks are filled, as a new exercise's are.
+ */
+fun ExerciseDraft.switchingTo(type: ExerciseType): ExerciseDraft {
+    val fields = configFields(type).associateBy { it.key }
+    val kept =
+        values.filter { (key, text) ->
+            val field = fields[key]
+            val number = jsNumberOrNull(text.trim())
+            field == null || number == null || number >= field.min
+        }
+    return copy(type = type, values = kept).withRequiredFilled()
 }
 
 /** A reps max goes no lower than the min; any other count no lower than its field allows. */

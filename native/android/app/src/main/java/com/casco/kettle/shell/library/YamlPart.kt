@@ -5,8 +5,9 @@ internal enum class YamlPart { Punctuation, Key, Number, Text }
 
 /**
  * A line of the app's own YAML, cut into coloured pieces (#444). Not a YAML parser: the serializer
- * writes one shape, `indent`, an optional `- `, `key: value`, and folded text under `>-`, so one
- * pattern reads all of it. A line that isn't a key is the folded text's.
+ * writes `indent`, an optional `- `, then `key: value`, or `key:` ending the line; a long or multi-line
+ * value wraps onto lines of its own, plain or quoted, which read whole as text. A key needs ": " or
+ * the line's end after it, so a wrapped `https://…` isn't one.
  */
 internal fun yamlParts(line: String): List<Pair<String, YamlPart>> {
     val match = KEY_LINE.matchEntire(line) ?: return listOf(line to YamlPart.Text)
@@ -23,10 +24,10 @@ internal fun yamlParts(line: String): List<Pair<String, YamlPart>> {
 private fun valuePart(value: String): YamlPart =
     when {
         value.toDoubleOrNull() != null -> YamlPart.Number
-        value == "[]" || value == ">-" || value == "|" || value == "|-" -> YamlPart.Punctuation
+        value == "[]" -> YamlPart.Punctuation
         else -> YamlPart.Text
     }
 
-private val KEY_LINE = Regex("""^(\s*(?:- )?)([A-Za-z_][A-Za-z0-9_]*)(: ?)(.*)$""")
+private val KEY_LINE = Regex("""^(\s*(?:- )?)([A-Za-z_][A-Za-z0-9_]*)(: |:$)(.*)$""")
 
 private const val VALUE_GROUP = 4

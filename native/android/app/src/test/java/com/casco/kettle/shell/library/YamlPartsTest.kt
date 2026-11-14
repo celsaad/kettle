@@ -31,11 +31,19 @@ class YamlPartsTest {
         )
     }
 
-    // An empty list and a folded-text marker are structure, not values.
+    // An empty list is structure, not a value.
     @Test
-    fun `reads an empty list and a fold marker as punctuation`() {
+    fun `reads an empty list as punctuation`() {
         assertEquals(YamlPart.Punctuation, yamlParts("workouts: []").last().second)
-        assertEquals(YamlPart.Punctuation, yamlParts("    notes: >-").last().second)
+    }
+
+    // A long note wraps onto lines of its own; one starting with a link isn't a key.
+    @Test
+    fun `reads a wrapped line that starts with a link as text`() {
+        assertEquals(
+            listOf("      https://example.com/cue" to YamlPart.Text),
+            yamlParts("      https://example.com/cue"),
+        )
     }
 
     @Test

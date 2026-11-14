@@ -12,7 +12,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -23,7 +22,6 @@ import com.casco.kettle.shell.R
 import com.casco.kettle.shell.files.LatestFiles
 import com.casco.kettle.shell.files.LocalLatestFiles
 import com.casco.kettle.shell.form.SheetColumn
-import com.casco.kettle.shell.i18n.deviceUnitSystem
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.Spacing
@@ -97,7 +95,7 @@ private fun ExerciseHeader(
     files: LatestFiles,
 ) {
     val colors = KettleTheme.colors
-    val units = files.preferences?.unitSystem ?: deviceUnitSystem(LocalConfiguration.current.locales[0])
+    val units = files.unitsOrDevice()
     name?.let { Text(it, style = KettleType.smallMedium, color = colors.textSecondary) }
     Text(
         stringResource(R.string.yamlView_asYaml),
@@ -106,10 +104,12 @@ private fun ExerciseHeader(
         color = colors.text,
     )
     val weights = if (units == UnitSystem.IMPERIAL) R.string.yamlView_unitsImperial else R.string.yamlView_unitsMetric
+    // Two texts, not one joined with a space: ja ends a sentence with 。 and wants no space after it.
     Text(
-        stringResource(weights) + " " + stringResource(R.string.yamlView_fresh),
+        stringResource(weights),
         Modifier.padding(top = Spacing.two),
         style = KettleType.small,
         color = colors.textSecondary,
     )
+    Text(stringResource(R.string.yamlView_fresh), style = KettleType.small, color = colors.textSecondary)
 }

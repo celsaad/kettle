@@ -2,6 +2,8 @@ package com.casco.kettle.shell.library
 
 import android.content.ClipboardManager
 import android.content.Context
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.hasText
@@ -82,10 +84,10 @@ class LibraryYamlScreenTest {
 
         compose.onNodeWithText("Squat").assertExists()
         compose.onNode(hasText("Como YAML") and isHeading()).assertExists()
+        compose.onNodeWithText("Os pesos aqui estão em quilogramas, como o arquivo os guarda.").assertExists()
         compose
             .onNodeWithText(
-                "Os pesos aqui estão em quilogramas, como o arquivo os guarda. " +
-                    "Escrito do zero, então os comentários do seu arquivo original não estão aqui.",
+                "Escrito do zero, então os comentários do seu arquivo original não estão aqui.",
             ).assertExists()
     }
 
@@ -113,7 +115,8 @@ class LibraryYamlScreenTest {
                 .text
                 .toString()
         assertEquals(ParseResult.Ok(squatLibrary), parseLibraryYaml(copied))
-        compose.onNodeWithText("Copiado").assertExists()
+        // Said, but not announced: the system announces a copy itself, and a live region doubled it.
+        compose.onNodeWithText("Copiado").assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.LiveRegion))
     }
 
     // The block's numbers are for the eye: out of the copy's selection and out of what TalkBack reads.

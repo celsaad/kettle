@@ -1086,9 +1086,9 @@
     "copied": "Copied",
     "copyFailed": "Couldn't copy it.",
     "share": "Share",
-    "shareFailed": "Couldn't open sharing. Copy it instead.",
     "sendNote": "Copy and Share send this as a complete file that imports on its own. Read-only here: to change it, use Edit.",
     "formatLink": "How the format works",
-    "linkCopied": "No browser to open it, so the link was copied."
+    "linkCopied": "No browser to open it, so the link was copied.",
+    "shareCopied": "Couldn't open sharing, so it was copied instead."
   }
 }

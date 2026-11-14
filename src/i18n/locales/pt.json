@@ -1150,9 +1150,9 @@
     "copied": "Copiado",
     "copyFailed": "Não foi possível copiar.",
     "share": "Compartilhar",
-    "shareFailed": "Não foi possível abrir o compartilhamento. Copie em vez disso.",
     "sendNote": "Copiar e Compartilhar enviam isto como um arquivo completo que se importa sozinho. Aqui é só leitura: para alterar, use Editar.",
     "formatLink": "Como o formato funciona",
-    "linkCopied": "Nenhum navegador para abrir, então o link foi copiado."
+    "linkCopied": "Nenhum navegador para abrir, então o link foi copiado.",
+    "shareCopied": "Não foi possível abrir o compartilhamento, então foi copiado."
   }
 }

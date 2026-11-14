@@ -37,7 +37,6 @@
   },
   "today": {
     "nextUp": "NEXT UP",
-    "nextUpWeek": "NEXT UP · {{week}}",
     "restDayTitle": "Rest day",
     "restDaySkip": "Train anyway",
     "startSession": "Start session",
@@ -80,8 +79,7 @@
     "notFound": "This workout isn't in your library any more.",
     "edit": "Edit workout",
     "changesTitle": "Changed for this day",
-    "changesHint": "Set by the program. Edit changes the workout itself.",
-    "rest": "rest {{time}}"
+    "changesHint": "Set by the program. Edit changes the workout itself."
   },
   "build": {
     "workoutCount_one": "{{count}} workout",
@@ -306,7 +304,8 @@
       "circuitLeft_one": "CIRCUIT · {{count}} LEFT",
       "circuitLeft_other": "CIRCUIT · {{count}} LEFT",
       "roundsAfter_one": "{{count}} MORE ROUND",
-      "roundsAfter_other": "{{count}} MORE ROUNDS"
+      "roundsAfter_other": "{{count}} MORE ROUNDS",
+      "restBetween": "rest {{time}}"
     },
     "countingUp": "counting up",
     "stepperAccessibility": "{{label}}: {{value}}. Tap to enter an exact value.",

@@ -12,10 +12,7 @@ import androidx.compose.ui.semantics.semantics
 import com.casco.kettle.domain.Library
 import com.casco.kettle.domain.Program
 import com.casco.kettle.domain.ProgramWeek
-import com.casco.kettle.domain.RunnerStep
 import com.casco.kettle.domain.SessionParams
-import com.casco.kettle.domain.WorkStep
-import com.casco.kettle.domain.Workout
 import com.casco.kettle.domain.findProgramWeek
 import com.casco.kettle.domain.overrideNote
 import com.casco.kettle.shell.R
@@ -58,7 +55,7 @@ internal fun daySlot(
 @Composable
 internal fun DayNotes(
     slot: DaySlot,
-    workout: Workout,
+    workoutId: String,
 ) {
     val colors = KettleTheme.colors
     val week = slot.programWeek ?: return
@@ -75,6 +72,8 @@ internal fun DayNotes(
             style = KettleType.heading,
             color = colors.text,
         )
+        // The library's workout, unpatched, as Program detail reads it: the same lines on both screens.
+        val workout = slot.library.workouts.firstOrNull { it.id == workoutId }
         overrides.forEach { override ->
             overrideLines(overrideNote(override, slot.library, workout)).forEach {
                 Text(it, style = KettleType.small, color = colors.text)
@@ -88,20 +87,3 @@ internal fun DayNotes(
         )
     }
 }
-
-/**
- * Each exercise's rest between its sets, by member key: the rest step after its first set. Keys are per
- * block, and a circuit's rests carry one of their own, so neither a Rest block nor a circuit's rest
- * lands on an exercise; the outline only asks for an exercise outside a circuit.
- */
-internal fun restsBetweenSets(steps: List<RunnerStep>): Map<String, Double> =
-    steps
-        .zipWithNext()
-        .mapNotNull { (work, rest) ->
-            if (work is WorkStep && rest is RunnerStep.Rest && rest.memberKey == work.memberKey) {
-                work.memberKey to rest.seconds
-            } else {
-                null
-            }
-        }.distinctBy { it.first }
-        .toMap()

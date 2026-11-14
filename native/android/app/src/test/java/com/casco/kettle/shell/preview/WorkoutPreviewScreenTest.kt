@@ -73,8 +73,8 @@ class WorkoutPreviewScreenTest {
         val lib = library(pullUpsDay, listOf(ProgramWeek.Training(1, workoutId = "day", overrides = listOf(override))))
 
         show(planned(SessionParams.ProgramSlot("p", 1, null)), lib)
-        compose.onNodeWithText("5 séries", substring = true).assertExists()
-        compose.onNodeWithText("3 séries", substring = true).assertDoesNotExist()
+        compose.onNodeWithText("5 séries · alvo", substring = true).assertExists()
+        compose.onNodeWithText("3 séries · alvo", substring = true).assertDoesNotExist()
     }
 
     @Test
@@ -83,8 +83,8 @@ class WorkoutPreviewScreenTest {
         val lib = library(pullUpsDay, listOf(ProgramWeek.Training(1, workoutId = "day", overrides = listOf(override))))
 
         show(planned(SessionParams.Workout("day")), lib)
-        compose.onNodeWithText("3 séries", substring = true).assertExists()
-        compose.onNodeWithText("5 séries", substring = true).assertDoesNotExist()
+        compose.onNodeWithText("3 séries · alvo", substring = true).assertExists()
+        compose.onNodeWithText("5 séries · alvo", substring = true).assertDoesNotExist()
     }
 
     @Test
@@ -233,6 +233,26 @@ class WorkoutPreviewScreenTest {
 
         compose.onNodeWithContentDescription("Editar treino").performClick()
         assertEquals("day", edited)
+    }
+
+    @Test
+    fun `counts the exercises and sets under the name, as Today's card does`() {
+        show(planned(SessionParams.Workout("day")), library(pullUpsDay))
+
+        compose.onNodeWithText("1 exercício, 3 séries").assertExists()
+    }
+
+    /** Nothing to run is the workout's problem, not the day's: its note and changes still show. */
+    @Test
+    fun `a program day with nothing to run keeps its note and changes`() {
+        val empty = Workout("day", "Empty day", listOf(WorkoutBlock.ExerciseBlock("missing")))
+        val override = ProgramOverride.ExerciseOverride("pull-ups", mapOf("sets" to OverrideValue.Numeric(5.0)))
+        val week = ProgramWeek.Training(1, workoutId = "day", notes = "Semana leve.", overrides = listOf(override))
+        show(planned(SessionParams.ProgramSlot("p", 1, null)), library(empty, listOf(week)))
+
+        compose.onNodeWithText("\"Empty day\" não tem blocos", substring = true).assertExists()
+        compose.onNodeWithText("Semana leve.").assertExists()
+        compose.onNodeWithText("Alterado neste dia").assertExists()
     }
 
     @Test

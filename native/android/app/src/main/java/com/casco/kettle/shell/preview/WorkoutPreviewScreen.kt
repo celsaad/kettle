@@ -26,14 +26,15 @@ import com.casco.kettle.domain.RunnerStep
 import com.casco.kettle.domain.SessionParams
 import com.casco.kettle.domain.UnitSystem
 import com.casco.kettle.domain.Workout
+import com.casco.kettle.domain.planSummary
 import com.casco.kettle.domain.resolveRunnerPlan
+import com.casco.kettle.domain.restsBetweenSets
 import com.casco.kettle.domain.sessionOutline
-import com.casco.kettle.domain.workoutShape
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.files.LatestFiles
 import com.casco.kettle.shell.files.LocalLatestFiles
+import com.casco.kettle.shell.home.contentsText
 import com.casco.kettle.shell.home.weekLabel
-import com.casco.kettle.shell.home.workoutShapeText
 import com.casco.kettle.shell.i18n.deviceUnitSystem
 import com.casco.kettle.shell.list.EditIconButton
 import com.casco.kettle.shell.list.ListHeaderRule
@@ -74,7 +75,7 @@ fun WorkoutPreviewRoute(params: Map<String, String>) {
 fun WorkoutPreviewScreen(
     start: RunnerStart?,
     files: LatestFiles,
-    onEdit: (String) -> Unit = {},
+    onEdit: (String) -> Unit,
 ) {
     val library = files.library
     val units = files.preferences?.unitSystem ?: deviceUnitSystem(LocalConfiguration.current.locales[0])
@@ -116,6 +117,7 @@ fun WorkoutPreviewScreen(
 
                 is RunnerPlan.NoSteps -> {
                     Header(plan.workout, emptyList(), header)
+                    header.slot?.let { DayNotes(it, plan.workout.id) }
                     Message(stringResource(R.string.session_nothingToRun_body, plan.workout.name))
                 }
 
@@ -155,7 +157,7 @@ private fun Preview(
         return
     }
     Header(workout, plan.exercises, header)
-    header.slot?.let { DayNotes(it, workout) }
+    header.slot?.let { DayNotes(it, workout.id) }
     // A workout the step ceiling cuts short says so, as the runner does before its count-in: the list
     // under it is what will run, which isn't the whole workout.
     if (note != null) Box(Modifier.padding(top = Spacing.two)) { note() }
@@ -195,14 +197,10 @@ private fun Header(
         )
         EditIconButton(stringResource(R.string.workoutPreview_edit)) { actions.onEdit(workout.id) }
     }
-    if (exercises.isNotEmpty()) {
-        val shape = remember(workout, exercises) { workoutShape(workout, exercises) }
-        Text(
-            workoutShapeText(shape),
-            Modifier.padding(top = Spacing.two),
-            style = KettleType.default,
-            color = colors.textSecondary,
-        )
+    // What it holds, as Today's card counts it (#439): "3 exercises, 12 sets".
+    val summary = remember(workout, exercises) { planSummary(workout, exercises) }
+    contentsText(summary)?.let {
+        Text(it, Modifier.padding(top = Spacing.two), style = KettleType.default, color = colors.textSecondary)
     }
 }
 

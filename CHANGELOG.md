@@ -122,8 +122,9 @@ here, next to what it describes.
   deletes it, and the weeks after it renumber to close the gap. A day's changes are labelled
   "Changes for this day", and Save sits at the top (#438).
 - **A workout's preview says more**: for a program day it names the program, week and day, shows
-  the day's note in full, and lists what the program changes that day. Each exercise shows its
-  rest between sets and its note, and a pencil at the top opens the workout to edit (#439).
+  the day's note in full, and lists what the program changes that day. Under the name it counts
+  the exercises and sets, as Today's card does. An exercise outside a circuit shows its rest between
+  sets, and its note sits under it. A pencil at the top opens the workout to edit (#439).
 
 ---
 

@@ -61,17 +61,19 @@
 /* ---- Tokens ------------------------------------------------
    Three roles, and only three. Orange is *act*: the one thing the page wants you to press, and
    links, which are the same kind of thing. Blue is *recover*, which on this site means only the
-   runner's rest field. Ink is everything else, selection included: a current nav item or tab is
-   ink, never orange, so it can't read as the main action. Eyebrows, chips, type names and icons
-   were orange before this palette, and that is what it was drawn to stop.
+   runner's rest field (`--rest`). Ink is everything else, selection included: a current nav item
+   or tab is ink, never orange, so it can't read as the main action. Labels, chips, type names and
+   icons are ink for the same reason: orange anywhere else dilutes the one thing it means.
 
    Measured ratios (WCAG 2.x) sit beside the values chosen to clear AA. Light: ink 15.5 on paper,
    ink-2 6.4, act-text 5.6, white on act fill 5.0. Dark: ink 16.1, ink-2 6.8, act-text 8.5, paper
-   on act fill 6.4. ink-2 on sunken: 5.8 light, 5.6 dark.
+   on act fill 6.4. ink-2 on sunken: 5.8 light, 5.6 dark. act-text on sunken: 5.1 light, 7.0
+   dark. The darkened hover fills: white on act 5.9 light, paper on act 5.2 dark.
    ---------------------------------------------------------- */
 :root {
   --paper: #f6f3ee;
-  --surface: #ffffff; /* the one card, never a list of peers */
+  --surface: #ffffff; /* cards: the assistant steps, and the example libraries, each of which
+                         carries its own actions and preview */
   --sunken: #eee9e1; /* inputs, pills, table heads */
   --ink: #1f1b16;
   --ink-2: #5f584c;
@@ -79,7 +81,6 @@
   --act: #b94f24;
   --on-act: #ffffff;
   --act-text: #a1461e;
-  --recover: #2f6fae;
 
   /* The runner's phase fields, which ignore the color scheme exactly as the app's `RunnerColors`
      do. The hero, the footer and every code panel sit on `--run-black`, so anything inside them
@@ -124,15 +125,14 @@
 @media (prefers-color-scheme: dark) {
   :root {
     --paper: #14110d;
-    --surface: #1f1a14;
+    --surface: var(--run-surface);
     --sunken: #2a241c;
     --ink: #f2ede3;
     --ink-2: #a39b8c;
     --border: rgba(242, 237, 227, 0.12);
-    --act: #e8763e;
+    --act: var(--work);
     --on-act: #14110d;
-    --act-text: #ef9a6a;
-    --recover: #6aa6de;
+    --act-text: var(--run-act-text);
   }
 }
 
@@ -176,6 +176,7 @@ a:hover {
    Act-text against body ink measures well under 3:1 in both schemes, so body links are underlined
    at rest. Navigation, footer columns and buttons are excluded: position already sets them apart. */
 .prose a,
+.after-link a,
 .callout a,
 .data-item a,
 .feature-copy a,
@@ -252,8 +253,7 @@ strong {
 .section-tight {
   padding-top: 0;
 }
-/* Sentence case, the same as the app's labels; the old tracked uppercase in orange was the loudest
-   thing on every page and said nothing an h2 doesn't. */
+/* Sentence case in ink-2, the same as the app's labels: a section label, not a second headline. */
 .eyebrow {
   font-family: var(--font-display);
   font-weight: 600;
@@ -310,11 +310,10 @@ strong {
   text-decoration: none;
   color: var(--ink);
 }
-/* The mark is ink: it is a name, not an action. */
+/* The mark inherits the brand's ink: it is a name, not an action. */
 .brand .mark {
   width: 30px;
   height: 30px;
-  color: currentColor;
 }
 .brand .word {
   font-family: var(--font-display);
@@ -322,9 +321,9 @@ strong {
   font-size: 21px;
   letter-spacing: -0.01em;
 }
-/* `flex-wrap` is load-bearing, not defensive: six links do not fit a 390px viewport on one line,
+/* `flex-wrap` is load-bearing, not defensive: the links do not fit a 390px viewport on one line,
    and without it the nav pushes the header wider than the screen and the whole page scrolls
-   sideways. Adding a seventh link must stay this cheap. */
+   sideways. Adding another link must stay this cheap. */
 .site-nav {
   margin-left: auto;
   display: flex;
@@ -400,8 +399,8 @@ strong {
 
 /* ---- Chips: categories ------------------------------------
    One kind only. A chip names a category (a length, a schedule, the equipment, the types used), and
-   categories are neutral: ink-2 on sunken. Before this palette the first chip in a row was orange
-   and the second blue, which taught the reader two meanings neither color has. */
+   categories are neutral: ink-2 on sunken. A coloured chip would teach a meaning the palette
+   doesn't give it. */
 .chip {
   display: inline-flex;
   align-items: center;
@@ -436,8 +435,9 @@ strong {
   font-size: 15px;
   color: var(--run-ink-2);
 }
-/* The one orange fill on the page: the runner's work field, with its black label (6.7; 5.5 on the
-   darkened hover). Written as runner tokens because it sits on the always-black hero. */
+/* The page's main action: the runner's work field, with its black label (6.7; 5.5 on the darkened
+   hover). It is the work field in both schemes, not the light act fill, because it sits on the
+   always-black hero, where the dark scheme's act pairing is the one that reads. */
 .store-cta {
   display: inline-flex;
   align-items: center;
@@ -515,6 +515,7 @@ strong {
   gap: var(--s2);
   margin-top: var(--s4);
 }
+/* run-ink-2 on run-surface: 7.6. */
 .hero-badges .chip {
   background: var(--run-surface);
   color: var(--run-ink-2);
@@ -569,8 +570,12 @@ strong {
 .phase.pace {
   background: var(--run-black);
   color: var(--run-ink);
-  /* An outline only where black would meet black: the dark scheme's paper is near it. */
-  box-shadow: inset 0 0 0 1px var(--run-line);
+}
+/* Black on dark paper has no edge, so there the tile takes the runner's outline (3.4 on dark paper). */
+@media (prefers-color-scheme: dark) {
+  .phase.pace {
+    box-shadow: inset 0 0 0 1px var(--run-outline);
+  }
 }
 .phase.pace .label {
   color: var(--run-ink-2);
@@ -578,6 +583,9 @@ strong {
 .phase.work {
   background: var(--work);
   color: var(--work-ink);
+}
+.phase.work .label {
+  color: var(--work-ink-2);
 }
 .phase.rest {
   background: var(--rest);
@@ -588,8 +596,9 @@ strong {
 }
 
 /* ---- Code panels ------------------------------------------
-   Always black: the file is the same file in either scheme. Keys take the act-text orange the
-   palette draws them in — the file is the thing you act on — and everything else is ink. */
+   Always black: the file is the same file in either scheme. Keys take act-text, as the palette's
+   own file sample draws them: they are the part a reader edits, and the only colour in the panel,
+   so they read as structure rather than competing with a button. Everything else is ink. */
 .code-panel {
   background: var(--run-black);
   border: 1px solid var(--run-line);
@@ -646,7 +655,7 @@ pre code {
 .y-c {
   color: var(--run-ink-2);
   font-style: italic;
-} /* comments, 8.6 */
+} /* comments, 8.7 */
 
 /* Inline code is the file too: mono, ink on sunken. */
 code.inl {
@@ -715,7 +724,7 @@ code.inl {
 }
 
 /* ---- Exercise types: rows, not cards ----------------------
-   Seven peers, so a list with a hairline between neighbours — the app's own rule for peers. */
+   The types are peers, so a list with a hairline between neighbours: the app's own rule for peers. */
 .type-list {
   margin: 0;
   padding: 0;
@@ -902,7 +911,7 @@ code.inl {
 .doc-nav a {
   display: flex;
   align-items: center;
-  min-height: 36px;
+  min-height: 44px;
   padding: 4px var(--s3);
   margin-left: -1px;
   color: var(--ink-2);
@@ -969,8 +978,7 @@ table.ref td {
   border-bottom: 1px solid var(--border);
   vertical-align: top;
 }
-/* ink-2 on sunken: 5.8 light, 5.6 dark. Sunken is opaque now, so the dark-scheme exception the
-   old translucent fill needed is gone. */
+/* ink-2 on sunken: 5.8 light, 5.6 dark. */
 table.ref thead th {
   font-family: var(--font-display);
   font-weight: 600;
@@ -1026,7 +1034,7 @@ table.ref td:first-child {
   font-size: 14px;
   margin-top: var(--s3);
 }
-.back-link {
+.after-link {
   margin-top: var(--s5);
 }
 
@@ -1149,7 +1157,7 @@ table.ref td:first-child {
     border-radius: 999px;
     background: var(--sunken);
   }
-  /* Selection as the app draws it: an ink fill. */
+  /* Selection as the app draws it: an ink fill (paper on ink, 15.5 light, 16.1 dark). */
   .doc-nav a[aria-current='true'] {
     background: var(--ink);
     color: var(--paper);

@@ -82,11 +82,9 @@ class ReminderActions(
 
 /**
  * What Settings asks of the platform and the shell, as parameters so a test hears each one. [open]
- * pushes a route, Import's or Support's.
+ * pushes a route, Your file's or Support's.
  */
 class SettingsActions(
-    val backup: BackupActions,
-    val export: ExportActions,
     val contact: ContactActions,
     val reminder: ReminderActions,
     val open: (Route) -> Unit,
@@ -97,22 +95,19 @@ class SettingsActions(
  * is the only writer of `preferences.json` from then: every change rewrites the whole file through
  * [files], so one setting can't drop another.
  *
- * [canChooseFolder] is whether this device has a folder picker at all; without one the backup rows
- * would advertise something that can never work, so the export copy stands in, as it did in RN where a
- * chosen folder wouldn't survive a relaunch. [version] is the app's, printed at the foot and prefilled
- * in the mail subject. The iOS Files-app copy isn't ported: Android never showed it.
+ * Preferences only since #416: Appearance and Units, the two switches, one row to Your file, which
+ * holds export, import and the backup folder since #413, and the Kettle rows. [version] is the app's,
+ * printed at the foot and prefilled in the mail subject.
  */
 @Composable
 fun SettingsScreen(
     files: LatestFiles,
     supporter: SupporterFile,
-    canChooseFolder: Boolean,
     version: String?,
     actions: SettingsActions,
 ) {
     val units = deviceUnitSystem(LocalConfiguration.current.locales[0])
     val preferences = preferencesOrDefault(files.preferences, units)
-    val sessions = files.sessionLog?.sessions.orEmpty()
     val scope = rememberCoroutineScope()
     val save = remember(files, units, actions) { PreferencesSaver(files, units, scope) }
     Box(
@@ -136,23 +131,14 @@ fun SettingsScreen(
                 color = KettleTheme.colors.text,
             )
             PreferenceSections(preferences, save, actions.reminder)
-            DataSection(sessions, scope, actions.export) { actions.open(Route(Destination.Import)) }
-            SupportSection(supporter) { actions.open(Route(Destination.Support)) }
-            Section(R.string.settings_files) {
-                if (canChooseFolder) {
-                    BackupFolder(preferences.backupFolderUri, files.sessionLog?.sessions, save, scope, actions.backup)
-                } else {
-                    ExportCopy()
-                }
-            }
-            Contact(version, actions.contact)
-            Counts(files.library, sessions.size)
+            YourFile { actions.open(Route(Destination.YourFile)) }
+            KettleSection(supporter, version, actions.contact) { actions.open(Route(Destination.Support)) }
             version?.let { Version(it) }
         }
     }
 }
 
-/** The four settings that are choices, each one a write of the whole file. */
+/** The four settings, each one a write of the whole file. */
 @Composable
 private fun PreferenceSections(
     preferences: Preferences,
@@ -161,18 +147,22 @@ private fun PreferenceSections(
 ) {
     Appearance(preferences.themePreference) { theme -> save.launch { it.copy(themePreference = theme) } }
     Units(preferences.unitSystem) { chosen -> save.launch { it.copy(unitSystem = chosen) } }
-    Sounds(preferences.sessionSounds) { on -> save.launch { it.copy(sessionSounds = on) } }
-    Reminder(preferences.restDayReminder) { on ->
-        save.launch({ it.copy(restDayReminder = on) }) { written -> reminder.changed(written.preferences) }
-        // Asked here and nowhere else (#221): the reminder is the only thing that posts on its own.
-        if (on) reminder.askNotifications()
-    }
+    Switches(
+        preferences,
+        onSounds = { on -> save.launch { it.copy(sessionSounds = on) } },
+        onReminder = { on ->
+            save.launch({ it.copy(restDayReminder = on) }) { written -> reminder.changed(written.preferences) }
+            // Asked here and nowhere else (#221): the reminder is the only thing that posts on its own.
+            if (on) reminder.askNotifications()
+        },
+    )
 }
 
+/** The foot: the version, and the one promise Settings makes about the data, as the board closes on it. */
 @Composable
 private fun Version(version: String) =
     Text(
-        stringResource(R.string.settings_version, version),
+        stringResource(R.string.settings_version, version) + "\n" + stringResource(R.string.settings_sessionsStayNote),
         Modifier
             .fillMaxWidth()
             .padding(top = Spacing.four),

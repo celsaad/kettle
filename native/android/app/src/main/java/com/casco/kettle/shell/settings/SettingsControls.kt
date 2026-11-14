@@ -12,7 +12,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -156,6 +159,50 @@ internal fun ActionRow(
                 Chevron()
             }
         }
+    }
+}
+
+/**
+ * A setting that is on or off (#416): its name and what it does, and a switch at the end. One toggleable
+ * row, so the whole row flips it and TalkBack hears a switch named by the title, with its state; the
+ * Switch itself takes no clicks of its own.
+ */
+@Composable
+internal fun SwitchRow(
+    title: String,
+    detail: String,
+    on: Boolean,
+    onChange: (Boolean) -> Unit,
+) {
+    val colors = KettleTheme.colors
+    ListRowSeparator()
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .heightIn(min = ListRowMinHeight)
+            .toggleable(value = on, role = Role.Switch, onValueChange = onChange)
+            .padding(vertical = ListRowVerticalPadding),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.three),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(title, style = KettleType.heading, color = colors.text)
+            Text(detail, style = KettleType.small, color = colors.textSecondary)
+        }
+        // The board's switch: ink when on with the page's colour for the thumb, an outlined track when off.
+        Switch(
+            checked = on,
+            onCheckedChange = null,
+            colors =
+                SwitchDefaults.colors(
+                    checkedThumbColor = colors.background,
+                    checkedTrackColor = colors.text,
+                    checkedBorderColor = colors.text,
+                    uncheckedThumbColor = colors.textSecondary,
+                    uncheckedTrackColor = colors.background,
+                    uncheckedBorderColor = colors.textSecondary,
+                ),
+        )
     }
 }
 

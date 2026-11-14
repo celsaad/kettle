@@ -14,7 +14,6 @@ import androidx.compose.runtime.remember
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import com.casco.kettle.domain.Preferences
-import com.casco.kettle.shell.export.FileShare
 import com.casco.kettle.shell.files.LatestFiles
 import com.casco.kettle.shell.files.LocalLatestFiles
 import com.casco.kettle.shell.files.StoragePaths
@@ -30,14 +29,10 @@ fun SettingsRoute() {
     val files = LocalLatestFiles.current
     val navigator = LocalNavigator.current
     val paths = remember { StoragePaths(activity.filesDir) }
-    val share = remember { FileShare(activity, paths) }
-    val backup = rememberBackupActions(activity, paths)
     val notifications = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
     val actions =
-        remember(files, backup, navigator) {
+        remember(files, navigator) {
             SettingsActions(
-                backup,
-                ExportActions(library = share::library, history = share::history),
                 ContactActions(openLink = activity::openLink, copy = activity::copyToClipboard),
                 ReminderActions(
                     askNotifications = {
@@ -53,7 +48,6 @@ fun SettingsRoute() {
     SettingsScreen(
         files,
         remember { DiskSupporterFile(paths.supporter) },
-        canChooseFolder = rememberCanChooseFolder(activity),
         version = remember { activity.packageManager.getPackageInfo(activity.packageName, 0).versionName },
         actions,
     )

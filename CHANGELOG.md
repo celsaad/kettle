@@ -106,6 +106,9 @@ here, next to what it describes.
   sessions and how long. A session that set a record carries a PR badge, and each row shows the
   exercise that set it, or its first. Search finds a session by any exercise in it, not only the
   workout's name (#414).
+- **Settings is just settings**: appearance, units, and two switches for session sounds and the
+  rest-day reminder. Exporting, importing and the backup folder live in Your file, one row away
+  (#416).
 
 ---
 

@@ -23,6 +23,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.ConfigField
 import com.casco.kettle.domain.ConfigProblem
@@ -49,8 +51,6 @@ import com.casco.kettle.shell.theme.Spacing
  * caller's, and every keystroke comes back through [onChange], so the caller decides what Save does.
  * [ExerciseNotesField] follows it, wherever the caller puts it.
  *
- * [typeLocked] for an exercise that exists: each type keys a different config, so switching would
- * read the form under keys the new type doesn't have. The pills stay, dimmed and announced disabled.
  * [compact] is the quick-add's smaller layout, in a card on the workout editor's picker, and puts the
  * keyboard on the name: it opens on a tap that means "a new one called…".
  */
@@ -60,7 +60,6 @@ fun ExerciseFormFields(
     draft: ExerciseDraft,
     onChange: (ExerciseDraft) -> Unit,
     units: UnitSystem,
-    typeLocked: Boolean,
     compact: Boolean = false,
 ) {
     val look = fieldLook(compact)
@@ -82,7 +81,7 @@ fun ExerciseFormFields(
             horizontalArrangement = Arrangement.spacedBy(if (compact) Spacing.one else Spacing.two - 2.dp),
         ) {
             for (type in FORM_TYPES) {
-                TypePill(type, type == draft.type, enabled = !typeLocked, compact) { onChange(draft.copy(type = type)) }
+                TypePill(type, type == draft.type, compact) { onChange(draft.copy(type = type)) }
             }
         }
 
@@ -116,7 +115,7 @@ fun ExerciseNotesField(
 
 /** The quick-add's fields are smaller, and fill with the background, since they sit in a card. */
 @Composable
-private fun fieldLook(compact: Boolean) =
+internal fun fieldLook(compact: Boolean) =
     if (compact) {
         FieldOptions(minHeight = 44.dp, fill = KettleTheme.colors.background)
     } else {
@@ -125,23 +124,26 @@ private fun fieldLook(compact: Boolean) =
 
 /**
  * One type to choose. The pill is RN's size, inside a 44dp target that grows with the reader's text
- * size; [enabled] false dims it, and `selectable` then announces it disabled, so a locked type isn't
- * a control that looks dimmed and still says it can be tapped.
+ * size. [locked], the reason an existing exercise's type can't change (#441), dims it, and
+ * `selectable` then announces it disabled, with the reason as its state, so a locked type isn't a
+ * control that looks dimmed and still says it can be tapped.
  */
 @Composable
-private fun TypePill(
+internal fun TypePill(
     type: ExerciseType,
     active: Boolean,
-    enabled: Boolean,
     compact: Boolean,
+    locked: String? = null,
     onSelect: () -> Unit,
 ) {
     val colors = KettleTheme.colors
+    val enabled = locked == null
     Box(
         Modifier
             .heightIn(min = 44.dp)
             .clip(PillShape)
             .selectable(selected = active, enabled = enabled, role = Role.Button, onClick = onSelect)
+            .semantics { locked?.let { stateDescription = it } }
             .alpha(if (enabled) 1f else DISABLED_ALPHA),
         contentAlignment = Alignment.Center,
     ) {
@@ -169,7 +171,7 @@ private fun TypePill(
 }
 
 @Composable
-private fun ConfigInput(
+internal fun ConfigInput(
     field: ConfigField,
     draft: ExerciseDraft,
     onChange: (ExerciseDraft) -> Unit,
@@ -207,7 +209,7 @@ internal fun withOptional(
     }
 
 @Composable
-private fun Label(
+internal fun Label(
     text: String,
     compact: Boolean,
 ) = Text(

@@ -849,9 +849,16 @@
     "notesOptional": "Notas · opcional",
     "notesPlaceholder": "Dica de execução…",
     "deleteExercise": "Excluir exercício",
-    "inUseTitle": "Exercício em uso",
-    "inUseBody": "\"{{name}}\" é usado em {{workouts}}. Remova-o desses treinos primeiro.",
-    "deleteConfirmTitle": "Excluir exercício?"
+    "deleteConfirmTitle": "Excluir exercício?",
+    "typeLocked": "Definido na criação",
+    "target": "Alvo",
+    "load": "Carga",
+    "timing": "Tempo",
+    "repsTo": "a",
+    "repsHint": "Fica {{shape}}. O mesmo número duas vezes salva uma contagem fixa, {{fixed}}.",
+    "storedAs": "Seu arquivo guarda como {{kg}} kg.",
+    "idLabel": "id: {{id}}",
+    "inUseReason": "Não dá para excluir enquanto for usado por {{workouts}}. Tire-o de lá primeiro."
   },
   "workoutEditor": {
     "newTitle": "Novo treino",

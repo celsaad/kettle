@@ -57,7 +57,7 @@ fun NewExerciseForm(
             .border(1.dp, colors.border, CardShape)
             .padding(Spacing.two + 4.dp),
     ) {
-        ExerciseFormFields(draft, { draft = it }, units, typeLocked = false, compact = true)
+        ExerciseFormFields(draft, { draft = it }, units, compact = true)
         ExerciseNotesField(draft, { draft = it }, compact = true)
         problem?.let {
             Text(

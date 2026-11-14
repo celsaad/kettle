@@ -100,6 +100,12 @@ fun buildExercise(
     return Exercise(id, draft.name.trim(), config, draft.notes.trim().ifEmpty { null })
 }
 
+/** The kilograms Save would write for the weight field (#441): what "Your file keeps it as 22 kg" says. */
+fun ExerciseDraft.storedWeightKg(
+    system: UnitSystem,
+    previousWeightKg: Double?,
+): Double? = values.weightKg(system, previousWeightKg)
+
 /** The weight field back in kilograms: the stored value itself while the field still shows it. */
 private fun Map<ConfigKey, String>.weightKg(
     system: UnitSystem,
@@ -149,7 +155,11 @@ private fun configOf(
             ExerciseConfig.Reps(
                 sets = values.count(ConfigKey.Sets),
                 targetRepsMin = values.count(ConfigKey.TargetRepsMin),
-                targetRepsMax = values.number(ConfigKey.TargetRepsMax)?.toLong(),
+                // The same number twice is a fixed count (#441): "8" rather than an "8–8" range.
+                targetRepsMax =
+                    values.number(ConfigKey.TargetRepsMax)?.toLong()?.takeIf {
+                        it != values.count(ConfigKey.TargetRepsMin)
+                    },
                 targetWeightKg = weightKg,
                 restSec = values.required(ConfigKey.RestSec),
             )

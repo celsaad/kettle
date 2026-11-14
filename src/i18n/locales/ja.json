@@ -753,9 +753,16 @@
     "notesOptional": "メモ · 任意",
     "notesPlaceholder": "動作のコツ…",
     "deleteExercise": "エクササイズを削除",
-    "inUseTitle": "使用中のエクササイズ",
-    "inUseBody": "「{{name}}」は{{workouts}}で使われています。先にそれらのワークアウトから外してください。",
-    "deleteConfirmTitle": "エクササイズを削除しますか？"
+    "deleteConfirmTitle": "エクササイズを削除しますか？",
+    "typeLocked": "作成時に決まります",
+    "target": "目標",
+    "load": "負荷",
+    "timing": "時間",
+    "repsTo": "〜",
+    "repsHint": "{{shape}}になります。同じ数を2回選ぶと固定回数{{fixed}}として保存されます。",
+    "storedAs": "ファイルには{{kg}} kgで保存されます。",
+    "idLabel": "id: {{id}}",
+    "inUseReason": "{{workouts}}で使用中のため削除できません。先にそこから外してください。"
   },
   "workoutEditor": {
     "newTitle": "新しいワークアウト",

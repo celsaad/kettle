@@ -1,13 +1,17 @@
 package com.casco.kettle.shell.exerciseeditor
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
@@ -21,10 +25,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.Exercise
+import com.casco.kettle.domain.ExerciseConfig
 import com.casco.kettle.domain.ExerciseDraft
 import com.casco.kettle.domain.ExerciseProblem
 import com.casco.kettle.domain.ExerciseSubmit
@@ -33,6 +40,7 @@ import com.casco.kettle.domain.UnitSystem
 import com.casco.kettle.domain.draftOf
 import com.casco.kettle.domain.submitExercise
 import com.casco.kettle.domain.withExercise
+import com.casco.kettle.domain.withRequiredFilled
 import com.casco.kettle.domain.withoutExercise
 import com.casco.kettle.domain.workoutsUsing
 import com.casco.kettle.shell.R
@@ -42,9 +50,9 @@ import com.casco.kettle.shell.files.LibraryWriteRefusal
 import com.casco.kettle.shell.files.LocalLatestFiles
 import com.casco.kettle.shell.files.libraryWriteOrRefusal
 import com.casco.kettle.shell.files.text
-import com.casco.kettle.shell.form.EditorButtons
+import com.casco.kettle.shell.form.EditorTitleBar
 import com.casco.kettle.shell.i18n.deviceUnitSystem
-import com.casco.kettle.shell.list.TextAction
+import com.casco.kettle.shell.list.ListRowSeparator
 import com.casco.kettle.shell.nav.LocalNavigator
 import com.casco.kettle.shell.theme.DialogAction
 import com.casco.kettle.shell.theme.KettleAlertDialog
@@ -95,32 +103,35 @@ fun ExerciseEditorScreen(
     val units = files.preferences?.unitSystem ?: deviceUnitSystem(locale)
     val library = files.library
     val scope = rememberCoroutineScope()
-    Box(
-        Modifier
-            .fillMaxSize()
-            .imePadding()
-            .verticalScroll(rememberScrollState()),
-        contentAlignment = Alignment.TopCenter,
-    ) {
-        Column(
-            Modifier
-                .widthIn(max = MaxContentWidth)
-                .fillMaxWidth()
-                .padding(horizontal = Spacing.three)
-                .padding(bottom = Spacing.four)
-                .navigationBarsPadding(),
+    // Nothing before the library is read, so an exercise that is there is never offered as new.
+    if (library == null) return
+    // Taken from the first read and kept, as RN's form copied the exercise once: the shell reads again
+    // while the sheet is up, and from then on what's typed is the user's. Keyed on the units too, so the
+    // weight is never shown in one unit and converted back in the other.
+    val editor =
+        remember(id, units) { Editor(library.exercises.firstOrNull { it.id == id }, units, files, scope, actions) }
+    val title = if (editor.existing == null) R.string.exerciseEditor_newTitle else R.string.exerciseEditor_editTitle
+    Column(Modifier.fillMaxSize().imePadding()) {
+        // Save pinned above what scrolls, as the program and workout editors' (#438, #440): the × is the cancel.
+        Box(Modifier.fillMaxWidth().padding(horizontal = Spacing.three), contentAlignment = Alignment.TopCenter) {
+            Column(Modifier.widthIn(max = MaxContentWidth).fillMaxWidth()) {
+                EditorTitleBar(stringResource(title), editor::save, refusalText(editor))
+            }
+        }
+        Box(
+            Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()),
+            contentAlignment = Alignment.TopCenter,
         ) {
-            // Nothing before the library is read, so an exercise that is there is never offered as new.
-            if (library == null) return@Column
-            // Taken from the first read and kept, as RN's form copied the exercise once: the shell reads
-            // again while the sheet is up, and from then on what's typed is the user's. Keyed on the
-            // units too, so the weight is never shown in one unit and converted back in the other.
-            val editor =
-                remember(
-                    id,
-                    units,
-                ) { Editor(library.exercises.firstOrNull { it.id == id }, units, files, scope, actions) }
-            Editing(editor, units)
+            Column(
+                Modifier
+                    .widthIn(max = MaxContentWidth)
+                    .fillMaxWidth()
+                    .padding(horizontal = Spacing.three)
+                    .padding(bottom = Spacing.four)
+                    .navigationBarsPadding(),
+            ) {
+                Editing(editor, units)
+            }
         }
     }
 }
@@ -134,12 +145,12 @@ private class Editor(
     private val scope: CoroutineScope,
     private val actions: ExerciseEditorActions,
 ) {
-    var draft by mutableStateOf(existing?.let { draftOf(it, units) } ?: ExerciseDraft.New)
+    var draft by mutableStateOf(existing?.let { draftOf(it, units) } ?: ExerciseDraft.New.withRequiredFilled())
     var problem by mutableStateOf<ExerciseProblem?>(null)
         private set
     var failure by mutableStateOf<Failure?>(null)
         private set
-    var deleting by mutableStateOf<Deleting?>(null)
+    var confirmingDelete by mutableStateOf(false)
         private set
     private var writing = false
 
@@ -149,8 +160,6 @@ private class Editor(
      * after a Delete writes the deleted exercise back.
      */
     private var closed = false
-
-    fun cancel() = actions.close()
 
     fun save() {
         if (closed) return
@@ -169,31 +178,35 @@ private class Editor(
         }
     }
 
-    /** Refuses while any workout uses it, plain or in a circuit, since a delete would orphan them. */
+    /**
+     * The workouts using this exercise, plain or in a circuit, by name, verbatim: Delete is unavailable
+     * while there are any, since a delete would orphan them. Read from the library as it is now.
+     */
+    val usedBy: List<String>
+        get() =
+            existing
+                ?.let { exercise ->
+                    files.library?.let { workoutsUsing(it, exercise.id) }
+                }.orEmpty()
+                .map { it.name }
+
     fun askToDelete() {
-        deleting = inUse() ?: Deleting.Confirm
+        confirmingDelete = usedBy.isEmpty()
     }
 
     fun dismissDelete() {
-        deleting = null
+        confirmingDelete = false
     }
 
     /**
-     * Asks [inUse] again: the library is read again while the confirm is up, and a workout that
-     * started using the exercise meanwhile would be left pointing at nothing.
+     * Asks [usedBy] again: the library is read again while the confirm is up, and a workout that started
+     * using the exercise meanwhile would be left pointing at nothing.
      */
     fun delete() {
         if (closed) return
         val exercise = existing ?: return
-        deleting = inUse()
-        if (deleting == null) write(Failure.Kind.Delete) { it.withoutExercise(exercise.id) }
-    }
-
-    /** The workouts using this exercise in the library as it is now, as a refusal; null for none. */
-    private fun inUse(): Deleting.InUse? {
-        val exercise = existing ?: return null
-        val usedBy = files.library?.let { workoutsUsing(it, exercise.id) }.orEmpty()
-        return Deleting.InUse(usedBy.map { it.name }).takeIf { usedBy.isNotEmpty() }
+        confirmingDelete = false
+        if (usedBy.isEmpty()) write(Failure.Kind.Delete) { it.withoutExercise(exercise.id) }
     }
 
     /**
@@ -229,15 +242,6 @@ private class Editor(
     ) {
         enum class Kind { Save, Delete }
     }
-
-    sealed interface Deleting {
-        data object Confirm : Deleting
-
-        /** [workouts]' names, verbatim. */
-        data class InUse(
-            val workouts: List<String>,
-        ) : Deleting
-    }
 }
 
 @Composable
@@ -245,16 +249,13 @@ private fun Editing(
     editor: Editor,
     units: UnitSystem,
 ) {
-    val colors = KettleTheme.colors
     val existing = editor.existing
-    Text(
-        stringResource(if (existing == null) R.string.exerciseEditor_newTitle else R.string.exerciseEditor_editTitle),
-        Modifier.semantics { heading() },
-        style = KettleType.subtitle,
-        color = colors.text,
+    val previousKg = (existing?.config as? ExerciseConfig.Reps)?.targetWeightKg
+    ExerciseSheetFields(
+        FieldContext(editor.draft, { editor.draft = it }, units, previousKg),
+        typeLocked =
+            existing != null,
     )
-    ExerciseFormFields(editor.draft, { editor.draft = it }, units, typeLocked = existing != null)
-
     // Only for a saved exercise: the bundled set is keyed by id, which a new one doesn't have yet.
     if (existing != null) {
         Box(Modifier.fillMaxWidth().padding(top = Spacing.three), contentAlignment = Alignment.Center) {
@@ -262,68 +263,73 @@ private fun Editing(
         }
     }
     ExerciseNotesField(editor.draft, { editor.draft = it })
-
-    val refusal =
-        editor.problem?.let { exerciseProblemText(it) }
-            ?: editor.failure?.let {
-                val format =
-                    if (it.kind ==
-                        Editor.Failure.Kind.Save
-                    ) {
-                        R.string.common_saveFailed
-                    } else {
-                        R.string.common_deleteFailed
-                    }
-                it.refusal.text(format)
-            }
-    refusal?.let { Text(it, Modifier.padding(top = Spacing.two), style = KettleType.small, color = colors.accentText) }
-
-    EditorButtons(stringResource(R.string.common_save), onCancel = editor::cancel, onPrimary = editor::save)
-    if (existing != null) {
-        Box(Modifier.fillMaxWidth().padding(top = Spacing.three - 2.dp), contentAlignment = Alignment.Center) {
-            TextAction(
-                stringResource(R.string.exerciseEditor_deleteExercise),
-                KettleType.smallMedium,
-                colors.textSecondary,
-                onClick = editor::askToDelete,
-            )
-        }
-        DeleteDialog(editor, existing)
-    }
+    existing?.let { IdAndDelete(editor, it) }
 }
 
-/** Delete's two questions: refused while a workout uses it, else confirmed before anything goes. */
 @Composable
-private fun DeleteDialog(
+private fun refusalText(editor: Editor): String? =
+    editor.problem?.let { exerciseProblemText(it) }
+        ?: editor.failure?.let {
+            it.refusal.text(
+                if (it.kind ==
+                    Editor.Failure.Kind.Save
+                ) {
+                    R.string.common_saveFailed
+                } else {
+                    R.string.common_deleteFailed
+                },
+            )
+        }
+
+/**
+ * The exercise's id, as text, and Delete: unavailable while a workout uses the exercise, with why on
+ * the button's state and under it, as the workout editor's (#440). The names are the user's, verbatim.
+ */
+@Composable
+private fun IdAndDelete(
     editor: Editor,
     exercise: Exercise,
 ) {
-    val deleting = editor.deleting ?: return
-    // Every name here is the user's, interpolated verbatim.
-    when (deleting) {
-        is Editor.Deleting.InUse -> {
-            KettleAlertDialog(
-                title = stringResource(R.string.exerciseEditor_inUseTitle),
-                body =
-                    stringResource(
-                        R.string.exerciseEditor_inUseBody,
-                        exercise.name,
-                        deleting.workouts.joinToString(stringResource(R.string.format_listSeparator)),
-                    ),
-                onDismissRequest = editor::dismissDelete,
-                // RN's buttonless alert, which Android titles with the platform's own OK.
-                confirm = DialogAction(stringResource(android.R.string.ok), editor::dismissDelete),
+    val colors = KettleTheme.colors
+    val usedBy = editor.usedBy
+    val reason =
+        usedBy.takeIf { it.isNotEmpty() }?.let {
+            stringResource(
+                R.string.exerciseEditor_inUseReason,
+                it.joinToString(stringResource(R.string.format_listSeparator)),
             )
         }
-
-        Editor.Deleting.Confirm -> {
-            KettleAlertDialog(
-                title = stringResource(R.string.exerciseEditor_deleteConfirmTitle),
-                body = stringResource(R.string.common_deleteConfirmBody, exercise.name),
-                onDismissRequest = editor::dismissDelete,
-                confirm = DialogAction(stringResource(R.string.common_delete), editor::delete),
-                dismiss = DialogAction(stringResource(R.string.common_cancel), editor::dismissDelete),
-            )
-        }
+    ListRowSeparator(Modifier.padding(top = Spacing.four))
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            stringResource(R.string.exerciseEditor_idLabel, exercise.id),
+            Modifier.weight(1f),
+            style = KettleType.code,
+            color = colors.textSecondary,
+        )
+        val enabled = usedBy.isEmpty()
+        Text(
+            stringResource(R.string.exerciseEditor_deleteExercise),
+            Modifier
+                .heightIn(min = 48.dp)
+                // Disabled rather than refusing after the tap: TalkBack says it's unavailable, and why.
+                .clickable(enabled = enabled, role = Role.Button, onClick = editor::askToDelete)
+                .semantics { reason?.let { stateDescription = it } }
+                .padding(horizontal = Spacing.two)
+                .wrapContentHeight(Alignment.CenterVertically),
+            style = KettleType.smallMedium,
+            color = if (enabled) colors.accentText else colors.textSecondary,
+        )
+    }
+    // Seen, but not read a second time: the button's state already says it.
+    reason?.let { Text(it, Modifier.clearAndSetSemantics {}, style = KettleType.small, color = colors.textSecondary) }
+    if (editor.confirmingDelete) {
+        KettleAlertDialog(
+            title = stringResource(R.string.exerciseEditor_deleteConfirmTitle),
+            body = stringResource(R.string.common_deleteConfirmBody, exercise.name),
+            onDismissRequest = editor::dismissDelete,
+            confirm = DialogAction(stringResource(R.string.common_delete), editor::delete),
+            dismiss = DialogAction(stringResource(R.string.common_cancel), editor::dismissDelete),
+        )
     }
 }

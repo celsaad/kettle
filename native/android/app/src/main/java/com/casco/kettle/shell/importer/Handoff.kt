@@ -41,6 +41,11 @@ internal class Handoff(
     var shareFailed by mutableStateOf(false)
         private set
 
+    /** The file sheet's share of the brief didn't open (#413): Import opens saying so, as if its own hadn't. */
+    fun sharedElsewhereFailed() {
+        shareFailed = true
+    }
+
     private var expiry: Job? = null
 
     /**

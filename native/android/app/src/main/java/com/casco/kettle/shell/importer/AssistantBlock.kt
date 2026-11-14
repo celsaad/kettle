@@ -50,8 +50,9 @@ internal fun AssistantBlock(
     }
 }
 
+/** The brief's words in the reader's language, the file sheet's too. */
 @Composable
-private fun briefWords() =
+internal fun briefWords() =
     AssistantBrief.Words(
         prompt = stringResource(R.string.import_brief_prompt),
         inventoryHeading = stringResource(R.string.import_brief_inventoryHeading),

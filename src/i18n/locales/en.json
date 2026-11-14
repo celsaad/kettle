@@ -975,5 +975,23 @@
     "interval": "{{variant}} · {{progress}}",
     "round": "round {{index}} of {{total}}",
     "seconds": "{{n}}s"
+  },
+  "file": {
+    "counts": "{{exercises}} · {{workouts}} · {{programs}}",
+    "assistantTitle": "Have an assistant write your training",
+    "assistantBody": "Send any assistant the format and your library. Paste its reply back and review every change before it merges.",
+    "shareBrief": "Share the brief",
+    "openFile": "Open a .yaml file",
+    "openFileDetail": "From Files, Drive, or any app that shares one",
+    "paste": "Paste YAML",
+    "pasteDetail": "From a text editor or a chat",
+    "packs": "Starter packs",
+    "takeItWithYou": "Take it with you",
+    "openAsYaml": "Open as YAML",
+    "openAsYamlDetail": "Read it as it is written, weights in kilograms",
+    "shareFile": "Share file",
+    "exportLog": "Export log",
+    "backupChange": "Change folder",
+    "unitsNote": "Weights are in kilograms, as the file stores them."
   }
 }

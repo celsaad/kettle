@@ -120,6 +120,16 @@ class LibraryTabTest {
         assertEquals(Route(Destination.ExerciseEditor), navigator.sheet)
     }
 
+    /** Named by its own words, the file's name, which is also the sheet's title. */
+    @Test
+    fun `the file's name under the title opens the file sheet`() {
+        show()
+
+        compose.onNode(hasText("exercises.yaml") and isButton).assertHeightIsAtLeast(48.dp).performClick()
+
+        assertEquals(Route(Destination.YourFile), navigator.sheet)
+    }
+
     private val isButton = SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button)
 
     private val isTab = SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Tab)

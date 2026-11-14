@@ -18,12 +18,6 @@ import com.casco.kettle.storage.BackupFailure
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
-/** What a backup said, ok or not: one line, so a stale "backed up" can't sit under a fresh failure. */
-private data class BackupMessage(
-    val ok: Boolean,
-    val text: String,
-)
-
 /**
  * The backup folder's rows (#237): choose it, back up now, and forget it, which only shows once there's
  * a choice to forget. The folder is the user's own path, shown verbatim.
@@ -63,9 +57,7 @@ internal fun BackupFolder(
         message = null
         backingUp = true
         scope.launch {
-            message =
-                backup.backUp(folder, log)?.let { BackupMessage(false, resources.describe(it)) }
-                    ?: BackupMessage(true, resources.getString(R.string.settings_backupDone))
+            message = backUpNow(backup, folder, log, resources)
             backingUp = false
         }
     }
@@ -89,7 +81,7 @@ internal fun BackupFolder(
  * chosen alone. The grant or the URI, either one lost at a restart, leaves a row that looks set and
  * stops working, so either one says so.
  */
-private suspend fun choose(
+internal suspend fun choose(
     backup: BackupActions,
     save: PreferencesSaver,
     resources: Resources,
@@ -114,6 +106,16 @@ private suspend fun choose(
             }
         }
     }
+
+/** One Back up now, Settings' and the file sheet's: the folder written, and what to say about it. */
+internal suspend fun backUpNow(
+    backup: BackupActions,
+    folderUri: String,
+    sessions: List<Session>,
+    resources: Resources,
+): BackupMessage =
+    backup.backUp(folderUri, sessions)?.let { BackupMessage(false, resources.describe(it)) }
+        ?: BackupMessage(true, resources.getString(R.string.settings_backupDone))
 
 /** Only a refused write carries the platform's own reason, inside a translated sentence. */
 private fun Resources.describe(failure: BackupFailure) =

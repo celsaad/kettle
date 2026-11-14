@@ -71,15 +71,20 @@ abstract class ImportHarness {
 
     internal lateinit var latest: LatestFiles
 
+    /** Whether the file sheet's share of the brief failed before this Import opened (#413). */
+    internal var shareFailedBefore = false
+
     /**
      * [io] holds the file work until it's run; [readFirst] false leaves the first read held in it too.
-     * [locale] stands in for the reader's language where a test changes it under the sheet.
+     * [locale] stands in for the reader's language where a test changes it under the sheet. [start] is
+     * the one source the file sheet opened it on, none for every source.
      */
     internal fun show(
         files: Files = Files(),
         io: Steps? = null,
         readFirst: Boolean = true,
         locale: State<Locale>? = null,
+        start: ImportStart? = null,
     ): Files {
         val dispatcher = io?.asCoroutineDispatcher() ?: Dispatchers.Unconfined
         latest = LatestFiles(files, CoroutineScope(Dispatchers.Unconfined), io = dispatcher).apply { reread() }
@@ -109,6 +114,8 @@ abstract class ImportHarness {
                                 sheetOpens
                             },
                         ),
+                        start,
+                        shareFailedBefore,
                     )
                 }
             }

@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
@@ -24,6 +25,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.home.WorkoutsRoute
@@ -35,6 +37,7 @@ import com.casco.kettle.shell.nav.Section
 import com.casco.kettle.shell.nav.Tab
 import com.casco.kettle.shell.nav.section
 import com.casco.kettle.shell.programs.ProgramsRoute
+import com.casco.kettle.shell.theme.Chevron
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.MaxContentWidth
@@ -61,7 +64,11 @@ internal fun LibraryTab(route: Route) {
                 .padding(start = Spacing.three, end = Spacing.three, top = Spacing.two),
         ) {
             val new = NEW.getValue(section)
-            Header(stringResource(new.label)) { navigator.push(Route(new.editor)) }
+            Header(
+                stringResource(new.label),
+                onFile = { navigator.push(Route(Destination.YourFile)) },
+                onNew = { navigator.push(Route(new.editor)) },
+            )
             UnderlineTabs(
                 Section.of(Tab.Library).map { it to stringResource(it.label) },
                 section,
@@ -77,18 +84,38 @@ internal fun LibraryTab(route: Route) {
     }
 }
 
+/**
+ * "Library", the file's name under it, which opens the file sheet (#413), and the +. The name is the
+ * link's own words, so it needs no label: it's what Voice Access matches, and the sheet it opens is
+ * titled the same.
+ */
 @Composable
 private fun Header(
     newLabel: String,
+    onFile: () -> Unit,
     onNew: () -> Unit,
 ) {
+    val colors = KettleTheme.colors
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Text(
-            stringResource(R.string.library_title),
-            Modifier.weight(1f).semantics { heading() },
-            style = KettleType.subtitle,
-            color = KettleTheme.colors.text,
-        )
+        Column(Modifier.weight(1f)) {
+            Text(
+                stringResource(R.string.library_title),
+                Modifier.semantics { heading() },
+                style = KettleType.subtitle,
+                color = colors.text,
+            )
+            Row(
+                Modifier.heightIn(min = 48.dp).clickable(role = Role.Button, onClick = onFile),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    LIBRARY_FILE_NAME,
+                    style = KettleType.small.copy(fontFamily = FontFamily.Monospace),
+                    color = colors.textSecondary,
+                )
+                Chevron()
+            }
+        }
         NewButton(newLabel, onNew)
     }
 }

@@ -918,5 +918,23 @@
     "interval": "{{variant}} · {{progress}}",
     "round": "{{total}}ラウンド中{{index}}ラウンド目",
     "seconds": "{{n}}秒"
+  },
+  "file": {
+    "counts": "{{exercises}} · {{workouts}} · {{programs}}",
+    "assistantTitle": "アシスタントにトレーニングを書いてもらう",
+    "assistantBody": "フォーマットとライブラリをアシスタントに送り、返ってきた内容を貼り付けて、マージする前に変更をひとつずつ確認します。",
+    "shareBrief": "ブリーフを共有",
+    "openFile": ".yaml ファイルを開く",
+    "openFileDetail": "ファイル、ドライブ、または共有できる任意のアプリから",
+    "paste": "YAML を貼り付け",
+    "pasteDetail": "テキストエディタやチャットから",
+    "packs": "スターターパック",
+    "takeItWithYou": "持ち出す",
+    "openAsYaml": "YAML で開く",
+    "openAsYamlDetail": "書かれたとおりに表示（重量はキログラム）",
+    "shareFile": "ファイルを共有",
+    "exportLog": "記録を書き出す",
+    "backupChange": "フォルダを変更",
+    "unitsNote": "重量はファイルに保存されているとおりキログラムです。"
   }
 }

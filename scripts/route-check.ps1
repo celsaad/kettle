@@ -78,6 +78,8 @@ $steps = @(
   @('/program-editor?id=foundations', 'Edit program'), @('back', 'tab:Progress'),
   @('/program-guide', 'Writing a program by hand'), @('back', 'tab:Progress'),
   @('/session-editor', 'Edit session'), @('back', 'tab:Progress'),
+  @('/your-file', 'Have an assistant write your training'), @('back', 'tab:Progress'),
+  @('/library-yaml', 'Weights are in kilograms, as the file stores them.'), @('back', 'tab:Progress'),
   # A section's row opens its native sheet over the tab (#197, #233), and back returns to it.
   @('tap:Library', 'tab:Programs'), @('tap:Foundations · 4 Weeks · No Equipment', 'Week 1 · Day 1'),
   # Over that native sheet, the native editor and the native runner each come back to it (#155, #233).
@@ -90,6 +92,12 @@ $steps = @(
   # it (#234, #413).
   @('tap:Exercises', 'tab:Exercises'), @('tap:Push-ups', 'Edit exercise'),
   @('back', 'tab:Exercises'), @('tap:New exercise', 'New exercise'), @('back', 'tab:Exercises'),
+  # The file's name under Library's title opens the file sheet; Open as YAML and Paste YAML open their own
+  # sheets over it, and back returns through each (#413).
+  @('tap:exercises.yaml', 'Have an assistant write your training'),
+  @('tap:Open as YAML', 'Weights are in kilograms, as the file stores them.'),
+  @('back', 'Have an assistant write your training'), @('tap:Paste YAML', 'Import library'),
+  @('back', 'Have an assistant write your training'), @('back', 'tab:Exercises'),
   # Today's gear opens native Settings over it, and back returns (#235). All workouts opens Library's
   # Workouts (#412), whose New workout opens the native editor over it (#238).
   @('tap:Today', 'tab:Today'), @('tap:Settings', 'Settings'), @('back', 'tab:Today'),

@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.sp
+import com.casco.kettle.domain.serializeExerciseYaml
 import com.casco.kettle.domain.serializeLibraryYaml
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.files.LatestFiles
@@ -26,20 +27,34 @@ import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.Spacing
 
-/** What the route table draws at `Destination.LibraryYaml`. */
+/** What the route table draws at `Destination.LibraryYaml`: the whole file, or one exercise of it. */
 @Composable
-fun LibraryYamlRoute() = LibraryYamlScreen(LocalLatestFiles.current)
+fun LibraryYamlRoute(params: Map<String, String> = emptyMap()) =
+    LibraryYamlScreen(LocalLatestFiles.current, params[EXERCISE_PARAM])
 
 /**
  * The library as YAML, read-only (#413): the app's own serialisation, so it reads as an export would
  * rather than as the file was last hand-written, and selectable, so a part can be copied out. Weights
  * are the file's kilograms whatever the reader's units, and it says so above them. No editing here.
+ *
+ * With [exerciseId], Exercise detail's YAML: that one item as it sits under `exercises:`, which copies
+ * out as a pasteable piece. An id the library doesn't have says so, as Exercise detail does.
  */
 @Composable
-fun LibraryYamlScreen(files: LatestFiles) {
+fun LibraryYamlScreen(
+    files: LatestFiles,
+    exerciseId: String? = null,
+) {
     val colors = KettleTheme.colors
     val library = files.library
-    val yaml = remember(library) { library?.let(::serializeLibraryYaml) }
+    val yaml =
+        remember(library, exerciseId) {
+            when {
+                library == null -> null
+                exerciseId == null -> serializeLibraryYaml(library)
+                else -> library.exercises.firstOrNull { it.id == exerciseId }?.let(::serializeExerciseYaml)
+            }
+        }
     Box(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), contentAlignment = Alignment.TopCenter) {
         Column(
             SheetColumn
@@ -49,6 +64,14 @@ fun LibraryYamlScreen(files: LatestFiles) {
         ) {
             FileNameTitle()
             Text(stringResource(R.string.file_unitsNote), style = KettleType.small, color = colors.textSecondary)
+            if (yaml == null && library != null) {
+                Text(
+                    stringResource(R.string.exerciseDetail_missing),
+                    Modifier.padding(top = Spacing.three),
+                    style = KettleType.default,
+                    color = colors.textSecondary,
+                )
+            }
             yaml?.let {
                 SelectionContainer(Modifier.padding(top = Spacing.three).horizontalScroll(rememberScrollState())) {
                     Text(

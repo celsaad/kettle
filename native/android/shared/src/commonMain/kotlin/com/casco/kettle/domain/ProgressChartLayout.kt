@@ -1,12 +1,17 @@
 package com.casco.kettle.domain
 
-import kotlin.math.abs
+import kotlin.math.ceil
+import kotlin.math.floor
+import kotlin.math.log10
+import kotlin.math.pow
+import kotlin.math.round
+import kotlin.math.roundToInt
 import kotlin.time.Instant
 
 /** The drawing's height. Fixed: nothing in it is a control, and every number is in the list below it. */
 const val CHART_HEIGHT = 168f
 
-/** Room above the plot for the value labels. */
+/** Room above the plot for the top tick's label. */
 private const val PAD_TOP = 20f
 
 /** Room below the baseline for the dates. */
@@ -15,17 +20,16 @@ private const val PAD_BOTTOM = 24f
 /** Keeps an end dot's ring inside the drawing rather than clipped at its edge. */
 private const val PAD_X = 6f
 
-/** How far above its point a value label's baseline sits. */
-private const val LABEL_RISE = 10f
+/** The steps a reader counts in, besides one: [niceStep]'s 1, 2 and 5 times a power of ten. */
+private const val TWO = 2.0
+private const val FIVE = 5.0
+private const val TEN = 10.0
 
-/** How far a value label keeps clear of its point sideways: the line through it is 2 wide. */
-private const val LABEL_NUDGE = 4f
+/** How many steps the axis aims for between zero and the top: three lines over the baseline, or about. */
+private const val AXIS_STEPS = 3
 
-/** A label's height at the chart's 11, with a little room: two closer than this vertically can collide. */
-private const val LABEL_HEIGHT = 14f
-
-/** The least clear space between two labels side by side. */
-private const val LABEL_GAP = 6f
+/** A tick's value is its index times the step, which in binary is 0.6000000000000001 for 3 × 0.2. */
+private const val TICK_PRECISION = 1e9
 
 /**
  * [NewBest] for a session that beat everything before it; [Latest] for the most recent when it didn't,
@@ -40,50 +44,57 @@ data class ChartPoint(
     val mark: ChartMark?,
 )
 
-/** A label's left edge and baseline. */
-data class ChartLabel(
-    val x: Float,
+/** An axis line: its value in the reader's units, and its height. The one at zero is the baseline. */
+data class ChartTick(
+    val value: Double,
     val y: Float,
 )
 
 data class ChartLayout(
     val baseline: Float,
     val points: List<ChartPoint>,
-    val firstLabel: ChartLabel?,
-    val lastLabel: ChartLabel?,
+    /** From zero up, the last at the plot's top; none when every value is zero, with nothing to scale. */
+    val ticks: List<ChartTick>,
 )
 
 /**
  * Where everything in the exercise progress chart goes, as plain numbers. Ported from RN's
  * `progress-chart-layout.ts`, deleted with the RN screen in #200.
  *
- * Split out of the drawing because the rules worth pinning (which dot a session gets, where a label
- * may sit, when one label gives way to the other) are arithmetic, and a test should reach them
- * without a Canvas. Units are the drawing's own, dp on Android; the caller measures the two labels and
- * draws what this returns. RN's also returned the line and area as SVG path strings; a Canvas builds
- * its path from [ChartLayout.points], so a string would only be parsed back.
+ * Split out of the drawing because the rules worth pinning (which dot a session gets, where the
+ * axis's lines fall) are arithmetic, and a test should reach them without a Canvas. Units are the
+ * drawing's own, dp on Android; the caller measures the axis's labels and draws what this returns.
+ * RN's also returned the line and area as SVG path strings; a Canvas builds its path from
+ * [ChartLayout.points], so a string would only be parsed back.
  *
  * [sessions] oldest first, across [window], which the x axis spans by time rather than
- * by session order. A label width of 0 means not measured yet, and that label isn't placed.
+ * by session order. [display] turns a stored value into the reader's (kilograms to pounds), so the
+ * axis lands on round numbers in the units it is read in; a straight scale, so the line's shape is the
+ * same either way. [minStep] is the least step the measure counts in: one for reps, rounds and
+ * seconds, so a best of one rep doesn't put a line at half a rep.
  */
 fun progressChartLayout(
     sessions: List<ProgressSession>,
     window: ClosedRange<Instant>,
     width: Float,
-    firstLabelWidth: Float,
-    lastLabelWidth: Float,
+    display: (Double) -> Double = { it },
+    minStep: Double = 0.0,
 ): ChartLayout {
     val baseline = CHART_HEIGHT - PAD_BOTTOM
-    if (sessions.isEmpty()) return ChartLayout(baseline, emptyList(), null, null)
+    if (sessions.isEmpty()) return ChartLayout(baseline, emptyList(), emptyList())
 
     val from = window.start
     val span = maxOf(1L, (window.endInclusive - from).inWholeMilliseconds).toFloat()
-    val max = maxOf(sessions.maxOf { it.value }, 0.0)
+    val max = maxOf(sessions.maxOf { display(it.value) }, 0.0)
+    // The axis's top is a round number at or over the highest value (#413), and the line scales to it,
+    // so a gridline's label reads true against the line crossing it.
+    val step = if (max > 0) maxOf(niceStep(max / AXIS_STEPS), minStep) else 0.0
+    val top = if (step > 0) ceil(max / step) * step else 0.0
 
     fun xOf(at: Instant) = PAD_X + (at - from).inWholeMilliseconds / span * (width - PAD_X * 2)
 
     // From zero, as the sparkline is: from the minimum, 10 kg to 10.5 kg would draw as a cliff.
-    fun yOf(value: Double) = if (max <= 0) baseline else baseline - (value / max).toFloat() * (baseline - PAD_TOP)
+    fun yOf(value: Double) = if (top <= 0) baseline else baseline - (value / top).toFloat() * (baseline - PAD_TOP)
 
     val points =
         sessions.mapIndexed { index, session ->
@@ -93,63 +104,30 @@ fun progressChartLayout(
                     index == sessions.lastIndex -> ChartMark.Latest
                     else -> null
                 }
-            ChartPoint(xOf(session.at), yOf(session.value), session.at, mark)
+            ChartPoint(xOf(session.at), yOf(display(session.value)), session.at, mark)
         }
-
-    val lastLabel = if (lastLabelWidth > 0) placeLabel(points.last(), lastLabelWidth, Side.End, width) else null
-    val firstCandidate =
-        if (firstLabelWidth > 0 &&
-            points.size > 1
-        ) {
-            placeLabel(points.first(), firstLabelWidth, Side.Start, width)
+    val ticks =
+        if (step <= 0) {
+            emptyList()
         } else {
-            null
+            (0..(top / step).roundToInt()).map {
+                val value = round(it * step * TICK_PRECISION) / TICK_PRECISION
+                ChartTick(value, yOf(value))
+            }
         }
-    // The latest value is the one the screen is about, so when the two would collide the first gives way.
-    // Judged on both labels' real boxes, both ways: a fixed gap between the points missed two wide
-    // labels ("137.5 lb" and "142.5 lb" need about 88), and close values, the change this chart shows
-    // most often, also sit at almost the same height.
-    val firstLabel =
-        firstCandidate?.takeIf {
-            lastLabel != null && !overlaps(it, firstLabelWidth, lastLabel, lastLabelWidth)
-        }
-    return ChartLayout(baseline, points, firstLabel, lastLabel)
+    return ChartLayout(baseline, points, ticks)
 }
 
-private enum class Side { Start, End }
-
-/**
- * A label beside its point, starting at the first and ending at the last, kept inside the drawing.
- *
- * The latest session can sit near the left edge (an exercise trained twice early in the window and not
- * since), where ending its label at the point runs it off the chart. Then the label **flips** to the
- * point's other side rather than sliding just inside the edge, where it lands across the line climbing
- * out of the point. The final clamp only matters for a label wider than the room on either side.
- */
-private fun placeLabel(
-    point: ChartPoint,
-    labelWidth: Float,
-    side: Side,
-    width: Float,
-): ChartLabel {
-    val after = point.x + LABEL_NUDGE
-    val before = point.x - LABEL_NUDGE - labelWidth
-    var x = if (side == Side.Start) after else before
-    if (x < 0) {
-        x = after
-    } else if (x + labelWidth > width) {
-        x = before
-    }
-    x = x.coerceIn(0f, maxOf(0f, width - labelWidth))
-    return ChartLabel(x, point.y - LABEL_RISE)
-}
-
-private fun overlaps(
-    a: ChartLabel,
-    aWidth: Float,
-    b: ChartLabel,
-    bWidth: Float,
-): Boolean {
-    val apart = a.x + aWidth + LABEL_GAP <= b.x || b.x + bWidth + LABEL_GAP <= a.x
-    return !apart && abs(a.y - b.y) < LABEL_HEIGHT
+/** 1, 2 or 5 times a power of ten, the least of them at or over [raw]: steps a reader counts in. */
+internal fun niceStep(raw: Double): Double {
+    val magnitude = 10.0.pow(floor(log10(raw)))
+    val fraction = raw / magnitude
+    val nice =
+        when {
+            fraction <= 1 -> 1.0
+            fraction <= TWO -> TWO
+            fraction <= FIVE -> FIVE
+            else -> TEN
+        }
+    return nice * magnitude
 }

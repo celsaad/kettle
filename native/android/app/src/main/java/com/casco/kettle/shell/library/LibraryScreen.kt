@@ -134,7 +134,14 @@ fun LibraryScreen(
             }
             itemsIndexed(visible, key = { _, exercise -> exercise.id }) { index, exercise ->
                 if (index > 0) ListRowSeparator()
-                ExerciseRow(exercise, units) { open(Route(Destination.ExerciseEditor, mapOf("id" to exercise.id))) }
+                ExerciseRow(exercise, units) {
+                    open(
+                        Route(
+                            Destination.ExerciseDetail,
+                            mapOf(EXERCISE_PARAM to exercise.id),
+                        ),
+                    )
+                }
             }
             // No first-run card, unlike Programs: a library with no exercises is reachable only by deleting
             // every seeded one, and RN never had one. A search or a filter that empties the list does say
@@ -240,7 +247,7 @@ private fun ExerciseRow(
     onClick: () -> Unit,
 ) {
     val colors = KettleTheme.colors
-    val type = Filters.firstOrNull { it.type?.isInstance(exercise.config) == true }?.label
+    val type = typeLabel(exercise.config)
     val summary = exerciseTarget(exercise.config, units)
     Box(Modifier.clickable(role = Role.Button, onClick = onClick)) {
         ListRow {
@@ -256,6 +263,11 @@ private fun ExerciseRow(
         }
     }
 }
+
+/** A type's short name, "Reps" or "Hold", as the filter and the rows name it; null for rest, never listed. */
+@StringRes
+internal fun typeLabel(config: ExerciseConfig): Int? =
+    Filters.firstOrNull { it.type?.isInstance(config) == true }?.label
 
 /** [Filters]' index for All, the filter that keeps everything. */
 private const val ALL = 0

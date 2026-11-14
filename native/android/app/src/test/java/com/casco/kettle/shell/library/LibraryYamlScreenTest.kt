@@ -10,6 +10,7 @@ import com.casco.kettle.domain.Library
 import com.casco.kettle.domain.Preferences
 import com.casco.kettle.domain.ThemePreference
 import com.casco.kettle.domain.UnitSystem
+import com.casco.kettle.domain.serializeExerciseYaml
 import com.casco.kettle.domain.serializeLibraryYaml
 import com.casco.kettle.shell.files.FakeStoredFiles
 import com.casco.kettle.shell.files.LatestFiles
@@ -29,10 +30,13 @@ class LibraryYamlScreenTest {
     @get:Rule
     val compose = createComposeRule()
 
-    private fun show(files: Files = Files()) {
+    private fun show(
+        files: Files = Files(),
+        exerciseId: String? = null,
+    ) {
         val latest =
             LatestFiles(files, CoroutineScope(Dispatchers.Unconfined), io = Dispatchers.Unconfined).apply { reread() }
-        compose.setContent { KettleTheme(darkTheme = false) { LibraryYamlScreen(latest) } }
+        compose.setContent { KettleTheme(darkTheme = false) { LibraryYamlScreen(latest, exerciseId) } }
     }
 
     @Test
@@ -52,12 +56,30 @@ class LibraryYamlScreenTest {
         compose.onNodeWithText("target_weight: 60", substring = true).assertExists()
     }
 
+    /** Exercise detail's YAML: the one item, as it sits under `exercises:`, and none of the file around it. */
+    @Test
+    fun `shows one exercise alone when detail asks for it`() {
+        show(exerciseId = "squat")
+
+        compose.onNodeWithText(serializeExerciseYaml(squatLibrary.exercises.single())).assertExists()
+        compose.onNodeWithText("version:", substring = true).assertDoesNotExist()
+    }
+
+    @Test
+    fun `says so, with no YAML, for an exercise the library no longer has`() {
+        show(exerciseId = "deleted")
+
+        compose.onNodeWithText("- id:", substring = true).assertDoesNotExist()
+        compose.onNodeWithText("Este exercício não está mais na sua biblioteca.").assertExists()
+    }
+
     /** Null is a library not read yet, and the screen shows no YAML before it has one. */
     @Test
     fun `shows no YAML before there is a library`() {
         show(Files(library = null))
 
         compose.onNodeWithText("exercises:", substring = true).assertDoesNotExist()
+        compose.onNodeWithText("Este exercício não está mais na sua biblioteca.").assertDoesNotExist()
     }
 
     private class Files(

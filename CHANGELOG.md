@@ -93,6 +93,10 @@ here, next to what it describes.
 - **Your file, in one place**: tap exercises.yaml under Library's title to see what's in it and
   everything that moves it. Have an assistant write your training, open a file, paste YAML or add a
   starter pack; read the whole file as YAML, share it or your log; and back it up to a folder (#413).
+- **Each exercise has its own page**: tap one in Library to see its target, drawing and notes, how
+  it has gone over eight weeks with a chart you can read values off, your recent sessions, and the
+  workouts and programs that use it. Edit opens the form, and YAML shows it as the file holds it.
+  Progress charts in Stats now have a scale up the side too (#413).
 
 ---
 

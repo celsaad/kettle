@@ -188,7 +188,7 @@ private data class Record(
 )
 
 /** A timed hold the runner ends at one fixed target, so its logged time is a copy of its config. */
-private fun isFixedTargetHold(exercise: Exercise): Boolean {
+internal fun isFixedTargetHold(exercise: Exercise): Boolean {
     val config = exercise.config as? ExerciseConfig.TimedHold ?: return false
     val min = config.holdSecMin
     return min != null && min > 0 && (config.holdSecMax == null || config.holdSecMax == min)

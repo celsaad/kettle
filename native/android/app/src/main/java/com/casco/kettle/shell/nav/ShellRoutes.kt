@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import com.casco.kettle.shell.exerciseeditor.ExerciseEditorRoute
 import com.casco.kettle.shell.home.HomeRoute
 import com.casco.kettle.shell.importer.ImportRoute
+import com.casco.kettle.shell.library.ExerciseDetailRoute
 import com.casco.kettle.shell.library.FileSheetRoute
 import com.casco.kettle.shell.library.LibraryTab
 import com.casco.kettle.shell.library.LibraryYamlRoute
@@ -64,7 +65,9 @@ internal fun RouteContent(route: Route) {
 
         Destination.YourFile -> FileSheetRoute()
 
-        Destination.LibraryYaml -> LibraryYamlRoute()
+        Destination.LibraryYaml -> LibraryYamlRoute(params)
+
+        Destination.ExerciseDetail -> ExerciseDetailRoute(params)
 
         // The runner's slot draws it from the start it holds; a route only says which start that is.
         Destination.Session -> RunnerRoute(route.runnerStart)

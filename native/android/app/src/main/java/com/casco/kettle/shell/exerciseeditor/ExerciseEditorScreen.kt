@@ -1,9 +1,7 @@
 package com.casco.kettle.shell.exerciseeditor
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
@@ -22,7 +20,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -34,7 +31,6 @@ import com.casco.kettle.domain.ExerciseSubmit
 import com.casco.kettle.domain.Library
 import com.casco.kettle.domain.UnitSystem
 import com.casco.kettle.domain.draftOf
-import com.casco.kettle.domain.exerciseHistory
 import com.casco.kettle.domain.submitExercise
 import com.casco.kettle.domain.withExercise
 import com.casco.kettle.domain.withoutExercise
@@ -47,9 +43,7 @@ import com.casco.kettle.shell.files.LocalLatestFiles
 import com.casco.kettle.shell.files.libraryWriteOrRefusal
 import com.casco.kettle.shell.files.text
 import com.casco.kettle.shell.form.EditorButtons
-import com.casco.kettle.shell.history.entryResultText
 import com.casco.kettle.shell.i18n.deviceUnitSystem
-import com.casco.kettle.shell.i18n.formatMonthDay
 import com.casco.kettle.shell.list.TextAction
 import com.casco.kettle.shell.nav.LocalNavigator
 import com.casco.kettle.shell.theme.DialogAction
@@ -62,7 +56,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlinx.datetime.TimeZone
 
 /**
  * What the route table draws at `Destination.ExerciseEditor`, as Library pushes it: with an `id` to edit,
@@ -74,7 +67,6 @@ fun ExerciseEditorRoute(params: Map<String, String>) {
     ExerciseEditorScreen(
         params["id"],
         LocalLatestFiles.current,
-        TimeZone.currentSystemDefault(),
         ExerciseEditorActions(close = { navigator.back() }),
     )
 }
@@ -86,8 +78,9 @@ class ExerciseEditorActions(
 
 /**
  * An exercise's plan (#241), as RN's `exercise-editor.tsx` was, now the empty stub at this path: its
- * name, type, config and notes, the bundled drawing of a seeded one, and Recent, what the log holds of
- * it. One of the library's writers, all native from the library flip (#245).
+ * name, type, config and notes, and the bundled drawing of a seeded one. What the log holds of it is
+ * Exercise detail's since #413, which the form is one tap behind. One of the library's writers, all
+ * native from the library flip (#245).
  *
  * Save-at-the-end: the form is this screen's copy, so closing writes nothing, and Save writes the
  * whole library once, with this exercise in it, as it is on disk by then.
@@ -96,7 +89,6 @@ class ExerciseEditorActions(
 fun ExerciseEditorScreen(
     id: String?,
     files: LatestFiles,
-    zone: TimeZone,
     actions: ExerciseEditorActions,
 ) {
     val locale = LocalConfiguration.current.locales[0]
@@ -128,7 +120,7 @@ fun ExerciseEditorScreen(
                     id,
                     units,
                 ) { Editor(library.exercises.firstOrNull { it.id == id }, units, files, scope, actions) }
-            Editing(editor, files, units, zone)
+            Editing(editor, units)
         }
     }
 }
@@ -251,9 +243,7 @@ private class Editor(
 @Composable
 private fun Editing(
     editor: Editor,
-    files: LatestFiles,
     units: UnitSystem,
-    zone: TimeZone,
 ) {
     val colors = KettleTheme.colors
     val existing = editor.existing
@@ -272,7 +262,6 @@ private fun Editing(
         }
     }
     ExerciseNotesField(editor.draft, { editor.draft = it })
-    if (existing != null) Recent(existing, files, units, zone)
 
     val refusal =
         editor.problem?.let { exerciseProblemText(it) }
@@ -300,49 +289,6 @@ private fun Editing(
             )
         }
         DeleteDialog(editor, existing)
-    }
-}
-
-/**
- * The last few times this exercise was logged, newest first, and the same as bars, oldest first so
- * they read left to right. Nothing at all for one never logged, a new library's usual case. Read live
- * from the log rather than with the form, since it isn't anything the user is editing.
- */
-@Composable
-private fun Recent(
-    exercise: Exercise,
-    files: LatestFiles,
-    units: UnitSystem,
-    zone: TimeZone,
-) {
-    val log = files.sessionLog ?: return
-    val history = remember(log, exercise.id, units) { exerciseHistory(log.logged, exercise.id, units) }
-    if (history.isEmpty()) return
-    val colors = KettleTheme.colors
-    val locale = LocalConfiguration.current.locales[0]
-    val resources = LocalResources.current
-    // A started_at that isn't an instant has no day to show, which RN printed as "Invalid Date".
-    val days = history.map { entry -> entry.startedAt?.let { formatMonthDay(it, locale, zone) }.orEmpty() }
-    Column(Modifier.padding(top = Spacing.three - 2.dp)) {
-        Text(
-            stringResource(R.string.exerciseEditor_recent),
-            Modifier.padding(bottom = Spacing.one),
-            style = KettleType.small,
-            color = colors.textSecondary,
-        )
-        VolumeChart(history.zip(days).map { (entry, day) -> entry.volume to day }.reversed())
-        Column(Modifier.padding(top = Spacing.one), verticalArrangement = Arrangement.spacedBy(Spacing.one + 2.dp)) {
-            history.zip(days).forEach { (entry, day) ->
-                Row(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.two),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(day, Modifier.weight(1f), style = KettleType.small, color = colors.textSecondary)
-                    Text(resources.entryResultText(entry.result), style = KettleType.smallMedium, color = colors.text)
-                }
-            }
-        }
     }
 }
 

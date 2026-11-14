@@ -170,7 +170,7 @@ private fun NotFound() =
 
 /** Where the exercise is now, how far it moved, and since when. */
 @Composable
-private fun Headline(
+internal fun Headline(
     row: ExerciseProgress,
     readings: Readings,
     dates: Dates,
@@ -196,11 +196,12 @@ private fun Headline(
 }
 
 @Composable
-private fun ChartCard(
+internal fun ChartCard(
     row: ExerciseProgress,
     readings: Readings,
     dates: Dates,
     window: ClosedRange<Instant>,
+    description: String? = null,
 ) {
     val colors = KettleTheme.colors
     Column(
@@ -212,9 +213,9 @@ private fun ChartCard(
         ProgressChart(
             row.sessions,
             window,
-            firstLabel = readings.reading(row.sessions.first().value),
-            lastLabel = readings.reading(row.sessions.last().value),
+            readings,
             dateLabel = dates::monthDay,
+            description = description,
         )
         // The key is for the dots, so it's drawn only when there are dots other than the latest's.
         if (row.sessions.any { it.newBest }) {
@@ -282,7 +283,7 @@ private fun SessionList(
 }
 
 /** Dates in the reader's locale and zone. */
-private class Dates(
+internal class Dates(
     val locale: Locale,
     private val zone: TimeZone,
 ) {

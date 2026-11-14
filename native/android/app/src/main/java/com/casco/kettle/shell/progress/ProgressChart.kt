@@ -7,15 +7,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.CHART_HEIGHT
@@ -25,7 +27,6 @@ import com.casco.kettle.domain.ProgressSession
 import com.casco.kettle.domain.progressChartLayout
 import com.casco.kettle.shell.theme.KettleColors
 import com.casco.kettle.shell.theme.KettleTheme
-import kotlin.math.ceil
 import kotlin.time.Instant
 
 /**
@@ -33,24 +34,27 @@ import kotlin.time.Instant
  * sparkline is a thumbnail of, ported from RN's `progress-chart.tsx` (#200). Where everything goes is
  * `progressChartLayout`'s decision, in `:shared`; this measures the labels and draws.
  *
- * **One series, one hue, and only two numbers.** The line takes the accent. A filled dot marks each
- * session that set a new best, which is what the key under the chart names; the latest, when it
- * didn't, gets a hollow ring instead, so a dip at the end can't be read as a record. Only the first and
- * last values are labelled: every value is in the session list directly below, which is the table this
- * chart would otherwise need, so there is no y axis, no gridlines, and no tap-for-a-value tooltip.
+ * **One series, one hue, and an axis.** The line takes the accent. A filled dot marks each session
+ * that set a new best, which is what the key under the chart names; the latest, when it didn't, gets a
+ * hollow ring instead, so a dip at the end can't be read as a record. A y axis of round steps from zero
+ * (#413), dashed lines labelled at the right edge, the top one with its unit, replaced labels on the
+ * first and last points, which collided with it there. Every value is still in the list below, so
+ * there is no tap-for-a-value tooltip.
  *
- * A Canvas, so it has no semantics and TalkBack passes over it, as RN's chart is hidden: the list says
- * everything the drawing does, row by row, in words a screen reader can step through.
+ * A Canvas, so it has no semantics of its own. On Stats' sheet TalkBack passes over it, as RN's chart
+ * is hidden: the list under it says everything the drawing does, row by row. Exercise detail has no
+ * such list, so it passes [description] instead.
  *
- * [firstLabel] and [lastLabel] are finished text in the reader's units; [dateLabel] formats the axis.
+ * [readings] puts a value in the reader's units and writes the axis's labels; [dateLabel] formats the
+ * dates. [description], where no list follows the chart, is what TalkBack reads in the drawing's place.
  */
 @Composable
 fun ProgressChart(
     sessions: List<ProgressSession>,
     window: ClosedRange<Instant>,
-    firstLabel: String,
-    lastLabel: String,
+    readings: Readings,
     dateLabel: (Instant) -> String,
+    description: String? = null,
 ) {
     val colors = KettleTheme.colors
     val measurer = rememberTextMeasurer()
@@ -58,7 +62,6 @@ fun ProgressChart(
     // labels is fixed, and every value is also in the list below, which does scale.
     val labelSize = with(LocalDensity.current) { LABEL_SIZE.dp.toSp() }
     val secondary = TextStyle(fontSize = labelSize, color = colors.textSecondary)
-    val emphasis = TextStyle(fontSize = labelSize, fontWeight = FontWeight.SemiBold, color = colors.text)
     val from = window.start
     val to = window.endInclusive
     val middle = from + (to - from) / 2
@@ -66,30 +69,14 @@ fun ProgressChart(
     Canvas(
         Modifier
             .fillMaxWidth()
-            .height(CHART_HEIGHT.dp),
+            .height(CHART_HEIGHT.dp)
+            .then(if (description == null) Modifier else Modifier.semantics { contentDescription = description }),
     ) {
-        val first = measurer.measure(firstLabel, secondary)
-        val last = measurer.measure(lastLabel, emphasis)
-
         // The layout works in dp, the units its paddings are written in.
-        // Label widths round up, as RN's `Math.ceil` on each: a label is never given less room than it
-        // takes, which is what decides whether the two collide.
-        fun inDp(px: Number) = px.toFloat() / density
-
-        fun labelWidth(px: Int) = ceil(inDp(px))
-        val layout =
-            progressChartLayout(
-                sessions,
-                window,
-                inDp(size.width),
-                labelWidth(first.size.width),
-                labelWidth(last.size.width),
-            )
+        val layout = progressChartLayout(sessions, window, size.width / density, readings::display, readings.minStep)
         if (layout.points.isEmpty()) return@Canvas
+        drawTicks(layout, colors) { tick, top -> measurer.measure(readings.axis(tick, top), secondary) }
         drawSeries(layout, colors)
-
-        layout.firstLabel?.let { drawAtBaseline(first, it.x.dp.toPx(), it.y.dp.toPx()) }
-        layout.lastLabel?.let { drawAtBaseline(last, it.x.dp.toPx(), it.y.dp.toPx()) }
 
         val dateBaseline = (CHART_HEIGHT - DATE_DROP).dp.toPx()
 
@@ -97,6 +84,28 @@ fun ProgressChart(
         drawAnchored(date(from), Anchor.Start, 0f, dateBaseline)
         drawAnchored(date(middle), Anchor.Middle, size.width / 2, dateBaseline)
         drawAnchored(date(to), Anchor.End, size.width, dateBaseline)
+    }
+}
+
+/**
+ * The axis: a dashed line at each step over the baseline, which [drawSeries] draws solid, and every
+ * step's value right-aligned above its line, so the line it labels runs out from under it.
+ */
+private fun DrawScope.drawTicks(
+    layout: ChartLayout,
+    colors: KettleColors,
+    measure: (Double, Boolean) -> TextLayoutResult,
+) {
+    val dash = PathEffect.dashPathEffect(floatArrayOf(DASH.dp.toPx(), GAP.dp.toPx()))
+    layout.ticks.forEachIndexed { index, tick ->
+        val y = tick.y.dp.toPx()
+        if (index > 0) drawLine(colors.border, Offset(0f, y), Offset(size.width, y), 1.dp.toPx(), pathEffect = dash)
+        drawAnchored(
+            measure(tick.value, index == layout.ticks.lastIndex),
+            Anchor.End,
+            size.width,
+            y - TICK_RISE.dp.toPx(),
+        )
     }
 }
 
@@ -164,6 +173,11 @@ private fun DrawScope.drawAtBaseline(
 private const val LABEL_SIZE = 11
 private const val DOT_RADIUS = 4
 private const val AREA_ALPHA = 0.1f
+
+/** An axis line's dash and gap, and how far above its line a value's baseline sits. */
+private const val DASH = 3f
+private const val GAP = 4f
+private const val TICK_RISE = 3f
 
 /** How far above the drawing's bottom the dates' baseline sits. */
 private const val DATE_DROP = 6f

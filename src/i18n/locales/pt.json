@@ -679,9 +679,6 @@
     "clipboardFailed": "Não foi possível ler a área de transferência.",
     "new": "novo",
     "updated": "atualizado",
-    "workoutNoun_one": "treino",
-    "workoutNoun_other": "treinos",
-    "workoutNoun_zero": "treinos",
     "newExercise": "novo exercício",
     "updatedExercise": "exercício atualizado",
     "newWorkout": "novo treino",
@@ -696,7 +693,9 @@
       "weeks": "Semanas",
       "weeksChanged": "Semanas editadas",
       "unset": "não definido",
-      "sameValues": "nenhum campo alterado — substituído por uma definição idêntica"
+      "sameValues": "nenhum campo alterado — substituído por uma definição idêntica",
+      "cleared": "limpo",
+      "rowAccessibility": "{{label}}: era {{was}}, agora {{now}}"
     },
     "noChanges": "Nenhuma alteração — o arquivo importado é igual à sua biblioteca atual.",
     "showAll_one": "Mostrar a {{count}} alteração",
@@ -713,8 +712,7 @@
       "updatedCount_zero": "{{count}} atualizados",
       "announcement": "Importado. {{new}} novos, {{updated}} atualizados."
     },
-    "updateNote": "Itens atualizados substituem ajustes locais. As sessões nunca são alteradas.",
-    "mergeButton": "Mesclar e importar",
+    "updateNote": "Nada é excluído da sua biblioteca. Mas tudo com um id que você já tem é substituído por inteiro, então um campo que a importação deixa de fora é limpo.",
     "error": {
       "invalidYaml": "YAML inválido: {{detail}}",
       "schemaMismatch": "Não corresponde ao formato do exercises.yaml — {{detail}}",
@@ -724,7 +722,27 @@
       "readFailed": "Não foi possível ler esse arquivo: {{detail}}",
       "saveFailed": "Não foi possível salvar sua biblioteca: {{detail}}",
       "tooLarge": "Grande demais para importar: uma biblioteca pode ter até {{limit}} KB."
-    }
+    },
+    "reviewTitle": "Revise as mudanças",
+    "fieldsCleared_zero": "campos limpos",
+    "fieldsCleared_one": "campo limpo",
+    "fieldsCleared_other": "campos limpos",
+    "sectionUpdated": "Atualizados",
+    "sectionNew": "Novos",
+    "itemSub": "{{id}} · {{kind}}",
+    "clearsCount_zero": "Limpa {{count}} campos",
+    "clearsCount_one": "Limpa {{count}} campo",
+    "clearsCount_other": "Limpa {{count}} campos",
+    "importItems_zero": "Importar {{count}} itens",
+    "importItems_one": "Importar {{count}} item",
+    "importItems_other": "Importar {{count}} itens",
+    "showChanges": "Mostrar mudanças",
+    "kind": {
+      "exercise": "exercício",
+      "workout": "treino",
+      "program": "programa"
+    },
+    "importButton": "Importar"
   },
   "exerciseForm": {
     "type": {

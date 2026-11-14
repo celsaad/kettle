@@ -3,7 +3,6 @@ package com.casco.kettle.shell.importer
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import com.casco.kettle.domain.ChangedItem
 import com.casco.kettle.domain.ImportPreview
 import com.casco.kettle.domain.Library
 import com.casco.kettle.domain.MAX_IMPORT_BYTES
@@ -175,11 +174,10 @@ internal class Importer(
         private set
 
     /**
-     * What landed, kept at the write rather than read off the preview: once the write lands the two
-     * libraries a diff compares are the same, and every row would claim no change. The diffs are left
-     * behind on purpose, being about a "before" that no longer exists.
+     * What landed: the preview kept at the write, for the result card's items and their names (#443).
+     * The card leaves the diffs behind on purpose, being about a "before" that no longer exists.
      */
-    var applied by mutableStateOf<List<ChangedItem>?>(null)
+    var applied by mutableStateOf<ImportPreview?>(null)
         private set
 
     var pasting by mutableStateOf(false)
@@ -293,7 +291,7 @@ internal class Importer(
                 if (saveError == null) {
                     // A retry after a failed write: the failure's slot is still drawn under Applied.
                     refused = null
-                    applied = merge.preview.items
+                    applied = merge.preview
                     ready = null
                 } else {
                     refuse(ImportRefusal.SaveFailed(saveError), RefusalSite.Preview)

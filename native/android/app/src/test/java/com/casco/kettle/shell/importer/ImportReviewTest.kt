@@ -1,0 +1,92 @@
+package com.casco.kettle.shell.importer
+
+import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import com.casco.kettle.domain.Exercise
+import com.casco.kettle.domain.ExerciseConfig
+import com.casco.kettle.domain.Library
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
+
+/**
+ * The review's own words (#443): the fields-cleared tile and what each update clears, names over
+ * ids, and the count on Import. The merge and its refusals are `ImportScreenTest`'s.
+ */
+@RunWith(RobolectricTestRunner::class)
+@Config(qualifiers = "pt-w400dp-h4000dp")
+class ImportReviewTest : ImportHarness() {
+    private val loaded =
+        Exercise(
+            "pull-ups",
+            "Pull-ups",
+            ExerciseConfig.Reps(3, 8, targetWeightKg = 20.0, restSec = 90.0),
+            notes = "Dead hang first.",
+        )
+
+    /** The library has a weighted, noted Pull-ups; the file has it bare, and a new Dips. */
+    private fun reviewsAClearingUpdate() {
+        picks(Library(1, listOf(pullUps, dips), emptyList(), emptyList()))
+        chooseFile(Files(Library(1, listOf(loaded), emptyList(), emptyList())))
+    }
+
+    // An update replaces whole, so what the file leaves out is cleared: counted, and said per item.
+    @Test
+    fun `counts the fields an update clears, and says it on the item`() {
+        reviewsAClearingUpdate()
+
+        // The tile is one node, its count and its noun: the count is what this asserts.
+        compose.onNodeWithText("campos limpos").assert(hasText("2"))
+        shown("Limpa 2 campos")
+    }
+
+    @Test
+    fun `marks a cleared field as cleared, with what it was`() {
+        reviewsAClearingUpdate()
+
+        compose.onNodeWithContentDescription("Peso: era 20 kg, agora limpo").assertExists()
+        compose.onNodeWithContentDescription("Notas: era Dead hang first., agora limpo").assertExists()
+    }
+
+    @Test
+    fun `names each item over its id and kind`() {
+        reviewsAClearingUpdate()
+
+        shown("Pull-ups")
+        shown("pull-ups · exercício")
+        shown("Dips")
+        shown("dips · exercício")
+    }
+
+    @Test
+    fun `says on Import how many items it writes`() {
+        reviewsAClearingUpdate()
+
+        merge().assertExists()
+        shown("Importar 2 itens")
+    }
+
+    // Before anything is picked there's nothing to count: "Importar 0 itens" read as a broken count.
+    @Test
+    fun `says plain Import until there is a review to count`() {
+        show(Files())
+
+        shown("Importar")
+        absent("Importar 0 itens")
+    }
+
+    // Open on its diff, the review being for what changes; a tap folds it, and it still says what it clears.
+    @Test
+    fun `folds an update's diff on a tap, and still says what it clears`() {
+        reviewsAClearingUpdate()
+
+        button("Pull-ups", substring = true).performClick()
+
+        compose.onNodeWithContentDescription("Peso: era 20 kg, agora limpo").assertDoesNotExist()
+        shown("Limpa 2 campos")
+    }
+}

@@ -635,8 +635,6 @@
     "clipboardFailed": "Couldn’t read the clipboard.",
     "new": "new",
     "updated": "updated",
-    "workoutNoun_one": "workout",
-    "workoutNoun_other": "workouts",
     "newExercise": "new exercise",
     "updatedExercise": "updated exercise",
     "newWorkout": "new workout",
@@ -651,7 +649,9 @@
       "weeks": "Weeks",
       "weeksChanged": "Weeks edited",
       "unset": "not set",
-      "sameValues": "no field changes — replaced with an identical definition"
+      "sameValues": "no field changes — replaced with an identical definition",
+      "cleared": "cleared",
+      "rowAccessibility": "{{label}}: was {{was}}, now {{now}}"
     },
     "noChanges": "No changes — the imported file matches your current library.",
     "showAll_one": "Show the {{count}} change",
@@ -665,8 +665,7 @@
       "updatedCount_other": "{{count}} updated",
       "announcement": "Imported. {{new}} new, {{updated}} updated."
     },
-    "updateNote": "Updated items replace local tweaks. Sessions are never touched.",
-    "mergeButton": "Merge & import",
+    "updateNote": "Nothing is deleted from your library. But anything with an id you already have is replaced whole, so a field the import leaves out is cleared.",
     "error": {
       "invalidYaml": "Invalid YAML: {{detail}}",
       "schemaMismatch": "Doesn't match the exercises.yaml format — {{detail}}",
@@ -676,7 +675,24 @@
       "readFailed": "Couldn't read that file: {{detail}}",
       "saveFailed": "Couldn't save your library: {{detail}}",
       "tooLarge": "Too large to import: a library can be up to {{limit}} KB."
-    }
+    },
+    "reviewTitle": "Review the changes",
+    "fieldsCleared_one": "field cleared",
+    "fieldsCleared_other": "fields cleared",
+    "sectionUpdated": "Updated",
+    "sectionNew": "New",
+    "itemSub": "{{id}} · {{kind}}",
+    "clearsCount_one": "Clears {{count}} field",
+    "clearsCount_other": "Clears {{count}} fields",
+    "importItems_one": "Import {{count}} item",
+    "importItems_other": "Import {{count}} items",
+    "showChanges": "Show changes",
+    "kind": {
+      "exercise": "exercise",
+      "workout": "workout",
+      "program": "program"
+    },
+    "importButton": "Import"
   },
   "exerciseForm": {
     "type": {

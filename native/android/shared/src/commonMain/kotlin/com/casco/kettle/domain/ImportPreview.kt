@@ -35,9 +35,6 @@ class ImportPreview(
 
     val updatedCount: Int = items.size - newCount
 
-    /** The third tile: workouts the file touches, new or replaced. */
-    val workoutCount: Int = items.count { it.kind == LibraryItemKind.Workout }
-
     /**
      * What updated [item] loses, weights in [units]; nothing for a new one. Asked per row drawn rather
      * than worked out for every id up front: a re-imported library is all updates, and diffing every
@@ -66,6 +63,24 @@ class ImportPreview(
             }
         }
     }
+
+    /**
+     * Fields the import leaves out of what it replaces, across every updated item, weights in [units]
+     * (#443): a value going to unset is the one an update takes away, the review's third tile. Diffs
+     * every update, so the screen asks once and remembers it, not per frame.
+     */
+    fun fieldsCleared(units: UnitSystem): Int =
+        items.filterNot { it.isNew }.sumOf { item ->
+            changes(item, units).count { it.to == DiffValue.Unset && it.from != DiffValue.Unset }
+        }
+
+    /** [item]'s name as the import has it, the user's, verbatim; its id where it has none to find. */
+    fun name(item: ChangedItem): String =
+        when (item.kind) {
+            LibraryItemKind.Exercise -> merged.exercises.firstOrNull { it.id == item.id }?.name
+            LibraryItemKind.Workout -> merged.workouts.firstOrNull { it.id == item.id }?.name
+            LibraryItemKind.Program -> merged.programs.firstOrNull { it.id == item.id }?.name
+        } ?: item.id
 
     private fun <T> diffById(
         list: (Library) -> List<T>,

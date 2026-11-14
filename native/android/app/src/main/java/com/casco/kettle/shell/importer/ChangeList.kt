@@ -11,10 +11,11 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -23,29 +24,32 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.collapse
 import androidx.compose.ui.semantics.expand
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.COLLAPSED_CHANGES
 import com.casco.kettle.domain.ChangedItem
-import com.casco.kettle.domain.DiffLabel
 import com.casco.kettle.domain.DiffValue
-import com.casco.kettle.domain.FieldChange
-import com.casco.kettle.domain.FieldUnit
 import com.casco.kettle.domain.ImportPreview
 import com.casco.kettle.domain.LibraryItemKind
 import com.casco.kettle.domain.UnitSystem
 import com.casco.kettle.domain.collapsed
 import com.casco.kettle.shell.R
-import com.casco.kettle.shell.exerciseeditor.label
-import com.casco.kettle.shell.form.unitSuffix
 import com.casco.kettle.shell.i18n.pluralText
+import com.casco.kettle.shell.list.ListRowMinHeight
+import com.casco.kettle.shell.list.ListRowSeparator
+import com.casco.kettle.shell.theme.Chevron
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.Spacing
 import com.casco.kettle.shell.theme.TypeIcon
 
-/** The tiles, the changed ids with what each updated one loses, and the note that updates replace. */
+/**
+ * The review (#443): "Review the changes", the three tiles, the note that updates replace whole, then
+ * what's updated, each opening to its field diff, and what's new. Updated first: it's the half that can
+ * take something away.
+ */
 @Composable
 internal fun PreviewSection(
     preview: ImportPreview,
@@ -53,33 +57,36 @@ internal fun PreviewSection(
     importer: Importer,
 ) {
     val colors = KettleTheme.colors
-    Row(Modifier.padding(top = Spacing.three - 2.dp), horizontalArrangement = Arrangement.spacedBy(Spacing.two)) {
-        CountTile("${preview.newCount}", stringResource(R.string.import_new), colors.accentSoft, colors.accentText)
+    // Every update diffed once, not per frame: a re-imported library is all updates.
+    val cleared = remember(preview, units) { preview.fieldsCleared(units) }
+    Text(
+        stringResource(R.string.import_reviewTitle),
+        Modifier.padding(top = Spacing.three).semantics { heading() },
+        style = KettleType.heading,
+        color = colors.text,
+    )
+    Row(Modifier.padding(top = Spacing.two), horizontalArrangement = Arrangement.spacedBy(Spacing.two)) {
+        CountTile(preview.newCount, stringResource(R.string.import_new), colors.accentText)
+        CountTile(preview.updatedCount, stringResource(R.string.import_updated), colors.accentCalmText)
         CountTile(
-            "${preview.updatedCount}",
-            stringResource(R.string.import_updated),
-            colors.accentCalmSoft,
-            colors.accentCalmText,
+            cleared,
+            pluralText(R.plurals.import_fieldsCleared, R.string.import_fieldsCleared_zero, cleared),
+            if (cleared > 0) colors.accentText else colors.text,
+            warn = cleared > 0,
         )
-        CountTile(
-            "${preview.workoutCount}",
-            pluralText(R.plurals.import_workoutNoun, R.string.import_workoutNoun_zero, preview.workoutCount),
-            colors.backgroundElement,
-            colors.text,
-            bordered = true,
-        )
-    }
-    ChangeList(preview.items, importer) { item ->
-        // Only updates, and only what moved. A byte-identical update says so instead of an empty indent:
-        // merge classifies by id, so re-importing your own export lands every item here.
-        if (!item.isNew) ChangedFields(preview.changes(item, units), units)
     }
     Text(
         stringResource(R.string.import_updateNote),
-        Modifier.padding(top = Spacing.two + 4.dp),
+        Modifier.padding(top = Spacing.two),
         style = KettleType.small,
         color = colors.textSecondary,
     )
+    ChangeList(preview, importer, units) { item ->
+        if (!item.isNew) {
+            // Asked per row drawn, as `changes` says: an unopened row diffs nothing it doesn't show.
+            DiffRows(remember(item, units) { preview.changes(item, units) }, units)
+        }
+    }
 }
 
 /**
@@ -87,17 +94,18 @@ internal fun PreviewSection(
  * otherwise read none of it. A pane title rather than a live region: Compose sends a live region's
  * event only when its content changes, and this card is new, so on a device nothing was spoken. A pane
  * appearing is the event TalkBack reads for a section that wasn't there, and it speaks RN's own
- * announcement. The rows are the preview's, without the diffs, which describe a "before" the write has
+ * announcement. The rows are the review's, without the diffs, which describe a "before" the write has
  * already replaced.
  */
 @Composable
 internal fun Applied(
-    items: List<ChangedItem>,
+    preview: ImportPreview,
     importer: Importer,
 ) {
     val colors = KettleTheme.colors
-    val new = items.count { it.isNew }
-    val announcement = stringResource(R.string.import_applied_announcement, "$new", "${items.size - new}")
+    val new = preview.newCount
+    val updated = preview.updatedCount
+    val announcement = stringResource(R.string.import_applied_announcement, "$new", "$updated")
     Column(
         Modifier
             .padding(top = Spacing.three - 2.dp)
@@ -110,167 +118,165 @@ internal fun Applied(
         Text(stringResource(R.string.import_applied_title), style = KettleType.heading, color = colors.accentText)
         Text(
             pluralText(R.plurals.import_applied_newCount, R.string.import_applied_newCount_zero, new) + " · " +
-                pluralText(
-                    R.plurals.import_applied_updatedCount,
-                    R.string.import_applied_updatedCount_zero,
-                    items.size - new,
-                ),
+                pluralText(R.plurals.import_applied_updatedCount, R.string.import_applied_updatedCount_zero, updated),
             style = KettleType.small,
             color = colors.textSecondary,
         )
     }
-    ChangeList(items, importer) {}
+    ChangeList(preview, importer, units = null, under = null)
 }
 
+/**
+ * A count and its noun. The fields-cleared one, when there are any, is outlined with the warning glyph:
+ * a shape, so it isn't told only by its colour.
+ */
 @Composable
 private fun RowScope.CountTile(
-    count: String,
+    count: Int,
     noun: String,
-    fill: Color,
     tint: Color,
-    bordered: Boolean = false,
+    warn: Boolean = false,
 ) {
     val colors = KettleTheme.colors
     Column(
         Modifier
             .weight(1f)
             .clip(TileShape)
-            .background(fill)
-            .then(if (bordered) Modifier.border(1.dp, colors.border, TileShape) else Modifier)
+            .background(colors.backgroundElement)
+            .border(1.dp, if (warn) colors.accentText else colors.border, TileShape)
             .padding(vertical = Spacing.two + 2.dp)
             .semantics(mergeDescendants = true) {},
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(count, style = KettleType.subtitle, color = tint)
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.one), verticalAlignment = Alignment.CenterVertically) {
+            if (warn) TypeIcon(R.drawable.icon_warning, KettleType.default, tint)
+            Text("$count", style = KettleType.subtitle, color = tint)
+        }
         Text(noun, style = KettleType.small, color = colors.textSecondary)
     }
 }
 
-/** The rows the preview and the result share, so the two can't drift apart on how a long list behaves. */
-@Composable
-private fun ChangeList(
-    items: List<ChangedItem>,
-    importer: Importer,
-    under: @Composable (ChangedItem) -> Unit,
-) {
-    val colors = KettleTheme.colors
-    Column(
-        Modifier.padding(top = Spacing.three - 2.dp),
-        verticalArrangement = Arrangement.spacedBy(Spacing.two - 1.dp),
-    ) {
-        for (item in items.collapsed(importer.showAll)) {
-            Column {
-                ChangedRow(item)
-                under(item)
-            }
-        }
-        if (items.isEmpty()) {
-            Text(stringResource(R.string.import_noChanges), style = KettleType.small, color = colors.textSecondary)
-        }
-        if (items.size > COLLAPSED_CHANGES) ShowAllToggle(items.size, importer)
-    }
-}
-
-@Composable
-private fun ChangedRow(item: ChangedItem) {
-    val colors = KettleTheme.colors
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(Spacing.two + 2.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        // Decoration: the noun at the end of the row says new or updated.
-        Box(Modifier.width(MARK_WIDTH), contentAlignment = Alignment.Center) {
-            TypeIcon(
-                if (item.isNew) R.drawable.icon_add else R.drawable.icon_refresh,
-                KettleType.default,
-                if (item.isNew) colors.accentText else colors.accentCalmText,
-            )
-        }
-        // The id, never a name: it's what the file the reader holds says.
-        Text(item.id, Modifier.weight(1f), style = KettleType.smallMedium, color = colors.text)
-        Text(stringResource(item.noun), style = KettleType.small, color = colors.textSecondary)
-    }
-}
-
-private val ChangedItem.noun: Int
-    get() =
-        when (kind) {
-            LibraryItemKind.Exercise -> if (isNew) R.string.import_newExercise else R.string.import_updatedExercise
-            LibraryItemKind.Workout -> if (isNew) R.string.import_newWorkout else R.string.import_updatedWorkout
-            LibraryItemKind.Program -> if (isNew) R.string.import_newProgram else R.string.import_updatedProgram
-        }
-
-/** Indented past the glyph column, so the lines read as part of the id above them. */
-@Composable
-private fun ChangedFields(
-    changes: List<FieldChange>,
-    units: UnitSystem,
-) {
-    val colors = KettleTheme.colors
-    Column(
-        Modifier.padding(top = 2.dp, start = MARK_WIDTH + Spacing.two + 2.dp),
-        verticalArrangement = Arrangement.spacedBy(1.dp),
-    ) {
-        for (change in changes) {
-            Text(
-                "${labelText(change.label)}: ${valueText(change.from, units)} → ${valueText(change.to, units)}",
-                style = KettleType.small,
-                color = colors.textSecondary,
-            )
-        }
-        if (changes.isEmpty()) {
-            Text(
-                stringResource(R.string.import_diff_sameValues),
-                style = KettleType.small,
-                color = colors.textSecondary,
-            )
-        }
-    }
-}
-
-@Composable
-private fun labelText(label: DiffLabel): String =
-    stringResource(
-        when (label) {
-            DiffLabel.Name -> R.string.common_name
-            DiffLabel.Type -> R.string.import_diff_type
-            DiffLabel.Notes -> R.string.import_diff_notes
-            DiffLabel.Blocks -> R.string.import_diff_blocks
-            DiffLabel.Exercises -> R.string.import_diff_exercises
-            DiffLabel.Weeks -> R.string.import_diff_weeks
-            DiffLabel.WeeksEdited -> R.string.import_diff_weeksChanged
-            is DiffLabel.Field -> label.name.label
-        },
-    )
-
-@Composable
-private fun valueText(
-    value: DiffValue,
-    units: UnitSystem,
-): String =
-    when (value) {
-        DiffValue.Unset -> stringResource(R.string.import_diff_unset)
-        is DiffValue.Text -> value.text
-        is DiffValue.Type -> stringResource(value.type.label)
-        is DiffValue.Measured -> measuredText(value.number, value.unit, units)
-    }
-
 /**
- * A value with its unit, as the rest of the app writes one ("90s", "5 min", "400 m"), not with a
- * field label's suffix: the locale decides the spacing, and ja writes 90秒 with no space before it.
+ * The items, updated then new, each under its heading, the first few until "Show all": the review's
+ * and the result's, so the two can't drift on how a long list behaves. [under] draws an updated item's
+ * diff when it's opened; the result has none, the "before" being gone.
  */
 @Composable
-internal fun measuredText(
-    number: String,
-    unit: FieldUnit,
-    units: UnitSystem,
-): String =
-    when (unit) {
-        FieldUnit.Weight -> stringResource(R.string.format_weight, unitSuffix(unit, units).orEmpty(), number)
-        FieldUnit.Seconds -> stringResource(R.string.format_seconds, number)
-        FieldUnit.Minutes -> stringResource(R.string.format_minutes, number)
-        FieldUnit.Metres -> stringResource(R.string.format_metres, number)
+private fun ChangeList(
+    preview: ImportPreview,
+    importer: Importer,
+    /** The reader's units, for what an update clears; none for the result, whose "before" is gone. */
+    units: UnitSystem?,
+    under: (@Composable (ChangedItem) -> Unit)?,
+) {
+    val colors = KettleTheme.colors
+    val ordered = preview.items.filterNot { it.isNew } + preview.items.filter { it.isNew }
+    val shown = ordered.collapsed(importer.showAll)
+    val open = remember(preview) { mutableStateMapOf<ChangedItem, Boolean>() }
+    Column(Modifier.padding(top = Spacing.two)) {
+        for ((isNew, items) in shown.groupBy { it.isNew }) {
+            Text(
+                stringResource(if (isNew) R.string.import_sectionNew else R.string.import_sectionUpdated),
+                Modifier.padding(top = Spacing.three, bottom = Spacing.one).semantics { heading() },
+                style = KettleType.heading,
+                color = colors.text,
+            )
+            for (item in items) {
+                val diff = under?.takeIf { !item.isNew }
+                val clears =
+                    units?.takeIf { !item.isNew }?.let {
+                        remember(item, it) {
+                            preview.changes(item, it).count { c ->
+                                c.to == DiffValue.Unset &&
+                                    c.from != DiffValue.Unset
+                            }
+                        }
+                    } ?: 0
+                ItemRow(
+                    preview,
+                    item,
+                    open[item] != false,
+                    clears,
+                    onToggle =
+                        diff?.let {
+                            {
+                                open[item] =
+                                    open[item] == false
+                            }
+                        },
+                )
+                if (diff != null && open[item] != false) diff(item)
+            }
+        }
+        if (ordered.isEmpty()) {
+            Text(stringResource(R.string.import_noChanges), style = KettleType.small, color = colors.textSecondary)
+        }
+        if (ordered.size > COLLAPSED_CHANGES) ShowAllToggle(ordered.size, importer)
     }
+}
+
+/**
+ * One item: its name, the user's, over "db-row · exercise", what the file says. An update opens on its
+ * diff, the review being for what changes, and folds on a tap; folded, it still says what it clears.
+ */
+@Composable
+private fun ItemRow(
+    preview: ImportPreview,
+    item: ChangedItem,
+    open: Boolean,
+    clears: Int,
+    onToggle: (() -> Unit)?,
+) {
+    val colors = KettleTheme.colors
+    ListRowSeparator()
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .heightIn(min = ListRowMinHeight)
+            .then(
+                if (onToggle == null) {
+                    Modifier
+                } else {
+                    Modifier.clickable(role = Role.Button, onClick = onToggle).semantics {
+                        if (open) collapse { true.also { onToggle() } } else expand { true.also { onToggle() } }
+                    }
+                },
+            ).padding(vertical = Spacing.one),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.two),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(preview.name(item), style = KettleType.heading, color = colors.text)
+            Text(
+                stringResource(R.string.import_itemSub, item.id, stringResource(item.kindLabel)),
+                style = KettleType.small,
+                color = colors.textSecondary,
+            )
+            if (clears > 0) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.half),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    TypeIcon(R.drawable.icon_warning, KettleType.small, colors.accentText)
+                    Text(
+                        pluralText(R.plurals.import_clearsCount, R.string.import_clearsCount_zero, clears),
+                        style = KettleType.small,
+                        color = colors.accentText,
+                    )
+                }
+            }
+        }
+        if (onToggle != null) Chevron(expanded = open)
+    }
+}
+
+private val ChangedItem.kindLabel: Int
+    get() =
+        when (kind) {
+            LibraryItemKind.Exercise -> R.string.import_kind_exercise
+            LibraryItemKind.Workout -> R.string.import_kind_workout
+            LibraryItemKind.Program -> R.string.import_kind_program
+        }
 
 /**
  * "Show all 30 changes", the count of the whole list rather than of what's hidden: it answers "how long
@@ -313,5 +319,3 @@ private fun ShowAllToggle(
 }
 
 private val TileShape = RoundedCornerShape(12.dp)
-
-private val MARK_WIDTH = 18.dp

@@ -158,6 +158,9 @@ abstract class ImportHarness {
 
     internal fun press(label: String) = button(label).performClick()
 
+    /** The import's own button, "Importar 3 itens": it carries the count, so it's found by its verb. */
+    internal fun merge() = compose.onNode(isMerge and isButton)
+
     internal fun shown(text: String) = compose.onNodeWithText(text).assertExists()
 
     internal fun absent(text: String) = compose.onAllNodesWithText(text).assertCountEquals(0)
@@ -250,3 +253,6 @@ internal fun hasTextMatching(pattern: Regex) =
     SemanticsMatcher("text matches $pattern") { node ->
         node.config.getOrElse(SemanticsProperties.Text) { emptyList() }.any { pattern.matches(it.text) }
     }
+
+/** The import button by its shape: "Importar 3 itens" with a review up, "Importar" before one (#443). */
+internal val isMerge = hasTextMatching(Regex("Importar( \\d+ (item|itens))?"))

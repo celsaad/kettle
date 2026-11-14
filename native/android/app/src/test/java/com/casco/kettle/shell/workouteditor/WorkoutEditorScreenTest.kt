@@ -62,7 +62,9 @@ import java.util.concurrent.Executor
  * is a device check, since the library owns its hit-testing.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(qualifiers = "pt")
+// Tall, as the program editor's: Save is pinned over the list, and a row scrolled to the top would
+// sit under it, its tap landing on the bar.
+@Config(qualifiers = "pt-w400dp-h4000dp")
 class WorkoutEditorScreenTest {
     @get:Rule
     val compose = createComposeRule()
@@ -115,6 +117,10 @@ class WorkoutEditorScreenTest {
     private fun ComposeContentTestRule.pressDialogButton(label: String) =
         onNode(hasText(label) and hasAnyAncestor(isDialog())).performClick()
 
+    /** A control inside the dialog, by its words or its name: the time picker's steppers. */
+    private fun pressInDialog(label: String) =
+        compose.onNode((hasText(label) or hasContentDescription(label)) and hasAnyAncestor(isDialog())).performClick()
+
     private val isControl =
         SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button) or
             SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Checkbox)
@@ -132,6 +138,10 @@ class WorkoutEditorScreenTest {
 
     private fun grip(name: String) = named("Reordenar $name")
 
+    /** The blocks on screen, by their grips: the board drops RN's "3 blocks" line. */
+    private fun blockCount() =
+        compose.onAllNodes(hasContentDescription("Reordenar", substring = true)).fetchSemanticsNodes().size
+
     /**
      * Runs the grip's custom action [label], as TalkBack's Actions menu does. Through the semantics
      * themselves, not `performCustomAccessibilityActionWithLabel`, which is experimental API.
@@ -145,13 +155,13 @@ class WorkoutEditorScreenTest {
 
     private fun addBlocks(vararg names: String) {
         for (name in names) {
-            press("+ Adicionar bloco")
+            press("+ Adicionar exercício")
             press(name)
         }
     }
 
     private fun buildCircuit(vararg names: String) {
-        press("+ Novo circuito")
+        press("+ Adicionar circuito")
         for (name in names) press(name)
         press("Adicionar circuito (${names.size})")
     }
@@ -224,7 +234,7 @@ class WorkoutEditorScreenTest {
 
         addBlocks("Pull-ups")
 
-        named("1 bloco").assertExists()
+        assertEquals(1, blockCount())
         // Once, not twice: the row is there and the picker that listed it is gone.
         compose.onAllNodesWithText("Pull-ups").assertCountEquals(1)
     }
@@ -236,7 +246,7 @@ class WorkoutEditorScreenTest {
 
         press("Remover Pull-ups")
 
-        named("0 blocos").assertExists()
+        assertEquals(0, blockCount())
     }
 
     // RN's shipped sized round its glyph, 14×30, and a missed grab read as a drag that wouldn't start.
@@ -304,11 +314,11 @@ class WorkoutEditorScreenTest {
     @Test
     fun `will not build a circuit from a single exercise`() {
         show()
-        press("+ Novo circuito")
+        press("+ Adicionar circuito")
         press("Pull-ups")
 
         named("Adicionar circuito (1)").assertIsNotEnabled()
-        named("0 blocos").assertExists()
+        assertEquals(0, blockCount())
     }
 
     @Test
@@ -317,17 +327,17 @@ class WorkoutEditorScreenTest {
 
         buildCircuit("Pull-ups", "Dips")
 
-        named("1 bloco").assertExists()
+        assertEquals(1, blockCount())
         named("Circuito").assertExists()
         // Reopened empty: the last circuit's members must not ride into the next.
-        press("+ Novo circuito")
+        press("+ Adicionar circuito")
         named("Adicionar circuito (0)").assertExists()
     }
 
     @Test
     fun `deselects a member that is tapped twice`() {
         show()
-        press("+ Novo circuito")
+        press("+ Adicionar circuito")
 
         press("Pull-ups")
         press("Dips")
@@ -339,13 +349,16 @@ class WorkoutEditorScreenTest {
     // -1 rounds builds no steps: a workout that starts and at once ends.
     @Test
     fun `does not let rounds fall below one`() {
-        show()
+        val files = show()
         buildCircuit("Pull-ups", "Dips")
-        named("3 rodadas · 15s / 60s de descanso").assertExists()
 
-        repeat(4) { press("Diminuir Rodadas") }
+        repeat(2) { press("Diminuir Rodadas") }
 
-        named("1 rodada · 15s / 60s de descanso").assertExists()
+        // Unavailable at one, not a tap that silently does nothing.
+        named("Diminuir Rodadas").assertIsNotEnabled()
+        type("Nome", "Circuit day")
+        press("Salvar")
+        assertEquals(1L, (files.savedWorkout("circuit-day").blocks.single() as WorkoutBlock.Circuit).rounds)
     }
 
     @Test
@@ -356,7 +369,7 @@ class WorkoutEditorScreenTest {
         press("Remover Dips do circuito")
 
         named("Circuito").assertExists()
-        named("1 bloco").assertExists()
+        assertEquals(1, blockCount())
         compose.onNodeWithText("Dips").assertDoesNotExist()
     }
 
@@ -377,18 +390,56 @@ class WorkoutEditorScreenTest {
         named("Remover Dips do circuito").assertIsEnabled()
     }
 
-    // `Number('-5') || 0` is -5, and the schema is non-negative, so this reached RN's file.
     @Test
-    fun `keeps a negative circuit rest out of the library`() {
+    fun `sets a circuit's rest between exercises with the time picker`() {
         val files = show()
         buildCircuit("Pull-ups", "Dips")
 
-        type("Descanso/exercício (s)", "-5")
+        press("Descanso entre exercícios, 15 segundos. Alterar")
+        repeat(2) { pressInDialog("Aumentar Segundos") }
+        compose.pressDialogButton("Concluir")
         type("Nome", "Circuit day")
         press("Salvar")
 
         val circuit = files.savedWorkout("circuit-day").blocks.single() as WorkoutBlock.Circuit
-        assertEquals(0.0, circuit.restBetweenExercisesSec)
+        assertEquals(25.0, circuit.restBetweenExercisesSec)
+    }
+
+    @Test
+    fun `leaves the rest as it was when the picker is cancelled`() {
+        show()
+        buildCircuit("Pull-ups", "Dips")
+
+        press("Descanso entre rodadas, 1 minuto. Alterar")
+        pressInDialog("Aumentar Minutos")
+        compose.pressDialogButton("Cancelar")
+
+        named("Descanso entre rodadas, 1 minuto. Alterar").assertExists()
+    }
+
+    @Test
+    fun `adds an exercise to a circuit, at its end`() {
+        val files = show()
+        buildCircuit("Pull-ups", "Dips")
+
+        press("+ Adicionar exercício ao circuito")
+        press("Rows")
+        type("Nome", "Circuit day")
+        press("Salvar")
+
+        val circuit = files.savedWorkout("circuit-day").blocks.single() as WorkoutBlock.Circuit
+        assertEquals(listOf("pull-ups", "dips", "rows"), circuit.members.map { it.exerciseId })
+        assertEquals(1, blockCount())
+    }
+
+    @Test
+    fun `removes a circuit by its text button`() {
+        show()
+        buildCircuit("Pull-ups", "Dips")
+
+        press("Remover circuito")
+
+        assertEquals(0, blockCount())
     }
 
     // 501 rounds is a library that won't parse on the next launch, and RN reseeded it silently.
@@ -402,7 +453,6 @@ class WorkoutEditorScreenTest {
                 members = listOf(CircuitMember("pull-ups"), CircuitMember("dips")),
             )
         val files = show("push-day", Files(workouts = listOf(pushDay(atCeiling))))
-        named("500 rodadas · 15s / 60s de descanso").assertExists()
 
         press("Aumentar Rodadas")
         press("Salvar")
@@ -431,11 +481,11 @@ class WorkoutEditorScreenTest {
     @Test
     fun `adds the new exercise as a block, writes it to the library, and closes the picker`() {
         val files = show()
-        press("+ Adicionar bloco")
+        press("+ Adicionar exercício")
 
         createExercise("Ring Row")
 
-        named("1 bloco").assertExists()
+        assertEquals(1, blockCount())
         compose.onAllNodesWithText("Ring Row").assertCountEquals(1)
         assertEquals(
             "ring-row",
@@ -451,7 +501,7 @@ class WorkoutEditorScreenTest {
     @Test
     fun `selects the new exercise as a circuit member and leaves the picker open for the next one`() {
         show()
-        press("+ Novo circuito")
+        press("+ Adicionar circuito")
 
         createExercise("Ring Row")
 
@@ -470,7 +520,7 @@ class WorkoutEditorScreenTest {
         val files = Files()
         show(files = files, io = io.asCoroutineDispatcher())
         io.run()
-        press("+ Adicionar bloco")
+        press("+ Adicionar exercício")
         createExercise("Ring Row")
         // The write lands; the read it launches doesn't, yet.
         io.runFirst()
@@ -492,7 +542,7 @@ class WorkoutEditorScreenTest {
         show(files = files, io = io.asCoroutineDispatcher())
         io.run()
         type("Nome", "Row day")
-        press("+ Adicionar bloco")
+        press("+ Adicionar exercício")
         createExercise("Ring Row")
 
         press("Salvar")
@@ -584,7 +634,7 @@ class WorkoutEditorScreenTest {
     fun `writes no quick-added exercise once the sheet has closed`() {
         val files = Files(workouts = listOf(pushDay()))
         show("push-day", files)
-        press("+ Adicionar bloco")
+        press("+ Adicionar exercício")
         press("+ Novo exercício")
 
         press("Salvar")
@@ -600,9 +650,11 @@ class WorkoutEditorScreenTest {
 
     // The picker is a lazy list item, disposed once scrolled out of view, and the form with it.
     @Test
+    // Phone height, so the form can scroll out of view; nothing it taps sits under the pinned Save.
+    @Config(qualifiers = "pt")
     fun `keeps what was typed into the quick-add through scrolling it out of view`() {
         show("push-day", Files(workouts = listOf(pushDay(*Array(40) { WorkoutBlock.ExerciseBlock("pull-ups") }))))
-        press("+ Adicionar bloco")
+        press("+ Adicionar exercício")
         press("+ Novo exercício")
         quickAddName().performTextReplacement("Ring Row")
 
@@ -619,7 +671,7 @@ class WorkoutEditorScreenTest {
     @Test
     fun `keeps the form open with its values when the save is refused`() {
         show(files = Files().apply { failure = IOException("disk full") })
-        press("+ Adicionar bloco")
+        press("+ Adicionar exercício")
 
         createExercise("Ring Row")
 
@@ -627,35 +679,28 @@ class WorkoutEditorScreenTest {
         // Still the form, its name still in it: closing it would throw away what was typed.
         named("Criar e adicionar").assertExists()
         quickAddName().assert(hasText("Ring Row"))
-        named("0 blocos").assertExists()
+        assertEquals(0, blockCount())
     }
 
     // deleting
 
     @Test
-    fun `refuses to delete a workout a program still points at`() {
+    fun `holds Delete unavailable while a program points at it, and says why`() {
         val files = show("push-day", Files(workouts = listOf(pushDay()), programs = listOf(base)))
 
-        press("Excluir treino")
-
-        compose.onNodeWithText("Treino em uso").assertExists()
-        compose.onNodeWithText("\"Push day\" é usado em Base. Remova-o desses programas primeiro.").assertExists()
-        compose.onNode(hasText("Excluir") and hasAnyAncestor(isDialog())).assertDoesNotExist()
+        named("Excluir treino").assertIsNotEnabled()
+        compose.onNodeWithText("Não dá para excluir enquanto Base usa este treino.").assertExists()
         assertEquals(emptyList<Library>(), files.written)
     }
 
     // The program names are joined by the bundle's separator, which ja writes as 、 (#387's review).
     @Test
-    @Config(qualifiers = "ja")
+    @Config(qualifiers = "ja-w400dp-h4000dp")
     fun `lists the programs using it with the Japanese separator`() {
         val peak = Program("peak", "Peak", listOf(ProgramWeek.Training(week = 1, workoutId = "push-day")))
         show("push-day", Files(workouts = listOf(pushDay()), programs = listOf(base, peak)))
 
-        press("ワークアウトを削除")
-
-        compose
-            .onNodeWithText("「Push day」はBase、Peakで使われています。先にそれらのプログラムから外してください。")
-            .assertExists()
+        compose.onNodeWithText("Base、Peakが使用中のため削除できません。").assertExists()
     }
 
     @Test
@@ -692,7 +737,7 @@ class WorkoutEditorScreenTest {
         latest.reread()
         compose.pressDialogButton("Excluir")
 
-        compose.onNodeWithText("Treino em uso").assertExists()
+        compose.onNodeWithText("Não dá para excluir enquanto Base usa este treino.").assertExists()
         assertEquals(emptyList<Library>(), files.written)
     }
 
@@ -707,7 +752,7 @@ class WorkoutEditorScreenTest {
     }
 
     @Test
-    fun `shows a rest block's own duration, marked as an override`() {
+    fun `shows a rest block's own length on its time button`() {
         val rest =
             WorkoutBlock.ExerciseBlock(
                 "rest",
@@ -716,31 +761,45 @@ class WorkoutEditorScreenTest {
             )
         show("push-day", Files(workouts = listOf(pushDay(rest))))
 
-        named("45 segundos").assertExists()
-        named("SUBSTITUÍDO").assertExists()
+        named("Duração do descanso, 45 segundos. Alterar").assertExists()
     }
 
-    // Truncated to pick the plural, 2.5 s read as "2 segundos".
+    // The Rest exercise is every workout's: a length set here is this workout's override alone.
     @Test
-    fun `shows a fractional override as it is`() {
-        val rest =
-            WorkoutBlock.ExerciseBlock(
-                "rest",
-                com.casco.kettle.domain
-                    .BlockConfigOverride(durationSec = 2.5),
-            )
-        show("push-day", Files(workouts = listOf(pushDay(rest))))
+    fun `sets a rest block's length for this workout, leaving the exercise as it is`() {
+        val files = show("push-day", Files(workouts = listOf(pushDay(WorkoutBlock.ExerciseBlock("rest")))))
 
-        named("2.5 segundos").assertExists()
+        press("Duração do descanso, 1 minuto. Alterar")
+        pressInDialog("Aumentar Minutos")
+        compose.pressDialogButton("Concluir")
+        press("Salvar")
+
+        val block = files.savedWorkout("push-day").blocks.single() as WorkoutBlock.ExerciseBlock
+        assertEquals(120.0, block.configOverride?.durationSec)
+        assertEquals(
+            ExerciseConfig.Rest(60.0),
+            files.written
+                .single()
+                .exercises
+                .first { it.id == "rest" }
+                .config,
+        )
+    }
+
+    @Test
+    fun `shows a block's target and rest in minutes and seconds`() {
+        show("push-day", Files(workouts = listOf(pushDay())))
+
+        named("3 × 8 · descanso 1:30").assertExists()
     }
 
     @Test
     fun `every control is a button or checkbox at least 44dp tall`() {
         show("push-day", Files(workouts = listOf(pushDay())))
-        press("+ Novo circuito")
+        press("+ Adicionar circuito")
 
         for (label in listOf(
-            "+ Adicionar bloco",
+            "+ Adicionar exercício",
             "Fechar",
             "+ Novo exercício",
             "Pull-ups",
@@ -755,8 +814,8 @@ class WorkoutEditorScreenTest {
     fun `says which picker is open`() {
         show()
 
-        named("+ Adicionar bloco").assert(SemanticsMatcher.keyIsDefined(SemanticsActions.Expand))
-        press("+ Adicionar bloco")
+        named("+ Adicionar exercício").assert(SemanticsMatcher.keyIsDefined(SemanticsActions.Expand))
+        press("+ Adicionar exercício")
         named("Fechar").assert(SemanticsMatcher.keyIsDefined(SemanticsActions.Collapse))
     }
 

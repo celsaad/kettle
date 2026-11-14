@@ -39,7 +39,10 @@ import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.Spacing
 
-/** What a picker is open for: one exercise to add as a block, or the members of a new circuit. */
+/**
+ * What a picker is open for: one exercise to add, as a block or, with a [Pickers.target], to that
+ * circuit (#440), or the exercises of a new circuit.
+ */
 internal enum class PickerMode { Block, Circuit }
 
 /**
@@ -54,6 +57,10 @@ internal class Pickers {
     var quickAdd by mutableStateOf(false)
         private set
 
+    /** The circuit a [PickerMode.Block] pick goes into, by its key; null for a new block at the end. */
+    var target by mutableStateOf<Int?>(null)
+        private set
+
     /**
      * The quick-add's values, held here rather than in the form: the form sits in a lazy list item,
      * which is disposed once scrolled out of view, and a refused create must keep what was typed.
@@ -61,15 +68,29 @@ internal class Pickers {
     var form by mutableStateOf(NewExerciseFormState())
         private set
 
-    /** Opens [mode]'s picker, or closes it if it was open, starting it empty either way. */
-    fun toggle(mode: PickerMode) {
-        open = if (open == mode) null else mode
+    /**
+     * Opens [mode]'s picker for [target], or closes it if that one was open, starting it empty either
+     * way: one picker at a time, so opening a circuit's closes the footer's.
+     */
+    fun toggle(
+        mode: PickerMode,
+        target: Int? = null,
+    ) {
+        val same = open == mode && this.target == target
+        open = if (same) null else mode
+        this.target = if (same) null else target
         selection = emptyList()
         showQuickAdd(false)
     }
 
+    /** Whether [mode]'s picker is open for [target]. */
+    fun isOpen(
+        mode: PickerMode,
+        target: Int? = null,
+    ) = open == mode && this.target == target
+
     fun close() {
-        open?.let(::toggle)
+        open?.let { toggle(it, target) }
     }
 
     fun toggleMember(exerciseId: String) {

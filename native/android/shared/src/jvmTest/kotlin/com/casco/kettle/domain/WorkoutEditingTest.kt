@@ -169,13 +169,10 @@ class WorkoutEditingTest {
             assertEquals(circuit(), circuit().withoutMember(1))
         }
 
-        // `Number('-5') || 0` is -5, and the schema is non-negative, so a minus sign reached the file.
+        // In the order added: there is no reordering inside a circuit.
         @Test
-        fun `reads a rest as seconds, never below zero`() {
-            assertEquals(0.0, restSeconds("-5"))
-            assertEquals(0.0, restSeconds(""))
-            assertEquals(0.0, restSeconds("abc"))
-            assertEquals(20.0, restSeconds(" 20 "))
+        fun `adds an exercise at the circuit's end`() {
+            assertEquals(three, circuit().withMember("rows").members)
         }
 
         @Test
@@ -190,6 +187,34 @@ class WorkoutEditingTest {
             val edited = draft.withCircuit(draft.blocks[1].key) { it.withRounds(5) }
             assertEquals(draft.blocks[0], edited.blocks[0])
             assertEquals(5L, (edited.blocks[1].block as WorkoutBlock.Circuit).rounds)
+        }
+    }
+
+    @Nested
+    inner class RestBlocks {
+        private val draft = WorkoutDraft().adding("pull-ups").adding("rest")
+        private val rest = draft.blocks[1].key
+
+        private fun WorkoutDraft.restBlock() = blocks[1].block as WorkoutBlock.ExerciseBlock
+
+        // The Rest exercise is every workout's; a length set here is this workout's alone.
+        @Test
+        fun `sets a rest's length as this workout's override`() {
+            assertEquals(
+                BlockConfigOverride(durationSec = 120.0),
+                draft.withRestLength(rest, 120.0, own = 60.0).restBlock().configOverride,
+            )
+        }
+
+        @Test
+        fun `drops the override when the length is the exercise's own`() {
+            val overridden = draft.withRestLength(rest, 120.0, own = 60.0)
+            assertEquals(null, overridden.withRestLength(rest, 60.0, own = 60.0).restBlock().configOverride)
+        }
+
+        @Test
+        fun `changes only the block it is keyed to`() {
+            assertEquals(draft.blocks[0], draft.withRestLength(rest, 120.0, own = 60.0).blocks[0])
         }
     }
 

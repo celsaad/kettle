@@ -30,13 +30,23 @@ internal fun KettleAlertDialog(
     onDismissRequest: (() -> Unit)?,
     confirm: DialogAction,
     dismiss: DialogAction? = null,
+) = KettleAlertDialog(title, onDismissRequest, confirm, dismiss) { Text(body) }
+
+/** The same alert with [content] where its body would be: a control rather than a question (#440). */
+@Composable
+internal fun KettleAlertDialog(
+    title: String,
+    onDismissRequest: (() -> Unit)?,
+    confirm: DialogAction,
+    dismiss: DialogAction?,
+    content: @Composable () -> Unit,
 ) {
     val colors = KettleTheme.colors
     val buttons = ButtonDefaults.textButtonColors(contentColor = colors.accentText)
     AlertDialog(
         onDismissRequest = onDismissRequest ?: {},
         title = { Text(title) },
-        text = { Text(body) },
+        text = content,
         confirmButton = {
             TextButton(
                 confirm.onClick,

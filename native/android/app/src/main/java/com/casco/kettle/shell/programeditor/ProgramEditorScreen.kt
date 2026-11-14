@@ -32,7 +32,6 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.ConfigProblem
@@ -61,6 +60,7 @@ import com.casco.kettle.shell.files.LibraryWriteRefusal
 import com.casco.kettle.shell.files.LocalLatestFiles
 import com.casco.kettle.shell.files.libraryWriteOrRefusal
 import com.casco.kettle.shell.files.text
+import com.casco.kettle.shell.form.EditorTitleBar
 import com.casco.kettle.shell.form.FieldKind
 import com.casco.kettle.shell.form.FieldOptions
 import com.casco.kettle.shell.form.FormField
@@ -347,34 +347,8 @@ private fun Editing(
 /** "Edit program" and Save, the one place Save is (Cancel is the sheet's ×), and why it refused. */
 @Composable
 private fun TitleBar(editor: Editor) {
-    val colors = KettleTheme.colors
     val title = if (editor.existing == null) R.string.programEditor_newTitle else R.string.programEditor_editTitle
-    Row(Modifier.padding(vertical = Spacing.two), verticalAlignment = Alignment.CenterVertically) {
-        Text(
-            stringResource(title),
-            Modifier.weight(1f).semantics {
-                heading()
-            },
-            style = KettleType.subtitle,
-            color = colors.text,
-        )
-        // The heading's size: white on the accent is 3.64:1, AA for large text only (theme.ts).
-        Box(
-            Modifier
-                .heightIn(min = 48.dp)
-                .clip(RoundedCornerShape(24.dp))
-                .background(colors.accent)
-                .clickable(role = Role.Button, onClick = editor::save)
-                .padding(horizontal = Spacing.three),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(stringResource(R.string.common_save), style = KettleType.heading, color = colors.onAccent)
-        }
-    }
-    // Under the Save it answers, pinned with it: at the foot of a long program it would never be seen.
-    refusalText(editor)?.let {
-        Text(it, Modifier.padding(bottom = Spacing.two), style = KettleType.small, color = colors.accentText)
-    }
+    EditorTitleBar(stringResource(title), editor::save, refusalText(editor))
 }
 
 /** The name, then "10 weeks · Runs top to bottom", and where to go first with no workouts to pick. */

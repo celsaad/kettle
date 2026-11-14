@@ -30,7 +30,8 @@ fun WorkoutBlock.Circuit.withoutMember(index: Int): WorkoutBlock.Circuit =
     if (canRemoveMember) copy(members = members.filterIndexed { at, _ -> at != index }) else this
 
 /**
- * A typed rest, as seconds: what RN's `Math.max(0, Number(text) || 0)` made of it. Junk and blank read
- * as 0, and so does a negative, which the schema refuses.
+ * [exerciseId] as the circuit's last exercise (#440): "+ Add exercise to circuit". At the end, since a
+ * circuit's exercises run in the order added and there is no reordering inside one.
  */
-fun restSeconds(text: String): Double = (jsNumberOrNull(text.trim()) ?: 0.0).coerceAtLeast(0.0)
+fun WorkoutBlock.Circuit.withMember(exerciseId: String): WorkoutBlock.Circuit =
+    copy(members = members + CircuitMember(exerciseId))

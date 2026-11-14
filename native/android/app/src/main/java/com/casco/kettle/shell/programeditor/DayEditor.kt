@@ -31,6 +31,7 @@ import com.casco.kettle.shell.R
 import com.casco.kettle.shell.form.FieldKind
 import com.casco.kettle.shell.form.FieldOptions
 import com.casco.kettle.shell.form.FormField
+import com.casco.kettle.shell.form.StepButton
 import com.casco.kettle.shell.list.ListRowSeparator
 import com.casco.kettle.shell.list.TextAction
 import com.casco.kettle.shell.settings.Segmented
@@ -38,7 +39,6 @@ import com.casco.kettle.shell.theme.Chevron
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.Spacing
-import com.casco.kettle.shell.workouteditor.StepButton
 
 /**
  * The open day (#438): its label with the uniqueness hint Save holds it to, Workout or Rest day, the

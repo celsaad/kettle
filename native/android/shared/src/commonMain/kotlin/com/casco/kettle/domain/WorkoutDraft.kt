@@ -89,6 +89,29 @@ fun WorkoutDraft.withCircuit(
             },
     )
 
+/**
+ * The rest block keyed [key] lasting [seconds] in this workout (#440): its `config_override`, never the
+ * Rest exercise itself, which every workout that rests shares. Set back to the exercise's [own] length,
+ * the override goes, so the file carries no override that changes nothing.
+ */
+fun WorkoutDraft.withRestLength(
+    key: Int,
+    seconds: Double,
+    own: Double,
+): WorkoutDraft =
+    copy(
+        blocks =
+            blocks.map { draft ->
+                val block = draft.block
+                if (draft.key == key && block is WorkoutBlock.ExerciseBlock) {
+                    val override = if (seconds == own) null else BlockConfigOverride(durationSec = seconds)
+                    draft.copy(block = block.copy(configOverride = override))
+                } else {
+                    draft
+                }
+            },
+    )
+
 private const val DEFAULT_CIRCUIT_ROUNDS = 3L
 private const val DEFAULT_REST_BETWEEN_EXERCISES_SEC = 15.0
 private const val DEFAULT_REST_BETWEEN_ROUNDS_SEC = 60.0

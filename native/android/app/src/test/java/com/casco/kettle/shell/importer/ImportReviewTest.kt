@@ -79,6 +79,27 @@ class ImportReviewTest : ImportHarness() {
         absent("Importar 0 itens")
     }
 
+    // A file that parses but holds nothing has nothing to count either.
+    @Test
+    fun `says plain Import for a review with nothing in it`() {
+        picks(Library(1, emptyList(), emptyList(), emptyList()))
+        chooseFile()
+
+        shown("Importar")
+        absent("Importar 0 itens")
+    }
+
+    // Each section is cut on its own: a run of updates can't push the new items behind Show all.
+    @Test
+    fun `keeps the new items in sight past a long run of updates`() {
+        val nine = many.take(9)
+        picks(Library(1, nine + dips, emptyList(), emptyList()))
+        chooseFile(Files(Library(1, nine, emptyList(), emptyList())))
+
+        shown("Novos")
+        shown("dips · exercício")
+    }
+
     // Open on its diff, the review being for what changes; a tap folds it, and it still says what it clears.
     @Test
     fun `folds an update's diff on a tap, and still says what it clears`() {

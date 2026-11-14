@@ -113,10 +113,18 @@ fun diffWorkout(
     val gone = had.filter { it !in has }
     val added = has.filter { it !in had }
     // Same place, same exercises, different settings: what the count and the references can't see.
-    val edited =
+    val settings =
         before.blocks.zip(after.blocks).mapIndexedNotNull { i, (was, now) ->
             (i + 1).takeIf { was != now && exercisesIn(was) == exercisesIn(now) }
         }
+    // Nothing else to say and still not equal is a reorder: every position that moved, so an empty
+    // diff only ever means the two really are the same.
+    val reordered =
+        before.blocks.zip(after.blocks).mapIndexedNotNull { i, (was, now) -> (i + 1).takeIf { was != now } }
+    val quiet =
+        before.name.trim() == after.name.trim() && before.blocks.size == after.blocks.size &&
+            had.sorted() == has.sorted()
+    val edited = if (settings.isEmpty() && quiet && before.blocks != after.blocks) reordered else settings
     return listOfNotNull(
         change(DiffLabel.Name, before.name, after.name),
         change(DiffLabel.Blocks, "${before.blocks.size}", "${after.blocks.size}"),

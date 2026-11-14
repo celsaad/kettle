@@ -170,6 +170,18 @@ class LibraryDiffTest {
             )
         }
 
+        // Same blocks, new order: no count or reference moved, and it is still not the same workout.
+        @Test
+        fun `names the blocks a reorder moved, rather than calling it identical`() {
+            val bench = WorkoutBlock.ExerciseBlock("bench")
+            val dips = WorkoutBlock.ExerciseBlock("dips")
+
+            assertEquals(
+                listOf(FieldChange(DiffLabel.BlocksEdited, DiffValue.Text("—"), DiffValue.Text("1, 2"))),
+                diffWorkout(push(bench, dips), push(dips, bench)),
+            )
+        }
+
         @Test
         fun `reports nothing for a workout that is the same`() {
             val same = push(WorkoutBlock.ExerciseBlock("bench"), circuit("bench", "dips"))

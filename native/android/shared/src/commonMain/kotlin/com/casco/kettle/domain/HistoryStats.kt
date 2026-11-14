@@ -138,7 +138,8 @@ fun trainingCalendar(
     }
 }
 
-private fun startOfWeek(
+/** The first day of [day]'s week, the week starting on [firstWeekday]. */
+fun startOfWeek(
     day: LocalDate,
     firstWeekday: DayOfWeek,
 ): LocalDate {

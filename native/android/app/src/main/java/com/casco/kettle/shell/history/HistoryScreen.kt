@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -25,21 +26,30 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.HistorySessionView
 import com.casco.kettle.domain.HistoryStats
+import com.casco.kettle.domain.HistoryWeek
 import com.casco.kettle.domain.Library
 import com.casco.kettle.domain.Session
 import com.casco.kettle.domain.filterByName
 import com.casco.kettle.domain.historySessionsView
 import com.casco.kettle.domain.historyStats
+import com.casco.kettle.domain.historyWeeks
+import com.casco.kettle.domain.recordsAtTheTime
+import com.casco.kettle.domain.startOfWeek
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.export.logShareRefused
 import com.casco.kettle.shell.export.rememberFileShare
 import com.casco.kettle.shell.files.LatestFiles
 import com.casco.kettle.shell.files.LocalLatestFiles
 import com.casco.kettle.shell.files.writeOrRefusal
+import com.casco.kettle.shell.i18n.firstWeekday
+import com.casco.kettle.shell.i18n.formatDayRange
 import com.casco.kettle.shell.i18n.pluralText
 import com.casco.kettle.shell.list.ListHeaderRule
 import com.casco.kettle.shell.list.ListRowSeparator
@@ -53,6 +63,7 @@ import com.casco.kettle.shell.nav.ScrollsToTopOnReselect
 import com.casco.kettle.shell.nav.Tab
 import com.casco.kettle.shell.runner.RunnerHost
 import com.casco.kettle.shell.runner.RunnerView
+import com.casco.kettle.shell.stats.rememberStatsTime
 import com.casco.kettle.shell.theme.DialogAction
 import com.casco.kettle.shell.theme.KettleAlertDialog
 import com.casco.kettle.shell.theme.KettleTheme
@@ -64,7 +75,13 @@ import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.datetime.DatePeriod
+import kotlinx.datetime.DayOfWeek
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.plus
+import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Instant
 
 /** What the Progress tab draws in its Sessions section (#411). */
 @Composable
@@ -74,9 +91,10 @@ fun HistoryRoute() {
     val scope = rememberCoroutineScope()
     val runner by RunnerHost.view.collectAsState()
     val navigator = LocalNavigator.current
+    val time = rememberStatsTime()
     HistoryScreen(
         files,
-        TimeZone.currentSystemDefault(),
+        HistoryTime(time.now, time.zone, firstWeekday(LocalConfiguration.current.locales[0])),
         LocalTabReselects.current,
         HistoryActions(
             open = navigator::push,
@@ -92,6 +110,16 @@ fun HistoryRoute() {
 }
 
 /**
+ * When Sessions reads the log from: [now] says which week is "This week", [zone] which day a session
+ * started on, and [firstWeekday] where the reader's weeks begin, as Overview's calendar has them.
+ */
+class HistoryTime(
+    val now: Instant,
+    val zone: TimeZone,
+    val firstWeekday: DayOfWeek,
+)
+
+/**
  * What History asks of the shell, as parameters so a test hears each one. [export] shares one session;
  * the whole log is Your file's Export log (#414).
  */
@@ -101,9 +129,11 @@ class HistoryActions(
 )
 
 /**
- * History (#202), the log as rows, newest first, as RN's `(tabs)/history.tsx`, now the empty stub at
- * this path: a one-line summary where six stat tiles used to be, a name search that narrows the line
- * with the list, and rows that expand in place to what each entry put up, with Delete, Edit and Export.
+ * Progress's Sessions (#414), which was History (#202): the log as rows, newest first, **grouped by
+ * week**, each week titled and totalled, under a search by workout or exercise name. A row carries a
+ * PR badge when it set a record at the time, and the entry that did, else its first, under its numbers.
+ * Rows expand in place to what each entry put up, with Delete, Edit and Export. While searching, a
+ * line over the weeks says how many of the log matched and what they add up to.
  *
  * It reads the log with zero work taken out, as every training view does (`SessionLog.logged`); the
  * whole log's export is Your file's Export log since #414. Native owns deleting a session
@@ -116,7 +146,7 @@ class HistoryActions(
 @Composable
 fun HistoryScreen(
     files: LatestFiles,
-    zone: TimeZone,
+    time: HistoryTime,
     reselected: Flow<Tab>,
     actions: HistoryActions,
     runningId: String? = null,
@@ -132,10 +162,15 @@ fun HistoryScreen(
     val deleting = remember(files) { Deleting(files, scope) }
 
     val logged = log?.logged.orEmpty()
-    val rows = remember(logged, library, zone) { historySessionsView(logged, library, zone) }
+    val rows = remember(logged, library, time.zone) { historySessionsView(logged, library, time.zone) }
+    val records = remember(logged) { recordsAtTheTime(logged) }
     val adHoc = stringResource(R.string.format_adHocSession)
-    val listing = remember(logged, rows, query, adHoc) { Listing(logged, rows, query, adHoc) }
+    val listing =
+        remember(logged, rows, query, adHoc, time.firstWeekday) {
+            Listing(logged, rows, query, adHoc, time.firstWeekday)
+        }
     val visible = listing.visible
+    val titles = weekTitles(time)
 
     Box(Modifier.fillMaxSize().statusBarsPadding(), contentAlignment = Alignment.TopCenter) {
         LazyColumn(
@@ -148,22 +183,24 @@ fun HistoryScreen(
             // read, so the line never says zero before it has looked.
             if (log == null) return@LazyColumn
             item(key = "summary") {
-                SummaryLine(listing.stats, listing.matched)
+                listing.matched?.let { SummaryLine(listing.stats, it) }
                 if (log.errors.isNotEmpty()) Problems(log.errors)
                 SearchBar(query, { query = it }, stringResource(R.string.history_searchPlaceholder))
-                ListHeaderRule()
             }
-            itemsIndexed(visible, key = { _, row -> row.id }) { index, row ->
-                if (index > 0) ListRowSeparator()
-                SessionRow(
-                    row,
-                    name = listing.nameOf(row),
-                    expanded = expandedId == row.id,
-                    failure = deleting.failure?.takeIf { it.id == row.id }?.reason,
-                    rowActions(row, actions, deleting, deletable = row.id != runningId) {
-                        expandedId = if (expandedId == row.id) null else row.id
-                    },
-                )
+            for (week in listing.weeks) {
+                item(key = "week-${week.start}") { WeekHeader(titles(week.start), listing.statsOf(week)) }
+                itemsIndexed(week.rows, key = { _, row -> row.id }) { index, row ->
+                    if (index > 0) ListRowSeparator()
+                    SessionRow(
+                        row,
+                        name = listing.nameOf(row),
+                        RowState(expandedId == row.id, deleting.failure?.takeIf { it.id == row.id }?.reason),
+                        record = records[row.id],
+                        rowActions(row, actions, deleting, deletable = row.id != runningId) {
+                            expandedId = if (expandedId == row.id) null else row.id
+                        },
+                    )
+                }
             }
             // No first-run half: an empty log is what a new install is, and the line above already
             // reads 0. This covers only the blank body a search makes.
@@ -179,27 +216,41 @@ fun HistoryScreen(
 }
 
 /**
- * What the list shows for [query]: the [rows] whose workout matches, filtered but never re-ranked,
- * since this is a timeline and a best-match-first History reads as broken. Matched on the row rather
- * than the session, since only the row has the workout's name ([adHoc] for none).
+ * What the list shows for [query]: the [rows] whose workout or any of whose exercises matches (#414),
+ * filtered but never re-ranked, since this is a timeline and a best-match-first list reads as broken.
+ * Matched on the row rather than the session, since only the row has the names ([adHoc] for none).
+ * Then the rows by week, each week totalled over what it lists.
  *
- * The summary totals what's listed, not the whole archive, and while searching says how many of the
- * whole it is ([matched]), so a narrowed set is never presented as a lifetime total.
+ * While searching, the line over the weeks totals what's listed and says how many of the whole it is
+ * ([matched]), so a narrowed set is never presented as a lifetime total.
  */
 private class Listing(
     logged: List<Session>,
     rows: List<HistorySessionView>,
     query: String,
     adHoc: String,
+    firstWeekday: DayOfWeek,
 ) {
     private val searching = query.isNotBlank()
 
     /** What a row is called: its workout, or the ad-hoc stand-in, which is what the search matches too. */
     val nameOf: (HistorySessionView) -> String = { it.workoutName ?: adHoc }
-    val visible = if (searching) filterByName(rows, query, nameOf) else rows
-    private val ids = visible.mapTo(HashSet()) { it.id }
-    val stats = historyStats(if (searching) logged.filter { it.id in ids } else logged)
+    val visible =
+        if (searching) {
+            rows.filter { row ->
+                val names = listOf(nameOf(row)) + row.entries.map { it.exerciseName }
+                filterByName(names, query) { it }.isNotEmpty()
+            }
+        } else {
+            rows
+        }
+    private val byId = logged.associateBy { it.id }
+    val stats = historyStats(visible.mapNotNull { byId[it.id] })
     val matched = if (searching) MatchCount(visible.size, logged.size) else null
+    val weeks = historyWeeks(visible, firstWeekday)
+    private val weekStats = weeks.associate { week -> week.start to historyStats(week.rows.mapNotNull { byId[it.id] }) }
+
+    fun statsOf(week: HistoryWeek): HistoryStats = weekStats.getValue(week.start)
 }
 
 /** While searching: [shown] sessions matched, of [total] in the log. */
@@ -273,15 +324,61 @@ private data class DeleteFailure(
 private val EmptyLibrary = Library(1, emptyList(), emptyList(), emptyList())
 
 /**
- * The whole header's numbers as one sentence, where six stat cards used to fill the first screen.
- * While searching it leads with the match count, so a narrowed set says what it is ("3 of 41") as
- * well as what it adds up to, rather than quietly relabelling a subset. Each count is formatted
- * before it goes in, so the first week reads "1 session", never "1 sessions".
+ * A week's title, "This week" for the one [time] is in, else its days as a range, and "No date" for
+ * the rows whose `started_at` isn't an instant.
+ */
+@Composable
+private fun weekTitles(time: HistoryTime): (LocalDate?) -> String {
+    val locale = LocalConfiguration.current.locales[0]
+    val thisWeek = stringResource(R.string.history_thisWeek)
+    val undated = stringResource(R.string.history_undated)
+    val current = startOfWeek(time.now.toLocalDateTime(time.zone).date, time.firstWeekday)
+    return { start ->
+        when (start) {
+            null -> undated
+            current -> thisWeek
+            else -> formatDayRange(start, start.plus(DatePeriod(days = DAYS_IN_WEEK - 1)), locale)
+        }
+    }
+}
+
+/** A week's title and what it adds up to, over a firmer rule than the rows' hairlines. */
+@Composable
+private fun WeekHeader(
+    title: String,
+    stats: HistoryStats,
+) {
+    val colors = KettleTheme.colors
+    Row(
+        Modifier.padding(top = Spacing.four, bottom = Spacing.one),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.two),
+        verticalAlignment = Alignment.Bottom,
+    ) {
+        Text(title, Modifier.weight(1f).semantics { heading() }, style = KettleType.heading, color = colors.text)
+        Text(
+            stringResource(
+                R.string.history_weekSummary,
+                pluralText(R.plurals.format_session, R.string.format_session_zero, stats.sessions),
+                stringResource(R.string.analytics_hoursMinutes, stats.hours, stats.minutes),
+            ),
+            style = KettleType.small,
+            color = colors.textSecondary,
+        )
+    }
+    ListHeaderRule()
+}
+
+private const val DAYS_IN_WEEK = 7
+
+/**
+ * While searching, what matched as one sentence: the match count first, so a narrowed set says what it
+ * is ("3 of 41") as well as what it adds up to, rather than passing for the whole log. Each count is
+ * formatted before it goes in, so it reads "1 session", never "1 sessions".
  */
 @Composable
 private fun SummaryLine(
     stats: HistoryStats,
-    matched: MatchCount?,
+    matched: MatchCount,
 ) {
     val totals =
         stringResource(
@@ -291,10 +388,13 @@ private fun SummaryLine(
             // Stats' reading of a time, so the two screens say one total in one form.
             stringResource(R.string.analytics_hoursMinutes, stats.hours, stats.minutes),
         )
-    val line =
-        matched?.let { "${stringResource(R.string.history_matchCount, it.shown, it.total)} · $totals" }
-            ?: totals
-    Text(line, Modifier.padding(top = 2.dp), style = KettleType.default, color = KettleTheme.colors.textSecondary)
+    val line = "${stringResource(R.string.history_matchCount, matched.shown, matched.total)} · $totals"
+    Text(
+        line,
+        Modifier.padding(top = 2.dp, bottom = Spacing.two),
+        style = KettleType.default,
+        color = KettleTheme.colors.textSecondary,
+    )
 }
 
 /**

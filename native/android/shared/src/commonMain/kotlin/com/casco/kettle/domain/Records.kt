@@ -182,3 +182,36 @@ private fun recordOf(
         RecordKind.LongestHold -> SessionRecord.LongestHold(id, name, best.value)
         RecordKind.MostRounds -> SessionRecord.MostRounds(id, name, best.value)
     }
+
+/**
+ * Which sessions set a record **at the time** (#414), for Sessions' PR badge: one pass over the
+ * finished [sessions] in the order they started, each entry against the best of every session before
+ * it, by [sessionRecords]' rule (strictly greater, and a first-ever entry is no record). Not
+ * [sessionRecords] per session, which judges against the whole log, later sessions included, so a
+ * record since beaten would lose its badge.
+ *
+ * Each such session's id maps to the exercise of its first record entry, in the order logged, which is
+ * the entry its row shows. A session whose `started_at` isn't an instant has no place in the order and
+ * is left out, and so is never a record or the best one is judged against.
+ */
+fun recordsAtTheTime(sessions: List<Session>): Map<String, String> {
+    val bests = HashMap<String, Double>()
+    val records = LinkedHashMap<String, String>()
+    val inOrder =
+        sessions
+            .filter { it.endedAt != null }
+            .mapNotNull { session -> session.startedInstant()?.let { session to it } }
+            .sortedBy { (_, startedAt) -> startedAt }
+    for ((session, _) in inOrder) {
+        val entries = session.entries.mapNotNull { entry -> entryBest(entry)?.let { entry.exercise to it } }
+        entries
+            .firstOrNull { (exercise, best) ->
+                bests[recordKey(exercise, best.kind)]?.let { best.value > it } == true
+            }?.let { (exercise) -> records[session.id] = exercise }
+        for ((exercise, best) in entries) {
+            val key = recordKey(exercise, best.kind)
+            if (best.value > (bests[key] ?: Double.NEGATIVE_INFINITY)) bests[key] = best.value
+        }
+    }
+    return records
+}

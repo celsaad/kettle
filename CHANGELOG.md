@@ -102,6 +102,10 @@ here, next to what it describes.
   and days still to come are blank. Getting stronger shows each change with ▲ or ▼ beside a small
   line of how it went. The day streak is gone, and exporting the whole log is Export log in
   Library's Your file (#414).
+- **Sessions by the week**: Progress's Sessions groups your log by week, each with how many
+  sessions and how long. A session that set a record carries a PR badge, and each row shows the
+  exercise that set it, or its first. Search finds a session by any exercise in it, not only the
+  workout's name (#414).
 
 ---
 

@@ -1,5 +1,6 @@
 package com.casco.kettle.domain
 
+import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -23,9 +24,11 @@ fun sessionStartDay(
     zone: TimeZone,
 ): LocalDate? = session.startedInstant()?.toLocalDateTime(zone)?.date
 
+/** [exerciseId] is the file's, so a row can find the entry that set its record (#414). */
 data class HistoryEntryView(
     val exerciseName: String,
     val result: EntryResult,
+    val exerciseId: String,
 )
 
 /**
@@ -68,7 +71,27 @@ fun historySessionsView(
                     HistoryEntryView(
                         exerciseName(library.exercises, it.exercise),
                         sessionEntryResult(it),
+                        it.exercise,
                     )
                 },
         )
     }
+
+/** One week of Sessions (#414): the day it [start]s on, null for rows with no day, and its rows. */
+data class HistoryWeek(
+    val start: LocalDate?,
+    val rows: List<HistorySessionView>,
+)
+
+/**
+ * [rows] by the week each started in, weeks starting on [firstWeekday], in the order the rows come
+ * (newest first, as Sessions lists them) and each week's rows in it too. Rows whose `started_at` isn't
+ * an instant have no week, and share one group with a null start.
+ */
+fun historyWeeks(
+    rows: List<HistorySessionView>,
+    firstWeekday: DayOfWeek,
+): List<HistoryWeek> =
+    rows
+        .groupBy { row -> row.day?.let { startOfWeek(it, firstWeekday) } }
+        .map { (start, inWeek) -> HistoryWeek(start, inWeek) }

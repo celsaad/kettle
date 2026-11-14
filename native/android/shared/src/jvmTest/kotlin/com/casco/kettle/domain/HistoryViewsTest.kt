@@ -1,5 +1,6 @@
 package com.casco.kettle.domain
 
+import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -68,8 +69,8 @@ class HistoryViewsTest {
 
         assertEquals(
             listOf(
-                HistoryEntryView("L-Sit", EntryResult.Holds(listOf(20.0, 18.5))),
-                HistoryEntryView("gone", EntryResult.Reps(listOf(8L))),
+                HistoryEntryView("L-Sit", EntryResult.Holds(listOf(20.0, 18.5)), "lsit"),
+                HistoryEntryView("gone", EntryResult.Reps(listOf(8L)), "gone"),
             ),
             row.entries,
         )
@@ -117,5 +118,36 @@ class HistoryViewsTest {
             sessionEntryResult(SessionEntry.Cardio("row", durationSec = 600.0)),
         )
         assertEquals(EntryResult.Rest(90.0), sessionEntryResult(SessionEntry.Rest("rest", 90.0)))
+    }
+
+    /** Sessions' weeks (#414): newest first as listed, each on the reader's own first weekday. */
+    @Test
+    fun `groups rows by the week they started in, on the calendar's first weekday`() {
+        // Sunday 26 July and Saturday 25 July: two weeks counted from Sunday, one from Monday.
+        val rows =
+            historySessionsView(
+                listOf(
+                    session(hold(20.0), startedAt = "2026-07-26T09:00:00.000Z"),
+                    session(hold(20.0), startedAt = "2026-07-25T09:00:00.000Z"),
+                ),
+                library,
+                TimeZone.UTC,
+            )
+
+        assertEquals(
+            listOf(LocalDate(2026, 7, 26) to 1, LocalDate(2026, 7, 19) to 1),
+            historyWeeks(rows, DayOfWeek.SUNDAY).map { it.start to it.rows.size },
+        )
+        assertEquals(
+            listOf(LocalDate(2026, 7, 20) to 2),
+            historyWeeks(rows, DayOfWeek.MONDAY).map { it.start to it.rows.size },
+        )
+    }
+
+    @Test
+    fun `puts rows with no day in one week of their own, with no start`() {
+        val rows = historySessionsView(listOf(session(hold(20.0), startedAt = "not a date")), library, TimeZone.UTC)
+
+        assertEquals(listOf<LocalDate?>(null), historyWeeks(rows, DayOfWeek.MONDAY).map { it.start })
     }
 }

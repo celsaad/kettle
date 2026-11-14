@@ -94,7 +94,7 @@
     "summaryLine": "{{sessions}} · {{time}} · {{sets}}",
     "matchCount": "{{shown}} of {{total}}",
     "sets": "sets",
-    "searchPlaceholder": "Search workouts",
+    "searchPlaceholder": "Filter by workout or exercise",
     "mixed": "mixed",
     "edit": "Edit",
     "showExercises": "Show exercises",
@@ -102,7 +102,12 @@
     "deleteConfirmTitle": "Delete session?",
     "deleteConfirmBody": "\"{{name}}\" on {{day}} {{month}} will be permanently removed.",
     "problemsTitle_one": "{{count}} session file couldn't be read or written",
-    "problemsTitle_other": "{{count}} session files couldn't be read or written"
+    "problemsTitle_other": "{{count}} session files couldn't be read or written",
+    "thisWeek": "This week",
+    "undated": "No date",
+    "weekSummary": "{{sessions}} · {{time}}",
+    "prBadge": "PR",
+    "topEntry": "{{exercise}} · {{result}}"
   },
   "analytics": {
     "hoursMinutes": "{{hours}}h {{minutes}}m",

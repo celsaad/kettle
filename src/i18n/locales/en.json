@@ -77,7 +77,11 @@
     }
   },
   "workoutPreview": {
-    "notFound": "This workout isn't in your library any more."
+    "notFound": "This workout isn't in your library any more.",
+    "edit": "Edit workout",
+    "changesTitle": "Changed for this day",
+    "changesHint": "Set by the program. Edit changes the workout itself.",
+    "rest": "rest {{time}}"
   },
   "build": {
     "workoutCount_one": "{{count}} workout",

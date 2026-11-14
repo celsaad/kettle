@@ -80,7 +80,11 @@
     }
   },
   "workoutPreview": {
-    "notFound": "Este treino não está mais na sua biblioteca."
+    "notFound": "Este treino não está mais na sua biblioteca.",
+    "edit": "Editar treino",
+    "changesTitle": "Alterado neste dia",
+    "changesHint": "Definido pelo programa. Editar altera o próprio treino.",
+    "rest": "descanso {{time}}"
   },
   "build": {
     "workoutCount_one": "{{count}} treino",

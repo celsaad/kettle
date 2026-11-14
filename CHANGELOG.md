@@ -121,6 +121,9 @@ here, next to what it describes.
   one day open at a time. A week's menu moves it up or down, duplicates it right after itself, or
   deletes it, and the weeks after it renumber to close the gap. A day's changes are labelled
   "Changes for this day", and Save sits at the top (#438).
+- **A workout's preview says more**: for a program day it names the program, week and day, shows
+  the day's note in full, and lists what the program changes that day. Each exercise shows its
+  rest between sets and its note, and a pencil at the top opens the workout to edit (#439).
 
 ---
 

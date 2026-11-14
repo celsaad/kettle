@@ -1,15 +1,12 @@
 package com.casco.kettle.shell.sessioneditor
 
 import androidx.annotation.StringRes
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -19,6 +16,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -30,45 +28,42 @@ import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.casco.kettle.domain.EntryDraft
 import com.casco.kettle.domain.EntryField
 import com.casco.kettle.domain.EntryProblem
 import com.casco.kettle.domain.Library
+import com.casco.kettle.domain.RemovedSet
 import com.casco.kettle.domain.Session
 import com.casco.kettle.domain.SessionEditing
 import com.casco.kettle.domain.SessionEntry
 import com.casco.kettle.domain.SetForm
 import com.casco.kettle.domain.UnitSystem
+import com.casco.kettle.domain.addingSet
 import com.casco.kettle.domain.editedSession
-import com.casco.kettle.domain.entryFields
 import com.casco.kettle.domain.exerciseName
 import com.casco.kettle.domain.firstProblem
-import com.casco.kettle.domain.isZeroForm
+import com.casco.kettle.domain.removingSet
+import com.casco.kettle.domain.restoring
 import com.casco.kettle.domain.sessionEditing
 import com.casco.kettle.domain.sessionEntryResult
 import com.casco.kettle.domain.sessionStartDay
+import com.casco.kettle.domain.wholeSeconds
 import com.casco.kettle.domain.workoutNameFor
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.files.LatestFiles
 import com.casco.kettle.shell.files.LocalLatestFiles
 import com.casco.kettle.shell.files.writeOrRefusal
-import com.casco.kettle.shell.form.EditorButtons
-import com.casco.kettle.shell.form.FormField
+import com.casco.kettle.shell.form.EditorTitleBar
 import com.casco.kettle.shell.history.entryResultText
 import com.casco.kettle.shell.i18n.deviceUnitSystem
 import com.casco.kettle.shell.i18n.formatMonthBadge
 import com.casco.kettle.shell.library.ExerciseBadge
-import com.casco.kettle.shell.list.TextAction
 import com.casco.kettle.shell.nav.LocalNavigator
-import com.casco.kettle.shell.theme.DialogAction
-import com.casco.kettle.shell.theme.KettleAlertDialog
+import com.casco.kettle.shell.runner.formatClock
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.MaxContentWidth
 import com.casco.kettle.shell.theme.Spacing
-import com.casco.kettle.shell.theme.card
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
@@ -113,56 +108,61 @@ fun SessionEditorScreen(
     val library = files.library ?: EmptyLibrary
     val logged = files.sessionLog?.logged
     val scope = rememberCoroutineScope()
-    Box(
-        Modifier
-            .fillMaxSize()
-            .imePadding()
-            .verticalScroll(rememberScrollState()),
-        contentAlignment = Alignment.TopCenter,
-    ) {
-        Column(
-            Modifier
-                .widthIn(max = MaxContentWidth)
-                .fillMaxWidth()
-                .padding(horizontal = Spacing.three)
-                .padding(bottom = Spacing.four)
-                .navigationBarsPadding(),
-        ) {
-            Text(
+    // Worked out from the first read of the log and kept, as RN's editor copied its drafts once: the
+    // shell reads again while the sheet is up, and from then on what's typed is the user's. Once more
+    // when the session's end lands: the receipt's Edit log (#416) can open this before the reread with
+    // the finished copy, which would otherwise hold "still running" for good.
+    val shown = logged?.firstOrNull { it.id == id }
+    val editing = logged?.let { remember(id, units, shown?.endedAt) { sessionEditing(it, id, units) } }
+    val editor =
+        (editing as? SessionEditing.Editable)?.let {
+            remember(
+                it,
+            ) { Editor(it, units, files, scope, actions) }
+        }
+    Column(Modifier.fillMaxSize().imePadding()) {
+        Sheet {
+            EditorTitleBar(
                 stringResource(R.string.sessionEditor_title),
-                Modifier.semantics { heading() },
-                style = KettleType.subtitle,
-                color = KettleTheme.colors.text,
+                editor?.let { it::save },
+                editor?.let { refusalText(it) },
             )
-            // Nothing more before the log is read, so a session that is there is never called gone.
-            if (logged == null) return@Column
-            // Worked out from the first read of the log and kept, as RN's editor copied its drafts once:
-            // the shell reads again while the sheet is up, and from then on what's typed is the user's.
-            // Once more when the session's end lands: the receipt's Edit log (#416) can open this before
-            // the reread with the finished copy, which would otherwise hold "still running" for good.
-            val shown = logged.firstOrNull { it.id == id }
-            val editing = remember(id, units, shown?.endedAt) { sessionEditing(logged, id, units) }
-            shown?.let { Subtitle(it, library, zone) }
-            when (editing) {
-                SessionEditing.NotFound -> {
-                    Notice(R.string.sessionEditor_notFoundTitle, R.string.sessionEditor_notFoundBody)
-                }
-
-                SessionEditing.Running -> {
-                    Notice(R.string.sessionEditor_runningTitle, R.string.sessionEditor_runningBody)
-                }
-
-                SessionEditing.NothingToEdit -> {
-                    Notice(R.string.sessionEditor_emptyTitle, R.string.sessionEditor_emptyBody)
-                }
-
-                is SessionEditing.Editable -> {
-                    val editor = remember(editing) { Editor(editing, units, files, scope, actions) }
-                    Editing(editor, library, units)
-                }
+        }
+        Box(
+            Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()),
+            contentAlignment = Alignment.TopCenter,
+        ) {
+            Sheet(Modifier.padding(bottom = Spacing.four).navigationBarsPadding()) {
+                shown?.let { Subtitle(it, library, zone) }
+                editing?.let { Body(it, editor, library, units) }
             }
         }
+        // Keyed on the removal, so each is a node of its own and announced, the same words twice included.
+        editor?.lastRemoved?.let { removed -> key(removed) { Sheet { UndoBar(removed, editor, library) } } }
     }
+}
+
+/** What the sheet shows for [editing]: the tables, or why there are none. */
+@Composable
+private fun Body(
+    editing: SessionEditing,
+    editor: Editor?,
+    library: Library,
+    units: UnitSystem,
+) = when (editing) {
+    SessionEditing.NotFound -> Notice(R.string.sessionEditor_notFoundTitle, R.string.sessionEditor_notFoundBody)
+    SessionEditing.Running -> Notice(R.string.sessionEditor_runningTitle, R.string.sessionEditor_runningBody)
+    SessionEditing.NothingToEdit -> Notice(R.string.sessionEditor_emptyTitle, R.string.sessionEditor_emptyBody)
+    is SessionEditing.Editable -> editor?.let { Editing(it, library, units) }
+}
+
+/** The editor's column: its content width, centred, inside the sheet's inset. */
+@Composable
+private fun Sheet(
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit,
+) = Box(Modifier.fillMaxWidth().padding(horizontal = Spacing.three), contentAlignment = Alignment.TopCenter) {
+    Column(Modifier.widthIn(max = MaxContentWidth).fillMaxWidth().then(modifier)) { content() }
 }
 
 /** Which session this is: its workout, verbatim, and the day it started. Nothing where that isn't a day. */
@@ -183,10 +183,10 @@ private fun Subtitle(
 }
 
 /**
- * One session's edit, from the first keystroke to the write: the drafts, the entry whose last set is
- * being asked about, and why Save refused, the form's problem or the disk's.
+ * One session's edit, from the first keystroke to the write: the drafts, the one cell open, the last
+ * removal Undo can put back, and why Save refused, the form's problem or the disk's.
  */
-private class Editor(
+internal class Editor(
     private val editing: SessionEditing.Editable,
     private val units: UnitSystem,
     private val files: LatestFiles,
@@ -195,7 +195,13 @@ private class Editor(
 ) {
     var drafts by mutableStateOf(editing.drafts)
         private set
-    var confirming by mutableStateOf<Int?>(null)
+
+    /** The set last removed, for the Undo bar; null once undone, or with nothing removed. */
+    var lastRemoved by mutableStateOf<RemovedSet?>(null)
+        private set
+
+    /** The one cell being edited, if any: one at a time, as the board has it. */
+    var editingCell by mutableStateOf<CellKey?>(null)
         private set
     var problem by mutableStateOf<EntryProblem?>(null)
         private set
@@ -209,10 +215,19 @@ private class Editor(
      */
     private var closed = false
 
-    val readOnly get() = editing.readOnly
+    val session get() = editing.session
 
-    /** Writes nothing: the drafts are this screen's copy, and go with it. */
-    fun cancel() = actions.close()
+    fun startEditing(cell: CellKey) {
+        editingCell = cell
+    }
+
+    /**
+     * Closes [cell], and only it: a cell losing focus because another was tapped mustn't close the one
+     * just opened.
+     */
+    fun stopEditing(cell: CellKey) {
+        if (editingCell == cell) editingCell = null
+    }
 
     fun setField(
         draft: Int,
@@ -225,23 +240,35 @@ private class Editor(
     }
 
     /**
-     * One set goes as asked. The last one takes the exercise with it, a bigger thing than the button
-     * says, so that one is asked about first.
+     * One set goes at once, the last of an exercise too, with Undo to put it back exactly (#442): nothing
+     * is written until Save, and closing the sheet discards it, so no removal needs asking about first.
      */
     fun remove(
         draft: Int,
         row: Int,
     ) {
-        if (drafts[draft].forms.size > 1) drop(draft, row) else confirming = draft
+        val (rest, removed) = drafts.removingSet(draft, row) ?: return
+        editingCell = null
+        // A refusal about the set that just went would point at nothing.
+        problem = null
+        drafts = rest
+        lastRemoved = removed
     }
 
-    fun dismissRemove() {
-        confirming = null
+    /**
+     * Puts the last removal back. An open cell closes first: its key names a row by position, and the
+     * restored set would slide under it, so the next keystroke would land in a set the user didn't open.
+     */
+    fun undo() {
+        val removed = lastRemoved ?: return
+        editingCell = null
+        problem = null
+        drafts = drafts.restoring(removed)
+        lastRemoved = null
     }
 
-    fun confirmRemove(draft: Int) {
-        confirming = null
-        drop(draft, 0)
+    fun addSet(draft: Int) {
+        drafts = drafts.addingSet(draft)
     }
 
     /**
@@ -269,11 +296,6 @@ private class Editor(
         }
     }
 
-    private fun drop(
-        draft: Int,
-        row: Int,
-    ) = update(draft) { forms -> forms.filterIndexed { i, _ -> i != row } }
-
     private fun update(
         draft: Int,
         change: (List<SetForm>) -> List<SetForm>,
@@ -282,147 +304,87 @@ private class Editor(
     }
 }
 
+/**
+ * The session in its own order (#442): a table per exercise it can correct, a read-only line per rest
+ * ("Rest · 1:34 taken"), and an EMOM as its result, shown rather than dropped, since a session that
+ * lost its EMOM on the way in would read as if the log had.
+ */
 @Composable
 private fun Editing(
     editor: Editor,
     library: Library,
     units: UnitSystem,
 ) {
-    val colors = KettleTheme.colors
-    Secondary(stringResource(R.string.sessionEditor_intro), Modifier.padding(top = Spacing.two))
-    editor.drafts.forEachIndexed { index, draft ->
-        // An entry whose last set was removed goes on save; until then it is simply not shown.
-        if (draft.forms.isNotEmpty()) {
-            val name = exerciseName(library.exercises, draft.entry.exercise)
-            EntryCard(name, draft.entry) { DraftRows(editor, index, draft, units) }
-        }
-    }
-    // Listed rather than hidden: a session that lost its EMOM on the way in would read as if the log had.
     val resources = LocalResources.current
-    for (entry in editor.readOnly) {
-        EntryCard(exerciseName(library.exercises, entry.exercise), entry) {
-            Text(
-                resources.entryResultText(sessionEntryResult(entry)),
-                style = KettleType.smallMedium,
-                color = colors.text,
-            )
-            Secondary(stringResource(R.string.sessionEditor_readOnlyNote))
-        }
-    }
-    val refusal =
-        editor.problem?.let { problemText(it) }
-            ?: editor.failure?.let { stringResource(R.string.common_saveFailed, it) }
-    refusal?.let { Text(it, Modifier.padding(top = Spacing.two), style = KettleType.small, color = colors.accentText) }
-    EditorButtons(stringResource(R.string.common_save), onCancel = editor::cancel, onPrimary = editor::save)
-
-    editor.confirming?.let { draft ->
-        RemoveDialog(
-            exerciseName(library.exercises, editor.drafts[draft].entry.exercise),
-            onDismiss = editor::dismissRemove,
-            onConfirm = { editor.confirmRemove(draft) },
-        )
-    }
-}
-
-@Composable
-private fun EntryCard(
-    name: String,
-    entry: SessionEntry,
-    content: @Composable () -> Unit,
-) = Column(
-    Modifier
-        .padding(top = Spacing.three - 2.dp)
-        .fillMaxWidth()
-        .card(16.dp)
-        .padding(Spacing.two + 4.dp),
-    verticalArrangement = Arrangement.spacedBy(Spacing.one),
-) {
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.two)) {
-        // User data, verbatim. It takes the leftover width and ellipsizes rather than push the badge off.
-        Text(
-            name,
-            Modifier.weight(1f),
-            style = KettleType.heading,
-            color = KettleTheme.colors.text,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-        ExerciseBadge(entry)
-    }
-    content()
-}
-
-/** One entry's rows, each its fields, its Remove, and the zero hint while saving would drop it. */
-@Composable
-private fun DraftRows(
-    editor: Editor,
-    index: Int,
-    draft: EntryDraft,
-    units: UnitSystem,
-) {
-    val colors = KettleTheme.colors
-    val fields = entryFields(draft.entry).orEmpty()
-    // The one-result types log one row for the whole entry, with no "Set 1" to put on it.
-    val perSet = draft.entry is SessionEntry.Reps || draft.entry is SessionEntry.TimedHold
-    val lastSet = draft.forms.size == 1
-    draft.forms.forEachIndexed { row, form ->
-        val setLabel = stringResource(R.string.sessionEditor_setLabel, row + 1)
-        Column(
-            Modifier
-                .padding(top = Spacing.one)
-                .fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(Spacing.one),
-        ) {
-            Box(Modifier.fillMaxWidth().heightIn(min = 1.dp).background(colors.border))
-            if (perSet) Text(setLabel.uppercase(), style = KettleType.code, color = colors.textSecondary)
-            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.two - 2.dp)) {
-                for (field in fields) {
-                    val label = fieldLabel(field, units)
-                    Column(Modifier.weight(1f)) {
-                        Secondary(label, Modifier.padding(bottom = 4.dp))
-                        FormField(
-                            form.values[field].orEmpty(),
-                            { editor.setField(index, row, field, it) },
-                            // Every row has the same labels, so the set is what tells them apart.
-                            name = if (perSet) setFieldName(setLabel, label) else label,
-                            placeholder = if (field.optional) "—" else "0",
-                        )
-                    }
+    Secondary(stringResource(R.string.sessionEditor_hint), Modifier.padding(top = Spacing.two))
+    val byIndex = editor.drafts.withIndex().associateBy { it.value.index }
+    var rests = false
+    editor.session.entries.forEachIndexed { at, entry ->
+        val draft = byIndex[at]
+        when {
+            // An entry whose last set was removed goes on save; until then it is simply not shown.
+            draft != null -> {
+                if (draft.value.forms.isNotEmpty()) {
+                    EntryTable(
+                        TableContext(
+                            editor,
+                            draft.index,
+                            draft.value,
+                            units,
+                            exerciseName(library.exercises, entry.exercise),
+                        ),
+                    )
                 }
             }
-            val remove =
-                stringResource(if (lastSet) R.string.sessionEditor_removeEntry else R.string.sessionEditor_removeSet)
-            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
-                TextAction(
-                    remove,
-                    KettleType.small,
-                    colors.textSecondary,
-                    onClick = { editor.remove(index, row) },
-                    // As the fields: "Remove set" reads the same on every row.
-                    label = if (lastSet) null else removeSetName(remove, setLabel),
+
+            entry is SessionEntry.Rest -> {
+                rests = true
+                Secondary(
+                    stringResource(
+                        R.string.sessionEditor_restLine,
+                        formatClock(wholeSeconds(entry.restTakenSec).toDouble()),
+                    ),
+                    Modifier.padding(top = Spacing.two),
                 )
             }
-            // Typing 0 is how a set gets cleared, and it goes on save without Remove's confirm, so it's
-            // said here, and only while it applies.
-            if (isZeroForm(draft.entry, form, units)) Secondary(stringResource(R.string.sessionEditor_zeroRemoved))
+
+            else -> {
+                ReadOnlyEntry(
+                    exerciseName(library.exercises, entry.exercise),
+                    entry,
+                    resources.entryResultText(sessionEntryResult(entry)),
+                )
+            }
         }
     }
+    if (rests) Secondary(stringResource(R.string.sessionEditor_restNote), Modifier.padding(top = Spacing.three))
+}
+
+/** An entry the editor can't rewrite, an EMOM's minute-by-minute log: its name, its result, and why. */
+@Composable
+private fun ReadOnlyEntry(
+    name: String,
+    entry: SessionEntry,
+    result: String,
+) = Column(Modifier.padding(top = Spacing.four), verticalArrangement = Arrangement.spacedBy(Spacing.one)) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.two)) {
+        Text(name, Modifier.weight(1f), style = KettleType.heading, color = KettleTheme.colors.text)
+        ExerciseBadge(entry)
+    }
+    Text(result, style = KettleType.smallMedium, color = KettleTheme.colors.text)
+    Secondary(stringResource(R.string.sessionEditor_readOnlyNote))
 }
 
 @Composable
-private fun RemoveDialog(
-    name: String,
-    onDismiss: () -> Unit,
-    onConfirm: () -> Unit,
-) {
-    KettleAlertDialog(
-        title = stringResource(R.string.sessionEditor_removeEntryConfirmTitle),
-        body = stringResource(R.string.sessionEditor_removeEntryConfirmBody, name),
-        onDismissRequest = onDismiss,
-        confirm = DialogAction(stringResource(R.string.common_delete), onConfirm),
-        dismiss = DialogAction(stringResource(R.string.common_cancel), onDismiss),
-    )
-}
+private fun refusalText(editor: Editor): String? =
+    editor.problem?.let { problemText(it) } ?: editor.failure?.let { stringResource(R.string.common_saveFailed, it) }
+
+/** Which cell is being edited: an entry's draft, a row of it, and a field of the row. */
+internal data class CellKey(
+    val draft: Int,
+    val row: Int,
+    val field: EntryField,
+)
 
 /** Why the editor offers nothing to edit. */
 @Composable

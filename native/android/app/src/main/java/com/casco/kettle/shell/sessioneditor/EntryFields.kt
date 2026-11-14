@@ -20,22 +20,12 @@ internal fun fieldLabel(
     units: UnitSystem,
 ): String = withUnit(stringResource(field.label), field.unit, units)
 
-// The two per-set names are helpers only to keep DraftRows under detekt's LongMethod limit; why the
-// set is in them is said where they're used.
-
 /** A per-set field's name: "Set 2 · Reps". */
 @Composable
 internal fun setFieldName(
     setLabel: String,
     label: String,
 ): String = stringResource(R.string.sessionEditor_setField, label, setLabel)
-
-/** A per-set Remove's name: "Remove set · Set 2". */
-@Composable
-internal fun removeSetName(
-    remove: String,
-    setLabel: String,
-): String = stringResource(R.string.sessionEditor_removeSetName, remove, setLabel)
 
 @Composable
 internal fun problemText(problem: EntryProblem): String =

@@ -136,6 +136,10 @@ here, next to what it describes.
   pounds, the weight says what your file keeps in kilograms. A new exercise starts filled in, so it
   saves what it shows. An exercise's type is fixed once it's created, and says so; Delete is greyed
   out while a workout uses the exercise, saying which one (#441).
+- **Editing a logged session is a table per exercise**: tap an underlined number to change it, and
+  a hold opens the time picker. Remove a set with its ×, and Undo puts it back exactly; removing an
+  exercise's last set removes the exercise, with Undo too. "+ Add a set" copies the set above it,
+  with Effort left blank. A rest block shows as a read-only line, since the timer logged it (#442).
 
 ---
 

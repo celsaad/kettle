@@ -673,7 +673,6 @@
   "sessionEditor": {
     "title": "セッションを編集",
     "subtitle": "{{name}} · {{month}}{{day}}日",
-    "intro": "記録した内容を修正できます。保存を押すまで何も保存されません。",
     "notFoundTitle": "セッションが見つかりません",
     "notFoundBody": "別の画面で削除された可能性があります。何も変更されていません。",
     "runningTitle": "このセッションはまだ実行中です",
@@ -681,10 +680,6 @@
     "emptyTitle": "編集するものがありません",
     "emptyBody": "このセッションには、修正できる記録済みのセットがありません。",
     "setLabel": "セット{{n}}",
-    "removeSet": "セットを削除",
-    "removeEntry": "エクササイズを削除",
-    "removeEntryConfirmTitle": "このエクササイズを削除しますか？",
-    "removeEntryConfirmBody": "「{{name}}」は残り1セットなので、削除するとこのセッションからエクササイズごとなくなります。",
     "readOnlyNote": "1分ごとの記録はここでは編集できません。",
     "zeroRemoved": "0のセットは保存時に削除されます。",
     "field": {
@@ -701,7 +696,19 @@
       "cardioNeedsOne": "時間か距離のどちらかを入力してください。"
     },
     "setField": "{{set}}の{{field}}",
-    "removeSetName": "{{set}}を削除"
+    "hint": "下線の付いた数字をタップすると変更できます。",
+    "colSet": "セット",
+    "colHeld": "保持",
+    "addSet": "+ セットを追加",
+    "restLine": "休憩 · {{time}}",
+    "restNote": "休憩はタイマーが記録するため、編集できません。",
+    "setRemoved": "{{name}}のセット{{n}}を削除しました",
+    "entryRemoved": "{{name}}を削除しました",
+    "cellValue": "{{name}}、{{value}}",
+    "noValue": "なし",
+    "removeSetOf": "{{name}}のセット{{n}}を削除",
+    "removeEntryOf": "{{name}}を削除",
+    "addSetTo": "{{name}}にセットを追加"
   },
   "exerciseArt": {
     "pushups": "腕立て伏せ：手は肩の真下、かかとから頭まで一直線の姿勢。",

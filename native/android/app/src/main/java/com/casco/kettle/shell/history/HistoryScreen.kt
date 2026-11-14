@@ -180,7 +180,7 @@ fun HistoryScreen(
                 PaddingValues(start = Spacing.three, end = Spacing.three, top = Spacing.two, bottom = Spacing.six),
         ) {
             // The tab's header names it and switches to Overview (#414). Nothing here until the log is
-            // read, so the line never says zero before it has looked.
+            // read, so an empty log is never announced before it has been looked at.
             if (log == null) return@LazyColumn
             item(key = "summary") { ListTop(listing, log.errors, empty = logged.isEmpty(), query) { query = it } }
             for (week in listing.weeks) {
@@ -191,15 +191,14 @@ fun HistoryScreen(
                         row,
                         name = listing.nameOf(row),
                         RowState(expandedId == row.id, deleting.failure?.takeIf { it.id == row.id }?.reason),
-                        record = records[row.id],
+                        recordIndex = records[row.id],
                         rowActions(row, actions, deleting, deletable = row.id != runningId) {
                             expandedId = if (expandedId == row.id) null else row.id
                         },
                     )
                 }
             }
-            // A search that finds nothing says so; an empty log says what will fill it, rather than a bare
-            // search field over a blank page.
+            // A search that finds nothing says so. (An empty log is ListTop's.)
             if (visible.isEmpty() && logged.isNotEmpty()) item(key = "no-results") { NoResults(query) }
         }
     }
@@ -333,7 +332,9 @@ private fun ListTop(
     query: String,
     onQuery: (String) -> Unit,
 ) {
-    listing.matched?.let { SummaryLine(listing.stats, it) }
+    // Not on an empty log, where the field is gone: a search kept from before its last session was
+    // deleted would leave a "0 of 0" nothing on screen can clear.
+    if (!empty) listing.matched?.let { SummaryLine(listing.stats, it) }
     if (errors.isNotEmpty()) Problems(errors)
     if (empty) {
         Text(
@@ -356,7 +357,8 @@ private fun weekTitles(time: HistoryTime): (LocalDate?) -> String {
     val locale = LocalConfiguration.current.locales[0]
     val thisWeek = stringResource(R.string.history_thisWeek)
     val undated = stringResource(R.string.history_undated)
-    val current = startOfWeek(time.now.toLocalDateTime(time.zone).date, time.firstWeekday)
+    val today = time.now.toLocalDateTime(time.zone).date
+    val current = startOfWeek(today, time.firstWeekday)
     return { start ->
         when (start) {
             null -> {
@@ -369,8 +371,8 @@ private fun weekTitles(time: HistoryTime): (LocalDate?) -> String {
 
             else -> {
                 val end = start.plus(DatePeriod(days = DAYS_IN_WEEK - 1))
-                // The year only where it isn't this one, which is most of a reader's weeks.
-                formatDayRange(start, end, locale, withYear = start.year != current.year || end.year != current.year)
+                // The year only for a week that isn't all in today's year; most weeks are, and go without.
+                formatDayRange(start, end, locale, withYear = start.year != today.year || end.year != today.year)
             }
         }
     }

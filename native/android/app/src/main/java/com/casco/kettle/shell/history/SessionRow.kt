@@ -48,7 +48,7 @@ import com.casco.kettle.shell.theme.Spacing
  * The pressable part takes its name from its own text; expand and collapse are what TalkBack can't
  * infer from the chevron, which is decoration.
  *
- * As the board draws it (#414): the day and its weekday, the name with a PR badge when [record] gives
+ * As the board draws it (#414): the day and its weekday, the name with a PR badge when [recordIndex] gives
  * the place of the entry that set one, the minutes and sets, and one entry's result: that record's, else the
  * first logged, so the line shows what earned the badge.
  */
@@ -57,7 +57,7 @@ internal fun SessionRow(
     row: HistorySessionView,
     name: String,
     state: RowState,
-    record: Int?,
+    recordIndex: Int?,
     actions: RowActions,
 ) {
     val colors = KettleTheme.colors
@@ -110,10 +110,10 @@ internal fun SessionRow(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(name, Modifier.weight(1f, fill = false), style = KettleType.heading, color = colors.text)
-                    if (record != null) PrBadge()
+                    if (recordIndex != null) PrBadge()
                 }
                 Text(details(row), style = KettleType.small, color = colors.textSecondary)
-                topEntry(row, record)?.let { Text(it, style = KettleType.small, color = colors.text) }
+                topEntry(row, recordIndex)?.let { Text(it, style = KettleType.small, color = colors.text) }
             }
             Chevron(expanded)
         }
@@ -131,9 +131,9 @@ internal data class RowState(
 @Composable
 private fun topEntry(
     row: HistorySessionView,
-    record: Int?,
+    recordIndex: Int?,
 ): String? {
-    val entry = row.entries.firstOrNull { it.index == record } ?: row.entries.firstOrNull() ?: return null
+    val entry = row.entries.firstOrNull { it.index == recordIndex } ?: row.entries.firstOrNull() ?: return null
     return stringResource(
         R.string.history_topEntry,
         entry.exerciseName,

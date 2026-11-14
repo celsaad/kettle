@@ -366,6 +366,24 @@ class HistoryScreenTest {
         search("leg dips")
 
         row("Leg day").assertExists()
+        row("Push day").assertDoesNotExist()
+    }
+
+    /**
+     * Deleting the last session a search found leaves no match line over the empty log, where no field
+     * could clear it.
+     */
+    @Test
+    fun `drops a kept search's line once the log is empty`() {
+        val files = Files(legs)
+        show(files)
+        search("leg")
+        row("Leg day").performClick()
+        action("Excluir").performClick()
+        compose.pressDialogButton("Excluir")
+
+        compose.onNodeWithText("Nada registrado ainda", substring = true).assertExists()
+        compose.onNodeWithText("0 de 0", substring = true).assertDoesNotExist()
     }
 
     /** A week outside this year carries its year, or a log over a year long titles two weeks alike. */

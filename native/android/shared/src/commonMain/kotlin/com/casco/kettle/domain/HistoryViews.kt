@@ -99,4 +99,5 @@ fun historyWeeks(
     rows
         .groupBy { row -> row.day?.let { startOfWeek(it, firstWeekday) } }
         .map { (start, inWeek) -> HistoryWeek(start, inWeek) }
+        // Descending over nulls-first: the newest week first and the undated group last.
         .sortedWith(compareByDescending<HistoryWeek, LocalDate?>(nullsFirst()) { it.start })

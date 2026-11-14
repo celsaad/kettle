@@ -211,8 +211,8 @@ private fun ComparisonRow(
     val badge = record?.let { stringResource(R.string.session_complete_recordBadge) }
     val description = listOfNotNull(row.exerciseName, badge, today, oneRepMax, spoken).joinToString(", ")
     Column(Modifier.fillMaxWidth().clearAndSetSemantics { contentDescription = description }) {
-        // The list rows' own metrics: a list of peers is rows, on the runner's field as in the shell.
         Rule()
+        // The list rows' own metrics: a list of peers is rows, on the runner's field as in the shell.
         Row(
             Modifier.fillMaxWidth().heightIn(min = ListRowMinHeight).padding(vertical = ListRowVerticalPadding),
             horizontalArrangement = Arrangement.spacedBy(Spacing.two),

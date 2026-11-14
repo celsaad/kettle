@@ -39,6 +39,21 @@ class AgainstLastTimeTest {
         assertEquals(3L, row.repsChange)
     }
 
+    /** A top set taken to failure: the most reps at the weight, not the first set's, on both sides. */
+    @Test
+    fun `counts the best set's reps at the weight, not the first's`() {
+        val sets = { counts: List<Long> ->
+            SessionEntry.Reps("squat", counts.map { RepsSetLog(it, 60.0, restTakenSec = 60.0) })
+        }
+        val row =
+            compare(
+                session("today", "2026-08-15", sets(listOf(5, 5, 8))),
+                session("last", "2026-08-08", sets(listOf(5, 5, 7))),
+            ).single()
+
+        assertEquals(1L, row.repsChange)
+    }
+
     @Test
     fun `has no reps change where the weight moved`() {
         assertNull(compare(lift("today", "2026-08-15", 65.0), lift("last", "2026-08-08", 60.0)).single().repsChange)

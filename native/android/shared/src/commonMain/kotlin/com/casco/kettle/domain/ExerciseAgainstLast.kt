@@ -47,8 +47,10 @@ fun againstLastTime(
                 entries
                     .mapNotNull { entry ->
                         entryBest(entry)?.let { entry to it }
-                    }.let { bests -> bests.filter { it.second.kind == preferredKind(bests) } }
-                    .maxWithOrNull(byBest)
+                    }.let { bests ->
+                        val kind = preferredKind(bests)
+                        bests.filter { it.second.kind == kind }
+                    }.maxWithOrNull(byBest)
             val last = before.firstOrNull { other -> other.entries.any { it.exercise == exerciseId } }
             val lastBest =
                 best?.let { (_, today) ->
@@ -59,6 +61,7 @@ fun againstLastTime(
                         ?.filter { it.kind == today.kind }
                         ?.maxWithOrNull(compareBy<EntryBest> { it.value }.thenBy { it.reps })
                 }
+            val lastEntries = last?.entries?.filter { it.exercise == exerciseId }.orEmpty()
             val held =
                 best != null && lastBest != null && best.second.kind == RecordKind.HeaviestSet &&
                     best.second.value == lastBest.value
@@ -69,10 +72,33 @@ fun againstLastTime(
                 kind = best?.second?.kind,
                 change = lastBest?.let { best.second.value - it.value },
                 firstTime = last == null,
-                repsChange = if (held) best.second.reps - lastBest.reps else null,
+                repsChange =
+                    if (held) {
+                        repsAt(
+                            best.second.value,
+                            entries,
+                        ) - repsAt(lastBest.value, lastEntries)
+                    } else {
+                        null
+                    },
             )
         }
 }
+
+/**
+ * The most reps any set at [weightKg] put up across [entries]: a 5, 5, 8 top-set day against 5, 5, 7
+ * is a rep gained, where `entryBest`'s first-of-equals set would read 5 against 5. Kept here rather than
+ * in `entryBest`, whose first-of-equals the records' goldens hold.
+ */
+private fun repsAt(
+    weightKg: Double,
+    entries: List<SessionEntry>,
+): Long =
+    entries
+        .filterIsInstance<SessionEntry.Reps>()
+        .flatMap { it.sets }
+        .filter { it.weightKg == weightKg }
+        .maxOfOrNull { it.reps } ?: 0
 
 /** The better of two entries of one exercise: the higher value, then, at one weight, more reps. */
 private val byBest = compareBy<Pair<SessionEntry, EntryBest>> { it.second.value }.thenBy { it.second.reps }

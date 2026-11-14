@@ -30,6 +30,7 @@ internal fun changeTexts(
         // Decided on what's printed, so 61.2 kg against 135 lb can't read "▲ 0 lb".
         readings.reading(abs(change)) != readings.reading(0.0) -> signed(change, readings)
 
+        // Reps take no units; the argument is only the constructor's.
         reps != null -> signed(reps, Readings(resources, RecordKind.MostReps, UnitSystem.METRIC))
 
         else -> resources.getString(R.string.session_complete_same).let { it to it }

@@ -76,7 +76,9 @@ decision assembled across several commits. Open work belongs in the sections at 
   for the completion screen's records and its "Against last time" (`againstLastTime`), the runner's
   live best-marker, Sessions' PR badge, and the Stats screen's per-exercise trend. It is exported for
   those rather than restated, because parts of the app disagreeing about whether a session was an
-  improvement is a bug no test would catch.
+  improvement is a bug no test would catch. One local addition, on the receipt only: at a weight that
+  held, "Against last time" also compares the most reps at that weight (`repsAt`), which `entryBest`'s
+  one number can't say and its goldens hold as is.
 
   **Its omissions are inherited, not re-decided.** `hiit` rounds and `emom` minutes are bounded by the
   exercise's own config, so a rise there reports that the *workout* was edited; `cardio` has real

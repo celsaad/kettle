@@ -50,6 +50,7 @@ fun ImportRoute(params: Map<String, String> = emptyMap()) {
             )
         },
         ImportStart.of(params[IMPORT_SOURCE_PARAM]),
+        shareFailed = params[IMPORT_SHARE_FAILED_PARAM] == "true",
     )
 }
 

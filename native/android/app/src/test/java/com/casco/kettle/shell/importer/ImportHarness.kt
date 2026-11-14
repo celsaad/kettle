@@ -71,6 +71,9 @@ abstract class ImportHarness {
 
     internal lateinit var latest: LatestFiles
 
+    /** Whether the file sheet's share of the brief failed before this Import opened (#413). */
+    internal var shareFailedBefore = false
+
     /**
      * [io] holds the file work until it's run; [readFirst] false leaves the first read held in it too.
      * [locale] stands in for the reader's language where a test changes it under the sheet. [start] is
@@ -112,6 +115,7 @@ abstract class ImportHarness {
                             },
                         ),
                         start,
+                        shareFailedBefore,
                     )
                 }
             }

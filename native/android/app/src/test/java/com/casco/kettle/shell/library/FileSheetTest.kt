@@ -27,6 +27,7 @@ import com.casco.kettle.domain.UnitSystem
 import com.casco.kettle.domain.Workout
 import com.casco.kettle.shell.files.FakeStoredFiles
 import com.casco.kettle.shell.files.LatestFiles
+import com.casco.kettle.shell.importer.IMPORT_SHARE_FAILED_PARAM
 import com.casco.kettle.shell.importer.IMPORT_SOURCE_PARAM
 import com.casco.kettle.shell.nav.Destination
 import com.casco.kettle.shell.nav.Route
@@ -139,7 +140,18 @@ class FileSheetTest {
 
         brief().performClick()
 
-        assertEquals(listOf(importOn("assistant")), opened)
+        assertEquals(
+            listOf(
+                Route(
+                    Destination.Import,
+                    mapOf(
+                        IMPORT_SOURCE_PARAM to "assistant",
+                        IMPORT_SHARE_FAILED_PARAM to "true",
+                    ),
+                ),
+            ),
+            opened,
+        )
     }
 
     /** The brief is the library's ids, so it isn't offered empty before the library is read. */

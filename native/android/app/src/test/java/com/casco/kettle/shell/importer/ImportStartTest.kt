@@ -76,6 +76,23 @@ class ImportStartTest : ImportHarness() {
         absent(FIRST_PACK)
     }
 
+    /** The file sheet's share already failed, so Import says why before anyone presses its own. */
+    @Test
+    fun `opened after the file sheet's share failed, it says so above the copy`() {
+        shareFailedBefore = true
+        show(start = ImportStart.Assistant)
+
+        shown(SHARE_FAILED)
+        button("Copiar em vez disso").assertExists()
+    }
+
+    @Test
+    fun `opened on the assistant otherwise, it claims no failure`() {
+        show(start = ImportStart.Assistant)
+
+        absent(SHARE_FAILED)
+    }
+
     @Test
     fun `no start, or one the sheet doesn't know, reads as none`() {
         assertNull(ImportStart.of(null))

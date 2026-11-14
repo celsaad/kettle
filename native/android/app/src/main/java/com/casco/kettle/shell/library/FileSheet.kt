@@ -24,6 +24,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
@@ -48,6 +49,7 @@ import com.casco.kettle.shell.files.StoragePaths
 import com.casco.kettle.shell.form.SheetColumn
 import com.casco.kettle.shell.i18n.deviceUnitSystem
 import com.casco.kettle.shell.i18n.pluralText
+import com.casco.kettle.shell.importer.IMPORT_SHARE_FAILED_PARAM
 import com.casco.kettle.shell.importer.IMPORT_SOURCE_PARAM
 import com.casco.kettle.shell.importer.ImportStart
 import com.casco.kettle.shell.importer.briefWords
@@ -139,7 +141,14 @@ fun FileSheetScreen(
         ) {
             FileNameTitle()
             files.library?.let { Text(counts(it), style = KettleType.small, color = colors.textSecondary) }
-            AssistantCard(files.library, actions) { importOn(ImportStart.Assistant) }
+            AssistantCard(files.library, actions) {
+                actions.open(
+                    Route(
+                        Destination.Import,
+                        mapOf(IMPORT_SOURCE_PARAM to ImportStart.Assistant.param, IMPORT_SHARE_FAILED_PARAM to "true"),
+                    ),
+                )
+            }
             WaysIn(packIds, importOn)
             WaysOut(sessions, actions, share)
             failure?.let { Outcome(stringResource(R.string.settings_exportFailed, it), accent = true) }
@@ -233,7 +242,8 @@ internal fun FileNameTitle() =
  * The assistant, a card since it's the one thing here that isn't a row of peers: what it does, and
  * Share the brief, which opens the share sheet on the brief itself, as Import's does. The reply comes
  * back by Paste YAML below. Where no share sheet opens, it falls back to Import's assistant source
- * ([onFallback]), which has the copy button. Off until [library] is read: the brief is the ids in it.
+ * ([onFallback]), opened saying the share sheet didn't, above the copy button that covers it. Off,
+ * and drawn dimmed, until [library] is read: the brief is the ids in it.
  */
 @Composable
 private fun AssistantCard(
@@ -243,9 +253,11 @@ private fun AssistantCard(
 ) {
     val colors = KettleTheme.colors
     val words = briefWords()
+    // Once per sheet, as Import's block reads it, rather than off the assets on every press.
+    val schema = remember(actions) { actions.schema() }
     val onShare = {
         library?.let {
-            if (!actions.shareText(AssistantBrief.build(it, words, actions.schema()))) onFallback()
+            if (!actions.shareText(AssistantBrief.build(it, words, schema))) onFallback()
         }
         Unit
     }
@@ -274,6 +286,7 @@ private fun AssistantCard(
                 .heightIn(min = 48.dp)
                 .clip(ButtonShape)
                 .background(colors.accent)
+                .alpha(if (library != null) 1f else DISABLED_ALPHA)
                 .clickable(enabled = library != null, role = Role.Button, onClick = onShare)
                 .padding(vertical = Spacing.two),
             style = KettleType.heading.copy(fontWeight = FontWeight.SemiBold),
@@ -285,3 +298,6 @@ private fun AssistantCard(
 
 private val CardShape = RoundedCornerShape(18.dp)
 private val ButtonShape = RoundedCornerShape(14.dp)
+
+/** A control that can't act yet, as Settings' rows draw one. */
+private const val DISABLED_ALPHA = 0.5f

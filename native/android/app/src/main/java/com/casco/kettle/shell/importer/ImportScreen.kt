@@ -50,9 +50,17 @@ fun ImportScreen(
     content: ShippedContent,
     actions: ImportActions,
     start: ImportStart? = null,
+    shareFailed: Boolean = false,
 ) {
     val scope = rememberCoroutineScope()
-    val importer = remember { Importer(files, scope, actions).also { it.pasting = start == ImportStart.Paste } }
+    val importer =
+        remember {
+            Importer(files, scope, actions).also {
+                it.pasting = start == ImportStart.Paste
+                // The file sheet's Share the brief already failed: say so here, beside the copy that covers it.
+                if (shareFailed) it.handoff.sharedElsewhereFailed()
+            }
+        }
     // The file sheet's "Open a .yaml file" goes straight to the picker, once: not again on a rotation,
     // and not again after it came back cancelled, which leaves the row here to try again.
     var picked by rememberSaveable { mutableStateOf(false) }
@@ -213,6 +221,9 @@ private const val KILOBYTE = 1024
 
 /** The param that names the one source the Import sheet opens on. */
 const val IMPORT_SOURCE_PARAM = "source"
+
+/** Set by the file sheet when its share sheet didn't open, so Import opens saying so. */
+const val IMPORT_SHARE_FAILED_PARAM = "shareFailed"
 
 /** The sources the file sheet opens Import on (#413), by their [param] value. */
 enum class ImportStart(

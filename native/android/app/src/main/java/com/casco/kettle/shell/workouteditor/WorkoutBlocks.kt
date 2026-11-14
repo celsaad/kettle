@@ -338,7 +338,7 @@ internal fun StepButton(
             .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
             .semantics { contentDescription = label }
             // Dimmed and announced disabled where it can't move, as the week menu's moves are.
-            .alpha(if (enabled) 1f else STEP_DISABLED_ALPHA),
+            .alpha(if (enabled) 1f else DISABLED_ALPHA),
         contentAlignment = Alignment.Center,
     ) { TypeIcon(icon, KettleType.default, colors.textSecondary) }
 }
@@ -372,5 +372,3 @@ internal val BlockRadius = 16.dp
 internal val BlockShape = RoundedCornerShape(BlockRadius)
 private val GripSize = 48.dp
 private const val DISABLED_ALPHA = 0.4f
-
-private const val STEP_DISABLED_ALPHA = 0.4f

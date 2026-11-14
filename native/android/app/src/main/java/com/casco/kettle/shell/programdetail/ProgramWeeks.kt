@@ -23,6 +23,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -72,21 +73,26 @@ internal fun ProgramWeeks(
     // Only what the reader picked is kept; until then, and whenever the pick is gone (a week deleted in
     // the editor), the week the program stands in, so the default follows a session finished from here.
     var picked by rememberSaveable(position.program.id) { mutableStateOf<Long?>(null) }
+    // A tap on a week scrolls its days into view: with ten weeks of tabs, the list they open sits a
+    // screen below the tab tapped. Keyed on taps, which aren't saved, rather than on the saved pick, so
+    // opening the sheet, or coming back to it after a rotation, doesn't scroll anywhere.
+    var taps by remember { mutableIntStateOf(0) }
+    val days = remember { BringIntoViewRequester() }
     val selected = picked?.takeIf { pick -> grid.any { it.week == pick } } ?: current
     val colors = KettleTheme.colors
     Column {
         Heading(stringResource(R.string.programDetail_weeks), stringResource(R.string.programDetail_weeksHint))
         Column(Modifier.selectableGroup()) {
             grid.forEach { week ->
-                WeekTab(week, current, week.week == selected) { picked = week.week }
+                WeekTab(week, current, week.week == selected) {
+                    picked = week.week
+                    taps++
+                }
             }
         }
         Legend(colors)
     }
-    // A tap on a week scrolls its days into view: with ten weeks of tabs, the list they open sits a
-    // screen below the tab tapped. Only on a pick, so opening the sheet doesn't scroll anywhere.
-    val days = remember { BringIntoViewRequester() }
-    LaunchedEffect(picked) { if (picked != null) days.bringIntoView() }
+    LaunchedEffect(taps) { if (taps > 0) days.bringIntoView() }
     grid
         .firstOrNull {
             it.week == selected

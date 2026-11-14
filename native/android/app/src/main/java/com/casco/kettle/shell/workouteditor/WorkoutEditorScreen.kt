@@ -37,6 +37,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.collapse
 import androidx.compose.ui.semantics.expand
 import androidx.compose.ui.semantics.heading
@@ -535,7 +536,8 @@ private fun IdAndDelete(
             color = if (enabled) colors.accentText else colors.textSecondary,
         )
     }
-    reason?.let { Text(it, style = KettleType.small, color = colors.textSecondary) }
+    // Seen, but not read a second time: the button's state already says it.
+    reason?.let { Text(it, Modifier.clearAndSetSemantics {}, style = KettleType.small, color = colors.textSecondary) }
     if (editor.confirmingDelete) {
         KettleAlertDialog(
             title = stringResource(R.string.workoutEditor_deleteConfirmTitle),

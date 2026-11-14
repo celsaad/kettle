@@ -470,6 +470,7 @@ class WorkoutEditorScreenTest {
             )
         val files = show("push-day", Files(workouts = listOf(pushDay(atCeiling))))
 
+        named("Aumentar Rodadas").assertIsNotEnabled()
         press("Aumentar Rodadas")
         press("Salvar")
 
@@ -721,7 +722,6 @@ class WorkoutEditorScreenTest {
         named("Excluir treino").assertIsNotEnabled()
         // On the button too, so TalkBack says why with it rather than on the next swipe.
         named("Excluir treino").assert(hasStateDescription("Não dá para excluir enquanto for usado por Base."))
-        compose.onNodeWithText("Não dá para excluir enquanto for usado por Base.").assertExists()
         assertEquals(emptyList<Library>(), files.written)
     }
 
@@ -732,7 +732,7 @@ class WorkoutEditorScreenTest {
         val peak = Program("peak", "Peak", listOf(ProgramWeek.Training(week = 1, workoutId = "push-day")))
         show("push-day", Files(workouts = listOf(pushDay()), programs = listOf(base, peak)))
 
-        compose.onNodeWithText("Base、Peakが使用中のため削除できません。").assertExists()
+        named("ワークアウトを削除").assert(hasStateDescription("Base、Peakが使用中のため削除できません。"))
     }
 
     @Test
@@ -769,7 +769,7 @@ class WorkoutEditorScreenTest {
         latest.reread()
         compose.pressDialogButton("Excluir")
 
-        compose.onNodeWithText("Não dá para excluir enquanto for usado por Base.").assertExists()
+        named("Excluir treino").assert(hasStateDescription("Não dá para excluir enquanto for usado por Base."))
         assertEquals(emptyList<Library>(), files.written)
     }
 

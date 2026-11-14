@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import com.casco.kettle.domain.ExerciseConfig
 import com.casco.kettle.domain.UnitSystem
+import com.casco.kettle.domain.wholeSeconds
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.library.exerciseSummary
 import com.casco.kettle.shell.library.exerciseTarget
@@ -67,10 +68,13 @@ internal fun memberTarget(
 private fun holdText(config: ExerciseConfig.TimedHold): String {
     val min = config.holdSecMin ?: return stringResource(R.string.workoutEditor_memberHoldOpen)
     val max = config.holdSecMax?.takeIf { it != 0.0 }
-    return if (max == null) formatClock(min) else "${formatClock(min)}–${formatClock(max)}"
+    return if (max == null) clock(min) else "${clock(min)}–${clock(max)}"
 }
+
+/** A time as the picker shows it, to the whole second it rounds to: a file's 74.6 s reads 1:15 on both. */
+private fun clock(seconds: Double): String = formatClock(wholeSeconds(seconds).toDouble())
 
 /** " · rest 1:15", or nothing for no rest. */
 @Composable
 private fun restSuffix(seconds: Double): String =
-    if (seconds > 0) " · " + stringResource(R.string.workoutEditor_restSuffix, formatClock(seconds)) else ""
+    if (seconds > 0) " · " + stringResource(R.string.workoutEditor_restSuffix, clock(seconds)) else ""

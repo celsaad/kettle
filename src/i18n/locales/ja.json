@@ -286,7 +286,18 @@
       "done": "完了",
       "recordBadge": "自己ベスト",
       "oneRepMaxNote": "1RM はいちばん良かったセットから Epley の式で推定しています。",
-      "backupFailed": "このセッションはこの端末に保存されましたが、バックアップフォルダへのコピーはできませんでした。ライブラリの「あなたのファイル」を確認してください。"
+      "backupFailed": "このセッションはこの端末に保存されましたが、バックアップフォルダへのコピーはできませんでした。ライブラリの「あなたのファイル」を確認してください。",
+      "dayDone": "{{slot}} 完了",
+      "time": "時間",
+      "sets": "セット",
+      "exercises": "エクササイズ",
+      "againstLastTime": "前回との比較",
+      "firstTime": "初回",
+      "same": "変化なし",
+      "nextIn": "{{program}} の次: {{next}}",
+      "rest": "休息",
+      "backedUp": "バックアップ済み · {{path}}",
+      "editLog": "記録を編集"
     },
     "countdown": {
       "getReady": "準備",
@@ -863,12 +874,6 @@
       "loaded": "前回 · {{weight}} × {{reps}}",
       "bodyweight": "前回 · {{reps}}",
       "hold": "前回 · {{seconds}}"
-    },
-    "record": {
-      "heaviestSet": "自己最高重量 · {{weight}} × {{reps}}",
-      "mostReps": "自己最多レップ · {{reps}}",
-      "longestHold": "自己最長ホールド · {{seconds}}",
-      "mostRounds": "自己最多ラウンド · {{rounds}}"
     },
     "oneRepMax": "推定1RM {{weight}}"
   },

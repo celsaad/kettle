@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.Exercise
 import com.casco.kettle.domain.ExerciseConfig
+import com.casco.kettle.domain.Library
 import com.casco.kettle.domain.RunnerCommand
 import com.casco.kettle.domain.RunnerPlan
 import com.casco.kettle.domain.RunnerState
@@ -73,6 +74,9 @@ abstract class RunnerScreenHarness {
     protected val sent = mutableListOf<RunnerCommand>()
     protected var left = 0
     protected var done = 0
+    protected var library: Library? = null
+    protected var backupFolder: String? = null
+    protected val editedLogs = mutableListOf<String>()
     protected var startedAnyway = 0
     protected val adopted = mutableListOf<Pair<String, Double>>()
 
@@ -124,7 +128,7 @@ abstract class RunnerScreenHarness {
         KettleTheme(darkTheme = true) {
             RunnerScreen(
                 entry,
-                RunnerEnvironment(prior, UnitSystem.METRIC, soundsOn),
+                RunnerEnvironment(prior, UnitSystem.METRIC, soundsOn, library, backupFolder),
                 T0,
                 RunnerActions(
                     send = { sent += it },
@@ -132,6 +136,7 @@ abstract class RunnerScreenHarness {
                     leave = { left += 1 },
                     done = { done += 1 },
                     adopt = { id, kg -> adopted += id to kg },
+                    editLog = { editedLogs += it },
                 ),
             )
         }

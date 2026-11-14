@@ -109,6 +109,11 @@ here, next to what it describes.
 - **Settings is just settings**: appearance, units, and two switches for session sounds and the
   rest-day reminder. Exporting, importing and the backup folder live in Your file, one row away
   (#416).
+- **A receipt when you finish**: the session-complete screen shows the time, sets and
+  exercises, then each exercise against the last time you did it, with ▲ or ▼, "Same" or "First
+  time" and a PR mark where you beat your best. A program day says which day it was and what comes
+  next, and with a backup folder set it says where the log went. Edit log opens the session
+  straight away (#416).
 
 ---
 

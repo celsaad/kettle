@@ -353,14 +353,15 @@ try {
   }
   # History's banner title (en.json's history.problemsTitle), or nothing with no unreadable file, and the
   # session files that are empty (#333). The user's own sessions stay in the log through the run, so the
-  # checks are that a kill adds nothing to either. Read only with History's tab selected, as route-check
+  # checks are that a kill adds nothing to either. Read only with the Sessions tab selected (Progress ›
+  # Sessions since #411; the bar's "History" tab it once looked for is gone), as route-check
   # reads it, so a dump that failed or a screen that never came can't pass as an empty banner.
   function HistoryBanner {
     Navigate '/history'
     Start-Sleep -Seconds 2
     $xml = (A exec-out 'f=/sdcard/session-check.xml; rm -f $f; uiautomator dump $f >/dev/null 2>&1; cat $f 2>/dev/null; true') -join ''
     try { $dump = [xml]$xml } catch { return 'History not on screen' }
-    if ($null -eq $dump.SelectSingleNode("//node[@selected='true'][.//node[@text='History']]")) { return 'History not on screen' }
+    if ($null -eq $dump.SelectSingleNode("//node[@selected='true'][.//node[@text='Sessions']]")) { return 'History not on screen' }
     $node = $dump.SelectSingleNode("//node[contains(@text, 'be read or written')]")
     if ($node) { $node.GetAttribute('text') } else { '' }
   }

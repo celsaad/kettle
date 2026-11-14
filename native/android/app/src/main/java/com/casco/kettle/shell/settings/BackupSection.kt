@@ -1,8 +1,6 @@
 package com.casco.kettle.shell.settings
 
 import android.content.res.Resources
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import com.casco.kettle.domain.Session
 import com.casco.kettle.shell.R
 import com.casco.kettle.storage.BackupFailure

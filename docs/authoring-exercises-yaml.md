@@ -409,8 +409,7 @@ programs: []
 are the wiring — blocks, circuit members and program weeks all reference exercises and workouts by
 `id`, never by name — and every other field is a number, a type, or a duration, none of which change
 meaning with the reader. Keep the ids as they are and the whole structure survives the translation
-untouched. The practical route is to export the library (**Library → export**, or **Settings →
-Export library**), edit the names in the exported file, then import it back:
+untouched. The practical route is to export the library (**Library → exercises.yaml → Share file**), edit the names in the exported file, then import it back:
 
 - **Ids stay put.** Changing an `id` to match the new name doesn't rename anything — merge-by-id
   would *add* a second exercise under the new id and leave the old one behind, with every workout

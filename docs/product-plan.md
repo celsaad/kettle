@@ -354,7 +354,7 @@ whole program.
 | **2** | Live session engine for one timed type (HIIT) end-to-end; nail timer reliability + incremental flush | ✅ done (shipped as part of the full interval runner below) |
 | **3** | Extend runner to `reps` and `timed_hold`; support mixed reps+timed workouts (calisthenics case) | ✅ done |
 | **4** | Add `emom` / `amrap`; session history + basic progression (last-time weights/holds, volume per session) | ✅ done — `emom`/`amrap`/`cardio` are runnable, session history exists, and an exercise's edit screen shows its recent history (last-time weight/reps/holds, newest first) |
-| **5** | Polish: import/export UX, cloud sync guidance, programs/plans, charts | ✅ done — programs have full in-app CRUD including per-week override editing (§10); a per-exercise volume chart shipped (§13); cloud sync guidance is Settings → "Backups and sync" (§13); import/export UX covers a file **or** paste path, a field-level merge diff, a copy-the-format brief for an assistant, a copy-the-error repair loop, and export from Library, Settings and any History card |
+| **5** | Polish: import/export UX, cloud sync guidance, programs/plans, charts | ✅ done — programs have full in-app CRUD including per-week override editing (§10); a per-exercise volume chart shipped (§13); cloud sync guidance is on Your file, beside the backup folder (§13); import/export UX covers a file **or** paste path, a field-level merge diff, a copy-the-format brief for an assistant, a copy-the-error repair loop, and export from Your file (Library → exercises.yaml) and any session row |
 
 See §13 for the concrete, current gap list.
 
@@ -389,7 +389,7 @@ What's genuinely missing today, checked directly against the code:
 
   As always here, **"analytics" never means a telemetry SDK**: these are charts over the user's own
   local sessions, and the zero-data-collected claim is unaffected.
-- ~~**No in-app cloud-sync guidance.**~~ ✅ Shipped — Settings has a "Backups and sync" section, and
+- ~~**No in-app cloud-sync guidance.**~~ ✅ Shipped — Your file (Library → exercises.yaml, or Settings → Your file) carries it since #416, and
   what it says now depends on the platform. On Android it names the folder the user picked, since a
   picked folder survives there. On iOS it names the Files app: `UIFileSharingEnabled` and
   `LSSupportsOpeningDocumentsInPlace` publish the app's Documents folder, so a sync client *can* be

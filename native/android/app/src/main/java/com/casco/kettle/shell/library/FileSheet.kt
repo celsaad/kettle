@@ -59,6 +59,7 @@ import com.casco.kettle.shell.nav.LocalNavigator
 import com.casco.kettle.shell.nav.Route
 import com.casco.kettle.shell.settings.ActionRow
 import com.casco.kettle.shell.settings.BackupActions
+import com.casco.kettle.shell.settings.Caption
 import com.casco.kettle.shell.settings.ExportActions
 import com.casco.kettle.shell.settings.Outcome
 import com.casco.kettle.shell.settings.PreferencesSaver
@@ -152,11 +153,19 @@ fun FileSheetScreen(
             WaysIn(packIds, importOn)
             WaysOut(sessions, actions, share)
             failure?.let { Outcome(stringResource(R.string.settings_exportFailed, it), accent = true) }
-            actions.backup?.let { backup ->
+            // What a backup is here, which Settings said beside its rows until #416: with a picker, what the
+            // folder gets; without one, that the files stay in the app until shared. Either way, that the
+            // log is a record and not a restore, which someone reinstalling needs before, not after.
+            val backup = actions.backup
+            if (backup != null) {
                 val units = deviceUnitSystem(LocalConfiguration.current.locales[0])
                 val save = remember(files, units) { PreferencesSaver(files, units, scope) }
                 BackupRow(files.preferences?.backupFolderUri, files.sessionLog?.sessions, save, scope, backup)
+                Caption(stringResource(R.string.settings_backupWhat))
+            } else {
+                Caption(stringResource(R.string.settings_filesLocal))
             }
+            Caption(stringResource(R.string.settings_backupLimits))
         }
     }
 }

@@ -80,7 +80,6 @@
     "notFound": "This workout isn't in your library any more."
   },
   "build": {
-    "title": "Workouts",
     "workoutCount_one": "{{count}} workout",
     "workoutCount_other": "{{count}} workouts",
     "emptyTitle": "No workouts yet",
@@ -201,7 +200,6 @@
     "openImport": "Open import"
   },
   "programs": {
-    "title": "Programs",
     "overrideIgnoredInvalid": "not applied — this value isn't allowed",
     "overrideIgnoredUnknownKey": "not applied — there is no such setting to change",
     "overrideIgnoredMissing": "not applied — nothing in this week matches",
@@ -313,7 +311,7 @@
       "done": "Done",
       "recordBadge": "PR",
       "oneRepMaxNote": "1RM estimated from your best set with the Epley formula.",
-      "backupFailed": "This session is saved on this device, but the copy to your backup folder didn't go through. Check Settings."
+      "backupFailed": "This session is saved on this device, but the copy to your backup folder didn't go through. Check Your file, in Library."
     },
     "countdown": {
       "getReady": "GET READY",
@@ -536,7 +534,10 @@
     "switches": "Sounds and reminders",
     "yourFile": "Your file",
     "yourFileDetail": "Export, backup folder and import",
-    "kettle": "Kettle"
+    "kettle": "Kettle",
+    "backupWhat": "Kettle writes kettle-library.yaml and kettle-history.yaml into the folder you choose, at the end of every session and whenever you tap Back up now. It overwrites those two files and touches nothing else in there. Point it at a folder your sync app already watches and your log leaves the phone without Kettle ever sending anything.",
+    "backupLimits": "The library file can be imported back into a fresh install. The session log can't — Kettle exports it to keep and read, but has nothing that reads one back in, so treat it as a record rather than as a restore.",
+    "filesLocal": "Your library and every session live in this app's own folder on this device. Nothing is uploaded and there's no account, so a backup is something you make rather than something that happens."
   },
   "support": {
     "title": "Support Kettle",

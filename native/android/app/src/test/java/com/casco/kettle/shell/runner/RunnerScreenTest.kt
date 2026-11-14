@@ -325,7 +325,7 @@ class RunnerScreenTest : RunnerScreenHarness() {
         compose.onNodeWithText("Pernas").assertExists()
         compose.onNodeWithText("Mais pesado até hoje · 60 kg × 5 repetições").assertExists()
         compose.onNodeWithText("1RM estimado a partir da sua melhor série, pela fórmula de Epley.").assertExists()
-        compose.onNodeWithText("Veja em Configurações", substring = true).assertDoesNotExist()
+        compose.onNodeWithText("Veja em Seu arquivo, na Biblioteca", substring = true).assertDoesNotExist()
         button("Concluir").performClick()
         assertEquals(1, done)
     }
@@ -337,7 +337,7 @@ class RunnerScreenTest : RunnerScreenHarness() {
                 RunnerView.Completed(plan(block(squat)), finished("s", 60.0), FinishBackupState.FAILED),
             ),
         )
-        compose.onNodeWithText("Veja em Configurações", substring = true).assertExists()
+        compose.onNodeWithText("Veja em Seu arquivo, na Biblioteca", substring = true).assertExists()
         compose.onNode(isDialog()).assertDoesNotExist()
     }
 

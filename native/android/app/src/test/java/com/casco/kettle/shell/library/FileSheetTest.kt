@@ -60,7 +60,8 @@ class FileSheetTest {
     private var libraryShares = 0
     private val historyShares = mutableListOf<List<Session>>()
     private var folderPicks = 0
-    private val backups = mutableListOf<String>()
+    private val backups = mutableListOf<Pair<String, List<Session>>>()
+    private var exportAnswer: String? = null
     private val shared = mutableListOf<String>()
     private var shareOpens = true
 
@@ -75,13 +76,13 @@ class FileSheetTest {
                 open = { opened += it },
                 export =
                     ExportActions(
-                        library = { null.also { libraryShares++ } },
-                        history = { sessions -> null.also { historyShares += sessions } },
+                        library = { exportAnswer.also { libraryShares++ } },
+                        history = { sessions -> exportAnswer.also { historyShares += sessions } },
                     ),
                 backup =
                     BackupActions(
                         pickFolder = { FolderPick.Cancelled.also { folderPicks++ } },
-                        backUp = { uri, _ -> null.also { backups += uri } },
+                        backUp = { uri, sessions -> null.also { backups += uri to sessions } },
                     ).takeIf { canChooseFolder },
                 shareText = { text -> shareOpens.also { shared += text } },
                 schema = { "{\"schema\": true}" },
@@ -183,6 +184,34 @@ class FileSheetTest {
         assertEquals(listOf(listOf(session)), historyShares)
     }
 
+    /** A row that spells out what it's about to do owes a reason when nothing happens (from Settings, #416). */
+    @Test
+    fun `says why an export didn't open`() {
+        exportAnswer = "exercises.yaml"
+        show()
+
+        row("Compartilhar arquivo").performScrollTo().performClick()
+
+        compose.onNodeWithText("Não foi possível compartilhar esse arquivo: exercises.yaml").performScrollTo()
+    }
+
+    /** What a backup is, and isn't, under the row that makes one (moved from Settings, #416). */
+    @Test
+    fun `says what the folder gets, and that the log is a record rather than a restore`() {
+        show()
+
+        compose.onNodeWithText("grava kettle-library.yaml e kettle-history.yaml", substring = true).performScrollTo()
+        compose.onNodeWithText("O registro de sessões não", substring = true).performScrollTo()
+    }
+
+    @Test
+    fun `without a folder picker, says where the files live instead`() {
+        show(canChooseFolder = false)
+
+        compose.onNodeWithText("ficam na pasta do próprio app", substring = true).performScrollTo()
+        compose.onNodeWithText("grava kettle-library.yaml", substring = true).assertDoesNotExist()
+    }
+
     @Test
     fun `the log can't be exported before anything is logged, and says why`() {
         show()
@@ -211,11 +240,12 @@ class FileSheetTest {
 
     @Test
     fun `with a folder, Back up now writes into it`() {
-        show(Files(preferences = withFolder))
+        show(Files(sessions = listOf(session), preferences = withFolder))
 
         row("Fazer backup agora").performScrollTo().assertHeightIsAtLeast(48.dp).performClick()
 
-        assertEquals(listOf(FOLDER), backups)
+        // The log as read, not an empty one: backing up nothing would write over the archive in the folder.
+        assertEquals(listOf(FOLDER to listOf(session)), backups)
         compose.onNodeWithText("Backup feito.").assertExists()
     }
 

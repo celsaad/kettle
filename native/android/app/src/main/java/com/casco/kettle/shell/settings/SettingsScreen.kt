@@ -133,7 +133,7 @@ fun SettingsScreen(
             PreferenceSections(preferences, save, actions.reminder)
             YourFile { actions.open(Route(Destination.YourFile)) }
             KettleSection(supporter, version, actions.contact) { actions.open(Route(Destination.Support)) }
-            version?.let { Version(it) }
+            Footer(version)
         }
     }
 }
@@ -158,18 +158,23 @@ private fun PreferenceSections(
     )
 }
 
-/** The foot: the version, and the one promise Settings makes about the data, as the board closes on it. */
+/**
+ * The foot: the version where there is one, and the one promise Settings makes about the data, as the
+ * board closes on it, always.
+ */
 @Composable
-private fun Version(version: String) =
-    Text(
-        stringResource(R.string.settings_version, version) + "\n" + stringResource(R.string.settings_sessionsStayNote),
-        Modifier
-            .fillMaxWidth()
-            .padding(top = Spacing.four),
-        style = KettleType.small,
-        color = KettleTheme.colors.textSecondary,
-        textAlign = TextAlign.Center,
-    )
+private fun Footer(version: String?) =
+    Column(Modifier.fillMaxWidth().padding(top = Spacing.four), horizontalAlignment = Alignment.CenterHorizontally) {
+        val style = KettleType.small
+        val color = KettleTheme.colors.textSecondary
+        version?.let { Text(stringResource(R.string.settings_version, it), style = style, color = color) }
+        Text(
+            stringResource(R.string.settings_sessionsStayNote),
+            style = style,
+            color = color,
+            textAlign = TextAlign.Center,
+        )
+    }
 
 /** What a change made, and whether it reached the disk. */
 internal data class Written(

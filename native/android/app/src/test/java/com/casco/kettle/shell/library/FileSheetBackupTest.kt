@@ -198,6 +198,8 @@ class FileSheetBackupTest {
         compose.waitForIdle()
         missing("Gravando…")
         text("Backup feito.")
+        // One tap, one write: the button held disabled while it ran.
+        assertEquals(listOf(FOLDER), backedUp.map { it.first })
     }
 
     // The one failure carrying a platform string, inside a translated sentence.

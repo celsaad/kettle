@@ -165,7 +165,8 @@ private fun WeekRow(
  * One week's days. The slot carries today's ring and the cell the shade, so the ring sits around the
  * cell with a gap of page between rather than eating into the shade. A rest day is an outline at 3:1
  * against the page (#414), so a day off reads as a day rather than a gap, and a day still to come is
- * blank: Friday hasn't happened yet.
+ * blank: Friday hasn't happened yet. Today untrained is blank too, its ring alone, as the board
+ * draws it: the day isn't over.
  */
 @Composable
 private fun RowScope.WeekCells(week: CalendarWeek) {

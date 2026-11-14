@@ -8,6 +8,7 @@ import androidx.compose.ui.test.performClick
 import com.casco.kettle.domain.Exercise
 import com.casco.kettle.domain.ExerciseConfig
 import com.casco.kettle.domain.Library
+import com.casco.kettle.domain.WorkoutBlock
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -50,6 +51,17 @@ class ImportReviewTest : ImportHarness() {
 
         compose.onNodeWithContentDescription("Peso: era 20 kg, agora removido").assertExists()
         compose.onNodeWithContentDescription("Notas: era Dead hang first., agora removido").assertExists()
+    }
+
+    // A lost list keeps its dash on screen; the warning mark is all that says cleared, and TalkBack can't hear it.
+    @Test
+    fun `says a workout's lost exercises are cleared, out loud`() {
+        // The file takes the dips out of a Push day that had them; it was pull-ups and dips.
+        val both = pushDay.copy(blocks = listOf("pull-ups", "dips").map { WorkoutBlock.ExerciseBlock(it) })
+        picks(Library(1, emptyList(), listOf(pushDay), emptyList()))
+        chooseFile(Files(Library(1, listOf(pullUps, dips), listOf(both), emptyList())))
+
+        compose.onNodeWithContentDescription("Exercícios: era dips, agora removido").assertExists()
     }
 
     @Test

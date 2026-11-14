@@ -143,8 +143,9 @@ here, next to what it describes.
   with Effort left blank. A rest block shows as a read-only line, since the timer logged it (#442).
 - **Import says what an update will clear**: the review counts new items, updated items and
   everything an import will clear, marked with a warning when there are any: fields the file leaves
-  out, a workout's exercises and a program's weeks, notes and changes, each listed under its item. Each updated item opens on
-  what changes, such as "Sets 3 → 4", and a field the file leaves out reads "cleared". A workout
+  out, a workout's exercises and a program's weeks, notes and changes, each listed under its item.
+  Each updated item opens on what changes, such as "Sets 3 → 4", and a field the file leaves out
+  reads "cleared". A workout
   whose rests or rounds the file changes says which blocks. Items show their name over their id,
   and the button says how many it imports (#443).
 - **An exercise's YAML is a file of its own**: it shows the exercise as a complete library, with

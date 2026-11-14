@@ -1001,6 +1001,7 @@
     "notTrained": "Not trained in the last {{count}} weeks.",
     "tooFew": "Not enough sessions in the last {{count}} weeks to chart: it takes two.",
     "fixed": "Each session logs the time it's set to, so there's no trend to chart.",
+    "unmeasured": "This kind of work has no single number to chart.",
     "chartPoint": "{{date}}: {{value}}",
     "recent": "Recent sessions",
     "usedIn": "Used in",

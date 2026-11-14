@@ -1058,6 +1058,7 @@
     "notTrained": "Não treinado nas últimas {{count}} semanas.",
     "tooFew": "Sessões insuficientes nas últimas {{count}} semanas para o gráfico: são precisas duas.",
     "fixed": "Cada sessão registra o tempo definido, então não há tendência para mostrar.",
+    "unmeasured": "Este tipo de treino não tem um número único para o gráfico.",
     "chartPoint": "{{date}}: {{value}}",
     "recent": "Sessões recentes",
     "usedIn": "Usado em",

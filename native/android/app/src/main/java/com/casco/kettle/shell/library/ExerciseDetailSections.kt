@@ -58,7 +58,7 @@ internal fun LatestFiles.unitsOrDevice(): UnitSystem =
 /**
  * Progress: Stats' own reading of this exercise (#413), the same selector, window and chart its Getting
  * stronger row opens, so detail and Stats can't show two numbers. Where Getting stronger has no row for
- * it, it says which of the three reasons it is, so a trained exercise isn't called untrained.
+ * it, it says which of the four reasons it is, so a trained exercise isn't called untrained.
  */
 @Composable
 internal fun ProgressSection(
@@ -91,6 +91,7 @@ internal fun ProgressSection(
         Text(
             when (trend) {
                 ExerciseTrend.Fixed -> stringResource(R.string.exerciseDetail_fixed)
+                ExerciseTrend.Unmeasured -> stringResource(R.string.exerciseDetail_unmeasured)
                 ExerciseTrend.TooFew -> stringResource(R.string.exerciseDetail_tooFew, TREND_WEEKS)
                 else -> stringResource(R.string.exerciseDetail_notTrained, TREND_WEEKS)
             },

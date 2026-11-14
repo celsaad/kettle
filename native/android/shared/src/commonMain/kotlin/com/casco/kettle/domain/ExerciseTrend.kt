@@ -13,11 +13,14 @@ sealed interface ExerciseTrend {
         val progress: ExerciseProgress,
     ) : ExerciseTrend
 
-    /**
-     * Trained, but its log is its config: a fixed-length hold, which Stats leaves out for that reason,
-     * or interval work, which puts up no single number at all.
-     */
+    /** Trained, but a fixed-length hold: its log is its config, which is why Stats leaves it out. */
     data object Fixed : ExerciseTrend
+
+    /**
+     * Trained, but as interval or cardio work, which logs real numbers (rounds, reps a minute, a time
+     * and a distance) and no single one Stats can follow from session to session.
+     */
+    data object Unmeasured : ExerciseTrend
 
     /** Trained, but not twice on one measure: one point is not a line. */
     data object TooFew : ExerciseTrend
@@ -48,7 +51,7 @@ fun exerciseTrend(
     return when {
         entries.isEmpty() -> ExerciseTrend.Untrained
         exercise != null && isFixedTargetHold(exercise) -> ExerciseTrend.Fixed
-        entries.all { entryBest(it) == null } -> ExerciseTrend.Fixed
+        entries.all { entryBest(it) == null } -> ExerciseTrend.Unmeasured
         else -> ExerciseTrend.TooFew
     }
 }

@@ -53,9 +53,20 @@ class ExerciseTrendTest {
         assertEquals(ExerciseTrend.Fixed, trend("hurdler", *held.toTypedArray(), exercises = listOf(hurdler)))
     }
 
+    /** Real numbers, unlike a fixed hold's copy of its config, but no single one to follow: not "fixed". */
     @Test
-    fun `is fixed for interval work, which puts up no number`() {
-        assertEquals(ExerciseTrend.Fixed, trend("burpees", logged("2026-08-17", SessionEntry.Hiit("burpees", 3))))
+    fun `is unmeasured, not fixed, for interval and cardio work`() {
+        val entries =
+            listOf(
+                SessionEntry.Hiit("burpees", 3),
+                SessionEntry.Emom("swings", listOf(EmomMinuteLog(reps = 10), EmomMinuteLog(reps = 12))),
+                SessionEntry.Cardio("run", durationSec = 1500.0, distanceMeters = 5000.0),
+            )
+
+        entries.forEach { entry ->
+            val weekly = listOf("2026-08-10", "2026-08-17").map { logged(it, entry) }
+            assertEquals(ExerciseTrend.Unmeasured, trend(entry.exercise, *weekly.toTypedArray()), entry.exercise)
+        }
     }
 }
 

@@ -149,6 +149,33 @@ class ExerciseDetailScreenTest {
         text("Não treinado nas últimas 8 semanas.").assertDoesNotExist()
     }
 
+    /** A run logs its real time and distance, so it isn't told it copies its setting, as a hold is. */
+    @Test
+    fun `says cardio work has no single number to chart, not that it logs its setting`() {
+        show(
+            "run",
+            Files(
+                sessions =
+                    listOf("2026-07-10T10:00:00Z", "2026-07-24T10:00:00Z").map {
+                        Session(
+                            1,
+                            it,
+                            null,
+                            null,
+                            null,
+                            null,
+                            it,
+                            it,
+                            listOf(SessionEntry.Cardio("run", 1500.0, 5000.0)),
+                        )
+                    },
+            ),
+        )
+
+        text("Este tipo de treino não tem um número único para o gráfico.").assertExists()
+        text("Cada sessão registra o tempo definido, então não há tendência para mostrar.").assertDoesNotExist()
+    }
+
     /** No list under the chart here, as Stats' sheet has: the drawing says its sessions itself. */
     @Test
     fun `gives TalkBack the chart's sessions in words, newest first`() {
@@ -264,11 +291,12 @@ private val squat =
 private val lunge = Exercise("lunge", "Lunge", ExerciseConfig.Reps(3, 10, restSec = 60.0))
 private val plank =
     Exercise("plank", "Plank", ExerciseConfig.TimedHold(1, holdSecMin = 45.0, restSec = 30.0))
+private val run = Exercise("run", "Run", ExerciseConfig.Cardio(durationSec = 1500.0))
 private val pushups = Exercise("pushups", "Push-ups", ExerciseConfig.Reps(3, 10, restSec = 60.0))
 private val fixture =
     Library(
         1,
-        listOf(squat, lunge, plank, pushups),
+        listOf(squat, lunge, plank, run, pushups),
         listOf(
             Workout("leg-day", "Leg day", listOf(WorkoutBlock.ExerciseBlock("squat"))),
             Workout("push-day", "Push day", listOf(WorkoutBlock.ExerciseBlock("pushups"))),

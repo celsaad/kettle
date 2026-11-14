@@ -1,6 +1,8 @@
 package com.casco.kettle.shell.workouteditor
 
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -9,11 +11,11 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
@@ -35,10 +37,12 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.collapse
 import androidx.compose.ui.semantics.expand
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.DraftBlock
@@ -57,6 +61,8 @@ import com.casco.kettle.domain.removing
 import com.casco.kettle.domain.submitWorkout
 import com.casco.kettle.domain.withCircuit
 import com.casco.kettle.domain.withExercise
+import com.casco.kettle.domain.withMember
+import com.casco.kettle.domain.withRestLength
 import com.casco.kettle.domain.withWorkout
 import com.casco.kettle.domain.withoutWorkout
 import com.casco.kettle.domain.workoutDraftOf
@@ -66,15 +72,13 @@ import com.casco.kettle.shell.files.LibraryWriteRefusal
 import com.casco.kettle.shell.files.LocalLatestFiles
 import com.casco.kettle.shell.files.libraryWriteOrRefusal
 import com.casco.kettle.shell.files.text
-import com.casco.kettle.shell.form.EditorButtons
+import com.casco.kettle.shell.form.EditorTitleBar
 import com.casco.kettle.shell.form.FieldKind
 import com.casco.kettle.shell.form.FieldOptions
 import com.casco.kettle.shell.form.FormField
 import com.casco.kettle.shell.form.SheetColumn
-import com.casco.kettle.shell.form.dashedBorder
 import com.casco.kettle.shell.i18n.deviceUnitSystem
-import com.casco.kettle.shell.i18n.pluralText
-import com.casco.kettle.shell.list.TextAction
+import com.casco.kettle.shell.list.ListRowSeparator
 import com.casco.kettle.shell.nav.LocalNavigator
 import com.casco.kettle.shell.theme.DialogAction
 import com.casco.kettle.shell.theme.KettleAlertDialog
@@ -146,7 +150,7 @@ private class Editor(
         private set
     var failure by mutableStateOf<Failure?>(null)
         private set
-    var deleting by mutableStateOf<Deleting?>(null)
+    var confirmingDelete by mutableStateOf(false)
         private set
     private var writing = false
 
@@ -166,10 +170,15 @@ private class Editor(
     /** The cancel, and the close that follows a write. */
     val close = actions.close
 
+    /** A picked exercise: into the circuit the picker was opened from, or as a block at the end. */
     fun pick(exerciseId: String) {
-        draft = draft.adding(exerciseId)
+        val target = pickers.target
+        draft =
+            if (target != null) draft.withCircuit(target) { it.withMember(exerciseId) } else draft.adding(exerciseId)
         pickers.close()
     }
+
+    val pickerActions get() = PickerActions(::pick, ::addCircuit, ::create)
 
     /** Builds the circuit and closes its picker, taking the selection with it so the next one starts empty. */
     fun addCircuit() {
@@ -224,27 +233,32 @@ private class Editor(
         }
     }
 
-    /** Refuses while a program points at it, since a delete would leave a week resolving to nothing. */
+    /**
+     * The programs pointing at this workout, by name, verbatim: Delete is unavailable while there are
+     * any, since a delete would leave a week resolving to nothing. Read from the library as it is now.
+     */
+    val usedBy: List<String>
+        get() =
+            existing
+                ?.let { workout ->
+                    files.library?.let { programsUsing(it, workout.id) }
+                }.orEmpty()
+                .map { it.name }
+
     fun askToDelete() {
-        deleting = inUse() ?: Deleting.Confirm
+        confirmingDelete = usedBy.isEmpty()
     }
 
     fun dismissDelete() {
-        deleting = null
+        confirmingDelete = false
     }
 
-    /** Asks [inUse] again: the library is read again while the confirm is up. */
+    /** Asks [usedBy] again: the library is read again while the confirm is up. */
     fun delete() {
         if (closed) return
         val workout = existing ?: return
-        deleting = inUse()
-        if (deleting == null) write(Failure.Kind.Delete, { it.withoutWorkout(workout.id) }, closes = true, close)
-    }
-
-    private fun inUse(): Deleting.InUse? {
-        val workout = existing ?: return null
-        val usedBy = files.library?.let { programsUsing(it, workout.id) }.orEmpty()
-        return Deleting.InUse(usedBy.map { it.name }).takeIf { usedBy.isNotEmpty() }
+        confirmingDelete = false
+        if (usedBy.isEmpty()) write(Failure.Kind.Delete, { it.withoutWorkout(workout.id) }, closes = true, close)
     }
 
     /**
@@ -288,15 +302,6 @@ private class Editor(
     ) {
         enum class Kind { Save, Delete }
     }
-
-    sealed interface Deleting {
-        data object Confirm : Deleting
-
-        /** [programs]' names, verbatim. */
-        data class InUse(
-            val programs: List<String>,
-        ) : Deleting
-    }
 }
 
 @Composable
@@ -304,9 +309,11 @@ private fun Editing(
     editor: Editor,
     context: BlockContext,
 ) {
+    val colors = KettleTheme.colors
     val listState = rememberLazyListState()
     val reorder = rememberReorderableLazyListState(listState) { from, to -> editor.move(from.key, to.key) }
     val blocks = editor.draft.blocks
+    val title = if (editor.existing == null) R.string.workoutEditor_newTitle else R.string.workoutEditor_editTitle
     LazyColumn(
         Modifier
             .fillMaxSize()
@@ -315,9 +322,14 @@ private fun Editing(
         state = listState,
         contentPadding = PaddingValues(start = Spacing.three, end = Spacing.three, bottom = Spacing.four),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(Spacing.two + 2.dp),
     ) {
-        item(key = HEADER_KEY) { Column(SheetColumn) { Header(editor) } }
+        // Save pinned at the top, as the program editor's (#438): the × is the cancel.
+        stickyHeader(key = HEADER_KEY) {
+            Column(SheetColumn.background(colors.background)) {
+                EditorTitleBar(stringResource(title), editor::save, refusalText(editor))
+            }
+        }
+        item(key = NAME_KEY) { Column(SheetColumn) { NameAndSection(editor) } }
         items(blocks, key = { it.key }) { draft ->
             ReorderableItem(reorder, key = draft.key, modifier = SheetColumn) { dragging ->
                 val lift by animateDpAsState(if (dragging) 8.dp else 0.dp, label = "lift")
@@ -333,7 +345,8 @@ private fun Editing(
                     BlockPlace(blocks.indexOf(draft), blocks.size, handle) {
                         editor.draft = editor.draft.movingBy(draft.key, it)
                     }
-                Box(Modifier.shadow(lift, RoundedCornerShape(16.dp))) {
+                // Filled, so a row lifted over the others hides them rather than showing through.
+                Box(Modifier.shadow(lift, RoundedCornerShape(12.dp)).background(colors.background)) {
                     Block(draft, context, place, editor)
                 }
             }
@@ -342,19 +355,13 @@ private fun Editing(
     }
 }
 
+/** The name, then "In this workout", with "Runs top to bottom" beside it. */
 @Composable
-private fun Header(editor: Editor) {
+private fun NameAndSection(editor: Editor) {
     val colors = KettleTheme.colors
-    val title = if (editor.existing == null) R.string.workoutEditor_newTitle else R.string.workoutEditor_editTitle
-    Text(
-        stringResource(title),
-        Modifier.semantics { heading() },
-        style = KettleType.subtitle,
-        color = colors.text,
-    )
     Text(
         stringResource(R.string.common_name),
-        Modifier.padding(top = Spacing.three - 2.dp, bottom = Spacing.one),
+        Modifier.padding(bottom = Spacing.one),
         style = KettleType.small,
         color = colors.textSecondary,
     )
@@ -365,19 +372,22 @@ private fun Header(editor: Editor) {
         placeholder = stringResource(R.string.workoutEditor_namePlaceholder),
         FieldOptions(kind = FieldKind.Text, fill = colors.backgroundElement),
     )
-    Text(
-        pluralText(
-            R.plurals.workoutEditor_blockCount,
-            R.string.workoutEditor_blockCount_zero,
-            editor.draft.blocks.size,
-        ),
-        Modifier.padding(top = Spacing.two),
-        style = KettleType.default,
-        color = colors.textSecondary,
-    )
+    Row(Modifier.padding(top = Spacing.four, bottom = Spacing.one), verticalAlignment = Alignment.Bottom) {
+        Text(
+            stringResource(R.string.workoutEditor_inThisWorkout),
+            Modifier.weight(1f).semantics { heading() },
+            style = KettleType.heading,
+            color = colors.text,
+        )
+        Text(
+            stringResource(R.string.workoutEditor_runsTopToBottom),
+            style = KettleType.small,
+            color = colors.textSecondary,
+        )
+    }
 }
 
-/** One block: a circuit's card, or a plain block's row. A block whose exercise is gone draws nothing, as in RN. */
+/** One block: a circuit, or a plain block's row. A block whose exercise is gone draws nothing, as in RN. */
 @Composable
 private fun Block(
     draft: DraftBlock,
@@ -386,63 +396,63 @@ private fun Block(
     editor: Editor,
 ) {
     val key = draft.key
+    val remove = { editor.draft = editor.draft.removing(key) }
     when (val block = draft.block) {
         is WorkoutBlock.Circuit -> {
-            CircuitCard(
+            val pickers = editor.pickers
+            CircuitSection(
                 block,
                 context,
                 place,
-                onChange = { changed -> editor.draft = editor.draft.withCircuit(key) { changed } },
-                onRemove = { editor.draft = editor.draft.removing(key) },
-            )
+                CircuitActions(
+                    change = { changed -> editor.draft = editor.draft.withCircuit(key) { changed } },
+                    remove = remove,
+                    togglePicker = { pickers.toggle(PickerMode.Block, key) },
+                    picking = pickers.isOpen(PickerMode.Block, key),
+                ),
+            ) { ExercisePicker(pickers, PickerMode.Block, context, editor.pickerActions) }
         }
 
         is WorkoutBlock.ExerciseBlock -> {
             val exercise = context.exercise(block.exerciseId) ?: return
-            BlockRow(exercise, block, context.units, place, onRemove = { editor.draft = editor.draft.removing(key) })
+            BlockRow(
+                exercise,
+                block,
+                context.units,
+                place,
+                BlockActions(remove) { seconds, own -> editor.draft = editor.draft.withRestLength(key, seconds, own) },
+            )
         }
     }
 }
 
-/** Everything after the blocks: the add buttons and their pickers, the refusal, Save, and Delete. */
+/** Everything after the blocks: the add buttons and their picker, the rest hint, and the id and Delete. */
 private fun LazyListScope.footer(
     editor: Editor,
     context: BlockContext,
 ) = item(key = FOOTER_KEY) {
     val colors = KettleTheme.colors
     Column(SheetColumn) {
-        Row(Modifier.padding(top = Spacing.one), horizontalArrangement = Arrangement.spacedBy(Spacing.two - 2.dp)) {
+        ListRowSeparator()
+        Row(Modifier.padding(top = Spacing.three), horizontalArrangement = Arrangement.spacedBy(Spacing.two)) {
             for (mode in PickerMode.entries) AddButton(editor.pickers, mode)
         }
-        editor.pickers.open?.let { mode ->
-            ExercisePicker(
-                editor.pickers,
-                mode,
-                context,
-                PickerActions(editor::pick, editor::addCircuit, editor::create),
-            )
+        val pickers = editor.pickers
+        pickers.open?.takeIf { pickers.target == null }?.let { mode ->
+            ExercisePicker(pickers, mode, context, editor.pickerActions)
         }
-        refusalText(editor)?.let {
-            Text(it, Modifier.padding(top = Spacing.two), style = KettleType.small, color = colors.accentText)
-        }
-        EditorButtons(stringResource(R.string.common_save), onCancel = editor.close, onPrimary = editor::save)
-        val existing = editor.existing
-        if (existing != null) {
-            Box(Modifier.fillMaxWidth().padding(top = Spacing.three - 2.dp), contentAlignment = Alignment.Center) {
-                TextAction(
-                    stringResource(R.string.workoutEditor_deleteWorkout),
-                    KettleType.smallMedium,
-                    colors.textSecondary,
-                    onClick = editor::askToDelete,
-                )
-            }
-            DeleteDialog(editor, existing)
-        }
+        Text(
+            stringResource(R.string.workoutEditor_restHint),
+            Modifier.padding(top = Spacing.two),
+            style = KettleType.small,
+            color = colors.textSecondary,
+        )
+        editor.existing?.let { IdAndDelete(editor, it) }
     }
 }
 
 /**
- * "+ Add block" or "+ New circuit", reading "Close" while its picker is open. `minHeight`: at half
+ * "+ Add exercise" or "+ Add circuit", reading "Close" while its picker is open. `minHeight`: at half
  * width the label wraps in any language wordier than English, and RN's fixed 48 clipped it.
  */
 @Composable
@@ -451,13 +461,15 @@ private fun RowScope.AddButton(
     mode: PickerMode,
 ) {
     val colors = KettleTheme.colors
-    val open = pickers.open == mode
+    val open = pickers.isOpen(mode)
+    val shape = RoundedCornerShape(12.dp)
     Box(
         Modifier
             .weight(1f)
             .heightIn(min = 48.dp)
-            .dashedBorder(1.5.dp, colors.border, 14.dp)
-            .clip(RoundedCornerShape(14.dp))
+            .clip(shape)
+            .background(colors.backgroundElement)
+            .border(1.dp, colors.border, shape)
             .clickable(role = Role.Button) { pickers.toggle(mode) }
             .semantics {
                 if (open) {
@@ -472,13 +484,67 @@ private fun RowScope.AddButton(
             stringResource(
                 when {
                     open -> R.string.common_close
-                    mode == PickerMode.Block -> R.string.workoutEditor_addBlock
-                    else -> R.string.workoutEditor_newCircuit
+                    mode == PickerMode.Block -> R.string.workoutEditor_addExercise
+                    else -> R.string.workoutEditor_addCircuit
                 },
             ),
-            style = KettleType.heading,
-            color = colors.textSecondary,
+            style = KettleType.smallMedium,
+            color = colors.text,
             textAlign = TextAlign.Center,
+        )
+    }
+}
+
+/**
+ * The workout's id, as text, and Delete: unavailable while a program uses the workout, with why under
+ * it, rather than a dialog after the tap. The names are the user's, verbatim.
+ */
+@Composable
+private fun IdAndDelete(
+    editor: Editor,
+    workout: Workout,
+) {
+    val colors = KettleTheme.colors
+    val usedBy = editor.usedBy
+    ListRowSeparator(Modifier.padding(top = Spacing.four))
+    val reason =
+        usedBy.takeIf { it.isNotEmpty() }?.let {
+            stringResource(
+                R.string.workoutEditor_inUseReason,
+                it.joinToString(stringResource(R.string.format_listSeparator)),
+            )
+        }
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            stringResource(R.string.workoutEditor_idLabel, workout.id),
+            Modifier.weight(1f),
+            style = KettleType.code,
+            color = colors.textSecondary,
+        )
+        val enabled = usedBy.isEmpty()
+        Text(
+            stringResource(R.string.workoutEditor_deleteWorkout),
+            Modifier
+                .heightIn(min = 48.dp)
+                // Disabled rather than refusing after the tap: TalkBack says it's unavailable.
+                .clickable(enabled = enabled, role = Role.Button, onClick = editor::askToDelete)
+                // Its reason with it, so TalkBack says why it is unavailable on the button itself.
+                .semantics { reason?.let { stateDescription = it } }
+                .padding(horizontal = Spacing.two)
+                .wrapContentHeight(Alignment.CenterVertically),
+            style = KettleType.smallMedium,
+            color = if (enabled) colors.accentText else colors.textSecondary,
+        )
+    }
+    // Seen, but not read a second time: the button's state already says it.
+    reason?.let { Text(it, Modifier.clearAndSetSemantics {}, style = KettleType.small, color = colors.textSecondary) }
+    if (editor.confirmingDelete) {
+        KettleAlertDialog(
+            title = stringResource(R.string.workoutEditor_deleteConfirmTitle),
+            body = stringResource(R.string.common_deleteConfirmBody, workout.name),
+            onDismissRequest = editor::dismissDelete,
+            confirm = DialogAction(stringResource(R.string.common_delete), editor::delete),
+            dismiss = DialogAction(stringResource(R.string.common_cancel), editor::dismissDelete),
         )
     }
 }
@@ -495,41 +561,6 @@ private fun refusalText(editor: Editor): String? =
         )
     }
 
-/** Delete's two questions: refused while a program uses it, else confirmed before anything goes. */
-@Composable
-private fun DeleteDialog(
-    editor: Editor,
-    workout: Workout,
-) {
-    val deleting = editor.deleting ?: return
-    // Every name here is the user's, interpolated verbatim.
-    when (deleting) {
-        is Editor.Deleting.InUse -> {
-            KettleAlertDialog(
-                title = stringResource(R.string.workoutEditor_inUseTitle),
-                body =
-                    stringResource(
-                        R.string.workoutEditor_inUseBody,
-                        workout.name,
-                        deleting.programs.joinToString(stringResource(R.string.format_listSeparator)),
-                    ),
-                onDismissRequest = editor::dismissDelete,
-                // RN's buttonless alert, which Android titles with the platform's own OK.
-                confirm = DialogAction(stringResource(android.R.string.ok), editor::dismissDelete),
-            )
-        }
-
-        Editor.Deleting.Confirm -> {
-            KettleAlertDialog(
-                title = stringResource(R.string.workoutEditor_deleteConfirmTitle),
-                body = stringResource(R.string.common_deleteConfirmBody, workout.name),
-                onDismissRequest = editor::dismissDelete,
-                confirm = DialogAction(stringResource(R.string.common_delete), editor::delete),
-                dismiss = DialogAction(stringResource(R.string.common_cancel), editor::dismissDelete),
-            )
-        }
-    }
-}
-
 private const val HEADER_KEY = "header"
+private const val NAME_KEY = "name"
 private const val FOOTER_KEY = "footer"

@@ -1,6 +1,6 @@
 import { t } from 'i18next';
 
-import { formatCircuitShape, formatEntryResult } from '@/domain/format';
+import { formatEntryResult } from '@/domain/format';
 
 // The hand-rolled `plural(count, singular)` helper is gone; i18next resolves CLDR categories from
 // `count` instead. These assert the resolution itself, since it's what every count-bearing string in
@@ -35,19 +35,5 @@ describe('formatEntryResult', () => {
     expect(formatEntryResult({ kind: 'intervals', intervals: 10 })).toBe('10 intervals');
     expect(formatEntryResult({ kind: 'cardio', distanceMeters: 2000 })).toBe('2000 m');
     expect(formatEntryResult({ kind: 'cardio', durationSec: 480, distanceMeters: 2000 })).toBe('480s · 2000 m');
-  });
-});
-
-describe('formatCircuitShape', () => {
-  it('says "1 round" for a single-round circuit', () => {
-    expect(formatCircuitShape({ rounds: 1, restBetweenExercisesSec: 15, restBetweenRoundsSec: 60 })).toBe(
-      '1 round · 15s / 60s rest',
-    );
-  });
-
-  it('pluralises past one', () => {
-    expect(formatCircuitShape({ rounds: 3, restBetweenExercisesSec: 0, restBetweenRoundsSec: 90 })).toBe(
-      '3 rounds · 0s / 90s rest',
-    );
   });
 });

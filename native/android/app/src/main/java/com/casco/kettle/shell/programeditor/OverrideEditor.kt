@@ -41,6 +41,7 @@ import com.casco.kettle.shell.exerciseeditor.withOptional
 import com.casco.kettle.shell.form.EditorButtons
 import com.casco.kettle.shell.form.FieldOptions
 import com.casco.kettle.shell.form.FormField
+import com.casco.kettle.shell.form.StepButton
 import com.casco.kettle.shell.form.dashedBorder
 import com.casco.kettle.shell.list.TextAction
 import com.casco.kettle.shell.programdetail.overrideLines
@@ -48,7 +49,6 @@ import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.Spacing
 import com.casco.kettle.shell.workouteditor.RemoveButton
-import com.casco.kettle.shell.workouteditor.StepButton
 
 /**
  * A training week's overrides (#243), as RN's `ProgramOverrideEditor`: a row per override, and an

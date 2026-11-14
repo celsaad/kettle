@@ -64,14 +64,3 @@ export function formatEntryResult(result: EntryResult): string {
       return t('format.seconds', { n: result.restTakenSec });
   }
 }
-
-/** A circuit block's configuration, as data — see `circuitShape`. */
-export type CircuitShape = { rounds: number; restBetweenExercisesSec: number; restBetweenRoundsSec: number };
-
-export function formatCircuitShape(shape: CircuitShape): string {
-  return t('format.circuitShape', {
-    rounds: t('format.round', { count: shape.rounds }),
-    between: shape.restBetweenExercisesSec,
-    rounds_rest: shape.restBetweenRoundsSec,
-  });
-}

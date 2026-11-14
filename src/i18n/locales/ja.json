@@ -174,7 +174,7 @@
     "overrides": {
       "title": "4. 上書き（任意）",
       "intro": "各エントリは、id でちょうど 1 つの種目または 1 つのサーキットブロックを指定し、その種目やサーキット自身のフィールド名を使って config を部分的に書き換えます。",
-      "body": "種目の上書きは単独の種目ブロックにだけ意味があります。ブロックの上書きは、ワークアウトタブで独自の id を付けたサーキット（サーキットを編集するときの「ブロック ID（任意）」欄）にだけ効き、サーキット自身の <c>rounds</c> や休憩を書き換えます。メンバーの config は変わりません。上書きは次の週へ引き継がれないので、効かせ続けたい週にはその都度書いてください。"
+      "body": "種目の上書きは単独の種目ブロックにだけ意味があります。ブロックの上書きは、ワークアウトタブで独自の id を付けたサーキット（サーキットを編集するときの「id」ボタン）にだけ効き、サーキット自身の <c>rounds</c> や休憩を書き換えます。個々の種目の config は変わりません。上書きは次の週へ引き継がれないので、効かせ続けたい週にはその都度書いてください。"
     },
     "multiDay": {
       "title": "5. 週に複数回のセッション（任意）",
@@ -761,34 +761,41 @@
     "newTitle": "新しいワークアウト",
     "editTitle": "ワークアウトを編集",
     "namePlaceholder": "例：プッシュの日",
-    "blockCount_other": "{{count}}ブロック",
-    "overrideSeconds_other": "{{count}}秒",
-    "overrideBadge": "上書き",
     "removeAccessibility": "{{name}}を削除",
     "circuit": "サーキット",
-    "removeCircuitAccessibility": "サーキットを削除",
     "removeFromCircuitAccessibility": "サーキットから{{name}}を削除",
-    "blockIdWithValue": "ブロック ID: {{id}}",
-    "blockIdPlaceholder": "ブロック ID（任意）",
-    "blockIdHint": "プログラムから、特定の週だけこのサーキットのラウンド数や休憩を上書きできるようになります。",
     "blockIdInputPlaceholder": "例：finisher-rounds",
     "rounds": "ラウンド",
-    "restPerExercise": "種目ごとの休憩（秒）",
-    "restPerRound": "ラウンドごとの休憩（秒）",
-    "addBlock": "＋ ブロックを追加",
-    "newCircuit": "＋ 新しいサーキット",
     "newExercise": "＋ 新しいエクササイズ",
     "selectAtLeast2": "エクササイズを2つ以上選んでください",
     "addCircuitCount": "サーキットを追加（{{count}}）",
     "deleteWorkout": "ワークアウトを削除",
-    "inUseTitle": "使用中のワークアウト",
-    "inUseBody": "「{{name}}」は{{programs}}で使われています。先にそれらのプログラムから外してください。",
     "deleteConfirmTitle": "ワークアウトを削除しますか？",
     "createAndAdd": "作成して追加",
     "reorderAccessibility": "{{name}}を並べ替え",
     "positionOf": "{{total}}件中{{index}}番目",
     "moveUp": "上へ移動",
-    "moveDown": "下へ移動"
+    "moveDown": "下へ移動",
+    "inThisWorkout": "このワークアウトの内容",
+    "runsTopToBottom": "上から順に実行",
+    "circuitSubtitle": "各種目をラウンドごとに1回",
+    "addToCircuit": "+ サーキットに種目を追加",
+    "restBetweenExercises": "種目間の休憩",
+    "restBetweenRounds": "ラウンド間の休憩",
+    "restLength": "休憩の長さ",
+    "idLabel": "id: {{id}}",
+    "addId": "idを追加",
+    "circuitHelp": "idが必要なのは、プログラムがこのサーキットを変更する場合だけです。サーキットの種目は追加した順に実行されます。順番を変えるには、一度削除して追加し直してください。",
+    "addExercise": "+ 種目を追加",
+    "addCircuit": "+ サーキットを追加",
+    "restHint": "種目の間に休憩を入れるには、+ 種目を追加 から休憩を選んでください。",
+    "inUseReason": "{{programs}}が使用中のため削除できません。",
+    "targetHold": "{{sets}} × {{hold}}",
+    "memberHold": "ホールド {{hold}}",
+    "memberHoldOpen": "最大ホールド",
+    "removeCircuit": "サーキットを削除",
+    "restSuffix": "休憩 {{time}}",
+    "idField": "サーキットのid"
   },
   "programEditor": {
     "editTitle": "プログラムを編集",
@@ -905,7 +912,6 @@
     "repsList": "{{list}} レップ",
     "roundsPlusReps": "{{rounds}} + {{reps}}",
     "intervalsWithReps": "{{intervals}} · {{reps}}",
-    "circuitShape": "{{rounds}} · 休憩 {{between}}秒 / {{rounds_rest}}秒",
     "adHocSession": "即席セッション",
     "previous": {
       "loaded": "前回 · {{weight}} × {{reps}}",
@@ -977,5 +983,12 @@
     "programThrough": "プログラム（{{workout}} 経由）",
     "notUsed": "まだどのワークアウトにも入っていません。",
     "missing": "このエクササイズはもうライブラリにありません。"
+  },
+  "durationPicker": {
+    "minutes": "分",
+    "seconds": "秒",
+    "minutesSpoken_other": "{{count}}分",
+    "secondsSpoken_other": "{{count}}秒",
+    "change": "{{label}}、{{time}}。変更"
   }
 }

@@ -141,7 +141,7 @@ private fun cardioSummary(config: ExerciseConfig.Cardio): String {
     }
 }
 
-private fun rangeLabel(
+internal fun rangeLabel(
     min: Double,
     max: Double?,
 ): String = if (max == null || max == 0.0) jsNumber(min) else "${jsNumber(min)}–${jsNumber(max)}"

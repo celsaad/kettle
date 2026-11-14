@@ -125,6 +125,11 @@ here, next to what it describes.
   the day's note in full, and lists what the program changes that day. Under the name it counts
   the exercises and sets, as Today's card does. An exercise outside a circuit shows its rest between
   sets, and its note sits under it. A pencil at the top opens the workout to edit (#439).
+- **The workout editor reads as a list**: each exercise is one row with its target and rest
+  ("3 × 6–12 · rest 1:15"), and Save sits at the top. A rest's length is a time button that opens a
+  minutes-and-seconds picker, and it changes this workout's rest only. A circuit shows its exercises
+  in place: add one with "+ Add exercise to circuit", and set the rounds and both rests right there.
+  Delete is greyed out while a program uses the workout, and says which one (#440).
 
 ---
 

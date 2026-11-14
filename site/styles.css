@@ -1,13 +1,13 @@
 /* ============================================================
-   Kettle — shared stylesheet for index / format / privacy / support
-   Warm paper-and-terracotta. Both themes via prefers-color-scheme.
-   No external requests: fonts are self-hosted under ./fonts/.
+   Kettle — shared stylesheet for every page on the site.
+   The design canvas's palette: orange means act, blue means recover, ink means everything else.
+   Both schemes via prefers-color-scheme. No external requests: fonts are self-hosted under ./fonts/.
 
-   Contrast: every pairing here is measured against WCAG AA (4.5:1 body, 3:1 large), the same bar
-   `src/constants/theme.ts` holds the app to, and the measured ratio is recorded next to any value
-   that was chosen to clear it. Two surfaces do NOT follow the color scheme — the hero band and the
-   code panels are always dark, mirroring the app's always-dark session runner — so anything inside
-   them needs the dark value written out rather than inherited from a token.
+   Contrast: every pairing here is measured against WCAG AA (4.5:1 body, 3:1 large and graphics),
+   the same bar `src/constants/theme.ts` holds the app to, and the ratio is recorded beside any value
+   chosen to clear it. The hero, the footer and the code panels do NOT follow the color scheme —
+   they are the runner's black field, as in the app — so anything inside them takes a `--run-*`
+   token rather than inheriting a scheme one.
    ============================================================ */
 
 /* ---- Self-hosted fonts ------------------------------------
@@ -58,21 +58,46 @@
   src: url('./fonts/hanken-grotesk-600.woff2') format('woff2');
 }
 
-/* ---- Tokens ------------------------------------------------ */
+/* ---- Tokens ------------------------------------------------
+   Three roles, and only three. Orange is *act*: the one thing the page wants you to press, and
+   links, which are the same kind of thing. Blue is *recover*, which on this site means only the
+   runner's rest field. Ink is everything else, selection included: a current nav item or tab is
+   ink, never orange, so it can't read as the main action. Eyebrows, chips, type names and icons
+   were orange before this palette, and that is what it was drawn to stop.
+
+   Measured ratios (WCAG 2.x) sit beside the values chosen to clear AA. Light: ink 15.5 on paper,
+   ink-2 6.4, act-text 5.6, white on act fill 5.0. Dark: ink 16.1, ink-2 6.8, act-text 8.5, paper
+   on act fill 6.4. ink-2 on sunken: 5.8 light, 5.6 dark.
+   ---------------------------------------------------------- */
 :root {
-  --text: #26221c;
-  --secondary: #6b6558;
-  --bg: #f7f4ef;
-  --surface: #ffffff;
-  --selected: #efe9df;
-  --border: rgba(30, 25, 15, 0.1);
-  --accent: #cf6a37;
-  --accent-text: #a1502a; /* accent-colored TEXT on light bg (AA) */
-  --accent-soft: rgba(207, 106, 55, 0.12);
-  --calm: #3f82c0;
-  --calm-text: #2f6493; /* calm-colored TEXT on light bg (AA)  */
-  --ink: #17140d; /* the site's near-black (the app's was) */
-  --on-accent: #17140d; /* near-black label on accent fills    */
+  --paper: #f6f3ee;
+  --surface: #ffffff; /* the one card, never a list of peers */
+  --sunken: #eee9e1; /* inputs, pills, table heads */
+  --ink: #1f1b16;
+  --ink-2: #5f584c;
+  --border: rgba(31, 27, 22, 0.12);
+  --act: #b94f24;
+  --on-act: #ffffff;
+  --act-text: #a1461e;
+  --recover: #2f6fae;
+
+  /* The runner's phase fields, which ignore the color scheme exactly as the app's `RunnerColors`
+     do. The hero, the footer and every code panel sit on `--run-black`, so anything inside them
+     uses these rather than the scheme tokens above. Work orange with black 6.7; rest blue with
+     its ink 6.8, and 2.7 against black, which is why the two never meet without a label. */
+  --run-black: #0b0a08;
+  --run-surface: #1f1a14;
+  --run-ink: #f7f3ea; /* 17.9 on black */
+  --run-ink-2: #b3ab9c; /* 8.7 on black */
+  --run-line: rgba(247, 243, 234, 0.12);
+  --run-outline: #6e685d; /* 3.6 on black: an outline, not text */
+  --run-act-text: #ef9a6a; /* 8.9 on black */
+  --work: #e8763e;
+  --work-ink: #0b0a08;
+  --work-ink-2: #3a1c0c; /* 5.3 on work */
+  --rest: #1e5a8c;
+  --rest-ink: #f5f9fd;
+  --rest-ink-2: #c5dbef; /* 5.1 on rest */
 
   /* spacing scale: 4 / 8 / 16 / 24 / 32 / 64 */
   --s1: 4px;
@@ -84,16 +109,13 @@
 
   --radius: 14px;
   --radius-s: 10px;
-  --radius-l: 22px;
 
   --font-display: 'Space Grotesk', ui-sans-serif, 'Segoe UI', system-ui, sans-serif;
   --font-body: 'Hanken Grotesk', ui-sans-serif, -apple-system, 'Segoe UI', system-ui, sans-serif;
-
-  /* Secondary text sitting ON a `--selected` fill rather than on `--bg`. In light the same value
-     works (5.79). In dark, `--selected` is a translucent white that composites to #2b2823 — lighter
-     than `--bg` — and `--secondary` drops to 4.46, just under AA. Kept as its own token so the
-     app-matching `--secondary` doesn't have to be bent to fit its least forgiving surface. */
-  --secondary-on-selected: #6b6558;
+  /* Mono is for anything that *is* the file: YAML, keys, type names, ids. JetBrains Mono is named
+     first but not self-hosted, since the app doesn't ship it and the site's fonts are converted
+     from the app's own; a reader who has it installed gets it, everyone else the system mono. */
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, Consolas, monospace;
 
   --measure: 70ch;
   --maxw: 1120px;
@@ -101,20 +123,16 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --text: #f0ece2;
-    --secondary: #948d80;
-    --bg: #1a1712;
-    --surface: #241f17;
-    --selected: rgba(240, 236, 226, 0.08);
-    --border: rgba(240, 236, 226, 0.1);
-    --accent: #e07d47;
-    --accent-text: #e8a172;
-    --accent-soft: rgba(224, 125, 71, 0.16);
-    --calm: #3f82c0;
-    --calm-text: #7fb0dd;
-    --ink: #17140d;
-    --on-accent: #17140d;
-    --secondary-on-selected: #a49c8d; /* 5.40 on the composited #2b2823 */
+    --paper: #14110d;
+    --surface: #1f1a14;
+    --sunken: #2a241c;
+    --ink: #f2ede3;
+    --ink-2: #a39b8c;
+    --border: rgba(242, 237, 227, 0.12);
+    --act: #e8763e;
+    --on-act: #14110d;
+    --act-text: #ef9a6a;
+    --recover: #6aa6de;
   }
 }
 
@@ -126,11 +144,12 @@
 }
 html {
   -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
 }
 body {
   margin: 0;
-  background: var(--bg);
-  color: var(--text);
+  background: var(--paper);
+  color: var(--ink);
   font-family: var(--font-body);
   font-weight: 400;
   font-size: 17px;
@@ -144,30 +163,30 @@ img {
   display: block;
 }
 a {
-  color: var(--accent-text);
+  color: var(--act-text);
   text-decoration: none;
 }
 a:hover {
-  color: var(--accent);
+  color: var(--ink);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
 
-/* A link sitting inside a paragraph must be distinguishable without relying on colour (WCAG 1.4.1).
-   Accent-on-body only measures 2.78:1 against the surrounding text in light and 1.82:1 in dark —
-   nowhere near the 3:1 that would let colour carry it alone — so body links are underlined at rest.
-   Navigation, footer columns and buttons are excluded: they sit in their own blocks, where position
-   already distinguishes them and underlining every one is just noise. */
+/* A link inside a paragraph must be distinguishable without relying on colour (WCAG 1.4.1).
+   Act-text against body ink measures well under 3:1 in both schemes, so body links are underlined
+   at rest. Navigation, footer columns and buttons are excluded: position already sets them apart. */
 .prose a,
 .callout a,
-.data-item a {
+.data-item a,
+.feature-copy a,
+.assist a:not(.btn) {
   text-decoration: underline;
   text-underline-offset: 3px;
   text-decoration-thickness: 1px;
 }
 ::selection {
-  background: var(--accent-soft);
-  color: var(--text);
+  background: color-mix(in srgb, var(--ink) 16%, transparent);
+  color: var(--ink);
 }
 
 h1,
@@ -189,15 +208,16 @@ strong {
   font-weight: 600;
 }
 
-/* Visible, themed keyboard focus everywhere */
+/* Focus is ink, not act: a focus ring on an orange button has to stay visible against it. */
 :focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--ink);
   outline-offset: 3px;
   border-radius: 4px;
 }
-a:focus-visible,
-button:focus-visible {
-  outline-offset: 3px;
+.hero :focus-visible,
+.site-footer :focus-visible,
+.code-panel :focus-visible {
+  outline-color: var(--run-ink);
 }
 
 .skip-link {
@@ -205,7 +225,7 @@ button:focus-visible {
   left: var(--s3);
   top: -60px;
   background: var(--surface);
-  color: var(--text);
+  color: var(--ink);
   padding: var(--s2) var(--s3);
   border-radius: var(--radius-s);
   border: 1px solid var(--border);
@@ -229,19 +249,39 @@ button:focus-visible {
 .section {
   padding-block: var(--s6);
 }
+.section-tight {
+  padding-top: 0;
+}
+/* Sentence case, the same as the app's labels; the old tracked uppercase in orange was the loudest
+   thing on every page and said nothing an h2 doesn't. */
 .eyebrow {
   font-family: var(--font-display);
   font-weight: 600;
-  font-size: 13px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--accent-text);
+  font-size: 15px;
+  color: var(--ink-2);
   margin: 0 0 var(--s2);
 }
 .lede {
   font-size: 20px;
-  color: var(--secondary);
+  color: var(--ink-2);
   max-width: 52ch;
+}
+.lede-note {
+  color: var(--ink-2);
+}
+.assist .lede,
+.assist .lede-note {
+  margin-bottom: var(--s4);
+}
+.data-head {
+  max-width: 46ch;
+  margin-bottom: var(--s5);
+}
+.section-title {
+  font-size: clamp(28px, 4vw, 40px);
+  letter-spacing: -0.02em;
+  max-width: 20ch;
+  margin-bottom: var(--s4);
 }
 
 /* ---- Site header ------------------------------------------ */
@@ -249,7 +289,7 @@ button:focus-visible {
   position: sticky;
   top: 0;
   z-index: 40;
-  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  background: color-mix(in srgb, var(--paper) 90%, transparent);
   backdrop-filter: saturate(1.4) blur(10px);
   border-bottom: 1px solid var(--border);
 }
@@ -257,22 +297,24 @@ button:focus-visible {
   display: flex;
   align-items: center;
   gap: var(--s4);
-  padding-block: var(--s3);
+  padding-block: var(--s2);
 }
 .brand {
   display: inline-flex;
   align-items: center;
   gap: var(--s2);
-  color: var(--text);
+  color: var(--ink);
+  min-height: 44px;
 }
 .brand:hover {
   text-decoration: none;
-  color: var(--text);
+  color: var(--ink);
 }
+/* The mark is ink: it is a name, not an action. */
 .brand .mark {
   width: 30px;
   height: 30px;
-  color: var(--accent);
+  color: currentColor;
 }
 .brand .word {
   font-family: var(--font-display);
@@ -280,32 +322,34 @@ button:focus-visible {
   font-size: 21px;
   letter-spacing: -0.01em;
 }
-/* `flex-wrap` is load-bearing, not defensive: five links do not fit a 390px viewport on one line,
-   and without it the nav pushes the header 66px wider than the screen and the whole page scrolls
-   sideways. Adding a sixth link must stay this cheap. */
+/* `flex-wrap` is load-bearing, not defensive: six links do not fit a 390px viewport on one line,
+   and without it the nav pushes the header wider than the screen and the whole page scrolls
+   sideways. Adding a seventh link must stay this cheap. */
 .site-nav {
   margin-left: auto;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--s4);
+  gap: 0 var(--s4);
 }
-/* 44px minimum touch target, the same house rule the app holds itself to. Done with `min-height`
-   rather than `height` so the target still grows when the reader enlarges text. */
+/* 44px minimum touch target, the house rule the app holds itself to, via `min-height` so the target
+   still grows when the reader enlarges text. The current page is selection, so it's ink with an ink
+   rule under it: never act. */
 .site-nav a {
-  color: var(--secondary);
+  color: var(--ink-2);
   font-weight: 500;
   display: inline-flex;
   align-items: center;
   min-height: 44px;
+  border-bottom: 2px solid transparent;
 }
-.site-nav a:hover,
-.site-nav a[aria-current='page'] {
-  color: var(--text);
+.site-nav a:hover {
+  color: var(--ink);
   text-decoration: none;
 }
 .site-nav a[aria-current='page'] {
-  color: var(--accent-text);
+  color: var(--ink);
+  border-bottom-color: var(--ink);
 }
 
 /* ---- Buttons ---------------------------------------------- */
@@ -317,63 +361,58 @@ button:focus-visible {
   font-weight: 600;
   font-size: 17px;
   line-height: 1;
-  padding: 14px 22px;
-  border-radius: 999px;
+  min-height: 48px;
+  padding: 0 22px;
+  border-radius: 12px;
   border: 1px solid transparent;
   cursor: pointer;
   transition:
     background 0.15s ease,
     border-color 0.15s ease,
-    color 0.15s ease,
-    transform 0.05s ease;
+    color 0.15s ease;
+}
+.btn:hover {
+  text-decoration: none;
 }
 .btn-primary {
-  background: var(--accent);
-  color: var(--on-accent);
-} /* large bold label — AA on accent */
+  background: var(--act);
+  color: var(--on-act);
+}
 .btn-primary:hover {
-  background: color-mix(in srgb, var(--accent) 88%, #000);
-  text-decoration: none;
-  color: var(--on-accent);
+  background: color-mix(in srgb, var(--act) 90%, #000);
+  color: var(--on-act);
 }
-.btn-primary:active {
-  transform: translateY(1px);
-}
+/* The secondary button is an ink outline. Its border is ink-2 rather than the hairline so the
+   button's edge clears 3:1 (6.4 light, 6.8 dark). */
 .btn-ghost {
   background: transparent;
-  color: var(--text);
-  border-color: var(--border);
+  color: var(--ink);
+  border-color: var(--ink-2);
 }
 .btn-ghost:hover {
-  background: var(--selected);
-  text-decoration: none;
-  color: var(--text);
+  background: var(--sunken);
+  color: var(--ink);
 }
 .btn .ico {
   width: 18px;
   height: 18px;
 }
 
-/* ---- Chips / tags ----------------------------------------- */
+/* ---- Chips: categories ------------------------------------
+   One kind only. A chip names a category (a length, a schedule, the equipment, the types used), and
+   categories are neutral: ink-2 on sunken. Before this palette the first chip in a row was orange
+   and the second blue, which taught the reader two meanings neither color has. */
 .chip {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-family: var(--font-display);
+  font-family: var(--font-body);
   font-weight: 500;
   font-size: 14px;
-  padding: 6px 12px;
+  padding: 4px 12px;
   border-radius: 999px;
-  background: var(--accent-soft);
-  color: var(--accent-text);
-}
-.chip.calm {
-  background: color-mix(in srgb, var(--calm) 14%, transparent);
-  color: var(--calm-text);
-}
-.chip.plain {
-  background: var(--selected);
-  color: var(--secondary);
+  background: var(--sunken);
+  color: var(--ink-2);
 }
 
 /* ---- Store badges ----------------------------------------- *
@@ -387,57 +426,37 @@ button:focus-visible {
   flex-wrap: wrap;
   align-items: center;
   gap: var(--s3);
-  margin-top: var(--s4);
+  margin-top: var(--s5);
 }
-/* Sits on the always-dark hero, so the colors are the dark-scheme ones spelled out rather than
-   inherited: #a89f8f on #17140d measures 7.02. */
 .store-pending {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
   min-height: 48px;
-  padding: 0 18px;
-  border-radius: 12px;
-  border: 1px dashed rgba(240, 236, 226, 0.18);
-  font-family: var(--font-display);
-  font-weight: 500;
+  font-family: var(--font-body);
   font-size: 15px;
-  color: #a89f8f;
+  color: var(--run-ink-2);
 }
-/* The second slot is a reservation, not an announcement — it recedes rather than competing. Done
-   with an explicit dimmer color rather than `opacity`, which multiplies against the background and
-   silently destroys contrast (at 0.62 it measured 1.96). #8f887a measures 5.23. */
-.store-pending.muted {
-  color: #8f887a;
-  font-weight: 400;
-}
-/* The one primary action on the page, so it carries the accent as a fill. Both colors are the
-   dark-scheme values written out rather than inherited, for the same reason `.store-pending` writes
-   its own: this sits on the always-dark hero, and the tokens would flip under a light scheme. The
-   near-black label on the accent fill is the app's own `--on-accent` pairing; #17140d on #e07d47
-   measures 6.30, and 4.97 against the darkened hover fill, so both clear AA. */
+/* The one orange fill on the page: the runner's work field, with its black label (6.7; 5.5 on the
+   darkened hover). Written as runner tokens because it sits on the always-black hero. */
 .store-cta {
   display: inline-flex;
   align-items: center;
   gap: 10px;
   min-height: 56px;
-  padding: 0 22px;
+  padding: 0 24px;
   border-radius: 12px;
-  background: #e07d47;
-  color: #17140d;
+  background: var(--work);
+  color: var(--work-ink);
   font-family: var(--font-display);
   font-weight: 600;
-  font-size: 16px;
+  font-size: 17px;
   text-decoration: none;
   transition: background 0.15s ease;
 }
 .store-cta:hover {
-  background: color-mix(in srgb, #e07d47 88%, #000);
-  color: #17140d;
+  background: color-mix(in srgb, var(--work) 90%, #000);
+  color: var(--work-ink);
   text-decoration: none;
-}
-.store-cta:active {
-  transform: translateY(1px);
 }
 .store-badge {
   display: inline-flex;
@@ -455,32 +474,51 @@ button:focus-visible {
   padding: var(--s4);
 }
 
-/* ---- Hero (near-black band) ------------------------------- */
+/* ---- Hero (runner black) ----------------------------------
+   Always black, in both schemes: the field the runner shows when you set the pace. */
 .hero {
-  background: var(--ink);
-  color: #f0ece2;
-  border-bottom: 1px solid rgba(240, 236, 226, 0.08);
+  background: var(--run-black);
+  color: var(--run-ink);
 }
 .hero .wrap {
   padding-block: var(--s6);
 }
-/* Copy sits above a full-width media row, so the YAML gets a readable measure. */
 .hero-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: var(--s5);
+  gap: var(--s6);
 }
 .hero-copy {
   max-width: 62ch;
 }
 .hero h1 {
-  font-size: clamp(40px, 6vw, 68px);
+  font-size: clamp(42px, 7vw, 80px);
   font-weight: 700;
-  color: #f7f4ef;
-  margin-bottom: var(--s3);
-  max-width: 20ch;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: var(--run-ink);
+  margin-bottom: var(--s4);
+  max-width: 14ch;
 }
-/* code panel + phone, side by side on desktop, stacked on mobile */
+.hero .eyebrow {
+  color: var(--run-ink-2);
+}
+.hero-lede {
+  font-size: clamp(18px, 2.2vw, 21px);
+  color: var(--run-ink-2);
+  max-width: 50ch;
+  margin-bottom: 0;
+}
+.hero-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+  margin-top: var(--s4);
+}
+.hero-badges .chip {
+  background: var(--run-surface);
+  color: var(--run-ink-2);
+}
 .hero-media-row {
   display: grid;
   grid-template-columns: minmax(340px, 1fr) auto;
@@ -492,76 +530,100 @@ button:focus-visible {
 }
 .hero-media-row .phone {
   align-self: center;
+  max-width: 230px;
 }
-/* The hero band is ALWAYS dark, in both schemes — the same split the app makes with `RunnerColors`.
-   So anything inside it needs the dark-scheme token explicitly; inheriting `--accent-text` put the
-   light value (#a1502a) on #17140d and measured 3.23. #e8a172 measures 8.55. */
-.hero .eyebrow {
-  color: #e8a172;
-}
-.hero-lede {
-  font-size: clamp(18px, 2.2vw, 22px);
-  color: #cabfac;
-  max-width: 46ch;
-  margin-bottom: var(--s4);
-}
-.hero-badges {
-  display: flex;
-  flex-wrap: wrap;
+
+/* ---- Phase fields -----------------------------------------
+   The runner's three states drawn as the fields themselves, so the page explains the one place the
+   app spends its colours. Each tile is a figure, not a control. */
+.phases {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--s2);
-  margin-top: var(--s4);
+  margin: var(--s4) 0;
+  padding: 0;
+  list-style: none;
 }
-.hero-badges .chip {
-  background: rgba(224, 125, 71, 0.16);
-  color: #e8a172;
+.phase {
+  border-radius: var(--radius);
+  min-height: 132px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: var(--s2);
 }
-.hero-badges .chip.plain {
-  background: rgba(240, 236, 226, 0.08);
-  color: #cabfac;
+.phase .label {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+.phase .clock {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(32px, 4vw, 44px);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.phase.pace {
+  background: var(--run-black);
+  color: var(--run-ink);
+  /* An outline only where black would meet black: the dark scheme's paper is near it. */
+  box-shadow: inset 0 0 0 1px var(--run-line);
+}
+.phase.pace .label {
+  color: var(--run-ink-2);
+}
+.phase.work {
+  background: var(--work);
+  color: var(--work-ink);
+}
+.phase.rest {
+  background: var(--rest);
+  color: var(--rest-ink);
+}
+.phase.rest .label {
+  color: var(--rest-ink-2);
 }
 
-/* code panel inside hero */
-.hero .code-panel {
-  margin-top: 0;
-}
-
-/* ---- Code blocks ------------------------------------------ */
+/* ---- Code panels ------------------------------------------
+   Always black: the file is the same file in either scheme. Keys take the act-text orange the
+   palette draws them in — the file is the thing you act on — and everything else is ink. */
 .code-panel {
-  background: #12100b;
-  border: 1px solid rgba(240, 236, 226, 0.12);
+  background: var(--run-black);
+  border: 1px solid var(--run-line);
   border-radius: var(--radius);
   overflow: hidden;
-  box-shadow: 0 20px 50px -30px rgba(0, 0, 0, 0.7);
 }
 .code-head {
   display: flex;
   align-items: center;
   gap: var(--s2);
   padding: 10px var(--s3);
-  border-bottom: 1px solid rgba(240, 236, 226, 0.1);
-  font-family: var(--font-body);
+  border-bottom: 1px solid var(--run-line);
+  font-family: var(--font-mono);
   font-size: 13px;
-  color: #948d80;
+  color: var(--run-ink-2);
 }
 .code-head .dot {
-  width: 9px;
-  height: 9px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
-  background: rgba(240, 236, 226, 0.22);
+  background: var(--run-outline);
 }
 .code-head .name {
-  margin-left: 6px;
-  font-weight: 500;
-  color: #cabfac;
+  margin-left: 4px;
+  color: var(--run-ink);
 }
 pre {
   margin: 0;
   padding: var(--s4);
   overflow-x: auto;
-  font-family: ui-monospace, 'SF Mono', 'Cascadia Code', 'JetBrains Mono', Menlo, Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 13.5px;
   line-height: 1.7;
-  color: #e8e2d5;
+  color: var(--run-ink);
   tab-size: 2;
 }
 pre code {
@@ -569,43 +631,48 @@ pre code {
   color: inherit;
   white-space: pre;
 }
-/* YAML token colors (against #12100b) */
 .y-k {
-  color: #7fb0dd;
-} /* keys — calm blue */
+  color: var(--run-act-text);
+} /* keys, 8.9 */
 .y-n {
-  color: #e8a172;
-} /* numbers — accent */
+  color: var(--run-ink);
+} /* numbers */
 .y-p {
-  color: #948d80;
-} /* dashes / punctuation */
+  color: var(--run-ink-2);
+} /* dashes and punctuation */
 .y-s {
-  color: #e8e2d5;
+  color: var(--run-ink);
 } /* scalar strings */
 .y-c {
-  color: #8b8474;
+  color: var(--run-ink-2);
   font-style: italic;
-} /* comments */
+} /* comments, 8.6 */
 
-/* inline code within prose */
+/* Inline code is the file too: mono, ink on sunken. */
 code.inl {
-  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
-  font-size: 0.88em;
-  background: var(--selected);
-  color: var(--accent-text);
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+  background: var(--sunken);
+  color: var(--ink);
   padding: 1px 6px;
   border-radius: 6px;
 }
 
 /* ---- Feature blocks --------------------------------------- */
+.features {
+  margin-top: var(--s6);
+}
 .feature {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: var(--s6);
   align-items: center;
+  padding-block: var(--s6);
+  border-top: 1px solid var(--border);
 }
-.feature + .feature {
-  margin-top: var(--s6);
+.feature:first-child {
+  border-top: none;
+  padding-top: 0;
 }
 .feature.flip .feature-media {
   order: -1;
@@ -615,8 +682,8 @@ code.inl {
   margin-bottom: var(--s3);
 }
 .feature p {
-  color: var(--secondary);
-  max-width: 46ch;
+  color: var(--ink-2);
+  max-width: 48ch;
 }
 .feature-media {
   display: flex;
@@ -629,102 +696,74 @@ code.inl {
   width: 100%;
   max-width: 260px;
   aspect-ratio: 1080 / 2204;
-  background: var(--ink);
+  background: var(--run-black);
   border: 1px solid var(--border);
   border-radius: 30px;
-  padding: 8px;
-  box-shadow: 0 30px 60px -35px rgba(0, 0, 0, 0.55);
+  padding: 7px;
 }
 .phone .screen {
   width: 100%;
   height: 100%;
-  border-radius: 22px;
+  border-radius: 23px;
   overflow: hidden;
-  background: var(--ink);
+  background: var(--run-black);
 }
 .phone .screen img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
-/* labelled placeholder variant */
-.phone.placeholder .screen {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: var(--s2);
-  text-align: center;
-  padding: var(--s4);
-  background: repeating-linear-gradient(135deg, rgba(224, 125, 71, 0.05) 0 12px, transparent 12px 24px), var(--ink);
-  color: #948d80;
-}
-.phone.placeholder .screen .plabel {
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: 15px;
-  color: #cabfac;
-}
-.phone.placeholder .screen .pmeta {
-  font-size: 12px;
-  color: #7d766a;
-}
-.phone.placeholder .screen .ico {
-  width: 30px;
-  height: 30px;
-  color: var(--accent);
-  opacity: 0.85;
-}
 
-/* ---- Exercise-type grid ----------------------------------- */
-.type-grid {
+/* ---- Exercise types: rows, not cards ----------------------
+   Seven peers, so a list with a hairline between neighbours — the app's own rule for peers. */
+.type-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--border);
+}
+.type-list li {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: var(--s3);
+  grid-template-columns: 160px minmax(0, 1fr);
+  gap: var(--s4);
+  align-items: baseline;
+  padding-block: 14px;
+  border-bottom: 1px solid var(--border);
 }
-.type {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: var(--s3) var(--s4);
+.type-list .name {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ink);
 }
-.type .name {
-  font-family: ui-monospace, Menlo, monospace;
-  font-size: 14px;
-  color: var(--accent-text);
-  font-weight: 600;
-  letter-spacing: 0.02em;
-}
-.type .desc {
-  font-size: 14.5px;
-  color: var(--secondary);
-  margin: 6px 0 0;
+.type-list .desc {
+  color: var(--ink-2);
+  margin: 0;
 }
 
 /* ---- Data / ownership section ----------------------------- */
 .data-band {
-  background: var(--surface);
-  border-block: 1px solid var(--border);
+  background: var(--sunken);
 }
 .data-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: var(--s4);
+  gap: var(--s5) var(--s4);
 }
 .data-item h3 {
-  font-family: var(--font-display);
   font-size: 19px;
   margin-bottom: 6px;
 }
+/* ink-2 on sunken: 5.8 light, 5.6 dark. */
 .data-item p {
-  color: var(--secondary);
+  color: var(--ink-2);
   font-size: 15.5px;
   margin: 0;
 }
 .data-item .ico {
   width: 24px;
   height: 24px;
-  color: var(--accent);
+  color: var(--ink);
   margin-bottom: var(--s2);
 }
 
@@ -734,9 +773,6 @@ code.inl {
   grid-template-columns: 1.1fr 0.9fr;
   gap: var(--s6);
   align-items: center;
-}
-.assist .card {
-  background: var(--surface);
 }
 .assist .step {
   display: flex;
@@ -754,32 +790,34 @@ code.inl {
   border-radius: 50%;
   display: grid;
   place-items: center;
-  background: var(--accent-soft);
-  color: var(--accent-text);
+  background: var(--sunken);
+  color: var(--ink);
   font-family: var(--font-display);
   font-weight: 600;
   font-size: 15px;
+  font-variant-numeric: tabular-nums;
 }
 .assist .step p {
   margin: 0;
   font-size: 15.5px;
-  color: var(--secondary);
+  color: var(--ink-2);
 }
 .assist .step strong {
-  color: var(--text);
+  color: var(--ink);
 }
 .disclaimer {
   font-size: 14px;
-  color: var(--secondary);
-  border-left: 2px solid var(--calm);
-  padding-left: var(--s3);
+  color: var(--ink-2);
+  border-top: 1px solid var(--border);
+  padding-top: var(--s3);
   margin-top: var(--s4);
+  max-width: 52ch;
 }
 
-/* ---- Footer ----------------------------------------------- */
+/* ---- Footer (runner black) -------------------------------- */
 .site-footer {
-  background: var(--ink);
-  color: #cabfac;
+  background: var(--run-black);
+  color: var(--run-ink-2);
   padding-block: var(--s6) var(--s5);
 }
 .footer-grid {
@@ -787,24 +825,22 @@ code.inl {
   grid-template-columns: 1.4fr 1fr 1fr;
   gap: var(--s5);
 }
-.site-footer .brand .word {
-  color: #f7f4ef;
+.site-footer .brand,
+.site-footer .brand:hover {
+  color: var(--run-ink);
 }
 .site-footer p {
-  color: #948d80;
+  color: var(--run-ink-2);
   font-size: 15px;
   max-width: 34ch;
+  margin-top: var(--s3);
 }
 /* h3 rather than the h5 its size suggests: the footer follows an h2 on every page, and heading level
    is the document outline, not a type scale. */
 .footer-col h3 {
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: 13px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: #948d80;
-  margin: 0 0 var(--s3);
+  font-size: 15px;
+  color: var(--run-ink);
+  margin: 0 0 var(--s2);
 }
 .footer-col ul {
   list-style: none;
@@ -813,29 +849,24 @@ code.inl {
   display: grid;
   gap: 2px;
 }
-/* Same 44px rule as the primary nav; the row gap shrinks to 2px to absorb the taller targets so the
-   column doesn't grow. */
+/* Same 44px rule as the primary nav; the row gap shrinks to 2px to absorb the taller targets. */
 .footer-col ul a {
   display: inline-flex;
   align-items: center;
   min-height: 44px;
 }
 .site-footer a {
-  color: #cabfac;
+  color: var(--run-ink-2);
 }
 .site-footer a:hover {
-  color: #f7f4ef;
+  color: var(--run-ink);
 }
 .footer-bottom {
   margin-top: var(--s5);
   padding-top: var(--s4);
-  border-top: 1px solid rgba(240, 236, 226, 0.1);
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--s3) var(--s4);
-  align-items: center;
+  border-top: 1px solid var(--run-line);
   font-size: 14px;
-  color: #948d80; /* was #7d766a, 4.08 on the ink band; this measures 5.59 */
+  color: var(--run-ink-2);
 }
 
 /* ============================================================
@@ -856,10 +887,8 @@ code.inl {
 .doc-nav .label {
   font-family: var(--font-display);
   font-weight: 600;
-  font-size: 12px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--secondary);
+  font-size: 14px;
+  color: var(--ink-2);
   margin: 0 0 var(--s3);
 }
 .doc-nav ul {
@@ -867,29 +896,32 @@ code.inl {
   margin: 0;
   padding: 0;
   display: grid;
-  gap: 4px;
+  gap: 2px;
   border-left: 1px solid var(--border);
 }
 .doc-nav a {
-  display: block;
-  padding: 6px var(--s3);
+  display: flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 4px var(--s3);
   margin-left: -1px;
-  color: var(--secondary);
+  color: var(--ink-2);
   font-size: 14.5px;
   font-weight: 500;
   border-left: 2px solid transparent;
 }
 .doc-nav a:hover {
-  color: var(--text);
+  color: var(--ink);
   text-decoration: none;
 }
+/* Selection is ink. */
 .doc-nav a[aria-current='true'] {
-  color: var(--accent-text);
-  border-left-color: var(--accent);
+  color: var(--ink);
+  border-left-color: var(--ink);
 }
 
-/* `min-width: 0` for the same reason as the grid column above — as a grid item it defaults to a
-   min-content floor, which its own code blocks would otherwise set. */
+/* `min-width: 0` because as a grid item it defaults to a min-content floor, which its own code
+   blocks would otherwise set. */
 .prose {
   max-width: var(--measure);
   min-width: 0;
@@ -906,10 +938,6 @@ code.inl {
   font-size: 21px;
   margin: var(--s5) 0 var(--s2);
   scroll-margin-top: 90px;
-}
-.prose p,
-.prose li {
-  color: var(--text);
 }
 .prose ul {
   padding-left: 1.3em;
@@ -941,31 +969,32 @@ table.ref td {
   border-bottom: 1px solid var(--border);
   vertical-align: top;
 }
+/* ink-2 on sunken: 5.8 light, 5.6 dark. Sunken is opaque now, so the dark-scheme exception the
+   old translucent fill needed is gone. */
 table.ref thead th {
   font-family: var(--font-display);
   font-weight: 600;
-  font-size: 13px;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--secondary-on-selected);
-  background: var(--selected);
+  font-size: 14px;
+  color: var(--ink-2);
+  background: var(--sunken);
 }
 table.ref tbody tr:last-child td {
   border-bottom: none;
 }
 table.ref td code,
 table.ref th code {
-  font-family: ui-monospace, Menlo, monospace;
+  font-family: var(--font-mono);
   font-size: 13px;
-  color: var(--accent-text);
+  color: var(--ink);
 }
 table.ref td:first-child {
   white-space: nowrap;
   font-weight: 500;
 }
 
+/* A note the reader should not miss: sunken, not tinted, since a warning isn't an action. */
 .callout {
-  background: var(--accent-soft);
+  background: var(--sunken);
   border-radius: var(--radius);
   padding: var(--s4);
   margin: var(--s4) 0;
@@ -973,43 +1002,47 @@ table.ref td:first-child {
 .callout p:last-child {
   margin-bottom: 0;
 }
-.callout strong {
-  color: var(--accent-text);
+.callout code.inl {
+  background: var(--paper);
 }
 
-/* page intro block shared by format + privacy */
+/* page intro block shared by format, examples, privacy and support */
 .page-head {
-  padding-block: var(--s6) var(--s4);
+  padding-block: var(--s6) var(--s5);
   border-bottom: 1px solid var(--border);
 }
 .page-head h1 {
-  font-size: clamp(34px, 5vw, 52px);
+  font-size: clamp(36px, 5.5vw, 60px);
   font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.02;
   margin-bottom: var(--s3);
 }
 .page-head .lede {
   font-size: 19px;
 }
 .page-head .meta {
-  color: var(--secondary);
+  color: var(--ink-2);
   font-size: 14px;
   margin-top: var(--s3);
 }
+.back-link {
+  margin-top: var(--s5);
+}
 
 /* ============================================================
-   examples.html — the ready-made library cards
+   examples.html — the ready-made libraries
    ============================================================ */
 /* `auto-fit` with a `min()` floor rather than a breakpoint: two columns while there is room for two
-   420px ones, one full-width column below that. The floor is deliberately wide enough that four
-   cards land 2×2 rather than 3+1 at desktop widths. `min(100%, …)` keeps the floor from exceeding
-   the viewport, which is what stops the previews' code blocks setting a min-content overflow. */
+   420px ones, one below that. `min(100%, …)` keeps the floor from exceeding the viewport, which is
+   what stops the previews' code blocks setting a min-content overflow. */
 .example-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
   gap: var(--s4);
 }
-/* Column flex with the action row pushed down by `margin-top: auto`, so two cards sitting side by
-   side line their buttons up however unevenly their descriptions wrap. */
+/* Column flex with the action row pushed down by `margin-top: auto`, so two cards side by side line
+   their buttons up however unevenly their descriptions wrap. */
 .card.example {
   display: flex;
   flex-direction: column;
@@ -1019,12 +1052,12 @@ table.ref td:first-child {
   margin-bottom: var(--s2);
 }
 .card.example > p {
-  color: var(--secondary);
+  color: var(--ink-2);
 }
 .card.example .chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
   margin-bottom: 0;
 }
 .example-actions {
@@ -1034,12 +1067,10 @@ table.ref td:first-child {
   margin-top: auto;
   padding-top: var(--s4);
 }
-/* Slightly smaller than the hero's call to action — there are eight of these on the page, and they
-   are not the loudest thing on it. Still 44px tall. */
 .example-actions .btn {
   font-size: 16px;
-  padding: 12px 20px;
   min-height: 44px;
+  padding: 0 18px;
 }
 .example-preview {
   margin-top: var(--s3);
@@ -1049,13 +1080,13 @@ table.ref td:first-child {
   align-items: center;
   min-height: 44px;
   cursor: pointer;
-  color: var(--secondary);
+  color: var(--ink-2);
   font-family: var(--font-display);
   font-weight: 500;
   font-size: 15px;
 }
 .example-preview summary:hover {
-  color: var(--text);
+  color: var(--ink);
 }
 .example-preview .code-panel {
   margin-top: var(--s2);
@@ -1084,6 +1115,7 @@ table.ref td:first-child {
   .feature {
     grid-template-columns: 1fr;
     gap: var(--s4);
+    padding-block: var(--s5);
   }
   .feature.flip .feature-media {
     order: 0;
@@ -1096,10 +1128,8 @@ table.ref td:first-child {
     grid-template-columns: 1fr 1fr;
     gap: var(--s4);
   }
-  /* `minmax(0, 1fr)`, never bare `1fr`. A bare `1fr` is `minmax(auto, 1fr)`, and that `auto` floor
-     is the column's min-content width — which the reference's wide YAML samples blow past, dragging
-     the grid to 612px inside a 390px viewport. The `pre` already scrolls internally; this is what
-     lets it. */
+  /* `minmax(0, 1fr)`, never bare `1fr`: a bare `1fr` is `minmax(auto, 1fr)`, whose `auto` floor is
+     the column's min-content width, which the reference's wide YAML samples blow past. */
   .doc-layout {
     grid-template-columns: minmax(0, 1fr);
     gap: var(--s4);
@@ -1111,17 +1141,18 @@ table.ref td:first-child {
     display: flex;
     flex-wrap: wrap;
     border-left: none;
-    gap: 4px;
+    gap: 6px;
   }
   .doc-nav a {
     border-left: none;
+    min-height: 44px;
     border-radius: 999px;
-    background: var(--selected);
-    color: var(--secondary-on-selected);
+    background: var(--sunken);
   }
+  /* Selection as the app draws it: an ink fill. */
   .doc-nav a[aria-current='true'] {
-    border-left: none;
-    background: var(--accent-soft);
+    background: var(--ink);
+    color: var(--paper);
   }
 }
 @media (max-width: 560px) {
@@ -1135,13 +1166,21 @@ table.ref td:first-child {
     padding-block: var(--s5);
   }
   .site-nav {
-    gap: var(--s3);
+    gap: 0 var(--s3);
   }
   .footer-grid {
     grid-template-columns: 1fr;
   }
   .feature-media {
     flex-wrap: wrap;
+  }
+  .type-list li {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+  }
+  .phase {
+    min-height: 112px;
+    padding: 10px;
   }
 }
 
@@ -1167,7 +1206,4 @@ table.ref td:first-child {
     opacity: 1;
     transform: none;
   }
-}
-html {
-  scroll-behavior: smooth;
 }

@@ -1,6 +1,5 @@
 package com.casco.kettle.shell.programdetail
 
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -8,47 +7,49 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.Library
 import com.casco.kettle.domain.Program
+import com.casco.kettle.domain.ProgramPosition
 import com.casco.kettle.domain.ProgramWeek
 import com.casco.kettle.domain.RunnerStart
 import com.casco.kettle.domain.SessionParams
-import com.casco.kettle.domain.overrideNote
+import com.casco.kettle.domain.programPosition
+import com.casco.kettle.domain.programSessionsPerWeek
+import com.casco.kettle.domain.programWeekNumbers
+import com.casco.kettle.domain.programWorkoutIds
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.files.LatestFiles
 import com.casco.kettle.shell.files.LocalLatestFiles
-import com.casco.kettle.shell.list.ListHeaderRule
-import com.casco.kettle.shell.list.ListRow
+import com.casco.kettle.shell.i18n.pluralText
+import com.casco.kettle.shell.library.rememberProgramPosition
 import com.casco.kettle.shell.list.ListRowSeparator
-import com.casco.kettle.shell.list.RowStartButton
 import com.casco.kettle.shell.nav.Destination
 import com.casco.kettle.shell.nav.LocalNavigator
 import com.casco.kettle.shell.nav.Route
+import com.casco.kettle.shell.nav.routeParams
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.MaxContentWidth
 import com.casco.kettle.shell.theme.Spacing
 import com.casco.kettle.shell.theme.TypeIcon
+import kotlin.time.Clock
 
 /** The param that names Program detail's program, as Programs pushes it. */
 const val PROGRAM_ID_PARAM = "programId"
@@ -62,15 +63,16 @@ fun ProgramDetailRoute(params: Map<String, String>) {
         LocalLatestFiles.current,
         navigator::push,
         navigator::openRunner,
-        { navigator.back() },
     )
 }
 
 /**
- * One program's weeks (#233), as RN's `program-detail.tsx`, now the empty stub at this path. A training
- * week names its workout and starts it in a runner; a rest week says so and starts nothing. Edit
- * opens the program editor. [open] pushes a route and [startRunner] opens the runner (#302), both
- * parameters so a test hears each route opened and each start.
+ * Program detail (#437): where the program stands and what comes next, its weeks as a grid of
+ * position, not completion, as Today's strip (#412), and the selected week's days as rows. Every
+ * training day keeps a Start, as agreed, so a day can still be run out of turn, and a tap on a day
+ * opens its preview. [open] pushes a route and [startRunner] opens the runner (#302), both parameters
+ * so a test hears each route opened and each start. [clock] is a parameter so a test can let rest
+ * days pass.
  */
 @Composable
 fun ProgramDetailScreen(
@@ -78,10 +80,11 @@ fun ProgramDetailScreen(
     files: LatestFiles,
     open: (Route) -> Unit,
     startRunner: (RunnerStart) -> Unit,
-    onClose: () -> Unit,
+    clock: Clock = Clock.System,
 ) {
     val library = files.library
     val program = library?.programs?.firstOrNull { it.id == programId }
+    val sessions = files.sessionLog?.logged.orEmpty()
     Box(
         Modifier
             .fillMaxSize()
@@ -95,6 +98,7 @@ fun ProgramDetailScreen(
                 .padding(horizontal = Spacing.three)
                 .padding(bottom = Spacing.four)
                 .navigationBarsPadding(),
+            verticalArrangement = Arrangement.spacedBy(Spacing.three),
         ) {
             // Nothing before the library is read, so a program that is there is never called gone.
             when {
@@ -109,123 +113,102 @@ fun ProgramDetailScreen(
                 }
 
                 else -> {
-                    Weeks(program, library, open, startRunner)
-                    Close(onClose)
+                    // Today's own reading when Today runs this program, rest days served and all, so the two
+                    // never name different next slots; the slot after its last session when it doesn't.
+                    val today = rememberProgramPosition(files, clock)?.takeIf { it.program.id == program.id }
+                    val own = remember(program, sessions) { programPosition(program, sessions) }
+                    val position = today ?: own
+                    Header(program, today) {
+                        open(Route(Destination.ProgramEditor, mapOf("id" to program.id)))
+                    }
+                    val slot = SlotActions(program.id, library, open, startRunner)
+                    position?.let { NextCard(it, slot) }
+                    position?.let { ProgramWeeks(it, slot) }
+                    WorkoutCount(program)
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun Weeks(
-    program: Program,
-    library: Library,
-    open: (Route) -> Unit,
-    startRunner: (RunnerStart) -> Unit,
-) {
-    Header(program.name) { open(Route(Destination.ProgramEditor, mapOf("id" to program.id))) }
-    // Starts the list the way every tab screen's does: without it the weeks begin under the title with
-    // nothing marking where the heading stops.
-    ListHeaderRule()
-    // Stable, as JS's sort is, so the days of one week keep the file's order.
-    program.weeks.sortedBy { it.week }.forEachIndexed { index, week ->
-        if (index > 0) ListRowSeparator()
-        WeekRow(week, library) {
-            startRunner(RunnerStart.Planned(SessionParams.ProgramSlot(program.id, week.week, week.day)))
-        }
-    }
-}
-
-@Composable
-private fun Header(
-    name: String,
-    onEdit: () -> Unit,
-) {
-    val colors = KettleTheme.colors
-    val edit = stringResource(R.string.programDetail_edit)
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        // User data, verbatim.
-        Text(name, Modifier.weight(1f).semantics { heading() }, style = KettleType.subtitle, color = colors.text)
-        // Icon-only, so it carries the name its pencil can't give it.
-        Box(
-            Modifier
-                .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
-                .clickable(role = Role.Button, onClick = onEdit)
-                .semantics { contentDescription = edit },
-            contentAlignment = Alignment.Center,
-        ) {
-            TypeIcon(R.drawable.icon_edit, KettleType.heading, colors.textSecondary)
         }
     }
 }
 
 /**
- * One week: its label, its workout or "Rest day", its notes and what its overrides do. A rest week gets
- * no start control at all rather than a disabled one, since it has nothing to start, and looks no
- * workout up, so its overrides (which the schema doesn't give it) can't be drawn either.
+ * What a slot can do, bound to its program: start it, or open its preview. [library] names its
+ * workout and reads its overrides.
  */
+internal class SlotActions(
+    private val programId: String,
+    val library: Library,
+    private val open: (Route) -> Unit,
+    private val startRunner: (RunnerStart) -> Unit,
+) {
+    private fun start(slot: ProgramWeek) =
+        RunnerStart.Planned(SessionParams.ProgramSlot(programId, slot.week, slot.day))
+
+    fun run(slot: ProgramWeek) = startRunner(start(slot))
+
+    fun preview(slot: ProgramWeek) = open(Route(Destination.WorkoutPreview, start(slot).routeParams()))
+
+    fun workoutName(slot: ProgramWeek.Training): String =
+        library.workouts.firstOrNull { it.id == slot.workoutId }?.name ?: slot.workoutId
+}
+
+/** The name with Edit, then "Active, week 3 · 10 weeks · 6 sessions a week", the first part only when Today runs it. */
 @Composable
-private fun WeekRow(
-    week: ProgramWeek,
-    library: Library,
-    onStart: () -> Unit,
+private fun Header(
+    program: Program,
+    active: ProgramPosition?,
+    onEdit: () -> Unit,
 ) {
     val colors = KettleTheme.colors
-    val number = stringResource(R.string.programs_week, week.week)
-    // An empty `day` is none, as RN tested it for truth: the schema takes `day: ""`.
-    val label = week.day?.takeIf { it.isNotEmpty() }?.let { "$number · $it" } ?: number
-    val workout =
-        (week as? ProgramWeek.Training)?.let { training ->
-            library.workouts.firstOrNull {
-                it.id ==
-                    training.workoutId
+    val edit = stringResource(R.string.programDetail_edit)
+    Column(verticalArrangement = Arrangement.spacedBy(Spacing.one)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            // User data, verbatim.
+            Text(
+                program.name,
+                Modifier.weight(1f).semantics { heading() },
+                style = KettleType.subtitle,
+                color = colors.text,
+            )
+            // Icon-only, so it carries the name its pencil can't give it.
+            Box(
+                Modifier
+                    .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                    .clickable(role = Role.Button, onClick = onEdit)
+                    .semantics { contentDescription = edit },
+                contentAlignment = Alignment.Center,
+            ) {
+                TypeIcon(R.drawable.icon_edit, KettleType.heading, colors.textSecondary)
             }
         }
-    ListRow {
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(label, style = KettleType.heading, color = colors.text)
-            when (week) {
-                is ProgramWeek.RestDay -> Secondary(stringResource(R.string.programDetail_restDay))
-                is ProgramWeek.Training -> Secondary(workout?.name ?: week.workoutId)
-            }
-            week.notes?.takeIf { it.isNotEmpty() }?.let { Secondary(it, FontStyle.Italic) }
-            if (week is ProgramWeek.Training) {
-                week.overrides.orEmpty().forEach { override ->
-                    overrideLines(overrideNote(override, library, workout)).forEach { Secondary(it) }
-                }
-            }
-        }
-        if (week is ProgramWeek.Training) {
-            RowStartButton(stringResource(R.string.programDetail_startAccessibility, label), onClick = onStart)
-        }
+        // Counted as the programs list counts them, so weeks 1, 2 and 4 are three weeks on both.
+        val weeks = programWeekNumbers(program).size
+        val parts =
+            listOfNotNull(
+                active?.let { stringResource(R.string.programs_active, it.weekNumber) },
+                // "No weeks", not "0 weeks", as the programs list says it.
+                if (weeks == 0) {
+                    stringResource(R.string.programs_noWeeks)
+                } else {
+                    pluralText(R.plurals.programs_weekCount, R.string.programs_weekCount_zero, weeks)
+                },
+                programSessionsPerWeek(program)?.let {
+                    pluralText(R.plurals.programs_sessionsPerWeek, R.string.programs_sessionsPerWeek_zero, it)
+                },
+            )
+        Text(parts.joinToString(" · "), style = KettleType.default, color = colors.textSecondary)
     }
 }
 
+/** "36 workouts in this program": a count, for a program like Skill Mastery with dozens. */
 @Composable
-private fun Secondary(
-    text: String,
-    fontStyle: FontStyle? = null,
-) = Text(text, style = KettleType.small, color = KettleTheme.colors.textSecondary, fontStyle = fontStyle)
-
-@Composable
-private fun Close(onClick: () -> Unit) =
-    Box(
-        Modifier
-            .padding(top = Spacing.four)
-            .fillMaxWidth()
-            // RN's 52px, as a floor: heightIn, never height, which clips at large text sizes.
-            .heightIn(min = 52.dp)
-            .clip(CloseShape)
-            .border(1.5.dp, KettleTheme.colors.border, CloseShape)
-            .clickable(role = Role.Button, onClick = onClick),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            stringResource(R.string.common_close),
-            style = KettleType.heading,
-            color = KettleTheme.colors.textSecondary,
-        )
-    }
-
-private val CloseShape = RoundedCornerShape(15.dp)
+private fun WorkoutCount(program: Program) {
+    val count = programWorkoutIds(program).size
+    if (count == 0) return
+    ListRowSeparator()
+    Text(
+        pluralText(R.plurals.programDetail_workoutCount, R.string.programDetail_workoutCount_zero, count),
+        style = KettleType.small,
+        color = KettleTheme.colors.textSecondary,
+    )
+}

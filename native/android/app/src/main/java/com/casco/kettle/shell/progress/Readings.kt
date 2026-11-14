@@ -39,6 +39,38 @@ class Readings(
             }
         }
 
+    /** A stored value in the reader's units, for the chart's axis to be round in (#413). */
+    fun display(value: Double): Double = if (kind == RecordKind.HeaviestSet) toDisplayWeight(value, units) else value
+
+    /**
+     * An axis line's label, its [value] already in the reader's units: the [top] line carries the unit,
+     * "50 lb", and the rest are bare numbers under it, as an axis reads.
+     */
+    fun axis(
+        value: Double,
+        top: Boolean,
+    ): String {
+        val number = jsNumber(value)
+        if (!top) return number
+        return when (kind) {
+            RecordKind.HeaviestSet -> {
+                "$number ${resources.getString(weightUnit(units))}"
+            }
+
+            RecordKind.LongestHold -> {
+                resources.getString(R.string.format_seconds, number)
+            }
+
+            RecordKind.MostReps, RecordKind.MostRounds -> {
+                resources.pluralText(
+                    R.plurals.format_rep,
+                    R.string.format_rep_zero,
+                    value.toInt(),
+                )
+            }
+        }
+    }
+
     /**
      * The change, signed. The magnitude is read and the sign added, so "−1 rep" pluralises on 1; and a
      * flat window has its own words rather than a "+0" that reads as a rounding artefact.

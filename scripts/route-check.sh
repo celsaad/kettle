@@ -61,6 +61,7 @@ steps=(
   '/session-editor|Edit session' 'back|tab:Progress'
   '/your-file|Have an assistant write your training' 'back|tab:Progress'
   '/library-yaml|Weights are in kilograms, as the file stores them.' 'back|tab:Progress'
+  '/exercise?id=pushups|YAML' 'back|tab:Progress'
   # A section's row opens its native sheet over the tab (#197, #233), and back returns to it.
   'tap:Library|tab:Programs' 'tap:Foundations · 4 Weeks · No Equipment|Week 1 · Day 1'
   # Over that native sheet, the native editor and the native runner each come back to it (#155, #233).
@@ -68,9 +69,10 @@ steps=(
   'tap:Edit program|Edit program' 'back|Week 1 · Day 1' 'tap:Start Week 1 · Day 1|End'
   'back|End the session early?' 'tap:Save and end|Workout complete' 'tap:Done|Week 1 · Day 1'
   'back|tab:Programs'
-  # Library's Exercises: a row and the header's + open their native sheets over it, and back returns to
-  # it (#234, #413).
-  'tap:Exercises|tab:Exercises' 'tap:Push-ups|Edit exercise' 'back|tab:Exercises'
+  # Library's Exercises: a row opens its detail, and Edit the form over that; the header's + opens the
+  # form directly. Back returns through each (#234, #413).
+  'tap:Exercises|tab:Exercises' 'tap:Push-ups|YAML' 'tap:Edit|Edit exercise' 'back|YAML'
+  'back|tab:Exercises'
   'tap:New exercise|New exercise' 'back|tab:Exercises'
   # The file's name under Library's title opens the file sheet; Open as YAML and Paste YAML open their own
   # sheets over it, and back returns through each (#413).

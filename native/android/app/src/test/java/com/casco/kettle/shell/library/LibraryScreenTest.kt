@@ -202,12 +202,12 @@ class LibraryScreenTest {
     }
 
     @Test
-    fun `a row opens its exercise in the editor`() {
+    fun `a row opens its exercise's detail, which the form is one tap behind`() {
         show()
 
         row("Dips").assertHeightIsAtLeast(48.dp).performClick()
 
-        assertEquals(listOf(Route(Destination.ExerciseEditor, mapOf("id" to "dips"))), opened)
+        assertEquals(listOf(Route(Destination.ExerciseDetail, mapOf("id" to "dips"))), opened)
     }
 
     @Test

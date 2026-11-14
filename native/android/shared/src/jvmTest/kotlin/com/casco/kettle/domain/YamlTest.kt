@@ -110,4 +110,20 @@ class YamlTest {
             (parseSessionYaml(text) as ParseResult.SchemaMismatch).paths,
         )
     }
+
+    /** Word for word as the whole file writes it, so a copied item pastes back under `exercises:`. */
+    @Test
+    fun `an exercise alone serialises as it sits in the file`() {
+        val squat =
+            Exercise(
+                "squat",
+                "Squat",
+                ExerciseConfig.Reps(3, 5, restSec = 120.0, targetWeightKg = 60.0),
+                notes = "Brace.",
+            )
+        val item = serializeExerciseYaml(squat)
+
+        assertTrue(item.startsWith("- id: squat"))
+        assertTrue(item in serializeLibraryYaml(Library(1, listOf(squat), emptyList(), emptyList())))
+    }
 }

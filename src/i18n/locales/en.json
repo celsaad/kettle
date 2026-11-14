@@ -803,7 +803,6 @@
     "optional": "optional",
     "notesOptional": "Notes · optional",
     "notesPlaceholder": "Coaching cue…",
-    "recent": "Recent",
     "deleteExercise": "Delete exercise",
     "inUseTitle": "Exercise in use",
     "inUseBody": "\"{{name}}\" is used by {{workouts}}. Remove it from those workouts first.",
@@ -993,5 +992,18 @@
     "exportLog": "Export log",
     "backupChange": "Change folder",
     "unitsNote": "Weights are in kilograms, as the file stores them."
+  },
+  "exerciseDetail": {
+    "edit": "Edit",
+    "yaml": "YAML",
+    "progress": "Progress",
+    "window": "Last {{weeks}} weeks",
+    "notTrained": "Not trained in the last {{weeks}} weeks.",
+    "recent": "Recent sessions",
+    "usedIn": "Used in",
+    "workout": "workout",
+    "programThrough": "program, through {{workout}}",
+    "notUsed": "Not in any workout yet.",
+    "missing": "This exercise isn't in your library any more."
   }
 }

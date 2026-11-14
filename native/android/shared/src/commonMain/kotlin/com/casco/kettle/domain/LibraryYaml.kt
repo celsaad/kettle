@@ -22,7 +22,7 @@ fun serializeLibraryYaml(library: Library): String =
         ),
     )
 
-private fun Exercise.toRaw(): Map<String, Any?> {
+internal fun Exercise.toRaw(): Map<String, Any?> {
     val (type, raw) = config.toRaw()
     return optionals("id" to id, "name" to name, "type" to type, "config" to raw, "notes" to notes)
 }

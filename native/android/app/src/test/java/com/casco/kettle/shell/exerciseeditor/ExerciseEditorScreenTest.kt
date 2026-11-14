@@ -38,7 +38,6 @@ import com.casco.kettle.shell.files.LatestFiles
 import com.casco.kettle.shell.theme.KettleTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.datetime.TimeZone
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -51,7 +50,7 @@ import java.io.IOException
  * The exercise editor (#241), case for case from RN's `exercise-editor.test.tsx`, on the harness
  * recipe (#193): in `pt`, since an English assertion passes a hardcoded English string, with the files
  * faked behind [StoredFiles]. Each asserts on the library written, which is what Save writes. Beyond
- * jest's: a write the disk refuses, a rename keeping its id, Recent, and the a11y.
+ * jest's: a write the disk refuses, a rename keeping its id, and the a11y.
  *
  * The validation's own cases are `:shared`'s (`ExerciseFormTest`); these cover the wiring.
  */
@@ -76,7 +75,6 @@ class ExerciseEditorScreenTest {
                 ExerciseEditorScreen(
                     id,
                     latest,
-                    TimeZone.UTC,
                     ExerciseEditorActions(close = { closed += 1 }),
                 )
             }
@@ -395,21 +393,14 @@ class ExerciseEditorScreenTest {
         assertEquals(0, closed)
     }
 
+    /** Recent moved to Exercise detail (#413), which the editor's form is now one tap behind. */
     @Test
-    fun `shows what the log holds of it, and nothing of a session still running`() {
+    fun `leaves the exercise's history to its detail`() {
         val logged = session("done", "2026-07-24T10:00:00.000Z")
-        val running = session("running", null)
-        show("pull-ups", Files(exercises = listOf(pullUps), sessions = listOf(running, logged)))
-
-        compose.onNodeWithText("Recente").performScrollTo().assertExists()
-        compose.onNodeWithText("24 de jul.").assertExists()
-    }
-
-    @Test
-    fun `shows no Recent for an exercise never logged`() {
-        show("pull-ups", Files(exercises = listOf(pullUps)))
+        show("pull-ups", Files(exercises = listOf(pullUps), sessions = listOf(logged)))
 
         compose.onNodeWithText("Recente").assertDoesNotExist()
+        compose.onNodeWithText("24 de jul.").assertDoesNotExist()
     }
 
     @Test

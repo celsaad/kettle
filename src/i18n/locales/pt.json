@@ -851,7 +851,6 @@
     "optional": "opcional",
     "notesOptional": "Notas · opcional",
     "notesPlaceholder": "Dica de execução…",
-    "recent": "Recente",
     "deleteExercise": "Excluir exercício",
     "inUseTitle": "Exercício em uso",
     "inUseBody": "\"{{name}}\" é usado em {{workouts}}. Remova-o desses treinos primeiro.",
@@ -1050,5 +1049,18 @@
     "exportLog": "Exportar registro",
     "backupChange": "Trocar pasta",
     "unitsNote": "Os pesos estão em quilos, como o arquivo os guarda."
+  },
+  "exerciseDetail": {
+    "edit": "Editar",
+    "yaml": "YAML",
+    "progress": "Progresso",
+    "window": "Últimas {{weeks}} semanas",
+    "notTrained": "Não treinado nas últimas {{weeks}} semanas.",
+    "recent": "Sessões recentes",
+    "usedIn": "Usado em",
+    "workout": "treino",
+    "programThrough": "programa, por meio de {{workout}}",
+    "notUsed": "Ainda não está em nenhum treino.",
+    "missing": "Este exercício não está mais na sua biblioteca."
   }
 }

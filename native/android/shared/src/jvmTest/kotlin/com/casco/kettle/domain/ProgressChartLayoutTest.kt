@@ -1,8 +1,6 @@
 package com.casco.kettle.domain
 
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNotNull
-import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -10,8 +8,8 @@ import kotlin.time.Duration.Companion.days
 import kotlin.time.Instant
 
 /**
- * RN's `progress-chart-layout.test.ts`, case for case, deleted with its layout once this port landed
- * (#200): where the progress chart puts its dots and labels, as arithmetic. How it looks is checked
+ * RN's `progress-chart-layout.test.ts`, ported (#200), its label cases since replaced by the y axis
+ * (#413): where the progress chart puts its dots and lines, as arithmetic. How it looks is checked
  * in the running app.
  */
 class ProgressChartLayoutTest {
@@ -38,54 +36,58 @@ class ProgressChartLayoutTest {
         }
     }
 
+    /** The y axis (#413): round steps from zero, the line scaled to the top one, in the reader's units. */
     @Nested
-    inner class LabelsStayInsideTheDrawing {
-        /** Trained twice early in the window: the latest point sits a few pixels from the left edge. */
+    inner class Axis {
         @Test
-        fun `keeps the latest label inside the left edge`() {
-            val last = layout(session(1, 10.0), session(2, 12.0, newBest = true), last = 50f).lastLabel
+        fun `steps in ones, twos or fives, from zero to a round top over the highest value`() {
+            val ticks = layout(session(0, 30.0), session(40, 48.5, newBest = true)).ticks.map { it.value }
 
-            assertTrue(last!!.x >= 0f)
+            assertEquals(listOf(0.0, 20.0, 40.0, 60.0), ticks)
         }
 
         @Test
-        fun `keeps the first label inside the right edge`() {
-            // Far apart in value, so the labels don't collide and the first is drawn at all.
-            val first = layout(session(54, 1.0), session(55, 10.0, newBest = true)).firstLabel
-
-            assertTrue(first!!.x + 40f <= WIDTH)
-        }
-    }
-
-    @Nested
-    inner class LabelsNeverPrintOverEachOther {
-        /** 137.5 → 142.5 lb two weeks apart: the labels need about 88px, at almost the same height. */
-        @Test
-        fun `drops the first label when two close values would collide`() {
-            val result = layout(session(0, 137.5), session(14, 142.5, newBest = true), first = 44f, last = 44f)
-
-            assertNull(result.firstLabel)
-            assertNotNull(result.lastLabel)
+        fun `lands on the highest value when it is round already`() {
+            assertEquals(listOf(0.0, 5.0, 10.0), layout(session(0, 6.0), session(9, 10.0)).ticks.map { it.value })
         }
 
+        /** The top tick is the plot's top, and the zero tick is the baseline the line rises from. */
         @Test
-        fun `keeps both when the values sit far apart vertically`() {
-            assertNotNull(layout(session(0, 5.0), session(7, 20.0, newBest = true)).firstLabel)
+        fun `puts the zero tick on the baseline and the top one where the plot ends`() {
+            val result = layout(session(0, 30.0), session(40, 48.5, newBest = true))
+
+            assertEquals(result.baseline, result.ticks.first().y)
+            assertTrue(result.ticks.last().y < result.points.minOf { it.y })
+            assertEquals(20f, result.ticks.last().y)
         }
 
+        /** 22 kg is 48.5 lb: a pounds reader's axis is round in pounds, not in kilograms converted. */
         @Test
-        fun `keeps both when the ends are far apart`() {
-            val result = layout(session(0, 137.5), session(50, 142.5, newBest = true), first = 44f, last = 44f)
+        fun `is round in the reader's units`() {
+            val result =
+                progressChartLayout(
+                    listOf(session(0, 13.6), session(40, 22.0)),
+                    FROM..TO,
+                    WIDTH,
+                ) { it * 2.20462 }
 
-            assertNotNull(result.firstLabel)
+            assertEquals(listOf(0.0, 20.0, 40.0, 60.0), result.ticks.map { it.value })
         }
 
         @Test
-        fun `places no label before it has been measured`() {
-            val result = layout(session(0, 10.0), session(40, 12.0, newBest = true), first = 0f, last = 0f)
+        fun `has no axis when every value is zero, with nothing to scale by`() {
+            val result = layout(session(0, 0.0), session(7, 0.0))
 
-            assertNull(result.firstLabel)
-            assertNull(result.lastLabel)
+            assertEquals(emptyList<ChartTick>(), result.ticks)
+            assertTrue(result.points.all { it.y == result.baseline })
+        }
+
+        @Test
+        fun `rounds a small step to a power of ten's one, two or five`() {
+            assertEquals(
+                listOf(0.1, 0.2, 0.5, 1.0, 2.0, 5.0, 10.0),
+                listOf(0.07, 0.15, 0.4, 0.9, 1.2, 3.0, 6.0).map(::niceStep),
+            )
         }
     }
 }
@@ -101,8 +103,4 @@ private fun session(
     newBest: Boolean = false,
 ) = ProgressSession(FROM + day.days, value, newBest)
 
-private fun layout(
-    vararg sessions: ProgressSession,
-    first: Float = 40f,
-    last: Float = 40f,
-) = progressChartLayout(sessions.toList(), FROM..TO, WIDTH, first, last)
+private fun layout(vararg sessions: ProgressSession) = progressChartLayout(sessions.toList(), FROM..TO, WIDTH)

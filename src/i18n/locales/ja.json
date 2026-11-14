@@ -755,7 +755,6 @@
     "optional": "任意",
     "notesOptional": "メモ · 任意",
     "notesPlaceholder": "動作のコツ…",
-    "recent": "最近",
     "deleteExercise": "エクササイズを削除",
     "inUseTitle": "使用中のエクササイズ",
     "inUseBody": "「{{name}}」は{{workouts}}で使われています。先にそれらのワークアウトから外してください。",
@@ -936,5 +935,18 @@
     "exportLog": "記録を書き出す",
     "backupChange": "フォルダを変更",
     "unitsNote": "重量はファイルに保存されているとおりキログラムです。"
+  },
+  "exerciseDetail": {
+    "edit": "編集",
+    "yaml": "YAML",
+    "progress": "推移",
+    "window": "過去{{weeks}}週間",
+    "notTrained": "過去{{weeks}}週間はトレーニングしていません。",
+    "recent": "最近のセッション",
+    "usedIn": "使用先",
+    "workout": "ワークアウト",
+    "programThrough": "プログラム（{{workout}} 経由）",
+    "notUsed": "まだどのワークアウトにも入っていません。",
+    "missing": "このエクササイズはもうライブラリにありません。"
   }
 }

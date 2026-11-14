@@ -9,8 +9,8 @@ import com.casco.kettle.shell.R
 import com.casco.kettle.shell.i18n.pluralText
 
 /**
- * A workout's one-line summary, "5 blocks · mixed reps + hold · ~13 min", as RN's `formatWorkoutShape`
- * was: the next-up card and every row of Home's list read it.
+ * A workout's one-line summary, "5 blocks · mixed reps + hold", as RN's `formatWorkoutShape` was, less
+ * its duration (#412): Today's rows, Library's Workouts and the preview read it.
  */
 @Composable
 fun workoutShapeText(shape: WorkoutShape): String {
@@ -22,7 +22,7 @@ fun workoutShapeText(shape: WorkoutShape): String {
             else -> stringResource(R.string.format_mixed, labels.joinToString(" + "))
         }
     val blocks = pluralText(R.plurals.format_block, R.string.format_block_zero, shape.blockCount)
-    return stringResource(R.string.format_workoutShape, blocks, shape.estimatedMinutes, types)
+    return stringResource(R.string.format_workoutShape, blocks, types)
 }
 
 @StringRes

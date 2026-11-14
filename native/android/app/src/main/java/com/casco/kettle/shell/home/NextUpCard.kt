@@ -21,58 +21,62 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.NextUp
+import com.casco.kettle.domain.PlanSummary
+import com.casco.kettle.domain.PlannedExercise
 import com.casco.kettle.domain.SessionParams
-import com.casco.kettle.domain.workoutShape
+import com.casco.kettle.domain.UnitSystem
+import com.casco.kettle.domain.planSummary
 import com.casco.kettle.shell.R
+import com.casco.kettle.shell.i18n.pluralText
+import com.casco.kettle.shell.list.ListRowSeparator
+import com.casco.kettle.shell.runner.weightText
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.Spacing
 import com.casco.kettle.shell.theme.card
 
 /**
- * What Home queues up: the next slot of the active program, or a scheduled rest day.
+ * What Today queues up (#412): the next slot of the active program, or a scheduled rest day, each a
+ * card as the boards draw it. The week itself is the program row's above, so a card names only its day.
  *
- * It shows no block chips. A wrapping row of them, capped at eight and then six, was most of why the
- * card filled a phone and pushed the list it introduces to the bottom, and the summary line already
- * says "5 blocks · reps · ~10 min" for any length of workout. The movement names are in the runner.
- *
- * No fill, border or padding either: it is the page's heading, not a box on it. It reads as primary
- * from the type scale and from Start's accent fill, and padding on top of the screen's inset started
- * its lines 32dp in while the rows below started at 16.
- *
- * Everything that can grow is capped by lines, never by a height, which would clip the card at a large
- * text size. [start] hears the session params of whichever button is pressed.
+ * It says what the workout holds, the exercises and their loads, and no duration: the estimate it
+ * carried counted a reps set as its rest alone. Everything that can grow is capped by lines or rows,
+ * never by a height, which would clip the card at a large text size. [start] hears the session params
+ * of whichever button is pressed.
  */
 @Composable
 fun NextUpCard(
     nextUp: NextUp,
+    units: UnitSystem,
     start: (SessionParams) -> Unit,
     preview: (SessionParams) -> Unit,
 ) = when (nextUp) {
-    is NextUp.Queued -> QueuedCard(nextUp, start, preview)
+    is NextUp.Queued -> QueuedCard(nextUp, units, start, preview)
     is NextUp.Rest -> RestDayCard(nextUp, start)
 }
 
 /**
- * Everything above Start opens the preview (#280), so the movement names this card leaves out are one
- * tap away without starting anything. Its words name it, label to notes, so it takes no label of its
- * own, which would only drift from what's on screen; the click label is what a reader hears it does.
- * Start stays a separate target, never inside this one.
+ * Everything above Start opens the preview (#280), so the exercises past the fourth are one tap away
+ * without starting anything. Its words name it, kicker to loads, so it takes no label of its own, which
+ * would only drift from what's on screen; the click label is what a reader hears it does. Start stays a
+ * separate target, never inside this one.
  */
 @Composable
 private fun QueuedCard(
     queued: NextUp.Queued,
+    units: UnitSystem,
     start: (SessionParams) -> Unit,
     preview: (SessionParams) -> Unit,
 ) {
     val colors = KettleTheme.colors
-    val shape = remember(queued.workout, queued.exercises) { workoutShape(queued.workout, queued.exercises) }
-    Column(Modifier.padding(top = Spacing.three)) {
+    val summary = remember(queued.workout, queued.exercises) { planSummary(queued.workout, queued.exercises) }
+    Column(Modifier.heroCard()) {
         Column(
             Modifier
                 .fillMaxWidth()
@@ -83,14 +87,7 @@ private fun QueuedCard(
                     role = Role.Button,
                 ) { preview(queued.sessionParams) },
         ) {
-            val label =
-                queued.weekNumber?.let {
-                    stringResource(
-                        R.string.today_nextUpWeek,
-                        weekLabel(it, queued.weekDay),
-                    )
-                }
-            Text(label ?: stringResource(R.string.today_nextUp), style = KettleType.label, color = colors.accentText)
+            Text(heroKicker(queued, summary), style = KettleType.smallMedium, color = colors.textSecondary)
             // User data, so its length is theirs, and two lines names any workout.
             Text(
                 queued.workout.name,
@@ -100,17 +97,8 @@ private fun QueuedCard(
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
-            // Two lines, not one: a mixed workout's summary drops its tail, the duration, at phone width,
-            // and the duration is the part you decide on.
-            Text(
-                workoutShapeText(shape),
-                Modifier.padding(top = Spacing.two),
-                style = KettleType.default,
-                color = colors.textSecondary,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
             WeekNotes(queued.weekNotes)
+            PlannedExercises(summary.exercises, units)
         }
         Row(
             Modifier
@@ -130,10 +118,83 @@ private fun QueuedCard(
 }
 
 /**
- * A scheduled rest day: no summary and deliberately no Start, since a filled primary action would
- * argue with the program. "Train anyway" is text weight in an outline, and jumps to the next slot that
- * runs something; the empty session under the card stays as always. The copy claims nothing about
- * *when*, because a run of rest slots means the next workout isn't necessarily tomorrow.
+ * "Next · Day 5 · 3 exercises, 12 sets": the slot as its day alone, since the program row above names
+ * the week, or as the week when the day has no name; nothing for a workout no program queued. Sets only
+ * when every piece of work is one ([PlanSummary.sets]).
+ */
+@Composable
+private fun heroKicker(
+    queued: NextUp.Queued,
+    summary: PlanSummary,
+): String {
+    val slot = queued.weekNumber?.let { week -> queued.weekDay?.takeIf { it.isNotEmpty() } ?: weekLabel(week, null) }
+    val exercises =
+        summary.exercises.size.takeIf { it > 0 }?.let {
+            pluralText(R.plurals.today_exercises, R.string.today_exercises_zero, it)
+        }
+    val contents =
+        exercises?.let {
+            summary.sets?.let { sets ->
+                stringResource(
+                    R.string.today_exercisesAndSets,
+                    it,
+                    pluralText(R.plurals.today_sets, R.string.today_sets_zero, sets),
+                )
+            } ?: it
+        }
+    return listOfNotNull(stringResource(R.string.today_next), slot, contents).joinToString(" · ")
+}
+
+/**
+ * The first [HERO_EXERCISES], each name against its load, then "+N more": a long workout would push Off
+ * the plan off the screen, and the preview this card opens lists them all. One more than that is listed
+ * whole, since "+1 more" would take its row. A name is the user's and wraps; the load never does.
+ */
+@Composable
+private fun PlannedExercises(
+    exercises: List<PlannedExercise>,
+    units: UnitSystem,
+) {
+    if (exercises.isEmpty()) return
+    val colors = KettleTheme.colors
+    val shown = if (exercises.size <= HERO_EXERCISES + 1) exercises.size else HERO_EXERCISES
+    Column(Modifier.padding(top = Spacing.two)) {
+        exercises.take(shown).forEach { exercise ->
+            ListRowSeparator()
+            Row(
+                Modifier.fillMaxWidth().padding(vertical = Spacing.two),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.two),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(exercise.name, Modifier.weight(1f), style = KettleType.default, color = colors.text)
+                exercise.loadKg?.let { kg ->
+                    Text(
+                        LocalResources.current.weightText(kg, units),
+                        style = KettleType.smallMedium,
+                        color = colors.text,
+                        maxLines = 1,
+                    )
+                }
+            }
+        }
+        val more = exercises.size - shown
+        if (more > 0) {
+            ListRowSeparator()
+            Text(
+                pluralText(R.plurals.today_moreExercises, R.string.today_moreExercises_zero, more),
+                Modifier.padding(top = Spacing.two),
+                style = KettleType.small,
+                color = colors.textSecondary,
+            )
+        }
+    }
+}
+
+/**
+ * A scheduled rest day: deliberately no Start, since a filled primary action would argue with the
+ * program. It names the next session, *what* and never *when*: a run of rest slots means it isn't
+ * necessarily tomorrow, and the strip above shows how many are left. "Train anyway" is an outline in
+ * ink, and jumps to that session; the empty session under the card stays as always.
  */
 @Composable
 private fun RestDayCard(
@@ -141,37 +202,36 @@ private fun RestDayCard(
     start: (SessionParams) -> Unit,
 ) {
     val colors = KettleTheme.colors
-    Column(Modifier.padding(top = Spacing.three)) {
-        Text(
-            stringResource(R.string.today_restDayWeek, weekLabel(rest.weekNumber, rest.weekDay)),
-            style = KettleType.label,
-            color = colors.textSecondary,
-        )
+    Column(Modifier.heroCard()) {
+        Text(weekLabel(rest.weekNumber, rest.weekDay), style = KettleType.smallMedium, color = colors.accentCalmText)
         Text(
             stringResource(R.string.today_restDayTitle),
             Modifier.padding(top = Spacing.one),
             style = KettleType.subtitle,
             color = colors.text,
         )
-        Text(
-            stringResource(R.string.today_restDayBody),
-            Modifier.padding(top = Spacing.one),
-            style = KettleType.default,
-            color = colors.textSecondary,
-        )
+        rest.skipTo?.let { next ->
+            val session = listOfNotNull(weekLabel(next.week, next.day), rest.skipToWorkout).joinToString(" · ")
+            Text(
+                stringResource(R.string.today_restDayNext, session),
+                Modifier.padding(top = Spacing.one),
+                style = KettleType.default,
+                color = colors.textSecondary,
+            )
+        }
         WeekNotes(rest.weekNotes)
         rest.skipTo?.let { skipTo ->
             Box(
                 Modifier
                     .padding(top = Spacing.three)
                     .fillMaxWidth()
-                    .heightIn(min = BigButtonHeight)
+                    .heightIn(min = 48.dp)
                     .clip(BigButtonShape)
-                    .border(1.dp, colors.border, BigButtonShape)
+                    .border(1.dp, colors.textSecondary, BigButtonShape)
                     .clickable(role = Role.Button) { start(skipTo) },
                 contentAlignment = Alignment.Center,
             ) {
-                Text(stringResource(R.string.today_restDaySkip), style = KettleType.heading, color = colors.accentText)
+                Text(stringResource(R.string.today_restDaySkip), style = KettleType.heading, color = colors.text)
             }
         }
     }
@@ -276,8 +336,19 @@ fun FirstRunCard() {
     }
 }
 
+/** The hero and rest-day cards' box, as the boards draw both (#412). */
+@Composable
+private fun Modifier.heroCard() = padding(top = Spacing.three).fillMaxWidth().card(HeroRadius).padding(Spacing.three)
+
 /** A minimum, as every control's height is, so the label survives a large text size. */
 private val BigButtonHeight = 56.dp
+private val HeroRadius = 20.dp
+
+/**
+ * How many exercises the hero card lists before "+N more", which then stands for two or more: one past
+ * the board's three, as four is a common length for a workout.
+ */
+private const val HERO_EXERCISES = 4
 private val BigButtonShape = RoundedCornerShape(16.dp)
 private val FirstRunRadius = 22.dp
 private val BadgeSize = 24.dp

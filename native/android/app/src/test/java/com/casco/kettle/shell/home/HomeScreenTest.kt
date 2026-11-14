@@ -30,7 +30,10 @@ import androidx.test.core.app.ApplicationProvider
 import com.casco.kettle.domain.Exercise
 import com.casco.kettle.domain.ExerciseConfig
 import com.casco.kettle.domain.Library
+import com.casco.kettle.domain.OverrideValue
+import com.casco.kettle.domain.Preferences
 import com.casco.kettle.domain.Program
+import com.casco.kettle.domain.ProgramOverride
 import com.casco.kettle.domain.ProgramWeek
 import com.casco.kettle.domain.RepsSetLog
 import com.casco.kettle.domain.RunnerStart
@@ -38,6 +41,8 @@ import com.casco.kettle.domain.Session
 import com.casco.kettle.domain.SessionEntry
 import com.casco.kettle.domain.SessionLog
 import com.casco.kettle.domain.SessionParams
+import com.casco.kettle.domain.ThemePreference
+import com.casco.kettle.domain.UnitSystem
 import com.casco.kettle.domain.Workout
 import com.casco.kettle.domain.WorkoutBlock
 import com.casco.kettle.shell.R
@@ -48,6 +53,7 @@ import com.casco.kettle.shell.nav.Route
 import com.casco.kettle.shell.nav.Section
 import com.casco.kettle.shell.nav.Tab
 import com.casco.kettle.shell.nav.routeParams
+import com.casco.kettle.shell.programdetail.PROGRAM_ID_PARAM
 import com.casco.kettle.shell.theme.KettleTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -152,7 +158,7 @@ class HomeScreenTest {
         text("Nenhum treino ainda").assertExists()
         text("Iniciar treino").assertDoesNotExist()
         // No card saying the library is empty: the list's own empty state already does.
-        text("PRÓXIMO").assertDoesNotExist()
+        compose.onNodeWithText("Próximo", substring = true).assertDoesNotExist()
     }
 
     /** The only route to Settings until the preferences flip, so losing it would strand the user. */
@@ -183,18 +189,27 @@ class HomeScreenTest {
     fun `the card starts its program slot with that week's params`() {
         show(Files(library(programs = listOf(program(ProgramWeek.Training(1, "Day 1", "push-day"))))))
 
-        text("PRÓXIMO · Semana 1 · Day 1").assertExists()
+        text("Próximo · Day 1 · 1 exercício, 3 séries").assertExists()
         button("Iniciar treino").assertHeightIsAtLeast(48.dp).performClick()
 
         assertEquals(listOf(RunnerStart.Planned(SessionParams.ProgramSlot("base", 1, "Day 1"))), started)
     }
 
-    // The schema takes `day: ""`, and RN tested the day for truth, so an empty one is none.
+    // The schema takes `day: ""`, and RN tested the day for truth, so an empty one is none, and the
+    // slot falls back to its week.
     @Test
     fun `labels a week with an empty day by its number alone`() {
         show(Files(library(programs = listOf(program(ProgramWeek.Training(1, "", "push-day"))))))
 
-        text("PRÓXIMO · Semana 1").assertExists()
+        text("Próximo · Semana 1 · 1 exercício, 3 séries").assertExists()
+    }
+
+    // No program queued it, so there is no slot to name.
+    @Test
+    fun `names no slot for a workout no program queued`() {
+        show(seededFiles())
+
+        text("Próximo · 1 exercício, 3 séries").assertExists()
     }
 
     // First-run guidance, derived from history rather than persisted: never having logged a session is
@@ -229,7 +244,7 @@ class HomeScreenTest {
 
         val claim = top(text("Sua biblioteca é um arquivo"))
         val link = top(text("Adicionar um programa inicial"))
-        val card = top(text("PRÓXIMO"))
+        val card = top(text("Próximo · 1 exercício, 3 séries"))
 
         assertTrue(claim < link)
         assertTrue(link < card)
@@ -302,9 +317,12 @@ class HomeScreenTest {
         assertEquals(listOf(Route(Destination.Import)), opened)
     }
 
-    // A long workout: the card names no block, and its one summary line is what scales.
+    // A long workout: the card lists four exercises and counts the rest, which the preview spells out.
 
-    private fun longFiles(): Files {
+    private fun longFiles(
+        units: UnitSystem? = null,
+        overrides: List<ProgramOverride>? = null,
+    ): Files {
         val names =
             listOf(
                 "Squat",
@@ -320,28 +338,115 @@ class HomeScreenTest {
                 "Calf",
                 "Crunch",
             )
-        val exercises = names.map { Exercise(it.lowercase(), it, ExerciseConfig.Reps(3, 10, restSec = 60.0)) }
+        val exercises =
+            names.map {
+                val kg = if (it == "Squat") 60.0 else null
+                Exercise(it.lowercase(), it, ExerciseConfig.Reps(3, 10, targetWeightKg = kg, restSec = 60.0))
+            }
         val long = Workout("long", "Long day", exercises.map { WorkoutBlock.ExerciseBlock(it.id) })
-        return Files(Library(1, exercises, listOf(long), emptyList()))
+        val programs =
+            overrides?.let { listOf(Program("p", "P", listOf(ProgramWeek.Training(1, "A", "long", overrides = it)))) }
+        return Files(Library(1, exercises, listOf(long), programs.orEmpty()), units = units)
     }
 
     @Test
-    fun `a long workout names no individual block on the card`() {
+    fun `a long workout lists its first four exercises and counts the rest`() {
         show(longFiles())
 
-        text("Squat").assertDoesNotExist()
-        text("Dip").assertDoesNotExist()
+        text("Squat").assertExists()
+        text("Press").assertExists()
+        text("Curl").assertDoesNotExist()
         text("Crunch").assertDoesNotExist()
+        text("+8 exercícios a mais").assertExists()
+    }
+
+    // "+1 more" would take the fifth exercise's row, so a workout of five lists all five.
+    @Test
+    fun `lists a fifth exercise rather than counting it`() {
+        val files = longFiles()
+        val library = checkNotNull(files.library)
+        val five = library.workouts.single().let { it.copy(blocks = it.blocks.take(5)) }
+        files.library = library.copy(workouts = listOf(five))
+        show(files)
+
+        text("Curl").assertExists()
         compose.onNodeWithText("a mais", substring = true).assertDoesNotExist()
     }
 
+    // The estimate counted a reps set as its rest alone, so 12 × 3 sets read as 36 minutes (#412).
     @Test
-    fun `a long workout is described in a single summary line instead`() {
+    fun `a long workout is counted in exercises and sets, with no time estimate`() {
         show(longFiles())
 
-        // 12 × 3 sets × 60s of rest is 36 minutes. Once: "Off the plan" leaves the card's workout out.
-        compose.onAllNodesWithText("12 blocos · repetições · ~36 min").assertCountEquals(1)
+        text("Próximo · 12 exercícios, 36 séries").assertExists()
+        compose.onNodeWithText(" min", substring = true).assertDoesNotExist()
         text("Iniciar treino").assertExists()
+    }
+
+    // Weights are stored in kilograms, and shown in the reader's units; the rest of the list has none.
+    @Test
+    fun `shows an exercise's load in the reader's units`() {
+        show(longFiles())
+
+        text("60 kg").assertExists()
+    }
+
+    @Test
+    fun `shows an exercise's load in pounds to a reader who picked them`() {
+        show(longFiles(UnitSystem.IMPERIAL))
+
+        text("132.3 lb").assertExists()
+        text("60 kg").assertDoesNotExist()
+    }
+
+    // A program week's override is the load the session runs, so it is the one the card shows.
+    @Test
+    fun `shows the load a program week sets, not the library's`() {
+        val heavier = mapOf("target_weight" to OverrideValue.Numeric(80.0))
+        show(longFiles(overrides = listOf(ProgramOverride.ExerciseOverride("squat", heavier))))
+
+        text("80 kg").assertExists()
+        text("60 kg").assertDoesNotExist()
+    }
+
+    // The program the card's slot is from, and its week (#412).
+
+    @Test
+    fun `names the program and its week, and opens the program`() {
+        show(Files(library(programs = listOf(program(ProgramWeek.Training(1, "Day 1", "push-day"))))))
+
+        text("Base").assertExists()
+        button("Semana 1 de 1").assertHeightIsAtLeast(48.dp).performClick()
+
+        assertEquals(listOf(Route(Destination.ProgramDetail, mapOf(PROGRAM_ID_PARAM to "base"))), opened)
+    }
+
+    @Test
+    fun `shows no program or strip for a workout no program queued`() {
+        show(seededFiles())
+
+        compose.onNodeWithText("Semana", substring = true).assertDoesNotExist()
+        compose.onNode(hasContentDescription("Esta semana do programa, em ordem")).assertDoesNotExist()
+    }
+
+    // Position, not completion (#408): what is behind the card's slot, the slot itself, and the rest.
+    @Test
+    fun `strips the week by where each slot stands against the card's`() {
+        show(restDayProgramFiles())
+
+        compose.onNode(hasContentDescription("Esta semana do programa, em ordem")).assertExists()
+        compose.onNode(hasContentDescription("Day 1, anterior")).assertExists()
+        compose.onNode(hasContentDescription("Day 2, descanso, hoje")).assertExists()
+        compose.onNode(hasContentDescription("Day 3")).assertExists()
+    }
+
+    @Test
+    fun `strips a queued slot as next, numbered where a day has no name`() {
+        val weeks = arrayOf(ProgramWeek.Training(1, null, "push-day"), ProgramWeek.RestDay(1))
+        show(Files(library(programs = listOf(program(*weeks)))))
+
+        compose.onNode(hasContentDescription("1, próximo")).assertExists()
+        compose.onNode(hasContentDescription("2, descanso")).assertExists()
     }
 
     // The card's height caps: line caps rather than a fixed height, which clips at large text sizes.
@@ -470,9 +575,17 @@ class HomeScreenTest {
         show(restDayProgramFiles())
 
         text("Dia de descanso").assertExists()
-        text("DIA DE DESCANSO · Semana 1 · Day 2").assertExists()
+        text("Semana 1 · Day 2").assertExists()
         text("Iniciar treino").assertDoesNotExist()
-        text("PRÓXIMO").assertDoesNotExist()
+        compose.onNodeWithText("Próximo", substring = true).assertDoesNotExist()
+    }
+
+    // What comes next, never when: a run of rest slots means it isn't necessarily tomorrow.
+    @Test
+    fun `a rest day names the session train anyway starts`() {
+        show(restDayProgramFiles())
+
+        text("Próxima sessão: Semana 1 · Day 3 · Pull day.").assertExists()
     }
 
     /** User data, so it stays in the language it was written in on a translated screen. */
@@ -528,7 +641,7 @@ class HomeScreenTest {
         compose.waitForIdle()
 
         text("Dia de descanso").assertDoesNotExist()
-        text("PRÓXIMO · Semana 1 · Day 3").assertExists()
+        text("Próximo · Day 3").assertExists()
     }
 
     /** Off the plan reads the card's workout, so it has to follow the card across the day turning. */
@@ -541,7 +654,7 @@ class HomeScreenTest {
         latest.reread()
         compose.waitForIdle()
 
-        text("PRÓXIMO · Semana 1 · Day 3").assertExists()
+        text("Próximo · Day 3").assertExists()
         compose.onAllNodesWithText("Pull day").assertCountEquals(1)
     }
 
@@ -625,10 +738,13 @@ class HomeScreenTest {
     private class Files(
         var library: Library?,
         private val sessions: List<Session> = emptyList(),
+        private val units: UnitSystem? = null,
     ) : FakeStoredFiles() {
         override fun sessionLog() = SessionLog(sessions, emptyList())
 
         override fun library() = library
+
+        override fun preferences() = units?.let { Preferences(it, ThemePreference.SYSTEM, false, true, null) }
     }
 
     private fun library(

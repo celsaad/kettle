@@ -83,6 +83,10 @@ here, next to what it describes.
   plan" offers the two workouts you ran most recently and an empty session. Every workout, with
   search and New workout, is now the first section of Library, a tap away from "All workouts"
   (#412).
+- **Today shows your program's week**: the program and the week you're in sit above a strip of
+  that week's days, ticked up to where you are. The next session lists its exercises with their
+  loads, and a rest day names the session that comes after it. Workouts no longer show an
+  estimated time, which counted only the rest between sets (#412).
 
 ---
 

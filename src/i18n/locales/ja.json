@@ -39,9 +39,7 @@
   "today": {
     "nextUp": "次のセッション",
     "nextUpWeek": "次のセッション · {{week}}",
-    "restDayWeek": "休養日 · {{week}}",
     "restDayTitle": "休養日",
-    "restDayBody": "プログラム上、ここで行うものはありません。次のセッションは時期が来たら Kettle が用意します。",
     "restDaySkip": "それでもトレーニングする",
     "startSession": "セッションを開始",
     "previewAction": "エクササイズを見る",
@@ -56,12 +54,25 @@
     },
     "startEmpty": "空のセッションを開始",
     "starterPacks": "スタータープログラムを追加",
-    "moreBlocks_other": "他 {{count}} 件",
+    "moreExercises_other": "他 {{count}} 種目",
     "title": "今日",
     "offThePlan": "プラン外",
     "allWorkouts": "すべてのワークアウト",
     "emptySession": "空のセッション",
-    "emptySessionDetail": "途中でエクササイズを追加"
+    "emptySessionDetail": "途中でエクササイズを追加",
+    "next": "次",
+    "programWeek": "第{{week}}週（全{{total}}週）",
+    "exercises_other": "{{count}}種目",
+    "sets_other": "{{count}}セット",
+    "exercisesAndSets": "{{exercises}}、{{sets}}",
+    "restDayNext": "次のセッション：{{session}}",
+    "strip": {
+      "label": "このプログラムの週（順番）",
+      "earlier": "{{slot}}、通過済み",
+      "next": "{{slot}}、次",
+      "rest": "{{slot}}、休養",
+      "restToday": "{{slot}}、休養、今日"
+    }
   },
   "workoutPreview": {
     "notFound": "このワークアウトはライブラリにありません。"
@@ -841,7 +852,7 @@
     },
     "restOnly": "休憩のみ",
     "mixed": "{{types}}の複合",
-    "workoutShape": "{{blocks}} · {{types}} · 約{{minutes}}分",
+    "workoutShape": "{{blocks}} · {{types}}",
     "block_other": "{{count}}ブロック",
     "round_other": "{{count}}ラウンド",
     "rep_other": "{{count}}レップ",

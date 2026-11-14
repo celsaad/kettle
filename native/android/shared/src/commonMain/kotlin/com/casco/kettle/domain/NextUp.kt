@@ -28,7 +28,13 @@ sealed interface NextUp {
     val weekDay: String?
     val weekNotes: String?
 
-    /** [exercises] is the whole library's, with the week's overrides applied. */
+    /** Where the slot shown sits in its program, which Today's program row and strip read (#412). */
+    val position: ProgramPosition?
+
+    /**
+     * [exercises] is the whole library's, with the week's overrides applied. [position] is null for a
+     * workout of the day, which no program put there.
+     */
     data class Queued(
         val workout: Workout,
         val exercises: List<Exercise>,
@@ -36,14 +42,20 @@ sealed interface NextUp {
         override val weekDay: String?,
         override val weekNotes: String?,
         val sessionParams: SessionParams,
+        override val position: ProgramPosition? = null,
     ) : NextUp
 
-    /** [skipTo] is the next slot that runs something, the card's "train anyway". */
+    /**
+     * [skipTo] is the next slot that runs something, the card's "train anyway", and [skipToWorkout] its
+     * workout's name, null when that workout is gone. [position] is the rest slot shown, not [skipTo]'s.
+     */
     data class Rest(
         val weekNumber: Long,
         override val weekDay: String?,
         override val weekNotes: String?,
-        val skipTo: SessionParams?,
+        val skipTo: SessionParams.ProgramSlot?,
+        override val position: ProgramPosition,
+        val skipToWorkout: String?,
     ) : NextUp
 }
 
@@ -81,8 +93,8 @@ fun nextUpView(
     val weeks = rotation(program)
     val start = nextIndexAfter(weeks, program, sessions)
     val restRun = restRunLength(weeks, start)
-    return restOwed(program, weeks, start, restRun, lastTracked(program, sessions), now, zone)
-        ?: queued(program, weeks[(start + restRun) % weeks.size], library)
+    return restOwed(library, program, weeks, start, restRun, lastTracked(program, sessions), now, zone)
+        ?: queued(program, (start + restRun) % weeks.size, library)
         ?: workoutOfTheDay(library, now)
 }
 
@@ -93,6 +105,7 @@ fun nextUpView(
  */
 @Suppress("LongParameterList") // The rule's own inputs; bundling them would only rename them.
 private fun restOwed(
+    library: Library,
     program: Program,
     weeks: List<ProgramWeek>,
     start: Int,
@@ -115,25 +128,31 @@ private fun restOwed(
         }
     val restsServed = if (last == null) 0 else daysSince?.let { maxOf(0, it - 1) }
     val owed = training == null || (restsServed != null && restsServed < restRun)
-    val rest = weeks[(start + minOf(restsServed ?: 0, restRun - 1)) % weeks.size]
-    return NextUp
-        .Rest(
+    val index = (start + minOf(restsServed ?: 0, restRun - 1)) % weeks.size
+    val rest = weeks[index]
+    return if (!owed) {
+        null
+    } else {
+        NextUp.Rest(
             rest.week,
             rest.day,
             rest.notes,
-            training?.let {
-                SessionParams.ProgramSlot(program.id, it.week, it.day)
-            },
-        ).takeIf { owed }
+            training?.let { SessionParams.ProgramSlot(program.id, it.week, it.day) },
+            ProgramPosition(program, index),
+            // Named by the same resolver that would start it.
+            training?.let { resolveWorkoutForWeek(program, it.week, library, it.day)?.workout?.name },
+        )
+    }
 }
 
-/** [target] queued with its overrides, or null when its workout is gone. */
+/** The slot at [index] queued with its overrides, or null when its workout is gone. */
 private fun queued(
     program: Program,
-    target: ProgramWeek,
+    index: Int,
     library: Library,
-): NextUp.Queued? =
-    resolveWorkoutForWeek(program, target.week, library, target.day)?.let {
+): NextUp.Queued? {
+    val target = rotation(program)[index]
+    return resolveWorkoutForWeek(program, target.week, library, target.day)?.let {
         NextUp.Queued(
             it.workout,
             it.exercises,
@@ -141,8 +160,10 @@ private fun queued(
             target.day,
             target.notes,
             SessionParams.ProgramSlot(program.id, target.week, target.day),
+            ProgramPosition(program, index),
         )
     }
+}
 
 /**
  * Picked by the UTC day rather than at random, so it holds still across recompositions within a day
@@ -171,7 +192,7 @@ private fun activeProgram(
  * order to read out of it. Relies on `sortedBy` being stable, which is why it has no tiebreak; RN's
  * `localeCompare` one ran a calendar week alphabetically.
  */
-private fun rotation(program: Program): List<ProgramWeek> = program.weeks.sortedBy { it.week }
+internal fun rotation(program: Program): List<ProgramWeek> = program.weeks.sortedBy { it.week }
 
 private fun lastTracked(
     program: Program,

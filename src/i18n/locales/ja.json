@@ -101,7 +101,8 @@
     "undated": "日付なし",
     "weekSummary": "{{sessions}} · {{time}}",
     "prBadge": "自己ベスト",
-    "topEntry": "{{exercise}} · {{result}}"
+    "topEntry": "{{exercise}} · {{result}}",
+    "empty": "まだ記録がありません。完了したセッションは週ごとにここに表示されます。"
   },
   "analytics": {
     "hoursMinutes": "{{hours}}時間{{minutes}}分",

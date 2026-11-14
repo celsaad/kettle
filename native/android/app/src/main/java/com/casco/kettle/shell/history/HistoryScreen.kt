@@ -182,11 +182,7 @@ fun HistoryScreen(
             // The tab's header names it and switches to Overview (#414). Nothing here until the log is
             // read, so the line never says zero before it has looked.
             if (log == null) return@LazyColumn
-            item(key = "summary") {
-                listing.matched?.let { SummaryLine(listing.stats, it) }
-                if (log.errors.isNotEmpty()) Problems(log.errors)
-                SearchBar(query, { query = it }, stringResource(R.string.history_searchPlaceholder))
-            }
+            item(key = "summary") { ListTop(listing, log.errors, empty = logged.isEmpty(), query) { query = it } }
             for (week in listing.weeks) {
                 item(key = "week-${week.start}") { WeekHeader(titles(week.start), listing.statsOf(week)) }
                 itemsIndexed(week.rows, key = { _, row -> row.id }) { index, row ->
@@ -202,8 +198,8 @@ fun HistoryScreen(
                     )
                 }
             }
-            // No first-run half: an empty log is what a new install is, and the line above already
-            // reads 0. This covers only the blank body a search makes.
+            // A search that finds nothing says so; an empty log says what will fill it, rather than a bare
+            // search field over a blank page.
             if (visible.isEmpty() && logged.isNotEmpty()) item(key = "no-results") { NoResults(query) }
         }
     }
@@ -237,9 +233,11 @@ private class Listing(
     val nameOf: (HistorySessionView) -> String = { it.workoutName ?: adHoc }
     val visible =
         if (searching) {
+            // One string of every name, so a query's words can land in different names: "push dips"
+            // finds Push day with its Dips.
             rows.filter { row ->
-                val names = listOf(nameOf(row)) + row.entries.map { it.exerciseName }
-                filterByName(names, query) { it }.isNotEmpty()
+                val names = (listOf(nameOf(row)) + row.entries.map { it.exerciseName }).joinToString(" ")
+                filterByName(listOf(names), query) { it }.isNotEmpty()
             }
         } else {
             rows
@@ -324,6 +322,32 @@ private data class DeleteFailure(
 private val EmptyLibrary = Library(1, emptyList(), emptyList(), emptyList())
 
 /**
+ * Over the weeks: the match line while searching, the files that couldn't be read, and the search, or,
+ * on an empty log, what will fill it rather than a search field over a blank page.
+ */
+@Composable
+private fun ListTop(
+    listing: Listing,
+    errors: List<String>,
+    empty: Boolean,
+    query: String,
+    onQuery: (String) -> Unit,
+) {
+    listing.matched?.let { SummaryLine(listing.stats, it) }
+    if (errors.isNotEmpty()) Problems(errors)
+    if (empty) {
+        Text(
+            stringResource(R.string.history_empty),
+            Modifier.padding(top = Spacing.three),
+            style = KettleType.default,
+            color = KettleTheme.colors.textSecondary,
+        )
+    } else {
+        SearchBar(query, onQuery, stringResource(R.string.history_searchPlaceholder))
+    }
+}
+
+/**
  * A week's title, "This week" for the one [time] is in, else its days as a range, and "No date" for
  * the rows whose `started_at` isn't an instant.
  */
@@ -335,9 +359,19 @@ private fun weekTitles(time: HistoryTime): (LocalDate?) -> String {
     val current = startOfWeek(time.now.toLocalDateTime(time.zone).date, time.firstWeekday)
     return { start ->
         when (start) {
-            null -> undated
-            current -> thisWeek
-            else -> formatDayRange(start, start.plus(DatePeriod(days = DAYS_IN_WEEK - 1)), locale)
+            null -> {
+                undated
+            }
+
+            current -> {
+                thisWeek
+            }
+
+            else -> {
+                val end = start.plus(DatePeriod(days = DAYS_IN_WEEK - 1))
+                // The year only where it isn't this one, which is most of a reader's weeks.
+                formatDayRange(start, end, locale, withYear = start.year != current.year || end.year != current.year)
+            }
         }
     }
 }

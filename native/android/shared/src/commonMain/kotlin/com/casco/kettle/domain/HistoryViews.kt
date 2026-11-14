@@ -24,11 +24,14 @@ fun sessionStartDay(
     zone: TimeZone,
 ): LocalDate? = session.startedInstant()?.toLocalDateTime(zone)?.date
 
-/** [exerciseId] is the file's, so a row can find the entry that set its record (#414). */
+/**
+ * [index] is the entry's place in the session's own `entries`, so a row can find the one that set its
+ * record (#414).
+ */
 data class HistoryEntryView(
     val exerciseName: String,
     val result: EntryResult,
-    val exerciseId: String,
+    val index: Int,
 )
 
 /**
@@ -57,21 +60,21 @@ fun historySessionsView(
     zone: TimeZone,
 ): List<HistorySessionView> =
     sessions.map { session ->
-        val worked = session.entries.filter { it !is SessionEntry.Rest }
+        val worked = session.entries.withIndex().filter { (_, entry) -> entry !is SessionEntry.Rest }
         HistorySessionView(
             id = session.id,
             day = sessionStartDay(session, zone),
             workoutName = workoutNameFor(session, library),
             minutes = sessionDurationMinutes(session),
             sets = sessionSetCount(session),
-            mixed = worked.map { it::class }.toSet().size > 1,
+            mixed = worked.map { (_, entry) -> entry::class }.toSet().size > 1,
             editable = session.endedAt != null,
             entries =
-                worked.map {
+                worked.map { (index, entry) ->
                     HistoryEntryView(
-                        exerciseName(library.exercises, it.exercise),
-                        sessionEntryResult(it),
-                        it.exercise,
+                        exerciseName(library.exercises, entry.exercise),
+                        sessionEntryResult(entry),
+                        index,
                     )
                 },
         )
@@ -84,9 +87,10 @@ data class HistoryWeek(
 )
 
 /**
- * [rows] by the week each started in, weeks starting on [firstWeekday], in the order the rows come
- * (newest first, as Sessions lists them) and each week's rows in it too. Rows whose `started_at` isn't
- * an instant have no week, and share one group with a null start.
+ * [rows] by the week each started in, weeks starting on [firstWeekday], newest week first, each week's
+ * rows in the order they come. Ordered by the week rather than by first appearance: the log is sorted
+ * by its `started_at` text, so offsets that differ can bring a row out of week order. Rows whose
+ * `started_at` isn't an instant have no week, and share one group with a null start, last.
  */
 fun historyWeeks(
     rows: List<HistorySessionView>,
@@ -95,3 +99,4 @@ fun historyWeeks(
     rows
         .groupBy { row -> row.day?.let { startOfWeek(it, firstWeekday) } }
         .map { (start, inWeek) -> HistoryWeek(start, inWeek) }
+        .sortedWith(compareByDescending<HistoryWeek, LocalDate?>(nullsFirst()) { it.start })

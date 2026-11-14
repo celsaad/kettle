@@ -278,9 +278,11 @@ class HistoryScreenTest {
     }
 
     @Test
-    fun `stays quiet when there is no history at all`() {
+    fun `says what will fill an empty log, with no search over nothing`() {
         show(Files())
 
+        compose.onNodeWithText("Nada registrado ainda", substring = true).assertExists()
+        compose.onNode(hasSetTextAction()).assertDoesNotExist()
         compose.onNodeWithText("Nada encontrado").assertDoesNotExist()
     }
 
@@ -357,6 +359,24 @@ class HistoryScreenTest {
         row("Push day").assertDoesNotExist()
     }
 
+    @Test
+    fun `finds a session by words split between its workout and an exercise`() {
+        show()
+
+        search("leg dips")
+
+        row("Leg day").assertExists()
+    }
+
+    /** A week outside this year carries its year, or a log over a year long titles two weeks alike. */
+    @Test
+    fun `gives a week from another year its year`() {
+        show(Files(push, older.copy(id = "last-year", startedAt = "2025-07-16T09:00:00.000Z")))
+
+        compose.onNodeWithText("2025", substring = true).assert(isHeading())
+        compose.onNodeWithText("Esta semana").assertExists()
+    }
+
     /**
      * #414: a PR badge for a record at the time, and the entry that set it under the numbers rather than
      * the first logged. Dips at 10 beat the 8 before them; pull-ups at 8 only tie, so the line skips them.
@@ -382,7 +402,7 @@ class HistoryScreenTest {
         compose.onNodeWithText("Dips · 8 repetições").assertExists()
     }
 
-    // Six cards' worth of chrome is what the line replaced; a stray tile label means it grew back.
+    // Six cards' worth of chrome is what the old summary line replaced; a stray tile label means it grew back.
     @Test
     fun `draws no stat cards at all`() {
         show()

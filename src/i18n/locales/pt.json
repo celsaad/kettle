@@ -113,7 +113,8 @@
     "undated": "Sem data",
     "weekSummary": "{{sessions}} · {{time}}",
     "prBadge": "Recorde",
-    "topEntry": "{{exercise}} · {{result}}"
+    "topEntry": "{{exercise}} · {{result}}",
+    "empty": "Nada registrado ainda. As sessões que você concluir aparecem aqui, semana a semana."
   },
   "analytics": {
     "hoursMinutes": "{{hours}}h {{minutes}}min",

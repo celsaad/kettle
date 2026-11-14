@@ -107,7 +107,8 @@
     "undated": "No date",
     "weekSummary": "{{sessions}} · {{time}}",
     "prBadge": "PR",
-    "topEntry": "{{exercise}} · {{result}}"
+    "topEntry": "{{exercise}} · {{result}}",
+    "empty": "Nothing logged yet. Sessions you finish show up here, week by week."
   },
   "analytics": {
     "hoursMinutes": "{{hours}}h {{minutes}}m",

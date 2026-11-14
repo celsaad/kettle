@@ -69,8 +69,8 @@ class HistoryViewsTest {
 
         assertEquals(
             listOf(
-                HistoryEntryView("L-Sit", EntryResult.Holds(listOf(20.0, 18.5)), "lsit"),
-                HistoryEntryView("gone", EntryResult.Reps(listOf(8L)), "gone"),
+                HistoryEntryView("L-Sit", EntryResult.Holds(listOf(20.0, 18.5)), 0),
+                HistoryEntryView("gone", EntryResult.Reps(listOf(8L)), 2),
             ),
             row.entries,
         )
@@ -144,10 +144,38 @@ class HistoryViewsTest {
         )
     }
 
+    /** "not a date" sorts above ISO text in the log, but its group still comes after every dated week. */
     @Test
-    fun `puts rows with no day in one week of their own, with no start`() {
-        val rows = historySessionsView(listOf(session(hold(20.0), startedAt = "not a date")), library, TimeZone.UTC)
+    fun `puts rows with no day in one week of their own, after the dated ones`() {
+        val rows =
+            historySessionsView(
+                listOf(session(hold(20.0), startedAt = "not a date"), session(hold(20.0))),
+                library,
+                TimeZone.UTC,
+            )
 
-        assertEquals(listOf<LocalDate?>(null), historyWeeks(rows, DayOfWeek.MONDAY).map { it.start })
+        assertEquals(listOf(LocalDate(2026, 7, 20), null), historyWeeks(rows, DayOfWeek.MONDAY).map { it.start })
+    }
+
+    /**
+     * Offsets that differ can bring a row out of week order in the text-sorted log; the weeks still run
+     * newest first.
+     */
+    @Test
+    fun `orders weeks newest first, whatever order their rows came in`() {
+        val rows =
+            historySessionsView(
+                listOf(
+                    session(hold(20.0), startedAt = "2026-07-14T09:00:00.000Z"),
+                    session(hold(20.0), startedAt = "2026-07-24T09:00:00.000Z"),
+                ),
+                library,
+                TimeZone.UTC,
+            )
+
+        assertEquals(
+            listOf(LocalDate(2026, 7, 20), LocalDate(2026, 7, 13)),
+            historyWeeks(rows, DayOfWeek.MONDAY).map { it.start },
+        )
     }
 }

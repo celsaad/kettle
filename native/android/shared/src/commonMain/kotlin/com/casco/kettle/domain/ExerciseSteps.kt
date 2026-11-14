@@ -67,7 +67,8 @@ fun ExerciseDraft.withRequiredFilled(): ExerciseDraft {
 /**
  * A new exercise switched to [type]: what it shares with the old one carries over, Sets from reps to a
  * hold say, but not a value the new type refuses, such as Rest's filled 0:00 landing in Cardio's
- * duration, whose least is a second. Then its own blanks are filled, as a new exercise's are.
+ * duration, whose least is a second, or typed text that is not a number. Then its own blanks are
+ * filled, as a new exercise's are.
  */
 fun ExerciseDraft.switchingTo(type: ExerciseType): ExerciseDraft {
     val fields = configFields(type).associateBy { it.key }
@@ -75,7 +76,8 @@ fun ExerciseDraft.switchingTo(type: ExerciseType): ExerciseDraft {
         values.filter { (key, text) ->
             val field = fields[key]
             val number = jsNumberOrNull(text.trim())
-            field == null || number == null || number >= field.min
+            // Not a number goes too: a time button shows it as 0:00, which Save then refuses unseen.
+            field == null || (number != null && number >= field.min)
         }
     return copy(type = type, values = kept).withRequiredFilled()
 }

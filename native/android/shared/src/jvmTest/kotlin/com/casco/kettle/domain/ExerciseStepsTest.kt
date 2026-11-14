@@ -78,6 +78,14 @@ class ExerciseStepsTest {
         assertEquals(null, rest.switchingTo(ExerciseType.Cardio).values[ConfigKey.DurationSec])
     }
 
+    // Cardio's typed "abc" would sit under Rest's time button as 0:00, refused by Save unseen.
+    @Test
+    fun `drops carried text that is not a number`() {
+        val cardio = ExerciseDraft("Run", ExerciseType.Cardio, mapOf(ConfigKey.DurationSec to "abc"), "")
+
+        assertEquals("0", cardio.switchingTo(ExerciseType.Rest).values[ConfigKey.DurationSec])
+    }
+
     @Test
     fun `keeps what is already set`() {
         assertEquals("4", reps(ConfigKey.Sets to "4").withRequiredFilled().values[ConfigKey.Sets])

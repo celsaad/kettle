@@ -52,6 +52,43 @@ fun exerciseSummary(
         }
     }
 
+/**
+ * Library's row (#413): the summary without the rest between sets, as the board draws it, "4 × 8–12 ·
+ * 48.5 lb". Rest belongs to the exercise's detail; HIIT keeps its own, which is its interval rather than
+ * a pause between sets.
+ */
+@Composable
+internal fun exerciseTarget(
+    config: ExerciseConfig,
+    units: UnitSystem,
+): String =
+    when (config) {
+        // Placeholders are numbered alphabetically: reps, sets, weight; hold, sets.
+        is ExerciseConfig.Reps -> {
+            stringResource(
+                R.string.library_targetReps,
+                rangeLabel(config.targetRepsMin.toDouble(), config.targetRepsMax?.toDouble()),
+                config.sets,
+                weightSuffix(config.targetWeightKg, units),
+            )
+        }
+
+        is ExerciseConfig.TimedHold -> {
+            config.holdSecMin?.let {
+                stringResource(
+                    R.string.library_targetHold,
+                    rangeLabel(it, config.holdSecMax),
+                    config.sets,
+                )
+            }
+                ?: stringResource(R.string.library_targetHoldOpen, config.sets)
+        }
+
+        else -> {
+            exerciseSummary(config, units)
+        }
+    }
+
 /** " · 20 kg" in the reader's [units], or nothing for no weight: also the Home preview's (#280). */
 @Composable
 internal fun weightSuffix(

@@ -1,5 +1,6 @@
 package com.casco.kettle.shell.library
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -59,7 +60,8 @@ internal fun LibraryTab(route: Route) {
                 .fillMaxWidth()
                 .padding(start = Spacing.three, end = Spacing.three, top = Spacing.two),
         ) {
-            Header(NEW.getValue(section)) { navigator.push(Route(NEW.getValue(section).second)) }
+            val new = NEW.getValue(section)
+            Header(stringResource(new.label)) { navigator.push(Route(new.editor)) }
             UnderlineTabs(
                 Section.of(Tab.Library).map { it to stringResource(it.label) },
                 section,
@@ -77,7 +79,7 @@ internal fun LibraryTab(route: Route) {
 
 @Composable
 private fun Header(
-    new: Pair<Int, Destination>,
+    newLabel: String,
     onNew: () -> Unit,
 ) {
     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -87,7 +89,7 @@ private fun Header(
             style = KettleType.subtitle,
             color = KettleTheme.colors.text,
         )
-        NewButton(stringResource(new.first), onNew)
+        NewButton(newLabel, onNew)
     }
 }
 
@@ -115,10 +117,15 @@ private fun NewButton(
     }
 }
 
-/** What the + makes on each section: its name and the editor it opens empty. */
+/** What the + makes on a section: its name, and the editor it opens empty. */
+private class NewItem(
+    @StringRes val label: Int,
+    val editor: Destination,
+)
+
 private val NEW =
     mapOf(
-        Section.WORKOUTS to (R.string.build_newWorkout to Destination.WorkoutEditor),
-        Section.PROGRAMS to (R.string.programs_newProgram to Destination.ProgramEditor),
-        Section.EXERCISES to (R.string.library_newExercise to Destination.ExerciseEditor),
+        Section.WORKOUTS to NewItem(R.string.build_newWorkout, Destination.WorkoutEditor),
+        Section.PROGRAMS to NewItem(R.string.programs_newProgram, Destination.ProgramEditor),
+        Section.EXERCISES to NewItem(R.string.library_newExercise, Destination.ExerciseEditor),
     )

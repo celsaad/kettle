@@ -160,10 +160,12 @@
     "filterAmrap": "AMRAP",
     "filterCardio": "Cardio",
     "filterType": "Type",
-    "filterLabel": "Filter by type: {{type}}",
     "filterAllTypes": "all types",
     "typedSummary": "{{type}} · {{summary}}",
-    "workoutInProgram": "In your program · {{shape}}"
+    "workoutInProgram": "In your program · {{shape}}",
+    "targetReps": "{{sets}} × {{reps}}{{weight}}",
+    "targetHold": "{{sets}} × {{hold}}s",
+    "targetHoldOpen": "{{sets}} × max hold"
   },
   "programGuide": {
     "title": "Writing a program by hand",

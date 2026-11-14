@@ -1,6 +1,7 @@
 package com.casco.kettle.shell.library
 
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
@@ -10,6 +11,7 @@ import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasScrollToIndexAction
 import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.hasStateDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
@@ -74,6 +76,14 @@ class LibraryScreenTest {
 
     private fun search(query: String) = compose.onNode(hasSetTextAction()).performTextInput(query)
 
+    /** As the board draws it: the type, then the target, and no rest between sets, which is the detail's. */
+    @Test
+    fun `a row's line drops the rest between sets`() {
+        show()
+
+        compose.onNodeWithText("de descanso", substring = true).assertDoesNotExist()
+    }
+
     /** Rest is block structure rather than something anyone browses for, so it never lists. */
     @Test
     fun `lists every exercise but rest, its type leading its summary`() {
@@ -82,8 +92,8 @@ class LibraryScreenTest {
         row("Pull-ups").assertExists()
         row("Plank").assertExists()
         row("Breather").assertDoesNotExist()
-        compose.onNodeWithText("Reps · 3 × 8–12 · 90s de descanso").assertExists()
-        compose.onNodeWithText("Isometria · 3 × 30–60s · 60s de descanso").assertExists()
+        compose.onNodeWithText("Reps · 3 × 8–12").assertExists()
+        compose.onNodeWithText("Isometria · 3 × 30–60s").assertExists()
     }
 
     @Test
@@ -117,17 +127,26 @@ class LibraryScreenTest {
         compose.onNodeWithText("Nada aqui se encaixa nesses filtros", substring = true).assertExists()
     }
 
-    /** The button names what it's set to, and shows the type once one is chosen, so a narrowed list says so. */
+    /**
+     * Named by its own words, which Voice Access matches, with what it's set to as its state, and it says
+     * whether its menu is open. It shows the type once one is chosen, so a narrowed list says so.
+     */
     @Test
     fun `the Type filter narrows to its type and says which one is on`() {
         show()
-        typeFilter().assertHeightIsAtLeast(48.dp).assert(hasContentDescription("Filtrar por tipo: todos os tipos"))
+        typeFilter()
+            .assertHeightIsAtLeast(48.dp)
+            .assert(hasText("Tipo"))
+            .assert(hasStateDescription("todos os tipos"))
+            .assert(SemanticsMatcher.keyIsDefined(SemanticsActions.Expand))
+        compose.onNode(hasContentDescription("Tipo", substring = true)).assertDoesNotExist()
         typeFilter().performClick()
+        typeFilter().assert(SemanticsMatcher.keyIsDefined(SemanticsActions.Collapse))
         menuItem("Todos").assertIsSelected()
         compose.onNode(hasText("Isometria") and isSelectable).performClick()
 
-        typeFilter().assert(hasContentDescription("Filtrar por tipo: Isometria"))
-        typeFilter().assert(hasText("Isometria"))
+        typeFilter().assert(hasText("Isometria")).assert(hasStateDescription("Isometria"))
+        typeFilter().assert(SemanticsMatcher.keyIsDefined(SemanticsActions.Expand))
         row("Plank").assertExists()
         row("Pull-ups").assertDoesNotExist()
         // The count is what the filter left, not the library: it describes the list under it.
@@ -150,7 +169,7 @@ class LibraryScreenTest {
     fun `shows a target weight in the reader's unit`() {
         show(Files(rows, preferences = imperial))
 
-        compose.onNodeWithText("Reps · 3 × 5 · 132.3 lb · 120s de descanso").assertExists()
+        compose.onNodeWithText("Reps · 3 × 5 · 132.3 lb").assertExists()
     }
 
     /** Each type's line, in its own words; the reps and ranged-hold lines are covered above. */
@@ -165,7 +184,7 @@ class LibraryScreenTest {
                 Exercise("run", "Run", ExerciseConfig.Cardio(distanceMeters = 5000.0)) to "5000 m",
                 Exercise("bike", "Bike", ExerciseConfig.Cardio(durationSec = 1200.0)) to "1200s",
                 Exercise("hang", "Dead hang", ExerciseConfig.TimedHold(3, restSec = 60.0)) to
-                    "3 × isometria máxima · 60s de descanso",
+                    "3 × isometria máxima",
             )
         show(Files(*others.map { it.first }.toTypedArray()))
 
@@ -179,7 +198,7 @@ class LibraryScreenTest {
     fun `shows a target weight in kilograms by default`() {
         show(Files(rows))
 
-        compose.onNodeWithText("Reps · 3 × 5 · 60 kg · 120s de descanso").assertExists()
+        compose.onNodeWithText("Reps · 3 × 5 · 60 kg").assertExists()
     }
 
     @Test
@@ -195,7 +214,7 @@ class LibraryScreenTest {
     fun `is translated`() {
         show()
 
-        typeFilter().assert(hasText("Tipo"))
+        typeFilter().assert(hasText("Tipo")).assert(hasStateDescription("todos os tipos"))
         // The field is named by its placeholder, read inside the field's own node.
         compose.onNode(hasSetTextAction() and hasText("Buscar 3 exercícios")).assertExists()
     }
@@ -217,7 +236,8 @@ class LibraryScreenTest {
         compose.onNode(hasSetTextAction()).assertIsDisplayed()
     }
 
-    private fun typeFilter() = compose.onNode(hasContentDescription("Filtrar por tipo", substring = true) and isButton)
+    private fun typeFilter() =
+        compose.onNode(isButton and SemanticsMatcher.keyIsDefined(SemanticsProperties.StateDescription))
 
     private fun menuItem(label: String) = compose.onNode(hasText(label) and isSelectable)
 

@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Text
@@ -34,10 +33,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.collapse
+import androidx.compose.ui.semantics.expand
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.Exercise
@@ -49,11 +50,13 @@ import com.casco.kettle.shell.files.LatestFiles
 import com.casco.kettle.shell.files.LocalLatestFiles
 import com.casco.kettle.shell.i18n.deviceUnitSystem
 import com.casco.kettle.shell.i18n.pluralText
+import com.casco.kettle.shell.list.FieldShape
 import com.casco.kettle.shell.list.ListHeaderRule
 import com.casco.kettle.shell.list.ListRow
 import com.casco.kettle.shell.list.ListRowSeparator
 import com.casco.kettle.shell.list.NoResults
 import com.casco.kettle.shell.list.SearchBar
+import com.casco.kettle.shell.list.fieldFill
 import com.casco.kettle.shell.nav.Destination
 import com.casco.kettle.shell.nav.LocalNavigator
 import com.casco.kettle.shell.nav.LocalTabReselects
@@ -164,8 +167,9 @@ private val Filters =
 
 /**
  * The Type button and its menu (#413), where seven chips scrolled sideways: "Type" until one is chosen,
- * then that type's name, so a filtered list says so. Named with what it's set to, since "Type" alone
- * doesn't say the list is whole, and each item is selectable, so a reader hears which is on.
+ * then that type's name, so a filtered list says so. Its visible words are its name, which Voice Access
+ * matches; what it's set to is its state ("all types", "Hold"), and it says whether the menu is open. Each
+ * item is selectable, so a reader hears which is on.
  */
 @Composable
 private fun TypeFilter(
@@ -174,22 +178,34 @@ private fun TypeFilter(
 ) {
     val colors = KettleTheme.colors
     var open by remember { mutableStateOf(false) }
-    val current =
-        if (selected == 0) stringResource(R.string.library_filterAllTypes) else stringResource(Filters[selected].label)
-    val name = stringResource(R.string.library_filterLabel, current)
+    val all = selected == ALL
+    val chosen = stringResource(Filters[selected].label)
+    val state = if (all) stringResource(R.string.library_filterAllTypes) else chosen
     Box(Modifier.padding(top = Spacing.three)) {
         Row(
             Modifier
                 .heightIn(min = 48.dp)
-                .clip(FilterShape)
-                .background(colors.backgroundSelected)
+                .clip(FieldShape)
+                .background(fieldFill())
                 .clickable(role = Role.Button) { open = true }
-                .semantics { contentDescription = name }
-                .padding(horizontal = Spacing.two + 4.dp),
+                .semantics {
+                    stateDescription = state
+                    if (open) {
+                        collapse {
+                            open = false
+                            true
+                        }
+                    } else {
+                        expand {
+                            open = true
+                            true
+                        }
+                    }
+                }.padding(horizontal = Spacing.two + 4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                if (selected == 0) stringResource(R.string.library_filterType) else current,
+                if (all) stringResource(R.string.library_filterType) else chosen,
                 style = KettleType.smallMedium,
                 color = colors.text,
             )
@@ -225,7 +241,7 @@ private fun ExerciseRow(
 ) {
     val colors = KettleTheme.colors
     val type = Filters.firstOrNull { it.type?.isInstance(exercise.config) == true }?.label
-    val summary = exerciseSummary(exercise.config, units)
+    val summary = exerciseTarget(exercise.config, units)
     Box(Modifier.clickable(role = Role.Button, onClick = onClick)) {
         ListRow {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -241,4 +257,5 @@ private fun ExerciseRow(
     }
 }
 
-private val FilterShape = RoundedCornerShape(14.dp)
+/** [Filters]' index for All, the filter that keeps everything. */
+private const val ALL = 0

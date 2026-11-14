@@ -20,6 +20,9 @@ import theme from '@/constants/theme.json';
  *   `backgroundSelected` — failing on two of its three surfaces, and it's the app's most-used color
  *   (every caption, count and summary line). Darkened to `#6b6558`: 5.28 on `background`, 5.79 on
  *   `backgroundElement`, 4.79 on `backgroundSelected`.
+ * - `dark.backgroundSelected` is translucent and composites over `background` to #2b2823, where
+ *   `textSecondary` measures **4.46**, short of 4.5. So a filled field (search, Library's Type) takes
+ *   `backgroundElement` in dark (4.97) and `backgroundSelected` only in light (4.79); see `fieldFill`.
  * - `light.onAccent` (white) on `light.accent` is **3.64** — AA-large only. That's fine where it's
  *   used, the 20px semibold "Start session" label, which clears the 18.66px-bold threshold, but it
  *   has no headroom: don't reuse this pairing for body-sized text without darkening `accent` first.

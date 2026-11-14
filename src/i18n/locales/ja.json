@@ -150,10 +150,12 @@
     "filterAmrap": "AMRAP",
     "filterCardio": "カーディオ",
     "filterType": "種類",
-    "filterLabel": "種類で絞り込み：{{type}}",
     "filterAllTypes": "すべての種類",
     "typedSummary": "{{type}} · {{summary}}",
-    "workoutInProgram": "プログラムで使用中 · {{shape}}"
+    "workoutInProgram": "プログラムで使用中 · {{shape}}",
+    "targetReps": "{{sets}} × {{reps}}{{weight}}",
+    "targetHold": "{{sets}} × {{hold}}秒",
+    "targetHoldOpen": "{{sets}} × 最大ホールド"
   },
   "programGuide": {
     "title": "プログラムを手で書く",

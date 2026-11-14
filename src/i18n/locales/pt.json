@@ -170,10 +170,12 @@
     "filterAmrap": "AMRAP",
     "filterCardio": "Cardio",
     "filterType": "Tipo",
-    "filterLabel": "Filtrar por tipo: {{type}}",
     "filterAllTypes": "todos os tipos",
     "typedSummary": "{{type}} · {{summary}}",
-    "workoutInProgram": "No seu programa · {{shape}}"
+    "workoutInProgram": "No seu programa · {{shape}}",
+    "targetReps": "{{sets}} × {{reps}}{{weight}}",
+    "targetHold": "{{sets}} × {{hold}}s",
+    "targetHoldOpen": "{{sets}} × isometria máxima"
   },
   "programGuide": {
     "title": "Escrevendo um programa à mão",

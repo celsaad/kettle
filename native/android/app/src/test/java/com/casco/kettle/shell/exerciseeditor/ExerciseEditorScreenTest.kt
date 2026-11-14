@@ -136,16 +136,22 @@ class ExerciseEditorScreenTest {
         show(null, files)
 
         type("Nome", "Pull-ups")
-        repeat(3) { press("Aumentar Séries") }
-        repeat(5) { press("Aumentar Reps alvo") }
-        press("Descanso, 0 segundos. Alterar")
-        pressInDialog("Aumentar Minutos")
-        repeat(6) { pressInDialog("Aumentar Segundos") }
+        // From the new exercise's 3 × 8–12, 1:30: one set more, a minute's rest less.
+        press("Aumentar Séries")
+        repeat(2) { press("Diminuir Reps alvo") }
+        press("Descanso, 1 minuto 30 segundos. Alterar")
+        pressInDialog("Diminuir Minutos")
         compose.pressDialogButton("Concluir")
         press("Salvar")
 
         assertEquals(
-            listOf(Exercise("pull-ups", "Pull-ups", ExerciseConfig.Reps(sets = 4, targetRepsMin = 6, restSec = 90.0))),
+            listOf(
+                Exercise(
+                    "pull-ups",
+                    "Pull-ups",
+                    ExerciseConfig.Reps(sets = 4, targetRepsMin = 6, targetRepsMax = 12, restSec = 30.0),
+                ),
+            ),
             files.written.single().exercises,
         )
         assertEquals(1, closed)
@@ -276,7 +282,7 @@ class ExerciseEditorScreenTest {
         )
     }
 
-    // A new exercise's steppers read 1, and Save must take the 1 it shows rather than call it blank.
+    // A new exercise starts at a plausible target (#456), and Save takes what its controls show.
     @Test
     fun `saves a new exercise as its controls show it`() {
         val files = Files()
@@ -286,7 +292,7 @@ class ExerciseEditorScreenTest {
         press("Salvar")
 
         assertEquals(
-            ExerciseConfig.Reps(sets = 1, targetRepsMin = 1, restSec = 0.0),
+            ExerciseConfig.Reps(sets = 3, targetRepsMin = 8, targetRepsMax = 12, restSec = 90.0),
             files.written
                 .single()
                 .exercises
@@ -295,7 +301,7 @@ class ExerciseEditorScreenTest {
         )
     }
 
-    // Its work starts at a second, the least it takes, not at a 0:00 Save would refuse.
+    // Its own starting target, not the reps one: 0:30 on and off for 8 rounds.
     @Test
     fun `saves a new HIIT as its controls show it`() {
         val files = Files()
@@ -306,7 +312,7 @@ class ExerciseEditorScreenTest {
         press("Salvar")
 
         assertEquals(
-            ExerciseConfig.Hiit(workSec = 1.0, restSec = 0.0, rounds = 1),
+            ExerciseConfig.Hiit(workSec = 30.0, restSec = 30.0, rounds = 8),
             files.written
                 .single()
                 .exercises

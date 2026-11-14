@@ -61,8 +61,9 @@ sealed interface NextUp {
 
 /**
  * The slot after the one the newest session tracked against [program] ran, wrapping at the end; the
- * first slot when none did or that slot is gone. Not a count of sessions, which drifts the moment a
- * week is redone or started out of turn from Program detail. [sessions] is newest first.
+ * first slot when none did, and the first at or after its week when that slot is gone. Not a count
+ * of sessions, which drifts the moment a week is redone or started out of turn from Program detail.
+ * [sessions] is newest first.
  */
 internal fun nextWeekAfter(
     program: Program,
@@ -204,9 +205,17 @@ internal fun nextIndexAfter(
     program: Program,
     sessions: List<Session>,
 ): Int {
-    val last = lastTracked(program, sessions) ?: return 0
-    val index = weeks.indexOfFirst { it.week == last.programWeek && it.day == last.programDay }
-    return if (index == -1) 0 else (index + 1) % weeks.size
+    val tracked = sessions.filter { it.program == program.id && it.programWeek != null }
+    val lostWeek = tracked.firstOrNull()?.programWeek ?: return 0
+    // The newest session whose slot still stands (#456): one deleted or renamed under the reader hands
+    // the place back to the slot logged before it, so a lost day C after A and B carries on after B.
+    val standing =
+        tracked.firstNotNullOfOrNull { session ->
+            weeks.indexOfFirst { it.week == session.programWeek && it.day == session.programDay }.takeIf { it != -1 }
+        }
+    // None standing, a hand-edited file say: the first slot at or after the week logged, rather than
+    // over from Week 1. Past the end, the program wraps as a finished one does.
+    return standing?.let { (it + 1) % weeks.size } ?: weeks.indexOfFirst { it.week >= lostWeek }.coerceAtLeast(0)
 }
 
 /** Rest slots in a row from [start], wrapping, capped at the length so an all-rest program can't spin. */

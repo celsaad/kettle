@@ -104,7 +104,10 @@ fun WorkoutDraft.withRestLength(
             blocks.map { draft ->
                 val block = draft.block
                 if (draft.key == key && block is WorkoutBlock.ExerciseBlock) {
-                    val override = if (seconds == own) null else BlockConfigOverride(durationSec = seconds)
+                    // Whole seconds, as the picker sets them: an exercise resting 59.5 s set back to
+                    // 1:00 is at its own length (#456).
+                    val isOwn = wholeSeconds(seconds) == wholeSeconds(own)
+                    val override = if (isOwn) null else BlockConfigOverride(durationSec = seconds)
                     draft.copy(block = block.copy(configOverride = override))
                 } else {
                     draft

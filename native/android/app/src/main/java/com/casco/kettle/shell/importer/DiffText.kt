@@ -61,8 +61,16 @@ private fun DiffRow(
     val label = labelText(change.label)
     val was = valueText(change.from, units)
     val cleared = change.clears
-    val now = if (cleared) stringResource(R.string.import_diff_cleared) else valueText(change.to, units)
-    val description = stringResource(R.string.import_diff_rowAccessibility, label, now, was)
+    val clearedWord = stringResource(R.string.import_diff_cleared)
+    // "cleared" where a value goes; a list that goes keeps its — on screen, the warning mark saying
+    // the rest. TalkBack can't hear the mark, so it hears "cleared" for both.
+    val now =
+        when (change.to) {
+            DiffValue.Unset -> clearedWord
+            else -> valueText(change.to, units)
+        }
+    val spoken = if (cleared) clearedWord else now
+    val description = stringResource(R.string.import_diff_rowAccessibility, label, spoken, was)
     Row(
         Modifier.clearAndSetSemantics { contentDescription = description },
         horizontalArrangement = Arrangement.spacedBy(Spacing.one),
@@ -86,6 +94,9 @@ internal fun labelText(label: DiffLabel): String =
             DiffLabel.Weeks -> R.string.import_diff_weeks
             DiffLabel.WeeksEdited -> R.string.import_diff_weeksChanged
             DiffLabel.BlocksEdited -> R.string.import_diff_blocksEdited
+            DiffLabel.WeeksAdded -> R.string.import_diff_weeksAdded
+            DiffLabel.WeeksRemoved -> R.string.import_diff_weeksRemoved
+            DiffLabel.WeeksLosing -> R.string.import_diff_weeksLosing
             is DiffLabel.Field -> label.name.label
         },
     )

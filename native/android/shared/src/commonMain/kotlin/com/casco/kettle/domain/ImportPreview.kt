@@ -37,7 +37,7 @@ class ImportPreview(
 
     /**
      * What updated [item] loses, weights in [units]; nothing for a new one. Asked per row drawn, and
-     * once per preview for [fieldsCleared]: a re-imported library is all updates, and diffing every
+     * once per preview for [clearedTotal]: a re-imported library is all updates, and diffing every
      * one of them on every frame would be the expensive half of the preview.
      */
     fun changes(
@@ -65,16 +65,17 @@ class ImportPreview(
     }
 
     /**
-     * Fields the import leaves out of what it replaces, across every updated item, weights in [units]
-     * (#443): a value going to unset, the review's third tile. In practice exercise fields, the diff
-     * that names them one by one; what a workout or program loses shows as its own rows ("Exercises",
-     * "Weeks edited", "Blocks edited") rather than in this count. Diffs every update, so the screen
+     * What the import takes away across every updated item, weights in [units] (#443, widened on #456):
+     * the review's third tile, the sum of every item's [clearedBy]. Diffs every update, so the screen
      * asks once per preview and remembers it.
      */
-    fun fieldsCleared(units: UnitSystem): Int =
-        items.filterNot { it.isNew }.sumOf { item ->
-            changes(item, units).count { it.clears }
-        }
+    fun clearedTotal(units: UnitSystem): Int = items.sumOf { clearedBy(it, units) }
+
+    /** What updated [item] takes away, as its open rows mark it: nothing for a new item. */
+    fun clearedBy(
+        item: ChangedItem,
+        units: UnitSystem,
+    ): Int = changes(item, units).sumOf { it.cleared }
 
     /** [item]'s name as the import has it, the user's, verbatim; its id where it has none to find. */
     fun name(item: ChangedItem): String =

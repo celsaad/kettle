@@ -646,7 +646,10 @@
       "sameValues": "no field changes — replaced with an identical definition",
       "cleared": "cleared",
       "rowAccessibility": "{{label}}: was {{was}}, now {{now}}",
-      "blocksEdited": "Blocks edited"
+      "blocksEdited": "Blocks edited",
+      "weeksAdded": "Weeks added",
+      "weeksRemoved": "Weeks removed",
+      "weeksLosing": "Weeks losing a note, change or workout"
     },
     "noChanges": "No changes — the imported file matches your current library.",
     "showAll_one": "Show the {{count}} change",
@@ -660,7 +663,7 @@
       "updatedCount_other": "{{count}} updated",
       "announcement": "Imported. {{new}} new, {{updated}} updated."
     },
-    "updateNote": "Nothing is deleted from your library. But anything with an id you already have is replaced whole, so a field the import leaves out is cleared.",
+    "updateNote": "Nothing is deleted from your library. But anything with an id you already have is replaced whole, so whatever the import leaves out of it is cleared.",
     "error": {
       "invalidYaml": "Invalid YAML: {{detail}}",
       "schemaMismatch": "Doesn't match the exercises.yaml format — {{detail}}",
@@ -672,13 +675,13 @@
       "tooLarge": "Too large to import: a library can be up to {{limit}} KB."
     },
     "reviewTitle": "Review the changes",
-    "fieldsCleared_one": "field cleared",
-    "fieldsCleared_other": "fields cleared",
+    "clearedTile_one": "cleared",
+    "clearedTile_other": "cleared",
     "sectionUpdated": "Updated",
     "sectionNew": "New",
     "itemSub": "{{id}} · {{kind}}",
-    "clearsCount_one": "Clears {{count}} field",
-    "clearsCount_other": "Clears {{count}} fields",
+    "clearsCount_one": "{{count}} cleared",
+    "clearsCount_other": "{{count}} cleared",
     "importItems_one": "Import {{count}} item",
     "importItems_other": "Import {{count}} items",
     "kind": {

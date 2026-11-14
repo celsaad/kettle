@@ -212,6 +212,13 @@ class WorkoutEditingTest {
             assertEquals(null, overridden.withRestLength(rest, 60.0, own = 60.0).restBlock().configOverride)
         }
 
+        // The picker sets whole seconds, so an exercise resting 59.5 s could never be set back to its own.
+        @Test
+        fun `drops the override for a length that is the exercise's own to the second`() {
+            val overridden = draft.withRestLength(rest, 120.0, own = 59.5)
+            assertEquals(null, overridden.withRestLength(rest, 60.0, own = 59.5).restBlock().configOverride)
+        }
+
         @Test
         fun `changes only the block it is keyed to`() {
             assertEquals(draft.blocks[0], draft.withRestLength(rest, 120.0, own = 60.0).blocks[0])

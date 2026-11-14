@@ -24,15 +24,22 @@ fun programWeekNumbers(program: Program): List<Long> =
         .sorted()
 
 /**
- * How many of the program's weeks carry notes or overrides, by week number rather than entry: several
- * days share one, and counting entries read "8 weeks" beside a range of four (`ProgramWeeksTest`).
+ * How many sessions each of the program's weeks trains (#413), when every week trains the same number;
+ * null when they differ or none trains, so Library's row never states a count only some weeks keep.
+ * Rest days aren't sessions.
  */
-fun programWeeksWithNotes(program: Program): Int =
+fun programSessionsPerWeek(program: Program): Int? =
     program.weeks
-        .filter { !it.notes.isNullOrEmpty() || (it as? ProgramWeek.Training)?.overrides.orEmpty().isNotEmpty() }
-        .map { it.week }
+        .groupBy { it.week }
+        .values
+        .map { days -> days.count { it is ProgramWeek.Training } }
         .distinct()
-        .size
+        .singleOrNull()
+        ?.takeIf { it > 0 }
+
+/** The workouts the program trains, for Library's "In your program" (#413). */
+fun programWorkoutIds(program: Program): Set<String> =
+    program.weeks.mapNotNullTo(mutableSetOf()) { (it as? ProgramWeek.Training)?.workoutId }
 
 /**
  * A week's workout and the library's whole exercise list, each with that week's overrides applied, and

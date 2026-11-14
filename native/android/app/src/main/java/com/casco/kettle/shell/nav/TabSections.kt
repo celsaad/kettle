@@ -11,28 +11,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.casco.kettle.shell.history.HistoryRoute
-import com.casco.kettle.shell.home.WorkoutsRoute
-import com.casco.kettle.shell.library.LibraryRoute
-import com.casco.kettle.shell.programs.ProgramsRoute
 import com.casco.kettle.shell.settings.Segmented
 import com.casco.kettle.shell.stats.StatsRoute
 import com.casco.kettle.shell.theme.MaxContentWidth
 import com.casco.kettle.shell.theme.Spacing
 
-// The Library and Progress tabs until their own tickets redesign them (#411): a switch over the screens
-// the four-tab shell had, each drawn as it was. The section rides in the route, so a link or a saved back
-// stack lands on it, and the switch is a navigate like any other.
-
-/** Library: Workouts, which Today held (#412), Exercises, and Programs, which was a tab of its own. */
-@Composable
-internal fun LibraryTab(route: Route) =
-    SectionedTab(Tab.Library, route) { section ->
-        when (section) {
-            Section.WORKOUTS -> WorkoutsRoute()
-            Section.PROGRAMS -> ProgramsRoute()
-            else -> LibraryRoute()
-        }
-    }
+// The Progress tab until its own ticket redesigns it (#414): a switch over the screens the four-tab shell
+// had, each drawn as it was. The section rides in the route, so a link or a saved back stack lands on it,
+// and the switch is a navigate like any other. Library has its own tabs since #413 (`LibraryTab`).
 
 /** Progress: Sessions, which was History, and Stats, which was a sheet off it. */
 @Composable

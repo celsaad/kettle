@@ -6,7 +6,6 @@
     "save": "保存",
     "done": "完了",
     "export": "書き出し",
-    "import": "読み込み",
     "close": "閉じる",
     "dragHandle": "ドラッグハンドル",
     "name": "名前",
@@ -149,7 +148,12 @@
     "searchPlaceholder_other": "{{count}}件のエクササイズを検索",
     "filterEmom": "EMOM",
     "filterAmrap": "AMRAP",
-    "filterCardio": "カーディオ"
+    "filterCardio": "カーディオ",
+    "filterType": "種類",
+    "filterLabel": "種類で絞り込み：{{type}}",
+    "filterAllTypes": "すべての種類",
+    "typedSummary": "{{type}} · {{summary}}",
+    "workoutInProgram": "プログラムで使用中 · {{shape}}"
   },
   "programGuide": {
     "title": "プログラムを手で書く",
@@ -188,20 +192,22 @@
   },
   "programs": {
     "title": "プログラム",
-    "helpLabel": "プログラムの書き方",
     "overrideIgnoredInvalid": "未適用 — この値は使用できません",
     "overrideIgnoredUnknownKey": "未適用 — 変更できる設定がありません",
     "overrideIgnoredMissing": "未適用 — この週に該当するものがありません",
     "noWeeks": "週がありません",
     "week": "第{{n}}週",
-    "weeksRange": "第{{first}}〜{{last}}週",
-    "weeksWithNotes_other": "メモまたは上書きのある週 {{count}}件",
     "count_other": "{{count}}件のプログラム",
     "emptyTitle": "プログラムがありません",
     "emptyBody": "プログラムは、あなたのワークアウトを数週間かけて進めていく計画です。＋ボタンで作成するか、細かく設定したい場合は YAML で書けます（週ごとの上書きはまだアプリ内では編集できません）。",
     "emptyYamlLink": "YAML で書く →",
     "newProgram": "新しいプログラム",
-    "searchPlaceholder_other": "{{count}}件のプログラムを検索"
+    "searchPlaceholder_other": "{{count}}件のプログラムを検索",
+    "active": "実施中、第{{n}}週",
+    "weekCount_other": "{{count}}週間",
+    "sessionsPerWeek_other": "週{{count}}回",
+    "rowDetail": "{{lead}} · {{sessions}}",
+    "guideLink": "プログラムを手で書くには"
   },
   "session": {
     "doneNextStep": "完了して次のステップへ",

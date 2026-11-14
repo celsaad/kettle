@@ -6,14 +6,11 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
-import androidx.compose.ui.test.assertWidthIsAtLeast
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasScrollToIndexAction
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
-import androidx.compose.ui.test.isHeading
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -57,7 +54,6 @@ class LibraryScreenTest {
     val compose = createComposeRule()
 
     private val opened = mutableListOf<Route>()
-    private var exports = 0
     private val reselects = MutableSharedFlow<Tab>(extraBufferCapacity = 1)
 
     private fun show(files: Files = Files(pullUps, dips, plank, breather)) {
@@ -69,7 +65,6 @@ class LibraryScreenTest {
                     latest,
                     reselects,
                     open = { opened += it },
-                    export = { exports++ },
                 )
             }
         }
@@ -81,15 +76,14 @@ class LibraryScreenTest {
 
     /** Rest is block structure rather than something anyone browses for, so it never lists. */
     @Test
-    fun `lists every exercise but rest, with its summary and type`() {
+    fun `lists every exercise but rest, its type leading its summary`() {
         show()
 
         row("Pull-ups").assertExists()
         row("Plank").assertExists()
         row("Breather").assertDoesNotExist()
-        compose.onNodeWithText("3 × 8–12 · 90s de descanso").assertExists()
-        compose.onNodeWithText("3 × 30–60s · 60s de descanso").assertExists()
-        compose.onNodeWithText("HOLD").assertExists()
+        compose.onNodeWithText("Reps · 3 × 8–12 · 90s de descanso").assertExists()
+        compose.onNodeWithText("Isometria · 3 × 30–60s · 60s de descanso").assertExists()
     }
 
     @Test
@@ -117,33 +111,38 @@ class LibraryScreenTest {
     fun `points at the filters when a filter emptied the list instead`() {
         show()
 
-        chip("Cardio").performClick()
+        choose("Cardio")
 
         compose.onNodeWithText("Nada encontrado").assertExists()
         compose.onNodeWithText("Nada aqui se encaixa nesses filtros", substring = true).assertExists()
     }
 
+    /** The button names what it's set to, and shows the type once one is chosen, so a narrowed list says so. */
     @Test
-    fun `a filter chip narrows to its type and says it is the one selected`() {
+    fun `the Type filter narrows to its type and says which one is on`() {
         show()
-        chip("Todos").assertIsSelected()
+        typeFilter().assertHeightIsAtLeast(48.dp).assert(hasContentDescription("Filtrar por tipo: todos os tipos"))
+        typeFilter().performClick()
+        menuItem("Todos").assertIsSelected()
+        compose.onNode(hasText("Isometria") and isSelectable).performClick()
 
-        chip("Isometria").assertHeightIsAtLeast(48.dp).performClick()
-
-        chip("Isometria").assertIsSelected()
-        chip("Todos").assertIsNotSelected()
+        typeFilter().assert(hasContentDescription("Filtrar por tipo: Isometria"))
+        typeFilter().assert(hasText("Isometria"))
         row("Plank").assertExists()
         row("Pull-ups").assertDoesNotExist()
         // The count is what the filter left, not the library: it describes the list under it.
         compose.onNode(hasSetTextAction() and hasText("Buscar 1 exercício")).assertExists()
     }
 
-    /** Every type but rest has a chip, in the order a library tends to hold them. */
+    /** Every type but rest is on the menu, in the order a library tends to hold them. */
     @Test
-    fun `offers a chip for every type but rest`() {
+    fun `offers every type but rest`() {
         show()
 
-        listOf("Todos", "HIIT", "Reps", "Isometria", "EMOM", "AMRAP", "Cardio").forEach { chip(it).assertExists() }
+        typeFilter().performClick()
+
+        listOf("Todos", "HIIT", "Reps", "Isometria", "EMOM", "AMRAP", "Cardio").forEach { menuItem(it).assertExists() }
+        menuItem("Descanso").assertDoesNotExist()
     }
 
     /** Stored in kilograms always; 60 kg reads as 132.3 lb, at pounds' one decimal. */
@@ -151,7 +150,7 @@ class LibraryScreenTest {
     fun `shows a target weight in the reader's unit`() {
         show(Files(rows, preferences = imperial))
 
-        compose.onNodeWithText("3 × 5 · 132.3 lb · 120s de descanso").assertExists()
+        compose.onNodeWithText("Reps · 3 × 5 · 132.3 lb · 120s de descanso").assertExists()
     }
 
     /** Each type's line, in its own words; the reps and ranged-hold lines are covered above. */
@@ -171,8 +170,8 @@ class LibraryScreenTest {
         show(Files(*others.map { it.first }.toTypedArray()))
 
         for ((_, line) in others) {
-            compose.onNode(hasScrollToIndexAction()).performScrollToNode(hasText(line))
-            compose.onNodeWithText(line).assertExists()
+            compose.onNode(hasScrollToIndexAction()).performScrollToNode(hasText(line, substring = true))
+            compose.onNodeWithText(line, substring = true).assertExists()
         }
     }
 
@@ -180,26 +179,7 @@ class LibraryScreenTest {
     fun `shows a target weight in kilograms by default`() {
         show(Files(rows))
 
-        compose.onNodeWithText("3 × 5 · 60 kg · 120s de descanso").assertExists()
-    }
-
-    @Test
-    fun `Export asks RN to share the library`() {
-        show()
-
-        compose.onNode(hasText("Exportar") and isButton).assertHeightIsAtLeast(48.dp).performClick()
-
-        assertEquals(1, exports)
-        assertEquals(emptyList<Any>(), opened)
-    }
-
-    @Test
-    fun `Import opens the import sheet`() {
-        show()
-
-        compose.onNode(hasText("Importar") and isButton).assertHeightIsAtLeast(48.dp).performClick()
-
-        assertEquals(listOf(Route(Destination.Import)), opened)
+        compose.onNodeWithText("Reps · 3 × 5 · 60 kg · 120s de descanso").assertExists()
     }
 
     @Test
@@ -212,23 +192,10 @@ class LibraryScreenTest {
     }
 
     @Test
-    fun `New exercise opens an empty editor`() {
-        show()
-
-        compose
-            .onNode(hasContentDescription("Novo exercício") and isButton)
-            .assertHeightIsAtLeast(48.dp)
-            .assertWidthIsAtLeast(48.dp)
-            .performClick()
-
-        assertEquals(listOf(Route(Destination.ExerciseEditor)), opened)
-    }
-
-    @Test
     fun `is translated`() {
         show()
 
-        compose.onNodeWithText("Biblioteca").assert(isHeading())
+        typeFilter().assert(hasText("Tipo"))
         // The field is named by its placeholder, read inside the field's own node.
         compose.onNode(hasSetTextAction() and hasText("Buscar 3 exercícios")).assertExists()
     }
@@ -239,18 +206,25 @@ class LibraryScreenTest {
         val many = (1..30).map { Exercise("e$it", "Exercise $it", ExerciseConfig.Amrap(600.0)) }
         show(Files(*many.toTypedArray()))
         compose.onNode(hasScrollToIndexAction()).performScrollToIndex(many.size)
-        compose.onNodeWithText("Biblioteca").assertDoesNotExist()
+        compose.onNode(hasSetTextAction()).assertDoesNotExist()
 
         reselects.tryEmit(Tab.Progress)
         compose.waitForIdle()
-        compose.onNodeWithText("Biblioteca").assertDoesNotExist()
+        compose.onNode(hasSetTextAction()).assertDoesNotExist()
 
         reselects.tryEmit(Tab.Library)
         compose.waitForIdle()
-        compose.onNodeWithText("Biblioteca").assertIsDisplayed()
+        compose.onNode(hasSetTextAction()).assertIsDisplayed()
     }
 
-    private fun chip(label: String) = compose.onNode(hasText(label) and isButton and isSelectable)
+    private fun typeFilter() = compose.onNode(hasContentDescription("Filtrar por tipo", substring = true) and isButton)
+
+    private fun menuItem(label: String) = compose.onNode(hasText(label) and isSelectable)
+
+    private fun choose(label: String) {
+        typeFilter().performClick()
+        menuItem(label).performClick()
+    }
 
     private val isSelectable = SemanticsMatcher.keyIsDefined(SemanticsProperties.Selected)
 

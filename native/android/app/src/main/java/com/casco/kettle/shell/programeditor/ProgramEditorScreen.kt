@@ -327,7 +327,7 @@ private fun Editing(
                 itemsIndexed(days, key = { _, day -> day.key }) { n, day ->
                     Column(SheetColumn.padding(start = Spacing.three)) {
                         if (outline.openDay == day.key) {
-                            DayEditor(day, n + 1, editor, context, outline)
+                            DayEditor(day, DayPlace(n + 1, n == 0, n == days.lastIndex), editor, context, outline)
                         } else {
                             DayRow(day, n + 1, context) { outline.toggleDay(day.key) }
                         }
@@ -336,7 +336,7 @@ private fun Editing(
                 item(key = "week-$number-footer") {
                     Column(
                         SheetColumn.padding(start = Spacing.three),
-                    ) { WeekFooter(number, days.size, context, outline) }
+                    ) { WeekFooter(number, editor, context, outline) }
                 }
             }
         }
@@ -344,7 +344,7 @@ private fun Editing(
     }
 }
 
-/** "Edit program" and Save, the one place Save is: Cancel is the sheet's ×. */
+/** "Edit program" and Save, the one place Save is (Cancel is the sheet's ×), and why it refused. */
 @Composable
 private fun TitleBar(editor: Editor) {
     val colors = KettleTheme.colors
@@ -370,6 +370,10 @@ private fun TitleBar(editor: Editor) {
         ) {
             Text(stringResource(R.string.common_save), style = KettleType.heading, color = colors.onAccent)
         }
+    }
+    // Under the Save it answers, pinned with it: at the foot of a long program it would never be seen.
+    refusalText(editor)?.let {
+        Text(it, Modifier.padding(bottom = Spacing.two), style = KettleType.small, color = colors.accentText)
     }
 }
 
@@ -420,7 +424,7 @@ private fun NameAndCount(
     }
 }
 
-/** After the weeks: adding one, the refusal, the program's id and Delete. */
+/** After the weeks: adding one, the program's id and Delete. */
 @Composable
 private fun Footer(
     editor: Editor,
@@ -444,9 +448,6 @@ private fun Footer(
         contentAlignment = Alignment.Center,
     ) {
         Text(stringResource(R.string.programEditor_addWeek), style = KettleType.heading, color = colors.textSecondary)
-    }
-    refusalText(editor)?.let {
-        Text(it, Modifier.padding(top = Spacing.two), style = KettleType.small, color = colors.accentText)
     }
     val existing = editor.existing ?: return
     Row(Modifier.fillMaxWidth().padding(top = Spacing.three), verticalAlignment = Alignment.CenterVertically) {

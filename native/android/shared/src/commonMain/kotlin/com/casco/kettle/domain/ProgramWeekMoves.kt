@@ -47,8 +47,9 @@ fun ProgramDraft.deletingWeek(week: Long): ProgramDraft =
     copy(weeks = weeks.filterNot { it.week.week == week }).renumbered { if (it > week) it - 1 else it }
 
 /**
- * A day at the end of week [week], labelled [label] (the screen's "Day N", so two new days don't share a
- * blank label Save would refuse), running the first of [workouts], as a new week does.
+ * A day at the end of week [week], labelled [label] (the screen's first free "Day N", [freeDayLabel], so
+ * a new day never takes a label its week already has), running the first of [workouts], as a new week
+ * does. The label is written in the editor's language: it's the reader's own default, theirs to change.
  */
 fun ProgramDraft.addingDay(
     week: Long,
@@ -58,6 +59,25 @@ fun ProgramDraft.addingDay(
     val day = DraftWeek(nextKey, ProgramWeek.Training(week, label, workouts.firstOrNull()?.id.orEmpty()))
     val after = weeks.indexOfLast { it.week.week == week } + 1
     return copy(weeks = weeks.take(after) + day + weeks.drop(after), nextKey = nextKey + 1)
+}
+
+/**
+ * The first of [candidate] (1, 2, …) that no day of week [week] already has as its label: "Day 3" after
+ * Day 1 was removed from Day 1–3 would be the second Day 3, which Save refuses as one address twice.
+ */
+fun ProgramDraft.freeDayLabel(
+    week: Long,
+    candidate: (Int) -> String,
+): String {
+    // A day with no label is shown as its place ("Day 2"), so that name is taken too.
+    val taken =
+        daysOf(week)
+            .mapIndexed { i, day ->
+                day.week.day
+                    ?.trim()
+                    ?.takeIf { it.isNotEmpty() } ?: candidate(i + 1).trim()
+            }.toSet()
+    return generateSequence(1) { it + 1 }.map(candidate).first { it.trim() !in taken }
 }
 
 /** The day keyed [key] traded places with its neighbour [by] (−1 or +1) within its own week. */

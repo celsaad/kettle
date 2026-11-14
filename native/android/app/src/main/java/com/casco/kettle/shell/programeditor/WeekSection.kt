@@ -19,6 +19,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.collapse
@@ -28,9 +29,12 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.DraftWeek
 import com.casco.kettle.domain.ProgramWeek
+import com.casco.kettle.domain.freeDayLabel
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.i18n.pluralText
+import com.casco.kettle.shell.list.ListRowMinHeight
 import com.casco.kettle.shell.list.ListRowSeparator
+import com.casco.kettle.shell.list.ListRowVerticalPadding
 import com.casco.kettle.shell.list.TextAction
 import com.casco.kettle.shell.theme.Chevron
 import com.casco.kettle.shell.theme.KettleTheme
@@ -58,7 +62,7 @@ internal fun WeekRow(
         Row(
             Modifier
                 .weight(1f)
-                .heightIn(min = 52.dp)
+                .heightIn(min = ListRowMinHeight)
                 .clickable(role = Role.Button, onClick = toggle)
                 .semantics { if (open) collapse { true.also { toggle() } } else expand { true.also { toggle() } } },
             horizontalArrangement = Arrangement.spacedBy(Spacing.two),
@@ -152,10 +156,10 @@ internal fun DayRow(
     Row(
         Modifier
             .fillMaxWidth()
-            .heightIn(min = 56.dp)
+            .heightIn(min = ListRowMinHeight)
             .clickable(role = Role.Button, onClick = onOpen)
             .semantics { expand { true.also { onOpen() } } }
-            .padding(vertical = Spacing.two),
+            .padding(vertical = ListRowVerticalPadding),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Spacing.half)) {
@@ -189,23 +193,29 @@ internal fun dayLabel(
     number: Int,
 ): String = week.day?.takeIf { it.isNotBlank() } ?: stringResource(R.string.programEditor_dayN, number)
 
-/** Under an open week's days: a day more, or the whole week again right after it. */
+/**
+ * Under an open week's days: a day more, labelled with the first "Day N" the week doesn't have, or the
+ * whole week again right after it. No day to add with no workout to give it: Save would refuse it.
+ */
 @Composable
 internal fun WeekFooter(
     week: Long,
-    days: Int,
+    editor: Editor,
     context: WeekContext,
     outline: EditorOutline,
 ) {
-    val newLabel = stringResource(R.string.programEditor_dayN, days + 1)
+    val resources = LocalResources.current
+    val newLabel = editor.draft.freeDayLabel(week) { resources.getString(R.string.programEditor_dayN, "$it") }
     ListRowSeparator()
     Row(horizontalArrangement = Arrangement.spacedBy(Spacing.four)) {
-        TextAction(
-            stringResource(R.string.programEditor_addDay),
-            KettleType.smallMedium,
-            KettleTheme.colors.text,
-            onClick = { outline.addDay(week, newLabel, context.workouts) },
-        )
+        if (context.workouts.isNotEmpty()) {
+            TextAction(
+                stringResource(R.string.programEditor_addDay),
+                KettleType.smallMedium,
+                KettleTheme.colors.text,
+                onClick = { outline.addDay(week, newLabel, context.workouts) },
+            )
+        }
         TextAction(
             stringResource(R.string.programEditor_duplicateThisWeek, week),
             KettleType.smallMedium,

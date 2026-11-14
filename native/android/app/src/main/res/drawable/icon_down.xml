@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Material Symbols "arrow_downward", 400 regular, for the program editor's week menu and day moves (#438),
+<!-- Material Symbols "arrow_downward", 400 regular, for moving a day down its week in the program editor (#438),
      redrawn in the 0–960 box the other icons use. Apache 2.0, like the font. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"

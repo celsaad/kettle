@@ -13,12 +13,15 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -80,7 +83,14 @@ internal fun ProgramWeeks(
         }
         Legend(colors)
     }
-    grid.firstOrNull { it.week == selected }?.let { DayList(it, current, slot) }
+    // A tap on a week scrolls its days into view: with ten weeks of tabs, the list they open sits a
+    // screen below the tab tapped. Only on a pick, so opening the sheet doesn't scroll anywhere.
+    val days = remember { BringIntoViewRequester() }
+    LaunchedEffect(picked) { if (picked != null) days.bringIntoView() }
+    grid
+        .firstOrNull {
+            it.week == selected
+        }?.let { Box(Modifier.bringIntoViewRequester(days)) { DayList(it, current, slot) } }
 }
 
 /** A section's heading, and what it covers on the right. */

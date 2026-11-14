@@ -48,14 +48,14 @@ import com.casco.kettle.shell.workouteditor.StepButton
 @Composable
 internal fun DayEditor(
     draft: DraftWeek,
-    number: Int,
+    place: DayPlace,
     editor: Editor,
     context: WeekContext,
     outline: EditorOutline,
 ) {
     val key = draft.key
     val week = draft.week
-    val label = dayLabel(week, number)
+    val label = dayLabel(week, place.number)
     Column(Modifier.padding(bottom = Spacing.two)) {
         ListRowSeparator()
         OpenDayHeader(label) { outline.toggleDay(key) }
@@ -103,7 +103,10 @@ internal fun DayEditor(
             ) { editor.setOverrides(key, it) }
         }
 
-        DayMoves(label, onMove = { by -> outline.moveDay(key, by) }) { editor.removeWeek(key) }
+        DayMoves(label, place, onMove = { by -> outline.moveDay(key, by) }) {
+            // A week's only day goes with its week, closing the gap as the week menu's delete does.
+            if (place.first && place.last) outline.deleteWeek(week.week) else editor.removeWeek(key)
+        }
     }
 }
 
@@ -130,6 +133,7 @@ private fun OpenDayHeader(
 @Composable
 private fun DayMoves(
     label: String,
+    place: DayPlace,
     onMove: (Int) -> Unit,
     onRemove: () -> Unit,
 ) {
@@ -138,8 +142,16 @@ private fun DayMoves(
         horizontalArrangement = Arrangement.spacedBy(Spacing.two),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        StepButton(R.drawable.icon_up, stringResource(R.string.programEditor_moveDayUp, label)) { onMove(-1) }
-        StepButton(R.drawable.icon_down, stringResource(R.string.programEditor_moveDayDown, label)) { onMove(+1) }
+        StepButton(
+            R.drawable.icon_up,
+            stringResource(R.string.programEditor_moveDayUp, label),
+            !place.first,
+        ) { onMove(-1) }
+        StepButton(
+            R.drawable.icon_down,
+            stringResource(R.string.programEditor_moveDayDown, label),
+            !place.last,
+        ) { onMove(+1) }
         Box(Modifier.weight(1f))
         TextAction(
             stringResource(R.string.programEditor_removeDay),
@@ -153,6 +165,13 @@ private fun DayMoves(
 @Composable
 private fun Hint(text: String) =
     Text(text, Modifier.padding(top = Spacing.half), style = KettleType.small, color = KettleTheme.colors.textSecondary)
+
+/** Where a day sits in its week: its number, and whether it can move up or down. */
+internal data class DayPlace(
+    val number: Int,
+    val first: Boolean,
+    val last: Boolean,
+)
 
 /** What a day runs: a workout, or rest. */
 private val KINDS = listOf(false to R.string.programEditor_workout, true to R.string.programEditor_restDay)

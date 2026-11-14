@@ -75,6 +75,52 @@ class ProgramWeekMovesTest {
         assertEquals("w", (added.daysOf(1).last().week as ProgramWeek.Training).workoutId)
     }
 
+    /** Day 1–3 with Day 1 removed: the next new day is Day 1 again, never a second Day 3. */
+    @Test
+    fun `picks the first day label its week doesn't have`() {
+        val week =
+            programDraftOf(
+                Program("p", "P", listOf("Day 2", "Day 3").map { ProgramWeek.Training(1, it, "a") }),
+            )
+
+        assertEquals("Day 1", week.freeDayLabel(1) { "Day $it" })
+        assertEquals("Day 4", week.addingDay(1, "Day 1", emptyList()).freeDayLabel(1) { "Day $it" })
+    }
+
+    /** An unlabelled first day reads "Day 1" on screen, so a new day can't take that name too. */
+    @Test
+    fun `counts an unlabelled day's shown name as taken`() {
+        val unlabelled = programDraftOf(Program("p", "P", listOf(ProgramWeek.Training(1, workoutId = "a"))))
+
+        assertEquals("Day 2", unlabelled.freeDayLabel(1) { "Day $it" })
+    }
+
+    @Test
+    fun `copies a week whole, its notes, rest days and changes`() {
+        val override = ProgramOverride.ExerciseOverride("x", mapOf("sets" to OverrideValue.Numeric(4.0)))
+        val full =
+            programDraftOf(
+                Program(
+                    "p",
+                    "P",
+                    listOf(
+                        ProgramWeek.Training(1, "Mon", "a", "Go easy", listOf(override)),
+                        ProgramWeek.RestDay(1, "Tue", "Walk"),
+                    ),
+                ),
+            )
+
+        val copy = full.duplicatingWeek(1).daysOf(2).map { it.week }
+
+        assertEquals(
+            listOf(
+                ProgramWeek.Training(2, "Mon", "a", "Go easy", listOf(override)),
+                ProgramWeek.RestDay(2, "Tue", "Walk"),
+            ),
+            copy,
+        )
+    }
+
     @Test
     fun `moves a day within its week only`() {
         val monday = draft.weeks.first().key

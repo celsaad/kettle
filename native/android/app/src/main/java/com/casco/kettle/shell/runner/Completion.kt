@@ -1,6 +1,5 @@
 package com.casco.kettle.shell.runner
 
-import android.content.res.Resources
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -12,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -29,14 +29,18 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.ExerciseAgainstLast
+import com.casco.kettle.domain.Session
 import com.casco.kettle.domain.SessionRecord
 import com.casco.kettle.domain.againstLastTime
 import com.casco.kettle.domain.sessionDurationMinutes
 import com.casco.kettle.domain.sessionRecords
 import com.casco.kettle.domain.sessionSetCount
+import com.casco.kettle.domain.withoutZeroWork
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.history.entryResultText
 import com.casco.kettle.shell.home.weekLabel
+import com.casco.kettle.shell.list.ListRowMinHeight
+import com.casco.kettle.shell.list.ListRowVerticalPadding
 import com.casco.kettle.shell.progress.Readings
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.Spacing
@@ -54,14 +58,17 @@ internal fun Completion(
     actions: RunnerActions,
 ) {
     val session = view.session
-    // The log is reread on every write, so the finished session is in it: both selectors skip it.
+    // Zero work out first, as every training view reads the log: logging 0 is how the runner skips, and
+    // a skipped 60 kg × 0 is no result, let alone a PR. The log is reread on every write, so the finished
+    // session is in it: both selectors skip it.
+    val logged = remember(session) { withoutZeroWork(session) }
     val records =
-        remember(session, environment.priorSessions) {
-            sessionRecords(session, environment.priorSessions, view.plan.exercises)
+        remember(logged, environment.priorSessions) {
+            sessionRecords(logged, environment.priorSessions, view.plan.exercises)
         }
     val rows =
-        remember(session, environment.priorSessions) {
-            againstLastTime(session, environment.priorSessions, view.plan.exercises)
+        remember(logged, environment.priorSessions) {
+            againstLastTime(logged, environment.priorSessions, view.plan.exercises)
         }
     Column(Modifier.fillMaxSize()) {
         Column(
@@ -69,9 +76,9 @@ internal fun Completion(
             verticalArrangement = Arrangement.spacedBy(Spacing.three),
         ) {
             Heading(view)
-            Tiles(view)
+            Tiles(logged, exercises = rows.size)
             if (rows.isNotEmpty()) AgainstLastTime(rows, records, environment)
-            NextInProgram(view, environment)
+            NextInProgramLine(view, environment)
             Backup(view.backup, environment.backupFolder)
         }
         Pinned(onEditLog = { actions.editLog(session.id) }, onDone = actions.done)
@@ -107,16 +114,10 @@ private fun Heading(view: RunnerView.Completed) {
 
 /** Time, Sets and Exercises in a ruled row, as Overview's tiles. */
 @Composable
-private fun Tiles(view: RunnerView.Completed) {
-    val session = view.session
-    val exercises =
-        remember(session) {
-            session.entries
-                .filter { it !is com.casco.kettle.domain.SessionEntry.Rest }
-                .map { it.exercise }
-                .distinct()
-                .size
-        }
+private fun Tiles(
+    session: Session,
+    exercises: Int,
+) {
     Column {
         Rule()
         Row(Modifier.height(IntrinsicSize.Min)) {
@@ -176,7 +177,10 @@ private fun AgainstLastTime(
         style = KettleType.smallMedium,
         color = runnerColors.textSecondary,
     )
-    rows.forEach { row -> ComparisonRow(row, records.firstOrNull { it.exerciseId == row.exerciseId }, environment) }
+    rows.forEach { row ->
+        // The record on the measure the row shows: one exercise can set a weight PR and a reps one.
+        ComparisonRow(row, records.firstOrNull { it.exerciseId == row.exerciseId && it.kind == row.kind }, environment)
+    }
     if (records.any { it is SessionRecord.HeaviestSet && it.oneRepMaxKg != null }) {
         Text(
             stringResource(R.string.session_complete_oneRepMaxNote),
@@ -207,12 +211,13 @@ private fun ComparisonRow(
     val badge = record?.let { stringResource(R.string.session_complete_recordBadge) }
     val description = listOfNotNull(row.exerciseName, badge, today, oneRepMax, spoken).joinToString(", ")
     Column(Modifier.fillMaxWidth().clearAndSetSemantics { contentDescription = description }) {
-        Box(Modifier.fillMaxWidth().height(1.dp).background(runnerColors.outline))
+        // The list rows' own metrics: a list of peers is rows, on the runner's field as in the shell.
+        Rule()
         Row(
-            Modifier.fillMaxWidth().padding(vertical = Spacing.two),
+            Modifier.fillMaxWidth().heightIn(min = ListRowMinHeight).padding(vertical = ListRowVerticalPadding),
             horizontalArrangement = Arrangement.spacedBy(Spacing.two),
         ) {
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Spacing.half)) {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(Spacing.two),
                     verticalAlignment = Alignment.CenterVertically,
@@ -246,24 +251,5 @@ private fun Pinned(
     ) {
         OutlineButton(stringResource(R.string.session_complete_editLog), onEditLog)
         PrimaryButton(stringResource(R.string.session_complete_done), onDone, Modifier.weight(1f))
-    }
-}
-
-/**
- * The change as shown, "▲ 2.5 kg", "Same" or "First time", and as spoken, where the drawn arrow is the
- * signed change instead ("+2.5 kg"). Both null for interval work or a last time on another measure.
- */
-private fun changeTexts(
-    row: ExerciseAgainstLast,
-    readings: Readings?,
-    resources: Resources,
-): Pair<String?, String?> {
-    val change = row.change
-    return when {
-        row.firstTime -> resources.getString(R.string.session_complete_firstTime).let { it to it }
-        change == null || readings == null -> null to null
-        change > 0 -> "▲ ${readings.reading(change)}" to readings.delta(change)
-        change < 0 -> "▼ ${readings.reading(-change)}" to readings.delta(change)
-        else -> resources.getString(R.string.session_complete_same).let { it to it }
     }
 }

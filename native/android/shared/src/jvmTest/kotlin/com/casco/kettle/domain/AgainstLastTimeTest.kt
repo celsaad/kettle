@@ -29,6 +29,32 @@ class AgainstLastTimeTest {
         assertEquals("Squat", rows.single().exerciseName)
     }
 
+    /** 60 kg × 5 last time, 60 kg × 8 today: the weight held and the reps went up, which is progress. */
+    @Test
+    fun `counts the reps gained at a weight that held`() {
+        val today = session("today", "2026-08-15", reps("squat", 60.0, count = 8))
+        val row = compare(today, lift("last", "2026-08-08", 60.0)).single()
+
+        assertEquals(0.0, row.change)
+        assertEquals(3L, row.repsChange)
+    }
+
+    @Test
+    fun `has no reps change where the weight moved`() {
+        assertNull(compare(lift("today", "2026-08-15", 65.0), lift("last", "2026-08-08", 60.0)).single().repsChange)
+    }
+
+    /** A weighted block and a bodyweight one: compared on the weight, never 12 reps against 10 kg. */
+    @Test
+    fun `ranks two entries of one exercise on one measure, the weight`() {
+        val bodyweight = SessionEntry.Reps("squat", listOf(RepsSetLog(reps = 12, restTakenSec = 60.0)))
+        val today = session("today", "2026-08-15", reps("squat", 10.0), bodyweight)
+        val row = compare(today, lift("last", "2026-08-08", 7.5)).single()
+
+        assertEquals(RecordKind.HeaviestSet, row.kind)
+        assertEquals(2.5, row.change)
+    }
+
     @Test
     fun `says first time when nothing before logged it`() {
         val row = compare(lift("today", "2026-08-15", 65.0)).single()
@@ -96,4 +122,5 @@ private fun session(
 private fun reps(
     exercise: String,
     kg: Double,
-) = SessionEntry.Reps(exercise, listOf(RepsSetLog(reps = 5, weightKg = kg, restTakenSec = 60.0)))
+    count: Long = 5,
+) = SessionEntry.Reps(exercise, listOf(RepsSetLog(reps = count, weightKg = kg, restTakenSec = 60.0)))

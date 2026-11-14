@@ -348,6 +348,36 @@ class RunnerScreenTest : RunnerScreenHarness() {
         assertEquals(1, done)
     }
 
+    /** Logging 0 is how the runner skips: a skipped 60 kg × 0 is no result, no ▲ and no PR. */
+    @Test
+    fun `completion leaves a skipped exercise off the receipt`() {
+        prior = listOf(finished("old", 50.0, at = "2026-07-25T10:00:00.000Z"))
+        val skipped =
+            finished(
+                "s",
+                60.0,
+            ).copy(entries = listOf(SessionEntry.Reps("squat", listOf(RepsSetLog(0, 60.0, restTakenSec = 90.0)))))
+        show(RunnerEntry.Complete(RunnerView.Completed(plan(block(squat)), skipped, FinishBackupState.NONE)))
+
+        compose.onNode(hasContentDescription("Agachamento", substring = true)).assertDoesNotExist()
+        compose.onNodeWithText("Em relação à última vez").assertDoesNotExist()
+    }
+
+    /** The weight held and the reps went up: progress the weight alone would call "Same". */
+    @Test
+    fun `completion shows reps gained at a weight that held`() {
+        prior = listOf(finished("old", 60.0, at = "2026-07-25T10:00:00.000Z"))
+        val more =
+            finished(
+                "s",
+                60.0,
+            ).copy(entries = listOf(SessionEntry.Reps("squat", listOf(RepsSetLog(8, 60.0, restTakenSec = 90.0)))))
+        show(RunnerEntry.Complete(RunnerView.Completed(plan(block(squat)), more, FinishBackupState.NONE)))
+
+        compose.onNode(hasContentDescription("+3 repetições", substring = true)).assertExists()
+        compose.onNode(hasContentDescription("Igual", substring = true)).assertDoesNotExist()
+    }
+
     @Test
     fun `completion says first time for an exercise never logged before`() {
         show(
@@ -378,7 +408,7 @@ class RunnerScreenTest : RunnerScreenHarness() {
         prior = listOf(day)
         show(RunnerEntry.Complete(RunnerView.Completed(plan(block(squat)), day, FinishBackupState.NONE)))
 
-        compose.onNodeWithText("Semana 1 · Dia 1 concluído").assertExists()
+        compose.onNodeWithText("Concluído: Semana 1 · Dia 1").assertExists()
         compose.onNodeWithText("Próximo em Base: Semana 1 · Dia 2 · Costas").assertExists()
     }
 

@@ -22,7 +22,8 @@ import com.casco.kettle.shell.R
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.Spacing
 
-// Either end of a session: the count-in before it, and the completion screen after.
+// The count-in before a session, and the centred column it and other runner screens stand in; the
+// completion receipt after a session is `Completion.kt`'s.
 
 /**
  * GET READY, the workout's name as the headline and the count as its caption: the name is what a

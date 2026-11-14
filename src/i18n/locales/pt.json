@@ -337,7 +337,7 @@
       "recordBadge": "RECORDE",
       "oneRepMaxNote": "1RM estimado a partir da sua melhor série, pela fórmula de Epley.",
       "backupFailed": "Esta sessão está salva neste aparelho, mas a cópia para a sua pasta de backup não foi feita. Veja em Seu arquivo, na Biblioteca.",
-      "dayDone": "{{slot}} concluído",
+      "dayDone": "Concluído: {{slot}}",
       "time": "Tempo",
       "sets": "Séries",
       "exercises": "Exercícios",

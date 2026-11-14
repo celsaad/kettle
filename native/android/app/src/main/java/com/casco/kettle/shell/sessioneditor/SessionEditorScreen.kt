@@ -138,7 +138,10 @@ fun SessionEditorScreen(
             if (logged == null) return@Column
             // Worked out from the first read of the log and kept, as RN's editor copied its drafts once:
             // the shell reads again while the sheet is up, and from then on what's typed is the user's.
-            val editing = remember(id, units) { sessionEditing(logged, id, units) }
+            // Once more when the session's end lands: the receipt's Edit log (#416) can open this before
+            // the reread with the finished copy, which would otherwise hold "still running" for good.
+            val endedAt = logged.firstOrNull { it.id == id }?.endedAt
+            val editing = remember(id, units, endedAt) { sessionEditing(logged, id, units) }
             logged.firstOrNull { it.id == id }?.let { Subtitle(it, library, zone) }
             when (editing) {
                 SessionEditing.NotFound -> {

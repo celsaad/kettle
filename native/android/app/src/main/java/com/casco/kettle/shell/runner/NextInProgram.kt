@@ -28,8 +28,8 @@ internal data class NextInProgram(
 
 /**
  * Today's card's own reading, taken now that the finished session is in the log: so the receipt and
- * Today, a tap away, name the same next slot. Null for a session not run as a program day, or a program
- * since deleted.
+ * Today, a tap away, name the same next slot. Null for a session not run as a program day, a program
+ * since deleted, or a next slot whose workout is gone (Today then shows a workout of the day).
  */
 @Composable
 internal fun rememberNextInProgram(
@@ -37,7 +37,8 @@ internal fun rememberNextInProgram(
     environment: RunnerEnvironment,
 ): NextInProgram? {
     val library = environment.library
-    val programId = session.program
+    // Gated as the heading is, on a week: a session with a program and no week says "Workout complete".
+    val programId = session.program?.takeIf { session.programWeek != null }
     return remember(session, library, environment.priorSessions) {
         val program = library?.programs?.firstOrNull { it.id == programId } ?: return@remember null
         when (
@@ -47,7 +48,9 @@ internal fun rememberNextInProgram(
                     environment.priorSessions,
                     Clock.System.now(),
                     TimeZone.currentSystemDefault(),
-                )
+                    // Only this session's own program's slot: a log read before the session landed would
+                    // still follow the previous one, and pair its slot with this program's name.
+                ).takeIf { it?.position?.program?.id == programId }
         ) {
             is NextUp.Queued -> {
                 next.weekNumber?.let {
@@ -73,7 +76,7 @@ internal fun rememberNextInProgram(
 
 /** What the program has next, for a session run as a program day; nothing for a plain workout. */
 @Composable
-internal fun NextInProgram(
+internal fun NextInProgramLine(
     view: RunnerView.Completed,
     environment: RunnerEnvironment,
 ) {

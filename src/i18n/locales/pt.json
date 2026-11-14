@@ -6,7 +6,6 @@
     "save": "Salvar",
     "done": "Concluir",
     "export": "Exportar",
-    "import": "Importar",
     "close": "Fechar",
     "dragHandle": "Alça de arrastar",
     "name": "Nome",
@@ -169,7 +168,14 @@
     "searchPlaceholder_zero": "Buscar {{count}} exercícios",
     "filterEmom": "EMOM",
     "filterAmrap": "AMRAP",
-    "filterCardio": "Cardio"
+    "filterCardio": "Cardio",
+    "filterType": "Tipo",
+    "filterAllTypes": "todos os tipos",
+    "typedSummary": "{{type}} · {{summary}}",
+    "workoutInProgram": "No seu programa · {{shape}}",
+    "targetReps": "{{sets}} × {{reps}}{{weight}}",
+    "targetHold": "{{sets}} × {{hold}}s",
+    "targetHoldOpen": "{{sets}} × isometria máxima"
   },
   "programGuide": {
     "title": "Escrevendo um programa à mão",
@@ -208,16 +214,11 @@
   },
   "programs": {
     "title": "Programas",
-    "helpLabel": "Como escrever um programa",
     "overrideIgnoredInvalid": "não aplicado — este valor não é permitido",
     "overrideIgnoredUnknownKey": "não aplicado — não existe essa configuração para alterar",
     "overrideIgnoredMissing": "não aplicado — nada nesta semana corresponde",
     "noWeeks": "Sem semanas",
     "week": "Semana {{n}}",
-    "weeksRange": "Semanas {{first}}–{{last}}",
-    "weeksWithNotes_one": "{{count}} semana com notas ou substituições",
-    "weeksWithNotes_other": "{{count}} semanas com notas ou substituições",
-    "weeksWithNotes_zero": "{{count}} semanas com notas ou substituições",
     "count_one": "{{count}} programa",
     "count_other": "{{count}} programas",
     "count_zero": "{{count}} programas",
@@ -227,7 +228,16 @@
     "newProgram": "Novo programa",
     "searchPlaceholder_one": "Buscar {{count}} programa",
     "searchPlaceholder_other": "Buscar {{count}} programas",
-    "searchPlaceholder_zero": "Buscar {{count}} programas"
+    "searchPlaceholder_zero": "Buscar {{count}} programas",
+    "active": "Ativo, semana {{n}}",
+    "weekCount_zero": "{{count}} semanas",
+    "weekCount_one": "{{count}} semana",
+    "weekCount_other": "{{count}} semanas",
+    "sessionsPerWeek_zero": "{{count}} sessões por semana",
+    "sessionsPerWeek_one": "{{count}} sessão por semana",
+    "sessionsPerWeek_other": "{{count}} sessões por semana",
+    "rowDetail": "{{lead}} · {{sessions}}",
+    "guideLink": "Como escrever um programa à mão"
   },
   "session": {
     "doneNextStep": "Concluído, próxima etapa",

@@ -248,10 +248,10 @@ private const val DAY = "day"
 const val SECTION = "section"
 
 /**
- * The sections the Library and Progress tabs hold until their own tickets redesign them (#411): each
- * shows a screen the four-tab shell had as a tab of its own, or Stats, which was a sheet. Declared in
- * switch order, and a tab's first is where it opens with none named. Library's is Workouts (#412),
- * the list Today held until it narrowed to what's next.
+ * The sections the Library and Progress tabs hold (#411): each shows a screen the four-tab shell had as
+ * a tab of its own, or Stats, which was a sheet. Declared in tab order, and a tab's first is where it
+ * opens with none named. Library's is Workouts (#412), the list Today held until it narrowed to what's
+ * next, then Programs and Exercises, as the canvas draws them (#413).
  */
 enum class Section(
     val param: String,
@@ -259,8 +259,8 @@ enum class Section(
     @StringRes val label: Int,
 ) {
     WORKOUTS("workouts", Tab.Library, R.string.tabs_sections_workouts),
-    EXERCISES("exercises", Tab.Library, R.string.tabs_sections_exercises),
     PROGRAMS("programs", Tab.Library, R.string.tabs_sections_programs),
+    EXERCISES("exercises", Tab.Library, R.string.tabs_sections_exercises),
     SESSIONS("sessions", Tab.Progress, R.string.tabs_sections_sessions),
     STATS("stats", Tab.Progress, R.string.tabs_sections_stats),
     ;

@@ -4,55 +4,55 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
 /**
- * `programWeeksWithNotes`, the count that sat inside RN's `(tabs)/programs.tsx` until Programs went
- * native (#232). Its one jest case was the screen's; it is here as the selector's, and the words are
- * `ProgramsScreenTest`'s.
+ * The counts Library's program rows read (#413): sessions a week, and the workouts a program trains.
+ * The words are `ProgramsScreenTest`'s.
  */
 class ProgramWeeksTest {
-    private val sets = mapOf("sets" to OverrideValue.Numeric(4.0))
-
     private fun program(vararg weeks: ProgramWeek) = Program("block", "Block", weeks.toList())
 
-    // `program.weeks` holds one entry per week *and day*, so counting entries over-reported: a
-    // four-week program with notes on two days of every week claimed 8 next to a "Weeks 1–4" range.
     @Test
-    fun `counts distinct weeks, not the day entries inside them`() {
-        val everyWeekTwice =
-            (1L..4L).flatMap { week ->
-                listOf(
-                    ProgramWeek.Training(week, "Day 1", "push-day", notes = "Push a little harder."),
-                    ProgramWeek.Training(week, "Day 3", "push-day", notes = "And again."),
-                )
-            }
-
-        assertEquals(4, programWeeksWithNotes(program(*everyWeekTwice.toTypedArray())))
-    }
-
-    @Test
-    fun `counts a week with overrides and no notes`() {
-        val overridden = ProgramOverride.ExerciseOverride("pushups", sets)
-
-        assertEquals(
-            1,
-            programWeeksWithNotes(program(ProgramWeek.Training(2, workoutId = "w", overrides = listOf(overridden)))),
-        )
-    }
-
-    @Test
-    fun `counts a rest day's notes`() {
-        assertEquals(1, programWeeksWithNotes(program(ProgramWeek.RestDay(3, notes = "Walk instead."))))
-    }
-
-    // RN tested `week.notes` and `overrides.length > 0` for truth, so empty ones say nothing.
-    @Test
-    fun `leaves out a week with empty notes or an empty override list`() {
-        val plain =
+    fun `sessions a week counts the training days each week holds, rest days not among them`() {
+        val program =
             program(
-                ProgramWeek.Training(1, workoutId = "w"),
-                ProgramWeek.Training(2, workoutId = "w", notes = ""),
-                ProgramWeek.Training(3, workoutId = "w", overrides = emptyList()),
+                ProgramWeek.Training(1, "Day 1", "push-day"),
+                ProgramWeek.RestDay(1, "Day 2"),
+                ProgramWeek.Training(1, "Day 3", "pull-day"),
+                ProgramWeek.Training(2, "Day 1", "push-day"),
+                ProgramWeek.Training(2, "Day 3", "pull-day"),
             )
 
-        assertEquals(0, programWeeksWithNotes(plain))
+        assertEquals(2, programSessionsPerWeek(program))
+    }
+
+    /** A count only some weeks keep would be wrong about the others, so the row says none. */
+    @Test
+    fun `sessions a week is null when the weeks differ`() {
+        val program =
+            program(
+                ProgramWeek.Training(1, "Day 1", "push-day"),
+                ProgramWeek.Training(2, "Day 1", "push-day"),
+                ProgramWeek.Training(2, "Day 2", "pull-day"),
+            )
+
+        assertEquals(null, programSessionsPerWeek(program))
+    }
+
+    @Test
+    fun `sessions a week is null for a program of rest alone, or of nothing`() {
+        assertEquals(null, programSessionsPerWeek(program(ProgramWeek.RestDay(1, "Day 1"))))
+        assertEquals(null, programSessionsPerWeek(program()))
+    }
+
+    @Test
+    fun `a program's workouts are those its training days name, once each`() {
+        val program =
+            program(
+                ProgramWeek.Training(1, "Day 1", "push-day"),
+                ProgramWeek.RestDay(1, "Day 2"),
+                ProgramWeek.Training(2, "Day 1", "push-day"),
+                ProgramWeek.Training(2, "Day 3", "pull-day"),
+            )
+
+        assertEquals(setOf("push-day", "pull-day"), programWorkoutIds(program))
     }
 }

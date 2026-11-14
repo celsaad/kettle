@@ -5,6 +5,7 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertWidthIsAtLeast
@@ -13,8 +14,8 @@ import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasScrollToIndexAction
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
-import androidx.compose.ui.test.isHeading
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToIndex
@@ -24,6 +25,8 @@ import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.Exercise
 import com.casco.kettle.domain.ExerciseConfig
 import com.casco.kettle.domain.Library
+import com.casco.kettle.domain.Program
+import com.casco.kettle.domain.ProgramWeek
 import com.casco.kettle.domain.RepsSetLog
 import com.casco.kettle.domain.RunnerStart
 import com.casco.kettle.domain.Session
@@ -99,7 +102,6 @@ class WorkoutsScreenTest {
     fun `is translated`() {
         show(listFiles())
 
-        text("Treinos").assert(isHeading())
         compose.onNode(hasSetTextAction() and hasText("Buscar 3 treinos")).assertExists()
     }
 
@@ -186,12 +188,22 @@ class WorkoutsScreenTest {
         show(Files(library(workouts = emptyList())))
 
         compose
-            .onNode(hasContentDescription("Novo treino") and isButton)
-            .assertHeightIsAtLeast(48.dp)
-            .assertWidthIsAtLeast(48.dp)
+            .onNode(
+                hasText("Adicionar um programa inicial") and isButton,
+            ).assertHeightIsAtLeast(48.dp)
             .performClick()
 
-        assertEquals(listOf(Route(Destination.WorkoutEditor)), opened)
+        assertEquals(listOf(Route(Destination.Import)), opened)
+    }
+
+    /** The program Today runs, so a row says it's in it rather than every program it might be in. */
+    @Test
+    fun `a workout the running program trains says so`() {
+        val program = Program("base", "Base", listOf(ProgramWeek.Training(1, "Day 1", "bench")))
+        show(Files(library(workouts = listOf(zercher, bench), programs = listOf(program))))
+
+        row("Bench day").assert(hasText("No seu programa · ", substring = true))
+        compose.onAllNodesWithText("No seu programa", substring = true).assertCountEquals(1)
     }
 
     /** #153 dropped re-tap-to-top with RN's bar; each tab's port brings it back for its own list. */
@@ -200,15 +212,15 @@ class WorkoutsScreenTest {
         val many = (1..60).map { Workout("w$it", "Workout $it", emptyList()) }
         show(Files(library(workouts = many), sessions = listOf(session())))
         compose.onNode(hasScrollToIndexAction()).performScrollToIndex(many.size)
-        text("Treinos").assertDoesNotExist()
+        compose.onNode(hasSetTextAction()).assertDoesNotExist()
 
         reselects.tryEmit(Tab.Today)
         compose.waitForIdle()
-        text("Treinos").assertDoesNotExist()
+        compose.onNode(hasSetTextAction()).assertDoesNotExist()
 
         reselects.tryEmit(Tab.Library)
         compose.waitForIdle()
-        text("Treinos").assertIsDisplayed()
+        compose.onNode(hasSetTextAction()).assertIsDisplayed()
     }
 
     @Test
@@ -232,7 +244,10 @@ class WorkoutsScreenTest {
         override fun library() = library
     }
 
-    private fun library(workouts: List<Workout> = listOf(pushDay)) = Library(1, listOf(pushups), workouts, emptyList())
+    private fun library(
+        workouts: List<Workout> = listOf(pushDay),
+        programs: List<Program> = emptyList(),
+    ) = Library(1, listOf(pushups), workouts, programs)
 
     private fun listFiles() = Files(library(workouts = listOf(zercher, bench, never)))
 

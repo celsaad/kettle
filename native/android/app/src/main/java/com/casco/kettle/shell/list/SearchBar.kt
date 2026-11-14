@@ -1,7 +1,6 @@
 package com.casco.kettle.shell.list
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -14,6 +13,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -28,19 +28,21 @@ import com.casco.kettle.shell.theme.TypeIcon
  * placeholder is its name too, read with the field as Material's `TextField` reads its own: the visible
  * words are what Voice Access matches, and a separate label would break that. It owns its top margin,
  * since every screen places it the same distance below the block above it.
+ *
+ * Filled and borderless (#413), in [fieldFill].
  */
 @Composable
 fun SearchBar(
     value: String,
     onValueChange: (String) -> Unit,
     placeholder: String,
+    modifier: Modifier = Modifier,
 ) {
     val colors = KettleTheme.colors
-    val shape = RoundedCornerShape(14.dp)
     BasicTextField(
         value,
         onValueChange,
-        Modifier
+        modifier
             .padding(top = Spacing.three)
             .fillMaxWidth(),
         textStyle = KettleType.default.copy(fontSize = 14.sp, color = colors.text),
@@ -50,8 +52,7 @@ fun SearchBar(
             Row(
                 Modifier
                     .heightIn(min = 48.dp)
-                    .background(colors.backgroundElement, shape)
-                    .border(1.dp, colors.border, shape)
+                    .background(fieldFill(), FieldShape)
                     .padding(horizontal = Spacing.two + 6.dp),
                 horizontalArrangement = Arrangement.spacedBy(Spacing.two),
                 verticalAlignment = Alignment.CenterVertically,
@@ -72,3 +73,16 @@ fun SearchBar(
         },
     )
 }
+
+/**
+ * A filled field's ground: the search box, and Library's Type button beside it. `backgroundSelected` in
+ * light, where `textSecondary` on it measures 4.79:1. Not in dark: that one is translucent, and over
+ * `background` it composites to #2b2823, where `textSecondary` measures 4.46:1, short of AA's 4.5, so
+ * dark takes `backgroundElement`, 4.97:1. `text` clears 12:1 on both.
+ */
+@Composable
+fun fieldFill(): Color =
+    if (KettleTheme.dark) KettleTheme.colors.backgroundElement else KettleTheme.colors.backgroundSelected
+
+/** A filled field's corners. */
+val FieldShape = RoundedCornerShape(14.dp)

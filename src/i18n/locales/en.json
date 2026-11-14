@@ -6,7 +6,6 @@
     "save": "Save",
     "done": "Done",
     "export": "Export",
-    "import": "Import",
     "close": "Close",
     "dragHandle": "Drag handle",
     "name": "Name",
@@ -159,7 +158,14 @@
     "searchPlaceholder_other": "Search {{count}} exercises",
     "filterEmom": "EMOM",
     "filterAmrap": "AMRAP",
-    "filterCardio": "Cardio"
+    "filterCardio": "Cardio",
+    "filterType": "Type",
+    "filterAllTypes": "all types",
+    "typedSummary": "{{type}} · {{summary}}",
+    "workoutInProgram": "In your program · {{shape}}",
+    "targetReps": "{{sets}} × {{reps}}{{weight}}",
+    "targetHold": "{{sets}} × {{hold}}s",
+    "targetHoldOpen": "{{sets}} × max hold"
   },
   "programGuide": {
     "title": "Writing a program by hand",
@@ -198,15 +204,11 @@
   },
   "programs": {
     "title": "Programs",
-    "helpLabel": "How to write a program",
     "overrideIgnoredInvalid": "not applied — this value isn't allowed",
     "overrideIgnoredUnknownKey": "not applied — there is no such setting to change",
     "overrideIgnoredMissing": "not applied — nothing in this week matches",
     "noWeeks": "No weeks",
     "week": "Week {{n}}",
-    "weeksRange": "Weeks {{first}}–{{last}}",
-    "weeksWithNotes_one": "{{count}} week with notes or overrides",
-    "weeksWithNotes_other": "{{count}} weeks with notes or overrides",
     "count_one": "{{count}} program",
     "count_other": "{{count}} programs",
     "emptyTitle": "No programs yet",
@@ -214,7 +216,14 @@
     "emptyYamlLink": "Writing one as YAML →",
     "newProgram": "New program",
     "searchPlaceholder_one": "Search {{count}} program",
-    "searchPlaceholder_other": "Search {{count}} programs"
+    "searchPlaceholder_other": "Search {{count}} programs",
+    "active": "Active, week {{n}}",
+    "weekCount_one": "{{count}} week",
+    "weekCount_other": "{{count}} weeks",
+    "sessionsPerWeek_one": "{{count}} session a week",
+    "sessionsPerWeek_other": "{{count}} sessions a week",
+    "rowDetail": "{{lead}} · {{sessions}}",
+    "guideLink": "Writing a program by hand"
   },
   "session": {
     "doneNextStep": "Done, next step",

@@ -66,9 +66,10 @@ steps=(
   'tap:Edit program|Edit program' 'back|Week 1 · Day 1' 'tap:Start Week 1 · Day 1|End'
   'back|End the session early?' 'tap:Save and end|Workout complete' 'tap:Done|Week 1 · Day 1'
   'back|tab:Programs'
-  # Library's Exercises: a row and Import open their native sheets over it, and back returns to it (#234).
+  # Library's Exercises: a row and the header's + open their native sheets over it, and back returns to
+  # it (#234, #413).
   'tap:Exercises|tab:Exercises' 'tap:Push-ups|Edit exercise' 'back|tab:Exercises'
-  'tap:Import|Import library' 'back|tab:Exercises'
+  'tap:New exercise|New exercise' 'back|tab:Exercises'
   # Today's gear opens native Settings over it, and back returns (#235). All workouts opens Library's
   # Workouts (#412), whose New workout opens the native editor over it (#238).
   'tap:Today|tab:Today' 'tap:Settings|Settings' 'back|tab:Today' 'tap:All workouts|tab:Workouts'

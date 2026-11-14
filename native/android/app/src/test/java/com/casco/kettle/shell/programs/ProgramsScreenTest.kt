@@ -3,15 +3,11 @@ package com.casco.kettle.shell.programs
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
-import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.assertWidthIsAtLeast
-import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasScrollToIndexAction
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
-import androidx.compose.ui.test.isHeading
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -21,6 +17,9 @@ import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.Library
 import com.casco.kettle.domain.Program
 import com.casco.kettle.domain.ProgramWeek
+import com.casco.kettle.domain.RepsSetLog
+import com.casco.kettle.domain.Session
+import com.casco.kettle.domain.SessionEntry
 import com.casco.kettle.domain.SessionLog
 import com.casco.kettle.domain.Workout
 import com.casco.kettle.shell.files.FakeStoredFiles
@@ -38,6 +37,8 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import kotlin.time.Clock
+import kotlin.time.Instant
 
 /**
  * Programs (#232), case for case from RN's `programs.test.tsx`, on the harness recipe (#193): in `pt`,
@@ -61,7 +62,7 @@ class ProgramsScreenTest {
             LatestFiles(files, CoroutineScope(Dispatchers.Unconfined), io = Dispatchers.Unconfined).apply { reread() }
         compose.setContent {
             KettleTheme(darkTheme = false) {
-                ProgramsScreen(latest, reselects) { opened += it }
+                ProgramsScreen(latest, reselects, open = { opened += it }, clock = clock)
             }
         }
     }
@@ -108,10 +109,9 @@ class ProgramsScreenTest {
 
     /** Null is a library not read yet, or not yet seeded on a first launch: neither has "no programs". */
     @Test
-    fun `says nothing below its header before there is a library`() {
+    fun `says nothing before there is a library`() {
         show(Files(library = null))
 
-        compose.onNodeWithText("Programas").assertExists()
         compose.onNodeWithText("Nenhum programa ainda").assertDoesNotExist()
         compose.onNode(hasSetTextAction()).assertDoesNotExist()
     }
@@ -120,19 +120,17 @@ class ProgramsScreenTest {
     fun `is translated`() {
         show()
 
-        compose.onNodeWithText("Programas").assert(isHeading())
         // The field is named by its placeholder, read inside the field's own node.
         compose.onNode(hasSetTextAction() and hasText("Buscar 2 programas")).assertExists()
-        compose.onNodeWithText("Semana 1").assertExists()
+        compose.onNodeWithText("Ativo, semana 1 · 1 sessão por semana").assertExists()
         compose.onNodeWithText("Sem semanas").assertExists()
-        control("Como escrever um programa").assertExists()
-        control("Novo programa").assertExists()
+        compose.onNode(hasText("Como escrever um programa à mão") and isButton).assertExists()
         search("zzz")
         compose.onNodeWithText("Nada encontrado").assertExists()
     }
 
     @Test
-    fun `counts distinct weeks with notes or overrides, not the day entries inside them`() {
+    fun `counts weeks by number and sessions by the days each one trains`() {
         val everyWeekTwice =
             Program(
                 "block",
@@ -144,10 +142,27 @@ class ProgramsScreenTest {
                     )
                 },
             )
-        show(Files(everyWeekTwice))
+        show(Files(base, everyWeekTwice))
 
-        compose.onNodeWithText("Semanas 1–4").assertExists()
-        compose.onNodeWithText("4 semanas com notas ou substituições").assertExists()
+        compose.onNodeWithText("4 semanas · 2 sessões por semana").assertExists()
+    }
+
+    /**
+     * The program Today runs, which is the last one logged rather than the first in the file, says so and
+     * where it stands; the others say how long they run.
+     */
+    @Test
+    fun `the program Today runs reads Active and its week, the others their length`() {
+        val twoWeeks =
+            Program(
+                "two",
+                "Two weeks",
+                listOf(ProgramWeek.Training(1, "Day 1", "push-day"), ProgramWeek.Training(2, "Day 1", "push-day")),
+            )
+        show(Files(base, twoWeeks, sessions = listOf(session("two", week = 1, day = "Day 1"))))
+
+        compose.onNodeWithText("Ativo, semana 2 · 1 sessão por semana").assertExists()
+        compose.onNodeWithText("1 semana · 1 sessão por semana").assertExists()
     }
 
     @Test
@@ -160,10 +175,14 @@ class ProgramsScreenTest {
     }
 
     @Test
-    fun `the help link opens the program guide`() {
+    fun `the guide link under the list opens the program guide`() {
         show()
 
-        control("Como escrever um programa").assertHeightIsAtLeast(48.dp).assertWidthIsAtLeast(48.dp).performClick()
+        compose
+            .onNode(
+                hasText("Como escrever um programa à mão") and isButton,
+            ).assertHeightIsAtLeast(48.dp)
+            .performClick()
 
         assertEquals(listOf(Route(Destination.ProgramGuide)), opened)
     }
@@ -177,42 +196,36 @@ class ProgramsScreenTest {
         assertEquals(listOf(Route(Destination.ProgramGuide)), opened)
     }
 
-    @Test
-    fun `New program opens the editor`() {
-        show()
-
-        control("Novo programa").assertHeightIsAtLeast(48.dp).assertWidthIsAtLeast(48.dp).performClick()
-
-        assertEquals(listOf(Route(Destination.ProgramEditor)), opened)
-    }
-
     /** #153 dropped re-tap-to-top with RN's bar; each tab's port brings it back for its own list. */
     @Test
     fun `a tap on the Library tab while Programs shows scrolls back to the top`() {
         val many = (1..30).map { Program("p$it", "Program $it", emptyList()) }
         show(Files(*many.toTypedArray()))
         compose.onNode(hasScrollToIndexAction()).performScrollToIndex(many.size)
-        compose.onNodeWithText("Programas").assertDoesNotExist()
+        compose.onNode(hasSetTextAction()).assertDoesNotExist()
 
         reselects.tryEmit(Tab.Progress)
         compose.waitForIdle()
-        compose.onNodeWithText("Programas").assertDoesNotExist()
+        compose.onNode(hasSetTextAction()).assertDoesNotExist()
 
         reselects.tryEmit(Tab.Library)
         compose.waitForIdle()
-        compose.onNodeWithText("Programas").assertIsDisplayed()
+        compose.onNode(hasSetTextAction()).assertIsDisplayed()
     }
 
-    /** An icon-only control, named by its label since it has no words of its own. */
-    private fun control(label: String) = compose.onNode(hasContentDescription(label) and isButton)
+    private val clock =
+        object : Clock {
+            override fun now() = Now
+        }
 
     private val isButton = SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button)
 
     private class Files(
         vararg programs: Program,
         private val library: Library? = Library(1, emptyList(), listOf(pushDay), programs.toList()),
+        private val sessions: List<Session> = emptyList(),
     ) : FakeStoredFiles() {
-        override fun sessionLog() = SessionLog(emptyList(), emptyList())
+        override fun sessionLog() = SessionLog(sessions, emptyList())
 
         override fun library() = library
     }
@@ -221,3 +234,22 @@ class ProgramsScreenTest {
 private val pushDay = Workout("push-day", "Push day", emptyList())
 private val base = Program("base", "Base building", listOf(ProgramWeek.Training(1, workoutId = "push-day")))
 private val peak = Program("peak", "Peak week", emptyList())
+
+private val Now = Instant.parse("2026-07-29T18:00:00Z")
+
+/** A session of [program]'s [week] and [day], logged at [Now]. */
+private fun session(
+    program: String,
+    week: Long,
+    day: String,
+) = Session(
+    1,
+    "s",
+    "push-day",
+    program,
+    week,
+    day,
+    Now.toString(),
+    Now.toString(),
+    listOf(SessionEntry.Reps("pushups", listOf(RepsSetLog(10, restTakenSec = 60.0)))),
+)

@@ -2,9 +2,7 @@ package com.casco.kettle.shell.library
 
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,8 +17,8 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -35,29 +33,30 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.collapse
+import androidx.compose.ui.semantics.expand
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.Exercise
 import com.casco.kettle.domain.ExerciseConfig
 import com.casco.kettle.domain.UnitSystem
 import com.casco.kettle.domain.rankByName
 import com.casco.kettle.shell.R
-import com.casco.kettle.shell.export.logShareRefused
-import com.casco.kettle.shell.export.rememberFileShare
 import com.casco.kettle.shell.files.LatestFiles
 import com.casco.kettle.shell.files.LocalLatestFiles
 import com.casco.kettle.shell.i18n.deviceUnitSystem
 import com.casco.kettle.shell.i18n.pluralText
+import com.casco.kettle.shell.list.FieldShape
 import com.casco.kettle.shell.list.ListHeaderRule
 import com.casco.kettle.shell.list.ListRow
 import com.casco.kettle.shell.list.ListRowSeparator
-import com.casco.kettle.shell.list.NewItemButton
-import com.casco.kettle.shell.list.NewItemButtonClearance
 import com.casco.kettle.shell.list.NoResults
 import com.casco.kettle.shell.list.SearchBar
-import com.casco.kettle.shell.list.TextAction
+import com.casco.kettle.shell.list.fieldFill
 import com.casco.kettle.shell.nav.Destination
 import com.casco.kettle.shell.nav.LocalNavigator
 import com.casco.kettle.shell.nav.LocalTabReselects
@@ -71,20 +70,14 @@ import com.casco.kettle.shell.theme.Spacing
 import kotlinx.coroutines.flow.Flow
 import kotlin.reflect.KClass
 
-/** What the route table draws at `Destination.Library`, the tab. */
+/** What the Library tab draws in its Exercises section. */
 @Composable
-fun LibraryRoute() {
-    val share = rememberFileShare()
-    val navigator = LocalNavigator.current
-    LibraryScreen(LocalLatestFiles.current, LocalTabReselects.current, navigator::push) {
-        logShareRefused(share?.library())
-    }
-}
+fun LibraryRoute() = LibraryScreen(LocalLatestFiles.current, LocalTabReselects.current, LocalNavigator.current::push)
 
 /**
- * Library (#234), the library's exercises as rows, as RN's `(tabs)/library.tsx`, now the empty stub at
- * this path: a name search, the type filter, and the header's Export and Import. [open] is
- * a push and [export] the library's share, parameters so a test hears each one.
+ * The library's exercises as rows (#234), under Library's tabs (#413), which hold its title and New
+ * exercise: a name search, the Type filter beside it, and rows that name each one's type before its
+ * target. [open] is a push, a parameter so a test hears each one.
  *
  * [reselected] carries taps on the tab already showing; one on Library scrolls back to the top.
  */
@@ -93,7 +86,6 @@ fun LibraryScreen(
     files: LatestFiles,
     reselected: Flow<Tab>,
     open: (Route) -> Unit,
-    export: () -> Unit,
 ) {
     val listState = rememberLazyListState()
     ScrollsToTopOnReselect(Tab.Library, reselected, listState)
@@ -119,23 +111,25 @@ fun LibraryScreen(
                     start = Spacing.three,
                     end = Spacing.three,
                     top = Spacing.two,
-                    bottom = NewItemButtonClearance,
+                    bottom = Spacing.four,
                 ),
         ) {
             item(key = "header") {
-                Header(export) { open(Route(Destination.Import)) }
-                // What the filter left rather than the whole library: with Reps chosen and nothing typed,
-                // the placeholder describes that subset, and the honest count is its own.
-                SearchBar(
-                    query,
-                    { query = it },
-                    pluralText(
-                        R.plurals.library_searchPlaceholder,
-                        R.string.library_searchPlaceholder_zero,
-                        visible.size,
-                    ),
-                )
-                FilterChips(filter) { filter = it }
+                Row(horizontalArrangement = Arrangement.spacedBy(Spacing.two)) {
+                    // What the filter left rather than the whole library: with Reps chosen and nothing
+                    // typed, the placeholder describes that subset, and the honest count is its own.
+                    SearchBar(
+                        query,
+                        { query = it },
+                        pluralText(
+                            R.plurals.library_searchPlaceholder,
+                            R.string.library_searchPlaceholder_zero,
+                            visible.size,
+                        ),
+                        Modifier.weight(1f),
+                    )
+                    TypeFilter(filter) { filter = it }
+                }
                 ListHeaderRule()
             }
             itemsIndexed(visible, key = { _, exercise -> exercise.id }) { index, exercise ->
@@ -147,28 +141,6 @@ fun LibraryScreen(
             // so, since a blank body under intact chrome reads as a broken screen.
             if (all.isNotEmpty() && visible.isEmpty()) item(key = "no-results") { NoResults(query) }
         }
-        NewItemButton(stringResource(R.string.library_newExercise), Modifier.align(Alignment.BottomEnd)) {
-            open(Route(Destination.ExerciseEditor))
-        }
-    }
-}
-
-/** The title, then Export and Import. */
-@Composable
-private fun Header(
-    onExport: () -> Unit,
-    onImport: () -> Unit,
-) {
-    val colors = KettleTheme.colors
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Text(
-            stringResource(R.string.library_title),
-            Modifier.weight(1f).semantics { heading() },
-            style = KettleType.subtitle,
-            color = colors.text,
-        )
-        TextAction(stringResource(R.string.common_export), KettleType.smallMedium, colors.textSecondary, onExport)
-        TextAction(stringResource(R.string.common_import), KettleType.smallMedium, colors.accentText, onImport)
     }
 }
 
@@ -194,49 +166,73 @@ private val Filters =
     )
 
 /**
- * The chips as one row that scrolls sideways, as RN's: seven wrap to two rows on a phone, three at a
- * large text size, so the row that saves room would take it. Each pill keeps RN's size inside a 48dp
- * target, which is why the row sits [ChipRowTop] below the field rather than RN's 16.
+ * The Type button and its menu (#413), where seven chips scrolled sideways: "Type" until one is chosen,
+ * then that type's name, so a filtered list says so. Its visible words are its name, which Voice Access
+ * matches; what it's set to is its state ("all types", "Hold"), and it says whether the menu is open. Each
+ * item is selectable, so a reader hears which is on.
  */
 @Composable
-private fun FilterChips(
+private fun TypeFilter(
     selected: Int,
     onSelect: (Int) -> Unit,
 ) {
     val colors = KettleTheme.colors
-    Row(
-        Modifier.padding(top = ChipRowTop).horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(Spacing.two),
-    ) {
-        Filters.forEachIndexed { index, item ->
-            val active = index == selected
-            Box(
-                Modifier
-                    .heightIn(min = 48.dp)
-                    .clickable(role = Role.Button) { onSelect(index) }
-                    .semantics { this.selected = active },
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    stringResource(item.label),
-                    Modifier
-                        .clip(ChipShape)
-                        .then(
-                            if (active) {
-                                Modifier.background(colors.text)
-                            } else {
-                                Modifier.background(colors.backgroundElement).border(1.dp, colors.border, ChipShape)
-                            },
-                        ).padding(ChipPadding),
-                    style = KettleType.small,
-                    color = if (active) colors.onAccent else colors.textSecondary,
+    var open by remember { mutableStateOf(false) }
+    val all = selected == ALL
+    val chosen = stringResource(Filters[selected].label)
+    val state = if (all) stringResource(R.string.library_filterAllTypes) else chosen
+    Box(Modifier.padding(top = Spacing.three)) {
+        Row(
+            Modifier
+                .heightIn(min = 48.dp)
+                .clip(FieldShape)
+                .background(fieldFill())
+                .clickable(role = Role.Button) { open = true }
+                .semantics {
+                    stateDescription = state
+                    if (open) {
+                        collapse {
+                            open = false
+                            true
+                        }
+                    } else {
+                        expand {
+                            open = true
+                            true
+                        }
+                    }
+                }.padding(horizontal = Spacing.two + 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                if (all) stringResource(R.string.library_filterType) else chosen,
+                style = KettleType.smallMedium,
+                color = colors.text,
+            )
+        }
+        DropdownMenu(open, { open = false }, containerColor = colors.backgroundElement) {
+            Filters.forEachIndexed { index, item ->
+                DropdownMenuItem(
+                    text = {
+                        Text(
+                            stringResource(item.label),
+                            style = KettleType.default,
+                            color = colors.text,
+                            fontWeight = if (index == selected) FontWeight.Bold else null,
+                        )
+                    },
+                    onClick = {
+                        onSelect(index)
+                        open = false
+                    },
+                    modifier = Modifier.semantics { this.selected = index == selected },
                 )
             }
         }
     }
 }
 
-/** One exercise: its name, its target in the reader's units, and its type. */
+/** One exercise: its name, then its type and its target in the reader's units, "Reps · 4 × 8–12 · 48.5 lb". */
 @Composable
 private fun ExerciseRow(
     exercise: Exercise,
@@ -244,17 +240,22 @@ private fun ExerciseRow(
     onClick: () -> Unit,
 ) {
     val colors = KettleTheme.colors
+    val type = Filters.firstOrNull { it.type?.isInstance(exercise.config) == true }?.label
+    val summary = exerciseTarget(exercise.config, units)
     Box(Modifier.clickable(role = Role.Button, onClick = onClick)) {
         ListRow {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(exercise.name, style = KettleType.heading, color = colors.text)
-                Text(exerciseSummary(exercise.config, units), style = KettleType.small, color = colors.textSecondary)
+                Text(
+                    // Placeholders are numbered alphabetically: summary, then type.
+                    type?.let { stringResource(R.string.library_typedSummary, summary, stringResource(it)) } ?: summary,
+                    style = KettleType.small,
+                    color = colors.textSecondary,
+                )
             }
-            ExerciseBadge(exercise.config)
         }
     }
 }
 
-private val ChipRowTop = Spacing.two
-private val ChipShape = RoundedCornerShape(percent = 50)
-private val ChipPadding = PaddingValues(horizontal = Spacing.three - 3.dp, vertical = 7.dp)
+/** [Filters]' index for All, the filter that keeps everything. */
+private const val ALL = 0

@@ -87,6 +87,10 @@ here, next to what it describes.
   that week's days, ticked up to where you are. The next session lists its exercises with their
   loads, and a rest day names the session that comes after it. Workouts no longer show an
   estimated time, which counted only the rest between sets (#412).
+- **Library has tabs for workouts, programs and exercises**: one + at the top makes whatever the
+  tab shows. Your current program reads "Active" with its week, and the workouts it uses say so.
+  Exercises name their type before their target, and a Type button filters them. Export and
+  Import are in Settings for now (#413).
 
 ---
 

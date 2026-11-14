@@ -1,5 +1,6 @@
 package com.casco.kettle.shell.stats
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -26,18 +28,21 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.collapse
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.expand
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.Exercise
@@ -46,7 +51,6 @@ import com.casco.kettle.domain.ProgressView
 import com.casco.kettle.domain.Session
 import com.casco.kettle.domain.TREND_WEEKS
 import com.casco.kettle.domain.UnitSystem
-import com.casco.kettle.domain.currentStreak
 import com.casco.kettle.domain.exerciseName
 import com.casco.kettle.domain.exerciseProgress
 import com.casco.kettle.domain.thisWeekStats
@@ -70,13 +74,11 @@ import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.MaxContentWidth
 import com.casco.kettle.shell.theme.Spacing
-import com.casco.kettle.shell.theme.card
 import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.TimeZone
-import java.util.Locale
 import kotlin.time.Instant
 
-/** What the Progress tab draws in its Stats section (#411); History's header switches to it. */
+/** What the Progress tab draws in its Overview section (#414), which was Stats. */
 @Composable
 fun StatsRoute() {
     val time = rememberStatsTime()
@@ -98,11 +100,11 @@ fun StatsRoute() {
 private const val CALENDAR_WEEKS = 4
 
 /**
- * Stats (#201): the numbers behind History, as RN's `analytics.tsx`, now the empty stub at this path.
- * It answers the two questions an all-time total can't (am I turning up, and is anything moving), and
- * **repeats no all-time totals**: History's header says them, a section over, in the same words.
- * Nothing here narrows with History's search; it always reports the whole log, which is the only
- * reading that makes "this week" and a streak mean anything.
+ * Progress's Overview (#414), which was Stats (#201): the two questions an all-time total can't answer,
+ * am I turning up and is anything moving, and **no all-time totals**. Nothing here narrows with
+ * Sessions' search; it always reports the whole log, which is the only reading that makes "this week"
+ * mean anything. The day streak went with #414: the calendar shows the same run of days without a
+ * number that resets on one rest day too many.
  *
  * [open] pushes a route, a parameter so a test hears which exercise a row opened.
  */
@@ -133,14 +135,7 @@ fun StatsScreen(
                 .padding(bottom = Spacing.six)
                 .navigationBarsPadding(),
         ) {
-            Text(
-                stringResource(R.string.analytics_title),
-                Modifier.semantics { heading() },
-                style = KettleType.title,
-                color = KettleTheme.colors.text,
-            )
-            // Nothing below the title until the log is read, so the sheet never says "train something
-            // twice" before it has looked.
+            // Nothing until the log is read, so it never says "train something twice" before it has looked.
             if (log != null) {
                 val sessions = log.logged
                 val stats =
@@ -149,16 +144,19 @@ fun StatsScreen(
                     remember(sessions, exercises, now, zone) {
                         exerciseProgress(sessions, exercises, TREND_WEEKS, now, zone)
                     }
-                ThisWeek(stats, locale)
+                ThisWeek(stats)
                 // Hidden on an empty log rather than drawn as four weeks of rest: a calendar of nothing
                 // says "no data" in the most expensive way available. It appears with the first session.
                 if (sessions.isNotEmpty()) {
-                    SectionLabel(stringResource(R.string.analytics_calendarTitle, CALENDAR_WEEKS), locale)
-                    Card { TrainingCalendar(stats.calendar, locale) }
+                    SectionHeading(stringResource(R.string.analytics_calendarTitle))
+                    TrainingCalendar(stats.calendar, locale)
                 }
                 // Below the calendar: turning up is the precondition for getting stronger, and a lapse
                 // explains a flat row better than a flat row explains itself.
-                SectionLabel(stringResource(R.string.analytics_progressTitle), locale)
+                SectionHeading(
+                    stringResource(R.string.analytics_progressTitle),
+                    stringResource(R.string.exerciseDetail_window, TREND_WEEKS),
+                )
                 ProgressSection(progress, exercises, units) { exerciseId ->
                     open(Route(Destination.ExerciseProgress, mapOf(EXERCISE_ID_PARAM to exerciseId)))
                 }
@@ -175,45 +173,59 @@ private class Attendance(
     firstWeekday: DayOfWeek,
 ) {
     val week = thisWeekStats(sessions, now, zone, firstWeekday)
-    val streak = currentStreak(sessions, now, zone)
     val calendar = trainingCalendar(sessions, CALENDAR_WEEKS, now, zone, firstWeekday)
 }
 
+/**
+ * This week's two numbers side by side, ruled rather than carded (#414): a hairline under the pair and
+ * one between them, as the board draws them.
+ */
 @Composable
-private fun ThisWeek(
-    stats: Attendance,
-    locale: Locale,
-) {
-    SectionLabel(stringResource(R.string.history_thisWeekLabel), locale)
-    // Intrinsic height so the three tiles are as tall as the tallest, as RN's stretched row.
-    Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(Spacing.two)) {
-        Tile(stats.week.sessions.toString(), stringResource(R.string.history_sessions))
+private fun ThisWeek(stats: Attendance) {
+    val colors = KettleTheme.colors
+    Row(
+        Modifier
+            .padding(top = Spacing.three)
+            .height(IntrinsicSize.Min)
+            .drawBehind {
+                val stroke = 1.dp.toPx()
+                drawLine(
+                    colors.border,
+                    Offset(0f, size.height - stroke / 2),
+                    Offset(
+                        size.width,
+                        size.height - stroke / 2,
+                    ),
+                    stroke,
+                )
+            },
+    ) {
+        Tile(stats.week.sessions.toString(), stringResource(R.string.analytics_sessionsThisWeek))
+        Box(Modifier.fillMaxHeight().width(1.dp).background(colors.border))
         Tile(
             stringResource(R.string.analytics_hoursMinutes, stats.week.hours, stats.week.minutes),
-            stringResource(R.string.history_time),
+            stringResource(R.string.analytics_trainedThisWeek),
+            Modifier.padding(start = Spacing.three),
         )
-        // "day streak", not "streak": the one number here not scoped to the week, so a bare "streak"
-        // under THIS WEEK would read a 30-day run as a weekly count.
-        Tile(stats.streak.toString(), stringResource(R.string.history_streak))
     }
 }
 
-/** One stat card, its number read together with what it counts. */
+/** One of the two, its number read together with what it counts. */
 @Composable
 private fun RowScope.Tile(
     value: String,
     label: String,
+    modifier: Modifier = Modifier,
 ) {
     val colors = KettleTheme.colors
     Column(
         Modifier
             .weight(1f)
-            .fillMaxHeight()
-            .card()
-            .padding(Spacing.two + 4.dp)
+            .padding(vertical = Spacing.three)
+            .then(modifier)
             .semantics(mergeDescendants = true) {},
     ) {
-        Text(value, style = KettleType.heading, color = colors.text)
+        Text(value, style = KettleType.subtitle, color = colors.text)
         Text(label, style = KettleType.small, color = colors.textSecondary)
     }
 }
@@ -315,11 +327,12 @@ private fun SteadyToggle(
 }
 
 /**
- * One exercise's trend: what it is at now, the shape of how it got there, and the change, and the way
- * into that exercise's own progress screen. The name is user data and renders verbatim; values print
- * through [Readings], as the screen it opens does, so the two show one number. No content description:
- * the name, the reading and the change inside it are what it is called; the click label says what a
- * tap does, which nothing on screen does.
+ * One exercise's trend, as the board draws it (#414): its name, then what it is at now and the change in
+ * ink with ▲ or ▼, then the sparkline, and the way into that exercise's progress screen. The name is
+ * user data and renders verbatim; values print through [Readings], as the screen it opens does, so the
+ * two show one number. The arrow is drawn, not said: the line's description reads the signed change
+ * ("+2.5 kg") that the arrow and its unsigned number show. The click label says what a tap does, which
+ * nothing on screen does.
  */
 @Composable
 private fun ProgressRow(
@@ -330,9 +343,18 @@ private fun ProgressRow(
 ) {
     val colors = KettleTheme.colors
     val readings = Readings(LocalResources.current, row.kind, units)
-    val bestEver = stringResource(R.string.analytics_bestEver)
+    val bestEver = stringResource(R.string.analytics_bestEver).takeIf { row.bestEver }
     // What a double-tap does, where the row's contents only say what it is.
     val openLabel = stringResource(R.string.analytics_openProgress)
+    val reading = readings.reading(row.latest)
+    // No red or green: a dip is information, not a failure.
+    val change =
+        when {
+            row.delta > 0 -> "▲ ${readings.reading(row.delta)}"
+            row.delta < 0 -> "▼ ${readings.reading(-row.delta)}"
+            else -> readings.delta(0.0)
+        }
+    val spoken = "$reading · ${readings.delta(row.delta)}" + bestEver?.let { " $it" }.orEmpty()
     Box(
         Modifier.clickable(role = Role.Button, onClickLabel = openLabel) {
             openProgress(row.exerciseId)
@@ -340,62 +362,38 @@ private fun ProgressRow(
     ) {
         ListRow {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(name, style = KettleType.smallMedium, color = colors.text)
-                // The record mark inline rather than a section of its own: nearly every record in the
-                // window is also a mover, so a separate list would say most things twice.
+                Text(name, style = KettleType.default.copy(fontWeight = FontWeight.SemiBold), color = colors.text)
                 Text(
                     buildAnnotatedString {
-                        append(readings.reading(row.latest))
-                        if (row.bestEver) {
-                            withStyle(SpanStyle(color = colors.accentText)) {
-                                append(" ")
-                                append(bestEver)
-                            }
-                        }
+                        append(reading)
+                        append(" · ")
+                        withStyle(SpanStyle(color = colors.text, fontWeight = FontWeight.SemiBold)) { append(change) }
+                        // The record mark inline rather than a section of its own: nearly every record
+                        // in the window is also a mover, so a separate list would say most things twice.
+                        bestEver?.let { withStyle(SpanStyle(color = colors.accentText)) { append(" $it") } }
                     },
-                    style = KettleType.small,
+                    Modifier.semantics { contentDescription = spoken },
+                    style = KettleType.small.copy(fontFeatureSettings = "tnum"),
                     color = colors.textSecondary,
                 )
             }
             Sparkline(row.points)
-            // The one number here that can be negative, and it gets no red/green pair: a dip is
-            // information, not a failure. The accent when something moved, so the eye finds those rows.
-            Text(
-                readings.delta(row.delta),
-                // A fixed column, so the deltas line up down the screen.
-                Modifier.widthIn(min = 72.dp),
-                style = KettleType.smallMedium,
-                color = if (row.delta == 0.0) colors.textSecondary else colors.accentText,
-                textAlign = TextAlign.End,
-            )
         }
     }
 }
 
-/** RN's `label` type uppercases at draw time; the bundle's string is in sentence case. */
+/** A section's heading, and what it covers on the right where that needs saying ("Last 8 weeks"). */
 @Composable
-private fun SectionLabel(
+private fun SectionHeading(
     text: String,
-    locale: Locale,
-) = Text(
-    text.uppercase(locale),
-    Modifier.padding(top = Spacing.four, bottom = Spacing.two),
-    style = KettleType.label,
-    color = KettleTheme.colors.textSecondary,
-)
+    aside: String? = null,
+) = Row(Modifier.padding(top = Spacing.four, bottom = Spacing.two), verticalAlignment = Alignment.Bottom) {
+    Text(text, Modifier.weight(1f).semantics { heading() }, style = KettleType.heading, color = KettleTheme.colors.text)
+    aside?.let { Text(it, style = KettleType.small, color = KettleTheme.colors.textSecondary) }
+}
 
 @Composable
 private fun Note(
     text: String,
     color: Color = KettleTheme.colors.textSecondary,
 ) = Text(text, Modifier.padding(bottom = Spacing.two), style = KettleType.small, color = color)
-
-@Composable
-private fun Card(content: @Composable () -> Unit) {
-    Box(
-        Modifier
-            .fillMaxWidth()
-            .card()
-            .padding(Spacing.three),
-    ) { content() }
-}

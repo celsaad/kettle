@@ -97,6 +97,11 @@ here, next to what it describes.
   it has gone over eight weeks with a chart you can read values off, your recent sessions, and the
   workouts and programs that use it. Edit opens the form, and YAML shows it as the file holds it.
   Progress charts in Stats now have a scale up the side too (#413).
+- **Progress opens on an overview**: Stats is now Overview, the first of Progress's two tabs, with
+  this week's sessions and time side by side. In the training calendar, a rest day is an outline
+  and days still to come are blank. Getting stronger shows each change with ▲ or ▼ beside a small
+  line of how it went. The day streak is gone, and Export all now lives in Library's Your file
+  (#414).
 
 ---
 

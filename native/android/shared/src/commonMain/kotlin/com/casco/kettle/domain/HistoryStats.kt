@@ -58,26 +58,6 @@ fun thisWeekStats(
     return historyStats(sessions.filter { session -> session.startedDay(zone)?.let { it >= weekStart } == true })
 }
 
-/**
- * Consecutive days with a session, walking back from today. Today without one yet doesn't break it
- * (the day isn't over); a whole day without one does.
- */
-fun currentStreak(
-    sessions: List<Session>,
-    now: Instant,
-    zone: TimeZone,
-): Int {
-    val activeDays = sessions.mapNotNull { it.startedDay(zone) }.toSet()
-    val today = now.dayIn(zone)
-    var cursor = if (today in activeDays) today else today.minus(ONE_DAY)
-    var streak = 0
-    while (cursor in activeDays) {
-        streak += 1
-        cursor = cursor.minus(ONE_DAY)
-    }
-    return streak
-}
-
 /** The minutes at which a trained day's shade steps up, which the legend names as well. */
 const val CALENDAR_MID_MINUTES = 30
 const val CALENDAR_LONG_MINUTES = 45
@@ -170,5 +150,4 @@ private fun Instant.dayIn(zone: TimeZone): LocalDate = toLocalDateTime(zone).dat
 
 private fun Session.startedDay(zone: TimeZone): LocalDate? = startedInstant()?.dayIn(zone)
 
-private val ONE_DAY = DatePeriod(days = 1)
 private const val MINUTES_PER_HOUR = 60

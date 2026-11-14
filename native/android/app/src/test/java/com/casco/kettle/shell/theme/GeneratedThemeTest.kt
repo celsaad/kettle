@@ -189,20 +189,17 @@ class GeneratedThemeTest {
         }
         assertContrast(6.68, RunnerColors.getReady.numeral, RunnerColors.getReady.background.surface())
 
-        // Each level against the card, then against the empty-day cell drawn on that card.
+        // The calendar sits on the page (#414): the rest day's outline, then each level, against it.
         val calendar =
             mapOf(
-                DarkColors to listOf(3.73 to 3.20, 5.61 to 4.81, 7.61 to 6.53),
-                LightColors to listOf(3.64 to 3.23, 5.68 to 5.04, 9.69 to 8.59),
+                DarkColors to listOf(3.85, 4.07, 6.12, 8.32),
+                LightColors to listOf(3.56, 3.32, 5.18, 8.83),
             )
         for ((colors, ratios) in calendar) {
-            val card = colors.backgroundElement.surface()
-            val empty = colors.calendarEmpty.over(card)
-            val levels = listOf(colors.calendarLevel1, colors.calendarLevel2, colors.calendarLevel3)
-            for ((level, ratio) in levels.zip(ratios)) {
-                assertContrast(ratio.first, level, card)
-                assertContrast(ratio.second, level, empty)
-            }
+            val page = colors.background.surface()
+            val marks =
+                listOf(colors.calendarEmpty, colors.calendarLevel1, colors.calendarLevel2, colors.calendarLevel3)
+            for ((mark, ratio) in marks.zip(ratios)) assertContrast(ratio, mark, page)
         }
     }
 

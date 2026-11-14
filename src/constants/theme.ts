@@ -26,20 +26,20 @@ import theme from '@/constants/theme.json';
  * - `light.onAccent` (white) on `light.accent` is **3.64** — AA-large only. That's fine where it's
  *   used, the 20px semibold "Start session" label, which clears the 18.66px-bold threshold, but it
  *   has no headroom: don't reuse this pairing for body-sized text without darkening `accent` first.
- * - The training calendar's shades (`calendarLevel1`–`3`) are held to **3:1 against both the card and
- *   the empty-day cell** — WCAG 1.4.11's bar for a graphic you need to read the chart, which here is
- *   whether a day was trained at all. Card / empty, dark: 3.73 / 3.20, 5.61 / 4.81, 7.61 / 6.53;
- *   light: 3.64 / 3.23, 5.68 / 5.04, 9.69 / 8.59. The steps *between* levels are 1.4–1.7 and don't
- *   have to clear it: every week's row label carries its count and time, and the legend names the
- *   buckets. The design's first draft had a lowest step at 1.6:1 against the empty cell, which is why
- *   these are measured rather than eyeballed.
+ * - The training calendar sits on the page since #414, and its marks are held to **3:1 against
+ *   `background`** — WCAG 1.4.11's bar for a graphic you need to read the chart, which here is
+ *   whether a day was trained at all. The rest day's outline (`calendarEmpty`) and the three shades,
+ *   dark: 3.85, 4.07, 6.12, 8.32; light: 3.56, 3.32, 5.18, 8.83. The steps *between* levels are
+ *   1.4–1.7 and don't have to clear it: every week's row label carries its count and time, and the
+ *   legend names the buckets. An early draft had a lowest step at 1.6:1 against the empty cell, which
+ *   is why these are measured rather than eyeballed.
  *
  * Tokens whose name doesn't say it all:
  *
  * - `onAccent` is the text/icon color to place on top of an accent-colored surface (buttons, active
  *   pills).
- * - `calendarEmpty` is a rest day on the training calendar, and `calendarLevel1`–`3` trained days by
- *   duration. More is darker on a light card and brighter on a dark one, so the two ramps run in
+ * - `calendarEmpty` is a rest day's outline on the training calendar, and `calendarLevel1`–`3`
+ *   trained days by duration. More is darker on a light card and brighter on a dark one, so the two ramps run in
  *   opposite directions.
  */
 export const Colors = theme.Colors;

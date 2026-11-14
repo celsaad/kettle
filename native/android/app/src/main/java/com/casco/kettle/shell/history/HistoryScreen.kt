@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -27,8 +26,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.HistorySessionView
 import com.casco.kettle.domain.HistoryStats
@@ -48,13 +45,11 @@ import com.casco.kettle.shell.list.ListHeaderRule
 import com.casco.kettle.shell.list.ListRowSeparator
 import com.casco.kettle.shell.list.NoResults
 import com.casco.kettle.shell.list.SearchBar
-import com.casco.kettle.shell.list.TextAction
 import com.casco.kettle.shell.nav.Destination
 import com.casco.kettle.shell.nav.LocalNavigator
 import com.casco.kettle.shell.nav.LocalTabReselects
 import com.casco.kettle.shell.nav.Route
 import com.casco.kettle.shell.nav.ScrollsToTopOnReselect
-import com.casco.kettle.shell.nav.Section
 import com.casco.kettle.shell.nav.Tab
 import com.casco.kettle.shell.runner.RunnerHost
 import com.casco.kettle.shell.runner.RunnerView
@@ -85,12 +80,10 @@ fun HistoryRoute() {
         LocalTabReselects.current,
         HistoryActions(
             open = navigator::push,
-            // The raw log for Export all, as Settings' Export history: an archive is the user's own files.
             export = { id ->
                 scope.launch {
                     val sheet = share ?: return@launch
-                    val sessions = files.sessionLog?.sessions.orEmpty()
-                    logShareRefused(if (id == null) sheet.history(sessions) else sheet.session(id))
+                    logShareRefused(sheet.session(id))
                 }
             },
         ),
@@ -99,12 +92,12 @@ fun HistoryRoute() {
 }
 
 /**
- * What History asks of the shell, as parameters so a test hears each one. [export] is a session's id,
- * or null for the whole log.
+ * What History asks of the shell, as parameters so a test hears each one. [export] shares one session;
+ * the whole log is Your file's Export log (#414).
  */
 class HistoryActions(
     val open: (Route) -> Unit,
-    val export: (id: String?) -> Unit,
+    val export: (id: String) -> Unit,
 )
 
 /**
@@ -151,14 +144,8 @@ fun HistoryScreen(
             contentPadding =
                 PaddingValues(start = Spacing.three, end = Spacing.three, top = Spacing.two, bottom = Spacing.six),
         ) {
-            item(key = "header") {
-                Header(
-                    showExportAll = log?.sessions?.isNotEmpty() == true,
-                    onStats = { actions.open(Route.of(Section.STATS)) },
-                    onExportAll = { actions.export(null) },
-                )
-            }
-            // Nothing more until the log is read, so the line never says zero before it has looked.
+            // The tab's header names it and switches to Overview (#414). Nothing here until the log is
+            // read, so the line never says zero before it has looked.
             if (log == null) return@LazyColumn
             item(key = "summary") {
                 SummaryLine(listing.stats, listing.matched)
@@ -284,37 +271,6 @@ private data class DeleteFailure(
 )
 
 private val EmptyLibrary = Library(1, emptyList(), emptyList(), emptyList())
-
-@Composable
-private fun Header(
-    showExportAll: Boolean,
-    onStats: () -> Unit,
-    onExportAll: () -> Unit,
-) {
-    val colors = KettleTheme.colors
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Text(
-            stringResource(R.string.history_title),
-            Modifier.weight(1f).semantics { heading() },
-            style = KettleType.subtitle,
-            color = colors.text,
-        )
-        // Always offered, even on an empty log: arriving at zeros explains what Stats is, where a link
-        // that appears only once there is history is one nobody learns about.
-        TextAction(stringResource(R.string.history_stats), KettleType.smallMedium, colors.accentText, onStats)
-        // Hidden at zero, since there's nothing to export. "Export all" rather than "Export": each open
-        // row has its own Export for one session, and two identical labels meaning different amounts of
-        // data is found out only after sharing the wrong one.
-        if (showExportAll) {
-            TextAction(
-                stringResource(R.string.history_exportAll),
-                KettleType.smallMedium,
-                colors.accentText,
-                onExportAll,
-            )
-        }
-    }
-}
 
 /**
  * The whole header's numbers as one sentence, where six stat cards used to fill the first screen.

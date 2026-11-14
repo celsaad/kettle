@@ -13,7 +13,6 @@ import androidx.compose.ui.test.hasScrollToIndexAction
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isDialog
-import androidx.compose.ui.test.isHeading
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
@@ -33,7 +32,6 @@ import com.casco.kettle.shell.files.FakeStoredFiles
 import com.casco.kettle.shell.files.LatestFiles
 import com.casco.kettle.shell.nav.Destination
 import com.casco.kettle.shell.nav.Route
-import com.casco.kettle.shell.nav.Section
 import com.casco.kettle.shell.nav.Tab
 import com.casco.kettle.shell.theme.KettleTheme
 import kotlinx.coroutines.CoroutineScope
@@ -64,7 +62,7 @@ class HistoryScreenTest {
     val compose = createComposeRule()
 
     private val opened = mutableListOf<Route>()
-    private val exported = mutableListOf<String?>()
+    private val exported = mutableListOf<String>()
     private val reselects = MutableSharedFlow<Tab>(extraBufferCapacity = 1)
 
     private fun show(
@@ -315,16 +313,16 @@ class HistoryScreenTest {
         action("Excluir").assertExists()
     }
 
-    /** Export shares one session, or the whole log from the header (`FileShare`, #238). */
+    /** Export shares one session (`FileShare`, #238); the whole log is Your file's since #414. */
     @Test
-    fun `exports the open session, or the whole log from the header`() {
+    fun `exports the open session, and offers no Export all`() {
         show()
 
         row("Leg day").performClick()
         action("Exportar").assertHeightIsAtLeast(48.dp).performClick()
-        action("Exportar tudo").assertHeightIsAtLeast(48.dp).performClick()
 
-        assertEquals(listOf("legs-1", null), exported)
+        assertEquals(listOf("legs-1"), exported)
+        action("Exportar tudo").assertDoesNotExist()
     }
 
     @Test
@@ -356,23 +354,6 @@ class HistoryScreenTest {
         compose.onNodeWithText("1 de 2 · 1 sessão · 49h 0min · 1 série").assertExists()
     }
 
-    @Test
-    fun `opens the stats screen`() {
-        show()
-
-        action("Números").performClick()
-
-        assertEquals(listOf(Route.of(Section.STATS)), opened)
-    }
-
-    @Test
-    fun `offers the stats screen on an empty log, unlike export`() {
-        show(Files())
-
-        action("Números").assertHeightIsAtLeast(48.dp)
-        action("Exportar tudo").assertDoesNotExist()
-    }
-
     // A zero set is how the runner skips; a session of nothing but skips was no session at all.
     @Test
     fun `leaves out a session that logged no work`() {
@@ -397,26 +378,24 @@ class HistoryScreenTest {
     fun `a tap on the History tab while it shows scrolls back to the top`() {
         val many = (1..30).map { day -> push.copy(id = "s$day", startedAt = "2026-06-${"%02d".format(day)}T09:00:00Z") }
         show(Files(*many.toTypedArray()))
+        val top = compose.onNode(hasSetTextAction())
         compose.onNode(hasScrollToIndexAction()).performScrollToIndex(many.size)
-        compose.onNodeWithText("Histórico").assertDoesNotExist()
+        top.assertDoesNotExist()
 
         reselects.tryEmit(Tab.Library)
         compose.waitForIdle()
-        compose.onNodeWithText("Histórico").assertDoesNotExist()
+        top.assertDoesNotExist()
 
         reselects.tryEmit(Tab.Progress)
         compose.waitForIdle()
-        compose.onNodeWithText("Histórico").assertIsDisplayed()
+        top.assertIsDisplayed()
     }
 
     @Test
     fun `is translated`() {
         show(Files(push, legs, push.copy(id = "ad-hoc", workout = null)))
 
-        compose.onNodeWithText("Histórico").assert(isHeading())
         compose.onNodeWithText("3 sessões · ", substring = true).assertExists()
-        action("Números").assertExists()
-        action("Exportar tudo").assertExists()
         row("Sessão avulsa").assertExists()
         // The field is named by its placeholder, read inside the field's own node.
         compose.onNode(hasSetTextAction() and hasText("Buscar treinos")).assertExists()

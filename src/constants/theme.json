@@ -14,7 +14,7 @@
       "accentCalmText": "#2f6493",
       "accentCalmSoft": "rgba(63,130,192,0.14)",
       "onAccent": "#ffffff",
-      "calendarEmpty": "rgba(30,25,15,0.06)",
+      "calendarEmpty": "#878074",
       "calendarLevel1": "#cf6a37",
       "calendarLevel2": "#a1502a",
       "calendarLevel3": "#6e3418"
@@ -33,7 +33,7 @@
       "accentCalmText": "#7fb0dd",
       "accentCalmSoft": "rgba(63,130,192,0.2)",
       "onAccent": "#1a1712",
-      "calendarEmpty": "rgba(240,236,226,0.06)",
+      "calendarEmpty": "#7a7468",
       "calendarLevel1": "#b8612f",
       "calendarLevel2": "#e07d47",
       "calendarLevel3": "#e8a172"

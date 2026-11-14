@@ -117,15 +117,21 @@ class RouteTest {
             Route.of(Section.SESSIONS),
             Route.fromLink("kettle://history"),
         )
-        assertEquals(Route.of(Section.STATS), Route.parse("/analytics"))
+        assertEquals(Route.of(Section.OVERVIEW), Route.parse("/analytics"))
         // Its own section wins over one the link carried.
         assertEquals(programs, Route.parse("/programs?section=exercises"))
     }
 
+    /** #414: Stats became Overview, so a stack saved on Stats names no section now and opens on the first. */
+    @Test
+    fun `a saved Stats section lands on Overview`() {
+        assertEquals(Section.OVERVIEW, Route(Destination.Progress, mapOf(SECTION to "stats")).section(Tab.Progress))
+    }
+
     @Test
     fun `a tab's section is the one its route names, else its first`() {
-        assertEquals(Section.STATS, Route.of(Section.STATS).section(Tab.Progress))
-        assertEquals(Section.SESSIONS, Route(Destination.Progress).section(Tab.Progress))
+        assertEquals(Section.SESSIONS, Route.of(Section.SESSIONS).section(Tab.Progress))
+        assertEquals(Section.OVERVIEW, Route(Destination.Progress).section(Tab.Progress))
         assertEquals(Section.WORKOUTS, Route(Destination.Library, mapOf(SECTION to "nowhere")).section(Tab.Library))
         assertNull(Route(Destination.Today).section(Tab.Today))
     }

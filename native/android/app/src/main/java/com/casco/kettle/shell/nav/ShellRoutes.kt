@@ -13,6 +13,7 @@ import com.casco.kettle.shell.programdetail.ProgramDetailRoute
 import com.casco.kettle.shell.programeditor.ProgramEditorRoute
 import com.casco.kettle.shell.programguide.ProgramGuideRoute
 import com.casco.kettle.shell.progress.ExerciseProgressRoute
+import com.casco.kettle.shell.progress.ProgressTab
 import com.casco.kettle.shell.runner.RunnerRoute
 import com.casco.kettle.shell.sessioneditor.SessionEditorRoute
 import com.casco.kettle.shell.settings.SettingsRoute

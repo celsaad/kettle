@@ -801,9 +801,16 @@
     "notesOptional": "Notes · optional",
     "notesPlaceholder": "Coaching cue…",
     "deleteExercise": "Delete exercise",
-    "inUseTitle": "Exercise in use",
-    "inUseBody": "\"{{name}}\" is used by {{workouts}}. Remove it from those workouts first.",
-    "deleteConfirmTitle": "Delete exercise?"
+    "deleteConfirmTitle": "Delete exercise?",
+    "typeLocked": "Set when it was created",
+    "target": "Target",
+    "load": "Load",
+    "timing": "Timing",
+    "repsTo": "to",
+    "repsHint": "Reads as {{shape}}. The same number twice saves as a fixed count, {{fixed}}.",
+    "storedAs": "Your file keeps it as {{kg}} kg.",
+    "idLabel": "id: {{id}}",
+    "inUseReason": "Can't delete while it's used by {{workouts}}. Remove it from there first."
   },
   "workoutEditor": {
     "newTitle": "New workout",

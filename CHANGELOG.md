@@ -130,6 +130,11 @@ here, next to what it describes.
   minutes-and-seconds picker, and it changes this workout's rest only. A circuit shows its exercises
   in place: add one with "+ Add exercise to circuit", and set the rounds and both rests right there.
   Delete is greyed out while a program uses the workout, and says which one (#440).
+- **The exercise editor uses steppers and the time picker**: sets, reps and rounds are steppers,
+  and rests and other required times open the minutes-and-seconds picker. Reps read "8 to 12", and
+  the same number twice saves as a fixed count. In pounds, the weight says what your file keeps in
+  kilograms. An exercise's type shows as set when it was created, and Delete is greyed out while a
+  workout uses the exercise, saying which one (#441).
 
 ---
 

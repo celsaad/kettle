@@ -6,7 +6,6 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsNotEnabled
-import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
@@ -87,8 +86,17 @@ class ExerciseEditorScreenTest {
         text: String,
     ) = compose.onNode(hasContentDescription(name)).performScrollTo().performTextReplacement(text)
 
+    /** A button by its words or name, scrolled to first where it scrolls: Save is pinned above the list (#441). */
     private fun press(label: String) =
-        compose.onNode((hasText(label) or hasContentDescription(label)) and isButton).performScrollTo().performClick()
+        compose
+            .onNode((hasText(label) or hasContentDescription(label)) and isButton)
+            .apply {
+                runCatching { performScrollTo() }
+            }.performClick()
+
+    /** A control inside the dialog, by its words or its name: the time picker's steppers. */
+    private fun pressInDialog(label: String) =
+        compose.onNode((hasText(label) or hasContentDescription(label)) and hasAnyAncestor(isDialog())).performClick()
 
     /** jest's `pressAlertButton`: a button inside the dialog, never a same-named one on the screen under it. */
     private fun ComposeContentTestRule.pressDialogButton(label: String) =
@@ -107,17 +115,17 @@ class ExerciseEditorScreenTest {
         assertEquals(emptyList<Library>(), files.written)
     }
 
-    // The only guard between a typo and a 0-set exercise, which builds no steps to run.
+    // A time button can reach 0:00, and a HIIT's work needs a second at least: the form says so.
     @Test
     fun `surfaces a config error and writes nothing`() {
         val files = Files()
         show(null, files)
 
-        type("Nome", "Pull-ups")
-        type("Séries", "0")
+        type("Nome", "Sprints")
+        press("HIIT")
         press("Salvar")
 
-        compose.onNodeWithText("Séries precisa ser pelo menos 1.").assertExists()
+        compose.onNodeWithText("Trabalho precisa ser pelo menos 1.").assertExists()
         assertEquals(emptyList<Library>(), files.written)
         assertEquals(0, closed)
     }
@@ -128,9 +136,12 @@ class ExerciseEditorScreenTest {
         show(null, files)
 
         type("Nome", "Pull-ups")
-        type("Séries", "4")
-        type("Reps alvo", "6")
-        type("Descanso (seg)", "90")
+        repeat(3) { press("Aumentar Séries") }
+        repeat(5) { press("Aumentar Reps alvo") }
+        press("Descanso, 0 segundos. Alterar")
+        pressInDialog("Aumentar Minutos")
+        repeat(6) { pressInDialog("Aumentar Segundos") }
+        compose.pressDialogButton("Concluir")
         press("Salvar")
 
         assertEquals(
@@ -146,8 +157,10 @@ class ExerciseEditorScreenTest {
         val files = Files(exercises = listOf(pullUps))
         show("pull-ups", files)
 
-        compose.onNode(hasText("HIIT") and isButton).assertIsNotEnabled()
-        compose.onNode(hasText("Reps") and isButton).assertIsSelected()
+        // Only its own type shows, locked and saying why: no pill to pick another.
+        compose.onNode(hasText("HIIT") and isButton).assertDoesNotExist()
+        compose.onNode(hasText("Reps") and isButton).assertIsNotEnabled()
+        compose.onNodeWithText("Definido na criação").assertExists()
         press("Salvar")
 
         assertEquals(
@@ -208,7 +221,7 @@ class ExerciseEditorScreenTest {
         val files = Files(exercises = listOf(benchPress), preferences = imperial)
         show("bench-press", files)
 
-        type("Séries", "6")
+        press("Aumentar Séries")
         press("Salvar")
 
         val config =
@@ -221,6 +234,80 @@ class ExerciseEditorScreenTest {
         assertEquals(100.0, config.targetWeightKg)
     }
 
+    // Weights are stored in kilograms always, and the form says what the file keeps.
+    @Test
+    fun `says in pounds what the file keeps in kilograms`() {
+        show("bench-press", Files(exercises = listOf(benchPress), preferences = imperial))
+
+        compose.onNodeWithText("Seu arquivo guarda como 100 kg.").performScrollTo().assertExists()
+    }
+
+    @Test
+    fun `says nothing of kilograms to a reader in kilograms`() {
+        show("bench-press", Files(exercises = listOf(benchPress)))
+
+        compose.onNodeWithText("Seu arquivo guarda como", substring = true).assertDoesNotExist()
+    }
+
+    // reps as a range
+
+    @Test
+    fun `steps the reps into a range, says what it reads as, and saves it`() {
+        val files = Files(exercises = listOf(pullUps))
+        show("pull-ups", files)
+        compose.onNodeWithText("Fica 3 × 8. O mesmo número duas vezes salva uma contagem fixa, 3 × 8.").assertExists()
+
+        repeat(4) { press("Aumentar Reps alvo (máx)") }
+
+        compose
+            .onNodeWithText(
+                "Fica 3 × 8–12. O mesmo número duas vezes salva uma contagem fixa, 3 × 8.",
+            ).assertExists()
+        press("Salvar")
+        assertEquals(
+            12L,
+            (
+                files.written
+                    .single()
+                    .exercises
+                    .single()
+                    .config as ExerciseConfig.Reps
+            ).targetRepsMax,
+        )
+    }
+
+    // A new exercise's steppers read 1, and Save must take the 1 it shows rather than call it blank.
+    @Test
+    fun `saves a new exercise as its controls show it`() {
+        val files = Files()
+        show(null, files)
+
+        type("Nome", "Pull-ups")
+        press("Salvar")
+
+        assertEquals(
+            ExerciseConfig.Reps(sets = 1, targetRepsMin = 1, restSec = 0.0),
+            files.written
+                .single()
+                .exercises
+                .single()
+                .config,
+        )
+    }
+
+    @Test
+    fun `groups the config under target, load and timing`() {
+        show("bench-press", Files(exercises = listOf(benchPress)))
+
+        for (heading in listOf(
+            "Alvo",
+            "Carga",
+            "Tempo",
+        )) {
+            compose.onNode(hasText(heading) and isHeading()).assertExists()
+        }
+    }
+
     // deleting
 
     @Test
@@ -229,11 +316,12 @@ class ExerciseEditorScreenTest {
             Files(exercises = listOf(pullUps), workouts = listOf(pushDay(WorkoutBlock.ExerciseBlock("pull-ups"))))
         show("pull-ups", files)
 
-        press("Excluir exercício")
-
-        compose.onNodeWithText("Exercício em uso").assertExists()
-        compose.onNodeWithText("\"Pull-ups\" é usado em Push day. Remova-o desses treinos primeiro.").assertExists()
-        compose.onNode(hasText("Excluir") and hasAnyAncestor(isDialog())).assertDoesNotExist()
+        val delete = compose.onNode(hasText("Excluir exercício") and isButton)
+        delete.assertIsNotEnabled()
+        // Why, on the button itself, so TalkBack says it with the button.
+        delete.assert(
+            hasStateDescription("Não dá para excluir enquanto for usado por Push day. Tire-o de lá primeiro."),
+        )
         assertEquals(emptyList<Library>(), files.written)
     }
 
@@ -248,9 +336,7 @@ class ExerciseEditorScreenTest {
         val files = Files(exercises = listOf(pullUps), workouts = listOf(pushDay(circuit)))
         show("pull-ups", files)
 
-        press("Excluir exercício")
-
-        compose.onNodeWithText("Exercício em uso").assertExists()
+        compose.onNode(hasText("Excluir exercício") and isButton).assertIsNotEnabled()
         assertEquals(emptyList<Library>(), files.written)
     }
 
@@ -294,7 +380,10 @@ class ExerciseEditorScreenTest {
         latest.reread()
         compose.pressDialogButton("Excluir")
 
-        compose.onNodeWithText("Exercício em uso").assertExists()
+        compose
+            .onNode(
+                hasText("Excluir exercício") and isButton,
+            ).assert(hasStateDescription("Não dá para excluir enquanto for usado por Push day. Tire-o de lá primeiro."))
         assertEquals(emptyList<Library>(), files.written)
         assertEquals(0, closed)
     }
@@ -308,7 +397,7 @@ class ExerciseEditorScreenTest {
         val files = Files(exercises = listOf(pullUps))
         show("pull-ups", files)
 
-        type("Séries", "4")
+        press("Aumentar Séries")
         files.rewrite { it.copy(exercises = emptyList()) }
         latest.reread()
         press("Salvar")
@@ -418,7 +507,6 @@ class ExerciseEditorScreenTest {
     fun `brackets a unit and marks an optional field the way Japanese does`() {
         show("plank", Files(exercises = listOf(plank)))
 
-        compose.onNodeWithText("休憩（秒）").performScrollTo().assertExists()
         compose.onNodeWithText("ホールド（秒）（任意）").performScrollTo().assertExists()
     }
 
@@ -433,11 +521,9 @@ class ExerciseEditorScreenTest {
             )
         show("pull-ups", files)
 
-        press("エクササイズを削除")
-
         compose
-            .onNodeWithText("「Pull-ups」はPush day、Leg dayで使われています。先にそれらのワークアウトから外してください。")
-            .assertExists()
+            .onNode(hasText("エクササイズを削除") and isButton)
+            .assert(hasStateDescription("Push day、Leg dayで使用中のため削除できません。先にそこから外してください。"))
     }
 
     // a11y
@@ -446,8 +532,17 @@ class ExerciseEditorScreenTest {
     fun `every control is a button at least 44dp tall`() {
         show("pull-ups", Files(exercises = listOf(pullUps)))
 
-        for (label in listOf("Reps", "HIIT", "Cancelar", "Salvar", "Excluir exercício")) {
-            compose.onNode(hasText(label) and isButton).performScrollTo().assertHeightIsAtLeast(44.dp)
+        for (label in listOf(
+            "Reps",
+            "Salvar",
+            "Excluir exercício",
+            "Aumentar Séries",
+            "Descanso, 1 minuto 30 segundos. Alterar",
+        )) {
+            compose
+                .onNode((hasText(label) or hasContentDescription(label)) and isButton)
+                .apply { runCatching { performScrollTo() } }
+                .assertHeightIsAtLeast(44.dp)
         }
     }
 
@@ -508,3 +603,5 @@ private fun session(
     endedAt,
     listOf(SessionEntry.Reps("pull-ups", listOf(RepsSetLog(reps = 8, restTakenSec = 90.0)))),
 )
+
+private fun hasStateDescription(text: String) = SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, text)

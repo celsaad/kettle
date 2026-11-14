@@ -116,7 +116,7 @@ fun ExerciseNotesField(
 
 /** The quick-add's fields are smaller, and fill with the background, since they sit in a card. */
 @Composable
-private fun fieldLook(compact: Boolean) =
+internal fun fieldLook(compact: Boolean) =
     if (compact) {
         FieldOptions(minHeight = 44.dp, fill = KettleTheme.colors.background)
     } else {
@@ -129,7 +129,7 @@ private fun fieldLook(compact: Boolean) =
  * a control that looks dimmed and still says it can be tapped.
  */
 @Composable
-private fun TypePill(
+internal fun TypePill(
     type: ExerciseType,
     active: Boolean,
     enabled: Boolean,
@@ -169,7 +169,7 @@ private fun TypePill(
 }
 
 @Composable
-private fun ConfigInput(
+internal fun ConfigInput(
     field: ConfigField,
     draft: ExerciseDraft,
     onChange: (ExerciseDraft) -> Unit,
@@ -207,7 +207,7 @@ internal fun withOptional(
     }
 
 @Composable
-private fun Label(
+internal fun Label(
     text: String,
     compact: Boolean,
 ) = Text(

@@ -1076,5 +1076,19 @@
     "secondsSpoken_one": "{{count}} second",
     "secondsSpoken_other": "{{count}} seconds",
     "change": "{{label}}, {{time}}. Change"
+  },
+  "yamlView": {
+    "asYaml": "As YAML",
+    "unitsImperial": "Weights here are in kilograms, as the file stores them; the app shows pounds.",
+    "unitsMetric": "Weights here are in kilograms, as the file stores them.",
+    "fresh": "Written out fresh, so comments from your original file aren't here.",
+    "copy": "Copy",
+    "copied": "Copied",
+    "copyFailed": "Couldn't copy it.",
+    "share": "Share",
+    "shareFailed": "Couldn't open sharing. Copy it instead.",
+    "sendNote": "Copy and Share send this as a complete file that imports on its own. Read-only here: to change it, use Edit.",
+    "formatLink": "How the format works",
+    "linkCopied": "No browser to open it, so the link was copied."
   }
 }

@@ -145,6 +145,9 @@ here, next to what it describes.
   what changes, such as "Sets 3 → 4", and a field the file leaves out reads "cleared". A workout
   whose rests or rounds the file changes says which blocks. Items show their name over their id,
   and the button says how many it imports (#443).
+- **An exercise's YAML is a file of its own**: it shows the exercise as a complete library, with
+  line numbers and colour, so Copy and Share hand over something that imports on its own. It says
+  the weights are the file's kilograms, and links to how the format works (#444).
 
 ---
 

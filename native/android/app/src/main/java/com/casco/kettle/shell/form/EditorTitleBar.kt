@@ -29,23 +29,26 @@ import com.casco.kettle.shell.theme.Spacing
 @Composable
 internal fun EditorTitleBar(
     title: String,
-    onSave: () -> Unit,
+    /** Null where there is nothing to save: a session that's gone, or still running. */
+    onSave: (() -> Unit)?,
     refusal: String?,
 ) {
     val colors = KettleTheme.colors
     Row(Modifier.padding(vertical = Spacing.two), verticalAlignment = Alignment.CenterVertically) {
         Text(title, Modifier.weight(1f).semantics { heading() }, style = KettleType.subtitle, color = colors.text)
-        // The heading's size: white on the accent is 3.64:1, AA for large text only (theme.ts).
-        Box(
-            Modifier
-                .heightIn(min = 48.dp)
-                .clip(RoundedCornerShape(24.dp))
-                .background(colors.accent)
-                .clickable(role = Role.Button, onClick = onSave)
-                .padding(horizontal = Spacing.three),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(stringResource(R.string.common_save), style = KettleType.heading, color = colors.onAccent)
+        if (onSave != null) {
+            // The heading's size: white on the accent is 3.64:1, AA for large text only (theme.ts).
+            Box(
+                Modifier
+                    .heightIn(min = 48.dp)
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(colors.accent)
+                    .clickable(role = Role.Button, onClick = onSave)
+                    .padding(horizontal = Spacing.three),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(stringResource(R.string.common_save), style = KettleType.heading, color = colors.onAccent)
+            }
         }
     }
     refusal?.let {

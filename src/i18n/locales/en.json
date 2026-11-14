@@ -721,7 +721,6 @@
   "sessionEditor": {
     "title": "Edit session",
     "subtitle": "{{name}} · {{day}} {{month}}",
-    "intro": "Correct what was logged. Nothing is saved until you press Save.",
     "notFoundTitle": "Session not found",
     "notFoundBody": "It may have been deleted from another screen. Nothing was changed.",
     "runningTitle": "This session is still running",
@@ -729,10 +728,6 @@
     "emptyTitle": "Nothing to edit",
     "emptyBody": "This session has no logged sets that can be corrected.",
     "setLabel": "Set {{n}}",
-    "removeSet": "Remove set",
-    "removeEntry": "Remove exercise",
-    "removeEntryConfirmTitle": "Remove this exercise?",
-    "removeEntryConfirmBody": "\"{{name}}\" has one set left, so removing it takes the exercise out of this session.",
     "readOnlyNote": "Minute-by-minute logs aren't editable here.",
     "zeroRemoved": "Sets at 0 are removed when you save.",
     "field": {
@@ -749,7 +744,19 @@
       "cardioNeedsOne": "Enter a duration or a distance."
     },
     "setField": "{{set}} · {{field}}",
-    "removeSetName": "{{remove}} · {{set}}"
+    "hint": "Tap an underlined number to change it.",
+    "colSet": "Set",
+    "colHeld": "Held",
+    "addSet": "+ Add a set",
+    "restLine": "Rest · {{time}} taken",
+    "restNote": "Rests are logged by the timer and can't be edited.",
+    "setRemoved": "Set {{n}} of {{name}} removed",
+    "entryRemoved": "{{name}} removed",
+    "cellValue": "{{name}}, {{value}}",
+    "noValue": "none",
+    "removeSetOf": "Remove set {{n}} of {{name}}",
+    "removeEntryOf": "Remove {{name}}",
+    "addSetTo": "Add a set to {{name}}"
   },
   "exerciseArt": {
     "pushups": "Push-up: hands under the shoulders, body in a straight line from heel to head.",

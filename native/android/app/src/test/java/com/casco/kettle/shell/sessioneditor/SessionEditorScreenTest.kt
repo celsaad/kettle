@@ -7,6 +7,7 @@ import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isDialog
 import androidx.compose.ui.test.isHeading
@@ -77,16 +78,42 @@ class SessionEditorScreenTest {
         }
     }
 
-    /** A field, by the name it announces: the set it's in, then its label, since every row has a "Reps". */
-    private fun field(name: String) = compose.onNode(hasContentDescription(name))
+    /**
+     * A value's cell, by the name it announces: the set it's in, then its column, since every row has a
+     * "Reps", then the value: "Série 2 · Reps, 8" (#442).
+     */
+    private fun cell(name: String) = compose.onNode(hasContentDescription(name, substring = true) and isButton)
 
+    /** Taps [name]'s cell, which becomes a field, and types [text] into it. */
     private fun type(
         name: String,
         text: String,
-    ) = field(name).performScrollTo().performTextReplacement(text)
+    ) {
+        cell(name).performScrollTo().performClick()
+        compose.onNode(hasContentDescription(name) and hasSetTextAction()).performTextReplacement(text)
+    }
 
+    /** Taps a hold's cell, which opens the time picker, and steps its minutes and seconds before Done. */
+    private fun setHold(
+        name: String,
+        minutes: Int,
+        seconds: Int,
+    ) {
+        cell(name).performScrollTo().performClick()
+        val step = { label: String, times: Int ->
+            repeat(times) { compose.onNode(hasContentDescription(label) and hasAnyAncestor(isDialog())).performClick() }
+        }
+        step(if (minutes > 0) "Aumentar Minutos" else "Diminuir Minutos", kotlin.math.abs(minutes))
+        step(if (seconds > 0) "Aumentar Segundos" else "Diminuir Segundos", kotlin.math.abs(seconds))
+        compose.pressDialogButton("Concluir")
+    }
+
+    /** A button by its words or name, scrolled to first, except the pinned Save, which doesn't scroll. */
     private fun press(label: String) =
-        compose.onNode((hasText(label) or hasContentDescription(label)) and isButton).performScrollTo().performClick()
+        compose
+            .onNode((hasText(label) or hasContentDescription(label)) and isButton)
+            .apply { if (label !in PINNED) performScrollTo() }
+            .performClick()
 
     /** jest's `pressAlertButton`: a button inside the dialog, never a same-named one on the screen under it. */
     private fun ComposeContentTestRule.pressDialogButton(label: String) =
@@ -121,7 +148,8 @@ class SessionEditorScreenTest {
         val files = Files(aSession())
         show(files)
 
-        type("Série 1 · Isometria (seg)", "60")
+        // 0:45 → 1:45 → 1:00
+        setHold("Série 1 · Mantido", minutes = 1, seconds = -9)
         press("Salvar")
 
         assertEquals(
@@ -168,18 +196,6 @@ class SessionEditorScreenTest {
         assertEquals(61.23, written.sets[0].weightKg)
         // The set left alone keeps its stored kilograms, not the 60.01 a trip through pounds makes.
         assertEquals(60.0, written.sets[1].weightKg)
-    }
-
-    @Test
-    fun `closes without writing anything when cancelled`() {
-        val files = Files(aSession())
-        show(files)
-
-        type("Série 1 · Reps", "99")
-        press("Cancelar")
-
-        assertEquals(emptyList<Session>(), files.written)
-        assertEquals(1, closed)
     }
 
     // The sheet is still dismissing after its write lands: a second Save wrote again, and its close
@@ -250,7 +266,7 @@ class SessionEditorScreenTest {
         latest.reread()
         compose.waitForIdle()
 
-        field("Série 2 · Reps").assert(hasText("7"))
+        compose.onNode(hasContentDescription("Série 2 · Reps") and hasSetTextAction()).assert(hasText("7"))
     }
 
     // a value typed down to zero
@@ -273,7 +289,7 @@ class SessionEditorScreenTest {
         val files = Files(aSession())
         show(files)
 
-        type("Série 1 · Isometria (seg)", "0")
+        setHold("Série 1 · Mantido", minutes = 0, seconds = -9)
         press("Salvar")
 
         assertEquals(listOf(squatEntry, restEntry), files.written.single().entries)
@@ -286,7 +302,7 @@ class SessionEditorScreenTest {
         show(files)
 
         compose.onNodeWithText("Back Squat").assertDoesNotExist()
-        type("Série 1 · Isometria (seg)", "50")
+        setHold("Série 1 · Mantido", minutes = 0, seconds = 1)
         press("Salvar")
 
         assertEquals(
@@ -302,37 +318,65 @@ class SessionEditorScreenTest {
         val files = Files(aSession())
         show(files)
 
-        press("Remover série · Série 1")
+        press("Remover série 1 de Back Squat")
 
         compose.onNode(isDialog()).assertDoesNotExist()
         press("Salvar")
         assertEquals(squatEntry.copy(sets = listOf(squatEntry.sets[1])), files.written.single().entries[0])
     }
 
-    // The last set takes the exercise with it, the one step the user can't infer from the button.
+    // The last set takes the exercise with it, at once, as agreed on #442: Undo is the way back.
     @Test
-    fun `confirms before the last set takes the exercise with it`() {
+    fun `removes an exercise's last set, and the exercise with it, without asking`() {
         val files = Files(aSession())
         show(files)
 
-        press("Remover exercício")
-        compose.onNodeWithText("Remover este exercício?").assertExists()
-        compose.pressDialogButton("Excluir")
+        press("Remover série 1 de Plank")
+        compose.onNode(isDialog()).assertDoesNotExist()
+        compose.onNodeWithText("Plank removido").assertExists()
         press("Salvar")
 
         assertEquals(listOf(squatEntry, restEntry), files.written.single().entries)
     }
 
+    // Undo puts back the set that was there, its rest and stored kilograms too: the session saves unchanged.
     @Test
-    fun `leaves the entry alone unless the confirm is accepted`() {
+    fun `puts a removed set back exactly with Undo`() {
         val files = Files(aSession())
         show(files)
 
-        press("Remover exercício")
-        compose.pressDialogButton("Cancelar")
+        press("Remover série 1 de Back Squat")
+        compose.onNodeWithText("Série 1 de Back Squat removida").assertExists()
+        press("Desfazer")
+        compose.onNodeWithText("Série 1 de Back Squat removida").assertDoesNotExist()
         press("Salvar")
 
-        assertEquals(plankEntry, files.written.single().entries[2])
+        assertEquals(aSession(), files.written.single())
+    }
+
+    @Test
+    fun `adds a set as a copy of the last, its effort blank`() {
+        val files = Files(aSession())
+        show(files)
+
+        press("Adicionar uma série a Back Squat")
+        press("Salvar")
+
+        val sets = (files.written.single().entries[0] as SessionEntry.Reps).sets
+        assertEquals(3, sets.size)
+        assertEquals(sets[1].copy(rpe = null, restTakenSec = 0.0), sets[2])
+    }
+
+    @Test
+    fun `shows a rest as a line it can't change`() {
+        show()
+
+        compose.onNodeWithText("Descanso · 2:00 feito").performScrollTo().assertExists()
+        compose
+            .onNodeWithText(
+                "Os descansos são registrados pelo cronômetro e não podem ser editados.",
+            ).performScrollTo()
+            .assertExists()
     }
 
     // sessions that can't be edited
@@ -404,20 +448,27 @@ class SessionEditorScreenTest {
     fun `every control is a button at least 44dp tall`() {
         show()
 
-        for (label in listOf("Remover série · Série 1", "Remover exercício", "Cancelar", "Salvar")) {
+        for (label in listOf(
+            "Remover série 1 de Back Squat",
+            "Remover série 1 de Plank",
+            "Adicionar uma série a Back Squat",
+            "Salvar",
+        )) {
             compose
                 .onNode((hasText(label) or hasContentDescription(label)) and isButton)
-                .performScrollTo()
+                .apply { if (label != "Salvar") performScrollTo() }
                 .assertHeightIsAtLeast(44.dp)
         }
+        // A value's cell is a control too: the board's underline is what says a tap changes it.
+        cell("Série 1 · Reps").assertHeightIsAtLeast(44.dp)
     }
 
     @Test
     fun `names each field by its set, since every row's labels are alike`() {
         show()
 
-        for (name in listOf("Série 1 · Reps", "Série 2 · Reps", "Série 2 · Carga (kg)", "Série 1 · Isometria (seg)")) {
-            field(name).assertExists()
+        for (name in listOf("Série 1 · Reps", "Série 2 · Reps", "Série 2 · Carga (kg)", "Série 1 · Mantido")) {
+            cell(name).assertExists()
         }
     }
 
@@ -427,10 +478,10 @@ class SessionEditorScreenTest {
     fun `names each field by its set in the order Japanese puts them`() {
         show()
 
-        for (name in listOf("セット2のレップ", "セット2の負荷（kg）", "セット1のホールド（秒）")) {
-            field(name).assertExists()
+        for (name in listOf("セット2のレップ", "セット2の負荷（kg）", "セット1の保持")) {
+            cell(name).assertExists()
         }
-        compose.onNode(hasContentDescription("セット1を削除") and isButton).assertExists()
+        compose.onNode(hasContentDescription("Back Squatのセット1を削除") and isButton).assertExists()
     }
 
     private class Files(
@@ -460,6 +511,9 @@ class SessionEditorScreenTest {
     }
 
     private companion object {
+        /** Pinned outside the scroll: Save above it, Undo below. */
+        val PINNED = setOf("Salvar", "Desfazer")
+
         const val ZERO_HINT = "Séries com 0 são removidas ao salvar."
     }
 }

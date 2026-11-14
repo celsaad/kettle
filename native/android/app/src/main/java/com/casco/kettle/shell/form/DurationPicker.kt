@@ -90,7 +90,7 @@ internal fun DurationButton(
  * and wrapping within the minute. Nothing changes until Done, so Cancel and back leave it as it was.
  */
 @Composable
-private fun DurationDialog(
+internal fun DurationDialog(
     title: String,
     initial: Double,
     onDone: (Double) -> Unit,

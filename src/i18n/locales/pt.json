@@ -769,7 +769,6 @@
   "sessionEditor": {
     "title": "Editar sessão",
     "subtitle": "{{name}} · {{day}} {{month}}",
-    "intro": "Corrija o que foi registrado. Nada é gravado até você tocar em Salvar.",
     "notFoundTitle": "Sessão não encontrada",
     "notFoundBody": "Ela pode ter sido excluída em outra tela. Nada foi alterado.",
     "runningTitle": "Esta sessão ainda está em andamento",
@@ -777,10 +776,6 @@
     "emptyTitle": "Nada para editar",
     "emptyBody": "Esta sessão não tem séries registradas que possam ser corrigidas.",
     "setLabel": "Série {{n}}",
-    "removeSet": "Remover série",
-    "removeEntry": "Remover exercício",
-    "removeEntryConfirmTitle": "Remover este exercício?",
-    "removeEntryConfirmBody": "\"{{name}}\" tem apenas uma série, então removê-la tira o exercício desta sessão.",
     "readOnlyNote": "Registros minuto a minuto não são editáveis aqui.",
     "zeroRemoved": "Séries com 0 são removidas ao salvar.",
     "field": {
@@ -797,7 +792,19 @@
       "cardioNeedsOne": "Informe uma duração ou uma distância."
     },
     "setField": "{{set}} · {{field}}",
-    "removeSetName": "{{remove}} · {{set}}"
+    "hint": "Toque num número sublinhado para alterá-lo.",
+    "colSet": "Série",
+    "colHeld": "Mantido",
+    "addSet": "+ Adicionar uma série",
+    "restLine": "Descanso · {{time}} feito",
+    "restNote": "Os descansos são registrados pelo cronômetro e não podem ser editados.",
+    "setRemoved": "Série {{n}} de {{name}} removida",
+    "entryRemoved": "{{name}} removido",
+    "cellValue": "{{name}}, {{value}}",
+    "noValue": "nenhum",
+    "removeSetOf": "Remover série {{n}} de {{name}}",
+    "removeEntryOf": "Remover {{name}}",
+    "addSetTo": "Adicionar uma série a {{name}}"
   },
   "exerciseArt": {
     "pushups": "Flexão: mãos sob os ombros, corpo em linha reta do calcanhar à cabeça.",

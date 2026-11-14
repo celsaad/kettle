@@ -143,15 +143,16 @@ here, next to what it describes.
   with Effort left blank. A rest block shows as a read-only line, since the timer logged it (#442).
 - **Import says what an update will clear**: the review counts new items, updated items and
   everything an import will clear, marked with a warning when there are any: fields the file leaves
-  out, a workout's exercises and a program's weeks, notes and changes. Each updated item opens on
+  out, a workout's exercises and a program's weeks, notes and changes, each listed under its item. Each updated item opens on
   what changes, such as "Sets 3 → 4", and a field the file leaves out reads "cleared". A workout
   whose rests or rounds the file changes says which blocks. Items show their name over their id,
   and the button says how many it imports (#443).
 - **An exercise's YAML is a file of its own**: it shows the exercise as a complete library, with
   line numbers and colour, so Copy and Share hand over something that imports on its own. It says
   the weights are the file's kilograms, and links to how the format works (#444).
-- **A program carries on after you delete the week you're on**: Home used to start the program
-  over at week 1. It now goes on from the next week that's still there (#456).
+- **A program keeps your place when the day you last trained is gone**: if an import removes it,
+  or you rename it, Home used to start the program over at week 1. It now carries on after the
+  last day you trained that's still there (#456).
 
 ---
 

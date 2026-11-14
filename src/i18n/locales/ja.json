@@ -602,7 +602,10 @@
       "sameValues": "項目の変更はありません — 同じ内容で置き換えられます",
       "cleared": "消去",
       "rowAccessibility": "{{label}}：{{was}}から{{now}}",
-      "blocksEdited": "編集されたブロック"
+      "blocksEdited": "編集されたブロック",
+      "weeksAdded": "追加される週",
+      "weeksRemoved": "削除される週",
+      "weeksLosing": "メモ・変更・ワークアウトがなくなる週"
     },
     "noChanges": "変更はありません — 読み込んだファイルは今のライブラリと同じです。",
     "showAll_other": "{{count}}件の変更をすべて表示",
@@ -613,7 +616,7 @@
       "updatedCount_other": "更新{{count}}件",
       "announcement": "読み込みました。{{new}}、{{updated}}。"
     },
-    "updateNote": "ライブラリから削除されるものはありません。ただし、すでにあるidの項目は丸ごと置き換わるため、インポートに含まれないフィールドは消去されます。",
+    "updateNote": "ライブラリから削除されるものはありません。ただし、すでにあるidの項目は丸ごと置き換わるため、インポートに含まれない内容は消去されます。",
     "error": {
       "invalidYaml": "不正な YAML: {{detail}}",
       "schemaMismatch": "exercises.yaml の形式に合いません — {{detail}}",
@@ -625,7 +628,7 @@
       "tooLarge": "大きすぎてインポートできません。ライブラリは {{limit}} KB までです。"
     },
     "reviewTitle": "変更を確認",
-    "fieldsCleared_other": "消去",
+    "clearedTile_other": "消去",
     "sectionUpdated": "更新",
     "sectionNew": "新規",
     "itemSub": "{{id}} · {{kind}}",

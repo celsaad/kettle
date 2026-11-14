@@ -61,11 +61,18 @@ class LibraryDiffTest {
 
     // Every key of both configs technically changed; listing them would bury the one line that explains it.
     @Test
-    fun `reports a type change instead of the config, not alongside it`() {
+    fun `reports a type change instead of the config, with only what the new type has no place for`() {
         val hold = Exercise("bench", "Bench Press", ExerciseConfig.TimedHold(5, holdSecMin = 20.0, restSec = 120.0))
+        // Sets and rest carry, changed or not; the reps and the weight go, as cleared (#456).
         assertEquals(
             listOf(
                 FieldChange(DiffLabel.Type, DiffValue.Type(ExerciseType.Reps), DiffValue.Type(ExerciseType.TimedHold)),
+                FieldChange(DiffLabel.Field(FieldName.TargetReps), DiffValue.Text("5"), DiffValue.Unset),
+                FieldChange(
+                    DiffLabel.Field(FieldName.Weight),
+                    DiffValue.Measured("60", FieldUnit.Weight),
+                    DiffValue.Unset,
+                ),
             ),
             diffExercise(reps(), hold, UnitSystem.METRIC),
         )
@@ -134,7 +141,7 @@ class LibraryDiffTest {
             assertEquals(
                 listOf(
                     FieldChange(DiffLabel.Blocks, DiffValue.Text("2"), DiffValue.Text("1")),
-                    FieldChange(DiffLabel.Exercises, DiffValue.Text("dips"), DiffValue.Text("—")),
+                    FieldChange(DiffLabel.Exercises, DiffValue.Text("dips"), DiffValue.Text("—"), cleared = 1),
                 ),
                 diffWorkout(before, after),
             )
@@ -145,7 +152,7 @@ class LibraryDiffTest {
         fun `sees inside a circuit, so a swapped member is not invisible`() {
             assertEquals(
                 listOf(
-                    FieldChange(DiffLabel.Exercises, DiffValue.Text("dips"), DiffValue.Text("—")),
+                    FieldChange(DiffLabel.Exercises, DiffValue.Text("dips"), DiffValue.Text("—"), cleared = 1),
                     FieldChange(DiffLabel.Exercises, DiffValue.Text("—"), DiffValue.Text("rows")),
                 ),
                 diffWorkout(push(circuit("bench", "dips")), push(circuit("bench", "rows"))),
@@ -209,9 +216,12 @@ class LibraryDiffTest {
 
         // Week 2 is new, so it isn't also "edited": reporting both would describe one change twice.
         @Test
-        fun `counts an added week once, in the count, not twice`() {
+        fun `names an added week in its own row, not as edited too`() {
             assertEquals(
-                listOf(FieldChange(DiffLabel.Weeks, DiffValue.Text("1"), DiffValue.Text("2"))),
+                listOf(
+                    FieldChange(DiffLabel.Weeks, DiffValue.Text("1"), DiffValue.Text("2")),
+                    FieldChange(DiffLabel.WeeksAdded, DiffValue.Text("—"), DiffValue.Text("2")),
+                ),
                 diffProgram(base(week(1, "push")), base(week(1, "push"), week(2, "push"))),
             )
         }
@@ -230,7 +240,10 @@ class LibraryDiffTest {
         @Test
         fun `sees a training week turned into a rest day`() {
             assertEquals(
-                listOf(FieldChange(DiffLabel.WeeksEdited, DiffValue.Text("—"), DiffValue.Text("2"))),
+                listOf(
+                    FieldChange(DiffLabel.WeeksEdited, DiffValue.Text("—"), DiffValue.Text("2")),
+                    FieldChange(DiffLabel.WeeksLosing, DiffValue.Text("—"), DiffValue.Text("2"), cleared = 1),
+                ),
                 diffProgram(base(week(1, "push"), week(2, "push")), base(week(1, "push"), ProgramWeek.RestDay(2))),
             )
         }

@@ -63,7 +63,26 @@ class NextUpTest {
             assertEquals(4L, nextWeekAfter(deleted, listOf(session("prog", 3))).week)
         }
 
-        // A day gone from the week logged: that week again from its first slot, the nearest place standing.
+        // A day gone after the two before it were logged: on after the last of them still standing (#456).
+        @Test
+        fun `carries on after the newest session whose slot still stands`() {
+            val days =
+                Program(
+                    "prog",
+                    "Prog",
+                    listOf(
+                        ProgramWeek.Training(2, "A", "full"),
+                        ProgramWeek.Training(2, "B", "full"),
+                        ProgramWeek.Training(3, "A", "full"),
+                    ),
+                )
+            val logged = listOf("C", "B", "A").map { session("prog", 2, it) }
+
+            val next = nextWeekAfter(days, logged)
+            assertEquals(3L to "A", next.week to next.day)
+        }
+
+        // Nothing logged still standing: that week again from its first slot, the nearest place left.
         @Test
         fun `carries on in the same week when only the day logged is gone`() {
             val days =

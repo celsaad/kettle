@@ -57,7 +57,7 @@ internal fun PreviewSection(
 ) {
     val colors = KettleTheme.colors
     // Every update diffed once, not per frame: a re-imported library is all updates.
-    val cleared = remember(preview, units) { preview.fieldsCleared(units) }
+    val cleared = remember(preview, units) { preview.clearedTotal(units) }
     Text(
         stringResource(R.string.import_reviewTitle),
         Modifier.padding(top = Spacing.three).semantics { heading() },
@@ -69,7 +69,7 @@ internal fun PreviewSection(
         CountTile(preview.updatedCount, stringResource(R.string.import_updated), colors.accentCalmText)
         CountTile(
             cleared,
-            pluralText(R.plurals.import_fieldsCleared, R.string.import_fieldsCleared_zero, cleared),
+            pluralText(R.plurals.import_clearedTile, R.string.import_clearedTile_zero, cleared),
             if (cleared > 0) colors.accentText else colors.text,
             warn = cleared > 0,
         )

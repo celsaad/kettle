@@ -29,6 +29,15 @@ sealed interface DiffLabel {
     /** Weeks on both sides that differ in any way, by number and day. */
     data object WeeksEdited : DiffLabel
 
+    /** Slots the update adds, by number and day: a renamed day is one removed and one added. */
+    data object WeeksAdded : DiffLabel
+
+    /** Slots the update takes away, by number and day. */
+    data object WeeksRemoved : DiffLabel
+
+    /** Weeks on both sides that lose a note, a change (override) or their workout to a rest day. */
+    data object WeeksLosing : DiffLabel
+
     /** A config field, named as the exercise form names it. */
     data class Field(
         val name: FieldName,
@@ -57,24 +66,26 @@ sealed interface DiffValue {
     ) : DiffValue
 }
 
-/** [label] moved from [from] to [to]. */
+/**
+ * [label] moved from [from] to [to]. [cleared] is how much of what it lists the update takes away: a
+ * field left unset is one, a workout's lost exercises one each. Import's counts and warning marks are
+ * this number and nothing else (#456), so the tile, an item's count and its open rows always agree.
+ */
 data class FieldChange(
     val label: DiffLabel,
     val from: DiffValue,
     val to: DiffValue,
+    val cleared: Int = if (to == DiffValue.Unset && from != DiffValue.Unset) 1 else 0,
 ) {
-    /**
-     * Whether the update takes the value away, set before and unset after, or a workout's exercises
-     * that go (#456): what Import marks as cleared.
-     */
-    val clears: Boolean get() =
-        (to == DiffValue.Unset && from != DiffValue.Unset) || (label == DiffLabel.Exercises && to == NONE)
+    /** Whether the update takes anything away here: what Import marks with its warning. */
+    val clears: Boolean get() = cleared > 0
 }
 
 /**
  * What moved between [before] and [after], the same exercise by id, with weights in [units]. A type
- * change is reported instead of the config, not beside it: the two configs share no keys once the type
- * moves, so listing them would call every field of both changed and bury the one line that explains it.
+ * change is reported instead of the config, not beside it: listing both configs would call every field
+ * changed and bury the one line that explains it. Only what the new type has no place for is listed,
+ * as cleared, since that is what the import takes away (#456).
  */
 fun diffExercise(
     before: Exercise,
@@ -89,15 +100,21 @@ fun diffExercise(
                 .takeIf { retyped },
             change(DiffLabel.Notes, before.notes, after.notes),
         )
-    if (retyped) return changes
-
     val beforeValues = draftOf(before, units).values
     val afterValues = draftOf(after, units).values
+    if (retyped) {
+        return changes +
+            configFields(before.config.type).mapNotNull { field ->
+                beforeValues[field.key]
+                    ?.takeIf { it.isNotBlank() && afterValues[field.key].isNullOrBlank() }
+                    ?.let { FieldChange(DiffLabel.Field(field.name), measured(field, it), DiffValue.Unset) }
+            }
+    }
     // In the form's order, so a diff lists fields as the editor the reader opens next shows them.
     return changes +
         configFields(after.config.type).mapNotNull { field ->
-            change(DiffLabel.Field(field.name), beforeValues[field.key], afterValues[field.key]) { number ->
-                field.unit?.let { DiffValue.Measured(number, it) } ?: DiffValue.Text(number)
+            change(DiffLabel.Field(field.name), beforeValues[field.key], afterValues[field.key]) {
+                measured(field, it)
             }
         }
 }
@@ -114,8 +131,9 @@ fun diffWorkout(
 ): List<FieldChange> {
     val had = before.blocks.flatMap(::exercisesIn)
     val has = after.blocks.flatMap(::exercisesIn)
-    val gone = had.filter { it !in has }
-    val added = has.filter { it !in had }
+    // Each reference, so losing one of two pull-ups is listed and counted, as the block count says.
+    val gone = had.minusEach(has)
+    val added = has.minusEach(had)
     // Same place, same exercises, different settings: what the count and the references can't see.
     val settings =
         before.blocks.zip(after.blocks).mapIndexedNotNull { i, (was, now) ->
@@ -132,63 +150,52 @@ fun diffWorkout(
     return listOfNotNull(
         change(DiffLabel.Name, before.name, after.name),
         change(DiffLabel.Blocks, "${before.blocks.size}", "${after.blocks.size}"),
-        FieldChange(DiffLabel.Exercises, DiffValue.Text(gone.joinToString(", ")), NONE).takeIf { gone.isNotEmpty() },
-        FieldChange(DiffLabel.Exercises, NONE, DiffValue.Text(added.joinToString(", "))).takeIf { added.isNotEmpty() },
+        FieldChange(
+            DiffLabel.Exercises,
+            DiffValue.Text(gone.joinToString(", ")),
+            NO_VALUE,
+            cleared = gone.size,
+        ).takeIf { gone.isNotEmpty() },
+        FieldChange(
+            DiffLabel.Exercises,
+            NO_VALUE,
+            DiffValue.Text(added.joinToString(", ")),
+        ).takeIf { added.isNotEmpty() },
         FieldChange(
             DiffLabel.BlocksEdited,
-            NONE,
+            NO_VALUE,
             DiffValue.Text(edited.joinToString(", ")),
         ).takeIf { edited.isNotEmpty() },
     )
 }
 
-/**
- * The workout diff's reasoning one level up: week count, plus which weeks differ in any way. Which
- * field of week 4 moved is a question the program editor answers better than a preview line can.
- */
-fun diffProgram(
-    before: Program,
-    after: Program,
-): List<FieldChange> {
-    val previous = before.weeks.associateBy(::slot)
-    // Only weeks on both sides: one that's new or gone is already in the count, and counting it here
-    // too would report the same edit twice.
-    val edited = after.weeks.filter { week -> previous[slot(week)]?.let { it != week } == true }
-    return listOfNotNull(
-        change(DiffLabel.Name, before.name, after.name),
-        change(DiffLabel.Weeks, "${before.weeks.size}", "${after.weeks.size}"),
-        FieldChange(
-            DiffLabel.WeeksEdited,
-            NONE,
-            DiffValue.Text(
-                edited.joinToString(", ") { week ->
-                    week.day?.ifEmpty { null }?.let { "${week.week} ($it)" }
-                        ?: "${week.week}"
-                },
-            ),
-        ).takeIf { edited.isNotEmpty() },
-    )
+private fun measured(
+    field: ConfigField,
+    number: String,
+): DiffValue = field.unit?.let { DiffValue.Measured(number, it) } ?: DiffValue.Text(number)
+
+/** This list less one of each of [other]'s entries: a multiset difference, repeats kept. */
+private fun List<String>.minusEach(other: List<String>): List<String> {
+    val left = other.toMutableList()
+    return filter { !left.remove(it) }
 }
 
-/** A week's place in the rotation: its number and day, which no two weeks share. */
-internal fun slot(week: ProgramWeek) = week.week to week.day.orEmpty()
-
 /** One entry per reference, not per id, as RN's `referencedExercises`. */
-internal fun exercisesIn(block: WorkoutBlock): List<String> =
+private fun exercisesIn(block: WorkoutBlock): List<String> =
     when (block) {
         is WorkoutBlock.ExerciseBlock -> listOf(block.exerciseId)
         is WorkoutBlock.Circuit -> block.members.map { it.exerciseId }
     }
 
 /** RN's dash for the empty side of a list that grew or shrank: a glyph, the same in every language. */
-private val NONE = DiffValue.Text("—")
+internal val NO_VALUE = DiffValue.Text("—")
 
 /**
  * Compares the **raw** values and cuts only what's shown: comparing the cut ones would make two notes
  * that first differ past the cut look identical, and the change would vanish from the one screen that
  * exists to show it.
  */
-private fun change(
+internal fun change(
     label: DiffLabel,
     from: String?,
     to: String?,

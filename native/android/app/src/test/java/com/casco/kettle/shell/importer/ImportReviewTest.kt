@@ -48,8 +48,8 @@ class ImportReviewTest : ImportHarness() {
     fun `marks a cleared field as cleared, with what it was`() {
         reviewsAClearingUpdate()
 
-        compose.onNodeWithContentDescription("Peso: era 20 kg, agora limpo").assertExists()
-        compose.onNodeWithContentDescription("Notas: era Dead hang first., agora limpo").assertExists()
+        compose.onNodeWithContentDescription("Peso: era 20 kg, agora removido").assertExists()
+        compose.onNodeWithContentDescription("Notas: era Dead hang first., agora removido").assertExists()
     }
 
     @Test
@@ -107,7 +107,7 @@ class ImportReviewTest : ImportHarness() {
 
         button("Pull-ups", substring = true).performClick()
 
-        compose.onNodeWithContentDescription("Peso: era 20 kg, agora limpo").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Peso: era 20 kg, agora removido").assertDoesNotExist()
         shown("2 removidos")
     }
 }

@@ -1,7 +1,5 @@
 package com.casco.kettle.domain
 
-import kotlin.math.roundToLong
-
 // The workout editor's draft (#242): its blocks, keyed, and the moves on them, which RN kept inline in
 // `workout-editor.tsx`. The circuits' own rules are `CircuitEditing.kt`'s; Save is `WorkoutEditing.kt`'s.
 
@@ -108,7 +106,7 @@ fun WorkoutDraft.withRestLength(
                 if (draft.key == key && block is WorkoutBlock.ExerciseBlock) {
                     // Whole seconds, as the picker sets them: an exercise resting 59.5 s set back to
                     // 1:00 is at its own length (#456).
-                    val isOwn = seconds.roundToLong() == own.roundToLong()
+                    val isOwn = wholeSeconds(seconds) == wholeSeconds(own)
                     val override = if (isOwn) null else BlockConfigOverride(durationSec = seconds)
                     draft.copy(block = block.copy(configOverride = override))
                 } else {

@@ -66,6 +66,21 @@ class ExerciseStepsTest {
         )
     }
 
+    @Test
+    fun `starts each timed type at its own target`() {
+        fun start(type: ExerciseType) = ExerciseDraft("x", type, emptyMap(), "").withDefaults().values
+        val hold = start(ExerciseType.TimedHold)
+        val emom = start(ExerciseType.Emom)
+
+        assertEquals(
+            listOf("3", "30", "60"),
+            listOf(hold[ConfigKey.Sets], hold[ConfigKey.HoldSecMin], hold[ConfigKey.RestSec]),
+        )
+        assertEquals(listOf("60", "10"), listOf(emom[ConfigKey.IntervalSec], emom[ConfigKey.TotalMinutes]))
+        assertEquals("600", start(ExerciseType.Amrap)[ConfigKey.TimeCapSec])
+        assertEquals("60", start(ExerciseType.Rest)[ConfigKey.DurationSec])
+    }
+
     // A cardio with no duration counts up, which a default would take away.
     @Test
     fun `leaves an optional field with no default blank`() {

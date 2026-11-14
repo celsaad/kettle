@@ -56,7 +56,7 @@ class ImportPreviewTest {
         val merged = mergeLibraries(before, Library(1, listOf(pullUps), emptyList(), emptyList())) as MergeResult.Ok
 
         // The notes, the top of the range and the weight go; nothing else changed.
-        assertEquals(3, ImportPreview(before, merged.library, merged.summary).fieldsCleared(UnitSystem.METRIC))
+        assertEquals(3, ImportPreview(before, merged.library, merged.summary).clearedTotal(UnitSystem.METRIC))
     }
 
     private fun cleared(
@@ -64,7 +64,7 @@ class ImportPreviewTest {
         incoming: Library,
     ): Int {
         val merged = mergeLibraries(before, incoming) as MergeResult.Ok
-        return ImportPreview(before, merged.library, merged.summary).fieldsCleared(UnitSystem.METRIC)
+        return ImportPreview(before, merged.library, merged.summary).clearedTotal(UnitSystem.METRIC)
     }
 
     // The tile once counted only unset exercise fields, and read 0 for an import that took a lot away (#456).
@@ -101,8 +101,91 @@ class ImportPreviewTest {
         val before = Library(1, listOf(pullUps), listOf(pushDay), listOf(Program("base", "Base", weeks)))
         val after = Program("base", "Base", listOf(ProgramWeek.Training(1, workoutId = "push-day"), weeks[1]))
 
-        // Week 3 goes; week 1 keeps its place but loses its note and its change.
-        assertEquals(3, cleared(before, Library(1, emptyList(), emptyList(), listOf(after))))
+        // Week 3 goes; week 1 keeps its place but loses its note and its change, which is one week losing.
+        assertEquals(2, cleared(before, Library(1, emptyList(), emptyList(), listOf(after))))
+    }
+
+    private fun programUpdate(
+        was: ProgramWeek,
+        now: ProgramWeek,
+    ): Int {
+        val before = Library(1, listOf(pullUps), listOf(pushDay), listOf(Program("base", "Base", listOf(was))))
+        return cleared(before, Library(1, emptyList(), emptyList(), listOf(Program("base", "Base", listOf(now)))))
+    }
+
+    // An override that only changes its patch takes nothing away: the reviewers' tile read "1 cleared".
+    @Test
+    fun `counts a change that keeps its target and keys as edited, not cleared`() {
+        val sets = { n: Double ->
+            ProgramOverride.ExerciseOverride("pull-ups", mapOf("sets" to OverrideValue.Numeric(n)))
+        }
+        val week = { n: Double -> ProgramWeek.Training(1, workoutId = "push-day", overrides = listOf(sets(n))) }
+
+        assertEquals(0, programUpdate(week(3.0), week(4.0)))
+    }
+
+    @Test
+    fun `counts a change that keeps its target but drops a key`() {
+        val patch = { keys: List<String> ->
+            ProgramOverride.ExerciseOverride("pull-ups", keys.associateWith { OverrideValue.Numeric(3.0) })
+        }
+        val week = { keys: List<String> ->
+            ProgramWeek.Training(1, workoutId = "push-day", overrides = listOf(patch(keys)))
+        }
+
+        assertEquals(1, programUpdate(week(listOf("sets", "rest_sec")), week(listOf("sets"))))
+    }
+
+    @Test
+    fun `counts a training week turned into a rest day`() {
+        assertEquals(1, programUpdate(ProgramWeek.Training(1, workoutId = "push-day"), ProgramWeek.RestDay(1)))
+    }
+
+    // A renamed day was "1 cleared" over a diff that said nothing changed (#456 review).
+    @Test
+    fun `lists a renamed day as one slot removed and one added`() {
+        val before =
+            Library(
+                1,
+                listOf(pullUps),
+                listOf(pushDay),
+                listOf(Program("base", "Base", listOf(ProgramWeek.Training(1, "Mon", "push-day")))),
+            )
+        val after = Program("base", "Base", listOf(ProgramWeek.Training(1, "Monday", "push-day")))
+        val merged = mergeLibraries(before, Library(1, emptyList(), emptyList(), listOf(after))) as MergeResult.Ok
+        val rows =
+            ImportPreview(
+                before,
+                merged.library,
+                merged.summary,
+            ).changes(ChangedItem("base", LibraryItemKind.Program, false), UnitSystem.METRIC)
+
+        assertEquals(
+            listOf(
+                FieldChange(DiffLabel.WeeksRemoved, DiffValue.Text("1 (Mon)"), DiffValue.Text("\u2014"), cleared = 1),
+                FieldChange(DiffLabel.WeeksAdded, DiffValue.Text("\u2014"), DiffValue.Text("1 (Monday)")),
+            ),
+            rows,
+        )
+    }
+
+    // The count pointed at nothing in the open item: a retype's lost settings are now rows of their own.
+    @Test
+    fun `lists a retype's lost settings as cleared rows the count agrees with`() {
+        val before =
+            Library(
+                1,
+                listOf(pullUps.copy(config = ExerciseConfig.Reps(3, 8, 12, 20.0, 90.0))),
+                emptyList(),
+                emptyList(),
+            )
+        val hold = pullUps.copy(config = ExerciseConfig.TimedHold(3, 30.0, restSec = 60.0))
+        val merged = mergeLibraries(before, Library(1, listOf(hold), emptyList(), emptyList())) as MergeResult.Ok
+        val preview = ImportPreview(before, merged.library, merged.summary)
+        val item = ChangedItem("pull-ups", LibraryItemKind.Exercise, false)
+
+        assertEquals(3, preview.changes(item, UnitSystem.METRIC).count { it.clears })
+        assertEquals(3, preview.clearedBy(item, UnitSystem.METRIC))
     }
 
     @Test
@@ -131,7 +214,7 @@ class ImportPreviewTest {
                 emptyList(),
             )
 
-        assertEquals(0, preview(incoming).fieldsCleared(UnitSystem.METRIC))
+        assertEquals(0, preview(incoming).clearedTotal(UnitSystem.METRIC))
     }
 
     @Test

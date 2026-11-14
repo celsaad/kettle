@@ -61,7 +61,15 @@ private fun DiffRow(
     val label = labelText(change.label)
     val was = valueText(change.from, units)
     val cleared = change.clears
-    val now = if (cleared) stringResource(R.string.import_diff_cleared) else valueText(change.to, units)
+    // "cleared" where a value goes; a list that goes keeps its —, the warning mark saying the rest.
+    val now =
+        if (change.to ==
+            DiffValue.Unset
+        ) {
+            stringResource(R.string.import_diff_cleared)
+        } else {
+            valueText(change.to, units)
+        }
     val description = stringResource(R.string.import_diff_rowAccessibility, label, now, was)
     Row(
         Modifier.clearAndSetSemantics { contentDescription = description },
@@ -86,6 +94,9 @@ internal fun labelText(label: DiffLabel): String =
             DiffLabel.Weeks -> R.string.import_diff_weeks
             DiffLabel.WeeksEdited -> R.string.import_diff_weeksChanged
             DiffLabel.BlocksEdited -> R.string.import_diff_blocksEdited
+            DiffLabel.WeeksAdded -> R.string.import_diff_weeksAdded
+            DiffLabel.WeeksRemoved -> R.string.import_diff_weeksRemoved
+            DiffLabel.WeeksLosing -> R.string.import_diff_weeksLosing
             is DiffLabel.Field -> label.name.label
         },
     )

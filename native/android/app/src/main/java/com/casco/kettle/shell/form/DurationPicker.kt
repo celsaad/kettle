@@ -30,9 +30,11 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.casco.kettle.domain.canAddMinute
 import com.casco.kettle.domain.durationParts
 import com.casco.kettle.domain.steppingMinutes
 import com.casco.kettle.domain.steppingSeconds
+import com.casco.kettle.domain.wholeSeconds
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.i18n.pluralText
 import com.casco.kettle.shell.runner.formatClock
@@ -71,13 +73,14 @@ internal fun DurationButton(
         horizontalArrangement = Arrangement.spacedBy(Spacing.one),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(formatClock(seconds), style = KettleType.heading, color = colors.text)
+        Text(clockText(seconds), style = KettleType.heading, color = colors.text)
         TypeIcon(R.drawable.icon_expand, KettleType.small, colors.textSecondary)
     }
     if (open) {
         DurationDialog(label, seconds, onDone = {
             open = false
-            onChange(it)
+            // Done on an untouched length writes nothing: a circuit's absent rest isn't turned into a 0.
+            if (it != seconds) onChange(it)
         }) { open = false }
     }
 }
@@ -102,7 +105,7 @@ private fun DurationDialog(
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.two)) {
             Text(
-                formatClock(seconds),
+                clockText(seconds),
                 Modifier
                     .fillMaxWidth()
                     .semantics { liveRegion = LiveRegionMode.Polite },
@@ -111,11 +114,11 @@ private fun DurationDialog(
                 textAlign = TextAlign.Center,
             )
             val (minutes, rest) = durationParts(seconds)
-            PartStepper(stringResource(R.string.durationPicker_minutes), "$minutes") {
+            PartStepper(stringResource(R.string.durationPicker_minutes), "$minutes", canAddMinute(seconds)) {
                 seconds =
                     steppingMinutes(seconds, it)
             }
-            PartStepper(stringResource(R.string.durationPicker_seconds), "$rest".padStart(2, '0')) {
+            PartStepper(stringResource(R.string.durationPicker_seconds), "$rest".padStart(2, '0'), canAdd = true) {
                 seconds = steppingSeconds(seconds, it)
             }
         }
@@ -127,6 +130,7 @@ private fun DurationDialog(
 private fun PartStepper(
     label: String,
     value: String,
+    canAdd: Boolean,
     step: (Int) -> Unit,
 ) {
     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -139,9 +143,15 @@ private fun PartStepper(
             color = KettleTheme.colors.text,
             textAlign = TextAlign.Center,
         )
-        StepButton(R.drawable.icon_add, stringResource(R.string.common_increase, label)) { step(+1) }
+        StepButton(R.drawable.icon_add, stringResource(R.string.common_increase, label), canAdd) { step(+1) }
     }
 }
+
+/**
+ * A length as the clock shows it, to the whole second the steppers and the spoken length round to: a
+ * file's 2.5 s would otherwise show 0:02 and read as 3 seconds.
+ */
+private fun clockText(seconds: Double): String = formatClock(wholeSeconds(seconds).toDouble())
 
 /** "2 minutes 30 seconds", "45 seconds", or "2 minutes": a length as words, for a screen reader. */
 @Composable

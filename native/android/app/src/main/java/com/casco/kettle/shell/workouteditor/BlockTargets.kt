@@ -73,4 +73,4 @@ private fun holdText(config: ExerciseConfig.TimedHold): String {
 /** " · rest 1:15", or nothing for no rest. */
 @Composable
 private fun restSuffix(seconds: Double): String =
-    if (seconds > 0) " · " + stringResource(R.string.session_upcoming_restBetween, formatClock(seconds)) else ""
+    if (seconds > 0) " · " + stringResource(R.string.workoutEditor_restSuffix, formatClock(seconds)) else ""

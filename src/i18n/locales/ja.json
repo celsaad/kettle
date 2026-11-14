@@ -174,7 +174,7 @@
     "overrides": {
       "title": "4. 上書き（任意）",
       "intro": "各エントリは、id でちょうど 1 つの種目または 1 つのサーキットブロックを指定し、その種目やサーキット自身のフィールド名を使って config を部分的に書き換えます。",
-      "body": "種目の上書きは単独の種目ブロックにだけ意味があります。ブロックの上書きは、ワークアウトタブで独自の id を付けたサーキット（サーキットを編集するときの「ブロック ID（任意）」欄）にだけ効き、サーキット自身の <c>rounds</c> や休憩を書き換えます。メンバーの config は変わりません。上書きは次の週へ引き継がれないので、効かせ続けたい週にはその都度書いてください。"
+      "body": "種目の上書きは単独の種目ブロックにだけ意味があります。ブロックの上書きは、ワークアウトタブで独自の id を付けたサーキット（サーキットを編集するときの「id」ボタン）にだけ効き、サーキット自身の <c>rounds</c> や休憩を書き換えます。個々の種目の config は変わりません。上書きは次の週へ引き継がれないので、効かせ続けたい週にはその都度書いてください。"
     },
     "multiDay": {
       "title": "5. 週に複数回のセッション（任意）",
@@ -763,7 +763,6 @@
     "namePlaceholder": "例：プッシュの日",
     "removeAccessibility": "{{name}}を削除",
     "circuit": "サーキット",
-    "removeCircuitAccessibility": "サーキットを削除",
     "removeFromCircuitAccessibility": "サーキットから{{name}}を削除",
     "blockIdInputPlaceholder": "例：finisher-rounds",
     "rounds": "ラウンド",
@@ -786,15 +785,17 @@
     "restLength": "休憩の長さ",
     "idLabel": "id: {{id}}",
     "addId": "idを追加",
-    "editIdAccessibility": "サーキットのid、{{id}}。編集",
     "circuitHelp": "idが必要なのは、プログラムがこのサーキットを変更する場合だけです。サーキットの種目は追加した順に実行されます。順番を変えるには、一度削除して追加し直してください。",
     "addExercise": "+ 種目を追加",
     "addCircuit": "+ サーキットを追加",
-    "restHint": "種目の間に休憩を入れるには、＋ 種目を追加 から休憩を選んでください。",
+    "restHint": "種目の間に休憩を入れるには、+ 種目を追加 から休憩を選んでください。",
     "inUseReason": "{{programs}}が使用中のため削除できません。",
     "targetHold": "{{sets}} × {{hold}}",
     "memberHold": "ホールド {{hold}}",
-    "memberHoldOpen": "最大ホールド"
+    "memberHoldOpen": "最大ホールド",
+    "removeCircuit": "サーキットを削除",
+    "restSuffix": "休憩 {{time}}",
+    "idField": "サーキットのid"
   },
   "programEditor": {
     "editTitle": "プログラムを編集",
@@ -911,7 +912,6 @@
     "repsList": "{{list}} レップ",
     "roundsPlusReps": "{{rounds}} + {{reps}}",
     "intervalsWithReps": "{{intervals}} · {{reps}}",
-    "circuitShape": "{{rounds}} · 休憩 {{between}}秒 / {{rounds_rest}}秒",
     "adHocSession": "即席セッション",
     "previous": {
       "loaded": "前回 · {{weight}} × {{reps}}",

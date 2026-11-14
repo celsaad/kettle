@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -24,13 +25,13 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.collapse
-import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.expand
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.Exercise
+import com.casco.kettle.domain.MAX_ROUNDS
 import com.casco.kettle.domain.UnitSystem
 import com.casco.kettle.domain.WorkoutBlock
 import com.casco.kettle.domain.canRemoveMember
@@ -165,18 +166,18 @@ private fun MemberRow(
 @Composable
 private fun AddToCircuit(actions: CircuitActions) {
     val toggle = actions.togglePicker
-    Row(
-        Modifier.fillMaxWidth().semantics {
-            if (actions.picking) collapse { true.also { toggle() } } else expand { true.also { toggle() } }
-        },
-    ) {
-        TextAction(
-            stringResource(if (actions.picking) R.string.common_close else R.string.workoutEditor_addToCircuit),
-            KettleType.smallMedium,
-            KettleTheme.colors.text,
-            onClick = toggle,
-        )
-    }
+    // Its own control rather than a TextAction, so the expanded state sits on what TalkBack focuses.
+    Text(
+        stringResource(if (actions.picking) R.string.common_close else R.string.workoutEditor_addToCircuit),
+        Modifier
+            .heightIn(min = 48.dp)
+            .clickable(role = Role.Button, onClick = toggle)
+            .semantics {
+                if (actions.picking) collapse { true.also { toggle() } } else expand { true.also { toggle() } }
+            }.wrapContentHeight(Alignment.CenterVertically),
+        style = KettleType.smallMedium,
+        color = KettleTheme.colors.text,
+    )
 }
 
 /** Rounds on a stepper held to 1..the schema's ceiling, the value between its buttons. */
@@ -197,7 +198,7 @@ private fun Rounds(
             color = KettleTheme.colors.text,
             textAlign = TextAlign.Center,
         )
-        StepButton(R.drawable.icon_add, stringResource(R.string.common_increase, label)) {
+        StepButton(R.drawable.icon_add, stringResource(R.string.common_increase, label), circuit.rounds < MAX_ROUNDS) {
             onChange(circuit.withRounds(circuit.rounds + 1))
         }
     }
@@ -229,7 +230,6 @@ private fun IdAndRemove(
     // Saveable: the circuit is a lazy list item, disposed while scrolled out of view.
     var editing by rememberSaveable { mutableStateOf(false) }
     val id = circuit.id
-    val description = id?.let { stringResource(R.string.workoutEditor_editIdAccessibility, it) }
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Row(
             Modifier
@@ -237,7 +237,6 @@ private fun IdAndRemove(
                 .heightIn(min = 44.dp)
                 .clickable(role = Role.Button) { editing = !editing }
                 .semantics {
-                    description?.let { contentDescription = it }
                     if (editing) collapse { true.also { editing = false } } else expand { true.also { editing = true } }
                 },
             horizontalArrangement = Arrangement.spacedBy(Spacing.one),
@@ -255,7 +254,7 @@ private fun IdAndRemove(
             TypeIcon(R.drawable.icon_edit, KettleType.small, colors.textSecondary)
         }
         TextAction(
-            stringResource(R.string.workoutEditor_removeCircuitAccessibility),
+            stringResource(R.string.workoutEditor_removeCircuit),
             KettleType.smallMedium,
             colors.text,
             onClick = actions.remove,
@@ -267,7 +266,7 @@ private fun IdAndRemove(
         FormField(
             id.orEmpty(),
             { actions.change(circuit.withId(it)) },
-            name = stringResource(R.string.workoutEditor_circuit),
+            name = stringResource(R.string.workoutEditor_idField),
             placeholder = stringResource(R.string.workoutEditor_blockIdInputPlaceholder),
             FieldOptions(kind = FieldKind.Text, minHeight = 44.dp, focus = focus),
         )

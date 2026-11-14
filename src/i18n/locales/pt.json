@@ -194,7 +194,7 @@
     "overrides": {
       "title": "4. Overrides (opcional)",
       "intro": "Cada entrada mira exatamente um exercício ou um bloco de circuito, por id, com um patch parcial de config usando os nomes de campo do próprio exercício ou circuito:",
-      "body": "Um override de exercício só faz sentido para um bloco de exercício único. Um override de bloco só funciona em um circuito que recebeu seu próprio id em Treinos (o campo opcional \"ID do bloco\" ao editar um circuito) — ele altera os campos <c>rounds</c>/descanso do próprio circuito, não a config de um dos membros. Overrides não se propagam — repita o mesmo em cada semana seguinte em que ele deva continuar valendo."
+      "body": "Um override de exercício só faz sentido para um bloco de exercício único. Um override de bloco só funciona em um circuito que recebeu seu próprio id em Treinos (o botão \"id\" ao editar um circuito) — ele altera os campos <c>rounds</c>/descanso do próprio circuito, não a config de um dos exercícios. Overrides não se propagam — repita o mesmo em cada semana seguinte em que ele deva continuar valendo."
     },
     "multiDay": {
       "title": "5. Mais de uma sessão por semana (opcional)",
@@ -859,7 +859,6 @@
     "namePlaceholder": "ex.: Dia de empurrar",
     "removeAccessibility": "Remover {{name}}",
     "circuit": "Circuito",
-    "removeCircuitAccessibility": "Remover circuito",
     "removeFromCircuitAccessibility": "Remover {{name}} do circuito",
     "blockIdInputPlaceholder": "ex.: finisher-rounds",
     "rounds": "Rodadas",
@@ -882,15 +881,17 @@
     "restLength": "Duração do descanso",
     "idLabel": "id: {{id}}",
     "addId": "Adicionar um id",
-    "editIdAccessibility": "Id do circuito, {{id}}. Editar",
     "circuitHelp": "O id só é necessário quando um programa altera este circuito. Os exercícios de um circuito rodam na ordem em que foram adicionados; para mudar um de lugar, remova e adicione de novo.",
     "addExercise": "+ Adicionar exercício",
     "addCircuit": "+ Adicionar circuito",
     "restHint": "Para uma pausa entre exercícios, toque em + Adicionar exercício e escolha Descanso.",
-    "inUseReason": "Não dá para excluir enquanto {{programs}} usa este treino.",
+    "inUseReason": "Não dá para excluir enquanto for usado por {{programs}}.",
     "targetHold": "{{sets}} × {{hold}}",
     "memberHold": "isometria {{hold}}",
-    "memberHoldOpen": "isometria máxima"
+    "memberHoldOpen": "isometria máxima",
+    "removeCircuit": "Remover circuito",
+    "restSuffix": "descanso {{time}}",
+    "idField": "Id do circuito"
   },
   "programEditor": {
     "editTitle": "Editar programa",
@@ -1031,7 +1032,6 @@
     "repsList": "{{list}} repetições",
     "roundsPlusReps": "{{rounds}} + {{reps}}",
     "intervalsWithReps": "{{intervals}} · {{reps}}",
-    "circuitShape": "{{rounds}} · {{between}}s / {{rounds_rest}}s de descanso",
     "adHocSession": "Sessão avulsa",
     "previous": {
       "loaded": "Da última vez · {{weight}} × {{reps}}",
@@ -1107,10 +1107,10 @@
   "durationPicker": {
     "minutes": "Minutos",
     "seconds": "Segundos",
-    "minutesSpoken_zero": "{{count}} minuto",
+    "minutesSpoken_zero": "{{count}} minutos",
     "minutesSpoken_one": "{{count}} minuto",
     "minutesSpoken_other": "{{count}} minutos",
-    "secondsSpoken_zero": "{{count}} segundo",
+    "secondsSpoken_zero": "{{count}} segundos",
     "secondsSpoken_one": "{{count}} segundo",
     "secondsSpoken_other": "{{count}} segundos",
     "change": "{{label}}, {{time}}. Alterar"

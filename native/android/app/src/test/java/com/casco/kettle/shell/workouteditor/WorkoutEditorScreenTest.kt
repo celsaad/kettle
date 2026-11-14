@@ -405,6 +405,22 @@ class WorkoutEditorScreenTest {
         assertEquals(25.0, circuit.restBetweenExercisesSec)
     }
 
+    // Done on an untouched length changes nothing, so an absent rest isn't written as a 0.
+    @Test
+    fun `writes nothing new when the picker is done without a change`() {
+        val bare = WorkoutBlock.Circuit(rounds = 3, members = listOf(CircuitMember("pull-ups"), CircuitMember("dips")))
+        val files = show("push-day", Files(workouts = listOf(pushDay(bare))))
+
+        press("Descanso entre exercícios, 0 segundos. Alterar")
+        compose.pressDialogButton("Concluir")
+        press("Salvar")
+
+        assertEquals(
+            null,
+            (files.savedWorkout("push-day").blocks.single() as WorkoutBlock.Circuit).restBetweenExercisesSec,
+        )
+    }
+
     @Test
     fun `leaves the rest as it was when the picker is cancelled`() {
         show()
@@ -476,6 +492,20 @@ class WorkoutEditorScreenTest {
         type("Reps alvo", "8")
         type("Descanso (seg)", "90")
         press("Criar e adicionar")
+    }
+
+    @Test
+    fun `puts a quick-added exercise into the circuit whose picker made it`() {
+        val files = show()
+        buildCircuit("Pull-ups", "Dips")
+        press("+ Adicionar exercício ao circuito")
+
+        createExercise("Ring Row")
+        type("Nome", "Circuit day")
+        press("Salvar")
+
+        val circuit = files.savedWorkout("circuit-day").blocks.single() as WorkoutBlock.Circuit
+        assertEquals(listOf("pull-ups", "dips", "ring-row"), circuit.members.map { it.exerciseId })
     }
 
     @Test
@@ -689,7 +719,9 @@ class WorkoutEditorScreenTest {
         val files = show("push-day", Files(workouts = listOf(pushDay()), programs = listOf(base)))
 
         named("Excluir treino").assertIsNotEnabled()
-        compose.onNodeWithText("Não dá para excluir enquanto Base usa este treino.").assertExists()
+        // On the button too, so TalkBack says why with it rather than on the next swipe.
+        named("Excluir treino").assert(hasStateDescription("Não dá para excluir enquanto for usado por Base."))
+        compose.onNodeWithText("Não dá para excluir enquanto for usado por Base.").assertExists()
         assertEquals(emptyList<Library>(), files.written)
     }
 
@@ -737,7 +769,7 @@ class WorkoutEditorScreenTest {
         latest.reread()
         compose.pressDialogButton("Excluir")
 
-        compose.onNodeWithText("Não dá para excluir enquanto Base usa este treino.").assertExists()
+        compose.onNodeWithText("Não dá para excluir enquanto for usado por Base.").assertExists()
         assertEquals(emptyList<Library>(), files.written)
     }
 

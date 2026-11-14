@@ -41,6 +41,7 @@ import androidx.compose.ui.semantics.collapse
 import androidx.compose.ui.semantics.expand
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.DraftBlock
@@ -505,6 +506,13 @@ private fun IdAndDelete(
     val colors = KettleTheme.colors
     val usedBy = editor.usedBy
     ListRowSeparator(Modifier.padding(top = Spacing.four))
+    val reason =
+        usedBy.takeIf { it.isNotEmpty() }?.let {
+            stringResource(
+                R.string.workoutEditor_inUseReason,
+                it.joinToString(stringResource(R.string.format_listSeparator)),
+            )
+        }
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text(
             stringResource(R.string.workoutEditor_idLabel, workout.id),
@@ -519,22 +527,15 @@ private fun IdAndDelete(
                 .heightIn(min = 48.dp)
                 // Disabled rather than refusing after the tap: TalkBack says it's unavailable.
                 .clickable(enabled = enabled, role = Role.Button, onClick = editor::askToDelete)
+                // Its reason with it, so TalkBack says why it is unavailable on the button itself.
+                .semantics { reason?.let { stateDescription = it } }
                 .padding(horizontal = Spacing.two)
                 .wrapContentHeight(Alignment.CenterVertically),
             style = KettleType.smallMedium,
             color = if (enabled) colors.accentText else colors.textSecondary,
         )
     }
-    if (usedBy.isNotEmpty()) {
-        Text(
-            stringResource(
-                R.string.workoutEditor_inUseReason,
-                usedBy.joinToString(stringResource(R.string.format_listSeparator)),
-            ),
-            style = KettleType.small,
-            color = colors.textSecondary,
-        )
-    }
+    reason?.let { Text(it, style = KettleType.small, color = colors.textSecondary) }
     if (editor.confirmingDelete) {
         KettleAlertDialog(
             title = stringResource(R.string.workoutEditor_deleteConfirmTitle),

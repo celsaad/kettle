@@ -101,7 +101,5 @@ internal fun RemoveButton(
     contentAlignment = Alignment.Center,
 ) { TypeIcon(R.drawable.icon_close, KettleType.default, KettleTheme.colors.textSecondary) }
 
-internal val BlockRadius = 16.dp
-internal val BlockShape = RoundedCornerShape(BlockRadius)
 private val GripSize = 48.dp
 private const val DISABLED_ALPHA = 0.4f

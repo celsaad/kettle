@@ -184,7 +184,7 @@
     "overrides": {
       "title": "4. Overrides (optional)",
       "intro": "Each entry targets exactly one exercise or one circuit block, by id, with a partial config patch using that exercise's/circuit's own field names:",
-      "body": "An exercise override only makes sense for a single exercise block. A block override only works on a circuit that was given its own id in Workouts (the optional \"Block ID\" field when editing a circuit) — it patches the circuit's own <c>rounds</c>/rest fields, not one member's config. Overrides don't carry forward — repeat one in every later week you want it to keep applying to."
+      "body": "An exercise override only makes sense for a single exercise block. A block override only works on a circuit that was given its own id in Workouts (its \"id\" button when editing a circuit) — it patches the circuit's own <c>rounds</c>/rest fields, not one exercise's config. Overrides don't carry forward — repeat one in every later week you want it to keep applying to."
     },
     "multiDay": {
       "title": "5. More than one session a week (optional)",
@@ -811,7 +811,6 @@
     "namePlaceholder": "e.g. Push day",
     "removeAccessibility": "Remove {{name}}",
     "circuit": "Circuit",
-    "removeCircuitAccessibility": "Remove circuit",
     "removeFromCircuitAccessibility": "Remove {{name}} from circuit",
     "blockIdInputPlaceholder": "e.g. finisher-rounds",
     "rounds": "Rounds",
@@ -834,15 +833,17 @@
     "restLength": "Rest length",
     "idLabel": "id: {{id}}",
     "addId": "Add an id",
-    "editIdAccessibility": "Circuit id, {{id}}. Edit",
     "circuitHelp": "The id is only needed when a program changes this circuit. Exercises in a circuit run in the order added; remove and re-add one to move it.",
     "addExercise": "+ Add exercise",
     "addCircuit": "+ Add circuit",
     "restHint": "For a pause between exercises, tap + Add exercise and pick Rest.",
-    "inUseReason": "Can't delete while {{programs}} uses it.",
+    "inUseReason": "Can't delete while it's used by {{programs}}.",
     "targetHold": "{{sets}} × {{hold}}",
     "memberHold": "hold {{hold}}",
-    "memberHoldOpen": "max hold"
+    "memberHoldOpen": "max hold",
+    "removeCircuit": "Remove circuit",
+    "restSuffix": "rest {{time}}",
+    "idField": "Circuit id"
   },
   "programEditor": {
     "editTitle": "Edit program",
@@ -971,7 +972,6 @@
     "repsList": "{{list}} reps",
     "roundsPlusReps": "{{rounds}} + {{reps}}",
     "intervalsWithReps": "{{intervals}} · {{reps}}",
-    "circuitShape": "{{rounds}} · {{between}}s / {{rounds_rest}}s rest",
     "adHocSession": "Ad-hoc session",
     "previous": {
       "loaded": "Last time · {{weight}} × {{reps}}",

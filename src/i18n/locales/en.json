@@ -39,9 +39,7 @@
   "today": {
     "nextUp": "NEXT UP",
     "nextUpWeek": "NEXT UP · {{week}}",
-    "restDayWeek": "REST DAY · {{week}}",
     "restDayTitle": "Rest day",
-    "restDayBody": "Nothing in the program to run here. Kettle queues your next session when it's due.",
     "restDaySkip": "Train anyway",
     "startSession": "Start session",
     "previewAction": "See the exercises",
@@ -62,7 +60,22 @@
     "offThePlan": "Off the plan",
     "allWorkouts": "All workouts",
     "emptySession": "Empty session",
-    "emptySessionDetail": "Add exercises as you go"
+    "emptySessionDetail": "Add exercises as you go",
+    "next": "Next",
+    "programWeek": "Week {{week}} of {{total}}",
+    "exercises_one": "{{count}} exercise",
+    "exercises_other": "{{count}} exercises",
+    "sets_one": "{{count}} set",
+    "sets_other": "{{count}} sets",
+    "exercisesAndSets": "{{exercises}}, {{sets}}",
+    "restDayNext": "Next session: {{session}}.",
+    "strip": {
+      "label": "This program week, in order",
+      "done": "{{slot}}, done",
+      "next": "{{slot}}, next",
+      "rest": "{{slot}}, rest",
+      "restToday": "{{slot}}, rest, today"
+    }
   },
   "workoutPreview": {
     "notFound": "This workout isn't in your library any more."
@@ -889,7 +902,7 @@
     },
     "restOnly": "rest only",
     "mixed": "mixed {{types}}",
-    "workoutShape": "{{blocks}} · {{types}} · ~{{minutes}} min",
+    "workoutShape": "{{blocks}} · {{types}}",
     "block_one": "{{count}} block",
     "block_other": "{{count}} blocks",
     "round_one": "{{count}} round",

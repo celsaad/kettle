@@ -32,24 +32,24 @@ class WorkoutShapeTextTest {
     // The bug RN's replaced: a count interpolated straight into "N blocks" read "1 blocks".
     @Test
     fun `says one block for a single-block workout`() {
-        assertReads(WorkoutShape(1, listOf(ExerciseType.Reps), 5), "1 bloco · repetições · ~5 min")
+        assertReads(WorkoutShape(1, listOf(ExerciseType.Reps)), "1 bloco · repetições")
     }
 
     @Test
     fun `lists a single type bare`() {
-        assertReads(WorkoutShape(3, listOf(ExerciseType.Reps), 9), "3 blocos · repetições · ~9 min")
+        assertReads(WorkoutShape(3, listOf(ExerciseType.Reps)), "3 blocos · repetições")
     }
 
     @Test
     fun `lists several types as mixed, in the order they came`() {
         assertReads(
-            WorkoutShape(4, listOf(ExerciseType.TimedHold, ExerciseType.Reps), 14),
-            "4 blocos · misto: isometria + repetições · ~14 min",
+            WorkoutShape(4, listOf(ExerciseType.TimedHold, ExerciseType.Reps)),
+            "4 blocos · misto: isometria + repetições",
         )
     }
 
     @Test
     fun `says rest only when nothing but rest is configured`() {
-        assertReads(WorkoutShape(2, emptyList(), 3), "2 blocos · só descanso · ~3 min")
+        assertReads(WorkoutShape(2, emptyList()), "2 blocos · só descanso")
     }
 }

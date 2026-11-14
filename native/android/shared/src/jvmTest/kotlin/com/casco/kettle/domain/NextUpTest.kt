@@ -211,6 +211,44 @@ class NextUpTest {
             assertEquals(SessionParams.ProgramSlot("prog", 1, "Day 3"), (view(monday) as NextUp.Rest).skipTo)
         }
 
+        // The rest card names where train anyway goes, by the workout's own name (#412).
+        @Test
+        fun `names the workout the escape hatch starts`() {
+            assertEquals("Pull", (view(monday) as NextUp.Rest).skipToWorkout)
+        }
+
+        @Test
+        fun `names no workout for an escape hatch whose workout is gone`() {
+            val gone = library.copy(workouts = library.workouts.filter { it.id != "pull" })
+
+            val rest = view(monday, gone) as NextUp.Rest
+
+            assertEquals(SessionParams.ProgramSlot("prog", 1, "Day 3"), rest.skipTo)
+            assertNull(rest.skipToWorkout)
+        }
+
+        // Today's strip outlines the slot the card shows: the rest slot itself, not the one after it.
+        @Test
+        fun `points at the rest slot shown, then at the workout once it is spent`() {
+            val program = library.programs.single()
+
+            assertEquals(ProgramPosition(program, 1), view(monday)?.position)
+            assertEquals(ProgramPosition(program, 2), view(dayAfter(2))?.position)
+        }
+
+        @Test
+        fun `points at the second of two rest slots on the second day`() {
+            val twoRests =
+                withWeeks(
+                    ProgramWeek.Training(1, "Day 1", "push"),
+                    ProgramWeek.RestDay(1, "Day 2"),
+                    ProgramWeek.RestDay(1, "Day 3"),
+                    ProgramWeek.Training(1, "Day 4", "pull"),
+                )
+
+            assertEquals(2, view(dayAfter(2), twoRests)?.position?.index)
+        }
+
         @Test
         fun `spends two consecutive rest slots over two days`() {
             val twoRests =
@@ -288,6 +326,8 @@ class NextUpTest {
 
             assertEquals(push, today.workout)
             assertNull(today.weekNumber)
+            // No program put it there, so Today draws no program row or strip.
+            assertNull(today.position)
             assertEquals(SessionParams.Workout("push"), today.sessionParams)
             assertEquals(pull, (tomorrow as NextUp.Queued).workout)
         }
@@ -302,10 +342,10 @@ class NextUpTest {
                     listOf(Program("p", "P", listOf(ProgramWeek.Training(1, workoutId = "gone")))),
                 )
 
-            assertEquals(
-                SessionParams.Workout("push"),
-                (nextUpView(library, emptyList(), Instant.DISTANT_PAST, zone) as NextUp.Queued).sessionParams,
-            )
+            val queued = nextUpView(library, emptyList(), Instant.DISTANT_PAST, zone) as NextUp.Queued
+
+            assertEquals(SessionParams.Workout("push"), queued.sessionParams)
+            assertNull(queued.position)
         }
 
         // The program the newest program session ran under, not the library's first.

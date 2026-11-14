@@ -17,6 +17,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
@@ -24,10 +25,12 @@ import com.casco.kettle.domain.Library
 import com.casco.kettle.domain.NextUp
 import com.casco.kettle.domain.RunnerStart
 import com.casco.kettle.domain.Session
+import com.casco.kettle.domain.UnitSystem
 import com.casco.kettle.domain.nextUpView
 import com.casco.kettle.domain.offThePlan
 import com.casco.kettle.shell.files.LatestFiles
 import com.casco.kettle.shell.files.LocalLatestFiles
+import com.casco.kettle.shell.i18n.deviceUnitSystem
 import com.casco.kettle.shell.list.ListRowSeparator
 import com.casco.kettle.shell.nav.Destination
 import com.casco.kettle.shell.nav.LocalNavigator
@@ -37,6 +40,7 @@ import com.casco.kettle.shell.nav.ScrollsToTopOnReselect
 import com.casco.kettle.shell.nav.Section
 import com.casco.kettle.shell.nav.Tab
 import com.casco.kettle.shell.nav.routeParams
+import com.casco.kettle.shell.programdetail.PROGRAM_ID_PARAM
 import com.casco.kettle.shell.theme.MaxContentWidth
 import com.casco.kettle.shell.theme.Spacing
 import kotlinx.coroutines.flow.Flow
@@ -90,6 +94,7 @@ fun HomeScreen(
             library?.let { offThePlan(it, sessions, except = (nextUp as? NextUp.Queued)?.workout?.id) }.orEmpty()
         }
     val hasWorkouts = library?.workouts.orEmpty().isNotEmpty()
+    val units = files.preferences?.unitSystem ?: deviceUnitSystem(LocalConfiguration.current.locales[0])
 
     Box(Modifier.fillMaxSize().statusBarsPadding().homeScreenTag(), contentAlignment = Alignment.TopCenter) {
         LazyColumn(
@@ -108,7 +113,8 @@ fun HomeScreen(
                 // Nothing below the title before there is a library, so the screen never says "none"
                 // before it has looked.
                 if (library != null) {
-                    WhatToRun(nextUp, newHere = sessions.isEmpty(), hasWorkouts = hasWorkouts, open, startRunner)
+                    FirstRunGuide(nextUp, newHere = sessions.isEmpty(), hasWorkouts = hasWorkouts, open)
+                    nextUp?.let { WhatsNext(it, units, open, startRunner) }
                     if (!hasWorkouts) NoWorkouts { open(Route(Destination.Import)) }
                     OffThePlanHeader(hasWorkouts) { open(Route.of(Section.WORKOUTS)) }
                 }
@@ -128,16 +134,15 @@ fun HomeScreen(
 }
 
 /**
- * Everything above "Off the plan" that says what to run: the first-run card and the starter-pack link
- * for someone [newHere], then the next-up card.
+ * What orients someone [newHere], above everything that says what to run: the first-run card and the
+ * starter-pack link.
  */
 @Composable
-private fun WhatToRun(
+private fun FirstRunGuide(
     nextUp: NextUp?,
     newHere: Boolean,
     hasWorkouts: Boolean,
     open: (Route) -> Unit,
-    startRunner: (RunnerStart) -> Unit,
 ) {
     // Gated on a queued workout, not on any card: step one reads "Start the workout below", and a rest
     // card has no Start, which a program opening on a rest day puts a new user in front of.
@@ -147,13 +152,31 @@ private fun WhatToRun(
     if (newHere && hasWorkouts) {
         StarterPackLink(Modifier.padding(top = Spacing.three)) { open(Route(Destination.Import)) }
     }
-    nextUp?.let {
-        NextUpCard(
-            it,
-            start = { params -> startRunner(RunnerStart.Planned(params)) },
-            preview = { params -> open(Route(Destination.WorkoutPreview, RunnerStart.Planned(params).routeParams())) },
-        )
+}
+
+/**
+ * The program and its week when a program queued [nextUp], heading the card it queued, then the card.
+ * Under the first-run guidance, so orientation for someone new comes before both.
+ */
+@Composable
+private fun WhatsNext(
+    nextUp: NextUp,
+    units: UnitSystem,
+    open: (Route) -> Unit,
+    startRunner: (RunnerStart) -> Unit,
+) {
+    nextUp.position?.let { position ->
+        ProgramRow(position) {
+            open(Route(Destination.ProgramDetail, mapOf(PROGRAM_ID_PARAM to position.program.id)))
+        }
+        WeekStrip(position)
     }
+    NextUpCard(
+        nextUp,
+        units,
+        start = { params -> startRunner(RunnerStart.Planned(params)) },
+        preview = { params -> open(Route(Destination.WorkoutPreview, RunnerStart.Planned(params).routeParams())) },
+    )
 }
 
 private fun nextUpView(

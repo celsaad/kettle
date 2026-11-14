@@ -52,7 +52,7 @@ class ProgramEditingTest {
 
         @Test
         fun `refuses the same week twice when neither has a day`() {
-            val draft = named("Base", 2).let { it.steppingWeek(it.keyAt(1), -1) }
+            val draft = named("Base", 1).addingDay(1, "", workouts)
             assertEquals(
                 ProgramSubmit.Refused(ProgramProblem.DuplicateWeek(1, null)),
                 submitProgram(draft, null),
@@ -63,8 +63,8 @@ class ProgramEditingTest {
         @Test
         fun `allows the same week number when the days differ`() {
             val draft =
-                named("Base", 2).let {
-                    it.steppingWeek(it.keyAt(1), -1).withDay(it.keyAt(0), "Monday").withDay(it.keyAt(1), "Thursday")
+                named("Base", 1).addingDay(1, "", workouts).let {
+                    it.withDay(it.keyAt(0), "Monday").withDay(it.keyAt(1), "Thursday")
                 }
             assertEquals(
                 listOf(
@@ -86,8 +86,8 @@ class ProgramEditingTest {
         @Test
         fun `compares days as Save writes them`() {
             val draft =
-                named("Base", 2).let {
-                    it.steppingWeek(it.keyAt(1), -1).withDay(it.keyAt(0), "Mon").withDay(it.keyAt(1), "Mon ")
+                named("Base", 1).addingDay(1, "", workouts).let {
+                    it.withDay(it.keyAt(0), "Mon").withDay(it.keyAt(1), "Mon ")
                 }
             assertEquals(
                 ProgramSubmit.Refused(ProgramProblem.DuplicateWeek(1, "Mon")),
@@ -119,11 +119,16 @@ class ProgramEditingTest {
         // Counting would call the next one 2 and collide; max+1 keeps the numbering monotonic.
         @Test
         fun `numbers a new week past the highest already there, not by count`() {
-            val draft =
-                named("Base", 2)
-                    .let { it.steppingWeek(it.keyAt(1), 3) }
-                    .let { it.removingWeek(it.keyAt(0)) }
-                    .addingWeek(workouts)
+            val gapped =
+                Program(
+                    "p",
+                    "Base",
+                    listOf(
+                        ProgramWeek.Training(1, workoutId = "push-day"),
+                        ProgramWeek.Training(5, workoutId = "push-day"),
+                    ),
+                )
+            val draft = programDraftOf(gapped).let { it.removingWeek(it.keyAt(0)) }.addingWeek(workouts)
             assertEquals(listOf(5L, 6L), draft.weeks.map { it.week.week })
         }
 
@@ -131,18 +136,6 @@ class ProgramEditingTest {
         @Test
         fun `defaults a new week to the first workout`() {
             assertEquals(ProgramWeek.Training(1, workoutId = "push-day"), named("Base", 1).weeks.single().week)
-        }
-
-        // 1-based throughout: the schema's `positive()` and week resolution both assume it.
-        @Test
-        fun `does not let a week number fall below one`() {
-            val draft = named("Base", 1).let { it.steppingWeek(it.keyAt(0), -3) }
-            assertEquals(
-                1L,
-                draft.weeks
-                    .single()
-                    .week.week,
-            )
         }
 
         @Test
@@ -160,7 +153,7 @@ class ProgramEditingTest {
         // Two cards at week 1, told apart by day, are one week: "28 weeks" read beside "Weeks 1–4".
         @Test
         fun `counts weeks rather than week entries`() {
-            val draft = named("Base", 3).let { it.steppingWeek(it.keyAt(1), -1) }
+            val draft = named("Base", 2).addingDay(1, "Day 2", workouts)
             assertEquals(2, draft.weekCount)
         }
 

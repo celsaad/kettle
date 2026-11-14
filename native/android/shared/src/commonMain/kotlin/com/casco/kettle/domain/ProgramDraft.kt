@@ -46,12 +46,6 @@ fun ProgramDraft.addingWeek(workouts: List<Workout>): ProgramDraft {
 
 fun ProgramDraft.removingWeek(key: Int): ProgramDraft = copy(weeks = weeks.filterNot { it.key == key })
 
-/** The week keyed [key] renumbered [by], never below 1: week numbers are 1-based everywhere. */
-fun ProgramDraft.steppingWeek(
-    key: Int,
-    by: Int,
-): ProgramDraft = withWeek(key) { it.withShared(week = (it.week + by).coerceAtLeast(1)) }
-
 fun ProgramDraft.withDay(
     key: Int,
     day: String,

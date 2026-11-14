@@ -1,10 +1,12 @@
 package com.casco.kettle.shell.programeditor
 
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -12,7 +14,7 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -31,6 +33,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.ConfigProblem
 import com.casco.kettle.domain.Library
@@ -42,12 +45,13 @@ import com.casco.kettle.domain.ProgramProblem
 import com.casco.kettle.domain.ProgramSubmit
 import com.casco.kettle.domain.UnitSystem
 import com.casco.kettle.domain.Workout
-import com.casco.kettle.domain.addingWeek
 import com.casco.kettle.domain.choosingWorkout
+import com.casco.kettle.domain.daysOf
 import com.casco.kettle.domain.programDraftOf
 import com.casco.kettle.domain.removingWeek
 import com.casco.kettle.domain.submitProgram
 import com.casco.kettle.domain.togglingRest
+import com.casco.kettle.domain.weekNumbers
 import com.casco.kettle.domain.withOverrides
 import com.casco.kettle.domain.withProgram
 import com.casco.kettle.domain.withoutProgram
@@ -57,7 +61,6 @@ import com.casco.kettle.shell.files.LibraryWriteRefusal
 import com.casco.kettle.shell.files.LocalLatestFiles
 import com.casco.kettle.shell.files.libraryWriteOrRefusal
 import com.casco.kettle.shell.files.text
-import com.casco.kettle.shell.form.EditorButtons
 import com.casco.kettle.shell.form.FieldKind
 import com.casco.kettle.shell.form.FieldOptions
 import com.casco.kettle.shell.form.FormField
@@ -126,7 +129,8 @@ fun ProgramEditorScreen(
     // Taken from the first read and kept: the shell reads again while the sheet is up, and from then
     // on the draft is the user's.
     val editor = remember(id) { Editor(library.programs.firstOrNull { it.id == id }, files, scope, actions) }
-    Editing(editor, WeekContext(library, units))
+    val outline = remember(editor) { EditorOutline(editor) }
+    Editing(editor, WeekContext(library, units), outline)
 }
 
 /** What every week card reads: the library its workouts and overrides resolve in, and the reader's units. */
@@ -193,7 +197,9 @@ internal class Editor(
         draft = change(draft)
     }
 
-    fun addWeek(workouts: List<Workout>) = edit { it.addingWeek(workouts) }
+    fun closePicker() {
+        pickerOpen = null
+    }
 
     fun removeWeek(key: Int) {
         edit { it.removingWeek(key) }
@@ -289,11 +295,14 @@ internal class Editor(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun Editing(
     editor: Editor,
     context: WeekContext,
+    outline: EditorOutline,
 ) {
+    val colors = KettleTheme.colors
     LazyColumn(
         Modifier
             .fillMaxSize()
@@ -301,27 +310,83 @@ private fun Editing(
             .navigationBarsPadding(),
         contentPadding = PaddingValues(start = Spacing.three, end = Spacing.three, bottom = Spacing.four),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(Spacing.two + 2.dp),
     ) {
-        item(key = HEADER_KEY) { Column(SheetColumn) { Header(editor, context) } }
-        items(editor.draft.weeks, key = { it.key }) { week ->
-            WeekCard(week, editor, context, SheetColumn)
+        // Pinned, as the board draws it: Save stays in reach however far down the weeks go.
+        stickyHeader(key = HEADER_KEY) { Column(SheetColumn.background(colors.background)) { TitleBar(editor) } }
+        item(key = NAME_KEY) { Column(SheetColumn) { NameAndCount(editor, context) } }
+        val numbers = editor.draft.weekNumbers
+        numbers.forEachIndexed { index, number ->
+            val days = editor.draft.daysOf(number)
+            val open = outline.openWeek == number
+            item(key = "week-$number") {
+                Column(SheetColumn) {
+                    WeekRow(number, days, open, WeekPosition(index == 0, index == numbers.lastIndex), outline)
+                }
+            }
+            if (open) {
+                itemsIndexed(days, key = { _, day -> day.key }) { n, day ->
+                    Column(SheetColumn.padding(start = Spacing.three)) {
+                        if (outline.openDay == day.key) {
+                            DayEditor(day, DayPlace(n + 1, n == 0, n == days.lastIndex), editor, context, outline)
+                        } else {
+                            DayRow(day, n + 1, context) { outline.toggleDay(day.key) }
+                        }
+                    }
+                }
+                item(key = "week-$number-footer") {
+                    Column(
+                        SheetColumn.padding(start = Spacing.three),
+                    ) { WeekFooter(number, editor, context, outline) }
+                }
+            }
         }
-        item(key = FOOTER_KEY) { Column(SheetColumn) { Footer(editor, context) } }
+        item(key = FOOTER_KEY) { Column(SheetColumn) { Footer(editor, context, outline) } }
     }
 }
 
+/** "Edit program" and Save, the one place Save is (Cancel is the sheet's ×), and why it refused. */
 @Composable
-private fun Header(
+private fun TitleBar(editor: Editor) {
+    val colors = KettleTheme.colors
+    val title = if (editor.existing == null) R.string.programEditor_newTitle else R.string.programEditor_editTitle
+    Row(Modifier.padding(vertical = Spacing.two), verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            stringResource(title),
+            Modifier.weight(1f).semantics {
+                heading()
+            },
+            style = KettleType.subtitle,
+            color = colors.text,
+        )
+        // The heading's size: white on the accent is 3.64:1, AA for large text only (theme.ts).
+        Box(
+            Modifier
+                .heightIn(min = 48.dp)
+                .clip(RoundedCornerShape(24.dp))
+                .background(colors.accent)
+                .clickable(role = Role.Button, onClick = editor::save)
+                .padding(horizontal = Spacing.three),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(stringResource(R.string.common_save), style = KettleType.heading, color = colors.onAccent)
+        }
+    }
+    // Under the Save it answers, pinned with it: at the foot of a long program it would never be seen.
+    refusalText(editor)?.let {
+        Text(it, Modifier.padding(bottom = Spacing.two), style = KettleType.small, color = colors.accentText)
+    }
+}
+
+/** The name, then "10 weeks · Runs top to bottom", and where to go first with no workouts to pick. */
+@Composable
+private fun NameAndCount(
     editor: Editor,
     context: WeekContext,
 ) {
     val colors = KettleTheme.colors
-    val title = if (editor.existing == null) R.string.programEditor_newTitle else R.string.programEditor_editTitle
-    Text(stringResource(title), Modifier.semantics { heading() }, style = KettleType.subtitle, color = colors.text)
     Text(
         stringResource(R.string.common_name),
-        Modifier.padding(top = Spacing.three - 2.dp, bottom = Spacing.one),
+        Modifier.padding(bottom = Spacing.one),
         style = KettleType.small,
         color = colors.textSecondary,
     )
@@ -332,16 +397,23 @@ private fun Header(
         placeholder = stringResource(R.string.programEditor_namePlaceholder),
         FieldOptions(kind = FieldKind.Text, fill = colors.backgroundElement),
     )
-    Text(
-        pluralText(
-            R.plurals.programEditor_weekCount,
-            R.string.programEditor_weekCount_zero,
-            editor.draft.weekCount,
-        ),
-        Modifier.padding(top = Spacing.two),
-        style = KettleType.default,
-        color = colors.textSecondary,
-    )
+    Row(Modifier.padding(top = Spacing.three, bottom = Spacing.one), verticalAlignment = Alignment.Bottom) {
+        Text(
+            pluralText(
+                R.plurals.programEditor_weekCount,
+                R.string.programEditor_weekCount_zero,
+                editor.draft.weekCount,
+            ),
+            Modifier.weight(1f),
+            style = KettleType.heading,
+            color = colors.text,
+        )
+        Text(
+            stringResource(R.string.programEditor_runsTopToBottom),
+            style = KettleType.small,
+            color = colors.textSecondary,
+        )
+    }
     if (context.workouts.isEmpty()) {
         Text(
             stringResource(R.string.programEditor_noWorkoutsHint),
@@ -352,11 +424,12 @@ private fun Header(
     }
 }
 
-/** Everything after the weeks: adding one, the refusal, Save, and Delete. */
+/** After the weeks: adding one, the program's id and Delete. */
 @Composable
 private fun Footer(
     editor: Editor,
     context: WeekContext,
+    outline: EditorOutline,
 ) {
     val colors = KettleTheme.colors
     // Every week needs a workout, so with none to pick, adding one could only make a week Save refuses.
@@ -364,24 +437,27 @@ private fun Footer(
     val canAdd = context.workouts.isNotEmpty()
     Box(
         Modifier
-            .padding(top = Spacing.one)
+            .padding(top = Spacing.three)
             .fillMaxWidth()
             .heightIn(min = 48.dp)
             .dashedBorder(1.5.dp, colors.border, 14.dp)
             .clip(RoundedCornerShape(14.dp))
-            .clickable(enabled = canAdd, role = Role.Button) { editor.addWeek(context.workouts) }
+            .clickable(enabled = canAdd, role = Role.Button) { outline.addWeek(context.workouts) }
             .alpha(if (canAdd) 1f else DISABLED_ALPHA)
             .padding(Spacing.two),
         contentAlignment = Alignment.Center,
     ) {
         Text(stringResource(R.string.programEditor_addWeek), style = KettleType.heading, color = colors.textSecondary)
     }
-    refusalText(editor)?.let {
-        Text(it, Modifier.padding(top = Spacing.two), style = KettleType.small, color = colors.accentText)
-    }
-    EditorButtons(stringResource(R.string.common_save), onCancel = editor.close, onPrimary = editor::save)
     val existing = editor.existing ?: return
-    Box(Modifier.fillMaxWidth().padding(top = Spacing.three - 2.dp), contentAlignment = Alignment.Center) {
+    Row(Modifier.fillMaxWidth().padding(top = Spacing.three), verticalAlignment = Alignment.CenterVertically) {
+        // The id the file keys it by, which a renamed program keeps.
+        Text(
+            stringResource(R.string.programEditor_id, existing.id),
+            Modifier.weight(1f),
+            style = KettleType.small.copy(fontFamily = FontFamily.Monospace),
+            color = colors.textSecondary,
+        )
         TextAction(
             stringResource(R.string.programEditor_deleteProgram),
             KettleType.smallMedium,
@@ -444,4 +520,5 @@ private fun problemText(problem: ProgramProblem): String =
 internal const val DISABLED_ALPHA = 0.4f
 
 private const val HEADER_KEY = "header"
+private const val NAME_KEY = "name"
 private const val FOOTER_KEY = "footer"

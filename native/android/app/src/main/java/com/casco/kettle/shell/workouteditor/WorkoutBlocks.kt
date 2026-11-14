@@ -325,6 +325,7 @@ private fun RowScope.ConfigColumn(
 internal fun StepButton(
     @DrawableRes icon: Int,
     label: String,
+    enabled: Boolean = true,
     onClick: () -> Unit,
 ) {
     val colors = KettleTheme.colors
@@ -334,8 +335,10 @@ internal fun StepButton(
             .sizeIn(minWidth = 44.dp, minHeight = 44.dp)
             .clip(shape)
             .border(1.dp, colors.border, shape)
-            .clickable(role = Role.Button, onClick = onClick)
-            .semantics { contentDescription = label },
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
+            .semantics { contentDescription = label }
+            // Dimmed and announced disabled where it can't move, as the week menu's moves are.
+            .alpha(if (enabled) 1f else DISABLED_ALPHA),
         contentAlignment = Alignment.Center,
     ) { TypeIcon(icon, KettleType.default, colors.textSecondary) }
 }

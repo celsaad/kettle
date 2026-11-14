@@ -6,6 +6,7 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHeightIsAtLeast
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertWidthIsAtLeast
@@ -211,7 +212,7 @@ class ProgramDetailScreenTest {
             .performScrollTo()
             .assertHeightIsAtLeast(48.dp)
             .performClick()
-        compose.onNode(hasText("Prévia e nota completa") and isButton).performScrollTo().performClick()
+        compose.onNode(hasText("Prévia") and isButton).performScrollTo().performClick()
 
         assertEquals(listOf(RunnerStart.Planned(SessionParams.ProgramSlot("two", 1, "Wed"))), started)
         assertEquals(
@@ -321,6 +322,23 @@ class ProgramDetailScreenTest {
         )
 
         compose.onNodeWithText("Ativo", substring = true).assertDoesNotExist()
+    }
+
+    /** Ten weeks of tabs put the day list a screen below the tab tapped, so the tap scrolls to it. */
+    @Test
+    fun `scrolls a picked week's days into view`() {
+        val long =
+            Program(
+                "long",
+                "Long",
+                (1L..10L).flatMap { week -> (1..3).map { ProgramWeek.Training(week, "D$it", "push-day") } },
+            )
+        show(library = Library(1, emptyList(), listOf(pushDay), listOf(long)), programId = "long")
+
+        compose.onNode(hasContentDescription("Semana 9")).performScrollTo().performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithText("Semana 9").assert(isHeading()).assertIsDisplayed()
     }
 
     @Test

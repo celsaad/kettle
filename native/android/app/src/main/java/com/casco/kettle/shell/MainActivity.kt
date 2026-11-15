@@ -9,6 +9,7 @@ import androidx.activity.addCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
@@ -115,7 +116,11 @@ class MainActivity : ComponentActivity() {
                             // Settings' Appearance repaints the × under the finger. Colors from here,
                             // not the file, which the write may not have reached yet.
                             val colors = KettleTheme.colors
-                            LaunchedEffect(colors) { sheet?.repaint(colors) }
+                            // And the text size: font scale no longer recreates the activity (#456), so
+                            // the ×, sized in sp, is resized here. Density still recreates it, since the
+                            // sheet's views read theirs once.
+                            val fontScale = LocalConfiguration.current.fontScale
+                            LaunchedEffect(colors, fontScale) { sheet?.repaint(colors) }
                             content()
                         }
                     }
@@ -130,7 +135,8 @@ class MainActivity : ComponentActivity() {
                     requestBack = onBackPressedDispatcher::onBackPressed,
                 )
             }
-        val sheet = layout.sheet
+        // The field the repaint above reads: a local of the same name shadowed it, and the repaint never ran.
+        val sheet = layout.sheet.also { this.sheet = it }
         navigator.moves = sheet
         // The shell's back, then the sheet's after it, which comes first while the sheet is up: the
         // predictive shrink is the sheet's. A screen's own handler, the runner's, composes later still.

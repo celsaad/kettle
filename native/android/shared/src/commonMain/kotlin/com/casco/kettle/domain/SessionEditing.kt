@@ -28,13 +28,12 @@ sealed interface SessionEditing {
     data object NothingToEdit : SessionEditing
 
     /**
-     * [session] with a draft per entry it can rewrite, and the ones it can't in [readOnly]: shown rather
-     * than dropped, since a session that lost its EMOM on the way in would read as if the log had.
+     * [session] with a draft per entry it can rewrite. The ones it can't, an EMOM, stay in [session]:
+     * the screen shows them from there, and Save writes them back untouched.
      */
     data class Editable(
         val session: Session,
         val drafts: List<EntryDraft>,
-        val readOnly: List<SessionEntry>,
     ) : SessionEditing
 }
 
@@ -57,7 +56,7 @@ fun sessionEditing(
         session == null -> SessionEditing.NotFound
         session.endedAt == null -> SessionEditing.Running
         drafts.isEmpty() -> SessionEditing.NothingToEdit
-        else -> SessionEditing.Editable(session, drafts, session.entries.filterIsInstance<SessionEntry.Emom>())
+        else -> SessionEditing.Editable(session, drafts)
     }
 }
 

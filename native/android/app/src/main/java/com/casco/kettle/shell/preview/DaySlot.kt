@@ -16,7 +16,7 @@ import com.casco.kettle.domain.SessionParams
 import com.casco.kettle.domain.findProgramWeek
 import com.casco.kettle.domain.overrideNote
 import com.casco.kettle.shell.R
-import com.casco.kettle.shell.programdetail.overrideLines
+import com.casco.kettle.shell.describe.overrideLines
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.Spacing

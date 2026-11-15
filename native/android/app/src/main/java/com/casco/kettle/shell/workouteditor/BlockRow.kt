@@ -17,6 +17,7 @@ import com.casco.kettle.domain.UnitSystem
 import com.casco.kettle.domain.WorkoutBlock
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.form.DurationButton
+import com.casco.kettle.shell.form.RemoveButton
 import com.casco.kettle.shell.list.ListRowMinHeight
 import com.casco.kettle.shell.list.ListRowSeparator
 import com.casco.kettle.shell.theme.KettleTheme

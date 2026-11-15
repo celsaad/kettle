@@ -36,11 +36,19 @@ class ImportPreview(
     val updatedCount: Int = items.size - newCount
 
     /**
-     * What updated [item] loses, weights in [units]; nothing for a new one. Asked per row drawn, and
-     * once per preview for [clearedTotal]: a re-imported library is all updates, and diffing every
-     * one of them on every frame would be the expensive half of the preview.
+     * Each item's diff, worked out once: the tile, an item's count and its open rows all ask for the
+     * same one, and a re-imported library is all updates (#456). Keyed by units too, which a reader can
+     * change under an open review. The screen asks from its main thread only.
      */
+    private val diffs = HashMap<Pair<ChangedItem, UnitSystem>, List<FieldChange>>()
+
+    /** What updated [item] loses, weights in [units]; nothing for a new one. Diffed once per preview. */
     fun changes(
+        item: ChangedItem,
+        units: UnitSystem,
+    ): List<FieldChange> = diffs.getOrPut(item to units) { diff(item, units) }
+
+    private fun diff(
         item: ChangedItem,
         units: UnitSystem,
     ): List<FieldChange> {
@@ -66,8 +74,7 @@ class ImportPreview(
 
     /**
      * What the import takes away across every updated item, weights in [units] (#443, widened on #456):
-     * the review's third tile, the sum of every item's [clearedBy]. Diffs every update, so the screen
-     * asks once per preview and remembers it.
+     * the review's third tile, the sum of every item's [clearedBy].
      */
     fun clearedTotal(units: UnitSystem): Int = items.sumOf { clearedBy(it, units) }
 

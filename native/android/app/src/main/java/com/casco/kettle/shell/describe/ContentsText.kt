@@ -1,4 +1,4 @@
-package com.casco.kettle.shell.home
+package com.casco.kettle.shell.describe
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource

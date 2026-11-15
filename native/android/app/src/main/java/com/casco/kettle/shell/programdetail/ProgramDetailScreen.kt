@@ -32,9 +32,9 @@ import com.casco.kettle.domain.programWorkoutIds
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.files.LatestFiles
 import com.casco.kettle.shell.files.LocalLatestFiles
+import com.casco.kettle.shell.form.EditIconButton
 import com.casco.kettle.shell.i18n.pluralText
 import com.casco.kettle.shell.library.rememberProgramPosition
-import com.casco.kettle.shell.list.EditIconButton
 import com.casco.kettle.shell.list.ListRowSeparator
 import com.casco.kettle.shell.nav.Destination
 import com.casco.kettle.shell.nav.LocalNavigator

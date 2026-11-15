@@ -20,6 +20,7 @@ import com.casco.kettle.domain.ProgramWeek
 import com.casco.kettle.domain.SlotPlace
 import com.casco.kettle.domain.overrideNote
 import com.casco.kettle.shell.R
+import com.casco.kettle.shell.describe.overrideLines
 import com.casco.kettle.shell.home.weekLabel
 import com.casco.kettle.shell.list.ListHeaderRule
 import com.casco.kettle.shell.list.ListRow

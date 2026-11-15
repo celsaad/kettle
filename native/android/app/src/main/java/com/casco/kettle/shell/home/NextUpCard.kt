@@ -33,6 +33,7 @@ import com.casco.kettle.domain.SessionParams
 import com.casco.kettle.domain.UnitSystem
 import com.casco.kettle.domain.planSummary
 import com.casco.kettle.shell.R
+import com.casco.kettle.shell.describe.contentsText
 import com.casco.kettle.shell.i18n.pluralText
 import com.casco.kettle.shell.list.ListRowSeparator
 import com.casco.kettle.shell.runner.weightText

@@ -1,6 +1,7 @@
 package com.casco.kettle.domain
 
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Test
 
 /**
@@ -215,6 +216,15 @@ class ImportPreviewTest {
             )
 
         assertEquals(0, preview(incoming).clearedTotal(UnitSystem.METRIC))
+    }
+
+    // The tile, a row's count and its open diff all ask; a re-imported library diffed each item three times.
+    @Test
+    fun `diffs an item once per preview, whoever asks`() {
+        val preview = preview(Library(1, listOf(pullUps.copy(name = "Chin-ups")), emptyList(), emptyList()))
+        val item = preview.items.single()
+
+        assertSame(preview.changes(item, UnitSystem.METRIC), preview.changes(item, UnitSystem.METRIC))
     }
 
     @Test

@@ -43,6 +43,7 @@ import com.casco.kettle.shell.form.DurationButton
 import com.casco.kettle.shell.form.FieldKind
 import com.casco.kettle.shell.form.FieldOptions
 import com.casco.kettle.shell.form.FormField
+import com.casco.kettle.shell.form.RemoveButton
 import com.casco.kettle.shell.form.StepButton
 import com.casco.kettle.shell.list.ListRowMinHeight
 import com.casco.kettle.shell.list.ListRowSeparator

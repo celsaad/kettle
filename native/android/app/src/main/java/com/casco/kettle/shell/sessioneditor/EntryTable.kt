@@ -43,6 +43,7 @@ import com.casco.kettle.shell.R
 import com.casco.kettle.shell.form.DurationDialog
 import com.casco.kettle.shell.form.FieldOptions
 import com.casco.kettle.shell.form.FormField
+import com.casco.kettle.shell.form.RemoveButton
 import com.casco.kettle.shell.library.ExerciseBadge
 import com.casco.kettle.shell.list.ListRowSeparator
 import com.casco.kettle.shell.list.TextAction
@@ -50,7 +51,6 @@ import com.casco.kettle.shell.runner.formatClock
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.Spacing
-import com.casco.kettle.shell.workouteditor.RemoveButton
 
 /**
  * One exercise as a table (#442): its name and type, a header row, a row per set, the set's number,

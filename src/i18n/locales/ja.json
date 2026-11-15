@@ -213,6 +213,7 @@
     "doneNextStep": "完了して次のステップへ",
     "pause": "一時停止",
     "resume": "再開",
+    "paused": "一時停止中",
     "prev": "戻る",
     "finish": {
       "label": "終了"
@@ -337,9 +338,13 @@
       "minus15": "−15秒"
     },
     "interval": {
-      "targetReps": "目標{{reps}}レップ",
       "targetDistance": "目標{{meters}}m",
-      "ofTotal": "全{{clock}}中",
+      "of": "全{{clock}}",
+      "endsByItself": "自動で終了",
+      "thenRest": "次は休憩 {{clock}}",
+      "thenNext": "次は{{name}}",
+      "leftInMinute": "この1分の残り",
+      "leftInInterval": "このインターバルの残り",
       "repsThisMinuteCaps": "この1分のレップ",
       "repsThisMinute": "この1分のレップ",
       "repsIntoRoundCaps": "{{index}}ラウンド目のレップ",

@@ -38,7 +38,7 @@ internal fun HoldScreen(
                 readings.beatsBest,
             )
         },
-        middle = { HoldClock(step, context.elapsed) },
+        middle = { HoldClock(step, context.elapsed, context.paused) },
         controls = {
             ClockRow(context, doneAction(context))
         },
@@ -49,16 +49,18 @@ internal fun HoldScreen(
 private fun HoldClock(
     step: RunnerStep.Hold,
     elapsed: Long,
+    paused: Boolean,
 ) {
     val target = step.holdTargetSec
+    PausedLine(paused)
     Row {
-        Numeral("$elapsed", HOLD_NUMERAL, Modifier.alignByBaseline())
+        Numeral("$elapsed", HOLD_NUMERAL, Modifier.alignByBaseline(), clockInk(paused))
         Numeral("s", UNIT_NUMERAL, Modifier.alignByBaseline(), runnerColors.textSecondary, leading = null)
     }
     if (target != null) {
         val barSec = step.holdTargetMaxSec?.takeIf { it > target } ?: target
         val bandStart = target.takeIf { barSec > it }?.let { (it / barSec).toFloat() }
-        FillBar(if (barSec > 0) (elapsed / barSec).toFloat() else 0f, bandStart)
+        FillBar(if (barSec > 0) (elapsed / barSec).toFloat() else 0f, bandStart, barFill(paused))
     }
     Secondary(holdCaption(step))
 }

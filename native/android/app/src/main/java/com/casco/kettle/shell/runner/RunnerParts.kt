@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -93,17 +92,19 @@ internal fun Caps(
 }
 
 /**
- * A bar filled to [fraction], 0 to 1, with an optional range band (#417) outlined from [bandStart] to its
- * end: a hold's range, the bar running to its top. Decorative: no semantics.
+ * A bar the column's width (#471), filled to [fraction], 0 to 1, in [fill], with an optional range band
+ * (#417) outlined from [bandStart] to its end: a hold's range, the bar running to its top. Decorative: no
+ * semantics.
  */
 @Composable
 internal fun FillBar(
     fraction: Float,
     bandStart: Float? = null,
+    fill: Color = runnerColors.accent,
 ) {
     // The box is the track's 6dp, as RN's: the band stands out of it above and below without taking
     // layout space, so a hold's caption sits where an interval's does.
-    Box(Modifier.testTag(BAR_TAG).width(BAR_WIDTH).height(TRACK_HEIGHT)) {
+    Box(Modifier.testTag(BAR_TAG).fillMaxWidth().height(TRACK_HEIGHT)) {
         Box(
             Modifier
                 .fillMaxSize()
@@ -115,7 +116,7 @@ internal fun FillBar(
                     .fillMaxWidth(fraction.coerceIn(0f, 1f))
                     .fillMaxHeight()
                     .clip(CircleShape)
-                    .background(runnerColors.accent),
+                    .background(fill),
             )
         }
         if (bandStart != null && bandStart < 1f) {
@@ -180,7 +181,6 @@ internal const val BAR_TAG = "fill-bar"
 internal const val BAND_TAG = "fill-bar-band"
 
 private const val NUMERAL_SCALE_CAP = 1.3f
-private val BAR_WIDTH = 220.dp
 private val BAND_HEIGHT = 16.dp
 private val BAND_STROKE = 2.dp
 private val BandShape = RoundedCornerShape(4.dp)

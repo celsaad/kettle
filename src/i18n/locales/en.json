@@ -227,6 +227,7 @@
     "doneNextStep": "Done, next step",
     "pause": "Pause",
     "resume": "Resume",
+    "paused": "Paused",
     "prev": "Back",
     "finish": {
       "label": "End"
@@ -363,9 +364,13 @@
       "minus15": "−15s"
     },
     "interval": {
-      "targetReps": "target {{reps}} reps",
       "targetDistance": "target {{meters}}m",
-      "ofTotal": "of {{clock}} total",
+      "of": "of {{clock}}",
+      "endsByItself": "ends by itself",
+      "thenRest": "Then rest {{clock}}",
+      "thenNext": "Then {{name}}",
+      "leftInMinute": "left in this minute",
+      "leftInInterval": "left in this interval",
       "repsThisMinuteCaps": "REPS THIS MINUTE",
       "repsThisMinute": "Reps this minute",
       "repsIntoRoundCaps": "REPS INTO ROUND {{index}}",

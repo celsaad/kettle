@@ -241,6 +241,7 @@
     "doneNextStep": "Concluído, próxima etapa",
     "pause": "Pausar",
     "resume": "Continuar",
+    "paused": "Pausado",
     "prev": "Voltar",
     "finish": {
       "label": "Encerrar"
@@ -389,9 +390,13 @@
       "minus15": "−15s"
     },
     "interval": {
-      "targetReps": "meta de {{reps}} reps",
       "targetDistance": "meta de {{meters}}m",
-      "ofTotal": "de {{clock}} total",
+      "of": "de {{clock}}",
+      "endsByItself": "termina sozinho",
+      "thenRest": "Depois, descanso de {{clock}}",
+      "thenNext": "Depois, {{name}}",
+      "leftInMinute": "restantes neste minuto",
+      "leftInInterval": "restantes neste intervalo",
       "repsThisMinuteCaps": "REPS NESTE MINUTO",
       "repsThisMinute": "Reps neste minuto",
       "repsIntoRoundCaps": "REPS NA RODADA {{index}}",

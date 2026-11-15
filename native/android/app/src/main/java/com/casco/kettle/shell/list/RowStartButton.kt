@@ -22,7 +22,8 @@ import androidx.compose.ui.unit.dp
 import com.casco.kettle.shell.theme.KettleTheme
 
 /**
- * The "start this one" control at the end of a row: Home's list and Program detail's weeks.
+ * The "start this one" control at the end of a row: Today's list and rest day, Library's Workouts and
+ * Program detail's days.
  *
  * Neutral, as the boards draw it (#490): a 44dp circle edged in `lineStrong` (3:1, #487) with an ink
  * glyph, no fill. It had been an accent tint, after a grey triangle beside a grey chevron stopped

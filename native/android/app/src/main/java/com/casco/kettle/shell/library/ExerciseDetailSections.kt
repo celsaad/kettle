@@ -149,7 +149,7 @@ internal fun RecentSessions(
             Text(
                 entry.startedAt?.let { formatMonthDay(it, locale, zone) }.orEmpty(),
                 Modifier.weight(1f),
-                style = KettleType.default,
+                style = KettleType.rowLabel,
                 color = colors.text,
             )
             Text(

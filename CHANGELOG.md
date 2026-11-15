@@ -204,9 +204,9 @@ here, next to what it describes.
   words on orange buttons read more clearly, text stands out a little more, and the training
   calendar's three shades are easier to tell apart. Settings' Appearance and Units choices are
   outlined rather than filled, and Back up now has an outline that stands out (#487, #486).
-- **Calmer lists**: the start buttons at the end of a row are plain outlined circles, leaving Today's
-  big Start as the one orange button, and the names in lists are a size smaller, so section headings
-  stand above them again (#490, #486).
+- **Calmer lists**: the start buttons at the end of a row are plain outlined circles, leaving the big
+  Start as the one orange button on Today, and the names in lists are a size smaller, so section
+  headings stand above them again (#490, #486).
 
 ---
 

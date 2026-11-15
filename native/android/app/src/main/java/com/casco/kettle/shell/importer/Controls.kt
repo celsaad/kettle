@@ -52,7 +52,7 @@ internal fun PickBox(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f)) {
-            Text(title, style = KettleType.rowLabel, color = colors.text)
+            Text(title, style = KettleType.heading, color = colors.text)
             Text(detail, style = KettleType.small, color = colors.textSecondary)
         }
         if (busy) CircularProgressIndicator(Modifier.size(20.dp), color = colors.accentText, strokeWidth = 2.dp)

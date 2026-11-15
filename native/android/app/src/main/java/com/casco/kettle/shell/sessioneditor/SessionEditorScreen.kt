@@ -373,7 +373,7 @@ private fun ReadOnlyEntry(
     result: String,
 ) = Column(Modifier.padding(top = Spacing.four), verticalArrangement = Arrangement.spacedBy(Spacing.one)) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.two)) {
-        Text(name, Modifier.weight(1f), style = KettleType.heading, color = KettleTheme.colors.text)
+        Text(name, Modifier.weight(1f), style = KettleType.rowTitle, color = KettleTheme.colors.text)
         ExerciseBadge(entry)
     }
     Text(result, style = KettleType.smallMedium, color = KettleTheme.colors.text)

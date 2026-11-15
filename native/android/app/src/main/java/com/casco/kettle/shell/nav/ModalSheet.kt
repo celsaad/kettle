@@ -31,7 +31,7 @@ class ModalSheet(
     private val colors: () -> KettleColors,
     private val requestBack: () -> Unit,
 ) : MoveListener {
-    private val stage: SheetStage =
+    internal val stage: SheetStage =
         SheetStage(content, shell.nativeSheet, requestBack, { motion.follow(it) }, ::letGo)
     private val motion: SheetMotion = SheetMotion(stage)
 
@@ -43,6 +43,9 @@ class ModalSheet(
 
     /** While an arrival is held: the picture its transition slides out, which is still on screen. */
     private var heldPicture: Bitmap? = null
+
+    /** The scheme [repaint] last painted, to tell a change of scheme from the same one again. */
+    private var painted: KettleColors? = null
 
     /** Back while the sheet is up, with Material's predictive shrink first where it's on. */
     val backCallback =
@@ -73,8 +76,20 @@ class ModalSheet(
      * Paints the chrome the shell draws itself, the × and the sheet behind it, in [colors]: what a scheme
      * changed while the sheet is up needs, as native Settings' Appearance does (#237). Each transition
      * paints them as it starts too.
+     *
+     * The tab's picture behind the sheet goes with a change of scheme, leaving the backdrop's own colour
+     * under the scrim: taken as the sheet opened, it kept the old scheme in the band above the sheet,
+     * near-black with dark icons over it after a switch to light (#481). Retaking it would picture a tab
+     * hidden behind the sheet, mid-recomposition; the band is the screen's background either way.
      */
-    fun repaint(colors: KettleColors) = stage.paint(colors)
+    fun repaint(colors: KettleColors) {
+        if (place != Place.Tab && painted != null && colors != painted) {
+            tabPicture = null
+            stage.backdrop.setImageDrawable(null)
+        }
+        painted = colors
+        stage.paint(colors)
+    }
 
     /**
      * The frame the user still sees, pictured for the transition to slide out. Not for a tab switch, the

@@ -171,6 +171,10 @@ here, next to what it describes.
   scroll sideways, and the session buttons and the finish screen's numbers stack instead. The
   sets list scrolls to its end, swap rows keep exercise names whole, Sessions' weekdays fit, and
   Back up now moves under the folder when they can't share a line (#469, #480).
+- **Readable status bar icons**: over the orange session screen, the clock and battery icons
+  sometimes stayed white, at the start of a timed step or after you came back to the app. They are
+  dark there now. Switching your phone between light and dark mode with a sheet open, such as
+  Settings, no longer leaves the strip above it in the old colours (#470, #481).
 
 ---
 

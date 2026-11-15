@@ -36,7 +36,9 @@ import com.casco.kettle.shell.runner.RunnerHost
 import com.casco.kettle.shell.runner.RunnerService
 import com.casco.kettle.shell.runner.runnerStateDir
 import com.casco.kettle.shell.theme.KettleTheme
+import com.casco.kettle.shell.theme.LocalRunnerBars
 import com.casco.kettle.shell.theme.PreferredKettleTheme
+import com.casco.kettle.shell.theme.RunnerBars
 import com.casco.kettle.shell.theme.preferredColors
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -72,6 +74,9 @@ class MainActivity : ComponentActivity() {
     private val tabReselects =
         MutableSharedFlow<Tab>(extraBufferCapacity = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
 
+    /** What [LocalRunnerBars] carries: one for the four Compose views, so they agree over the runner. */
+    private val runnerBars = RunnerBars()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         // First, so the library's read overlaps the activity's own start, up to the wait below.
         LibraryGate.start(this)
@@ -104,6 +109,7 @@ class MainActivity : ComponentActivity() {
                         LocalTabReselects provides tabReselects,
                         LocalNavigator provides navigator,
                         LocalSplashExit provides splash::release,
+                        LocalRunnerBars provides runnerBars,
                     ) {
                         PreferredKettleTheme(
                             preferences,

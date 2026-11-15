@@ -3,7 +3,12 @@ package com.casco.kettle.shell.theme
 import androidx.activity.compose.LocalActivity
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.Stable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.core.view.WindowInsetsControllerCompat
 import com.casco.kettle.domain.Preferences
 import java.io.File
@@ -12,13 +17,16 @@ import java.io.File
  * [KettleTheme] in the scheme [preferences] pins ([rememberPreferredDarkTheme], which [latest] and
  * [reread] are passed to), with the system bars' icons drawn to contrast with what's under them (#248). Nothing else
  * sets them: the window's theme leaves them light in either scheme, white on the light background, and
- * a theme attribute couldn't follow Settings → Appearance anyway. [runnerShown] keeps them light over
- * the runner, dark in either scheme but for its orange field, which sets its own ([RunnerBarIcons]).
+ * a theme attribute couldn't follow Settings → Appearance anyway. While [runnerShown], they're the
+ * runner's: whatever its field last asked for ([RunnerBarIcons]), read from [LocalRunnerBars].
  * Each of [splashExits] sets them again: on API 31 and 32
  * the splash's exit resets them from the window's theme, with nothing here recomposing to undo it.
  *
- * Each of the shell's Compose views is wrapped in one, so each sets the same window's icons to the same
- * value from the same file and configuration.
+ * Each of the shell's Compose views is wrapped in one, so each sets the same window's icons, and each
+ * has to arrive at the same value: from the same file and configuration, and over the runner from the
+ * one [RunnerBars] they all read. Any one of them recomposes on its own (the preferences reread on
+ * Resume, for one); while the runner's choice lived in the runner's view alone, that one set the
+ * shell's light icons back over the orange field (#470).
  */
 @Suppress("LongParameterList") // Each is an input the bars follow; a holder would serve one call site.
 @Composable
@@ -32,7 +40,9 @@ fun PreferredKettleTheme(
 ) {
     val dark = rememberPreferredDarkTheme(preferences, latest, reread)
     val window = LocalActivity.current?.window
-    val darkIcons = !dark && !runnerShown
+    val runnerBars = LocalRunnerBars.current
+    // Light by default over the runner, dark in either scheme but for its orange field.
+    val darkIcons = if (runnerShown) runnerBars?.darkIcons ?: false else !dark
     // A new splashExits already recomposes this, and every composition sets the icons; the key is the
     // parameter's one use, and says what an exit is for.
     key(splashExits) {
@@ -48,15 +58,29 @@ fun PreferredKettleTheme(
 }
 
 /**
+ * What the runner's field asks of the system bars' icons, held for every one of the shell's views to
+ * read ([PreferredKettleTheme]); one per activity, provided as [LocalRunnerBars].
+ */
+@Stable
+class RunnerBars {
+    var darkIcons by mutableStateOf(false)
+}
+
+/** The activity's [RunnerBars]; none in a screen's test, where the runner is the only view. */
+val LocalRunnerBars = staticCompositionLocalOf<RunnerBars?> { null }
+
+/**
  * The bars' icons over the runner's field, which decides them (`RunnerField.darkBarIcons`): over the
- * orange one light icons would measure 2.96:1. Composed inside [PreferredKettleTheme], so its effect
- * runs after that one's in the same frame and wins; and once the runner closes, `runnerShown` changing
- * recomposes that one, which sets the shell's icons back.
+ * orange one light icons would measure 2.96:1. Set on the window at once, and handed to [RunnerBars],
+ * whose change recomposes every view's [PreferredKettleTheme] to the same value; once the runner
+ * closes, `runnerShown` changing sets the shell's icons back.
  */
 @Composable
 fun RunnerBarIcons(darkIcons: Boolean) {
     val window = LocalActivity.current?.window
+    val runnerBars = LocalRunnerBars.current
     SideEffect {
+        runnerBars?.darkIcons = darkIcons
         if (window == null) return@SideEffect
         WindowInsetsControllerCompat(window, window.decorView).apply {
             isAppearanceLightStatusBars = darkIcons

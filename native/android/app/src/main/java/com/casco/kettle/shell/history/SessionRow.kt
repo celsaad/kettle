@@ -16,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
@@ -28,6 +29,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.HistorySessionView
+import com.casco.kettle.domain.UnitSystem
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.i18n.formatMonthBadge
 import com.casco.kettle.shell.i18n.formatShortWeekday
@@ -35,10 +37,10 @@ import com.casco.kettle.shell.i18n.pluralText
 import com.casco.kettle.shell.list.ListRowMinHeight
 import com.casco.kettle.shell.list.ListRowVerticalPadding
 import com.casco.kettle.shell.list.TextAction
-import com.casco.kettle.shell.theme.Chevron
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.Spacing
+import com.casco.kettle.shell.theme.TypeIcon
 
 /**
  * One session: a row, not a card, that expands in place. It can't be a `ListRow`, since the detail
@@ -88,22 +90,7 @@ internal fun SessionRow(
             horizontalArrangement = Arrangement.spacedBy(Spacing.two + 4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column(Modifier.width(38.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                val locale = LocalConfiguration.current.locales[0]
-                Text(
-                    row.day
-                        ?.day
-                        ?.toString()
-                        .orEmpty(),
-                    style = KettleType.heading,
-                    color = colors.text,
-                )
-                Text(
-                    row.day?.let { formatShortWeekday(it, locale) }.orEmpty(),
-                    style = KettleType.small,
-                    color = colors.textSecondary,
-                )
-            }
+            DayColumn(row)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(Spacing.two),
@@ -113,31 +100,69 @@ internal fun SessionRow(
                     if (recordIndex != null) PrBadge()
                 }
                 Text(details(row), style = KettleType.small, color = colors.textSecondary)
-                topEntry(row, recordIndex)?.let { Text(it, style = KettleType.small, color = colors.text) }
+                topEntry(row, recordIndex, state.units)?.let { Text(it, style = KettleType.small, color = colors.text) }
             }
-            Chevron(expanded)
+            OpenChevron(expanded)
         }
-        if (expanded) Detail(row, state.failure, actions)
+        if (expanded) Detail(row, state.failure, state.units, actions)
     }
 }
 
-/** Whether a row is open, and why its delete was refused, if it was: the screen's state for it. */
+/**
+ * Whether a row is open, why its delete was refused, if it was, and the units its loads read in: the
+ * screen's state for it.
+ */
 internal data class RowState(
     val expanded: Boolean,
     val failure: String?,
+    val units: UnitSystem,
 )
+
+/** The day of the month over its short weekday, the column a row's words line up beside. */
+@Composable
+private fun DayColumn(row: HistorySessionView) =
+    Column(Modifier.width(38.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        val locale = LocalConfiguration.current.locales[0]
+        Text(
+            row.day
+                ?.day
+                ?.toString()
+                .orEmpty(),
+            style = KettleType.heading,
+            color = KettleTheme.colors.text,
+        )
+        Text(
+            row.day?.let { formatShortWeekday(it, locale) }.orEmpty(),
+            style = KettleType.small,
+            color = KettleTheme.colors.textSecondary,
+        )
+    }
+
+/**
+ * Down while shut and up while open, as #414 drew it: the row opens in place rather than going anywhere,
+ * which a › would promise.
+ */
+@Composable
+private fun OpenChevron(expanded: Boolean) =
+    TypeIcon(
+        R.drawable.icon_expand,
+        KettleType.default,
+        KettleTheme.colors.textSecondary,
+        Modifier.rotate(if (expanded) HALF_TURN else 0f),
+    )
 
 /** The record's entry, else the first, as "Squat · 3 × 5 · 60 kg". The name is the user's, verbatim. */
 @Composable
 private fun topEntry(
     row: HistorySessionView,
     recordIndex: Int?,
+    units: UnitSystem,
 ): String? {
     val entry = row.entries.firstOrNull { it.index == recordIndex } ?: row.entries.firstOrNull() ?: return null
     return stringResource(
         R.string.history_topEntry,
         entry.exerciseName,
-        LocalResources.current.entryResultText(entry.result),
+        LocalResources.current.entryResultText(entry.result, units),
     )
 }
 
@@ -178,14 +203,18 @@ internal fun dateBadge(row: HistorySessionView): Pair<String, String> {
 private fun details(row: HistorySessionView): String =
     listOfNotNull(
         stringResource(R.string.format_minutes, row.minutes),
-        pluralText(R.plurals.format_set, R.string.format_set_zero, row.sets),
-        stringResource(R.string.history_mixed).takeIf { row.mixed },
+        if (row.inRounds) {
+            pluralText(R.plurals.format_round, R.string.format_round_zero, row.sets)
+        } else {
+            pluralText(R.plurals.format_set, R.string.format_set_zero, row.sets)
+        },
     ).joinToString(" · ")
 
 @Composable
 private fun Detail(
     row: HistorySessionView,
     failure: String?,
+    units: UnitSystem,
     actions: RowActions,
 ) {
     val colors = KettleTheme.colors
@@ -207,7 +236,7 @@ private fun Detail(
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    resources.entryResultText(entry.result),
+                    resources.entryResultText(entry.result, units),
                     Modifier.weight(1f, fill = false),
                     style = KettleType.smallMedium,
                     color = colors.text,
@@ -235,3 +264,5 @@ private fun Detail(
         }
     }
 }
+
+private const val HALF_TURN = 180f

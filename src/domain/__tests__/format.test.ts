@@ -27,7 +27,9 @@ describe('formatEntryResult', () => {
 
   it('joins per-set values', () => {
     expect(formatEntryResult({ kind: 'holds', holdSecs: [20, 18, 15] })).toBe('20s · 18s · 15s');
-    expect(formatEntryResult({ kind: 'reps', reps: [8, 7, 5] })).toBe('8 · 7 · 5 reps');
+    expect(formatEntryResult({ kind: 'reps', reps: [8, 7, 5], weightsKg: [undefined, undefined, undefined] })).toBe(
+      '8 · 7 · 5 reps',
+    );
   });
 
   it('omits extras that were not recorded', () => {

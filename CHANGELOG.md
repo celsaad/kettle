@@ -159,6 +159,10 @@ here, next to what it describes.
 - **A program keeps your place when the day you last trained is gone**: if an import removes it,
   or you rename it, Home used to start the program over at week 1. It now carries on after the
   last day you trained that's still there (#456).
+- **Your logged sets show their weight**: Sessions, an exercise's Recent sessions and the receipt
+  when you finish used to list only the reps. They now show the load too, "48.5 lb · 12, 12, 10",
+  or set by set where it changed. A session of EMOM, HIIT or AMRAP rounds says rounds, not sets
+  (#482, #483).
 
 ---
 

@@ -376,7 +376,8 @@ private fun ProgressRow(
                         withStyle(SpanStyle(color = colors.text, fontWeight = FontWeight.SemiBold)) { append(change) }
                         // The record mark inline rather than a section of its own: nearly every record
                         // in the window is also a mover, so a separate list would say most things twice.
-                        bestEver?.let { withStyle(SpanStyle(color = colors.accentText)) { append(" $it") } }
+                        // In ink, as the change is: achievement takes no hue of its own (#414's palette rule).
+                        bestEver?.let { withStyle(SpanStyle(color = colors.text)) { append(" $it") } }
                     },
                     style = KettleType.small.copy(fontFeatureSettings = "tnum"),
                     color = colors.textSecondary,

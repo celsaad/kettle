@@ -508,7 +508,7 @@ private fun entryResultJson(result: EntryResult): Map<String, Any> {
             }
 
             is EntryResult.Reps -> {
-                mapOf("kind" to "reps", "reps" to result.reps)
+                mapOf("kind" to "reps", "reps" to result.reps, "weightsKg" to result.weightsKg)
             }
 
             is EntryResult.Rounds -> {

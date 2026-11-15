@@ -48,12 +48,16 @@ data class HistorySessionView(
     val workoutName: String?,
     val minutes: Int,
     val sets: Int,
-    val mixed: Boolean,
+    val inRounds: Boolean,
     val editable: Boolean,
     val entries: List<HistoryEntryView>,
 )
 
-/** Every row of History, in [sessions]' order. Rests are left out of a row's entries and of "mixed". */
+/**
+ * Every row of History, in [sessions]' order. Rests are left out of a row's entries. [HistorySessionView.inRounds]
+ * is a session of intervals alone, HIIT, AMRAP and EMOM, whose [sessionSetCount] is rounds; anything else in it
+ * keeps the count in sets, since a round of three moves and a set of eight reps would add up to nothing.
+ */
 fun historySessionsView(
     sessions: List<Session>,
     library: Library,
@@ -67,7 +71,7 @@ fun historySessionsView(
             workoutName = workoutNameFor(session, library),
             minutes = sessionDurationMinutes(session),
             sets = sessionSetCount(session),
-            mixed = worked.map { (_, entry) -> entry::class }.toSet().size > 1,
+            inRounds = worked.isNotEmpty() && worked.all { (_, entry) -> entry.isInterval() },
             editable = session.endedAt != null,
             entries =
                 worked.map { (index, entry) ->
@@ -101,3 +105,6 @@ fun historyWeeks(
         .map { (start, inWeek) -> HistoryWeek(start, inWeek) }
         // Descending over nulls-first: the newest week first and the undated group last.
         .sortedWith(compareByDescending<HistoryWeek, LocalDate?>(nullsFirst()) { it.start })
+
+private fun SessionEntry.isInterval() =
+    this is SessionEntry.Hiit || this is SessionEntry.Amrap || this is SessionEntry.Emom

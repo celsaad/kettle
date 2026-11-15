@@ -74,7 +74,8 @@
     },
     {
       "kind": "reps",
-      "reps": [8, 6]
+      "reps": [8, 6],
+      "weightsKg": [60, null]
     },
     {
       "kind": "rounds",

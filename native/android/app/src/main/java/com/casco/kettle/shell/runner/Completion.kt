@@ -205,7 +205,7 @@ private fun ComparisonRow(
     val resources = LocalResources.current
     val units = environment.units
     val readings = row.kind?.let { Readings(resources, it, units) }
-    val today = resources.entryResultText(row.result)
+    val today = resources.entryResultText(row.result, units)
     val oneRepMax = (record as? SessionRecord.HeaviestSet)?.oneRepMaxKg?.let { resources.oneRepMaxText(it, units) }
     val (shown, spoken) = changeTexts(row, readings, resources)
     val badge = record?.let { stringResource(R.string.session_complete_recordBadge) }

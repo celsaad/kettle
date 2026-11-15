@@ -58,8 +58,10 @@ sealed interface EntryResult {
         val holdSecs: List<Double>,
     ) : EntryResult
 
+    /** [weightsKg] is each set's load, null for one logged without, beside [reps] set for set. */
     data class Reps(
         val reps: List<Long>,
+        val weightsKg: List<Double?>,
     ) : EntryResult
 
     data class Rounds(
@@ -94,7 +96,7 @@ fun sessionEntryResult(entry: SessionEntry): EntryResult =
         }
 
         is SessionEntry.Reps -> {
-            EntryResult.Reps(entry.sets.map { it.reps })
+            EntryResult.Reps(entry.sets.map { it.reps }, entry.sets.map { it.weightKg })
         }
 
         is SessionEntry.Hiit -> {

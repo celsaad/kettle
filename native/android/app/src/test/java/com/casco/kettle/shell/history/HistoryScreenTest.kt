@@ -21,6 +21,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.unit.dp
+import com.casco.kettle.domain.EmomMinuteLog
 import com.casco.kettle.domain.Exercise
 import com.casco.kettle.domain.ExerciseConfig
 import com.casco.kettle.domain.Library
@@ -180,8 +181,38 @@ class HistoryScreenTest {
         show(Files(push, twoSets))
 
         compose.onNodeWithText("60 min · 1 série").assertExists()
-        // A HIIT round is a set too, and two kinds of work make the session mixed.
-        compose.onNodeWithText("2940 min · 5 séries · misto").assertExists()
+        // A HIIT round is a set too, and two kinds of work say nothing more: #414's line is minutes and sets.
+        compose.onNodeWithText("2940 min · 5 séries").assertExists()
+    }
+
+    // The board's "10 rounds": an EMOM's minutes are its rounds, where "10 séries" would be a lie about them.
+    @Test
+    fun `counts a session of intervals alone in rounds`() {
+        val emom = legs.copy(entries = listOf(SessionEntry.Emom("swings", List(10) { EmomMinuteLog(reps = 8) })))
+        show(Files(push, emom))
+
+        compose.onNodeWithText("2940 min · 10 rodadas").assertExists()
+    }
+
+    // The third line, as the boards draw it: the load in front of the reps it was lifted for.
+    @Test
+    fun `shows the load an entry was lifted with`() {
+        val loaded =
+            legs.copy(
+                entries =
+                    listOf(
+                        SessionEntry.Reps(
+                            "dips",
+                            listOf(
+                                RepsSetLog(reps = 8, weightKg = 20.0, restTakenSec = 60.0),
+                                RepsSetLog(reps = 6, weightKg = 20.0, restTakenSec = 0.0),
+                            ),
+                        ),
+                    ),
+            )
+        show(Files(push, loaded))
+
+        compose.onNodeWithText("20 kg · 8, 6", substring = true).assertExists()
     }
 
     @Test

@@ -2,6 +2,7 @@ package com.casco.kettle.shell.history
 
 import androidx.test.core.app.ApplicationProvider
 import com.casco.kettle.domain.EntryResult
+import com.casco.kettle.domain.UnitSystem
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -18,7 +19,10 @@ import org.robolectric.annotation.Config
 class EntryResultsTest {
     private val resources = ApplicationProvider.getApplicationContext<android.content.Context>().resources
 
-    private fun text(result: EntryResult) = resources.entryResultText(result)
+    private fun text(
+        result: EntryResult,
+        units: UnitSystem = UnitSystem.METRIC,
+    ) = resources.entryResultText(result, units)
 
     // As JS prints them: a whole second has no ".0", and a half keeps its ".5".
     @Test
@@ -28,7 +32,31 @@ class EntryResultsTest {
 
     @Test
     fun `reps are each set's count, in one phrase`() {
-        assertEquals("8 · 6 repetições", text(EntryResult.Reps(listOf(8, 6))))
+        assertEquals("8 · 6 repetições", text(EntryResult.Reps(listOf(8, 6), listOf(null, null))))
+    }
+
+    @Test
+    fun `one load across every set goes in front, as the boards write it`() {
+        assertEquals("60 kg · 8, 8, 6", text(EntryResult.Reps(listOf(8, 8, 6), listOf(60.0, 60.0, 60.0))))
+    }
+
+    // Stored in kilograms, read in the reader's unit, as every weight is.
+    @Test
+    fun `the load is in the reader's unit`() {
+        assertEquals("50 lb · 10", text(EntryResult.Reps(listOf(10), listOf(22.6796185)), UnitSystem.IMPERIAL))
+    }
+
+    // One load in front would claim a weight some sets didn't carry.
+    @Test
+    fun `loads that differ, or a set without one, go set by set`() {
+        assertEquals(
+            "8 × 60 kg · 6 × 55 kg",
+            text(EntryResult.Reps(listOf(8, 6), listOf(60.0, 55.0))),
+        )
+        assertEquals(
+            "8 × 60 kg · 6 repetições",
+            text(EntryResult.Reps(listOf(8, 6), listOf(60.0, null))),
+        )
     }
 
     @Test

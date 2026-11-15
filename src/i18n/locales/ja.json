@@ -304,7 +304,9 @@
       "editLog": "記録を編集"
     },
     "countdown": {
-      "getReady": "準備",
+      "getReady": "準備して",
+      "first": "最初は{{name}}",
+      "firstLoaded": "最初は{{name}} · {{load}}",
       "firstTimeHint": "スマホは置いたままで大丈夫。カウントダウンと種目の切り替えは音でお知らせします。"
     },
     "hold": {

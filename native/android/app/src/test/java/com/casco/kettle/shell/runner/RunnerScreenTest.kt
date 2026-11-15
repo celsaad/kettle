@@ -94,10 +94,29 @@ class RunnerScreenTest : RunnerScreenHarness() {
     @Test
     fun `the count-in shows the name and the first-session hint with no history and sounds on`() {
         show(RunnerEntry.Attach(RunnerView.CountingIn(plan(block(squat)), null, CountIn(T0))))
-        compose.onNodeWithText("PREPARE-SE").assertExists()
+        compose.onNodeWithText("Prepare-se").assertExists()
         compose.onNodeWithText("Pernas").assertExists()
         compose.onNodeWithText("3").assertExists()
         compose.onNodeWithText("Pode largar o celular", substring = true).assertExists()
+    }
+
+    /** The board's count-in (#472): what comes first, with its load where it has one. */
+    @Test
+    fun `the count-in says what comes first, with its load`() {
+        show(RunnerEntry.Attach(RunnerView.CountingIn(plan(block(squat)), null, CountIn(T0))))
+        compose.onNodeWithText("Primeiro: Agachamento · 60 kg").assertExists()
+
+        show(RunnerEntry.Attach(RunnerView.CountingIn(plan(block(plank)), null, CountIn(T0))))
+        compose.onNodeWithText("Primeiro: Prancha").assertExists()
+    }
+
+    /** End, as a running session has it: nothing is written yet, so it leaves at once, as back does. */
+    @Test
+    fun `End during the count-in leaves without asking`() {
+        show(RunnerEntry.Attach(RunnerView.CountingIn(plan(block(squat)), null, CountIn(T0))))
+        compose.onNodeWithText("Encerrar").performClick()
+        assertEquals(1, left)
+        compose.onNode(isDialog()).assertDoesNotExist()
     }
 
     @Test

@@ -149,7 +149,7 @@ private fun WorkoutName(
  * matches what's on screen; 44dp drawn in its 48dp target, as the canvas draws it.
  */
 @Composable
-private fun EndPill(confirm: () -> Unit) {
+internal fun EndPill(confirm: () -> Unit) {
     OutlinedPill(stringResource(R.string.session_finish_label), confirm, minWidth = END_WIDTH)
 }
 

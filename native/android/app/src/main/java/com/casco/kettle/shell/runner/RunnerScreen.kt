@@ -156,7 +156,7 @@ private fun RunnerBody(
 
         is RunnerEntry.Attach -> {
             when (val view = entry.view) {
-                is RunnerView.CountingIn -> CountIn(view, environment, now)
+                is RunnerView.CountingIn -> CountIn(view, environment, now, actions.leave)
                 is RunnerView.Running -> frame(view)
             }
         }

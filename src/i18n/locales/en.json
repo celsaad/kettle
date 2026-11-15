@@ -329,7 +329,9 @@
       "editLog": "Edit log"
     },
     "countdown": {
-      "getReady": "GET READY",
+      "getReady": "Get ready",
+      "first": "First: {{name}}",
+      "firstLoaded": "First: {{name}} · {{load}}",
       "firstTimeHint": "Put the phone down — you'll hear each countdown and exercise change."
     },
     "hold": {

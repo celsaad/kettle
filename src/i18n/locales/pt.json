@@ -354,7 +354,9 @@
       "editLog": "Editar registro"
     },
     "countdown": {
-      "getReady": "PREPARE-SE",
+      "getReady": "Prepare-se",
+      "first": "Primeiro: {{name}}",
+      "firstLoaded": "Primeiro: {{name}} · {{load}}",
       "firstTimeHint": "Pode largar o celular — você ouve cada contagem e cada troca de exercício."
     },
     "hold": {

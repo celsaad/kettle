@@ -3,10 +3,10 @@ package com.casco.kettle.shell.runner
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
@@ -45,6 +46,7 @@ import com.casco.kettle.shell.progress.Readings
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.Spacing
 import com.casco.kettle.shell.theme.TypeIcon
+import com.casco.kettle.shell.theme.rememberWidestText
 
 /**
  * Completion (#416), a receipt: which day this was, the session's three numbers, each exercise against
@@ -112,46 +114,72 @@ private fun Heading(view: RunnerView.Completed) {
     }
 }
 
-/** Time, Sets and Exercises in a ruled row, as Overview's tiles. */
+/**
+ * Time, Sets and Exercises in a ruled row, as Overview's tiles. At 200% text a third of the row is
+ * narrower than "Exercícios", which broke mid-word (#469), so the words are measured: in a row while the
+ * widest fits its third, else one tile under another, each still a value over its label.
+ */
 @Composable
 private fun Tiles(
     session: Session,
     exercises: Int,
 ) {
-    Column {
-        Rule()
-        Row(Modifier.height(IntrinsicSize.Min)) {
-            Tile(
-                stringResource(R.string.format_minutes, sessionDurationMinutes(session)),
+    val tiles =
+        listOf(
+            stringResource(R.string.format_minutes, sessionDurationMinutes(session)) to
                 stringResource(R.string.session_complete_time),
-            )
-            Divider()
-            Tile(
-                sessionSetCount(session).toString(),
-                stringResource(R.string.session_complete_sets),
-                Modifier.padding(start = Spacing.three),
-            )
-            Divider()
-            Tile(
-                exercises.toString(),
-                stringResource(R.string.session_complete_exercises),
-                Modifier.padding(start = Spacing.three),
-            )
+            sessionSetCount(session).toString() to stringResource(R.string.session_complete_sets),
+            exercises.toString() to stringResource(R.string.session_complete_exercises),
+        )
+    val widest =
+        maxOf(
+            rememberWidestText(tiles.map { it.first }, KettleType.heading),
+            rememberWidestText(tiles.map { it.second }, KettleType.small),
+        )
+    BoxWithConstraints {
+        // Each tile's share of the row less the dividers between them, and the start padding all but
+        // the first take.
+        val fits = widest + Spacing.three <= (maxWidth - DIVIDER_WIDTH * (tiles.size - 1)) / tiles.size
+        Column {
+            Rule()
+            if (fits) {
+                Row(Modifier.height(IntrinsicSize.Min)) {
+                    tiles.forEachIndexed { index, (value, label) ->
+                        if (index > 0) Divider()
+                        Tile(
+                            value,
+                            label,
+                            Modifier.weight(1f).then(
+                                if (index >
+                                    0
+                                ) {
+                                    Modifier.padding(start = Spacing.three)
+                                } else {
+                                    Modifier
+                                },
+                            ),
+                        )
+                    }
+                }
+            } else {
+                tiles.forEachIndexed { index, (value, label) ->
+                    if (index > 0) Rule()
+                    Tile(value, label, Modifier.fillMaxWidth())
+                }
+            }
+            Rule()
         }
-        Rule()
     }
 }
 
 @Composable
-private fun RowScope.Tile(
+private fun Tile(
     value: String,
     label: String,
-    modifier: Modifier = Modifier,
+    modifier: Modifier,
 ) = Column(
-    Modifier
-        .weight(1f)
+    modifier
         .padding(vertical = Spacing.two)
-        .then(modifier)
         .semantics(mergeDescendants = true) {},
 ) {
     Text(value, style = KettleType.heading, color = runnerColors.text)
@@ -162,7 +190,7 @@ private fun RowScope.Tile(
 private fun Rule() = Box(Modifier.fillMaxWidth().height(1.dp).background(runnerColors.outline))
 
 @Composable
-private fun Divider() = Box(Modifier.fillMaxHeight().width(1.dp).background(runnerColors.outline))
+private fun Divider() = Box(Modifier.fillMaxHeight().width(DIVIDER_WIDTH).background(runnerColors.outline))
 
 /** One row per exercise, then the 1RM note once, only where a 1RM shows. */
 @Composable
@@ -245,11 +273,16 @@ private fun Pinned(
     onDone: () -> Unit,
 ) = Column {
     Rule()
-    Row(
-        Modifier.fillMaxWidth().padding(vertical = Spacing.three),
-        horizontalArrangement = Arrangement.spacedBy(Spacing.two),
-    ) {
-        OutlineButton(stringResource(R.string.session_complete_editLog), onEditLog)
-        PrimaryButton(stringResource(R.string.session_complete_done), onDone, Modifier.weight(1f))
+    BoxWithConstraints(Modifier.fillMaxWidth().padding(vertical = Spacing.three)) {
+        // Edit log at most half the row, Done the rest: unbounded at 200% text, Edit log took its full
+        // words' width and left Done too narrow for "Concluir", which broke mid-word (#469). A cap, not
+        // an unfilled weight, which would leave the half it doesn't use empty instead of Done's.
+        val half = (maxWidth - Spacing.two) / 2
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.two)) {
+            OutlineButton(stringResource(R.string.session_complete_editLog), onEditLog, Modifier.widthIn(max = half))
+            PrimaryButton(stringResource(R.string.session_complete_done), onDone, Modifier.weight(1f))
+        }
     }
 }
+
+private val DIVIDER_WIDTH = 1.dp

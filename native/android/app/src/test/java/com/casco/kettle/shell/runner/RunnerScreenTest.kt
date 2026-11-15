@@ -23,6 +23,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.width
 import com.casco.kettle.domain.CircuitMember
 import com.casco.kettle.domain.CountIn
 import com.casco.kettle.domain.Library
@@ -43,6 +44,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
 
 /**
  * The native runner's screens (#306), case for case from `session.test.tsx` and the `session-*` suites,
@@ -321,6 +323,38 @@ class RunnerScreenTest : RunnerScreenHarness() {
     }
 
     // completion
+
+    // At 200% text a third of the row is narrower than "Exercícios", which broke mid-word (#469): the
+    // tiles go one under another, and Done keeps at least half the foot, never squeezed by Edit log.
+    @Test
+    // Native graphics: legacy mode measures text far narrower than a device, so nothing overflows in it.
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun `at a large text size the receipt's tiles stack and Done keeps half the foot`() {
+        fontScale = 2f
+        show(RunnerEntry.Complete(RunnerView.Completed(plan(block(squat)), finished("s", 60.0), FinishBackupState.OK)))
+
+        val time = compose.onNode(hasText("30 min") and hasText("Tempo")).getUnclippedBoundsInRoot()
+        val sets = compose.onNode(hasText("1") and hasText("Séries")).getUnclippedBoundsInRoot()
+        assertTrue(time.bottom <= sets.top)
+        val edit = button("Editar registro").getUnclippedBoundsInRoot()
+        val done = button("Concluir").getUnclippedBoundsInRoot()
+        // Equal halves at most, give or take the rounding of a split pixel.
+        assertTrue(done.width >= edit.width - 1.dp)
+    }
+
+    @Test
+    // Native graphics: in legacy mode nothing overflows, so only native can catch a 1× stack.
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun `at the default size the receipt's tiles share a row and Done fills the rest of the foot`() {
+        show(RunnerEntry.Complete(RunnerView.Completed(plan(block(squat)), finished("s", 60.0), FinishBackupState.OK)))
+
+        val time = compose.onNode(hasText("30 min") and hasText("Tempo")).getUnclippedBoundsInRoot()
+        val sets = compose.onNode(hasText("1") and hasText("Séries")).getUnclippedBoundsInRoot()
+        assertEquals(time.top, sets.top)
+        val edit = button("Editar registro").getUnclippedBoundsInRoot()
+        val done = button("Concluir").getUnclippedBoundsInRoot()
+        assertTrue(done.width > edit.width)
+    }
 
     /**
      * The receipt (#416): the day, the numbers, the exercise against last time with its PR and 1RM, said

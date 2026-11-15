@@ -68,7 +68,7 @@ class RunnerIntervalTest : RunnerScreenHarness() {
         show(running(amrap, started(amrap).after(RunnerCommand.SetRounds(2))))
         compose.onNodeWithText("AMRAP · rodada 3").assertExists()
         compose.onNodeWithText("2 rodadas · última vez 7").assertExists()
-        compose.onNodeWithText("rodada 2").assertExists()
+        compose.onNodeWithText("Registrado rodada 2").assertExists()
         button("Desfazer").performClick()
         assertEquals(RunnerCommand.SetRounds(1), sent.last())
     }

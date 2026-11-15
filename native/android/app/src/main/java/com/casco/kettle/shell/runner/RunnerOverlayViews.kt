@@ -15,7 +15,9 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -49,15 +51,15 @@ import com.casco.kettle.shell.theme.TypeIcon
 
 /**
  * A dimmed backdrop that dismisses, and a sheet at the bottom. Drawn over the runner's body, which the
- * frame hides from accessibility while one is open, so a screen reader stays in here. [inset] keeps
- * the sheet inside the runner's column, as RN's pad and pickers are: only Coming up spans the width.
+ * frame hides from accessibility while one is open, so a screen reader stays in here. [layout] says
+ * how it sits ([SheetLayout]).
  */
 @Composable
 internal fun OverlaySheet(
     dismissLabel: String?,
     onDismiss: () -> Unit,
     title: String,
-    inset: Boolean = true,
+    layout: SheetLayout = SheetLayout.Inset,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Box(Modifier.fillMaxSize()) {
@@ -81,7 +83,7 @@ internal fun OverlaySheet(
                 .safeDrawingPadding()
                 .imePadding()
                 .then(
-                    if (inset) {
+                    if (layout != SheetLayout.FullWidth) {
                         Modifier.padding(
                             start = Spacing.three,
                             end = Spacing.three,
@@ -97,6 +99,7 @@ internal fun OverlaySheet(
                 // backdrop behind and closed the sheet, the pad losing what had been typed into it.
                 .pointerInput(Unit) {}
                 .semantics { paneTitle = title }
+                .then(if (layout == SheetLayout.Scrolling) Modifier.verticalScroll(rememberScrollState()) else Modifier)
                 .padding(Spacing.three),
             verticalArrangement = Arrangement.spacedBy(Spacing.two),
         ) {

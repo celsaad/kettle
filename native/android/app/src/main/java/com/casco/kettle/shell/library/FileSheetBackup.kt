@@ -4,6 +4,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -39,6 +40,7 @@ import com.casco.kettle.shell.theme.KettleAlertDialog
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.Spacing
+import com.casco.kettle.shell.theme.rememberWidestText
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -68,24 +70,29 @@ internal fun BackupRow(
     }
     val label = folderUri?.let(::backupFolderLabel)
     ListRowSeparator()
-    Row(
-        Modifier.fillMaxWidth().heightIn(min = ListRowMinHeight),
-        horizontalArrangement = Arrangement.spacedBy(Spacing.two),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Folder(label, Modifier.weight(1f)) { if (label == null) chooseFolder() else asking = true }
-        if (folderUri != null) {
-            BackUpNow(enabled = sessions != null && !backingUp, running = backingUp) {
-                val log = sessions ?: return@BackUpNow
-                message = null
-                backingUp = true
-                scope.launch {
-                    message = backUpNow(backup, folderUri, log, resources)
-                    backingUp = false
-                }
+    val choose: () -> Unit = {
+        if (label == null) chooseFolder() else asking = true
+    }
+    val backUp = {
+        val log = sessions
+        val uri = folderUri
+        if (log != null && uri != null) {
+            message = null
+            backingUp = true
+            scope.launch {
+                message = backUpNow(backup, uri, log, resources)
+                backingUp = false
             }
         }
     }
+    FolderLine(
+        label,
+        folder = { Folder(label, it, choose) },
+        button =
+            folderUri?.let {
+                { BackUpNow(enabled = sessions != null && !backingUp, running = backingUp, backUp) }
+            },
+    )
     message?.let { Outcome(it.text, accent = !it.ok) }
     if (asking && label != null) {
         FolderDialog(
@@ -101,6 +108,46 @@ internal fun BackupRow(
                 save.launch { it.copy(backupFolderUri = null) }
             },
         )
+    }
+}
+
+/**
+ * The folder, and Back up now beside it while the folder keeps room for its longest word; under it once
+ * it can't. A fixed row squeezed the path at 200% text until it broke as "Documents/ / Kettle" (#480).
+ * Measured on both of the button's labels, so "Writing…" never moves it mid-backup.
+ */
+@Composable
+private fun FolderLine(
+    label: String?,
+    folder: @Composable (Modifier) -> Unit,
+    button: (@Composable () -> Unit)?,
+) {
+    val pill =
+        rememberWidestText(
+            listOf(stringResource(R.string.settings_backupNow), stringResource(R.string.settings_backupInProgress)),
+            KettleType.smallMedium,
+        ) + PILL_INSET * 2
+    val folderWords =
+        maxOf(
+            rememberWidestText(words(stringResource(R.string.settings_backupFolder)), KettleType.heading),
+            rememberWidestText(words(label ?: stringResource(R.string.settings_backupFolderNone)), KettleType.small),
+        )
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        if (button == null || folderWords + Spacing.two + pill <= maxWidth) {
+            Row(
+                Modifier.fillMaxWidth().heightIn(min = ListRowMinHeight),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.two),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                folder(Modifier.weight(1f))
+                button?.invoke()
+            }
+        } else {
+            Column(Modifier.fillMaxWidth().padding(bottom = Spacing.two)) {
+                folder(Modifier.fillMaxWidth())
+                button()
+            }
+        }
     }
 }
 
@@ -142,7 +189,7 @@ private fun BackUpNow(
             .clip(PillShape)
             .border(1.dp, colors.textSecondary, PillShape)
             .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
-            .padding(horizontal = Spacing.three),
+            .padding(horizontal = PILL_INSET),
         contentAlignment = Alignment.Center,
     ) {
         Text(
@@ -173,3 +220,12 @@ private fun FolderDialog(
 )
 
 private val PillShape = RoundedCornerShape(percent = 50)
+
+/** Back up now's side padding, read by the row's fit check as by the pill. */
+private val PILL_INSET = Spacing.three
+
+/**
+ * A text's words, and a path's segments with their slash, the pieces it can wrap between: a line can
+ * break after a "/" but not before it, so "Documents/" is the piece that has to fit.
+ */
+private fun words(text: String) = text.split(Regex("(?<=/)| ")).filter { it.isNotEmpty() }

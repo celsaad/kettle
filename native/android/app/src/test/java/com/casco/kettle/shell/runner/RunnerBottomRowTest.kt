@@ -1,14 +1,17 @@
 package com.casco.kettle.shell.runner
 
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.casco.kettle.domain.RunnerCommand
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
 
 /**
  * The runner's bottom row (#409) on each step screen, and the rest's Undo: what each slot holds and
@@ -44,6 +47,34 @@ class RunnerBottomRowTest : RunnerScreenHarness() {
         assertEquals(listOf(RunnerCommand.TogglePause, RunnerCommand.Prev, RunnerCommand.Advance(FIRST_VISIT)), sent)
     }
 
+    // At 200% text a paused hold's "Voltar", "Continuar" and "Concluir" can't share one line, and the
+    // main action's word broke mid-word between the slots (#469): it takes a line of its own, above them.
+    @Test
+    // Native graphics: legacy mode measures text far narrower than a device, so nothing overflows in it.
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun `at a large text size the main action takes its own line, above Back and Done`() {
+        fontScale = 2f
+        val hold = plan(block(plank))
+        show(running(hold, started(hold).after(RunnerCommand.TogglePause)))
+        val main = button("Continuar").getUnclippedBoundsInRoot()
+        val back = button("Voltar").getUnclippedBoundsInRoot()
+        val done = button("Concluir").getUnclippedBoundsInRoot()
+        assertTrue(main.bottom <= back.top)
+        assertEquals(back.top, done.top)
+    }
+
+    @Test
+    // Native graphics, as above: in legacy mode nothing overflows, so only native can catch a 1× stack.
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun `at the default size Back, the main action and Done share one line`() {
+        val hold = plan(block(plank))
+        show(running(hold, started(hold).after(RunnerCommand.TogglePause)))
+        val main = button("Continuar").getUnclippedBoundsInRoot()
+        val back = button("Voltar").getUnclippedBoundsInRoot()
+        assertTrue(main.top < back.bottom && back.top < main.bottom)
+        assertTrue(back.right <= main.left)
+    }
+
     @Test
     fun `an interval's main button is Pause, with Skip to the side, or Done for a count-up`() {
         show(running(plan(block(burpees))))
@@ -71,7 +102,8 @@ class RunnerBottomRowTest : RunnerScreenHarness() {
     @Test
     fun `straight after a set the rest names it with Undo, and has no Back beside it`() {
         show(running(plan(block(squat)), started(plan(block(squat))).advanced()))
-        compose.onNodeWithText("série 1 · 5 × 60 kg").assertExists()
+        // One line of prose, title and value together (#469): two Texts split into columns at 200%.
+        compose.onNodeWithText("Registrado série 1 · 5 × 60 kg").assertExists()
         button("Voltar").assertDoesNotExist()
         button("Desfazer").assertIsTarget().performClick()
         assertEquals(RunnerCommand.Prev, sent.last())
@@ -81,7 +113,7 @@ class RunnerBottomRowTest : RunnerScreenHarness() {
     fun `a rest with nothing to undo has Back in Undo's place`() {
         show(running(plan(block(squat)), started(plan(block(squat))).advanced(), restored = true))
         button("Desfazer").assertDoesNotExist()
-        compose.onNodeWithText("Registrado").assertDoesNotExist()
+        compose.onNodeWithText("Registrado", substring = true).assertDoesNotExist()
         button("Voltar").performClick()
         assertEquals(RunnerCommand.Prev, sent.last())
     }

@@ -50,7 +50,7 @@ internal fun ComingUp(
     val list = rememberLazyListState(initialFirstVisibleItemIndex = maxOf(0, now - 1))
     // The backdrop is hidden from a reader: the × already closes, and a second "Close" covering the
     // whole screen would only be one more stop to swipe past.
-    OverlaySheet(null, onClose, title, inset = false) {
+    OverlaySheet(null, onClose, title, SheetLayout.FullWidth) {
         Row(verticalAlignment = Alignment.Top) {
             Column(Modifier.weight(1f)) {
                 Text(title, Modifier.semantics { heading() }, style = KettleType.heading, color = runnerColors.text)

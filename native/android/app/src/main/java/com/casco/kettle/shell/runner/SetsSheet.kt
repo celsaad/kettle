@@ -153,7 +153,7 @@ internal fun SetsSheet(
 ) {
     val total = model.rows.size
     val planned = model.planned
-    OverlaySheet(null, onClose, step.exerciseName) {
+    OverlaySheet(null, onClose, step.exerciseName, SheetLayout.Scrolling) {
         Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(Spacing.two)) {
             Column(Modifier.weight(1f)) {
                 Text(

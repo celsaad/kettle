@@ -132,25 +132,38 @@ private fun WorkoutName(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.one),
     ) {
-        Text(
-            resources.sessionName(view.plan.workout?.name),
-            Modifier.weight(1f, fill = false),
-            style = KettleType.small,
-            color = runnerColors.textSecondary,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
+        TopBarName(resources.sessionName(view.plan.workout?.name), Modifier.weight(1f, fill = false))
         Chevron()
     }
 }
 
 /**
- * End, top right: an outlined pill that asks first (`FinishDialog`). Named by its word, so Voice Control
- * matches what's on screen; 44dp drawn in its 48dp target, as the canvas draws it.
+ * End, top right: an outlined pill. On a running session it asks first ([EndSheet]); on the count-in,
+ * where nothing is written yet, it leaves at once. Named by its word, so Voice Control matches what's on
+ * screen; 44dp drawn in its 48dp target, as the canvas draws it.
  */
 @Composable
-private fun EndPill(confirm: () -> Unit) {
-    OutlinedPill(stringResource(R.string.session_finish_label), confirm, minWidth = END_WIDTH)
+internal fun EndPill(onClick: () -> Unit) {
+    OutlinedPill(stringResource(R.string.session_finish_label), onClick, minWidth = END_WIDTH)
+}
+
+/**
+ * The workout's name in the top bar, the running session's and the count-in's alike, so the two can't
+ * drift apart: one line, quiet, ellipsized.
+ */
+@Composable
+internal fun TopBarName(
+    name: String,
+    modifier: Modifier = Modifier,
+) {
+    Text(
+        name,
+        modifier,
+        style = KettleType.small,
+        color = runnerColors.textSecondary,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+    )
 }
 
 /** A down chevron, drawn: RN's is an SVG path, and a text glyph would change with the font. */

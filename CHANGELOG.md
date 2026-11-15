@@ -180,6 +180,10 @@ here, next to what it describes.
   the next exercise, cardio says it ends by itself, and an EMOM says its clock is what's left of the
   minute; the reps you aim for are where the reps stepper starts. A paused timer says "Paused" above
   it and dims, so you can tell at a glance that it's stopped (#471).
+- **A bigger countdown before you start**: the 3, 2, 1 now fills the screen under "Get ready",
+  with the first exercise and its weight below it, so you know what to pick up. The workout's name
+  and End sit at the top, as they do once the session runs, and End leaves before anything starts,
+  with nothing logged (#472).
 
 ---
 

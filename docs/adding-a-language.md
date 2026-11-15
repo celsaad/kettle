@@ -67,8 +67,8 @@ Three traps before picking one:
   files 0 under `one` too and means it, so this is decided per language, not derived from CLDR.
 - **An RTL language is a project, not a bundle.** The `I18nManager` plumbing was deliberately deferred
   until a real RTL locale existed (see `testing-a11y-i18n-plan.md`), and the work it defers is the
-  CSS-triangle glyphs, which are drawn and don't flip, plus the arrow characters baked into copy
-  (`'Skip rest →'`, `'Done set →'`). Adding Arabic or Hebrew means doing that first.
+  CSS-triangle glyphs, which are drawn and don't flip, plus any arrow character baked into copy (one is
+  left, `import.emptyYamlLink`'s "→"). Adding Arabic or Hebrew means doing that first.
 - **A seed table's day labels must sort in training order.** `nextWeekAfter` walks a multi-day week by
   `day.localeCompare`, so `Dia 1`/`Dia 2`/`Dia 3` and `1日目`/`2日目`/`3日目` work and weekday names do
   not — the per-language seed test catches it, and this is why it runs every structural invariant

@@ -60,9 +60,6 @@ fun swapChoices(
     return SwapChoices(current, same, other).takeIf { others.isNotEmpty() }
 }
 
-/** How many blocks the progress dots count: the workout's, or for an ad-hoc session the exercises added. */
-fun blockTotal(snapshot: RunnerSnapshot): Int = snapshot.workoutBlockCount ?: snapshot.adhocCount
-
 /**
  * The edit, as RN's hook makes it: on whatever step is on screen, with the buttons' rules
  * ([canAddSet], [canDropSet], [swapChoices]) left to the UI that shows them, and the undo record

@@ -460,7 +460,7 @@ class RunnerEditsTest {
             assertEquals("pullups", runner.work().exerciseId)
             assertEquals(1L, runner.work().setIndex)
             assertEquals(3L, runner.work().setTotal)
-            assertEquals(1, blockTotal(runner.snapshot))
+            assertEquals(1, runner.snapshot.adhocCount)
         }
 
         @Test
@@ -483,7 +483,7 @@ class RunnerEditsTest {
 
             assertEquals("pullups", runner.work().exerciseId)
             assertEquals(1L, runner.work().setIndex)
-            assertEquals(2, blockTotal(runner.snapshot))
+            assertEquals(2, runner.snapshot.adhocCount)
         }
 
         @Test
@@ -536,7 +536,7 @@ class RunnerEditsTest {
                     .last()
                     .memberKey,
             )
-            assertEquals(1, blockTotal(runner.snapshot))
+            assertEquals(1, runner.snapshot.workoutBlockCount)
         }
     }
 

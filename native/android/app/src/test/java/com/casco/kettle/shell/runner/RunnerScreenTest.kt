@@ -543,7 +543,7 @@ class RunnerScreenTest : RunnerScreenHarness() {
         val squats = plan(block(squat))
         show(running(squats))
         assertEquals(0f, progress().current)
-        assertEquals(2f, progress().range.endInclusive)
+        assertEquals(0f..2f, progress().range)
         // On the rest after set 1, that set is done.
         show(running(squats, started(squats).advanced()))
         assertEquals(1f, progress().current)
@@ -551,7 +551,8 @@ class RunnerScreenTest : RunnerScreenHarness() {
         val adhoc = RunnerPlan.Runnable(null, exercises, emptyList())
         val two = started(adhoc).after(RunnerCommand.AddExercise(squat), RunnerCommand.AddExercise(plank))
         show(running(adhoc, two))
-        compose.onNode(isProgressBar).assertExists()
+        // What's queued so far, in steps: the squat's two sets and the plank's two.
+        assertEquals(4f, progress().range.endInclusive)
     }
 
     @Test

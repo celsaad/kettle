@@ -208,9 +208,9 @@ here, next to what it describes.
   Start as the one orange button on Today, and the names in lists are a size smaller, so section
   headings stand above them again (#490, #486).
 - **The session bar counts your steps**: the bar at the top of a session now fills by the exercises,
-  sets and rounds you've done, the same count Coming up shows, and it now appears in a workout of one
-  exercise with several sets or minutes, such as an EMOM. The workout's name above it reads more clearly, and the main
-  buttons say just "Log set" and "Skip rest" (#476).
+  sets and rounds you've done, the same count Coming up shows, and it now appears in a workout of
+  one exercise with several sets or minutes, such as an EMOM. The workout's name above it reads more
+  clearly, and the main buttons say just "Log set" and "Skip rest" (#476).
 
 ---
 

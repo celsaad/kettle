@@ -184,6 +184,10 @@ here, next to what it describes.
   with the first exercise and its weight below it, so you know what to pick up. The workout's name
   and End sit at the top, as they do once the session runs, and End leaves before anything starts,
   with nothing logged (#472).
+- **A rest says what's next in full**: under "Next", a rest now reads
+  "Set 2 of 4 · 48.5 lb · 8–12 reps", with the weight the set will start on. In a circuit it gives
+  the round, and what you just logged says "round 2" rather than "set 2". The logged line over the
+  orange screen sits on a darker panel, as it does on a rest (#473).
 
 ---
 

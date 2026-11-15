@@ -206,7 +206,8 @@ class RunnerSessionTest {
         session.begin()
         loop.advanceBy(3000)
         session.send(RunnerCommand.Advance((view as RunnerView.Running).snapshot.visit))
-        assertEquals(LoggedUnit.Set(1, PreviousSet.Reps(6, 20.0)), (view as RunnerView.Running).logged)
+        val inRound = LoggedUnit.Set(1, PreviousSet.Reps(6, 20.0), inCircuit = true)
+        assertEquals(inRound, (view as RunnerView.Running).logged)
 
         // A circuit member's sets are refused: the snapshot stays the same object, only the record goes.
         session.send(RunnerCommand.AddSet)

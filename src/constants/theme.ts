@@ -79,9 +79,11 @@ export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
  *
  * - `pace`: `text` 17.87, `textSecondary` 8.69 (7.58 on `backgroundElement`), `outline`/`track` 3.58
  *   against the field, the fill 4.99 against the track. `getReady`'s orange `numeral` 6.68.
- * - `work`: `text` 6.68, `textSecondary` 5.25 (6.26 on `backgroundElement`, which is a lighter tint for
- *   that reason: a darker one took the secondary text to 4.20), `outline` 3.47, the fill 3.02 against
- *   `track`, which is 2.21 against the field.
+ * - `work`: `text` 6.68, `textSecondary` 5.25 (4.55 on `backgroundElement`, the board's dark panel over
+ *   orange (#473) as ink at 8%, the darkest tint the secondary text still clears AA on: the board's own
+ *   10% gave 4.36. `text` is 5.80 there, and a pill's `outline` 3.01, which 9% would take under 3:1, so
+ *   that's the second limit on darkening it), `outline` 3.47, the fill 3.02 against `track`, which is 2.21
+ *   against the field.
  * - `rest`: `text` 6.85, `textSecondary` 5.09, `outline` 3.49, the fill 3.03 against `track`, which is
  *   2.26 against the field.
  * - `onAccent` on `accent`, the main button's label: 17.87 on `pace` and `work`, 6.85 on `rest`.

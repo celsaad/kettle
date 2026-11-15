@@ -8,7 +8,7 @@ package com.casco.kettle.domain
 // native runner can't get it wrong.
 
 /** Whether [memberKey] belongs to a circuit, which no edit may target. */
-private fun inCircuit(
+internal fun inCircuit(
     steps: List<RunnerStep>,
     memberKey: String,
 ): Boolean = steps.any { it.memberKey == memberKey && it.circuit != null }

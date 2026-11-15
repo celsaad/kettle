@@ -449,6 +449,9 @@
       "setLoaded": "série {{index}} · {{reps}} × {{weight}}",
       "setBodyweight": "série {{index}} · {{reps}}",
       "setHold": "série {{index}} · {{seconds}}",
+      "roundLoaded": "rodada {{index}} · {{reps}} × {{weight}}",
+      "roundBodyweight": "rodada {{index}} · {{reps}}",
+      "roundHold": "rodada {{index}} · {{seconds}}",
       "round": "rodada {{index}}",
       "minute": "minuto {{index}}",
       "rest": "descanso"
@@ -1102,9 +1105,10 @@
     "metres": "m"
   },
   "preview": {
-    "hold": "isometria · série {{index}} de {{total}} · alvo {{target}}",
-    "holdOpen": "isometria · série {{index}} de {{total}} · sem alvo",
-    "reps": "repetições · série {{index}} de {{total}} · alvo {{target}}",
+    "set": "Série {{index}} de {{total}}",
+    "roundOf": "Rodada {{index}} de {{total}}",
+    "repsTarget": "{{target}} repetições",
+    "noTarget": "sem alvo",
     "interval": "{{variant}} · {{progress}}",
     "round": "rodada {{index}} de {{total}}",
     "seconds": "{{n}}s"

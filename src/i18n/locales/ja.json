@@ -397,6 +397,9 @@
       "setLoaded": "{{index}}セット目 · {{reps}} × {{weight}}",
       "setBodyweight": "{{index}}セット目 · {{reps}}",
       "setHold": "{{index}}セット目 · {{seconds}}",
+      "roundLoaded": "{{index}}ラウンド目 · {{reps}} × {{weight}}",
+      "roundBodyweight": "{{index}}ラウンド目 · {{reps}}",
+      "roundHold": "{{index}}ラウンド目 · {{seconds}}",
       "round": "{{index}}ラウンド目",
       "minute": "{{index}}分目",
       "rest": "休憩"
@@ -978,9 +981,10 @@
     "metres": "m"
   },
   "preview": {
-    "hold": "ホールド · {{total}}セット中{{index}}セット目 · 目標{{target}}",
-    "holdOpen": "ホールド · {{total}}セット中{{index}}セット目 · 目標なし",
-    "reps": "レップ · {{total}}セット中{{index}}セット目 · 目標{{target}}",
+    "set": "{{total}}セット中{{index}}セット目",
+    "roundOf": "{{total}}ラウンド中{{index}}ラウンド目",
+    "repsTarget": "{{target}}レップ",
+    "noTarget": "目標なし",
     "interval": "{{variant}} · {{progress}}",
     "round": "{{total}}ラウンド中{{index}}ラウンド目",
     "seconds": "{{n}}秒"

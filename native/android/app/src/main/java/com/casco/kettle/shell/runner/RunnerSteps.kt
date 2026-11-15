@@ -128,7 +128,8 @@ private fun RestHeader(
         style = KettleType.heading,
         color = runnerColors.text,
     )
-    Secondary(resources.previewDetail(next))
+    val readings = context.readings
+    Secondary(resources.previewDetail(next, readings.nextCircuit, readings.nextLoadKg, context.units))
 }
 
 /**

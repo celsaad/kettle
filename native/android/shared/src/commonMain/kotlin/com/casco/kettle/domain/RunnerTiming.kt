@@ -72,13 +72,7 @@ private fun seededInputs(
             is RunnerStep.Interval -> step.targetReps ?: 0
             else -> 0
         }
-    val weightKg =
-        if (step is RunnerStep.Reps) {
-            val carried = (state.memberEntry(step.memberKey) as? SessionEntry.Reps)?.sets?.lastOrNull()?.weightKg
-            carried ?: step.targetWeightKg ?: 0.0
-        } else {
-            inputs.weightKg
-        }
+    val weightKg = if (step is RunnerStep.Reps) state.openingLoadKg(step) ?: 0.0 else inputs.weightKg
     return inputs.copy(reps = reps, weightKg = weightKg, rpe = null, roundsCompleted = 0, extraReps = 0)
 }
 
@@ -187,3 +181,10 @@ private fun cued(
     val effects = cues.map(RunnerEffect::PlayCue)
     return if (next == marks) unchanged(state) else RunnerTransition(state.copy(cues = next), effects)
 }
+
+/**
+ * The load [step] opens on: its member's last logged set's, else its target; null with neither. The set
+ * seeds it, and the rest before says it (#473), so the two can't disagree.
+ */
+fun RunnerState.openingLoadKg(step: RunnerStep.Reps): Double? =
+    (memberEntry(step.memberKey) as? SessionEntry.Reps)?.sets?.lastOrNull()?.weightKg ?: step.targetWeightKg

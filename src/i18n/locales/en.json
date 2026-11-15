@@ -423,6 +423,9 @@
       "setLoaded": "set {{index}} · {{reps}} × {{weight}}",
       "setBodyweight": "set {{index}} · {{reps}}",
       "setHold": "set {{index}} · {{seconds}}",
+      "roundLoaded": "round {{index}} · {{reps}} × {{weight}}",
+      "roundBodyweight": "round {{index}} · {{reps}}",
+      "roundHold": "round {{index}} · {{seconds}}",
       "round": "round {{index}}",
       "minute": "minute {{index}}",
       "rest": "rest"
@@ -1040,9 +1043,10 @@
     "metres": "m"
   },
   "preview": {
-    "hold": "hold · set {{index}} of {{total}} · target {{target}}",
-    "holdOpen": "hold · set {{index}} of {{total}} · no target",
-    "reps": "reps · set {{index}} of {{total}} · target {{target}}",
+    "set": "Set {{index}} of {{total}}",
+    "roundOf": "Round {{index}} of {{total}}",
+    "repsTarget": "{{target}} reps",
+    "noTarget": "no target",
     "interval": "{{variant}} · {{progress}}",
     "round": "round {{index}} of {{total}}",
     "seconds": "{{n}}s"

@@ -20,15 +20,6 @@ fun upcomingStep(
     return if (next is RunnerStep.Rest) steps.getOrNull(index + 2) else next
 }
 
-/**
- * Whether a rest follows [index], which the reps button names ("Log set → Rest"). It can't be
- * assumed: back-to-back sets (`rest_sec: 0`) emit no rest step at all.
- */
-fun restFollows(
-    steps: List<RunnerStep>,
-    index: Int,
-): Boolean = steps.getOrNull(index + 1) is RunnerStep.Rest
-
 /** A hold's target: [minSec] alone, or a range. A 0 maximum is no maximum, as JS's falsy test has it. */
 data class HoldTarget(
     val minSec: Double,

@@ -366,7 +366,7 @@
     "rest": {
       "remaining": "of {{total}} remaining",
       "add30": "+30s",
-      "skip": "Skip rest →",
+      "skip": "Skip rest",
       "minus15": "−15s"
     },
     "interval": {
@@ -391,8 +391,7 @@
       "increaseLoad": "Increase load",
       "adoptPrevious": "Use last time's load, {{weight}} {{unit}}, and save it as the new target",
       "beatsBest": "Beats your best",
-      "logSet": "Log set → Rest",
-      "logSetNoRest": "Log set →",
+      "logSet": "Log set",
       "repsDone": "Reps done",
       "loadLabel": "Load",
       "repsLabel": "Reps",

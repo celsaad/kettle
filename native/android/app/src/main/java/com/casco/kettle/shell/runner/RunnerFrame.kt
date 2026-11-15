@@ -31,7 +31,7 @@ import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.RunnerCommand
 import com.casco.kettle.domain.RunnerPlan
 import com.casco.kettle.domain.RunnerStep
-import com.casco.kettle.domain.blockTotal
+import com.casco.kettle.domain.workProgress
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.theme.DialogAction
 import com.casco.kettle.shell.theme.KettleType
@@ -70,7 +70,7 @@ internal fun Frame(
     // clear of the status bar. The progress bar runs full width under it, then the step's own header.
     Column(hidden.fillMaxSize().padding(bottom = Spacing.three)) {
         Header(view, Overlay.UPCOMING in open, controls)
-        ProgressTrack(blockTotal(view.snapshot), step.blockIndex)
+        workProgress(view.snapshot.steps, view.snapshot.stepIndex).let { ProgressTrack(it.done, it.total) }
         Spacer(Modifier.height(Spacing.three))
         Box(Modifier.weight(1f)) {
             when (step) {
@@ -149,7 +149,8 @@ internal fun EndPill(onClick: () -> Unit) {
 
 /**
  * The workout's name in the top bar, the running session's and the count-in's alike, so the two can't
- * drift apart: one line, quiet, ellipsized.
+ * drift apart: one line, ellipsized, in ink at `rowLabel` as the board draws it (#476). The step's 26sp
+ * name below still leads.
  */
 @Composable
 internal fun TopBarName(
@@ -159,8 +160,8 @@ internal fun TopBarName(
     Text(
         name,
         modifier,
-        style = KettleType.small,
-        color = runnerColors.textSecondary,
+        style = KettleType.rowLabel,
+        color = runnerColors.text,
         maxLines = 1,
         overflow = TextOverflow.Ellipsis,
     )
@@ -169,7 +170,8 @@ internal fun TopBarName(
 /** A down chevron, drawn: RN's is an SVG path, and a text glyph would change with the font. */
 @Composable
 private fun Chevron() {
-    val color = runnerColors.textSecondary
+    // The name's own ink, as the board draws it (#476).
+    val color = runnerColors.text
     Canvas(Modifier.size(12.dp)) {
         val stroke = 1.5.dp.toPx()
         val w = size.width

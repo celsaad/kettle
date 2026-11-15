@@ -90,9 +90,8 @@ internal fun Numeral(
 internal fun Caps(
     label: String,
     modifier: Modifier = Modifier,
-    tracking: TextUnit = CapsTracking,
 ) {
-    Text(label, modifier, style = QuietStyle.copy(letterSpacing = tracking))
+    Text(label, modifier, style = QuietStyle.copy(letterSpacing = CapsTracking))
 }
 
 /**
@@ -168,7 +167,7 @@ internal fun ProgressTrack(
 
 /**
  * The author's note, capped at two lines so it can't push what's being counted down the screen. Plain, as
- * the board sets it (#477): italic was hard to read mid-set.
+ * the board sets it (#477).
  */
 @Composable
 internal fun StepNotes(notes: String?) {

@@ -211,9 +211,10 @@ here, next to what it describes.
   sets and rounds you've done, the same count Coming up shows, and it now appears in a workout of
   one exercise with several sets or minutes, such as an EMOM. The workout's name above it reads more
   clearly, and the main buttons say just "Log set" and "Skip rest" (#476).
-- **Steadier session screens**: an EMOM's and an AMRAP's rep counters look like the weight one, with
-  square buttons at the edges, and an exercise's notes are no longer in italics. While you rest out an
-  EMOM minute the notes step aside, and a rest shows just its countdown. Seconds read "45 s" (#477).
+- **Matching counters**: an EMOM's and an AMRAP's rep counters look like the weight one, with square
+  buttons at the edges, and an exercise's notes are no longer in italics. While you rest out an EMOM
+  minute the notes step aside, a rest no longer repeats its length under the countdown, and times in
+  seconds have a space, "60 s rest" (#477).
 
 ---
 

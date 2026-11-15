@@ -288,8 +288,11 @@ private fun Stepper(
                 }.semantics(mergeDescendants = true) { contentDescription = description },
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Secondary(name)
-            Text("$value", style = KettleType.heading.copy(fontSize = STEPPER_VALUE), color = runnerColors.text)
+            // Centred like the value under it, should the name wrap at large text.
+            Text(name, style = KettleType.small, color = runnerColors.textSecondary, textAlign = TextAlign.Center)
+            // A Numeral, so its size stops at 1.3× the text size: the runner doesn't scroll, and at 200% the
+            // full-size value pushed the bottom row's labels off a short screen.
+            Numeral("$value", STEPPER_VALUE, color = runnerColors.text)
         }
         SymbolButton(R.drawable.icon_add, stringResource(R.string.common_increase, name), {
             set(value + 1)

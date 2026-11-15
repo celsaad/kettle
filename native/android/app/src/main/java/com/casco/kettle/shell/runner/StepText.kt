@@ -22,7 +22,7 @@ fun formatClock(totalSeconds: Double): String {
     return "${whole / SECONDS_PER_MINUTE}:${(whole % SECONDS_PER_MINUTE).toString().padStart(2, '0')}"
 }
 
-/** "15s" or "15–25s", as RN's `formatHoldTarget`. */
+/** "15 s" or "15–25 s", as RN's `formatHoldTarget`. */
 fun Resources.holdTargetText(target: HoldTarget): String =
     getString(
         R.string.format_seconds,
@@ -107,7 +107,7 @@ fun Resources.upcomingDetail(item: UpcomingItem.Exercise): String {
 }
 
 /**
- * "hiit · round 2 of 4", "emom · 30s" or "cardio · counting up": the variant as its YAML id, as RN
+ * "hiit · round 2 of 4", "emom · 30 s" or "cardio · counting up": the variant as its YAML id, as RN
  * puts it, then how far in. [rounds] says the round when there are several; Coming up's targets don't.
  */
 internal fun Resources.intervalLine(

@@ -171,15 +171,13 @@ internal fun TextControl(
 /**
  * How a round control is drawn: its circle's [size], which can be smaller than the 48dp it takes to
  * touch (#263: RN's set row drew 26px with overlapping slop), the type its symbol is sized by, whether
- * it's the accented one of a pair, as a stepper's + is, whether it is [filled] with the field, and where
- * in its target it sits. The symbol is the field's secondary colour, or its accent: read as it's drawn,
- * since the field changes under a look that doesn't.
+ * it is [filled] with the field, and where in its target it sits. The symbol is the field's secondary
+ * colour, read as it's drawn, since the field changes under a look that doesn't.
  */
 internal data class SymbolLook(
     val size: Dp,
     val symbolType: TextStyle = KettleType.heading,
     val border: Dp = 1.dp,
-    val accent: Boolean = false,
     val filled: Boolean = false,
     val placement: CirclePlacement = CirclePlacement.CENTRE,
     val shape: Shape = CircleShape,
@@ -230,7 +228,7 @@ internal fun SymbolButton(
     look: SymbolLook = SymbolLook.Small,
 ) {
     RoundButton(description, onClick, enabled, look) {
-        TypeIcon(symbol, look.symbolType, if (look.accent) runnerColors.accent else runnerColors.textSecondary)
+        TypeIcon(symbol, look.symbolType, runnerColors.textSecondary)
     }
 }
 
@@ -251,14 +249,6 @@ private fun RoundButton(
             .semantics { contentDescription = description },
         contentAlignment = look.placement.alignment,
     ) {
-        val accentBorder =
-            if (look.accent) {
-                runnerColors.accent.copy(
-                    alpha = SOFT_BORDER_ALPHA,
-                )
-            } else {
-                runnerColors.outline
-            }
         val fill = if (look.filled) runnerColors.background else Color.Transparent
         Box(
             Modifier
@@ -267,8 +257,8 @@ private fun RoundButton(
                 .padding(start = look.placement.startInset, end = look.placement.endInset)
                 .sizeIn(minWidth = look.size, minHeight = look.size)
                 .clip(look.shape)
-                .background(if (look.accent) runnerColors.accentSoft else fill)
-                .border(look.border, accentBorder, look.shape),
+                .background(fill)
+                .border(look.border, runnerColors.outline, look.shape),
             contentAlignment = Alignment.Center,
         ) {
             content()
@@ -279,6 +269,3 @@ private fun RoundButton(
 private val PAIR_INSET = 4.dp
 private const val DISABLED_ALPHA = 0.4f
 private val OUTLINE_PAD = 12.dp
-
-/** RN's 0.4 outline on a soft fill, `rgba(207,106,55,0.4)` or the calm blue's: the tint at 40%. */
-internal const val SOFT_BORDER_ALPHA = 0.4f

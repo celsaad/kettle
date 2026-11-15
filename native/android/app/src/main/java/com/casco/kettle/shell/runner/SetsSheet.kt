@@ -285,7 +285,7 @@ private fun SetDot(row: SetRow) {
     }
 }
 
-/** What a logged set was: "10 × 48.5 lb", "8 reps" for bodyweight (a bare number read as nothing), "45s". */
+/** What a logged set was: "10 × 48.5 lb", "8 reps" for bodyweight (a bare number read as nothing), "45 s". */
 private fun Resources.loggedText(
     set: PreviousSet,
     context: StepContext,

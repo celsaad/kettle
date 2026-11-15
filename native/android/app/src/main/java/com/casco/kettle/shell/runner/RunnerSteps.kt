@@ -1,13 +1,17 @@
 package com.casco.kettle.shell.runner
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -26,9 +30,11 @@ import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.Spacing
 
 /**
- * Top, middle, the Next card and the controls, spread down the screen: no scroll, as RN's. The top
- * block is RN's 4dp rhythm, the name and last time's row taking a step more; [middleGap] is the reps
- * screen's wider one. The controls sit 14dp under the card and 8dp apart, as RN's Done under Pause.
+ * Top, middle and the controls down the screen: the middle centred in the room between, and scrolling
+ * once it can't fit, so the controls are always on screen. At 200% text on a short phone a paused EMOM's
+ * line, clock, hint and stepper pushed Back and Done off the bottom (#477). The top block is RN's 4dp
+ * rhythm, the name and last time's row taking a step more; [middleGap] is the reps screen's wider one.
+ * The controls sit 8dp apart, as RN's Done under Pause.
  */
 @Composable
 internal fun StepLayout(
@@ -37,14 +43,19 @@ internal fun StepLayout(
     controls: @Composable ColumnScope.() -> Unit,
     middleGap: Dp = Spacing.two,
 ) {
-    Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.SpaceBetween) {
+    Column(Modifier.fillMaxSize()) {
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.one), content = top)
-        Column(
-            Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(middleGap),
-            content = middle,
-        )
+        BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+                    .heightIn(min = maxHeight),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(middleGap, Alignment.CenterVertically),
+                content = middle,
+            )
+        }
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.two), content = controls)
     }
 }

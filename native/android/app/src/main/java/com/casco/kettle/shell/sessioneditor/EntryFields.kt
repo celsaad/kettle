@@ -5,7 +5,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import com.casco.kettle.domain.EntryField
 import com.casco.kettle.domain.EntryProblem
+import com.casco.kettle.domain.Library
+import com.casco.kettle.domain.LocatedProblem
 import com.casco.kettle.domain.UnitSystem
+import com.casco.kettle.domain.exerciseName
 import com.casco.kettle.domain.jsNumber
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.form.withUnit
@@ -76,3 +79,24 @@ private val EntryField.label: Int
             EntryField.Duration -> R.string.sessionEditor_field_duration
             EntryField.Distance -> R.string.sessionEditor_field_distance
         }
+
+@Composable
+internal fun refusalText(
+    editor: Editor,
+    library: Library,
+): String? =
+    editor.problem?.let { locatedText(it, editor, library) }
+        ?: editor.failure?.let { stringResource(R.string.common_saveFailed, it) }
+
+/** "Push-ups, set 2: Fill in Reps.", the exercise's name the user's, verbatim. */
+@Composable
+private fun locatedText(
+    located: LocatedProblem,
+    editor: Editor,
+    library: Library,
+): String {
+    val name = exerciseName(library.exercises, editor.drafts[located.draft].entry.exercise)
+    val problem = problemText(located.problem)
+    return located.row?.let { stringResource(R.string.sessionEditor_problemInSet, "${it + 1}", name, problem) }
+        ?: stringResource(R.string.sessionEditor_problemIn, name, problem)
+}

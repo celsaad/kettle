@@ -819,7 +819,9 @@
     "noValue": "nenhum",
     "removeSetOf": "Remover série {{n}} de {{name}}",
     "removeEntryOf": "Remover {{name}}",
-    "addSetTo": "Adicionar uma série a {{name}}"
+    "addSetTo": "Adicionar uma série a {{name}}",
+    "problemInSet": "{{name}}, série {{n}}: {{problem}}",
+    "problemIn": "{{name}}: {{problem}}"
   },
   "exerciseArt": {
     "pushups": "Flexão: mãos sob os ombros, corpo em linha reta do calcanhar à cabeça.",

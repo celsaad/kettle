@@ -156,6 +156,8 @@ private fun Stepper(
         }
         Text(
             shown,
+            // A live region still: TalkBack doesn't speak a focused button's state change (checked on the
+            // AVD for #456), so this is what says "4" after a press; the buttons' state says it on focus.
             Modifier.widthIn(min = VALUE_WIDTH).semantics { liveRegion = LiveRegionMode.Polite },
             style = KettleType.heading,
             color = KettleTheme.colors.text,

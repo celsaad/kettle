@@ -28,10 +28,14 @@ internal fun blockTarget(
 
         // "hold", as a circuit's member line says it (#456): "3 × 0:20" alone read as a time of anything.
         is ExerciseConfig.TimedHold -> {
-            config.holdSecMin
-                ?.let { stringResource(R.string.workoutEditor_targetHold, holdText(config), config.sets) }
-                ?.plus(restSuffix(config.restSec))
-                ?: (stringResource(R.string.workoutEditor_targetHoldOpen, config.sets) + restSuffix(config.restSec))
+            val min = config.holdSecMin
+            val hold =
+                if (min == null) {
+                    stringResource(R.string.workoutEditor_targetHoldOpen, config.sets)
+                } else {
+                    stringResource(R.string.workoutEditor_targetHold, holdText(min, config.holdSecMax), config.sets)
+                }
+            hold + restSuffix(config.restSec)
         }
 
         else -> {
@@ -57,7 +61,12 @@ internal fun memberTarget(
         }
 
         is ExerciseConfig.TimedHold -> {
-            config.holdSecMin?.let { stringResource(R.string.workoutEditor_memberHold, holdText(config)) }
+            config.holdSecMin?.let {
+                stringResource(
+                    R.string.workoutEditor_memberHold,
+                    holdText(it, config.holdSecMax),
+                )
+            }
                 ?: stringResource(R.string.workoutEditor_memberHoldOpen)
         }
 
@@ -66,12 +75,13 @@ internal fun memberTarget(
         }
     }
 
-/** "0:20–0:45", or "0:30" for a fixed hold, or "max hold" for none. */
-@Composable
-private fun holdText(config: ExerciseConfig.TimedHold): String {
-    val min = config.holdSecMin ?: return stringResource(R.string.workoutEditor_memberHoldOpen)
-    val max = config.holdSecMax?.takeIf { it != 0.0 }
-    return if (max == null) clock(min) else "${clock(min)}–${clock(max)}"
+/** "0:20–0:45", or "0:30" for a fixed hold: a hold with no target says so in its own words. */
+private fun holdText(
+    min: Double,
+    max: Double?,
+): String {
+    val top = max?.takeIf { it != 0.0 }
+    return if (top == null) clock(min) else "${clock(min)}–${clock(top)}"
 }
 
 /** A time as the picker shows it, to the whole second it rounds to: a file's 74.6 s reads 1:15 on both. */

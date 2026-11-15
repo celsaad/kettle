@@ -31,8 +31,8 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.EntryField
-import com.casco.kettle.domain.EntryProblem
 import com.casco.kettle.domain.Library
+import com.casco.kettle.domain.LocatedProblem
 import com.casco.kettle.domain.RemovedSet
 import com.casco.kettle.domain.Session
 import com.casco.kettle.domain.SessionEditing
@@ -126,7 +126,7 @@ fun SessionEditorScreen(
             EditorTitleBar(
                 stringResource(R.string.sessionEditor_title),
                 editor?.let { it::save },
-                editor?.let { refusalText(it) },
+                editor?.let { refusalText(it, library) },
             )
         }
         Box(
@@ -211,7 +211,7 @@ internal class Editor(
     /** The one cell being edited, if any: one at a time, as the board has it. */
     var editingCell by mutableStateOf<CellKey?>(null)
         private set
-    var problem by mutableStateOf<EntryProblem?>(null)
+    var problem by mutableStateOf<LocatedProblem?>(null)
         private set
     var failure by mutableStateOf<String?>(null)
         private set
@@ -383,10 +383,6 @@ private fun ReadOnlyEntry(
     Text(result, style = KettleType.smallMedium, color = KettleTheme.colors.text)
     Secondary(stringResource(R.string.sessionEditor_readOnlyNote))
 }
-
-@Composable
-private fun refusalText(editor: Editor): String? =
-    editor.problem?.let { problemText(it) } ?: editor.failure?.let { stringResource(R.string.common_saveFailed, it) }
 
 /** Which cell is being edited: an entry's draft, a row of it, and a field of the row. */
 internal data class CellKey(

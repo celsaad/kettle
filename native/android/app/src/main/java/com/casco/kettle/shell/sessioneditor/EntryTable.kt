@@ -21,13 +21,16 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.EntryField
 import com.casco.kettle.domain.SetForm
@@ -92,7 +95,7 @@ private fun HeaderRow(context: TableContext) {
         if (context.perSet) {
             Text(
                 stringResource(R.string.sessionEditor_colSet),
-                Modifier.width(SET_WIDTH),
+                Modifier.width(setWidth()),
                 style = KettleType.small,
                 color = colors.textSecondary,
             )
@@ -129,7 +132,7 @@ private fun SetRow(
     ListRowSeparator()
     Row(Modifier.fillMaxWidth().heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically) {
         if (context.perSet) {
-            Text("${row + 1}", Modifier.width(SET_WIDTH), style = KettleType.default, color = colors.textSecondary)
+            Text("${row + 1}", Modifier.width(setWidth()), style = KettleType.default, color = colors.textSecondary)
         }
         for (field in context.fields) Cell(context, row, form, field, setLabel)
         // Named by its set and its exercise, "Remove set 2 of Back Squat": every row has the same ×.
@@ -272,7 +275,20 @@ private fun InlineField(
     }
 }
 
-private val SET_WIDTH = 36.dp
+/**
+ * The set column: as wide as its heading, measured, and never under 36dp. A fixed width broke "Série"
+ * mid-word at 200% text (#456, on the AVD), and a width in sp only guessed at the face's letters.
+ */
+@Composable
+private fun setWidth(): Dp {
+    val density = LocalDensity.current
+    val measurer = rememberTextMeasurer()
+    val heading = stringResource(R.string.sessionEditor_colSet)
+    val px = remember(heading, density) { measurer.measure(heading, KettleType.small).size.width }
+    return maxOf(MIN_SET_WIDTH, with(density) { px.toDp() })
+}
+
+private val MIN_SET_WIDTH = 36.dp
 private val REMOVE_WIDTH = 44.dp
 
 /** A blank value's dash, as the log's own tables write none: a placeholder, not an icon, so read as "none". */

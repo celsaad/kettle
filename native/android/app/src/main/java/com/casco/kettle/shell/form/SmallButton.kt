@@ -19,13 +19,11 @@ import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.Spacing
 
 /**
- * Import's and the YAML view's outlined button (#456: the view's own was the same at 48dp); a
- * [modifier] sizes it, its label centred.
- *
- * The outlined small button the copies and the clipboard paste share, named by its own text. Not a
- * live region, though "Copied" changes its words under focus: from Android 13 the system announces a
- * copy itself, and on a device a live region here was read on the way back to idle, not on "Copied"
- * (Compose fires from the node's previous state). The route confirms a copy below 13 instead.
+ * The outlined small button of Import's copies and paste and the YAML view's Copy and Share, named by
+ * its own text; a [modifier] sizes it, its label centred. Not a live region, though Import's "Copied"
+ * changes its words under focus: from Android 13 the system announces a copy itself, and on a device a
+ * live region here was read on the way back to idle, not on "Copied" (Compose fires from the node's
+ * previous state). Import's route confirms a copy below 13 instead.
  */
 @Composable
 internal fun SmallButton(

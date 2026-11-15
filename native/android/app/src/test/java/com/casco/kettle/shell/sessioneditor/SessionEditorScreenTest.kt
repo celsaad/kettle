@@ -180,7 +180,7 @@ class SessionEditorScreenTest {
         type("Série 1 · Esforço", "88")
         press("Salvar")
 
-        compose.onNodeWithText("Esforço pode ser no máximo 10.").assertExists()
+        compose.onNodeWithText("Back Squat, série 1: Esforço pode ser no máximo 10.").assertExists()
         assertEquals(emptyList<Session>(), files.written)
         assertEquals(0, closed)
     }
@@ -492,7 +492,8 @@ class SessionEditorScreenTest {
         type("Série 1 · Reps", "")
         press("Salvar")
 
-        compose.onNodeWithText("Preencha o campo Reps.").assertExists()
+        // Where, too: with several tables, the field alone left the cell to be hunted for (#456).
+        compose.onNodeWithText("Back Squat, série 1: Preencha o campo Reps.").assertExists()
     }
 
     // a11y

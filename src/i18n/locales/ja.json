@@ -719,7 +719,9 @@
     "noValue": "なし",
     "removeSetOf": "{{name}}のセット{{n}}を削除",
     "removeEntryOf": "{{name}}を削除",
-    "addSetTo": "{{name}}にセットを追加"
+    "addSetTo": "{{name}}にセットを追加",
+    "problemInSet": "{{name}}のセット{{n}}：{{problem}}",
+    "problemIn": "{{name}}：{{problem}}"
   },
   "exerciseArt": {
     "pushups": "腕立て伏せ：手は肩の真下、かかとから頭まで一直線の姿勢。",

@@ -115,4 +115,5 @@ internal const val FORMAT_URL = "https://celsaad.github.io/kettle/format.html"
 
 private const val COPIED_FOR_MS = 2000L
 
+// A sentence saying why it copied, or that it couldn't: three times "Copied"'s time, to be read.
 private const val NOTE_FOR_MS = 6000L

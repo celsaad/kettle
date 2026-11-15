@@ -434,8 +434,21 @@ class SessionEntryFormTest {
             val drafts = editable().drafts.toMutableList()
             drafts[1] = drafts[1].copy(forms = listOf(SetForm(mapOf(EntryField.Hold to ""), 60.0)))
 
-            assertEquals(EntryProblem.Required(EntryField.Hold), firstProblem(drafts))
+            assertEquals(LocatedProblem(1, 0, EntryProblem.Required(EntryField.Hold)), firstProblem(drafts))
             assertNull(firstProblem(editable().drafts))
+        }
+
+        // "Fill in Reps" named no set: the row is the one whose value is missing, not the first.
+        @Test
+        fun `locates a problem at the row that has it`() {
+            val drafts = editable().drafts.toMutableList()
+            val forms = drafts[0].forms
+            drafts[0] =
+                drafts[0].copy(
+                    forms = listOf(forms[0], forms[1].copy(values = forms[1].values + (EntryField.Reps to ""))),
+                )
+
+            assertEquals(LocatedProblem(0, 1, EntryProblem.Required(EntryField.Reps)), firstProblem(drafts))
         }
 
         // The runner owns an in-flight session's file and writes through its own copy of it, so an edit

@@ -769,7 +769,9 @@
     "noValue": "none",
     "removeSetOf": "Remove set {{n}} of {{name}}",
     "removeEntryOf": "Remove {{name}}",
-    "addSetTo": "Add a set to {{name}}"
+    "addSetTo": "Add a set to {{name}}",
+    "problemInSet": "{{name}}, set {{n}}: {{problem}}",
+    "problemIn": "{{name}}: {{problem}}"
   },
   "exerciseArt": {
     "pushups": "Push-up: hands under the shoulders, body in a straight line from heel to head.",

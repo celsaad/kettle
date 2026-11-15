@@ -40,10 +40,19 @@ import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.Spacing
 
 /**
- * What a picker is open for: one exercise to add, as a block or, with a [Pickers.target], to that
- * circuit (#440), or the exercises of a new circuit.
+ * What a picker is open for: one exercise to add as a block, the exercises of a new circuit, or one
+ * exercise into the circuit keyed [IntoCircuit.key] (#440). Two circuits' pickers are told apart by that
+ * key, being data: opening one closes the other, and the footer's.
  */
-internal enum class PickerMode { Block, Circuit }
+internal sealed interface PickerMode {
+    data object Block : PickerMode
+
+    data object Circuit : PickerMode
+
+    data class IntoCircuit(
+        val key: Int,
+    ) : PickerMode
+}
 
 /**
  * Which picker is open, the circuit members picked so far, and whether the quick-add form is up: the
@@ -57,10 +66,6 @@ internal class Pickers {
     var quickAdd by mutableStateOf(false)
         private set
 
-    /** The circuit a [PickerMode.Block] pick goes into, by its key; null for a new block at the end. */
-    var target by mutableStateOf<Int?>(null)
-        private set
-
     /**
      * The quick-add's values, held here rather than in the form: the form sits in a lazy list item,
      * which is disposed once scrolled out of view, and a refused create must keep what was typed.
@@ -69,28 +74,20 @@ internal class Pickers {
         private set
 
     /**
-     * Opens [mode]'s picker for [target], or closes it if that one was open, starting it empty either
-     * way: one picker at a time, so opening a circuit's closes the footer's.
+     * Opens [mode]'s picker, or closes it if that one was open, starting it empty either way: one picker
+     * at a time, so opening a circuit's closes the footer's.
      */
-    fun toggle(
-        mode: PickerMode,
-        target: Int? = null,
-    ) {
-        val same = open == mode && this.target == target
-        open = if (same) null else mode
-        this.target = if (same) null else target
+    fun toggle(mode: PickerMode) {
+        open = if (open == mode) null else mode
         selection = emptyList()
         showQuickAdd(false)
     }
 
-    /** Whether [mode]'s picker is open for [target]. */
-    fun isOpen(
-        mode: PickerMode,
-        target: Int? = null,
-    ) = open == mode && this.target == target
+    /** Whether [mode]'s picker is the open one: a circuit's by its key. */
+    fun isOpen(mode: PickerMode) = open == mode
 
     fun close() {
-        open?.let { toggle(it, target) }
+        open?.let { toggle(it) }
     }
 
     fun toggleMember(exerciseId: String) {
@@ -105,9 +102,10 @@ internal class Pickers {
 }
 
 /**
- * The editor's exercise picker, as RN's `ExercisePicker`, in its two modes. A row adds a block in
- * [PickerMode.Block]; in [PickerMode.Circuit] it toggles a member, and a confirm builds the circuit
- * from two or more. No search, as RN's had none: the feature freeze ports it as it is.
+ * The editor's exercise picker, as RN's `ExercisePicker`. A row adds a block in [PickerMode.Block], or a
+ * member to its circuit in [PickerMode.IntoCircuit]; in [PickerMode.Circuit] it toggles a member of a
+ * new circuit, and a confirm builds it from two or more. No search, as RN's had none: the feature
+ * freeze ports it as it is.
  *
  * The quick-add form replaces the list while it is up, so the workout being built isn't left for the
  * exercise editor. It stays up until the create's write lands, so a refused one keeps its values.
@@ -140,7 +138,7 @@ internal fun ExercisePicker(
         NewExerciseButton { pickers.showQuickAdd(true) }
         for (exercise in context.exercises) {
             when (mode) {
-                PickerMode.Block -> {
+                PickerMode.Block, is PickerMode.IntoCircuit -> {
                     PickerRow(exercise, Modifier.clickable(role = Role.Button) { actions.pick(exercise.id) })
                 }
 

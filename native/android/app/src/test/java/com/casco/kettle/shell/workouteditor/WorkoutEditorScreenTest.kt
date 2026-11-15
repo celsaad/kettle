@@ -1,32 +1,22 @@
 package com.casco.kettle.shell.workouteditor
 
-import androidx.compose.ui.focus.FocusManager
-import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsActions
-import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
-import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertWidthIsAtLeast
-import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasScrollToNodeAction
 import androidx.compose.ui.test.hasText
-import androidx.compose.ui.test.isDialog
 import androidx.compose.ui.test.isHeading
-import androidx.compose.ui.test.junit4.ComposeContentTestRule
-import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToIndex
-import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.CircuitMember
@@ -37,21 +27,13 @@ import com.casco.kettle.domain.Program
 import com.casco.kettle.domain.ProgramWeek
 import com.casco.kettle.domain.Workout
 import com.casco.kettle.domain.WorkoutBlock
-import com.casco.kettle.shell.files.FakeStoredFiles
-import com.casco.kettle.shell.files.LatestFiles
-import com.casco.kettle.shell.theme.KettleTheme
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asCoroutineDispatcher
 import org.junit.Assert.assertEquals
-import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import java.io.IOException
-import java.util.concurrent.Executor
 
 /**
  * The workout editor (#242), case for case from RN's `workout-editor.test.tsx`, plus the move half of
@@ -65,107 +47,7 @@ import java.util.concurrent.Executor
 // Tall, as the program editor's: Save is pinned over the list, and a row scrolled to the top would
 // sit under it, its tap landing on the bar.
 @Config(qualifiers = "pt-w400dp-h4000dp")
-class WorkoutEditorScreenTest {
-    @get:Rule
-    val compose = createComposeRule()
-
-    private var closed = 0
-
-    private lateinit var latest: LatestFiles
-
-    private lateinit var focus: FocusManager
-
-    private fun show(
-        id: String? = null,
-        files: Files = Files(),
-        io: CoroutineDispatcher = Dispatchers.Unconfined,
-    ): Files {
-        latest = LatestFiles(files, CoroutineScope(Dispatchers.Unconfined), io = io).apply { reread() }
-        compose.setContent {
-            focus = LocalFocusManager.current
-            KettleTheme(darkTheme = false) {
-                WorkoutEditorScreen(
-                    id,
-                    latest,
-                    WorkoutEditorActions(close = { closed += 1 }),
-                )
-            }
-        }
-        return files
-    }
-
-    /**
-     * [matcher]'s node, scrolled into the list first: a `LazyColumn` composes only what's on screen,
-     * so a row below the fold isn't in the tree to find until the list has been scrolled to it.
-     */
-    private fun node(matcher: SemanticsMatcher): SemanticsNodeInteraction {
-        compose.onNode(hasScrollToNodeAction()).performScrollToNode(matcher)
-        return compose.onNode(matcher)
-    }
-
-    private fun named(label: String) = node(hasText(label) or hasContentDescription(label))
-
-    private fun press(label: String) =
-        node((hasText(label) or hasContentDescription(label)) and isControl).performClick()
-
-    private fun type(
-        name: String,
-        text: String,
-    ) = node(hasContentDescription(name)).performTextReplacement(text)
-
-    /** jest's `pressAlertButton`: a button inside the dialog, never a same-named one on the screen under it. */
-    private fun ComposeContentTestRule.pressDialogButton(label: String) =
-        onNode(hasText(label) and hasAnyAncestor(isDialog())).performClick()
-
-    /** A control inside the dialog, by its words or its name: the time picker's steppers. */
-    private fun pressInDialog(label: String) =
-        compose.onNode((hasText(label) or hasContentDescription(label)) and hasAnyAncestor(isDialog())).performClick()
-
-    private val isControl =
-        SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button) or
-            SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Checkbox)
-
-    /**
-     * Runs [io]'s queued file work, and the main thread's after it, until neither has any: a write's
-     * continuation resumes on the main thread, and may queue the next write.
-     */
-    private fun settle(io: Steps) {
-        repeat(SETTLE_ROUNDS) {
-            io.run()
-            compose.waitForIdle()
-        }
-    }
-
-    private fun grip(name: String) = named("Reordenar $name")
-
-    /** The blocks on screen, by their grips: the board drops RN's "3 blocks" line. */
-    private fun blockCount() =
-        compose.onAllNodes(hasContentDescription("Reordenar", substring = true)).fetchSemanticsNodes().size
-
-    /**
-     * Runs the grip's custom action [label], as TalkBack's Actions menu does. Through the semantics
-     * themselves, not `performCustomAccessibilityActionWithLabel`, which is experimental API.
-     */
-    private fun SemanticsNodeInteraction.moveWith(label: String) {
-        val action = fetchSemanticsNode().config[SemanticsActions.CustomActions].single { it.label == label }
-        compose.runOnIdle { action.action() }
-    }
-
-    private fun Files.savedWorkout(id: String) = written.last().workouts.single { it.id == id }
-
-    private fun addBlocks(vararg names: String) {
-        for (name in names) {
-            press("+ Adicionar exercício")
-            press(name)
-        }
-    }
-
-    private fun buildCircuit(vararg names: String) {
-        press("+ Adicionar circuito")
-        for (name in names) press(name)
-        press("Adicionar circuito (${names.size})")
-    }
-
+class WorkoutEditorScreenTest : WorkoutEditorHarness() {
     // A hold row said "3 × 0:30" and nothing else: a time of what? A circuit's member line says "hold".
     @Test
     fun `says hold on a hold's row, and max hold for one with no target`() {
@@ -873,63 +755,36 @@ class WorkoutEditorScreenTest {
         named("Fechar").assert(SemanticsMatcher.keyIsDefined(SemanticsActions.Collapse))
     }
 
-    private class Files(
-        private val workouts: List<Workout> = emptyList(),
-        private val programs: List<Program> = emptyList(),
-    ) : FakeStoredFiles() {
-        private var library = Library(1, listOf(pullUps, dips, rows, rest), workouts, programs)
-        val written = mutableListOf<Library>()
+    // One picker at a time: a circuit's takes over from the footer's, and the footer's back from it.
+    @Test
+    fun `hands the open picker between the footer and a circuit`() {
+        show()
+        buildCircuit("Pull-ups", "Dips")
 
-        /** Thrown by the next write, as a full disk would. */
-        var failure: IOException? = null
+        press("+ Adicionar exercício")
+        press("+ Adicionar exercício ao circuito")
+        named("+ Adicionar exercício").assertExists()
+        press("+ Adicionar exercício")
 
-        override fun library() = library
+        named("+ Adicionar exercício ao circuito").assertExists()
+        compose.onAllNodes(hasText("Fechar") and isControl).assertCountEquals(1)
+    }
 
-        /** RN writing the library behind the editor's back, as `.dev`'s second writer can. */
-        fun rewrite(change: (Library) -> Library) {
-            library = change(library)
-        }
+    // A circuit's picker is that circuit's: a pick from the first lands in it, and the second is untouched.
+    @Test
+    fun `keeps each circuit's picker to its own circuit`() {
+        val files = show()
+        buildCircuit("Pull-ups", "Dips")
+        buildCircuit("Rows", "Dips")
 
-        override fun writeLibrary(library: Library) {
-            failure?.let { throw it }
-            written += library
-            this.library = library
-        }
+        compose.onAllNodes(hasText("+ Adicionar exercício ao circuito") and isControl)[0].performClick()
+        compose.onAllNodes(hasText("+ Adicionar exercício ao circuito") and isControl).assertCountEquals(1)
+        press("Rows")
+        type("Nome", "Two circuits")
+        press("Salvar")
+
+        val (first, second) = files.savedWorkout("two-circuits").blocks.map { it as WorkoutBlock.Circuit }
+        assertEquals(listOf("pull-ups", "dips", "rows"), first.members.map { it.exerciseId })
+        assertEquals(listOf("rows", "dips"), second.members.map { it.exerciseId })
     }
 }
-
-private val pullUps = Exercise("pull-ups", "Pull-ups", ExerciseConfig.Reps(sets = 3, targetRepsMin = 8, restSec = 90.0))
-private val dips = Exercise("dips", "Dips", ExerciseConfig.Reps(sets = 3, targetRepsMin = 10, restSec = 90.0))
-
-/** A third, so a removal has a circuit it may remove from. */
-private val rows = Exercise("rows", "Rows", ExerciseConfig.Reps(sets = 3, targetRepsMin = 10, restSec = 90.0))
-private val rest = Exercise("rest", "Rest", ExerciseConfig.Rest(durationSec = 60.0))
-
-private val base = Program("base", "Base", listOf(ProgramWeek.Training(week = 1, workoutId = "push-day")))
-
-private fun pushDay(vararg blocks: WorkoutBlock) =
-    Workout("push-day", "Push day", blocks.toList().ifEmpty { listOf(WorkoutBlock.ExerciseBlock("pull-ups")) })
-
-private fun Workout.exerciseIds() = blocks.map { (it as WorkoutBlock.ExerciseBlock).exerciseId }
-
-private const val SETTLE_ROUNDS = 3
-
-/** A dispatcher that runs nothing until told to, so a test holds a write or a read mid-way. */
-private class Steps : Executor {
-    private val queued = ArrayDeque<Runnable>()
-
-    override fun execute(task: Runnable) {
-        queued += task
-    }
-
-    fun run() {
-        while (queued.isNotEmpty()) queued.removeFirst().run()
-    }
-
-    fun runFirst() = queued.removeFirst().run()
-}
-
-private fun hasStateDescription(text: String) = SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, text)
-
-private fun SemanticsNodeInteraction.actionLabels() =
-    fetchSemanticsNode().config[SemanticsActions.CustomActions].map { it.label }

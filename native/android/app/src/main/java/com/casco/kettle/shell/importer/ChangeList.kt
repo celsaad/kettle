@@ -56,8 +56,8 @@ internal fun PreviewSection(
     importer: Importer,
 ) {
     val colors = KettleTheme.colors
-    // Every update diffed once, not per frame: a re-imported library is all updates.
-    val cleared = remember(preview, units) { preview.clearedTotal(units) }
+    // Not remembered here: the preview diffs each item once, and this is a sum over its answers.
+    val cleared = preview.clearedTotal(units)
     Text(
         stringResource(R.string.import_reviewTitle),
         Modifier.padding(top = Spacing.three).semantics { heading() },
@@ -83,7 +83,7 @@ internal fun PreviewSection(
     ChangeList(preview, importer, units) { item ->
         if (!item.isNew) {
             // Asked per row drawn, open or folded: a folded row still says what it clears.
-            DiffRows(remember(item, units) { preview.changes(item, units) }, units)
+            DiffRows(preview.changes(item, units), units)
         }
     }
 }
@@ -185,7 +185,7 @@ private fun ChangeList(
                 val diff = under?.takeIf { !item.isNew }
                 val clears =
                     units?.takeIf { !item.isNew }?.let {
-                        remember(item, it) { preview.clearedBy(item, it) }
+                        preview.clearedBy(item, it)
                     } ?: 0
                 ItemRow(
                     preview,

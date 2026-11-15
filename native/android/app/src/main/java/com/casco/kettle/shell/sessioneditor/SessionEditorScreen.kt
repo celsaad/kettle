@@ -37,9 +37,9 @@ import com.casco.kettle.domain.RemovedSet
 import com.casco.kettle.domain.Session
 import com.casco.kettle.domain.SessionEditing
 import com.casco.kettle.domain.SessionEntry
-import com.casco.kettle.domain.SetForm
 import com.casco.kettle.domain.UnitSystem
 import com.casco.kettle.domain.addingSet
+import com.casco.kettle.domain.changing
 import com.casco.kettle.domain.editedSession
 import com.casco.kettle.domain.exerciseName
 import com.casco.kettle.domain.firstProblem
@@ -242,9 +242,12 @@ internal class Editor(
         row: Int,
         field: EntryField,
         text: String,
-    ) = update(draft) { forms ->
-        val edited = forms[row].copy(values = forms[row].values + (field to text))
-        forms.mapIndexed { i, form -> if (i == row) edited else form }
+    ) {
+        drafts =
+            drafts.changing(draft) { forms ->
+                val edited = forms[row].copy(values = forms[row].values + (field to text))
+                forms.mapIndexed { i, form -> if (i == row) edited else form }
+            }
     }
 
     /**
@@ -303,13 +306,6 @@ internal class Editor(
                 }
             }
         }
-    }
-
-    private fun update(
-        draft: Int,
-        change: (List<SetForm>) -> List<SetForm>,
-    ) {
-        drafts = drafts.mapIndexed { i, entry -> if (i == draft) entry.copy(forms = change(entry.forms)) else entry }
     }
 }
 

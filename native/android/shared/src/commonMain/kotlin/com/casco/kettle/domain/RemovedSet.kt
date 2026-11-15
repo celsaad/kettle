@@ -50,7 +50,8 @@ fun List<EntryDraft>.addingSet(draft: Int): List<EntryDraft> {
     }
 }
 
-private fun List<EntryDraft>.changing(
+/** These drafts with [draft]'s set forms put through [change], every other draft as it was. */
+fun List<EntryDraft>.changing(
     draft: Int,
     change: (List<SetForm>) -> List<SetForm>,
 ): List<EntryDraft> = mapIndexed { i, entry -> if (i == draft) entry.copy(forms = change(entry.forms)) else entry }

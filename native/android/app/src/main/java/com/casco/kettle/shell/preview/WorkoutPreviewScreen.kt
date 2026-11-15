@@ -31,12 +31,12 @@ import com.casco.kettle.domain.resolveRunnerPlan
 import com.casco.kettle.domain.restsBetweenSets
 import com.casco.kettle.domain.sessionOutline
 import com.casco.kettle.shell.R
+import com.casco.kettle.shell.describe.contentsText
 import com.casco.kettle.shell.files.LatestFiles
 import com.casco.kettle.shell.files.LocalLatestFiles
-import com.casco.kettle.shell.home.contentsText
+import com.casco.kettle.shell.form.EditIconButton
 import com.casco.kettle.shell.home.weekLabel
 import com.casco.kettle.shell.i18n.deviceUnitSystem
-import com.casco.kettle.shell.list.EditIconButton
 import com.casco.kettle.shell.list.ListHeaderRule
 import com.casco.kettle.shell.nav.Destination
 import com.casco.kettle.shell.nav.LocalNavigator

@@ -421,11 +421,10 @@ class SessionEntryFormTest {
         }
 
         @Test
-        fun `keeps an entry it can't rewrite, untouched, and lists it read-only`() {
+        fun `keeps an entry it can't rewrite, untouched`() {
             val withEmom = session.copy(entries = listOf(repsEntry, emom))
             val editing = editable(withEmom)
 
-            assertEquals(listOf<SessionEntry>(emom), editing.readOnly)
             assertEquals(withEmom, editedSession(withEmom, editing.drafts, UnitSystem.METRIC))
         }
 

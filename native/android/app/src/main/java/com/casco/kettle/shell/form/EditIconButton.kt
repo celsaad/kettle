@@ -1,4 +1,4 @@
-package com.casco.kettle.shell.list
+package com.casco.kettle.shell.form
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box

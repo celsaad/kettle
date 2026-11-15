@@ -172,9 +172,9 @@ private class Editor(
 
     /** A picked exercise: into the circuit the picker was opened from, or as a block at the end. */
     fun pick(exerciseId: String) {
-        val target = pickers.target
+        val into = pickers.open as? PickerMode.IntoCircuit
         draft =
-            if (target != null) draft.withCircuit(target) { it.withMember(exerciseId) } else draft.adding(exerciseId)
+            if (into != null) draft.withCircuit(into.key) { it.withMember(exerciseId) } else draft.adding(exerciseId)
         pickers.close()
     }
 
@@ -197,7 +197,11 @@ private class Editor(
         val mode = pickers.open ?: return
         write(Failure.Kind.Save, { it.withExercise(exercise) }, closes = false) {
             pickers.showQuickAdd(false)
-            if (mode == PickerMode.Block) pick(exercise.id) else pickers.toggleMember(exercise.id)
+            // Exhaustive, so a new mode has to say where its quick-added exercise goes.
+            when (mode) {
+                PickerMode.Circuit -> pickers.toggleMember(exercise.id)
+                PickerMode.Block, is PickerMode.IntoCircuit -> pick(exercise.id)
+            }
         }
     }
 
@@ -407,10 +411,10 @@ private fun Block(
                 CircuitActions(
                     change = { changed -> editor.draft = editor.draft.withCircuit(key) { changed } },
                     remove = remove,
-                    togglePicker = { pickers.toggle(PickerMode.Block, key) },
-                    picking = pickers.isOpen(PickerMode.Block, key),
+                    togglePicker = { pickers.toggle(PickerMode.IntoCircuit(key)) },
+                    picking = pickers.isOpen(PickerMode.IntoCircuit(key)),
                 ),
-            ) { ExercisePicker(pickers, PickerMode.Block, context, editor.pickerActions) }
+            ) { ExercisePicker(pickers, PickerMode.IntoCircuit(key), context, editor.pickerActions) }
         }
 
         is WorkoutBlock.ExerciseBlock -> {
@@ -435,10 +439,10 @@ private fun LazyListScope.footer(
     Column(SheetColumn) {
         ListRowSeparator()
         Row(Modifier.padding(top = Spacing.three), horizontalArrangement = Arrangement.spacedBy(Spacing.two)) {
-            for (mode in PickerMode.entries) AddButton(editor.pickers, mode)
+            for (mode in listOf(PickerMode.Block, PickerMode.Circuit)) AddButton(editor.pickers, mode)
         }
         val pickers = editor.pickers
-        pickers.open?.takeIf { pickers.target == null }?.let { mode ->
+        pickers.open?.takeIf { it !is PickerMode.IntoCircuit }?.let { mode ->
             ExercisePicker(pickers, mode, context, editor.pickerActions)
         }
         Text(

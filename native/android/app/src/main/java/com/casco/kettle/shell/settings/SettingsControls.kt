@@ -29,6 +29,7 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.casco.kettle.shell.list.ListRowMinHeight
@@ -93,12 +94,13 @@ internal fun <T> Segmented(
 ) {
     val colors = KettleTheme.colors
     val outer = RoundedCornerShape(SEGMENTED_RADIUS)
+    // No track of its own, as the board draws it (#486): the control's edge is its 3:1 `lineStrong`
+    // outline (#487), where a white track behind a 10% hairline left the edge to the fill alone.
     Row(
         Modifier
             .fillMaxWidth()
             .clip(outer)
-            .background(colors.backgroundElement)
-            .border(1.dp, colors.border, outer)
+            .border(1.dp, colors.lineStrong, outer)
             .padding(SEGMENT_GAP),
         horizontalArrangement = Arrangement.spacedBy(SEGMENT_GAP),
     ) {
@@ -109,14 +111,22 @@ internal fun <T> Segmented(
                     .weight(1f)
                     .heightIn(min = 48.dp)
                     .clip(RoundedCornerShape(SEGMENT_RADIUS))
-                    .background(if (active) colors.text else colors.backgroundElement)
+                    .then(if (active) Modifier.background(colors.text) else Modifier)
                     .selectable(selected = active, role = Role.Button) { onSelect(value) },
                 contentAlignment = Alignment.Center,
             ) {
+                // The page turned over on the chosen one; the rest in ink on the page itself.
                 Text(
                     stringResource(label),
-                    style = KettleType.smallMedium,
-                    color = if (active) colors.onAccent else colors.textSecondary,
+                    style =
+                        if (active) {
+                            KettleType.smallMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                            )
+                        } else {
+                            KettleType.smallMedium
+                        },
+                    color = if (active) colors.background else colors.text,
                 )
             }
         }

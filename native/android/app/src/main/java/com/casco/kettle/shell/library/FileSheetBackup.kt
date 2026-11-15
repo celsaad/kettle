@@ -188,10 +188,10 @@ private fun BackUpNow(
         Modifier
             .heightIn(min = 48.dp)
             .clip(PillShape)
-            // Filled with the surface, as the board draws it (#486), so it reads as a button on the sheet
-            // rather than one more outlined label; its outline waits on #487's 3:1 line colour.
+            // Filled with the surface and outlined in the 3:1 `lineStrong` (#487), as the board draws it
+            // (#486): a button on the sheet rather than one more outlined label.
             .background(colors.backgroundElement)
-            .border(1.dp, colors.textSecondary, PillShape)
+            .border(1.dp, colors.lineStrong, PillShape)
             .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
             .padding(horizontal = PILL_INSET),
         contentAlignment = Alignment.Center,

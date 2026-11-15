@@ -175,7 +175,7 @@ internal fun DayRow(
                             R.string.programEditor_selectWorkout
                         },
                     ),
-                style = KettleType.heading,
+                style = KettleType.rowTitle,
                 color = if (training != null) colors.text else colors.textSecondary,
             )
             listOfNotNull(note, changes).takeIf { it.isNotEmpty() }?.let {

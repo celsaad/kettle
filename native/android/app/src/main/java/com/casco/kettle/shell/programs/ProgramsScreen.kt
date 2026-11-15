@@ -183,7 +183,7 @@ private fun ProgramRow(
     Box(Modifier.clickable(role = Role.Button, onClick = onClick)) {
         ListRow {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(program.name, style = KettleType.heading, color = colors.text)
+                Text(program.name, style = KettleType.rowTitle, color = colors.text)
                 Text(
                     buildAnnotatedString {
                         append(line.replace(LEAD_MARK, lead))

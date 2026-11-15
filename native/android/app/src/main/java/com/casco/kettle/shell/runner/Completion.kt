@@ -256,7 +256,7 @@ private fun ComparisonRow(
                     verticalArrangement = Arrangement.spacedBy(Spacing.half),
                     itemVerticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(row.exerciseName, style = KettleType.heading, color = runnerColors.text)
+                    Text(row.exerciseName, style = KettleType.rowTitle, color = runnerColors.text)
                     if (badge != null) RecordBadge(badge)
                 }
                 Text(today, style = KettleType.small, color = runnerColors.textSecondary)

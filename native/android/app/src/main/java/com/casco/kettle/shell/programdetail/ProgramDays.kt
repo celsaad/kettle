@@ -84,7 +84,7 @@ private fun DayRow(
                 Text(label, style = KettleType.smallMedium, color = colors.textSecondary)
                 Text(
                     training?.let(slot::workoutName) ?: stringResource(R.string.programDetail_restDay),
-                    style = KettleType.heading,
+                    style = KettleType.rowTitle,
                     color = if (training != null) colors.text else colors.textSecondary,
                 )
                 training?.let { Changes(it, slot) }

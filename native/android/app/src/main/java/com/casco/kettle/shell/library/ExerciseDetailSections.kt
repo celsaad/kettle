@@ -221,7 +221,7 @@ private fun UsedInRow(
     Box(Modifier.clickable(role = Role.Button, onClick = onClick)) {
         ListRow {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(name, style = KettleType.heading, color = colors.text)
+                Text(name, style = KettleType.rowLabel, color = colors.text)
                 Text(kind, style = KettleType.small, color = colors.textSecondary)
             }
             Chevron()

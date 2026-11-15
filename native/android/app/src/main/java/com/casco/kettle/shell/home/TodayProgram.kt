@@ -61,7 +61,7 @@ internal fun ProgramRow(
     ) {
         Column(Modifier.weight(1f)) {
             // User data, verbatim.
-            Text(position.program.name, style = KettleType.heading, color = colors.text)
+            Text(position.program.name, style = KettleType.rowLabel, color = colors.text)
             Text(
                 stringResource(R.string.today_programWeek, position.weekCount, position.weekNumber),
                 style = KettleType.small,

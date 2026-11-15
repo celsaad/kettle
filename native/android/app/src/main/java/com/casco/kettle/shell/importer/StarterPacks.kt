@@ -63,7 +63,7 @@ internal fun StarterPacks(
             ListRow {
                 val strings = packStrings(id)
                 Column {
-                    Text(stringResource(strings.name), style = KettleType.heading, color = colors.text)
+                    Text(stringResource(strings.name), style = KettleType.rowTitle, color = colors.text)
                     Text(stringResource(strings.detail), style = KettleType.small, color = colors.textSecondary)
                     Text(packCounts(library), style = KettleType.small, color = colors.textSecondary)
                 }

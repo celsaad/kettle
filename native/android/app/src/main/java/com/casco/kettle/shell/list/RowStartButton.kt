@@ -1,7 +1,7 @@
 package com.casco.kettle.shell.list
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
@@ -24,15 +24,14 @@ import com.casco.kettle.shell.theme.KettleTheme
 /**
  * The "start this one" control at the end of a row: Home's list and Program detail's weeks.
  *
- * Accent, after a detour through grey: a grey triangle beside a grey chevron stopped announcing itself
- * as the way to start anything. The accent budget is spent on the *fill* instead, so the next-up card's
- * Start is the only solid accent block on Home and these are a tint behind a glyph. The glyph is
- * `accentText`, not `accent`: it measures 4.75:1 on `accentSoft` light and 6.85:1 dark. `accent` fell
- * under the 3:1 a meaningful graphic needs in the old palette; it is 3.85:1 since #487.
+ * Neutral, as the boards draw it (#490): a 44dp circle edged in `lineStrong` (3:1, #487) with an ink
+ * glyph, no fill. It had been an accent tint, after a grey triangle beside a grey chevron stopped
+ * announcing itself as the way to start anything; ink and a 3:1 edge answer that without spending the
+ * accent, so the next-up card's Start is the one accent block on Today.
  *
  * A drawn [glyph] with no words, so [label] is its only name, and it has to say *which* row: a column
  * of identical triangles otherwise announces itself the same all the way down. The target is 48dp
- * while the drawn circle stays 36, so it doesn't crowd the name beside it.
+ * around the drawn 44.
  */
 @Composable
 fun RowStartButton(
@@ -51,21 +50,21 @@ fun RowStartButton(
     ) {
         // Decorative geometry, so a fixed size is right: the target above is what grows.
         Box(
-            Modifier.size(36.dp).clip(CircleShape).background(colors.accentSoft),
+            Modifier.size(44.dp).border(1.dp, colors.lineStrong, CircleShape),
             contentAlignment = Alignment.Center,
         ) {
             if (glyph == StartGlyph.Plus) {
                 Canvas(Modifier.size(PLUS_SIZE)) {
                     val stroke = PLUS_STROKE.toPx()
                     drawLine(
-                        colors.accentText,
+                        colors.text,
                         Offset(0f, center.y),
                         Offset(size.width, center.y),
                         stroke,
                         StrokeCap.Round,
                     )
                     drawLine(
-                        colors.accentText,
+                        colors.text,
                         Offset(center.x, 0f),
                         Offset(center.x, size.height),
                         stroke,
@@ -82,7 +81,7 @@ fun RowStartButton(
                         lineTo(0f, size.height)
                         close()
                     }
-                drawPath(triangle, colors.accentText)
+                drawPath(triangle, colors.text)
             }
         }
     }

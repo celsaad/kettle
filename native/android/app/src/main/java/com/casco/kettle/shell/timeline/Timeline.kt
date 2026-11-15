@@ -183,7 +183,7 @@ private fun Entry(
     note: String? = null,
 ) {
     Column(Modifier.semantics(mergeDescendants = true) {}) {
-        Text(name, style = KettleType.heading, color = colors.text)
+        Text(name, style = KettleType.rowTitle, color = colors.text)
         Text(detail, style = KettleType.small, color = colors.textSecondary)
         note?.let {
             Text(

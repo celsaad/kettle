@@ -154,6 +154,15 @@
       "font": "display",
       "fontSize": 20
     },
+    "rowTitle": {
+      "font": "display",
+      "fontSize": 16
+    },
+    "rowLabel": {
+      "font": "bodySemiBold",
+      "fontSize": 15,
+      "lineHeight": 20
+    },
     "small": {
       "font": "body",
       "fontSize": 13,

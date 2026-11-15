@@ -246,7 +246,7 @@ private fun ItemRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(preview.name(item), style = KettleType.heading, color = colors.text)
+            Text(preview.name(item), style = KettleType.rowTitle, color = colors.text)
             Text(
                 stringResource(R.string.import_itemSub, item.id, stringResource(item.kindLabel)),
                 style = KettleType.small,

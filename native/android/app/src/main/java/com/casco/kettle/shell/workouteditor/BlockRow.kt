@@ -48,7 +48,7 @@ internal fun BlockRow(
         ) {
             Grip(exercise.name, place)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(exercise.name, style = KettleType.heading, color = colors.text)
+                Text(exercise.name, style = KettleType.rowTitle, color = colors.text)
                 // A rest says its length on its button instead.
                 val target = if (rest == null) blockTarget(exercise.config, units) else null
                 target?.let { Text(it, style = KettleType.small, color = colors.textSecondary) }

@@ -127,7 +127,7 @@ private fun Header(place: BlockPlace) {
     ) {
         Grip(name, place)
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(name, style = KettleType.heading, color = colors.text)
+            Text(name, style = KettleType.rowTitle, color = colors.text)
             Text(
                 stringResource(R.string.workoutEditor_circuitSubtitle),
                 style = KettleType.small,
@@ -152,7 +152,7 @@ private fun MemberRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(exercise.name, style = KettleType.heading, color = colors.text)
+            Text(exercise.name, style = KettleType.rowTitle, color = colors.text)
             Text(memberTarget(exercise.config, units), style = KettleType.small, color = colors.textSecondary)
         }
         RemoveButton(

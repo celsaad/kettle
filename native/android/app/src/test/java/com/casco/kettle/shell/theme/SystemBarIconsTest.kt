@@ -148,8 +148,28 @@ class SystemBarIconsTest {
             }
         }
         compose.waitForIdle()
+        assertEquals(true to true, darkIcons())
 
         latest = Preferences(UnitSystem.METRIC, ThemePreference.LIGHT, false, true, null)
+
+        assertEquals(true to true, darkIcons())
+    }
+
+    /** Once the runner leaves, the scheme decides again, not the black field it last asked for. */
+    @Test
+    fun `the runner leaving hands the icons back to the scheme, whatever its field asked`() {
+        var runner by mutableStateOf(true)
+        compose.setContent {
+            CompositionLocalProvider(LocalRunnerBars provides RunnerBars()) {
+                PreferredKettleTheme(preferences, null, reread = false, runnerShown = runner, splashExits = 0) {
+                    if (runner) RunnerBarIcons(darkIcons = false)
+                }
+            }
+        }
+        compose.waitForIdle()
+        assertEquals(false to false, darkIcons())
+
+        runner = false
 
         assertEquals(true to true, darkIcons())
     }

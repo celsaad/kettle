@@ -80,7 +80,9 @@ class ModalSheet(
      * The tab's picture behind the sheet goes with a change of scheme, leaving the backdrop's own colour
      * under the scrim: taken as the sheet opened, it kept the old scheme in the band above the sheet,
      * near-black with dark icons over it after a switch to light (#481). Retaking it would picture a tab
-     * hidden behind the sheet, mid-recomposition; the band is the screen's background either way.
+     * hidden behind the sheet, mid-recomposition; on a phone the band is the screen's background either
+     * way. What it costs: a tablet's tab beside the sheet, and the tab a drag or a predictive back
+     * uncovers, show plain until the sheet closes.
      */
     fun repaint(colors: KettleColors) {
         if (place != Place.Tab && painted != null && colors != painted) {

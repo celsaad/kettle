@@ -2,6 +2,7 @@ package com.casco.kettle.shell.theme
 
 import androidx.activity.compose.LocalActivity
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
@@ -73,12 +74,14 @@ val LocalRunnerBars = staticCompositionLocalOf<RunnerBars?> { null }
  * The bars' icons over the runner's field, which decides them (`RunnerField.darkBarIcons`): over the
  * orange one light icons would measure 2.96:1. Set on the window at once, and handed to [RunnerBars],
  * whose change recomposes every view's [PreferredKettleTheme] to the same value; once the runner
- * closes, `runnerShown` changing sets the shell's icons back.
+ * closes, `runnerShown` changing sets the shell's icons back. Cleared as it leaves, so the next
+ * session's first frame can't show the last one's orange-field icons over its black count-in.
  */
 @Composable
 fun RunnerBarIcons(darkIcons: Boolean) {
     val window = LocalActivity.current?.window
     val runnerBars = LocalRunnerBars.current
+    DisposableEffect(runnerBars) { onDispose { runnerBars?.darkIcons = false } }
     SideEffect {
         runnerBars?.darkIcons = darkIcons
         if (window == null) return@SideEffect

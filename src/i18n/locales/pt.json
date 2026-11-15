@@ -355,8 +355,8 @@
     },
     "countdown": {
       "getReady": "Prepare-se",
-      "first": "Primeiro: {{name}}",
-      "firstLoaded": "Primeiro: {{name}} · {{load}}",
+      "first": "Para começar: {{name}}",
+      "firstLoaded": "Para começar: {{name}} · {{load}}",
       "firstTimeHint": "Pode largar o celular — você ouve cada contagem e cada troca de exercício."
     },
     "hold": {

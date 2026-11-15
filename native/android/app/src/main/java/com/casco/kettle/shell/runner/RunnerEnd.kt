@@ -21,7 +21,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.sp
 import com.casco.kettle.domain.RunnerPlan
 import com.casco.kettle.domain.RunnerStep
@@ -50,21 +49,12 @@ internal fun CountIn(
     val resources = LocalResources.current
     Column(Modifier.fillMaxSize().padding(bottom = Spacing.three)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.two)) {
-            Text(
-                resources.sessionName(view.plan.workout?.name),
-                Modifier.weight(1f),
-                style = KettleType.small,
-                color = runnerColors.textSecondary,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+            TopBarName(resources.sessionName(view.plan.workout?.name), Modifier.weight(1f))
             EndPill(leave)
         }
-        Column(
-            Modifier.weight(1f).fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(Spacing.two, Alignment.CenterVertically),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
+        // Scrolling once it can't fit: at 200% text on a short phone the 312dp count, the First line
+        // and the first-session hint ran past the bottom, and the hint was what got cut.
+        CenteredColumn(Modifier.weight(1f)) {
             Text(
                 stringResource(R.string.session_countdown_getReady),
                 Modifier.semantics { heading() },
@@ -89,8 +79,9 @@ internal fun CountIn(
 }
 
 /**
- * "First: Goblet Squat · 48.5 lb": the first exercise the session runs, with its load where it has one.
- * None for an ad-hoc session, which starts with nothing queued.
+ * "First: Goblet Squat · 48.5 lb": the first exercise the session runs, with its load where it has one,
+ * which is what the set screen seeds. A Rest block first is passed over: the line says what to pick
+ * up. None for an ad-hoc session, which starts with nothing queued.
  */
 private fun Resources.firstLine(
     plan: RunnerPlan.Runnable,

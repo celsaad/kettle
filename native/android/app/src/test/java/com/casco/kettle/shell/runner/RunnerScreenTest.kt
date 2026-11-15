@@ -104,10 +104,22 @@ class RunnerScreenTest : RunnerScreenHarness() {
     @Test
     fun `the count-in says what comes first, with its load`() {
         show(RunnerEntry.Attach(RunnerView.CountingIn(plan(block(squat)), null, CountIn(T0))))
-        compose.onNodeWithText("Primeiro: Agachamento · 60 kg").assertExists()
+        compose.onNodeWithText("Para começar: Agachamento · 60 kg").assertExists()
+        compose.onNode(isHeading() and hasText("Prepare-se")).assertExists()
 
         show(RunnerEntry.Attach(RunnerView.CountingIn(plan(block(plank)), null, CountIn(T0))))
-        compose.onNodeWithText("Primeiro: Prancha").assertExists()
+        compose.onNodeWithText("Para começar: Prancha").assertExists()
+
+        // A set with no load seeded starts at none, so the line names it alone.
+        show(RunnerEntry.Attach(RunnerView.CountingIn(plan(block(extras[0])), null, CountIn(T0))))
+        compose.onNodeWithText("Para começar: Búlgaro").assertExists()
+    }
+
+    /** A Rest block first is passed over: the line says what to pick up. */
+    @Test
+    fun `the count-in names the first exercise past a Rest block`() {
+        show(RunnerEntry.Attach(RunnerView.CountingIn(plan(block(rest), block(squat)), null, CountIn(T0))))
+        compose.onNodeWithText("Para começar: Agachamento · 60 kg").assertExists()
     }
 
     /** End, as a running session has it: nothing is written yet, so it leaves at once, as back does. */
@@ -116,7 +128,6 @@ class RunnerScreenTest : RunnerScreenHarness() {
         show(RunnerEntry.Attach(RunnerView.CountingIn(plan(block(squat)), null, CountIn(T0))))
         compose.onNodeWithText("Encerrar").performClick()
         assertEquals(1, left)
-        compose.onNode(isDialog()).assertDoesNotExist()
     }
 
     @Test

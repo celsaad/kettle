@@ -182,8 +182,8 @@ here, next to what it describes.
   it and dims, so you can tell at a glance that it's stopped (#471).
 - **A bigger countdown before you start**: the 3, 2, 1 now fills the screen under "Get ready",
   with the first exercise and its weight below it, so you know what to pick up. The workout's name
-  and End sit at the top, as they do once the session runs, and End stops before anything starts
-  (#472).
+  and End sit at the top, as they do once the session runs, and End leaves before anything starts,
+  with nothing logged (#472).
 
 ---
 

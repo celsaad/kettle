@@ -38,17 +38,17 @@ import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.RunnerPalette
 import com.casco.kettle.shell.theme.Spacing
 
-// Coming up's line (#415): the rail every stop hangs on, its nodes, and the circuit loop off it. All
+// Coming up's line (#415): the rail every stop hangs on, its nodes, and the circuit loop on it. All
 // decorative: each stop's words carry its state for a reader ("Now", or Done as its state).
 
 /** What sits on the rail at a stop. */
-internal enum class RailNode { Stop, Now, Tick, End, None }
+internal enum class RailNode { Stop, Now, Tick, End }
 
 /**
  * One stop: the rail beside [content], the line drawn the stop's whole height so it meets the next
  * whatever the text's length. The line is the text's ink as far as the session has come and dim beyond:
- * above a stop when it's reached, below it once it's done. The circuit you're in ([RailNode.None]) is
- * reached all down its loop.
+ * above a stop when it's reached, below it once it's done. The circuit you're in draws its own
+ * ([LoopCard]).
  */
 @Composable
 internal fun RailRow(
@@ -66,7 +66,7 @@ internal fun RailRow(
                 val middle = NODE_CENTER.toPx()
                 val stroke = LINE.toPx()
                 val reached = if (state == StopState.NEXT) colors.outline else colors.text
-                val beyond = if (state == StopState.DONE || node == RailNode.None) colors.text else colors.outline
+                val beyond = if (state == StopState.DONE) colors.text else colors.outline
                 if (!first) drawLine(reached, Offset(x, 0f), Offset(x, middle), stroke)
                 if (!last) drawLine(beyond, Offset(x, middle), Offset(x, size.height), stroke)
                 drawNode(node, state, Offset(x, middle), colors)
@@ -85,9 +85,6 @@ internal fun DrawScope.drawNode(
 ) {
     val stroke = LINE.toPx()
     when (node) {
-        // The circuit you're in has no node of its own: its loop is the stop.
-        RailNode.None -> {}
-
         RailNode.Tick -> {
             val half = TICK_HALF.toPx()
             val ink = if (state == StopState.NEXT) colors.outline else colors.text

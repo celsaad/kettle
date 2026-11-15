@@ -8,8 +8,8 @@ import com.casco.kettle.domain.jsNumber
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.i18n.pluralText
 
-// The words on Coming up's stops (#415). Logged values come from the session file as written; targets
-// and counts from the steps, through the same lines Home's preview uses.
+// The words on Coming up's stops (#415). Logged values come from the session file as written; counts
+// from the steps, and targets from `ComingUpTargets.kt`'s own lines (#479).
 
 /**
  * A stop done, as it was logged: "3 sets · 10, 9, 8", "2 sets · 30, 28 s", "8 rounds", "5 minutes".

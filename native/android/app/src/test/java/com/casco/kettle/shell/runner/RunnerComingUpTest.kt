@@ -14,6 +14,16 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(qualifiers = "pt-w411dp-h891dp")
 class RunnerComingUpTest : RunnerScreenHarness() {
+    /** Only the stop on screen says "Alvo" (#479): an exercise ahead gives its sets and the number alone. */
+    @Test
+    fun `an exercise ahead reads its sets and reps with no target word`() {
+        val two = plan(block(plank), block(squat))
+        show(running(two))
+        button("Pernas").performClick()
+        compose.onNodeWithText("Agachamento · 2 séries · 5 repetições").assertExists()
+        compose.onNodeWithText("alvo", substring = true).assertDoesNotExist()
+    }
+
     @Test
     fun `a done exercise reads as one line of what was logged, and the next is the stop on screen`() {
         val two = plan(block(squat), block(plank))

@@ -548,7 +548,7 @@
       "hold": "isometria {{target}}",
       "holdOpen": "isometria máxima",
       "nowTarget": "Alvo {{target}}",
-      "nowNoTarget": "Sem alvo",
+      "nowHoldOpen": "Isometria máxima",
       "lastRound": "rodada {{round}}: {{reps}}",
       "nowLine": "{{first}} · {{then}}",
       "end": "Fim do treino",

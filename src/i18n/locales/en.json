@@ -510,7 +510,7 @@
       "hold": "hold {{target}}",
       "holdOpen": "max hold",
       "nowTarget": "Target {{target}}",
-      "nowNoTarget": "No target",
+      "nowHoldOpen": "Max hold",
       "lastRound": "round {{round}}: {{reps}}",
       "nowLine": "{{first}} · {{then}}",
       "end": "End of workout",

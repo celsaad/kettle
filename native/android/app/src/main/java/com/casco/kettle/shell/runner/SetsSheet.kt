@@ -39,6 +39,7 @@ import com.casco.kettle.domain.holdTarget
 import com.casco.kettle.domain.repsTarget
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.i18n.pluralText
+import com.casco.kettle.shell.list.ListHeaderRule
 import com.casco.kettle.shell.list.ListRow
 import com.casco.kettle.shell.list.ListRowSeparator
 import com.casco.kettle.shell.theme.KettleType
@@ -177,10 +178,10 @@ internal fun SetsSheet(
             }
             FilledPill(stringResource(R.string.session_done), onClose)
         }
-        Column(Modifier.padding(top = Spacing.two)) {
+        Column {
             model.rows.forEachIndexed { index, row ->
-                // A rule above the first set too, as the board draws it (#479): it starts the list.
-                ListRowSeparator()
+                // The list's own rule above the first set, as the board draws it (#479), then hairlines.
+                if (index == 0) ListHeaderRule() else ListRowSeparator()
                 SetRowView(step, row, context, removable = model.canRemoveLast && index == model.rows.lastIndex)
             }
         }

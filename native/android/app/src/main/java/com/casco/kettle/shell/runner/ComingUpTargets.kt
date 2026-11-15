@@ -59,7 +59,7 @@ internal fun Resources.loopNowDetail(
     )
 }
 
-/** "Target 8–12", "Target 20–45 s", or "No target" for an open hold. */
+/** "Target 8–12", "Target 20–45 s", or "Max hold" for an open hold, as it reads ahead. */
 private fun Resources.nowTarget(step: WorkStep): String =
     when (step) {
         is RunnerStep.Reps -> {
@@ -68,7 +68,7 @@ private fun Resources.nowTarget(step: WorkStep): String =
 
         is RunnerStep.Hold -> {
             holdTarget(step)?.let { getString(R.string.session_comingUp_nowTarget, holdTargetText(it)) }
-                ?: getString(R.string.session_comingUp_nowNoTarget)
+                ?: getString(R.string.session_comingUp_nowHoldOpen)
         }
 
         is RunnerStep.Interval -> {

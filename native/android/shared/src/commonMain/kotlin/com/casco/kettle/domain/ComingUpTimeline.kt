@@ -44,7 +44,7 @@ sealed interface TimelineStop {
     ) : TimelineStop
 
     /**
-     * The circuit you're in, as a loop off the line: the [round] with work left, of [rounds], its
+     * The circuit you're in, as a loop on the line: the [round] with work left, of [rounds], its
      * [members] each done, now or next, the rest between moves and after each round (null for none), and
      * the [lastRound] the list runs to, for "Then round 3".
      */

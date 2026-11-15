@@ -472,7 +472,7 @@
       "hold": "ホールド {{target}}",
       "holdOpen": "最大ホールド",
       "nowTarget": "目標{{target}}",
-      "nowNoTarget": "目標なし",
+      "nowHoldOpen": "最大ホールド",
       "lastRound": "{{round}}ラウンド目：{{reps}}",
       "nowLine": "{{first}} · {{then}}",
       "end": "ワークアウト終了",

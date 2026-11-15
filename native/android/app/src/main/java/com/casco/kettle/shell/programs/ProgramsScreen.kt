@@ -86,8 +86,9 @@ fun ProgramsScreen(
     val active = position?.program?.id
     val ordered = remember(all, active) { leadingFirst(all, listOfNotNull(active)) { it.id } }
     // No search (#488): the seed's programs and every pack's together fit on one screen, and a field
-    // shown only past some count would change the tab's shape as the library grew. With nothing between the tabs
-    // and the rows, the tabs' own line heads the list, so it takes no header rule of its own either.
+    // shown only past some count would change the tab's shape as the library grew. With nothing
+    // between the tabs and the rows, the tabs' own line heads the list, so it takes no header rule of
+    // its own either.
     val openGuide = { open(Route(Destination.ProgramGuide)) }
 
     Box(Modifier.fillMaxSize().statusBarsPadding(), contentAlignment = Alignment.TopCenter) {

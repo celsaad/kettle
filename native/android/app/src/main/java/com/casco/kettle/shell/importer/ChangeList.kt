@@ -56,7 +56,7 @@ internal fun PreviewSection(
     importer: Importer,
 ) {
     val colors = KettleTheme.colors
-    // Every update diffed once, not per frame: a re-imported library is all updates.
+    // Not remembered here: the preview diffs each item once, and this is a sum over its answers.
     val cleared = preview.clearedTotal(units)
     Text(
         stringResource(R.string.import_reviewTitle),

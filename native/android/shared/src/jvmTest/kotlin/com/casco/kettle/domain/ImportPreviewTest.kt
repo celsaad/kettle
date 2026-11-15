@@ -218,7 +218,7 @@ class ImportPreviewTest {
         assertEquals(0, preview(incoming).clearedTotal(UnitSystem.METRIC))
     }
 
-    // The tile, a row's count and its open diff all ask; a re-imported library diffed each item three times.
+    // The tile, a row's count and its open diff all ask for the same diff; a re-imported library is all updates.
     @Test
     fun `diffs an item once per preview, whoever asks`() {
         val preview = preview(Library(1, listOf(pullUps.copy(name = "Chin-ups")), emptyList(), emptyList()))

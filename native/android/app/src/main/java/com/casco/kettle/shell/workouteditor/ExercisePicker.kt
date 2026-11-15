@@ -41,8 +41,8 @@ import com.casco.kettle.shell.theme.Spacing
 
 /**
  * What a picker is open for: one exercise to add as a block, the exercises of a new circuit, or one
- * exercise into the circuit keyed [IntoCircuit.key] (#440). The circuit's key rides in the mode, so
- * nothing decodes a separate target to tell a block's pick from a circuit's (#456).
+ * exercise into the circuit keyed [IntoCircuit.key] (#440). Two circuits' pickers are told apart by that
+ * key, being data: opening one closes the other, and the footer's.
  */
 internal sealed interface PickerMode {
     data object Block : PickerMode
@@ -83,6 +83,7 @@ internal class Pickers {
         showQuickAdd(false)
     }
 
+    /** Whether [mode]'s picker is the open one: a circuit's by its key. */
     fun isOpen(mode: PickerMode) = open == mode
 
     fun close() {
@@ -101,9 +102,9 @@ internal class Pickers {
 }
 
 /**
- * The editor's exercise picker, as RN's `ExercisePicker`, in its two modes. A row adds a block in
- * [PickerMode.Block]; in [PickerMode.Circuit] it toggles a member, and a confirm builds the circuit
- * from two or more. No search, as RN's had none: the feature freeze ports it as it is.
+ * The editor's exercise picker, as RN's `ExercisePicker`. A row adds a block in [PickerMode.Block], or a
+ * member to its circuit in [PickerMode.IntoCircuit]; in [PickerMode.Circuit] it toggles a member of a
+ * new circuit, and a confirm builds it from two or more. No search, as RN's had none: the feature freeze ports it as it is.
  *
  * The quick-add form replaces the list while it is up, so the workout being built isn't left for the
  * exercise editor. It stays up until the create's write lands, so a refused one keeps its values.

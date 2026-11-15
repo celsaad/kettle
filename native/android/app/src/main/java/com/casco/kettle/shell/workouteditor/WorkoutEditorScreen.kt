@@ -197,7 +197,11 @@ private class Editor(
         val mode = pickers.open ?: return
         write(Failure.Kind.Save, { it.withExercise(exercise) }, closes = false) {
             pickers.showQuickAdd(false)
-            if (mode == PickerMode.Circuit) pickers.toggleMember(exercise.id) else pick(exercise.id)
+            // Exhaustive, so a new mode has to say where its quick-added exercise goes.
+            when (mode) {
+                PickerMode.Circuit -> pickers.toggleMember(exercise.id)
+                PickerMode.Block, is PickerMode.IntoCircuit -> pick(exercise.id)
+            }
         }
     }
 

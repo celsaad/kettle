@@ -873,6 +873,39 @@ class WorkoutEditorScreenTest {
         named("Fechar").assert(SemanticsMatcher.keyIsDefined(SemanticsActions.Collapse))
     }
 
+    // One picker at a time: a circuit's takes over from the footer's, and the footer's back from it.
+    @Test
+    fun `hands the open picker between the footer and a circuit`() {
+        show()
+        buildCircuit("Pull-ups", "Dips")
+
+        press("+ Adicionar exercício")
+        press("+ Adicionar exercício ao circuito")
+        named("+ Adicionar exercício").assertExists()
+        press("+ Adicionar exercício")
+
+        named("+ Adicionar exercício ao circuito").assertExists()
+        compose.onAllNodes(hasText("Fechar") and isControl).assertCountEquals(1)
+    }
+
+    // A circuit's picker is that circuit's: a pick from the first lands in it, and the second is untouched.
+    @Test
+    fun `keeps each circuit's picker to its own circuit`() {
+        val files = show()
+        buildCircuit("Pull-ups", "Dips")
+        buildCircuit("Rows", "Dips")
+
+        compose.onAllNodes(hasText("+ Adicionar exercício ao circuito") and isControl)[0].performClick()
+        compose.onAllNodes(hasText("+ Adicionar exercício ao circuito") and isControl).assertCountEquals(1)
+        press("Rows")
+        type("Nome", "Two circuits")
+        press("Salvar")
+
+        val (first, second) = files.savedWorkout("two-circuits").blocks.map { it as WorkoutBlock.Circuit }
+        assertEquals(listOf("pull-ups", "dips", "rows"), first.members.map { it.exerciseId })
+        assertEquals(listOf("rows", "dips"), second.members.map { it.exerciseId })
+    }
+
     private class Files(
         private val workouts: List<Workout> = emptyList(),
         private val programs: List<Program> = emptyList(),

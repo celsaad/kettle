@@ -1,6 +1,5 @@
 package com.casco.kettle.shell.home
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -11,7 +10,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -39,7 +38,7 @@ import kotlin.time.Instant
 // Today's own pieces (#412): the date over the title, "Off the plan"'s heading and its empty session.
 
 /**
- * The date, "Today", and the gear that is the app's only way to Settings: a bordered 36dp square inside
+ * The date, "Today", and the gear that is the app's only way to Settings: a hairline 44dp circle inside
  * a 48dp target, icon-only, so it carries the name. The date in the locale's order, read at [now].
  */
 @Composable
@@ -67,19 +66,20 @@ internal fun TitleRow(
         Box(
             Modifier
                 .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                // The press ripple the circle's shape, not the target's square around it.
+                .clip(CircleShape)
                 .clickable(role = Role.Button, onClick = onSettings)
                 .semantics { contentDescription = settings },
             contentAlignment = Alignment.Center,
         ) {
+            // The board's 44dp circle, a hairline and no fill (#486): a filled square read as a second card.
             Box(
                 Modifier
-                    .size(36.dp)
-                    .clip(GearShape)
-                    .background(colors.backgroundElement)
-                    .border(1.dp, colors.border, GearShape),
+                    .size(GEAR_SIZE)
+                    .border(1.dp, colors.border, CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
-                TypeIcon(R.drawable.icon_settings, KettleType.default, colors.textSecondary)
+                TypeIcon(R.drawable.icon_settings, KettleType.default, colors.text)
             }
         }
     }
@@ -122,4 +122,4 @@ internal fun EmptySessionRow(onStart: () -> Unit) {
     }
 }
 
-private val GearShape = RoundedCornerShape(10.dp)
+private val GEAR_SIZE = 44.dp

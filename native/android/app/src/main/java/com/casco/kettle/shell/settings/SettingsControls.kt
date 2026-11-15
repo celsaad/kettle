@@ -22,14 +22,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.casco.kettle.shell.list.ListRowMinHeight
 import com.casco.kettle.shell.list.ListRowSeparator
 import com.casco.kettle.shell.list.ListRowVerticalPadding
@@ -45,15 +46,15 @@ internal fun Section(
     @StringRes title: Int,
     content: @Composable () -> Unit,
 ) = Column(Modifier.padding(top = Spacing.four)) {
-    val locale = LocalConfiguration.current.locales[0]
-    // RN's `label` type uppercases at draw time; the bundle's string is in sentence case.
+    // A sentence-case heading in ink, as Settings' board draws its sections (#486), where these were RN's
+    // tracked `label` caps. Its 16sp sits under the 20sp row titles until #490 settles those.
     Text(
-        stringResource(title).uppercase(locale),
+        stringResource(title),
         Modifier
             .padding(bottom = Spacing.two)
             .semantics { heading() },
-        style = KettleType.label,
-        color = KettleTheme.colors.textSecondary,
+        style = KettleType.heading.copy(fontSize = SECTION_SIZE),
+        color = KettleTheme.colors.text,
     )
     content()
 }
@@ -132,6 +133,8 @@ internal fun ActionRow(
     title: String,
     detail: String,
     enabled: Boolean = true,
+    // A file's name, set in the file's face as Library's link and the file sheet set it (#486).
+    fileName: Boolean = false,
     onClick: () -> Unit,
 ) {
     val colors = KettleTheme.colors
@@ -151,7 +154,7 @@ internal fun ActionRow(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(title, style = KettleType.heading, color = colors.text)
+                Text(title, style = if (fileName) FileNameStyle else KettleType.heading, color = colors.text)
                 Text(detail, style = KettleType.small, color = colors.textSecondary)
             }
             // Decoration, as on the list rows: the row is named by its two texts, never by a chevron.
@@ -210,3 +213,9 @@ private val SEGMENTED_RADIUS = 14.dp
 private val SEGMENT_RADIUS = 11.dp
 private val SEGMENT_GAP = Spacing.half + 1.dp
 private const val DISABLED_ALPHA = 0.5f
+
+/** The board's 16px section heading. */
+private val SECTION_SIZE = 16.sp
+
+/** The board's 14px mono for a file's name. */
+private val FileNameStyle = KettleType.default.copy(fontFamily = FontFamily.Monospace, fontSize = 14.sp)

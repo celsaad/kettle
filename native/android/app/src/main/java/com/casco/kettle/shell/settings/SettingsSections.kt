@@ -90,7 +90,7 @@ internal fun Switches(
 @Composable
 internal fun YourFile(open: () -> Unit) =
     Section(R.string.settings_yourFile) {
-        ActionRow(LIBRARY_FILE_NAME, stringResource(R.string.settings_yourFileDetail), onClick = open)
+        ActionRow(LIBRARY_FILE_NAME, stringResource(R.string.settings_yourFileDetail), fileName = true, onClick = open)
     }
 
 /**

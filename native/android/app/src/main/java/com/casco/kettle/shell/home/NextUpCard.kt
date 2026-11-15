@@ -24,6 +24,9 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.NextUp
@@ -199,8 +202,21 @@ private fun RestDayCard(
         )
         rest.skipTo?.let { next ->
             val session = listOfNotNull(weekLabel(next.week, next.day), rest.skipToWorkout).joinToString(" · ")
+            val line = stringResource(R.string.today_restDayNext, session)
+            // The slot in ink and weight, as the board draws it (#486): what to come back for. Found from
+            // the end, as the receipt's next line is, past any words of the sentence the slot repeats.
+            val at = line.lastIndexOf(session)
             Text(
-                stringResource(R.string.today_restDayNext, session),
+                buildAnnotatedString {
+                    append(line)
+                    if (at >= 0) {
+                        addStyle(
+                            SpanStyle(color = colors.text, fontWeight = FontWeight.SemiBold),
+                            at,
+                            at + session.length,
+                        )
+                    }
+                },
                 Modifier.padding(top = Spacing.one),
                 style = KettleType.default,
                 color = colors.textSecondary,

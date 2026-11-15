@@ -25,6 +25,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.Exercise
 import com.casco.kettle.shell.R
@@ -39,6 +40,7 @@ import com.casco.kettle.shell.nav.Route
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.Spacing
+import com.casco.kettle.shell.theme.TypeIcon
 import kotlinx.datetime.TimeZone
 import kotlin.time.Clock
 import kotlin.time.Instant
@@ -119,7 +121,8 @@ private fun Actions(
     Modifier.fillMaxWidth(),
     horizontalArrangement = Arrangement.spacedBy(Spacing.two, Alignment.End),
 ) {
-    OutlinedPill(stringResource(R.string.exerciseDetail_yaml), onYaml)
+    // The file's own name for it, in the file's face, with "</>" (#486), as the board draws it.
+    OutlinedPill(stringResource(R.string.exerciseDetail_yaml), onYaml, code = true)
     OutlinedPill(stringResource(R.string.exerciseDetail_edit), onEdit)
 }
 
@@ -163,23 +166,30 @@ private fun Identity(
     }
 }
 
-/** A small outlined button, named by its own words, in a 48dp target. */
+/**
+ * A small outlined button, named by its own words, in a 48dp target. [code] for one about the YAML: its
+ * words in mono after a decorative "</>".
+ */
 @Composable
 private fun OutlinedPill(
     label: String,
     onClick: () -> Unit,
+    code: Boolean = false,
 ) {
     val colors = KettleTheme.colors
-    Box(
+    val style = if (code) KettleType.smallMedium.copy(fontFamily = FontFamily.Monospace) else KettleType.smallMedium
+    Row(
         Modifier
             .heightIn(min = 48.dp)
             .clip(PillShape)
             .border(1.dp, colors.textSecondary, PillShape)
             .clickable(role = Role.Button, onClick = onClick)
             .padding(horizontal = Spacing.three),
-        contentAlignment = Alignment.Center,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.one + 2.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(label, style = KettleType.smallMedium, color = colors.text)
+        if (code) TypeIcon(R.drawable.icon_code, style, colors.text)
+        Text(label, style = style, color = colors.text)
     }
 }
 

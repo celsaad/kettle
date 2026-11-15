@@ -47,7 +47,6 @@ import com.casco.kettle.shell.list.ListRow
 import com.casco.kettle.shell.list.ListRowSeparator
 import com.casco.kettle.shell.list.NoResults
 import com.casco.kettle.shell.list.SearchBar
-import com.casco.kettle.shell.list.TextAction
 import com.casco.kettle.shell.nav.Destination
 import com.casco.kettle.shell.nav.LocalNavigator
 import com.casco.kettle.shell.nav.LocalTabReselects
@@ -139,17 +138,22 @@ fun ProgramsScreen(
     }
 }
 
-/** "Writing a program by hand", the guide the `?` in the old header opened. */
+/**
+ * "Writing a program by hand", the guide the `?` in the old header opened: flush with the rows above it,
+ * as the board puts it (#486), where the action's own side padding set it in.
+ */
 @Composable
 private fun GuideLink(onClick: () -> Unit) {
-    Box(Modifier.padding(top = Spacing.two)) {
-        TextAction(
-            stringResource(R.string.programs_guideLink),
-            KettleType.smallMedium,
-            KettleTheme.colors.accentText,
-            onClick,
-        )
-    }
+    Text(
+        stringResource(R.string.programs_guideLink),
+        Modifier
+            .padding(top = Spacing.two)
+            .heightIn(min = 48.dp)
+            .clickable(role = Role.Button, onClick = onClick)
+            .wrapContentHeight(Alignment.CenterVertically),
+        style = KettleType.smallMedium,
+        color = KettleTheme.colors.accentText,
+    )
 }
 
 /**

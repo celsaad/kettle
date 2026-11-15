@@ -67,6 +67,7 @@ import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.MaxContentWidth
 import com.casco.kettle.shell.theme.Spacing
+import com.casco.kettle.shell.theme.TypeIcon
 import kotlinx.coroutines.flow.Flow
 import kotlin.reflect.KClass
 
@@ -210,7 +211,10 @@ private fun TypeFilter(
                     }
                 }.padding(horizontal = Spacing.two + 4.dp),
             verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.one + 2.dp),
         ) {
+            // Decorative: the button is named by its words and its state; the icon says filter (#486).
+            TypeIcon(R.drawable.icon_filter, KettleType.smallMedium, colors.text)
             Text(
                 if (all) stringResource(R.string.library_filterType) else chosen,
                 style = KettleType.smallMedium,

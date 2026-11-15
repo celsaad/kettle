@@ -20,6 +20,7 @@ import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.CircuitMember
+import com.casco.kettle.domain.Exercise
 import com.casco.kettle.domain.ExerciseConfig
 import com.casco.kettle.domain.Library
 import com.casco.kettle.domain.Program
@@ -47,6 +48,28 @@ import java.io.IOException
 // sit under it, its tap landing on the bar.
 @Config(qualifiers = "pt-w400dp-h4000dp")
 class WorkoutEditorScreenTest : WorkoutEditorHarness() {
+    // A hold row said "3 × 0:30" and nothing else: a time of what? A circuit's member line says "hold".
+    @Test
+    fun `says hold on a hold's row, and max hold for one with no target`() {
+        val fixed = Exercise("plank", "Plank", ExerciseConfig.TimedHold(sets = 3, holdSecMin = 30.0, restSec = 60.0))
+        val open = Exercise("hang", "Hang", ExerciseConfig.TimedHold(sets = 2, restSec = 0.0))
+        val files =
+            Files(
+                listOf(
+                    Workout(
+                        "holds",
+                        "Holds",
+                        listOf(WorkoutBlock.ExerciseBlock("plank"), WorkoutBlock.ExerciseBlock("hang")),
+                    ),
+                ),
+            )
+        files.rewrite { it.copy(exercises = it.exercises + fixed + open) }
+        show("holds", files)
+
+        named("3 × isometria 0:30 · descanso 1:00").assertExists()
+        named("2 × isometria máxima").assertExists()
+    }
+
     // saving
 
     @Test

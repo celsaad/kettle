@@ -65,7 +65,7 @@ internal fun EntryTable(context: TableContext) {
             Text(
                 context.name,
                 Modifier.weight(1f),
-                style = KettleType.heading,
+                style = KettleType.rowTitle,
                 color = colors.text,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,

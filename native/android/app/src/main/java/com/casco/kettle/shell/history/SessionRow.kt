@@ -100,7 +100,7 @@ internal fun SessionRow(
                     horizontalArrangement = Arrangement.spacedBy(Spacing.two),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(name, Modifier.weight(1f, fill = false), style = KettleType.heading, color = colors.text)
+                    Text(name, Modifier.weight(1f, fill = false), style = KettleType.rowTitle, color = colors.text)
                     if (recordIndex != null) PrBadge()
                 }
                 Text(details(row), style = KettleType.small, color = colors.textSecondary)

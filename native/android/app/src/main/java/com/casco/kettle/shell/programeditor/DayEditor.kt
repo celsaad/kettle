@@ -124,7 +124,7 @@ private fun OpenDayHeader(
             .semantics { collapse { true.also { onCollapse() } } },
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(label, Modifier.weight(1f), style = KettleType.heading, color = KettleTheme.colors.text)
+        Text(label, Modifier.weight(1f), style = KettleType.rowTitle, color = KettleTheme.colors.text)
         Chevron(expanded = true)
     }
 }

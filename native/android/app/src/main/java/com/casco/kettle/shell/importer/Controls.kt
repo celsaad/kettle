@@ -16,7 +16,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.shell.form.dashedBorder
 import com.casco.kettle.shell.theme.KettleTheme

@@ -130,7 +130,7 @@ private fun FolderLine(
         ) + PILL_INSET * 2
     val folderWords =
         maxOf(
-            rememberWidestText(words(stringResource(R.string.settings_backupFolder)), KettleType.heading),
+            rememberWidestText(words(stringResource(R.string.settings_backupFolder)), KettleType.rowLabel),
             rememberWidestText(words(label ?: stringResource(R.string.settings_backupFolderNone)), KettleType.small),
         )
     BoxWithConstraints(Modifier.fillMaxWidth()) {
@@ -167,7 +167,7 @@ private fun Folder(
             .padding(vertical = Spacing.two),
         verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically),
     ) {
-        Text(stringResource(R.string.settings_backupFolder), style = KettleType.heading, color = colors.text)
+        Text(stringResource(R.string.settings_backupFolder), style = KettleType.rowLabel, color = colors.text)
         Text(
             label ?: stringResource(R.string.settings_backupFolderNone),
             style = KettleType.small,

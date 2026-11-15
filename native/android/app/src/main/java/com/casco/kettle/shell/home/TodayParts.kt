@@ -111,7 +111,7 @@ internal fun EmptySessionRow(onStart: () -> Unit) {
             Modifier.weight(1f).heightIn(min = 48.dp),
             verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
-            Text(stringResource(R.string.today_emptySession), style = KettleType.heading, color = colors.text)
+            Text(stringResource(R.string.today_emptySession), style = KettleType.rowTitle, color = colors.text)
             Text(
                 stringResource(R.string.today_emptySessionDetail),
                 style = KettleType.small,

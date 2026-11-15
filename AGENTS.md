@@ -173,6 +173,8 @@ are house rules here rather than a backlog — cheap as you go, tedious to retro
   is the column everything else lines up on. A row that can't use the component (History's expands;
   Settings' are section siblings rather than list children) shares its exported metrics rather than
   retyping them. Sibling lists that look subtly unlike each other read as a bug, not a distinction.
+  A row's name is `KettleType.rowTitle` in a list of things and `rowLabel` in a list of settings or
+  details; `heading` is for headings (#490).
 - Sheet screens: a `Destination` with `Presentation.Sheet` in `shell/nav/Route.kt`, and its branch in
   `RouteContent` (`ShellRoutes.kt`), which the `when` won't compile without. The shell presents it as
   its sheet, with the grabber and × drawn over the top by `SheetChrome`; the screen's content starts

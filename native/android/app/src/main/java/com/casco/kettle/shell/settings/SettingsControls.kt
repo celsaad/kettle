@@ -48,7 +48,7 @@ internal fun Section(
     content: @Composable () -> Unit,
 ) = Column(Modifier.padding(top = Spacing.four)) {
     // A sentence-case heading in ink, as Settings' board draws its sections (#486), where these were RN's
-    // tracked `label` caps. Its 16sp sits under the 20sp row titles until #490 settles those.
+    // tracked `label` caps: 16sp display over the rows' 15sp `rowLabel` (#490).
     Text(
         stringResource(title),
         Modifier
@@ -164,7 +164,7 @@ internal fun ActionRow(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(title, style = if (fileName) FileNameStyle else KettleType.heading, color = colors.text)
+                Text(title, style = if (fileName) FileNameStyle else KettleType.rowLabel, color = colors.text)
                 Text(detail, style = KettleType.small, color = colors.textSecondary)
             }
             // Decoration, as on the list rows: the row is named by its two texts, never by a chevron.
@@ -199,7 +199,7 @@ internal fun SwitchRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(title, style = KettleType.heading, color = colors.text)
+            Text(title, style = KettleType.rowLabel, color = colors.text)
             Text(detail, style = KettleType.small, color = colors.textSecondary)
         }
         // The board's switch: ink when on with the page's colour for the thumb, an outlined track when off.

@@ -35,7 +35,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.collapse
 import androidx.compose.ui.semantics.expand
-import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
@@ -256,7 +255,7 @@ private fun ExerciseRow(
     Box(Modifier.clickable(role = Role.Button, onClick = onClick)) {
         ListRow {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(exercise.name, style = KettleType.heading, color = colors.text)
+                Text(exercise.name, style = KettleType.rowTitle, color = colors.text)
                 Text(
                     // Placeholders are numbered alphabetically: summary, then type.
                     type?.let { stringResource(R.string.library_typedSummary, summary, stringResource(it)) } ?: summary,

@@ -151,7 +151,7 @@ internal fun WorkoutRow(
                 .wrapContentHeight(Alignment.CenterVertically),
             verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
-            Text(workout.name, style = KettleType.heading, color = colors.text)
+            Text(workout.name, style = KettleType.rowTitle, color = colors.text)
             val summary = workoutShapeText(shape)
             Text(
                 if (inProgram) stringResource(R.string.library_workoutInProgram, summary) else summary,

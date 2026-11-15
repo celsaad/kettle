@@ -30,7 +30,6 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -174,10 +173,10 @@ internal fun PickerRow(
         // row: unbounded, the plan took the width it asked for and squeezed the name to a letter a line
         // at 200% text (#469). Two thirds, since a name is one long word ("Bodyweight") where the plan
         // wraps between words; and from the name's own width, so a short name leaves the plan its line.
-        val nameWidth = rememberWidestText(listOf(name), KettleType.heading)
+        val nameWidth = rememberWidestText(listOf(name), KettleType.rowTitle)
         val planMax = maxWidth - Spacing.two - minOf(nameWidth, maxWidth * NAME_MAX_SHARE)
         ListRow {
-            Text(name, Modifier.weight(1f), style = KettleType.heading, color = runnerColors.text)
+            Text(name, Modifier.weight(1f), style = KettleType.rowTitle, color = runnerColors.text)
             if (detail != null) {
                 Text(
                     detail,

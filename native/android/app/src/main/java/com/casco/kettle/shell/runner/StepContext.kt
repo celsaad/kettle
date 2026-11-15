@@ -18,6 +18,7 @@ import com.casco.kettle.domain.beatsPersonalBest
 import com.casco.kettle.domain.canAddSet
 import com.casco.kettle.domain.canDropSet
 import com.casco.kettle.domain.elapsedSec
+import com.casco.kettle.domain.lastRoundReps
 import com.casco.kettle.domain.offeredLoadKg
 import com.casco.kettle.domain.openingLoadKg
 import com.casco.kettle.domain.previousAmrapRounds
@@ -47,6 +48,8 @@ data class StepReadings(
     val lastRounds: Long? = null,
     val beatsBest: Boolean,
     val next: StepPreview?,
+    /** A circuit's reps step from round 2: what the member logged last round (#478). */
+    val lastRoundReps: Long? = null,
     /** What the step [next] previews opens on, if it's a reps set with a load: the rest's line says it (#473). */
     val nextLoadKg: Double? = null,
     /** The circuit [next] sits in, whose round its line names in place of a set. */
@@ -139,6 +142,7 @@ internal fun stepContext(
                     ?.let { previousAmrapRounds(prior, it.exerciseId) },
             beatsBest = beatsPersonalBest(state, prior, now),
             next = upcomingPreview(snapshot.steps, snapshot.stepIndex),
+            lastRoundReps = (snapshot.step as? RunnerStep.Reps)?.let { state.lastRoundReps(it) },
             nextLoadKg = (upcoming as? RunnerStep.Reps)?.let { state.openingLoadKg(it) },
             nextCircuit = upcoming?.circuit,
             canAddSet = canAddSet(snapshot),

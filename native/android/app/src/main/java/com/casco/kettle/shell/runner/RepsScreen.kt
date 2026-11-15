@@ -61,6 +61,7 @@ internal fun RepsScreen(
     context: StepContext,
 ) {
     val readings = context.readings
+    val inCircuit = step.circuit != null
     StepLayout(
         top = {
             val resources = LocalResources.current
@@ -74,13 +75,22 @@ internal fun RepsScreen(
             // The canvas's order (#410): the load leads, as the larger number, with last time and the
             // next load to try right under it; the reps are counted below.
             Column(Modifier.padding(top = Spacing.two), verticalArrangement = Arrangement.spacedBy(Spacing.one)) {
-                LoadControl(context)
+                // A circuit's bodyweight member has no load to set (#478); a weighted one keeps it.
+                if (!(inCircuit && bodyweight(step, context))) LoadControl(context)
                 LastTimeRow(step, context)
             }
         },
-        middle = { RepsCounter(step, context) },
+        middle = {
+            RepsCounter(step, context)
+            // What the member did last round, the reference a circuit moves by (#478).
+            readings.lastRoundReps?.let { reps ->
+                val round = (step.circuit?.round ?: 1) - 1
+                Secondary(stringResource(R.string.session_reps_lastRound, "$reps", "$round"))
+            }
+        },
         controls = {
-            EffortTrack(context)
+            // No effort in a circuit, as the board draws it (#478): it moves too fast for one per member.
+            if (!inCircuit) EffortTrack(context)
             BottomRow(
                 RowAction(
                     stringResource(R.string.session_reps_logSet),
@@ -317,3 +327,9 @@ private val REPS_NUMERAL = 96.sp
 private val STEPPER_GAP = 22.dp
 private val REPS_LABEL_GAP = 6.dp
 private val LOAD_UNIT = 18.sp
+
+/** No load on the step's plan and none set on this set: nothing to show a load control for. */
+private fun bodyweight(
+    step: RunnerStep.Reps,
+    context: StepContext,
+): Boolean = (step.targetWeightKg ?: 0.0) <= 0 && context.snapshot.inputs.weightKg <= 0

@@ -394,7 +394,8 @@
       "repsLabel": "Reps",
       "repsDoneTarget": "Reps done · target {{target}}",
       "effortLabel": "Effort · optional",
-      "tryLoad": "Try {{weight}}"
+      "tryLoad": "Try {{weight}}",
+      "lastRound": "Round {{round}}: {{reps}}"
     },
     "numberPad": {
       "dismiss": "Dismiss keypad",

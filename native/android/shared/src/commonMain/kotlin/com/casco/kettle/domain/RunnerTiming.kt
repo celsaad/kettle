@@ -188,3 +188,13 @@ private fun cued(
  */
 fun RunnerState.openingLoadKg(step: RunnerStep.Reps): Double? =
     (memberEntry(step.memberKey) as? SessionEntry.Reps)?.sets?.lastOrNull()?.weightKg ?: step.targetWeightKg
+
+/**
+ * The reps the member logged last round, for a circuit's step from its second round on (#478): its last
+ * logged set, which in a circuit is the round before. Null outside a circuit, in its first round, or
+ * with nothing logged.
+ */
+fun RunnerState.lastRoundReps(step: RunnerStep.Reps): Long? =
+    step.circuit
+        ?.takeIf { it.round > 1 }
+        ?.let { (memberEntry(step.memberKey) as? SessionEntry.Reps)?.sets?.lastOrNull()?.reps }

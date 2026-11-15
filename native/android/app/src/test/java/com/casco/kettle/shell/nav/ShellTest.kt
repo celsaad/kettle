@@ -2,6 +2,7 @@ package com.casco.kettle.shell.nav
 
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.drawable.ColorDrawable
 import android.os.Looper
 import android.view.View
 import androidx.activity.ComponentActivity
@@ -38,11 +39,14 @@ import com.casco.kettle.domain.SessionParams
 import com.casco.kettle.shell.files.FakeStoredFiles
 import com.casco.kettle.shell.files.LatestFiles
 import com.casco.kettle.shell.files.LocalLatestFiles
+import com.casco.kettle.shell.theme.DarkColors
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.LightColors
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -233,6 +237,29 @@ class ShellTest {
 
         go { back() }
         compose.runOnIdle { assertEquals(false, shell.sheet.backCallback.isEnabled) }
+    }
+
+    /**
+     * A scheme switched under an open sheet: the tab's picture behind it, taken as it opened, is of the
+     * scheme gone, and kept the band above the sheet in it (#481). The same scheme again keeps it.
+     */
+    @Test
+    fun `a change of scheme under the sheet drops the tab's picture for the new background`() {
+        show()
+        go { push(Route(Destination.Settings)) }
+        val backdrop = shell.sheet.stage.backdrop
+        compose.runOnIdle {
+            shell.sheet.repaint(LightColors)
+            shell.sheet.repaint(LightColors)
+            assertNotNull(backdrop.drawable)
+        }
+
+        compose.runOnIdle { shell.sheet.repaint(DarkColors) }
+
+        compose.runOnIdle {
+            assertNull(backdrop.drawable)
+            assertEquals(DarkColors.background.toArgb(), (backdrop.background as ColorDrawable).color)
+        }
     }
 
     @Test

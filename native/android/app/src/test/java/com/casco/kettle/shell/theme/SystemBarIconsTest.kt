@@ -1,6 +1,7 @@
 package com.casco.kettle.shell.theme
 
 import androidx.activity.ComponentActivity
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -127,6 +128,48 @@ class SystemBarIconsTest {
         }
 
         exits++
+
+        assertEquals(true to true, darkIcons())
+    }
+
+    /**
+     * The shell is four Compose views on one window, each setting the icons. Any one recomposing (the
+     * preferences reread on Resume) set the runner's light ones back over its orange field (#470).
+     */
+    @Test
+    fun `over the orange field, another view recomposing keeps the icons dark`() {
+        var latest by mutableStateOf<Preferences?>(null)
+        compose.setContent {
+            CompositionLocalProvider(LocalRunnerBars provides RunnerBars()) {
+                PreferredKettleTheme(preferences, null, reread = false, runnerShown = true, splashExits = 0) {
+                    RunnerBarIcons(darkIcons = true)
+                }
+                PreferredKettleTheme(preferences, latest, reread = false, runnerShown = true, splashExits = 0) {}
+            }
+        }
+        compose.waitForIdle()
+        assertEquals(true to true, darkIcons())
+
+        latest = Preferences(UnitSystem.METRIC, ThemePreference.LIGHT, false, true, null)
+
+        assertEquals(true to true, darkIcons())
+    }
+
+    /** Once the runner leaves, the scheme decides again, not the black field it last asked for. */
+    @Test
+    fun `the runner leaving hands the icons back to the scheme, whatever its field asked`() {
+        var runner by mutableStateOf(true)
+        compose.setContent {
+            CompositionLocalProvider(LocalRunnerBars provides RunnerBars()) {
+                PreferredKettleTheme(preferences, null, reread = false, runnerShown = runner, splashExits = 0) {
+                    if (runner) RunnerBarIcons(darkIcons = false)
+                }
+            }
+        }
+        compose.waitForIdle()
+        assertEquals(false to false, darkIcons())
+
+        runner = false
 
         assertEquals(true to true, darkIcons())
     }

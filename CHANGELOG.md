@@ -218,6 +218,10 @@ here, next to what it describes.
   screen, the clock scrolling instead (#477).
 - **Lighter circuit steps**: inside a circuit, a set skips the effort rating, a bodyweight move
   doesn't show a weight to set, and from the second round you see last round's reps, "Round 1: 16". A paused AMRAP's big button is Resume (#478).
+- **Clearer session sheets**: Swap lists each exercise's sets and reps without load or rest, so names
+  stop wrapping. In Coming up the circuit you're in sits on the line, says "Then round 3: all 3
+  again", and shows last round's reps on the move you're on; End says which round finishes the
+  workout (#479).
 
 ---
 

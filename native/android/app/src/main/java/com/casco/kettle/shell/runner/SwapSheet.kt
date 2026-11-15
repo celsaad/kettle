@@ -25,7 +25,7 @@ import com.casco.kettle.domain.SwapChoices
 import com.casco.kettle.domain.UnitSystem
 import com.casco.kettle.domain.rankByName
 import com.casco.kettle.shell.R
-import com.casco.kettle.shell.library.exerciseSummary
+import com.casco.kettle.shell.library.exerciseTarget
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.Spacing
 
@@ -101,14 +101,19 @@ private fun LazyListScope.group(
     }
 }
 
-/** The exercise's plan as the library lists it, after its type where the type differs. */
+/**
+ * The exercise's plan, after its type where the type differs: the library row's target without its load
+ * (#479), "3 × 8–12", since the full summary's load and rest wrapped the name even at 1×. A swap is picked
+ * by what it trains, and the load set is the runner's, not the plan's.
+ */
 @Composable
 private fun planText(
     config: ExerciseConfig,
     units: UnitSystem,
     typed: Boolean,
 ): String {
-    val summary = exerciseSummary(config, units)
+    val summary =
+        exerciseTarget(if (config is ExerciseConfig.Reps) config.copy(targetWeightKg = null) else config, units)
     return if (typed) {
         stringResource(
             R.string.session_swap_otherMeta,

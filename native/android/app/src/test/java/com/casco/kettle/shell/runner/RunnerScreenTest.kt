@@ -585,7 +585,7 @@ class RunnerScreenTest : RunnerScreenHarness() {
         button("Pernas").performClick()
         compose.onNodeWithText("0 de 2 etapas concluídas").assertExists()
         compose.onNodeWithText("Agora").assertExists()
-        compose.onNodeWithText("Série 1 de 2 · alvo 5").assertExists()
+        compose.onNodeWithText("Série 1 de 2 · Alvo 5").assertExists()
         compose.onNodeWithText(":", substring = true).assertDoesNotExist()
     }
 

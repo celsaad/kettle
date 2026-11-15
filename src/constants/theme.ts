@@ -84,6 +84,9 @@ export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
  *
  * - `pace`: `text` 17.87, `textSecondary` 8.69 (7.58 on `backgroundElement`), `outline`/`track` 3.58
  *   against the field, the fill 4.99 against the track. `getReady`'s orange `numeral` 6.68.
+ * - `field`, a sheet's search fill (#479), with no edge of its own: `text` 13.87 and `textSecondary` 6.74
+ *   on it. Only the sheets draw it, and they are always `pace`'s, so `work` and `rest` repeat their
+ *   `backgroundElement` to keep each field whole.
  * - `work`: `text` 6.68, `textSecondary` 5.25 (4.55 on `backgroundElement`, the board's dark panel over
  *   orange (#473) as ink at 8%, the darkest tint the secondary text still clears AA on: the board's own
  *   10% gave 4.36. `text` is 5.80 there, and a pill's `outline` 3.01, which 9% would take under 3:1, so

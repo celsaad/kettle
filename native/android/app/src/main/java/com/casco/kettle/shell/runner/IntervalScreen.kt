@@ -173,7 +173,7 @@ private fun Resources.thenHint(
             when {
                 next.memberKey != step.memberKey -> getString(R.string.session_interval_thenNext, next.exerciseName)
 
-                next.setIndex > step.setIndex -> getString(R.string.session_comingUp_thenRound, "${next.setIndex}")
+                next.setIndex > step.setIndex -> getString(R.string.session_interval_thenRound, "${next.setIndex}")
 
                 // A one-member circuit's next visit: the same exercise again, from its first round.
                 else -> null

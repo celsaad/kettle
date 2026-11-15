@@ -179,7 +179,8 @@ internal fun SetsSheet(
         }
         Column(Modifier.padding(top = Spacing.two)) {
             model.rows.forEachIndexed { index, row ->
-                if (index > 0) ListRowSeparator()
+                // A rule above the first set too, as the board draws it (#479): it starts the list.
+                ListRowSeparator()
                 SetRowView(step, row, context, removable = model.canRemoveLast && index == model.rows.lastIndex)
             }
         }

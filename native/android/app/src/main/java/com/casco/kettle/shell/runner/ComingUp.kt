@@ -72,11 +72,14 @@ internal fun ComingUp(
             if (ends) {
                 item {
                     RailRow(RailNode.End, StopState.NEXT, first = timeline.stops.isEmpty(), last = true) {
-                        Text(
-                            stringResource(R.string.session_comingUp_end),
-                            style = KettleType.default,
-                            color = runnerColors.text,
-                        )
+                        Column(Modifier.semantics(mergeDescendants = true) {}) {
+                            Text(
+                                stringResource(R.string.session_comingUp_end),
+                                style = KettleType.default,
+                                color = runnerColors.text,
+                            )
+                            LocalResources.current.afterLastRound(timeline.stops.lastOrNull())?.let { Secondary(it) }
+                        }
                     }
                 }
             }
@@ -118,8 +121,9 @@ private fun StopRow(
             }
         }
 
+        // On the rail rather than beside it (#479): the loop's left edge is the line, its members' nodes on it.
         is TimelineStop.Loop -> {
-            RailRow(RailNode.None, stop.state, first, last) { LoopCard(stop, entryOf) }
+            LoopCard(stop, last, entryOf)
         }
 
         is TimelineStop.Circuit -> {

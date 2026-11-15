@@ -45,6 +45,7 @@
     "pace": {
       "background": "#0B0A08",
       "backgroundElement": "#1F1A14",
+      "field": "#2A241C",
       "border": "rgba(247,243,234,0.12)",
       "text": "#F7F3EA",
       "textSecondary": "#B3AB9C",
@@ -62,6 +63,7 @@
     "getReady": {
       "background": "#0B0A08",
       "backgroundElement": "#1F1A14",
+      "field": "#2A241C",
       "border": "rgba(247,243,234,0.12)",
       "text": "#F7F3EA",
       "textSecondary": "#B3AB9C",
@@ -79,6 +81,7 @@
     "work": {
       "background": "#E8763E",
       "backgroundElement": "rgba(11,10,8,0.08)",
+      "field": "rgba(11,10,8,0.08)",
       "border": "rgba(11,10,8,0.16)",
       "text": "#0B0A08",
       "textSecondary": "#3A1C0C",
@@ -96,6 +99,7 @@
     "rest": {
       "background": "#1E5A8C",
       "backgroundElement": "rgba(5,20,35,0.28)",
+      "field": "rgba(5,20,35,0.28)",
       "border": "rgba(245,249,253,0.16)",
       "text": "#F5F9FD",
       "textSecondary": "#C5DBEF",

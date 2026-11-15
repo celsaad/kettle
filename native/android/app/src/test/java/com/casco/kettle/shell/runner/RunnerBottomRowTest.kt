@@ -1,5 +1,6 @@
 package com.casco.kettle.shell.runner
 
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
@@ -91,7 +92,8 @@ class RunnerBottomRowTest : RunnerScreenHarness() {
     fun `a rest has +30s and Skip, and no Pause`() {
         val resting = started(plan(block(squat))).advanced()
         show(running(plan(block(squat)), resting))
-        compose.onNodeWithText("de 1:30 restantes").assertExists()
+        // The clock alone under the rest (#477): its total no longer repeats under it.
+        compose.onNodeWithText("restantes", substring = true).assertDoesNotExist()
         button("Pausar").assertDoesNotExist()
         button("+30s").performClick()
         assertEquals(RunnerCommand.AddRestSeconds(30.0), sent.last())
@@ -130,5 +132,20 @@ class RunnerBottomRowTest : RunnerScreenHarness() {
         button("Pular descanso").assertDoesNotExist()
         button("Pular").performClick()
         assertEquals(RunnerCommand.Advance(paused.snapshot.visit), sent.last())
+    }
+
+    /**
+     * On a short phone at 200% text a paused EMOM's line, clock, hint and stepper pushed Back and Done off
+     * the bottom (#477): the step's middle scrolls instead, so the controls stay on screen.
+     */
+    @Test
+    @Config(qualifiers = "pt-w320dp-h480dp")
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun `at a large text size on a short screen a paused EMOM keeps Back and Done on screen`() {
+        fontScale = 2f
+        val emom = plan(block(everyMinute))
+        show(running(emom, started(emom).after(RunnerCommand.TogglePause)))
+        button("Voltar").assertIsDisplayed()
+        button("Concluir").assertIsDisplayed()
     }
 }

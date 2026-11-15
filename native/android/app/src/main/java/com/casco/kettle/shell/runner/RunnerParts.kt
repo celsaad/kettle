@@ -25,7 +25,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.TextUnit
@@ -91,9 +90,8 @@ internal fun Numeral(
 internal fun Caps(
     label: String,
     modifier: Modifier = Modifier,
-    tracking: TextUnit = CapsTracking,
 ) {
-    Text(label, modifier, style = QuietStyle.copy(letterSpacing = tracking))
+    Text(label, modifier, style = QuietStyle.copy(letterSpacing = CapsTracking))
 }
 
 /**
@@ -167,13 +165,16 @@ internal fun ProgressTrack(
     }
 }
 
-/** The author's note, capped at two lines so it can't push what's being counted down the screen. */
+/**
+ * The author's note, capped at two lines so it can't push what's being counted down the screen. Plain, as
+ * the board sets it (#477).
+ */
 @Composable
 internal fun StepNotes(notes: String?) {
     if (notes.isNullOrEmpty()) return
     Text(
         notes,
-        style = KettleType.small.copy(fontStyle = FontStyle.Italic),
+        style = KettleType.small,
         color = runnerColors.textSecondary,
         maxLines = 2,
         overflow = TextOverflow.Ellipsis,

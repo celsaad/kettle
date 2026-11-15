@@ -338,7 +338,6 @@
       "workoutComplete": "ワークアウト完了"
     },
     "rest": {
-      "remaining": "全{{total}}中の残り",
       "add30": "+30秒",
       "skip": "休憩をスキップ",
       "minus15": "−15秒"
@@ -351,9 +350,7 @@
       "thenNext": "次は{{name}}",
       "leftInMinute": "この1分の残り",
       "leftInInterval": "このインターバルの残り",
-      "repsThisMinuteCaps": "この1分のレップ",
       "repsThisMinute": "この1分のレップ",
-      "repsIntoRoundCaps": "{{index}}ラウンド目のレップ",
       "repsIntoRound": "{{index}}ラウンド目のレップ"
     },
     "reps": {

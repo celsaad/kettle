@@ -26,7 +26,7 @@ class LoggedTextTest {
         assertEquals("série 2 · 8 × 60 kg", text(LoggedUnit.Set(2, PreviousSet.Reps(8, 60.0))))
         assertEquals("série 1 · 8 repetições", text(LoggedUnit.Set(1, PreviousSet.Reps(8, null))))
         assertEquals("série 1 · 1 repetição", text(LoggedUnit.Set(1, PreviousSet.Reps(1, 0.0))))
-        assertEquals("série 3 · 45s", text(LoggedUnit.Set(3, PreviousSet.Hold(45.0))))
+        assertEquals("série 3 · 45 s", text(LoggedUnit.Set(3, PreviousSet.Hold(45.0))))
     }
 
     @Test

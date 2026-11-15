@@ -93,7 +93,7 @@ class LibraryScreenTest {
         row("Plank").assertExists()
         row("Breather").assertDoesNotExist()
         compose.onNodeWithText("Reps · 3 × 8–12").assertExists()
-        compose.onNodeWithText("Isometria · 3 × 30–60s").assertExists()
+        compose.onNodeWithText("Isometria · 3 × 30–60 s").assertExists()
     }
 
     @Test
@@ -178,11 +178,11 @@ class LibraryScreenTest {
         val others =
             listOf(
                 Exercise("burpees", "Burpees", ExerciseConfig.Hiit(40.0, 20.0, 8)) to
-                    "40s de trabalho · 20s de descanso · ×8",
-                Exercise("swings", "Swings", ExerciseConfig.Emom(60.0, 10.0)) to "intervalo de 60s · 10 min",
-                Exercise("cindy", "Cindy", ExerciseConfig.Amrap(600.0)) to "limite de 600s",
+                    "40 s de trabalho · 20 s de descanso · ×8",
+                Exercise("swings", "Swings", ExerciseConfig.Emom(60.0, 10.0)) to "intervalo de 60 s · 10 min",
+                Exercise("cindy", "Cindy", ExerciseConfig.Amrap(600.0)) to "limite de 600 s",
                 Exercise("run", "Run", ExerciseConfig.Cardio(distanceMeters = 5000.0)) to "5000 m",
-                Exercise("bike", "Bike", ExerciseConfig.Cardio(durationSec = 1200.0)) to "1200s",
+                Exercise("bike", "Bike", ExerciseConfig.Cardio(durationSec = 1200.0)) to "1200 s",
                 Exercise("hang", "Dead hang", ExerciseConfig.TimedHold(3, restSec = 60.0)) to
                     "3 × isometria máxima",
             )

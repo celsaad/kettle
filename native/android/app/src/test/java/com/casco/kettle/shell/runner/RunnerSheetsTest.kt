@@ -46,7 +46,7 @@ class RunnerSheetsTest : RunnerScreenHarness() {
         button("Trocar").performClick()
         compose.onNodeWithText("Pelo resto deste exercício. Seu treino continua como está.").assertExists()
         compose.onNodeWithText("Também de repetições").assertExists()
-        assertTrue(compose.onAllNodesWithText("3 × 8 · 60s de descanso").fetchSemanticsNodes().isNotEmpty())
+        assertTrue(compose.onAllNodesWithText("3 × 8 · 60 s de descanso").fetchSemanticsNodes().isNotEmpty())
         button("Manter Agachamento").assertIsTarget().performClick()
         compose.onNodeWithText("Trocar Agachamento").assertDoesNotExist()
         assertTrue(sent.none { it is RunnerCommand.Swap })
@@ -59,7 +59,7 @@ class RunnerSheetsTest : RunnerScreenHarness() {
         compose.onNode(hasContentDescription("Buscar exercícios")).performTextInput("prancha")
         compose.onNodeWithText("Também de repetições").assertDoesNotExist()
         compose.onNodeWithText("Outros tipos").assertExists()
-        compose.onNodeWithText("Isometria · 2 × 20–30s · 30s de descanso").assertExists()
+        compose.onNodeWithText("Isometria · 2 × 20–30 s · 30 s de descanso").assertExists()
         button("Prancha").performClick()
         assertEquals(RunnerCommand.Swap(plank), sent.last())
     }

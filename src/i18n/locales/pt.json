@@ -173,7 +173,7 @@
     "typedSummary": "{{type}} · {{summary}}",
     "workoutInProgram": "No seu programa · {{shape}}",
     "targetReps": "{{sets}} × {{reps}}{{weight}}",
-    "targetHold": "{{sets}} × {{hold}}s",
+    "targetHold": "{{sets}} × {{hold}} s",
     "targetHoldOpen": "{{sets}} × isometria máxima"
   },
   "programGuide": {
@@ -390,7 +390,6 @@
       "workoutComplete": "Treino concluído"
     },
     "rest": {
-      "remaining": "de {{total}} restantes",
       "add30": "+30s",
       "skip": "Pular descanso",
       "minus15": "−15s"
@@ -403,9 +402,7 @@
       "thenNext": "Depois, {{name}}",
       "leftInMinute": "restantes neste minuto",
       "leftInInterval": "restantes neste intervalo",
-      "repsThisMinuteCaps": "REPS NESTE MINUTO",
       "repsThisMinute": "Reps neste minuto",
-      "repsIntoRoundCaps": "REPS NA RODADA {{index}}",
       "repsIntoRound": "Reps na rodada {{index}}"
     },
     "reps": {
@@ -1068,7 +1065,7 @@
     "set_one": "{{count}} série",
     "set_other": "{{count}} séries",
     "set_zero": "{{count}} séries",
-    "seconds": "{{n}}s",
+    "seconds": "{{n}} s",
     "minutes": "{{n}} min",
     "metres": "{{n}} m",
     "weight": "{{weight}} {{unit}}",
@@ -1087,15 +1084,15 @@
     "oneRepMax": "1RM estimado {{weight}}"
   },
   "summary": {
-    "hiit": "{{work}}s de trabalho · {{rest}}s de descanso · ×{{rounds}}",
-    "reps": "{{sets}} × {{reps}}{{weight}} · {{rest}}s de descanso",
+    "hiit": "{{work}} s de trabalho · {{rest}} s de descanso · ×{{rounds}}",
+    "reps": "{{sets}} × {{reps}}{{weight}} · {{rest}} s de descanso",
     "repsWeight": " · {{weight}} {{unit}}",
-    "hold": "{{sets}} × {{hold}}s · {{rest}}s de descanso",
-    "holdOpen": "{{sets}} × isometria máxima · {{rest}}s de descanso",
-    "emom": "intervalo de {{interval}}s · {{minutes}} min",
-    "amrap": "limite de {{cap}}s",
+    "hold": "{{sets}} × {{hold}} s · {{rest}} s de descanso",
+    "holdOpen": "{{sets}} × isometria máxima · {{rest}} s de descanso",
+    "emom": "intervalo de {{interval}} s · {{minutes}} min",
+    "amrap": "limite de {{cap}} s",
     "cardioDistance": "{{n}} m",
-    "cardioDuration": "{{n}}s",
+    "cardioDuration": "{{n}} s",
     "restSeconds": "{{n}} segundos"
   },
   "units": {
@@ -1114,7 +1111,7 @@
     "noTarget": "sem alvo",
     "interval": "{{variant}} · {{progress}}",
     "round": "rodada {{index}} de {{total}}",
-    "seconds": "{{n}}s"
+    "seconds": "{{n}} s"
   },
   "file": {
     "counts": "{{exercises}} · {{workouts}} · {{programs}}",

@@ -2,9 +2,14 @@ package com.casco.kettle.shell.runner
 
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import com.casco.kettle.domain.Exercise
+import com.casco.kettle.domain.ExerciseConfig
 import com.casco.kettle.domain.RunnerCommand
+import com.casco.kettle.domain.RunnerPlan
 import com.casco.kettle.domain.Session
 import com.casco.kettle.domain.SessionEntry
+import com.casco.kettle.domain.Workout
+import com.casco.kettle.domain.buildSteps
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -33,7 +38,7 @@ class RunnerIntervalTest : RunnerScreenHarness() {
         compose.onNodeWithText("Minuto 2 começa em").assertExists()
         button("Concluir").assertDoesNotExist()
         // The reps stay editable while it rests.
-        button("Aumentar REPS NESTE MINUTO").performClick()
+        button("Aumentar Reps neste minuto").performClick()
         assertEquals(RunnerCommand.SetReps(11), sent.last())
         button("Pular").performClick()
         assertEquals(RunnerCommand.Advance(FIRST_VISIT), sent.last())
@@ -77,10 +82,23 @@ class RunnerIntervalTest : RunnerScreenHarness() {
     fun `the extra reps come only in the cap's last minute`() {
         val amrap = plan(block(grinder))
         show(running(amrap))
-        button("Aumentar REPS NA RODADA 1").assertDoesNotExist()
+        button("Aumentar Reps na rodada 1").assertDoesNotExist()
         // Ten minutes capped down to one, as a minute left on the clock.
         show(running(amrap, started(amrap).after(RunnerCommand.AddRestSeconds(-540.0))))
-        button("Aumentar REPS NA RODADA 1").performClick()
+        button("Aumentar Reps na rodada 1").performClick()
         assertEquals(RunnerCommand.SetExtraReps(1), sent.last())
+    }
+
+    /** While a minute rests out its notes go (#477): the countdown to the next minute is what matters then. */
+    @Test
+    fun `an EMOM's notes show while it works, and go while the minute rests out`() {
+        val noted = Exercise("noted", "Swing anotado", ExerciseConfig.Emom(60.0, 5.0, 10), notes = "Quadril para trás")
+        val workout = Workout("w", "Pernas", listOf(block(noted)))
+        val all = exercises + noted
+        val emom = RunnerPlan.Runnable(workout, all, buildSteps(workout, all))
+        show(running(emom))
+        compose.onNodeWithText("Quadril para trás").assertExists()
+        button("Concluir").performClick()
+        compose.onNodeWithText("Quadril para trás").assertDoesNotExist()
     }
 }

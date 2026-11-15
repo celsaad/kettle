@@ -114,7 +114,7 @@ internal fun valueText(
     }
 
 /**
- * A value with its unit, as the rest of the app writes one ("90s", "5 min", "400 m"), not with a
+ * A value with its unit, as the rest of the app writes one ("90 s", "5 min", "400 m"), not with a
  * field label's suffix: the locale decides the spacing, and ja writes 90秒 with no space before it.
  */
 @Composable

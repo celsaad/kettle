@@ -416,7 +416,7 @@ class ImportScreenTest : ImportHarness() {
         picks(Library(1, listOf(pullUps.copy(config = threeSets.copy(restSec = 60.0))), emptyList(), emptyList()))
         chooseFile()
 
-        compose.onNodeWithContentDescription("Descanso: era 90s, agora: 60s").assertExists()
+        compose.onNodeWithContentDescription("Descanso: era 90 s, agora: 60 s").assertExists()
     }
 
     @Test

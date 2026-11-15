@@ -76,7 +76,7 @@ class ExerciseDetailScreenTest {
 
         text("Reps").assertExists()
         text("Squat").assert(isHeading())
-        text("3 × 5 · 60 kg · 120s de descanso").assertExists()
+        text("3 × 5 · 60 kg · 120 s de descanso").assertExists()
         text("Brace before every rep.").assertExists()
     }
 

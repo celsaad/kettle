@@ -27,8 +27,8 @@ import com.casco.kettle.shell.theme.KettleTheme
  * Accent, after a detour through grey: a grey triangle beside a grey chevron stopped announcing itself
  * as the way to start anything. The accent budget is spent on the *fill* instead, so the next-up card's
  * Start is the only solid accent block on Home and these are a tint behind a glyph. The glyph is
- * `accentText`, not `accent`: it measures 4.75:1 on `accentSoft` light and 6.84:1 dark, where `accent`
- * took the old palette under the 3:1 a meaningful graphic needs (3.85:1 since #487).
+ * `accentText`, not `accent`: it measures 4.75:1 on `accentSoft` light and 6.85:1 dark. `accent` fell
+ * under the 3:1 a meaningful graphic needs in the old palette; it is 3.85:1 since #487.
  *
  * A drawn [glyph] with no words, so [label] is its only name, and it has to say *which* row: a column
  * of identical triangles otherwise announces itself the same all the way down. The target is 48dp

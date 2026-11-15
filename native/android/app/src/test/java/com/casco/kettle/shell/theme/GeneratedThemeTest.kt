@@ -235,7 +235,7 @@ class GeneratedThemeTest {
         }
         // The HOLD badge's 12sp label, the text blue on its own soft tint, on the page and on a card: the
         // canvas blue for words failed it in light, which is why `accentCalmText` is a shade darker there.
-        val badges = mapOf(LightColors to (4.61 to 5.07), DarkColors to (5.28 to 4.75))
+        val badges = mapOf(LightColors to (4.62 to 5.07), DarkColors to (5.28 to 4.75))
         for ((colors, ratios) in badges) {
             with(colors) {
                 assertContrast(ratios.first, accentCalmText, accentCalmSoft.over(background.surface()))

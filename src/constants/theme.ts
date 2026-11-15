@@ -23,9 +23,9 @@ import theme from '@/constants/theme.json';
  * - `onAccent` on `accent`, the filled button's label: 4.99 light (white on the deeper `#b94f24`; the
  *   old `#cf6a37` took it at 3.64, AA-large only), 6.36 dark.
  * - `lineStrong` is the 3:1 edge of a control that has no fill of its own, or only the surface's
- *   (Settings' segmented controls, Back up now): 3.30 on `background` and 3.65 on `backgroundElement` light, 3.41 and 3.13
- *   dark. Never on `backgroundSelected`, where it falls short (3.02 light, 2.78 dark). `border` stays
- *   the decorative hairline, rows' and cards'.
+ *   (Settings' segmented controls, Back up now): 3.30 on `background` and 3.65 on
+ *   `backgroundElement` light, 3.41 and 3.13 dark. Never on `backgroundSelected`, where it falls short
+ *   (3.02 light, 2.78 dark). `border` stays the decorative hairline, rows' and cards'.
  * - The training calendar sits on the page since #414, and its marks are held to **3:1 against
  *   `background`** — WCAG 1.4.11's bar for a graphic you need to read the chart, which here is
  *   whether a day was trained at all. The rest day's outline (`calendarEmpty`) and the three shades,
@@ -36,7 +36,7 @@ import theme from '@/constants/theme.json';
  *   which is why these are measured rather than eyeballed.
  * - `accentCalmText` is the recover blue for words, `#2a64a0` in light: a shade under the canvas's
  *   `#2f6fae`, which stays `accentCalm`, the blue for fills and marks. On its own soft tint, the HOLD
- *   badge's 12sp label, the canvas blue measured 3.95 on the page and 4.34 on a card; this one is 4.61
+ *   badge's 12sp label, the canvas blue measured 3.95 on the page and 4.34 on a card; this one is 4.62
  *   and 5.07 (dark, `#6aa6de`, is 5.28 and 4.75).
  * - The YAML view colours a key in `accentText` and a number in `accentCalmText`, on `background`:
  *   5.56 and 5.53 light, 8.52 and 7.28 dark (#444).

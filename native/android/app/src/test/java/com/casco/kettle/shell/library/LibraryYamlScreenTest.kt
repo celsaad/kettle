@@ -111,16 +111,7 @@ class LibraryYamlScreenTest {
 
         compose.onNodeWithText("Copiar").performScrollTo().performClick()
 
-        val clipboard =
-            ApplicationProvider.getApplicationContext<Context>().getSystemService(
-                ClipboardManager::class.java,
-            )
-        val copied =
-            clipboard.primaryClip!!
-                .getItemAt(0)
-                .text
-                .toString()
-        assertEquals(ParseResult.Ok(squatLibrary), parseLibraryYaml(copied))
+        assertEquals(ParseResult.Ok(squatLibrary), parseLibraryYaml(clipboardText()))
         // Said, but not announced: the system announces a copy itself, and a live region doubled it.
         compose.onNodeWithText("Copiado").assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.LiveRegion))
     }
@@ -149,19 +140,6 @@ class LibraryYamlScreenTest {
         compose.onNodeWithText("exercises:", substring = true).assertDoesNotExist()
         compose.onNodeWithText("Este exercício não está mais na sua biblioteca.").assertDoesNotExist()
     }
-
-    private fun clipboardText() =
-        ApplicationProvider
-            .getApplicationContext<Context>()
-            .getSystemService(ClipboardManager::class.java)
-            .primaryClip!!
-            .getItemAt(0)
-            .text
-            .toString()
-
-    /** No share sheet to open: an unresolvable intent throws, as a device with no sharing app does. */
-    private fun noSharingApp() =
-        shadowOf(ApplicationProvider.getApplicationContext<Application>()).checkActivities(true)
 
     // A sheet that won't open must not drop the document: it is copied, and the note says why.
     @Test
@@ -195,7 +173,7 @@ class LibraryYamlScreenTest {
 
         compose.onNodeWithText("Copiar").performScrollTo().performClick()
 
-        compose.onNodeWithText("Não foi possível copiar.").assert(
+        compose.onNodeWithText(COPY_FAILED).assert(
             SemanticsMatcher.expectValue(SemanticsProperties.LiveRegion, LiveRegionMode.Polite),
         )
         compose.onNodeWithText("Copiado").assertDoesNotExist()
@@ -204,50 +182,87 @@ class LibraryYamlScreenTest {
     // "Copiado" is for reading, not for describing a later copy: two seconds, as Import's.
     @Test
     fun `clears Copied after about two seconds`() {
-        compose.mainClock.autoAdvance = false
         show(exerciseId = "squat")
-        compose.onNodeWithText("Copiar").performScrollTo().performClick()
-        compose.mainClock.advanceTimeByFrame()
-        compose.onNodeWithText("Copiado").assertExists()
+        tapWithClockPaused("Copiar")
 
+        showsFor("Copiado", shownAt = 1_500, goneBy = 2_500)
+    }
+
+    // A second Copy restarts the two seconds rather than inheriting what was left of the first's.
+    @Test
+    fun `restarts the two seconds on a second Copy`() {
+        show(exerciseId = "squat")
+        tapWithClockPaused("Copiar")
         compose.mainClock.advanceTimeBy(1_500)
-        compose.onNodeWithText("Copiado").assertExists()
-        compose.mainClock.advanceTimeBy(1_000)
+        compose.onNodeWithText("Copiar").performClick()
+        compose.mainClock.advanceTimeByFrame()
 
-        compose.onNodeWithText("Copiado").assertDoesNotExist()
+        showsFor("Copiado", shownAt = 1_500, goneBy = 2_500)
     }
 
     // A sentence saying why holds three times as long, so it can be read, and still goes.
     @Test
-    fun `holds a fallback note for about six seconds, past where Copied would have gone`() {
+    fun `holds the share fallback's note for about six seconds`() {
         noSharingApp()
-        compose.mainClock.autoAdvance = false
         show(exerciseId = "squat")
-        compose.onNodeWithText("Compartilhar").performScrollTo().performClick()
-        compose.mainClock.advanceTimeByFrame()
+        tapWithClockPaused("Compartilhar")
 
-        compose.mainClock.advanceTimeBy(2_500)
-        compose.onNodeWithText(SHARE_COPIED).assertExists()
-        compose.mainClock.advanceTimeBy(4_000)
-
-        compose.onNodeWithText(SHARE_COPIED).assertDoesNotExist()
+        showsFor(SHARE_COPIED, shownAt = 2_500, goneBy = 6_500)
     }
 
     @Test
-    fun `holds the format link's note for about six seconds too`() {
+    fun `holds the format link's note for about six seconds`() {
         noSharingApp()
         show(exerciseId = "squat")
-        // Scrolled to while the clock still runs: a scroll waits on animations a paused clock never ends.
-        compose.onNodeWithText("Como o formato funciona").performScrollTo()
+        tapWithClockPaused("Como o formato funciona")
+
+        showsFor(LINK_COPIED, shownAt = 2_500, goneBy = 6_500)
+    }
+
+    // A failure left up would describe the next copy too.
+    @Test
+    @Config(shadows = [RefusingClipboard::class])
+    fun `clears a refused copy's note after about six seconds`() {
+        show(exerciseId = "squat")
+        tapWithClockPaused("Copiar")
+
+        showsFor(COPY_FAILED, shownAt = 2_500, goneBy = 6_500)
+    }
+
+    private fun clipboardText() =
+        ApplicationProvider
+            .getApplicationContext<Context>()
+            .getSystemService(ClipboardManager::class.java)
+            .primaryClip!!
+            .getItemAt(0)
+            .text
+            .toString()
+
+    /** No share sheet or browser to open: an unresolvable intent throws, as on a device with neither. */
+    private fun noSharingApp() =
+        shadowOf(ApplicationProvider.getApplicationContext<Application>()).checkActivities(true)
+
+    /**
+     * Taps [label] with the clock paused from then on, scrolled to first while it still runs: a scroll
+     * waits on animations a paused clock never ends.
+     */
+    private fun tapWithClockPaused(label: String) {
+        compose.onNodeWithText(label).performScrollTo()
         compose.mainClock.autoAdvance = false
-        compose.onNodeWithText("Como o formato funciona").performClick()
+        compose.onNodeWithText(label).performClick()
         compose.mainClock.advanceTimeByFrame()
+    }
 
-        compose.mainClock.advanceTimeBy(2_500)
-        compose.onNodeWithText(LINK_COPIED).assertExists()
-        compose.mainClock.advanceTimeBy(4_000)
-
-        compose.onNodeWithText(LINK_COPIED).assertDoesNotExist()
+    /** [text] is still up [shownAt] ms from now and gone by [goneBy]. */
+    private fun showsFor(
+        text: String,
+        shownAt: Long,
+        goneBy: Long,
+    ) {
+        compose.mainClock.advanceTimeBy(shownAt)
+        compose.onNodeWithText(text).assertExists()
+        compose.mainClock.advanceTimeBy(goneBy - shownAt)
+        compose.onNodeWithText(text).assertDoesNotExist()
     }
 
     private class Files(
@@ -262,6 +277,7 @@ class LibraryYamlScreenTest {
 
 private const val SHARE_COPIED = "Não foi possível abrir o compartilhamento, então foi copiado."
 private const val LINK_COPIED = "Nenhum navegador para abrir, então o link foi copiado."
+private const val COPY_FAILED = "Não foi possível copiar."
 
 private val squatLibrary =
     Library(

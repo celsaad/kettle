@@ -184,7 +184,7 @@ class ProgramEditorWeeksTest : ProgramEditorHarness() {
         week(2).assertOpen(false)
     }
 
-    // A move that swaps two other weeks leaves the open one where it is.
+    // The open number only follows a week that moved: two others trading places aren't the reader's.
     @Test
     fun `leaves an unrelated open week open when two others trade places`() {
         draftWith(3)
@@ -218,7 +218,8 @@ class ProgramEditorWeeksTest : ProgramEditorHarness() {
         week(3).assertOpen(false)
     }
 
-    // Duplicating the open week itself leaves the original open and the copy folded.
+    // Through the open week's own button, the one in reach: the copy arrives folded, so the reader stays
+    // on the original rather than being moved to something they haven't looked at.
     @Test
     fun `leaves the original open and the copy folded when the open week is duplicated`() {
         draftWith(3)
@@ -249,6 +250,29 @@ class ProgramEditorWeeksTest : ProgramEditorHarness() {
         menu(2, "Excluir semana")
 
         week(1).assertOpen(false)
+        week(2).assertOpen(false)
+    }
+
+    // A week after the open one is no business of its number: neither copy nor removal moves it.
+    @Test
+    fun `keeps an earlier open week open when a later one is duplicated`() {
+        draftWith(3)
+        week(1).performClick()
+
+        menu(3, "Duplicar")
+
+        week(1).assertOpen(true)
+        week(4).assertOpen(false)
+    }
+
+    @Test
+    fun `keeps an earlier open week open when a later one is deleted`() {
+        draftWith(3)
+        week(1).performClick()
+
+        menu(3, "Excluir semana")
+
+        week(1).assertOpen(true)
         week(2).assertOpen(false)
     }
 }

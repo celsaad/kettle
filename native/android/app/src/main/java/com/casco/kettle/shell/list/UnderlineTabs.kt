@@ -20,14 +20,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
+import com.casco.kettle.shell.theme.Spacing
+import com.casco.kettle.shell.theme.rememberWidestText
 
 /**
  * A screen's sections as tabs (#413): equal widths over a hairline, the one showing in the text's ink,
@@ -45,18 +45,8 @@ fun <T> UnderlineTabs(
     onSelect: (T) -> Unit,
 ) {
     val colors = KettleTheme.colors
-    val measurer = rememberTextMeasurer()
-    val density = LocalDensity.current
     // Bold, as the selected label is drawn, so a label never grows past its width when it's picked.
-    val widest =
-        with(density) {
-            items.maxOfOrNull { (_, label) ->
-                measurer
-                    .measure(label, labelStyle(true))
-                    .size.width
-                    .toDp()
-            } ?: 0.dp
-        }
+    val widest = rememberWidestText(items.map { it.second }, labelStyle(true))
     BoxWithConstraints(Modifier.fillMaxWidth()) {
         val fits = items.isEmpty() || (widest + TAB_INSET * 2) * items.size <= maxWidth
         val scroll = rememberScrollState()
@@ -73,7 +63,7 @@ fun <T> UnderlineTabs(
             items.forEach { (value, label) ->
                 val active = value == selected
                 val inView = remember { BringIntoViewRequester() }
-                if (active && !fits) LaunchedEffect(Unit) { inView.bringIntoView() }
+                if (active && !fits) LaunchedEffect(selected) { inView.bringIntoView() }
                 Box(
                     (if (fits) Modifier.weight(1f) else Modifier)
                         .heightIn(min = 48.dp)
@@ -92,7 +82,6 @@ fun <T> UnderlineTabs(
                         style = labelStyle(active),
                         color = if (active) colors.text else colors.textSecondary,
                         textAlign = TextAlign.Center,
-                        maxLines = 1,
                     )
                 }
             }
@@ -103,9 +92,9 @@ fun <T> UnderlineTabs(
 private fun labelStyle(active: Boolean) =
     KettleType.default.copy(fontWeight = if (active) FontWeight.Bold else FontWeight.Medium)
 
-private val TAB_INSET = 4.dp
+private val TAB_INSET = Spacing.one
 
 /** Wide enough apart that tabs at their own widths still read as separate targets. */
-private val SCROLLING_INSET = 16.dp
+private val SCROLLING_INSET = Spacing.three
 private val HAIRLINE = 1.dp
 private val UNDERLINE = 3.dp

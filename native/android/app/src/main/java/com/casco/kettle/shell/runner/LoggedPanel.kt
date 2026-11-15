@@ -14,7 +14,6 @@ import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.LoggedUnit
 import com.casco.kettle.domain.RunnerCommand
@@ -51,12 +50,14 @@ internal fun LoggedPanel(
     ) {
         // One text in two inks rather than two Texts side by side: at 200% text the pair split the
         // width into two columns and each broke mid-phrase (#469), where one line of prose wraps whole.
+        // The bundle's phrase sets the order and the gap; the title is found in it to take the second ink.
         val title = stringResource(R.string.session_logged_title)
+        val phrase = stringResource(R.string.session_logged_phrase, title, logged)
+        val at = phrase.indexOf(title)
         Text(
             buildAnnotatedString {
-                withStyle(SpanStyle(color = runnerColors.textSecondary)) { append(title) }
-                append(" ")
-                append(logged)
+                append(phrase)
+                if (at >= 0) addStyle(SpanStyle(color = runnerColors.textSecondary), at, at + title.length)
             },
             Modifier.weight(1f),
             style = KettleType.default,

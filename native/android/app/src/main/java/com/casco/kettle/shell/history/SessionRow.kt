@@ -19,7 +19,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -27,7 +26,6 @@ import androidx.compose.ui.semantics.collapse
 import androidx.compose.ui.semantics.expand
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -45,6 +43,7 @@ import com.casco.kettle.shell.theme.Chevron
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.Spacing
+import com.casco.kettle.shell.theme.rememberWidestText
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.plus
@@ -97,7 +96,7 @@ internal fun SessionRow(
             horizontalArrangement = Arrangement.spacedBy(Spacing.two + 4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            DayColumn(row)
+            DayColumn(row, state.dayWidth)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(Spacing.two),
@@ -118,55 +117,57 @@ internal fun SessionRow(
 }
 
 /**
- * Whether a row is open, why its delete was refused, if it was, and the units its loads read in: the
- * screen's state for it.
+ * Whether a row is open, why its delete was refused, if it was, the units its loads read in, and the
+ * day column's width, one for every row: the screen's state for it.
  */
 internal data class RowState(
     val expanded: Boolean,
     val failure: String?,
     val units: UnitSystem,
+    val dayWidth: Dp,
 )
 
 /**
- * As wide as the widest short weekday or two-digit day at the reader's text size, and never under the
+ * As wide as the widest short weekday or day of the month at the reader's text size, and never under the
  * board's 38dp: a fixed 38dp broke "qua." mid-word at 200% (#480), and one width for every row keeps the
- * names lined up down the list, where each row sizing itself would stagger them.
+ * names lined up down the list, where each row sizing itself would stagger them. The screen works it out
+ * once and hands it to every row: per row, it built seven ICU formatters for each row scrolled in.
  */
 @Composable
-private fun dayColumnWidth(): Dp {
+internal fun dayColumnWidth(): Dp {
     val locale = LocalConfiguration.current.locales[0]
-    val density = LocalDensity.current
-    val measurer = rememberTextMeasurer()
-    return remember(locale, density) {
-        // Any seven consecutive days are the seven weekdays.
-        val anyDay = LocalDate.fromEpochDays(0)
-        val weekdays = (0 until DAYS_IN_WEEK).map { formatShortWeekday(anyDay.plus(it, DateTimeUnit.DAY), locale) }
-        val widest =
-            (weekdays.map { measurer.measure(it, KettleType.small) } + measurer.measure(WIDEST_DAY, KettleType.heading))
-                .maxOf { it.size.width }
-        with(density) { maxOf(DAY_COLUMN_MIN, widest.toDp()) }
-    }
+    // Any seven consecutive days are the seven weekdays.
+    val weekdays =
+        remember(locale) {
+            val anyDay = LocalDate.fromEpochDays(0)
+            (0 until DAYS_IN_WEEK).map { formatShortWeekday(anyDay.plus(it, DateTimeUnit.DAY), locale) }
+        }
+    // Every day of the month, since a proportional face's "28" can be wider than its "30".
+    val widestDay = rememberWidestText(DAYS_OF_MONTH, KettleType.heading)
+    return maxOf(DAY_COLUMN_MIN, rememberWidestText(weekdays, KettleType.small), widestDay)
 }
 
 /** The day of the month over its short weekday, the column a row's words line up beside. */
 @Composable
-private fun DayColumn(row: HistorySessionView) =
-    Column(Modifier.width(dayColumnWidth()), horizontalAlignment = Alignment.CenterHorizontally) {
-        val locale = LocalConfiguration.current.locales[0]
-        Text(
-            row.day
-                ?.day
-                ?.toString()
-                .orEmpty(),
-            style = KettleType.heading,
-            color = KettleTheme.colors.text,
-        )
-        Text(
-            row.day?.let { formatShortWeekday(it, locale) }.orEmpty(),
-            style = KettleType.small,
-            color = KettleTheme.colors.textSecondary,
-        )
-    }
+private fun DayColumn(
+    row: HistorySessionView,
+    width: Dp,
+) = Column(Modifier.width(width), horizontalAlignment = Alignment.CenterHorizontally) {
+    val locale = LocalConfiguration.current.locales[0]
+    Text(
+        row.day
+            ?.day
+            ?.toString()
+            .orEmpty(),
+        style = KettleType.heading,
+        color = KettleTheme.colors.text,
+    )
+    Text(
+        row.day?.let { formatShortWeekday(it, locale) }.orEmpty(),
+        style = KettleType.small,
+        color = KettleTheme.colors.textSecondary,
+    )
+}
 
 /** The record's entry, else the first, as "Squat · 3 × 5 · 60 kg". The name is the user's, verbatim. */
 @Composable
@@ -288,5 +289,6 @@ private val DAY_COLUMN_MIN = 38.dp
 
 private const val DAYS_IN_WEEK = 7
 
-/** The widest day of the month in the column's digits, as wide as any two. */
-private const val WIDEST_DAY = "30"
+private const val LONGEST_MONTH = 31
+
+private val DAYS_OF_MONTH = (1..LONGEST_MONTH).map { "$it" }

@@ -386,6 +386,7 @@
     "undo": "元に戻す",
     "logged": {
       "title": "記録済み",
+      "phrase": "{{title}} {{value}}",
       "setLoaded": "{{index}}セット目 · {{reps}} × {{weight}}",
       "setBodyweight": "{{index}}セット目 · {{reps}}",
       "setHold": "{{index}}セット目 · {{seconds}}",

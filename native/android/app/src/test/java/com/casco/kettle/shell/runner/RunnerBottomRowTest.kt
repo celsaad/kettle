@@ -64,9 +64,12 @@ class RunnerBottomRowTest : RunnerScreenHarness() {
     }
 
     @Test
+    // Native graphics, as above: in legacy mode nothing overflows, so only native can catch a 1× stack.
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
     fun `at the default size Back, the main action and Done share one line`() {
-        show(running(plan(block(plank))))
-        val main = button("Pausar").getUnclippedBoundsInRoot()
+        val hold = plan(block(plank))
+        show(running(hold, started(hold).after(RunnerCommand.TogglePause)))
+        val main = button("Continuar").getUnclippedBoundsInRoot()
         val back = button("Voltar").getUnclippedBoundsInRoot()
         assertTrue(main.top < back.bottom && back.top < main.bottom)
         assertTrue(back.right <= main.left)

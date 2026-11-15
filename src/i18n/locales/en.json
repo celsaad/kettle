@@ -412,6 +412,7 @@
     "undo": "Undo",
     "logged": {
       "title": "Logged",
+      "phrase": "{{title}} {{value}}",
       "setLoaded": "set {{index}} · {{reps}} × {{weight}}",
       "setBodyweight": "set {{index}} · {{reps}}",
       "setHold": "set {{index}} · {{seconds}}",

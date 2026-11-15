@@ -342,6 +342,20 @@ class RunnerScreenTest : RunnerScreenHarness() {
         assertTrue(done.width >= edit.width - 1.dp)
     }
 
+    @Test
+    // Native graphics: in legacy mode nothing overflows, so only native can catch a 1× stack.
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun `at the default size the receipt's tiles share a row and Done fills the rest of the foot`() {
+        show(RunnerEntry.Complete(RunnerView.Completed(plan(block(squat)), finished("s", 60.0), FinishBackupState.OK)))
+
+        val time = compose.onNode(hasText("30 min") and hasText("Tempo")).getUnclippedBoundsInRoot()
+        val sets = compose.onNode(hasText("1") and hasText("Séries")).getUnclippedBoundsInRoot()
+        assertEquals(time.top, sets.top)
+        val edit = button("Editar registro").getUnclippedBoundsInRoot()
+        val done = button("Concluir").getUnclippedBoundsInRoot()
+        assertTrue(done.width > edit.width)
+    }
+
     /**
      * The receipt (#416): the day, the numbers, the exercise against last time with its PR and 1RM, said
      * as one node with the signed change the drawn arrow stands for; Done and Edit log at the foot.

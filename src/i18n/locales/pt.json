@@ -438,6 +438,7 @@
     "undo": "Desfazer",
     "logged": {
       "title": "Registrado",
+      "phrase": "{{title}} {{value}}",
       "setLoaded": "série {{index}} · {{reps}} × {{weight}}",
       "setBodyweight": "série {{index}} · {{reps}}",
       "setHold": "série {{index}} · {{seconds}}",

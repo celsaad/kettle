@@ -27,13 +27,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -44,6 +42,7 @@ import com.casco.kettle.shell.list.ListRow
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.Spacing
 import com.casco.kettle.shell.theme.TypeIcon
+import com.casco.kettle.shell.theme.rememberWidestText
 
 /**
  * The add picker (§3.5); the swap's is a sheet of its own ([SwapSheet], #417). Search shows above eight
@@ -175,14 +174,7 @@ internal fun PickerRow(
         // row: unbounded, the plan took the width it asked for and squeezed the name to a letter a line
         // at 200% text (#469). Two thirds, since a name is one long word ("Bodyweight") where the plan
         // wraps between words; and from the name's own width, so a short name leaves the plan its line.
-        val measurer = rememberTextMeasurer()
-        val nameWidth =
-            with(LocalDensity.current) {
-                measurer
-                    .measure(name, KettleType.heading)
-                    .size.width
-                    .toDp()
-            }
+        val nameWidth = rememberWidestText(listOf(name), KettleType.heading)
         val planMax = maxWidth - Spacing.two - minOf(nameWidth, maxWidth * NAME_MAX_SHARE)
         ListRow {
             Text(name, Modifier.weight(1f), style = KettleType.heading, color = runnerColors.text)

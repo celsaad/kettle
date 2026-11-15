@@ -22,14 +22,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.ExerciseAgainstLast
 import com.casco.kettle.domain.Session
@@ -48,6 +46,7 @@ import com.casco.kettle.shell.progress.Readings
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.Spacing
 import com.casco.kettle.shell.theme.TypeIcon
+import com.casco.kettle.shell.theme.rememberWidestText
 
 /**
  * Completion (#416), a receipt: which day this was, the session's three numbers, each exercise against
@@ -132,19 +131,15 @@ private fun Tiles(
             sessionSetCount(session).toString() to stringResource(R.string.session_complete_sets),
             exercises.toString() to stringResource(R.string.session_complete_exercises),
         )
-    val measurer = rememberTextMeasurer()
-    val density = LocalDensity.current
     val widest =
-        with(density) {
-            tiles.maxOf { (value, label) ->
-                maxOf(
-                    measurer.measure(value, KettleType.heading).size.width,
-                    measurer.measure(label, KettleType.small).size.width,
-                ).toDp()
-            }
-        }
+        maxOf(
+            rememberWidestText(tiles.map { it.first }, KettleType.heading),
+            rememberWidestText(tiles.map { it.second }, KettleType.small),
+        )
     BoxWithConstraints {
-        val fits = widest + Spacing.three <= maxWidth / tiles.size
+        // Each tile's share of the row less the dividers between them, and the start padding all but
+        // the first take.
+        val fits = widest + Spacing.three <= (maxWidth - DIVIDER_WIDTH * (tiles.size - 1)) / tiles.size
         Column {
             Rule()
             if (fits) {
@@ -195,7 +190,7 @@ private fun Tile(
 private fun Rule() = Box(Modifier.fillMaxWidth().height(1.dp).background(runnerColors.outline))
 
 @Composable
-private fun Divider() = Box(Modifier.fillMaxHeight().width(1.dp).background(runnerColors.outline))
+private fun Divider() = Box(Modifier.fillMaxHeight().width(DIVIDER_WIDTH).background(runnerColors.outline))
 
 /** One row per exercise, then the 1RM note once, only where a 1RM shows. */
 @Composable
@@ -289,3 +284,5 @@ private fun Pinned(
         }
     }
 }
+
+private val DIVIDER_WIDTH = 1.dp

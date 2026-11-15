@@ -24,7 +24,6 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -33,6 +32,7 @@ import com.casco.kettle.shell.R
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.Spacing
 import com.casco.kettle.shell.theme.TypeIcon
+import com.casco.kettle.shell.theme.rememberWidestText
 
 /**
  * The runner's one bottom row (#409): Back on the left, the main action in the middle, and the step's
@@ -52,30 +52,12 @@ internal fun BottomRow(
 ) {
     val backAction = back?.let { RowAction(stringResource(R.string.session_prev), R.drawable.icon_back, it) }
     val slots = listOfNotNull(backAction, side)
-    val measurer = rememberTextMeasurer()
-    val density = LocalDensity.current
+    val slotWidths = slots.map { maxOf(SLOT_WIDTH, rememberWidestText(listOf(it.label), SlotLabel) + SLOT_INSET * 2) }
+    val mainWidth = rememberWidestText(listOf(main.label), KettleType.heading) + MAIN_INSET * 2
     BoxWithConstraints {
         // At 200% text "Voltar", "Continuar" and "Concluir" can't share one line at any split, and the
         // main action's word broke mid-word (#469). Then it takes a line of its own, over the slots.
-        val need =
-            with(density) {
-                val slotWidths =
-                    slots.map {
-                        maxOf(
-                            SLOT_WIDTH,
-                            measurer
-                                .measure(it.label, SlotLabel)
-                                .size.width
-                                .toDp() + Spacing.two * 2,
-                        )
-                    }
-                val mainWidth =
-                    measurer
-                        .measure(main.label, KettleType.heading)
-                        .size.width
-                        .toDp() + Spacing.two * 2
-                slotWidths.fold(mainWidth) { sum, width -> sum + width + Spacing.two }
-            }
+        val need = slotWidths.fold(mainWidth) { sum, width -> sum + width + Spacing.two }
         if (need <= maxWidth) {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(Spacing.two),
@@ -110,7 +92,7 @@ private fun MainButton(
     action: RowAction,
     modifier: Modifier,
 ) {
-    val measurer = rememberTextMeasurer()
+    val words = rememberWidestText(listOf(action.label), KettleType.heading)
     val density = LocalDensity.current
     BoxWithConstraints(
         modifier
@@ -118,16 +100,9 @@ private fun MainButton(
             .clip(RowShape)
             .background(runnerColors.accent)
             .clickable(role = Role.Button, onClick = action.onClick)
-            .padding(horizontal = Spacing.two, vertical = Spacing.one),
+            .padding(horizontal = MAIN_INSET, vertical = Spacing.one),
         contentAlignment = Alignment.Center,
     ) {
-        val words =
-            with(density) {
-                measurer
-                    .measure(action.label, KettleType.heading)
-                    .size.width
-                    .toDp()
-            }
         val symbol = with(density) { KettleType.heading.fontSize.toDp() }
         val beside = action.icon == null || words + symbol + Spacing.two <= maxWidth
         val icon = @Composable { action.icon?.let { TypeIcon(it, KettleType.heading, runnerColors.onAccent) } }
@@ -175,7 +150,7 @@ private fun SlotButton(
             .clickable(role = Role.Button, onClick = action.onClick)
             // 8dp, not 4: at 200% text the word grew to the slot's edge and touched its outline (#469).
             // The slot widens past 64dp instead, which the main button gives up.
-            .padding(horizontal = Spacing.two, vertical = Spacing.two),
+            .padding(horizontal = SLOT_INSET, vertical = Spacing.two),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(Spacing.one, Alignment.CenterVertically),
     ) {
@@ -278,3 +253,7 @@ internal val SlotLabel = KettleType.smallMedium.copy(fontWeight = FontWeight.Sem
 /** The canvas's pill, inside its 48dp target. */
 private val PILL_HEIGHT = 44.dp
 private val RowShape = RoundedCornerShape(20.dp)
+
+/** The side slot's and the main button's side padding, read by the row's fit check as by their layout. */
+private val SLOT_INSET = Spacing.two
+private val MAIN_INSET = Spacing.two

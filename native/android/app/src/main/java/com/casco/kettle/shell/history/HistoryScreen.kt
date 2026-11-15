@@ -155,6 +155,7 @@ fun HistoryScreen(
     val log = files.sessionLog
     val library = files.library ?: EmptyLibrary
     val units = files.unitsOrDevice()
+    val dayWidth = dayColumnWidth()
     val listState = rememberLazyListState()
     ScrollsToTopOnReselect(Tab.Progress, reselected, listState)
 
@@ -192,7 +193,12 @@ fun HistoryScreen(
                     SessionRow(
                         row,
                         name = listing.nameOf(row),
-                        RowState(expandedId == row.id, deleting.failure?.takeIf { it.id == row.id }?.reason, units),
+                        RowState(
+                            expandedId == row.id,
+                            deleting.failure?.takeIf { it.id == row.id }?.reason,
+                            units,
+                            dayWidth,
+                        ),
                         recordIndex = records[row.id],
                         rowActions(row, actions, deleting, deletable = row.id != runningId) {
                             expandedId = if (expandedId == row.id) null else row.id

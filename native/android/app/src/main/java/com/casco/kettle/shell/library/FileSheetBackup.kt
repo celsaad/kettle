@@ -224,5 +224,8 @@ private val PillShape = RoundedCornerShape(percent = 50)
 /** Back up now's side padding, read by the row's fit check as by the pill. */
 private val PILL_INSET = Spacing.three
 
-/** A text's words, and a path's segments, the pieces it can wrap between. */
-private fun words(text: String) = text.split(' ', '/').filter { it.isNotEmpty() }
+/**
+ * A text's words, and a path's segments with their slash, the pieces it can wrap between: a line can
+ * break after a "/" but not before it, so "Documents/" is the piece that has to fit.
+ */
+private fun words(text: String) = text.split(Regex("(?<=/)| ")).filter { it.isNotEmpty() }

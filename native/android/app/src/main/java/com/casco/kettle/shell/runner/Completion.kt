@@ -249,8 +249,8 @@ private fun ComparisonRow(
             horizontalArrangement = Arrangement.spacedBy(Spacing.two),
         ) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Spacing.half)) {
-                // Wrapping, as the board's row does: a long badge ("Recorde · isometria mais longa") at
-                // 200% text took the width first and broke the name mid-word beside it; it now drops under.
+                // Wrapping, as the board's row does: unweighted beside the name, a long badge at large text
+                // would take the width first and leave the name a sliver; here it drops under the name.
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(Spacing.two),
                     verticalArrangement = Arrangement.spacedBy(Spacing.half),

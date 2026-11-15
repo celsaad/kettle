@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Material Symbols "filter_list", 400 regular: the Library's Type filter, as the board draws it
-     (#486). Apache 2.0, like the font the other icons come from. -->
+     (#486), redrawn in the 0–960 box the other icons use. Apache 2.0, like the
+     font the other icons come from. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
     android:height="24dp"

@@ -5,6 +5,7 @@ import androidx.activity.FullyDrawnReporter
 import androidx.activity.FullyDrawnReporterOwner
 import androidx.activity.compose.LocalFullyDrawnReporterOwner
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -60,6 +61,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -594,6 +596,8 @@ class HomeScreenTest {
             ).fetchSemanticsNode().config[SemanticsProperties.Text].first()
         val slot = line.spanStyles.single { it.item.fontWeight == FontWeight.SemiBold }
         assertEquals("Semana 1 · Day 3 · Pull day", line.text.substring(slot.start, slot.end))
+        // In ink, the other half of it: a span of weight alone left it in the line's secondary colour.
+        assertNotEquals(Color.Unspecified, slot.item.color)
     }
 
     /** User data, so it stays in the language it was written in on a translated screen. */

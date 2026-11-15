@@ -46,8 +46,8 @@ internal fun Section(
     @StringRes title: Int,
     content: @Composable () -> Unit,
 ) = Column(Modifier.padding(top = Spacing.four)) {
-    // A sentence-case heading in ink, as the board draws Settings' sections (#486): the tracked caps were
-    // RN's `label` type, which the redesign's lists dropped everywhere else.
+    // A sentence-case heading in ink, as Settings' board draws its sections (#486), where these were RN's
+    // tracked `label` caps. Its 16sp sits under the 20sp row titles until #490 settles those.
     Text(
         stringResource(title),
         Modifier

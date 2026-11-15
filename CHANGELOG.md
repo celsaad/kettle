@@ -198,7 +198,8 @@ here, next to what it describes.
 - **Smaller touches to match the new design**: Settings' sections have plain headings instead of
   spaced capitals, and your file's name is in a code font there, as in Library. Today's settings
   button is a simple circle, a rest day's next session stands out, Library's Type filter and an
-  exercise's YAML button have icons, and the programs guide link lines up with the list (#486).
+  exercise's YAML button have icons (the YAML one in the code font), Back up now is filled, and the
+  programs guide link lines up with the list (#486).
 
 ---
 

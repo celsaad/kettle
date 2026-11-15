@@ -15,6 +15,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -37,7 +38,7 @@ import kotlin.time.Instant
 // Today's own pieces (#412): the date over the title, "Off the plan"'s heading and its empty session.
 
 /**
- * The date, "Today", and the gear that is the app's only way to Settings: a bordered 36dp square inside
+ * The date, "Today", and the gear that is the app's only way to Settings: a hairline 44dp circle inside
  * a 48dp target, icon-only, so it carries the name. The date in the locale's order, read at [now].
  */
 @Composable
@@ -65,6 +66,8 @@ internal fun TitleRow(
         Box(
             Modifier
                 .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                // The press ripple the circle's shape, not the target's square around it.
+                .clip(CircleShape)
                 .clickable(role = Role.Button, onClick = onSettings)
                 .semantics { contentDescription = settings },
             contentAlignment = Alignment.Center,

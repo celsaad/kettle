@@ -1,5 +1,6 @@
 package com.casco.kettle.shell.library
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -187,6 +188,9 @@ private fun BackUpNow(
         Modifier
             .heightIn(min = 48.dp)
             .clip(PillShape)
+            // Filled with the surface, as the board draws it (#486), so it reads as a button on the sheet
+            // rather than one more outlined label; its outline waits on #487's 3:1 line colour.
+            .background(colors.backgroundElement)
             .border(1.dp, colors.textSecondary, PillShape)
             .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
             .padding(horizontal = PILL_INSET),

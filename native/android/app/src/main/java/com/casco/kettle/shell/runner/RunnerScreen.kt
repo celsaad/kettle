@@ -113,14 +113,15 @@ fun RunnerScreen(
     }
     val field = runnerField(entry, now, resting)
     RunnerBarIcons(field.darkBarIcons)
-    Box(
-        Modifier.fillMaxSize().background(field.palette.background).safeDrawingPadding(),
-        contentAlignment = Alignment.TopCenter,
-    ) {
-        CompositionLocalProvider(LocalRunnerPalette provides field.palette) {
-            Box(Modifier.widthIn(max = MaxContentWidth).fillMaxSize().padding(horizontal = Spacing.three)) {
-                RunnerBody(entry, environment, now, actions) { view ->
-                    Frame(view, stepContext(view, environment, now, controlsFor(view)), open.open)
+    Box(Modifier.fillMaxSize().background(field.palette.background)) {
+        // The body inside the system bars; the sheets below are not, so a sheet's colour and its backdrop
+        // can run under them (#474), each sheet keeping its own content clear of them.
+        Box(Modifier.fillMaxSize().safeDrawingPadding(), contentAlignment = Alignment.TopCenter) {
+            CompositionLocalProvider(LocalRunnerPalette provides field.palette) {
+                Box(Modifier.widthIn(max = MaxContentWidth).fillMaxSize().padding(horizontal = Spacing.three)) {
+                    RunnerBody(entry, environment, now, actions) { view ->
+                        Frame(view, stepContext(view, environment, now, controlsFor(view)), open.open)
+                    }
                 }
             }
         }

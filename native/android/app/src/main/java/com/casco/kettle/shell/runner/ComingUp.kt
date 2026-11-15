@@ -48,8 +48,8 @@ internal fun ComingUp(
     val title = stringResource(R.string.session_comingUp_title)
     val now = timeline.stops.indexOfFirst { it.state == StopState.NOW }
     val list = rememberLazyListState(initialFirstVisibleItemIndex = maxOf(0, now - 1))
-    // The backdrop is hidden from a reader: the × already closes, and a second "Close" covering the
-    // whole screen would only be one more stop to swipe past.
+    // The backdrop is hidden from a reader: the × and the sheet's grabber already close it, and a "Close"
+    // covering the whole screen would only be one more stop to swipe past.
     OverlaySheet(null, onClose, title) {
         Row(verticalAlignment = Alignment.Top) {
             Column(Modifier.weight(1f)) {

@@ -1,7 +1,6 @@
 package com.casco.kettle.shell.runner
 
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.AnimationVector1D
+import androidx.compose.animation.core.animate
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -17,7 +16,6 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.offset
@@ -32,10 +30,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableFloatState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -67,15 +66,15 @@ import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.RunnerPalette
 import com.casco.kettle.shell.theme.Spacing
 import com.casco.kettle.shell.theme.TypeIcon
-import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
 /**
  * A dimmed backdrop that dismisses, and a sheet at the bottom, as every runner sheet is drawn (#474):
- * flush to the screen's edges with a grabber, where Sets, Swap and End early were inset cards and Coming
- * up alone ran full width. Drawn over the runner's body, which the frame hides from accessibility while
- * one is open, so a screen reader stays in here. [scrolls] for a sheet of plain rows, which ran past the
- * screen at 200% text (#469); not for one holding a lazy list, which can't sit in another vertical scroll.
+ * flush to the screen's edges with a grabber. The backdrop and the sheet's colour run under the system
+ * bars, the sheet's content kept clear of them and its top below the status bar. Drawn over the runner's
+ * body, which the frame hides from accessibility while one is open, so a screen reader stays in here.
+ * [scrolls] for a sheet of plain rows, which ran past the screen at 200% text (#469); not for one holding
+ * a lazy list, which can't sit in another vertical scroll.
  */
 @Composable
 internal fun OverlaySheet(
@@ -85,7 +84,8 @@ internal fun OverlaySheet(
     scrolls: Boolean = false,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    val drag = remember { Animatable(0f) }
+    // Written straight from each drag move, so no move can land after the spring back has begun.
+    val drag = remember { mutableFloatStateOf(0f) }
     Box(Modifier.fillMaxSize()) {
         Box(
             Modifier
@@ -100,49 +100,54 @@ internal fun OverlaySheet(
                     },
                 ),
         )
-        Column(
-            Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .offset { IntOffset(0, drag.value.roundToInt()) }
-                .clip(SheetShape)
-                .background(runnerColors.backgroundElement)
-                .topBorder(runnerColors)
-                // Absorbs the taps nothing inside handles, as M3's Surface does: they fell through to the
-                // backdrop behind and closed the sheet, the pad losing what had been typed into it.
-                .pointerInput(Unit) {}
-                .semantics { paneTitle = title }
-                // Edge to edge, the sheet's colour runs under the navigation bar; its content stays above.
-                .windowInsetsPadding(
-                    WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom),
-                ).imePadding(),
-        ) {
-            Grabber(drag, onDismiss)
+        // The status bar caps the sheet's top: a tall one (Sets at 200%, Swap over the keyboard) ran under it.
+        Box(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top))) {
             Column(
                 Modifier
-                    .then(if (scrolls) Modifier.verticalScroll(rememberScrollState()) else Modifier)
-                    .padding(start = Spacing.three, end = Spacing.three, bottom = Spacing.three),
-                verticalArrangement = Arrangement.spacedBy(Spacing.two),
-                content = content,
-            )
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .offset { IntOffset(0, drag.floatValue.roundToInt()) }
+                    .clip(SheetShape)
+                    .background(runnerColors.backgroundElement)
+                    .topBorder(runnerColors)
+                    // Absorbs the taps nothing inside handles, as M3's Surface does: they fell through to the
+                    // backdrop behind and closed the sheet, the pad losing what had been typed into it.
+                    .pointerInput(Unit) {}
+                    .semantics { paneTitle = title }
+                    .windowInsetsPadding(
+                        WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom),
+                    ).imePadding(),
+            ) {
+                Grabber(drag, onDismiss)
+                Column(
+                    Modifier
+                        .then(if (scrolls) Modifier.verticalScroll(rememberScrollState()) else Modifier)
+                        .padding(start = Spacing.three, end = Spacing.three, bottom = Spacing.three),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.two),
+                    content = content,
+                )
+            }
         }
     }
 }
 
 /**
  * The sheet's grabber, the shell's sheet's in Compose: a finger drags the sheet down by it, and a drag
- * past [DISMISS_DRAG] closes it, else it springs back. A tap does nothing, as on the shell's; TalkBack's
- * click, dismiss and collapse each close it, as Material's handle offers them, the sheet having one
- * height. A strip the sheet's width, so the drag has room to land; named by the handle's own word.
+ * past [DISMISS_DRAG] or a flick closes it, else it springs back. A tap does nothing, as on the shell's;
+ * TalkBack's click, dismiss and collapse each close it, as Material's handle offers them, the sheet having
+ * one height. Named "Drag handle", as the shell's is. A [MinTarget] strip the sheet's width, the bar drawn
+ * in its middle. TalkBack reads it first: five of the six sheets have no × to read before it, as the
+ * shell's does.
  */
 @Composable
 private fun Grabber(
-    drag: Animatable<Float, AnimationVector1D>,
+    drag: MutableFloatState,
     onDismiss: () -> Unit,
 ) {
-    val scope = rememberCoroutineScope()
     val label = stringResource(R.string.common_dragHandle)
-    val dismissAt = with(LocalDensity.current) { DISMISS_DRAG.toPx() }
+    val density = LocalDensity.current
+    val dismissAt = with(density) { DISMISS_DRAG.toPx() }
+    val flingAt = with(density) { FLING_SPEED.toPx() }
     val close = {
         onDismiss()
         true
@@ -150,7 +155,7 @@ private fun Grabber(
     Box(
         Modifier
             .fillMaxWidth()
-            .height(GRAB_STRIP)
+            .heightIn(min = MinTarget)
             .semantics {
                 contentDescription = label
                 role = Role.Button
@@ -158,10 +163,14 @@ private fun Grabber(
                 dismiss(action = close)
                 collapse(action = close)
             }.draggable(
-                rememberDraggableState { delta -> scope.launch { drag.snapTo(maxOf(0f, drag.value + delta)) } },
+                rememberDraggableState { delta -> drag.floatValue = maxOf(0f, drag.floatValue + delta) },
                 Orientation.Vertical,
-                onDragStopped = {
-                    if (drag.value > dismissAt) onDismiss() else drag.animateTo(0f)
+                onDragStopped = { velocity ->
+                    if (drag.floatValue > dismissAt || velocity > flingAt) {
+                        onDismiss()
+                    } else {
+                        animate(drag.floatValue, 0f) { value, _ -> drag.floatValue = value }
+                    }
                 },
             ),
         contentAlignment = Alignment.Center,
@@ -310,12 +319,14 @@ private sealed interface PadKeyKind {
 private val DIGITS = ('1'..'9').map(PadKeyKind::Character)
 private const val KEYS_PER_ROW = 3
 private const val BACKDROP_ALPHA = 0.55f
-private val GRAB_STRIP = 24.dp
 private val GRABBER_WIDTH = 40.dp
 private val GRABBER_HEIGHT = 4.dp
 
 /** How far down the grabber drags the sheet before letting go closes it. */
 private val DISMISS_DRAG = 96.dp
+
+/** A flick that closes it however short, per second: the shell's sheet's `FLING_DP_PER_S`. */
+private val FLING_SPEED = 1000.dp
 private const val SET_WEIGHT = 1.6f
 private val SHEET_RADIUS = 24.dp
 private val SheetShape = RoundedCornerShape(topStart = SHEET_RADIUS, topEnd = SHEET_RADIUS)

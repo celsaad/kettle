@@ -8,7 +8,6 @@ import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasContentDescription
-import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -17,6 +16,8 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeDown
+import androidx.compose.ui.unit.dp
 import com.casco.kettle.domain.RunnerCommand
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -92,23 +93,24 @@ class RunnerSheetsTest : RunnerScreenHarness() {
     }
 
     /**
-     * Every sheet's grabber (#474): a button named by its word, whose TalkBack dismiss closes the sheet, as
-     * the shell's sheet's does. The sheet runs the screen's width, where Swap and End early were inset.
+     * Every sheet's grabber (#474): a button named by its word, whose TalkBack click, dismiss and collapse
+     * each close the sheet, as the shell's sheet's do. The sheet runs the screen's width, where Swap and
+     * End early were inset.
      */
     @Test
-    fun `a sheet runs the full width, and its grabber's dismiss closes it`() {
-        show(running(plan(block(squat))))
-        button("Encerrar").performClick()
-        val sheet = compose.onNode(hasText("Encerrar o treino agora?")).fetchSemanticsNode()
-        val grabber = compose.onNodeWithContentDescription("Alça de arrastar")
-        grabber.assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
-        val root = compose.onRoot().getUnclippedBoundsInRoot()
-        val strip = grabber.getUnclippedBoundsInRoot()
-        assertEquals((root.right - root.left).value, (strip.right - strip.left).value, 1f)
-        assertTrue(sheet.boundsInRoot.top > 0f)
+    fun `a sheet runs the full width, and its grabber's TalkBack actions each close it`() {
+        for (action in listOf(SemanticsActions.OnClick, SemanticsActions.Dismiss, SemanticsActions.Collapse)) {
+            show(running(plan(block(squat))))
+            button("Encerrar").performClick()
+            val grabber = compose.onNodeWithContentDescription("Alça de arrastar")
+            grabber.assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
+            val root = compose.onRoot().getUnclippedBoundsInRoot()
+            val strip = grabber.getUnclippedBoundsInRoot()
+            assertEquals((root.right - root.left).value, (strip.right - strip.left).value, 1f)
 
-        grabber.performSemanticsAction(SemanticsActions.Dismiss)
-        compose.onNodeWithText("Encerrar o treino agora?").assertDoesNotExist()
+            grabber.performSemanticsAction(action)
+            compose.onNodeWithText("Encerrar o treino agora?").assertDoesNotExist()
+        }
     }
 
     /** A finger's tap on the grabber does nothing, as on the shell's: a drag closes, never a stray tap. */
@@ -118,5 +120,20 @@ class RunnerSheetsTest : RunnerScreenHarness() {
         button("Trocar").performClick()
         compose.onNodeWithContentDescription("Alça de arrastar").performTouchInput { click() }
         compose.onNodeWithText("Trocar Agachamento").assertExists()
+    }
+
+    @Test
+    fun `a long drag down the grabber closes the sheet, and a short one springs back`() {
+        show(running(plan(block(squat))))
+        button("Encerrar").performClick()
+        val grabber = compose.onNodeWithContentDescription("Alça de arrastar")
+        val before = grabber.getUnclippedBoundsInRoot().top
+        grabber.performTouchInput { swipeDown(startY = centerY, endY = centerY + 30.dp.toPx(), durationMillis = 600) }
+        compose.waitForIdle()
+        compose.onNodeWithText("Encerrar o treino agora?").assertExists()
+        assertEquals(before.value, grabber.getUnclippedBoundsInRoot().top.value, 1f)
+
+        grabber.performTouchInput { swipeDown(startY = centerY, endY = centerY + 200.dp.toPx(), durationMillis = 600) }
+        compose.onNodeWithText("Encerrar o treino agora?").assertDoesNotExist()
     }
 }

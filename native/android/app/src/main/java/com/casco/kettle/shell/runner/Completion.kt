@@ -236,7 +236,7 @@ private fun ComparisonRow(
     val today = resources.entryResultText(row.result, units)
     val oneRepMax = (record as? SessionRecord.HeaviestSet)?.oneRepMaxKg?.let { resources.oneRepMaxText(it, units) }
     val (shown, spoken) = changeTexts(row, readings, resources)
-    val badge = record?.let { stringResource(R.string.session_complete_recordBadge) }
+    val badge = record?.let { recordLabel(it.kind) }
     val description = listOfNotNull(row.exerciseName, badge, today, oneRepMax, spoken).joinToString(", ")
     Column(Modifier.fillMaxWidth().clearAndSetSemantics { contentDescription = description }) {
         Rule()
@@ -256,7 +256,7 @@ private fun ComparisonRow(
                         style = KettleType.heading,
                         color = runnerColors.text,
                     )
-                    if (badge != null) RecordBadge()
+                    if (badge != null) RecordBadge(badge)
                 }
                 Text(today, style = KettleType.small, color = runnerColors.textSecondary)
                 oneRepMax?.let { Text(it, style = KettleType.small, color = runnerColors.textSecondary) }

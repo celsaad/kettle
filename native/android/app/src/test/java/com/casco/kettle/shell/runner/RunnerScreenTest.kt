@@ -22,6 +22,7 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.width
 import com.casco.kettle.domain.CircuitMember
@@ -401,7 +402,8 @@ class RunnerScreenTest : RunnerScreenHarness() {
         compose.onNode(hasText("1") and hasText("Séries")).assertExists()
         compose.onNodeWithText("Em relação à última vez").assertExists()
         compose
-            .onNode(hasContentDescription("Agachamento, RECORDE", substring = true))
+            // The badge names the record it set (#475), read as it shows.
+            .onNode(hasContentDescription("Agachamento, RECORDE · mais pesado,", substring = true))
             .assert(hasContentDescription("1RM", substring = true))
             .assert(hasContentDescription("+10 kg", substring = true))
         compose.onNodeWithText("1RM estimado a partir da sua melhor série, pela fórmula de Epley.").assertExists()
@@ -474,6 +476,15 @@ class RunnerScreenTest : RunnerScreenHarness() {
 
         compose.onNodeWithText("Concluído: Semana 1 · Dia 1").assertExists()
         compose.onNodeWithText("Próximo em Base: Semana 1 · Dia 2 · Costas").assertExists()
+        // The slot in weight, as the board draws it (#475): the span covers it and only it.
+        val line =
+            compose
+                .onNodeWithText("Próximo em Base: Semana 1 · Dia 2 · Costas")
+                .fetchSemanticsNode()
+                .config[SemanticsProperties.Text]
+                .first()
+        val slot = line.spanStyles.single { it.item.fontWeight == FontWeight.SemiBold }
+        assertEquals("Semana 1 · Dia 2 · Costas", line.text.substring(slot.start, slot.end))
     }
 
     @Test

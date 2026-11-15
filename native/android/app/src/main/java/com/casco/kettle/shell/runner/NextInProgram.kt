@@ -4,7 +4,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import com.casco.kettle.domain.HISTORY_BACKUP_NAME
 import com.casco.kettle.domain.NextUp
 import com.casco.kettle.domain.Session
@@ -83,8 +86,17 @@ internal fun NextInProgramLine(
     val next = rememberNextInProgram(view.session, environment) ?: return
     val slot = weekLabel(next.week, next.day)
     val what = next.workout ?: stringResource(R.string.session_complete_rest)
+    val value = "$slot · $what"
+    val line = stringResource(R.string.session_complete_nextIn, value, next.program)
+    // The slot in ink and weight, as the board draws it (#475): the line's point is what comes next.
+    // The last match, since every bundle puts it after the program's name, which could repeat its words.
+    val at = line.lastIndexOf(value)
+    val ink = runnerColors.text
     Text(
-        stringResource(R.string.session_complete_nextIn, "$slot · $what", next.program),
+        buildAnnotatedString {
+            append(line)
+            if (at >= 0) addStyle(SpanStyle(color = ink, fontWeight = FontWeight.SemiBold), at, at + value.length)
+        },
         style = KettleType.small,
         color = runnerColors.textSecondary,
     )

@@ -27,31 +27,47 @@ import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
+import com.casco.kettle.domain.RecordKind
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.theme.KettleType
-import com.casco.kettle.shell.theme.Spacing
 
 // The pieces the runner's screens share that aren't controls: numerals, bars, captions.
 
-/** The record badge: words, not colour alone, which is the one signal everyone can read. */
+/**
+ * The record badge: words, not colour alone, which is the one signal everyone can read. An ink pill with
+ * the field's own colour for its words, as the board draws it and History's is (#475): achievement takes
+ * no hue of its own (the decision log), where this one was rest-blue. [label] names the record on the
+ * receipt ("PR · heaviest yet"); a set's screen says "PR" alone.
+ */
 @Composable
-internal fun RecordBadge() {
-    Box(
+internal fun RecordBadge(label: String = stringResource(R.string.session_complete_recordBadge)) {
+    Text(
+        label,
         Modifier
-            .softPill(runnerColors.accentCalm, runnerColors.accentCalmSoft)
-            .padding(horizontal = BADGE_PAD_H, vertical = Spacing.one),
-    ) {
-        Text(
-            stringResource(R.string.session_complete_recordBadge),
-            style = KettleType.code.copy(letterSpacing = CapsTracking),
-            color = runnerColors.accentCalmOnSoft,
-        )
-    }
+            .clip(BadgeShape)
+            .background(runnerColors.text)
+            .padding(horizontal = BADGE_PAD_H, vertical = 1.dp),
+        style = KettleType.code.copy(fontWeight = FontWeight.Bold),
+        color = runnerColors.background,
+    )
 }
+
+/** What a receipt's badge says of [kind]: "PR · heaviest yet", the record it set. */
+@Composable
+internal fun recordLabel(kind: RecordKind): String =
+    stringResource(
+        when (kind) {
+            RecordKind.HeaviestSet -> R.string.session_complete_recordHeaviest
+            RecordKind.MostReps -> R.string.session_complete_recordMostReps
+            RecordKind.LongestHold -> R.string.session_complete_recordLongestHold
+            RecordKind.MostRounds -> R.string.session_complete_recordMostRounds
+        },
+    )
 
 /**
  * A big number capped at 1.3× the font scale, so the largest accessibility sizes don't push the
@@ -185,7 +201,8 @@ private val BAND_HEIGHT = 16.dp
 private val BAND_STROKE = 2.dp
 private val BandShape = RoundedCornerShape(4.dp)
 private val TRACK_HEIGHT = 6.dp
-private val BADGE_PAD_H = 10.dp
+private val BADGE_PAD_H = 6.dp
+private val BadgeShape = RoundedCornerShape(6.dp)
 
 /** RN's `Spacing.three - 2`, which several of its cards and rows use. */
 internal val CARD_PAD = 14.dp

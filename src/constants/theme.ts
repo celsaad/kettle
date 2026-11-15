@@ -22,8 +22,8 @@ import theme from '@/constants/theme.json';
  *   field takes it in both (`fieldFill`): dark's used to be translucent and composited to 4.46.
  * - `onAccent` on `accent`, the filled button's label: 4.99 light (white on the deeper `#b94f24`; the
  *   old `#cf6a37` took it at 3.64, AA-large only), 6.36 dark.
- * - `lineStrong` is the 3:1 outline for a control with no fill of its own (Settings' segmented
- *   controls, Back up now): 3.30 on `background` and 3.65 on `backgroundElement` light, 3.41 and 3.13
+ * - `lineStrong` is the 3:1 edge of a control that has no fill of its own, or only the surface's
+ *   (Settings' segmented controls, Back up now): 3.30 on `background` and 3.65 on `backgroundElement` light, 3.41 and 3.13
  *   dark. Never on `backgroundSelected`, where it falls short (3.02 light, 2.78 dark). `border` stays
  *   the decorative hairline, rows' and cards'.
  * - The training calendar sits on the page since #414, and its marks are held to **3:1 against
@@ -31,9 +31,15 @@ import theme from '@/constants/theme.json';
  *   whether a day was trained at all. The rest day's outline (`calendarEmpty`) and the three shades,
  *   light: 3.53, 3.13, 7.03, 14.41; dark: 4.06, 3.05, 6.36, 13.46. Neighbouring levels are about 2:1
  *   apart (2.25 and 2.05 light, 2.08 and 2.12 dark), where the old scale's 1.36–1.71 barely told them
- *   apart; they still needn't clear 3:1, since every week's row label carries its count and time.
+ *   apart; they still needn't clear 3:1, since every week's row label carries its count and time and
+ *   the legend names the buckets. An early draft had a lowest step at 1.6:1 against the empty cell,
+ *   which is why these are measured rather than eyeballed.
+ * - `accentCalmText` is the recover blue for words, `#2a64a0` in light: a shade under the canvas's
+ *   `#2f6fae`, which stays `accentCalm`, the blue for fills and marks. On its own soft tint, the HOLD
+ *   badge's 12sp label, the canvas blue measured 3.95 on the page and 4.34 on a card; this one is 4.61
+ *   and 5.07 (dark, `#6aa6de`, is 5.28 and 4.75).
  * - The YAML view colours a key in `accentText` and a number in `accentCalmText`, on `background`:
- *   5.56 and 4.74 light, 8.52 and 7.28 dark (#444).
+ *   5.56 and 5.53 light, 8.52 and 7.28 dark (#444).
  * - The session editor's Undo bar turns the page over, `background` on a `text` pill: 15.47 light,
  *   16.13 dark (#442).
  *

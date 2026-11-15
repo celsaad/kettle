@@ -121,7 +121,7 @@ internal fun <T> Segmented(
                     style =
                         if (active) {
                             KettleType.smallMedium.copy(
-                                fontWeight = FontWeight.Bold,
+                                fontWeight = FontWeight.SemiBold,
                             )
                         } else {
                             KettleType.smallMedium

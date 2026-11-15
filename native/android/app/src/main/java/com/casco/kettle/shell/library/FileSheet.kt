@@ -287,7 +287,7 @@ private fun AssistantCard(
             color = colors.text,
         )
         Text(stringResource(R.string.file_assistantBody), style = KettleType.small, color = colors.textSecondary)
-        // `accent` under white is 3.64:1, which this 20sp label clears as large text (theme.ts).
+        // White on `accent`, 4.99:1 (theme.ts).
         // A Box, so the label sits in the middle of the 48dp minimum: a Text given the height draws its
         // line at the top. Dimmed whole while the library loads, fill and label alike.
         Box(

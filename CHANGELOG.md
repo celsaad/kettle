@@ -200,11 +200,10 @@ here, next to what it describes.
   button is a simple circle, a rest day's next session stands out, Library's Type filter and an
   exercise's YAML button have icons (the YAML one in the code font), Back up now is filled, and the
   programs guide link lines up with the list (#486).
-- **New colours outside the workout screen**: the app takes the redesign's palette in light and dark.
-  The orange on buttons is deeper, so their white words read clearly, the text is a touch darker,
-  and the training calendar's three shades are easier to tell apart. Settings' Appearance and Units
-  switches are outlined rather than filled, and Back up now has an outline that stands out (#487,
-  #486).
+- **New colours outside a session**: the app takes the redesign's palette in light and dark. The
+  words on orange buttons read more clearly, text stands out a little more, and the training
+  calendar's three shades are easier to tell apart. Settings' Appearance and Units choices are
+  outlined rather than filled, and Back up now has an outline that stands out (#487, #486).
 
 ---
 

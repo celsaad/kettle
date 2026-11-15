@@ -211,14 +211,35 @@ class GeneratedThemeTest {
     @Test
     fun `the canvas palette's fields, labels and strong line hold their recorded ratios`() {
         with(DarkColors) {
+            assertContrast(6.83, textSecondary, background.surface())
+            assertContrast(6.27, textSecondary, backgroundElement.surface())
             assertContrast(5.58, textSecondary, backgroundSelected.surface())
             assertContrast(6.36, onAccent, accent.surface())
         }
-        val lines = mapOf(LightColors to (3.30 to 3.65), DarkColors to (3.41 to 3.13))
+        // Page, card, then the sunken fill it is kept off, where it falls short of 3:1.
+        val lines = mapOf(LightColors to Triple(3.30, 3.65, 3.02), DarkColors to Triple(3.41, 3.13, 2.78))
         for ((colors, ratios) in lines) {
             with(colors) {
                 assertContrast(ratios.first, lineStrong, background.surface())
                 assertContrast(ratios.second, lineStrong, backgroundElement.surface())
+                assertContrast(ratios.third, lineStrong, backgroundSelected.surface())
+            }
+        }
+        // The calendar's neighbouring levels, about 2:1 apart (#487), where the old scale's were 1.36–1.71.
+        val steps = mapOf(LightColors to (2.25 to 2.05), DarkColors to (2.08 to 2.12))
+        for ((colors, ratios) in steps) {
+            with(colors) {
+                assertContrast(ratios.first, calendarLevel1, calendarLevel2.surface())
+                assertContrast(ratios.second, calendarLevel2, calendarLevel3.surface())
+            }
+        }
+        // The HOLD badge's 12sp label, the text blue on its own soft tint, on the page and on a card: the
+        // canvas blue for words failed it in light, which is why `accentCalmText` is a shade darker there.
+        val badges = mapOf(LightColors to (4.61 to 5.07), DarkColors to (5.28 to 4.75))
+        for ((colors, ratios) in badges) {
+            with(colors) {
+                assertContrast(ratios.first, accentCalmText, accentCalmSoft.over(background.surface()))
+                assertContrast(ratios.second, accentCalmText, accentCalmSoft.over(backgroundElement.surface()))
             }
         }
     }
@@ -231,7 +252,7 @@ class GeneratedThemeTest {
     fun `the page colours theme ts records for the YAML view and the Undo bar hold`() {
         val onPage =
             mapOf(
-                LightColors to Triple(5.56, 4.74, 15.47),
+                LightColors to Triple(5.56, 5.53, 15.47),
                 DarkColors to Triple(8.52, 7.28, 16.13),
             )
         for ((colors, ratios) in onPage) {

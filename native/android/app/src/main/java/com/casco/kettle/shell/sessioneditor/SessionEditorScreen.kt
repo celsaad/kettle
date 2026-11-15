@@ -357,7 +357,7 @@ private fun Editing(
                 ReadOnlyEntry(
                     exerciseName(library.exercises, entry.exercise),
                     entry,
-                    resources.entryResultText(sessionEntryResult(entry)),
+                    resources.entryResultText(sessionEntryResult(entry), units),
                 )
             }
         }

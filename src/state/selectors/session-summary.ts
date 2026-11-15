@@ -54,7 +54,7 @@ export function sessionEntryResult(entry: SessionEntry): EntryResult {
     case 'timed_hold':
       return { kind: 'holds', holdSecs: entry.sets.map((set) => set.holdSec) };
     case 'reps':
-      return { kind: 'reps', reps: entry.sets.map((set) => set.reps) };
+      return { kind: 'reps', reps: entry.sets.map((set) => set.reps), weightsKg: entry.sets.map((set) => set.weightKg) };
     case 'hiit':
       return { kind: 'rounds', rounds: entry.roundsCompleted };
     case 'emom': {

@@ -24,11 +24,11 @@ describe('sessionEntryResult', () => {
           exercise: 'e',
           type: 'reps',
           sets: [
-            { reps: 10, restTakenSec: 60 },
+            { reps: 10, weightKg: 60, restTakenSec: 60 },
             { reps: 8, restTakenSec: 0 },
           ],
         },
-        { kind: 'reps', reps: [10, 8] },
+        { kind: 'reps', reps: [10, 8], weightsKg: [60, undefined] },
       ],
       [
         { exercise: 'e', type: 'hiit', roundsCompleted: 4 },

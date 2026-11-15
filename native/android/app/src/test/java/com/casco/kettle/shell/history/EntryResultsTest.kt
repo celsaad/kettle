@@ -2,6 +2,7 @@ package com.casco.kettle.shell.history
 
 import androidx.test.core.app.ApplicationProvider
 import com.casco.kettle.domain.EntryResult
+import com.casco.kettle.domain.UnitSystem
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -9,16 +10,19 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 /**
- * [entryResultText], each shape in `pt` as RN's `formatEntryResult` renders it, since a History row
- * shows what an entry put up in these words. In `pt` for the screen tests' reason, and because its
- * plurals have the `_zero` step English lacks.
+ * [entryResultText], each shape in `pt` as RN's `formatEntryResult` renders it, and a reps entry's
+ * load, which is native's alone, since a History row shows what an entry put up in these words. In
+ * `pt` for the screen tests' reason, and because its plurals have the `_zero` step English lacks.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(qualifiers = "pt")
 class EntryResultsTest {
     private val resources = ApplicationProvider.getApplicationContext<android.content.Context>().resources
 
-    private fun text(result: EntryResult) = resources.entryResultText(result)
+    private fun text(
+        result: EntryResult,
+        units: UnitSystem = UnitSystem.METRIC,
+    ) = resources.entryResultText(result, units)
 
     // As JS prints them: a whole second has no ".0", and a half keeps its ".5".
     @Test
@@ -28,7 +32,61 @@ class EntryResultsTest {
 
     @Test
     fun `reps are each set's count, in one phrase`() {
-        assertEquals("8 · 6 repetições", text(EntryResult.Reps(listOf(8, 6))))
+        assertEquals("8 · 6 repetições", text(EntryResult.Reps(listOf(8, 6), listOf(null, null))))
+    }
+
+    @Test
+    fun `one load across every set goes in front, as the boards write it`() {
+        assertEquals("60 kg · 8, 8, 6", text(EntryResult.Reps(listOf(8, 8, 6), listOf(60.0, 60.0, 60.0))))
+    }
+
+    // Stored in kilograms, read in the reader's unit, as every weight is.
+    @Test
+    fun `the load is in the reader's unit`() {
+        assertEquals("50 lb · 10", text(EntryResult.Reps(listOf(10), listOf(22.6796185)), UnitSystem.IMPERIAL))
+    }
+
+    // The schema reads `sets: []` as valid, so a hand-edited file can carry one; a crash here would cost
+    // the whole Sessions tab.
+    @Test
+    fun `an entry with no sets reads as none rather than crashing`() {
+        assertEquals(" repetições", text(EntryResult.Reps(emptyList(), emptyList())))
+    }
+
+    // The session editor saves a typed "0" as a load; records count it as none, and so does this.
+    @Test
+    fun `a load of zero is no load`() {
+        assertEquals("8 · 8 repetições", text(EntryResult.Reps(listOf(8, 8), listOf(0.0, 0.0))))
+        assertEquals("8 × 20 kg · 6 repetições", text(EntryResult.Reps(listOf(8, 6), listOf(20.0, 0.0))))
+    }
+
+    // 22.7 kg from the runner and "50" lb typed in the editor are one load to an imperial reader.
+    @Test
+    fun `loads that read the same are one load`() {
+        assertEquals(
+            "50 lb · 8, 6",
+            text(EntryResult.Reps(listOf(8, 6), listOf(22.7, 22.6796185)), UnitSystem.IMPERIAL),
+        )
+    }
+
+    // Each language's own separator: a hardcoded ", " would put a Latin comma in Japanese.
+    @Test
+    @Config(qualifiers = "ja")
+    fun `separates the reps as the reader's language does`() {
+        assertEquals("60 kg · 8、8、6", text(EntryResult.Reps(listOf(8, 8, 6), listOf(60.0, 60.0, 60.0))))
+    }
+
+    // One load in front would claim a weight some sets didn't carry.
+    @Test
+    fun `loads that differ, or a set without one, go set by set`() {
+        assertEquals(
+            "8 × 60 kg · 6 × 55 kg",
+            text(EntryResult.Reps(listOf(8, 6), listOf(60.0, 55.0))),
+        )
+        assertEquals(
+            "8 × 60 kg · 6 repetições",
+            text(EntryResult.Reps(listOf(8, 6), listOf(60.0, null))),
+        )
     }
 
     @Test

@@ -27,7 +27,7 @@ describe('a corrected entry, downstream', () => {
   const after = { ...before, entries: [logged([{ reps: 8 }, { reps: 5 }])] };
 
   it('changes the entry result the summary is built from', () => {
-    expect(sessionEntryResult(after.entries[0])).toEqual({ kind: 'reps', reps: [8, 5] });
+    expect(sessionEntryResult(after.entries[0])).toEqual({ kind: 'reps', reps: [8, 5], weightsKg: [undefined, undefined] });
   });
 
   it('changes the volume the chart plots', () => {

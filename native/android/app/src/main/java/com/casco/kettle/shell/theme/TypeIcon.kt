@@ -31,11 +31,17 @@ fun TypeIcon(
     tint = color,
 )
 
-/** A row's trailing chevron: › for one that opens something, ⌄ for one that is open. */
+/**
+ * A row's trailing chevron: › for one that opens something, ⌄ ([expanded]) for one that is open, or the ⌄
+ * turned by [modifier] where a row that opens in place points down while shut.
+ */
 @Composable
-fun Chevron(expanded: Boolean = false) =
-    TypeIcon(
-        if (expanded) R.drawable.icon_expand else R.drawable.icon_chevron,
-        KettleType.default,
-        KettleTheme.colors.textSecondary,
-    )
+fun Chevron(
+    modifier: Modifier = Modifier,
+    expanded: Boolean = false,
+) = TypeIcon(
+    if (expanded) R.drawable.icon_expand else R.drawable.icon_chevron,
+    KettleType.default,
+    KettleTheme.colors.textSecondary,
+    modifier,
+)

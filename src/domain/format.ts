@@ -27,7 +27,7 @@ import { t } from 'i18next';
  */
 export type EntryResult =
   | { kind: 'holds'; holdSecs: number[] }
-  | { kind: 'reps'; reps: number[] }
+  | { kind: 'reps'; reps: number[]; weightsKg: (number | undefined)[] }
   | { kind: 'rounds'; rounds: number; extraReps?: number }
   | { kind: 'intervals'; intervals: number; totalReps?: number }
   | { kind: 'cardio'; durationSec?: number; distanceMeters?: number }

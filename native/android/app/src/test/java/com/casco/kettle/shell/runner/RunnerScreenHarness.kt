@@ -53,6 +53,7 @@ abstract class RunnerScreenHarness {
     protected val everyMinute = Exercise("emom", "Swing", ExerciseConfig.Emom(60.0, 5.0, 10))
     protected val grinder = Exercise("amrap", "Moedor", ExerciseConfig.Amrap(600.0))
     protected val row = Exercise("row", "Remo", ExerciseConfig.Cardio())
+    protected val run = Exercise("run", "Corrida", ExerciseConfig.Cardio(durationSec = 600.0))
     protected val burpees = Exercise("burpees", "Burpees", ExerciseConfig.Hiit(20.0, 10.0, 2))
     protected val rest = Exercise("rest", "Descanso", ExerciseConfig.Rest(60.0))
     protected val extras =
@@ -66,7 +67,7 @@ abstract class RunnerScreenHarness {
     /** A rep range with a top, which "Try" needs: every set at 12 last time suggests the next load. */
     protected val bench = Exercise("bench", "Supino", ExerciseConfig.Reps(2, 8, 12, 60.0, 90.0))
     protected val exercises =
-        listOf(squat, plank, hang, maxHold, fixedHold, everyMinute, grinder, row, burpees, rest, bench) + extras
+        listOf(squat, plank, hang, maxHold, fixedHold, everyMinute, grinder, row, run, burpees, rest, bench) + extras
 
     protected var entry by mutableStateOf<RunnerEntry>(RunnerEntry.Loading)
     protected var prior by mutableStateOf<List<Session>>(emptyList())

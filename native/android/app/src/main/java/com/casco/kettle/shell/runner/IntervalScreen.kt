@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.sp
 import com.casco.kettle.domain.IntervalVariant
 import com.casco.kettle.domain.RunnerCommand
 import com.casco.kettle.domain.RunnerStep
+import com.casco.kettle.domain.WorkStep
 import com.casco.kettle.domain.isMinute
 import com.casco.kettle.domain.jsNumber
 import com.casco.kettle.shell.R
@@ -63,9 +64,23 @@ internal fun IntervalScreen(
         },
         middle = {
             if (resting) Secondary(resources.nextStartsIn(step))
-            Numeral(formatClock(if (step.countUp) context.elapsed.toDouble() else context.remaining), CLOCK_NUMERAL)
-            if (!step.countUp) FillBar(context.spent)
-            if (!resting) Secondary(resources.caption(step))
+            PausedHeading(context.paused)
+            Numeral(
+                formatClock(if (step.countUp) context.elapsed.toDouble() else context.remaining),
+                CLOCK_NUMERAL,
+                color = clockInk(context.paused),
+            )
+            if (!step.countUp) FillBar(context.spent, fill = barFill(context.paused))
+            if (!resting) {
+                val snapshot = context.snapshot
+                ClockHint(
+                    resources.caption(step),
+                    resources.thenHint(
+                        step,
+                        snapshot.steps.getOrNull(snapshot.stepIndex + 1),
+                    ),
+                )
+            }
             if (emom) {
                 Stepper(
                     stringResource(R.string.session_interval_repsThisMinuteCaps),
@@ -102,20 +117,60 @@ private fun Resources.nextStartsIn(step: RunnerStep.Interval): String {
     }
 }
 
-private fun Resources.caption(step: RunnerStep.Interval): String =
-    listOfNotNull(
-        step.targetReps
-            ?.takeIf { step.variant == IntervalVariant.EMOM && it > 0 }
-            ?.let { getString(R.string.session_interval_targetReps, "$it") },
+/**
+ * The start of the line under the bar (#471): how the clock ends. An EMOM's counts down what's left of
+ * the minute, its target being the stepper's seed; cardio's ends by itself, with its distance; HIIT's is
+ * its length, with what follows at the other end ([thenHint]).
+ */
+private fun Resources.caption(step: RunnerStep.Interval): String {
+    val distance =
         step.cardioDistanceMeters
             ?.takeIf { step.variant == IntervalVariant.CARDIO && it > 0 }
-            ?.let { getString(R.string.session_interval_targetDistance, jsNumber(it)) },
-        if (step.countUp) {
-            getString(R.string.session_countingUp)
-        } else {
-            getString(R.string.session_interval_ofTotal, formatClock(step.targetSec))
-        },
-    ).joinToString(" · ")
+            ?.let { getString(R.string.session_interval_targetDistance, jsNumber(it)) }
+    val clock =
+        when {
+            step.countUp -> {
+                getString(R.string.session_countingUp)
+            }
+
+            step.variant == IntervalVariant.EMOM && step.isMinute -> {
+                getString(R.string.session_interval_leftInMinute)
+            }
+
+            step.variant == IntervalVariant.EMOM -> {
+                getString(R.string.session_interval_leftInInterval)
+            }
+
+            step.variant == IntervalVariant.CARDIO -> {
+                getString(R.string.session_interval_of, formatClock(step.targetSec)) + SEPARATOR +
+                    getString(R.string.session_interval_endsByItself)
+            }
+
+            else -> {
+                getString(R.string.session_interval_of, formatClock(step.targetSec))
+            }
+        }
+    return listOfNotNull(distance, clock).joinToString(SEPARATOR)
+}
+
+/**
+ * What a HIIT round's clock leads to, the line's far end (#471): the rest after it, else the exercise
+ * that follows, and nothing at the session's end. Only HIIT's: an EMOM's minute and cardio say how
+ * they end instead.
+ */
+private fun Resources.thenHint(
+    step: RunnerStep.Interval,
+    next: RunnerStep?,
+): String? {
+    if (step.variant != IntervalVariant.HIIT || step.countUp) return null
+    return when (next) {
+        is RunnerStep.Rest -> getString(R.string.session_interval_thenRest, formatClock(next.seconds))
+        is WorkStep -> getString(R.string.session_interval_thenNext, next.exerciseName)
+        null -> null
+    }
+}
+
+private const val SEPARATOR = " · "
 
 /**
  * An AMRAP (#417): "Round N done" is the main action, each tap a round, with Undo taking back the last;
@@ -137,8 +192,9 @@ private fun AmrapScreen(
             StepNotes(step.notes)
         },
         middle = {
-            Numeral(formatClock(context.remaining), CLOCK_NUMERAL)
-            FillBar(context.spent)
+            PausedHeading(context.paused)
+            Numeral(formatClock(context.remaining), CLOCK_NUMERAL, color = clockInk(context.paused))
+            FillBar(context.spent, fill = barFill(context.paused))
             PaceLine(rounds, context.readings.lastRounds)
             if (context.remaining <= LAST_MINUTE_SEC) {
                 Stepper(

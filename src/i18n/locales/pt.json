@@ -392,7 +392,7 @@
     "rest": {
       "remaining": "de {{total}} restantes",
       "add30": "+30s",
-      "skip": "Pular descanso →",
+      "skip": "Pular descanso",
       "minus15": "−15s"
     },
     "interval": {
@@ -417,8 +417,7 @@
       "increaseLoad": "Aumentar carga",
       "adoptPrevious": "Usar a carga da última vez, {{weight}} {{unit}}, e salvar como novo alvo",
       "beatsBest": "Supera seu recorde",
-      "logSet": "Registrar série → Descanso",
-      "logSetNoRest": "Registrar série →",
+      "logSet": "Registrar série",
       "repsDone": "Reps feitas",
       "loadLabel": "Carga",
       "repsLabel": "Repetições",

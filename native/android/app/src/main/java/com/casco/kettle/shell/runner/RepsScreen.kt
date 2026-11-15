@@ -43,7 +43,6 @@ import com.casco.kettle.domain.UnitSystem
 import com.casco.kettle.domain.fromDisplayWeight
 import com.casco.kettle.domain.jsNumber
 import com.casco.kettle.domain.repsTarget
-import com.casco.kettle.domain.restFollows
 import com.casco.kettle.domain.toDisplayWeight
 import com.casco.kettle.domain.weightStep
 import com.casco.kettle.shell.R
@@ -82,10 +81,9 @@ internal fun RepsScreen(
         middle = { RepsCounter(step, context) },
         controls = {
             EffortTrack(context)
-            val follows = restFollows(context.snapshot.steps, context.snapshot.stepIndex)
             BottomRow(
                 RowAction(
-                    stringResource(if (follows) R.string.session_reps_logSet else R.string.session_reps_logSetNoRest),
+                    stringResource(R.string.session_reps_logSet),
                     null,
                     context::advance,
                 ),

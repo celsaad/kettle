@@ -21,8 +21,8 @@ fun upcomingStep(
 }
 
 /**
- * Whether a rest follows [index], which the reps button names ("Log set → Rest"). It can't be
- * assumed: back-to-back sets (`rest_sec: 0`) emit no rest step at all.
+ * Whether a rest step follows [index]. It can't be assumed: back-to-back sets (`rest_sec: 0`) emit
+ * none. The reps button named it ("Log set → Rest") until #476 dropped the arrow.
  */
 fun restFollows(
     steps: List<RunnerStep>,

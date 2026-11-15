@@ -43,7 +43,7 @@ class RunnerLoadTest : RunnerScreenHarness() {
         assertEquals(emptyList<Pair<String, Double>>(), adopted)
 
         show(running(plan(block(bench)), started(plan(block(bench))).after(RunnerCommand.SetWeight(62.5))))
-        button("Registrar série → Descanso").performClick()
+        button("Registrar série").performClick()
         assertEquals(listOf("bench" to 62.5), adopted)
     }
 
@@ -54,7 +54,7 @@ class RunnerLoadTest : RunnerScreenHarness() {
         button("Tentar 62.5 kg").performClick()
 
         show(running(plan(block(bench)), started(plan(block(bench))).after(RunnerCommand.SetWeight(65.0))))
-        button("Registrar série → Descanso").performClick()
+        button("Registrar série").performClick()
         assertEquals(emptyList<Pair<String, Double>>(), adopted)
     }
 

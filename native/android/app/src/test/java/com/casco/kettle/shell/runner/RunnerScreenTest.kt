@@ -210,7 +210,7 @@ class RunnerScreenTest : RunnerScreenHarness() {
         // The library takes it only once the set is logged with it (#410), not on the tap.
         assertEquals(emptyList<Pair<String, Double>>(), adopted)
         show(running(plan(block(squat)), started(plan(block(squat))).after(RunnerCommand.SetWeight(50.0))))
-        button("Registrar série → Descanso").performClick()
+        button("Registrar série").performClick()
         assertEquals(listOf("squat" to 50.0), adopted)
     }
 
@@ -527,12 +527,27 @@ class RunnerScreenTest : RunnerScreenHarness() {
 
     private val isProgressBar = SemanticsMatcher.keyIsDefined(SemanticsProperties.ProgressBarRangeInfo)
 
+    /** The bar's fill: work steps done of all of them (#476), Coming up's own count. */
+    private fun progress() =
+        compose.onNode(isProgressBar).fetchSemanticsNode().config[SemanticsProperties.ProgressBarRangeInfo]
+
+    /**
+     * The session bar counts work steps (#476), where it counted blocks: a one-block workout of several
+     * sets shows it, a single step doesn't, and the step on screen isn't done until it's logged.
+     */
     @Test
-    fun `block progress draws nothing below two blocks, and an ad-hoc session counts what was added`() {
-        show(running(plan(block(squat))))
+    fun `the session bar counts work steps done, and draws nothing below two`() {
+        show(running(plan(block(maxHold))))
         compose.onNode(isProgressBar).assertDoesNotExist()
-        show(running(plan(block(squat), block(plank))))
-        compose.onNode(isProgressBar).assertExists()
+
+        val squats = plan(block(squat))
+        show(running(squats))
+        assertEquals(0f, progress().current)
+        assertEquals(2f, progress().range.endInclusive)
+        // On the rest after set 1, that set is done.
+        show(running(squats, started(squats).advanced()))
+        assertEquals(1f, progress().current)
+
         val adhoc = RunnerPlan.Runnable(null, exercises, emptyList())
         val two = started(adhoc).after(RunnerCommand.AddExercise(squat), RunnerCommand.AddExercise(plank))
         show(running(adhoc, two))

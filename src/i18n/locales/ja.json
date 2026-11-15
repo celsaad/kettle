@@ -340,7 +340,7 @@
     "rest": {
       "remaining": "全{{total}}中の残り",
       "add30": "+30秒",
-      "skip": "休憩をスキップ →",
+      "skip": "休憩をスキップ",
       "minus15": "−15秒"
     },
     "interval": {
@@ -365,8 +365,7 @@
       "increaseLoad": "負荷を増やす",
       "adoptPrevious": "前回の負荷 {{weight}} {{unit}} を使い、新しい目標として保存する",
       "beatsBest": "自己ベスト更新",
-      "logSet": "セットを記録 → 休憩",
-      "logSetNoRest": "セットを記録 →",
+      "logSet": "セットを記録",
       "repsDone": "完了レップ",
       "loadLabel": "負荷",
       "repsLabel": "レップ",

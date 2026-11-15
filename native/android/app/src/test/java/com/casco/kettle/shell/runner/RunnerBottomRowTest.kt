@@ -31,7 +31,7 @@ class RunnerBottomRowTest : RunnerScreenHarness() {
         compose.onNodeWithText("Reps feitas · meta 5").assertExists()
         button("Aumentar Repetições").performClick()
         assertEquals(RunnerCommand.SetReps(6), sent.last())
-        button("Registrar série → Descanso").performClick()
+        button("Registrar série").performClick()
         assertEquals(RunnerCommand.Advance(FIRST_VISIT), sent.last())
         button("Voltar").assertIsTarget().performClick()
         assertEquals(RunnerCommand.Prev, sent.last())
@@ -95,7 +95,7 @@ class RunnerBottomRowTest : RunnerScreenHarness() {
         button("Pausar").assertDoesNotExist()
         button("+30s").performClick()
         assertEquals(RunnerCommand.AddRestSeconds(30.0), sent.last())
-        button("Pular descanso →").performClick()
+        button("Pular descanso").performClick()
         assertEquals(RunnerCommand.Advance(resting.snapshot.visit), sent.last())
     }
 
@@ -127,7 +127,7 @@ class RunnerBottomRowTest : RunnerScreenHarness() {
         show(running(plan(block(squat)), paused))
         button("Continuar").performClick()
         assertEquals(RunnerCommand.TogglePause, sent.last())
-        button("Pular descanso →").assertDoesNotExist()
+        button("Pular descanso").assertDoesNotExist()
         button("Pular").performClick()
         assertEquals(RunnerCommand.Advance(paused.snapshot.visit), sent.last())
     }

@@ -140,24 +140,23 @@ internal fun FillBar(
 }
 
 /**
- * How far through the blocks, as one bar the width of the screen under the top bar (#409). Nothing
- * below two: one step is not progress. Fills through the step on screen, so the first of five reads as
- * under way.
+ * How far through the session's work, as one bar the width of the screen under the top bar (#409):
+ * [done] work steps of [total], Coming up's own count (#476), where it counted blocks and filled through
+ * the one on screen. Nothing below two steps: one is not progress.
  */
 @Composable
 internal fun ProgressTrack(
+    done: Int,
     total: Int,
-    activeIndex: Int,
 ) {
     if (total < 2) return
-    val done = minOf(activeIndex + 1, total)
     Box(
         Modifier
             .fillMaxWidth()
             .height(TRACK_HEIGHT)
             .clip(CircleShape)
             .background(runnerColors.track)
-            .semantics { progressBarRangeInfo = ProgressBarRangeInfo(done.toFloat(), 1f..total.toFloat(), total) },
+            .semantics { progressBarRangeInfo = ProgressBarRangeInfo(done.toFloat(), 0f..total.toFloat(), total) },
     ) {
         Box(
             Modifier

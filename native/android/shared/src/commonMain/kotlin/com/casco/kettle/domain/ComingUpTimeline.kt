@@ -126,8 +126,27 @@ fun comingUpTimeline(
         }
         i = end
     }
+    val progress = workProgress(steps, stepIndex)
+    return ComingUpTimeline(progress.done, progress.total, stops)
+}
+
+/** Work steps before [stepIndex], and in all: a rest isn't a step. */
+data class WorkProgress(
+    val done: Int,
+    val total: Int,
+)
+
+/**
+ * How far through the session's work [stepIndex] is: Coming up's "7 of 12 steps done", and the session
+ * bar's fill (#476), so the two can't disagree. The step on screen isn't done yet; on a rest, the work
+ * it follows is.
+ */
+fun workProgress(
+    steps: List<RunnerStep>,
+    stepIndex: Int,
+): WorkProgress {
     val work = steps.withIndex().filter { it.value is WorkStep }
-    return ComingUpTimeline(work.count { it.index < stepIndex }, work.size, stops)
+    return WorkProgress(work.count { it.index < stepIndex }, work.size)
 }
 
 /**

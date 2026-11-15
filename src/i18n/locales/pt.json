@@ -551,7 +551,7 @@
     "unitsImperialNote": "Os pesos aparecem em libras. Eles continuam salvos em quilogramas, então sua biblioteca exportada é lida igual em qualquer lugar.",
     "sounds": "Sons",
     "soundsNote": "O tique da contagem regressiva, o aviso quando o exercício muda e o toque na metade do caminho. O Kettle os reproduz mesmo com o celular no silencioso, então desligar aqui é a única forma de calá-los. A vibração é à parte e continua seguindo as configurações do seu celular.",
-    "reminder": "Aviso de dia de descanso",
+    "reminder": "Lembrete para voltar a treinar",
     "reminderNote_one": "Uma notificação neste aparelho se passar um dia sem sessão. Nada é enviado para lugar nenhum, e quem treina com regularidade nunca vai vê-la.",
     "reminderNote_other": "Uma notificação neste aparelho se passarem {{count}} dias sem sessão. Nada é enviado para lugar nenhum, e quem treina com regularidade nunca vai vê-la.",
     "reminderNote_zero": "Uma notificação neste aparelho se passarem {{count}} dias sem sessão. Nada é enviado para lugar nenhum, e quem treina com regularidade nunca vai vê-la.",

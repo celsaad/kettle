@@ -218,7 +218,7 @@ private fun DrawScope.drawBox(
 private fun CalendarBox.inset(by: Float) = CalendarBox(x + by, y + by, width - 2 * by, height - 2 * by)
 
 /**
- * From the page's edge, as the board aligns it, so it lines up with the heading above rather than
+ * From the page's edge (#484), so it lines up with the heading above rather than
  * starting mid-row. The three trained shades only (#414): a rest day's outline explains itself.
  */
 @Composable

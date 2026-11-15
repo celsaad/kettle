@@ -82,7 +82,7 @@ class SettingsScreenTest {
     /** Each a switch named by its own title (#416), the whole row toggling it. */
     private fun sounds() = compose.onNode(hasText("Sons") and isSwitch).performScrollTo()
 
-    private fun reminder() = compose.onNode(hasText("Aviso de dia de descanso") and isSwitch).performScrollTo()
+    private fun reminder() = compose.onNode(hasText("Lembrete para voltar a treinar") and isSwitch).performScrollTo()
 
     private val isSwitch = SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Switch)
 

@@ -9,21 +9,15 @@ import com.casco.kettle.shell.R
 import com.casco.kettle.shell.i18n.pluralText
 
 /**
- * A workout's one-line summary, "5 blocks · reps, hold", as the boards write it: the types listed
+ * A workout's one-line summary, "5 blocks · reps, hold" (#484): the types listed
  * plainly, with no "mixed" in front, and no duration (#412). Today's rows, Library's Workouts and the
  * preview read it.
  */
 @Composable
 fun workoutShapeText(shape: WorkoutShape): String {
     val labels = shape.types.map { stringResource(typeLabel(it)) }
-    val types =
-        if (labels.isEmpty()) {
-            stringResource(
-                R.string.format_restOnly,
-            )
-        } else {
-            labels.joinToString(stringResource(R.string.format_listSeparator))
-        }
+    val separator = stringResource(R.string.format_listSeparator)
+    val types = if (labels.isEmpty()) stringResource(R.string.format_restOnly) else labels.joinToString(separator)
     val blocks = pluralText(R.plurals.format_block, R.string.format_block_zero, shape.blockCount)
     return stringResource(R.string.format_workoutShape, blocks, types)
 }

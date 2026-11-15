@@ -30,7 +30,7 @@ class WorkoutShapeTest {
         assertEquals(2, shape.blockCount)
     }
 
-    // The types are what the summary calls "mixed reps + hiit", so duplicates would read as a longer
+    // The types are what the summary lists, "reps, HIIT", so duplicates would read as a longer
     // list of the same thing.
     @Test
     fun `lists each type once, however many blocks use it`() {

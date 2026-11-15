@@ -195,6 +195,10 @@ here, next to what it describes.
   reps, longest hold, most rounds) in the screen's own colours, no longer a blue "PR", and the "PR"
   beside your last set during a session matches it. What your program has next stands out in the line
   under it (#475).
+- **Smaller touches to match the new design**: Settings' sections have plain headings instead of
+  spaced capitals, and your file's name is in a code font there, as in Library. Today's settings
+  button is a simple circle, a rest day's next session stands out, Library's Type filter and an
+  exercise's YAML button have icons, and the programs guide link lines up with the list (#486).
 
 ---
 

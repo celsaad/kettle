@@ -25,6 +25,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.test.core.app.ApplicationProvider
 import com.casco.kettle.domain.Exercise
@@ -586,6 +587,13 @@ class HomeScreenTest {
         show(restDayProgramFiles())
 
         text("Próxima sessão: Semana 1 · Day 3 · Pull day.").assertExists()
+        // The slot in weight, as the board draws it (#486): the span covers it and only it, not the full stop.
+        val line =
+            text(
+                "Próxima sessão: Semana 1 · Day 3 · Pull day.",
+            ).fetchSemanticsNode().config[SemanticsProperties.Text].first()
+        val slot = line.spanStyles.single { it.item.fontWeight == FontWeight.SemiBold }
+        assertEquals("Semana 1 · Day 3 · Pull day", line.text.substring(slot.start, slot.end))
     }
 
     /** User data, so it stays in the language it was written in on a translated screen. */

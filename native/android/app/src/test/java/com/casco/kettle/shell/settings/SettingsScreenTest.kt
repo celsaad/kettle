@@ -141,7 +141,7 @@ class SettingsScreenTest {
     fun `the sounds row is translated`() {
         show()
 
-        compose.onNode(hasText("SONS E LEMBRETES") and isHeading()).performScrollTo()
+        compose.onNode(hasText("Sons e lembretes") and isHeading()).performScrollTo()
         text("no silencioso")
     }
 
@@ -315,7 +315,7 @@ class SettingsScreenTest {
     fun `is translated, except for the address itself`() {
         show()
 
-        compose.onNode(hasText("KETTLE") and isHeading()).performScrollTo()
+        compose.onNode(hasText("Kettle") and isHeading()).performScrollTo()
         text("Escrever para o desenvolvedor")
         text(FEEDBACK_EMAIL)
     }
@@ -333,7 +333,7 @@ class SettingsScreenTest {
                 .assert(isButton)
                 .assertHeightIsAtLeast(48.dp)
         }
-        compose.onNode(hasText("APARÊNCIA") and isHeading()).assertExists()
+        compose.onNode(hasText("Aparência") and isHeading()).assertExists()
         compose.onNodeWithText("Configurações").assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.Heading))
     }
 

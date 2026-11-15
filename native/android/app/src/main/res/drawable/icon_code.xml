@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Material Symbols "code", 400 regular: the "</>" on Exercise detail's YAML button, as the board
+     draws it (#486). Apache 2.0, like the font the other icons come from. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="960"
+    android:viewportHeight="960">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M320 720 80 480 320 240 377 297 193 481 376 664 320 720ZM640 720 583 663 767 479 584 296 640 240 880 480 640 720Z" />
+</vector>

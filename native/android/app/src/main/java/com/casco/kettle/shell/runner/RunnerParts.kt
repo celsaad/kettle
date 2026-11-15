@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -31,27 +30,33 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
+import com.casco.kettle.domain.RecordKind
 import com.casco.kettle.shell.R
+import com.casco.kettle.shell.theme.InkBadge
 import com.casco.kettle.shell.theme.KettleType
-import com.casco.kettle.shell.theme.Spacing
 
 // The pieces the runner's screens share that aren't controls: numerals, bars, captions.
 
-/** The record badge: words, not colour alone, which is the one signal everyone can read. */
+/**
+ * The record badge: words, not colour alone, which is the one signal everyone can read. The shared
+ * [InkBadge], History's too, on the field's own ink (#475), where this one was rest-blue. [label] names the
+ * record on the receipt ("PR · heaviest yet"); a set's screen says "PR" alone.
+ */
 @Composable
-internal fun RecordBadge() {
-    Box(
-        Modifier
-            .softPill(runnerColors.accentCalm, runnerColors.accentCalmSoft)
-            .padding(horizontal = BADGE_PAD_H, vertical = Spacing.one),
-    ) {
-        Text(
-            stringResource(R.string.session_complete_recordBadge),
-            style = KettleType.code.copy(letterSpacing = CapsTracking),
-            color = runnerColors.accentCalmOnSoft,
-        )
-    }
-}
+internal fun RecordBadge(label: String = stringResource(R.string.session_complete_recordBadge)) =
+    InkBadge(label, runnerColors.text, runnerColors.background)
+
+/** What a receipt's badge says of [kind]: "PR · heaviest yet", the record it set. */
+@Composable
+internal fun recordLabel(kind: RecordKind): String =
+    stringResource(
+        when (kind) {
+            RecordKind.HeaviestSet -> R.string.session_complete_recordHeaviest
+            RecordKind.MostReps -> R.string.session_complete_recordMostReps
+            RecordKind.LongestHold -> R.string.session_complete_recordLongestHold
+            RecordKind.MostRounds -> R.string.session_complete_recordMostRounds
+        },
+    )
 
 /**
  * A big number capped at 1.3× the font scale, so the largest accessibility sizes don't push the
@@ -185,7 +190,6 @@ private val BAND_HEIGHT = 16.dp
 private val BAND_STROKE = 2.dp
 private val BandShape = RoundedCornerShape(4.dp)
 private val TRACK_HEIGHT = 6.dp
-private val BADGE_PAD_H = 10.dp
 
 /** RN's `Spacing.three - 2`, which several of its cards and rows use. */
 internal val CARD_PAD = 14.dp

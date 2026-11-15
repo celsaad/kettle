@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -224,6 +226,7 @@ private fun AgainstLastTime(
  * estimated 1RM under a heaviest-set PR, and the change since last time on the right. One node for a
  * screen reader, which hears the signed change ("+5 kg") the drawn ▲ stands for.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ComparisonRow(
     row: ExerciseAgainstLast,
@@ -236,7 +239,7 @@ private fun ComparisonRow(
     val today = resources.entryResultText(row.result, units)
     val oneRepMax = (record as? SessionRecord.HeaviestSet)?.oneRepMaxKg?.let { resources.oneRepMaxText(it, units) }
     val (shown, spoken) = changeTexts(row, readings, resources)
-    val badge = record?.let { stringResource(R.string.session_complete_recordBadge) }
+    val badge = record?.let { recordLabel(it.kind) }
     val description = listOfNotNull(row.exerciseName, badge, today, oneRepMax, spoken).joinToString(", ")
     Column(Modifier.fillMaxWidth().clearAndSetSemantics { contentDescription = description }) {
         Rule()
@@ -246,17 +249,15 @@ private fun ComparisonRow(
             horizontalArrangement = Arrangement.spacedBy(Spacing.two),
         ) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Spacing.half)) {
-                Row(
+                // Wrapping, as the board's row does: unweighted beside the name, a long badge at large text
+                // would take the width first and leave the name a sliver; here it drops under the name.
+                FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(Spacing.two),
-                    verticalAlignment = Alignment.CenterVertically,
+                    verticalArrangement = Arrangement.spacedBy(Spacing.half),
+                    itemVerticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(
-                        row.exerciseName,
-                        Modifier.weight(1f, fill = false),
-                        style = KettleType.heading,
-                        color = runnerColors.text,
-                    )
-                    if (badge != null) RecordBadge()
+                    Text(row.exerciseName, style = KettleType.heading, color = runnerColors.text)
+                    if (badge != null) RecordBadge(badge)
                 }
                 Text(today, style = KettleType.small, color = runnerColors.textSecondary)
                 oneRepMax?.let { Text(it, style = KettleType.small, color = runnerColors.textSecondary) }

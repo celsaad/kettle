@@ -22,6 +22,7 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.width
 import com.casco.kettle.domain.CircuitMember
@@ -29,6 +30,7 @@ import com.casco.kettle.domain.CountIn
 import com.casco.kettle.domain.Library
 import com.casco.kettle.domain.Program
 import com.casco.kettle.domain.ProgramWeek
+import com.casco.kettle.domain.RecordKind
 import com.casco.kettle.domain.RepsSetLog
 import com.casco.kettle.domain.RunnerCommand
 import com.casco.kettle.domain.RunnerPlan
@@ -202,7 +204,7 @@ class RunnerScreenTest : RunnerScreenHarness() {
         show(running(plan(block(squat))))
         compose.onNodeWithText("Da última vez · 50 kg × 5 repetições").assertExists()
         // The target of 60 kg beats a best of 50.
-        compose.onNodeWithText("RECORDE").assertExists()
+        compose.onNodeWithText("Recorde").assertExists()
         button("Usar a carga da última vez, 50 quilogramas, e salvar como novo alvo").performClick()
         assertEquals(RunnerCommand.SetWeight(50.0), sent.last())
         // The library takes it only once the set is logged with it (#410), not on the tap.
@@ -401,7 +403,8 @@ class RunnerScreenTest : RunnerScreenHarness() {
         compose.onNode(hasText("1") and hasText("Séries")).assertExists()
         compose.onNodeWithText("Em relação à última vez").assertExists()
         compose
-            .onNode(hasContentDescription("Agachamento, RECORDE", substring = true))
+            // The badge names the record it set (#475), read as it shows.
+            .onNode(hasContentDescription("Agachamento, Recorde · maior carga,", substring = true))
             .assert(hasContentDescription("1RM", substring = true))
             .assert(hasContentDescription("+10 kg", substring = true))
         compose.onNodeWithText("1RM estimado a partir da sua melhor série, pela fórmula de Epley.").assertExists()
@@ -449,7 +452,7 @@ class RunnerScreenTest : RunnerScreenHarness() {
         )
 
         compose.onNode(hasContentDescription("Primeira vez", substring = true)).assertExists()
-        compose.onNode(hasContentDescription("RECORDE", substring = true)).assertDoesNotExist()
+        compose.onNode(hasContentDescription("Recorde", substring = true)).assertDoesNotExist()
     }
 
     /** A program day says which, and what the program has next, as Today's card will a tap away. */
@@ -474,6 +477,15 @@ class RunnerScreenTest : RunnerScreenHarness() {
 
         compose.onNodeWithText("Concluído: Semana 1 · Dia 1").assertExists()
         compose.onNodeWithText("Próximo em Base: Semana 1 · Dia 2 · Costas").assertExists()
+        // The slot in weight, as the board draws it (#475): the span covers it and only it.
+        val line =
+            compose
+                .onNodeWithText("Próximo em Base: Semana 1 · Dia 2 · Costas")
+                .fetchSemanticsNode()
+                .config[SemanticsProperties.Text]
+                .first()
+        val slot = line.spanStyles.single { it.item.fontWeight == FontWeight.SemiBold }
+        assertEquals("Semana 1 · Dia 2 · Costas", line.text.substring(slot.start, slot.end))
     }
 
     @Test
@@ -692,4 +704,21 @@ class RunnerScreenTest : RunnerScreenHarness() {
         "2026-08-01T10:30:00.000Z",
         listOf(SessionEntry.Reps("squat", listOf(RepsSetLog(5, kg, restTakenSec = 90.0)))),
     )
+
+    /** Each record names its own kind (#475): an exhaustive `when` would still compile with two swapped. */
+    @Test
+    fun `each record kind has its own badge words`() {
+        val labels = mutableMapOf<RecordKind, String>()
+        compose.setContent { RecordKind.entries.forEach { labels[it] = recordLabel(it) } }
+        compose.waitForIdle()
+        assertEquals(
+            mapOf(
+                RecordKind.HeaviestSet to "Recorde · maior carga",
+                RecordKind.MostReps to "Recorde · mais repetições",
+                RecordKind.LongestHold to "Recorde · isometria mais longa",
+                RecordKind.MostRounds to "Recorde · mais rodadas",
+            ),
+            labels.toMap(),
+        )
+    }
 }

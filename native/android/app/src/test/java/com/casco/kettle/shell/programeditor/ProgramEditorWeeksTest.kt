@@ -1,5 +1,9 @@
 package com.casco.kettle.shell.programeditor
 
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.SemanticsNodeInteraction
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
@@ -131,5 +135,144 @@ class ProgramEditorWeeksTest : ProgramEditorHarness() {
 
         named("1 semana").assertExists()
         named("2 dias").assertExists()
+    }
+
+    // A row is open when it offers Collapse and folded when it offers Expand: that is what TalkBack reads.
+    private fun SemanticsNodeInteraction.assertOpen(open: Boolean) =
+        assert(
+            SemanticsMatcher.keyIsDefined(if (open) SemanticsActions.Collapse else SemanticsActions.Expand) and
+                SemanticsMatcher.keyNotDefined(if (open) SemanticsActions.Expand else SemanticsActions.Collapse),
+        )
+
+    private fun week(number: Int) = compose.onNode(hasText("Semana $number") and isControl)
+
+    private fun day(number: Int) = compose.onNode(hasText("Dia $number") and isControl)
+
+    private fun menu(
+        week: Int,
+        action: String,
+    ) {
+        press("Ações da semana $week")
+        compose.onNodeWithText(action).performClick()
+    }
+
+    // One day open at a time: opening Day 1 folds Day 2, which a new day had opened.
+    @Test
+    fun `opens one day at a time, folding the open one when another opens`() {
+        draftWith(1)
+        press("+ Adicionar dia")
+        day(2).assertOpen(true)
+        day(1).assertOpen(false)
+
+        day(1).performClick()
+
+        day(1).assertOpen(true)
+        day(2).assertOpen(false)
+    }
+
+    // Moving the open week keeps the reader on what they moved: the open number follows it.
+    @Test
+    fun `keeps the moved week open, up and down`() {
+        draftWith(3)
+        menu(3, "Mover para cima")
+        week(2).assertOpen(true)
+        week(3).assertOpen(false)
+
+        menu(2, "Mover para baixo")
+
+        week(3).assertOpen(true)
+        week(2).assertOpen(false)
+    }
+
+    // The open number only follows a week that moved: two others trading places aren't the reader's.
+    @Test
+    fun `leaves an unrelated open week open when two others trade places`() {
+        draftWith(3)
+
+        menu(1, "Mover para baixo")
+
+        week(3).assertOpen(true)
+        week(1).assertOpen(false)
+        week(2).assertOpen(false)
+    }
+
+    // The week a move displaces is the open one here, and it takes the mover's number.
+    @Test
+    fun `keeps the open week open when a move displaces it`() {
+        draftWith(3)
+
+        menu(2, "Mover para baixo")
+
+        week(2).assertOpen(true)
+        week(3).assertOpen(false)
+    }
+
+    // The copy goes in right after the original, so an open week after it shifts a number with the rest.
+    @Test
+    fun `keeps the same week open when an earlier one is duplicated`() {
+        draftWith(3)
+
+        menu(1, "Duplicar")
+
+        week(4).assertOpen(true)
+        week(3).assertOpen(false)
+    }
+
+    // Through the open week's own button, the one in reach: the copy arrives folded, so the reader stays
+    // on the original rather than being moved to something they haven't looked at.
+    @Test
+    fun `leaves the original open and the copy folded when the open week is duplicated`() {
+        draftWith(3)
+
+        press("Duplicar semana 3")
+
+        week(3).assertOpen(true)
+        week(4).assertOpen(false)
+    }
+
+    // Deleting a week before the open one renumbers it down, and the reader is still on it.
+    @Test
+    fun `keeps the same week open when an earlier one is deleted`() {
+        draftWith(3)
+
+        menu(1, "Excluir semana")
+
+        week(2).assertOpen(true)
+        week(1).assertOpen(false)
+    }
+
+    // Deleting the open week leaves nothing open, rather than opening the neighbour that took its number.
+    @Test
+    fun `leaves no week open when the open one is deleted`() {
+        draftWith(3)
+        week(2).performClick()
+
+        menu(2, "Excluir semana")
+
+        week(1).assertOpen(false)
+        week(2).assertOpen(false)
+    }
+
+    // A week after the open one is no business of its number: neither copy nor removal moves it.
+    @Test
+    fun `keeps an earlier open week open when a later one is duplicated`() {
+        draftWith(3)
+        week(1).performClick()
+
+        menu(3, "Duplicar")
+
+        week(1).assertOpen(true)
+        week(4).assertOpen(false)
+    }
+
+    @Test
+    fun `keeps an earlier open week open when a later one is deleted`() {
+        draftWith(3)
+        week(1).performClick()
+
+        menu(3, "Excluir semana")
+
+        week(1).assertOpen(true)
+        week(2).assertOpen(false)
     }
 }

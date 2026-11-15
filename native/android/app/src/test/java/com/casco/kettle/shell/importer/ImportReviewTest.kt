@@ -1,9 +1,16 @@
 package com.casco.kettle.shell.importer
 
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.filter
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.onChildren
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onParent
 import androidx.compose.ui.test.performClick
 import com.casco.kettle.domain.Exercise
 import com.casco.kettle.domain.ExerciseConfig
@@ -121,5 +128,63 @@ class ImportReviewTest : ImportHarness() {
 
         compose.onNodeWithContentDescription("Peso: era 20 kg, agora: removido").assertDoesNotExist()
         shown("2 removidos")
+    }
+
+    // The row is a button whose state is its action: Collapse while open, Expand once folded, for TalkBack.
+    @Test
+    fun `exposes an update's row as a button that collapses, then expands, and reopens its diff`() {
+        reviewsAClearingUpdate()
+        val row = button("Pull-ups", substring = true)
+
+        row.assert(SemanticsMatcher.keyIsDefined(SemanticsActions.Collapse))
+        row.assert(SemanticsMatcher.keyNotDefined(SemanticsActions.Expand))
+        row.performClick()
+        row.assert(SemanticsMatcher.keyIsDefined(SemanticsActions.Expand))
+        row.assert(SemanticsMatcher.keyNotDefined(SemanticsActions.Collapse))
+        row.performClick()
+
+        row.assert(SemanticsMatcher.keyIsDefined(SemanticsActions.Collapse))
+        compose.onNodeWithContentDescription("Peso: era 20 kg, agora: removido").assertExists()
+    }
+
+    // The warning glyph is a shape beside the count, so the tile isn't told by colour alone.
+    @Test
+    fun `draws the warning glyph on the cleared tile only when something is cleared`() {
+        reviewsAClearingUpdate()
+
+        glyphs().assertCountEquals(1)
+    }
+
+    @Test
+    fun `leaves the cleared tile plain when nothing is cleared`() {
+        val same = Library(1, listOf(pullUps), emptyList(), emptyList())
+        picks(same)
+        chooseFile(Files(same))
+
+        compose.onNodeWithText("removidos").assert(hasText("0"))
+        glyphs().assertCountEquals(0)
+    }
+
+    /**
+     * The cleared tile's children with no text: its glyph, which has no words to find it by. It is a node
+     * at all only because `TypeIcon` clears its semantics to an empty one, so the glyph is seen without
+     * pinning the tile's other children.
+     */
+    private fun glyphs() =
+        compose
+            .onNodeWithText("removidos", useUnmergedTree = true)
+            .onParent()
+            .onChildren()
+            .filter(SemanticsMatcher.keyNotDefined(SemanticsProperties.Text))
+
+    // The result is for what landed, so it says the user's names, as the review does, and not only the ids.
+    @Test
+    fun `names the items on the result card by their names`() {
+        reviewsAClearingUpdate()
+        merge().performClick()
+
+        shown("Importado")
+        shown("Pull-ups")
+        shown("Dips")
     }
 }

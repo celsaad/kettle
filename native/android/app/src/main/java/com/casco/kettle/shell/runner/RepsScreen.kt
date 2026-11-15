@@ -20,6 +20,9 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -61,6 +64,7 @@ internal fun RepsScreen(
     context: StepContext,
 ) {
     val readings = context.readings
+    val inCircuit = step.circuit != null
     StepLayout(
         top = {
             val resources = LocalResources.current
@@ -74,13 +78,22 @@ internal fun RepsScreen(
             // The canvas's order (#410): the load leads, as the larger number, with last time and the
             // next load to try right under it; the reps are counted below.
             Column(Modifier.padding(top = Spacing.two), verticalArrangement = Arrangement.spacedBy(Spacing.one)) {
-                LoadControl(context)
+                // A circuit's bodyweight member has no load to set (#478); a weighted one keeps it.
+                if (!inCircuit || loadShown(step, context)) LoadControl(context)
                 LastTimeRow(step, context)
             }
         },
-        middle = { RepsCounter(step, context) },
+        middle = {
+            RepsCounter(step, context)
+            // What the member did last round, the reference a circuit moves by (#478).
+            readings.lastRoundReps?.let { reps ->
+                val round = (step.circuit?.round ?: 1) - 1
+                Secondary(stringResource(R.string.session_reps_lastRound, "$reps", "$round"))
+            }
+        },
         controls = {
-            EffortTrack(context)
+            // No effort in a circuit, as the board draws it (#478): it moves too fast for one per member.
+            if (!inCircuit) EffortTrack(context)
             BottomRow(
                 RowAction(
                     stringResource(R.string.session_reps_logSet),
@@ -317,3 +330,19 @@ private val REPS_NUMERAL = 96.sp
 private val STEPPER_GAP = 22.dp
 private val REPS_LABEL_GAP = 6.dp
 private val LOAD_UNIT = 18.sp
+
+/**
+ * Whether a circuit member shows its load: once it has a load, planned or set on this set, it keeps the
+ * control for the rest of the visit. Read live, − down to 0 took the row away under the finger and slid
+ * last time's adopt into its place, where the next tap brought it back.
+ */
+@Composable
+private fun loadShown(
+    step: RunnerStep.Reps,
+    context: StepContext,
+): Boolean {
+    val shown = remember(context.snapshot.visit) { mutableStateOf(false) }
+    val loaded = (step.targetWeightKg ?: 0.0) > 0 || context.snapshot.inputs.weightKg > 0
+    if (loaded && !shown.value) SideEffect { shown.value = true }
+    return loaded || shown.value
+}

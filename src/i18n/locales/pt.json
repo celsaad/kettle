@@ -420,7 +420,8 @@
       "repsLabel": "Repetições",
       "repsDoneTarget": "Reps feitas · meta {{target}}",
       "effortLabel": "Esforço · opcional",
-      "tryLoad": "Tentar {{weight}}"
+      "tryLoad": "Tentar {{weight}}",
+      "lastRound": "Rodada {{round}}: {{reps}}"
     },
     "numberPad": {
       "dismiss": "Fechar teclado",

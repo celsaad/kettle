@@ -782,4 +782,65 @@ class RunnerTimingTest {
             assertEquals("2026-07-27T09:00:01.007Z", isoInstant(T0 + 1007))
         }
     }
+
+    /** A circuit's "Round 1: 16" (#478): shown only when it can name the round its count came from. */
+    @Nested
+    inner class LastRoundReps {
+        private fun Runner.reps() = step as RunnerStep.Reps
+
+        /** Log each reps step on the way with [reps], skipping the rests, until [exerciseId]'s [round]. */
+        private fun Runner.logUntil(
+            exerciseId: String,
+            round: Long,
+            reps: (RunnerStep.Reps) -> Long = { 8 + it.circuit!!.round },
+        ) {
+            while ((step as? RunnerStep.Reps)?.let { it.exerciseId == exerciseId && it.circuit?.round == round } !=
+                true
+            ) {
+                (step as? RunnerStep.Reps)?.let { send(RunnerCommand.SetReps(reps(it))) }
+                advance()
+            }
+        }
+
+        @Test
+        fun `is the round before's reps from round 2`() {
+            val runner = Runner(workoutOf(circuitOf("dips", "pullups", rounds = 3)))
+            runner.logUntil("dips", 3)
+
+            assertEquals(10L, runner.state.lastRoundReps(runner.reps()))
+        }
+
+        @Test
+        fun `is null in round 1, and outside a circuit`() {
+            val circuit = Runner(workoutOf(circuitOf("dips", "pullups")))
+            assertEquals(null, circuit.state.lastRoundReps(circuit.reps()))
+
+            val straight = Runner(workoutOf(single("dips")))
+            // Its second set, with the first logged: a straight block's sets aren't rounds.
+            straight.advance()
+            while (straight.step !is RunnerStep.Reps) straight.advance()
+            assertEquals(null, straight.state.lastRoundReps(straight.reps()))
+        }
+
+        @Test
+        fun `is null after a round skipped at 0, rather than an older round's count`() {
+            val runner = Runner(workoutOf(circuitOf("dips", "pullups", rounds = 3)))
+            runner.logUntil("dips", 3) { if (it.exerciseId == "dips" && it.circuit!!.round == 2L) 0 else 8 }
+
+            assertEquals(null, runner.state.lastRoundReps(runner.reps()))
+        }
+
+        @Test
+        fun `is null on a step gone back to without undoing its set`() {
+            val runner = Runner(workoutOf(circuitOf("dips", "pullups", rounds = 3)))
+            runner.logUntil("dips", 3)
+            // The first Back undoes pull-ups' round 2; the second only moves, onto dips' round 2 with its
+            // set still logged.
+            runner.prev()
+            runner.prev()
+            assertEquals(2L, runner.reps().circuit?.round)
+
+            assertEquals(null, runner.state.lastRoundReps(runner.reps()))
+        }
+    }
 }

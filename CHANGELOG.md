@@ -216,6 +216,8 @@ here, next to what it describes.
   minute the notes step aside, a rest no longer repeats its length under the countdown, and times in
   seconds have a space, "60 s rest". At the largest text sizes a session's buttons now stay on
   screen, the clock scrolling instead (#477).
+- **Lighter circuit steps**: inside a circuit, a set skips the effort rating, a bodyweight move
+  doesn't show a weight to set, and from the second round you see last round's reps, "Round 1: 16". A paused AMRAP's big button is Resume (#478).
 
 ---
 

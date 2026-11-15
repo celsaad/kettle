@@ -30,6 +30,7 @@ import com.casco.kettle.domain.CountIn
 import com.casco.kettle.domain.Library
 import com.casco.kettle.domain.Program
 import com.casco.kettle.domain.ProgramWeek
+import com.casco.kettle.domain.RecordKind
 import com.casco.kettle.domain.RepsSetLog
 import com.casco.kettle.domain.RunnerCommand
 import com.casco.kettle.domain.RunnerPlan
@@ -203,7 +204,7 @@ class RunnerScreenTest : RunnerScreenHarness() {
         show(running(plan(block(squat))))
         compose.onNodeWithText("Da última vez · 50 kg × 5 repetições").assertExists()
         // The target of 60 kg beats a best of 50.
-        compose.onNodeWithText("RECORDE").assertExists()
+        compose.onNodeWithText("Recorde").assertExists()
         button("Usar a carga da última vez, 50 quilogramas, e salvar como novo alvo").performClick()
         assertEquals(RunnerCommand.SetWeight(50.0), sent.last())
         // The library takes it only once the set is logged with it (#410), not on the tap.
@@ -403,7 +404,7 @@ class RunnerScreenTest : RunnerScreenHarness() {
         compose.onNodeWithText("Em relação à última vez").assertExists()
         compose
             // The badge names the record it set (#475), read as it shows.
-            .onNode(hasContentDescription("Agachamento, RECORDE · mais pesado,", substring = true))
+            .onNode(hasContentDescription("Agachamento, Recorde · maior carga,", substring = true))
             .assert(hasContentDescription("1RM", substring = true))
             .assert(hasContentDescription("+10 kg", substring = true))
         compose.onNodeWithText("1RM estimado a partir da sua melhor série, pela fórmula de Epley.").assertExists()
@@ -451,7 +452,7 @@ class RunnerScreenTest : RunnerScreenHarness() {
         )
 
         compose.onNode(hasContentDescription("Primeira vez", substring = true)).assertExists()
-        compose.onNode(hasContentDescription("RECORDE", substring = true)).assertDoesNotExist()
+        compose.onNode(hasContentDescription("Recorde", substring = true)).assertDoesNotExist()
     }
 
     /** A program day says which, and what the program has next, as Today's card will a tap away. */
@@ -703,4 +704,21 @@ class RunnerScreenTest : RunnerScreenHarness() {
         "2026-08-01T10:30:00.000Z",
         listOf(SessionEntry.Reps("squat", listOf(RepsSetLog(5, kg, restTakenSec = 90.0)))),
     )
+
+    /** Each record names its own kind (#475): an exhaustive `when` would still compile with two swapped. */
+    @Test
+    fun `each record kind has its own badge words`() {
+        val labels = mutableMapOf<RecordKind, String>()
+        compose.setContent { RecordKind.entries.forEach { labels[it] = recordLabel(it) } }
+        compose.waitForIdle()
+        assertEquals(
+            mapOf(
+                RecordKind.HeaviestSet to "Recorde · maior carga",
+                RecordKind.MostReps to "Recorde · mais repetições",
+                RecordKind.LongestHold to "Recorde · isometria mais longa",
+                RecordKind.MostRounds to "Recorde · mais rodadas",
+            ),
+            labels.toMap(),
+        )
+    }
 }

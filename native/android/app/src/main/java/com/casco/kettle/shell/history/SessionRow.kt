@@ -10,13 +10,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalResources
@@ -25,7 +23,6 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.collapse
 import androidx.compose.ui.semantics.expand
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -40,6 +37,7 @@ import com.casco.kettle.shell.list.ListRowMinHeight
 import com.casco.kettle.shell.list.ListRowVerticalPadding
 import com.casco.kettle.shell.list.TextAction
 import com.casco.kettle.shell.theme.Chevron
+import com.casco.kettle.shell.theme.InkBadge
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.Spacing
@@ -184,25 +182,12 @@ private fun topEntry(
     )
 }
 
-/**
- * The PR mark on a row's name line: the page's colour on ink, as the board draws it. Text, so the row's
- * merged name reads it with the rest; a content description here would replace the whole row's words.
- */
+/** The PR mark on a row's name line: the page's colour on ink, as the board draws it ([InkBadge]). */
 @Composable
 private fun PrBadge() {
     val colors = KettleTheme.colors
-    Text(
-        stringResource(R.string.history_prBadge),
-        Modifier
-            .clip(BadgeShape)
-            .background(colors.text)
-            .padding(horizontal = Spacing.one + 2.dp, vertical = 1.dp),
-        style = KettleType.code.copy(fontWeight = FontWeight.Bold),
-        color = colors.background,
-    )
+    InkBadge(stringResource(R.string.history_prBadge), colors.text, colors.background)
 }
-
-private val BadgeShape = RoundedCornerShape(6.dp)
 
 /**
  * The day of the month and the short month the delete's confirm names a session by, "29 JUL". Blank

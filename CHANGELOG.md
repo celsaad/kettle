@@ -192,8 +192,9 @@ here, next to what it describes.
   full width like Coming up, and every one has a handle at the top you can drag down to close it
   (#474).
 - **A record says which**: when you finish, a record's badge reads "PR · heaviest yet" (or most
-  reps, longest hold, most rounds) in the screen's own ink, no longer a blue "PR". What your program
-  has next stands out in the line under it (#475).
+  reps, longest hold, most rounds) in the screen's own colours, no longer a blue "PR", and the "PR"
+  beside your last set during a session matches it. What your program has next stands out in the line
+  under it (#475).
 
 ---
 

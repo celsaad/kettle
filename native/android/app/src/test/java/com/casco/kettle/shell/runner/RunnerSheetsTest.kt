@@ -1,10 +1,22 @@
 package com.casco.kettle.shell.runner
 
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.click
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTouchInput
 import com.casco.kettle.domain.RunnerCommand
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -77,5 +89,34 @@ class RunnerSheetsTest : RunnerScreenHarness() {
         back()
         compose.onNodeWithText("Encerrar o treino agora?").assertDoesNotExist()
         assertTrue(sent.none { it is RunnerCommand.Finish })
+    }
+
+    /**
+     * Every sheet's grabber (#474): a button named by its word, whose TalkBack dismiss closes the sheet, as
+     * the shell's sheet's does. The sheet runs the screen's width, where Swap and End early were inset.
+     */
+    @Test
+    fun `a sheet runs the full width, and its grabber's dismiss closes it`() {
+        show(running(plan(block(squat))))
+        button("Encerrar").performClick()
+        val sheet = compose.onNode(hasText("Encerrar o treino agora?")).fetchSemanticsNode()
+        val grabber = compose.onNodeWithContentDescription("Alça de arrastar")
+        grabber.assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
+        val root = compose.onRoot().getUnclippedBoundsInRoot()
+        val strip = grabber.getUnclippedBoundsInRoot()
+        assertEquals((root.right - root.left).value, (strip.right - strip.left).value, 1f)
+        assertTrue(sheet.boundsInRoot.top > 0f)
+
+        grabber.performSemanticsAction(SemanticsActions.Dismiss)
+        compose.onNodeWithText("Encerrar o treino agora?").assertDoesNotExist()
+    }
+
+    /** A finger's tap on the grabber does nothing, as on the shell's: a drag closes, never a stray tap. */
+    @Test
+    fun `a tap on the grabber leaves the sheet open`() {
+        show(running(plan(block(squat))))
+        button("Trocar").performClick()
+        compose.onNodeWithContentDescription("Alça de arrastar").performTouchInput { click() }
+        compose.onNodeWithText("Trocar Agachamento").assertExists()
     }
 }

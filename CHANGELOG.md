@@ -188,6 +188,9 @@ here, next to what it describes.
   "Set 2 of 4 · 48.5 lb · 8–12 reps", with the weight the set will start on. In a circuit it gives
   the round, and what you just logged says "round 2" rather than "set 2". The logged line over the
   orange screen sits on a darker panel, as it does on a rest (#473).
+- **The session's sheets match**: Sets, Swap, End early and the number pad now open as full-width
+  sheets from the bottom, like Coming up, with a handle at the top you can drag down to close them
+  (#474).
 
 ---
 

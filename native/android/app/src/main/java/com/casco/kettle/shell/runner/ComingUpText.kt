@@ -1,38 +1,15 @@
 package com.casco.kettle.shell.runner
 
 import android.content.res.Resources
-import com.casco.kettle.domain.RunnerStep
 import com.casco.kettle.domain.SessionEntry
 import com.casco.kettle.domain.TimelineStop
-import com.casco.kettle.domain.UpcomingItem
-import com.casco.kettle.domain.WorkStep
 import com.casco.kettle.domain.WorkUnit
 import com.casco.kettle.domain.jsNumber
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.i18n.pluralText
 
-// The words on Coming up's stops (#415). Logged values come from the session file as written; targets
-// and counts from the steps, through the same lines Home's preview uses.
-
-/** A stop ahead: "3 sets · target 8–12", the target alone for one-shot work. */
-internal fun Resources.nextDetail(stop: TimelineStop.Exercise): String =
-    upcomingDetail(UpcomingItem.Exercise(stop.memberKey, stop.step, stop.count, stop.unit, started = false))
-
-/** The stop on screen: "set 2 of 4 · target 8–12", or an interval's own line. */
-internal fun Resources.nowDetail(step: WorkStep): String =
-    when (step) {
-        is RunnerStep.Interval -> {
-            intervalLine(step, rounds = true)
-        }
-
-        else -> {
-            getString(
-                R.string.session_upcoming_detail,
-                getString(R.string.session_setOf, "${step.setIndex}", "${step.setTotal}"),
-                upcomingTarget(step),
-            )
-        }
-    }
+// The words on Coming up's stops (#415). Logged values come from the session file as written; counts
+// from the steps, and targets from `ComingUpTargets.kt`'s own lines (#479).
 
 /**
  * A stop done, as it was logged: "3 sets · 10, 9, 8", "2 sets · 30, 28 s", "8 rounds", "5 minutes".
@@ -116,14 +93,40 @@ internal fun Resources.loopRests(stop: TimelineStop.Loop): String {
     return getString(R.string.session_comingUp_rests, moves, rounds)
 }
 
-/** "Then round 3", "Then rounds 3–5", or null on the last. */
+/** "Then round 3: all 3 again", "Then rounds 3–5: all 3 again", or null on the last. */
 internal fun Resources.thenRounds(stop: TimelineStop.Loop): String? {
     val next = stop.round + 1
+    val members = stop.members.size
     return when {
-        next > stop.lastRound -> null
-        next == stop.lastRound -> getString(R.string.session_comingUp_thenRound, "$next")
-        else -> getString(R.string.session_comingUp_thenRounds, "$next", "${stop.lastRound}")
+        next > stop.lastRound -> {
+            null
+        }
+
+        next == stop.lastRound -> {
+            pluralText(R.plurals.session_comingUp_thenRound, R.string.session_comingUp_thenRound_zero, members, "$next")
+        }
+
+        else -> {
+            pluralText(
+                R.plurals.session_comingUp_thenRounds,
+                R.string.session_comingUp_thenRounds_zero,
+                members,
+                "$next",
+                "${stop.lastRound}",
+            )
+        }
     }
+}
+
+/** "After round 3" under End, when the circuit's last round is what ends the workout (#479). */
+internal fun Resources.afterLastRound(last: TimelineStop?): String? {
+    val round =
+        when (last) {
+            is TimelineStop.Loop -> last.lastRound
+            is TimelineStop.Circuit -> last.rounds
+            else -> return null
+        }
+    return getString(R.string.session_comingUp_afterLastRound, "$round")
 }
 
 private fun Resources.withCount(

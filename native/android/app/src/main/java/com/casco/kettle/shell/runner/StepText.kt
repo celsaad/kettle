@@ -13,8 +13,8 @@ import com.casco.kettle.domain.repsTarget
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.i18n.pluralText
 
-// The step's own words: its clock and targets, what a screen reader hears as it comes up, and the
-// Coming up sheet's lines. Placeholders go in the alphabetical order of their names, as in RunnerText.
+// The step's own words: its clock and targets, what a screen reader hears as it comes up, and Home's
+// preview lines. Placeholders go in the alphabetical order of their names, as in RunnerText.
 
 /** `m:ss`, as RN's `formatClock`. */
 fun formatClock(totalSeconds: Double): String {
@@ -80,7 +80,7 @@ fun Resources.announcement(step: RunnerStep): String =
         }
     }
 
-/** A work step's target, as the Coming up sheet words it. */
+/** A work step's target, as Home's preview words it ("target 8–12"); Coming up has its own (#479). */
 fun Resources.upcomingTarget(step: WorkStep): String =
     when (step) {
         is RunnerStep.Reps -> {

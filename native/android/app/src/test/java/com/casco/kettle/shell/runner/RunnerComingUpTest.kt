@@ -14,6 +14,16 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(qualifiers = "pt-w411dp-h891dp")
 class RunnerComingUpTest : RunnerScreenHarness() {
+    /** Only the stop on screen says "Alvo" (#479): an exercise ahead gives its sets and the number alone. */
+    @Test
+    fun `an exercise ahead reads its sets and reps with no target word`() {
+        val two = plan(block(plank), block(squat))
+        show(running(two))
+        button("Pernas").performClick()
+        compose.onNodeWithText("Agachamento · 2 séries · 5 repetições").assertExists()
+        compose.onNodeWithText("alvo", substring = true).assertDoesNotExist()
+    }
+
     @Test
     fun `a done exercise reads as one line of what was logged, and the next is the stop on screen`() {
         val two = plan(block(squat), block(plank))
@@ -48,7 +58,23 @@ class RunnerComingUpTest : RunnerScreenHarness() {
         compose.onNodeWithText("Sem descanso entre os exercícios · 1:00 após cada rodada").assertExists()
         compose.onNodeWithText("Agachamento · 5 repetições").assertExists()
         compose.onNodeWithText("Agora").assertExists()
-        compose.onNodeWithText("Depois, rodadas 2–3").assertExists()
+        // The stop on screen says "Alvo"; the circuit's last round ends the workout, which End says (#479).
+        compose.onNodeWithText("Alvo 20–30 s").assertExists()
+        compose.onNodeWithText("Depois, rodadas 2–3: os 2 de novo").assertExists()
+        compose.onNodeWithText("Após a rodada 3").assertExists()
+    }
+
+    /** From round 2 the stop on screen adds last round's reps, as its screen does; what's ahead has no "alvo". */
+    @Test
+    fun `a circuit's second round says last round's reps on Now, and the stops ahead their numbers alone`() {
+        val circuit =
+            WorkoutBlock.Circuit(rounds = 2, members = listOf(CircuitMember(squat.id), CircuitMember(plank.id)))
+        val loop = plan(circuit)
+        show(running(loop, started(loop).advanced().advanced()))
+        button("Pernas").performClick()
+        compose.onNodeWithText("Alvo 5 · rodada 1: 5").assertExists()
+        compose.onNodeWithText("Prancha · isometria 20–30 s").assertExists()
+        compose.onNodeWithText("alvo", substring = true).assertDoesNotExist()
     }
 
     @Test

@@ -188,6 +188,9 @@ class GeneratedThemeTest {
             }
         }
         assertContrast(6.68, RunnerColors.getReady.numeral, RunnerColors.getReady.background.surface())
+        // A sheet's search fill (#479), drawn only on pace's sheets.
+        assertContrast(13.87, RunnerColors.pace.text, RunnerColors.pace.field.surface())
+        assertContrast(6.74, RunnerColors.pace.textSecondary, RunnerColors.pace.field.surface())
 
         // The calendar sits on the page (#414): the rest day's outline, then each level, against it.
         val calendar =

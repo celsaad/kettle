@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -129,8 +130,9 @@ internal fun PickerSearch(
         Modifier
             .fillMaxWidth()
             .heightIn(min = MinTarget)
-            .clip(KeyShape)
-            .keyFace(runnerColors)
+            // Filled with no edge, as the board draws it (#479): a key's face read as a button.
+            .clip(SearchShape)
+            .background(runnerColors.field)
             .semantics { contentDescription = label }
             .padding(horizontal = CARD_PAD),
         singleLine = true,
@@ -155,6 +157,7 @@ internal fun PickerSearch(
 
 private const val SEARCH_THRESHOLD = 8
 private val SEARCH_TEXT = 14.sp
+private val SearchShape = RoundedCornerShape(14.dp)
 
 /**
  * A picker's row: the hairline above it but on the [first], then the name, and [detail] to its right

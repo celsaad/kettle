@@ -33,7 +33,7 @@ import com.casco.kettle.shell.theme.Spacing
 /**
  * Coming up as a subway map (#415): the whole session on one line, done stops ticked with what was
  * logged, the stop on screen ringed with its target (no clock: the screen behind has it), what's ahead
- * dim, standalone rests as ticks, and the circuit you're in as a loop off the line. Opens scrolled to
+ * dim, standalone rests as ticks, and the circuit you're in as a loop on the line. Opens scrolled to
  * the stop on screen. An ad-hoc session has no end node.
  */
 @Composable
@@ -72,11 +72,14 @@ internal fun ComingUp(
             if (ends) {
                 item {
                     RailRow(RailNode.End, StopState.NEXT, first = timeline.stops.isEmpty(), last = true) {
-                        Text(
-                            stringResource(R.string.session_comingUp_end),
-                            style = KettleType.default,
-                            color = runnerColors.text,
-                        )
+                        Column(Modifier.semantics(mergeDescendants = true) {}) {
+                            Text(
+                                stringResource(R.string.session_comingUp_end),
+                                style = KettleType.default,
+                                color = runnerColors.text,
+                            )
+                            LocalResources.current.afterLastRound(timeline.stops.lastOrNull())?.let { Secondary(it) }
+                        }
                     }
                 }
             }
@@ -118,8 +121,9 @@ private fun StopRow(
             }
         }
 
+        // On the rail rather than beside it (#479): the loop's left edge is the line, its members' nodes on it.
         is TimelineStop.Loop -> {
-            RailRow(RailNode.None, stop.state, first, last) { LoopCard(stop, entryOf) }
+            LoopCard(stop, last, entryOf)
         }
 
         is TimelineStop.Circuit -> {

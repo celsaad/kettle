@@ -136,4 +136,18 @@ class RunnerSheetsTest : RunnerScreenHarness() {
         grabber.performTouchInput { swipeDown(startY = centerY, endY = centerY + 200.dp.toPx(), durationMillis = 600) }
         compose.onNodeWithText("Encerrar o treino agora?").assertDoesNotExist()
     }
+
+    /**
+     * A flick closes the sheet however short, as the shell's sheet's does: 80dp in 60ms is about 1300dp/s,
+     * short of the 96dp a drag needs. A shorter swipe gave the velocity tracker too few events to read.
+     */
+    @Test
+    fun `a quick flick on the grabber closes the sheet, short of the drag that would`() {
+        show(running(plan(block(squat))))
+        button("Encerrar").performClick()
+        compose
+            .onNodeWithContentDescription("Alça de arrastar")
+            .performTouchInput { swipeDown(startY = centerY, endY = centerY + 80.dp.toPx(), durationMillis = 60) }
+        compose.onNodeWithText("Encerrar o treino agora?").assertDoesNotExist()
+    }
 }

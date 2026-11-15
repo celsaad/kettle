@@ -133,7 +133,7 @@ fun TrainingCalendar(
             ) { WeekCells(week) }
         }
 
-        Legend(columns.label)
+        Legend()
     }
 }
 
@@ -218,11 +218,11 @@ private fun DrawScope.drawBox(
 private fun CalendarBox.inset(by: Float) = CalendarBox(x + by, y + by, width - 2 * by, height - 2 * by)
 
 /**
- * Under the first cell rather than under the dates, so the swatches read as the grid's. The three
- * trained shades only (#414): a rest day's outline explains itself.
+ * From the page's edge (#484), so it lines up with the heading above rather than
+ * starting mid-row. The three trained shades only (#414): a rest day's outline explains itself.
  */
 @Composable
-private fun Legend(labelWidth: Dp) {
+private fun Legend() {
     val items =
         listOf(
             CalendarLevel.Short to stringResource(R.string.analytics_calendarShort, CALENDAR_MID_MINUTES),
@@ -231,7 +231,7 @@ private fun Legend(labelWidth: Dp) {
             CalendarLevel.Long to stringResource(R.string.analytics_calendarLong, CALENDAR_LONG_MINUTES),
         )
     FlowRow(
-        Modifier.padding(start = labelWidth + Spacing.two, top = Spacing.two),
+        Modifier.padding(top = Spacing.two),
         horizontalArrangement = Arrangement.spacedBy(Spacing.three - 2.dp),
         verticalArrangement = Arrangement.spacedBy(Spacing.one),
     ) {

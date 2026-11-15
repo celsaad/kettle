@@ -163,6 +163,9 @@ here, next to what it describes.
   when you finish used to list only the reps. They now show the load too, "48.5 lb · 12, 12, 10",
   or set by set where it changed. A session of EMOM, HIIT or AMRAP rounds says rounds, not sets
   (#482, #483).
+- **Shorter labels**: workouts list their exercise types plainly, "reps, hold" or "EMOM", and
+  Settings' switches are Sounds and Rest-day nudge. The training calendar's key says "45 min or
+  more" in full (#484).
 
 ---
 

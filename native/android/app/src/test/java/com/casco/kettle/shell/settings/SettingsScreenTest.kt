@@ -80,9 +80,9 @@ class SettingsScreenTest {
     private fun missing(label: String) = compose.onNodeWithText(label, substring = true).assertDoesNotExist()
 
     /** Each a switch named by its own title (#416), the whole row toggling it. */
-    private fun sounds() = compose.onNode(hasText("Sons da sessão") and isSwitch).performScrollTo()
+    private fun sounds() = compose.onNode(hasText("Sons") and isSwitch).performScrollTo()
 
-    private fun reminder() = compose.onNode(hasText("Lembrete") and isSwitch).performScrollTo()
+    private fun reminder() = compose.onNode(hasText("Lembrete para voltar a treinar") and isSwitch).performScrollTo()
 
     private val isSwitch = SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Switch)
 

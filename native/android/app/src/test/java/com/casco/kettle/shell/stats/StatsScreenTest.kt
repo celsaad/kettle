@@ -248,6 +248,8 @@ class StatsScreenTest {
         compose.onNodeWithText("Últimas 8 semanas").assertExists()
         compose.onNodeWithText("Dias de treino").assert(isHeading())
         compose.onNodeWithText("Menos de 30 min").assertExists()
+        // #484's words, not "45 min+".
+        compose.onNodeWithText("45 min ou mais").assertExists()
         // A rest day's outline explains itself, so the legend has no Rest swatch (#414).
         compose.onNodeWithText("Descanso").assertDoesNotExist()
         compose.onNodeWithText("12 kg · ▲ 2 kg · melhor marca").assertExists()

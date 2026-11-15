@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.res.stringResource
+import com.casco.kettle.domain.CircuitPosition
 import com.casco.kettle.domain.IntervalVariant
 import com.casco.kettle.domain.LoggedUnit
 import com.casco.kettle.domain.PreviousSet
@@ -18,12 +19,14 @@ import com.casco.kettle.domain.canAddSet
 import com.casco.kettle.domain.canDropSet
 import com.casco.kettle.domain.elapsedSec
 import com.casco.kettle.domain.offeredLoadKg
+import com.casco.kettle.domain.openingLoadKg
 import com.casco.kettle.domain.previousAmrapRounds
 import com.casco.kettle.domain.previousSet
 import com.casco.kettle.domain.progressionLoadKg
 import com.casco.kettle.domain.remainingSec
 import com.casco.kettle.domain.swapChoices
 import com.casco.kettle.domain.upcomingPreview
+import com.casco.kettle.domain.upcomingStep
 import com.casco.kettle.shell.R
 
 /** What the number pad is opened for: its label, the value it starts from, and where the value goes. */
@@ -44,6 +47,10 @@ data class StepReadings(
     val lastRounds: Long? = null,
     val beatsBest: Boolean,
     val next: StepPreview?,
+    /** What the step [next] previews opens on, if it's a reps set with a load: the rest's line says it (#473). */
+    val nextLoadKg: Double? = null,
+    /** The circuit [next] sits in, whose round its line names in place of a set. */
+    val nextCircuit: CircuitPosition? = null,
     val canAddSet: Boolean,
     val canDropSet: Boolean,
     val canSwap: Boolean,
@@ -108,6 +115,7 @@ internal fun stepContext(
     val snapshot = view.snapshot
     val state = RunnerState(snapshot, view.session)
     val prior = environment.priorSessions
+    val upcoming = upcomingStep(snapshot.steps, snapshot.stepIndex)
     val readings =
         StepReadings(
             previous = previousSet(snapshot, prior),
@@ -131,6 +139,8 @@ internal fun stepContext(
                     ?.let { previousAmrapRounds(prior, it.exerciseId) },
             beatsBest = beatsPersonalBest(state, prior, now),
             next = upcomingPreview(snapshot.steps, snapshot.stepIndex),
+            nextLoadKg = (upcoming as? RunnerStep.Reps)?.let { state.openingLoadKg(it) },
+            nextCircuit = upcoming?.circuit,
             canAddSet = canAddSet(snapshot),
             canDropSet = canDropSet(state),
             canSwap = swapChoices(snapshot, view.plan.exercises) != null,

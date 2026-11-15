@@ -159,7 +159,7 @@ class GeneratedThemeTest {
         val fields =
             mapOf(
                 RunnerColors.pace to FieldRatios(17.87, 8.69, 7.58, 3.58, 4.99, 17.87),
-                RunnerColors.work to FieldRatios(6.68, 5.25, 6.26, 3.47, 3.02, 17.87),
+                RunnerColors.work to FieldRatios(6.68, 5.25, 4.55, 3.47, 3.02, 17.87),
                 RunnerColors.rest to FieldRatios(6.85, 5.09, 6.85, 3.49, 3.03, 6.85),
             )
         for ((palette, ratios) in fields) {

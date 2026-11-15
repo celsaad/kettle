@@ -1,6 +1,7 @@
 package com.casco.kettle.shell.runner
 
 import android.content.res.Resources
+import com.casco.kettle.domain.CircuitPosition
 import com.casco.kettle.domain.IntervalProgress
 import com.casco.kettle.domain.LoggedUnit
 import com.casco.kettle.domain.PreviousSet
@@ -31,28 +32,19 @@ internal fun Resources.reps(count: Long): String =
 
 internal fun Resources.seconds(value: Double): String = getString(R.string.format_seconds, jsNumber(value))
 
-/** What Undo would take back, after "Logged": "set 1 · 10 × 48.5 lb", "round 3", or the entry's name. */
+/**
+ * What Undo would take back, after "Logged": "set 1 · 10 × 48.5 lb", "round 3", or the entry's name. In
+ * a circuit, a member's set is its round, so [inCircuit] says round: "set 2" there read as a second set
+ * of the same move (#473).
+ */
 fun Resources.loggedText(
     logged: LoggedUnit,
     units: UnitSystem,
+    inCircuit: Boolean = false,
 ): String =
     when (logged) {
         is LoggedUnit.Set -> {
-            val index = "${logged.number}"
-            when (val set = logged.set) {
-                is PreviousSet.Hold -> {
-                    getString(R.string.session_logged_setHold, index, seconds(set.holdSec))
-                }
-
-                is PreviousSet.Reps -> {
-                    val kg = set.weightKg?.takeIf { it > 0 }
-                    if (kg == null) {
-                        getString(R.string.session_logged_setBodyweight, index, reps(set.reps))
-                    } else {
-                        getString(R.string.session_logged_setLoaded, index, "${set.reps}", weightText(kg, units))
-                    }
-                }
-            }
+            setText(logged.number, logged.set, units, if (inCircuit) ROUND_KEYS else SET_KEYS)
         }
 
         is LoggedUnit.Round -> {
@@ -68,34 +60,86 @@ fun Resources.loggedText(
         }
     }
 
-/** The Next card's second line, as RN's `previewFor`. */
-fun Resources.previewDetail(preview: StepPreview): String =
-    when (preview) {
-        is StepPreview.Hold -> {
-            preview.target?.let {
-                getString(R.string.preview_hold, "${preview.setIndex}", holdTargetText(it), "${preview.setTotal}")
-            } ?: getString(R.string.preview_holdOpen, "${preview.setIndex}", "${preview.setTotal}")
+/** One logged set after its number, with [keys] saying "set" or, in a circuit, "round". */
+private fun Resources.setText(
+    number: Int,
+    set: PreviousSet,
+    units: UnitSystem,
+    keys: SetKeys,
+): String {
+    val index = "$number"
+    return when (set) {
+        is PreviousSet.Hold -> {
+            getString(keys.hold, index, seconds(set.holdSec))
         }
 
-        is StepPreview.Reps -> {
-            getString(
-                R.string.preview_reps,
-                "${preview.setIndex}",
-                repsTargetText(preview.target),
-                "${preview.setTotal}",
-            )
-        }
-
-        is StepPreview.Interval -> {
-            val progress =
-                when (val at = preview.progress) {
-                    is IntervalProgress.Round -> getString(R.string.preview_round, "${at.index}", "${at.total}")
-                    is IntervalProgress.Seconds -> getString(R.string.preview_seconds, jsNumber(at.seconds))
-                }
-            // The variant goes in as its YAML id, as RN's does.
-            getString(R.string.preview_interval, progress, preview.variant.json)
+        is PreviousSet.Reps -> {
+            val kg = set.weightKg?.takeIf { it > 0 }
+            if (kg == null) {
+                getString(keys.bodyweight, index, reps(set.reps))
+            } else {
+                getString(keys.loaded, index, "${set.reps}", weightText(kg, units))
+            }
         }
     }
+}
+
+/** The three ways a logged set is said: held, at bodyweight, loaded. */
+private class SetKeys(
+    val hold: Int,
+    val bodyweight: Int,
+    val loaded: Int,
+)
+
+private val SET_KEYS =
+    SetKeys(R.string.session_logged_setHold, R.string.session_logged_setBodyweight, R.string.session_logged_setLoaded)
+private val ROUND_KEYS =
+    SetKeys(
+        R.string.session_logged_roundHold,
+        R.string.session_logged_roundBodyweight,
+        R.string.session_logged_roundLoaded,
+    )
+
+/**
+ * A rest's line under "Next: Squat" (#473), as the board writes it: "Set 2 of 4 · 48.5 lb · 8–12 reps".
+ * In a circuit its [circuit] round stands in for the set, since a member's set there is the round; the
+ * load is what the set will open on ([openingLoadKg]), so the rest and the set can't disagree.
+ */
+fun Resources.previewDetail(
+    preview: StepPreview,
+    circuit: CircuitPosition?,
+    loadKg: Double?,
+    units: UnitSystem,
+): String {
+    val round = circuit?.let { getString(R.string.preview_roundOf, "${it.round}", "${it.rounds}") }
+    val parts =
+        when (preview) {
+            is StepPreview.Hold -> {
+                listOf(
+                    round ?: getString(R.string.preview_set, "${preview.setIndex}", "${preview.setTotal}"),
+                    preview.target?.let { holdTargetText(it) } ?: getString(R.string.preview_noTarget),
+                )
+            }
+
+            is StepPreview.Reps -> {
+                listOfNotNull(
+                    round ?: getString(R.string.preview_set, "${preview.setIndex}", "${preview.setTotal}"),
+                    loadKg?.takeIf { it > 0 }?.let { weightText(it, units) },
+                    getString(R.string.preview_repsTarget, repsTargetText(preview.target)),
+                )
+            }
+
+            is StepPreview.Interval -> {
+                listOf(
+                    round ?: when (val at = preview.progress) {
+                        is IntervalProgress.Round -> getString(R.string.preview_roundOf, "${at.index}", "${at.total}")
+                        is IntervalProgress.Seconds -> getString(R.string.preview_seconds, jsNumber(at.seconds))
+                    },
+                )
+            }
+        }
+    return parts.joinToString(" · ")
+}
 
 /** "Last time · 60 kg × 8 reps", or the bodyweight and hold forms. */
 fun Resources.previousSetText(

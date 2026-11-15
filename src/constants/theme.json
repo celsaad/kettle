@@ -76,7 +76,7 @@
     },
     "work": {
       "background": "#E8763E",
-      "backgroundElement": "rgba(247,243,234,0.18)",
+      "backgroundElement": "rgba(11,10,8,0.08)",
       "border": "rgba(11,10,8,0.16)",
       "text": "#0B0A08",
       "textSecondary": "#3A1C0C",

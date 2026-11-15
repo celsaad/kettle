@@ -152,7 +152,10 @@ here, next to what it describes.
   line numbers and colour, so Copy and Share hand over something that imports on its own. It says
   the weights are the file's kilograms, and links to how the format works (#444).
 - **Changing your text size no longer loses an unsaved edit**: changing the system font size or
-  bold text while an editor was open threw away what you hadn't saved yet. Editors now keep it. A session edit that can't be saved also says which exercise and set to fix (#456).
+  bold text while an editor was open threw away what you hadn't saved yet. Editors now keep it
+  (#456).
+- **A session edit that can't be saved says where**: it names the exercise and set to fix, such as
+  "Back Squat, set 1: Fill in Reps", rather than the field alone (#456).
 - **A program keeps your place when the day you last trained is gone**: if an import removes it,
   or you rename it, Home used to start the program over at week 1. It now carries on after the
   last day you trained that's still there (#456).

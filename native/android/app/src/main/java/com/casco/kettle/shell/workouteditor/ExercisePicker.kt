@@ -104,7 +104,8 @@ internal class Pickers {
 /**
  * The editor's exercise picker, as RN's `ExercisePicker`. A row adds a block in [PickerMode.Block], or a
  * member to its circuit in [PickerMode.IntoCircuit]; in [PickerMode.Circuit] it toggles a member of a
- * new circuit, and a confirm builds it from two or more. No search, as RN's had none: the feature freeze ports it as it is.
+ * new circuit, and a confirm builds it from two or more. No search, as RN's had none: the feature
+ * freeze ports it as it is.
  *
  * The quick-add form replaces the list while it is up, so the workout being built isn't left for the
  * exercise editor. It stays up until the create's write lands, so a refused one keeps its values.

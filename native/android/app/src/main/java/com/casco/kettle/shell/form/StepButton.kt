@@ -14,17 +14,23 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.KettleType
 import com.casco.kettle.shell.theme.TypeIcon
 
-/** A − or + on a stepper: named by [label], since its icon says nothing, in a 44dp target. */
+/**
+ * A − or + on a stepper: named by [label], since its icon says nothing, in a 44dp target. [value] is
+ * the number it moves, as its state: focusing + says "8" rather than leaving it to the live region,
+ * which only speaks once the number changes (#456).
+ */
 @Composable
 internal fun StepButton(
     @DrawableRes icon: Int,
     label: String,
     enabled: Boolean = true,
+    value: String? = null,
     onClick: () -> Unit,
 ) {
     val colors = KettleTheme.colors
@@ -35,7 +41,10 @@ internal fun StepButton(
             .clip(shape)
             .border(1.dp, colors.border, shape)
             .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
-            .semantics { contentDescription = label }
+            .semantics {
+                contentDescription = label
+                value?.let { stateDescription = it }
+            }
             // Dimmed and announced disabled where it can't move, as the week menu's moves are.
             .alpha(if (enabled) 1f else DISABLED_ALPHA),
         contentAlignment = Alignment.Center,

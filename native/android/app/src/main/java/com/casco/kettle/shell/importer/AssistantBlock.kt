@@ -12,6 +12,7 @@ import com.casco.kettle.domain.AssistantBrief
 import com.casco.kettle.domain.Library
 import com.casco.kettle.shell.R
 import com.casco.kettle.shell.files.ShippedContent
+import com.casco.kettle.shell.form.SmallButton
 import com.casco.kettle.shell.theme.KettleTheme
 import com.casco.kettle.shell.theme.Spacing
 
@@ -77,7 +78,7 @@ internal fun CopyAction(
 ) {
     val confirmed = handoff.confirmed(target)
     SmallButton(
-        if (confirmed) stringResource(R.string.import_copied) else idle,
+        if (confirmed) stringResource(R.string.common_copied) else idle,
         KettleTheme.colors.textSecondary,
     ) { handoff.copy(target, text()) }
     if (handoff.failed(target)) Note(stringResource(R.string.import_copyFailed))

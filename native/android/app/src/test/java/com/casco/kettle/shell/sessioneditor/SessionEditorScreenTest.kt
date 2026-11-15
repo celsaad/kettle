@@ -4,6 +4,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasContentDescription
@@ -352,6 +353,29 @@ class SessionEditorScreenTest {
         press("Salvar")
 
         assertEquals(aSession(), files.written.single())
+    }
+
+    // Keyed on the removal, the bar for a second identical one was the first's node again, and TalkBack
+    // said nothing: two equal sets removed in a row are two removals (#456).
+    @Test
+    fun `shows a fresh Undo bar for a second removal identical to the first`() {
+        val same = RepsSetLog(reps = 8, weightKg = 60.0, rpe = 8.0, restTakenSec = 90.0)
+        show(Files(aSession(listOf(SessionEntry.Reps("back-squat", listOf(same, same, same))))))
+        val bar = { compose.onNodeWithText("Série 1 de Back Squat removida").fetchSemanticsNode().id }
+
+        press("Remover série 1 de Back Squat")
+        val first = bar()
+        press("Remover série 1 de Back Squat")
+
+        assert(bar() != first) { "the second removal reused the first's bar" }
+    }
+
+    // A one-result table has no set to say, so two HIIT tables' "Rounds, 8" were the same to TalkBack.
+    @Test
+    fun `names a one-result cell by its exercise`() {
+        show(Files(aSession(listOf(squatEntry, SessionEntry.Hiit("back-squat", 8)))))
+
+        compose.onAllNodes(hasContentDescription("Back Squat · ", substring = true) and isButton).assertCountEquals(1)
     }
 
     // A cell names its row by position: left open across an Undo, it would be on the restored set instead.

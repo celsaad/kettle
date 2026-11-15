@@ -26,9 +26,12 @@ internal fun blockTarget(
             exerciseTarget(config, units) + restSuffix(config.restSec)
         }
 
+        // "hold", as a circuit's member line says it (#456): "3 × 0:20" alone read as a time of anything.
         is ExerciseConfig.TimedHold -> {
-            stringResource(R.string.workoutEditor_targetHold, holdText(config), config.sets) +
-                restSuffix(config.restSec)
+            config.holdSecMin
+                ?.let { stringResource(R.string.workoutEditor_targetHold, holdText(config), config.sets) }
+                ?.plus(restSuffix(config.restSec))
+                ?: (stringResource(R.string.workoutEditor_targetHoldOpen, config.sets) + restSuffix(config.restSec))
         }
 
         else -> {

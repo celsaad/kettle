@@ -397,7 +397,7 @@ class ImportScreenTest : ImportHarness() {
         picks(Library(1, listOf(pullUps.copy(config = threeSets.copy(sets = 4))), emptyList(), emptyList()))
         chooseFile()
 
-        compose.onNodeWithContentDescription("Séries: era 3, agora 4").assertExists()
+        compose.onNodeWithContentDescription("Séries: era 3, agora: 4").assertExists()
     }
 
     // A kilogram figure shown to someone working in pounds describes a change they didn't make.
@@ -408,7 +408,7 @@ class ImportScreenTest : ImportHarness() {
         )
         chooseFile(Files(preferences = imperial))
 
-        compose.onNodeWithContentDescription("Peso: era não definido, agora 143.3 lb").assertExists()
+        compose.onNodeWithContentDescription("Peso: era não definido, agora: 143.3 lb").assertExists()
     }
 
     @Test
@@ -416,7 +416,7 @@ class ImportScreenTest : ImportHarness() {
         picks(Library(1, listOf(pullUps.copy(config = threeSets.copy(restSec = 60.0))), emptyList(), emptyList()))
         chooseFile()
 
-        compose.onNodeWithContentDescription("Descanso: era 90s, agora 60s").assertExists()
+        compose.onNodeWithContentDescription("Descanso: era 90s, agora: 60s").assertExists()
     }
 
     @Test

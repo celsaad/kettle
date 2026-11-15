@@ -1,14 +1,8 @@
 package com.casco.kettle.shell.library
 
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -17,18 +11,15 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.unit.dp
 import com.casco.kettle.shell.R
+import com.casco.kettle.shell.form.SmallButton
 import com.casco.kettle.shell.list.TextAction
 import com.casco.kettle.shell.system.confirmCopy
 import com.casco.kettle.shell.system.copyToClipboard
@@ -48,7 +39,7 @@ private enum class SendOutcome(
     val message: Int,
     val failure: Boolean,
 ) {
-    Copied(R.string.yamlView_copied, failure = false),
+    Copied(R.string.common_copied, failure = false),
     CopyFailed(R.string.yamlView_copyFailed, failure = true),
     ShareCopied(R.string.yamlView_shareCopied, failure = false),
     LinkCopied(R.string.yamlView_linkCopied, failure = false),
@@ -67,7 +58,7 @@ internal fun SendActions(yaml: String) {
     var outcome by remember { mutableStateOf<SendOutcome?>(null) }
     // Bumped by every outcome, so a second Copy inside two seconds restarts the timer, not inherits it.
     var said by remember { mutableIntStateOf(0) }
-    val copied = stringResource(R.string.yamlView_copied)
+    val copied = stringResource(R.string.common_copied)
     // Where the app announces a copy (12L and lower), a share's fallback says why it copied.
     val shareCopied = stringResource(R.string.yamlView_shareCopied)
     val linkCopied = stringResource(R.string.yamlView_linkCopied)
@@ -78,9 +69,13 @@ internal fun SendActions(yaml: String) {
         said++
     }
     Row(Modifier.padding(top = Spacing.three), horizontalArrangement = Arrangement.spacedBy(Spacing.two)) {
-        SendButton(stringResource(R.string.yamlView_copy)) { copy(SendOutcome.Copied) }
+        SmallButton(
+            stringResource(R.string.yamlView_copy),
+            colors.text,
+            Modifier.weight(1f),
+        ) { copy(SendOutcome.Copied) }
         // A sheet that won't open copies instead, and says so: the document still leaves.
-        SendButton(stringResource(R.string.yamlView_share)) {
+        SmallButton(stringResource(R.string.yamlView_share), colors.text, Modifier.weight(1f)) {
             if (context.shareText(yaml)) outcome = null else copy(SendOutcome.ShareCopied)
         }
     }
@@ -92,12 +87,12 @@ internal fun SendActions(yaml: String) {
             color = if (it.failure) colors.accentText else colors.textSecondary,
         )
     }
-    // "Copied" holds for two seconds, as Import's does: long enough to read, not long enough to describe a later copy.
+    // "Copied" holds for two seconds, as Import's does: long enough to read, not long enough to describe a
+    // later copy. A sentence saying why holds longer, but goes too, rather than describing an hour-old tap.
     LaunchedEffect(said) {
-        if (outcome == SendOutcome.Copied) {
-            delay(COPIED_FOR_MS)
-            outcome = null
-        }
+        val shown = outcome ?: return@LaunchedEffect
+        delay(if (shown == SendOutcome.Copied) COPIED_FOR_MS else NOTE_FOR_MS)
+        outcome = null
     }
     Text(
         stringResource(R.string.yamlView_sendNote),
@@ -115,26 +110,9 @@ internal fun SendActions(yaml: String) {
     })
 }
 
-@Composable
-private fun RowScope.SendButton(
-    label: String,
-    onClick: () -> Unit,
-) {
-    val shape = RoundedCornerShape(12.dp)
-    Box(
-        Modifier
-            .weight(1f)
-            .heightIn(min = 48.dp)
-            .clip(shape)
-            .border(1.dp, KettleTheme.colors.border, shape)
-            .clickable(role = Role.Button, onClick = onClick),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(label, style = KettleType.smallMedium, color = KettleTheme.colors.text)
-    }
-}
-
 /** The format reference the site publishes, the copy an outside author reads. */
 internal const val FORMAT_URL = "https://celsaad.github.io/kettle/format.html"
 
 private const val COPIED_FOR_MS = 2000L
+
+private const val NOTE_FOR_MS = 6000L

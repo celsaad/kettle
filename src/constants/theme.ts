@@ -33,6 +33,10 @@ import theme from '@/constants/theme.json';
  *   1.36–1.71 and don't have to clear it: every week's row label carries its count and time, and the
  *   legend names the buckets. An early draft had a lowest step at 1.6:1 against the empty cell, which
  *   is why these are measured rather than eyeballed.
+ * - The YAML view colours a key in `accentText` and a number in `accentCalmText`, on `background`:
+ *   5.18 and 5.69 light, 8.32 and 7.79 dark (#444).
+ * - The session editor's Undo bar turns the page over, `background` on a `text` pill: 14.41 light,
+ *   15.15 dark (#442).
  *
  * Tokens whose name doesn't say it all:
  *

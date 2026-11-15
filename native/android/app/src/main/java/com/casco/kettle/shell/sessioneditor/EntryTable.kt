@@ -163,7 +163,9 @@ private fun RowScope.Cell(
 ) {
     val editor = context.editor
     val label = columnLabel(field, context.units)
-    val name = if (context.perSet) setFieldName(setLabel, label) else label
+    // A one-result table has no set to name its cells by, so the exercise does: two HIIT tables'
+    // "Rounds, 8" were the same words to TalkBack (#456).
+    val name = setFieldName(if (context.perSet) setLabel else context.name, label)
     val value = form.values[field].orEmpty()
     val key = CellKey(context.index, row, field)
     val editing = editor.editingCell == key

@@ -35,7 +35,7 @@ fun ImportRoute(params: Map<String, String> = emptyMap()) {
     val activity = LocalActivity.current ?: return
     val pickFile = rememberFilePicker(activity)
     val view = LocalView.current
-    val copied = stringResource(R.string.import_copied)
+    val copied = stringResource(R.string.common_copied)
     val navigator = LocalNavigator.current
     ImportScreen(
         LocalLatestFiles.current,

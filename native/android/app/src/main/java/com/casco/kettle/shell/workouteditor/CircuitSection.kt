@@ -188,7 +188,12 @@ private fun Rounds(
 ) = Setting(stringResource(R.string.workoutEditor_rounds)) { label ->
     // The buttons draw their own outlines, as everywhere else they step; a box round them doubled it.
     Row(verticalAlignment = Alignment.CenterVertically) {
-        StepButton(R.drawable.icon_remove, stringResource(R.string.common_decrease, label), circuit.rounds > 1) {
+        StepButton(
+            R.drawable.icon_remove,
+            stringResource(R.string.common_decrease, label),
+            circuit.rounds > 1,
+            "${circuit.rounds}",
+        ) {
             onChange(circuit.withRounds(circuit.rounds - 1))
         }
         Text(
@@ -198,7 +203,12 @@ private fun Rounds(
             color = KettleTheme.colors.text,
             textAlign = TextAlign.Center,
         )
-        StepButton(R.drawable.icon_add, stringResource(R.string.common_increase, label), circuit.rounds < MAX_ROUNDS) {
+        StepButton(
+            R.drawable.icon_add,
+            stringResource(R.string.common_increase, label),
+            circuit.rounds < MAX_ROUNDS,
+            "${circuit.rounds}",
+        ) {
             onChange(circuit.withRounds(circuit.rounds + 1))
         }
     }

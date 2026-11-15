@@ -279,16 +279,21 @@ private fun RoundsStepper(
     // One name for the field, its buttons and its refusal, which names it as `FieldName.Rounds`.
     val label = stringResource(R.string.exerciseForm_field_rounds)
     Text(label, style = KettleType.small, color = colors.textSecondary)
+    val shown = text.ifEmpty { "1" }
     Row(horizontalArrangement = Arrangement.spacedBy(Spacing.one), verticalAlignment = Alignment.CenterVertically) {
-        StepButton(R.drawable.icon_remove, stringResource(R.string.common_decrease, label)) { onStep(-1) }
+        StepButton(
+            R.drawable.icon_remove,
+            stringResource(R.string.common_decrease, label),
+            value = shown,
+        ) { onStep(-1) }
         Text(
-            text.ifEmpty { "1" },
+            shown,
             Modifier.widthIn(min = 24.dp),
             style = KettleType.smallMedium,
             color = colors.text,
             textAlign = TextAlign.Center,
         )
-        StepButton(R.drawable.icon_add, stringResource(R.string.common_increase, label)) { onStep(1) }
+        StepButton(R.drawable.icon_add, stringResource(R.string.common_increase, label), value = shown) { onStep(1) }
     }
 }
 

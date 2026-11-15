@@ -17,6 +17,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -132,13 +133,16 @@ fun SessionEditorScreen(
             Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()),
             contentAlignment = Alignment.TopCenter,
         ) {
-            Sheet(Modifier.padding(bottom = Spacing.four).navigationBarsPadding()) {
+            // The Undo bar clears the nav bar itself while it's up; padding here too left a bar-high gap.
+            val navBar = if (editor?.lastRemoved == null) Modifier.navigationBarsPadding() else Modifier
+            Sheet(Modifier.padding(bottom = Spacing.four).then(navBar)) {
                 shown?.let { Subtitle(it, library, zone) }
                 editing?.let { Body(it, editor, library, units) }
             }
         }
-        // Keyed on the removal, so each is a node of its own and announced, the same words twice included.
-        editor?.lastRemoved?.let { removed -> key(removed) { Sheet { UndoBar(removed, editor, library) } } }
+        // Keyed on a count of removals, so each is a node of its own and announced: keyed on the removal,
+        // two identical ones in a row were equal and the second said nothing (#456).
+        editor?.lastRemoved?.let { removed -> key(editor.removals) { Sheet { UndoBar(removed, editor, library) } } }
     }
 }
 
@@ -200,6 +204,10 @@ internal class Editor(
     var lastRemoved by mutableStateOf<RemovedSet?>(null)
         private set
 
+    /** Every removal so far, which the Undo bar is keyed on. */
+    var removals by mutableIntStateOf(0)
+        private set
+
     /** The one cell being edited, if any: one at a time, as the board has it. */
     var editingCell by mutableStateOf<CellKey?>(null)
         private set
@@ -253,6 +261,7 @@ internal class Editor(
         problem = null
         drafts = rest
         lastRemoved = removed
+        removals++
     }
 
     /**
